@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+  streaming-server:
+    container_name: streaming-server
+    build:
+      streaming-backend/
+    ports:
+      - 1935:1935
+      - 7002:7002
+    networks:
+      backend-network:
+    depends_on:
+      - backend
+    volumes:
+    - type: volume
+      source: recordings
+      target: /recordings
+    restart: always
+
+  backend:
+    container_name: backend_container
+    depends_on:
+      - db
+    build: .
+    networks:
+      backend-network:
+    ports:
+      - 8080:8080
+    volumes:
+        - type: volume
+          source: recordings
+          target: /recordings
+    restart: always
+
+  db:
+    container_name: postgres_container
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: changeme
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    networks:
+      backend-network:
+    restart: always
+
+networks:
+  backend-network:
+    driver: bridge
+
+volumes:
+  recordings:
+  postgres:

@@ -1,0 +1,46 @@
+server {
+       listen 8081;
+       listen [::]:8081;
+
+       server_name _;
+
+       root /var/www/html;
+       index index.html;
+
+       location / {
+               try_files $uri $uri/ =404;
+       }
+
+        location /on_publish {
+            return 200;
+        }
+
+        location /on_publish_done {
+            return 200;
+        }
+}
+
+server {
+    listen 80;
+    root /var/www;
+
+    # Let streams be delivered via XHR.
+    # You'd also want to configure a `crossdomain.xml` file
+    # for Flash-based players.
+    add_header Access-Control-Allow-Origin "*";
+    add_header Access-Control-Allow-Methods "GET";
+
+    location ~ ^/live/(.+\.ts)$ {
+        alias /recordings/$1;
+
+        # Let the MPEG-TS video chunks be cacheable
+        expires max;
+    }
+
+    location ~ ^/live/(.+\.m3u8)$ {
+        alias /recordings/$1;
+
+        # The M3U8 playlists should not be cacheable
+        expires -1d;
+    }
+}
