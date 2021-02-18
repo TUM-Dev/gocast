@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"github.com/droundy/goopt"
 	"github.com/gin-gonic/gin"
+	//_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	//_ "github.com/golang-migrate/migrate/v4/source/github"
 	"github.com/jmoiron/sqlx"
 	"log"
 	"net/http"
@@ -70,6 +72,21 @@ func main() {
 			fmt.Printf("SQL: %s\n", sql)
 		}
 	}
+	//todo fix database
+	/* todo: auto migrate database
+	// Migrate database
+	driver, err := postgres.WithInstance(db.DB, &postgres.Config{})
+	if err != nil {
+		log.Fatal("couldn't migrate database")
+	}
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://migrations",
+		"rbgreater", driver)
+	if err != nil {
+		log.Fatal("couldn't migrate database")
+	}
+	_ = m.Steps(2)
+	*/
 
 	api.ContextInitializer = func(r *http.Request) (ctx context.Context) {
 

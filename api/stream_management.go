@@ -1,6 +1,8 @@
 package api
 
 import (
+	"TUM-Live-Backend/dao"
+	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/julienschmidt/httprouter"
@@ -9,9 +11,9 @@ import (
 )
 
 func configGinStreamAuthRouter(router gin.IRoutes) {
-	router.POST("/on_publish", ConverHttprouterToGin(AuthenticateStream))
-	router.POST("/on_publish_done", ConverHttprouterToGin(EndStream))
-	router.POST("/on_record_done", ConverHttprouterToGin(OnRecordingFinished))
+	router.POST("/stream-management/on_publish", ConverHttprouterToGin(AuthenticateStream))
+	router.POST("/stream-management/on_publish_done", ConverHttprouterToGin(EndStream))
+	router.POST("/stream-management/on_record_done", ConverHttprouterToGin(OnRecordingFinished))
 }
 
 /**
@@ -20,11 +22,19 @@ func configGinStreamAuthRouter(router gin.IRoutes) {
 * @r: request. Form if valid: POST /on_publish/app/kurs-key example: {/on_publish/eidi-3zt45z452h4754nj2q74}
  */
 func AuthenticateStream(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	w.WriteHeader(200)
+	res, err := dao.GetStreamByKey(context.Background(), "key1")
+	if err != nil || res == nil{
+		w.WriteHeader(403) //reject when no results in database
+		fmt.Println("stream rejected.")
+		fmt.Println(err)
+		fmt.Println(res)
+		return
+	}
+	fmt.Printf("stream approved: id=%d\n", res.ID)
 }
 
 func EndStream(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-
+	println(formatRequest(r))
 }
 
 // TODO: Convert recording to mp4 and put into correct directory. Delete flv file.

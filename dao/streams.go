@@ -62,6 +62,23 @@ func GetAllStreams(ctx context.Context, page, pagesize int64, order string) (res
 	return results, cnt, err
 }
 
+// return stream by streaming key
+func GetStreamByKey(ctx context.Context, key string) (record *model.Streams, err error){
+	sql := "SELECT * FROM streams WHERE streamkey = ?"
+	sql = DB.Rebind(sql)
+
+	if Logger != nil {
+		Logger(ctx, sql)
+	}
+
+	record = &model.Streams{}
+	err = DB.GetContext(ctx, record, sql, key)
+	if err != nil {
+		return nil, err
+	}
+	return record, nil
+}
+
 // GetStreams is a function to get a single record from the streams table in the rbglive database
 // error - ErrNotFound, db Find error
 func GetStreams(ctx context.Context, argID int32) (record *model.Streams, err error) {
