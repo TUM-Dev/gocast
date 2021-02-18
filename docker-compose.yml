@@ -6,7 +6,7 @@ services:
     build:
       streaming-backend/
     ports:
-      - 1935:1935
+      - 420:420
       - 7002:7002
     networks:
       backend-network:

@@ -35,6 +35,9 @@ RUN ln -sf /dev/stderr /var/log/nginx/error.log
 VOLUME ["/etc/nginx", "/var/cache/nginx"]
 
 COPY nginx.conf /etc/nginx/nginx.conf
-COPY default /etc/nginx/sites-enabled/default
+
+# prepare folder for volume with owner www-data
+RUN mkdir /recordings
+RUN chown -R www-data:www-data /recordings
 
 CMD ["nginx", "-g", "daemon off;"]

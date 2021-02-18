@@ -50,20 +50,6 @@ type HTTPError struct {
 	Message string `json:"Message" example:"status bad request"`
 }
 
-// ConfigRouter configure http.Handler router
-func ConfigRouter() http.Handler {
-	router := httprouter.New()
-	configCourseOwnersRouter(router)
-	configCoursesRouter(router)
-	configSessionsRouter(router)
-	configStreamsRouter(router)
-	configUsersRouter(router)
-
-	router.GET("/ddl/:argID", GetDdl)
-	router.GET("/ddl", GetDdlEndpoints)
-	return router
-}
-
 // ConfigGinRouter configure gin router
 func ConfigGinRouter(router gin.IRoutes) {
 	configGinCourseOwnersRouter(router)
@@ -71,6 +57,7 @@ func ConfigGinRouter(router gin.IRoutes) {
 	configGinSessionsRouter(router)
 	configGinStreamsRouter(router)
 	configGinUsersRouter(router)
+	configGinStreamAuthRouter(router)
 
 	router.GET("/ddl/:argID", ConverHttprouterToGin(GetDdl))
 	router.GET("/ddl", ConverHttprouterToGin(GetDdlEndpoints))
