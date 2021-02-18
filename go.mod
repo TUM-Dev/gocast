@@ -14,6 +14,5 @@ require (
 	github.com/lib/pq v1.3.0 // indirect
 	github.com/mattn/go-sqlite3 v2.0.2+incompatible // indirect
 	github.com/satori/go.uuid v1.2.0
-	github.com/swaggo/gin-swagger v1.3.0
 	golang.org/x/sys v0.0.0-20200420163511-1957bb5e6d1f // indirect
 )

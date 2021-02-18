@@ -3,6 +3,6 @@ FROM golang:1.16
 WORKDIR /go/src/app
 COPY . .
 
-RUN make app
+RUN go install ./app/server/
 
-CMD ["bin/app"]
+CMD ["server"]
