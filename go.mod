@@ -8,7 +8,7 @@ require (
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/go-cmp v0.5.1 // indirect
-	github.com/guregu/null v3.4.0+incompatible
+	github.com/guregu/null v3.5.0+incompatible
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/kr/pretty v0.2.0 // indirect
