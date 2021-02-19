@@ -11,6 +11,5 @@ require (
 	github.com/jmoiron/sqlx v1.3.1
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/kr/pretty v0.2.0 // indirect
-	github.com/mattn/go-sqlite3 v2.0.2+incompatible // indirect
 	github.com/satori/go.uuid v1.2.0
 )
