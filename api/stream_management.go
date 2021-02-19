@@ -23,14 +23,14 @@ func configGinStreamAuthRouter(router gin.IRoutes) {
  */
 func AuthenticateStream(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	res, err := dao.GetStreamByKey(context.Background(), "key1")
-	if err != nil || res == nil{
+	if err != nil || res == 0{
 		w.WriteHeader(403) //reject when no results in database
 		fmt.Println("stream rejected.")
 		fmt.Println(err)
 		fmt.Println(res)
 		return
 	}
-	fmt.Printf("stream approved: id=%d\n", res.ID)
+	fmt.Printf("stream approved: id=%d\n", res)
 }
 
 func EndStream(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

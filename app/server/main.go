@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/droundy/goopt"
 	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
 	//_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	//_ "github.com/golang-migrate/migrate/v4/source/github"
 	"github.com/jmoiron/sqlx"
@@ -58,10 +59,17 @@ func main() {
 
 	goopt.Parse(nil)
 
-	db, err := sqlx.Open("postgres", "host=db port=5432 user=postgres database=rbglive password=changeme sslmode=disable")
+	db, err := sqlx.Open("mysql", "rbglive:changeme@tcp(db:3306)/rbglive")
 	if err != nil {
 		log.Fatalf("Got error when connecting to database: '%v'", err)
+	}else {
+		err = db.Ping()
+		if err != nil {
+			log.Fatalf(fmt.Sprintf("Got error when connecting to database: %v", err))
+		}
+		log.Println("Database connection established.")
 	}
+
 
 	dao.DB = db
 	dao.Logger = func(ctx context.Context, sql string) {

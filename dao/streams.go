@@ -63,20 +63,20 @@ func GetAllStreams(ctx context.Context, page, pagesize int64, order string) (res
 }
 
 // return stream by streaming key
-func GetStreamByKey(ctx context.Context, key string) (record *model.Streams, err error){
-	sql := "SELECT * FROM streams WHERE streamkey = ?"
+func GetStreamByKey(ctx context.Context, key string) (count int, err error){
+	sql := "SELECT count(*) FROM streams WHERE streamkey = ?"
 	sql = DB.Rebind(sql)
 
 	if Logger != nil {
 		Logger(ctx, sql)
 	}
 
-	record = &model.Streams{}
-	err = DB.GetContext(ctx, record, sql, key)
+	row := DB.QueryRow(sql, key)
+	err = row.Scan(&count)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	return record, nil
+	return count, nil
 }
 
 // GetStreams is a function to get a single record from the streams table in the rbglive database

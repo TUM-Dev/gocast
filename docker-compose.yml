@@ -34,16 +34,16 @@ services:
     restart: always
 
   db:
-    container_name: postgres_container
-    image: postgres
+    container_name: mariadb_container
+    image: mariadb
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: changeme
-      PGDATA: /data/postgres
+      MYSQL_ROOT_PASSWORD: example
     volumes:
-      - postgres:/data/postgres
+      - mariadb-data:/var/lib/mysql
     networks:
       backend-network:
+    ports:
+    - 3306:3306
     restart: always
 
 networks:
@@ -52,4 +52,4 @@ networks:
 
 volumes:
   recordings:
-  postgres:
+  mariadb-data:

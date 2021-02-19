@@ -13,7 +13,6 @@ import (
 
 	"TUM-Live-Backend/dao"
 	"TUM-Live-Backend/model"
-	_ "github.com/bmizerany/pq"
 
 	"github.com/gin-gonic/gin"
 	"github.com/julienschmidt/httprouter"
