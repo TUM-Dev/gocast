@@ -22,12 +22,11 @@ func configGinStreamAuthRouter(router gin.IRoutes) {
 * @r: request. Form if valid: POST /on_publish/app/kurs-key example: {/on_publish/eidi-3zt45z452h4754nj2q74}
  */
 func AuthenticateStream(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Printf("%v\n", r.Header.Get("key"))
 	res, err := dao.GetStreamByKey(context.Background(), "key1")
 	if err != nil {
 		w.WriteHeader(403) //reject when no results in database
-		fmt.Println("stream rejected.")
-		fmt.Println(err)
-		fmt.Println(res)
+		fmt.Printf("stream rejected. cause: %v\n", err)
 		return
 	}
 	fmt.Printf("stream approved: id=%d\n", res.ID)
