@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	_ "github.com/satori/go.uuid"
 	"io/ioutil"
 	"net/http"
@@ -12,28 +11,14 @@ import (
 	"unsafe"
 
 	"TUM-Live-Backend/dao"
-	"TUM-Live-Backend/model"
-
 	"github.com/gin-gonic/gin"
 	"github.com/julienschmidt/httprouter"
 )
 
 var (
 	_             = time.Second // import time.Second for unknown usage in api
-	crudEndpoints map[string]*CrudAPI
 )
 
-// CrudAPI describes requests available for tables in the database
-type CrudAPI struct {
-	Name            string           `json:"Name"`
-	CreateURL       string           `json:"CreateUrl"`
-	RetrieveOneURL  string           `json:"RetrieveOneUrl"`
-	RetrieveManyURL string           `json:"RetrieveManyUrl"`
-	UpdateURL       string           `json:"UpdateUrl"`
-	DeleteURL       string           `json:"DeleteUrl"`
-	FetchDDLURL     string           `json:"FetchDdlUrl"`
-	TableInfo       *model.TableInfo `json:"TableInfo"`
-}
 
 // PagedResults results for pages GetAll results.
 type PagedResults struct {
@@ -51,15 +36,7 @@ type HTTPError struct {
 
 // ConfigGinRouter configure gin router
 func ConfigGinRouter(router gin.IRoutes) {
-	configGinCourseOwnersRouter(router)
-	configGinCoursesRouter(router)
-	configGinSessionsRouter(router)
-	configGinStreamsRouter(router)
-	configGinUsersRouter(router)
 	configGinStreamAuthRouter(router)
-
-	router.GET("/ddl/:argID", ConverHttprouterToGin(GetDdl))
-	router.GET("/ddl", ConverHttprouterToGin(GetDdlEndpoints))
 	return
 }
 
@@ -87,15 +64,15 @@ func initializeContext(r *http.Request) (ctx context.Context) {
 	return ctx
 }
 
-func ValidateRequest(ctx context.Context, r *http.Request, table string, action model.Action) error {
+func ValidateRequest(ctx context.Context, r *http.Request, table string) error {
 	if RequestValidator != nil {
-		return RequestValidator(ctx, r, table, action)
+		return RequestValidator(ctx, r, table)
 	}
 
 	return nil
 }
 
-type RequestValidatorFunc func(ctx context.Context, r *http.Request, table string, action model.Action) error
+type RequestValidatorFunc func(ctx context.Context, r *http.Request, table string) error
 
 var RequestValidator RequestValidatorFunc
 
@@ -249,128 +226,4 @@ func parseString(ps httprouter.Params, key string) (string, error) {
 func parseUUID(ps httprouter.Params, key string) (string, error) {
 	idStr := ps.ByName(key)
 	return idStr, nil
-}
-
-// GetDdl is a function to get table info for a table in the rbglive database
-// @Summary Get table info for a table in the rbglive database by argID
-// @Tags TableInfo
-// @ID argID
-// @Description GetDdl is a function to get table info for a table in the rbglive database
-// @Accept  json
-// @Produce  json
-// @Param  argID path int true "id"
-// @Success 200 {object} api.CrudAPI
-// @Failure 400 {object} api.HTTPError
-// @Failure 404 {object} api.HTTPError "ErrNotFound, db record for id not found - returns NotFound HTTP 404 not found error"
-// @Router /ddl/{argID} [get]
-// http "http://localhost:8080/ddl/xyz" X-Api-User:user123
-func GetDdl(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	ctx := initializeContext(r)
-
-	argID := ps.ByName("argID")
-
-	if err := ValidateRequest(ctx, r, "ddl", model.FetchDDL); err != nil {
-		returnError(ctx, w, r, err)
-		return
-	}
-
-	record, ok := crudEndpoints[argID]
-	if !ok {
-		returnError(ctx, w, r, fmt.Errorf("unable to find table: %s", argID))
-		return
-	}
-
-	writeJSON(ctx, w, record)
-}
-
-// GetDdlEndpoints is a function to get a list of ddl endpoints available for tables in the rbglive database
-// @Summary Gets a list of ddl endpoints available for tables in the rbglive database
-// @Tags TableInfo
-// @Description GetDdlEndpoints is a function to get a list of ddl endpoints available for tables in the rbglive database
-// @Accept  json
-// @Produce  json
-// @Success 200 {object} api.CrudAPI
-// @Router /ddl [get]
-// http "http://localhost:8080/ddl" X-Api-User:user123
-func GetDdlEndpoints(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	ctx := initializeContext(r)
-
-	if err := ValidateRequest(ctx, r, "ddl", model.FetchDDL); err != nil {
-		returnError(ctx, w, r, err)
-		return
-	}
-
-	writeJSON(ctx, w, crudEndpoints)
-}
-
-func init() {
-	crudEndpoints = make(map[string]*CrudAPI)
-
-	var tmp *CrudAPI
-
-	tmp = &CrudAPI{
-		Name:            "course_owners",
-		CreateURL:       "/courseowners",
-		RetrieveOneURL:  "/courseowners",
-		RetrieveManyURL: "/courseowners",
-		UpdateURL:       "/courseowners",
-		DeleteURL:       "/courseowners",
-		FetchDDLURL:     "/ddl/course_owners",
-	}
-
-	tmp.TableInfo, _ = model.GetTableInfo("course_owners")
-	crudEndpoints["course_owners"] = tmp
-
-	tmp = &CrudAPI{
-		Name:            "courses",
-		CreateURL:       "/courses",
-		RetrieveOneURL:  "/courses",
-		RetrieveManyURL: "/courses",
-		UpdateURL:       "/courses",
-		DeleteURL:       "/courses",
-		FetchDDLURL:     "/ddl/courses",
-	}
-
-	tmp.TableInfo, _ = model.GetTableInfo("courses")
-	crudEndpoints["courses"] = tmp
-
-	tmp = &CrudAPI{
-		Name:            "sessions",
-		CreateURL:       "/sessions",
-		RetrieveOneURL:  "/sessions",
-		RetrieveManyURL: "/sessions",
-		UpdateURL:       "/sessions",
-		DeleteURL:       "/sessions",
-		FetchDDLURL:     "/ddl/sessions",
-	}
-
-	tmp.TableInfo, _ = model.GetTableInfo("sessions")
-	crudEndpoints["sessions"] = tmp
-
-	tmp = &CrudAPI{
-		Name:            "streams",
-		CreateURL:       "/streams",
-		RetrieveOneURL:  "/streams",
-		RetrieveManyURL: "/streams",
-		UpdateURL:       "/streams",
-		DeleteURL:       "/streams",
-		FetchDDLURL:     "/ddl/streams",
-	}
-
-	tmp.TableInfo, _ = model.GetTableInfo("streams")
-	crudEndpoints["streams"] = tmp
-
-	tmp = &CrudAPI{
-		Name:            "users",
-		CreateURL:       "/users",
-		RetrieveOneURL:  "/users",
-		RetrieveManyURL: "/users",
-		UpdateURL:       "/users",
-		DeleteURL:       "/users",
-		FetchDDLURL:     "/ddl/users",
-	}
-
-	tmp.TableInfo, _ = model.GetTableInfo("users")
-	crudEndpoints["users"] = tmp
-
 }

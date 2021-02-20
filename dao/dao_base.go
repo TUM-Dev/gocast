@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"gorm.io/gorm"
 	"reflect"
-
-	"github.com/jmoiron/sqlx"
 )
 
 // BuildInfo is used to define the application build info, and inject values into via the build process.
@@ -53,7 +52,7 @@ var (
 	ErrBadParams = fmt.Errorf("bad params error")
 
 	// DB reference to database
-	DB *sqlx.DB
+	DB *gorm.DB
 
 	// AppBuildInfo reference to build info
 	AppBuildInfo *BuildInfo
@@ -90,17 +89,7 @@ func isZeroOfUnderlyingType(x interface{}) bool {
 }
 
 func GetRowCount(ctx context.Context, tableName string) (int, error) {
-	sql := fmt.Sprintf("SELECT count(*) FROM %s", tableName)
-	if Logger != nil {
-		Logger(ctx, sql)
-	}
-
-	cnt := 0
-	row := DB.QueryRowContext(ctx, sql)
-	err := row.Scan(&cnt)
-	if err != nil {
-		return -1, err
-	}
-
-	return cnt, err
+	context.TODO()
+	return 0, nil
+	//TODO
 }

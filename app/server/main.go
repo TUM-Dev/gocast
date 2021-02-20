@@ -8,10 +8,9 @@ import (
 	"fmt"
 	"github.com/droundy/goopt"
 	"github.com/gin-gonic/gin"
-	_ "github.com/go-sql-driver/mysql"
-	//_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	//_ "github.com/golang-migrate/migrate/v4/source/github"
-	"github.com/jmoiron/sqlx"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+
 	"log"
 	"net/http"
 	"os"
@@ -20,7 +19,6 @@ import (
 )
 
 const UserKey = "RBG-Default-User" // UserKey key used for storing User struct in context
-
 
 // GinServer launch gin server
 func GinServer() (err error) {
@@ -59,17 +57,21 @@ func main() {
 
 	goopt.Parse(nil)
 
-	db, err := sqlx.Open("mysql", "rbglive:changeme@tcp(db:3306)/rbglive")
+	db, err := gorm.Open(mysql.Open("rbglive:changeme@tcp(db:3306)/rbglive"), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Got error when connecting to database: '%v'", err)
-	}else {
-		err = db.Ping()
-		if err != nil {
-			log.Fatalf(fmt.Sprintf("Got error when connecting to database: %v", err))
-		}
-		log.Println("Database connection established.")
 	}
 
+	err = db.AutoMigrate(
+		&model.Course{},
+		&model.CourseOwner{},
+		&model.Session{},
+		&model.Stream{},
+		&model.User{},
+	)
+	if err != nil {
+		log.Fatalf("Could not migrate database: %v", err)
+	}
 
 	dao.DB = db
 	dao.Logger = func(ctx context.Context, sql string) {
@@ -80,21 +82,6 @@ func main() {
 			fmt.Printf("SQL: %s\n", sql)
 		}
 	}
-	//todo fix database
-	/* todo: auto migrate database
-	// Migrate database
-	driver, err := postgres.WithInstance(db.DB, &postgres.Config{})
-	if err != nil {
-		log.Fatal("couldn't migrate database")
-	}
-	m, err := migrate.NewWithDatabaseInstance(
-		"file://migrations",
-		"rbgreater", driver)
-	if err != nil {
-		log.Fatal("couldn't migrate database")
-	}
-	_ = m.Steps(2)
-	*/
 
 	api.ContextInitializer = func(r *http.Request) (ctx context.Context) {
 
@@ -115,13 +102,13 @@ func main() {
 		return ctx
 	}
 
-	api.RequestValidator = func(ctx context.Context, r *http.Request, table string, action model.Action) error {
+	api.RequestValidator = func(ctx context.Context, r *http.Request, table string) error {
 		user, ok := UserFromContext(ctx)
 		if !ok {
 			return fmt.Errorf("unknown user")
 		}
 
-		fmt.Printf("user: %v accessing %s action: %v\n", user, table, action)
+		fmt.Printf("user: %v accessing %s ", user, table)
 		return nil
 	}
 	go GinServer()
