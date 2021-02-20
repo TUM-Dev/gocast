@@ -8,10 +8,9 @@ import (
 type Course struct {
 	gorm.Model
 
-	ID int
-	Name string
-	Start time.Time
-	End time.Time
+	ID       int
+	Name     string
+	Start    time.Time
+	End      time.Time
 	Semester string
 }
-

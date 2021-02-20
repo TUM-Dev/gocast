@@ -16,9 +16,8 @@ import (
 )
 
 var (
-	_             = time.Second // import time.Second for unknown usage in api
+	_ = time.Second // import time.Second for unknown usage in api
 )
-
 
 // PagedResults results for pages GetAll results.
 type PagedResults struct {
