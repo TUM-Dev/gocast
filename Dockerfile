@@ -1,4 +1,4 @@
-FROM node:12.18.1 as node
+FROM node:15.9.0 as node
 
 WORKDIR /app
 COPY ["package.json", "package-lock.json*", "./"]
