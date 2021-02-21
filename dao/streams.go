@@ -12,11 +12,9 @@ func GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err e
 		Logger(ctx, "Getting stream by key from database.")
 	}
 	var res model.Stream
-	err = DB.First(&res, "streamKey = ?", key).Error
-	if err != nil {
-		fmt.Printf("error getting stream by key: %v", err)
-	}
-	if err != nil {
+	err = DB.First(&res, "stream_key = ?", key).Error
+	if err != nil { // entry probably not existent -> not authenticated
+		fmt.Printf("error getting stream by key: %v\n", err)
 		return res, err
 	}
 	return res, nil

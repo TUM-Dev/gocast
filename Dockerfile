@@ -1,7 +1,15 @@
+FROM node:12.18.1 as node
+
+WORKDIR /app
+COPY ["package.json", "package-lock.json*", "./"]
+RUN npm i --no-dev
+
 FROM golang:1.16
 
 WORKDIR /go/src/app
 COPY . .
+
+COPY --from=node /app/node_modules ./node_modules
 
 RUN go install ./app/server/
 

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <title>Setup</title>
+    <script src="/dist/jquery/dist/jquery.min.js"></script>
+    <script src="assets/js/formsub.js"></script>
+</head>
+<body>
+<h1>Create a new admin user:</h1>
+<form id="onboardingForm">
+    <label>
+        Full name:
+        <input type="text" name="name" placeholder="Erika Musterfrau"/>
+    </label>
+    <label>
+        Email:
+        <input type="email" name="email" placeholder="erika-muster69@hotmail.com"/>
+    </label>
+    <label>
+        Password
+        <input type="password" name="password"/>
+    </label>
+    <button type="button" onclick="apiSubmit('#onboardingForm', '/api/createUser')">ok</button>
+</form>
+</body>
+</html>

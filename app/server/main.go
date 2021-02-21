@@ -4,6 +4,7 @@ import (
 	"TUM-Live-Backend/api"
 	"TUM-Live-Backend/dao"
 	"TUM-Live-Backend/model"
+	"TUM-Live-Backend/web"
 	"context"
 	"fmt"
 	"github.com/droundy/goopt"
@@ -25,6 +26,7 @@ func GinServer() (err error) {
 	router := gin.Default()
 
 	api.ConfigGinRouter(router)
+	web.ConfigGinRouter(router)
 	err = router.Run(":8080")
 	if err != nil {
 		log.Fatalf("Error starting server, the error is '%v'", err)
@@ -46,18 +48,12 @@ func (u *User) String() string {
 	return u.Name
 }
 
-// @title Sample CRUD api for rbglive db
-// @version 1.0
-// @description Sample CRUD api for rbglive db
-// @termsOfService
-// @host localhost:8080
-// @BasePath /
 func main() {
 	OsSignal = make(chan os.Signal, 1)
 
 	goopt.Parse(nil)
 
-	db, err := gorm.Open(mysql.Open("rbglive:changeme@tcp(db:3306)/rbglive"), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open("rbglive:changeme@tcp(db:3306)/rbglive?parseTime=true"), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Got error when connecting to database: '%v'", err)
 	}
@@ -84,7 +80,6 @@ func main() {
 	}
 
 	api.ContextInitializer = func(r *http.Request) (ctx context.Context) {
-
 		val, ok := r.Header["X-Api-User"]
 		if ok {
 			if len(val) > 0 {

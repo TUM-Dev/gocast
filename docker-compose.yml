@@ -12,10 +12,10 @@ services:
     depends_on:
       - backend
     volumes:
-    - type: volume
-      source: recordings
-      target: /recordings
-    - ./streaming-backend/nginx.conf:/etc/nginx/nginx.conf.template
+      - type: volume
+        source: recordings
+        target: /recordings
+      - ./streaming-backend/nginx.conf:/etc/nginx/nginx.conf.template
     restart: always
 
   backend:
@@ -28,9 +28,9 @@ services:
     ports:
       - 8080:8080
     volumes:
-        - type: volume
-          source: recordings
-          target: /recordings
+      - type: volume
+        source: recordings
+        target: /recordings
     restart: always
 
   db:
@@ -43,7 +43,7 @@ services:
     networks:
       backend-network:
     ports:
-    - 3306:3306
+      - 3306:3306
     restart: always
 
 networks:

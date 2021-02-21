@@ -93,3 +93,6 @@ fabric.properties
 
 # database migration tool:
 migrate.linux-amd64
+
+# node modules
+node_modules
