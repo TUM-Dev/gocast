@@ -12,7 +12,7 @@ import (
 )
 
 func configGinUsersRouter(router gin.IRoutes) {
-	router.POST("/createUser", ConverHttprouterToGin(CreateUser))
+	router.POST("/api/createUser", ConverHttprouterToGin(CreateUser))
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -34,7 +34,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		log.Printf("couldn't decode json: %v\n", err)
 		return
 	}
-	var user model.User
+	var user = model.User {}
 	user.Email = request.Email
 	user.Name = request.Name
 	user.Role = "admin"

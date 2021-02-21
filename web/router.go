@@ -2,6 +2,8 @@ package web
 
 import (
 	"TUM-Live-Backend/api"
+	"TUM-Live-Backend/dao"
+	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/julienschmidt/httprouter"
 	"html/template"
@@ -19,6 +21,7 @@ func ConfigGinRouter(router gin.IRoutes) {
 
 func configGinStaticRouter(router gin.IRoutes) {
 	router.Static("/assets", "./web/assets")
+	router.Static("/dist", "./node_modules")
 }
 
 func configMainRoute(router gin.IRoutes) {
@@ -26,5 +29,12 @@ func configMainRoute(router gin.IRoutes) {
 }
 
 func MainPage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	_ = templ.ExecuteTemplate(w, "index.html", "")
+	res, err := dao.AreUsersEmpty(context.Background())
+	if err != nil {
+		_ = templ.ExecuteTemplate(w, "error.html", "")
+	} else if res {
+		_ = templ.ExecuteTemplate(w, "onboarding.html", "")
+	} else {
+		_ = templ.ExecuteTemplate(w, "index.html", "")
+	}
 }

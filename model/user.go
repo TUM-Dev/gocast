@@ -56,7 +56,7 @@ func (u User) ValidateFields() bool {
 	return emailRegex.MatchString(u.Email)
 }
 
-func (u User) SetPassword(password string) (err error) {
+func (u *User) SetPassword(password string) (err error) {
 	if len(password) < 8 {
 		return errors.New("password length insufficient")
 	}
