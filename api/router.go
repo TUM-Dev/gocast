@@ -36,6 +36,8 @@ type HTTPError struct {
 // ConfigGinRouter configure gin router
 func ConfigGinRouter(router gin.IRoutes) {
 	configGinStreamAuthRouter(router)
+	configGinOnboardingRouter(router)
+	configGinUsersRouter(router)
 	return
 }
 
