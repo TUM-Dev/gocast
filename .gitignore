@@ -96,3 +96,6 @@ migrate.linux-amd64
 
 # node modules
 node_modules
+
+# ts out
+web/assets/ts-dist

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es5",
+    "sourceMap": true,
+    "outDir": "web/assets/ts-dist"
+  },
+  "include": [
+    "web/ts/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
