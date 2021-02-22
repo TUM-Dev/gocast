@@ -2,27 +2,47 @@
 <html lang="en" xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Setup</title>
-    <script src="/dist/jquery/dist/jquery.min.js"></script>
-    <script src="assets/js/formsub.js"></script>
-    <script src="assets/ts-dist/onboarding.js"></script>
+    <script src="/assets/ts-dist/main.min.js" defer async></script>
+    <link href="assets/css-dist/main.css" rel="stylesheet">
+    <link href="/dist/@fortawesome/fontawesome-free/css/all.css" rel="stylesheet">
 </head>
-<body>
-<h1>Create a new admin user:</h1>
-<form id="onboardingForm">
-    <label>
-        Full name:
-        <input type="text" name="name" placeholder="Erika Musterfrau"/>
-    </label>
-    <label>
-        Email:
-        <input type="email" name="email" placeholder="erika-muster69@hotmail.com"/>
-    </label>
-    <label>
-        Password
-        <input type="password" name="password"/>
-    </label>
-    <button type="button" onclick="apiSubmit('#onboardingForm', '/api/createUser')">ok</button>
-</form>
+<body class="bg-primary">
+
+{{template "header"}}
+
+<div class="bg-secondary lg:w-4/12 md:6/12 w-10/12 m-auto my-10 shadow-md">
+    <div class="py-8 px-8 rounded border border-gray-500">
+        <h1 class="font-medium text-2xl mt-3 text-center text-gray-200">Create a new Admin user</h1>
+        <form id="onboardingForm" action="#" class="mt-6">
+            <div class="my-5 text-sm">
+                <label for="name" class="block text-gray-200">Name</label>
+                <div id="nameError" class="my-5 text-sm text-danger"></div>
+                <input type="text" autofocus name="name" id="name"
+                       class="rounded-sm px-4 py-3 mt-3 focus:outline-none bg-gray-100 w-full"
+                       placeholder="Erika Mustermann"/>
+            </div>
+            <div class="my-5 text-sm">
+                <label for="email" class="block text-gray-200">Email</label>
+                <div id="emailError" class="my-5 text-sm text-danger"></div>
+                <input type="text" name="email" id="email"
+                       class="rounded-sm px-4 py-3 mt-3 focus:outline-none bg-gray-100 w-full"
+                       placeholder="erika-muster69@hotmail.com"/>
+            </div>
+            <div class="my-5 text-sm">
+                <label for="password" class="block text-gray-200">Password</label>
+                <div id="passwordError" class="my-5 text-sm text-danger"></div>
+                <input type="password" name="password" id="password"
+                       class="rounded-sm px-4 py-3 mt-3 focus:outline-none bg-gray-100 w-full" placeholder="Password"/>
+
+            </div>
+            <button class="block text-center text-white bg-gray-800 p-3 duration-300 rounded-sm hover:bg-black w-full">
+                Finish Setup
+            </button>
+        </form>
+
+    </div>
+</div>
 </body>
 </html>

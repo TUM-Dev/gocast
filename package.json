@@ -7,7 +7,7 @@
     "url": "git+https://github.com/joschahenningsen/TUMlive-backend.git"
   },
   "scripts": {
-    "postinstall": "npx tsc && npx google-closure-compiler --js 'web/assets/ts-dist/*.js' --js_output_file web/assets/ts-dist/main.min.js"
+    "postinstall": "npx tsc && npx google-closure-compiler -O BUNDLE --js 'web/assets/ts-dist-temp/*.js' --js_output_file web/assets/ts-dist/main.min.js && rm -rf web/assets/ts-dist-temp && npx tailwindcss build -o ./web/assets/css-dist/main.css"
   },
   "author": "Joscha Henningsen",
   "license": "GPL-3.0-or-later",
@@ -16,10 +16,13 @@
   },
   "homepage": "https://github.com/joschahenningsen/TUMlive-backend#readme",
   "dependencies": {
-    "jquery": "^3.5.1"
+    "@fortawesome/fontawesome-free": "^5.15.2"
   },
   "devDependencies": {
+    "autoprefixer": "^10.2.4",
     "google-closure-compiler": "^20210202.0.0",
+    "postcss": "^8.2.6",
+    "tailwindcss": "^2.0.3",
     "typescript": "^4.1.5"
   }
 }

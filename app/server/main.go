@@ -53,7 +53,7 @@ func main() {
 
 	goopt.Parse(nil)
 
-	db, err := gorm.Open(mysql.Open("rbglive:changeme@tcp(db:3306)/rbglive?parseTime=true"), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open("root:example@tcp(db:3306)/rbglive?parseTime=true"), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Got error when connecting to database: '%v'", err)
 	}

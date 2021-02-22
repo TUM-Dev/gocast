@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/julienschmidt/httprouter"
 	"html/template"
+	"log"
 	"net/http"
 )
 
@@ -31,10 +32,16 @@ func configMainRoute(router gin.IRoutes) {
 func MainPage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	res, err := dao.AreUsersEmpty(context.Background())
 	if err != nil {
+		println("rendering error")
 		_ = templ.ExecuteTemplate(w, "error.html", "")
 	} else if res {
-		_ = templ.ExecuteTemplate(w, "onboarding.html", "")
+		println("rendering onboarding")
+		err = templ.ExecuteTemplate(w, "onboarding.html", "")
+		if err != nil {
+			log.Fatalf("couldn't render template: %v\n", err)
+		}
 	} else {
+		println("rendering index")
 		_ = templ.ExecuteTemplate(w, "index.html", "")
 	}
 }

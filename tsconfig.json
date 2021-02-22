@@ -3,7 +3,7 @@
     "module": "commonjs",
     "target": "es5",
     "sourceMap": true,
-    "outDir": "web/assets/ts-dist"
+    "outDir": "web/assets/ts-dist-temp"
   },
   "include": [
     "web/ts/*"

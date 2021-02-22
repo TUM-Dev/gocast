@@ -97,5 +97,6 @@ migrate.linux-amd64
 # node modules
 node_modules
 
-# ts out
+# out
 web/assets/ts-dist
+web/assets/css-dist
