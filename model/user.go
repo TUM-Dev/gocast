@@ -68,10 +68,10 @@ func (u *User) SetPassword(password string) (err error) {
 	return nil
 }
 
-func comparePasswordAndHash(password, encodedHash string) (match bool, err error) {
+func (u *User) ComparePasswordAndHash(password string) (match bool, err error) {
 	// Extract the parameters, salt and derived key from the encoded password
 	// hash.
-	salt, hash, err := decodeHash(encodedHash)
+	salt, hash, err := decodeHash(u.Password)
 	if err != nil {
 		return false, err
 	}

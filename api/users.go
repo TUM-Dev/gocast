@@ -7,12 +7,60 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/julienschmidt/httprouter"
+	uuid "github.com/satori/go.uuid"
 	"log"
 	"net/http"
+	"time"
 )
 
 func configGinUsersRouter(router gin.IRoutes) {
-	router.POST("/api/createUser", ConverHttprouterToGin(CreateUser))
+	router.POST("/api/createUser", ConvertHttprouterToGin(CreateUser))
+	router.POST("/api/login", ConvertHttprouterToGin(Login))
+}
+
+type loginRequest struct {
+	Email    string
+	Password string
+}
+
+func Login(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	var requestData loginRequest
+	err := json.NewDecoder(request.Body).Decode(&requestData)
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	user, err := dao.GetUserByEmail(context.Background(), requestData.Email)
+	if err != nil {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	pwCorrect, err := user.ComparePasswordAndHash(requestData.Password)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		log.Printf("error validating password: %v\n", err)
+	}
+	if pwCorrect {
+		var cookie http.Cookie
+		cookie.Name = "SID"
+		cookie.Value = uuid.NewV4().String()
+		cookie.Expires = time.Now().Add(time.Hour * 24 * 30)
+		var session model.Session
+		session.User = user
+		session.SessionID = cookie.Value
+		session.UserID = user.ID
+		err = dao.CreateSession(context.Background(), session)
+		if err != nil {
+			log.Printf("couldn't create session: %v\n", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		} else {
+			writer.WriteHeader(http.StatusOK)
+			http.SetCookie(writer, &cookie)
+			return
+		}
+	}
+	writer.WriteHeader(http.StatusInternalServerError)
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -34,7 +82,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		log.Printf("couldn't decode json: %v\n", err)
 		return
 	}
-	var user = model.User {}
+	var user = model.User{}
 	user.Email = request.Email
 	user.Name = request.Name
 	user.Role = "admin"

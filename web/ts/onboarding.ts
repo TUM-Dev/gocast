@@ -10,16 +10,16 @@ class OnboardingFormData {
     }
 }
 
-let nameBox: HTMLInputElement= document.querySelector('#name');
-nameBox.onfocus = function (){
+let nameBox: HTMLInputElement = document.querySelector('#name');
+nameBox.onfocus = function () {
     document.querySelector("#nameError").innerHTML = "";
 }
-let emailBox: HTMLInputElement= document.querySelector('#email');
-emailBox.onfocus = function (){
+let emailBox: HTMLInputElement = document.querySelector('#email');
+emailBox.onfocus = function () {
     document.querySelector("#emailError").innerHTML = "";
 }
-let passwordBox: HTMLInputElement= document.querySelector('#password');
-passwordBox.onfocus = function (){
+let passwordBox: HTMLInputElement = document.querySelector('#password');
+passwordBox.onfocus = function () {
     document.querySelector("#passwordError").innerHTML = "";
 }
 
@@ -45,5 +45,11 @@ form.onsubmit = (e: Event) => {
         return false;
     }
     console.log(JSON.stringify(data));
+    postData("api/createUser", data)
+        .then(data => {
+            location.reload();
+        }).catch(error => {
+            console.log(error)
+        })
     return false; // prevent reload
 }

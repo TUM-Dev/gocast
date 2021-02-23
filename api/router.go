@@ -37,11 +37,12 @@ type HTTPError struct {
 func ConfigGinRouter(router gin.IRoutes) {
 	configGinStreamAuthRouter(router)
 	configGinUsersRouter(router)
+	configGinChatRouter(router)
 	return
 }
 
-// ConverHttprouterToGin wrap httprouter.Handle to gin.HandlerFunc
-func ConverHttprouterToGin(f httprouter.Handle) gin.HandlerFunc {
+// ConvertHttprouterToGin wrap httprouter.Handle to gin.HandlerFunc
+func ConvertHttprouterToGin(f httprouter.Handle) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var params httprouter.Params
 		_len := len(c.Params)

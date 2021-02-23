@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/droundy/goopt"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -24,6 +25,7 @@ const UserKey = "RBG-Default-User" // UserKey key used for storing User struct i
 // GinServer launch gin server
 func GinServer() (err error) {
 	router := gin.Default()
+	router.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	api.ConfigGinRouter(router)
 	web.ConfigGinRouter(router)

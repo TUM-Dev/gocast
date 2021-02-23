@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "none",
     "target": "es5",
     "sourceMap": true,
-    "outDir": "web/assets/ts-dist-temp"
+    "outDir": "web/assets/ts-dist"
   },
   "include": [
     "web/ts/*"

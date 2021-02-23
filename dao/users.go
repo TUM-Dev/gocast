@@ -22,6 +22,14 @@ func CreateUser(ctx context.Context, user model.User) (err error){
 	return res.Error
 }
 
+func CreateSession(ctx context.Context, session model.Session) (err error){
+	if Logger != nil {
+		Logger(ctx, "Create user.")
+	}
+	res := DB.Create(&session)
+	return res.Error
+}
+
 func GetUserByEmail(ctx context.Context, email string) (user model.User, err error)  {
 	if Logger != nil {
 		Logger(ctx, "find user by email.")

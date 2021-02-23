@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/html">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Setup</title>
+    <title>TUM Live | Login</title>
     {{template "headImports"}}
-    <script src="/assets/ts-dist/onboarding.js" defer async></script>
+    <script defer async src="/assets/ts-dist/login.js"></script>
 </head>
 <body class="bg-primary">
 
@@ -13,31 +11,21 @@
 
 <div class="bg-secondary lg:w-4/12 md:6/12 w-10/12 m-auto my-10 shadow-md">
     <div class="py-8 px-8 rounded border border-gray-500">
-        <h1 class="font-medium text-2xl mt-3 text-center text-gray-200">Create a new Admin user</h1>
-        <form id="onboardingForm" action="#" class="mt-6">
-            <div class="my-5 text-sm">
-                <label for="name" class="block text-gray-200">Name</label>
-                <div id="nameError" class="my-5 text-sm text-danger"></div>
-                <input type="text" autofocus name="name" id="name"
-                       class="rounded-sm px-4 py-3 mt-3 focus:outline-none bg-gray-100 w-full"
-                       placeholder="Erika Mustermann"/>
-            </div>
+        <h1 class="font-medium text-2xl mt-3 text-center text-gray-200">Login</h1>
+        <form id="loginForm" action="#" class="mt-6">
             <div class="my-5 text-sm">
                 <label for="email" class="block text-gray-200">Email</label>
-                <div id="emailError" class="my-5 text-sm text-danger"></div>
                 <input type="text" name="email" id="email"
                        class="rounded-sm px-4 py-3 mt-3 focus:outline-none bg-gray-100 w-full"
                        placeholder="erika-muster69@hotmail.com"/>
             </div>
             <div class="my-5 text-sm">
                 <label for="password" class="block text-gray-200">Password</label>
-                <div id="passwordError" class="my-5 text-sm text-danger"></div>
                 <input type="password" name="password" id="password"
                        class="rounded-sm px-4 py-3 mt-3 focus:outline-none bg-gray-100 w-full" placeholder="Password"/>
-
             </div>
             <button class="block text-center text-white bg-gray-800 p-3 duration-300 rounded-sm hover:bg-black w-full">
-                Finish Setup
+                Login
             </button>
         </form>
 

@@ -26,22 +26,30 @@ func configGinStaticRouter(router gin.IRoutes) {
 }
 
 func configMainRoute(router gin.IRoutes) {
-	router.GET("/", api.ConverHttprouterToGin(MainPage))
+	router.GET("/admin", api.ConvertHttprouterToGin(AdminPage))
+	router.GET("/login", api.ConvertHttprouterToGin(LoginPage))
+	router.GET("/", api.ConvertHttprouterToGin(MainPage))
 }
 
 func MainPage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	res, err := dao.AreUsersEmpty(context.Background())
 	if err != nil {
-		println("rendering error")
 		_ = templ.ExecuteTemplate(w, "error.html", "")
 	} else if res {
-		println("rendering onboarding")
-		err = templ.ExecuteTemplate(w, "onboarding.html", "")
-		if err != nil {
-			log.Fatalf("couldn't render template: %v\n", err)
-		}
+		_ = templ.ExecuteTemplate(w, "onboarding.html", "")
 	} else {
-		println("rendering index")
 		_ = templ.ExecuteTemplate(w, "index.html", "")
+	}
+}
+
+func AdminPage(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	//todo authentication
+	_ = templ.ExecuteTemplate(writer, "admin.html", "")
+}
+
+func LoginPage(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	err := templ.ExecuteTemplate(writer, "login.html", "")
+	if err != nil {
+		log.Printf("couldn't render template: %v\n", err)
 	}
 }

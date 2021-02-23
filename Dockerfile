@@ -3,6 +3,10 @@ FROM node:15.9.0 as node
 WORKDIR /app
 COPY . .
 
+## remove generated files in case the developer build with npm before
+RUN rm -rf web/assets/ts-dist
+RUN rm -rf web/assets/css-dist
+
 RUN npm i --no-dev
 
 FROM golang:1.16

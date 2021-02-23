@@ -10,9 +10,9 @@ import (
 )
 
 func configGinStreamAuthRouter(router gin.IRoutes) {
-	router.POST("/stream-management/on_publish", ConverHttprouterToGin(AuthenticateStream))
-	router.POST("/stream-management/on_publish_done", ConverHttprouterToGin(EndStream))
-	router.POST("/stream-management/on_record_done", ConverHttprouterToGin(OnRecordingFinished))
+	router.POST("/stream-management/on_publish", ConvertHttprouterToGin(AuthenticateStream))
+	router.POST("/stream-management/on_publish_done", ConvertHttprouterToGin(EndStream))
+	router.POST("/stream-management/on_record_done", ConvertHttprouterToGin(OnRecordingFinished))
 }
 
 /**
