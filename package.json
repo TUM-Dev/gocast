@@ -4,7 +4,7 @@
   "description": "Backend of TUMs live streaming service",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/joschahenningsen/TUMlive-backend.git"
+    "url": "git+https://github.com/joschahenningsen/TUM-Live.git"
   },
   "scripts": {
     "postinstall": "npx tsc && npx google-closure-compiler -O BUNDLE --js 'web/assets/ts-dist-temp/*.js' --js_output_file web/assets/ts-dist/main.min.js && rm -rf web/assets/ts-dist-temp && npx tailwindcss build -o ./web/assets/css-dist/main.css"
@@ -12,9 +12,9 @@
   "author": "Joscha Henningsen",
   "license": "GPL-3.0-or-later",
   "bugs": {
-    "url": "https://github.com/joschahenningsen/TUMlive-backend/issues"
+    "url": "https://github.com/joschahenningsen/TUM-Live/issues"
   },
-  "homepage": "https://github.com/joschahenningsen/TUMlive-backend#readme",
+  "homepage": "https://github.com/joschahenningsen/TUM-Live#readme",
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.2"
   },
