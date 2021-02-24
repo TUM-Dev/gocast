@@ -26,6 +26,7 @@ func ConfigGinRouter(router gin.IRoutes) {
 func configGinStaticRouter(router gin.IRoutes) {
 	router.Static("/assets", "./web/assets")
 	router.Static("/dist", "./node_modules")
+	router.StaticFile("/favicon.ico", "./web/assets/favicon.ico")
 }
 
 func configMainRoute(router gin.IRoutes) {

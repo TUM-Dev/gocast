@@ -2,12 +2,78 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>TUM Live | administration</title>
+    <title>TUM Live | Administration</title>
     {{template "headImports"}}
 </head>
 <body class="bg-primary">
 
 {{template "header" .}}
+
+<div class="container mx-auto">
+    <div class="min-w-screen flex items-center justify-center">
+        <div class="w-full lg:w-5/6">
+            <div class="bg-secondary rounded my-6 overflow-x-auto">
+                <table class="table-auto w-full">
+                    <thead>
+                    <tr class="bg-primary text-gray-300 uppercase text-sm leading-normal">
+                        <th class="py-3 px-6 text-left">Name</th>
+                        <th class="py-3 px-6 text-left">Email</th>
+                        <th class="py-3 px-6 text-center">Role</th>
+                        <th class="py-3 px-6 text-center">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody class="text-gray-300 text-sm font-light">
+                    <tr class="border-gray-500 hover:bg-primary">
+                        <td class="py-3 px-6 text-left whitespace-nowrap">
+                            <div class="flex items-center">
+                                <span class="font-medium p-3">Silke Rolex</span>
+                            </div>
+                        </td>
+                        <td class="py-3 px-6 text-left">
+                            <div class="flex items-center">
+                                <span class="font-medium p-3">s.rolex@example.tum.de</span>
+                            </div>
+                        </td>
+                        <td class="py-3 px-6 text-center">
+                            <span class="bg-info text-gray-100 py-1 px-3 rounded-full text-xs">Admin</span>
+                        </td>
+                        <td class="py-3 px-6 text-center">
+                            <div class="flex item-center justify-center">
+                                <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
+                                    <i class="fas fa-trash"></i>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr class=" hover:bg-primary">
+                        <td class="py-3 px-6 text-left whitespace-nowrap">
+                            <div class="flex items-center">
+                                <input name="name" placeholder="Name" type="text" autocomplete="off"
+                                       class="focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500"/>
+                            </div>
+                        </td>
+                        <td class="py-3 px-6 text-left">
+                            <div class="flex items-center">
+                                <input name="email" type="email" placeholder="Email" autocomplete="off"
+                                       class="focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500"/>
+                            </div>
+                        </td>
+                        <td class="py-3 px-6 text-center"></td>
+                        <td class="py-3 px-6 text-center">
+                            <div class="flex item-center justify-center">
+                                <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
+                                    <i class="fas fa-plus"></i>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>

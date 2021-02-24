@@ -55,6 +55,7 @@ func main() {
 
 	goopt.Parse(nil)
 
+	//todo: change host to db: when developing with docker
 	db, err := gorm.Open(mysql.Open("root:example@tcp(localhost:3306)/rbglive?parseTime=true"), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Got error when connecting to database: '%v'", err)
