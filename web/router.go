@@ -3,15 +3,18 @@ package web
 import (
 	"TUM-Live-Backend/api"
 	"TUM-Live-Backend/dao"
+	"TUM-Live-Backend/model"
 	"context"
+	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/julienschmidt/httprouter"
 	"html/template"
-	"log"
 	"net/http"
 )
 
 var templ *template.Template
+
+var errorNotLoggedIn = errors.New("not logged in")
+var genericError = errors.New("something went wrong")
 
 func ConfigGinRouter(router gin.IRoutes) {
 	templ, _ = template.ParseGlob("./web/template/*")
@@ -28,28 +31,28 @@ func configGinStaticRouter(router gin.IRoutes) {
 func configMainRoute(router gin.IRoutes) {
 	router.GET("/admin", api.ConvertHttprouterToGin(AdminPage))
 	router.GET("/login", api.ConvertHttprouterToGin(LoginPage))
+	router.GET("/logout", api.ConvertHttprouterToGin(LogoutPage))
 	router.GET("/", api.ConvertHttprouterToGin(MainPage))
 }
 
-func MainPage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	res, err := dao.AreUsersEmpty(context.Background())
+func getUser(r *http.Request, user *model.User) (err error) {
+	sid, err := getSID(r)
 	if err != nil {
-		_ = templ.ExecuteTemplate(w, "error.html", "")
-	} else if res {
-		_ = templ.ExecuteTemplate(w, "onboarding.html", "")
-	} else {
-		_ = templ.ExecuteTemplate(w, "index.html", "")
+		return errorNotLoggedIn
 	}
+	foundUser, err := dao.GetUserBySID(context.Background(), sid)
+	if err != nil {
+		// Session id invalid.
+		return errorNotLoggedIn
+	}
+	*user = foundUser
+	return nil
 }
 
-func AdminPage(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-	//todo authentication
-	_ = templ.ExecuteTemplate(writer, "admin.html", "")
-}
-
-func LoginPage(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-	err := templ.ExecuteTemplate(writer, "login.html", "")
+func getSID(r *http.Request) (SID string, err error) {
+	cookie, err := r.Cookie("SID")
 	if err != nil {
-		log.Printf("couldn't render template: %v\n", err)
+		return "", errorNotLoggedIn
 	}
+	return cookie.Value, nil
 }

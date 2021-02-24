@@ -44,7 +44,8 @@ func Login(writer http.ResponseWriter, request *http.Request, params httprouter.
 		var cookie http.Cookie
 		cookie.Name = "SID"
 		cookie.Value = uuid.NewV4().String()
-		cookie.Expires = time.Now().Add(time.Hour * 24 * 30)
+		cookie.Expires = time.Now().AddDate(0, 1, 0)
+		cookie.Path = "/"
 		var session model.Session
 		session.User = user
 		session.SessionID = cookie.Value

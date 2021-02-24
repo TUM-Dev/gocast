@@ -6,5 +6,5 @@ async function postData(url = '', data = {}) {
         },
         body: JSON.stringify(data)
     });
-    return response.json()
+    return response.status
 }

@@ -15,10 +15,14 @@ loginForm.onsubmit = (e: Event) => {
     const data = new LoginFormData(formData.get("email") as string, formData.get("password") as string);
     console.log(JSON.stringify(data));
     postData("api/login", data)
-        .then(data => {
-            location.reload();
+        .then(responseCode => {
+            if (responseCode === 200) {
+                location.replace("/");
+            } else {
+                console.log("got error from server: " + data)
+            }
         }).catch(error => {
-            console.log(error)
-        })
+        console.log(error)
+    })
     return false; // prevent reload
 }

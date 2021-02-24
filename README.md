@@ -1,6 +1,6 @@
-# TUM-Live-Backend
+# TUM-Live
 
-Backend of TUMs live streaming service
+**Work in progress** of TUMs lecture streaming service
 
 ## Disclaimer
 
