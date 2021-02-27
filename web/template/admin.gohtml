@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>TUM Live | Administration</title>
     {{template "headImports"}}
+    <script src="/assets/ts-dist/admin.js"></script>
 </head>
 <body class="bg-primary">
 
@@ -49,13 +50,13 @@
                     <tr class=" hover:bg-primary">
                         <td class="py-3 px-6 text-left whitespace-nowrap">
                             <div class="flex items-center">
-                                <input name="name" placeholder="Name" type="text" autocomplete="off"
+                                <input id="name" name="name" placeholder="Name" type="text" autocomplete="off"
                                        class="focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500"/>
                             </div>
                         </td>
                         <td class="py-3 px-6 text-left">
                             <div class="flex items-center">
-                                <input name="email" type="email" placeholder="Email" autocomplete="off"
+                                <input id="email" name="email" type="email" placeholder="Email" autocomplete="off"
                                        class="focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500"/>
                             </div>
                         </td>
@@ -63,7 +64,7 @@
                         <td class="py-3 px-6 text-center">
                             <div class="flex item-center justify-center">
                                 <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
-                                    <i class="fas fa-plus"></i>
+                                    <i onclick="createUser()" id="createUser" class="fas fa-plus"></i>
                                 </div>
                             </div>
                         </td>

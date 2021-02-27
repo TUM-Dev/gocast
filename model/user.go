@@ -17,7 +17,7 @@ type User struct {
 	gorm.Model
 	ID       int
 	Name     string
-	Email    string
+	Email    string `gorm:"unique"`
 	Role     string
 	Password string
 }

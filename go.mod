@@ -1,4 +1,4 @@
-module TUM-Live-Backend
+module TUM-Live
 
 go 1.14
 

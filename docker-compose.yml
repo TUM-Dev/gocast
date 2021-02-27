@@ -29,6 +29,10 @@ services:
       - type: volume
         source: recordings
         target: /recordings
+    environment:
+      - MAILUSER="vorname.nachname@tum.de"
+      - MAILSERVER="postout.lrz.de"
+      - MAILPASSWORD="super_secret"
     restart: always
 
   db:

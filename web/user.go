@@ -1,8 +1,10 @@
 package web
 
 import (
-	"TUM-Live-Backend/dao"
+	"TUM-Live/dao"
+	"TUM-Live/tools"
 	"context"
+	"github.com/gin-gonic/gin"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
@@ -17,7 +19,7 @@ func LoginPage(writer http.ResponseWriter, request *http.Request, params httprou
 }
 
 func LogoutPage(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-	sid, err := getSID(request)
+	sid, err := tools.GetSID(request)
 	if err == nil { // logged in
 		err = dao.DeleteSession(context.Background(), sid)
 		if err != nil {
@@ -28,3 +30,12 @@ func LogoutPage(writer http.ResponseWriter, request *http.Request, params httpro
 	http.SetCookie(writer, &c)
 	http.Redirect(writer, request, "/", http.StatusFound)
 }
+
+func CreatePasswordPage(c *gin.Context) {
+	key := c.Param("key")
+	err := templ.ExecuteTemplate(c.Writer, "passwordreset.gohtml", key)
+	if err != nil {
+		log.Printf("couldn't render template: %v\n", err)
+	}
+}
+

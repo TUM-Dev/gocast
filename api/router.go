@@ -10,7 +10,7 @@ import (
 	"time"
 	"unsafe"
 
-	"TUM-Live-Backend/dao"
+	"TUM-Live/dao"
 	"github.com/gin-gonic/gin"
 	"github.com/julienschmidt/httprouter"
 )

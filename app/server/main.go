@@ -1,10 +1,10 @@
 package main
 
 import (
-	"TUM-Live-Backend/api"
-	"TUM-Live-Backend/dao"
-	"TUM-Live-Backend/model"
-	"TUM-Live-Backend/web"
+	"TUM-Live/api"
+	"TUM-Live/dao"
+	"TUM-Live/model"
+	"TUM-Live/web"
 	"context"
 	"fmt"
 	"github.com/droundy/goopt"
@@ -56,7 +56,7 @@ func main() {
 	goopt.Parse(nil)
 
 	//todo: change host to db: when developing with docker
-	db, err := gorm.Open(mysql.Open("root:example@tcp(localhost:3306)/rbglive?parseTime=true"), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open("root:example@tcp(db:3306)/rbglive?parseTime=true"), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Got error when connecting to database: '%v'", err)
 	}
@@ -67,6 +67,8 @@ func main() {
 		&model.Session{},
 		&model.Stream{},
 		&model.User{},
+		&model.RegisterLink{},
+		&model.CurrentLive{},
 	)
 	if err != nil {
 		log.Fatalf("Could not migrate database: %v", err)

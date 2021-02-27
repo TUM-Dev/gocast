@@ -1,8 +1,9 @@
 package dao
 
 import (
-	"TUM-Live-Backend/model"
+	"TUM-Live/model"
 	"context"
+	uuid "github.com/satori/go.uuid"
 )
 
 func AreUsersEmpty(ctx context.Context) (isEmpty bool, err error) {
@@ -23,7 +24,7 @@ func CreateUser(ctx context.Context, user model.User) (err error) {
 
 func CreateSession(ctx context.Context, session model.Session) (err error) {
 	if Logger != nil {
-		Logger(ctx, "Create user.")
+		Logger(ctx, "Create Session.")
 	}
 	res := DB.Create(&session)
 	return res.Error
@@ -31,7 +32,7 @@ func CreateSession(ctx context.Context, session model.Session) (err error) {
 
 func DeleteSession(ctx context.Context, session string) (err error) {
 	if Logger != nil {
-		Logger(ctx, "Create user.")
+		Logger(ctx, "Delete Session.")
 	}
 	res := DB.Delete(&model.Session{}, "session_id = ?", session)
 	return res.Error
@@ -48,7 +49,7 @@ func GetUserByEmail(ctx context.Context, email string) (user model.User, err err
 
 func GetUserBySID(ctx context.Context, sid string) (user model.User, err error) {
 	if Logger != nil {
-		Logger(ctx, "find user by email.")
+		Logger(ctx, "find user by session id "+sid)
 	}
 	var foundUser model.User
 	dbErr := DB.Model(&model.User{}).
@@ -57,4 +58,18 @@ func GetUserBySID(ctx context.Context, sid string) (user model.User, err error) 
 		Where("session_id = ?", sid).
 		Scan(&foundUser).Error
 	return foundUser, dbErr
+}
+
+func CreateRegisterLink(ctx context.Context, user model.User) (registerLink model.RegisterLink, err error) {
+	if Logger != nil {
+		Logger(ctx, "generating a password reset link")
+	}
+	var link = uuid.NewV4().String()
+	var registerLinkObj = model.RegisterLink{
+		UserId:         user.ID,
+		User:           user,
+		RegisterSecret: link,
+	}
+	err = DB.Create(&registerLinkObj).Error
+	return registerLinkObj, err
 }

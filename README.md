@@ -27,4 +27,13 @@ todo
 
 ## Development
 
-todo
+To avoid rebuilding the entire system everytime you test something you can start by 
+running the stack using `docker-compose build && docker-compose up`
+
+Now log in to the database on localhost:3306 and create a database called rbglive.
+If you now stop the stack and run `docker-compose up` again your system should be up
+and you can start a development server with `npm i --no-dev && go run app/server/main.go`
+
+Now head over to localhost:8080
+
+A more solid dev environment will follow soon.
