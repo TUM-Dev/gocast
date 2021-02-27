@@ -1,7 +1,11 @@
 FROM node:15.10.0 as node
 
 WORKDIR /app
-COPY . .
+COPY web web
+COPY package.json .
+COPY package-lock.json .
+COPY tailwind.config.js .
+COPY tsconfig.json .
 
 ## remove generated files in case the developer build with npm before
 RUN rm -rf web/assets/ts-dist
@@ -9,18 +13,23 @@ RUN rm -rf web/assets/css-dist
 
 RUN npm i --no-dev
 
-FROM golang:1.16
+FROM golang:1.16-alpine as build-env
+RUN mkdir /gostuff
+WORKDIR /gostuff
+COPY go.mod .
+COPY go.sum .
+
+# Get dependancies - will also be cached if we won't change mod/sum
+RUN go mod download
 
 WORKDIR /go/src/app
 COPY . .
 
-COPY --from=node /app .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /go/bin/server app/server/main.go
 
-RUN go install ./app/server/
-
-#RUN wget -O /bin/wait-for-it.sh https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh
-#RUN chmod +x /bin/wait-for-it.sh
-
-# wait for database to fully start before starting backend
-#CMD ["wait-for-it.sh", "db:3306", "--", "server"]
-CMD ["bash", "-c", "sleep 3 && server"]
+FROM alpine
+WORKDIR /app
+COPY --from=build-env /go/bin/server .
+COPY --from=node /app/node_modules node_modules
+COPY --from=node /app/web web
+CMD ["sh", "-c", "sleep 3 && ./server"]
