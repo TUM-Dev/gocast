@@ -5,7 +5,7 @@ import (
 	"context"
 )
 
-func GetCoursesByUserId(ctx context.Context, userid int) (courses []model.Course, err error) {
+func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Course, err error) {
 	var foundCourses []model.Course
 	dbErr := DB.Table("courses").
 		Select("courses.*").

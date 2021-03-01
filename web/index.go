@@ -18,7 +18,7 @@ func MainPage(writer http.ResponseWriter, request *http.Request, ps httprouter.P
 	} else {
 		user := model.User{}
 		err = tools.GetUser(writer, request, &user)
-		var streams []model.CurrentLive
+		var streams []model.Stream
 		err := dao.GetCurrentLive(context.Background(), &streams)
 		if err != nil {
 			_ = templ.ExecuteTemplate(writer, "index.gohtml", IndexData{User: user, LiveStreams: streams})
@@ -30,5 +30,5 @@ func MainPage(writer http.ResponseWriter, request *http.Request, ps httprouter.P
 
 type IndexData struct {
 	User        model.User
-	LiveStreams []model.CurrentLive
+	LiveStreams []model.Stream
 }

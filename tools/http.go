@@ -45,19 +45,10 @@ func RequirePermission(w http.ResponseWriter, r http.Request, permLevel int) (us
 		http.SetCookie(w, &http.Cookie{Name: "SID", Expires: time.Now().AddDate(0, 0, -1)})
 		return nil
 	}
-	//admin
-	if permLevel == 1 {
-		if foundUser.Role != "admin" {
-			w.WriteHeader(http.StatusForbidden)
-			return nil
-		}
+	if foundUser.Role > permLevel {
+		w.WriteHeader(http.StatusForbidden)
+		return nil
 	}
-	//lecturer
-	if permLevel == 2 {
-		if foundUser.Role != "admin" && foundUser.Role != "lecturer" {
-			w.WriteHeader(http.StatusForbidden)
-			return nil
-		}
-	}
+
 	return &foundUser
 }

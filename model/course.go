@@ -2,15 +2,14 @@ package model
 
 import (
 	"gorm.io/gorm"
-	"time"
 )
 
 type Course struct {
 	gorm.Model
 
-	ID       int
-	Name     string
-	Start    time.Time
-	End      time.Time
-	Semester string
+	UserID              uint
+	Name                string
+	Slug                string //eg. eidi
+	TUMOnlineIdentifier string //not in use rn
+	Streams             []Stream
 }

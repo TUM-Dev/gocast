@@ -62,8 +62,8 @@ func GetUserBySID(ctx context.Context, sid string) (user model.User, err error) 
 	var foundUser model.User
 	dbErr := DB.Model(&model.User{}).
 		Select("users.*").
-		Joins("left join sessions on sessions.user_id = users.id").
-		Where("session_id = ?", sid).
+		Joins("join sessions s on users.id = s.user_id").
+		Where("session_key = ?", sid).
 		Scan(&foundUser).Error
 	return foundUser, dbErr
 }
@@ -74,8 +74,7 @@ func CreateRegisterLink(ctx context.Context, user model.User) (registerLink mode
 	}
 	var link = uuid.NewV4().String()
 	var registerLinkObj = model.RegisterLink{
-		UserId:         user.ID,
-		User:           user,
+		UserID:         user.ID,
 		RegisterSecret: link,
 	}
 	err = DB.Create(&registerLinkObj).Error

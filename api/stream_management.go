@@ -2,13 +2,13 @@ package api
 
 import (
 	"TUM-Live/dao"
-	"TUM-Live/model"
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
+	"strings"
 )
 
 func configGinStreamAuthRouter(router gin.IRoutes) {
@@ -30,15 +30,20 @@ func CreateStream(writer http.ResponseWriter, request *http.Request, params http
 func StartStream(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	_ = r.ParseForm()
 	key := r.FormValue("name")
-	println(key)
-	res, err := dao.GetStreamByKey(context.Background(), key)
+	parts := strings.Split(key, "-")
+	if len(parts) != 2 {
+		w.WriteHeader(403) //reject when no results in database
+		fmt.Printf("stream rejected. cause: key not in correct form.\n")
+		return
+	}
+	res, err := dao.GetStreamByKey(context.Background(), parts[1])
 	if err != nil {
 		w.WriteHeader(403) //reject when no results in database
 		fmt.Printf("stream rejected. cause: %v\n", err)
 		return
 	}
 	fmt.Printf("stream approved: id=%d\n", res.ID)
-	err = dao.CreateCurrentLive(context.Background(), &model.CurrentLive{Url: "http://localhost:7002/live/" + key + ".m3u8"})
+	err = dao.SetStreamLive(context.Background(), parts[1], "http://localhost:7002/live/"+key+".m3u8")
 	if err != nil {
 		log.Printf("Couldn't create live stream: %v\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -50,8 +55,12 @@ func StartStream(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 func EndStream(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	_ = r.ParseForm()
 	key := r.FormValue("name")
-	println(key)
-	_ = dao.DeleteCurrentLive(context.Background(), key)
+	parts := strings.Split(key, "-")
+	if len(parts) != 2 {
+		log.Printf("stream publish ended with invalid key. That's odd.")
+		return
+	}
+	_ = dao.SetStreamNotLive(context.Background(), parts[1])
 }
 
 // TODO: Convert recording to mp4 and put into correct directory. Delete flv file.

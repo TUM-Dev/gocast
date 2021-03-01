@@ -14,7 +14,7 @@
 <div class="container mx-auto">
     <div class="min-w-screen flex items-center justify-center">
         <div class="w-full lg:w-5/6">
-            {{if eq .User.Role "admin"}}
+            {{if eq .User.Role 1}}
                 <div class="bg-secondary rounded my-6 overflow-x-auto">
                     <h2 class="text-2xl bg-primary text-gray-300">User Management</h2>
                     <table class="table-auto w-full">
@@ -40,9 +40,9 @@
                                     </div>
                                 </td>
                                 <td class="py-3 px-6 text-center">
-                                    {{if eq $user.Role "admin"}}
+                                    {{if eq $user.Role 1}}
                                         <span class="bg-info text-gray-100 py-1 px-3 rounded-full text-xs">Admin</span>
-                                    {{else if eq $user.Role "lecturer"}}
+                                    {{else if eq $user.Role 2}}
                                         <span class="bg-success text-gray-100 py-1 px-3 rounded-full text-xs">Lecturer</span>
                                     {{else}}
                                         <span class="bg-warn text-gray-100 py-1 px-3 rounded-full text-xs">Generic</span>
@@ -84,7 +84,7 @@
                     </table>
                 </div>
             {{end}}
-            {{if or (eq .User.Role "lecturer") (eq .User.Role "admin")}}
+            {{if or (eq .User.Role 1) (eq .User.Role 2)}}
                 <div class="bg-secondary rounded my-6 overflow-x-auto">
                     <h2 class="text-2xl bg-primary text-gray-300">Course Management</h2>
                     <table class="table-auto w-full">

@@ -12,14 +12,21 @@ import (
 	"strings"
 )
 
+const (
+	AdminType    = 1
+	LecturerType = 2
+)
+
 // Users struct is a row record of the users table in the rbglive database
 type User struct {
 	gorm.Model
-	ID       int
+
 	Name     string
 	Email    string `gorm:"unique"`
-	Role     string
+	Role     int    //1:admin 2:lecturer 3:others
 	Password string
+	Courses  []Course
+	Sessions []Session
 }
 
 type argonParams struct {
@@ -47,7 +54,7 @@ func (u User) ValidateFields() bool {
 	if len(u.Name) < 4 || !strings.Contains(u.Name, " ") {
 		return false
 	}
-	if u.Role != "admin" && u.Role != "lecturer" && u.Role != "generic" {
+	if u.Role > 3 || u.Role < 1 {
 		return false
 	}
 	if len(u.Email) < 3 || len(u.Email) > 254 {

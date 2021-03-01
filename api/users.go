@@ -49,8 +49,7 @@ func Login(writer http.ResponseWriter, request *http.Request, _ httprouter.Param
 		cookie.Expires = time.Now().AddDate(0, 1, 0)
 		cookie.Path = "/"
 		var session model.Session
-		session.User = user
-		session.SessionID = cookie.Value
+		session.SessionKey = cookie.Value
 		session.UserID = user.ID
 		err = dao.CreateSession(context.Background(), session)
 		if err != nil {
@@ -69,7 +68,7 @@ func Login(writer http.ResponseWriter, request *http.Request, _ httprouter.Param
 // todo: refactor
 func CreateUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	usersEmpty, err := dao.AreUsersEmpty(context.Background())
-	if err!=nil {
+	if err != nil {
 		InternalServerError(w, errors.New("something went wrong"))
 		return
 	}
@@ -81,13 +80,13 @@ func CreateUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 	var createdUser model.User
 	if usersEmpty {
-		createdUser, err = createUserHelper(request, "admin")
-	}else {
-		adminUser := tools.RequirePermission(w, *r, 1) // user has to be admin
+		createdUser, err = createUserHelper(request, model.AdminType)
+	} else {
+		adminUser := tools.RequirePermission(w, *r, model.AdminType) // user has to be admin
 		if adminUser == nil {
 			return
 		}
-		createdUser, err = createUserHelper(request, "lecturer")
+		createdUser, err = createUserHelper(request, model.LecturerType)
 	}
 	if err != nil {
 		BadRequestError(w)
@@ -96,13 +95,13 @@ func CreateUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	writeJSON(context.Background(), w, createUserResponse{Name: createdUser.Name, Email: createdUser.Email, Role: createdUser.Role})
 }
 
-func createUserHelper(request createUserRequest, userType string) (user model.User, err error) {
+func createUserHelper(request createUserRequest, userType int) (user model.User, err error) {
 	var u = model.User{
 		Name:  request.Name,
 		Email: request.Email,
 		Role:  userType,
 	}
-	if userType == "admin" {
+	if userType == 1 {
 		err = u.SetPassword(request.Password)
 		if err != nil {
 			return u, errors.New("user could not be created")
@@ -115,7 +114,7 @@ func createUserHelper(request createUserRequest, userType string) (user model.Us
 	if dbErr != nil {
 		return u, errors.New("user could not be created")
 	}
-	if userType != "admin" { //generate password set link and send out email
+	if userType != model.AdminType { //generate password set link and send out email
 		err = forgotPassword(request.Email)
 	}
 	return u, nil
@@ -146,5 +145,5 @@ type createUserRequest struct {
 type createUserResponse struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
-	Role  string `json:"role"`
+	Role  int    `json:"role"`
 }

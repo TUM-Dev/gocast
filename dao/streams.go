@@ -25,17 +25,24 @@ func CreateStream(ctx context.Context, stream model.Stream) (err error) {
 	return dbErr
 }
 
-func CreateCurrentLive(ctx context.Context, currentLive *model.CurrentLive) (err error) {
-	dbErr := DB.Create(currentLive).Error
+func SetStreamLive(ctx context.Context, streamKey string, playlistUrl string) (err error) {
+	dbErr := DB.Model(&model.Stream{}).
+		Where("stream_key = ?", streamKey).
+		Update("live_now", true).
+		Update("playlist_url", playlistUrl).
+		Error
 	return dbErr
 }
 
-func GetCurrentLive(ctx context.Context, currentLive *[]model.CurrentLive) (err error) {
-	res := DB.Find(&currentLive)
+func GetCurrentLive(ctx context.Context, currentLive *[]model.Stream) (err error) {
+	res := DB.Find(&currentLive, "live_now = ?", true)
 	return res.Error
 }
 
-func DeleteCurrentLive(ctx context.Context, key string) (err error) {
-	res := DB.Delete(&model.CurrentLive{}, "url = ?", "http://localhost:7002/live/"+key+".m3u8")
-	return res.Error
+func SetStreamNotLive(ctx context.Context, streamKey string) (err error) {
+	dbErr := DB.Model(&model.Stream{}).
+		Where("stream_key = ?", streamKey).
+		Update("live_now", false).
+		Error
+	return dbErr
 }

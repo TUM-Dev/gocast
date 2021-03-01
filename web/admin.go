@@ -16,7 +16,7 @@ func AdminPage(writer http.ResponseWriter, request *http.Request, params httprou
 	}
 	var users []model.User
 	_ = dao.GetAllUsers(context.Background(), &users)
-	courses, _ := dao.GetCoursesByUserId(context.Background(), user.ID)
+	courses, _ := dao.GetCoursesByUserId(context.Background(), user.Model.ID)
 	_ = templ.ExecuteTemplate(writer, "admin.gohtml", AdminPageData{User: *user, Users: users, Courses: courses})
 }
 

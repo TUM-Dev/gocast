@@ -62,13 +62,11 @@ func main() {
 	}
 
 	err = db.AutoMigrate(
+		&model.User{},
 		&model.Course{},
-		&model.CourseOwner{},
+		&model.RegisterLink{},
 		&model.Session{},
 		&model.Stream{},
-		&model.User{},
-		&model.RegisterLink{},
-		&model.CurrentLive{},
 	)
 	if err != nil {
 		log.Fatalf("Could not migrate database: %v", err)
