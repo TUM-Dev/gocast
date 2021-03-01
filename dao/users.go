@@ -47,6 +47,14 @@ func GetUserByEmail(ctx context.Context, email string) (user model.User, err err
 	return res, err
 }
 
+func GetAllUsers(ctx context.Context, users *[]model.User) (err error) {
+	if Logger != nil {
+		Logger(ctx, "Get all users.")
+	}
+	err = DB.Find(users).Error
+	return err
+}
+
 func GetUserBySID(ctx context.Context, sid string) (user model.User, err error) {
 	if Logger != nil {
 		Logger(ctx, "find user by session id "+sid)

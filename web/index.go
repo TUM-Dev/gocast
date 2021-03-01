@@ -17,7 +17,7 @@ func MainPage(writer http.ResponseWriter, request *http.Request, ps httprouter.P
 		_ = templ.ExecuteTemplate(writer, "onboarding.gohtml", nil)
 	} else {
 		user := model.User{}
-		err = tools.GetUser(request, &user)
+		err = tools.GetUser(writer, request, &user)
 		var streams []model.CurrentLive
 		err := dao.GetCurrentLive(context.Background(), &streams)
 		if err != nil {

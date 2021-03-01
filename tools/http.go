@@ -6,20 +6,19 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 )
 
-var ErrorNotLoggedIn = errors.New("not logged in")
-var genericError = errors.New("something went wrong")
-
-func GetUser(r *http.Request, user *model.User) (err error) {
+func GetUser(w http.ResponseWriter, r *http.Request, user *model.User) (err error) {
 	sid, err := GetSID(r)
 	if err != nil {
-		return ErrorNotLoggedIn
+		return err
 	}
 	foundUser, err := dao.GetUserBySID(context.Background(), sid)
 	if err != nil {
-		// Session id invalid.
-		return ErrorNotLoggedIn
+		// delete invalid session cookie
+		http.SetCookie(w, &http.Cookie{Name: "SID", Expires: time.Now().AddDate(0, 0, -1)})
+		return err
 	}
 	*user = foundUser
 	return nil
@@ -28,7 +27,37 @@ func GetUser(r *http.Request, user *model.User) (err error) {
 func GetSID(r *http.Request) (SID string, err error) {
 	cookie, err := r.Cookie("SID")
 	if err != nil {
-		return "", ErrorNotLoggedIn
+		return "", errors.New("no session cookie")
 	}
 	return cookie.Value, nil
+}
+
+func RequirePermission(w http.ResponseWriter, r http.Request, permLevel int) (user *model.User) {
+	sid, err := GetSID(&r)
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+		return nil
+	}
+	foundUser, err := dao.GetUserBySID(context.Background(), sid)
+	if err != nil { // no record for session id
+		w.WriteHeader(http.StatusForbidden)
+		// delete invalid session cookie
+		http.SetCookie(w, &http.Cookie{Name: "SID", Expires: time.Now().AddDate(0, 0, -1)})
+		return nil
+	}
+	//admin
+	if permLevel == 1 {
+		if foundUser.Role != "admin" {
+			w.WriteHeader(http.StatusForbidden)
+			return nil
+		}
+	}
+	//lecturer
+	if permLevel == 2 {
+		if foundUser.Role != "admin" && foundUser.Role != "lecturer" {
+			w.WriteHeader(http.StatusForbidden)
+			return nil
+		}
+	}
+	return &foundUser
 }

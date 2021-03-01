@@ -68,52 +68,35 @@ func Login(writer http.ResponseWriter, request *http.Request, _ httprouter.Param
 
 // todo: refactor
 func CreateUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	usersEmpty, err := dao.AreUsersEmpty(context.Background())
+	if err!=nil {
+		InternalServerError(w, errors.New("something went wrong"))
+		return
+	}
 	var request createUserRequest
-	err := json.NewDecoder(r.Body).Decode(&request)
+	err = json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
 		BadRequestError(w)
 		return
 	}
-
-	_, err = r.Cookie("SID")
-	if err != nil { // not logged in-> only accept if no user exists
-		usersEmpty, err := dao.AreUsersEmpty(context.Background())
-		if !usersEmpty {
-			ForbiddenError(w, errors.New("not logged in but users not empty"))
+	var createdUser model.User
+	if usersEmpty {
+		createdUser, err = createUserHelper(request, "admin")
+	}else {
+		adminUser := tools.RequirePermission(w, *r, 1) // user has to be admin
+		if adminUser == nil {
 			return
 		}
-		if err != nil {
-			InternalServerError(w, err)
-			return
-		}
-		err = createUserHelper(request, "admin")
-		if err != nil {
-			BadRequestError(w)
-		}
-		writeJSON(context.Background(), w, createUserResponse{Success: true})
-		return
+		createdUser, err = createUserHelper(request, "lecturer")
 	}
-	var requestUser model.User
-	err = tools.GetUser(r, &requestUser)
-	if err != nil { // sid invalid -> reject
-		ForbiddenError(w, err)
-		return
-	}
-	if requestUser.Role != "admin" {
-		log.Printf("%v", requestUser)
-		ForbiddenError(w, errors.New("user creation by non admin user"))
-		return
-	}
-
-	err = createUserHelper(request, "lecturer")
 	if err != nil {
-		InternalServerError(w, err)
+		BadRequestError(w)
 		return
 	}
-	writeJSON(context.Background(), w, createUserResponse{Success: true})
+	writeJSON(context.Background(), w, createUserResponse{Name: createdUser.Name, Email: createdUser.Email, Role: createdUser.Role})
 }
 
-func createUserHelper(request createUserRequest, userType string) (err error) {
+func createUserHelper(request createUserRequest, userType string) (user model.User, err error) {
 	var u = model.User{
 		Name:  request.Name,
 		Email: request.Email,
@@ -122,20 +105,20 @@ func createUserHelper(request createUserRequest, userType string) (err error) {
 	if userType == "admin" {
 		err = u.SetPassword(request.Password)
 		if err != nil {
-			return errors.New("user could not be created")
+			return u, errors.New("user could not be created")
 		}
 	}
 	if !u.ValidateFields() {
-		return errors.New("user data rejected")
+		return u, errors.New("user data rejected")
 	}
 	dbErr := dao.CreateUser(context.Background(), u)
 	if dbErr != nil {
-		return errors.New("user could not be created")
+		return u, errors.New("user could not be created")
 	}
 	if userType != "admin" { //generate password set link and send out email
 		err = forgotPassword(request.Email)
 	}
-	return nil
+	return u, nil
 }
 
 func forgotPassword(email string) error {
@@ -161,5 +144,7 @@ type createUserRequest struct {
 }
 
 type createUserResponse struct {
-	Success bool `json:"success"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Role  string `json:"role"`
 }

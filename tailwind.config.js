@@ -14,6 +14,7 @@ module.exports = {
                 'success': '#2fe395',
                 'info': '#2f56e3',
                 'danger': '#e3342f',
+                'warn': '#e3bc2f',
             },
             container: {
                 center: true,

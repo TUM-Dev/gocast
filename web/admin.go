@@ -1,22 +1,27 @@
 package web
 
 import (
+	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
+	"context"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 )
 
 func AdminPage(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-	user := model.User{}
-	err := tools.GetUser(request, &user)
-	if err != nil {
-		if err==tools.ErrorNotLoggedIn {
-			http.Redirect(writer, request, "/login", http.StatusFound)
-		}else {
-			writer.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+	user := tools.RequirePermission(writer, *request, 2) // user has to be admin or lecturer
+	if user == nil {
+		return
 	}
-	_ = templ.ExecuteTemplate(writer, "admin.gohtml", user)
+	var users []model.User
+	_ = dao.GetAllUsers(context.Background(), &users)
+	courses, _ := dao.GetCoursesByUserId(context.Background(), user.ID)
+	_ = templ.ExecuteTemplate(writer, "admin.gohtml", AdminPageData{User: *user, Users: users, Courses: courses})
+}
+
+type AdminPageData struct {
+	User  model.User
+	Users []model.User
+	Courses []model.Course
 }

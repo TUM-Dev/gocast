@@ -3,9 +3,9 @@ function createUser() {
     let email: string = (document.getElementById("email") as HTMLInputElement).value
     postData("api/createUser", {"name": userName, "email": email, "password": null})
         .then(data => {
-            console.log(data)
+            showMessage("User was created successfully.Reload to see them.")
         }).catch(error => {
-        console.log(error)
+        showMessage("There was an error creating the user: " + error)
     })
 
 }

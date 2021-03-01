@@ -23,7 +23,7 @@
                        class="inline-block align-middle mt-0 text-gray-300 hover:text-white mr-4">
                         Logout
                     </a>
-                    {{if eq .Role "admin"}}
+                    {{if or (eq .Role "admin") (eq .Role "lecturer")}}
                         <a href="/admin"
                            class="inline-block align-middle mt-0 text-gray-300 hover:text-white mr-4">
                             Admin
@@ -32,8 +32,17 @@
                 {{end}}
             </div>
             <div>
-                <a class="mr-3" target="_blank" rel="noopener" href="https://github.com/joschahenningsen/TUM-Live"><i class="text-white fab fa-github"></i></a>
+                <a class="mr-3" target="_blank" rel="noopener" href="https://github.com/joschahenningsen/TUM-Live"><i
+                            class="text-white fab fa-github"></i></a>
             </div>
         </div>
     </nav>
+    <div id="alertBox" class="hidden text-center px-0 lg:py-4 lg:px-4">
+        <div class="p-2 bg-indigo-800 items-center text-indigo-100 leading-none lg:rounded-full flex lg:inline-flex"
+             role="alert">
+            <span id="alertText" class="font-semibold mx-2 text-left flex-auto"></span>
+            <span id="alertOk" onclick="document.getElementById('alertBox').classList.add('hidden')"
+                  class="cursor-pointer flex rounded-full bg-indigo-500 uppercase px-2 py-1 text-xs font-bold mr-3">Dismiss</span>
+        </div>
+    </div>
 {{end}}
