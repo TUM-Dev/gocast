@@ -20,7 +20,7 @@
   "homepage": "https://github.com/joschahenningsen/TUM-Live#readme",
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.2",
-    "@videojs/http-streaming": "^2.4.2",
+    "@videojs/http-streaming": "^2.6.2",
     "video.js": "^7.11.4",
     "videojs-hls-quality-selector": "^1.1.4"
   },
