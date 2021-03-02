@@ -2,6 +2,11 @@
 
 **Work in progress** of TUMs lecture streaming service
 
+## Target Architecture:
+
+![Target Architecture](https://raw.githubusercontent.com/joschahenningsen/TUM-Live/dev/target_architecture.png "Target Architecture")
+
+
 ## Disclaimer
 
 ~ 95% of modern browsers are supported. IE is not and probably won't be (officially).
