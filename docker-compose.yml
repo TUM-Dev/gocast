@@ -6,7 +6,7 @@ services:
     image: alfg/nginx-rtmp
     ports:
       - 420:420
-      - 7002:7002
+      - 80:7002
     networks:
       backend-network:
     depends_on:
@@ -29,18 +29,21 @@ services:
       - type: volume
         source: recordings
         target: /recordings
-    environment:
-      - MAILUSER="vorname.nachname@tum.de"
-      - MAILSERVER="postout.lrz.de"
-      - MAILPASSWORD="super_secret"
+    env_file:
+      - variables-backend.env
     restart: always
 
   db:
     container_name: mariadb_container
     image: mariadb
     environment:
+      MYSQL_ROOT_USER: root
       MYSQL_ROOT_PASSWORD: example
+      MYSQL_USER: rbg
+      MYSQL_PASSWORD: example
+    command: --init-file /data/application/init.sql
     volumes:
+      - ./init.sql:/data/application/init.sql
       - mariadb-data:/var/lib/mysql
     networks:
       backend-network:

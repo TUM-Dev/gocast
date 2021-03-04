@@ -100,3 +100,6 @@ node_modules
 # out
 web/assets/ts-dist
 web/assets/css-dist
+
+# secrets
+variables-backend.env
