@@ -52,18 +52,6 @@ func (u *User) String() string {
 }
 
 func main() {
-	tools.Cfg = tools.Config{
-		MailUser:         os.Getenv("MAIL_USER"),
-		MailPassword:     os.Getenv("MAIL_PASSWORD"),
-		MailServer:       os.Getenv("MAIL_SERVER"),
-		DatabaseUser:     os.Getenv("MYSQL_USER"),
-		DatabasePassword: os.Getenv("MYSQL_PASSWORD"),
-		DatabaseName:     os.Getenv("MYSQL_DATABASE"),
-		VersionTag:       os.Getenv("VERSION_TAG"),
-		LrzServer:        os.Getenv("LRZ_SERVER"),
-		LrzUser:          os.Getenv("LRZ_USER"),
-		LrzPassword:      os.Getenv("LRZ_PASSWORD"),
-	}
 	OsSignal = make(chan os.Signal, 1)
 
 	goopt.Parse(nil)

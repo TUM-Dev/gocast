@@ -5,7 +5,7 @@ services:
     container_name: streaming-server
     image: alfg/nginx-rtmp
     ports:
-      - 420:420
+      - 1935:1935
       - 80:7002
     networks:
       backend-network:

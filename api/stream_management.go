@@ -2,6 +2,7 @@ package api
 
 import (
 	"TUM-Live/dao"
+	"TUM-Live/tools"
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -43,7 +44,7 @@ func StartStream(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 	fmt.Printf("stream approved: id=%d\n", res.ID)
-	err = dao.SetStreamLive(context.Background(), parts[1], "http://localhost:7002/live/"+key+".m3u8")
+	err = dao.SetStreamLive(context.Background(), parts[1], tools.Cfg.LrzServerHls+key+"/playlist.m3u8")
 	if err != nil {
 		log.Printf("Couldn't create live stream: %v\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
