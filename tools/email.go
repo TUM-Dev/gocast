@@ -2,13 +2,12 @@ package tools
 
 import (
 	"net/smtp"
-	"os"
 )
 
 func SendPasswordMail(to string, link string) error {
-	user := os.Getenv("MAILUSER")
-	password := os.Getenv("MAILPASSWORD")
-	server :=os.Getenv("MAILSERVER")
+	user := Cfg.MailUser
+	password := Cfg.MailPassword
+	server := Cfg.MailServer
 	auth := smtp.PlainAuth("", user, password, server)
 
 	msg := []byte("To: " + to + "\r\n" +

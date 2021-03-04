@@ -39,8 +39,6 @@ services:
     environment:
       MYSQL_ROOT_USER: root
       MYSQL_ROOT_PASSWORD: example
-      MYSQL_USER: rbg
-      MYSQL_PASSWORD: example
     command: --init-file /data/application/init.sql
     volumes:
       - ./init.sql:/data/application/init.sql

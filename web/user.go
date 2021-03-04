@@ -38,4 +38,3 @@ func CreatePasswordPage(c *gin.Context) {
 		log.Printf("couldn't render template: %v\n", err)
 	}
 }
-

@@ -4,6 +4,7 @@ import (
 	"TUM-Live/api"
 	"TUM-Live/dao"
 	"TUM-Live/model"
+	"TUM-Live/tools"
 	"TUM-Live/web"
 	"context"
 	"fmt"
@@ -51,12 +52,28 @@ func (u *User) String() string {
 }
 
 func main() {
+	tools.Cfg = tools.Config{
+		MailUser:         os.Getenv("MAIL_USER"),
+		MailPassword:     os.Getenv("MAIL_PASSWORD"),
+		MailServer:       os.Getenv("MAIL_SERVER"),
+		DatabaseUser:     os.Getenv("MYSQL_USER"),
+		DatabasePassword: os.Getenv("MYSQL_PASSWORD"),
+		DatabaseName:     os.Getenv("MYSQL_DATABASE"),
+		VersionTag:       os.Getenv("VERSION_TAG"),
+		LrzServer:        os.Getenv("LRZ_SERVER"),
+		LrzUser:          os.Getenv("LRZ_USER"),
+		LrzPassword:      os.Getenv("LRZ_PASSWORD"),
+	}
 	OsSignal = make(chan os.Signal, 1)
 
 	goopt.Parse(nil)
 
-	//todo: change host to db: when developing with docker
-	db, err := gorm.Open(mysql.Open("root:example@tcp(db:3306)/rbglive?parseTime=true"), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
+		"%v:%v@tcp(db:3306)/%v?parseTime=true",
+		tools.Cfg.DatabaseUser,
+		tools.Cfg.DatabasePassword,
+		tools.Cfg.DatabaseName),
+	), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Got error when connecting to database: '%v'", err)
 	}

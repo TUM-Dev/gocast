@@ -21,7 +21,7 @@ func AdminPage(writer http.ResponseWriter, request *http.Request, params httprou
 }
 
 type AdminPageData struct {
-	User  model.User
-	Users []model.User
+	User    model.User
+	Users   []model.User
 	Courses []model.Course
 }
