@@ -30,11 +30,31 @@ func CreateSession(ctx context.Context, session model.Session) (err error) {
 	return res.Error
 }
 
+func DeleteUser(ctx context.Context, uid int32) (err error) {
+	if Logger != nil {
+		Logger(ctx, "Delete User.")
+	}
+	res := DB.Unscoped().Delete(&model.User{}, "id = ?", uid)
+	return res.Error
+}
+
+func IsUserAdmin(ctx context.Context, uid int32) (res bool, err error) {
+	if Logger != nil {
+		Logger(ctx, "Check if user is admin.")
+	}
+	var user model.User
+	err = DB.Find(&user, "id = ?", uid).Error
+	if err != nil {
+		return false, err
+	}
+	return user.Role == 1, nil
+}
+
 func DeleteSession(ctx context.Context, session string) (err error) {
 	if Logger != nil {
 		Logger(ctx, "Delete Session.")
 	}
-	res := DB.Delete(&model.Session{}, "session_id = ?", session)
+	res := DB.Unscoped().Delete(&model.Session{}, "session_id = ?", session)
 	return res.Error
 }
 

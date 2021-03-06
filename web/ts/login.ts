@@ -15,8 +15,8 @@ loginForm.onsubmit = (e: Event) => {
     const data = new LoginFormData(formData.get("email") as string, formData.get("password") as string);
     console.log(JSON.stringify(data));
     postData("api/login", data)
-        .then(responseCode => {
-            if (responseCode === 200) {
+        .then(res => {
+            if (res.status === 200) {
                 location.replace("/");
             } else {
                 console.log("got error from server: " + data)

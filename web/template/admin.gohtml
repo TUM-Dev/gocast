@@ -28,7 +28,7 @@
                         </thead>
                         <tbody class="text-gray-300 text-sm font-light">
                         {{range $user := .Users}}
-                            <tr class="border-gray-500 hover:bg-primary">
+                            <tr id="user{{$user.Model.ID}}" class="border-gray-500 hover:bg-primary">
                                 <td class="py-3 px-6 text-left whitespace-nowrap">
                                     <div class="flex items-center">
                                         <span class="font-medium p-3">{{$user.Name}}</span>
@@ -50,9 +50,11 @@
                                 </td>
                                 <td class="py-3 px-6 text-center">
                                     <div class="flex item-center justify-center">
-                                        <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
-                                            <i class="fas fa-trash"></i>
-                                        </div>
+                                        {{if ne $user.Role 1}}
+                                            <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
+                                                <i onclick="deleteUser({{$user.Model.ID}})" class="fas fa-trash"></i>
+                                            </div>
+                                        {{end}}
                                     </div>
                                 </td>
                             </tr>

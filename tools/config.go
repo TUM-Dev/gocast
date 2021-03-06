@@ -17,6 +17,8 @@ func init() {
 		LrzServerHls:     os.Getenv("LRZ_SERVER_HLS"),
 		LrzUser:          os.Getenv("LRZ_USER"),
 		LrzPassword:      os.Getenv("LRZ_PASSWORD"),
+		CampusBase:       os.Getenv("CAMPUS_API_BASE"),
+		CampusToken:      os.Getenv("CAMPUS_API_TOKEN"),
 	}
 }
 
@@ -32,4 +34,6 @@ type Config struct {
 	LrzServerHls     string
 	LrzUser          string
 	LrzPassword      string
+	CampusBase       string
+	CampusToken      string
 }

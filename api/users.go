@@ -17,6 +17,7 @@ import (
 
 func configGinUsersRouter(router gin.IRoutes) {
 	router.POST("/api/createUser", ConvertHttprouterToGin(CreateUser))
+	router.POST("/api/deleteUser", ConvertHttprouterToGin(DeleteUser))
 	router.POST("/api/login", ConvertHttprouterToGin(Login))
 }
 
@@ -63,6 +64,36 @@ func Login(writer http.ResponseWriter, request *http.Request, _ httprouter.Param
 		}
 	}
 	writer.WriteHeader(http.StatusUnauthorized)
+}
+
+func DeleteUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	var deleteRequest deleteUserRequest
+	err := json.NewDecoder(r.Body).Decode(&deleteRequest)
+	if err != nil {
+		BadRequestError(w)
+		return
+	}
+	user := tools.RequirePermission(w, *r, 1) // require admin
+	if user == nil {
+		return
+	}
+	// currently admins can not be deleted.
+	res, err := dao.IsUserAdmin(context.Background(), deleteRequest.Id)
+	if err!=nil {
+		InternalServerError(w, errors.New("couldn't query database"))
+		return
+	}
+	if res {
+		BadRequestError(w)
+		return
+	}
+
+	err = dao.DeleteUser(context.Background(), deleteRequest.Id)
+	if err != nil {
+		InternalServerError(w, errors.New("user could not be deleted"))
+		return
+	}
+	writeJSON(context.Background(), w, &deleteUserResponse{Success: true})
 }
 
 // todo: refactor
@@ -134,6 +165,14 @@ func forgotPassword(email string) error {
 	log.Printf("register link: %v\n", registerLink)
 	err = tools.SendPasswordMail(email, registerLink.RegisterSecret)
 	return err
+}
+
+type deleteUserRequest struct {
+	Id int32 `json:"id"`
+}
+
+type deleteUserResponse struct {
+	Success bool `json:"success"`
 }
 
 type createUserRequest struct {

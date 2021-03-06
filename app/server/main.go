@@ -11,6 +11,7 @@ import (
 	"github.com/droundy/goopt"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
+	cron "github.com/robfig/cron/v3"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
@@ -52,6 +53,10 @@ func (u *User) String() string {
 }
 
 func main() {
+	cronService := cron.New()
+	//Fetch students every 6 hours
+	_, _ = cronService.AddFunc("0 */6 * * *", tools.FindStudentsForAllCourses)
+
 	OsSignal = make(chan os.Signal, 1)
 
 	goopt.Parse(nil)
