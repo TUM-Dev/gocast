@@ -56,7 +56,6 @@ func main() {
 	cronService := cron.New()
 	//Fetch students every 6 hours
 	_, _ = cronService.AddFunc("0 */6 * * *", tools.FindStudentsForAllCourses)
-
 	OsSignal = make(chan os.Signal, 1)
 
 	goopt.Parse(nil)
