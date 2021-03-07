@@ -55,7 +55,8 @@ func (u *User) String() string {
 func main() {
 	cronService := cron.New()
 	//Fetch students every 6 hours
-	_, _ = cronService.AddFunc("0 */6 * * *", tools.FindStudentsForAllCourses)
+	_, _ = cronService.AddFunc("* */6 * * *", tools.FindStudentsForAllCourses)
+	cronService.Start()
 	OsSignal = make(chan os.Signal, 1)
 
 	goopt.Parse(nil)
@@ -72,6 +73,7 @@ func main() {
 
 	err = db.AutoMigrate(
 		&model.User{},
+		&model.StudentToCourse{},
 		&model.Course{},
 		&model.RegisterLink{},
 		&model.Session{},

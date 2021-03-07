@@ -10,6 +10,7 @@ type Course struct {
 	UserID              uint
 	Name                string
 	Slug                string //eg. eidi
-	TUMOnlineIdentifier string //not in use rn
+	TUMOnlineIdentifier string
 	Streams             []Stream
+	Students            []StudentToCourse
 }
