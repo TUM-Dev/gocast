@@ -5,10 +5,10 @@ import (
 	"time"
 )
 
-// Streams struct is a row record of the streams table in the rbglive database
 type Stream struct {
 	gorm.Model
 
+	Name        string
 	CourseID    uint
 	Start       time.Time
 	End         time.Time

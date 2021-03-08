@@ -20,6 +20,19 @@ func GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err e
 	return res, nil
 }
 
+func GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error) {
+	if Logger != nil {
+		Logger(ctx, "Getting stream by id from database.")
+	}
+	var res model.Stream
+	err = DB.First(&res, "id = ?", id).Error
+	if err != nil {
+		fmt.Printf("error getting stream by id: %v\n", err)
+		return res, err
+	}
+	return res, nil
+}
+
 func CreateStream(ctx context.Context, stream model.Stream) (err error) {
 	dbErr := DB.Create(stream).Error
 	return dbErr

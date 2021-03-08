@@ -1,3 +1,7 @@
+class Admin{
+
+}
+
 function createUser() {
     let userName: string = (document.getElementById("name") as HTMLInputElement).value
     let email: string = (document.getElementById("email") as HTMLInputElement).value

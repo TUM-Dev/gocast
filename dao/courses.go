@@ -13,6 +13,12 @@ func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Cours
 	return foundCourses, dbErr
 }
 
+func GetCourseById(ctx context.Context, id uint) (courses model.Course, err error) {
+	var foundCourse model.Course
+	dbErr := DB.Find(&foundCourse, "id = ?", id).Error
+	return foundCourse, dbErr
+}
+
 func GetAllCoursesWithTUMID(ctx context.Context) (courses []model.Course, err error) {
 	if Logger != nil {
 		Logger(ctx, "Find all courses with tum_online_identifier")
