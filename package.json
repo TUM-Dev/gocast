@@ -25,7 +25,7 @@
     "videojs-hls-quality-selector": "^1.1.4"
   },
   "devDependencies": {
-    "autoprefixer": "^10.2.4",
+    "autoprefixer": "^10.2.5",
     "google-closure-compiler": "^20210302.0.0",
     "postcss": "^8.2.7",
     "tailwindcss": "^2.0.3",
