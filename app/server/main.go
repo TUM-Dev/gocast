@@ -64,8 +64,8 @@ func (u *User) String() string {
 
 func main() {
 	cronService := cron.New()
-	//Fetch students every 6 hours
-	_, _ = cronService.AddFunc("* */6 * * *", tum.FindStudentsForAllCourses)
+	//Fetch students every 12 hours
+	_, _ = cronService.AddFunc("0 */12 * * *", tum.FindStudentsForAllCourses)
 	cronService.Start()
 	OsSignal = make(chan os.Signal, 1)
 
