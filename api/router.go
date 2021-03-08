@@ -1,18 +1,16 @@
 package api
 
 import (
+	"TUM-Live/dao"
 	"context"
 	"encoding/json"
+	"github.com/gin-gonic/gin"
+	"github.com/julienschmidt/httprouter"
 	_ "github.com/satori/go.uuid"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
-	"unsafe"
-
-	"TUM-Live/dao"
-	"github.com/gin-gonic/gin"
-	"github.com/julienschmidt/httprouter"
 )
 
 var (
@@ -39,21 +37,6 @@ func ConfigGinRouter(router gin.IRoutes) {
 	configGinUsersRouter(router)
 	configGinChatRouter(router)
 	return
-}
-
-// ConvertHttprouterToGin wrap httprouter.Handle to gin.HandlerFunc
-func ConvertHttprouterToGin(f httprouter.Handle) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var params httprouter.Params
-		_len := len(c.Params)
-		if _len == 0 {
-			params = nil
-		} else {
-			params = ((*[1 << 10]httprouter.Param)(unsafe.Pointer(&c.Params[0])))[:_len]
-		}
-
-		f(c.Writer, c.Request, params)
-	}
 }
 
 func initializeContext(r *http.Request) (ctx context.Context) {

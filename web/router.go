@@ -1,7 +1,6 @@
 package web
 
 import (
-	"TUM-Live/api"
 	"github.com/gin-gonic/gin"
 	"html/template"
 )
@@ -23,7 +22,7 @@ func configGinStaticRouter(router gin.IRoutes) {
 
 func configMainRoute(router gin.IRoutes) {
 	router.GET("/admin", AdminPage)
-	router.GET("/login", api.ConvertHttprouterToGin(LoginPage))
+	router.GET("/login", LoginPage)
 	router.GET("/logout", LogoutPage)
 	router.GET("/setPassword/:key", CreatePasswordPage)
 	router.GET("/", MainPage)

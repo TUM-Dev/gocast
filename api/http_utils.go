@@ -10,19 +10,6 @@ import (
 	"strings"
 )
 
-// HTTPNocacheContent will set the headers for content type along with no caching.
-func HTTPNocacheContent(w http.ResponseWriter, content string) {
-	w.Header().Set("Content-Type", content)
-	w.Header().Set("Cache-Control", "no-cache, no-store")
-	w.Header().Set("Pragma", "no-cache")
-	w.Header().Set("Expires", "0")
-}
-
-// HTTPNocacheJSON will set the headers on an http Response for a text/json content type along with no cache.
-func HTTPNocacheJSON(w http.ResponseWriter) {
-	HTTPNocacheContent(w, "text/json")
-}
-
 // SendJSON will return take a value and serialize it to json and return the http response.
 func SendJSON(w http.ResponseWriter, r *http.Request, code int, val interface{}) {
 	w.Header().Set("Cache-Control", "no-cache, no-store")
