@@ -5,30 +5,39 @@ import (
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"context"
-	"github.com/julienschmidt/httprouter"
-	"net/http"
+	"github.com/gin-gonic/gin"
 )
 
-func MainPage(writer http.ResponseWriter, request *http.Request, ps httprouter.Params) {
+func MainPage(c *gin.Context) {
 	res, err := dao.AreUsersEmpty(context.Background()) // fresh installation?
 	if err != nil {
-		_ = templ.ExecuteTemplate(writer, "error.gohtml", nil)
+		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", nil)
 	} else if res {
-		_ = templ.ExecuteTemplate(writer, "onboarding.gohtml", nil)
+		_ = templ.ExecuteTemplate(c.Writer, "onboarding.gohtml", nil)
 	} else {
-		user := model.User{}
-		err = tools.GetUser(writer, request, &user)
+		var indexData IndexData
+		_, userErr := tools.GetUser(c)
+		_, studentErr := tools.GetStudent(c)
+		if userErr == nil {
+			indexData.IsUser = true
+		}
+		if studentErr == nil {
+			indexData.IsStudent = true
+		}
+		// Todo get live streams for user
 		var streams []model.Stream
-		err := dao.GetCurrentLive(context.Background(), &streams)
+		err = dao.GetCurrentLive(context.Background(), &streams)
+		indexData.LiveStreams = streams
 		if err != nil {
-			_ = templ.ExecuteTemplate(writer, "index.gohtml", IndexData{User: user, LiveStreams: streams})
+			_ = templ.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
 		} else {
-			_ = templ.ExecuteTemplate(writer, "index.gohtml", IndexData{User: user, LiveStreams: streams})
+			_ = templ.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
 		}
 	}
 }
 
 type IndexData struct {
-	User        model.User
+	IsUser      bool
+	IsStudent   bool
 	LiveStreams []model.Stream
 }

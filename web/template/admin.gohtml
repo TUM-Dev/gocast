@@ -9,7 +9,7 @@
 <body class="bg-primary">
 
 {{- /*gotype: TUM-Live/web.AdminPageData*/ -}}
-{{template "header" .User}}
+{{template "header" .IndexData}}
 
 <div class="container mx-auto">
     <div class="min-w-screen flex items-center justify-center">
@@ -123,7 +123,7 @@
                         <tr class=" hover:bg-primary">
                             <td class="py-3 px-6 text-left whitespace-nowrap">
                                 <div class="flex items-center">
-                                    <input id="name" name="name" placeholder="Name" type="text" autocomplete="off"
+                                    <input id="courseId" name="courseId" placeholder="TUMOnline ID" type="text" autocomplete="off"
                                            class="focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500"/>
                                 </div>
                             </td>
@@ -131,7 +131,7 @@
                             <td class="py-3 px-6 text-center">
                                 <div class="flex item-center justify-center">
                                     <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
-                                        <i onclick="createUser()" id="createUser" class="fas fa-plus"></i>
+                                        <i onclick="" id="createCourse" class="fas fa-plus"></i>
                                     </div>
                                 </div>
                             </td>

@@ -38,7 +38,7 @@ func UpdateCourses(ctx context.Context, courses []model.Course) {
 	}
 	for i := range courses {
 		// We have to reimport all students because we can't get info on who left the course from tumonline
-		dbErr := DB.Delete(&model.StudentToCourse{}, "course_id = ?", courses[i].ID).Error
+		dbErr := DB.Delete(&model.Student{}, "course_id = ?", courses[i].ID).Error
 		if dbErr != nil {
 			if Logger != nil {
 				Logger(ctx, fmt.Sprintf("Failed to remove students from course: %v\n", dbErr))

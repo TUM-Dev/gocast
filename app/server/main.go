@@ -5,15 +5,19 @@ import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
+	"TUM-Live/tools/tum"
 	"TUM-Live/web"
 	"context"
 	"fmt"
 	"github.com/droundy/goopt"
 	"github.com/gin-contrib/gzip"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	cron "github.com/robfig/cron/v3"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"math/rand"
 
 	"log"
 	"net/http"
@@ -28,6 +32,13 @@ const UserKey = "RBG-Default-User" // UserKey key used for storing User struct i
 func GinServer() (err error) {
 	router := gin.Default()
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
+	secret := make([]byte, 40) // 40 random bytes as cookie secret
+	_, err = rand.Read(secret)
+	if err!=nil {
+		log.Fatalf("Unable to generate cookie store secret: %err\n", err)
+	}
+	store := cookie.NewStore(secret)
+	router.Use(sessions.Sessions("TUMLiveSession", store))
 
 	api.ConfigGinRouter(router)
 	web.ConfigGinRouter(router)
@@ -35,7 +46,6 @@ func GinServer() (err error) {
 	if err != nil {
 		log.Fatalf("Error starting server, the error is '%v'", err)
 	}
-
 	return
 }
 
@@ -55,7 +65,7 @@ func (u *User) String() string {
 func main() {
 	cronService := cron.New()
 	//Fetch students every 6 hours
-	_, _ = cronService.AddFunc("* */6 * * *", tools.FindStudentsForAllCourses)
+	_, _ = cronService.AddFunc("* */6 * * *", tum.FindStudentsForAllCourses)
 	cronService.Start()
 	OsSignal = make(chan os.Signal, 1)
 
@@ -73,10 +83,9 @@ func main() {
 
 	err = db.AutoMigrate(
 		&model.User{},
-		&model.StudentToCourse{},
+		&model.Student{},
 		&model.Course{},
 		&model.RegisterLink{},
-		&model.Session{},
 		&model.Stream{},
 	)
 	if err != nil {

@@ -12,5 +12,5 @@ type Course struct {
 	Slug                string //eg. eidi
 	TUMOnlineIdentifier string
 	Streams             []Stream
-	Students            []StudentToCourse
+	Students            []Student `gorm:"many2many:course_students;"`
 }

@@ -26,7 +26,6 @@ type User struct {
 	Role     int    //1:admin 2:lecturer 3:others
 	Password string
 	Courses  []Course
-	Sessions []Session
 }
 
 type argonParams struct {

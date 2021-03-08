@@ -5,50 +5,40 @@ import (
 	"TUM-Live/model"
 	"context"
 	"errors"
-	"net/http"
-	"time"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 )
 
-func GetUser(w http.ResponseWriter, r *http.Request, user *model.User) (err error) {
-	sid, err := GetSID(r)
-	if err != nil {
-		return err
+func GetStudent(c *gin.Context) (student model.Student, err error) {
+	s := sessions.Default(c)
+	sid := s.Get("StudentID")
+	if sid != nil {
+		return dao.GetStudent(context.Background(), sid.(string))
 	}
-	foundUser, err := dao.GetUserBySID(context.Background(), sid)
-	if err != nil {
-		// delete invalid session cookie
-		http.SetCookie(w, &http.Cookie{Name: "SID", Expires: time.Now().AddDate(0, 0, -1)})
-		return err
+	return model.Student{}, errors.New("not a student")
+}
+
+func GetUser(c *gin.Context) (student model.User, err error) {
+	s := sessions.Default(c)
+	uid := s.Get("UserID")
+	if uid != nil {
+		return dao.GetUserByID(context.Background(), uid.(uint))
 	}
-	*user = foundUser
+	return model.User{}, errors.New("not a user")
+}
+
+func RequirePermission(c *gin.Context, permLevel int) (err error) {
+	s := sessions.Default(c)
+	userid := s.Get("UserID")
+	if userid == nil {
+		return errors.New("not authenticated")
+	}
+	user, err := dao.GetUserByID(context.Background(), userid.(uint))
+	if err != nil {
+		return errors.New("not authenticated")
+	}
+	if user.Role > permLevel {
+		return errors.New("insufficient permission")
+	}
 	return nil
-}
-
-func GetSID(r *http.Request) (SID string, err error) {
-	cookie, err := r.Cookie("SID")
-	if err != nil {
-		return "", errors.New("no session cookie")
-	}
-	return cookie.Value, nil
-}
-
-func RequirePermission(w http.ResponseWriter, r http.Request, permLevel int) (user *model.User) {
-	sid, err := GetSID(&r)
-	if err != nil {
-		w.WriteHeader(http.StatusForbidden)
-		return nil
-	}
-	foundUser, err := dao.GetUserBySID(context.Background(), sid)
-	if err != nil { // no record for session id
-		w.WriteHeader(http.StatusForbidden)
-		// delete invalid session cookie
-		http.SetCookie(w, &http.Cookie{Name: "SID", Expires: time.Now().AddDate(0, 0, -1)})
-		return nil
-	}
-	if foundUser.Role > permLevel {
-		w.WriteHeader(http.StatusForbidden)
-		return nil
-	}
-
-	return &foundUser
 }

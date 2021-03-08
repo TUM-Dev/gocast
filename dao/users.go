@@ -3,6 +3,7 @@ package dao
 import (
 	"TUM-Live/model"
 	"context"
+	"fmt"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -19,14 +20,6 @@ func CreateUser(ctx context.Context, user model.User) (err error) {
 		Logger(ctx, "Create user.")
 	}
 	res := DB.Create(&user)
-	return res.Error
-}
-
-func CreateSession(ctx context.Context, session model.Session) (err error) {
-	if Logger != nil {
-		Logger(ctx, "Create Session.")
-	}
-	res := DB.Create(&session)
 	return res.Error
 }
 
@@ -50,14 +43,6 @@ func IsUserAdmin(ctx context.Context, uid int32) (res bool, err error) {
 	return user.Role == 1, nil
 }
 
-func DeleteSession(ctx context.Context, session string) (err error) {
-	if Logger != nil {
-		Logger(ctx, "Delete Session.")
-	}
-	res := DB.Unscoped().Delete(&model.Session{}, "session_id = ?", session)
-	return res.Error
-}
-
 func GetUserByEmail(ctx context.Context, email string) (user model.User, err error) {
 	if Logger != nil {
 		Logger(ctx, "find user by email.")
@@ -75,16 +60,21 @@ func GetAllUsers(ctx context.Context, users *[]model.User) (err error) {
 	return err
 }
 
-func GetUserBySID(ctx context.Context, sid string) (user model.User, err error) {
+func GetStudent(ctx context.Context, id string) (s model.Student, err error) {
 	if Logger != nil {
-		Logger(ctx, "find user by session id "+sid)
+		Logger(ctx, "find student by id: "+id)
+	}
+	var student model.Student
+	dbErr := DB.Find(&student, "id = ?", id).Error
+	return student, dbErr
+}
+
+func GetUserByID(ctx context.Context, id uint) (user model.User, err error) {
+	if Logger != nil {
+		Logger(ctx, fmt.Sprintf("find user by id %v", id))
 	}
 	var foundUser model.User
-	dbErr := DB.Model(&model.User{}).
-		Select("users.*").
-		Joins("join sessions s on users.id = s.user_id").
-		Where("session_key = ?", sid).
-		Scan(&foundUser).Error
+	dbErr := DB.Find(&foundUser, "id = ?", id).Error
 	return foundUser, dbErr
 }
 

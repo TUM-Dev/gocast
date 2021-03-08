@@ -22,9 +22,9 @@ func configGinStaticRouter(router gin.IRoutes) {
 }
 
 func configMainRoute(router gin.IRoutes) {
-	router.GET("/admin", api.ConvertHttprouterToGin(AdminPage))
+	router.GET("/admin", AdminPage)
 	router.GET("/login", api.ConvertHttprouterToGin(LoginPage))
-	router.GET("/logout", api.ConvertHttprouterToGin(LogoutPage))
+	router.GET("/logout", LogoutPage)
 	router.GET("/setPassword/:key", CreatePasswordPage)
-	router.GET("/", api.ConvertHttprouterToGin(MainPage))
+	router.GET("/", MainPage)
 }

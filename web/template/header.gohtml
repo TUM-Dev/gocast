@@ -12,8 +12,8 @@
                    class="block inline-block align-middle mt-0 text-gray-300 hover:text-white mr-4">
                     Start
                 </a>
-                {{- /*gotype: TUM-Live-Backend/model.User*/ -}}
-                {{if not .ID}}
+                {{- /*gotype: TUM-Live/web.IndexData*/ -}}
+                {{if not (or .IsUser .IsStudent)}}
                     <a href="/login"
                        class="block inline-block align-middle mt-0 text-gray-300 hover:text-white mr-4">
                         Login
@@ -23,7 +23,7 @@
                        class="inline-block align-middle mt-0 text-gray-300 hover:text-white mr-4">
                         Logout
                     </a>
-                    {{if or (eq .Role 1) (eq .Role 2)}}
+                    {{if .IsUser}}
                         <a href="/admin"
                            class="inline-block align-middle mt-0 text-gray-300 hover:text-white mr-4">
                             Admin

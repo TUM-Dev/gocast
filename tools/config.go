@@ -19,6 +19,11 @@ func init() {
 		LrzPassword:      os.Getenv("LRZ_PASSWORD"),
 		CampusBase:       os.Getenv("CAMPUS_API_BASE"),
 		CampusToken:      os.Getenv("CAMPUS_API_TOKEN"),
+		LdapUrl:          os.Getenv("LDAP_URL"),
+		LdapUser:         os.Getenv("LDAP_USER"),
+		LdapPassword:     os.Getenv("LDAP_PASSWORD"),
+		LdapBaseDN:       os.Getenv("LDAP_BASE_DN"),
+		LdapUserDN:       os.Getenv("LDAP_USER_DN"),
 	}
 }
 
@@ -36,4 +41,9 @@ type Config struct {
 	LrzPassword      string
 	CampusBase       string
 	CampusToken      string
+	LdapUrl          string
+	LdapUser         string
+	LdapPassword     string
+	LdapBaseDN       string
+	LdapUserDN       string
 }

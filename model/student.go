@@ -1,6 +1,7 @@
 package model
 
-type StudentToCourse struct {
-	ObfuscatedID string `gorm:"primaryKey"`
-	CourseID     uint   `gorm:"primaryKey"` // Composite primary key prevents duplication of a combination of ObfuscatedID and CourseID
+type Student struct {
+	ID      string `gorm:"primaryKey"` // currently matrikelnr. as soon as we get a reply from the it service "obfuscatedID"
+	LRZID   string `gorm:"unique"`
+	Courses []*Course `gorm:"many2many:course_students;"` // sql back reference
 }

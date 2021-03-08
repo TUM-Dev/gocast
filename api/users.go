@@ -4,126 +4,125 @@ import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
+	"TUM-Live/tools/tum"
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/julienschmidt/httprouter"
-	uuid "github.com/satori/go.uuid"
 	"log"
 	"net/http"
-	"time"
 )
 
 func configGinUsersRouter(router gin.IRoutes) {
-	router.POST("/api/createUser", ConvertHttprouterToGin(CreateUser))
-	router.POST("/api/deleteUser", ConvertHttprouterToGin(DeleteUser))
-	router.POST("/api/login", ConvertHttprouterToGin(Login))
+	router.POST("/api/createUser", CreateUser)
+	router.POST("/api/deleteUser", DeleteUser)
+	router.POST("/api/login", Login)
 }
 
 type loginRequest struct {
-	Email    string
-	Password string
+	LoginWithTUM bool
+	Username     string
+	Password     string
 }
 
-func Login(writer http.ResponseWriter, request *http.Request, _ httprouter.Params) {
+func Login(c *gin.Context) {
 	var requestData loginRequest
-	err := json.NewDecoder(request.Body).Decode(&requestData)
+	err := json.NewDecoder(c.Request.Body).Decode(&requestData)
 	if err != nil {
-		writer.WriteHeader(http.StatusBadRequest)
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	user, err := dao.GetUserByEmail(context.Background(), requestData.Email)
-	if err != nil {
-		writer.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	pwCorrect, err := user.ComparePasswordAndHash(requestData.Password)
-	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		log.Printf("error validating password: %v\n", err)
-	}
-	if pwCorrect {
-		var cookie http.Cookie
-		cookie.Name = "SID"
-		cookie.Value = uuid.NewV4().String()
-		cookie.Expires = time.Now().AddDate(0, 1, 0)
-		cookie.Path = "/"
-		var session model.Session
-		session.SessionKey = cookie.Value
-		session.UserID = user.ID
-		err = dao.CreateSession(context.Background(), session)
+	if requestData.LoginWithTUM {
+		studentID, err := tum.LoginWithTumCredentials(requestData.Username, requestData.Password)
 		if err != nil {
-			log.Printf("couldn't create session: %v\n", err)
-			writer.WriteHeader(http.StatusInternalServerError)
-			return
+			log.Printf("Login attempt rejected. Username: %v\n\n", requestData.Username)
 		} else {
-			writer.WriteHeader(http.StatusOK)
-			http.SetCookie(writer, &cookie)
+			s := sessions.Default(c)
+			s.Set("StudentID", studentID)
+			_ = s.Save()
+		}
+	} else {
+		user, err := dao.GetUserByEmail(context.Background(), requestData.Username)
+		if err != nil {
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
+		pwCorrect, err := user.ComparePasswordAndHash(requestData.Password)
+		if err != nil {
+			c.AbortWithStatus(http.StatusInternalServerError)
+			log.Printf("error validating password: %v\n", err)
+			return
+		}
+		if pwCorrect {
+			s := sessions.Default(c)
+			s.Set("UserID", user.ID)
+			_ = s.Save()
+			c.Status(200)
+			return
+		}
+		c.AbortWithStatus(http.StatusUnauthorized)
 	}
-	writer.WriteHeader(http.StatusUnauthorized)
 }
 
-func DeleteUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func DeleteUser(c *gin.Context) {
 	var deleteRequest deleteUserRequest
-	err := json.NewDecoder(r.Body).Decode(&deleteRequest)
+	err := json.NewDecoder(c.Request.Body).Decode(&deleteRequest)
 	if err != nil {
-		BadRequestError(w)
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	user := tools.RequirePermission(w, *r, 1) // require admin
-	if user == nil {
+	err = tools.RequirePermission(c, 1) // require admin
+	if err != nil {
 		return
 	}
 	// currently admins can not be deleted.
 	res, err := dao.IsUserAdmin(context.Background(), deleteRequest.Id)
-	if err!=nil {
-		InternalServerError(w, errors.New("couldn't query database"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	if res {
-		BadRequestError(w)
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	err = dao.DeleteUser(context.Background(), deleteRequest.Id)
 	if err != nil {
-		InternalServerError(w, errors.New("user could not be deleted"))
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	writeJSON(context.Background(), w, &deleteUserResponse{Success: true})
+	c.Status(200)
 }
 
 // todo: refactor
-func CreateUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func CreateUser(c *gin.Context) {
 	usersEmpty, err := dao.AreUsersEmpty(context.Background())
 	if err != nil {
-		InternalServerError(w, errors.New("something went wrong"))
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	var request createUserRequest
-	err = json.NewDecoder(r.Body).Decode(&request)
+	err = json.NewDecoder(c.Request.Body).Decode(&request)
 	if err != nil {
-		BadRequestError(w)
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	var createdUser model.User
 	if usersEmpty {
 		createdUser, err = createUserHelper(request, model.AdminType)
 	} else {
-		adminUser := tools.RequirePermission(w, *r, model.AdminType) // user has to be admin
+		adminUser := tools.RequirePermission(c, model.AdminType) // user has to be admin
 		if adminUser == nil {
 			return
 		}
 		createdUser, err = createUserHelper(request, model.LecturerType)
 	}
 	if err != nil {
-		BadRequestError(w)
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	writeJSON(context.Background(), w, createUserResponse{Name: createdUser.Name, Email: createdUser.Email, Role: createdUser.Role})
+	c.JSON(200, createUserResponse{Name: createdUser.Name, Email: createdUser.Email, Role: createdUser.Role})
 }
 
 func createUserHelper(request createUserRequest, userType int) (user model.User, err error) {

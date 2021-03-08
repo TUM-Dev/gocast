@@ -5,23 +5,24 @@ import (
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"context"
-	"github.com/julienschmidt/httprouter"
+	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-func AdminPage(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-	user := tools.RequirePermission(writer, *request, 2) // user has to be admin or lecturer
-	if user == nil {
+func AdminPage(c *gin.Context) {
+	user, err := tools.GetUser(c)
+	if err != nil {
+		c.Redirect(http.StatusFound, "/login")
 		return
 	}
 	var users []model.User
 	_ = dao.GetAllUsers(context.Background(), &users)
-	courses, _ := dao.GetCoursesByUserId(context.Background(), user.Model.ID)
-	_ = templ.ExecuteTemplate(writer, "admin.gohtml", AdminPageData{User: *user, Users: users, Courses: courses})
+	_ = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{User: user, Users: users, Courses: user.Courses, IndexData: IndexData{IsStudent: false, IsUser: true}})
 }
 
 type AdminPageData struct {
-	User    model.User
-	Users   []model.User
-	Courses []model.Course
+	IndexData IndexData
+	User      model.User
+	Users     []model.User
+	Courses   []model.Course
 }
