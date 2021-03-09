@@ -4,7 +4,7 @@ import (
 	"TUM-Live/model"
 	"context"
 	"fmt"
-	"gorm.io/gorm/clause"
+	"gorm.io/gorm"
 )
 
 func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Course, err error) {
@@ -35,23 +35,14 @@ func GetAllCoursesWithTUMID(ctx context.Context) (courses []model.Course, err er
 }
 
 /**
-* Saves all provided courses into database. This might be faster with some sort of batch insert but
-* we shouldn't have more than ~ 20 courses so it should be fine.
+* Saves all provided courses into database.
 **/
 func UpdateCourses(ctx context.Context, courses []model.Course) {
 	if Logger != nil {
 		Logger(ctx, "Updating multiple courses.")
 	}
 	for i := range courses {
-		// We have to reimport all students because we can't get info on who left the course from tumonline
-		dbErr := DB.Delete(&model.Student{}, "course_id = ?", courses[i].ID).Error
-		if dbErr != nil {
-			if Logger != nil {
-				Logger(ctx, fmt.Sprintf("Failed to remove students from course: %v\n", dbErr))
-			}
-		}
-		// skip on same configuration of users->courses
-		dbErr = DB.Clauses(clause.OnConflict{DoNothing: true}).Save(courses[i]).Error
+		dbErr := DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&courses[i]).Error
 		if dbErr != nil {
 			if Logger != nil {
 				Logger(ctx, fmt.Sprintf("Failed to save a course: %v\n", dbErr))

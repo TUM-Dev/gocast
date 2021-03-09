@@ -14,7 +14,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
-	cron "github.com/robfig/cron/v3"
+	"github.com/robfig/cron/v3"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"math/rand"
@@ -63,10 +63,6 @@ func (u *User) String() string {
 }
 
 func main() {
-	cronService := cron.New()
-	//Fetch students every 12 hours
-	_, _ = cronService.AddFunc("0 */12 * * *", tum.FindStudentsForAllCourses)
-	cronService.Start()
 	OsSignal = make(chan os.Signal, 1)
 
 	goopt.Parse(nil)
@@ -101,6 +97,13 @@ func main() {
 			fmt.Printf("SQL: %s\n", sql)
 		}
 	}
+
+	cronService := cron.New()
+	//Fetch students every 12 hours
+	_, _ = cronService.AddFunc("0 */12 * * *", tum.FindStudentsForAllCourses)
+	cronService.Start()
+	//load students at app startup.
+	tum.FindStudentsForAllCourses()
 
 	api.ContextInitializer = func(r *http.Request) (ctx context.Context) {
 		val, ok := r.Header["X-Api-User"]
