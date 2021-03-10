@@ -8,7 +8,8 @@ import (
 var templ *template.Template
 
 func ConfigGinRouter(router gin.IRoutes) {
-	templ, _ = template.ParseGlob("./web/template/*")
+	templ = template.Must(template.ParseGlob("./web/template/*.gohtml"))
+	template.Must(templ.ParseGlob("./web/template/admin/*"))
 	configGinStaticRouter(router)
 	configMainRoute(router)
 	return
@@ -22,6 +23,7 @@ func configGinStaticRouter(router gin.IRoutes) {
 
 func configMainRoute(router gin.IRoutes) {
 	router.GET("/admin", AdminPage)
+	router.GET("/admin/create-course", CreateCoursePage)
 	router.GET("/login", LoginPage)
 	router.GET("/logout", LogoutPage)
 	router.GET("/setPassword/:key", CreatePasswordPage)

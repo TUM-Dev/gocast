@@ -1,18 +1,24 @@
 @import "tailwindcss/base";
-
+@import "tailwindcss/custom-forms";
 @layer base {
     h1 {
         @apply text-2xl;
     }
+
     h2 {
         @apply text-xl;
     }
+
     h3 {
         @apply text-lg;
     }
-    a {
-        @apply text-blue-600 underline;
-    }
+}
+input {
+    @apply focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500 text-white
+}
+.btn{
+    @apply flex-1 bg-gray-800 text-white w-full p-3 text-center text-sm cursor-pointer hover:bg-primary
+
 }
 
 @import "tailwindcss/components";

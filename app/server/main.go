@@ -104,7 +104,6 @@ func main() {
 	cronService.Start()
 	//load students at app startup.
 	tum.FindStudentsForAllCourses()
-
 	api.ContextInitializer = func(r *http.Request) (ctx context.Context) {
 		val, ok := r.Header["X-Api-User"]
 		if ok {

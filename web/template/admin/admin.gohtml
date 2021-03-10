@@ -89,12 +89,11 @@
             {{if or (eq .User.Role 1) (eq .User.Role 2)}}
                 <div class="bg-secondary rounded my-6 overflow-x-auto">
                     <h2 class="text-2xl bg-primary text-gray-300">Course Management</h2>
-                    <table class="table-auto w-full">
+                    <table class="table-fixed w-full">
                         <thead>
                         <tr class="bg-primary text-gray-300 uppercase text-sm leading-normal">
-                            <th class="py-3 px-6 text-left">Name</th>
-                            <th class="py-3 px-6 text-left">Streaming-Key</th>
-                            <th class="py-3 px-6 text-center">Actions</th>
+                            <th class="py-3 px-6 text-left w-3/4">Name</th>
+                            <th class="py-3 px-6 text-center w-1/4">Actions</th>
                         </tr>
                         </thead>
                         <tbody class="text-gray-300 text-sm font-light">
@@ -105,15 +104,10 @@
                                         <span class="font-medium p-3">{{$course.Name}}</span>
                                     </div>
                                 </td>
-                                <td class="py-3 px-6 text-left">
-                                    <div class="flex items-center">
-                                        <span class="font-medium p-3">{{$course.ID}}</span>
-                                    </div>
-                                </td>
                                 <td class="py-3 px-6 text-center">
                                     <div class="flex item-center justify-center">
                                         <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="fas fa-edit"></i>
                                         </div>
                                     </div>
                                 </td>
@@ -121,19 +115,13 @@
                         {{end}}
 
                         <tr class="hover:bg-primary">
-                            <td class="py-3 px-6 text-left whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <input id="courseId" name="courseId" placeholder="TUMOnline ID" type="text" autocomplete="off"
-                                           class="focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500"/>
-                                </div>
-                            </td>
-                            <td class="py-3 px-6 text-left"></td>
+                            <td class="py-3 px-6 text-left whitespace-nowrap"></td>
                             <td class="py-3 px-6 text-center">
-                                <div class="flex item-center justify-center">
-                                    <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
-                                        <i id="createCourse" class="fas fa-plus mouse-pointer"></i>
+                                <a href="/admin/create-course">
+                                    <div class="p-3 rounded bg-info text-white">
+                                        New Course
                                     </div>
-                                </div>
+                                </a>
                             </td>
                         </tr>
                         </tbody>

@@ -10,7 +10,7 @@
     "postinstall": "npm run typescript-compile && npm run tailwind-compile",
     "typescript-compile": "npx tsc",
     "typescript-minify": "npx google-closure-compiler -O ADVANCED --js 'web/assets/ts-dist-temp/**.js' --js_output_file web/assets/ts-dist/main.min.js && rm -rf web/assets/ts-dist-temp",
-    "tailwind-compile": "NODE_ENV=production npx tailwindcss build -o ./web/assets/css-dist/main.css"
+    "tailwind-compile": "npx tailwindcss build ./web/assets/css/main.css -o ./web/assets/css-dist/main.css"
   },
   "author": "Joscha Henningsen",
   "license": "GPL-3.0-or-later",

@@ -36,7 +36,7 @@ func FindStudentsForAllCourses() {
 		return
 	}
 	for i := range courses {
-		studentIDs, err := findStudentsForCourse(courses[i].TUMOnlineIdentifier)
+		studentIDs, err := FindStudentsForCourse(courses[i].TUMOnlineIdentifier)
 		if err != nil {
 			log.Printf("Could not get Students for course with id %v: %v\n", courses[i].TUMOnlineIdentifier, err)
 			break
@@ -53,20 +53,20 @@ func FindStudentsForAllCourses() {
 /**
  * scans the CampusOnline API for enrolled students in one course
  */
-func findStudentsForCourse(courseID string) (obfuscatedIDs []string, err error) {
+func FindStudentsForCourse(courseID string) (obfuscatedIDs []string, err error) {
 	doc, err := xmlquery.LoadURL(fmt.Sprintf("%v/course/students/xml?token=%v&courseID=%v", tools.Cfg.CampusBase, tools.Cfg.CampusToken, courseID))
 	if err != nil {
 		log.Printf("couldn't load TUMOnline xml: %v\n", err)
 		return []string{}, err
 	}
-	res, err := xmlquery.QueryAll(doc, "//personID")
+	res, err := xmlquery.QueryAll(doc, "//person")
 	if err != nil {
 		log.Printf("Malformed TUMOnline xml: %v\n", err)
 		return []string{}, err
 	}
 	ids := make([]string, len(res))
 	for i := range res {
-		ids[i] = res[i].InnerText()
+		ids[i] = res[i].SelectAttr("ident")
 	}
 	return ids, nil
 }
