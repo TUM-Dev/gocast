@@ -4,6 +4,7 @@ import (
 	"TUM-Live/model"
 	"context"
 	"fmt"
+	"gorm.io/gorm/clause"
 )
 
 // return stream by streaming key
@@ -58,4 +59,13 @@ func SetStreamNotLive(ctx context.Context, streamKey string) (err error) {
 		Update("live_now", false).
 		Error
 	return dbErr
+}
+
+func InsertConvertJob(ctx context.Context, job *model.ProcessingJob) {
+	if Logger != nil {
+		Logger(ctx, "inserting processing job.")
+	}
+	DB.Clauses(clause.OnConflict{
+		UpdateAll: true,
+	}).Create(job)
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"TUM-Live/dao"
+	"TUM-Live/model"
 	"TUM-Live/tools"
 	"context"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 )
 
 func configGinStreamAuthRouter(router gin.IRoutes) {
@@ -31,7 +33,7 @@ func StartStream(c *gin.Context) {
 	_ = c.Request.ParseForm()
 	slug := c.Request.FormValue("name")
 	key := strings.Split(c.Request.FormValue("tcurl"), "?secret=")[1] // this could be nicer.
-	println(slug+":"+key)
+	println(slug + ":" + key)
 	res, err := dao.GetStreamByKey(context.Background(), key)
 	if err != nil {
 		c.AbortWithStatus(http.StatusForbidden)
@@ -56,5 +58,19 @@ func EndStream(c *gin.Context) {
 
 // TODO: Convert recording to mp4 and put into correct directory. Delete flv file.
 func OnRecordingFinished(c *gin.Context) {
-	println(FormatRequest(c.Request))
+	_ = c.Request.ParseForm()
+	key := strings.Split(c.Request.FormValue("tcurl"), "?secret=")[1] // this could be nicer.
+	filepath := c.Request.FormValue("path")
+	_ = dao.SetStreamNotLive(context.Background(), key)
+	stream, err := dao.GetStreamByKey(context.Background(), key)
+	if err != nil {
+		log.Printf("invalid end stream request. Weird %v\n", err)
+		return
+	}
+	var convertJob = model.ProcessingJob{
+		FilePath:    filepath,
+		StreamID:    stream.ID,
+		AvailableAt: time.Now().Add(time.Hour * 2),
+	}
+	dao.InsertConvertJob(context.Background(), &convertJob)
 }
