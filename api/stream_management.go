@@ -56,7 +56,6 @@ func EndStream(c *gin.Context) {
 	_ = dao.SetStreamNotLive(context.Background(), key)
 }
 
-// TODO: Convert recording to mp4 and put into correct directory. Delete flv file.
 func OnRecordingFinished(c *gin.Context) {
 	_ = c.Request.ParseForm()
 	key := strings.Split(c.Request.FormValue("tcurl"), "?secret=")[1] // this could be nicer.

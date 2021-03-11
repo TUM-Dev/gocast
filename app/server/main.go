@@ -84,6 +84,7 @@ func main() {
 		&model.RegisterLink{},
 		&model.Stream{},
 		&model.ProcessingJob{},
+		&model.Worker{},
 	)
 	if err != nil {
 		log.Fatalf("Could not migrate database: %v", err)
