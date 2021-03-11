@@ -22,6 +22,7 @@ func configGinStaticRouter(router gin.IRoutes) {
 }
 
 func configMainRoute(router gin.IRoutes) {
+	router.GET("/about", AboutPage)
 	router.GET("/admin", AdminPage)
 	router.GET("/admin/create-course", CreateCoursePage)
 	router.GET("/login", LoginPage)

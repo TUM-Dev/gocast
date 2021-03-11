@@ -36,6 +36,19 @@ func MainPage(c *gin.Context) {
 	}
 }
 
+func AboutPage(c *gin.Context) {
+	var indexData IndexData
+	_, userErr := tools.GetUser(c)
+	_, studentErr := tools.GetStudent(c)
+	if userErr == nil {
+		indexData.IsUser = true
+	}
+	if studentErr == nil {
+		indexData.IsStudent = true
+	}
+	_ = templ.ExecuteTemplate(c.Writer, "about.gohtml", indexData)
+}
+
 type IndexData struct {
 	IsUser      bool
 	IsStudent   bool
