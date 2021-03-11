@@ -22,15 +22,13 @@ class CreateCourse {
         postData("/api/courseInfo", {"courseID": this.courseIDInput.value})
             .then(data => {
                 if (data.status != 200) {
-                    this.TUMOnlineInfo.classList.remove("hidden")
                     this.TUMOnlineInfo.innerText = "The course with this ID was not found in TUMOnline. Please verify the ID or reach out to us."
                 } else {
                     data.text().then(data => {
                         const json = JSON.parse(data)
                         this.courseNameInput.value = json["courseName"]
                         this.teachingTermInput.value = json["teachingTerm"]
-                        this.TUMOnlineInfo.classList.remove("hidden")
-                        this.TUMOnlineInfo.innerText = "Currently there are " + json["numberAttendees"] + " students enrolled in this course. Please verify that you got the right id."
+                        this.TUMOnlineInfo.innerText = "Currently there are " + json["numberAttendees"] + " students enrolled in this course. Please verify that this looks right."
                         this.EnrolledRadio.removeAttribute("disabled")
                     })
                 }

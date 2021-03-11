@@ -29,21 +29,17 @@ func CreateStream(c *gin.Context) {
  */
 func StartStream(c *gin.Context) {
 	_ = c.Request.ParseForm()
-	key := c.Request.FormValue("name")
-	parts := strings.Split(key, "-")
-	if len(parts) != 2 {
-		c.AbortWithStatus(http.StatusForbidden)
-		fmt.Printf("stream rejected. cause: key not in correct form.\n")
-		return
-	}
-	res, err := dao.GetStreamByKey(context.Background(), parts[1])
+	slug := c.Request.FormValue("name")
+	key := strings.Split(c.Request.FormValue("tcurl"), "?secret=")[1] // this could be nicer.
+	println(slug+":"+key)
+	res, err := dao.GetStreamByKey(context.Background(), key)
 	if err != nil {
 		c.AbortWithStatus(http.StatusForbidden)
 		fmt.Printf("stream rejected. cause: %v\n", err)
 		return
 	}
 	fmt.Printf("stream approved: id=%d\n", res.ID)
-	err = dao.SetStreamLive(context.Background(), parts[1], tools.Cfg.LrzServerHls+key+"/playlist.m3u8")
+	err = dao.SetStreamLive(context.Background(), key, tools.Cfg.LrzServerHls+slug+"/playlist.m3u8")
 	if err != nil {
 		log.Printf("Couldn't create live stream: %v\n", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -54,13 +50,8 @@ func StartStream(c *gin.Context) {
 
 func EndStream(c *gin.Context) {
 	_ = c.Request.ParseForm()
-	key := c.Request.FormValue("name")
-	parts := strings.Split(key, "-")
-	if len(parts) != 2 {
-		log.Printf("stream publish ended with invalid key. That's odd.")
-		return
-	}
-	_ = dao.SetStreamNotLive(context.Background(), parts[1])
+	key := strings.Split(c.Request.FormValue("tcurl"), "?secret=")[1] // this could be nicer.
+	_ = dao.SetStreamNotLive(context.Background(), key)
 }
 
 // TODO: Convert recording to mp4 and put into correct directory. Delete flv file.

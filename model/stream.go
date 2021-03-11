@@ -13,7 +13,6 @@ type Stream struct {
 	Start       time.Time
 	End         time.Time
 	StreamKey   string
-	VodEnabled  bool
 	PlaylistUrl string
 	LiveNow     bool
 }

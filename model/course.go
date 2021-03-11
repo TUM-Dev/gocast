@@ -11,6 +11,9 @@ type Course struct {
 	Name                string
 	Slug                string //eg. eidi
 	TUMOnlineIdentifier string
+	VODEnabled          bool
+	DownloadsEnabled    bool
+	ChatEnabled         bool
 	Streams             []Stream
 	Students            []Student `gorm:"many2many:course_students;"`
 }
