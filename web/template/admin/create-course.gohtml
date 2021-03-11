@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>TUM Live | Create Course</title>
     {{template "headImports"}}
-    <script src="/assets/ts-dist/create-course.js"></script>
+    <script defer async src="/assets/ts-dist/create-course.js"></script>
 </head>
 <body class="bg-primary">
 
@@ -20,18 +20,23 @@
                     <label class="hidden" for="courseID">TUM online id:</label>
                     <input class="w-4/5" id="courseID" name="courseID" type="text" autocomplete="off"
                            placeholder="TUMOnline ID"/>
-                    <div class="btn w-1/5">Load Infos from TUMOnline</div>
+                    <div id="loadCourseInfoBtn" class="btn w-1/5">Load Infos from TUMOnline</div>
                 </div>
                 <div class="flex space-x-1">
                     <label for="name" class="hidden">Course Title</label>
-                    <input class="w-4/5" id="name" name="name" type="text"
+                    <input class="w-2/5" id="name" name="name" type="text"
                            autocomplete="off"
                            placeholder="Einführung in die Informatik (IN0001)"/>
+                    <label for="teachingTerm" class="hidden">Course Title</label>
+                    <input class="w-2/5" id="teachingTerm" name="teachingTerm" type="text"
+                           autocomplete="off"
+                           placeholder="Sommersemester 2021"/>
                     <label for="slug" class="hidden">Slug</label>
                     <input class="w-1/5" id="slug" name="slug" type="text"
                            autocomplete="off"
                            placeholder="eidi"/>
                 </div>
+                <span id="TUMOnlineInfo" class="text-warn hidden"></span>
                 <div class="mt-3">
                     <h3>Visibility of this course</h3>
                     <div class="p-4 text-gray-300">
@@ -73,7 +78,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="btn">Create Course</div>
+                <div id="createCourseBtn" class="btn">Create Course</div>
             </form>
         </div>
     </div>

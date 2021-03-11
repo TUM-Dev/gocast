@@ -36,6 +36,7 @@ func ConfigGinRouter(router gin.IRoutes) {
 	configGinStreamAuthRouter(router)
 	configGinUsersRouter(router)
 	configGinChatRouter(router)
+	configGinCourseRouter(router)
 	return
 }
 
