@@ -19,16 +19,16 @@ func getJob(c *gin.Context) {
 	}
 	job, err := dao.PickJob(context.Background())
 	if err != nil {
-		c.JSON(http.StatusNotFound, jobData{})
+		c.JSON(http.StatusNotFound, &jobData{})
 		return
 	}
-	c.JSON(http.StatusOK, jobData{
-		id:   job.ID,
-		path: job.FilePath,
+	c.JSON(http.StatusOK, &jobData{
+		Id:   job.ID,
+		Path: job.FilePath,
 	})
 }
 
 type jobData struct {
-	id   uint
-	path string
+	Id   uint   `json:"id"`
+	Path string `json:"path"`
 }

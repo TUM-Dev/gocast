@@ -4,6 +4,7 @@ import (
 	"TUM-Live/model"
 	"context"
 	"gorm.io/gorm"
+	"log"
 )
 
 func GetWorkerByID(ctx context.Context, workerID string) (model.Worker, error) {
@@ -11,7 +12,8 @@ func GetWorkerByID(ctx context.Context, workerID string) (model.Worker, error) {
 		Logger(ctx, "Getting worker by id.")
 	}
 	var worker model.Worker
-	dbErr := DB.Find(&worker, "worker_id = ?", workerID).Error
+	dbErr := DB.First(&worker, "worker_id = ?", workerID).Error
+	log.Printf("%v", dbErr)
 	return worker, dbErr
 }
 
@@ -29,5 +31,6 @@ func PickJob(ctx context.Context) (job model.ProcessingJob, er error) {
 		DB.Save(&foundJob)
 		return nil
 	})
+	println(foundJob.FilePath)
 	return foundJob, err
 }
