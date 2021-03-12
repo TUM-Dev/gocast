@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"gorm.io/gorm"
+	"log"
 )
 
 func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Course, err error) {
@@ -48,5 +49,15 @@ func UpdateCourses(ctx context.Context, courses []model.Course) {
 				Logger(ctx, fmt.Sprintf("Failed to save a course: %v\n", dbErr))
 			}
 		}
+	}
+}
+
+func CreateCourse(ctx context.Context, course model.Course) {
+	if Logger != nil {
+		Logger(ctx, "Creating course.")
+	}
+	err := DB.Create(&course).Error
+	if err != nil {
+		log.Printf("%v\n", err)
 	}
 }
