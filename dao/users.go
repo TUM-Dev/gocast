@@ -23,7 +23,7 @@ func CreateUser(ctx context.Context, user model.User) (err error) {
 	return res.Error
 }
 
-func DeleteUser(ctx context.Context, uid int32) (err error) {
+func DeleteUser(ctx context.Context, uid uint) (err error) {
 	if Logger != nil {
 		Logger(ctx, "Delete User.")
 	}
@@ -31,7 +31,7 @@ func DeleteUser(ctx context.Context, uid int32) (err error) {
 	return res.Error
 }
 
-func IsUserAdmin(ctx context.Context, uid int32) (res bool, err error) {
+func IsUserAdmin(ctx context.Context, uid uint) (res bool, err error) {
 	if Logger != nil {
 		Logger(ctx, "Check if user is admin.")
 	}

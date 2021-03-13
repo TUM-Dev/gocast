@@ -5,11 +5,18 @@ import (
 	"context"
 	"fmt"
 	"gorm.io/gorm"
-	"log"
 )
 
 func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Course, err error) {
+	isAdmin, err := IsUserAdmin(ctx, userid)
+	if err!=nil {
+		return nil, err
+	}
 	var foundCourses []model.Course
+	if isAdmin {
+		dbErr := DB.Find(&foundCourses).Error
+		return foundCourses, dbErr
+	}
 	dbErr := DB.Find(&foundCourses, "user_id = ?", userid).Error
 	return foundCourses, dbErr
 }
@@ -52,12 +59,10 @@ func UpdateCourses(ctx context.Context, courses []model.Course) {
 	}
 }
 
-func CreateCourse(ctx context.Context, course model.Course) {
+func CreateCourse(ctx context.Context, course model.Course) error {
 	if Logger != nil {
 		Logger(ctx, "Creating course.")
 	}
 	err := DB.Create(&course).Error
-	if err != nil {
-		log.Printf("%v\n", err)
-	}
+	return err
 }

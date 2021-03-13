@@ -6,6 +6,7 @@ import (
 	"TUM-Live/tools"
 	"context"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 )
 
@@ -17,7 +18,12 @@ func AdminPage(c *gin.Context) {
 	}
 	var users []model.User
 	_ = dao.GetAllUsers(context.Background(), &users)
-	_ = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{User: user, Users: users, Courses: user.Courses, IndexData: IndexData{IsStudent: false, IsUser: true}})
+	courses, err := dao.GetCoursesByUserId(context.Background(), user.ID)
+	if err!=nil {
+		log.Printf("couldn't query courses for user. %v\n", err)
+		courses = []model.Course{}
+	}
+	_ = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{User: user, Users: users, Courses: courses, IndexData: IndexData{IsStudent: false, IsUser: true}})
 }
 
 func CreateCoursePage(c *gin.Context) {

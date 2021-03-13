@@ -112,8 +112,9 @@ func CreateUser(c *gin.Context) {
 	if usersEmpty {
 		createdUser, err = createUserHelper(request, model.AdminType)
 	} else {
-		adminUser := tools.RequirePermission(c, model.AdminType) // user has to be admin
-		if adminUser == nil {
+		requestUser, err := tools.GetUser(c)
+		if err!=nil || requestUser.Role>1 {
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 		createdUser, err = createUserHelper(request, model.LecturerType)
@@ -167,7 +168,7 @@ func forgotPassword(email string) error {
 }
 
 type deleteUserRequest struct {
-	Id int32 `json:"id"`
+	Id uint `json:"id"`
 }
 
 type deleteUserResponse struct {

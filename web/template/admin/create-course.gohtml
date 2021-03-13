@@ -15,7 +15,7 @@
     <div class="min-w-screen flex items-center justify-center">
         <div class="w-full lg:w-5/6 p-3 bg-secondary rounded border border-gray-500">
             <h1>Create a new course:</h1>
-            <form class="mt-3">
+            <form id="createCourseForm" class="mt-3">
                 <div class="flex mb-3 space-x-1">
                     <label class="hidden" for="courseID">TUM online id:</label>
                     <input class="w-4/5" id="courseID" name="courseID" type="text" autocomplete="off"
@@ -62,19 +62,19 @@
                     <div class="p-4">
                         <div>
                             <label class="inline-flex items-center" for="enVOD">
-                                <input class="w-auto form-checkbox" id="enVOD" type="checkbox" checked>
+                                <input class="w-auto form-checkbox" id="enVOD" name="enVOD" type="checkbox" checked>
                                 <span class="ml-2">Enable VOD</span>
                             </label>
                         </div>
                         <div>
                             <label class="inline-flex items-center" for="enDL">
-                                <input class="w-auto form-checkbox" id="enDL" type="checkbox" checked>
+                                <input class="w-auto form-checkbox" id="enDL" name="enDL" type="checkbox" checked>
                                 <span class="ml-2">Enable Downloads</span>
                             </label>
                         </div>
                         <div>
                             <label class="inline-flex items-center" for="enChat">
-                                <input class="w-auto form-checkbox" id="enChat" type="checkbox" checked>
+                                <input class="w-auto form-checkbox" id="enChat" name="enChat" type="checkbox" checked>
                                 <span class="ml-2">Enable Live Chat</span>
                             </label>
                         </div>
