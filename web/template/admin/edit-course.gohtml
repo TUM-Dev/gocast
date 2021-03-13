@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TUM Live | Create Course</title>
+    {{template "headImports"}}
+    <script defer async src="/assets/ts-dist/edit-course.js"></script>
+</head>
+<body class="bg-primary">
+
+{{- /*gotype: TUM-Live/web.EditCourseData*/ -}}
+{{template "header" .IndexData}}
+
+<div class="text-white container mx-auto mt-4">
+    <div class="min-w-screen flex items-center justify-center">
+        <div class="w-full lg:w-5/6 p-3 bg-secondary rounded border border-gray-500">
+            <h1>Edit {{.Course.Name}}</h1>
+            <h2>Lectures:</h2>
+            <label for="courseID">CourseID<input id="courseID" type="text" class="hidden" value="{{.Course.Model.ID}}"></label>
+            <table class="table-fixed w-full">
+                <thead>
+                <tr class="bg-primary text-gray-300 uppercase text-sm leading-normal">
+                    <th class="py-3 px-6 text-left w-1/4">Title</th>
+                    <th class="py-3 px-6 text-left w-1/8">Date</th>
+                    <th class="py-3 px-6 text-left w-1/8">Time</th>
+                    <th class="py-3 px-6 text-left w-1/4">Key</th>
+                    <th class="py-3 px-6 text-center w-1/4">Actions</th>
+                </tr>
+                </thead>
+                <tbody class="text-gray-300 text-sm font-light">
+                {{range $lecture := .Course.Streams }}
+                    <tr class="hover:bg-primary">
+                        <td class="py-3 px-6 text-left whitespace-nowrap">{{$lecture.Name}}</td>
+                        <td class="py-3 px-6 text-left whitespace-nowrap">{{$lecture.Start}}</td>
+                        <td class="py-3 px-6 text-left whitespace-nowrap">{{$lecture.Start}}</td>
+                        <td class="py-3 px-6 text-left whitespace-nowrap">{{$lecture.StreamKey}}</td>
+                        <td class="flex item-center justify-center">
+                            <i onclick="deleteLecture({{$lecture.Model.ID}})"
+                               class="fas fa-trash w-4 mr-2 transform hover:text-purple-500 hover:scale-110"></i>
+                        </td>
+                    </tr>
+                {{end}}
+                <tr class="hover:bg-primary">
+                    <td>
+                        <label for="name">
+                            <input name="name" id="name" type="text" placeholder="L01: Binary Trees"/>
+                            <span class="hidden">Lecture Name</span>
+                        </label>
+                    </td>
+                    <td>
+                        <label for="date">
+                            <input name="date" id="date" type="date"/>
+                            <span class="hidden">Date</span>
+                        </label>
+                    </td>
+                    <td>
+                        <label for="time">
+                            <input name="time" id="time" type="time" step="900"/>
+                            <span class="hidden">Time</span>
+                        </label>
+                    </td>
+                    <td></td>
+                    <td class="flex item-center justify-center">
+                        <div id="createLectureBtn" class="p-3 rounded bg-info text-white">
+                            Add
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

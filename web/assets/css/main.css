@@ -23,3 +23,7 @@ input {
 
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
+
+::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}

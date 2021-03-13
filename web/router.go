@@ -25,6 +25,7 @@ func configMainRoute(router gin.IRoutes) {
 	router.GET("/about", AboutPage)
 	router.GET("/admin", AdminPage)
 	router.GET("/admin/create-course", CreateCoursePage)
+	router.GET("/admin/course/:id", EditCoursePage)
 	router.GET("/login", LoginPage)
 	router.GET("/logout", LogoutPage)
 	router.GET("/setPassword/:key", CreatePasswordPage)
