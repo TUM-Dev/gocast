@@ -50,6 +50,7 @@ func EditCoursePage(c *gin.Context) {
 	}
 	_ = templ.ExecuteTemplate(c.Writer, "edit-course.gohtml", EditCourseData{IndexData: IndexData{IsUser: true}, Course: course})
 }
+
 func CreateCoursePage(c *gin.Context) {
 	user, err := tools.GetUser(c)
 	if err != nil {

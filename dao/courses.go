@@ -9,7 +9,7 @@ import (
 
 func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Course, err error) {
 	isAdmin, err := IsUserAdmin(ctx, userid)
-	if err!=nil {
+	if err != nil {
 		return nil, err
 	}
 	var foundCourses []model.Course
@@ -23,7 +23,7 @@ func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Cours
 
 func GetCourseById(ctx context.Context, id uint) (courses model.Course, err error) {
 	var foundCourse model.Course
-	dbErr := DB.Find(&foundCourse, "id = ?", id).Error
+	dbErr := DB.Preload("Streams").Find(&foundCourse, "id = ?", id).Error
 	return foundCourse, dbErr
 }
 
@@ -55,6 +55,18 @@ func UpdateCourses(ctx context.Context, courses []model.Course) {
 			if Logger != nil {
 				Logger(ctx, fmt.Sprintf("Failed to save a course: %v\n", dbErr))
 			}
+		}
+	}
+}
+
+func UpdateCourse(ctx context.Context, course model.Course) {
+	if Logger != nil {
+		Logger(ctx, "Updating one course.")
+	}
+	dbErr := DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&course).Error
+	if dbErr != nil {
+		if Logger != nil {
+			Logger(ctx, fmt.Sprintf("Failed to save a course: %v\n", dbErr))
 		}
 	}
 }

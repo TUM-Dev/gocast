@@ -14,10 +14,10 @@
 <div class="text-white container mx-auto mt-4">
     <div class="min-w-screen flex items-center justify-center">
         <div class="w-full lg:w-5/6 p-3 bg-secondary rounded border border-gray-500">
-            <h1>Edit {{.Course.Name}}</h1>
+            <h1>{{.Course.Name}}</h1>
             <h2>Lectures:</h2>
-            <label for="courseID">CourseID<input id="courseID" type="text" class="hidden" value="{{.Course.Model.ID}}"></label>
-            <table class="table-fixed w-full">
+            <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden" value="{{.Course.Model.ID}}"></label>
+            <table class="mt-4 table-fixed w-full">
                 <thead>
                 <tr class="bg-primary text-gray-300 uppercase text-sm leading-normal">
                     <th class="py-3 px-6 text-left w-1/4">Title</th>
@@ -31,8 +31,8 @@
                 {{range $lecture := .Course.Streams }}
                     <tr class="hover:bg-primary">
                         <td class="py-3 px-6 text-left whitespace-nowrap">{{$lecture.Name}}</td>
-                        <td class="py-3 px-6 text-left whitespace-nowrap">{{$lecture.Start}}</td>
-                        <td class="py-3 px-6 text-left whitespace-nowrap">{{$lecture.Start}}</td>
+                        <td class="py-3 px-6 text-left whitespace-nowrap">{{$lecture.Start.Month}} {{$lecture.Start.Day}}.{{$lecture.Start.Year}}</td>
+                        <td class="py-3 px-6 text-left whitespace-nowrap">{{$lecture.Start.Hour}}:{{$lecture.Start.Minute}}</td>
                         <td class="py-3 px-6 text-left whitespace-nowrap">{{$lecture.StreamKey}}</td>
                         <td class="flex item-center justify-center">
                             <i onclick="deleteLecture({{$lecture.Model.ID}})"

@@ -8,14 +8,66 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	uuid "github.com/satori/go.uuid"
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"strconv"
+	"strings"
+	"time"
 )
 
 func configGinCourseRouter(router gin.IRoutes) {
 	router.POST("/api/courseInfo", courseInfo)
 	router.POST("/api/createCourse", createCourse)
+	router.POST("/api/createLecture", createLecture)
+}
+
+func createLecture(c *gin.Context) {
+	user, err := tools.GetUser(c)
+	if err != nil {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	if user.Role > 2 { // not lecturer or admin
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	var req createLectureRequest
+	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	err = json.Unmarshal(jsonData, &req)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	u64, err := strconv.Atoi(req.Id)
+	courseID := uint(u64)
+	course, err := dao.GetCourseById(context.Background(), courseID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	if user.Role != 1 && course.UserID != user.ID {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+	streamKey := uuid.NewV4().String()
+	streamKey = strings.ReplaceAll(streamKey, "-", "")
+	lecture := model.Stream{
+		Name:        req.Name,
+		CourseID:    uint(u64),
+		Start:       req.Start,
+		End:         req.Start,
+		StreamKey:   streamKey,
+		PlaylistUrl: "",
+		LiveNow:     false,
+	}
+	course.Streams = append(course.Streams, lecture)
+	dao.UpdateCourse(context.Background(), course)
 }
 
 func createCourse(c *gin.Context) {
@@ -106,4 +158,10 @@ type createCourseRequest struct {
 	Name         string
 	Slug         string
 	TeachingTerm string
+}
+
+type createLectureRequest struct {
+	Id    string
+	Name  string
+	Start time.Time
 }
