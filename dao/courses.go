@@ -14,7 +14,7 @@ func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Cours
 	}
 	var foundCourses []model.Course
 	if isAdmin {
-		dbErr := DB.Find(&foundCourses).Error
+		dbErr := DB.Preload("Recordings").Find(&foundCourses).Error
 		return foundCourses, dbErr
 	}
 	dbErr := DB.Find(&foundCourses, "user_id = ?", userid).Error
@@ -23,7 +23,7 @@ func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Cours
 
 func GetCourseById(ctx context.Context, id uint) (courses model.Course, err error) {
 	var foundCourse model.Course
-	dbErr := DB.Preload("Streams").Find(&foundCourse, "id = ?", id).Error
+	dbErr := DB.Preload("Streams").Preload("Recordings").Find(&foundCourse, "id = ?", id).Error
 	return foundCourse, dbErr
 }
 

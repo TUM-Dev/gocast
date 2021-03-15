@@ -28,11 +28,14 @@ func MainPage(c *gin.Context) {
 		var streams []model.Stream
 		err = dao.GetCurrentLive(context.Background(), &streams)
 		indexData.LiveStreams = streams
+		recordings, err := dao.GetAllRecordings(context.Background())
 		if err != nil {
-			_ = templ.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
+			indexData.Recordings = []model.Recording{}
 		} else {
-			_ = templ.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
+			indexData.Recordings = recordings
 		}
+		_ = templ.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
+
 	}
 }
 
@@ -53,4 +56,6 @@ type IndexData struct {
 	IsUser      bool
 	IsStudent   bool
 	LiveStreams []model.Stream
+	Courses     []model.Course
+	Recordings  []model.Recording
 }
