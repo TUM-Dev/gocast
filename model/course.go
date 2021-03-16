@@ -15,5 +15,6 @@ type Course struct {
 	DownloadsEnabled    bool
 	ChatEnabled         bool
 	Streams             []Stream
+	Recordings          []Recording
 	Students            []Student `gorm:"many2many:course_students;"`
 }

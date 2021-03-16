@@ -10,6 +10,40 @@ import (
 	"net/http"
 )
 
+func WatchVODPage(c *gin.Context) {
+	var data WatchPageData
+	_, userErr := tools.GetUser(c)
+	_, studentErr := tools.GetStudent(c)
+	if userErr == nil {
+		data.IndexData.IsUser = true
+	}
+	if studentErr == nil {
+		// todo: is student allowed to watch?
+		data.IndexData.IsStudent = true
+	}
+	vodID := c.Param("id")
+	vod, err := dao.GetVodByID(context.Background(), vodID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	data.Stream = model.Stream{
+		Name:        vod.Name,
+		CourseID:    vod.CourseID,
+		Start:       vod.Start,
+		PlaylistUrl: vod.PlaylistUrl,
+	}
+	course, err := dao.GetCourseById(context.Background(), vod.CourseID)
+	if err != nil {
+		log.Printf("couldn't find course for stream: %v\n", err)
+		c.AbortWithStatus(http.StatusNotFound)
+	}
+	data.Course = course
+	err = templ.ExecuteTemplate(c.Writer, "watch.gohtml", data)
+	if err != nil {
+		log.Printf("couldn't render template: %v\n", err)
+	}
+}
 func WatchPage(c *gin.Context) {
 	var data WatchPageData
 	_, userErr := tools.GetUser(c)
@@ -30,7 +64,7 @@ func WatchPage(c *gin.Context) {
 	data.Stream = stream
 
 	course, err := dao.GetCourseById(context.Background(), stream.CourseID)
-	if err!=nil {
+	if err != nil {
 		log.Printf("couldn't find course for stream: %v\n", err)
 		c.AbortWithStatus(http.StatusNotFound)
 	}
