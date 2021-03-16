@@ -21,6 +21,19 @@ func GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err e
 	return res, nil
 }
 
+func GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error) {
+	if Logger != nil {
+		Logger(ctx, "Getting stream by tumonline id from database.")
+	}
+	var res model.Stream
+	err = DB.First(&res, "tum_online_event_id = ?", id).Error
+	if err != nil {
+		fmt.Printf("error getting stream by tumonline id: %v\n", err)
+		return res, err
+	}
+	return res, nil
+}
+
 func GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error) {
 	if Logger != nil {
 		Logger(ctx, "Getting stream by id from database.")

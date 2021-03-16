@@ -113,7 +113,7 @@ func createCourse(c *gin.Context) {
 		return
 	}
 	// refresh enrollments
-	go tum.FindStudentsForAllCourses()
+	go tum.FetchCourses()
 }
 
 func courseInfo(c *gin.Context) {
