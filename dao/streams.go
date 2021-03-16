@@ -9,9 +9,6 @@ import (
 
 // return stream by streaming key
 func GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error) {
-	if Logger != nil {
-		Logger(ctx, "Getting stream by key from database.")
-	}
 	var res model.Stream
 	err = DB.First(&res, "stream_key = ?", key).Error
 	if err != nil { // entry probably not existent -> not authenticated
@@ -22,9 +19,6 @@ func GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err e
 }
 
 func GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error) {
-	if Logger != nil {
-		Logger(ctx, "Getting stream by tumonline id from database.")
-	}
 	var res model.Stream
 	err = DB.First(&res, "tum_online_event_id = ?", id).Error
 	if err != nil {
@@ -35,9 +29,6 @@ func GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, 
 }
 
 func GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error) {
-	if Logger != nil {
-		Logger(ctx, "Getting stream by id from database.")
-	}
 	var res model.Stream
 	err = DB.First(&res, "id = ?", id).Error
 	if err != nil {

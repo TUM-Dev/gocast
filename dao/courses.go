@@ -60,9 +60,6 @@ func UpdateCourses(ctx context.Context, courses []model.Course) {
 }
 
 func UpdateCourse(ctx context.Context, course model.Course) {
-	if Logger != nil {
-		Logger(ctx, "Updating one course.")
-	}
 	dbErr := DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&course).Error
 	if dbErr != nil {
 		if Logger != nil {

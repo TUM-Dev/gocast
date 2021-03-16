@@ -38,14 +38,27 @@ func getEventsForCourse(courseID string) []Event {
 			log.Printf("EventID not an int %v\n", err)
 			break
 		}
+		var eventTypeName, status, roomCode, roomName string
+		if eventTypeNameDoc := xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='singleEventTypeName']"); eventTypeNameDoc != nil {
+			eventTypeName = eventTypeNameDoc.InnerText()
+		}
+		if statusDoc := xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='status']"); statusDoc != nil {
+			status = statusDoc.InnerText()
+		}
+		if roomCodeDoc := xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='adr/roomCode']"); roomCodeDoc != nil {
+			roomCode = roomCodeDoc.InnerText()
+		}
+		if roomNameDoc := xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='adr/roomAdditionalInfo']"); roomNameDoc != nil {
+			roomName = roomNameDoc.InnerText()
+		}
 		events = append(events, Event{
 			Start:               start,
 			End:                 end,
 			SingleEventID:       uint(eventID64),
-			SingleEventTypeName: xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='singleEventTypeName']").InnerText(),
-			Status:              xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='status']").InnerText(),
-			RoomCode:            xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='adr/roomCode']").InnerText(),
-			RoomName:            strings.Trim(xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='adr/roomAdditionalInfo']").InnerText(), "\n \t"),
+			SingleEventTypeName: eventTypeName,
+			Status:              status,
+			RoomCode:            roomCode,
+			RoomName:            strings.Trim(roomName, "\n \t"),
 		})
 	}
 	return events
@@ -57,6 +70,8 @@ func getEventsForCourses(courses []model.Course) {
 		events := getEventsForCourse(course.TUMOnlineIdentifier)
 		for j := range events {
 			event := events[j]
+			print(event.Status)
+			println(event.Status=="gelöscht")
 			stream, err := dao.GetStreamByTumOnlineID(context.Background(), event.SingleEventID)
 			if err != nil { // Lecture does not exist yet
 				if event.Status != "gelöscht" {
