@@ -4,6 +4,7 @@ import (
 	"TUM-Live/model"
 	"context"
 	"fmt"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -22,7 +23,6 @@ func GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, 
 	var res model.Stream
 	err = DB.First(&res, "tum_online_event_id = ?", id).Error
 	if err != nil {
-		fmt.Printf("error getting stream by tumonline id: %v\n", err)
 		return res, err
 	}
 	return res, nil
@@ -36,6 +36,16 @@ func GetStreamByID(ctx context.Context, id string) (stream model.Stream, err err
 		return res, err
 	}
 	return res, nil
+}
+
+func DeleteStreamsWithTumID(ids []uint) {
+	// transaction for performance
+	_ = DB.Transaction(func(tx *gorm.DB) error {
+		for i := range ids {
+			tx.Where("tum_online_event_id = ?", ids[i]).Delete(&model.Stream{})
+		}
+		return nil
+	})
 }
 
 func CreateStream(ctx context.Context, stream model.Stream) (err error) {
