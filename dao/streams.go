@@ -53,6 +53,11 @@ func CreateStream(ctx context.Context, stream model.Stream) (err error) {
 	return dbErr
 }
 
+func UpdateStream(stream model.Stream) error {
+	err := DB.Updates(&stream).Error
+	return err
+}
+
 func SetStreamLive(ctx context.Context, streamKey string, playlistUrl string) (err error) {
 	dbErr := DB.Model(&model.Stream{}).
 		Where("stream_key = ?", streamKey).

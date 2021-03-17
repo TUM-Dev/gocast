@@ -25,4 +25,16 @@ class EditCourse {
     }
 }
 
+function saveLectureName(id: number) {
+    const input = (document.getElementById("lectureNameInput" + id) as HTMLInputElement).value
+    postData("/api/renameLecture", {"id": id, "name": input})
+        .then(res => {
+            if (res.status == 200) {
+                window.location.reload()
+            } else {
+                res.text().then(t => showMessage(t))
+            }
+        })
+}
+
 new EditCourse()

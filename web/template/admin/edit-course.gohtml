@@ -13,11 +13,12 @@
 
 <div class="text-white container mx-auto mt-4">
     <div class="min-w-screen flex items-center justify-center">
-        <div class="w-full lg:w-5/6 p-3 bg-secondary rounded border border-gray-500">
+        <div class="w-full lg:w-5/6">
             <h1>{{.Course.Name}}</h1>
             <h2>Lectures:</h2>
-            <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden" value="{{.Course.Model.ID}}"></label>
-            <table class="mt-4 table-fixed w-full">
+            <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
+                                                                value="{{.Course.Model.ID}}"></label>
+            <table class="mt-4 table-auto w-full">
                 <thead>
                 <tr class="bg-primary text-gray-300 uppercase text-sm leading-normal">
                     <th class="py-3 px-6 text-left w-1/4">Title</th>
@@ -29,14 +30,23 @@
                 </thead>
                 <tbody class="text-gray-300 text-sm font-light">
                 {{range $lecture := .Course.Streams }}
-                    <tr class="hover:bg-primary">
-                        <td class="py-3 px-6 text-left whitespace-nowrap">{{$lecture.Name}}</td>
-                        <td class="py-3 px-6 text-left whitespace-nowrap">{{$lecture.Start.Month}} {{$lecture.Start.Day}}.{{$lecture.Start.Year}}</td>
-                        <td class="py-3 px-6 text-left whitespace-nowrap">{{$lecture.Start.Hour}}:{{$lecture.Start.Minute}}</td>
+                    <tr class="hover:bg-primary bg-secondary">
+                        <td class="py-3 px-6 text-left whitespace-nowrap">
+                            <input type="text" id="lectureNameInput{{$lecture.Model.ID}}" placeholder="Testing Patterns II"
+                                   value="{{$lecture.Name}}">
+                            <i onclick="saveLectureName({{$lecture.Model.ID}})"
+                               class="hover:text-purple-500 hover:scale-110 fas fa-check"></i>
+                        </td>
+                        <td class="py-3 px-6 text-left whitespace-nowrap">{{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}</td>
+                        <td class="py-3 px-6 text-left whitespace-nowrap">{{printf "%02d:%02d" $lecture.Start.Hour $lecture.Start.Minute}}</td>
                         <td class="py-3 px-6 text-left whitespace-nowrap">{{$lecture.StreamKey}}</td>
-                        <td class="flex item-center justify-center">
-                            <i onclick="deleteLecture({{$lecture.Model.ID}})"
-                               class="fas fa-trash w-4 mr-2 transform hover:text-purple-500 hover:scale-110"></i>
+                        <td class="py-3 px-6 text-center">
+                            <div class="flex item-center justify-center">
+                                <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
+                                    <i onclick="deleteLecture({{$lecture.Model.ID}})"
+                                       class="fas fa-trash w-4 mr-2 transform hover:text-purple-500 hover:scale-110"></i>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 {{end}}
