@@ -60,7 +60,7 @@ func getEventsForCourse(courseID string) (events map[time.Time]Event, deleted []
 			RoomCode:            roomCode,
 			RoomName:            strings.Trim(roomName, "\n \t"),
 		}
-		if e.Status != "gelöscht" {
+		if e.Status != "gelöscht" && e.Status != "verschoben"{
 			eventsMap[start] = e
 		} else {
 			deletedEvents = append(deletedEvents, e)

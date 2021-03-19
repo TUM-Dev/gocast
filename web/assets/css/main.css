@@ -13,7 +13,7 @@
         @apply text-lg;
     }
 }
-input {
+input, textarea {
     @apply focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500 text-white
 }
 .btn{

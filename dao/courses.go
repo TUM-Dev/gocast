@@ -24,8 +24,11 @@ func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Cours
 func GetCourseById(ctx context.Context, id uint) (courses model.Course, err error) {
 	var foundCourse model.Course
 	dbErr := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
-			return db.Order("start asc")
-		}).Preload("Recordings").Find(&foundCourse, "id = ?", id).Error
+		return db.Order("start asc")
+	}).Preload("Recordings", func(db *gorm.DB) *gorm.DB {
+		return db.Order("start asc")
+	}).Find(&foundCourse, "id = ?", id).Error
+	println(len(foundCourse.Recordings))
 	return foundCourse, dbErr
 }
 
