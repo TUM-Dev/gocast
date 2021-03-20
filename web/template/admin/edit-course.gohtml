@@ -14,27 +14,45 @@
 <div class="text-white container mx-auto mt-4">
     <div class="min-w-screen flex items-center justify-center">
         <div class="w-full lg:w-5/6">
-            <h1>{{.Course.Name}}</h1>
-            <h2>Lectures:</h2>
+            <h1 class="mb-4">{{.Course.Name}}</h1>
             <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
                                                                 value="{{.Course.Model.ID}}"></label>
             <div>
                 <ul class="bg-secondary rounded-xl">
+                    {{$course := .Course}}
                     {{range $lecture := .Course.Streams }}
-                        <li class="p-6 hover:bg-primary">
-                            <div class="grid grid-rows-3 grid-flow-col gap-4">
-                                <div class="row-span-3 ">
+                        <li class="p-6 hover:bg-primary border-b-2 border-gray-900">
+                            <div class="flex">
+                                <div class="w-1/4">
                                     <div class="text-white font-semibold">{{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}</div>
                                     <div class="text-gray-300 font-sans">{{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}} </div>
                                 </div>
-                                <form onsubmit="saveLectureName({{$lecture.Model.ID}})" class="col-span-2 flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
-                                    <input id="lectureNameInput{{$lecture.Model.ID}}" onfocus="focusNameInput(this, {{$lecture.Model.ID}})" class="flex-grow border-none" type="text" value="{{$lecture.Name}}"
-                                                               placeholder="Lecture 2: Dark-Patterns I">
-                                    <button id="nameSubmitBtn{{$lecture.Model.ID}}" class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
-                                </form>
-                                <div class="row-span-2 col-span-2">
-                                <textarea class="w-full h-full" placeholder="Tell your students something about this Lecture.
-Perhaps a link to additional readings, a brief summary or a tweedback link."></textarea>
+                                <div class="w-3/4">
+                                    <form onsubmit="saveLectureName(event, {{$lecture.Model.ID}})"
+                                          class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                                        <input id="lectureNameInput{{$lecture.Model.ID}}"
+                                               onfocus="focusNameInput(this, {{$lecture.Model.ID}})"
+                                               class="flex-grow border-none" type="text" value="{{$lecture.Name}}"
+                                               placeholder="Lecture 2: Dark-Patterns I"
+                                               autocomplete="off">
+                                        <button id="nameSubmitBtn{{$lecture.Model.ID}}"
+                                                class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
+                                    </form>
+                                    <form class="w-full mt-3">
+                                        <div class="w-full flex justify-center">
+                                            <i onclick="toggleExtraInfos(this, {{$lecture.Model.ID}})"
+                                               class="fas fa-angle-double-down hover:text-purple-500"></i>
+                                        </div>
+                                        <div id="extraInfos{{$lecture.Model.ID}}" class="hidden">
+                                            {{if not $lecture.Recording}}
+                                                <p class="mt-2">
+                                                    <span class="font-semibold">Stream Server:</span> <span>rtmp://live.mm.rbg.tum.de:1935/stream?secret={{$lecture.StreamKey}}</span>
+                                                    <i class="fas fa-clipboard hover:text-purple-500" onclick="copyToClipboard('rtmp://live.mm.rbg.tum.de:1935/stream?secret={{$lecture.StreamKey}}')"></i><br>
+                                                    <span class="font-semibold">Stream Key:</span> <span>{{$course.Slug}}</span>
+                                                </p>
+                                            {{end}}
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
                         </li>

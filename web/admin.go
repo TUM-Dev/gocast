@@ -48,7 +48,10 @@ func EditCoursePage(c *gin.Context) {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
-	_ = templ.ExecuteTemplate(c.Writer, "edit-course.gohtml", EditCourseData{IndexData: IndexData{IsUser: true}, Course: course})
+	err = templ.ExecuteTemplate(c.Writer, "edit-course.gohtml", EditCourseData{IndexData: IndexData{IsUser: true}, Course: course})
+	if err != nil {
+		log.Printf("%v\n", err)
+	}
 }
 
 func CreateCoursePage(c *gin.Context) {

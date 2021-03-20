@@ -25,12 +25,13 @@ class EditCourse {
     }
 }
 
-function saveLectureName(id: number) {
+function saveLectureName(e: Event, id: number) {
+    e.preventDefault()
     const input = (document.getElementById("lectureNameInput" + id) as HTMLInputElement).value
     postData("/api/renameLecture", {"id": id, "name": input})
         .then(res => {
             if (res.status == 200) {
-                window.location.reload()
+                document.getElementById("nameSubmitBtn" + id).classList.add("invisible")
             } else {
                 res.text().then(t => showMessage(t))
             }
@@ -40,6 +41,17 @@ function saveLectureName(id: number) {
 function focusNameInput(input: HTMLInputElement, id: number) {
     input.oninput = function () {
         document.getElementById("nameSubmitBtn" + id).classList.remove("invisible")
+    }
+}
+
+function toggleExtraInfos(btn: HTMLElement, id: number) {
+    btn.classList.add("transform", "transition", "duration-500", "ease-in-out")
+    if (btn.classList.contains("rotate-180")){
+        btn.classList.remove("rotate-180")
+        document.getElementById("extraInfos"+id).classList.add("hidden")
+    }else {
+        btn.classList.add("rotate-180")
+        document.getElementById("extraInfos"+id).classList.remove("hidden")
     }
 }
 

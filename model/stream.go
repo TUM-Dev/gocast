@@ -9,6 +9,7 @@ type Stream struct {
 	gorm.Model
 
 	Name             string
+	Description      string
 	CourseID         uint
 	Start            time.Time
 	End              time.Time
