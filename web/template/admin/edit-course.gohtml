@@ -19,33 +19,19 @@
             <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
                                                                 value="{{.Course.Model.ID}}"></label>
             <div>
-                <ul class="bg-secondary rounded-xl p-2 sm:p-5 xl:p-6">
-                    {{range $recording := .Course.Recordings}}
-                        <li class="py-4">
-                            <div class="grid grid-rows-3 grid-flow-col gap-4">
-                                <div class="row-span-3 ">
-                                    <div class="text-white font-semibold">{{$recording.Start.Month}} {{printf "%02d." $recording.Start.Day}} {{$recording.Start.Year}}</div>
-                                    <div class="text-gray-300 font-sans">{{printf "%02d:%02d - %02d:%02d" $recording.Start.Hour $recording.Start.Minute $recording.Start.Hour $recording.Start.Minute}} </div>
-                                    <div class="text-gray-400 font-sans">VoD</div>
-                                </div>
-                                <div class="col-span-2"><input type="text" value="{{$recording.Name}}"
-                                                               placeholder="Lecture 2: Dark-Patterns I"></div>
-                                <div class="row-span-2 col-span-2">
-                                <textarea class="w-full h-full" placeholder="Tell your students something about this Lecture.
-Perhaps a link to additional readings, a brief summary or a tweedback link."></textarea>
-                                </div>
-                            </div>
-                        </li>
-                    {{end}}
+                <ul class="bg-secondary rounded-xl">
                     {{range $lecture := .Course.Streams }}
-                        <li class="py-4">
+                        <li class="p-6 hover:bg-primary">
                             <div class="grid grid-rows-3 grid-flow-col gap-4">
                                 <div class="row-span-3 ">
                                     <div class="text-white font-semibold">{{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}</div>
-                                    <div class="text-gray-300 font-sans">{{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.Start.Hour $lecture.Start.Minute}} </div>
+                                    <div class="text-gray-300 font-sans">{{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}} </div>
                                 </div>
-                                <div class="col-span-2"><input type="text" value="{{$lecture.Name}}"
-                                                               placeholder="Lecture 2: Dark-Patterns I"></div>
+                                <form onsubmit="saveLectureName({{$lecture.Model.ID}})" class="col-span-2 flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                                    <input id="lectureNameInput{{$lecture.Model.ID}}" onfocus="focusNameInput(this, {{$lecture.Model.ID}})" class="flex-grow border-none" type="text" value="{{$lecture.Name}}"
+                                                               placeholder="Lecture 2: Dark-Patterns I">
+                                    <button id="nameSubmitBtn{{$lecture.Model.ID}}" class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
+                                </form>
                                 <div class="row-span-2 col-span-2">
                                 <textarea class="w-full h-full" placeholder="Tell your students something about this Lecture.
 Perhaps a link to additional readings, a brief summary or a tweedback link."></textarea>

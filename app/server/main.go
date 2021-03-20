@@ -83,7 +83,6 @@ func main() {
 		&model.Course{},
 		&model.RegisterLink{},
 		&model.Stream{},
-		&model.Recording{},
 		&model.ProcessingJob{},
 		&model.Worker{},
 	)

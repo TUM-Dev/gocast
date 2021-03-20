@@ -22,17 +22,12 @@ func WatchVODPage(c *gin.Context) {
 		data.IndexData.IsStudent = true
 	}
 	vodID := c.Param("id")
-	vod, err := dao.GetVodByID(context.Background(), vodID)
+	vod, err := dao.GetStreamByID(context.Background(), vodID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	data.Stream = model.Stream{
-		Name:        vod.Name,
-		CourseID:    vod.CourseID,
-		Start:       vod.Start,
-		PlaylistUrl: vod.PlaylistUrl,
-	}
+	data.Stream = vod
 	course, err := dao.GetCourseById(context.Background(), vod.CourseID)
 	if err != nil {
 		log.Printf("couldn't find course for stream: %v\n", err)

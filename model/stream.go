@@ -15,8 +15,9 @@ type Stream struct {
 	RoomName         string
 	RoomCode         string
 	EventTypeName    string
-	TUMOnlineEventID uint `gorm:"unique"`
+	TUMOnlineEventID uint `gorm:"unique"` // todo: what about events without tumonline id?
 	StreamKey        string
 	PlaylistUrl      string
 	LiveNow          bool
+	Recording        bool
 }

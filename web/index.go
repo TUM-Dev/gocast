@@ -30,7 +30,7 @@ func MainPage(c *gin.Context) {
 		indexData.LiveStreams = streams
 		recordings, err := dao.GetAllRecordings(context.Background())
 		if err != nil {
-			indexData.Recordings = []model.Recording{}
+			indexData.Recordings = []model.Stream{}
 		} else {
 			indexData.Recordings = recordings
 		}
@@ -57,5 +57,5 @@ type IndexData struct {
 	IsStudent   bool
 	LiveStreams []model.Stream
 	Courses     []model.Course
-	Recordings  []model.Recording
+	Recordings  []model.Stream
 }

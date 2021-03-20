@@ -2,7 +2,6 @@ package api
 
 import (
 	"TUM-Live/dao"
-	"TUM-Live/model"
 	"context"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
@@ -35,12 +34,9 @@ func putVod(c *gin.Context) {
 		return
 	}
 	stream, _ := dao.GetStreamByID(context.Background(), strconv.Itoa(int(req.StreamId)))
-	_ = dao.CreateVod(context.Background(), &model.Recording{ // todo handle err
-		Name:        req.Name,
-		CourseID:    stream.CourseID,
-		Start:       req.Start,
-		PlaylistUrl: req.HlsUrl,
-	})
+	stream.Recording = true
+	stream.PlaylistUrl = req.HlsUrl
+	_ = dao.SaveStream(&stream)
 }
 
 func getJob(c *gin.Context) {

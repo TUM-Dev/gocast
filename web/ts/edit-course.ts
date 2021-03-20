@@ -37,4 +37,10 @@ function saveLectureName(id: number) {
         })
 }
 
+function focusNameInput(input: HTMLInputElement, id: number) {
+    input.oninput = function () {
+        document.getElementById("nameSubmitBtn" + id).classList.remove("invisible")
+    }
+}
+
 new EditCourse()
