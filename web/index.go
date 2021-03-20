@@ -16,13 +16,17 @@ func MainPage(c *gin.Context) {
 		_ = templ.ExecuteTemplate(c.Writer, "onboarding.gohtml", nil)
 	} else {
 		var indexData IndexData
-		_, userErr := tools.GetUser(c)
-		_, studentErr := tools.GetStudent(c)
+		user, userErr := tools.GetUser(c)
+		student, studentErr := tools.GetStudent(c)
 		if userErr == nil {
 			indexData.IsUser = true
-		}
-		if studentErr == nil {
+			courses, err := dao.GetCoursesByUserId(context.Background(), user.ID)
+			if err == nil {
+				indexData.Courses = courses
+			}
+		}else if studentErr == nil {
 			indexData.IsStudent = true
+			indexData.Courses = student.Courses
 		}
 		// Todo get live streams for user
 		var streams []model.Stream

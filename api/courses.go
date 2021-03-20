@@ -134,10 +134,12 @@ func createCourse(c *gin.Context) {
 		UserID:              user.ID,
 		Name:                req.Name,
 		Slug:                req.Slug,
+		TeachingTerm:        req.TeachingTerm,
 		TUMOnlineIdentifier: req.CourseID,
 		VODEnabled:          req.EnVOD,
 		DownloadsEnabled:    req.EnDL,
 		ChatEnabled:         req.EnChat,
+		Visibility:          req.Access,
 		Streams:             []model.Stream{},
 		Students:            []model.Student{},
 	}

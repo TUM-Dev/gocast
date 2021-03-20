@@ -29,6 +29,12 @@ func GetCourseById(ctx context.Context, id uint) (courses model.Course, err erro
 	return foundCourse, dbErr
 }
 
+func GetCourseBySlugAndTerm(ctx context.Context, slug string, term string) (model.Course, error) {
+	var course model.Course
+	err := DB.Preload("Streams").Where("teaching_term = ? AND slug = ?", term, slug).First(&course).Error
+	return course, err
+}
+
 func GetAllCoursesWithTUMID(ctx context.Context) (courses []model.Course, err error) {
 	if Logger != nil {
 		Logger(ctx, "Find all courses with tum_online_identifier")

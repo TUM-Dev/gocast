@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/antchfx/xmlquery"
 	"log"
+	"strings"
 )
 
 func GetCourseInformation(courseID string) (CourseInfo, error) {
@@ -23,7 +24,9 @@ func GetCourseInformation(courseID string) (CourseInfo, error) {
 	var courseInfo CourseInfo
 	courseInfo.TumOnlineId = courseID
 	courseInfo.CourseName = xmlquery.FindOne(doc, "//courseName/text").InnerText()
-	courseInfo.TeachingTerm = xmlquery.FindOne(doc, "//teachingTerm").InnerText()
+	// turns Sommersemester 2020 into SoSe2020
+	r := strings.NewReplacer(" ", "", "Sommersemester", "SoSe", "Wintersemester", "WiSe")
+	courseInfo.TeachingTerm = r.Replace(xmlquery.FindOne(doc, "//teachingTerm").InnerText())
 	courseInfo.NumberAttendees = len(xmlquery.Find(doc, "//personID"))
 	return courseInfo, nil
 }

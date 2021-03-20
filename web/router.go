@@ -12,6 +12,7 @@ func ConfigGinRouter(router gin.IRoutes) {
 	template.Must(templ.ParseGlob("./web/template/admin/*"))
 	configGinStaticRouter(router)
 	configMainRoute(router)
+	configCourseRoute(router)
 	return
 }
 
@@ -32,4 +33,7 @@ func configMainRoute(router gin.IRoutes) {
 	router.GET("/vod/:id", WatchVODPage)
 	router.GET("/live/:id", WatchPage)
 	router.GET("/", MainPage)
+}
+func configCourseRoute(router gin.IRoutes) {
+	router.GET("/c/:teachingTerm/:slug", CoursePage)
 }

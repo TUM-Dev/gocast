@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{.Course.Name}} | TUM Live</title>
+    {{template "headImports"}}
+</head>
+<body class="bg-primary">
+{{- /*gotype: TUM-Live/web.CoursePageData*/ -}}
+{{template "header" .IndexData}}
+
+<div class="container pt-6">
+    <h1 class="text-gray-200">{{.Course.Name}}</h1>
+</div>
+</body>
+</html>

@@ -65,7 +65,7 @@ func GetStudent(ctx context.Context, id string) (s model.Student, err error) {
 		Logger(ctx, "find student by id: "+id)
 	}
 	var student model.Student
-	dbErr := DB.Find(&student, "id = ?", id).Error
+	dbErr := DB.Preload("Courses").Find(&student, "id = ?", id).Error
 	return student, dbErr
 }
 
