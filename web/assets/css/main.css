@@ -1,5 +1,6 @@
 @import "tailwindcss/base";
 @import "tailwindcss/custom-forms";
+
 @layer base {
     h1 {
         @apply text-2xl;
@@ -14,11 +15,16 @@
     }
 }
 input, textarea {
-    @apply focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500 text-white
+    @apply focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500 text-white;
 }
-.btn{
-    @apply flex-1 bg-gray-800 text-white w-full p-3 text-center text-sm cursor-pointer hover:bg-primary
 
+.btn {
+    @apply flex-1 bg-gray-800 text-white w-full p-3 text-center text-sm cursor-pointer hover:bg-primary;
+
+}
+
+.container {
+    @apply mt-24;
 }
 
 @import "tailwindcss/components";
@@ -26,4 +32,29 @@ input, textarea {
 
 ::-webkit-calendar-picker-indicator {
     filter: invert(1);
+}
+
+.video-js .vjs-control-bar {
+    background-color: rgba(255, 255, 255, 0) !important;
+}
+
+.video-js .vjs-play-progress {
+    background-color: #3070b3 !important;
+}
+
+@media (min-width: 768px) {
+    .chat {
+        max-height: calc(100vh - 5rem);
+    }
+}
+
+.chat {
+    /* Hide scrollbar for IE, Edge and Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.chat::-webkit-scrollbar {
+    display: none;
 }

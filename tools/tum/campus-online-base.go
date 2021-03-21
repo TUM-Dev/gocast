@@ -25,7 +25,7 @@ func GetCourseInformation(courseID string) (CourseInfo, error) {
 	courseInfo.TumOnlineId = courseID
 	courseInfo.CourseName = xmlquery.FindOne(doc, "//courseName/text").InnerText()
 	// turns Sommersemester 2020 into SoSe2020
-	r := strings.NewReplacer(" ", "", "Sommersemester", "SoSe", "Wintersemester", "WiSe")
+	r := strings.NewReplacer(" ", "", "Sommersemester", "SoSe", "Wintersemester", "WiSe", "/", "")
 	courseInfo.TeachingTerm = r.Replace(xmlquery.FindOne(doc, "//teachingTerm").InnerText())
 	courseInfo.NumberAttendees = len(xmlquery.Find(doc, "//personID"))
 	return courseInfo, nil
@@ -42,8 +42,9 @@ func FetchCourses() {
 }
 
 type CourseInfo struct {
-	CourseName      string `json:"courseName"`
-	TumOnlineId     string `json:"tumOnlineID"`
-	NumberAttendees int    `json:"numberAttendees"`
-	TeachingTerm    string `json:"teachingTerm"`
+	CourseName       string `json:"courseName"`
+	TumOnlineId      string `json:"tumOnlineID"`
+	NumberAttendees  int    `json:"numberAttendees"`
+	TeachingTerm     string `json:"teachingTerm"`
+	TeachingTermFull string `json:"teachingTermFull"`
 }

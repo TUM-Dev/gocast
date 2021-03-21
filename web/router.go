@@ -30,7 +30,7 @@ func configMainRoute(router gin.IRoutes) {
 	router.GET("/login", LoginPage)
 	router.GET("/logout", LogoutPage)
 	router.GET("/setPassword/:key", CreatePasswordPage)
-	router.GET("/vod/:id", WatchVODPage)
+	router.GET("/w/:slug/:id", WatchVODPage)
 	router.GET("/live/:id", WatchPage)
 	router.GET("/", MainPage)
 }

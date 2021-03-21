@@ -1,5 +1,5 @@
 {{define "header"}}
-    <nav class="flex items-center justify-between flex-wrap bg-secondary p-3">
+    <nav class="flex fixed top-0 w-full items-center justify-between bg-secondary p-3 h-20 z-40">
         <div class="flex items-center flex-no-shrink text-white mr-6">
             <svg class="mr-2" width="100" height="54" viewBox="0 0 100 54" xmlns="http://www.w3.org/2000/svg">
                 <path fill="#3070B3"
@@ -41,7 +41,7 @@
             </div>
         </div>
     </nav>
-    <div id="alertBox" class="hidden text-center px-0 lg:py-4 lg:px-4">
+    <div id="alertBox" class="hidden text-center">
         <div class="p-2 bg-indigo-800 items-center text-indigo-100 leading-none lg:rounded-full flex lg:inline-flex"
              role="alert">
             <span id="alertText" class="font-semibold mx-2 text-left flex-auto"></span>

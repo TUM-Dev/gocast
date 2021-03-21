@@ -14,10 +14,14 @@ func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Cours
 	}
 	var foundCourses []model.Course
 	if isAdmin {
-		dbErr := DB.Preload("Streams").Find(&foundCourses).Error
+		dbErr := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
+			return db.Order("start asc")
+		}).Find(&foundCourses).Error
 		return foundCourses, dbErr
 	}
-	dbErr := DB.Find(&foundCourses, "user_id = ?", userid).Error
+	dbErr := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
+		return db.Order("start asc")
+	}).Find(&foundCourses, "user_id = ?", userid).Error
 	return foundCourses, dbErr
 }
 
@@ -31,7 +35,9 @@ func GetCourseById(ctx context.Context, id uint) (courses model.Course, err erro
 
 func GetCourseBySlugAndTerm(ctx context.Context, slug string, term string) (model.Course, error) {
 	var course model.Course
-	err := DB.Preload("Streams").Where("teaching_term = ? AND slug = ?", term, slug).First(&course).Error
+	err := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
+		return db.Order("start asc")
+	}).Where("teaching_term = ? AND slug = ?", term, slug).First(&course).Error
 	return course, err
 }
 
