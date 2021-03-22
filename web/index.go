@@ -36,7 +36,14 @@ func MainPage(c *gin.Context) {
 		if err != nil {
 			indexData.PublicCourses = []model.Course{}
 		} else {
-			indexData.PublicCourses = public
+			// filter out courses that already are in "my courses"
+			var publicFiltered []model.Course
+			for _, c := range public {
+				if !tools.CourseListContains(indexData.Courses, c.ID) {
+					publicFiltered = append(publicFiltered, c)
+				}
+			}
+			indexData.PublicCourses = publicFiltered
 		}
 		_ = templ.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
 	}

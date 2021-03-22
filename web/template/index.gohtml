@@ -19,7 +19,12 @@
             </a>
         </div>
     {{end}}
-    <h2 class="text-2xl text-white">{{if not .Courses}}You are not enrolled in any Courses that use TUM Live.{{else}}My Courses{{end}}</h2>
+    {{if not (or .IsUser .IsStudent)}}
+        <p class="text-gray-300">Log in to see your courses</p>
+    {{end}}
+    {{if .Courses}}
+        <h2 class="text-2xl text-white">My Courses</h2>
+    {{end}}
     {{range $course := .Courses }}
         <div class="py-2 px-4">
             <a href="/c/{{$course.TeachingTerm}}/{{$course.Slug}}">
