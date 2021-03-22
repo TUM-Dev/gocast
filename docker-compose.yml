@@ -6,7 +6,8 @@ services:
     image: alfg/nginx-rtmp
     ports:
       - 1935:1935
-      - 80:7002
+      - 80:80
+      - 443:443
     networks:
       backend-network:
     depends_on:
@@ -16,6 +17,7 @@ services:
         source: recordings
         target: /recordings
       - ./streaming-backend/nginx.conf:/etc/nginx/nginx.conf.template
+      - ./streaming-backend/certs:/etc/nginx/certs
     restart: always
 
   backend:
