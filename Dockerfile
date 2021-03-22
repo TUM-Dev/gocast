@@ -1,4 +1,4 @@
-FROM node:15.11.0 as node
+FROM node:15.12.0 as node
 
 WORKDIR /app
 COPY web web
