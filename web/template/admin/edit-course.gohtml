@@ -11,21 +11,41 @@
 {{- /*gotype: TUM-Live/web.EditCourseData*/ -}}
 {{template "header" .IndexData}}
 
-<div class="text-white container mx-auto mt-4">
+<div class="text-white container mx-auto">
     <div class="min-w-screen flex items-center justify-center">
         <div class="w-full lg:w-5/6">
             <h1 class="mb-4">{{.Course.Name}}</h1>
             <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
                                                                 value="{{.Course.Model.ID}}"></label>
             <div>
-                <ul class="bg-secondary rounded-xl">
+                <ul class="bg-secondary rounded">
                     {{$course := .Course}}
                     {{range $lecture := .Course.Streams }}
-                        <li class="p-6 hover:bg-primary border-b-2 border-gray-900">
+                        <li class="p-6 hover:bg-primary border-b-2 border-primary">
                             <div class="flex">
                                 <div class="w-1/4">
                                     <div class="text-white font-semibold">{{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}</div>
-                                    <div class="text-gray-300 font-sans">{{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}} </div>
+                                    <div class="text-gray-300 font-sans">
+                                        {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
+                                    </div>
+                                    {{if $lecture.Recording}}
+                                        <div class="font-semibold bg-success w-auto inline-block px-2 text-white rounded-full">
+                                            VoD
+                                        </div>
+                                    {{else if $lecture.LiveNow}}
+                                        <div class="font-semibold bg-danger w-auto inline-block px-2 text-white rounded-full">
+                                            Live
+                                        </div>
+                                    {{else if $lecture.IsPast}}
+                                        <div class="font-semibold bg-warn w-auto inline-block px-2 text-white rounded-full">
+                                            Past
+                                        </div>
+                                    {{else}}
+                                        <div class="font-semibold bg-info w-auto inline-block px-2 text-white rounded-full">
+                                            Scheduled
+                                        </div>
+                                    {{end}}
+
                                 </div>
                                 <div class="w-3/4">
                                     <form onsubmit="saveLectureName(event, {{$lecture.Model.ID}})"
@@ -44,11 +64,23 @@
                                                class="fas fa-angle-double-down hover:text-purple-500"></i>
                                         </div>
                                         <div id="extraInfos{{$lecture.Model.ID}}" class="hidden">
-                                            {{if not $lecture.Recording}}
+                                            {{if not $lecture.IsPast}}
                                                 <p class="mt-2">
                                                     <span class="font-semibold">Stream Server:</span> <span>rtmp://live.mm.rbg.tum.de:1935/stream?secret={{$lecture.StreamKey}}</span>
-                                                    <i class="fas fa-clipboard hover:text-purple-500" onclick="copyToClipboard('rtmp://live.mm.rbg.tum.de:1935/stream?secret={{$lecture.StreamKey}}')"></i><br>
-                                                    <span class="font-semibold">Stream Key:</span> <span>{{$course.Slug}}</span>
+                                                    <i class="fas fa-clipboard hover:text-purple-500"
+                                                       onclick="copyToClipboard('rtmp://live.mm.rbg.tum.de:1935/stream?secret={{$lecture.StreamKey}}')"></i><br>
+                                                    <span class="font-semibold">Stream Key:</span>
+                                                    <span>{{$course.Slug}}</span>
+                                                </p>
+                                            {{else if $lecture.Recording}}
+                                                <p class="mt-2 flex">
+                                                    <i class="fas fa-eye hover:text-purple-500 px-2" title="Make Invisible"></i>
+                                                    <i class="fas fa-cut hover:text-purple-500 px-2" title="Edit VoD"></i>
+                                                    <i class="fas fa-download hover:text-purple-500 px-2" title="Download VoD"></i>
+                                                </p>
+                                            {{else}}
+                                                <p class="mt-2 flex">
+                                                    <i class="fas fa-upload hover:text-purple-500 px-2" title="Upload VoD"></i>
                                                 </p>
                                             {{end}}
                                         </div>

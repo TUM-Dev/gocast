@@ -31,7 +31,6 @@ const UserKey = "RBG-Default-User" // UserKey key used for storing User struct i
 // GinServer launch gin server
 func GinServer() (err error) {
 	router := gin.Default()
-	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	secret := make([]byte, 40) // 40 random bytes as cookie secret
 	_, err = rand.Read(secret)
 	if err!=nil {
@@ -39,7 +38,11 @@ func GinServer() (err error) {
 	}
 	store := cookie.NewStore(secret)
 	router.Use(sessions.Sessions("TUMLiveSession", store))
+	// event streams don't work with gzip, configure group without
+	chat := router.Group("/api/chat")
+	api.ConfigChatRouter(chat)
 
+	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	api.ConfigGinRouter(router)
 	web.ConfigGinRouter(router)
 	err = router.Run(":8080")

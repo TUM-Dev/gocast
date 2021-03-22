@@ -5,14 +5,15 @@
     <title>{{.Course.Name}}: {{.Stream.Name}} | TUM Live</title>
     {{template "headImports"}}
     <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
+    <script async src="/assets/ts-dist/watch.js"></script>
     <link rel="stylesheet" href="/dist/video.js/dist/video-js.min.css">
 </head>
 <body class="bg-primary h-full">
 {{- /*gotype: TUM-Live/web.WatchPageData*/ -}}
 {{template "header" .IndexData}}
 
-<div class="flex md:flex-row h-full w-full flex-wrap pt-20">
-    <div class="w-full pt-3 px-8 md:w-4/6 lg:w-9/12 mx-auto">
+<div class="flex flex-col md:flex-row h-full w-full flex-wrap pt-20">
+    <div class="watchContent w-full pt-3 px-2 md:px-8 md:w-4/6 lg:w-9/12 mx-auto h-full overflow-y-scroll">
         <video
                 id="my-video"
                 class="video-js w-full"
@@ -27,11 +28,11 @@
         <h1 class="text-gray-300 text-2xl">{{.Stream.Name}}</h1>
         <h1 class="text-gray-300 text-xl">{{.Course.Name}}</h1>
     </div>
-    <div class="relative chat border-l-2 border-secondary md:w-2/6 lg:w-1/6 overflow-scroll text-white overflow-x-hidden overflow-y-scroll pt-3">
+    <div class="md:relative chat border-t-2 mt-2 md:mt-0 md:border-t-0 md:border-l-2 border-secondary md:w-2/6 lg:w-1/6 overflow-scroll text-white overflow-x-hidden overflow-y-scroll pt-3">
         <div class="bg-secondary rounded p-2 mx-2">Chat will be available soon &trade;</div>
-        <form class="border-b-2 focus-within:border-gray-300 border-secondary inset-x-0 absolute bottom-0 flex mb-2 px-3">
-            <input type="text" class="border-none" placeholder="Send a message">
-            <button class="fas fa-paper-plane text-gray-400 hover:text-purple-500"></button>
+        <form id="chatForm" class="border-b-2 focus-within:border-gray-300 border-secondary inset-x-0 absolute bottom-0 flex mb-2 px-3">
+            <input id="chatInput" type="text" class="border-none" placeholder="Send a message">
+            <button class="fas fa-paper-plane text-gray-400 hover:text-purple-500 focus:outline-none"></button>
         </form>
     </div>
 </div>
@@ -43,6 +44,7 @@
     let player = videojs('my-video');
     player.play();
     player.hlsQualitySelector();
+    new Watch(player);
 </script>
 </body>
 </html>

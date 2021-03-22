@@ -10,11 +10,10 @@ func SendPasswordMail(to string, link string) error {
 	server := Cfg.MailServer
 	auth := smtp.PlainAuth("", user, password, server)
 
-	msg := []byte("To: " + to + "\r\n" +
+	err := smtp.SendMail(server+":587", auth, user, []string{to}, []byte("To: " + to + "\r\n" +
 		"Subject: [TUM-Live] Setup your password.\r\n" +
 		"\r\n" +
-		"Hello! You can set your password for TUM-Live here: http://localhost:8080/setPassword/" + link + "\r\n")
-	err := smtp.SendMail(server+":587", auth, user, []string{to}, msg)
+		"Hello! You can set your password for TUM-Live here: http://localhost:8080/setPassword/" + link + "\r\n"))
 	return err
 
 }

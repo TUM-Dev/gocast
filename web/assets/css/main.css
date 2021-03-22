@@ -48,13 +48,13 @@ input, textarea {
     }
 }
 
-.chat {
+.chat, .watchContent{
     /* Hide scrollbar for IE, Edge and Firefox */
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
-.chat::-webkit-scrollbar {
+.chat::-webkit-scrollbar, .watchContent::-webkit-scrollbar {
     display: none;
 }

@@ -22,3 +22,7 @@ type Stream struct {
 	LiveNow          bool
 	Recording        bool
 }
+
+func (s Stream) IsPast() bool {
+	return s.Start.Before(time.Now())
+}

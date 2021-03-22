@@ -7,7 +7,7 @@ import (
 )
 
 func configGinChatRouter(router gin.IRoutes) {
-	router.GET("/chat", ChatStream)
+	router.GET("/", ChatStream)
 }
 
 func ChatStream(context *gin.Context) {
