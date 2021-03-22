@@ -25,6 +25,14 @@ func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Cours
 	return foundCourses, dbErr
 }
 
+func GetPublicCourses() (courses []model.Course, err error) {
+	var publicCourses []model.Course
+	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
+		return db.Order("start asc")
+	}).Find(&publicCourses, "visibility = 'public'").Error
+	return publicCourses, err
+}
+
 func GetCourseById(ctx context.Context, id uint) (courses model.Course, err error) {
 	var foundCourse model.Course
 	dbErr := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {

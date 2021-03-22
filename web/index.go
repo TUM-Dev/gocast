@@ -24,7 +24,7 @@ func MainPage(c *gin.Context) {
 			if err == nil {
 				indexData.Courses = courses
 			}
-		}else if studentErr == nil {
+		} else if studentErr == nil {
 			indexData.IsStudent = true
 			indexData.Courses = student.Courses
 		}
@@ -32,14 +32,13 @@ func MainPage(c *gin.Context) {
 		var streams []model.Stream
 		err = dao.GetCurrentLive(context.Background(), &streams)
 		indexData.LiveStreams = streams
-		recordings, err := dao.GetAllRecordings(context.Background())
+		public, err := dao.GetPublicCourses()
 		if err != nil {
-			indexData.Recordings = []model.Stream{}
+			indexData.PublicCourses = []model.Course{}
 		} else {
-			indexData.Recordings = recordings
+			indexData.PublicCourses = public
 		}
 		_ = templ.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
-
 	}
 }
 
@@ -57,9 +56,9 @@ func AboutPage(c *gin.Context) {
 }
 
 type IndexData struct {
-	IsUser      bool
-	IsStudent   bool
-	LiveStreams []model.Stream
-	Courses     []model.Course
-	Recordings  []model.Stream
+	IsUser        bool
+	IsStudent     bool
+	LiveStreams   []model.Stream
+	Courses       []model.Course
+	PublicCourses []model.Course
 }

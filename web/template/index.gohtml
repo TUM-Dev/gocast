@@ -12,16 +12,18 @@
 <div class="container pt-6">
     {{if .LiveStreams}}
         <h2 class="text-2xl text-white text-center">Currently Live:</h2>{{end}}
-        {{range $liveStream := .LiveStreams }}
+    {{range $liveStream := .LiveStreams }}
         <div>
-            <a href="/live/{{$liveStream.Model.ID}}"><h3 class="text-xl text-gray-300">{{$liveStream.Name}}</h3></a>
+            <a href="/live/{{$liveStream.Model.ID}}">
+                <h3 class="text-xl text-gray-300">{{$liveStream.Name}}</h3>
+            </a>
         </div>
     {{end}}
     <h2 class="text-2xl text-white">{{if not .Courses}}You are not enrolled in any Courses that use TUM Live.{{else}}My Courses{{end}}</h2>
     {{range $course := .Courses }}
         <div class="py-2 px-4">
-            <a href="/c/{{$course.TeachingTerm}}/{{$course.Slug}}"><h3
-                        class="text-xl text-gray-300 hover:text-gray-200">{{$course.Name}}</h3></a>
+            <a href="/c/{{$course.TeachingTerm}}/{{$course.Slug}}">
+                <h3 class="text-xl text-gray-300 hover:text-gray-200">{{$course.Name}}</h3></a>
             <p class="text-white font-sans font-light">
                 {{if $course.HasNextLecture}}
                     {{$next := $course.GetNextLectureDate}}Next Lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
@@ -30,6 +32,23 @@
                 {{end}}
             </p>
         </div>
+    {{end}}
+    {{if .PublicCourses}}
+        <h2 class="text-2xl text-white pt-4">Public Courses:</h2>
+        {{range $course := .PublicCourses }}
+            <div class="py-2 px-4">
+                <a href="/c/{{$course.TeachingTerm}}/{{$course.Slug}}">
+                    <h3 class="text-xl text-gray-300 hover:text-gray-200">{{$course.Name}}</h3>
+                </a>
+                <p class="text-white font-sans font-light">
+                    {{if $course.HasNextLecture}}
+                        {{$next := $course.GetNextLectureDate}}Next Lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
+                    {{else}}
+                        No upcoming Lectures
+                    {{end}}
+                </p>
+            </div>
+        {{end}}
     {{end}}
 </div>
 </body>
