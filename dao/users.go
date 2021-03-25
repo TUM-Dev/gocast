@@ -8,10 +8,17 @@ import (
 )
 
 func AreUsersEmpty(ctx context.Context) (isEmpty bool, err error) {
+	_, found := Cache.Get("areUsersEmpty")
+	if found {
+		return false, nil
+	}
 	if Logger != nil {
 		Logger(ctx, "Test if users table is empty.")
 	}
 	res := DB.Find(&model.User{})
+	if res.RowsAffected != 0 {
+		Cache.Set("areUsersEmpty", false, 1)
+	}
 	return res.RowsAffected == 0, res.Error
 }
 

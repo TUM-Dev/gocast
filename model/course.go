@@ -11,7 +11,8 @@ type Course struct {
 	UserID              uint
 	Name                string
 	Slug                string //eg. eidi
-	TeachingTerm        string //eg. SoSe2020, WiSe2021
+	Year                int // eg. 2021
+	TeachingTerm        string //eg. Summer/Winter
 	TUMOnlineIdentifier string
 	VODEnabled          bool
 	DownloadsEnabled    bool

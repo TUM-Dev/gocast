@@ -9,6 +9,7 @@ import (
 	"TUM-Live/web"
 	"context"
 	"fmt"
+	"github.com/dgraph-io/ristretto"
 	"github.com/droundy/goopt"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-contrib/sessions"
@@ -33,7 +34,7 @@ func GinServer() (err error) {
 	router := gin.Default()
 	secret := make([]byte, 40) // 40 random bytes as cookie secret
 	_, err = rand.Read(secret)
-	if err!=nil {
+	if err != nil {
 		log.Fatalf("Unable to generate cookie store secret: %err\n", err)
 	}
 	store := cookie.NewStore(secret)
@@ -102,6 +103,16 @@ func main() {
 			fmt.Printf("SQL: %s\n", sql)
 		}
 	}
+
+	cache, err := ristretto.NewCache(&ristretto.Config{
+		NumCounters: 1e7,     // number of keys to track frequency of (10M).
+		MaxCost:     1 << 30, // maximum cost of cache (1GB).
+		BufferItems: 64,      // number of keys per Get buffer.
+	})
+	if err != nil {
+		panic(err)
+	}
+	dao.Cache = *cache
 
 	cronService := cron.New()
 	//Fetch students every 12 hours

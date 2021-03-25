@@ -130,11 +130,32 @@ func createCourse(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+
+	//verify teaching term input, should either be Sommersemester 2020 or Wintersemester 2020/21
+	match, err = regexp.MatchString("(Sommersemester [0-9]{4}|Wintersemester [0-9]{4}/[0-9]{2})$", req.TeachingTerm)
+	if err != nil || !match {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "Semester is not in the correct format"})
+		return
+	}
+	reYear := regexp.MustCompile("[0-9]{4}")
+	year, err := strconv.Atoi(reYear.FindStringSubmatch(req.TeachingTerm)[0])
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "Semester is not in the correct format"})
+		return
+	}
+	var semester string
+	if strings.Contains(req.TeachingTerm, "Wintersemester") {
+		semester = "W"
+	} else {
+		semester = "S"
+	}
+
 	course := model.Course{
 		UserID:              user.ID,
 		Name:                req.Name,
 		Slug:                req.Slug,
-		TeachingTerm:        req.TeachingTerm,
+		Year:                year,
+		TeachingTerm:        semester,
 		TUMOnlineIdentifier: req.CourseID,
 		VODEnabled:          req.EnVOD,
 		DownloadsEnabled:    req.EnDL,

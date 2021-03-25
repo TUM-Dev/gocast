@@ -13,10 +13,12 @@
     {{if .LiveStreams}}
         <h2 class="text-2xl text-white text-center">Currently Live:</h2>{{end}}
     {{range $liveStream := .LiveStreams }}
-        <div>
+        <div class="py-2 px-4">
             <a href="/live/{{$liveStream.Model.ID}}">
-                <h3 class="text-xl text-gray-300">{{$liveStream.Name}}</h3>
-            </a>
+                <h3 class="text-xl text-gray-300 hover:text-gray-200">{{$liveStream.Name}}</h3></a>
+            <p class="text-white font-sans font-light">
+
+            </p>
         </div>
     {{end}}
     {{if not (or .IsUser .IsStudent)}}
