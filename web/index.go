@@ -4,49 +4,65 @@ import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
+	"TUM-Live/tools/tum"
 	"context"
 	"github.com/gin-gonic/gin"
+	"net/http"
+	"strconv"
 )
 
 func MainPage(c *gin.Context) {
 	res, err := dao.AreUsersEmpty(context.Background()) // fresh installation?
 	if err != nil {
 		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", nil)
+		return
 	} else if res {
 		_ = templ.ExecuteTemplate(c.Writer, "onboarding.gohtml", nil)
-	} else {
-		var indexData IndexData
-		user, userErr := tools.GetUser(c)
-		student, studentErr := tools.GetStudent(c)
-		if userErr == nil {
-			indexData.IsUser = true
-			courses, err := dao.GetCoursesByUserId(context.Background(), user.ID)
-			if err == nil {
-				indexData.Courses = courses
-			}
-		} else if studentErr == nil {
-			indexData.IsStudent = true
-			indexData.Courses = student.Courses
-		}
-		// Todo get live streams for user
-		var streams []model.Stream
-		err = dao.GetCurrentLive(context.Background(), &streams)
-		indexData.LiveStreams = streams
-		public, err := dao.GetPublicCourses()
-		if err != nil {
-			indexData.PublicCourses = []model.Course{}
-		} else {
-			// filter out courses that already are in "my courses"
-			var publicFiltered []model.Course
-			for _, c := range public {
-				if !tools.CourseListContains(indexData.Courses, c.ID) {
-					publicFiltered = append(publicFiltered, c)
-				}
-			}
-			indexData.PublicCourses = publicFiltered
-		}
-		_ = templ.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
+		return
 	}
+	var indexData IndexData
+	user, userErr := tools.GetUser(c)
+	student, studentErr := tools.GetStudent(c)
+
+	var year int
+	var term string
+	if c.Param("year") == "" {
+		year, term = tum.GetCurrentSemester()
+	} else {
+		term = c.Param("term")
+		year, err = strconv.Atoi(c.Param("year"))
+		if err != nil || (term != "W" && term != "S") {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Bad semester format in url."})
+			return
+		}
+	}
+	indexData.Semesters = getSemesterList(year, term)
+	if userErr == nil {
+		indexData.IsUser = true
+		indexData.Courses = user.CoursesForSemester(year, term)
+	} else if studentErr == nil {
+		indexData.IsStudent = true
+		indexData.Courses = student.CoursesForSemester(year, term)
+	}
+	// Todo get live streams for user
+	var streams []model.Stream
+	err = dao.GetCurrentLive(context.Background(), &streams)
+	indexData.LiveStreams = streams
+	public, err := dao.GetPublicCourses(year, term)
+	if err != nil {
+		indexData.PublicCourses = []model.Course{}
+	} else {
+		// filter out courses that already are in "my courses"
+		var publicFiltered []model.Course
+		for _, c := range public {
+			if !tools.CourseListContains(indexData.Courses, c.ID) {
+				publicFiltered = append(publicFiltered, c)
+			}
+		}
+		indexData.PublicCourses = publicFiltered
+	}
+	_ = templ.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
+
 }
 
 func AboutPage(c *gin.Context) {
@@ -68,4 +84,37 @@ type IndexData struct {
 	LiveStreams   []model.Stream
 	Courses       []model.Course
 	PublicCourses []model.Course
+	Semesters     []Semester
+}
+
+type Semester struct {
+	Year   int
+	WiSe   bool
+	Active bool
+}
+
+func getSemesterList(year int, term string) []Semester {
+	curYear, curTerm := tum.GetCurrentSemester()
+	prevYear := year
+	if year == curYear && term == curTerm {
+		if term == "W"{
+			prevYear--
+		}
+		return []Semester{
+			{Year: year, WiSe: term=="W", Active: true},
+			{Year: prevYear, WiSe: term!="W", Active: false},
+		}
+	} else {
+		nextYear := year
+		if term=="W" {
+			prevYear--
+		}else {
+			nextYear++
+		}
+		return []Semester{
+			{Year: nextYear, WiSe: term!="W", Active: false},
+			{Year: year, WiSe: term=="W", Active: true},
+			{Year: prevYear, WiSe: term!="W", Active: false},
+		}
+	}
 }

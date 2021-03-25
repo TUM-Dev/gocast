@@ -81,7 +81,7 @@ func GetUserByID(ctx context.Context, id uint) (user model.User, err error) {
 		Logger(ctx, fmt.Sprintf("find user by id %v", id))
 	}
 	var foundUser model.User
-	dbErr := DB.Find(&foundUser, "id = ?", id).Error
+	dbErr := DB.Preload("Courses").Find(&foundUser, "id = ?", id).Error
 	return foundUser, dbErr
 }
 

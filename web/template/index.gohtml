@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <title>TUM Live</title>
@@ -9,7 +9,7 @@
 {{- /*gotype: TUM-Live/web.IndexData*/ -}}
 {{template "header" .}}
 
-<div class="container pt-6">
+<div class="container pt-6 flex flex-col">
     {{if .LiveStreams}}
         <h2 class="text-2xl text-white text-center">Currently Live:</h2>{{end}}
     {{range $liveStream := .LiveStreams }}
@@ -56,6 +56,11 @@
                 </p>
             </div>
         {{end}}
+    {{end}}
+</div>
+<div class="flex justify-center absolute bottom-0 w-full p-2">
+    {{range $s := .Semesters}}
+    <a href="/semester/{{$s.Year}}/{{if $s.WiSe}}W{{else}}S{{end}}" class="mx-2 {{if $s.Active}}text-white{{else}}text-gray-500{{end}}">{{$s.Year}}-{{if $s.WiSe}}W{{else}}S{{end}}</a>
     {{end}}
 </div>
 </body>

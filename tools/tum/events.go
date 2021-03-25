@@ -60,7 +60,7 @@ func getEventsForCourse(courseID string) (events map[time.Time]Event, deleted []
 			RoomCode:            roomCode,
 			RoomName:            strings.Trim(roomName, "\n \t"),
 		}
-		if e.Status != "gelöscht" && e.Status != "verschoben"{
+		if e.Status != "gelöscht" && e.Status != "verschoben" {
 			eventsMap[start] = e
 		} else {
 			deletedEvents = append(deletedEvents, e)
@@ -104,6 +104,24 @@ func getEventsForCourses(courses []model.Course) {
 		}
 		dao.UpdateCourse(context.Background(), course)
 	}
+}
+
+func GetCurrentSemester() (year int, term string) {
+	var curTerm string
+	var curYear int
+	if time.Now().Month() >= 3 && time.Now().Month() < 10 {
+		curTerm = "S"
+		curYear = time.Now().Year()
+	} else {
+		curTerm = "W"
+		if time.Now().Month() >= 10 {
+			curYear = time.Now().Year()
+		} else {
+			curYear = time.Now().Year() - 1
+		}
+	}
+
+	return curYear, curTerm
 }
 
 type Event struct {

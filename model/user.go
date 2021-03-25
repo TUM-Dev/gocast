@@ -36,6 +36,16 @@ type argonParams struct {
 	keyLength   uint32
 }
 
+func (u *User) CoursesForSemester(year int, term string) []Course {
+	var cRes []Course
+	for _, c := range u.Courses {
+		if c.Year == year && c.TeachingTerm == term {
+			cRes = append(cRes, c)
+		}
+	}
+	return cRes
+}
+
 var (
 	ErrInvalidHash                     = errors.New("the encoded hash is not in the correct format")
 	ErrIncompatibleVersion             = errors.New("incompatible version of argon2")

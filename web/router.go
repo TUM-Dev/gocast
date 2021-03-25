@@ -33,7 +33,7 @@ func configMainRoute(router gin.IRoutes) {
 	router.GET("/w/:slug/:id", WatchVODPage)
 	router.GET("/live/:id", WatchPage)
 	router.GET("/", MainPage)
-	router.GET("/semester/:semester", MainPage)
+	router.GET("/semester/:year/:term", MainPage)
 }
 func configCourseRoute(router gin.IRoutes) {
 	router.GET("/c/:teachingTerm/:slug", CoursePage)
