@@ -1,29 +1,25 @@
 class Watch {
-    private player
     private chatInput: HTMLInputElement;
+    private ws: WebSocket
 
-    constructor(player) {
-        // @ts-ignore
-        this.player = player
+    constructor() {
         (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", e => this.submitChat(e))
         this.chatInput = document.getElementById("chatInput") as HTMLInputElement
-        addEventListener('keypress', this.handleKeyPress)
+        this.ws = new WebSocket("ws://localhost:8080/api/chat/" + (document.getElementById("streamID") as HTMLInputElement).value + "/ws")
+        this.ws.onmessage = function (m) {
+            let chatElem = document.createElement("div") as HTMLDivElement
+            chatElem.classList.add("bg-secondary", "rounded", "p-2", "mx-2", "mb-2")
+            chatElem.innerText = m.data
+            document.getElementById("chatBox").appendChild(chatElem)
+        }
     }
 
     submitChat(e: Event) {
         e.preventDefault()
-
-    }
-
-    private handleKeyPress(ev: KeyboardEvent): void {
-        if (this.chatInput === document.activeElement) {
-            return
-        }
-        switch (ev.key){
-            case "f":
-                this.player.requestFullScreen()
-                break
-            default : return;
-        }
+        this.ws.send(this.chatInput.value)
+        this.chatInput.value = ""
+        return false//prevent form submission
     }
 }
+
+new Watch()

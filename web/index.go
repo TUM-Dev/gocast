@@ -93,6 +93,9 @@ type Semester struct {
 	Active bool
 }
 
+/*
+ * meh.
+ */
 func getSemesterList(year int, term string) []Semester {
 	curYear, curTerm := tum.GetCurrentSemester()
 	prevYear := year

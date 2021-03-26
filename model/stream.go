@@ -21,6 +21,7 @@ type Stream struct {
 	PlaylistUrl      string
 	LiveNow          bool
 	Recording        bool
+	Chats            []Chat
 }
 
 func (s Stream) IsPast() bool {

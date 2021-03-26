@@ -85,6 +85,7 @@ func main() {
 		&model.User{},
 		&model.Student{},
 		&model.Course{},
+		&model.Chat{},
 		&model.RegisterLink{},
 		&model.Stream{},
 		&model.ProcessingJob{},
