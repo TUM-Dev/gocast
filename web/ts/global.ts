@@ -9,6 +9,13 @@ async function postData(url = '', data = {}) {
     return response
 }
 
+function Get(yourUrl) {
+    let HttpReq = new XMLHttpRequest();
+    HttpReq.open("GET", yourUrl, false);
+    HttpReq.send(null);
+    return HttpReq.responseText;
+}
+
 function showMessage(msg: string) {
     let alertBox: HTMLElement = document.getElementById("alertBox")
     let alertText: HTMLSpanElement = document.getElementById("alertText")

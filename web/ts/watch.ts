@@ -14,6 +14,12 @@ class Watch {
             document.getElementById("chatBox").appendChild(chatElem)
             document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight
         }
+        if (document.getElementById("viewerCount") != null) {
+            Watch.loadStat()
+            setInterval(function () {
+                Watch.loadStat()
+            }, 60 * 1000)
+        }
     }
 
     submitChat(e: Event) {
@@ -21,6 +27,11 @@ class Watch {
         this.ws.send(this.chatInput.value)
         this.chatInput.value = ""
         return false//prevent form submission
+    }
+
+    private static loadStat() {
+        let stat = JSON.parse(Get("/api/chat/" + (document.getElementById("streamID") as HTMLInputElement).value + "/stats"))
+        document.getElementById("viewerCount").innerText = stat["viewers"]
     }
 }
 

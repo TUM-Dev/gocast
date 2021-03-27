@@ -50,18 +50,18 @@ func configGinChatRouter(router gin.IRoutes) {
 }
 
 func ChatStats(context *gin.Context) {
-	u, uErr := tools.GetUser(context)
+	/*u, uErr := tools.GetUser(context)
 	if uErr != nil || u.Role != 1 {
 		context.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "stats can currently only be retrieved by admins"})
 		return
-	}
+	}*/
 	vidId := context.Param("vidId")
-	watchers, found := stats[vidId]
+	viewers, found := stats[vidId]
 	if !found {
 		context.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "stream not found"})
 		return
 	}
-	context.JSON(http.StatusOK, gin.H{"watchers": watchers})
+	context.JSON(http.StatusOK, gin.H{"viewers": viewers})
 }
 
 func ChatStream(c *gin.Context) {
