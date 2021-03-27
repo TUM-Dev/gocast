@@ -100,7 +100,7 @@ func getSemesterList(year int, term string) []Semester {
 	curYear, curTerm := tum.GetCurrentSemester()
 	prevYear := year
 	if year == curYear && term == curTerm {
-		if term == "W"{
+		if term == "S"{
 			prevYear--
 		}
 		return []Semester{
@@ -109,7 +109,7 @@ func getSemesterList(year int, term string) []Semester {
 		}
 	} else {
 		nextYear := year
-		if term=="W" {
+		if term=="S" {
 			prevYear--
 		}else {
 			nextYear++
