@@ -72,7 +72,7 @@ func GetStudent(ctx context.Context, id string) (s model.Student, err error) {
 		Logger(ctx, "find student by id: "+id)
 	}
 	var student model.Student
-	dbErr := DB.Preload("Courses").Find(&student, "id = ?", id).Error
+	dbErr := DB.Preload("Courses.Streams").Find(&student, "id = ?", id).Error
 	return student, dbErr
 }
 
@@ -81,7 +81,7 @@ func GetUserByID(ctx context.Context, id uint) (user model.User, err error) {
 		Logger(ctx, fmt.Sprintf("find user by id %v", id))
 	}
 	var foundUser model.User
-	dbErr := DB.Preload("Courses").Find(&foundUser, "id = ?", id).Error
+	dbErr := DB.Preload("Courses.Streams").Find(&foundUser, "id = ?", id).Error
 	return foundUser, dbErr
 }
 
