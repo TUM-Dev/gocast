@@ -36,5 +36,5 @@ func configMainRoute(router gin.IRoutes) {
 	router.GET("/semester/:year/:term", MainPage)
 }
 func configCourseRoute(router gin.IRoutes) {
-	router.GET("/c/:teachingTerm/:slug", CoursePage)
+	router.GET("/course/:year/:teachingTerm/:slug", CoursePage)
 }

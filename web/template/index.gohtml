@@ -11,13 +11,13 @@
 
 <div class="container pt-6 flex flex-col">
     {{if .LiveStreams}}
-        <h2 class="text-2xl text-white text-center">Currently Live:</h2>{{end}}
+        <h2 class="text-2xl text-white">Currently Live</h2>{{end}}
     {{range $liveStream := .LiveStreams }}
         <div class="py-2 px-4">
             <a href="/live/{{$liveStream.Model.ID}}">
                 <h3 class="text-xl text-gray-300 hover:text-gray-200">{{$liveStream.Name}}</h3></a>
+            {{printf "%v %02d. %02d:%02d" $liveStream.Start.Month $liveStream.Start.Day $liveStream.Start.Hour $liveStream.Start.Minute}}
             <p class="text-white font-sans font-light">
-
             </p>
         </div>
     {{end}}
@@ -29,7 +29,7 @@
     {{end}}
     {{range $course := .Courses }}
         <div class="py-2 px-4">
-            <a href="/c/{{$course.TeachingTerm}}/{{$course.Slug}}">
+            <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                 <h3 class="text-xl text-gray-300 hover:text-gray-200">{{$course.Name}}</h3></a>
             <p class="text-white font-sans font-light">
                 {{if $course.HasNextLecture}}
@@ -41,10 +41,10 @@
         </div>
     {{end}}
     {{if .PublicCourses}}
-        <h2 class="text-2xl text-white pt-4">Public Courses:</h2>
+        <h2 class="text-2xl text-white pt-4">Public Courses</h2>
         {{range $course := .PublicCourses }}
             <div class="py-2 px-4">
-                <a href="/c/{{$course.TeachingTerm}}/{{$course.Slug}}">
+                <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                     <h3 class="text-xl text-gray-300 hover:text-gray-200">{{$course.Name}}</h3>
                 </a>
                 <p class="text-white font-sans font-light">

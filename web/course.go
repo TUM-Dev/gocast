@@ -12,7 +12,8 @@ import (
 func CoursePage(c *gin.Context) {
 	slug := c.Param("slug")
 	teachingTerm := c.Param("teachingTerm")
-	course, err := dao.GetCourseBySlugAndTerm(context.Background(), slug, teachingTerm)
+	year := c.Param("year")
+	course, err := dao.GetCourseBySlugYearAndTerm(context.Background(), slug, teachingTerm, year)
 	if err != nil {
 		c.Status(http.StatusNotFound)
 		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", nil)

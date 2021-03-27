@@ -4,7 +4,7 @@ import "gorm.io/gorm"
 
 type Chat struct {
 	gorm.Model
-	UserID   uint
+	UserID   string
 	Message  string
 	StreamID uint
 }

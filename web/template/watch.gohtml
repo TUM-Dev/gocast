@@ -30,7 +30,9 @@
     </div>
     <div id="chatBox"
          class="md:relative chat border-t-2 mt-2 md:mt-0 md:border-t-0 md:border-l-2 border-secondary md:w-2/6 lg:w-1/6 overflow-scroll text-white overflow-x-hidden overflow-y-scroll pt-3">
-        <div class="bg-secondary rounded p-2 mx-2 mb-2">Chat will be available soon &trade;</div>
+        {{range $chat := .Stream.Chats}}
+            <div class="bg-secondary rounded p-2 mx-2 mb-2">{{$chat.Message}}</div>
+        {{end}}
         <form id="chatForm"
               class="border-b-2 focus-within:border-gray-300 border-secondary inset-x-0 absolute bottom-0 flex mb-2 px-3">
             <label for="chatInput" class="hidden">Chat input</label><input

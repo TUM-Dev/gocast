@@ -73,17 +73,17 @@ func GetCourseById(ctx context.Context, id uint) (courses model.Course, err erro
 	return foundCourse, dbErr
 }
 
-func GetCourseBySlugAndTerm(ctx context.Context, slug string, term string) (model.Course, error) {
-	cachedCourses, found := Cache.Get("courseBySlugAndTerm")
+func GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year string) (model.Course, error) {
+	cachedCourses, found := Cache.Get(fmt.Sprintf("courseBySlugYearAndTerm%v%v%v", slug, term, year))
 	if found {
 		return cachedCourses.(model.Course), nil
 	}
 	var course model.Course
 	err := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start asc")
-	}).Where("teaching_term = ? AND slug = ?", term, slug).First(&course).Error
+	}).Where("teaching_term = ? AND slug = ? AND year = ?", term, slug, year).First(&course).Error
 	if err == nil {
-		Cache.SetWithTTL("courseBySlugAndTerm", course, 1, time.Minute)
+		Cache.SetWithTTL(fmt.Sprintf("courseBySlugYearAndTerm%v%v%v", slug, term, year), course, 1, time.Minute)
 	}
 	return course, err
 }

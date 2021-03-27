@@ -1,10 +1,12 @@
 package api
 
 import (
+	"TUM-Live/dao"
 	"TUM-Live/tools"
 	"github.com/gin-gonic/gin"
 	"gopkg.in/olahol/melody.v1"
 	"log"
+	"strconv"
 )
 
 var m *melody.Melody
@@ -16,16 +18,26 @@ func configGinChatRouter(router gin.IRoutes) {
 		m = melody.New()
 	}
 	m.HandleMessage(func(s *melody.Session, msg []byte) {
-		ctx, found := s.Get("ctx") // get gin context
-		if found {
-			_, uErr := tools.GetUser(ctx.(*gin.Context))
-			_, sErr := tools.GetStudent(ctx.(*gin.Context))
-			if uErr != nil && sErr != nil {
-				// not allowed to send message
-				return
-			}
+		ctx, _ := s.Get("ctx") // get gin context
+
+		user, uErr := tools.GetUser(ctx.(*gin.Context))
+		student, sErr := tools.GetStudent(ctx.(*gin.Context))
+		if uErr != nil && sErr != nil {
+			// not allowed to send message
+			return
+
 		}
-		// todo store message
+		var uid string
+		if uErr == nil {
+			uid = strconv.Itoa(int(user.ID))
+		} else if sErr == nil {
+			uid = student.ID
+		}
+		vID, err := strconv.Atoi(ctx.(*gin.Context).Param("vidId"))
+		if err != nil {
+			return
+		}
+		dao.AddMessage(string(msg), uid, uint(vID))
 		_ = m.BroadcastFilter(msg, func(q *melody.Session) bool { // filter broadcasting to same lecture.
 			return q.Request.URL.Path == s.Request.URL.Path
 		})
