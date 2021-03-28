@@ -58,3 +58,10 @@ input, textarea {
 .chat::-webkit-scrollbar, .watchContent::-webkit-scrollbar {
     display: none;
 }
+
+/* slider for cutting videos: */
+
+.noUi-horizontal {
+    height: 5px;
+}
+

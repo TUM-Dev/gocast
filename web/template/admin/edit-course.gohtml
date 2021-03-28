@@ -5,6 +5,8 @@
     <title>TUM Live | Create Course</title>
     {{template "headImports"}}
     <script defer async src="/assets/ts-dist/edit-course.js"></script>
+    <link href="/dist/nouislider/distribute/nouislider.min.css" rel="stylesheet">
+    <script src="/dist/nouislider/distribute/nouislider.min.js"></script>
 </head>
 <body class="bg-primary">
 
@@ -65,23 +67,29 @@
                                         </div>
                                         <div id="extraInfos{{$lecture.Model.ID}}" class="hidden">
                                             {{if not $lecture.IsPast}}
-                                                <p class="mt-2">
-                                                    <span class="font-semibold">Stream Server:</span> <span>rtmp://live.mm.rbg.tum.de:1935/stream?secret={{$lecture.StreamKey}}</span>
-                                                    <i class="fas fa-clipboard hover:text-purple-500"
-                                                       onclick="copyToClipboard('rtmp://live.mm.rbg.tum.de:1935/stream?secret={{$lecture.StreamKey}}')"></i><br>
-                                                    <span class="font-semibold">Stream Key:</span>
-                                                    <span>{{$course.Slug}}</span>
-                                                </p>
+                                            <p class="mt-2">
+                                                <span class="font-semibold">Stream Server:</span> <span>rtmp://live.mm.rbg.tum.de:1935/stream?secret={{$lecture.StreamKey}}</span>
+                                                <i class="fas fa-clipboard hover:text-purple-500"
+                                                   onclick="copyToClipboard('rtmp://live.mm.rbg.tum.de:1935/stream?secret={{$lecture.StreamKey}}')"></i><br>
+                                                <span class="font-semibold">Stream Key:</span>
+                                                <span>{{$course.Slug}}</span>
+                                            </p>
                                             {{else if $lecture.Recording}}
-                                                <p class="mt-2 flex">
-                                                    <i class="fas fa-eye hover:text-purple-500 px-2" title="Make Invisible"></i>
-                                                    <i class="fas fa-cut hover:text-purple-500 px-2" title="Edit VoD"></i>
-                                                    <i class="fas fa-download hover:text-purple-500 px-2" title="Download VoD"></i>
-                                                </p>
+                                            <p class="mt-2 flex">
+                                                <i class="fas fa-eye hover:text-purple-500 px-2"
+                                                   title="Make Invisible"></i>
+                                                <i class="fas fa-cut hover:text-purple-500 px-2"
+                                                   title="Edit VoD" onclick="cutVod({{$lecture.Model.ID}})"></i>
+                                                <i class="fas fa-download hover:text-purple-500 px-2"
+                                                   title="Download VoD"></i>
+                                            </p>
+                                            <div class="hidden" id="slider{{$lecture.Model.ID}}"></div>
+
                                             {{else}}
-                                                <p class="mt-2 flex">
-                                                    <i class="fas fa-upload hover:text-purple-500 px-2" title="Upload VoD"></i>
-                                                </p>
+                                            <p class="mt-2 flex">
+                                                <i class="fas fa-upload hover:text-purple-500 px-2"
+                                                   title="Upload VoD"></i>
+                                            </p>
                                             {{end}}
                                         </div>
                                     </form>

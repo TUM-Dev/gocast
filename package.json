@@ -21,6 +21,7 @@
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.3",
     "@videojs/http-streaming": "^1.11.3",
+    "nouislider": "^14.6.4",
     "video.js": "^7.7.4",
     "videojs-hls-quality-selector": "^1.1.4"
   },

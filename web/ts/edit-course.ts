@@ -38,6 +38,21 @@ function saveLectureName(e: Event, id: number) {
         })
 }
 
+function cutVod(id: number): void {
+    document.getElementById("slider"+id).classList.remove("hidden")
+    const slider = document.getElementById('slider'+id);
+
+    // @ts-ignore
+    noUiSlider.create(slider, {
+        start: [0, 100],
+        connect: true,
+        range: {
+            'min': 0,
+            'max': 100
+        }
+    });
+}
+
 function focusNameInput(input: HTMLInputElement, id: number) {
     input.oninput = function () {
         document.getElementById("nameSubmitBtn" + id).classList.remove("invisible")
@@ -46,12 +61,12 @@ function focusNameInput(input: HTMLInputElement, id: number) {
 
 function toggleExtraInfos(btn: HTMLElement, id: number) {
     btn.classList.add("transform", "transition", "duration-500", "ease-in-out")
-    if (btn.classList.contains("rotate-180")){
+    if (btn.classList.contains("rotate-180")) {
         btn.classList.remove("rotate-180")
-        document.getElementById("extraInfos"+id).classList.add("hidden")
-    }else {
+        document.getElementById("extraInfos" + id).classList.add("hidden")
+    } else {
         btn.classList.add("rotate-180")
-        document.getElementById("extraInfos"+id).classList.remove("hidden")
+        document.getElementById("extraInfos" + id).classList.remove("hidden")
     }
 }
 
