@@ -74,6 +74,7 @@ func DeleteUser(c *gin.Context) {
 	}
 	err = tools.RequirePermission(c, 1) // require admin
 	if err != nil {
+		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
 	// currently admins can not be deleted.
