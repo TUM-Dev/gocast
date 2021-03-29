@@ -94,7 +94,7 @@ func ChatStream(c *gin.Context) {
 		statsLock.Lock()
 		stats[c.Param("vidId")] = stats[c.Param("vidId")] - 1
 		if stats[c.Param("vidID")] == 0 {
-			delete(stats, "vidID")
+			delete(stats, c.Param("vidID"))
 		}
 		statsLock.Unlock()
 		return nil
