@@ -5,8 +5,10 @@
     <title>TUM Live | Create Course</title>
     {{template "headImports"}}
     <script defer async src="/assets/ts-dist/edit-course.js"></script>
+    <link href="/dist/chart.js/dist/Chart.min.css" rel="stylesheet">
     <link href="/dist/nouislider/distribute/nouislider.min.css" rel="stylesheet">
     <script src="/dist/nouislider/distribute/nouislider.min.js"></script>
+    <script src="/dist/chart.js/dist/Chart.min.js"></script>
 </head>
 <body class="bg-primary">
 
@@ -66,7 +68,7 @@
                                                class="fas fa-angle-double-down hover:text-purple-500"></i>
                                         </div>
                                         <div id="extraInfos{{$lecture.Model.ID}}" class="hidden">
-                                            {{if not $lecture.IsPast}}
+                                            {{if and (not $lecture.IsPast) (not $lecture.Recording)}}
                                             <p class="mt-2">
                                                 <span class="font-semibold">Stream Server:</span> <span>rtmp://live.mm.rbg.tum.de:1935/stream?secret={{$lecture.StreamKey}}</span>
                                                 <i class="fas fa-clipboard hover:text-purple-500"
@@ -82,9 +84,34 @@
                                                    title="Edit VoD" onclick="cutVod({{$lecture.Model.ID}})"></i>
                                                 <i class="fas fa-download hover:text-purple-500 px-2"
                                                    title="Download VoD"></i>
+                                                {{if $lecture.Stats}}
+                                                    <i class="fas fa-chart-line hover:text-purple-500 px-2"
+                                                       title="Live Statistics"
+                                                       onclick="showStats({{$lecture.Model.ID}})"></i>
+                                                {{end}}
                                             </p>
                                             <div class="hidden" id="slider{{$lecture.Model.ID}}"></div>
-
+                                            {{if $lecture.Stats}}
+                                            <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
+                                                <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
+                                                        width="undefined" height="undefined"></canvas>
+                                            </div>
+                                            <script>
+                                                new Chart(
+                                                    document.getElementById("stats{{$lecture.Model.ID}}"), {
+                                                        "type": "line", "data": {
+                                                            "labels": [{{range $stat := $lecture.Stats}}"{{$stat.Time.Hour}}:{{$stat.Time.Minute}}", {{end}}],
+                                                            "datasets": [{
+                                                                "label": "Viewers",
+                                                                "data": [{{range $stat := $lecture.Stats}}{{$stat.Viewers}}, {{end}}],
+                                                                "fill": false,
+                                                                "borderColor": "rgb(75, 192, 192)",
+                                                                "lineTension": 0.1
+                                                            }]
+                                                        }, "options": {}
+                                                    });
+                                            </script>
+                                            {{end}}
                                             {{else}}
                                             <p class="mt-2 flex">
                                                 <i class="fas fa-upload hover:text-purple-500 px-2"

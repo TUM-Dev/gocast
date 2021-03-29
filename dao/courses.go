@@ -67,8 +67,8 @@ func GetPublicCourses(year int, term string) (courses []model.Course, err error)
 
 func GetCourseById(ctx context.Context, id uint) (courses model.Course, err error) {
 	var foundCourse model.Course
-	dbErr := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("start asc")
+	dbErr := DB.Preload("Streams.Stats").Preload("Streams", func(db *gorm.DB) *gorm.DB {
+		return db.Order("streams.start asc")
 	}).Find(&foundCourse, "id = ?", id).Error
 	return foundCourse, dbErr
 }

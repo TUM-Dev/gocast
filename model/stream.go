@@ -22,6 +22,7 @@ type Stream struct {
 	LiveNow          bool
 	Recording        bool
 	Chats            []Chat
+	Stats            []Stat
 }
 
 func (s Stream) IsPast() bool {

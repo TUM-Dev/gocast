@@ -39,8 +39,8 @@ function saveLectureName(e: Event, id: number) {
 }
 
 function cutVod(id: number): void {
-    document.getElementById("slider"+id).classList.remove("hidden")
-    const slider = document.getElementById('slider'+id);
+    document.getElementById("slider" + id).classList.remove("hidden")
+    const slider = document.getElementById('slider' + id);
 
     // @ts-ignore
     noUiSlider.create(slider, {
@@ -51,6 +51,14 @@ function cutVod(id: number): void {
             'max': 100
         }
     });
+}
+
+function showStats(id: number): void {
+    if (document.getElementById("statsBox" + id).classList.contains("hidden")) {
+        document.getElementById("statsBox" + id).classList.remove("hidden")
+    } else {
+        document.getElementById("statsBox" + id).classList.add("hidden")
+    }
 }
 
 function focusNameInput(input: HTMLInputElement, id: number) {

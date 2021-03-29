@@ -87,6 +87,7 @@ func main() {
 		&model.Course{},
 		&model.Chat{},
 		&model.RegisterLink{},
+		&model.Stat{},
 		&model.Stream{},
 		&model.ProcessingJob{},
 		&model.Worker{},
@@ -118,6 +119,7 @@ func main() {
 	cronService := cron.New()
 	//Fetch students every 12 hours
 	_, _ = cronService.AddFunc("0 */12 * * *", tum.FetchCourses)
+	_, _ = cronService.AddFunc("0-59/5 * * * *", api.CollectStats)
 	//tum.FetchCourses()
 	cronService.Start()
 	api.ContextInitializer = func(r *http.Request) (ctx context.Context) {

@@ -2,13 +2,16 @@ package api
 
 import (
 	"TUM-Live/dao"
+	"TUM-Live/model"
 	"TUM-Live/tools"
+	"context"
 	"github.com/gin-gonic/gin"
 	"gopkg.in/olahol/melody.v1"
 	"log"
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 )
 
 var m *melody.Melody
@@ -49,6 +52,23 @@ func configGinChatRouter(router gin.IRoutes) {
 	})
 }
 
+func CollectStats() {
+	log.Printf("Collecting stats\n")
+	for sID, numWatchers := range stats {
+		log.Printf("Collecting stats for stream %v, viewers:%v\n", sID, numWatchers)
+		stat := model.Stat{
+			Time:    time.Now(),
+			Viewers: numWatchers,
+		}
+		if s, err := dao.GetStreamByID(context.Background(), sID); err == nil {
+			s.Stats = append(s.Stats, stat)
+			if err = dao.SaveStream(&s); err != nil {
+				log.Printf("Error saving stats: %v\n", err)
+			}
+		}
+	}
+}
+
 func ChatStats(context *gin.Context) {
 	/*u, uErr := tools.GetUser(context)
 	if uErr != nil || u.Role != 1 {
@@ -73,6 +93,9 @@ func ChatStream(c *gin.Context) {
 	m.HandleClose(func(session *melody.Session, i int, s string) error {
 		statsLock.Lock()
 		stats[c.Param("vidId")] = stats[c.Param("vidId")] - 1
+		if stats[c.Param("vidID")] == 0 {
+			delete(stats, "vidID")
+		}
 		statsLock.Unlock()
 		return nil
 	})
