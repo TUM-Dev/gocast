@@ -11,7 +11,7 @@ import (
 /**
  * returns student id if login and password match, err otherwise
  */
-func LoginWithTumCredentials(lrzId string, password string) (userId string, err error) {
+func LoginWithTumCredentials(username string, password string) (userId string, err error) {
 	l, err := ldap.DialURL(tools.Cfg.LdapUrl)
 	if err != nil {
 		log.Fatal(err)
@@ -28,13 +28,14 @@ func LoginWithTumCredentials(lrzId string, password string) (userId string, err 
 	searchRequest := ldap.NewSearchRequest(
 		"ou=users,ou=data,ou=prod,ou=iauth,dc=tum,dc=de",
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
-		fmt.Sprintf("(&(objectClass=organizationalPerson)(uid=%s))", lrzId),
+		fmt.Sprintf("(&(objectClass=organizationalPerson)(|(uid=%s)(imEmailAdressen=%s)))", username, username),
 		[]string{"dn"},
 		nil,
 	)
 
 	sr, err := l.Search(searchRequest)
 	if err != nil {
+		log.Printf("%v",err)
 		return "", errors.New("couldn't query user")
 	}
 
@@ -47,16 +48,16 @@ func LoginWithTumCredentials(lrzId string, password string) (userId string, err 
 	// Bind as the user to verify their password
 	err = l.Bind(userdn, password)
 	if err != nil {
-		log.Printf("login failed\n")
+		log.Printf("%v\n", err)
 		return "", errors.New("couldn't login with tum credentials")
 	}
 	res, err := l.Search(&ldap.SearchRequest{
-		BaseDN:   fmt.Sprintf(tools.Cfg.LdapUserDN, lrzId),
+		BaseDN:   userdn,
 		Filter:   "(objectClass=Person)",
 		Controls: nil,
 	})
 	if err != nil {
-		log.Printf("login failed\n")
+		log.Printf("%v\n", err)
 		return "", errors.New("couldn't login with tum credentials")
 	} else {
 		if len(res.Entries)!=1 {
@@ -64,8 +65,13 @@ func LoginWithTumCredentials(lrzId string, password string) (userId string, err 
 			return "", errors.New("bad response from ldap server")
 		}
 		mNr := res.Entries[0].GetAttributeValue("imMatrikelNr")
+		mwnID := res.Entries[0].GetAttributeValue("imMWNID")
 		if mNr != "" {
 			return mNr, nil
+		}
+		if mwnID != "" {
+			log.Println("Falling back to mwn id.")
+			return mwnID, nil
 		}
 	}
 	return "", errors.New("something went wrong")

@@ -4,11 +4,9 @@ import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
-	"TUM-Live/tools/tum"
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -17,52 +15,12 @@ import (
 func configGinUsersRouter(router gin.IRoutes) {
 	router.POST("/api/createUser", CreateUser)
 	router.POST("/api/deleteUser", DeleteUser)
-	router.POST("/api/login", Login)
 }
 
 type loginRequest struct {
 	LoginWithTUM bool
 	Username     string
 	Password     string
-}
-
-func Login(c *gin.Context) {
-	var requestData loginRequest
-	err := json.NewDecoder(c.Request.Body).Decode(&requestData)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-	if requestData.LoginWithTUM {
-		studentID, err := tum.LoginWithTumCredentials(requestData.Username, requestData.Password)
-		if err != nil {
-			log.Printf("Login attempt rejected. Username: %v\n\n", requestData.Username)
-		} else {
-			s := sessions.Default(c)
-			s.Set("StudentID", studentID)
-			_ = s.Save()
-		}
-	} else {
-		user, err := dao.GetUserByEmail(context.Background(), requestData.Username)
-		if err != nil {
-			c.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-		pwCorrect, err := user.ComparePasswordAndHash(requestData.Password)
-		if err != nil {
-			c.AbortWithStatus(http.StatusInternalServerError)
-			log.Printf("error validating password: %v\n", err)
-			return
-		}
-		if pwCorrect {
-			s := sessions.Default(c)
-			s.Set("UserID", user.ID)
-			_ = s.Save()
-			c.Status(200)
-			return
-		}
-		c.AbortWithStatus(http.StatusUnauthorized)
-	}
 }
 
 func DeleteUser(c *gin.Context) {

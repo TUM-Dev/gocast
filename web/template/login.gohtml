@@ -3,39 +3,31 @@
 <head>
     <title>TUM Live | Login</title>
     {{template "headImports"}}
-    <script defer async src="/assets/ts-dist/login.js"></script>
 </head>
 <body class="bg-primary">
 
-{{template "header" .}}
+{{template "header"}}
 
 <div class="bg-secondary lg:w-4/12 md:6/12 w-10/12 m-auto my-10 mt-24 shadow-md">
     <div class="py-8 px-8 rounded border border-gray-500">
         <h1 class="font-medium text-2xl mt-3 text-center text-gray-200">Login</h1>
-        <form id="loginForm" action="#" class="mt-6">
-            <p class="text-gray-400 mb-4">Please note that "student login" is only possible if you are (or have been) enrolled at TUM as a student.
-                Internal accounts are managed by the RBG. If you need one, please reach out.</p>
-            <div class="w-full flex space-x-1">
-                <div id="studentLoginBtn"
-                     class="btn">Student Login
-                </div>
-                <div id="adminLoginBtn"
-                     class="btn text-gray-500">Admin Login
-                </div>
-            </div>
+        <form id="loginForm" method="post" class="mt-6">
             <div class="my-5 text-sm">
                 <label for="username" class="hidden">Username</label>
                 <input type="text" name="username" id="username"
-                       placeholder="ga10abc" autocomplete="off"/>
+                       placeholder="ga10abc/erika.mustermann@tum.de" autocomplete="off"/>
             </div>
             <div class="my-5 text-sm">
                 <label for="password" class="hidden">Password</label>
                 <input type="password" name="password" id="password"
                        placeholder="Password"/>
             </div>
-            <button class="btn">
+            <button class="btn" type="submit">
                 Login
             </button>
+            {{if .}}
+                <p class="text-warn">Couldn't log in. Please double check your credentials.</p>
+            {{end}}
         </form>
 
     </div>

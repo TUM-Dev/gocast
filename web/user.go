@@ -2,17 +2,39 @@ package web
 
 import (
 	"TUM-Live/dao"
+	"TUM-Live/tools/tum"
+	"context"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 )
 
-func LoginPage(c *gin.Context) {
-	err := templ.ExecuteTemplate(c.Writer, "login.gohtml", nil)
-	if err != nil {
-		log.Printf("couldn't render template: %v\n", err)
+func LoginHandler(c *gin.Context) {
+	username := c.Request.FormValue("username")
+	password := c.Request.FormValue("password")
+	if u, err := dao.GetUserByEmail(context.Background(), username); err == nil {
+		// user with this email found.
+		if match, err := u.ComparePasswordAndHash(password); err == nil && match {
+			s := sessions.Default(c)
+			s.Set("UserID", u.ID)
+			_ = s.Save()
+			c.Redirect(http.StatusFound, "/")
+			return
+		}
 	}
+	if sId, err := tum.LoginWithTumCredentials(username, password); err == nil {
+		s := sessions.Default(c)
+		s.Set("StudentID", sId)
+		_ = s.Save()
+		c.Redirect(http.StatusFound, "/")
+		return
+	}
+	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", true)
+}
+
+func LoginPage(c *gin.Context) {
+	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", false)
 }
 
 func LogoutPage(c *gin.Context) {
@@ -40,7 +62,7 @@ func CreatePasswordPage(c *gin.Context) {
 			log.Printf("error setting password.")
 			_ = templ.ExecuteTemplate(c.Writer, "passwordreset.gohtml", PasswordResetPageData{Error: true})
 			return
-		}else {
+		} else {
 			dao.UpdateUser(u)
 			c.Redirect(http.StatusFound, "/")
 		}
