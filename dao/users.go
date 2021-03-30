@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
+	"log"
 )
 
 func AreUsersEmpty(ctx context.Context) (isEmpty bool, err error) {
@@ -96,4 +97,22 @@ func CreateRegisterLink(ctx context.Context, user model.User) (registerLink mode
 	}
 	err = DB.Create(&registerLinkObj).Error
 	return registerLinkObj, err
+}
+
+func GetUserByResetKey(key string) (model.User, error) {
+	var resetKey model.RegisterLink
+	if err := DB.First(&resetKey, "register_secret = ?", key).Error; err != nil {
+		return model.User{}, err
+	}
+	var user model.User
+	if err := DB.First(&user, resetKey.UserID).Error; err != nil {
+		return model.User{}, err
+	}
+	return user, nil
+}
+
+func UpdateUser(user model.User) {
+	if err := DB.Save(&user).Error; err != nil {
+		log.Printf("error saving user: %v\n", err)
+	}
 }

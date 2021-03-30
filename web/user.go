@@ -1,6 +1,7 @@
 package web
 
 import (
+	"TUM-Live/dao"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -22,9 +23,38 @@ func LogoutPage(c *gin.Context) {
 }
 
 func CreatePasswordPage(c *gin.Context) {
-	key := c.Param("key")
-	err := templ.ExecuteTemplate(c.Writer, "passwordreset.gohtml", key)
-	if err != nil {
-		log.Printf("couldn't render template: %v\n", err)
+	if c.Request.Method == "POST" {
+		p1 := c.Request.FormValue("password")
+		p2 := c.Request.FormValue("passwordConfirm")
+		u, err := dao.GetUserByResetKey(c.Param("key"))
+		if err != nil {
+			c.Redirect(http.StatusFound, "/")
+			return
+		}
+		if p1 != p2 {
+			_ = templ.ExecuteTemplate(c.Writer, "passwordreset.gohtml", PasswordResetPageData{Error: true})
+			return
+		}
+		err = u.SetPassword(p1)
+		if err != nil {
+			log.Printf("error setting password.")
+			_ = templ.ExecuteTemplate(c.Writer, "passwordreset.gohtml", PasswordResetPageData{Error: true})
+			return
+		}else {
+			dao.UpdateUser(u)
+			c.Redirect(http.StatusFound, "/")
+		}
+		return
+	} else {
+		_, err := dao.GetUserByResetKey(c.Param("key"))
+		if err != nil {
+			c.Redirect(http.StatusFound, "/")
+			return
+		}
+		_ = templ.ExecuteTemplate(c.Writer, "passwordreset.gohtml", PasswordResetPageData{Error: false})
 	}
+}
+
+type PasswordResetPageData struct {
+	Error bool
 }

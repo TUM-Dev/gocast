@@ -61,6 +61,9 @@ func CollectStats() {
 			Viewers: numWatchers,
 		}
 		if s, err := dao.GetStreamByID(context.Background(), sID); err == nil {
+			if !s.LiveNow { // collect stats for livestreams only
+				return
+			}
 			s.Stats = append(s.Stats, stat)
 			if err = dao.SaveStream(&s); err != nil {
 				log.Printf("Error saving stats: %v\n", err)
