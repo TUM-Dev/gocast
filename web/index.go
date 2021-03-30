@@ -36,7 +36,9 @@ func MainPage(c *gin.Context) {
 			return
 		}
 	}
-	indexData.Semesters = getSemesterList(year, term)
+	indexData.Semesters = dao.GetAvailableSemesters()
+	indexData.CurrentYear = year
+	indexData.CurrentTerm = term
 	if userErr == nil {
 		indexData.IsUser = true
 		indexData.Courses = user.CoursesForSemester(year, term)
@@ -62,7 +64,6 @@ func MainPage(c *gin.Context) {
 		indexData.PublicCourses = publicFiltered
 	}
 	_ = templ.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
-
 }
 
 func AboutPage(c *gin.Context) {
@@ -84,40 +85,7 @@ type IndexData struct {
 	LiveStreams   []model.Stream
 	Courses       []model.Course
 	PublicCourses []model.Course
-	Semesters     []Semester
-}
-
-type Semester struct {
-	Year   int
-	WiSe   bool
-	Active bool
-}
-
-/*
- * meh.
- */
-func getSemesterList(year int, term string) []Semester {
-	curYear, curTerm := tum.GetCurrentSemester()
-	prevYear := year
-	if year == curYear && term == curTerm {
-		if term == "S"{
-			prevYear--
-		}
-		return []Semester{
-			{Year: year, WiSe: term=="W", Active: true},
-			{Year: prevYear, WiSe: term!="W", Active: false},
-		}
-	} else {
-		nextYear := year
-		if term=="S" {
-			prevYear--
-		}else {
-			nextYear++
-		}
-		return []Semester{
-			{Year: nextYear, WiSe: term!="W", Active: false},
-			{Year: year, WiSe: term=="W", Active: true},
-			{Year: prevYear, WiSe: term!="W", Active: false},
-		}
-	}
+	Semesters     []dao.Semester
+	CurrentYear   int
+	CurrentTerm   string
 }

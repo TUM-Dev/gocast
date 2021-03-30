@@ -139,3 +139,21 @@ func CreateCourse(ctx context.Context, course model.Course) error {
 	err := DB.Create(&course).Error
 	return err
 }
+
+func GetAvailableSemesters() []Semester {
+	if cached, found := Cache.Get("getAllSemesters"); found {
+		return cached.([]Semester)
+	} else {
+		var semesters []Semester
+		DB.Raw("SELECT year, teaching_term from courses " +
+			"group by year, teaching_term " +
+			"order by year desc, teaching_term desc").Scan(&semesters)
+		Cache.SetWithTTL("getAllSemesters", semesters, 1, time.Hour)
+		return semesters
+	}
+}
+
+type Semester struct {
+	TeachingTerm string
+	Year         int
+}

@@ -59,8 +59,13 @@
     {{end}}
 </div>
 <div class="flex justify-center absolute bottom-0 w-full p-2">
+    {{$currentYear := .CurrentYear}}
+    {{$currentTerm := .CurrentTerm}}
     {{range $s := .Semesters}}
-    <a href="/semester/{{$s.Year}}/{{if $s.WiSe}}W{{else}}S{{end}}" class="mx-2 {{if $s.Active}}text-white{{else}}text-gray-500{{end}}">{{$s.Year}}-{{if $s.WiSe}}W{{else}}S{{end}}</a>
+        <a href="/semester/{{$s.Year}}/{{$s.TeachingTerm}}"
+           class="mx-2 {{if and (eq $s.Year $currentYear) (eq $s.TeachingTerm $currentTerm)}}text-white{{else}}text-gray-500{{end}}">
+            {{$s.Year}}-{{$s.TeachingTerm}}
+        </a>
     {{end}}
 </div>
 </body>
