@@ -93,7 +93,7 @@ func GetAllCoursesWithTUMID(ctx context.Context) (courses []model.Course, err er
 		Logger(ctx, "Find all courses with tum_online_identifier")
 	}
 	var foundCourses []model.Course
-	dbErr := DB.Where("tum_online_identifier IS NOT NULL").Find(&foundCourses).Error
+	dbErr := DB.Where("tum_online_identifier <> ''").Find(&foundCourses).Error
 	if dbErr != nil {
 		if Logger != nil {
 			Logger(ctx, fmt.Sprintf("Unable to query courses with tum_online_identifier:%v\n", dbErr))

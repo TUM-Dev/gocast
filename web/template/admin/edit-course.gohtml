@@ -54,6 +54,7 @@
                                 <div class="w-3/4">
                                     <form onsubmit="saveLectureName(event, {{$lecture.Model.ID}})"
                                           class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                                        <label for="lectureNameInput{{$lecture.Model.ID}}" class="hidden">Lecture title</label>
                                         <input id="lectureNameInput{{$lecture.Model.ID}}"
                                                onfocus="focusNameInput(this, {{$lecture.Model.ID}})"
                                                class="flex-grow border-none" type="text" value="{{$lecture.Name}}"
@@ -124,24 +125,41 @@
                             </div>
                         </li>
                     {{end}}
+                    <li class="p-6 hover:bg-primary border-b-2 border-primary">
+                        <div class="flex">
+                            <div class="w-1/4">
+                                <div class="text-white font-semibold">Create Lecture</div>
+                            </div>
+                            <div class="w-3/4">
+                                <div class="hover:bg-primary">
+                                    <label for="name">
+                                        <input name="name" id="name" type="text" placeholder="L01: Binary Trees"/>
+                                        <span class="hidden">Lecture Name</span>
+                                    </label>
+
+                                    <div class="flex">
+                                        <label for="date" class="w-1/2">
+                                            <span class="font-semibold p-2">Date</span>
+                                            <input name="date" id="date" type="date"/>
+                                        </label>
+                                        <label for="time" class="w-1/4">
+                                            <span class="font-semibold p-2">Start</span>
+                                            <input name="time" id="time" type="time" step="900"/>
+                                        </label>
+                                        <label for="time2" class="w-1/4">
+                                            <span class="font-semibold p-2">End</span>
+                                            <input name="time2" id="time2" type="time" step="900"/>
+                                        </label>
+                                    </div>
+
+                                    <div id="createLectureBtn" class="p-3 rounded bg-info text-center text-white">
+                                        Add
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
                 </ul>
-                <div class="hover:bg-primary">
-                    <label for="name">
-                        <input name="name" id="name" type="text" placeholder="L01: Binary Trees"/>
-                        <span class="hidden">Lecture Name</span>
-                    </label>
-                    <label for="date">
-                        <input name="date" id="date" type="date"/>
-                        <span class="hidden">Date</span>
-                    </label>
-                    <label for="time">
-                        <input name="time" id="time" type="time" step="900"/>
-                        <span class="hidden">Time</span>
-                    </label>
-                    <div id="createLectureBtn" class="p-3 rounded bg-info text-white">
-                        Add
-                    </div>
-                </div>
             </div>
         </div>
     </div>
