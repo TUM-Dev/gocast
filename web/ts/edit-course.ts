@@ -78,4 +78,6 @@ function toggleExtraInfos(btn: HTMLElement, id: number) {
     }
 }
 
-new EditCourse()
+window.onload = function () {
+    new EditCourse()
+}

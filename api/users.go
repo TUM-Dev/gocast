@@ -114,7 +114,7 @@ func CreateUser(c *gin.Context) {
 		createdUser, err = createUserHelper(request, model.AdminType)
 	} else {
 		requestUser, err := tools.GetUser(c)
-		if err!=nil || requestUser.Role>1 {
+		if err != nil || requestUser.Role > 1 {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
@@ -147,7 +147,9 @@ func createUserHelper(request createUserRequest, userType int) (user model.User,
 		return u, errors.New("user could not be created")
 	}
 	if userType != model.AdminType { //generate password set link and send out email
-		err = forgotPassword(request.Email)
+		if err = forgotPassword(request.Email); err != nil {
+			log.Printf("error sending email: %v\n", err)
+		}
 	}
 	return u, nil
 }

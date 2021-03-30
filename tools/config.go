@@ -7,7 +7,6 @@ var Cfg Config
 func init() {
 	Cfg = Config{
 		MailUser:         os.Getenv("MAIL_USER"),
-		MailPassword:     os.Getenv("MAIL_PASSWORD"),
 		MailServer:       os.Getenv("MAIL_SERVER"),
 		DatabaseUser:     os.Getenv("MYSQL_USER"),
 		DatabasePassword: os.Getenv("MYSQL_PASSWORD"),
@@ -29,7 +28,6 @@ func init() {
 
 type Config struct {
 	MailUser         string
-	MailPassword     string
 	MailServer       string
 	DatabaseUser     string
 	DatabasePassword string
