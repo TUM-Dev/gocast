@@ -11,6 +11,25 @@
 {{$course := .Course}}
 <div class="container">
     <h1 class="text-gray-200">{{.Course.Name}}</h1>
+    {{range $stream := .Course.Streams }}
+        {{if $stream.LiveNow}}
+            <h2 class="text-white">Live:</h2>
+            <div class="py-2 px-4">
+                <a href="/live/{{$course.Slug}}/{{$stream.Model.ID}}">
+                    <h3 class="text-xl text-gray-300 hover:text-gray-200">
+                        {{if $stream.Name}}
+                            {{$stream.Name}}
+                        {{else}}
+                            Lecture {{printf "%v %02d." $stream.Start.Month $stream.Start.Day}}
+                        {{end}}
+                    </h3>
+                </a>
+                <p class="text-white font-sans font-light">
+                    {{printf "%v %02d. %02d:%02d" $stream.Start.Month $stream.Start.Day $stream.Start.Hour $stream.Start.Minute}}
+                </p>
+            </div>
+        {{end}}
+    {{end}}
     {{$recordings := .Course.GetRecordings}}
     {{range $i, $recording := $recordings }}
         <div class="py-2 px-4">
