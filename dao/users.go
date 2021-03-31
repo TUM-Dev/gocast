@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
+	"gorm.io/gorm/clause"
 	"log"
 )
 
@@ -115,4 +116,9 @@ func UpdateUser(user model.User) {
 	if err := DB.Save(&user).Error; err != nil {
 		log.Printf("error saving user: %v\n", err)
 	}
+}
+
+func UpdateStudent(student model.Student) {
+	// insert student if they don't exist yet.
+	DB.Clauses(clause.OnConflict{DoNothing: true}).Create(&student)
 }

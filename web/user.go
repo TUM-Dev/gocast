@@ -2,6 +2,7 @@ package web
 
 import (
 	"TUM-Live/dao"
+	"TUM-Live/model"
 	"TUM-Live/tools/tum"
 	"context"
 	"github.com/gin-contrib/sessions"
@@ -25,6 +26,11 @@ func LoginHandler(c *gin.Context) {
 		}
 	}
 	if sId, name, err := tum.LoginWithTumCredentials(username, password); err == nil {
+		student := model.Student{
+			ID:      sId,
+			Name:    name,
+		}
+		dao.UpdateStudent(student)
 		s := sessions.Default(c)
 		s.Set("StudentID", sId)
 		s.Set("Name", name)
