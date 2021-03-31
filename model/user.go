@@ -104,6 +104,15 @@ func (u *User) ComparePasswordAndHash(password string) (match bool, err error) {
 	return false, nil
 }
 
+func (u *User) IsAdminOfCourse(courseID uint) bool {
+	for _, course := range u.Courses {
+		if course.ID == courseID {
+			return true
+		}
+	}
+	return false
+}
+
 func decodeHash(encodedHash string) (salt, hash []byte, err error) {
 	vals := strings.Split(encodedHash, "$")
 	if len(vals) != 6 {

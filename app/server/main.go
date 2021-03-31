@@ -72,7 +72,7 @@ func main() {
 	goopt.Parse(nil)
 
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
-		"%v:%v@tcp(db:3306)/%v?parseTime=true",
+		"%v:%v@tcp(db:3306)/%v?parseTime=true&loc=Local",
 		tools.Cfg.DatabaseUser,
 		tools.Cfg.DatabasePassword,
 		tools.Cfg.DatabaseName),

@@ -8,4 +8,5 @@ type Chat struct {
 	UserName string
 	Message  string
 	StreamID uint
+	Admin    bool
 }

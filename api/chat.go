@@ -6,6 +6,7 @@ import (
 	"TUM-Live/tools"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"gopkg.in/olahol/melody.v1"
@@ -51,15 +52,26 @@ func configGinChatRouter(router gin.IRoutes) {
 		if err != nil {
 			return
 		}
+		stream, err := dao.GetStreamByID(context.Background(), fmt.Sprintf("%v", vID))
+		if err != nil {
+			return
+		}
 		session := sessions.Default(ctx.(*gin.Context))
 		uname := session.Get("Name").(string)
 		if chat.Anonymous {
-			uname = ""
+			uname = "Anonymous"
 		}
-		dao.AddMessage(chat.Msg, uid, uname, uint(vID))
+		dao.AddMessage(model.Chat{
+			UserID:   uid,
+			UserName: uname,
+			Message:  chat.Msg,
+			StreamID: uint(vID),
+			Admin:    uErr == nil && user.IsAdminOfCourse(stream.CourseID),
+		})
 		broadcast, err := json.Marshal(ChatRep{
-			Msg:  chat.Msg,
-			Name: uname,
+			Msg:   chat.Msg,
+			Name:  uname,
+			Admin: uErr == nil && user.IsAdminOfCourse(stream.CourseID),
 		})
 		if err == nil {
 			_ = m.BroadcastFilter(broadcast, func(q *melody.Session) bool { // filter broadcasting to same lecture.
@@ -74,8 +86,9 @@ type ChatReq struct {
 	Anonymous bool   `json:"anonymous"`
 }
 type ChatRep struct {
-	Msg  string `json:"msg"`
-	Name string `json:"name"`
+	Msg   string `json:"msg"`
+	Name  string `json:"name"`
+	Admin bool   `json:"admin"`
 }
 
 func CollectStats() {

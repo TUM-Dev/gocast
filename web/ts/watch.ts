@@ -8,10 +8,7 @@ class Watch {
         this.chatInput = document.getElementById("chatInput") as HTMLInputElement
         this.ws = new WebSocket("wss://live.mm.rbg.tum.de:443/api/chat/" + (document.getElementById("streamID") as HTMLInputElement).value + "/ws")
         this.ws.onmessage = function (m) {
-            let chatElem = document.createElement("div") as HTMLDivElement
-            chatElem.classList.add("bg-secondary", "rounded", "p-2", "mx-2", "mb-2")
-            const reply = JSON.parse(m.data)
-            chatElem.innerText = reply["msg"] + reply["name"]
+            const chatElem = Watch.createMessageElement(JSON.parse(m.data))
             document.getElementById("chatBox").appendChild(chatElem)
             document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight
         }
@@ -36,6 +33,39 @@ class Watch {
     private static loadStat() {
         let stat = JSON.parse(Get("/api/chat/" + (document.getElementById("streamID") as HTMLInputElement).value + "/stats"))
         document.getElementById("viewerCount").innerText = stat["viewers"]
+    }
+
+    /*
+    while I'm not a fan of huge frontend frameworks, this is a good example why they can be useful.
+     */
+    private static createMessageElement(m): HTMLDivElement {
+        // Header:
+        let chatElem = document.createElement("div") as HTMLDivElement
+        chatElem.classList.add("rounded", "p-2", "mx-2")
+        let chatHeader = document.createElement("div") as HTMLDivElement
+        chatHeader.classList.add("flex", "flex-row")
+        let chatNameField = document.createElement("p") as HTMLParagraphElement
+        chatNameField.classList.add("flex-grow", "font-semibold")
+        if (m["admin"]){
+            chatNameField.classList.add("text-warn")
+        }
+        chatNameField.innerText = m["name"]
+        chatHeader.appendChild(chatNameField)
+
+        const d = new Date
+        d.setTime(Date.now())
+        let chatTimeField = document.createElement("p") as HTMLParagraphElement
+        chatTimeField.classList.add("text-gray-500", "font-thin")
+        chatTimeField.innerText = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2)
+        chatHeader.appendChild(chatTimeField)
+        chatElem.appendChild(chatHeader)
+
+        // Message:
+        let chatMessage = document.createElement("p") as HTMLParagraphElement
+        chatMessage.classList.add("text-gray-300", "break-words")
+        chatMessage.innerText = m["msg"]
+        chatElem.appendChild(chatMessage)
+        return chatElem
     }
 }
 
