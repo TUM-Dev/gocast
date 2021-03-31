@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"gorm.io/gorm"
+	"log"
 	"time"
 )
 
@@ -55,12 +56,13 @@ func GetPublicCourses(year int, term string) (courses []model.Course, err error)
 	if found {
 		return cachedCourses.([]model.Course), err
 	}
+	log.Printf("not using cache!")
 	var publicCourses []model.Course
 	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start asc")
 	}).Find(&publicCourses, "visibility = 'public' AND teaching_term = ? AND year = ?", term, year).Error
 	if err == nil {
-		Cache.SetWithTTL("publicCourses", publicCourses, 1, time.Minute)
+		Cache.SetWithTTL(fmt.Sprintf("publicCourses%v%v", year, term), publicCourses, 1, time.Minute)
 	}
 	return publicCourses, err
 }

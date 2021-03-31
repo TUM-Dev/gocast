@@ -63,10 +63,14 @@
     {{$currentTerm := .CurrentTerm}}
     {{range $s := .Semesters}}
         <a href="/semester/{{$s.Year}}/{{$s.TeachingTerm}}"
-           class="mx-2 {{if and (eq $s.Year $currentYear) (eq $s.TeachingTerm $currentTerm)}}text-white{{else}}text-gray-500{{end}}">
+           class="mx-2 {{if and (eq $s.Year $currentYear) (eq $s.TeachingTerm $currentTerm)}}text-white{{else}}text-gray-500 hover:text-white{{end}}">
             {{$s.Year}}-{{$s.TeachingTerm}}
         </a>
     {{end}}
 </div>
 </body>
+<!--       _
+       .__(.)< (MEOW)
+        \___)
+ ~~~~~~~~~~~~~~~~~~-->
 </html>

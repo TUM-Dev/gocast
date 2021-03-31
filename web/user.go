@@ -18,14 +18,16 @@ func LoginHandler(c *gin.Context) {
 		if match, err := u.ComparePasswordAndHash(password); err == nil && match {
 			s := sessions.Default(c)
 			s.Set("UserID", u.ID)
+			s.Set("Name", u.Name)
 			_ = s.Save()
 			c.Redirect(http.StatusFound, "/")
 			return
 		}
 	}
-	if sId, err := tum.LoginWithTumCredentials(username, password); err == nil {
+	if sId, name, err := tum.LoginWithTumCredentials(username, password); err == nil {
 		s := sessions.Default(c)
 		s.Set("StudentID", sId)
+		s.Set("Name", name)
 		_ = s.Save()
 		c.Redirect(http.StatusFound, "/")
 		return

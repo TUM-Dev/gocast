@@ -5,6 +5,8 @@ import (
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"context"
+	"encoding/json"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"gopkg.in/olahol/melody.v1"
 	"log"
@@ -27,7 +29,10 @@ func configGinChatRouter(router gin.IRoutes) {
 	}
 	m.HandleMessage(func(s *melody.Session, msg []byte) {
 		ctx, _ := s.Get("ctx") // get gin context
-
+		var chat ChatReq
+		if err := json.Unmarshal(msg, &chat); err != nil {
+			return
+		}
 		user, uErr := tools.GetUser(ctx.(*gin.Context))
 		student, sErr := tools.GetStudent(ctx.(*gin.Context))
 		if uErr != nil && sErr != nil {
@@ -41,15 +46,36 @@ func configGinChatRouter(router gin.IRoutes) {
 		} else if sErr == nil {
 			uid = student.ID
 		}
+
 		vID, err := strconv.Atoi(ctx.(*gin.Context).Param("vidId"))
 		if err != nil {
 			return
 		}
-		dao.AddMessage(string(msg), uid, uint(vID))
-		_ = m.BroadcastFilter(msg, func(q *melody.Session) bool { // filter broadcasting to same lecture.
-			return q.Request.URL.Path == s.Request.URL.Path
+		session := sessions.Default(ctx.(*gin.Context))
+		uname := session.Get("Name").(string)
+		if chat.Anonymous {
+			uname = ""
+		}
+		dao.AddMessage(chat.Msg, uid, uname, uint(vID))
+		broadcast, err := json.Marshal(ChatRep{
+			Msg:  chat.Msg,
+			Name: uname,
 		})
+		if err == nil {
+			_ = m.BroadcastFilter(broadcast, func(q *melody.Session) bool { // filter broadcasting to same lecture.
+				return q.Request.URL.Path == s.Request.URL.Path
+			})
+		}
 	})
+}
+
+type ChatReq struct {
+	Msg       string `json:"msg"`
+	Anonymous bool   `json:"anonymous"`
+}
+type ChatRep struct {
+	Msg  string `json:"msg"`
+	Name string `json:"name"`
 }
 
 func CollectStats() {

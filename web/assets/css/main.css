@@ -42,13 +42,24 @@ input, textarea {
     background-color: #3070b3 !important;
 }
 
+/* slider for cutting videos: */
+
+.noUi-horizontal {
+    height: 5px;
+}
+
+/* Chat */
+input[type='checkbox']:checked + label {
+    color: #3070b3;
+}
+
 @media (min-width: 768px) {
     .chat {
         max-height: calc(100vh - 5rem);
     }
 }
 
-.chat, .watchContent{
+.chat, .watchContent {
     /* Hide scrollbar for IE, Edge and Firefox */
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
@@ -58,10 +69,3 @@ input, textarea {
 .chat::-webkit-scrollbar, .watchContent::-webkit-scrollbar {
     display: none;
 }
-
-/* slider for cutting videos: */
-
-.noUi-horizontal {
-    height: 5px;
-}
-

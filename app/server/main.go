@@ -38,7 +38,7 @@ func GinServer() (err error) {
 		log.Fatalf("Unable to generate cookie store secret: %err\n", err)
 	}
 	store := cookie.NewStore(secret)
-	router.Use(sessions.Sessions("TUMLiveSessionV2", store))
+	router.Use(sessions.Sessions("TUMLiveSessionV3", store))
 	// event streams don't work with gzip, configure group without
 	chat := router.Group("/api/chat")
 	api.ConfigChatRouter(chat)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"time"
 )
 
 // return stream by streaming key
@@ -67,12 +68,20 @@ func SetStreamLive(ctx context.Context, streamKey string, playlistUrl string) (e
 	return dbErr
 }
 
-func GetCurrentLive(ctx context.Context, currentLive *[]model.Stream) (err error) {
-	res := DB.Find(&currentLive, "live_now = ?", true)
-	return res.Error
+func GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error) {
+	if streams, found := Cache.Get("AllCurrentlyLiveStreams"); found {
+		return streams.([]model.Stream), nil
+	}
+	var streams []model.Stream
+	if err := DB.Find(&streams, "live_now = ?", true).Error; err != nil {
+		return nil, err
+	}
+	Cache.SetWithTTL("AllCurrentlyLiveStreams", streams, 1, time.Minute)
+	return streams, err
 }
 
 func SetStreamNotLive(ctx context.Context, streamKey string) (err error) {
+	Cache.Clear() // costs a bit but hey
 	dbErr := DB.Model(&model.Stream{}).
 		Where("stream_key = ?", streamKey).
 		Update("live_now", false).

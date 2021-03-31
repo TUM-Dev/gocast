@@ -10,7 +10,8 @@ class Watch {
         this.ws.onmessage = function (m) {
             let chatElem = document.createElement("div") as HTMLDivElement
             chatElem.classList.add("bg-secondary", "rounded", "p-2", "mx-2", "mb-2")
-            chatElem.innerText = m.data
+            const reply = JSON.parse(m.data)
+            chatElem.innerText = reply["msg"] + reply["name"]
             document.getElementById("chatBox").appendChild(chatElem)
             document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight
         }
@@ -24,7 +25,10 @@ class Watch {
 
     submitChat(e: Event) {
         e.preventDefault()
-        this.ws.send(this.chatInput.value)
+        this.ws.send(JSON.stringify({
+            "msg": this.chatInput.value,
+            "anonymous": (document.getElementById("anonymous") as HTMLInputElement).checked
+        }))
         this.chatInput.value = ""
         return false//prevent form submission
     }

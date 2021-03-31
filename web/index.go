@@ -47,8 +47,7 @@ func MainPage(c *gin.Context) {
 		indexData.Courses = student.CoursesForSemester(year, term)
 	}
 	// Todo get live streams for user
-	var streams []model.Stream
-	err = dao.GetCurrentLive(context.Background(), &streams)
+	streams, err := dao.GetCurrentLive(context.Background())
 	indexData.LiveStreams = streams
 	public, err := dao.GetPublicCourses(year, term)
 	if err != nil {

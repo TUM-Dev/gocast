@@ -17,12 +17,6 @@ func configGinUsersRouter(router gin.IRoutes) {
 	router.POST("/api/deleteUser", DeleteUser)
 }
 
-type loginRequest struct {
-	LoginWithTUM bool
-	Username     string
-	Password     string
-}
-
 func DeleteUser(c *gin.Context) {
 	var deleteRequest deleteUserRequest
 	err := json.NewDecoder(c.Request.Body).Decode(&deleteRequest)
@@ -130,10 +124,6 @@ func forgotPassword(email string) error {
 
 type deleteUserRequest struct {
 	Id uint `json:"id"`
-}
-
-type deleteUserResponse struct {
-	Success bool `json:"success"`
 }
 
 type createUserRequest struct {

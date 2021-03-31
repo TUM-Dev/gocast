@@ -11,7 +11,7 @@ import (
 /**
  * returns student id if login and password match, err otherwise
  */
-func LoginWithTumCredentials(username string, password string) (userId string, err error) {
+func LoginWithTumCredentials(username string, password string) (userId string, firstName string, err error) {
 	l, err := ldap.DialURL(tools.Cfg.LdapUrl)
 	if err != nil {
 		log.Fatal(err)
@@ -35,13 +35,13 @@ func LoginWithTumCredentials(username string, password string) (userId string, e
 
 	sr, err := l.Search(searchRequest)
 	if err != nil {
-		log.Printf("%v",err)
-		return "", errors.New("couldn't query user")
+		log.Printf("%v", err)
+		return "", "", errors.New("couldn't query user")
 	}
 
 	if len(sr.Entries) != 1 {
 		log.Printf("User does not exist or too many entries returned: %v\n", len(sr.Entries))
-		return "", errors.New("couldn't find single user")
+		return "", "", errors.New("couldn't find single user")
 	}
 
 	userdn := sr.Entries[0].DN
@@ -49,7 +49,7 @@ func LoginWithTumCredentials(username string, password string) (userId string, e
 	err = l.Bind(userdn, password)
 	if err != nil {
 		log.Printf("%v\n", err)
-		return "", errors.New("couldn't login with tum credentials")
+		return "", "", errors.New("couldn't login with tum credentials")
 	}
 	res, err := l.Search(&ldap.SearchRequest{
 		BaseDN:   userdn,
@@ -58,21 +58,22 @@ func LoginWithTumCredentials(username string, password string) (userId string, e
 	})
 	if err != nil {
 		log.Printf("%v\n", err)
-		return "", errors.New("couldn't login with tum credentials")
+		return "", "", errors.New("couldn't login with tum credentials")
 	} else {
-		if len(res.Entries)!=1 {
+		if len(res.Entries) != 1 {
 			log.Println("bad response from ldap server")
-			return "", errors.New("bad response from ldap server")
+			return "", "", errors.New("bad response from ldap server")
 		}
 		mNr := res.Entries[0].GetAttributeValue("imMatrikelNr")
 		mwnID := res.Entries[0].GetAttributeValue("imMWNID")
+		name := res.Entries[0].GetAttributeValue("imVorname")
 		if mNr != "" {
-			return mNr, nil
+			return mNr, name, nil
 		}
 		if mwnID != "" {
 			log.Println("Falling back to mwn id.")
-			return mwnID, nil
+			return mwnID, name, nil
 		}
 	}
-	return "", errors.New("something went wrong")
+	return "", "", errors.New("something went wrong")
 }
