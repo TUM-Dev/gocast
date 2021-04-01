@@ -34,7 +34,7 @@ func configGinChatRouter(router gin.IRoutes) {
 		if err := json.Unmarshal(msg, &chat); err != nil {
 			return
 		}
-		if chat.Msg == "" {
+		if chat.Msg == "" || len(chat.Msg) > 200 {
 			return
 		}
 		user, uErr := tools.GetUser(ctx.(*gin.Context))
@@ -44,7 +44,7 @@ func configGinChatRouter(router gin.IRoutes) {
 			uid = strconv.Itoa(int(user.ID))
 		} else if sErr == nil {
 			uid = student.ID
-		}else {
+		} else {
 			return
 		}
 		if dao.IsUserCooledDown(uid) {
