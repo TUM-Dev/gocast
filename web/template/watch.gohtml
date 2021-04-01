@@ -73,9 +73,12 @@
 <script src="/dist/videojs-contrib-quality-levels/dist/videojs-contrib-quality-levels.min.js"></script>
 <script src="/dist/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.min.js"></script>
 <script>
-    let player = videojs('my-video');
+    let player = videojs('my-video', {
+        playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
+    });
     player.play();
     player.hlsQualitySelector();
+
 </script>
 </body>
 </html>
