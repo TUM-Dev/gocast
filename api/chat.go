@@ -34,20 +34,22 @@ func configGinChatRouter(router gin.IRoutes) {
 		if err := json.Unmarshal(msg, &chat); err != nil {
 			return
 		}
+		if chat.Msg == "" {
+			return
+		}
 		user, uErr := tools.GetUser(ctx.(*gin.Context))
 		student, sErr := tools.GetStudent(ctx.(*gin.Context))
-		if uErr != nil && sErr != nil {
-			// not allowed to send message
-			return
-
-		}
 		var uid string
 		if uErr == nil {
 			uid = strconv.Itoa(int(user.ID))
 		} else if sErr == nil {
 			uid = student.ID
+		}else {
+			return
 		}
-
+		if dao.IsUserCooledDown(uid) {
+			return
+		}
 		vID, err := strconv.Atoi(ctx.(*gin.Context).Param("vidId"))
 		if err != nil {
 			return

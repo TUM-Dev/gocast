@@ -60,6 +60,7 @@
                 <i class="fas fa-ghost"></i>
             </label>
             <label for="chatInput" class="hidden">Chat input</label><input
+                    maxlength="200"
                     {{if not (or .IndexData.IsStudent .IndexData.IsUser)}}disabled placeholder="Log in to chat" {{else}}
                     placeholder="Send a message" {{end}}autocomplete="off" id="chatInput" type="text"
                     class="border-none">

@@ -7,3 +7,10 @@ import (
 func AddMessage(chat model.Chat) {
 	DB.Save(&chat)
 }
+
+// returns true if a user sent 5 messages within the last two minutes
+func IsUserCooledDown(uid string) bool {
+	var chat []model.Chat
+	res := DB.Table("chats").Where("user_id = ? AND created_at > ADDTIME(NOW(), '-0:01:0')", uid).Scan(&chat)
+	return res.RowsAffected >= 5
+}
