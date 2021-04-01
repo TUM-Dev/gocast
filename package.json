@@ -23,7 +23,7 @@
     "@videojs/http-streaming": "^1.11.3",
     "chart.js": "^2.9.4",
     "nouislider": "^14.6.4",
-    "video.js": "^7.7.4",
+    "video.js": "^7.9.7",
     "videojs-hls-quality-selector": "^1.1.4"
   },
   "devDependencies": {
