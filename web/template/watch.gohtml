@@ -27,16 +27,19 @@
         </video>
         <div class="flex justify-between align-middle"><h1
                     class="text-gray-300 text-2xl">{{.Stream.Name}}</h1>
-            <p class="text-xl text-gray-400">
-            {{if .Stream.LiveNow}}
+            <p class="text-xl text-gray-400 flex space-x-2">
+                {{if .Stream.LiveNow}}
                     <span id="viewerCount"></span>
                     <i class="fas fa-users text-gray-400"></i>
-            {{else if .Course.DownloadsEnabled}}
-                    <a href="/api/download/{{.Stream.Model.ID}}/{{.Course.Slug}}/{{.Course.Slug}}-{{printf "%v-%02d-%04d" .Stream.Start.Month .Stream.Start.Day .Stream.Start.Year}}" download>
+                {{else if .Course.DownloadsEnabled}}
+                    <a class="flex"
+                       href="/api/download/{{.Stream.Model.ID}}/{{.Course.Slug}}/{{.Course.Slug}}-{{printf "%v-%02d-%04d" .Stream.Start.Month .Stream.Start.Day .Stream.Start.Year}}"
+                       download>
                         <i class="fas fa-download text-gray-400 hover:text-purple-500"></i>
                     </a>
-            {{end}}
-                <i title="Copy HLS URL" class="fas fa-link hover:text-purple-500 mr-2" onclick="copyToClipboard('{{.Stream.PlaylistUrl}}')"></i>
+                {{end}}
+                <i title="Copy HLS URL" class="fas fa-link hover:text-purple-500"
+                   onclick="copyToClipboard('{{.Stream.PlaylistUrl}}')"></i>
             </p>
         </div>
         <h1 class="text-gray-300 text-xl">{{.Course.Name}}</h1>
