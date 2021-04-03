@@ -1,4 +1,4 @@
-class Admin{
+class Admin {
 
 }
 

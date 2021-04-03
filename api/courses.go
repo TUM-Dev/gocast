@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
+	"gorm.io/gorm"
 	"io/ioutil"
 	"net/http"
 	"regexp"
@@ -21,6 +22,7 @@ func configGinCourseRouter(router gin.IRoutes) {
 	router.POST("/api/courseInfo", courseInfo)
 	router.POST("/api/createCourse", createCourse)
 	router.POST("/api/createLecture", createLecture)
+	router.POST("/api/deleteLecture/:id", deleteLecture)
 	router.POST("/api/renameLecture", renameLecture)
 }
 
@@ -55,6 +57,29 @@ func renameLecture(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't update lecture name")
 		return
 	}
+}
+
+func deleteLecture(c *gin.Context) {
+	user, err := tools.GetUser(c)
+	if err != nil {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	if user.Role > 2 { // not lecturer or admin
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	stream, err := dao.GetStreamByID(context.Background(), c.Param("id"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	if user.Role != 1 && !user.IsAdminOfCourse(stream.ID) {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	stream.Model.DeletedAt = gorm.DeletedAt{Time: time.Now()}
+	dao.DeleteStream(strconv.Itoa(int(stream.ID)))
 }
 
 func createLecture(c *gin.Context) {

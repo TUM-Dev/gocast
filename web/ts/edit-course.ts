@@ -83,6 +83,14 @@ function toggleExtraInfos(btn: HTMLElement, id: number) {
     }
 }
 
+function deleteLecture(id: number) {
+    if (confirm("Confirm deleting video?")) {
+        postData("/api/deleteLecture/" + id).then(r => {
+            document.location.reload()
+        })
+    }
+}
+
 window.onload = function () {
     new EditCourse()
 }

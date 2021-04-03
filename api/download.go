@@ -21,7 +21,7 @@ func downloadVod(c *gin.Context) {
 		return
 	}
 	course, err := dao.GetCourseById(context.Background(), stream.CourseID)
-	if err != nil || !course.DownloadsEnabled {
+	if err != nil {
 		log.Printf("Deny download, cause: error or download disabled: %v", err)
 		c.AbortWithStatus(http.StatusNotFound)
 		return
@@ -31,9 +31,22 @@ func downloadVod(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	if course.Visibility != "public" {
-		user, uerr := tools.GetUser(c)
-		student, serr := tools.GetStudent(c)
+	user, uerr := tools.GetUser(c)
+	student, serr := tools.GetStudent(c)
+	if !course.DownloadsEnabled {
+		// only allow for owner or admin
+		if uerr != nil {
+			log.Printf("Deny download, cause: download disabled but not logged in")
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		} else {
+			if user.Role > 1 && !user.IsAdminOfCourse(course.ID) {
+				log.Printf("Deny download, cause: download disabled and user not admin or owner.")
+				c.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+		}
+	} else if course.Visibility != "public" {
 		if uerr == nil {
 			if user.Role > 1 && !user.IsAdminOfCourse(course.ID) {
 				log.Printf("Deny download, cause: user but not admin or owner")

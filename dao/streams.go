@@ -97,3 +97,8 @@ func InsertConvertJob(ctx context.Context, job *model.ProcessingJob) {
 		UpdateAll: true,
 	}).Create(job)
 }
+
+func DeleteStream(streamID string) {
+	DB.Where("id = ?", streamID).Delete(&model.Stream{})
+	Cache.Clear()
+}

@@ -28,7 +28,11 @@
                         <li class="p-6 hover:bg-primary border-b-2 border-primary">
                             <div class="flex">
                                 <div class="w-1/4">
-                                    <div class="text-white font-semibold">{{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}</div>
+                                    <div class="text-white font-semibold">{{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
+                                        <i class="fas fa-trash hover:text-purple-500 px-2"
+                                           title="Delete Lecture"
+                                           onclick="deleteLecture({{$lecture.Model.ID}})"></i>
+                                    </div>
                                     <div class="text-gray-300 font-sans">
                                         {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
                                     </div>
@@ -49,12 +53,12 @@
                                             Scheduled
                                         </div>
                                     {{end}}
-
                                 </div>
                                 <div class="w-3/4">
                                     <form onsubmit="saveLectureName(event, {{$lecture.Model.ID}})"
                                           class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
-                                        <label for="lectureNameInput{{$lecture.Model.ID}}" class="hidden">Lecture title</label>
+                                        <label for="lectureNameInput{{$lecture.Model.ID}}" class="hidden">Lecture
+                                            title</label>
                                         <input id="lectureNameInput{{$lecture.Model.ID}}"
                                                onfocus="focusNameInput(this, {{$lecture.Model.ID}})"
                                                class="flex-grow border-none" type="text" value="{{$lecture.Name}}"
@@ -73,18 +77,19 @@
                                             <p class="mt-2">
                                                 <span class="font-semibold">Stream Server:</span> <span>rtmp://live.mm.rbg.tum.de:1935/stream?secret={{$lecture.StreamKey}}</span>
                                                 <i class="fas fa-clipboard hover:text-purple-500"
-                                                   onclick="copyToClipboard('rtmp://live.mm.rbg.tum.de:1935/stream?secret={{$lecture.StreamKey}}')"></i><br>
+                                                   onclick="copyToClipboard('rtmp://live.mm.rbg.tum.de:1935/stream?secret={{$lecture.StreamKey}}')"></i>
+                                                <br>
                                                 <span class="font-semibold">Stream Key:</span>
                                                 <span>{{$course.Slug}}</span>
                                             </p>
                                             {{else if $lecture.Recording}}
                                             <p class="mt-2 flex">
-                                                <i class="fas fa-eye hover:text-purple-500 px-2"
-                                                   title="Make Invisible"></i>
-                                                <i class="fas fa-cut hover:text-purple-500 px-2"
-                                                   title="Edit VoD" onclick="cutVod({{$lecture.Model.ID}})"></i>
-                                                <i class="fas fa-download hover:text-purple-500 px-2"
-                                                   title="Download VoD"></i>
+                                                <a class="flex"
+                                                   href="/api/download/{{$lecture.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $lecture.Start.Month $lecture.Start.Day $lecture.Start.Year}}"
+                                                   download>
+                                                    <i class="fas fa-download hover:text-purple-500 px-2"
+                                                       title="Download VoD"></i>
+                                                </a>
                                                 {{if $lecture.Stats}}
                                                     <i class="fas fa-chart-line hover:text-purple-500 px-2"
                                                        title="Live Statistics"
