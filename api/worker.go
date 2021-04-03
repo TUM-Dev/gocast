@@ -36,6 +36,7 @@ func putVod(c *gin.Context) {
 	stream, _ := dao.GetStreamByID(context.Background(), strconv.Itoa(int(req.StreamId)))
 	stream.Recording = true
 	stream.PlaylistUrl = req.HlsUrl
+	stream.FilePath = req.FilePath
 	_ = dao.SaveStream(&stream)
 }
 
@@ -75,5 +76,6 @@ type putVodData struct {
 	Name     string
 	Start    time.Time
 	HlsUrl   string
+	FilePath string
 	StreamId uint
 }

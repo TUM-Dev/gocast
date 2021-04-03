@@ -19,6 +19,7 @@ type Stream struct {
 	TUMOnlineEventID uint
 	StreamKey        string
 	PlaylistUrl      string
+	FilePath         string
 	LiveNow          bool
 	Recording        bool
 	Chats            []Chat

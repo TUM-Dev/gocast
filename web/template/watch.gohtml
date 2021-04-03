@@ -32,6 +32,12 @@
                     <span id="viewerCount"></span>
                     <i class="fas fa-users text-gray-400"></i>
                 </p>
+            {{else if .Course.DownloadsEnabled}}
+                <p class="text-xl text-gray-400">
+                    <a href="/api/download/{{.Stream.Model.ID}}/{{.Course.Slug}}/{{.Course.Slug}}-{{printf "%v-%02d-%04d" .Stream.Start.Month .Stream.Start.Day .Stream.Start.Year}}" download>
+                        <i class="fas fa-download text-gray-400 hover:text-purple-500"></i>
+                    </a>
+                </p>
             {{end}}
         </div>
         <h1 class="text-gray-300 text-xl">{{.Course.Name}}</h1>

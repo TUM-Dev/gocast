@@ -64,7 +64,6 @@ func WatchPage(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 	}
 	data.Course = course
-	println(stream.Name)
 	err = templ.ExecuteTemplate(c.Writer, "watch.gohtml", data)
 	if err != nil {
 		log.Printf("couldn't render template: %v\n", err)
