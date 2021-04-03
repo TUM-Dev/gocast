@@ -5,6 +5,7 @@ import (
 	"TUM-Live/tools"
 	"context"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 )
 
@@ -15,11 +16,18 @@ func configGinDownloadRouter(router gin.IRoutes) {
 func downloadVod(c *gin.Context) {
 	stream, err := dao.GetStreamByID(context.Background(), c.Param("id"))
 	if err != nil || !stream.Recording {
+		log.Printf("Deny download, cause: error or not recording: %v", err)
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
 	course, err := dao.GetCourseById(context.Background(), stream.CourseID)
 	if err != nil || !course.DownloadsEnabled {
+		log.Printf("Deny download, cause: error or download disabled: %v", err)
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	if course.ID != stream.CourseID {
+		log.Printf("Deny download, cause: courseid and stream-courseid don't match")
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
@@ -28,6 +36,7 @@ func downloadVod(c *gin.Context) {
 		student, serr := tools.GetStudent(c)
 		if uerr == nil {
 			if user.Role > 1 && !user.IsAdminOfCourse(course.ID) {
+				log.Printf("Deny download, cause: user but not admin or owner")
 				// logged in as user but not owner of course or admin
 				c.AbortWithStatus(http.StatusNotFound)
 				return
@@ -41,16 +50,19 @@ func downloadVod(c *gin.Context) {
 				}
 			}
 			if !canDownload {
+				log.Printf("Deny download, cause: student but not their course.")
 				// student but not allowed enrolled to course
 				c.AbortWithStatus(http.StatusNotFound)
 				return
 			}
 		} else {
+			log.Printf("Deny download, private course but not logged in")
 			// not logged in to a course that is private.
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
 	}
 	// public -> download
+	log.Printf("Download stream: %v", stream.FilePath)
 	c.File(stream.FilePath)
 }
