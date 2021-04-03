@@ -7,14 +7,19 @@ class EditCourse {
         const id = (document.getElementById("courseID") as HTMLInputElement).value
         const name = (document.getElementById("name") as HTMLInputElement).value
         const date = (document.getElementById("date") as HTMLInputElement).value.split("-").map(value => parseInt(value))
-        const time = (document.getElementById("time") as HTMLInputElement).value.split(":").map(value => parseInt(value))
-        const datetime = new Date()
-        datetime.setFullYear(date[0], date[1] - 1, date[2]) // wtf js??? month is 0 based, year and day 1 based.
-        datetime.setHours(time[0], time[1], 0, 0)
+        const startTime = (document.getElementById("time") as HTMLInputElement).value.split(":").map(value => parseInt(value))
+        const endTime = (document.getElementById("time2") as HTMLInputElement).value.split(":").map(value => parseInt(value))
+        const datetimeStart = new Date()
+        datetimeStart.setFullYear(date[0], date[1] - 1, date[2]) // wtf js??? month is 0 based, year and day 1 based.
+        datetimeStart.setHours(startTime[0], startTime[1], 0, 0)
+        const datetimeEnd = new Date()
+        datetimeEnd.setFullYear(date[0], date[1] - 1, date[2]) // wtf js??? month is 0 based, year and day 1 based.
+        datetimeEnd.setHours(endTime[0], endTime[1], 0, 0)
         postData("/api/createLecture", {
             "id": id,
             "name": name,
-            "start": datetime.toISOString(),
+            "start": datetimeStart.toISOString(),
+            "end": datetimeEnd.toISOString(),
         }).then(data => {
             if (data.status != 200) {
                 data.text().then(t => showMessage(t))

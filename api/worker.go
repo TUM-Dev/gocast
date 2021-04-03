@@ -51,12 +51,14 @@ func getJob(c *gin.Context) {
 		return
 	}
 	stream, _ := dao.GetStreamByID(context.Background(), strconv.Itoa(int(job.StreamID)))
+	course, _ := dao.GetCourseById(context.Background(), stream.CourseID)
 	c.JSON(http.StatusOK, &jobData{
 		Id:          job.ID,
 		Name:        stream.Name,
 		StreamStart: stream.Start,
 		StreamId:    job.StreamID,
 		Path:        job.FilePath,
+		Upload:      course.VODEnabled,
 	})
 }
 
@@ -66,6 +68,7 @@ type jobData struct {
 	StreamId    uint      `json:"streamId"`
 	StreamStart time.Time `json:"streamStart"`
 	Path        string    `json:"path"`
+	Upload      bool
 }
 
 type putVodData struct {

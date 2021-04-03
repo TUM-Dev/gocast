@@ -120,7 +120,6 @@ func main() {
 	//Fetch students every 12 hours
 	_, _ = cronService.AddFunc("0 */12 * * *", tum.FetchCourses)
 	_, _ = cronService.AddFunc("0-59/5 * * * *", api.CollectStats)
-	//tum.FetchCourses()
 	cronService.Start()
 	api.ContextInitializer = func(r *http.Request) (ctx context.Context) {
 		val, ok := r.Header["X-Api-User"]

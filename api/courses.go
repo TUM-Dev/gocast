@@ -95,7 +95,7 @@ func createLecture(c *gin.Context) {
 		Name:        req.Name,
 		CourseID:    uint(u64),
 		Start:       req.Start,
-		End:         req.Start,
+		End:         req.End,
 		StreamKey:   streamKey,
 		PlaylistUrl: "",
 		LiveNow:     false,
@@ -221,6 +221,7 @@ type createLectureRequest struct {
 	Id    string
 	Name  string
 	Start time.Time
+	End   time.Time
 }
 
 type renameLectureRequest struct {
