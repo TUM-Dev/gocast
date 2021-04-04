@@ -13,7 +13,7 @@
 {{template "header" .IndexData}}
 <div class="flex md:flex-row h-full w-full flex-wrap pt-20">
     <input type="hidden" id="streamID" value="{{.Stream.Model.ID}}">
-    <div class="watchContent w-full pt-3 px-2 md:px-8 md:w-4/6 lg:w-9/12 mx-auto mx:h-full overflow-y-scroll">
+    <div class="watchContent w-full pt-3 px-2 md:px-8 md:w-4/6 lg:w-8/12 2xl:max-w-screen-xl mx-auto mx:h-full overflow-y-scroll">
         <video
                 id="my-video"
                 class="video-js w-full"
@@ -25,7 +25,7 @@
                 To view this video please enable JavaScript.
             </p>
         </video>
-        <div class="flex justify-between align-middle"><h1
+        <div class="flex justify-between align-middle mt-4"><h1
                     class="text-gray-300 text-2xl">{{.Stream.Name}}</h1>
             <p class="text-xl text-gray-400 flex space-x-2">
                 {{if .Stream.LiveNow}}
@@ -33,6 +33,7 @@
                     <i class="fas fa-users text-gray-400"></i>
                 {{else if .Course.DownloadsEnabled}}
                     <a class="flex"
+                       title="Download Lecture"
                        href="/api/download/{{.Stream.Model.ID}}/{{.Course.Slug}}/{{.Course.Slug}}-{{printf "%v-%02d-%04d" .Stream.Start.Month .Stream.Start.Day .Stream.Start.Year}}"
                        download>
                         <i class="fas fa-download text-gray-400 hover:text-purple-500"></i>
@@ -61,7 +62,7 @@
             {{end}}
         </div>
         <form id="chatForm"
-              class="border-b-2 focus-within:border-gray-300 border-secondary bg-primary inset-x-0 absolute bottom-0 flex px-3">
+              class="border-b-2 focus-within:border-gray-300 border-secondary bg-primary inset-x-0 absolute bottom-0 flex px-3 h-16">
             <input type="checkbox" name="anonymous" id="anonymous" class="hidden">
             <label for="anonymous" class="flex items-center cursor-pointer text-gray-400 hover:text-white"
                    title="Don't show my name.">
