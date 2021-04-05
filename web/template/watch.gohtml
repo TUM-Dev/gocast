@@ -46,7 +46,7 @@
         <h1 class="text-gray-300 text-xl">{{.Course.Name}}</h1>
     </div>
     <div class="hidden md:block md:relative w-full md:h-full border-t-2 mt-2 md:mt-0 md:border-t-0 md:border-l-2 border-secondary md:w-2/6 lg:w-1/6 text-white pt-3">
-        <div id="chatBox" class="overflow-scroll chat overflow-x-hidden overflow-y-scroll pb-16">
+        <div id="chatBox" class="overflow-scroll chat overflow-x-hidden overflow-y-scroll">
             {{range $chat := .Stream.Chats}}
                 <div class="rounded p-2 mx-2">
                     <div class="flex flex-row">
@@ -62,7 +62,7 @@
             {{end}}
         </div>
         <form id="chatForm"
-              class="border-b-2 focus-within:border-gray-300 border-secondary bg-primary inset-x-0 absolute bottom-0 flex px-3 h-16">
+              class="border-b-2 focus-within:border-gray-300 border-secondary bg-primary inset-x-0 absolute bottom-0 flex px-3">
             <input type="checkbox" name="anonymous" id="anonymous" class="hidden">
             <label for="anonymous" class="flex items-center cursor-pointer text-gray-400 hover:text-white"
                    title="Don't show my name.">

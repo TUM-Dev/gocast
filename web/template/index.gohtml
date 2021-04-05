@@ -15,9 +15,9 @@
     {{range $liveStream := .LiveStreams }}
         <div class="py-2 px-4">
             <a href="/live/{{$liveStream.Model.ID}}">
-                <h3 class="text-xl text-gray-300 hover:text-gray-200">{{$liveStream.Name}}</h3></a>
-            {{printf "%v %02d. %02d:%02d" $liveStream.Start.Month $liveStream.Start.Day $liveStream.Start.Hour $liveStream.Start.Minute}}
-            <p class="text-white font-sans font-light">
+                <h3 class="text-xl text-gray-300 hover:text-white inline">{{$liveStream.Name}}</h3></a>
+            <p class="text-gray-500 font-sans font-light">
+                {{printf "%v %02d. %02d:%02d" $liveStream.Start.Month $liveStream.Start.Day $liveStream.Start.Hour $liveStream.Start.Minute}}
             </p>
         </div>
     {{end}}
@@ -30,8 +30,8 @@
     {{range $course := .Courses }}
         <div class="py-2 px-4">
             <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
-                <h3 class="text-xl text-gray-300 hover:text-gray-200">{{$course.Name}}</h3></a>
-            <p class="text-white font-sans font-light">
+                <h3 class="text-xl text-gray-300 hover:text-white">{{$course.Name}}</h3></a>
+            <p class="text-gray-400 font-sans font-light">
                 {{if $course.HasNextLecture}}
                     {{$next := $course.GetNextLectureDate}}Next Lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
                 {{else}}
