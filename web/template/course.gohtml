@@ -11,42 +11,95 @@
 {{$course := .Course}}
 <div class="container">
     <h1 class="text-gray-200">{{.Course.Name}}</h1>
-    {{range $stream := .Course.Streams }}
-        {{if $stream.LiveNow}}
-            <h2 class="text-white">Live:</h2>
-            <div class="py-2 px-4">
-                <a href="/live/{{$course.Slug}}/{{$stream.Model.ID}}">
-                    <h3 class="text-xl text-gray-300 hover:text-gray-200">
-                        {{if $stream.Name}}
-                            {{$stream.Name}}
-                        {{else}}
-                            Lecture {{printf "%v %02d." $stream.Start.Month $stream.Start.Day}}
-                        {{end}}
-                    </h3>
-                </a>
-                <p class="text-white font-sans font-light">
-                    {{printf "%v %02d. %02d:%02d" $stream.Start.Month $stream.Start.Day $stream.Start.Hour $stream.Start.Minute}}
-                </p>
-            </div>
+    <ul>
+        {{range $lecture := .Course.Streams }}
+            {{if $lecture.LiveNow}}
+                <li class="p-2 hover:bg-primary border-b-2 border-primary">
+                    <div class="flex">
+                        <div class="">
+                            <div class="text-white font-semibold">{{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}</div>
+                            <div class="text-gray-300 font-sans">
+                                {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}">
+                                <h3 class="text-xl text-gray-300 hover:text-white p-0">
+                                    {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
+                                </h3>
+                            </a>
+                            <div class="flex space-x-2">
+                                <i class="fas fa-comments text-gray-400 hover:text-purple-500" title="Chat Only"></i>
+                                <i class="fas fa-link text-gray-400 hover:text-purple-500" title="Copy HLS URL"></i>
+                                {{if $lecture.PlaylistUrlCAM}}
+                                    <a class="flex"
+                                       title="Cam Only"
+                                       href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/CAM">
+                                        <i class="fas fa-camera text-gray-400 hover:text-purple-500"></i>
+                                    </a>
+                                {{end}}
+                                {{if $lecture.PlaylistUrlPRES}}
+                                    <a class="flex"
+                                       title="Presentation Only"
+                                       href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/PRES">
+                                        <i class="fas fa-edit text-gray-400 hover:text-purple-500"></i>
+                                    </a>
+                                {{end}}
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            {{end}}
         {{end}}
-    {{end}}
+    </ul>
     {{$recordings := .Course.GetRecordings}}
-    {{range $i, $recording := $recordings }}
-        <div class="py-2 px-4">
-            <a href="/w/{{$course.Slug}}/{{$recording.Model.ID}}">
-                <h3 class="text-xl text-gray-300 hover:text-gray-200">
-                    {{if $recording.Name}}
-                        {{$recording.Name}}
-                    {{else}}
-                        Lecture {{printf "%v %02d." $recording.Start.Month $recording.Start.Day}}
-                    {{end}}
-                </h3>
-            </a>
-            <p class="text-white font-sans font-light">
-                {{printf "%v %02d. %02d:%02d" $recording.Start.Month $recording.Start.Day $recording.Start.Hour $recording.Start.Minute}}
-            </p>
-        </div>
-    {{end}}
+    <ul>
+        {{range $lecture := $recordings }}
+            <li class="p-2 hover:bg-primary border-b-2 border-primary">
+                <div class="flex">
+                    <div class="">
+                        <div class="text-white font-semibold">{{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}</div>
+                        <div class="text-gray-300 font-sans">
+                            {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}">
+                            <h3 class="text-xl text-gray-300 hover:text-white p-0">
+                                {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
+                            </h3>
+                        </a>
+                        <div class="flex space-x-2">
+                            {{if $course.DownloadsEnabled}}
+                                <a class="flex"
+                                   title="Download Lecture"
+                                   href="/api/download/{{$lecture.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $lecture.Start.Month $lecture.Start.Day $lecture.Start.Year}}"
+                                   download>
+                                    <i class="fas fa-download text-gray-400 hover:text-purple-500"></i>
+                                </a>
+                            {{end}}
+                            <i class="fas fa-comments text-gray-400 hover:text-purple-500" title="Chat Only"></i>
+                            <i class="fas fa-link text-gray-400 hover:text-purple-500" title="Copy HLS URL"></i>
+                            {{if $lecture.PlaylistUrlCAM}}
+                                <a class="flex"
+                                   title="Cam Only"
+                                   href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/CAM">
+                                    <i class="fas fa-camera text-gray-400 hover:text-purple-500"></i>
+                                </a>
+                            {{end}}
+                            {{if $lecture.PlaylistUrlPRES}}
+                                <a class="flex"
+                                   title="Presentation Only"
+                                   href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/PRES">
+                                    <i class="fas fa-edit text-gray-400 hover:text-purple-500"></i>
+                                </a>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+            </li>
+        {{end}}
+    </ul>
 </div>
 </body>
 </html>
