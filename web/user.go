@@ -72,6 +72,7 @@ func CreatePasswordPage(c *gin.Context) {
 			return
 		} else {
 			dao.UpdateUser(u)
+			dao.DeleteResetKey(c.Param("key"))
 			c.Redirect(http.StatusFound, "/")
 		}
 		return

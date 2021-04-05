@@ -112,6 +112,10 @@ func GetUserByResetKey(key string) (model.User, error) {
 	return user, nil
 }
 
+func DeleteResetKey(key string){
+	DB.Where("register_secret = ?", key).Delete(&model.RegisterLink{})
+}
+
 func UpdateUser(user model.User) {
 	if err := DB.Save(&user).Error; err != nil {
 		log.Printf("error saving user: %v\n", err)
