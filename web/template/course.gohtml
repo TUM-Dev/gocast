@@ -24,7 +24,7 @@
                         {{if (and $course.DownloadsEnabled $lecture.FilePath) }}
                             <a class="flex"
                                title="Download Lecture"
-                               href="/api/download/{{.Stream.Model.ID}}/{{.Course.Slug}}/{{.Course.Slug}}-{{printf "%v-%02d-%04d" .Stream.Start.Month .Stream.Start.Day .Stream.Start.Year}}"
+                               href="/api/download/{{$lecture.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $lecture.Start.Month $lecture.Start.Day $lecture.Start.Year}}"
                                download>
                                 <i class="fas fa-download text-gray-400 hover:text-purple-500"></i>
                             </a>
