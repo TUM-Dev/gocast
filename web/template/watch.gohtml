@@ -20,7 +20,8 @@
                 controls
                 preload="auto"
                 data-setup='{"fluid": true}'>
-            <source src="{{.Stream.PlaylistUrl}}" type="application/x-mpegURL"/>
+            <source src="{{if eq .Version "PRES"}}{{.Stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{.Stream.PlaylistUrlCAM}}{{else}}{{.Stream.PlaylistUrl}}{{end}}"
+                    type="application/x-mpegURL"/>
             <p class="vjs-no-js">
                 To view this video please enable JavaScript.
             </p>
@@ -42,7 +43,7 @@
                     </a>
                 {{end}}
                 <i title="Copy HLS URL" class="fas fa-link hover:text-purple-500"
-                   onclick="copyToClipboard('{{.Stream.PlaylistUrl}}')"></i>
+                   onclick="copyToClipboard('{{if eq .Version "PRES"}}{{.Stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{.Stream.PlaylistUrlCAM}}{{else}}{{.Stream.PlaylistUrl}}{{end}}')"></i>
             </p>
         </div>
         <h1 class="text-gray-300 text-xl">{{.Course.Name}}</h1>
@@ -89,7 +90,6 @@
     });
     player.play();
     player.hlsQualitySelector();
-
 </script>
 </body>
 </html>

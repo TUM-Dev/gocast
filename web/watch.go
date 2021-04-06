@@ -10,8 +10,11 @@ import (
 	"net/http"
 )
 
-func WatchVODPage(c *gin.Context) {
+func WatchPage(c *gin.Context) {
 	var data WatchPageData
+	if c.Param("version") != "" {
+		data.Version=c.Param("version")
+	}
 	_, userErr := tools.GetUser(c)
 	_, studentErr := tools.GetStudent(c)
 	if userErr == nil {
@@ -32,36 +35,7 @@ func WatchVODPage(c *gin.Context) {
 	if err != nil {
 		log.Printf("couldn't find course for stream: %v\n", err)
 		c.AbortWithStatus(http.StatusNotFound)
-	}
-	data.Course = course
-	err = templ.ExecuteTemplate(c.Writer, "watch.gohtml", data)
-	if err != nil {
-		log.Printf("couldn't render template: %v\n", err)
-	}
-}
-func WatchPage(c *gin.Context) {
-	var data WatchPageData
-	_, userErr := tools.GetUser(c)
-	_, studentErr := tools.GetStudent(c)
-	if userErr == nil {
-		data.IndexData.IsUser = true
-	}
-	if studentErr == nil {
-		// todo: is student allowed to watch?
-		data.IndexData.IsStudent = true
-	}
-	streamID := c.Param("id")
-	stream, err := dao.GetStreamByID(context.Background(), streamID)
-	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
 		return
-	}
-	data.Stream = stream
-
-	course, err := dao.GetCourseById(context.Background(), stream.CourseID)
-	if err != nil {
-		log.Printf("couldn't find course for stream: %v\n", err)
-		c.AbortWithStatus(http.StatusNotFound)
 	}
 	data.Course = course
 	err = templ.ExecuteTemplate(c.Writer, "watch.gohtml", data)
@@ -74,4 +48,5 @@ type WatchPageData struct {
 	IndexData IndexData
 	Stream    model.Stream
 	Course    model.Course
+	Version   string
 }

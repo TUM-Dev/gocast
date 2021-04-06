@@ -32,8 +32,8 @@ func configMainRoute(router gin.IRoutes) {
 	router.GET("/logout", LogoutPage)
 	router.GET("/setPassword/:key", CreatePasswordPage)
 	router.POST("/setPassword/:key", CreatePasswordPage)
-	router.GET("/w/:slug/:id", WatchVODPage)
-	router.GET("/live/:id", WatchPage)
+	router.GET("/w/:slug/:id", WatchPage)
+	router.GET("/w/:slug/:id/:version", WatchPage)
 	router.GET("/", MainPage)
 	router.GET("/semester/:year/:term", MainPage)
 }
