@@ -29,5 +29,5 @@ type Stream struct {
 }
 
 func (s Stream) IsPast() bool {
-	return s.Start.Before(time.Now())
+	return s.End.Before(time.Now())
 }

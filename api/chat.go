@@ -129,20 +129,31 @@ func ChatStats(context *gin.Context) {
 }
 
 func ChatStream(c *gin.Context) {
+	go addUser(c.Param("vidId"))
 	ctxMap := make(map[string]interface{}, 1)
-	println(c.Param("vidId") + "joined")
-	statsLock.Lock()
-	stats[c.Param("vidId")] = stats[c.Param("vidId")] + 1
-	statsLock.Unlock()
-	m.HandleClose(func(session *melody.Session, i int, s string) error {
-		statsLock.Lock()
-		stats[c.Param("vidId")] = stats[c.Param("vidId")] - 1
-		if stats[c.Param("vidID")] == 0 {
-			delete(stats, c.Param("vidID"))
-		}
-		statsLock.Unlock()
-		return nil
-	})
 	ctxMap["ctx"] = c
+
+	m.HandleDisconnect(func(session *melody.Session) {
+		defer removeUser(c.Param("vidId"))
+	})
+
 	_ = m.HandleRequestWithKeys(c.Writer, c.Request, ctxMap)
+}
+
+func addUser(id string) {
+	statsLock.Lock()
+	if _, ok := stats[id]; !ok {
+		stats[id] = 0
+	}
+	stats[id] += 1
+	statsLock.Unlock()
+}
+
+func removeUser(id string) {
+	statsLock.Lock()
+	stats[id] -= 1
+	if stats[id] == 0 {
+		delete(stats, id)
+	}
+	statsLock.Unlock()
 }
