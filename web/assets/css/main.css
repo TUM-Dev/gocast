@@ -67,24 +67,9 @@ input[type='checkbox']:checked + label {
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
-.chat::-webkit-scrollbar{
-    background: #0d1117;
-    width: 3px;
-}
-.chat::-webkit-scrollbar-thumb {
-    color:gray;
-    background-color: gray;
-}
-
-.watchContent::-webkit-scrollbar {
+#chatBox::-webkit-scrollbar{
     display: none;
 }
-
-#chatBox {
-    padding-bottom: 64px !important;
-}
-
-#chatForm {
-    height: 65px !important;
-    max-height: 65px !important;
+.watchContent::-webkit-scrollbar {
+    display: none;
 }
