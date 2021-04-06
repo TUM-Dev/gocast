@@ -24,6 +24,9 @@
             <div>
                 <ul class="bg-secondary rounded">
                     {{$course := .Course}}
+                    {{if not .Course.Streams}}
+                    <p class="text-gray-300 p-4">It might take a minute to load your lectures from TUMOnline</p>
+                    {{end}}
                     {{range $lecture := .Course.Streams }}
                         <li class="p-6 hover:bg-primary border-b-2 border-primary">
                             <div class="flex">
