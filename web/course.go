@@ -6,6 +6,7 @@ import (
 	"TUM-Live/tools"
 	"context"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 )
 
@@ -62,7 +63,8 @@ func CoursePage(c *gin.Context) {
 		}
 	}
 	// in any other case assume either validated before or public course
-	_ = templ.ExecuteTemplate(c.Writer, "course.gohtml", CoursePageData{IndexData: indexData, Course: course})
+	err = templ.ExecuteTemplate(c.Writer, "course.gohtml", CoursePageData{IndexData: indexData, Course: course})
+	log.Printf("%v",err )
 }
 
 type CoursePageData struct {

@@ -11,9 +11,15 @@
 {{$course := .Course}}
 <div class="container">
     <h1 class="text-gray-200">{{.Course.Name}}</h1>
-    <ul class="w-full md:w-5/6 m-auto">
+    <ul class="w-full md:w-5/6 m-auto mb-4">
+        {{$lastMonth := -1}}
         {{range $lecture := .Course.Streams }}
-            <li class="p-2 hover:bg-primary border-b-2 border-gray-700 bg-secondary">
+            {{if or (or (not $lecture.IsPast) $lecture.Recording) $lecture.LiveNow}}
+            {{if ne $lecture.Start.Month $lastMonth}}
+            {{$lastMonth = $lecture.Start.Month}}
+                <p class="p-2 text-lg text-gray-300">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
+            {{end}}
+            <li class="pl-4 p-2 hover:bg-secondary">
                 <div class="flex justify-between">
                     <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}">
                         <h3 class="text-l text-gray-300 hover:text-white p-0">
@@ -66,6 +72,7 @@
                     {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
                 </p>
             </li>
+            {{end}}
         {{end}}
     </ul>
 </div>
