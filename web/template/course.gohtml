@@ -17,7 +17,7 @@
             {{if or (or (not $lecture.IsPast) $lecture.Recording) $lecture.LiveNow}}
                 {{if ne $lecture.Start.Month $lastMonth}}
                     {{$lastMonth = $lecture.Start.Month}}
-                    <p class="p-2 text-lg text-gray-300">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
+                    <p class="p-2 text-lg text-gray-300 border-b-2 border-gray-800">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
                 {{end}}
                 <li class="pl-4 p-2 hover:bg-secondary">
                     <div class="flex justify-between">

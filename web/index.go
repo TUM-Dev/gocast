@@ -60,6 +60,14 @@ func MainPage(c *gin.Context) {
 				publicFiltered = append(publicFiltered, c)
 			}
 		}
+		if userErr == nil || studentErr == nil {
+			loggedIn, _ := dao.GetCoursesForLoggedInUsers(year, term)
+			for _, c := range loggedIn {
+				if !tools.CourseListContains(indexData.Courses, c.ID) {
+					publicFiltered = append(publicFiltered, c)
+				}
+			}
+		}
 		indexData.PublicCourses = publicFiltered
 	}
 	_ = templ.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
