@@ -48,7 +48,15 @@ func MainPage(c *gin.Context) {
 	}
 	// Todo get live streams for user
 	streams, err := dao.GetCurrentLive(context.Background())
-	indexData.LiveStreams = streams
+	var livestreams []CourseStream
+	for _, stream := range streams {
+		courseForLiveStream, _ := dao.GetCourseById(context.Background(), stream.CourseID)
+		livestreams = append(livestreams, CourseStream{
+			Course: courseForLiveStream,
+			Stream: stream,
+		})
+	}
+	indexData.LiveStreams = livestreams
 	public, err := dao.GetPublicCourses(year, term)
 	if err != nil {
 		indexData.PublicCourses = []model.Course{}
@@ -89,10 +97,15 @@ func AboutPage(c *gin.Context) {
 type IndexData struct {
 	IsUser        bool
 	IsStudent     bool
-	LiveStreams   []model.Stream
+	LiveStreams   []CourseStream
 	Courses       []model.Course
 	PublicCourses []model.Course
 	Semesters     []dao.Semester
 	CurrentYear   int
 	CurrentTerm   string
+}
+
+type CourseStream struct {
+	Course model.Course
+	Stream model.Stream
 }
