@@ -69,6 +69,7 @@ func configGinChatRouter(router gin.IRoutes) {
 			Message:  chat.Msg,
 			StreamID: uint(vID),
 			Admin:    uErr == nil && user.IsAdminOfCourse(stream.CourseID),
+			SendTime: time.Now().In(tools.Loc),
 		})
 		broadcast, err := json.Marshal(ChatRep{
 			Msg:   chat.Msg,

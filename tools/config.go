@@ -1,10 +1,21 @@
 package tools
 
-import "os"
+import (
+	"log"
+	"os"
+	"time"
+)
 
 var Cfg Config
+var Loc *time.Location
+
 
 func init() {
+	var err error
+	Loc, err = time.LoadLocation("Europe/Berlin")
+	if err != nil {
+		log.Printf("%v",err)
+	}
 	Cfg = Config{
 		MailUser:         os.Getenv("MAIL_USER"),
 		MailServer:       os.Getenv("MAIL_SERVER"),

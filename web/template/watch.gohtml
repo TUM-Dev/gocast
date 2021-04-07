@@ -55,7 +55,7 @@
                     <div class="flex flex-row">
                         <p class="flex-grow font-semibold {{if $chat.Admin}}text-warn{{end}}">{{$chat.UserName}}</p>
                         <p class="text-gray-500 font-thin">
-                            {{printf "%02d:%02d" $chat.Model.CreatedAt.Hour $chat.Model.CreatedAt.Minute}}
+                            {{printf "%02d:%02d" $chat.SendTime.Hour $chat.SendTime.Minute}}
                         </p>
                     </div>
                     <p class="text-gray-300 break-words">

@@ -28,6 +28,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /go/bin/server app/server/main.go
 
 FROM alpine
+RUN apk add --no-cache tzdata
 WORKDIR /app
 COPY --from=build-env /go/bin/server .
 COPY --from=node /app/node_modules node_modules
