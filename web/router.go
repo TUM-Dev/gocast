@@ -3,6 +3,8 @@ package web
 import (
 	"github.com/gin-gonic/gin"
 	"html/template"
+	"net/http"
+	"os"
 )
 
 var templ *template.Template
@@ -36,7 +38,14 @@ func configMainRoute(router gin.IRoutes) {
 	router.GET("/w/:slug/:id/:version", WatchPage)
 	router.GET("/", MainPage)
 	router.GET("/semester/:year/:term", MainPage)
+	router.GET("/healthcheck", HealthCheck)
 }
+
 func configCourseRoute(router gin.IRoutes) {
 	router.GET("/course/:year/:teachingTerm/:slug", CoursePage)
+}
+
+
+func HealthCheck(context *gin.Context) {
+	context.JSON(http.StatusOK, gin.H{"version": os.Getenv("hash")})
 }
