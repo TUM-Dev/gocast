@@ -20,7 +20,7 @@ func CoursePage(c *gin.Context) {
 		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", nil)
 		return
 	}
-	indexData := IndexData{}
+	indexData := NewIndexData()
 	u, uErr := tools.GetUser(c)
 	s, sErr := tools.GetStudent(c)
 	if uErr == nil {

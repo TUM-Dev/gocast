@@ -8,6 +8,7 @@ import (
 	"context"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -20,7 +21,7 @@ func MainPage(c *gin.Context) {
 		_ = templ.ExecuteTemplate(c.Writer, "onboarding.gohtml", nil)
 		return
 	}
-	var indexData IndexData
+	indexData := NewIndexData()
 	user, userErr := tools.GetUser(c)
 	student, studentErr := tools.GetStudent(c)
 
@@ -91,6 +92,7 @@ func MainPage(c *gin.Context) {
 
 func AboutPage(c *gin.Context) {
 	var indexData IndexData
+	indexData.VersionTag = os.Getenv("hash")
 	_, userErr := tools.GetUser(c)
 	_, studentErr := tools.GetStudent(c)
 	if userErr == nil {
@@ -103,6 +105,7 @@ func AboutPage(c *gin.Context) {
 }
 
 type IndexData struct {
+	VersionTag    string
 	IsUser        bool
 	IsStudent     bool
 	LiveStreams   []CourseStream
@@ -111,6 +114,12 @@ type IndexData struct {
 	Semesters     []dao.Semester
 	CurrentYear   int
 	CurrentTerm   string
+}
+
+func NewIndexData() IndexData{
+	return IndexData{
+		VersionTag:    os.Getenv("hash"),
+	}
 }
 
 type CourseStream struct {

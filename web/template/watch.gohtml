@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>{{.Course.Name}}: {{.Stream.Name}} | TUM Live</title>
-    {{template "headImports"}}
+    {{template "headImports" .IndexData.VersionTag}}
     <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
-    <script async src="/assets/ts-dist/watch.js?v=0.2"></script>
+    <script async src="/assets/ts-dist/watch.js?v={{.IndexData.VersionTag}}"></script>
     <link rel="stylesheet" href="/dist/video.js/dist/video-js.min.css">
 </head>
 <body class="bg-primary h-full overflow-hidden">

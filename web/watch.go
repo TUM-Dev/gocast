@@ -17,6 +17,7 @@ func WatchPage(c *gin.Context) {
 	}
 	user, userErr := tools.GetUser(c)
 	student, studentErr := tools.GetStudent(c)
+	data.IndexData = NewIndexData()
 	if userErr == nil {
 		data.IndexData.IsUser = true
 	}

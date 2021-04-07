@@ -1,7 +1,7 @@
 {{define "headImports"}}
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<script src="/assets/ts-dist/global.js?v=0.2" defer async></script>
-<link href="/assets/css-dist/main.css?v=0.5.3" rel="stylesheet">
+<script src="/assets/ts-dist/global.js?v={{if .}}{{.}}{{end}}" defer async></script>
+<link href="/assets/css-dist/main.css?v={{if .}}{{.}}{{end}}" rel="stylesheet">
 <link href="/dist/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
 {{end}}

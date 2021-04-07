@@ -24,7 +24,10 @@ func AdminPage(c *gin.Context) {
 		log.Printf("couldn't query courses for user. %v\n", err)
 		courses = []model.Course{}
 	}
-	_ = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{User: user, Users: users, Courses: courses, IndexData: IndexData{IsStudent: false, IsUser: true}})
+	indexData := NewIndexData()
+	indexData.IsStudent = false
+	indexData.IsUser = true
+	_ = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{User: user, Users: users, Courses: courses, IndexData: indexData})
 }
 
 func EditCoursePage(c *gin.Context) {
@@ -48,7 +51,9 @@ func EditCoursePage(c *gin.Context) {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
-	err = templ.ExecuteTemplate(c.Writer, "edit-course.gohtml", EditCourseData{IndexData: IndexData{IsUser: true}, Course: course})
+	indexData := NewIndexData()
+	indexData.IsUser = true
+	err = templ.ExecuteTemplate(c.Writer, "edit-course.gohtml", EditCourseData{IndexData: indexData, Course: course})
 	if err != nil {
 		log.Printf("%v\n", err)
 	}
@@ -65,7 +70,10 @@ func CreateCoursePage(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/login")
 		return
 	}
-	_ = templ.ExecuteTemplate(c.Writer, "create-course.gohtml", CreateCourseData{User: user, IndexData: IndexData{IsStudent: false, IsUser: true}})
+	indexData := NewIndexData()
+	indexData.IsStudent = false
+	indexData.IsUser = true
+	_ = templ.ExecuteTemplate(c.Writer, "create-course.gohtml", CreateCourseData{User: user, IndexData: indexData})
 }
 
 type AdminPageData struct {
