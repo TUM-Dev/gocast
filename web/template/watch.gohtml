@@ -50,37 +50,39 @@
                     class="text-gray-300 hover:text-white hover:underline text-xl">{{.Course.Name}}</h2></a>
     </div>
     {{if .Course.ChatEnabled}}
-    <div class="hidden md:flex flex-col w-full md:h-full border-t-2 mt-2 md:mt-0 md:border-t-0 md:border-l-2 border-secondary md:w-2/6 lg:w-1/6 text-white pt-3">
-        <div id="chatBox" class="overflow-scroll overflow-x-hidden overflow-y-scroll" style="flex: 2;">
-            {{range $chat := .Stream.Chats}}
-                <div class="rounded p-2 mx-2">
-                    <div class="flex flex-row">
-                        <p class="flex-grow font-semibold {{if $chat.Admin}}text-warn{{end}}">{{$chat.UserName}}</p>
-                        <p class="text-gray-500 font-thin">
-                            {{printf "%02d:%02d" $chat.SendTime.Hour $chat.SendTime.Minute}}
+        <div class="hidden md:flex flex-col w-full md:h-full border-t-2 mt-2 md:mt-0 md:border-t-0 md:border-l-2 border-secondary md:w-2/6 lg:w-1/6 text-white pt-3">
+            <div id="chatBox" class="overflow-scroll overflow-x-hidden overflow-y-scroll" style="flex: 2;">
+                {{range $chat := .Stream.Chats}}
+                    <div class="rounded p-2 mx-2">
+                        <div class="flex flex-row">
+                            <p class="flex-grow font-semibold {{if $chat.Admin}}text-warn{{end}}">{{$chat.UserName}}</p>
+                            <p class="text-gray-500 font-thin">
+                                {{printf "%02d:%02d" $chat.SendTime.Hour $chat.SendTime.Minute}}
+                            </p>
+                        </div>
+                        <p class="text-gray-300 break-words">
+                            {{$chat.Message}}
                         </p>
                     </div>
-                    <p class="text-gray-300 break-words">
-                        {{$chat.Message}}
-                    </p>
-                </div>
-            {{end}}
+                {{end}}
+            </div>
+            <form id="chatForm"
+                  class="border-b-2 focus-within:border-gray-300 border-secondary bg-primary inset-x-0 flex px-3"
+                  style="">
+                <input type="checkbox" name="anonymous" id="anonymous" class="hidden">
+                <label for="anonymous" class="flex items-center cursor-pointer text-gray-400 hover:text-white"
+                       title="Don't show my name.">
+                    <i class="fas fa-ghost"></i>
+                </label>
+                <label for="chatInput" class="hidden">Chat input</label><input
+                        maxlength="200"
+                        {{if not (or .IndexData.IsStudent .IndexData.IsUser)}}disabled
+                        placeholder="Log in to chat" {{else}}
+                        placeholder="Send a message" {{end}}autocomplete="off" id="chatInput" type="text"
+                        class="border-none">
+                <button class="fas fa-paper-plane text-gray-400 hover:text-purple-500 focus:outline-none"></button>
+            </form>
         </div>
-        <form id="chatForm"
-              class="border-b-2 focus-within:border-gray-300 border-secondary bg-primary inset-x-0 flex px-3" style="">
-            <input type="checkbox" name="anonymous" id="anonymous" class="hidden">
-            <label for="anonymous" class="flex items-center cursor-pointer text-gray-400 hover:text-white"
-                   title="Don't show my name.">
-                <i class="fas fa-ghost"></i>
-            </label>
-            <label for="chatInput" class="hidden">Chat input</label><input
-                    maxlength="200"
-                    {{if not (or .IndexData.IsStudent .IndexData.IsUser)}}disabled placeholder="Log in to chat" {{else}}
-                    placeholder="Send a message" {{end}}autocomplete="off" id="chatInput" type="text"
-                    class="border-none">
-            <button class="fas fa-paper-plane text-gray-400 hover:text-purple-500 focus:outline-none"></button>
-        </form>
-    </div>
     {{end}}
 </div>
 <script src="/dist/video.js/dist/video.min.js"></script>
