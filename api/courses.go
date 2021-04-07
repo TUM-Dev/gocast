@@ -20,6 +20,7 @@ import (
 
 func configGinCourseRouter(router gin.IRoutes) {
 	router.POST("/api/courseInfo", courseInfo)
+	router.GET("/api/courseSchedule/:year/:term/:slug", courseSchedule)
 	router.POST("/api/createCourse", createCourse)
 	router.POST("/api/createLecture", createLecture)
 	router.POST("/api/deleteLecture/:id", deleteLecture)
@@ -225,6 +226,45 @@ func courseInfo(c *gin.Context) {
 		return
 	}
 	c.JSON(200, courseInfo)
+}
+
+func courseSchedule(c *gin.Context) {
+	course, err := dao.GetCourseBySlugYearAndTerm(context.Background(), c.Param("slug"), c.Param("term"), c.Param("year"))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "not found"})
+		return
+	}
+	u, uerr := tools.GetUser(c)
+	if uerr != nil {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "you don't have permission to access this resource"})
+		return
+	}
+	if u.Role != 1 && !u.IsAdminOfCourse(course.ID) {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "you don't have permission to access this resource"})
+		return
+	}
+
+	var resp []courseScheduleResp
+	for _, stream := range course.Streams {
+		if stream.End.After(time.Now()) {
+			resp = append(resp, courseScheduleResp{
+				Start:        stream.Start,
+				End:          stream.End,
+				Name:         stream.Name,
+				StreamSecret: stream.StreamKey,
+				StreamKey:    course.Slug,
+			})
+		}
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+type courseScheduleResp struct {
+	Start        time.Time
+	End          time.Time
+	Name         string
+	StreamSecret string
+	StreamKey    string
 }
 
 type getCourseRequest struct {

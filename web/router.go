@@ -45,7 +45,6 @@ func configCourseRoute(router gin.IRoutes) {
 	router.GET("/course/:year/:teachingTerm/:slug", CoursePage)
 }
 
-
 func HealthCheck(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{"version": os.Getenv("hash")})
 }
