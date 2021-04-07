@@ -48,7 +48,7 @@
                 <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                     <h3 class="text-xl text-gray-300 hover:text-gray-200">{{$course.Name}}</h3>
                 </a>
-                <p class="text-white font-sans font-light">
+                <p class="text-gray-400 font-light">
                     {{if $course.HasNextLecture}}
                         {{$next := $course.GetNextLectureDate}}Next Lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
                     {{else}}

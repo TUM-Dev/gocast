@@ -13,15 +13,14 @@ import (
 func WatchPage(c *gin.Context) {
 	var data WatchPageData
 	if c.Param("version") != "" {
-		data.Version=c.Param("version")
+		data.Version = c.Param("version")
 	}
-	_, userErr := tools.GetUser(c)
-	_, studentErr := tools.GetStudent(c)
+	user, userErr := tools.GetUser(c)
+	student, studentErr := tools.GetStudent(c)
 	if userErr == nil {
 		data.IndexData.IsUser = true
 	}
 	if studentErr == nil {
-		// todo: is student allowed to watch?
 		data.IndexData.IsStudent = true
 	}
 	vodID := c.Param("id")
@@ -35,6 +34,14 @@ func WatchPage(c *gin.Context) {
 	if err != nil {
 		log.Printf("couldn't find course for stream: %v\n", err)
 		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	if course.Visibility == "loggedin" && userErr != nil && studentErr != nil {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"Error": "you are not allowed to watch this lecture."})
+		return
+	}
+	if course.Visibility == "enrolled" && !dao.IsUserAllowedToWatchPrivateCourse(course.ID, user, userErr, student, studentErr) {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"Error": "you are not allowed to watch this lecture."})
 		return
 	}
 	data.Course = course

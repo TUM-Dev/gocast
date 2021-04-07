@@ -46,11 +46,19 @@ func MainPage(c *gin.Context) {
 		indexData.IsStudent = true
 		indexData.Courses = student.CoursesForSemester(year, term)
 	}
-	// Todo get live streams for user
 	streams, err := dao.GetCurrentLive(context.Background())
 	var livestreams []CourseStream
 	for _, stream := range streams {
 		courseForLiveStream, _ := dao.GetCourseById(context.Background(), stream.CourseID)
+		// Todo: refactor into dao
+		if courseForLiveStream.Visibility == "loggedin" && (userErr != nil && studentErr != nil) {
+			continue
+		}
+		if courseForLiveStream.Visibility == "enrolled" {
+			if !dao.IsUserAllowedToWatchPrivateCourse(courseForLiveStream.ID, user, userErr, student, studentErr) {
+				continue
+			}
+		}
 		livestreams = append(livestreams, CourseStream{
 			Course: courseForLiveStream,
 			Stream: stream,
