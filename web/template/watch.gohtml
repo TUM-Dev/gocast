@@ -91,7 +91,15 @@
 <script src="/dist/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.min.js"></script>
 <script>
     let player = videojs('my-video', {
-        playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
+        playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+        html5: {
+            hls: {
+                overrideNative: true
+            },
+            nativeVideoTracks: false,
+            nativeAudioTracks: false,
+            nativeTextTracks: false
+        }
     });
     player.play();
     player.hlsQualitySelector();

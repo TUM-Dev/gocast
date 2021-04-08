@@ -90,7 +90,7 @@ input[type='checkbox']:checked + label {
 
 #chatBox{
     scrollbar-width: 6px;
-    scrollbar-color: #0d1117 #5b5b5b;
+    scrollbar-color: #5b5b5b #0d1117;
 }
 
 .vjs-button, .vjs-control {
