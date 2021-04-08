@@ -101,16 +101,12 @@ func deleteLecture(c *gin.Context) {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
-	if user.Role > 2 { // not lecturer or admin
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
 	stream, err := dao.GetStreamByID(context.Background(), c.Param("id"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
-	if user.Role != 1 && !user.IsAdminOfCourse(stream.ID) {
+	if user.Role != 1 && !user.IsAdminOfCourse(stream.CourseID) {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
