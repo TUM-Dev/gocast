@@ -4,6 +4,7 @@ import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
+	"TUM-Live/tools/tum"
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -77,6 +78,15 @@ func UpdateCourse(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "unauthorized to edit this course."})
 		return
 	}
+	if c.PostForm("submit") == "Reload Students From TUMOnline" {
+		tum.FindStudentsForCourses([]model.Course{course})
+		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", id))
+		return
+	}else if c.PostForm("submit") == "Reload Lectures From TUMOnline"{
+		tum.GetEventsForCourses([]model.Course{course})
+		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", id))
+		return
+	}
 	access := c.PostForm("access")
 	if match, err := regexp.MatchString("(public|loggedin|enrolled)", access); err != nil || !match {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad course id"})
@@ -85,8 +95,6 @@ func UpdateCourse(c *gin.Context) {
 	enVOD := c.PostForm("enVOD") == "on"
 	enDL := c.PostForm("enDL") == "on"
 	enChat := c.PostForm("enChat") == "on"
-	println(c.PostForm("enDL"))
-	println(c.PostForm("enDL")=="on")
 	course.Visibility = access
 	course.VODEnabled = enVOD
 	course.DownloadsEnabled = enDL

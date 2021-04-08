@@ -24,7 +24,14 @@
 
             <form class="p-4" method="post">
                 {{template "course_settings" .Course}}
-                <input class="btn border-0" type="submit" value="Update">
+                <div class="flex">
+                    <input name="submit" class="btn border-0" type="submit" value="Update">
+                    {{if .Course.TUMOnlineIdentifier}}
+                        <input name="submit" class="btn border-0 border-l-2 border-r-2 border-black" type="submit"
+                               value="Reload Students From TUMOnline">
+                        <input name="submit" class="btn border-0" type="submit" value="Reload Lectures From TUMOnline">
+                    {{end}}
+                </div>
             </form>
 
             <h2>Lectures</h2>
@@ -32,7 +39,7 @@
                 <ul class="bg-secondary rounded">
                     {{$course := .Course}}
                     {{if not .Course.Streams}}
-                    <p class="text-gray-300 p-4">It might take a minute to load your lectures from TUMOnline</p>
+                        <p class="text-gray-300 p-4">It might take a minute to load your lectures from TUMOnline</p>
                     {{end}}
                     {{range $lecture := .Course.Streams }}
                         <li class="p-6 hover:bg-primary border-b-2 border-primary">
