@@ -1,25 +1,23 @@
 class EditCourse {
+    private start
+    private end
+
     constructor() {
-        document.getElementById("createLectureBtn").addEventListener("click", (e: Event) => EditCourse.createLecture())
+        document.getElementById("createLectureBtn").addEventListener("click", (e: Event) => this.createLecture())
+        // @ts-ignore
+        this.start = flatpickr("#start", {enableTime: true, time_24hr: true});
+        // @ts-ignore
+        this.end = flatpickr("#end", {enableTime: true, time_24hr: true});
     }
 
-    private static createLecture(): void {
+    private createLecture(): void {
         const id = (document.getElementById("courseID") as HTMLInputElement).value
         const name = (document.getElementById("name") as HTMLInputElement).value
-        const date = (document.getElementById("date") as HTMLInputElement).value.split("-").map(value => parseInt(value))
-        const startTime = (document.getElementById("time") as HTMLInputElement).value.split(":").map(value => parseInt(value))
-        const endTime = (document.getElementById("time2") as HTMLInputElement).value.split(":").map(value => parseInt(value))
-        const datetimeStart = new Date()
-        datetimeStart.setFullYear(date[0], date[1] - 1, date[2]) // wtf js??? month is 0 based, year and day 1 based.
-        datetimeStart.setHours(startTime[0], startTime[1], 0, 0)
-        const datetimeEnd = new Date()
-        datetimeEnd.setFullYear(date[0], date[1] - 1, date[2]) // wtf js??? month is 0 based, year and day 1 based.
-        datetimeEnd.setHours(endTime[0], endTime[1], 0, 0)
         postData("/api/createLecture", {
             "id": id,
             "name": name,
-            "start": datetimeStart.toISOString(),
-            "end": datetimeEnd.toISOString(),
+            "start": this.start.selectedDates[0].toISOString(),
+            "end": this.end.selectedDates[0].toISOString(),
         }).then(data => {
             if (data.status != 200) {
                 data.text().then(t => showMessage(t))

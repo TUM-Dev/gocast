@@ -9,6 +9,8 @@
     <link href="/dist/nouislider/distribute/nouislider.min.css" rel="stylesheet">
     <script src="/dist/nouislider/distribute/nouislider.min.js"></script>
     <script src="/dist/chart.js/dist/Chart.min.js"></script>
+    <link rel="stylesheet" href="/dist/flatpickr/dist/flatpickr.min.css">
+    <script src="/dist/flatpickr/dist/flatpickr.min.js"></script>
 </head>
 <body class="bg-primary">
 
@@ -154,28 +156,22 @@
                             </div>
                             <div class="w-3/4">
                                 <div class="hover:bg-primary">
-                                    <label for="name">
-                                        <input name="name" id="name" type="text" placeholder="L01: Binary Trees"/>
-                                        <span class="hidden">Lecture Name</span>
-                                    </label>
-
                                     <div class="flex">
-                                        <label for="date" class="w-1/2">
-                                            <span class="font-semibold p-2">Date</span>
-                                            <input name="date" id="date" type="date"/>
+                                        <label for="name" class="w-1/2">
+                                            <span class="font-semibold p-2">Lecture Name</span>
+                                            <input name="name" id="name" type="text" placeholder="L01: Binary Trees"/>
                                         </label>
-                                        <label for="time" class="w-1/4">
+                                        <label for="start" class="w-1/4">
                                             <span class="font-semibold p-2">Start</span>
-                                            <input name="time" id="time" type="time" step="900"/>
+                                            <input name="start" type="text" placeholder="2021-04-08 14:00" id="start"/>
                                         </label>
-                                        <label for="time2" class="w-1/4">
+                                        <label for="end" class="w-1/4">
                                             <span class="font-semibold p-2">End</span>
-                                            <input name="time2" id="time2" type="time" step="900"/>
+                                            <input name="end" type="text" placeholder="2021-04-08 16:00" id="end"/>
                                         </label>
-                                    </div>
-
-                                    <div id="createLectureBtn" class="p-3 rounded bg-info text-center text-white">
-                                        Add
+                                        <button type="submit" id="createLectureBtn">
+                                            <i class="fas fa-check text-gray-300 hover:text-purple-500"></i>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
