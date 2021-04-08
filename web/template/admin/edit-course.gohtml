@@ -26,10 +26,10 @@
 
             <form class="p-4" method="post">
                 {{template "course_settings" .Course}}
-                <div class="flex">
+                <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
                     <input name="submit" class="btn border-0" type="submit" value="Update">
                     {{if .Course.TUMOnlineIdentifier}}
-                        <input name="submit" class="btn border-0 border-l-2 border-r-2 border-black" type="submit"
+                        <input name="submit" class="btn border-0" type="submit"
                                value="Reload Students From TUMOnline">
                         <input name="submit" class="btn border-0" type="submit" value="Reload Lectures From TUMOnline">
                     {{end}}
@@ -156,16 +156,16 @@
                             </div>
                             <div class="w-3/4">
                                 <div class="hover:bg-primary">
-                                    <div class="flex">
-                                        <label for="name" class="w-1/2">
+                                    <div class="flex flex-col md:flex-row">
+                                        <label for="name" class="md:w-1/2 w-full">
                                             <span class="font-semibold p-2">Lecture Name</span>
                                             <input name="name" id="name" type="text" placeholder="L01: Binary Trees"/>
                                         </label>
-                                        <label for="start" class="w-1/4">
+                                        <label for="start" class="md:w-1/4 w-full">
                                             <span class="font-semibold p-2">Start</span>
                                             <input name="start" type="text" placeholder="2021-04-08 14:00" id="start"/>
                                         </label>
-                                        <label for="end" class="w-1/4">
+                                        <label for="end" class="md:w-1/4 w-full">
                                             <span class="font-semibold p-2">End</span>
                                             <input name="end" type="text" placeholder="2021-04-08 16:00" id="end"/>
                                         </label>
