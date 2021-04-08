@@ -67,9 +67,10 @@ input[type='checkbox']:checked + label {
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
-#chatBox::-webkit-scrollbar{
+#chatBox::-webkit-scrollbar {
     width: 6px;
 }
+
 #chatBox::-webkit-scrollbar-track {
     background: #0d1117;
 }
@@ -80,4 +81,18 @@ input[type='checkbox']:checked + label {
 
 .watchContent::-webkit-scrollbar {
     display: none;
+}
+
+/* firefox */
+.watchContent {
+    scrollbar-width: none;
+}
+
+#chatBox{
+    scrollbar-width: 6px;
+    scrollbar-color: #0d1117 #5b5b5b;
+}
+
+.vjs-button, .vjs-control {
+    color: #3070b3!important;
 }
