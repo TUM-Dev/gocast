@@ -69,7 +69,7 @@ func getEventsForCourse(courseID string) (events map[time.Time]Event, deleted []
 	return eventsMap, deletedEvents
 }
 
-func getEventsForCourses(courses []model.Course) {
+func GetEventsForCourses(courses []model.Course) {
 	for i := range courses {
 		course := courses[i]
 		events, deleted := getEventsForCourse(course.TUMOnlineIdentifier)

@@ -5,9 +5,11 @@ import (
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"context"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
 )
 
@@ -59,6 +61,40 @@ func EditCoursePage(c *gin.Context) {
 	}
 }
 
+func UpdateCourse(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad course id"})
+		return
+	}
+	course, err := dao.GetCourseById(context.Background(), uint(id))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "course not found"})
+		return
+	}
+	u, uErr := tools.GetUser(c)
+	if uErr != nil || (u.Role > 1 && !u.IsAdminOfCourse(uint(id))) {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "unauthorized to edit this course."})
+		return
+	}
+	access := c.PostForm("access")
+	if match, err := regexp.MatchString("(public|loggedin|enrolled)", access); err != nil || !match {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad course id"})
+		return
+	}
+	enVOD := c.PostForm("enVOD") == "on"
+	enDL := c.PostForm("enDL") == "on"
+	enChat := c.PostForm("enChat") == "on"
+	println(c.PostForm("enDL"))
+	println(c.PostForm("enDL")=="on")
+	course.Visibility = access
+	course.VODEnabled = enVOD
+	course.DownloadsEnabled = enDL
+	course.ChatEnabled = enChat
+	dao.UpdateCourseMetadata(context.Background(), course)
+	c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", id))
+}
+
 func CreateCoursePage(c *gin.Context) {
 	user, err := tools.GetUser(c)
 	if err != nil {
@@ -73,7 +109,10 @@ func CreateCoursePage(c *gin.Context) {
 	indexData := NewIndexData()
 	indexData.IsStudent = false
 	indexData.IsUser = true
-	_ = templ.ExecuteTemplate(c.Writer, "create-course.gohtml", CreateCourseData{User: user, IndexData: indexData})
+	err = templ.ExecuteTemplate(c.Writer, "create-course.gohtml", CreateCourseData{User: user, IndexData: indexData})
+	if err != nil {
+		log.Printf("%v", err)
+	}
 }
 
 type AdminPageData struct {

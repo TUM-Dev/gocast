@@ -10,7 +10,7 @@ import (
 	"log"
 )
 
-func findStudentsForAllCourses(courses []model.Course) {
+func FindStudentsForCourses(courses []model.Course) {
 	for i := range courses {
 		studentIDs, err := findStudentsForCourse(courses[i].TUMOnlineIdentifier)
 		if err != nil {

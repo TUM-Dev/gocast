@@ -105,12 +105,12 @@ func GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, y
 	return course, err
 }
 
-func GetAllCoursesWithTUMID(ctx context.Context) (courses []model.Course, err error) {
+func GetAllCoursesWithTUMIDForSemester(ctx context.Context, year int, term string) (courses []model.Course, err error) {
 	if Logger != nil {
 		Logger(ctx, "Find all courses with tum_online_identifier")
 	}
 	var foundCourses []model.Course
-	dbErr := DB.Where("tum_online_identifier <> ''").Find(&foundCourses).Error
+	dbErr := DB.Where("tum_online_identifier <> '' AND year = ? AND teaching_term = ?", year, term).Find(&foundCourses).Error
 	if dbErr != nil {
 		if Logger != nil {
 			Logger(ctx, fmt.Sprintf("Unable to query courses with tum_online_identifier:%v\n", dbErr))
@@ -136,6 +136,11 @@ func UpdateCourses(ctx context.Context, courses []model.Course) {
 			}
 		}
 	}
+}
+
+func UpdateCourseMetadata(ctx context.Context, course model.Course) {
+	defer Cache.Clear()
+	DB.Save(&course)
 }
 
 func UpdateCourse(ctx context.Context, course model.Course) {

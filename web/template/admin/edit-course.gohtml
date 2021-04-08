@@ -21,6 +21,13 @@
             <h1 class="mb-4">{{.Course.Name}}</h1>
             <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
                                                                 value="{{.Course.Model.ID}}"></label>
+
+            <form class="p-4" method="post">
+                {{template "course_settings" .Course}}
+                <input class="btn border-0" type="submit" value="Update">
+            </form>
+
+            <h2>Lectures</h2>
             <div>
                 <ul class="bg-secondary rounded">
                     {{$course := .Course}}

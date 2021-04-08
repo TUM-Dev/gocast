@@ -7,6 +7,7 @@ import (
 	"TUM-Live/tools/tum"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
@@ -195,7 +196,12 @@ func createCourse(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "Couldn't save course. Please reach out to us.")
 		return
 	}
-	// refresh enrollments
+	courseWithID, err := dao.GetCourseBySlugYearAndTerm(context.Background(), req.Slug, semester, fmt.Sprintf("%v", year))
+	// refresh enrollments and lectures
+	courses := make([]model.Course, 1)
+	courses[0] = courseWithID
+	go tum.GetEventsForCourses(courses)
+	go tum.FindStudentsForCourses(courses)
 	go tum.FetchCourses()
 }
 

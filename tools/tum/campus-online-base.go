@@ -30,13 +30,14 @@ func GetCourseInformation(courseID string) (CourseInfo, error) {
 }
 
 func FetchCourses() {
-	courses, err := dao.GetAllCoursesWithTUMID(context.Background())
+	y, t := GetCurrentSemester()
+	courses, err := dao.GetAllCoursesWithTUMIDForSemester(context.Background(), y, t)
 	if err != nil {
 		log.Printf("Could not get courses with TUM online identifier: %v", err)
 		return
 	}
-	findStudentsForAllCourses(courses)
-	getEventsForCourses(courses)
+	FindStudentsForCourses(courses)
+	GetEventsForCourses(courses)
 }
 
 type CourseInfo struct {
