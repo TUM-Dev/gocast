@@ -28,6 +28,20 @@ class EditCourse {
     }
 }
 
+function saveLectureDescription(e: Event, id: number) {
+    e.preventDefault()
+    const input = (document.getElementById("lectureDescriptionInput" + id) as HTMLInputElement).value
+    postData("/api/updateDescription", {"id": id, "name": input})
+        .then(res => {
+            if (res.status == 200) {
+                document.getElementById("descriptionSubmitBtn" + id).classList.add("invisible")
+            } else {
+                res.text().then(t => showMessage(t))
+            }
+        })
+    return false
+}
+
 function saveLectureName(e: Event, id: number) {
     e.preventDefault()
     const input = (document.getElementById("lectureNameInput" + id) as HTMLInputElement).value
@@ -67,6 +81,12 @@ function showStats(id: number): void {
 function focusNameInput(input: HTMLInputElement, id: number) {
     input.oninput = function () {
         document.getElementById("nameSubmitBtn" + id).classList.remove("invisible")
+    }
+}
+
+function focusDescriptionInput(input: HTMLInputElement, id: number) {
+    input.oninput = function () {
+        document.getElementById("descriptionSubmitBtn" + id).classList.remove("invisible")
     }
 }
 

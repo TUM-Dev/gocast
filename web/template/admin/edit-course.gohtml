@@ -86,12 +86,24 @@
                                         <button id="nameSubmitBtn{{$lecture.Model.ID}}"
                                                 class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
                                     </form>
-                                    <form class="w-full mt-3">
+                                    <div class="w-full mt-3">
                                         <div class="w-full flex justify-center">
                                             <i onclick="toggleExtraInfos(this, {{$lecture.Model.ID}})"
                                                class="fas fa-angle-double-down hover:text-purple-500"></i>
                                         </div>
                                         <div id="extraInfos{{$lecture.Model.ID}}" class="hidden">
+                                            <form onsubmit="saveLectureDescription(event, {{$lecture.Model.ID}})"
+                                                  class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                                                <label for="lectureDescriptionInput{{$lecture.Model.ID}}"
+                                                       class="hidden">Lecture description</label>
+                                                <textarea id="lectureDescriptionInput{{$lecture.Model.ID}}"
+                                                          onfocus="focusDescriptionInput(this, {{$lecture.Model.ID}})"
+                                                          class="flex-grow border-none"
+                                                          placeholder="Add a nice description, links, and more. You can use MarkDown."
+                                                          autocomplete="off">{{$lecture.Description}}</textarea>
+                                                <button id="descriptionSubmitBtn{{$lecture.Model.ID}}"
+                                                        class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
+                                            </form>
                                             {{if and (not $lecture.IsPast) (not $lecture.Recording)}}
                                             <p class="mt-2">
                                                 <span class="font-semibold">Stream Server:</span> <span>rtmp://live.mm.rbg.tum.de:1935/stream?secret={{$lecture.StreamKey}}</span>
@@ -144,7 +156,7 @@
                                             </p>
                                             {{end}}
                                         </div>
-                                    </form>
+                                    </div>
                                 </div>
                             </div>
                         </li>

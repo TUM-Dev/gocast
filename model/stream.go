@@ -1,6 +1,8 @@
 package model
 
 import (
+	"github.com/microcosm-cc/bluemonday"
+	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
 	"time"
 )
@@ -30,4 +32,10 @@ type Stream struct {
 
 func (s Stream) IsPast() bool {
 	return s.End.Before(time.Now())
+}
+
+func (s Stream) GetDescriptionHTML() string {
+	unsafe := blackfriday.Run([]byte(s.Description))
+	html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+	return string(html)
 }

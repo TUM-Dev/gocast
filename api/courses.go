@@ -26,6 +26,40 @@ func configGinCourseRouter(router gin.IRoutes) {
 	router.POST("/api/createLecture", createLecture)
 	router.POST("/api/deleteLecture/:id", deleteLecture)
 	router.POST("/api/renameLecture", renameLecture)
+	router.POST("/api/updateDescription", updateDescription)
+}
+
+func updateDescription(c *gin.Context) {
+	var req renameLectureRequest
+	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	if err := json.Unmarshal(jsonData, &req); err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	u, err := tools.GetUser(c)
+	if err != nil {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+	stream, err := dao.GetStreamByID(context.Background(), strconv.Itoa(int(req.Id)))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	course, _ := dao.GetCourseById(context.Background(), stream.CourseID)
+	if u.Role != 1 && course.UserID != u.ID {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+	stream.Description = req.Name
+	if err := dao.UpdateStream(stream); err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't update lecture Description")
+		return
+	}
 }
 
 func renameLecture(c *gin.Context) {

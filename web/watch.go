@@ -6,6 +6,7 @@ import (
 	"TUM-Live/tools"
 	"context"
 	"github.com/gin-gonic/gin"
+	"html/template"
 	"log"
 	"net/http"
 )
@@ -46,6 +47,7 @@ func WatchPage(c *gin.Context) {
 		return
 	}
 	data.Course = course
+	data.Description = template.HTML(data.Stream.GetDescriptionHTML())
 	err = templ.ExecuteTemplate(c.Writer, "watch.gohtml", data)
 	if err != nil {
 		log.Printf("couldn't render template: %v\n", err)
@@ -53,8 +55,9 @@ func WatchPage(c *gin.Context) {
 }
 
 type WatchPageData struct {
-	IndexData IndexData
-	Stream    model.Stream
-	Course    model.Course
-	Version   string
+	IndexData   IndexData
+	Stream      model.Stream
+	Description template.HTML
+	Course      model.Course
+	Version     string
 }
