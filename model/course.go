@@ -11,7 +11,7 @@ type Course struct {
 	UserID              uint
 	Name                string
 	Slug                string //eg. eidi
-	Year                int // eg. 2021
+	Year                int    // eg. 2021
 	TeachingTerm        string //eg. Summer/Winter
 	TUMOnlineIdentifier string
 	VODEnabled          bool
@@ -23,13 +23,13 @@ type Course struct {
 }
 
 func (c Course) GetNextLectureDate() time.Time {
-	n := time.Now()
+	earliestLecture := time.Now().Add(time.Hour * 24 * 365 * 10) // 10 years from now.
 	for _, s := range c.Streams {
-		if s.Start.After(n) {
-			return s.Start
+		if s.Start.Before(earliestLecture) {
+			earliestLecture = s.Start
 		}
 	}
-	return time.Now()
+	return earliestLecture
 }
 
 func (c Course) HasNextLecture() bool {
