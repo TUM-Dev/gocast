@@ -180,7 +180,12 @@ func IsUserAllowedToWatchPrivateCourse(courseid uint, user model.User, userErr e
 		return user.IsAdminOfCourse(courseid)
 	}
 	if studentErr == nil {
-		return DB.Raw("SELECT * FROM course_students where student_id = ? AND course_id = ?", student.ID, courseid).RowsAffected != 0
+		log.Printf("%v, %v", student.ID, courseid)
+		for _, sCourse := range student.Courses {
+			if sCourse.ID == courseid {
+				return true
+			}
+		}
 	}
 	return false
 }
