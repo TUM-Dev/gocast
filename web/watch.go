@@ -48,7 +48,11 @@ func WatchPage(c *gin.Context) {
 	}
 	data.Course = course
 	data.Description = template.HTML(data.Stream.GetDescriptionHTML())
-	err = templ.ExecuteTemplate(c.Writer, "watch.gohtml", data)
+	if c.Param("version") == "video-only" {
+		err = templ.ExecuteTemplate(c.Writer, "video_only.gohtml", data)
+	}else {
+		err = templ.ExecuteTemplate(c.Writer, "watch.gohtml", data)
+	}
 	if err != nil {
 		log.Printf("couldn't render template: %v\n", err)
 	}
