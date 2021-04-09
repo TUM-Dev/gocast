@@ -20,6 +20,7 @@ type Course struct {
 	Visibility          string //public, loggedin or enrolled
 	Streams             []Stream
 	Students            []Student `gorm:"many2many:course_students;"`
+	Users               []User    `gorm:"many2many:course_users;"`
 }
 
 func (c Course) GetNextLectureDate() time.Time {

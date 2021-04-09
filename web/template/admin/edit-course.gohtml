@@ -27,7 +27,7 @@
             <form class="p-4" method="post">
                 {{template "course_settings" .Course}}
                 <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
-                    <input name="submit" class="btn border-0" type="submit" value="Update">
+                    <input name="submit" class="btn border-0" type="submit" value="Save Settings">
                     {{if .Course.TUMOnlineIdentifier}}
                         <input name="submit" class="btn border-0" type="submit"
                                value="Reload Students From TUMOnline">
@@ -188,6 +188,40 @@
                                 </div>
                             </div>
                         </div>
+                    </li>
+                </ul>
+                <h2>External Participants</h2>
+                <ul class="bg-secondary">
+                    {{range $user := .Course.Users}}
+                        <li class="flex">
+                            <div class="font-semibold text-gray-300">{{$user.Name}}</div>
+                            <div class="text-gray-300">{{$user.Email}}</div>
+                            <i class="fas fa-remove text-gray-300 hover:text-purple-500"></i>
+                        </li>
+                    {{end}}
+                    <li>
+                        <p class="text-gray-300 p-4">Add participants. They'll get notified about your invitation to your lecture via mail.</p>
+                        <form onsubmit="createUser()" class="flex">
+                            <label class="w-full">
+                                <span class="hidden">First Name</span>
+                                <input class="mx-2 px-2" type="text" name="newUserFirstName"
+                                       id="newUserFirstName" autocomplete="off" placeholder="Tim">
+                            </label>
+                            <label class="w-full">
+                                <span class="hidden">Email</span>
+                                <input class="mx-2 px-2" type="email" autocomplete="off" name="newUserEmail"
+                                       id="newUserEmail" placeholder="tim@lmu.de">
+                            </label>
+                            <button type="button" class="btn bg-secondary hover:bg-primary"><i class="fas fa-check "></i></button>
+                        </form>
+                        <p class="text-gray-300 p-4">Batch insert</p>
+                        <form onsubmit="batchCreateUsers()" class="flex">
+                            <label class="w-full">
+                                <span class="hidden">Batch insert users</span>
+                                <textarea name="batchUserInput" placeholder="Tim,tim69@hotmail.com&#10;Anja,anja@lmu.de"></textarea>
+                            </label>
+                            <button type="button" class="btn bg-secondary hover:bg-primary"><i class="fas fa-check "></i></button>
+                        </form>
                     </li>
                 </ul>
             </div>

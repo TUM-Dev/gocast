@@ -21,11 +21,12 @@ const (
 type User struct {
 	gorm.Model
 
-	Name     string
-	Email    string `gorm:"unique"`
-	Role     int    //1:admin 2:lecturer 3:others
-	Password string
-	Courses  []Course
+	Name           string
+	Email          string `gorm:"unique"`
+	Role           int    //1:admin 2:lecturer 3:others
+	Password       string
+	Courses        []Course
+	InvitedCourses []Course `gorm:"many2many:course_users;"` // courses a lecturer invited this user to
 }
 
 type argonParams struct {
