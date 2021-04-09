@@ -177,7 +177,7 @@ func GetAvailableSemesters() []Semester {
 
 func IsUserAllowedToWatchPrivateCourse(courseid uint, user model.User, userErr error, student model.Student, studentErr error) bool {
 	if userErr == nil {
-		return user.IsAdminOfCourse(courseid)
+		return user.IsAdminOfCourse(courseid) || user.Role == 1
 	}
 	if studentErr == nil {
 		log.Printf("%v, %v", student.ID, courseid)
