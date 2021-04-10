@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"log"
 )
@@ -83,7 +84,7 @@ func GetUserByID(ctx context.Context, id uint) (user model.User, err error) {
 		Logger(ctx, fmt.Sprintf("find user by id %v", id))
 	}
 	var foundUser model.User
-	dbErr := DB.Preload("Courses.Streams").Find(&foundUser, "id = ?", id).Error
+	dbErr := DB.Preload("Courses.Streams").Preload("InvitedCourses.Streams").Find(&foundUser, "id = ?", id).Error
 	return foundUser, dbErr
 }
 
@@ -112,12 +113,12 @@ func GetUserByResetKey(key string) (model.User, error) {
 	return user, nil
 }
 
-func DeleteResetKey(key string){
+func DeleteResetKey(key string) {
 	DB.Where("register_secret = ?", key).Delete(&model.RegisterLink{})
 }
 
 func UpdateUser(user model.User) {
-	if err := DB.Save(&user).Error; err != nil {
+	if err := DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&user).Error; err != nil {
 		log.Printf("error saving user: %v\n", err)
 	}
 }

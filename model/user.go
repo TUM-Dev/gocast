@@ -15,9 +15,9 @@ import (
 const (
 	AdminType    = 1
 	LecturerType = 2
+	GenericType  = 3
 )
 
-// Users struct is a row record of the users table in the rbglive database
 type User struct {
 	gorm.Model
 
@@ -44,6 +44,11 @@ func (u *User) CoursesForSemester(year int, term string) []Course {
 			cRes = append(cRes, c)
 		}
 	}
+	for _, c := range u.InvitedCourses {
+		if c.Year == year && c.TeachingTerm == term {
+			cRes = append(cRes, c)
+		}
+	}
 	return cRes
 }
 
@@ -61,9 +66,6 @@ var (
 )
 
 func (u User) ValidateFields() bool {
-	if len(u.Name) < 4 || !strings.Contains(u.Name, " ") {
-		return false
-	}
 	if u.Role > 3 || u.Role < 1 {
 		return false
 	}

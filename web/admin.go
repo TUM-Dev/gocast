@@ -30,6 +30,7 @@ func AdminPage(c *gin.Context) {
 	indexData := NewIndexData()
 	indexData.IsStudent = false
 	indexData.IsUser = true
+	indexData.IsAdmin = user.Role == model.AdminType || user.Role == model.LecturerType
 	_ = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{User: user, Users: users, Courses: courses, IndexData: indexData})
 }
 
@@ -56,6 +57,7 @@ func EditCoursePage(c *gin.Context) {
 	}
 	indexData := NewIndexData()
 	indexData.IsUser = true
+	indexData.IsAdmin = user.Role == model.AdminType || user.Role == model.LecturerType
 	err = templ.ExecuteTemplate(c.Writer, "edit-course.gohtml", EditCourseData{IndexData: indexData, Course: course})
 	if err != nil {
 		log.Printf("%v\n", err)
@@ -117,6 +119,7 @@ func CreateCoursePage(c *gin.Context) {
 	indexData := NewIndexData()
 	indexData.IsStudent = false
 	indexData.IsUser = true
+	indexData.IsAdmin = user.Role == model.AdminType || user.Role == model.LecturerType
 	err = templ.ExecuteTemplate(c.Writer, "create-course.gohtml", CreateCourseData{User: user, IndexData: indexData})
 	if err != nil {
 		log.Printf("%v", err)

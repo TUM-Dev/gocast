@@ -21,6 +21,7 @@ func WatchPage(c *gin.Context) {
 	data.IndexData = NewIndexData()
 	if userErr == nil {
 		data.IndexData.IsUser = true
+		data.IndexData.IsAdmin = user.Role == model.AdminType || user.Role == model.LecturerType
 	}
 	if studentErr == nil {
 		data.IndexData.IsStudent = true

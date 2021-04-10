@@ -5,7 +5,7 @@ class Admin {
 function createUser() {
     let userName: string = (document.getElementById("name") as HTMLInputElement).value
     let email: string = (document.getElementById("email") as HTMLInputElement).value
-    postData("api/createUser", {"name": userName, "email": email, "password": null})
+    postData("/api/createUser", {"name": userName, "email": email, "password": null})
         .then(data => {
             if (data.status === 200) {
                 showMessage("User was created successfully. Reload to see them.")

@@ -2,16 +2,13 @@ package tools
 
 import (
 	"encoding/base64"
-	"fmt"
 	"net/smtp"
 	"strings"
 )
 
-func SendPasswordMail(to string, link string) error {
+func SendPasswordMail(to string, body string) error {
 	err := SendMail(Cfg.MailServer, Cfg.MailUser, "Setup your TUM-Live Account",
-		fmt.Sprintf("Hello!<br>\n"+
-			"You can set a password for your TUM-Live account here: <a href=\"https://live.mm.rbg.tum.de/setPassword/%v\">https://live.mm.rbg.tum.de/setPassword/%v</a>.</br>\n" +
-			"If you have any further questions please reach out to <a href=\"rbg@in.tum.de\">rbg@in.tum.de</a>", link, link),
+		body,
 		[]string{to})
 	return err
 }

@@ -42,6 +42,7 @@ func MainPage(c *gin.Context) {
 	indexData.CurrentTerm = term
 	if userErr == nil {
 		indexData.IsUser = true
+		indexData.IsAdmin = user.Role == model.AdminType || user.Role == model.LecturerType
 		indexData.Courses = user.CoursesForSemester(year, term)
 	} else if studentErr == nil {
 		indexData.IsStudent = true
@@ -93,10 +94,11 @@ func MainPage(c *gin.Context) {
 func AboutPage(c *gin.Context) {
 	var indexData IndexData
 	indexData.VersionTag = os.Getenv("hash")
-	_, userErr := tools.GetUser(c)
+	u, userErr := tools.GetUser(c)
 	_, studentErr := tools.GetStudent(c)
 	if userErr == nil {
 		indexData.IsUser = true
+		indexData.IsAdmin = u.Role == model.AdminType || u.Role == model.LecturerType
 	}
 	if studentErr == nil {
 		indexData.IsStudent = true
@@ -107,6 +109,7 @@ func AboutPage(c *gin.Context) {
 type IndexData struct {
 	VersionTag    string
 	IsUser        bool
+	IsAdmin       bool
 	IsStudent     bool
 	LiveStreams   []CourseStream
 	Courses       []model.Course
@@ -116,9 +119,9 @@ type IndexData struct {
 	CurrentTerm   string
 }
 
-func NewIndexData() IndexData{
+func NewIndexData() IndexData {
 	return IndexData{
-		VersionTag:    os.Getenv("hash"),
+		VersionTag: os.Getenv("hash"),
 	}
 }
 

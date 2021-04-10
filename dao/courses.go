@@ -84,7 +84,7 @@ func GetPublicCourses(year int, term string) (courses []model.Course, err error)
 
 func GetCourseById(ctx context.Context, id uint) (courses model.Course, err error) {
 	var foundCourse model.Course
-	dbErr := DB.Preload("Streams.Stats").Preload("Streams", func(db *gorm.DB) *gorm.DB {
+	dbErr := DB.Preload("Users").Preload("Streams.Stats").Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("streams.start asc")
 	}).Find(&foundCourse, "id = ?", id).Error
 	return foundCourse, dbErr
@@ -177,7 +177,12 @@ func GetAvailableSemesters() []Semester {
 
 func IsUserAllowedToWatchPrivateCourse(courseid uint, user model.User, userErr error, student model.Student, studentErr error) bool {
 	if userErr == nil {
-		return user.IsAdminOfCourse(courseid) || user.Role == 1
+		for _, c := range user.InvitedCourses {
+			if c.ID == courseid {
+				return true
+			}
+		}
+		return user.Role == 1 || user.IsAdminOfCourse(courseid)
 	}
 	if studentErr == nil {
 		log.Printf("%v, %v", student.ID, courseid)
