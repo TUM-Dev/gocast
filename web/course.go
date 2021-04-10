@@ -37,8 +37,7 @@ func CoursePage(c *gin.Context) {
 		}
 	} else if course.Visibility == "enrolled" {
 		if uErr == nil { // logged in with internal account, check if authorized
-			if u.Role != 1 && course.UserID != u.ID {
-				//logged in but not admin or owner
+			if !u.IsEligibleToWatchCourse(course) {
 				c.Status(http.StatusForbidden)
 				_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", nil)
 				return

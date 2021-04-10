@@ -37,6 +37,18 @@ type argonParams struct {
 	keyLength   uint32
 }
 
+func (u *User) IsEligibleToWatchCourse(course Course) bool {
+	if course.Visibility == "enrolled" || course.Visibility == "public" {
+		return true
+	}
+	for _, invCourse := range u.InvitedCourses {
+		if invCourse.ID == course.ID {
+			return true
+		}
+	}
+	return u.Role == AdminType || u.ID == course.UserID
+}
+
 func (u *User) CoursesForSemester(year int, term string) []Course {
 	var cRes []Course
 	for _, c := range u.Courses {
