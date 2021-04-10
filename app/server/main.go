@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"github.com/dgraph-io/ristretto"
 	"github.com/droundy/goopt"
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -18,13 +20,13 @@ import (
 	"github.com/robfig/cron/v3"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"math/rand"
-
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 const UserKey = "RBG-Default-User" // UserKey key used for storing User struct in context
@@ -35,10 +37,14 @@ func GinServer() (err error) {
 	secret := make([]byte, 40) // 40 random bytes as cookie secret
 	_, err = rand.Read(secret)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Fatalf("Unable to generate cookie store secret: %err\n", err)
 	}
 	store := cookie.NewStore(secret)
 	router.Use(sessions.Sessions("TUMLiveSessionV3", store))
+
+	// capture performance with sentry
+	router.Use(sentrygin.New(sentrygin.Options{}))
 	// event streams don't work with gzip, configure group without
 	chat := router.Group("/api/chat")
 	api.ConfigChatRouter(chat)
@@ -48,6 +54,7 @@ func GinServer() (err error) {
 	web.ConfigGinRouter(router)
 	err = router.Run(":8080")
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Fatalf("Error starting server, the error is '%v'", err)
 	}
 	return
@@ -70,6 +77,17 @@ func main() {
 	OsSignal = make(chan os.Signal, 1)
 
 	goopt.Parse(nil)
+	if os.Getenv("SentryDSN") == "" {
+		panic("need sentry dsn to run.")
+	}
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn: os.Getenv("SentryDSN"),
+	})
+	if err != nil {
+		log.Fatalf("sentry.Init: %s", err)
+	}
+	// Flush buffered events before the program terminates.
+	defer sentry.Flush(2 * time.Second)
 
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
 		"%v:%v@tcp(db:3306)/%v?parseTime=true&loc=Local",
@@ -78,7 +96,8 @@ func main() {
 		tools.Cfg.DatabaseName),
 	), &gorm.Config{})
 	if err != nil {
-		log.Fatalf("Got error when connecting to database: '%v'", err)
+		sentry.CaptureException(err)
+		log.Fatalf("%v", err)
 	}
 
 	err = db.AutoMigrate(
@@ -93,7 +112,8 @@ func main() {
 		&model.Worker{},
 	)
 	if err != nil {
-		log.Fatalf("Could not migrate database: %v", err)
+		sentry.CaptureException(err)
+		log.Fatalf("%v", err)
 	}
 
 	dao.DB = db
@@ -112,7 +132,8 @@ func main() {
 		BufferItems: 64,      // number of keys per Get buffer.
 	})
 	if err != nil {
-		panic(err)
+		sentry.CaptureException(err)
+		log.Fatalf("%v", err)
 	}
 	dao.Cache = *cache
 

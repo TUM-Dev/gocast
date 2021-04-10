@@ -4,6 +4,7 @@ import (
 	"TUM-Live/tools"
 	"errors"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"github.com/go-ldap/ldap/v3"
 	"log"
 )
@@ -14,6 +15,7 @@ import (
 func LoginWithTumCredentials(username string, password string) (userId string, firstName string, err error) {
 	l, err := ldap.DialURL(tools.Cfg.LdapUrl)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Fatal(err)
 	}
 	defer l.Close()
@@ -21,6 +23,7 @@ func LoginWithTumCredentials(username string, password string) (userId string, f
 	// First bind with a read only user
 	err = l.Bind(tools.Cfg.LdapUser, tools.Cfg.LdapPassword)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Fatal(err)
 	}
 
@@ -35,11 +38,12 @@ func LoginWithTumCredentials(username string, password string) (userId string, f
 
 	sr, err := l.Search(searchRequest)
 	if err != nil {
-		log.Printf("%v", err)
+		sentry.CaptureException(err)
 		return "", "", errors.New("couldn't query user")
 	}
 
 	if len(sr.Entries) != 1 {
+		sentry.CaptureMessage(fmt.Sprintf("User does not exist or too many entries returned. User: %v", username))
 		log.Printf("User does not exist or too many entries returned: %v\n", len(sr.Entries))
 		return "", "", errors.New("couldn't find single user")
 	}
@@ -61,7 +65,7 @@ func LoginWithTumCredentials(username string, password string) (userId string, f
 		return "", "", errors.New("couldn't login with tum credentials")
 	} else {
 		if len(res.Entries) != 1 {
-			log.Println("bad response from ldap server")
+			sentry.CaptureMessage(fmt.Sprintf("bad response from ldap server. User: %v", username))
 			return "", "", errors.New("bad response from ldap server")
 		}
 		mNr := res.Entries[0].GetAttributeValue("imMatrikelNr")
@@ -75,5 +79,6 @@ func LoginWithTumCredentials(username string, password string) (userId string, f
 			return mwnID, name, nil
 		}
 	}
+	sentry.CaptureMessage(fmt.Sprintf("LDAP: reached unexpected codepoint. User: %v", username))
 	return "", "", errors.New("something went wrong")
 }

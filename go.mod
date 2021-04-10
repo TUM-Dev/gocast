@@ -6,6 +6,7 @@ require (
 	github.com/antchfx/xmlquery v1.3.5
 	github.com/dgraph-io/ristretto v0.0.3
 	github.com/droundy/goopt v0.0.0-20170604162106-0b8effe182da
+	github.com/getsentry/sentry-go v0.10.0
 	github.com/gin-contrib/gzip v0.0.3
 	github.com/gin-contrib/sessions v0.0.3
 	github.com/gin-gonic/gin v1.6.3
