@@ -38,13 +38,14 @@ func GinServer() (err error) {
 	_, err = rand.Read(secret)
 	if err != nil {
 		sentry.CaptureException(err)
+		sentry.Flush(time.Second * 5)
 		log.Fatalf("Unable to generate cookie store secret: %err\n", err)
 	}
 	store := cookie.NewStore(secret)
 	router.Use(sessions.Sessions("TUMLiveSessionV3", store))
 
 	// capture performance with sentry
-	router.Use(sentrygin.New(sentrygin.Options{}))
+	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
 	// event streams don't work with gzip, configure group without
 	chat := router.Group("/api/chat")
 	api.ConfigChatRouter(chat)
@@ -81,13 +82,19 @@ func main() {
 		panic("need sentry dsn to run.")
 	}
 	err := sentry.Init(sentry.ClientOptions{
-		Dsn: os.Getenv("SentryDSN"),
+		Dsn:              os.Getenv("SentryDSN"),
+		Release:          os.Getenv("hash"),
+		TracesSampleRate: 1.0,
+		Debug:            true,
+		AttachStacktrace: true,
 	})
 	if err != nil {
 		log.Fatalf("sentry.Init: %s", err)
 	}
+	sentry.CaptureMessage("Service restarted!")
 	// Flush buffered events before the program terminates.
 	defer sentry.Flush(2 * time.Second)
+	defer sentry.Recover()
 
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
 		"%v:%v@tcp(db:3306)/%v?parseTime=true&loc=Local",
@@ -97,6 +104,7 @@ func main() {
 	), &gorm.Config{})
 	if err != nil {
 		sentry.CaptureException(err)
+		sentry.Flush(time.Second * 5)
 		log.Fatalf("%v", err)
 	}
 
@@ -113,6 +121,7 @@ func main() {
 	)
 	if err != nil {
 		sentry.CaptureException(err)
+		sentry.Flush(time.Second * 5)
 		log.Fatalf("%v", err)
 	}
 
@@ -133,6 +142,7 @@ func main() {
 	})
 	if err != nil {
 		sentry.CaptureException(err)
+		sentry.Flush(time.Second * 5)
 		log.Fatalf("%v", err)
 	}
 	dao.Cache = *cache

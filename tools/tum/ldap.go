@@ -7,12 +7,14 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/go-ldap/ldap/v3"
 	"log"
+	"time"
 )
 
 /**
  * returns student id if login and password match, err otherwise
  */
 func LoginWithTumCredentials(username string, password string) (userId string, firstName string, err error) {
+	defer sentry.Flush(time.Second * 2)
 	l, err := ldap.DialURL(tools.Cfg.LdapUrl)
 	if err != nil {
 		sentry.CaptureException(err)
