@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -47,6 +48,8 @@ func DeleteUser(c *gin.Context) {
 
 	err = dao.DeleteUser(context.Background(), deleteRequest.Id)
 	if err != nil {
+		sentry.CaptureException(err)
+		defer sentry.Flush(time.Second * 2)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}

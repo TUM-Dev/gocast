@@ -6,6 +6,7 @@ import (
 	"TUM-Live/tools"
 	"TUM-Live/tools/tum"
 	"context"
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
@@ -13,6 +14,9 @@ import (
 )
 
 func MainPage(c *gin.Context) {
+	tName := sentry.TransactionName("GET /")
+	spanMain := sentry.StartSpan(c.Request.Context(), "MainPageHandler", tName)
+	defer spanMain.Finish()
 	res, err := dao.AreUsersEmpty(context.Background()) // fresh installation?
 	if err != nil {
 		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", nil)
@@ -37,20 +41,24 @@ func MainPage(c *gin.Context) {
 			return
 		}
 	}
-	indexData.Semesters = dao.GetAvailableSemesters()
+	indexData.Semesters = dao.GetAvailableSemesters(spanMain.Context())
 	indexData.CurrentYear = year
 	indexData.CurrentTerm = term
 	if userErr == nil {
 		indexData.IsUser = true
 		indexData.IsAdmin = user.Role == model.AdminType || user.Role == model.LecturerType
 		if user.Role == model.AdminType {
-			indexData.Courses = dao.GetAllCoursesForSemester(year, term)
+			indexData.Courses = dao.GetAllCoursesForSemester(year, term, spanMain.Context())
 		} else {
-			indexData.Courses = user.CoursesForSemester(year, term)
+			indexData.Courses = user.CoursesForSemester(year, term, spanMain.Context())
 		}
 	} else if studentErr == nil {
 		indexData.IsStudent = true
-		indexData.Courses = student.CoursesForSemester(year, term)
+		indexData.Courses = student.CoursesForSemester(
+			year,
+			term,
+			spanMain.Context(),
+		)
 	}
 	streams, err := dao.GetCurrentLive(context.Background())
 	var livestreams []CourseStream

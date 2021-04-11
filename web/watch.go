@@ -5,6 +5,7 @@ import (
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"context"
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"html/template"
 	"log"
@@ -12,6 +13,8 @@ import (
 )
 
 func WatchPage(c *gin.Context) {
+	span := sentry.StartSpan(c, "GET /w", sentry.TransactionName("GET /w"))
+	defer span.Finish()
 	var data WatchPageData
 	if c.Param("version") != "" {
 		data.Version = c.Param("version")

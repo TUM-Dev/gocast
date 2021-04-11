@@ -5,8 +5,10 @@ import (
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"context"
+	"fmt"
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
-	"log"
 	"net/http"
 )
 
@@ -14,6 +16,8 @@ func CoursePage(c *gin.Context) {
 	slug := c.Param("slug")
 	teachingTerm := c.Param("teachingTerm")
 	year := c.Param("year")
+	span := sentry.StartSpan(c, fmt.Sprintf("GET /course/%v/%v/%v", year, teachingTerm, slug), sentry.TransactionName(fmt.Sprintf("GET /course/%v/%v/%v", year, teachingTerm, slug)))
+	defer span.Finish()
 	course, err := dao.GetCourseBySlugYearAndTerm(context.Background(), slug, teachingTerm, year)
 	if err != nil {
 		c.Status(http.StatusNotFound)
@@ -64,7 +68,9 @@ func CoursePage(c *gin.Context) {
 	}
 	// in any other case assume either validated before or public course
 	err = templ.ExecuteTemplate(c.Writer, "course.gohtml", CoursePageData{IndexData: indexData, Course: course})
-	log.Printf("%v",err )
+	if err != nil {
+		sentrygin.GetHubFromContext(c).CaptureException(err)
+	}
 }
 
 type CoursePageData struct {

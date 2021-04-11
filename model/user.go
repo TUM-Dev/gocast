@@ -1,11 +1,13 @@
 package model
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"golang.org/x/crypto/argon2"
 	"gorm.io/gorm"
 	"regexp"
@@ -49,7 +51,9 @@ func (u *User) IsEligibleToWatchCourse(course Course) bool {
 	return u.Role == AdminType || u.ID == course.UserID
 }
 
-func (u *User) CoursesForSemester(year int, term string) []Course {
+func (u *User) CoursesForSemester(year int, term string, context context.Context) []Course {
+	span := sentry.StartSpan(context, "User.CoursesForSemester")
+	defer span.Finish()
 	var cRes []Course
 	for _, c := range u.Courses {
 		if c.Year == year && c.TeachingTerm == term {

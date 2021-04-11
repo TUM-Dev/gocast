@@ -4,6 +4,7 @@ import (
 	"TUM-Live/model"
 	"context"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"gorm.io/gorm"
 	"log"
 	"time"
@@ -66,7 +67,9 @@ func GetCoursesForLoggedInUsers(year int, term string) (courses []model.Course, 
 	return publicCourses, err
 }
 
-func GetAllCoursesForSemester(year int, term string) (courses []model.Course) {
+func GetAllCoursesForSemester(year int, term string, ctx context.Context) (courses []model.Course) {
+	span := sentry.StartSpan(ctx, "SQL: GetAllCoursesForSemester")
+	defer span.Finish()
 	var foundCourses []model.Course
 	DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start asc")
@@ -170,7 +173,9 @@ func CreateCourse(ctx context.Context, course model.Course) error {
 	return err
 }
 
-func GetAvailableSemesters() []Semester {
+func GetAvailableSemesters(c context.Context) []Semester {
+	span := sentry.StartSpan(c, "SQL: GetAvailableSemesters")
+	defer span.Finish()
 	if cached, found := Cache.Get("getAllSemesters"); found {
 		return cached.([]Semester)
 	} else {

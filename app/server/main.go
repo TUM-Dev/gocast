@@ -84,7 +84,7 @@ func main() {
 	err := sentry.Init(sentry.ClientOptions{
 		Dsn:              os.Getenv("SentryDSN"),
 		Release:          os.Getenv("hash"),
-		TracesSampleRate: 1.0,
+		TracesSampleRate: 0.1,
 		Debug:            true,
 		AttachStacktrace: true,
 	})
@@ -150,6 +150,7 @@ func main() {
 	//Fetch students every 12 hours
 	_, _ = cronService.AddFunc("0 */12 * * *", tum.FetchCourses)
 	_, _ = cronService.AddFunc("0-59/5 * * * *", api.CollectStats)
+	_, _ = cronService.AddFunc("0-59/5 * * * *", func() { sentry.Flush(time.Minute * 2) })
 	cronService.Start()
 	api.ContextInitializer = func(r *http.Request) (ctx context.Context) {
 		val, ok := r.Header["X-Api-User"]
