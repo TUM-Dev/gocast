@@ -91,7 +91,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("sentry.Init: %s", err)
 	}
-	sentry.CaptureMessage("Service restarted!")
 	// Flush buffered events before the program terminates.
 	defer sentry.Flush(2 * time.Second)
 	defer sentry.Recover()

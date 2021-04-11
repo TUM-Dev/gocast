@@ -37,7 +37,7 @@ func FetchCourses() {
 		return
 	}
 	FindStudentsForCourses(courses)
-	GetEventsForCourses(courses)
+	//GetEventsForCourses(courses)
 }
 
 type CourseInfo struct {
