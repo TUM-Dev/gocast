@@ -27,8 +27,9 @@ func getEventsForCourse(courseID string) (events map[time.Time]Event, deleted []
 	for i := range xmlEvents {
 		event := xmlEvents[i]
 		// whoever came up with this way of parsing times is a psychopath
-		start, timeErr1 := time.Parse("20060102T150405", xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='dtstart']").InnerText())
-		end, timeErr2 := time.Parse("20060102T150405", xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='dtend']").InnerText())
+		start, timeErr1 := time.ParseInLocation("20060102T150405", xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='dtstart']").InnerText(), tools.Loc)
+		end, timeErr2 := time.ParseInLocation("20060102T150405", xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='dtend']").InnerText(), tools.Loc)
+		log.Printf("%v- %v", start, end)
 		if timeErr1 != nil || timeErr2 != nil {
 			log.Printf("couldn't parse time: %v or %v\n", timeErr1, timeErr2)
 			break
