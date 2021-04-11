@@ -9,12 +9,11 @@ import (
 var Cfg Config
 var Loc *time.Location
 
-
 func init() {
 	var err error
 	Loc, err = time.LoadLocation("Europe/Berlin")
 	if err != nil {
-		log.Printf("%v",err)
+		log.Printf("%v", err)
 	}
 	Cfg = Config{
 		MailUser:         os.Getenv("MAIL_USER"),

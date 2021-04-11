@@ -84,7 +84,7 @@ func UpdateCourse(c *gin.Context) {
 		tum.FindStudentsForCourses([]model.Course{course})
 		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", id))
 		return
-	}else if c.PostForm("submit") == "Reload Lectures From TUMOnline"{
+	} else if c.PostForm("submit") == "Reload Lectures From TUMOnline" {
 		tum.GetEventsForCourses([]model.Course{course})
 		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", id))
 		return

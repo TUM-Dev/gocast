@@ -27,8 +27,8 @@ func LoginHandler(c *gin.Context) {
 	}
 	if sId, name, err := tum.LoginWithTumCredentials(username, password); err == nil {
 		student := model.Student{
-			ID:      sId,
-			Name:    name,
+			ID:   sId,
+			Name: name,
 		}
 		dao.UpdateStudent(student)
 		s := sessions.Default(c)

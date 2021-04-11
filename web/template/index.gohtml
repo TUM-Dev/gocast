@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>TUM Live</title>
     {{template "headImports" .VersionTag}}
+    <meta name="description"
+          content="TUM-Live, the livestreaming and VoD service of the Rechnerbetriebsgruppe at the department of informatics and mathematics at the Technical University of Munich's "/>
 </head>
 <body class="bg-primary">
 {{- /*gotype: TUM-Live/web.IndexData*/ -}}
@@ -15,7 +17,8 @@
     {{range $liveStream := .LiveStreams }}
         <div class="py-2 px-4">
             <a href="/w/{{$liveStream.Course.Slug}}/{{$liveStream.Stream.Model.ID}}">
-                <h3 class="text-xl text-gray-300 hover:text-white inline">{{$liveStream.Course.Name}}: {{if $liveStream.Stream.Name}}{{$liveStream.Stream.Name}}{{else}}Lecture: {{$liveStream.Stream.Start.Month}} {{printf "%02d." $liveStream.Stream.Start.Day}} {{$liveStream.Stream.Start.Year}}{{end}}</h3>
+                <h3 class="text-xl text-gray-300 hover:text-white inline">{{$liveStream.Course.Name}}
+                    : {{if $liveStream.Stream.Name}}{{$liveStream.Stream.Name}}{{else}}Lecture: {{$liveStream.Stream.Start.Month}} {{printf "%02d." $liveStream.Stream.Start.Day}} {{$liveStream.Stream.Start.Year}}{{end}}</h3>
             </a>
             <p class="text-gray-500 font-sans font-light">
                 {{printf "%v %02d. %02d:%02d" $liveStream.Stream.Start.Month $liveStream.Stream.Start.Day $liveStream.Stream.Start.Hour $liveStream.Stream.Start.Minute}}
