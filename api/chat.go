@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"gopkg.in/olahol/melody.v1"
@@ -99,6 +100,7 @@ type ChatRep struct {
 
 func CollectStats() {
 	log.Printf("Collecting stats\n")
+	defer sentry.Flush(time.Second * 2)
 	for sID, numWatchers := range stats {
 		log.Printf("Collecting stats for stream %v, viewers:%v\n", sID, numWatchers)
 		stat := model.Stat{
@@ -107,10 +109,13 @@ func CollectStats() {
 		}
 		if s, err := dao.GetStreamByID(context.Background(), sID); err == nil {
 			if !s.LiveNow { // collect stats for livestreams only
+				log.Printf("stream not live, skipping stats\n")
+				delete(stats, strconv.Itoa(int(s.ID)))
 				return
 			}
 			s.Stats = append(s.Stats, stat)
 			if err = dao.SaveStream(&s); err != nil {
+				sentry.CaptureException(err)
 				log.Printf("Error saving stats: %v\n", err)
 			}
 		}
@@ -133,6 +138,10 @@ func ChatStats(context *gin.Context) {
 }
 
 func ChatStream(c *gin.Context) {
+	// max participants in chat to prevent attacks
+	if m.Len() > 10000 {
+		return
+	}
 	go addUser(c.Param("vidId"))
 	ctxMap := make(map[string]interface{}, 1)
 	ctxMap["ctx"] = c
@@ -156,7 +165,7 @@ func addUser(id string) {
 func removeUser(id string) {
 	statsLock.Lock()
 	stats[id] -= 1
-	if stats[id] == 0 {
+	if stats[id] <= 0 {
 		delete(stats, id)
 	}
 	statsLock.Unlock()
