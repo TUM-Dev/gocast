@@ -31,7 +31,7 @@
                 {{if .Stream.Name}}{{.Stream.Name}}{{else}}Lecture: {{.Stream.Start.Month}} {{printf "%02d." .Stream.Start.Day}} {{.Stream.Start.Year}}{{end}}
             </h1>
             <p class="text-xl text-gray-400 flex space-x-2">
-                {{if and .Stream.LiveNow .Course.ChatEnabled}}
+                {{if .Stream.LiveNow}}
                     <span id="viewerCount"></span>
                     <i class="fas fa-users text-gray-400"></i>
                 {{else if .Course.DownloadsEnabled}}

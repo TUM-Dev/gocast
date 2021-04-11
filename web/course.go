@@ -25,6 +25,7 @@ func CoursePage(c *gin.Context) {
 	s, sErr := tools.GetStudent(c)
 	if uErr == nil {
 		indexData.IsUser = true
+		indexData.IsAdmin = u.Role == model.AdminType || u.Role == model.LecturerType
 	}
 	if sErr == nil {
 		indexData.IsStudent = true

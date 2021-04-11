@@ -3,14 +3,16 @@ class Watch {
     private ws: WebSocket
 
     constructor() {
-        (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", e => this.submitChat(e))
-        document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight
-        this.chatInput = document.getElementById("chatInput") as HTMLInputElement
         this.ws = new WebSocket("wss://live.mm.rbg.tum.de:443/api/chat/" + (document.getElementById("streamID") as HTMLInputElement).value + "/ws")
-        this.ws.onmessage = function (m) {
-            const chatElem = Watch.createMessageElement(JSON.parse(m.data))
-            document.getElementById("chatBox").appendChild(chatElem)
+        if (document.getElementById("chatForm") != null) {
+            (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", e => this.submitChat(e))
             document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight
+            this.chatInput = document.getElementById("chatInput") as HTMLInputElement
+            this.ws.onmessage = function (m) {
+                const chatElem = Watch.createMessageElement(JSON.parse(m.data))
+                document.getElementById("chatBox").appendChild(chatElem)
+                document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight
+            }
         }
         if (document.getElementById("viewerCount") != null) {
             Watch.loadStat()

@@ -58,6 +58,9 @@ func configGinChatRouter(router gin.IRoutes) {
 		if err != nil {
 			return
 		}
+		if course, err := dao.GetCourseById(context.Background(), stream.CourseID); err != nil || !course.ChatEnabled {
+			return
+		}
 		session := sessions.Default(ctx.(*gin.Context))
 		uname := session.Get("Name").(string)
 		if chat.Anonymous {

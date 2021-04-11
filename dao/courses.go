@@ -66,6 +66,14 @@ func GetCoursesForLoggedInUsers(year int, term string) (courses []model.Course, 
 	return publicCourses, err
 }
 
+func GetAllCoursesForSemester(year int, term string) (courses []model.Course) {
+	var foundCourses []model.Course
+	DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
+		return db.Order("start asc")
+	}).Find(&foundCourses, "teaching_term = ? AND year = ?", term, year)
+	return foundCourses
+}
+
 func GetPublicCourses(year int, term string) (courses []model.Course, err error) {
 	cachedCourses, found := Cache.Get(fmt.Sprintf("publicCourses%v%v", year, term))
 	if found {

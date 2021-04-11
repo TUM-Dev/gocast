@@ -43,7 +43,11 @@ func MainPage(c *gin.Context) {
 	if userErr == nil {
 		indexData.IsUser = true
 		indexData.IsAdmin = user.Role == model.AdminType || user.Role == model.LecturerType
-		indexData.Courses = user.CoursesForSemester(year, term)
+		if user.Role == model.AdminType {
+			indexData.Courses = dao.GetAllCoursesForSemester(year, term)
+		} else {
+			indexData.Courses = user.CoursesForSemester(year, term)
+		}
 	} else if studentErr == nil {
 		indexData.IsStudent = true
 		indexData.Courses = student.CoursesForSemester(year, term)
