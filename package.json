@@ -23,6 +23,7 @@
     "@videojs/http-streaming": "^1.11.3",
     "chart.js": "^2.9.4",
     "flatpickr": "^4.6.9",
+    "hls.js": "^1.0.0",
     "nouislider": "^14.6.4",
     "video.js": "^7.12.0",
     "videojs-hls-quality-selector": "^1.1.4"

@@ -19,6 +19,7 @@ func WatchPage(c *gin.Context) {
 	if c.Param("version") != "" {
 		data.Version = c.Param("version")
 	}
+	data.IsLegacy = true
 	user, userErr := tools.GetUser(c)
 	student, studentErr := tools.GetStudent(c)
 	data.IndexData = NewIndexData()
@@ -68,4 +69,5 @@ type WatchPageData struct {
 	Description template.HTML
 	Course      model.Course
 	Version     string
+	IsLegacy    bool
 }

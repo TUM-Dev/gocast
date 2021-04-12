@@ -143,12 +143,9 @@ func ChatStream(c *gin.Context) {
 		return
 	}
 	go addUser(c.Param("vidId"))
+	defer removeUser(c.Param("vidId"))
 	ctxMap := make(map[string]interface{}, 1)
 	ctxMap["ctx"] = c
-
-	m.HandleDisconnect(func(session *melody.Session) {
-		defer removeUser(c.Param("vidId"))
-	})
 
 	_ = m.HandleRequestWithKeys(c.Writer, c.Request, ctxMap)
 }
