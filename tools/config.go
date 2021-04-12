@@ -33,6 +33,7 @@ func init() {
 		LdapPassword:     os.Getenv("LDAP_PASSWORD"),
 		LdapBaseDN:       os.Getenv("LDAP_BASE_DN"),
 		LdapUserDN:       os.Getenv("LDAP_USER_DN"),
+		IngestBase:       os.Getenv("IngestBase"),
 	}
 }
 
@@ -54,4 +55,5 @@ type Config struct {
 	LdapPassword     string
 	LdapBaseDN       string
 	LdapUserDN       string
+	IngestBase       string
 }

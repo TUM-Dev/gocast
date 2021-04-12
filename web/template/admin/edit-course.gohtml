@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>TUM Live | Create Course</title>
+    <title>TUM Live | Edit Course</title>
     {{template "headImports"}}
     <script defer async src="/assets/ts-dist/edit-course.js?v={{.IndexData.VersionTag}}"></script>
     <link href="/dist/chart.js/dist/Chart.min.css" rel="stylesheet">
@@ -105,9 +105,9 @@
                                             </form>
                                             {{if and (not $lecture.IsPast) (not $lecture.Recording)}}
                                             <p class="mt-2">
-                                                <span class="font-semibold">Stream Server:</span> <span>rtmp://live.mm.rbg.tum.de:1935/stream?secret={{$lecture.StreamKey}}</span>
+                                                <span class="font-semibold">Stream Server:</span> <span>{{.IngestBase}}stream?secret={{$lecture.StreamKey}}</span>
                                                 <i class="fas fa-clipboard hover:text-purple-500"
-                                                   onclick="copyToClipboard('rtmp://live.mm.rbg.tum.de:1935/stream?secret={{$lecture.StreamKey}}')"></i>
+                                                   onclick="copyToClipboard('{{.IngestBase}}stream?secret=stream?secret={{$lecture.StreamKey}}')"></i>
                                                 <br>
                                                 <span class="font-semibold">Stream Key:</span>
                                                 <span>{{$course.Slug}}</span>

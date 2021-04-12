@@ -58,7 +58,7 @@ func EditCoursePage(c *gin.Context) {
 	indexData := NewIndexData()
 	indexData.IsUser = true
 	indexData.IsAdmin = user.Role == model.AdminType || user.Role == model.LecturerType
-	err = templ.ExecuteTemplate(c.Writer, "edit-course.gohtml", EditCourseData{IndexData: indexData, Course: course})
+	err = templ.ExecuteTemplate(c.Writer, "edit-course.gohtml", EditCourseData{IndexData: indexData, IngestBase: tools.Cfg.IngestBase, Course: course})
 	if err != nil {
 		log.Printf("%v\n", err)
 	}
@@ -139,6 +139,7 @@ type CreateCourseData struct {
 }
 
 type EditCourseData struct {
-	IndexData IndexData
-	Course    model.Course
+	IndexData  IndexData
+	IngestBase string
+	Course     model.Course
 }
