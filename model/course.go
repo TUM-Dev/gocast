@@ -26,7 +26,7 @@ type Course struct {
 func (c Course) GetNextLectureDate() time.Time {
 	earliestLecture := time.Now().Add(time.Hour * 24 * 365 * 10) // 10 years from now.
 	for _, s := range c.Streams {
-		if s.Start.Before(earliestLecture) {
+		if s.Start.Before(earliestLecture) && s.End.After(time.Now()) {
 			earliestLecture = s.Start
 		}
 	}
