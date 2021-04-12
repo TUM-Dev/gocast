@@ -37,7 +37,7 @@ func DeleteUser(ctx context.Context, uid uint) (err error) {
 	if Logger != nil {
 		Logger(ctx, "Delete User.")
 	}
-	res := DB.Unscoped().Delete(&model.User{}, "id = ?", uid)
+	res := DB.Delete(&model.User{}, "id = ?", uid)
 	return res.Error
 }
 
