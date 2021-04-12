@@ -33,7 +33,10 @@ class Watch {
     }
 
     private static loadStat() {
-        let stat = JSON.parse(Get("/api/chat/" + (document.getElementById("streamID") as HTMLInputElement).value + "/stats"))
+        let HttpReq = new XMLHttpRequest();
+        HttpReq.open("GET", "/api/chat/" + (document.getElementById("streamID") as HTMLInputElement).value, false);
+        HttpReq.send(null);
+        let stat = JSON.parse(HttpReq.responseText)
         document.getElementById("viewerCount").innerText = stat["viewers"]
     }
 
