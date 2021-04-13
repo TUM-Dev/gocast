@@ -36,6 +36,9 @@ func (s Stream) IsPast() bool {
 
 func (s Stream) GetDescriptionHTML() string {
 	unsafe := blackfriday.Run([]byte(s.Description))
-	html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+	html := bluemonday.
+		UGCPolicy().
+		AddTargetBlankToFullyQualifiedLinks(true).
+		SanitizeBytes(unsafe)
 	return string(html)
 }

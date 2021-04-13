@@ -96,3 +96,7 @@ input[type='checkbox']:checked + label {
 .vjs-button, .vjs-control {
     color: #3070b3!important;
 }
+
+.video-description a {
+    @apply text-gray-300 hover:text-white hover:underline;
+}
