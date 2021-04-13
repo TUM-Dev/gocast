@@ -54,6 +54,13 @@
         </div>
         <a href="/course/{{.Course.Year}}/{{.Course.TeachingTerm}}/{{.Course.Slug}}"><h2
                     class="text-gray-300 hover:text-white hover:underline text-xl">{{.Course.Name}}</h2></a>
+        {{if .IsLegacy}}
+            <a class="text-gray-300 hover:text-white hover:underline"
+               href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}/experimental">Use experimental player</a>
+        {{else}}
+            <a class="text-gray-300 hover:text-white hover:underline"
+               href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}">Use normal player</a>
+        {{end}}
         {{if .Stream.Description}}
             <div class="text-gray-300 p-4 border-t-2 border-secondary">
                 <span class="font-semibold">Video Description:</span>

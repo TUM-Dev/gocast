@@ -94,5 +94,5 @@ input[type='checkbox']:checked + label {
 }
 
 .vjs-button, .vjs-control {
-    -webkit-text-stroke: 0.2px black;
+    color: #3070b3!important;
 }
