@@ -149,7 +149,7 @@ func main() {
 	cronService := cron.New()
 	//Fetch students every 12 hours
 	_, _ = cronService.AddFunc("0 */12 * * *", tum.FetchCourses)
-	_, _ = cronService.AddFunc("0-59/5 * * * *", api.CollectStats)
+	_, _ = cronService.AddFunc("0-59 * * * *", api.CollectStats)
 	_, _ = cronService.AddFunc("0-59/5 * * * *", func() { sentry.Flush(time.Minute * 2) })
 	cronService.Start()
 	api.ContextInitializer = func(r *http.Request) (ctx context.Context) {

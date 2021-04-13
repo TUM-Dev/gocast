@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"gopkg.in/olahol/melody.v1"
 	"log"
-	"net/http"
 	"strconv"
 	"sync"
 	"time"
@@ -24,11 +23,22 @@ var statsLock = sync.RWMutex{}
 
 func configGinChatRouter(router gin.IRoutes) {
 	router.GET("/:vidId/ws", ChatStream)
-	router.GET("/:vidId/stats", ChatStats)
 	if m == nil {
 		log.Printf("creating melody")
 		m = melody.New()
 	}
+	m.HandleConnect(func(s *melody.Session) {
+		ctx, _ := s.Get("ctx") // get gin context
+		vid := ctx.(*gin.Context).Param("vidId")
+		if stream, err := dao.GetStreamByID(context.Background(), vid); err == nil && stream.LiveNow {
+			if statMsg, err := json.Marshal(gin.H{"viewers": stats[vid]}); err == nil {
+				_ = s.Write(statMsg)
+			} else {
+				sentry.CaptureException(err)
+			}
+		}
+	})
+
 	m.HandleMessage(func(s *melody.Session, msg []byte) {
 		ctx, _ := s.Get("ctx") // get gin context
 		var chat ChatReq
@@ -102,6 +112,13 @@ func CollectStats() {
 	log.Printf("Collecting stats\n")
 	defer sentry.Flush(time.Second * 2)
 	for sID, numWatchers := range stats {
+		if mStat, err := json.Marshal(gin.H{"viewers": numWatchers}); err == nil {
+			_ = m.BroadcastFilter(mStat, func(q *melody.Session) bool { // filter broadcasting to same lecture.
+				return q.Request.URL.Path == fmt.Sprintf("/api/chat/%v/ws", sID)
+			})
+		} else {
+			sentry.CaptureException(err)
+		}
 		log.Printf("Collecting stats for stream %v, viewers:%v\n", sID, numWatchers)
 		stat := model.Stat{
 			Time:    time.Now(),
@@ -120,21 +137,6 @@ func CollectStats() {
 			}
 		}
 	}
-}
-
-func ChatStats(context *gin.Context) {
-	/*u, uErr := tools.GetUser(context)
-	if uErr != nil || u.Role != 1 {
-		context.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "stats can currently only be retrieved by admins"})
-		return
-	}*/
-	vidId := context.Param("vidId")
-	viewers, found := stats[vidId]
-	if !found {
-		context.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "stream not found"})
-		return
-	}
-	context.JSON(http.StatusOK, gin.H{"viewers": viewers})
 }
 
 func ChatStream(c *gin.Context) {

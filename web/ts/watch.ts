@@ -3,22 +3,21 @@ class Watch {
     private ws: WebSocket
 
     constructor() {
-        this.ws = new WebSocket("wss://live.mm.rbg.tum.de:443/api/chat/" + (document.getElementById("streamID") as HTMLInputElement).value + "/ws")
+        this.ws = new WebSocket("ws://localhost:8080/api/chat/" + (document.getElementById("streamID") as HTMLInputElement).value + "/ws")
         if (document.getElementById("chatForm") != null) {
             (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", e => this.submitChat(e))
             document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight
             this.chatInput = document.getElementById("chatInput") as HTMLInputElement
             this.ws.onmessage = function (m) {
-                const chatElem = Watch.createMessageElement(JSON.parse(m.data))
-                document.getElementById("chatBox").appendChild(chatElem)
-                document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight
+                const data = JSON.parse(m.data)
+                if ("viewers" in data){
+                    document.getElementById("viewerCount").innerText=data["viewers"]
+                }else {
+                    const chatElem = Watch.createMessageElement(data)
+                    document.getElementById("chatBox").appendChild(chatElem)
+                    document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight
+                }
             }
-        }
-        if (document.getElementById("viewerCount") != null) {
-            Watch.loadStat()
-            setInterval(function () {
-                Watch.loadStat()
-            }, 60 * 1000)
         }
     }
 
@@ -30,14 +29,6 @@ class Watch {
         }))
         this.chatInput.value = ""
         return false//prevent form submission
-    }
-
-    private static loadStat() {
-        let HttpReq = new XMLHttpRequest();
-        HttpReq.open("GET", "/api/chat/" + (document.getElementById("streamID") as HTMLInputElement).value + "/stats", false);
-        HttpReq.send(null);
-        let stat = JSON.parse(HttpReq.responseText)
-        document.getElementById("viewerCount").innerText = stat["viewers"]
     }
 
     /*
