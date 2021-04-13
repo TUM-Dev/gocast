@@ -10,12 +10,19 @@ class Watch {
             this.chatInput = document.getElementById("chatInput") as HTMLInputElement
             this.ws.onmessage = function (m) {
                 const data = JSON.parse(m.data)
-                if ("viewers" in data){
-                    document.getElementById("viewerCount").innerText=data["viewers"]
-                }else {
+                if ("viewers" in data) {
+                    document.getElementById("viewerCount").innerText = data["viewers"]
+                } else {
                     const chatElem = Watch.createMessageElement(data)
                     document.getElementById("chatBox").appendChild(chatElem)
                     document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight
+                }
+            }
+        } else {
+            this.ws.onmessage = function (m) {
+                const data = JSON.parse(m.data)
+                if ("viewers" in data) {
+                    document.getElementById("viewerCount").innerText = data["viewers"]
                 }
             }
         }
@@ -42,7 +49,7 @@ class Watch {
         chatHeader.classList.add("flex", "flex-row")
         let chatNameField = document.createElement("p") as HTMLParagraphElement
         chatNameField.classList.add("flex-grow", "font-semibold")
-        if (m["admin"]){
+        if (m["admin"]) {
             chatNameField.classList.add("text-warn")
         }
         chatNameField.innerText = m["name"]
