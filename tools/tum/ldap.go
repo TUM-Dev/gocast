@@ -25,7 +25,6 @@ func LoginWithTumCredentials(username string, password string) (userId string, f
 	// First bind with a read only user
 	err = l.Bind(tools.Cfg.LdapUser, tools.Cfg.LdapPassword)
 	if err != nil {
-		sentry.CaptureException(err)
 		log.Fatal(err)
 	}
 
