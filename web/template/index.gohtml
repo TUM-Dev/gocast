@@ -20,7 +20,7 @@
                 <h3 class="text-xl text-gray-300 hover:text-white inline">{{$liveStream.Course.Name}}
                     : {{if $liveStream.Stream.Name}}{{$liveStream.Stream.Name}}{{else}}Lecture: {{$liveStream.Stream.Start.Month}} {{printf "%02d." $liveStream.Stream.Start.Day}} {{$liveStream.Stream.Start.Year}}{{end}}</h3>
             </a>
-            <p class="text-gray-500 font-sans font-light">
+            <p class="text-gray-400 font-sans font-light">
                 {{printf "%v %02d. %02d:%02d" $liveStream.Stream.Start.Month $liveStream.Stream.Start.Day $liveStream.Stream.Start.Hour $liveStream.Stream.Start.Minute}}
             </p>
         </div>
@@ -36,10 +36,14 @@
             <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                 <h3 class="text-xl text-gray-300 hover:text-white">{{$course.Name}}</h3></a>
             <p class="text-gray-400 font-sans font-light">
-                {{if $course.HasNextLecture}}
-                    {{$next := $course.GetNextLectureDate}}Next Lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
+                {{if $course.IsLive}}
+                    Live now.
                 {{else}}
-                    No upcoming Lectures
+                    {{if $course.HasNextLecture}}
+                        {{$next := $course.GetNextLectureDate}}Next Lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
+                    {{else}}
+                        No upcoming Lectures
+                    {{end}}
                 {{end}}
             </p>
         </div>

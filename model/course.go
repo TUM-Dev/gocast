@@ -23,6 +23,15 @@ type Course struct {
 	Users               []User    `gorm:"many2many:course_users;"`
 }
 
+func (c Course) IsLive() bool {
+	for _, s := range c.Streams {
+		if s.LiveNow {
+			return true
+		}
+	}
+	return false
+}
+
 func (c Course) GetNextLectureDate() time.Time {
 	earliestLecture := time.Now().Add(time.Hour * 24 * 365 * 10) // 10 years from now.
 	for _, s := range c.Streams {
