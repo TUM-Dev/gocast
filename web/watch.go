@@ -19,11 +19,11 @@ func WatchPage(c *gin.Context) {
 	if c.Param("version") != "" {
 		data.Version = c.Param("version")
 	}
-	if data.Version == "experimental" {
+	if data.Version == "legacy" {
 		data.Version = ""
-		data.IsLegacy = false
-	} else {
 		data.IsLegacy = true
+	} else {
+		data.IsLegacy = false
 	}
 	user, userErr := tools.GetUser(c)
 	student, studentErr := tools.GetStudent(c)

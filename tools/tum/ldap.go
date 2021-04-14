@@ -25,6 +25,7 @@ func LoginWithTumCredentials(username string, password string) (userId string, f
 	// First bind with a read only user
 	err = l.Bind(tools.Cfg.LdapUser, tools.Cfg.LdapPassword)
 	if err != nil {
+		sentry.CaptureException(err)
 		log.Fatal(err)
 	}
 
@@ -44,7 +45,6 @@ func LoginWithTumCredentials(username string, password string) (userId string, f
 	}
 
 	if len(sr.Entries) != 1 {
-		sentry.CaptureMessage(fmt.Sprintf("User does not exist or too many entries returned. User: %v", username))
 		log.Printf("User does not exist or too many entries returned: %v\n", len(sr.Entries))
 		return "", "", errors.New("couldn't find single user")
 	}
