@@ -15,7 +15,7 @@
 {{template "header" .IndexData}}
 <div class="flex h-full md:flex-row w-full flex-wrap pt-20">
     <input type="hidden" id="streamID" value="{{.Stream.Model.ID}}">
-    <div class="watchContent w-full pt-3 px-2 md:px-8 md:w-4/6 lg:w-8/12 2xl:max-w-screen-xl mx-auto mx:h-full overflow-scroll overflow-x-hidden">
+    <div class="watchContent w-full pt-3 px-2 md:px-8 {{if .Course.ChatEnabled}}md:w-4/6{{end}} lg:w-8/12 2xl:max-w-screen-xl mx-auto mx:h-full overflow-scroll overflow-x-hidden">
         {{if not .IsLegacy}}
             <video
                     id="my-video"
