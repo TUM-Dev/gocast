@@ -114,6 +114,7 @@ func main() {
 		&model.Chat{},
 		&model.RegisterLink{},
 		&model.Stat{},
+		&model.StreamUnit{},
 		&model.Stream{},
 		&model.ProcessingJob{},
 		&model.Worker{},

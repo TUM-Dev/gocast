@@ -55,21 +55,6 @@ function saveLectureName(e: Event, id: number) {
         })
 }
 
-function cutVod(id: number): void {
-    document.getElementById("slider" + id).classList.remove("hidden")
-    const slider = document.getElementById('slider' + id);
-
-    // @ts-ignore
-    noUiSlider.create(slider, {
-        start: [0, 100],
-        connect: true,
-        range: {
-            'min': 0,
-            'max': 100
-        }
-    });
-}
-
 function showStats(id: number): void {
     if (document.getElementById("statsBox" + id).classList.contains("hidden")) {
         document.getElementById("statsBox" + id).classList.remove("hidden")
@@ -107,6 +92,21 @@ function deleteLecture(id: number) {
             document.location.reload()
         })
     }
+}
+
+function showHideUnits(id: number) {
+    const container = document.getElementById('unitsContainer' + id)
+    if (container.classList.contains("hidden")) {
+        container.classList.remove("hidden")
+    } else {
+        container.classList.add("hidden")
+    }
+}
+
+function addUnit(streamID: number): boolean {
+
+
+    return false
 }
 
 window.onload = function () {
