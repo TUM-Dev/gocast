@@ -23,7 +23,7 @@
                     controls
                     preload="auto"
                     data-setup='{"fluid": true}'>
-                <source src="{{if eq .Version "PRES"}}{{.Stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{.Stream.PlaylistUrlCAM}}{{else}}{{.Stream.PlaylistUrl}}{{end}}"
+                <source src="{{if eq .Version "PRES"}}{{.Stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{.Stream.PlaylistUrlCAM}}{{else}}{{.Stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{end}}"
                         type="application/x-mpegURL"/>
                 <p class="vjs-no-js">
                     To view this video please enable JavaScript.
@@ -55,10 +55,7 @@
         <a href="/course/{{.Course.Year}}/{{.Course.TeachingTerm}}/{{.Course.Slug}}"><h2
                     class="text-gray-300 hover:text-white hover:underline text-xl">{{.Course.Name}}</h2></a>
         {{if not .IsLegacy}}
-            <p class="text-sm text-gray-300">Video doesn't play correctly?
-                <a class="text-gray-300 hover:text-white hover:underline"
-                   href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}/legacy">
-                    Use legacy player</a></p>
+
         {{else}}
             <a class="text-sm text-gray-300 hover:text-white hover:underline"
                href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}">Use normal player</a>
@@ -130,7 +127,7 @@
 <script src="/dist/hls.js/dist/hls.min.js"></script>
 <script>
     let video = document.getElementById('my-video');
-    let videoSrc = '{{if eq .Version "PRES"}}{{.Stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{.Stream.PlaylistUrlCAM}}{{else}}{{.Stream.PlaylistUrl}}{{end}}';
+    let videoSrc = '{{if eq .Version "PRES"}}{{.Stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{.Stream.PlaylistUrlCAM}}{{else}}{{.Stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{end}}';
     if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = videoSrc;
     } else if (Hls.isSupported()) {

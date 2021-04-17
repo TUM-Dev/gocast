@@ -64,6 +64,24 @@
                             {{end}}
                         </div>
                     </div>
+                    {{if $lecture.Units}}
+                        <div>
+                            <ul>
+                                {{range $i, $unit := $lecture.Units}}
+                                    <li>
+                                        <p>
+                                            <a class="hover:text-white hover:underline text-gray-300 px-2 mx-2 mr-0"
+                                               href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/unit-{{$i}}">
+                                                {{$unit.UnitName}}
+                                            </a>
+                                            <span class="text-sm text-gray-400">
+                                                {{$unit.GetRoundedUnitLen}}</span>
+                                        </p>
+                                    </li>
+                                {{end}}
+                            </ul>
+                        </div>
+                    {{end}}
                     <p class="text-gray-400 text-sm">
                         {{if $lecture.Recording}}
                             <span class="bg-success rounded-full text-gray-800 px-2">VoD</span>
