@@ -65,7 +65,11 @@ func WatchPage(c *gin.Context) {
 		return
 	}
 	data.Course = course
-	data.Description = template.HTML(data.Stream.GetDescriptionHTML())
+	if strings.HasPrefix(data.Version, "unit-") {
+		data.Description = template.HTML(data.Unit.GetDescriptionHTML())
+	} else {
+		data.Description = template.HTML(data.Stream.GetDescriptionHTML())
+	}
 	if c.Param("version") == "video-only" {
 		err = templ.ExecuteTemplate(c.Writer, "video_only.gohtml", data)
 	} else {
