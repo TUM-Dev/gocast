@@ -3,7 +3,13 @@ package dao
 import (
 	"TUM-Live/model"
 	"context"
+	"gorm.io/gorm"
 )
+
+func UpdateStreamFullAssoc(vod *model.Stream) error {
+	err := DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&vod).Error
+	return err
+}
 
 func SaveStream(vod *model.Stream) error {
 	err := DB.Save(&vod).Error

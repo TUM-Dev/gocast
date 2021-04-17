@@ -31,7 +31,7 @@ func GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, 
 
 func GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error) {
 	var res model.Stream
-	err = DB.Preload("Chats").First(&res, "id = ?", id).Error
+	err = DB.Preload("Chats").Preload("Units").First(&res, "id = ?", id).Error
 	if err != nil {
 		fmt.Printf("error getting stream by id: %v\n", err)
 		return res, err
