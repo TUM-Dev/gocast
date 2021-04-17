@@ -43,9 +43,24 @@ input, textarea {
 }
 
 /* slider for cutting videos: */
+.noUi-target {
+    background: #1f2937 !important;
+    border: none !important;
+    box-shadow: none !important;
+}
 
-.noUi-horizontal {
-    height: 5px;
+.noUi-connect {
+    background: #3070b3 !important;
+}
+
+.noUi-tooltip input {
+    width: 120px;
+    text-align: center;
+    @apply focus:text-white;
+}
+
+.noUi-tooltip {
+    padding: 0 !important;
 }
 
 /* Chat */

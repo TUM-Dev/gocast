@@ -2,10 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>TUM Live | Edit Course</title>
+    <title>TUM Live | Edit Units</title>
     {{template "headImports"}}
     <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
     <link rel="stylesheet" href="/dist/video.js/dist/video-js.min.css">
+    <link rel="stylesheet" href="/dist/nouislider/distribute/nouislider.min.css">
+    <script src="/dist/nouislider/distribute/nouislider.min.js"></script>
 </head>
 <body class="bg-primary">
 
@@ -32,10 +34,23 @@
             <div class="mt-4">
                 <h2>Units:</h2>
                 {{range $unit := .Units}}
-                    <form id="unit{{$unit.Model.ID}}">
-                        <div class="fla"></div>
-                    </form>
+                    <div class="flex">
+                        {{$unit.UnitName}}
+                    </div>
                 {{end}}
+                <button class="bg-info px-4 py-2 rounded" onclick="toggleNewUnitForm(this)">New Unit</button>
+                <form id="unitNew" class="hidden" onsubmit="return submitNewUnit({{.Lecture.Model.ID}})">
+                    <label>
+                        <span>Unit Title. Keep it short (Perhaps one word and a number)</span>
+                        <input id="newUnitTitle" type="text" placeholder="Introduction">
+                    </label>
+                    <label>
+                        Unit description
+                        <textarea id="newUnitDescription" placeholder="You can use Markdown."></textarea>
+                    </label>
+                    <div id="sliderNew" class="mt-4"></div>
+                    <input type="submit" value="Save Unit" class="bg-secondary hover:text-white text-gray-300 m-4 border-0">
+                </form>
             </div>
         </div>
     </div>
@@ -46,18 +61,5 @@
 <script src="/dist/@videojs/http-streaming/dist/videojs-http-streaming.min.js"></script>
 <script src="/dist/videojs-contrib-quality-levels/dist/videojs-contrib-quality-levels.min.js"></script>
 <script src="/dist/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.min.js"></script>
-<script>
-    let player = videojs('my-video', {
-        playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
-        html5: {
-            hls: {
-                overrideNative: true
-            },
-            nativeVideoTracks: false,
-            nativeAudioTracks: false,
-            nativeTextTracks: false
-        }
-    });
-    player.hlsQualitySelector();
-</script>
+<script src="/assets/ts-dist/lecture-units.js"></script>
 </html>

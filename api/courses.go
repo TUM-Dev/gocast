@@ -27,6 +27,44 @@ func configGinCourseRouter(router gin.IRoutes) {
 	router.POST("/api/deleteLecture/:id", deleteLecture)
 	router.POST("/api/renameLecture", renameLecture)
 	router.POST("/api/updateDescription", updateDescription)
+	router.POST("/api/addUnit", addUnit)
+}
+
+func addUnit(c *gin.Context) {
+	user, uErr := tools.GetUser(c)
+	if uErr != nil {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "login is required to perform this operation."})
+		return
+	}
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
+		return
+	}
+	var req addUnitRequest
+	if err = json.Unmarshal(body, &req); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
+		return
+	}
+	stream, err := dao.GetStreamByID(context.Background(), strconv.Itoa(int(req.LectureID)))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "stream not found"})
+		return
+	}
+	if user.Role != model.AdminType && !user.IsAdminOfCourse(stream.CourseID) {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "login is required to perform this operation."})
+		return
+	}
+	stream.Units = append(stream.Units, model.StreamUnit{
+		UnitName:        req.Title,
+		UnitDescription: req.Description,
+		UnitStart:       req.From,
+		UnitEnd:         req.To,
+		StreamID:        stream.Model.ID,
+	})
+	if err = dao.UpdateStreamFullAssoc(&stream); err != nil {
+		panic(err)
+	}
 }
 
 func updateDescription(c *gin.Context) {
@@ -328,4 +366,12 @@ type createLectureRequest struct {
 type renameLectureRequest struct {
 	Id   uint
 	Name string
+}
+
+type addUnitRequest struct {
+	LectureID   uint   `json:"lectureID"`
+	From        uint   `json:"from"`
+	To          uint   `json:"to"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
 }
