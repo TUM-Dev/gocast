@@ -10,21 +10,15 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 func WatchPage(c *gin.Context) {
+	log.Printf("watchpage")
 	span := sentry.StartSpan(c, "GET /w", sentry.TransactionName("GET /w"))
 	defer span.Finish()
 	var data WatchPageData
-	if c.Param("version") != "" {
-		data.Version = c.Param("version")
-	}
-	if data.Version == "legacy" {
-		data.Version = ""
-		data.IsLegacy = true
-	} else {
-		data.IsLegacy = false
-	}
 	user, userErr := tools.GetUser(c)
 	student, studentErr := tools.GetStudent(c)
 	data.IndexData = NewIndexData()
@@ -42,6 +36,20 @@ func WatchPage(c *gin.Context) {
 		return
 	}
 	data.Stream = vod
+	if c.Param("version") != "" {
+		data.Version = c.Param("version")
+		if strings.HasPrefix(data.Version, "unit-") {
+			if unitID, err := strconv.Atoi(strings.ReplaceAll(data.Version, "unit-", "")); err == nil && unitID < len(vod.Units) {
+				data.Unit = vod.Units[unitID]
+			}
+		}
+	}
+	if data.Version == "legacy" {
+		data.Version = ""
+		data.IsLegacy = true
+	} else {
+		data.IsLegacy = false
+	}
 	course, err := dao.GetCourseById(context.Background(), vod.CourseID)
 	if err != nil {
 		log.Printf("couldn't find course for stream: %v\n", err)
@@ -71,6 +79,7 @@ func WatchPage(c *gin.Context) {
 type WatchPageData struct {
 	IndexData   IndexData
 	Stream      model.Stream
+	Unit        model.StreamUnit
 	Description template.HTML
 	Course      model.Course
 	Version     string
