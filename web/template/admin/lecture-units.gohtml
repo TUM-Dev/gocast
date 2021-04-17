@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TUM Live | Edit Course</title>
+    {{template "headImports"}}
+    <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
+    <link rel="stylesheet" href="/dist/video.js/dist/video-js.min.css">
+</head>
+<body class="bg-primary">
+
+{{- /*gotype: TUM-Live/web.LectureUnitsPageData*/ -}}
+{{template "header" .IndexData}}
+
+<div class="text-white container mx-auto">
+    <div class="min-w-screen flex items-center justify-center">
+        <div class="w-full lg:w-5/6">
+            <h1>Cut your lecture into units:</h1>
+            <video
+                    id="my-video"
+                    class="video-js w-full"
+                    controls
+                    muted
+                    preload="auto"
+                    data-setup='{"fluid": true}'>
+                <source src="{{if .Lecture.PlaylistUrl}}{{.Lecture.PlaylistUrl}}{{else if .Lecture.PlaylistUrlPRES}}{{.Lecture.PlaylistUrlPRES}}{{else}}{{.Lecture.PlaylistUrlCAM}}{{end}}"
+                        type="application/x-mpegURL"/>
+                <p class="vjs-no-js">
+                    To view this video please enable JavaScript.
+                </p>
+            </video>
+            <div class="mt-4">
+                <h2>Units:</h2>
+                {{range $unit := .Units}}
+                    <form id="unit{{$unit.Model.ID}}">
+                        <div class="fla"></div>
+                    </form>
+                {{end}}
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+<script src="/dist/video.js/dist/video.min.js"></script>
+<script src="/dist/@videojs/http-streaming/dist/videojs-http-streaming.min.js"></script>
+<script src="/dist/videojs-contrib-quality-levels/dist/videojs-contrib-quality-levels.min.js"></script>
+<script src="/dist/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.min.js"></script>
+<script>
+    let player = videojs('my-video', {
+        playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+        html5: {
+            hls: {
+                overrideNative: true
+            },
+            nativeVideoTracks: false,
+            nativeAudioTracks: false,
+            nativeTextTracks: false
+        }
+    });
+    player.hlsQualitySelector();
+</script>
+</html>
