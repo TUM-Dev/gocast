@@ -18,12 +18,6 @@ func CoursePage(c *gin.Context) {
 	year := c.Param("year")
 	span := sentry.StartSpan(c, fmt.Sprintf("GET /course/%v/%v/%v", year, teachingTerm, slug), sentry.TransactionName(fmt.Sprintf("GET /course/%v/%v/%v", year, teachingTerm, slug)))
 	defer span.Finish()
-	course, err := dao.GetCourseBySlugYearAndTerm(context.Background(), slug, teachingTerm, year)
-	if err != nil {
-		c.Status(http.StatusNotFound)
-		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", nil)
-		return
-	}
 	indexData := NewIndexData()
 	u, uErr := tools.GetUser(c)
 	s, sErr := tools.GetStudent(c)
@@ -34,17 +28,23 @@ func CoursePage(c *gin.Context) {
 	if sErr == nil {
 		indexData.IsStudent = true
 	}
+	course, err := dao.GetCourseBySlugYearAndTerm(context.Background(), slug, teachingTerm, year)
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: indexData, Status: http.StatusNotFound, Message: "Course not found."})
+		return
+	}
 	if course.Visibility == "loggedin" {
 		if !indexData.IsStudent && !indexData.IsUser {
 			c.Status(http.StatusForbidden)
-			_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", nil)
+			_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: indexData, Status: http.StatusForbidden, Message: "Please log in to access this course."})
 			return
 		}
 	} else if course.Visibility == "enrolled" {
 		if uErr == nil { // logged in with internal account, check if authorized
 			if !u.IsEligibleToWatchCourse(course) {
 				c.Status(http.StatusForbidden)
-				_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", nil)
+				_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: indexData, Status: http.StatusForbidden, Message: "You are not allowed to see this course. Please log in or contact your instructor."})
 				return
 			}
 		} else if sErr == nil { // logged in as student check if authorized
@@ -57,12 +57,12 @@ func CoursePage(c *gin.Context) {
 			}
 			if !isEnrolled {
 				c.Status(http.StatusForbidden)
-				_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", nil)
+				_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: indexData, Status: http.StatusForbidden, Message: "You are not allowed to see this course. Please log in or contact your instructor."})
 				return
 			}
 		} else { // not logged in
 			c.Status(http.StatusForbidden)
-			_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", nil)
+			_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: indexData, Status: http.StatusForbidden, Message: "You are not allowed to see this course. Please log in or contact your instructor."})
 			return
 		}
 	}

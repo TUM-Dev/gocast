@@ -1,12 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <title>error</title>
+    <title>TUM Live</title>
+    {{template "headImports" .IndexData.VersionTag}}
 </head>
-<body>
+<body class="bg-primary">
+{{- /*gotype: TUM-Live/web.ErrorPageData*/ -}}
+{{template "header" .IndexData}}
 
-<h1>error</h1>
-
+<div class="container pt-6 flex flex-col">
+    <h1 class="text-lg text-white">Error {{.Status}}</h1>
+    <p class="text-gray-300">{{.Message}}</p>
+</div>
 </body>
 </html>

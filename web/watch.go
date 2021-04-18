@@ -38,22 +38,26 @@ func WatchPage(c *gin.Context) {
 	vodID := c.Param("id")
 	vod, err := dao.GetStreamByID(context.Background(), vodID)
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		c.Status(http.StatusNotFound)
+		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status:http.StatusNotFound,Message: "Couldn't find stream."})
 		return
 	}
 	data.Stream = vod
 	course, err := dao.GetCourseById(context.Background(), vod.CourseID)
 	if err != nil {
 		log.Printf("couldn't find course for stream: %v\n", err)
-		c.AbortWithStatus(http.StatusNotFound)
+		c.Status(http.StatusNotFound)
+		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status:http.StatusNotFound,Message: "Couldn't find stream."})
 		return
 	}
 	if course.Visibility == "loggedin" && userErr != nil && studentErr != nil {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"Error": "you are not allowed to watch this lecture."})
+		c.Status(http.StatusForbidden)
+		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status:http.StatusForbidden,Message: "Please log in to access this resource."})
 		return
 	}
 	if course.Visibility == "enrolled" && !dao.IsUserAllowedToWatchPrivateCourse(course.ID, user, userErr, student, studentErr) {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"Error": "you are not allowed to watch this lecture."})
+		c.Status(http.StatusForbidden)
+		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status:http.StatusForbidden ,Message: "You are not allowed to watch this lecture. Please log in or contact your instructor."})
 		return
 	}
 	data.Course = course

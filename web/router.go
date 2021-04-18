@@ -49,3 +49,9 @@ func configCourseRoute(router gin.IRoutes) {
 func HealthCheck(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{"version": os.Getenv("hash")})
 }
+
+type ErrorPageData struct {
+	IndexData IndexData
+	Status    int
+	Message   string
+}
