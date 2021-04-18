@@ -99,7 +99,7 @@
                                                 <textarea id="lectureDescriptionInput{{$lecture.Model.ID}}"
                                                           onfocus="focusDescriptionInput(this, {{$lecture.Model.ID}})"
                                                           class="flex-grow border-none"
-                                                          placeholder="Add a nice description, links, and more. You can use MarkDown."
+                                                          placeholder="Add a nice description, links, and more. You can use Markdown."
                                                           autocomplete="off">{{$lecture.Description}}</textarea>
                                                 <button id="descriptionSubmitBtn{{$lecture.Model.ID}}"
                                                         class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
@@ -126,8 +126,17 @@
                                                        title="Live Statistics"
                                                        onclick="showStats({{$lecture.Model.ID}})"></i>
                                                 {{end}}
+                                                <a title="Cut lecture"
+                                                   class="flex"
+                                                   href="/admin/cut/{{$lecture.Model.ID}}">
+                                                    <i class="fas fa-cut text-gray-300 hover:text-purple-500 px-2"></i>
+                                                </a>
+                                                <a title="Cut lecture into units"
+                                                   class="flex"
+                                                   href="/admin/units/{{$lecture.Model.ID}}">
+                                                    <i class="fas fa-puzzle-piece text-gray-300 hover:text-purple-500 px-2"></i>
+                                                </a>
                                             </p>
-                                            <div class="hidden" id="slider{{$lecture.Model.ID}}"></div>
                                             {{if $lecture.Stats}}
                                             <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
                                                 <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"

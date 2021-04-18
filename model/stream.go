@@ -28,6 +28,9 @@ type Stream struct {
 	Recording        bool
 	Chats            []Chat
 	Stats            []Stat
+	Units            []StreamUnit
+	StartOffset      uint `gorm:"default:null"`
+	EndOffset        uint `gorm:"default:null"`
 }
 
 func (s Stream) IsPast() bool {
