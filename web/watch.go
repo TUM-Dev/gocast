@@ -33,7 +33,7 @@ func WatchPage(c *gin.Context) {
 	vod, err := dao.GetStreamByID(context.Background(), vodID)
 	if err != nil {
 		c.Status(http.StatusNotFound)
-		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status:http.StatusNotFound,Message: "Couldn't find stream."})
+		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status: http.StatusNotFound, Message: "Couldn't find stream."})
 		return
 	}
 	data.Stream = vod
@@ -49,17 +49,17 @@ func WatchPage(c *gin.Context) {
 	if err != nil {
 		log.Printf("couldn't find course for stream: %v\n", err)
 		c.Status(http.StatusNotFound)
-		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status:http.StatusNotFound,Message: "Couldn't find stream."})
+		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status: http.StatusNotFound, Message: "Couldn't find stream."})
 		return
 	}
 	if course.Visibility == "loggedin" && userErr != nil && studentErr != nil {
 		c.Status(http.StatusForbidden)
-		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status:http.StatusForbidden,Message: "Please log in to access this resource."})
+		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status: http.StatusForbidden, Message: "Please log in to access this resource."})
 		return
 	}
 	if course.Visibility == "enrolled" && !dao.IsUserAllowedToWatchPrivateCourse(course.ID, user, userErr, student, studentErr) {
 		c.Status(http.StatusForbidden)
-		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status:http.StatusForbidden ,Message: "You are not allowed to watch this lecture. Please log in or contact your instructor."})
+		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status: http.StatusForbidden, Message: "You are not allowed to watch this lecture. Please log in or contact your instructor."})
 		return
 	}
 	data.Course = course
@@ -68,7 +68,7 @@ func WatchPage(c *gin.Context) {
 	} else {
 		data.Description = template.HTML(data.Stream.GetDescriptionHTML())
 	}
-	if c.Param("version") == "video-only" {
+	if c.Query("video_only") == "1" {
 		err = templ.ExecuteTemplate(c.Writer, "video_only.gohtml", data)
 	} else {
 		err = templ.ExecuteTemplate(c.Writer, "watch.gohtml", data)
