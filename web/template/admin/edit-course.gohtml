@@ -126,9 +126,15 @@
                                                        title="Live Statistics"
                                                        onclick="showStats({{$lecture.Model.ID}})"></i>
                                                 {{end}}
-                                                <a class="flex"
+                                                <a title="Cut lecture"
+                                                   class="flex"
+                                                   href="/admin/cut/{{$lecture.Model.ID}}">
+                                                    <i class="fas fa-cut text-gray-300 hover:text-purple-500 px-2"></i>
+                                                </a>
+                                                <a title="Cut lecture into units"
+                                                   class="flex"
                                                    href="/admin/units/{{$lecture.Model.ID}}">
-                                                    <i class="fas fa-cut text-gray-300 hover:text-purple-500"></i>
+                                                    <i class="fas fa-puzzle-piece text-gray-300 hover:text-purple-500 px-2"></i>
                                                 </a>
                                             </p>
                                             {{if $lecture.Stats}}

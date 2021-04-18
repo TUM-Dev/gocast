@@ -34,6 +34,32 @@ func AdminPage(c *gin.Context) {
 	_ = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{User: user, Users: users, Courses: courses, IndexData: indexData})
 }
 
+
+func LectureCutPage(c *gin.Context) {
+	if u, uErr := tools.GetUser(c); uErr == nil {
+		stream, sErr := dao.GetStreamByID(context.Background(), c.Param("streamID"))
+		if sErr != nil {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "Not found."})
+			return
+		}
+		if u.Role == model.AdminType || u.IsAdminOfCourse(stream.CourseID) {
+			indexData := NewIndexData()
+			indexData.IsAdmin = true
+			indexData.IsUser = true
+			if err := templ.ExecuteTemplate(c.Writer, "lecture-cut.gohtml", LectureUnitsPageData{
+				IndexData: indexData,
+				Lecture:   stream,
+				Units:     stream.Units,
+			}); err != nil {
+				log.Fatalln(err)
+			}
+			return
+		}
+	}
+
+	c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "you are not allowed to access this resource."})
+}
+
 func LectureUnitsPage(c *gin.Context) {
 	if u, uErr := tools.GetUser(c); uErr == nil {
 		stream, sErr := dao.GetStreamByID(context.Background(), c.Param("streamID"))

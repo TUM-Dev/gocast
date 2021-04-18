@@ -20,6 +20,17 @@ func GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err e
 	return res, nil
 }
 
+func DeleteUnit(id uint) {
+	defer Cache.Clear()
+	DB.Delete(&model.StreamUnit{}, id)
+}
+
+func GetUnitByID(id string) (model.StreamUnit, error) {
+	var unit model.StreamUnit
+	err := DB.First(&unit, "id = ?", id).Error
+	return unit, err
+}
+
 func GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error) {
 	var res model.Stream
 	err = DB.Preload("Chats").First(&res, "tum_online_event_id = ?", id).Error
@@ -57,6 +68,7 @@ func CreateStream(ctx context.Context, stream model.Stream) (err error) {
 }
 
 func UpdateStream(stream model.Stream) error {
+	defer Cache.Clear()
 	err := DB.Save(&stream).Error
 	return err
 }

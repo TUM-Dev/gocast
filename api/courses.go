@@ -28,6 +28,59 @@ func configGinCourseRouter(router gin.IRoutes) {
 	router.POST("/api/renameLecture", renameLecture)
 	router.POST("/api/updateDescription", updateDescription)
 	router.POST("/api/addUnit", addUnit)
+	router.POST("/api/submitCut", submitCut)
+	router.POST("/api/deleteUnit/:unitID", deleteUnit)
+}
+
+func submitCut(c *gin.Context) {
+	user, uErr := tools.GetUser(c)
+	if uErr != nil {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "login is required to perform this operation."})
+		return
+	}
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
+		return
+	}
+	var req submitCutRequest
+	if err = json.Unmarshal(body, &req); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
+		return
+	}
+	stream, err := dao.GetStreamByID(context.Background(), strconv.Itoa(int(req.LectureID)))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "stream not found"})
+		return
+	}
+	if user.Role != model.AdminType && !user.IsAdminOfCourse(stream.CourseID) {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "login is required to perform this operation."})
+		return
+	}
+	stream.StartOffset = req.From
+	stream.EndOffset = req.To
+	if err = dao.SaveStream(&stream); err != nil {
+		panic(err)
+	}
+}
+
+func deleteUnit(c *gin.Context) {
+	user, uErr := tools.GetUser(c)
+	if uErr != nil {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "login is required to perform this operation."})
+		return
+	}
+	unit, err := dao.GetUnitByID(c.Param("unitID"))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "not found"})
+		return
+	}
+	stream, err := dao.GetStreamByID(context.Background(), strconv.Itoa(int(unit.StreamID)))
+	if err != nil || (user.Role != model.AdminType && !user.IsAdminOfCourse(stream.CourseID)) {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "forbidden"})
+		return
+	}
+	dao.DeleteUnit(unit.Model.ID)
 }
 
 func addUnit(c *gin.Context) {
@@ -339,6 +392,12 @@ type courseScheduleResp struct {
 	Name         string
 	StreamSecret string
 	StreamKey    string
+}
+
+type submitCutRequest struct {
+	LectureID uint `json:"lectureID"`
+	From      uint `json:"from"`
+	To        uint `json:"to"`
 }
 
 type getCourseRequest struct {
