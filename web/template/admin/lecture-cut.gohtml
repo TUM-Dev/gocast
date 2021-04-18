@@ -32,40 +32,15 @@
                 </p>
             </video>
             <div class="mt-4">
-                <h2>Units:</h2>
-                <ul>
-                    {{range $unit := .Units}}
-                        <li class="hover:bg-secondary">
-                            <div class="flex w-full">
-                                <div class="text-gray-300 font-semibold w-full">
-                                    {{$unit.UnitName}}
-                                </div>
-                                <div>
-                                    <i class="fas fa-trash text-gray-300 hover:text-purple-500 cursor-pointer"
-                                       onclick="deleteUnit({{$unit.Model.ID}})"></i>
-                                </div>
-                            </div>
-                            <div class="text-sm text-gray-300">
-                                {{$unit.GetDescriptionHTML}}
-                            </div>
-                        </li>
-                    {{end}}
-                </ul>
-                <button class="bg-info px-4 py-2 rounded" onclick="toggleNewUnitForm(this)">New Unit</button>
-                <form id="unitNew" class="hidden border-gray-300 border-t-2"
+                <form id="cutForm" class="border-gray-300 border-t-2"
                       onkeydown="return event.key !== 'Enter';"
-                      onsubmit="return submitNewUnit({{.Lecture.Model.ID}})">
-                    <label>
-                        <span>Unit Title. Keep it short (Perhaps one word and a number)</span>
-                        <input id="newUnitTitle" type="text" placeholder="Introduction">
-                    </label>
-                    <label>
-                        Unit description
-                        <textarea id="newUnitDescription" placeholder="You can use Markdown."></textarea>
-                    </label>
+                      onsubmit="return submitCut({{.Lecture.Model.ID}}, {{.Lecture.CourseID}})">
                     <div id="sliderNew" class="mt-4"></div>
-                    <input type="submit" value="Save Unit"
+                    <input type="submit"
+                           value="Save"
                            class="bg-secondary hover:text-white text-gray-300 m-4 border-0">
+                    <p class="text-gray-300">changes you make here are fully reversible. If you need something
+                        permanently removed from the lecture reach out to the RBG.</p>
                 </form>
             </div>
         </div>

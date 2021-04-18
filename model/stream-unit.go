@@ -5,6 +5,7 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
+	"html/template"
 )
 
 type StreamUnit struct {
@@ -32,11 +33,11 @@ func (s StreamUnit) GetRoundedUnitLen() string {
 	return fmt.Sprintf("%2dmin, %2dsec", lenM, lenS)
 }
 
-func (s StreamUnit) GetDescriptionHTML() string {
+func (s StreamUnit) GetDescriptionHTML() template.HTML {
 	unsafe := blackfriday.Run([]byte(s.UnitDescription))
 	html := bluemonday.
 		UGCPolicy().
 		AddTargetBlankToFullyQualifiedLinks(true).
 		SanitizeBytes(unsafe)
-	return string(html)
+	return template.HTML(html)
 }

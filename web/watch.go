@@ -40,7 +40,7 @@ func WatchPage(c *gin.Context) {
 		data.Version = c.Param("version")
 		if strings.HasPrefix(data.Version, "unit-") {
 			if unitID, err := strconv.Atoi(strings.ReplaceAll(data.Version, "unit-", "")); err == nil && unitID < len(vod.Units) {
-				data.Unit = vod.Units[unitID]
+				data.Unit = &vod.Units[unitID]
 			}
 		}
 	}
@@ -83,7 +83,7 @@ func WatchPage(c *gin.Context) {
 type WatchPageData struct {
 	IndexData   IndexData
 	Stream      model.Stream
-	Unit        model.StreamUnit
+	Unit        *model.StreamUnit
 	Description template.HTML
 	Course      model.Course
 	Version     string

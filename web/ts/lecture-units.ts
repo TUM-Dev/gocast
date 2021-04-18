@@ -66,6 +66,35 @@ function submitNewUnit(lectureID: number) {
     return false
 }
 
+function submitCut(lectureID: number, courseID: number) {
+    let from = timeToS(slider.noUiSlider.get()[0]) * 1000;
+    let to = timeToS(slider.noUiSlider.get()[1]) * 1000;
+    postData("/api/submitCut", {
+        "lectureID": lectureID,
+        "from": from,
+        "to": to,
+    }).then(data => {
+        if (data.status == 200) {
+            window.location.replace("/admin/course/" + courseID)
+        } else {
+            data.text().then(
+                text => {
+                    alert("error! status: " + data.status + ", message: " + text)
+                }
+            )
+        }
+    })
+    return false
+}
+
+function deleteUnit(unitID: number) {
+    postData("/api/deleteUnit/" + unitID).then(r => {
+        if (r.status == 200) {
+            window.location.reload()
+        }
+    })
+}
+
 function timeToS(s) {
     let parts = s.split(":")
     return parseInt(parts[0]) * 60 * 60 + parseInt(parts[1]) * 60 + parseInt(parts[2])
