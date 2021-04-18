@@ -7,31 +7,25 @@
     {{template "headImports" .IndexData.VersionTag}}
     <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
     <script async src="/assets/ts-dist/watch.js?v={{.IndexData.VersionTag}}"></script>
-    {{if not .IsLegacy}}
-        <link rel="stylesheet" href="/dist/video.js/dist/video-js.min.css">
-    {{end}}
+    <link rel="stylesheet" href="/dist/video.js/dist/video-js.min.css">
 </head>
 <body class="bg-primary h-full overflow-hidden">
 {{template "header" .IndexData}}
 <div class="flex h-full md:flex-row w-full flex-wrap pt-20">
     <input type="hidden" id="streamID" value="{{.Stream.Model.ID}}">
     <div class="watchContent w-full pt-3 px-2 md:px-8 {{if .Course.ChatEnabled}}md:w-4/6{{end}} lg:w-8/12 2xl:max-w-screen-xl mx-auto mx:h-full overflow-scroll overflow-x-hidden">
-        {{if not .IsLegacy}}
-            <video
-                    id="my-video"
-                    class="video-js w-full"
-                    controls
-                    preload="auto"
-                    data-setup='{"fluid": true}'>
-                <source src="{{if eq .Version "PRES"}}{{.Stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{.Stream.PlaylistUrlCAM}}{{else}}{{.Stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if .Stream.StartOffset}}?wowzaplaystart={{.Stream.StartOffset}}&wowzaplayduration={{.Stream.EndOffset}}{{end}}"
-                        type="application/x-mpegURL"/>
-                <p class="vjs-no-js">
-                    To view this video please enable JavaScript.
-                </p>
-            </video>
-        {{else}}
-            <video class="w-full" id="my-video" controls autoplay></video>
-        {{end}}
+        <video
+                id="my-video"
+                class="video-js w-full"
+                controls
+                preload="auto"
+                data-setup='{"fluid": true}'>
+            <source src="{{if eq .Version "PRES"}}{{.Stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{.Stream.PlaylistUrlCAM}}{{else}}{{.Stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if .Stream.StartOffset}}?wowzaplaystart={{.Stream.StartOffset}}&wowzaplayduration={{.Stream.EndOffset}}{{end}}"
+                    type="application/x-mpegURL"/>
+            <p class="vjs-no-js">
+                To view this video please enable JavaScript.
+            </p>
+        </video>
         <div class="flex justify-between align-middle mt-4">
             <h1 class="text-gray-300 text-2xl">
                 {{if .Stream.Name}}{{.Stream.Name}}{{else}}Lecture: {{.Stream.Start.Month}} {{printf "%02d." .Stream.Start.Day}} {{.Stream.Start.Year}}{{end}}
@@ -54,12 +48,6 @@
         </div>
         <a href="/course/{{.Course.Year}}/{{.Course.TeachingTerm}}/{{.Course.Slug}}"><h2
                     class="text-gray-300 hover:text-white hover:underline text-xl">{{.Course.Name}}</h2></a>
-        {{if not .IsLegacy}}
-
-        {{else}}
-            <a class="text-sm text-gray-300 hover:text-white hover:underline"
-               href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}">Use normal player</a>
-        {{end}}
         {{if .Stream.Description}}
             <div class="text-gray-300 p-4 border-t-2 border-secondary video-description">
                 <span class="font-semibold">Video Description:</span>
@@ -103,7 +91,6 @@
         </div>
     {{end}}
 </div>
-{{if not .IsLegacy}}
 <script src="/dist/video.js/dist/video.min.js"></script>
 <script src="/dist/@videojs/http-streaming/dist/videojs-http-streaming.min.js"></script>
 <script src="/dist/videojs-contrib-quality-levels/dist/videojs-contrib-quality-levels.min.js"></script>
@@ -123,19 +110,5 @@
     player.play();
     player.hlsQualitySelector();
 </script>
-{{else}}
-<script src="/dist/hls.js/dist/hls.min.js"></script>
-<script>
-    let video = document.getElementById('my-video');
-    let videoSrc = '{{if eq .Version "PRES"}}{{.Stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{.Stream.PlaylistUrlCAM}}{{else}}{{.Stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{end}}';
-    if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = videoSrc;
-    } else if (Hls.isSupported()) {
-        let hls = new Hls();
-        hls.loadSource(videoSrc);
-        hls.attachMedia(video);
-    }
-</script>
-{{end}}
 </body>
 </html>

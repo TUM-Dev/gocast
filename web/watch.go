@@ -44,12 +44,6 @@ func WatchPage(c *gin.Context) {
 			}
 		}
 	}
-	if data.Version == "legacy" {
-		data.Version = ""
-		data.IsLegacy = true
-	} else {
-		data.IsLegacy = false
-	}
 	course, err := dao.GetCourseById(context.Background(), vod.CourseID)
 	if err != nil {
 		log.Printf("couldn't find course for stream: %v\n", err)
@@ -87,5 +81,4 @@ type WatchPageData struct {
 	Description template.HTML
 	Course      model.Course
 	Version     string
-	IsLegacy    bool
 }
