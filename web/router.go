@@ -1,6 +1,7 @@
 package web
 
 import (
+	"embed"
 	"github.com/gin-gonic/gin"
 	"html/template"
 	"net/http"
@@ -9,9 +10,15 @@ import (
 
 var templ *template.Template
 
+//go:embed template
+var templateFS embed.FS
+
+//go:embed assets/*
+//go:embed node_modules
+var staticFS embed.FS
+
 func ConfigGinRouter(router gin.IRoutes) {
-	templ = template.Must(template.ParseGlob("./web/template/*.gohtml"))
-	template.Must(templ.ParseGlob("./web/template/admin/*"))
+	templ = template.Must(template.ParseFS(templateFS, "template/*.gohtml", "template/admin/*.gohtml"))
 	configGinStaticRouter(router)
 	configMainRoute(router)
 	configCourseRoute(router)
@@ -19,9 +26,10 @@ func ConfigGinRouter(router gin.IRoutes) {
 }
 
 func configGinStaticRouter(router gin.IRoutes) {
-	router.Static("/assets", "./web/assets")
-	router.Static("/dist", "./node_modules")
-	router.StaticFile("/favicon.ico", "./web/assets/favicon.ico")
+	router.StaticFS("/static", http.FS(staticFS))
+	router.GET("/favicon.ico", func(c *gin.Context) {
+		c.FileFromFS("assets/favicon.ico", http.FS(staticFS))
+	})
 }
 
 func configMainRoute(router gin.IRoutes) {

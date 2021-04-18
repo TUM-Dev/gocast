@@ -1,9 +1,9 @@
 module.exports = {
     purge: [
-        './web/**/*.html',
-        './web/**/*.gohtml',
-        './web/**/*.js',
-        './web/**/*.css',
+        './**/*.html',
+        './**/*.gohtml',
+        './**/*.js',
+        './**/*.css',
     ],
     darkMode: 'class', // or 'media' or 'false'
     theme: {
