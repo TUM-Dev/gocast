@@ -28,7 +28,7 @@ func ConfigGinRouter(router gin.IRoutes) {
 func configGinStaticRouter(router gin.IRoutes) {
 	router.StaticFS("/static", http.FS(staticFS))
 	router.GET("/favicon.ico", func(c *gin.Context) {
-		c.FileFromFS("assets/favicon.ico", http.FS(staticFS))
+		c.FileFromFS("assets/favicon0.ico", http.FS(staticFS))
 	})
 }
 
