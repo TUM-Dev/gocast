@@ -26,6 +26,7 @@ func MainPage(c *gin.Context) {
 		return
 	}
 	indexData := NewIndexData()
+	indexData.UserName = tools.GetName(c)
 	user, userErr := tools.GetUser(c)
 	student, studentErr := tools.GetStudent(c)
 
@@ -129,6 +130,7 @@ type IndexData struct {
 	Semesters     []dao.Semester
 	CurrentYear   int
 	CurrentTerm   string
+	UserName      string
 }
 
 func NewIndexData() IndexData {

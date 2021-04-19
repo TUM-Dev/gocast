@@ -5,13 +5,18 @@
     <title>TUM Live</title>
     {{template "headImports" .VersionTag}}
     <meta name="description"
-          content="TUM-Live, the livestreaming and VoD service of the Rechnerbetriebsgruppe at the department of informatics and mathematics at the Technical University of Munich's "/>
+          content="TUM-Live, the livestreaming and VoD service of the Rechnerbetriebsgruppe at the department of informatics and mathematics at the Technical University of Munich"/>
 </head>
 <body class="bg-primary">
 {{- /*gotype: TUM-Live/web.IndexData*/ -}}
 {{template "header" .}}
 
-<div class="container pt-6 flex flex-col">
+<div class="container flex flex-col">
+    {{if not (or .IsUser .IsStudent)}}
+        <p class="text-gray-300">Log in to see your courses</p>
+    {{else if .UserName}}
+        <p class="text-gray-300">Moin {{.UserName}}, nice to see you!</p>
+    {{end}}
     {{if .LiveStreams}}
         <h2 class="text-2xl text-white">Currently Live</h2>{{end}}
     {{range $liveStream := .LiveStreams }}
@@ -24,9 +29,6 @@
                 {{printf "%v %02d. %02d:%02d" $liveStream.Stream.Start.Month $liveStream.Stream.Start.Day $liveStream.Stream.Start.Hour $liveStream.Stream.Start.Minute}}
             </p>
         </div>
-    {{end}}
-    {{if not (or .IsUser .IsStudent)}}
-        <p class="text-gray-300">Log in to see your courses</p>
     {{end}}
     {{if .Courses}}
         <h2 class="text-2xl text-white">My Courses</h2>
