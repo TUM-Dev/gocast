@@ -110,11 +110,12 @@
         }
     });
     player.play();
+    {{if not .Stream.LiveNow}}
     player.seekButtons({
         forward: 15,
         back: 15
     });
-
+    {{end}}
     player.hlsQualitySelector();
 </script>
 </body>

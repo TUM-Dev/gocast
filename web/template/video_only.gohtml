@@ -9,8 +9,11 @@
     <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
     <link rel="stylesheet" href="/assets/css-dist/main.css">
     <link rel="stylesheet" href="/dist/video.js/dist/video-js.min.css">
+    <link rel="stylesheet" href="/dist/videojs-seek-buttons/dist/videojs-seek-buttons.css">
+    <script async src="/assets/ts-dist/watch.js?v={{.IndexData.VersionTag}}"></script>
 </head>
-<body>
+<body class="overflow-hidden">
+<input type="hidden" id="streamID" value="{{.Stream.Model.ID}}">
 <video
         id="my-video"
         class="video-js w-full"
@@ -28,6 +31,7 @@
 <script src="/dist/@videojs/http-streaming/dist/videojs-http-streaming.min.js"></script>
 <script src="/dist/videojs-contrib-quality-levels/dist/videojs-contrib-quality-levels.min.js"></script>
 <script src="/dist/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.min.js"></script>
+<script src="/dist/videojs-seek-buttons/dist/videojs-seek-buttons.min.js"></script>
 <script>
     let player = videojs('my-video', {
         playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
@@ -41,6 +45,12 @@
         }
     });
     player.play();
+    {{if not .Stream.LiveNow}}
+    player.seekButtons({
+        forward: 15,
+        back: 15
+    });
+    {{end}}
     player.hlsQualitySelector();
 </script>
 </html>
