@@ -112,13 +112,6 @@ func CollectStats() {
 	log.Printf("Collecting stats\n")
 	defer sentry.Flush(time.Second * 2)
 	for sID, numWatchers := range stats {
-		if mStat, err := json.Marshal(gin.H{"viewers": numWatchers}); err == nil {
-			_ = m.BroadcastFilter(mStat, func(q *melody.Session) bool { // filter broadcasting to same lecture.
-				return q.Request.URL.Path == fmt.Sprintf("/api/chat/%v/ws", sID)
-			})
-		} else {
-			sentry.CaptureException(err)
-		}
 		log.Printf("Collecting stats for stream %v, viewers:%v\n", sID, numWatchers)
 		stat := model.Stat{
 			Time:    time.Now(),
@@ -128,12 +121,19 @@ func CollectStats() {
 			if !s.LiveNow { // collect stats for livestreams only
 				log.Printf("stream not live, skipping stats\n")
 				delete(stats, strconv.Itoa(int(s.ID)))
-				return
+				continue
 			}
 			s.Stats = append(s.Stats, stat)
 			if err = dao.SaveStream(&s); err != nil {
 				sentry.CaptureException(err)
 				log.Printf("Error saving stats: %v\n", err)
+			}
+			if mStat, err := json.Marshal(gin.H{"viewers": numWatchers}); err == nil {
+				_ = m.BroadcastFilter(mStat, func(q *melody.Session) bool { // filter broadcasting to same lecture.
+					return q.Request.URL.Path == fmt.Sprintf("/api/chat/%v/ws", sID)
+				})
+			} else {
+				sentry.CaptureException(err)
 			}
 		}
 	}
