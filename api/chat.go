@@ -112,13 +112,6 @@ func CollectStats() {
 	log.Printf("Collecting stats\n")
 	defer sentry.Flush(time.Second * 2)
 	for sID, numWatchers := range stats {
-		if mStat, err := json.Marshal(gin.H{"viewers": numWatchers}); err == nil {
-			_ = m.BroadcastFilter(mStat, func(q *melody.Session) bool { // filter broadcasting to same lecture.
-				return q.Request.URL.Path == fmt.Sprintf("/api/chat/%v/ws", sID)
-			})
-		} else {
-			sentry.CaptureException(err)
-		}
 		log.Printf("Collecting stats for stream %v, viewers:%v\n", sID, numWatchers)
 		stat := model.Stat{
 			Time:    time.Now(),
@@ -128,12 +121,19 @@ func CollectStats() {
 			if !s.LiveNow { // collect stats for livestreams only
 				log.Printf("stream not live, skipping stats\n")
 				delete(stats, strconv.Itoa(int(s.ID)))
-				return
+				continue
 			}
 			s.Stats = append(s.Stats, stat)
 			if err = dao.SaveStream(&s); err != nil {
 				sentry.CaptureException(err)
 				log.Printf("Error saving stats: %v\n", err)
+			}
+			if mStat, err := json.Marshal(gin.H{"viewers": numWatchers}); err == nil {
+				_ = m.BroadcastFilter(mStat, func(q *melody.Session) bool { // filter broadcasting to same lecture.
+					return q.Request.URL.Path == fmt.Sprintf("/api/chat/%v/ws", sID)
+				})
+			} else {
+				sentry.CaptureException(err)
 			}
 		}
 	}
@@ -145,7 +145,8 @@ func ChatStream(c *gin.Context) {
 		return
 	}
 	go addUser(c.Param("vidId"))
-	defer removeUser(c.Param("vidId"))
+	joinTime := time.Now()
+	defer removeUser(c.Param("vidId"), joinTime)
 	ctxMap := make(map[string]interface{}, 1)
 	ctxMap["ctx"] = c
 
@@ -161,7 +162,11 @@ func addUser(id string) {
 	statsLock.Unlock()
 }
 
-func removeUser(id string) {
+func removeUser(id string, jointime time.Time) {
+	// watched at least 5 minutes of the lecture? Count as view.
+	if jointime.Before(time.Now().Add(time.Minute * -5)) {
+		dao.AddVodView(id)
+	}
 	statsLock.Lock()
 	stats[id] -= 1
 	if stats[id] <= 0 {

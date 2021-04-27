@@ -26,7 +26,8 @@
     "hls.js": "^1.0.0",
     "nouislider": "^14.6.4",
     "video.js": "^7.12.0",
-    "videojs-hls-quality-selector": "^1.1.4"
+    "videojs-hls-quality-selector": "^1.1.4",
+    "videojs-seek-buttons": "^1.6.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.2.5",

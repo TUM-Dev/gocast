@@ -10,7 +10,7 @@ class Watch {
             this.chatInput = document.getElementById("chatInput") as HTMLInputElement
             this.ws.onmessage = function (m) {
                 const data = JSON.parse(m.data)
-                if ("viewers" in data) {
+                if ("viewers" in data && document.getElementById("viewerCount") != null) {
                     document.getElementById("viewerCount").innerText = data["viewers"]
                 } else {
                     const chatElem = Watch.createMessageElement(data)

@@ -29,8 +29,10 @@ type Stream struct {
 	Chats            []Chat
 	Stats            []Stat
 	Units            []StreamUnit
+	VodViews         uint `gorm:"default:0"`
 	StartOffset      uint `gorm:"default:null"`
 	EndOffset        uint `gorm:"default:null"`
+	LectureHallID    uint `gorm:"default:null"`
 }
 
 func (s Stream) IsPast() bool {

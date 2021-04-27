@@ -8,6 +8,7 @@
     <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
     <script async src="/static/assets/ts-dist/watch.js?v={{.IndexData.VersionTag}}"></script>
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
+    <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
 </head>
 <body class="bg-primary h-full overflow-hidden">
 {{template "header" .IndexData}}
@@ -91,10 +92,18 @@
         </div>
     {{end}}
 </div>
+<<<<<<< HEAD
 <script src="/static/node_modules/video.js/dist/video.min.js"></script>
 <script src="/static/node_modules/@videojs/http-streaming/dist/videojs-http-streaming.min.js"></script>
 <script src="/static/node_modules/videojs-contrib-quality-levels/dist/videojs-contrib-quality-levels.min.js"></script>
 <script src="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.min.js"></script>
+=======
+<script src="/dist/video.js/dist/video.min.js"></script>
+<script src="/dist/@videojs/http-streaming/dist/videojs-http-streaming.min.js"></script>
+<script src="/dist/videojs-contrib-quality-levels/dist/videojs-contrib-quality-levels.min.js"></script>
+<script src="/dist/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.min.js"></script>
+<script src="/dist/videojs-seek-buttons/dist/videojs-seek-buttons.min.js"></script>
+>>>>>>> dev
 <script>
     let player = videojs('my-video', {
         playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
@@ -108,6 +117,12 @@
         }
     });
     player.play();
+    {{if not .Stream.LiveNow}}
+    player.seekButtons({
+        forward: 15,
+        back: 15
+    });
+    {{end}}
     player.hlsQualitySelector();
 </script>
 </body>

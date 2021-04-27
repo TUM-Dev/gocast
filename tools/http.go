@@ -9,6 +9,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func GetName(c *gin.Context) string {
+	s := sessions.Default(c)
+	name := s.Get("Name")
+	if name != nil{
+		return name.(string)
+	}
+	return ""
+}
+
 func GetStudent(c *gin.Context) (student model.Student, err error) {
 	s := sessions.Default(c)
 	sid := s.Get("StudentID")

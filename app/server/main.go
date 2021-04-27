@@ -115,6 +115,7 @@ func main() {
 		&model.RegisterLink{},
 		&model.Stat{},
 		&model.StreamUnit{},
+		&model.LectureHall{},
 		&model.Stream{},
 		&model.ProcessingJob{},
 		&model.Worker{},

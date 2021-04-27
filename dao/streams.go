@@ -67,9 +67,22 @@ func CreateStream(ctx context.Context, stream model.Stream) (err error) {
 	return dbErr
 }
 
+func AddVodView(id string) {
+	_ = DB.Transaction(func(tx *gorm.DB) error {
+		var stream model.Stream
+		if err := tx.Where("id = ? AND live_now = 0", id).First(&stream).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&stream).Update("VodViews", stream.VodViews+1).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
 func UpdateStream(stream model.Stream) error {
 	defer Cache.Clear()
-	err := DB.Save(&stream).Error
+	err := DB.Model(&stream).Updates(model.Stream{Name: stream.Name, Description: stream.Description}).Error
 	return err
 }
 

@@ -28,6 +28,17 @@ class EditCourse {
     }
 }
 
+function saveLectureHall(lectureID: number) {
+    postData("/api/updateLecturesLectureHall", {
+        "lecture": lectureID,
+        "lectureHall": parseInt((document.getElementById("lectureHallSelector" + lectureID) as HTMLSelectElement).selectedOptions[0].value)
+    }).then(res => {
+        if (res.status === 200) {
+            document.getElementById("applyLectureHall" + lectureID).classList.add("hidden")
+        }
+    })
+}
+
 function saveLectureDescription(e: Event, id: number) {
     e.preventDefault()
     const input = (document.getElementById("lectureDescriptionInput" + id) as HTMLInputElement).value
