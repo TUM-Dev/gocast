@@ -27,13 +27,13 @@ func AdminPage(c *gin.Context) {
 		log.Printf("couldn't query courses for user. %v\n", err)
 		courses = []model.Course{}
 	}
+	lectureHalls := dao.GetAllLectureHalls()
 	indexData := NewIndexData()
 	indexData.IsStudent = false
 	indexData.IsUser = true
 	indexData.IsAdmin = user.Role == model.AdminType || user.Role == model.LecturerType
-	_ = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{User: user, Users: users, Courses: courses, IndexData: indexData})
+	_ = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{User: user, Users: users, Courses: courses, IndexData: indexData, LectureHalls: lectureHalls})
 }
-
 
 func LectureCutPage(c *gin.Context) {
 	if u, uErr := tools.GetUser(c); uErr == nil {
@@ -106,10 +106,11 @@ func EditCoursePage(c *gin.Context) {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
+	lectureHalls := dao.GetAllLectureHalls()
 	indexData := NewIndexData()
 	indexData.IsUser = true
 	indexData.IsAdmin = user.Role == model.AdminType || user.Role == model.LecturerType
-	err = templ.ExecuteTemplate(c.Writer, "edit-course.gohtml", EditCourseData{IndexData: indexData, IngestBase: tools.Cfg.IngestBase, Course: course})
+	err = templ.ExecuteTemplate(c.Writer, "edit-course.gohtml", EditCourseData{IndexData: indexData, IngestBase: tools.Cfg.IngestBase, Course: course, User: user, LectureHalls: lectureHalls})
 	if err != nil {
 		log.Printf("%v\n", err)
 	}
@@ -178,10 +179,11 @@ func CreateCoursePage(c *gin.Context) {
 }
 
 type AdminPageData struct {
-	IndexData IndexData
-	User      model.User
-	Users     []model.User
-	Courses   []model.Course
+	IndexData    IndexData
+	User         model.User
+	Users        []model.User
+	Courses      []model.Course
+	LectureHalls []model.LectureHall
 }
 
 type CreateCourseData struct {
@@ -190,9 +192,11 @@ type CreateCourseData struct {
 }
 
 type EditCourseData struct {
-	IndexData  IndexData
-	IngestBase string
-	Course     model.Course
+	IndexData    IndexData
+	IngestBase   string
+	Course       model.Course
+	User         model.User
+	LectureHalls []model.LectureHall
 }
 
 type LectureUnitsPageData struct {

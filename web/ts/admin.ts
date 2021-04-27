@@ -2,6 +2,19 @@ class Admin {
 
 }
 
+function createLectureHall() {
+    postData("/api/createLectureHall", {
+        "name": (document.getElementById("newLectureHallName") as HTMLInputElement).value,
+        "combIP": (document.getElementById("newLectureHallCombIP") as HTMLInputElement).value,
+        "presIP": (document.getElementById("newLectureHallPresIP") as HTMLInputElement).value,
+        "camIP": (document.getElementById("newLectureHallCamIP") as HTMLInputElement).value,
+    }).then(e => {
+        if (e.status === 200) {
+            window.location.reload()
+        }
+    })
+}
+
 function createUser() {
     let userName: string = (document.getElementById("name") as HTMLInputElement).value
     let email: string = (document.getElementById("email") as HTMLInputElement).value

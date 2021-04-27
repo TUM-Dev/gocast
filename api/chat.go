@@ -145,7 +145,8 @@ func ChatStream(c *gin.Context) {
 		return
 	}
 	go addUser(c.Param("vidId"))
-	defer removeUser(c.Param("vidId"))
+	joinTime := time.Now()
+	defer removeUser(c.Param("vidId"), joinTime)
 	ctxMap := make(map[string]interface{}, 1)
 	ctxMap["ctx"] = c
 
@@ -161,7 +162,11 @@ func addUser(id string) {
 	statsLock.Unlock()
 }
 
-func removeUser(id string) {
+func removeUser(id string, jointime time.Time) {
+	// watched at least 5 minutes of the lecture? Count as view.
+	if jointime.Before(time.Now().Add(time.Minute * -5)) {
+		dao.AddVodView(id)
+	}
 	statsLock.Lock()
 	stats[id] -= 1
 	if stats[id] <= 0 {
