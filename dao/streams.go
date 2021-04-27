@@ -82,7 +82,7 @@ func AddVodView(id string) {
 
 func UpdateStream(stream model.Stream) error {
 	defer Cache.Clear()
-	err := DB.Save(&stream).Error
+	err := DB.Model(&stream).Updates(model.Stream{Name: stream.Name, Description: stream.Description}).Error
 	return err
 }
 
