@@ -9,51 +9,32 @@
 ## Development
 
 Developing on this locally is a pain (because we can't just provide the secrets). 
-To get started you might want to follow these steps to get the system up locally (without docker):
+There is a dockerfile/docker-compose.yml. I don't guarantee that it works because we can't currently use it in production.
+To get this running locally follow these steps:
 
 ### Setup IPs
 In `/etc/hosts` add this: 
 ```
-127.0.0.1  backend
 127.0.0.1  db
 ```
 
-### Install nginx with the rtmp module:
-
-Follow [this](https://github.com/arut/nginx-rtmp-module#build) guide. 
-**Or** use the dockerfile in the folder `streaming-backend` (expose ports 80 and 1935).
-
 ### Setup Database
 
-- get mariadb from your favourite package manager
-- Set up the password `example` for the user `root`.
+- get mariadb from your favourite package manager or docker (I recommend this option)
+- `docker run --name mariadb -e MYSQL_ROOT_PASSWORD=example -p 3306:3306 -d mariadb:latest`
 - create the database `tumlive`
 
 ### Get go running locally
 
 - Install go1.16
-- Preferably use Jetbrains GoLand and open this project (get from vcs)
+- Preferably use Jetbrains GoLand and open this project
 - Edit Configuration > Environment 
-  - Add environment variables from `variables-backend.example.env`
+  - Add environment variables from `variables-backend.example.env`. Sentry is currently required but if you just want to test stuff, edit it out of main.go.
 - Start the app
-- Head over to localhost
+- Head over to localhost:8081
 - Happy coding! :sparkles:
-
-## Disclaimer
-
-~ 95% of modern browsers are supported. IE is not and probably won't be (officially).
-Reason being is that I want to avoid using jQuery because it's way too bloated. 
-This is about what you can expect:
-
-Browser | Chrome | Edge | Firefox | IE | Opera | Safari | Android Webview | Chrome Android | Firefox Android | Safari iOS | Samsung Internet
---- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
-version | 42+ | 14+ | 39+ | no | 29+ | 10.1+ | 42+ | 42+ | 39+ | 29+ | 10.3+ | 4.0+
-
 
 ## Credit & Licenses
 
-- [ffmpeg](https://ffmpeg.org/) Licenced under [lgpl-2.1](http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html)
-- [NGINX](https://www.nginx.com/) Licenced under [FreeBSD](http://nginx.org/LICENSE)
-- [go](https://golang.org/) Licence [here](https://golang.org/LICENSE)
-- [mariadb](https://mariadb.com/) Licenced under [GPL](https://mariadb.com/kb/en/mariadb-license/)
-- todo
+- [Check out our dependencies](https://github.com/joschahenningsen/TUM-Live/network/dependencies)
+- Also, check out Mariadb, Go and `go.mod`
