@@ -1,5 +1,6 @@
 # ---> Go
 # Binaries for programs and plugins
+main
 *.exe
 *.exe~
 *.dll
@@ -95,7 +96,7 @@ fabric.properties
 migrate.linux-amd64
 
 # node modules
-node_modules
+web/node_modules
 
 # out
 web/assets/ts-dist
@@ -105,3 +106,5 @@ web/assets/css-dist
 variables-backend.env
 hash.env
 rebuild.sh
+
+tumlive.service

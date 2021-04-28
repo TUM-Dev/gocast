@@ -31,11 +31,13 @@ func configGinChatRouter(router gin.IRoutes) {
 		ctx, _ := s.Get("ctx") // get gin context
 		vid := ctx.(*gin.Context).Param("vidId")
 		if stream, err := dao.GetStreamByID(context.Background(), vid); err == nil && stream.LiveNow {
+			statsLock.Lock()
 			if statMsg, err := json.Marshal(gin.H{"viewers": stats[vid]}); err == nil {
 				_ = s.Write(statMsg)
 			} else {
 				sentry.CaptureException(err)
 			}
+			statsLock.Unlock()
 		}
 	})
 

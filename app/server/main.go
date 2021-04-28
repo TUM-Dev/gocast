@@ -53,7 +53,7 @@ func GinServer() (err error) {
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	api.ConfigGinRouter(router)
 	web.ConfigGinRouter(router)
-	err = router.Run(":8080")
+	err = router.Run(":8081")
 	if err != nil {
 		sentry.CaptureException(err)
 		log.Fatalf("Error starting server, the error is '%v'", err)

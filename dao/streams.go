@@ -41,6 +41,9 @@ func GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, 
 }
 
 func GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error) {
+	if cached, found := Cache.Get(fmt.Sprintf("streambyid%v", id)); found {
+		return cached.(model.Stream), nil
+	}
 	var res model.Stream
 	err = DB.Preload("Chats").Preload("Units", func(db *gorm.DB) *gorm.DB {
 		return db.Order("unit_start asc")
@@ -49,6 +52,7 @@ func GetStreamByID(ctx context.Context, id string) (stream model.Stream, err err
 		fmt.Printf("error getting stream by id: %v\n", err)
 		return res, err
 	}
+	Cache.SetWithTTL(fmt.Sprintf("streambyid%v", id), res, 1, time.Second*10)
 	return res, nil
 }
 

@@ -3,10 +3,10 @@
     "module": "none",
     "target": "es5",
     "sourceMap": true,
-    "outDir": "web/assets/ts-dist"
+    "outDir": "assets/ts-dist"
   },
   "include": [
-    "web/ts/*"
+    "ts/*"
   ],
   "exclude": [
     "node_modules"
