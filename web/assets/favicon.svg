@@ -1,8 +1,0 @@
-<svg width="90" height="50" viewBox="0 0 90 50" xmlns="http://www.w3.org/2000/svg">
-    <path
-            transform="translate(30,0)"
-            fill="#3070B3"
-            d="M0,7v31h8V7h37v38h-7V14h-8v31h-7V14h-8v31h-22V14h-7v31h-7V14h-7V7H23">
-    </path>
-    <circle cx="76" cy="8" r="7" fill="red"/>
-</svg>
