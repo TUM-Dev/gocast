@@ -1,0 +1,33 @@
+[Unit]
+Description=TUM-Live
+After=network.target
+Requires=mariadb.service
+
+[Service]
+Environment="MYSQL_USER=root"
+Environment="MYSQL_PASSWORD=example"
+Environment="MYSQL_DATABASE=tumlive"
+Environment="MAILUSER=vorname.nachname@tum.de"
+Environment="MAILSERVER=your.smtp.server:25"
+Environment="VERSION_TAG=b_0.0.1"
+Environment="LRZ_SERVER_INGEST=some.server.lrz.de:1935/livetum/"
+Environment="LRZ_SERVER_HLS= https://some.other.server.lrz.de/livetum/"
+Environment="LRZ_USER=username"
+Environment="LRZ_PASSWORD=super_secret"
+Environment="CAMPUS_API_BASE=https://campus.tum.de/xyz"
+Environment="CAMPUS_API_TOKEN=super_secret"
+Environment="LDAP_URL=auth.example.com"
+Environment="LDAP_USER=someUser"
+Environment="LDAP_PASSWORD=super_secret"
+Environment="LDAP_BASE_DN=someDN"
+Environment="LDAP_USER_DN=someOtherDN"
+Environment="TZ=Europe/Berlin"
+Environment="SentryDSN=https://examplePublicKey@o0.ingest.sentry.io/0"
+Environment="IngestBase=rtmp://our.ingest.server"
+Type=forking
+ExecStart=/usr/sbin/nginx -g 'daemon on; master_process on;'
+TimeoutStopSec=5
+KillMode=mixed
+
+[Install]
+WantedBy=multi-user.target
