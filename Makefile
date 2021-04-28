@@ -12,3 +12,6 @@ bundle:
 
 clean:
 	rm -fr web/node_modules
+
+install:
+	mv main /bin/tum-live
