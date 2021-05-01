@@ -14,4 +14,5 @@ clean:
 	rm -fr web/node_modules
 
 install:
+	echo "hash=$(git log -n 1 --no-merges --pretty=format:%h)" > hash.env; \
 	mv main /bin/tum-live
