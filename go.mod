@@ -18,6 +18,6 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 	gopkg.in/olahol/melody.v1 v1.0.0-20170518105555-d52139073376
-	gorm.io/driver/mysql v1.0.5
-	gorm.io/gorm v1.21.6
+	gorm.io/driver/mysql v1.0.6
+	gorm.io/gorm v1.21.9
 )
