@@ -13,6 +13,9 @@ bundle:
 clean:
 	rm -fr web/node_modules
 
-install:
-	echo "hash=$(git log -n 1 --no-merges --pretty=format:%h)" > hash.env; \
+version:
+	echo -n "hash=" > hash.env; \
+	git log --pretty=format:'%h' -n 1 >> hash.env
+
+install: version
 	mv main /bin/tum-live
