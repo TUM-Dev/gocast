@@ -21,7 +21,7 @@
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.3",
     "@videojs/http-streaming": "^1.11.3",
-    "chart.js": "^2.9.4",
+    "chart.js": "^3.2.0",
     "flatpickr": "^4.6.9",
     "hls.js": "^1.0.0",
     "nouislider": "^14.6.4",
