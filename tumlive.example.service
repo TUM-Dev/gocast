@@ -4,12 +4,16 @@ After=network.target
 Requires=mariadb.service
 
 [Service]
+LimitNOFILE=1048576:2097152
 EnvironmentFile=/path/to/your/variables-backend.env
 EnvironmentFile=/path/to/your/hash.env
-Type=forking
-ExecStart=/usr/sbin/nginx -g 'daemon on; master_process on;'
+Type=simple
+ExecStart=/bin/tum-live
 TimeoutStopSec=5
 KillMode=mixed
+Restart=on-failure
+StandardOutput=append:/var/log/tum-live/logs.log
+StandardError=append:/var/log/tum-live/error.log
 
 [Install]
 WantedBy=multi-user.target
