@@ -21,7 +21,6 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
@@ -36,15 +35,8 @@ func GinServer() (err error) {
 	router := gin.Default()
 	// capture performance with sentry
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
-	secret := make([]byte, 40) // 40 random bytes as cookie secret
-	_, err = rand.Read(secret)
-	if err != nil {
-		sentry.CaptureException(err)
-		sentry.Flush(time.Second * 5)
-		log.Fatalf("Unable to generate cookie store secret: %err\n", err)
-	}
-	store := cookie.NewStore(secret)
-	router.Use(sessions.Sessions("TUMLiveSessionV3", store))
+	store := cookie.NewStore([]byte(tools.Cfg.CookieStoreSecret))
+	router.Use(sessions.Sessions("TUMLiveSessionV4", store))
 
 	// event streams don't work with gzip, configure group without
 	chat := router.Group("/api/chat")
