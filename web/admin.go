@@ -17,7 +17,7 @@ import (
 
 func AdminPage(c *gin.Context) {
 	var tumLiveContext middleware.TUMLiveContext
-	if found, exists := c.Get("TUMLiveContext"); exists{
+	if found, exists := c.Get("TUMLiveContext"); exists {
 		tumLiveContext = found.(middleware.TUMLiveContext)
 	}
 	var users []model.User
@@ -32,27 +32,23 @@ func AdminPage(c *gin.Context) {
 }
 
 func LectureCutPage(c *gin.Context) {
-	if u, uErr := tools.GetUser(c); uErr == nil {
-		stream, sErr := dao.GetStreamByID(context.Background(), c.Param("streamID"))
-		if sErr != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "Not found."})
-			return
-		}
-		if u.Role == model.AdminType || u.IsAdminOfCourse(stream.CourseID) {
-			indexData := NewIndexData()
-			indexData.IsAdmin = true
-			indexData.IsUser = true
-			if err := templ.ExecuteTemplate(c.Writer, "lecture-cut.gohtml", LectureUnitsPageData{
-				IndexData: indexData,
-				Lecture:   stream,
-				Units:     stream.Units,
-			}); err != nil {
-				log.Fatalln(err)
-			}
-			return
-		}
+	var tumLiveContext middleware.TUMLiveContext
+	if found, exists := c.Get("TUMLiveContext"); exists {
+		tumLiveContext = found.(middleware.TUMLiveContext)
 	}
-
+	if tumLiveContext.User.Role == model.AdminType || tumLiveContext.User.IsAdminOfCourse(tumLiveContext.Stream.CourseID) {
+		indexData := NewIndexData()
+		indexData.IsAdmin = true
+		indexData.IsUser = true
+		if err := templ.ExecuteTemplate(c.Writer, "lecture-cut.gohtml", LectureUnitsPageData{
+			IndexData: indexData,
+			Lecture:   *tumLiveContext.Stream,
+			Units:     tumLiveContext.Stream.Units,
+		}); err != nil {
+			log.Fatalln(err)
+		}
+		return
+	}
 	c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "you are not allowed to access this resource."})
 }
 
@@ -82,31 +78,19 @@ func LectureUnitsPage(c *gin.Context) {
 }
 
 func EditCoursePage(c *gin.Context) {
-	user, err := tools.GetUser(c)
-	if err != nil {
-		c.Redirect(http.StatusFound, "/login")
-		return
+	var tumLiveContext middleware.TUMLiveContext
+	if found, exists := c.Get("TUMLiveContext"); exists {
+		tumLiveContext = found.(middleware.TUMLiveContext)
 	}
-	u64, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-	course, err := dao.GetCourseById(context.Background(), uint(u64))
-	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
-		return
-	}
-	// user has to be course owner or admin
-	if user.Role != 1 && course.UserID != user.ID {
+	if tumLiveContext.User.Role != model.AdminType && tumLiveContext.Course.UserID != tumLiveContext.User.ID {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
 	lectureHalls := dao.GetAllLectureHalls()
 	indexData := NewIndexData()
 	indexData.IsUser = true
-	indexData.IsAdmin = user.Role == model.AdminType || user.Role == model.LecturerType
-	err = templ.ExecuteTemplate(c.Writer, "edit-course.gohtml", EditCourseData{IndexData: indexData, IngestBase: tools.Cfg.IngestBase, Course: course, User: user, LectureHalls: lectureHalls})
+	indexData.IsAdmin = tumLiveContext.IsAdmin
+	err := templ.ExecuteTemplate(c.Writer, "edit-course.gohtml", EditCourseData{IndexData: indexData, IngestBase: tools.Cfg.IngestBase, Course: *tumLiveContext.Course, User: *tumLiveContext.User, LectureHalls: lectureHalls})
 	if err != nil {
 		log.Printf("%v\n", err)
 	}

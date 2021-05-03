@@ -37,6 +37,17 @@ func InitContext() gin.HandlerFunc {
 		if name != nil {
 			tumLiveContext.Name = name.(string)
 		}
+		if streamID := c.Param("streamID"); streamID != "" {
+			if stream, err := dao.GetStreamByID(c, streamID); err == nil {
+				tumLiveContext.Stream = &stream
+			}
+		}
+		if courseID := c.Param("courseID"); courseID != "" {
+			if course, err := dao.GetCourseByIdStr(courseID); err == nil {
+				tumLiveContext.Course = &course
+			}
+		}
+
 		c.Set("TUMLiveContext", tumLiveContext)
 	}
 }
@@ -113,4 +124,5 @@ type TUMLiveContext struct {
 	Student   *model.Student
 	IsStudent bool
 	Course    *model.Course
+	Stream    *model.Stream
 }
