@@ -22,7 +22,7 @@
                 <li class="pl-4 p-2 hover:bg-secondary">
                     <div class="flex justify-between">
                         {{if or $lecture.LiveNow $lecture.Recording}}
-                            <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}">
+                            <a href="/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}/{{$lecture.Model.ID}}/">
                                 <h3 class="text-l text-gray-300 hover:text-white hover:underline p-0">
                                     {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
                                 </h3>
@@ -44,21 +44,21 @@
                             {{if $lecture.PlaylistUrlCAM}}
                                 <a class="flex"
                                    title="Camera Only"
-                                   href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/CAM">
+                                   href="/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}/{{$lecture.Model.ID}}/CAM">
                                     <i class="fas fa-camera text-gray-400 hover:text-purple-500"></i>
                                 </a>
                             {{end}}
                             {{if $lecture.PlaylistUrlPRES}}
                                 <a class="flex"
                                    title="Presentation Only"
-                                   href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/PRES">
+                                   href="/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}/{{$lecture.Model.ID}}/PRES">
                                     <i class="fas fa-edit text-gray-400 hover:text-purple-500"></i>
                                 </a>
                             {{end}}
                             {{if and $course.ChatEnabled (or $lecture.LiveNow $lecture.Recording)}}
                                 <a class="flex"
                                    title="Chat Only"
-                                   href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/chat">
+                                   href="/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}/{{$lecture.Model.ID}}/chat">
                                     <i class="fas fa-comments text-gray-400 hover:text-purple-500"></i>
                                 </a>
                             {{end}}
@@ -71,7 +71,7 @@
                                     <li>
                                         <p>
                                             <a class="hover:text-white hover:underline text-gray-300 px-2 mx-2 mr-0"
-                                               href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/unit-{{$i}}">
+                                               href="/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}/{{$lecture.Model.ID}}/unit-{{$i}}">
                                                 {{$unit.UnitName}}
                                             </a>
                                             <span class="text-sm text-gray-400">

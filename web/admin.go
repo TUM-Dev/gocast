@@ -2,6 +2,7 @@ package web
 
 import (
 	"TUM-Live/dao"
+	"TUM-Live/middleware"
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"TUM-Live/tools/tum"
@@ -15,24 +16,19 @@ import (
 )
 
 func AdminPage(c *gin.Context) {
-	user, err := tools.GetUser(c)
-	if err != nil {
-		c.Redirect(http.StatusFound, "/login")
-		return
+	var tumLiveContext middleware.TUMLiveContext
+	if found, exists := c.Get("TUMLiveContext"); exists{
+		tumLiveContext = found.(middleware.TUMLiveContext)
 	}
 	var users []model.User
-	_ = dao.GetAllUsers(context.Background(), &users)
-	courses, err := dao.GetCoursesByUserId(context.Background(), user.ID)
-	if err != nil {
-		log.Printf("couldn't query courses for user. %v\n", err)
-		courses = []model.Course{}
-	}
+	_ = dao.GetAllUsers(c, &users)
+	courses := tumLiveContext.User.Courses
 	lectureHalls := dao.GetAllLectureHalls()
 	indexData := NewIndexData()
 	indexData.IsStudent = false
 	indexData.IsUser = true
-	indexData.IsAdmin = user.Role == model.AdminType || user.Role == model.LecturerType
-	_ = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{User: user, Users: users, Courses: courses, IndexData: indexData, LectureHalls: lectureHalls})
+	indexData.IsAdmin = true
+	_ = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{User: *tumLiveContext.User, Users: users, Courses: courses, IndexData: indexData, LectureHalls: lectureHalls})
 }
 
 func LectureCutPage(c *gin.Context) {

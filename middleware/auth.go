@@ -60,7 +60,7 @@ func RequireAtLeastLecturer() gin.HandlerFunc {
 
 //RequireAtLeastViewer
 //
-//Middleware that aborts the context with 403 Forbidden if @model.User is not allowed to see a course
+//Middleware that aborts the context with 403 Forbidden if User is not allowed to see a course
 func RequireAtLeastViewer() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		var tumLiveContext TUMLiveContext
