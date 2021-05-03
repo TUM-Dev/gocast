@@ -3,6 +3,7 @@ package main
 import (
 	"TUM-Live/api"
 	"TUM-Live/dao"
+	"TUM-Live/middleware"
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"TUM-Live/tools/tum"
@@ -21,14 +22,11 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 )
-
-const UserKey = "RBG-Default-User" // UserKey key used for storing User struct in context
 
 // GinServer launch gin server
 func GinServer() (err error) {
@@ -37,6 +35,7 @@ func GinServer() (err error) {
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
 	store := cookie.NewStore([]byte(tools.Cfg.CookieStoreSecret))
 	router.Use(sessions.Sessions("TUMLiveSessionV4", store))
+	router.Use(middleware.InitContext())
 
 	// event streams don't work with gzip, configure group without
 	chat := router.Group("/api/chat")
@@ -56,15 +55,6 @@ func GinServer() (err error) {
 var (
 	OsSignal chan os.Signal
 )
-
-// User struct to store database related info in context
-type User struct {
-	Name string
-}
-
-func (u *User) String() string {
-	return u.Name
-}
 
 func main() {
 	OsSignal = make(chan os.Signal, 1)
@@ -120,12 +110,7 @@ func main() {
 
 	dao.DB = db
 	dao.Logger = func(ctx context.Context, sql string) {
-		user, ok := UserFromContext(ctx)
-		if ok {
-			fmt.Printf("[%v] SQL: %s\n", user, sql)
-		} else {
-			fmt.Printf("SQL: %s\n", sql)
-		}
+		fmt.Printf("SQL: %s\n", sql)
 	}
 
 	cache, err := ristretto.NewCache(&ristretto.Config{
@@ -146,41 +131,8 @@ func main() {
 	_, _ = cronService.AddFunc("0-59 * * * *", api.CollectStats)
 	_, _ = cronService.AddFunc("0-59/5 * * * *", func() { sentry.Flush(time.Minute * 2) })
 	cronService.Start()
-	api.ContextInitializer = func(r *http.Request) (ctx context.Context) {
-		val, ok := r.Header["X-Api-User"]
-		if ok {
-			if len(val) > 0 {
-				u := &User{Name: val[0]}
-				ctx = r.Context()
-				ctx = context.WithValue(ctx, UserKey, u)
-				r.WithContext(ctx)
-			}
-		}
-
-		if ctx == nil {
-			ctx = r.Context()
-		}
-
-		return ctx
-	}
-
-	api.RequestValidator = func(ctx context.Context, r *http.Request, table string) error {
-		user, ok := UserFromContext(ctx)
-		if !ok {
-			return fmt.Errorf("unknown user")
-		}
-
-		fmt.Printf("user: %v accessing %s ", user, table)
-		return nil
-	}
 	go GinServer()
 	LoopForever()
-}
-
-// UserFromContext retrieve a User from Context if available
-func UserFromContext(ctx context.Context) (*User, bool) {
-	u, ok := ctx.Value(UserKey).(*User)
-	return u, ok
 }
 
 // LoopForever on signal processing

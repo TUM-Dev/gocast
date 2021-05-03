@@ -1,6 +1,7 @@
 package web
 
 import (
+	"TUM-Live/middleware"
 	"embed"
 	"github.com/gin-gonic/gin"
 	"html/template"
@@ -17,11 +18,10 @@ var templateFS embed.FS
 //go:embed node_modules
 var staticFS embed.FS
 
-func ConfigGinRouter(router gin.IRoutes) {
+func ConfigGinRouter(router *gin.Engine) {
 	templ = template.Must(template.ParseFS(templateFS, "template/*.gohtml", "template/admin/*.gohtml"))
 	configGinStaticRouter(router)
 	configMainRoute(router)
-	configCourseRoute(router)
 	return
 }
 
@@ -32,7 +32,11 @@ func configGinStaticRouter(router gin.IRoutes) {
 	})
 }
 
-func configMainRoute(router gin.IRoutes) {
+func configMainRoute(router *gin.Engine) {
+	courseGroup := router.Group("/:year/:teachingTerm/:slug")
+	courseGroup.Use(middleware.RequireAtLeastViewer())
+	courseGroup.GET("/", CoursePage)
+	courseGroup.GET(":id/*version", WatchPage)
 	router.GET("/about", AboutPage)
 	router.GET("/admin", AdminPage)
 	router.GET("/admin/create-course", CreateCoursePage)
@@ -50,10 +54,6 @@ func configMainRoute(router gin.IRoutes) {
 	router.GET("/", MainPage)
 	router.GET("/semester/:year/:term", MainPage)
 	router.GET("/healthcheck", HealthCheck)
-}
-
-func configCourseRoute(router gin.IRoutes) {
-	router.GET("/course/:year/:teachingTerm/:slug", CoursePage)
 }
 
 func HealthCheck(context *gin.Context) {

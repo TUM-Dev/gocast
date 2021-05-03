@@ -1,10 +1,8 @@
 package api
 
 import (
-	"context"
 	"github.com/gin-gonic/gin"
 	_ "github.com/satori/go.uuid"
-	"net/http"
 	"time"
 )
 
@@ -26,11 +24,10 @@ type HTTPError struct {
 	Message string `json:"Message" example:"status bad request"`
 }
 
-// ConfigGinRouter configure gin router
 func ConfigChatRouter(router gin.IRoutes) {
 	configGinChatRouter(router)
 }
-func ConfigGinRouter(router gin.IRoutes) {
+func ConfigGinRouter(router *gin.Engine) {
 	configGinStreamAuthRouter(router)
 	configGinUsersRouter(router)
 	configGinCourseRouter(router)
@@ -39,11 +36,3 @@ func ConfigGinRouter(router gin.IRoutes) {
 	configGinLectureHallApiRouter(router)
 	return
 }
-
-type RequestValidatorFunc func(ctx context.Context, r *http.Request, table string) error
-
-var RequestValidator RequestValidatorFunc
-
-type ContextInitializerFunc func(r *http.Request) (ctx context.Context)
-
-var ContextInitializer ContextInitializerFunc

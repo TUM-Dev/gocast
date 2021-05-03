@@ -2,6 +2,7 @@ package api
 
 import (
 	"TUM-Live/dao"
+	"TUM-Live/middleware"
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"TUM-Live/tools/tum"
@@ -19,17 +20,19 @@ import (
 	"time"
 )
 
-func configGinCourseRouter(router gin.IRoutes) {
-	router.POST("/api/courseInfo", courseInfo)
-	router.GET("/api/courseSchedule/:year/:term/:slug", courseSchedule)
-	router.POST("/api/createCourse", createCourse)
-	router.POST("/api/createLecture", createLecture)
-	router.POST("/api/deleteLecture/:id", deleteLecture)
-	router.POST("/api/renameLecture", renameLecture)
-	router.POST("/api/updateDescription", updateDescription)
-	router.POST("/api/addUnit", addUnit)
-	router.POST("/api/submitCut", submitCut)
-	router.POST("/api/deleteUnit/:unitID", deleteUnit)
+func configGinCourseRouter(router *gin.Engine) {
+	group := router.Group("/")
+	group.Use(middleware.RequireAtLeastLecturer())
+	group.POST("/api/courseInfo", courseInfo)
+	group.GET("/api/courseSchedule/:year/:term/:slug", courseSchedule)
+	group.POST("/api/createCourse", createCourse)
+	group.POST("/api/createLecture", createLecture)
+	group.POST("/api/deleteLecture/:id", deleteLecture)
+	group.POST("/api/renameLecture", renameLecture)
+	group.POST("/api/updateDescription", updateDescription)
+	group.POST("/api/addUnit", addUnit)
+	group.POST("/api/submitCut", submitCut)
+	group.POST("/api/deleteUnit/:unitID", deleteUnit)
 }
 
 func submitCut(c *gin.Context) {
@@ -131,9 +134,10 @@ func updateDescription(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	u, err := tools.GetUser(c)
-	if err != nil {
-		c.AbortWithStatus(http.StatusForbidden)
+	var tumLiveContext middleware.TUMLiveContext
+	if found, exists := c.Get("TUMLiveContext"); exists {
+		tumLiveContext = found.(middleware.TUMLiveContext)
+	} else {
 		return
 	}
 	stream, err := dao.GetStreamByID(context.Background(), strconv.Itoa(int(req.Id)))
@@ -142,7 +146,7 @@ func updateDescription(c *gin.Context) {
 		return
 	}
 	course, _ := dao.GetCourseById(context.Background(), stream.CourseID)
-	if u.Role != 1 && course.UserID != u.ID {
+	if tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.Model.ID != course.UserID {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
@@ -160,22 +164,23 @@ func renameLecture(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+	var tumLiveContext middleware.TUMLiveContext
+	if found, exists := c.Get("TUMLiveContext"); exists {
+		tumLiveContext = found.(middleware.TUMLiveContext)
+	} else {
+		return
+	}
 	if err := json.Unmarshal(jsonData, &req); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	u, err := tools.GetUser(c)
-	if err != nil {
-		c.AbortWithStatus(http.StatusForbidden)
-		return
-	}
-	stream, err := dao.GetStreamByID(context.Background(), strconv.Itoa(int(req.Id)))
+	stream, err := dao.GetStreamByID(c, strconv.Itoa(int(req.Id)))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
 	course, _ := dao.GetCourseById(context.Background(), stream.CourseID)
-	if u.Role != 1 && course.UserID != u.ID {
+	if tumLiveContext.User.Role != model.AdminType && course.UserID != tumLiveContext.User.Model.ID {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
