@@ -198,19 +198,18 @@ func GetAvailableSemesters(c context.Context) []Semester {
 	}
 }
 
-func IsUserAllowedToWatchPrivateCourse(courseid uint, user model.User, userErr error, student model.Student, studentErr error) bool {
-	if userErr == nil {
+func IsUserAllowedToWatchPrivateCourse(courseId uint, user *model.User, student *model.Student) bool {
+	if user != nil {
 		for _, c := range user.InvitedCourses {
-			if c.ID == courseid {
+			if c.ID == courseId {
 				return true
 			}
 		}
-		return user.Role == 1 || user.IsAdminOfCourse(courseid)
+		return user.Role == 1 || user.IsAdminOfCourse(courseId)
 	}
-	if studentErr == nil {
-		log.Printf("%v, %v", student.ID, courseid)
+	if student != nil {
 		for _, sCourse := range student.Courses {
-			if sCourse.ID == courseid {
+			if sCourse.ID == courseId {
 				return true
 			}
 		}

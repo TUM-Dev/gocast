@@ -2,6 +2,7 @@ package web
 
 import (
 	"TUM-Live/dao"
+	"TUM-Live/middleware"
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"TUM-Live/tools/tum"
@@ -14,6 +15,10 @@ import (
 )
 
 func MainPage(c *gin.Context) {
+	var tumLiveContext middleware.TUMLiveContext
+	if found, exists := c.Get("TUMLiveContext"); exists {
+		tumLiveContext = found.(middleware.TUMLiveContext)
+	}
 	tName := sentry.TransactionName("GET /")
 	spanMain := sentry.StartSpan(c.Request.Context(), "MainPageHandler", tName)
 	defer spanMain.Finish()
@@ -26,10 +31,7 @@ func MainPage(c *gin.Context) {
 		return
 	}
 	indexData := NewIndexData()
-	indexData.UserName = tools.GetName(c)
-	user, userErr := tools.GetUser(c)
-	student, studentErr := tools.GetStudent(c)
-
+	indexData.UserName = tumLiveContext.Name
 	var year int
 	var term string
 	if c.Param("year") == "" {
@@ -45,32 +47,28 @@ func MainPage(c *gin.Context) {
 	indexData.Semesters = dao.GetAvailableSemesters(spanMain.Context())
 	indexData.CurrentYear = year
 	indexData.CurrentTerm = term
-	if userErr == nil {
+	if tumLiveContext.User != nil {
 		indexData.IsUser = true
-		indexData.IsAdmin = user.Role == model.AdminType || user.Role == model.LecturerType
-		if user.Role == model.AdminType {
+		indexData.IsAdmin = tumLiveContext.IsAdmin
+		if tumLiveContext.User.Role == model.AdminType {
 			indexData.Courses = dao.GetAllCoursesForSemester(year, term, spanMain.Context())
 		} else {
-			indexData.Courses = user.CoursesForSemester(year, term, spanMain.Context())
+			indexData.Courses = tumLiveContext.User.CoursesForSemester(year, term, spanMain.Context())
 		}
-	} else if studentErr == nil {
+	} else if tumLiveContext.Student != nil {
 		indexData.IsStudent = true
-		indexData.Courses = student.CoursesForSemester(
-			year,
-			term,
-			spanMain.Context(),
-		)
+		indexData.Courses = tumLiveContext.Student.CoursesForSemester(year, term, spanMain.Context())
 	}
 	streams, err := dao.GetCurrentLive(context.Background())
 	var livestreams []CourseStream
 	for _, stream := range streams {
 		courseForLiveStream, _ := dao.GetCourseById(context.Background(), stream.CourseID)
 		// Todo: refactor into dao
-		if courseForLiveStream.Visibility == "loggedin" && (userErr != nil && studentErr != nil) {
+		if courseForLiveStream.Visibility == "loggedin" && (tumLiveContext.User == nil && tumLiveContext.Student == nil) {
 			continue
 		}
 		if courseForLiveStream.Visibility == "enrolled" {
-			if !dao.IsUserAllowedToWatchPrivateCourse(courseForLiveStream.ID, user, userErr, student, studentErr) {
+			if !dao.IsUserAllowedToWatchPrivateCourse(courseForLiveStream.ID, tumLiveContext.User, tumLiveContext.Student) {
 				continue
 			}
 		}
@@ -91,7 +89,7 @@ func MainPage(c *gin.Context) {
 				publicFiltered = append(publicFiltered, c)
 			}
 		}
-		if userErr == nil || studentErr == nil {
+		if tumLiveContext.User != nil || tumLiveContext.Student != nil {
 			loggedIn, _ := dao.GetCoursesForLoggedInUsers(year, term)
 			for _, c := range loggedIn {
 				if !tools.CourseListContains(indexData.Courses, c.ID) {
@@ -105,17 +103,14 @@ func MainPage(c *gin.Context) {
 }
 
 func AboutPage(c *gin.Context) {
-	var indexData IndexData
-	indexData.VersionTag = os.Getenv("hash")
-	u, userErr := tools.GetUser(c)
-	_, studentErr := tools.GetStudent(c)
-	if userErr == nil {
-		indexData.IsUser = true
-		indexData.IsAdmin = u.Role == model.AdminType || u.Role == model.LecturerType
+	var tumLiveContext middleware.TUMLiveContext
+	if found, exists := c.Get("TUMLiveContext"); exists {
+		tumLiveContext = found.(middleware.TUMLiveContext)
 	}
-	if studentErr == nil {
-		indexData.IsStudent = true
-	}
+	var indexData IndexData = NewIndexData()
+	indexData.IsStudent = tumLiveContext.IsStudent
+	indexData.IsAdmin = tumLiveContext.IsAdmin
+	indexData.IsUser = tumLiveContext.User != nil
 	_ = templ.ExecuteTemplate(c.Writer, "about.gohtml", indexData)
 }
 
