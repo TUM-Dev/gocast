@@ -16,7 +16,6 @@ services:
         target: /recordings
     env_file:
       - variables-backend.env
-      - hash.env
     restart: always
 
   db:

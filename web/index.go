@@ -9,9 +9,10 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"os"
 	"strconv"
 )
+
+var VersionTag string
 
 func MainPage(c *gin.Context) {
 	tName := sentry.TransactionName("GET /")
@@ -106,7 +107,7 @@ func MainPage(c *gin.Context) {
 
 func AboutPage(c *gin.Context) {
 	var indexData IndexData
-	indexData.VersionTag = os.Getenv("hash")
+	indexData.VersionTag = VersionTag
 	u, userErr := tools.GetUser(c)
 	_, studentErr := tools.GetStudent(c)
 	if userErr == nil {
@@ -135,7 +136,7 @@ type IndexData struct {
 
 func NewIndexData() IndexData {
 	return IndexData{
-		VersionTag: os.Getenv("hash"),
+		VersionTag: VersionTag,
 	}
 }
 
