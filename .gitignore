@@ -104,7 +104,6 @@ web/assets/css-dist
 
 # secrets
 variables-backend.env
-hash.env
 rebuild.sh
 
 tumlive.service

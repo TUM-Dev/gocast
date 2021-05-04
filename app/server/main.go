@@ -28,6 +28,8 @@ import (
 	"time"
 )
 
+var VersionTag = "development"
+
 const UserKey = "RBG-Default-User" // UserKey key used for storing User struct in context
 
 // GinServer launch gin server
@@ -67,6 +69,7 @@ func (u *User) String() string {
 }
 
 func main() {
+	web.VersionTag = VersionTag
 	OsSignal = make(chan os.Signal, 1)
 
 	goopt.Parse(nil)
@@ -75,7 +78,7 @@ func main() {
 	}
 	err := sentry.Init(sentry.ClientOptions{
 		Dsn:              os.Getenv("SentryDSN"),
-		Release:          os.Getenv("hash"),
+		Release:          VersionTag,
 		TracesSampleRate: 0.1,
 		Debug:            true,
 		AttachStacktrace: true,

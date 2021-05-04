@@ -5,7 +5,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"html/template"
 	"net/http"
-	"os"
 )
 
 var templ *template.Template
@@ -57,7 +56,7 @@ func configCourseRoute(router gin.IRoutes) {
 }
 
 func HealthCheck(context *gin.Context) {
-	context.JSON(http.StatusOK, gin.H{"version": os.Getenv("hash")})
+	context.JSON(http.StatusOK, gin.H{"version": VersionTag})
 }
 
 type ErrorPageData struct {
