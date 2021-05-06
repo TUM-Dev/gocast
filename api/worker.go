@@ -4,6 +4,7 @@ import (
 	"TUM-Live/dao"
 	"context"
 	"encoding/json"
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
@@ -14,6 +15,50 @@ import (
 func configGinWorkerRouter(r gin.IRoutes) {
 	r.GET("/api/worker/getJobs/:workerID", getJob)
 	r.POST("/api/worker/putVOD/:workerID", putVod)
+	r.POST("/api/worker/notifyLive/:workerID", notifyLive)
+}
+
+func notifyLive(c *gin.Context) {
+	_, err := dao.GetWorkerByID(context.Background(), c.Param("workerID"))
+	if err != nil {
+		c.JSON(http.StatusForbidden, "forbidden")
+		return
+	}
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	var req notifyLiveRequest
+	err = json.Unmarshal(body, &req)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	stream, err := dao.GetStreamByID(context.Background(), req.StreamID)
+	if err != nil {
+		sentry.CaptureException(err)
+		return
+	}
+	stream.LiveNow = true
+	switch req.Version {
+	case "COMB":
+		stream.PlaylistUrl = req.URL
+	case "PRES":
+		stream.PlaylistUrlPRES = req.URL
+	case "CAM":
+		stream.PlaylistUrlCAM = req.URL
+	}
+	err = dao.SaveStream(&stream)
+	if err != nil {
+		sentry.CaptureException(err)
+	}
+}
+
+type notifyLiveRequest struct {
+	StreamID string `json:"streamID"`
+	URL      string `json:"url"`     // eg. https://live.lrz.de/livetum/stream/playlist.m3u8
+	Version  string `json:"version"` //eg. COMB
 }
 
 func putVod(c *gin.Context) {

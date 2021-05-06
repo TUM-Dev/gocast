@@ -9,7 +9,14 @@ import (
 	"time"
 )
 
-// return stream by streaming key
+func GetDueStreamsFromLectureHalls() []model.Stream {
+	var res []model.Stream
+	DB.Model(&model.Stream{}).
+		Where("lecture_hall_id IS NOT NULL AND start BETWEEN ? AND ? AND live_now = false AND recording = false", time.Now(), time.Now().Add(time.Minute*10)).
+		Scan(&res)
+	return res
+}
+
 func GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error) {
 	var res model.Stream
 	err = DB.First(&res, "stream_key = ?", key).Error

@@ -1,0 +1,61 @@
+package tools
+
+import (
+	"TUM-Live/dao"
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/getsentry/sentry-go"
+	"log"
+	"net/http"
+	"time"
+)
+
+func NotifyWorkers() {
+	log.Println("getting streams for workers")
+	streams := dao.GetDueStreamsFromLectureHalls()
+	workers := dao.GetWorkersOrderedByWorkload()
+	for i, stream := range streams {
+		assignedWorker := workers[i%len(workers)]
+		log.Printf("stream %v assigned to %v", stream.Model.ID, assignedWorker.Host)
+		lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
+		course, _ := dao.GetCourseById(context.Background(), stream.CourseID)
+		if err != nil {
+			sentry.CaptureException(err)
+			continue
+		}
+		sources := make(map[string]string)
+		if lectureHall.CamIP != "" {
+			sources["CAM"] = lectureHall.CamIP
+		}
+		if lectureHall.PresIP != "" {
+			sources["PRES"] = lectureHall.PresIP
+		}
+		if lectureHall.CamIP != "" {
+			sources["COMB"] = lectureHall.CombIP
+		}
+		if req, err := json.Marshal(streamLectureHallRequest{
+			ID:         fmt.Sprintf("%v", stream.Model.ID),
+			Sources:    sources,
+			StreamEnd:  stream.End,
+			StreamName: fmt.Sprintf("%s%v", course.Slug, stream.Start.Format("02012006")), // again, wtf go
+		}); err == nil {
+			_, err := http.Post(fmt.Sprintf("http://%s/%s/streamLectureHall", assignedWorker.Host, assignedWorker.WorkerID), "application/json", bytes.NewBuffer(req))
+			if err != nil {
+				// todo: pick new worker for stream
+				sentry.CaptureException(err)
+				continue
+			}
+		} else {
+			sentry.CaptureException(err)
+		}
+	}
+}
+
+type streamLectureHallRequest struct {
+	Sources    map[string]string `json:"sources"` //CAM->123.4.5.6/extron5
+	StreamEnd  time.Time         `json:"streamEnd"`
+	StreamName string            `json:"streamName"`
+	ID         string            `json:"id"`
+}

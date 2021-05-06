@@ -7,6 +7,12 @@ import (
 	"log"
 )
 
+func GetWorkersOrderedByWorkload() []model.Worker {
+	var workers []model.Worker
+	DB.Model(&model.Worker{}).Order("workload").Scan(&workers)
+	return workers
+}
+
 func GetWorkerByID(ctx context.Context, workerID string) (model.Worker, error) {
 	if Logger != nil {
 		Logger(ctx, "Getting worker by id.")
