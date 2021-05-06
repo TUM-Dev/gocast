@@ -34,7 +34,7 @@
             <p class="text-xl text-gray-400 flex space-x-2">
                 {{if .Stream.LiveNow}}
                     <span id="viewerCount"></span>
-                    <i class="fas fa-users text-gray-400"></i>
+                    <i class="fas fa-users text-gray-400 flex"></i>
                 {{else if .Course.DownloadsEnabled}}
                     <a class="flex"
                        title="Download Lecture"
@@ -43,8 +43,15 @@
                         <i class="fas fa-download text-gray-400 hover:text-purple-500"></i>
                     </a>
                 {{end}}
-                <i title="Copy HLS URL" class="fas fa-link hover:text-purple-500"
-                   onclick="copyToClipboard('{{if eq .Version "PRES"}}{{.Stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{.Stream.PlaylistUrlCAM}}{{else}}{{.Stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if .Stream.StartOffset}}?wowzaplaystart={{.Stream.StartOffset}}&wowzaplayduration={{.Stream.EndOffset}}{{end}}')"></i>
+                {{if .Stream.PlaylistUrlPRES}}
+                    <a class="flex" title="Presentation only" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}/PRES"><i class="fas fa-edit hover:text-purple-500"></i></a>
+                {{end}}
+                {{if .Stream.PlaylistUrlCAM}}
+                    <a class="flex" title="Camera only" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}/CAM"><i class="fas fa-camera hover:text-purple-500"></i></a>
+                {{end}}
+                {{if .Stream.PlaylistUrl}}
+                    <a class="flex" title="Camera only" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}"><i class="fas fa-object-group hover:text-purple-500"></i></a>
+                {{end}}
             </p>
         </div>
         <a href="/course/{{.Course.Year}}/{{.Course.TeachingTerm}}/{{.Course.Slug}}"><h2
