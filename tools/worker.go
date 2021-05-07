@@ -41,7 +41,7 @@ func NotifyWorkers() {
 			StreamEnd:  stream.End,
 			StreamName: fmt.Sprintf("%s%v", course.Slug, stream.Start.Format("02012006")), // again, wtf go
 		}); err == nil {
-			_, err := http.Post(fmt.Sprintf("http://%s/%s/streamLectureHall", assignedWorker.Host, assignedWorker.WorkerID), "application/json", bytes.NewBuffer(req))
+			_, err := http.Post(fmt.Sprintf("https://%s/%s/streamLectureHall", assignedWorker.Host, assignedWorker.WorkerID), "application/json", bytes.NewBuffer(req))
 			if err != nil {
 				// todo: pick new worker for stream
 				sentry.CaptureException(err)
