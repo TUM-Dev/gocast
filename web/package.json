@@ -20,13 +20,11 @@
   "homepage": "https://github.com/joschahenningsen/TUM-Live#readme",
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.3",
-    "@videojs/http-streaming": "^2.8.0",
     "chart.js": "^3.2.0",
     "flatpickr": "^4.6.9",
     "hls.js": "^1.0.0",
     "nouislider": "^14.6.4",
     "video.js": "^7.12.0",
-    "videojs-hls-quality-selector": "^1.1.4",
     "videojs-seek-buttons": "^1.6.0"
   },
   "devDependencies": {

@@ -17,11 +17,12 @@
     <div class="watchContent w-full pt-3 px-2 md:px-8 {{if .Course.ChatEnabled}}md:w-4/6{{end}} lg:w-8/12 2xl:max-w-screen-xl mx-auto mx:h-full overflow-scroll overflow-x-hidden">
         <video
                 id="my-video"
-                class="video-js w-full"
+                class="video-js w-full frameborder-none"
                 controls
-                preload="auto"
-                data-setup='{"fluid": true}'>
+                preload="auto">
             <source src="{{if eq .Version "PRES"}}{{.Stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{.Stream.PlaylistUrlCAM}}{{else}}{{.Stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if .Stream.StartOffset}}?wowzaplaystart={{.Stream.StartOffset}}&wowzaplayduration={{.Stream.EndOffset}}{{end}}"
+                    type="application/x-mpegURL"/>
+            <source src="{{if eq .Version "PRES"}}{{.Stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{.Stream.PlaylistUrlCAM}}{{else}}{{.Stream.PlaylistUrl}}{{end}}?anc{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if .Stream.StartOffset}}?wowzaplaystart={{.Stream.StartOffset}}&wowzaplayduration={{.Stream.EndOffset}}{{end}}"
                     type="application/x-mpegURL"/>
             <p class="vjs-no-js">
                 To view this video please enable JavaScript.
@@ -44,13 +45,16 @@
                     </a>
                 {{end}}
                 {{if .Stream.PlaylistUrlPRES}}
-                    <a class="flex" title="Presentation only" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}/PRES"><i class="fas fa-edit hover:text-purple-500"></i></a>
+                    <a class="flex" title="Presentation only" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}/PRES"><i
+                                class="fas fa-edit hover:text-purple-500"></i></a>
                 {{end}}
                 {{if .Stream.PlaylistUrlCAM}}
-                    <a class="flex" title="Camera only" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}/CAM"><i class="fas fa-camera hover:text-purple-500"></i></a>
+                    <a class="flex" title="Camera only" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}/CAM"><i
+                                class="fas fa-camera hover:text-purple-500"></i></a>
                 {{end}}
                 {{if .Stream.PlaylistUrl}}
-                    <a class="flex" title="Combined view" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}"><i class="fas fa-object-group hover:text-purple-500"></i></a>
+                    <a class="flex" title="Combined view" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}"><i
+                                class="fas fa-object-group hover:text-purple-500"></i></a>
                 {{end}}
             </p>
         </div>
@@ -101,22 +105,24 @@
 </div>
 
 <script src="/static/node_modules/video.js/dist/video.min.js"></script>
-<script src="/static/node_modules/@videojs/http-streaming/dist/videojs-http-streaming.min.js"></script>
-<script src="/static/node_modules/videojs-contrib-quality-levels/dist/videojs-contrib-quality-levels.min.js"></script>
-<script src="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.min.js"></script>
 <script src="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.min.js"></script>
 
 <script>
     let player = videojs('my-video', {
+        fluid: true,
         playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
         html5: {
+            reloadSourceOnError: true,
             vhs: {
                 overrideNative: true
             },
             nativeVideoTracks: false,
             nativeAudioTracks: false,
             nativeTextTracks: false
-        }
+        },
+        userActions: {
+            hotkeys: {}
+        },
     });
     player.play();
     {{if not .Stream.LiveNow}}
@@ -125,7 +131,7 @@
         back: 15
     });
     {{end}}
-    player.hlsQualitySelector();
+
 </script>
 </body>
 </html>
