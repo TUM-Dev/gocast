@@ -7,6 +7,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -16,8 +17,29 @@ func configGinWorkerRouter(r gin.IRoutes) {
 	r.GET("/api/worker/getJobs/:workerID", getJob)
 	r.POST("/api/worker/putVOD/:workerID", putVod)
 	r.POST("/api/worker/notifyLive/:workerID", notifyLive)
+	r.POST("/api/worker/notifyLiveEnd/:workerID/:streamID", notifyLiveEnd)
 }
 
+func notifyLiveEnd(c *gin.Context) {
+	_, err := dao.GetWorkerByID(context.Background(), c.Param("workerID"))
+	if err != nil {
+		c.JSON(http.StatusForbidden, "forbidden")
+		return
+	}
+	if sid := c.Param("streamID"); sid != "" {
+		err := dao.SetStreamNotLiveById(sid)
+		if err != nil {
+			log.Printf("Couldn't set stream not live: %v\n", err)
+			sentry.CaptureException(err)
+			return
+		}
+		return
+
+	}
+	c.JSON(http.StatusNotFound, "forbidden")
+	return
+
+}
 func notifyLive(c *gin.Context) {
 	_, err := dao.GetWorkerByID(context.Background(), c.Param("workerID"))
 	if err != nil {

@@ -12,6 +12,10 @@ func UpdateStreamFullAssoc(vod *model.Stream) error {
 	return err
 }
 
+func SetStreamNotLiveById(streamID string) error {
+	return DB.Table("streams").Where("id = ?", streamID).Update("live_now", "0").Error
+}
+
 func SaveStream(vod *model.Stream) error {
 	defer Cache.Clear()
 	err := DB.Model(&vod).Updates(model.Stream{
