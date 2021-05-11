@@ -5,7 +5,12 @@ import (
 	"context"
 	"gorm.io/gorm"
 	"log"
+	"time"
 )
+
+func WorkerPing(id string) {
+	DB.Model(&model.Worker{}).Where("worker_id = ?", id).Update("last_seen", time.Now())
+}
 
 func GetAllWorkers() ([]model.Worker, error) {
 	var workers []model.Worker

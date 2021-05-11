@@ -16,8 +16,15 @@ import (
 func configGinWorkerRouter(r gin.IRoutes) {
 	r.GET("/api/worker/getJobs/:workerID", getJob)
 	r.POST("/api/worker/putVOD/:workerID", putVod)
+	r.POST("/api/worker/ping/:workerID", ping)
 	r.POST("/api/worker/notifyLive/:workerID", notifyLive)
 	r.POST("/api/worker/notifyLiveEnd/:workerID/:streamID", notifyLiveEnd)
+}
+
+func ping(c *gin.Context) {
+	if _, err := dao.GetWorkerByID(context.Background(), c.Param("workerID")); err == nil {
+		dao.WorkerPing(c.Param("workerID"))
+	}
 }
 
 func notifyLiveEnd(c *gin.Context) {
