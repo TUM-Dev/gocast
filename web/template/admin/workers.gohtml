@@ -21,7 +21,7 @@
         {{range $worker := .Workers}}
             <tr class="text-gray-200 odd:bg-secondary">
                 <td class="p-2">{{$worker.Host}}</td>
-                <td class="p-2">{{if $worker.IsAlive}}<span class="bg-success rounded-full text-gray-400">Alive</span>{{else}}<span class="bg-danger rounded-full text-gray-400">Dead</span>{{end}}{{$worker.Status}}</td>
+                <td class="p-2">{{if $worker.IsAlive}}<span class="bg-success rounded-full px-2 mr-2 text-gray-600">Alive</span>{{else}}<span class="bg-danger rounded-full px-2 mr-2 text-gray-200">Dead</span>{{end}}{{$worker.Status}}</td>
                 <td class="p-2">{{$worker.Workload}}</td>
                 <td class="p-2"><i class="fas fa-trash text-gray-400 cursor-pointer hover:text-purple-500"></i></td>
             </tr>
