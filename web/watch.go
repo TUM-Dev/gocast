@@ -45,6 +45,10 @@ func WatchPage(c *gin.Context) {
 			}
 		}
 	}
+	if c.Query("restart") == "1" {
+		c.Redirect(http.StatusFound, strings.Split(c.Request.RequestURI, "?")[0])
+		return
+	}
 	course, err := dao.GetCourseById(context.Background(), vod.CourseID)
 	if err != nil {
 		log.Printf("couldn't find course for stream: %v\n", err)

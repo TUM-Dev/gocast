@@ -35,9 +35,9 @@
             <p class="text-xl text-gray-400 flex space-x-2">
                 {{if .Stream.LiveNow}}
                     <span id="viewerCount"></span>
-                    <i class="fas fa-users text-gray-400 flex"></i>
+                    <i class="fas fa-users text-gray-400 flex m-auto"></i>
                 {{else if .Course.DownloadsEnabled}}
-                    <a class="flex"
+                    <a class="flex m-auto"
                        title="Download Lecture"
                        href="/api/download/{{.Stream.Model.ID}}/{{.Course.Slug}}/{{.Course.Slug}}-{{printf "%v-%02d-%04d" .Stream.Start.Month .Stream.Start.Day .Stream.Start.Year}}"
                        download>
@@ -45,16 +45,19 @@
                     </a>
                 {{end}}
                 {{if .Stream.PlaylistUrlPRES}}
-                    <a class="flex" title="Presentation only" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}/PRES"><i
+                    <a class="flex m-auto" title="Presentation only" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}/PRES"><i
                                 class="fas fa-edit hover:text-purple-500"></i></a>
                 {{end}}
                 {{if .Stream.PlaylistUrlCAM}}
-                    <a class="flex" title="Camera only" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}/CAM"><i
+                    <a class="flex m-auto" title="Camera only" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}/CAM"><i
                                 class="fas fa-camera hover:text-purple-500"></i></a>
                 {{end}}
                 {{if .Stream.PlaylistUrl}}
-                    <a class="flex" title="Combined view" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}"><i
+                    <a class="flex m-auto" title="Combined view" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}"><i
                                 class="fas fa-object-group hover:text-purple-500"></i></a>
+                {{end}}
+                {{if and .IndexData.IsAdmin .Stream.LectureHallID}}
+                    <a href="?restart=1" title="Issues with the stream? Restart it." class="bg-danger text-white rounded cursor-pointer p-2 flex text-sm">Restart stream</a>
                 {{end}}
             </p>
         </div>
