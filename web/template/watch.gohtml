@@ -34,7 +34,7 @@
             </h1>
             <p class="text-xl text-gray-400 flex space-x-2">
                 {{if .Stream.LiveNow}}
-                    <span id="viewerCount"></span>
+                    <span class="flex m-auto" id="viewerCount"></span>
                     <i class="fas fa-users text-gray-400 flex m-auto"></i>
                 {{else if .Course.DownloadsEnabled}}
                     <a class="flex m-auto"
