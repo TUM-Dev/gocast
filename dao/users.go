@@ -62,6 +62,11 @@ func GetUserByEmail(ctx context.Context, email string) (user model.User, err err
 	return res, err
 }
 
+func GetAllAdminsAndLecturers(users *[]model.User) (err error) {
+	err = DB.Find(users, "role < 3").Error
+	return err
+}
+
 func GetAllUsers(ctx context.Context, users *[]model.User) (err error) {
 	if Logger != nil {
 		Logger(ctx, "Get all users.")

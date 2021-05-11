@@ -7,6 +7,12 @@ import (
 	"log"
 )
 
+func GetAllWorkers() ([]model.Worker, error) {
+	var workers []model.Worker
+	err := DB.Find(&workers).Error
+	return workers, err
+}
+
 func GetWorkersOrderedByWorkload() []model.Worker {
 	var workers []model.Worker
 	DB.Model(&model.Worker{}).Order("workload").Scan(&workers)

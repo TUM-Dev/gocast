@@ -7,12 +7,27 @@ import (
 	"TUM-Live/tools/tum"
 	"context"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"regexp"
 	"strconv"
 )
+
+func WorkersPage(c *gin.Context) {
+	if workers, err := dao.GetAllWorkers(); err == nil {
+		payload := WorkersPageData{IndexData: NewIndexData(), Workers: workers}
+		_ = templ.ExecuteTemplate(c.Writer, "workers.gohtml", payload)
+	} else {
+		sentry.CaptureException(err)
+	}
+}
+
+type WorkersPageData struct {
+	IndexData IndexData
+	Workers   []model.Worker
+}
 
 func AdminPage(c *gin.Context) {
 	user, err := tools.GetUser(c)
@@ -21,7 +36,7 @@ func AdminPage(c *gin.Context) {
 		return
 	}
 	var users []model.User
-	_ = dao.GetAllUsers(context.Background(), &users)
+	_ = dao.GetAllAdminsAndLecturers(&users)
 	courses, err := dao.GetCoursesByUserId(context.Background(), user.ID)
 	if err != nil {
 		log.Printf("couldn't query courses for user. %v\n", err)
