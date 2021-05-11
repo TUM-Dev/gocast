@@ -22,9 +22,30 @@ func configGinWorkerRouter(r gin.IRoutes) {
 }
 
 func ping(c *gin.Context) {
-	if _, err := dao.GetWorkerByID(context.Background(), c.Param("workerID")); err == nil {
-		dao.WorkerPing(c.Param("workerID"))
+	if worker, err := dao.GetWorkerByID(context.Background(), c.Param("workerID")); err == nil {
+		body, err := ioutil.ReadAll(c.Request.Body)
+		if err != nil {
+			log.Printf("Couldn't read ping request")
+			sentry.CaptureException(err)
+			return
+		}
+		var req pingReq
+		err = json.Unmarshal(body, &req)
+		if err != nil {
+			log.Printf("Couldn't unmarshal ping request")
+			sentry.CaptureException(err)
+			return
+		}
+		worker.Workload = req.Workload
+		worker.Status = req.Status
+		worker.LastSeen = time.Now()
+		dao.SaveWorker(worker)
 	}
+}
+
+type pingReq struct {
+	Workload int    `json:"workload,omitempty"`
+	Status   string `json:"status,omitempty"`
 }
 
 func notifyLiveEnd(c *gin.Context) {

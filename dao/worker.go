@@ -3,13 +3,16 @@ package dao
 import (
 	"TUM-Live/model"
 	"context"
+	"github.com/getsentry/sentry-go"
 	"gorm.io/gorm"
 	"log"
-	"time"
 )
 
-func WorkerPing(id string) {
-	DB.Model(&model.Worker{}).Where("worker_id = ?", id).Update("last_seen", time.Now())
+func SaveWorker(worker model.Worker) {
+	err := DB.Save(&worker).Error
+	if err != nil {
+		sentry.CaptureException(err)
+	}
 }
 
 func GetAllWorkers() ([]model.Worker, error) {
