@@ -10,20 +10,6 @@ import (
 	"time"
 )
 
-func GetCoursesByUserIdForTerm(ctx context.Context, userid uint, year int, term string) (courses []model.Course, err error) {
-	c, e := GetCoursesByUserId(ctx, userid)
-	if e != nil {
-		return nil, err
-	}
-	var cRes []model.Course
-	for _, cL := range c {
-		if cL.Year == year && cL.TeachingTerm == term {
-			cRes = append(cRes, cL)
-		}
-	}
-	return cRes, nil
-}
-
 func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Course, err error) {
 	cachedCourses, found := Cache.Get(fmt.Sprintf("coursesByUserID%v", userid))
 	if found {
@@ -133,9 +119,7 @@ func GetAllCoursesWithTUMIDForSemester(ctx context.Context, year int, term strin
 	return foundCourses, nil
 }
 
-/**
-* Saves all provided courses into database.
-**/
+// UpdateCourses Saves all provided courses into database.
 func UpdateCourses(ctx context.Context, courses []model.Course) {
 	defer Cache.Clear()
 	if Logger != nil {

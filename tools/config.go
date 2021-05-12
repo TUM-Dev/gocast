@@ -36,6 +36,7 @@ func init() {
 		LdapUserDN:           os.Getenv("LDAP_USER_DN"),
 		IngestBase:           os.Getenv("IngestBase"),
 		CameraAuthentication: os.Getenv("CAMERA_AUTH"),
+		StaticPath:           os.Getenv("STATIC_PATH"),
 	}
 }
 
@@ -60,4 +61,5 @@ type Config struct {
 	LdapUserDN           string
 	IngestBase           string
 	CameraAuthentication string
+	StaticPath           string
 }

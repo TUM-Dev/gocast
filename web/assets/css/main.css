@@ -94,6 +94,34 @@ input[type='checkbox']:checked + label {
     background: #5b5b5b;
 }
 
+.scrollbarThin:hover::-webkit-scrollbar {
+    width: 8px;
+    height: 12px;
+}
+
+.scrollbarThin::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+}
+
+.scrollbarThin::-webkit-scrollbar-track {
+    background: #0d1117;
+}
+
+.scrollbarThin::-webkit-scrollbar-thumb {
+    background: #5b5b5b;
+}
+
+.scrollbarThin {
+    scrollbar-height: 3px;
+    scrollbar-width: 3px;
+    scrollbar-color: #5b5b5b #0d1117;
+    margin-bottom: 9px;
+}
+
+.scrollbarThin:hover {
+    margin-bottom: 0;
+}
 .watchContent::-webkit-scrollbar {
     display: none;
 }

@@ -1,6 +1,7 @@
 package web
 
 import (
+	"TUM-Live/tools"
 	"embed"
 	"github.com/gin-gonic/gin"
 	"html/template"
@@ -25,6 +26,7 @@ func ConfigGinRouter(router gin.IRoutes) {
 }
 
 func configGinStaticRouter(router gin.IRoutes) {
+	router.Static("/public", tools.Cfg.StaticPath)
 	router.StaticFS("/static", http.FS(staticFS))
 	router.GET("/favicon.ico", func(c *gin.Context) {
 		c.FileFromFS("assets/favicon.ico", http.FS(staticFS))

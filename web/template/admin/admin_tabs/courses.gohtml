@@ -4,13 +4,20 @@
         <table class="table-auto w-full">
             <thead>
             <tr class="bg-primary text-gray-300 uppercase text-sm leading-normal">
-                <th class="py-3 px-6 text-left w-3/4">Name</th>
-                <th class="py-3 px-6 text-center w-1/4">Actions</th>
+                <th class="py-3 px-6 text-left w-1/6">Semester</th>
+                <th class="py-3 px-6 text-left w-4/6">Name</th>
+                <th class="py-3 px-6 text-center w-1/6">Actions</th>
             </tr>
             </thead>
             <tbody class="text-gray-300 text-sm font-light">
             {{range $course := .}}
                 <tr class="border-gray-500 hover:bg-primary">
+                    <td class="py-3 px-6 text-left whitespace-nowrap">
+                        <div class="flex items-center">
+                            <span class="font-medium p-3">
+                                {{printf "%d-%s" $course.Year $course.TeachingTerm}}</span>
+                        </div>
+                    </td>
                     <td class="py-3 px-6 text-left whitespace-nowrap">
                         <div class="flex items-center">
                             <span class="font-medium p-3">{{$course.Name}}</span>
@@ -27,6 +34,7 @@
             {{end}}
 
             <tr class="hover:bg-primary">
+                <td class="py-3 px-6 text-left whitespace-nowrap"></td>
                 <td class="py-3 px-6 text-left whitespace-nowrap"></td>
                 <td class="py-3 px-6 text-center">
                     <a href="/admin/create-course">

@@ -132,7 +132,7 @@ func main() {
 		}
 	}
 
-	//tools.FetchCameraPresets()
+	// tools.SwitchPreset()
 
 	cache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,     // number of keys to track frequency of (10M).

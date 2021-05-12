@@ -12,3 +12,17 @@ type LectureHall struct {
 	Streams       []Stream
 	CameraPresets []CameraPreset
 }
+
+func (l LectureHall) NumSources() int {
+	num := 0
+	if l.CombIP != "" {
+		num++
+	}
+	if l.PresIP != "" {
+		num++
+	}
+	if l.CamIP != "" {
+		num++
+	}
+	return num
+}

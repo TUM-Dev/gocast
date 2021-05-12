@@ -8,7 +8,7 @@ import (
 
 func GetAllLectureHalls() []model.LectureHall {
 	var lectureHalls []model.LectureHall
-	_ = DB.Find(&lectureHalls)
+	_ = DB.Preload("CameraPresets").Find(&lectureHalls)
 	return lectureHalls
 }
 
