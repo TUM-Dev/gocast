@@ -15,20 +15,6 @@ import (
 	"strconv"
 )
 
-func WorkersPage(c *gin.Context) {
-	if workers, err := dao.GetAllWorkers(); err == nil {
-		payload := WorkersPageData{IndexData: NewIndexData(), Workers: workers}
-		_ = templ.ExecuteTemplate(c.Writer, "workers.gohtml", payload)
-	} else {
-		sentry.CaptureException(err)
-	}
-}
-
-type WorkersPageData struct {
-	IndexData IndexData
-	Workers   []model.Worker
-}
-
 func AdminPage(c *gin.Context) {
 	user, err := tools.GetUser(c)
 	if err != nil {
@@ -42,12 +28,26 @@ func AdminPage(c *gin.Context) {
 		log.Printf("couldn't query courses for user. %v\n", err)
 		courses = []model.Course{}
 	}
+	workers, err := dao.GetAllWorkers()
+	if err != nil {
+		sentry.CaptureException(err)
+	}
 	lectureHalls := dao.GetAllLectureHalls()
 	indexData := NewIndexData()
 	indexData.IsStudent = false
 	indexData.IsUser = true
 	indexData.IsAdmin = user.Role == model.AdminType || user.Role == model.LecturerType
-	_ = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{User: user, Users: users, Courses: courses, IndexData: indexData, LectureHalls: lectureHalls})
+	page := "courses"
+	if _, ok := c.Request.URL.Query()["users"]; ok {
+		page = "users"
+	}
+	if _, ok := c.Request.URL.Query()["lectureHalls"]; ok {
+		page = "lectureHalls"
+	}
+	if _, ok := c.Request.URL.Query()["workers"]; ok {
+		page = "workers"
+	}
+	_ = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{User: user, Users: users, Courses: courses, IndexData: indexData, LectureHalls: lectureHalls, Page: page, Workers: workers})
 }
 
 func LectureCutPage(c *gin.Context) {
@@ -199,6 +199,8 @@ type AdminPageData struct {
 	Users        []model.User
 	Courses      []model.Course
 	LectureHalls []model.LectureHall
+	Page         string
+	Workers      []model.Worker
 }
 
 type CreateCourseData struct {

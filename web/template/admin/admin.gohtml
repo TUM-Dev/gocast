@@ -15,6 +15,19 @@
     <div class="min-w-screen flex items-center justify-center">
         <div class="w-full lg:w-5/6">
             {{if eq .User.Role 1}}
+                <div class="flex w-full bg-secondary">
+                    <a href="/admin"
+                       class="flex-grow p-2 px-4 hover:bg-primary{{if eq .Page "courses"}} bg-primary p-2 px-4 border-b-2 border-white text-white{{else}} text-gray-400{{end}}">Courses</a>
+                    <a href="?users"
+                       class="flex-grow p-2 px-4 hover:bg-primary{{if eq .Page "users"}} bg-primary p-2 px-4 border-b-2 border-white text-white{{else}} text-gray-400{{end}}">Users</a>
+                    <a href="?lectureHalls"
+                       class="flex-grow p-2 px-2 hover:bg-primary{{if eq .Page "lectureHalls"}} bg-primary p-2 px-4 border-b-2 border-white text-white{{else}} text-gray-400{{end}}">Lecture
+                        Halls</a>
+                    <a href="?workers"
+                       class="flex-grow p-2 px-2 hover:bg-primary{{if eq .Page "workers"}} bg-primary p-2 px-4 border-b-2 border-white text-white{{else}} text-gray-400{{end}}">Workers</a>
+                </div>
+            {{end}}
+            {{if and (eq .User.Role 1) (eq .Page "users")}}
                 <div class="bg-secondary rounded my-6 overflow-x-auto">
                     <h2 class="text-2xl bg-primary text-gray-300">User Management</h2>
                     <table class="table-auto w-full">
@@ -86,7 +99,7 @@
                     </table>
                 </div>
             {{end}}
-            {{if or (eq .User.Role 1) (eq .User.Role 2)}}
+            {{if and (or (eq .User.Role 1) (eq .User.Role 2)) (eq .Page "courses")}}
                 <div class="bg-secondary rounded my-6 overflow-x-auto">
                     <h2 class="text-2xl bg-primary text-gray-300">Course Management</h2>
                     <table class="table-auto w-full">
@@ -128,7 +141,7 @@
                     </table>
                 </div>
             {{end}}
-            {{if eq .User.Role 1}}
+            {{if and (eq .User.Role 1) (eq .Page "lectureHalls")}}
                 <div class="bg-secondary rounded my-6 overflow-x-auto">
                     <h2 class="text-2xl bg-primary text-gray-300">Lecture Halls</h2>
                     <table class="table-auto w-full">
@@ -191,36 +204,70 @@
                                 <div class="flex items-center">
                                     <label>
                                         <span class="hidden">New Lecture Hall Name</span>
-                                        <input id="newLectureHallName" type="text" class="font-medium p-3" placeholder="MI HS1"/>
+                                        <input id="newLectureHallName" type="text" class="font-medium p-3"
+                                               placeholder="MI HS1"/>
                                     </label>
                                 </div>
                             </td>
                             <td class="py-3 px-6 text-left">
                                 <label>
                                     <span class="hidden">COMB IP</span>
-                                    <input id="newLectureHallCombIP" type="text" class="font-medium p-3" placeholder="127.0.0.1/extron1"/>
+                                    <input id="newLectureHallCombIP" type="text" class="font-medium p-3"
+                                           placeholder="127.0.0.1/extron1"/>
                                 </label>
                             </td>
                             <td class="py-3 px-6 text-center">
                                 <label>
                                     <span class="hidden">Pres IP</span>
-                                    <input id="newLectureHallPresIP" type="text" class="font-medium p-3" placeholder="127.0.0.1/extron2"/>
+                                    <input id="newLectureHallPresIP" type="text" class="font-medium p-3"
+                                           placeholder="127.0.0.1/extron2"/>
                                 </label>
                             </td>
                             <td class="py-3 px-6 text-center">
                                 <div class="flex item-center justify-center">
                                     <label>
                                         <span class="hidden">Cam IP</span>
-                                        <input id="newLectureHallCamIP" type="text" class="font-medium p-3" placeholder="127.0.0.1/extron3"/>
+                                        <input id="newLectureHallCamIP" type="text" class="font-medium p-3"
+                                               placeholder="127.0.0.1/extron3"/>
                                     </label>
                                 </div>
                             </td>
                             <td>
                                 <div class="flex item-center justify-center">
-                                    <i class="fas fa-plus text-gray-300 hover:text-purple-500 cursor-pointer" onclick="createLectureHall()"></i>
+                                    <i class="fas fa-plus text-gray-300 hover:text-purple-500 cursor-pointer"
+                                       onclick="createLectureHall()"></i>
                                 </div>
                             </td>
                         </tr>
+                        </tbody>
+                    </table>
+                </div>
+            {{else if and (eq .User.Role 1) (eq .Page "workers")}}
+                <div class="bg-secondary rounded my-6 overflow-x-auto">
+                    <h2 class="text-2xl bg-primary text-gray-300">Workers</h2>
+                    <table class="table-auto w-full">
+                        <thead>
+                        <tr class="bg-primary text-gray-300 uppercase text-sm leading-normal">
+                            <th class="py-3 px-6 text-left">Name</th>
+                            <th class="py-3 px-6 text-left">Status</th>
+                            <th class="py-3 px-6 text-left">Workload</th>
+                            <th class="py-3 px-6 text-left">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody class="text-gray-300 text-sm font-light">
+                        {{range $worker := .Workers}}
+                            <tr class="border-gray-500 hover:bg-primary">
+                                <td class="py-3 px-6">{{$worker.Host}}</td>
+                                <td class="py-3 px-6">{{if $worker.IsAlive}}<span
+                                            class="bg-success rounded-full px-2 mr-2 text-gray-600">Alive</span>{{else}}
+                                    <span class="bg-danger rounded-full px-2 mr-2 text-gray-200">Dead</span>{{end}}{{$worker.Status}}
+                                </td>
+                                <td class="py-3 px-6">{{$worker.Workload}}</td>
+                                <td class="py-3 px-6"><i
+                                            class="fas fa-trash text-gray-400 cursor-pointer hover:text-purple-500"></i>
+                                </td>
+                            </tr>
+                        {{end}}
                         </tbody>
                     </table>
                 </div>

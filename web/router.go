@@ -34,7 +34,6 @@ func configGinStaticRouter(router gin.IRoutes) {
 func configMainRoute(router gin.IRoutes) {
 	router.GET("/about", AboutPage)
 	router.GET("/admin", AdminPage)
-	router.GET("/admin/workers", WorkersPage)
 	router.GET("/admin/create-course", CreateCoursePage)
 	router.GET("/admin/course/:id", EditCoursePage)
 	router.GET("/admin/units/:streamID", LectureUnitsPage)

@@ -114,6 +114,7 @@ func main() {
 		&model.Stream{},
 		&model.ProcessingJob{},
 		&model.Worker{},
+		&model.CameraPreset{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -130,6 +131,8 @@ func main() {
 			fmt.Printf("SQL: %s\n", sql)
 		}
 	}
+
+	//tools.FetchCameraPresets()
 
 	cache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,     // number of keys to track frequency of (10M).

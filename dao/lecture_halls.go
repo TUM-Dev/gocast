@@ -2,6 +2,8 @@ package dao
 
 import (
 	"TUM-Live/model"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func GetAllLectureHalls() []model.LectureHall {
@@ -18,6 +20,10 @@ func GetLectureHallByID(id uint) (model.LectureHall, error) {
 	var lectureHall model.LectureHall
 	err := DB.First(&lectureHall, id).Error
 	return lectureHall, err
+}
+
+func SaveLectureHallFullAssoc(lectureHall model.LectureHall) {
+	DB.Clauses(clause.OnConflict{UpdateAll: true}).Session(&gorm.Session{FullSaveAssociations: true}).Updates(&lectureHall)
 }
 
 func SaveLectureHall(lectureHall model.LectureHall) {

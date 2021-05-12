@@ -110,7 +110,7 @@ func GetEventsForCourses(courses []model.Course) {
 func GetCurrentSemester() (year int, term string) {
 	var curTerm string
 	var curYear int
-	if time.Now().Month() >= 3 && time.Now().Month() < 10 {
+	if time.Now().Month() >= 4 && time.Now().Month() < 10 {
 		curTerm = "S"
 		curYear = time.Now().Year()
 	} else {
