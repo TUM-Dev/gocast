@@ -1,0 +1,103 @@
+{{define "lectureHalls"}}
+    {{- /*gotype: TUM-Live/[]model.LectureHall*/ -}}
+    <div class="bg-secondary rounded my-6 overflow-x-auto">
+        <h2 class="text-2xl bg-primary text-gray-300">Lecture Halls</h2>
+        <table class="table-auto w-full">
+            <thead>
+            <tr class="bg-primary text-gray-300 uppercase text-sm leading-normal">
+                <th class="py-3 px-6 text-left">Name</th>
+                <th class="py-3 px-6 text-left">COMB IP</th>
+                <th class="py-3 px-6 text-left">PRES IP</th>
+                <th class="py-3 px-6 text-left">CAM IP</th>
+                <th class="py-3 px-6 text-left">Actions</th>
+            </tr>
+            </thead>
+            <tbody class="text-gray-300 text-sm font-light">
+            {{range $lectureHall := .}}
+                <tr id="user{{$lectureHall.Model.ID}}" class="border-gray-500 hover:bg-primary">
+                    <td class="py-3 px-6 text-left whitespace-nowrap">
+                        <div class="flex items-center">
+                            <span class="font-medium p-3">{{$lectureHall.Name}}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-6 text-left">
+                        <label>
+                                            <span class="hidden">
+                                                Comb IP
+                                            </span>
+                            <input type="text" class="font-medium p-3"
+                                   value="{{$lectureHall.CombIP}}"/>
+                        </label>
+                    </td>
+                    <td class="py-3 px-6 text-center">
+                        <label>
+                                        <span class="hidden">
+                                            Pres IP
+                                        </span>
+                            <input type="text" class="font-medium p-3"
+                                   value="{{$lectureHall.PresIP}}"/>
+                        </label>
+                    </td>
+                    <td class="py-3 px-6 text-center">
+                        <div class="flex item-center justify-center">
+                            <label>
+                                            <span class="hidden">
+                                                Pres IP
+                                            </span>
+                                <input type="text" class="font-medium p-3"
+                                       value="{{$lectureHall.CamIP}}"/>
+                            </label>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="flex item-center justify-center">
+                            <i class="invisible fas fa-check text-gray-300 hover:text-purple-500"></i>
+                            <i class="fas fa-trash text-gray-300 hover:text-purple-500"></i>
+                        </div>
+                    </td>
+                </tr>
+            {{end}}
+            <tr class="border-gray-500 hover:bg-primary">
+                <td class="py-3 px-6 text-left whitespace-nowrap">
+                    <div class="flex items-center">
+                        <label>
+                            <span class="hidden">New Lecture Hall Name</span>
+                            <input id="newLectureHallName" type="text" class="font-medium p-3"
+                                   placeholder="MI HS1"/>
+                        </label>
+                    </div>
+                </td>
+                <td class="py-3 px-6 text-left">
+                    <label>
+                        <span class="hidden">COMB IP</span>
+                        <input id="newLectureHallCombIP" type="text" class="font-medium p-3"
+                               placeholder="127.0.0.1/extron1"/>
+                    </label>
+                </td>
+                <td class="py-3 px-6 text-center">
+                    <label>
+                        <span class="hidden">Pres IP</span>
+                        <input id="newLectureHallPresIP" type="text" class="font-medium p-3"
+                               placeholder="127.0.0.1/extron2"/>
+                    </label>
+                </td>
+                <td class="py-3 px-6 text-center">
+                    <div class="flex item-center justify-center">
+                        <label>
+                            <span class="hidden">Cam IP</span>
+                            <input id="newLectureHallCamIP" type="text" class="font-medium p-3"
+                                   placeholder="127.0.0.1/extron3"/>
+                        </label>
+                    </div>
+                </td>
+                <td>
+                    <div class="flex item-center justify-center">
+                        <i class="fas fa-plus text-gray-300 hover:text-purple-500 cursor-pointer"
+                           onclick="createLectureHall()"></i>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+{{end}}

@@ -1,0 +1,72 @@
+{{define "users"}}
+    <div class="bg-secondary rounded my-6 overflow-x-auto">
+        <h2 class="text-2xl bg-primary text-gray-300">User Management</h2>
+        <table class="table-auto w-full">
+            <thead>
+            <tr class="bg-primary text-gray-300 uppercase text-sm leading-normal">
+                <th class="py-3 px-6 text-left">Name</th>
+                <th class="py-3 px-6 text-left">Email</th>
+                <th class="py-3 px-6 text-center">Role</th>
+                <th class="py-3 px-6 text-center">Actions</th>
+            </tr>
+            </thead>
+            <tbody class="text-gray-300 text-sm font-light">
+            {{range $user := .}}
+                <tr id="user{{$user.Model.ID}}" class="border-gray-500 hover:bg-primary">
+                    <td class="py-3 px-6 text-left whitespace-nowrap">
+                        <div class="flex items-center">
+                            <span class="font-medium p-3">{{$user.Name}}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-6 text-left">
+                        <div class="flex items-center">
+                            <span class="font-medium p-3">{{$user.Email}}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-6 text-center">
+                        {{if eq $user.Role 1}}
+                            <span class="bg-info text-gray-100 py-1 px-3 rounded-full text-xs">Admin</span>
+                        {{else if eq $user.Role 2}}
+                            <span class="bg-success text-gray-100 py-1 px-3 rounded-full text-xs">Lecturer</span>
+                        {{else}}
+                            <span class="bg-warn text-gray-100 py-1 px-3 rounded-full text-xs">Generic</span>
+                        {{end}}
+                    </td>
+                    <td class="py-3 px-6 text-center">
+                        <div class="flex item-center justify-center">
+                            {{if ne $user.Role 1}}
+                                <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
+                                    <i onclick="deleteUser({{$user.Model.ID}})" class="fas fa-trash"></i>
+                                </div>
+                            {{end}}
+                        </div>
+                    </td>
+                </tr>
+            {{end}}
+
+            <tr class="hover:bg-primary">
+                <td class="py-3 px-6 text-left whitespace-nowrap">
+                    <div class="flex items-center">
+                        <input id="name" name="name" placeholder="Name" type="text" autocomplete="off"
+                               class="focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500"/>
+                    </div>
+                </td>
+                <td class="py-3 px-6 text-left">
+                    <div class="flex items-center">
+                        <input id="email" name="email" type="email" placeholder="Email" autocomplete="off"
+                               class="focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500"/>
+                    </div>
+                </td>
+                <td class="py-3 px-6 text-center"></td>
+                <td class="py-3 px-6 text-center">
+                    <div class="flex item-center justify-center">
+                        <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
+                            <i onclick="createUser()" id="createUser" class="fas fa-plus"></i>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+{{end}}
