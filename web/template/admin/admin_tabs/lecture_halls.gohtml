@@ -1,7 +1,7 @@
 {{define "lectureHalls"}}
     {{- /*gotype: TUM-Live/[]model.LectureHall*/ -}}
     <div class="rounded my-6 overflow-x-auto">
-        <h2 class="text-2xl bg-primary text-gray-300">Lecture Halls</h2>
+        <h2 class="text-2xl bg-primary text-gray-300 mb-6">Lecture Halls</h2>
         {{- /*<table class="table-auto w-full text-gray-400">
 
             <thead>
@@ -15,18 +15,30 @@
             </thead>
             <tbody class="text-gray-300 text-sm font-light">*/ -}}
         {{range $lectureHall := .}}
-            <div class="w-full border-2 border-secondary rounded">
+            <div class="w-full border-2 border-secondary rounded mb-6">
                 <div class="bg-secondary font-thin text-xl text-white p-2 px-6">{{$lectureHall.Name}}</div>
                 <div class="text-gray-300 px-4 p-2">
                     <div class="flex flex-row">
                         <div class="w-1/4 font-semibold text-white">Sources:</div>
                         <div class="w-3/4">
-                            <ul>
-                                <li>Pres: {{if $lectureHall.PresIP}}{{$lectureHall.PresIP}}{{else}}<i>Unset</i>{{end}}
+                            <ul class="flex">
+                                <li>
+                                    <label>
+                                        <input value="{{if $lectureHall.PresIP}}{{$lectureHall.PresIP}}{{end}}">
+                                        <span class="px-4">Presentation</span>
+                                    </label>
                                 </li>
-                                <li>Cam.: {{if $lectureHall.CamIP}}{{$lectureHall.CamIP}}{{else}}<i>Unset</i>{{end}}
+                                <li>
+                                    <label>
+                                        <input value="{{if $lectureHall.CamIP}}{{$lectureHall.CamIP}}{{end}}">
+                                        <span class="px-4">Camera</span>
+                                    </label>
                                 </li>
-                                <li>Comb: {{if $lectureHall.CombIP}}{{$lectureHall.CombIP}}{{else}}<i>Unset</i>{{end}}
+                                <li>
+                                    <label>
+                                        <input value="{{if $lectureHall.CombIP}}{{$lectureHall.CombIP}}{{end}}">
+                                        <span class="px-4">Combined</span>
+                                    </label>
                                 </li>
                             </ul>
                         </div>
