@@ -2,18 +2,6 @@
     {{- /*gotype: TUM-Live/[]model.LectureHall*/ -}}
     <div class="rounded my-6 overflow-x-auto">
         <h2 class="text-2xl bg-primary text-gray-300 mb-6">Lecture Halls</h2>
-        {{- /*<table class="table-auto w-full text-gray-400">
-
-            <thead>
-            <tr class="bg-primary text-gray-300 uppercase text-sm leading-normal">
-                <th class="py-3 px-6 text-left">Name</th>
-                <th class="py-3 px-6 text-left">Sources</th>
-                <th class="py-3 px-6 text-left">Presets</th>
-                <th class="py-3 px-6 text-left">Schedule</th>
-                <th class="py-3 px-6 text-left">Actions</th>
-            </tr>
-            </thead>
-            <tbody class="text-gray-300 text-sm font-light">*/ -}}
         {{range $lectureHall := .}}
             <div class="w-full border-2 border-secondary rounded mb-6">
                 <div class="bg-secondary font-thin text-xl text-white p-2 px-6">{{$lectureHall.Name}}</div>
@@ -43,96 +31,33 @@
                             </ul>
                         </div>
                     </div>
-                    <div class="flex flex-row mt-6">
-                        <div class="w-1/4 font-semibold text-white">
-                            <p class="mb-2">Presets:</p>
-                            <a title="Refresh list" class="py-1 px-2 text-white rounded bg-info">
-                                <i class="fas fa-sync"></i>
-                            </a>
-                        </div>
-                        <div class="w-3/4 flex align-middle">
-                            <i class="fas fa-angle-left self-center text-2xl hover:text-purple-500"></i>
-                            <div class="w-full overflow-x-scroll scrollbarThin">
-                                <div class="flex flex-row gap-x-2">
-                                    {{range $preset := $lectureHall.CameraPresets}}
-                                        <div style="min-width: 150px" class="text-center relative group">
-                                            <img src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
-                                                 alt="prev" width="150px">
-                                            <i title="Take new snapshot" class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-sync"></i>
-                                            <span>{{$preset.Name}}</span>
-                                        </div>
-                                    {{end}}
+                    {{if $lectureHall.CameraPresets}}
+                        <div class="flex flex-row mt-6">
+                            <div class="w-1/4 font-semibold text-white">
+                                <p class="mb-2">Presets:</p>
+                                <a title="Refresh list" class="py-1 px-2 text-white rounded bg-info">
+                                    <i class="fas fa-sync"></i>
+                                </a>
+                            </div>
+                            <div class="w-3/4 flex align-middle">
+                                <div class="w-full overflow-x-scroll scrollbarThin">
+                                    <div class="flex flex-row gap-x-2">
+                                        {{range $preset := $lectureHall.CameraPresets}}
+                                            <div style="min-width: 150px" class="text-center relative group">
+                                                <img src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
+                                                     alt="prev" width="150px">
+                                                <i title="Take new snapshot"
+                                                   class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-sync"></i>
+                                                <span>{{$preset.Name}}</span>
+                                            </div>
+                                        {{end}}
+                                    </div>
                                 </div>
                             </div>
-                            <i class="fas fa-angle-right self-center text-2xl hover:text-purple-500"></i>
                         </div>
-                    </div>
+                    {{end}}
                 </div>
             </div>
-            {{- /*<tr id="user{{$lectureHall.Model.ID}}" class="border-gray-500 hover:bg-primary">
-                    <td class="p-2 px-6 whitespace-nowrap">
-                        {{$lectureHall.Name}}
-                    </td>
-                    <td class="p-2 px-6">
-                        <button class="bg-info rounded p-2">
-                            {{$lectureHall.NumSources}}Sources</button>
-                    </td>
-                    <td class="p-2 px-6">
-                        <button class="bg-info rounded">Sources</button>
-                    </td>
-                    <td class="p-2 px-6">
-                        <button class="bg-info rounded">Sources</button>
-                    </td>
-                    <td>
-                        <div class="flex item-center justify-center gap-2">
-                            <i class="invisible fas fa-check text-gray-300 hover:text-purple-500"></i>
-                            <i class="fas fa-edit text-gray-300 hover:text-purple-500"></i>
-                            <i class="fas fa-trash text-gray-300 hover:text-purple-500"></i>
-                        </div>
-                    </td>
-                </tr>*/ -}}
         {{end}}
-        {{- /*<tr class="border-gray-500 hover:bg-primary">
-                <td class="py-3 px-6 text-left whitespace-nowrap">
-                    <div class="flex items-center">
-                        <label>
-                            <span class="hidden">New Lecture Hall Name</span>
-                            <input id="newLectureHallName" type="text" class="font-medium p-3"
-                                   placeholder="MI HS1"/>
-                        </label>
-                    </div>
-                </td>
-                <td class="py-3 px-6 text-left">
-                    <label>
-                        <span class="hidden">COMB IP</span>
-                        <input id="newLectureHallCombIP" type="text" class="font-medium p-3"
-                               placeholder="127.0.0.1/extron1"/>
-                    </label>
-                </td>
-                <td class="py-3 px-6 text-center">
-                    <label>
-                        <span class="hidden">Pres IP</span>
-                        <input id="newLectureHallPresIP" type="text" class="font-medium p-3"
-                               placeholder="127.0.0.1/extron2"/>
-                    </label>
-                </td>
-                <td class="py-3 px-6 text-center">
-                    <div class="flex item-center justify-center">
-                        <label>
-                            <span class="hidden">Cam IP</span>
-                            <input id="newLectureHallCamIP" type="text" class="font-medium p-3"
-                                   placeholder="127.0.0.1/extron3"/>
-                        </label>
-                    </div>
-                </td>
-                <td>
-                    <div class="flex item-center justify-center">
-                        <i class="fas fa-plus text-gray-300 hover:text-purple-500 cursor-pointer"
-                           onclick="createLectureHall()"></i>
-                    </div>
-                </td>
-            </tr>
-            </tbody>
-        </table> */ -}}
     </div>
 {{end}}
