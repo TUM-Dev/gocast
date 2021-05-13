@@ -12,12 +12,39 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func configGinLectureHallApiRouter(router gin.IRoutes) {
 	router.POST("/api/createLectureHall", createLectureHall)
 	router.POST("/api/updateLecturesLectureHall", updateLecturesLectureHall)
 	router.POST("/api/takeSnapshot/:lectureHallID/:presetID", takeSnapshot)
+	router.POST("/api/switchPreset/:lectureHallID/:presetID/:streamID", switchPreset)
+}
+
+func switchPreset(c *gin.Context) {
+	stream, err := dao.GetStreamByID(c, c.Param("streamID"))
+	if err != nil || !stream.LiveNow {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	course, err := dao.GetCourseById(c, stream.CourseID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	user, err := tools.GetUser(c)
+	if err != nil || !(user.Role == model.AdminType || user.ID == course.UserID) {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+	preset, err := dao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	tools.UsePreset(preset)
+	time.Sleep(time.Second * 5)
 }
 
 func takeSnapshot(c *gin.Context) {

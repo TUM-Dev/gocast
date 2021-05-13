@@ -56,6 +56,16 @@ func WatchPage(c *gin.Context) {
 		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status: http.StatusNotFound, Message: "Couldn't find stream."})
 		return
 	}
+	if userErr == nil {
+		data.IsAdminOfCourse = user.Role == model.AdminType || user.ID == course.UserID
+		if data.IsAdminOfCourse {
+			lectureHall, err := dao.GetLectureHallByID(vod.LectureHallID)
+			if err != nil {
+				sentry.CaptureException(err)
+			}
+			data.Presets = lectureHall.CameraPresets
+		}
+	}
 	if course.Visibility == "loggedin" && userErr != nil && studentErr != nil {
 		c.Status(http.StatusForbidden)
 		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status: http.StatusForbidden, Message: "Please log in to access this resource."})
@@ -83,10 +93,12 @@ func WatchPage(c *gin.Context) {
 }
 
 type WatchPageData struct {
-	IndexData   IndexData
-	Stream      model.Stream
-	Unit        *model.StreamUnit
-	Description template.HTML
-	Course      model.Course
-	Version     string
+	IndexData       IndexData
+	Stream          model.Stream
+	Unit            *model.StreamUnit
+	Description     template.HTML
+	Course          model.Course
+	Version         string
+	IsAdminOfCourse bool // is current user admin or lecturer who created this course
+	Presets         []model.CameraPreset
 }

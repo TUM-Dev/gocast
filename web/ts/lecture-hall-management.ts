@@ -12,5 +12,4 @@ function takeSnapshot(lectureHallID: number, presetID: number) {
             }
         )
     }
-
 }

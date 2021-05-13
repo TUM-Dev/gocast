@@ -9,6 +9,7 @@
     <script async src="/static/assets/ts-dist/watch.js?v={{.IndexData.VersionTag}}"></script>
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
     <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons-google-free/dist/videojs-seek-buttons.css">
+    {{if .IsAdminOfCourse}}<script async src="/static/assets/ts-dist/watch-admin.js?v={{.IndexData.VersionTag}}"></script>{{end}}
 </head>
 <body class="bg-primary h-full overflow-hidden">
 {{template "header" .IndexData}}
@@ -45,7 +46,8 @@
                     </a>
                 {{end}}
                 {{if .Stream.PlaylistUrlPRES}}
-                    <a class="flex m-auto" title="Presentation only" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}/PRES"><i
+                    <a class="flex m-auto" title="Presentation only"
+                       href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}/PRES"><i
                                 class="fas fa-edit hover:text-purple-500"></i></a>
                 {{end}}
                 {{if .Stream.PlaylistUrlCAM}}
@@ -56,13 +58,33 @@
                     <a class="flex m-auto" title="Combined view" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}"><i
                                 class="fas fa-object-group hover:text-purple-500"></i></a>
                 {{end}}
-                {{if and .IndexData.IsAdmin .Stream.LectureHallID}}
-                    <a href="?restart=1" title="Issues with the stream? Restart it." class="bg-danger text-white rounded cursor-pointer p-2 flex text-sm">Restart stream</a>
-                {{end}}
             </p>
         </div>
         <a href="/course/{{.Course.Year}}/{{.Course.TeachingTerm}}/{{.Course.Slug}}"><h2
                     class="text-gray-300 hover:text-white hover:underline text-xl">{{.Course.Name}}</h2></a>
+        {{if and .IsAdminOfCourse .Stream.LectureHallID}}
+            <div class="border-t-2 border-secondary p-4">
+                <h3 class="text-gray-400 mb-2">Administration:</h3>
+                <a href="?restart=1" title="Issues with the stream? Restart it."
+                   class="bg-danger text-white rounded cursor-pointer p-2 text-sm">Restart stream</a>
+                <p class="text-gray-400 my-2">Presets:</p>
+                <div class="w-full overflow-x-scroll scrollbarThin">
+                    <div class="flex flex-row gap-x-2">
+                        {{range $preset := .Presets}}
+                            <div style="min-width: 150px" class="text-center relative group">
+                                <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
+                                     src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
+                                     alt="prev" width="150px">
+                                <i onclick="usePreset({{$preset.LectureHallId}}, {{$preset.PresetID}})"
+                                   title="Switch to this preset"
+                                   class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-exchange-alt cursor-pointer"></i>
+                                <span title="{{$preset.Name}}" class="text-gray-400 truncate block my-2">{{$preset.Name}}</span>
+                            </div>
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+        {{end}}
         {{if .Stream.Description}}
             <div class="text-gray-300 p-4 border-t-2 border-secondary video-description">
                 <span class="font-semibold">Video Description:</span>

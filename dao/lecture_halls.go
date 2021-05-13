@@ -28,7 +28,7 @@ func CreateLectureHall(lectureHall model.LectureHall) {
 
 func GetLectureHallByID(id uint) (model.LectureHall, error) {
 	var lectureHall model.LectureHall
-	err := DB.First(&lectureHall, id).Error
+	err := DB.Preload("CameraPresets").First(&lectureHall, id).Error
 	return lectureHall, err
 }
 
