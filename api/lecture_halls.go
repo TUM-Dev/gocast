@@ -5,11 +5,14 @@ import (
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"context"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"html/template"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -18,8 +21,37 @@ import (
 func configGinLectureHallApiRouter(router gin.IRoutes) {
 	router.POST("/api/createLectureHall", createLectureHall)
 	router.POST("/api/updateLecturesLectureHall", updateLecturesLectureHall)
+	router.GET("/api/hall/:lectureHallID/export.ical", lectureHallIcal)
 	router.POST("/api/takeSnapshot/:lectureHallID/:presetID", takeSnapshot)
 	router.POST("/api/switchPreset/:lectureHallID/:presetID/:streamID", switchPreset)
+}
+
+//go:embed template
+var staticFS embed.FS
+
+func lectureHallIcal(c *gin.Context) {
+	templ, err := template.ParseFS(staticFS, "template/*.gotemplate")
+	if err != nil {
+		return
+	}
+	lhID, err := strconv.Atoi(c.Param("lectureHallID"))
+	if err != nil {
+		return
+	}
+	lectureHall, err := dao.GetLectureHallByID(uint(lhID))
+	streams, err := dao.GetAllStreamsForLectureHall(c.Param("lectureHallID"))
+	if err != nil {
+		return
+	}
+	err = templ.ExecuteTemplate(c.Writer, "ical.gotemplate", ICALData{streams, lectureHall})
+	if err != nil {
+		log.Printf("%v", err)
+	}
+}
+
+type ICALData struct {
+	Streams     []model.Stream
+	LectureHall model.LectureHall
 }
 
 func switchPreset(c *gin.Context) {

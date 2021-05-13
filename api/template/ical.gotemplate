@@ -1,0 +1,13 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+{{- /*gotype: TUM-Live/api.ICALData*/ -}}
+{{$lectureHall := .LectureHall}}
+{{range $stream := .Streams}}
+BEGIN:VEVENT
+DTSTART:{{$stream.IsoStart}}
+DTEND:{{$stream.IsoEnd}}
+LOCATION:{{$lectureHall.Name}}
+SUMMARY:Livestream From {{$lectureHall.Name}}
+END:VEVENT
+{{end}}
+END:VCALENDAR

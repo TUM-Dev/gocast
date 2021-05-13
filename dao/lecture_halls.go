@@ -6,6 +6,12 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+func GetAllStreamsForLectureHall(lectureHallID string) ([]model.Stream, error) {
+	var streams []model.Stream
+	err := DB.Model(&model.Stream{}).Where("lecture_hall_id = ?", lectureHallID).Scan(&streams).Error
+	return streams, err
+}
+
 func FindPreset(lectureHallID string, presetID string) (model.CameraPreset, error) {
 	var preset model.CameraPreset
 	err := DB.First(&preset, "preset_id = ? AND lecture_hall_id = ?", presetID, lectureHallID).Error
