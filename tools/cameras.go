@@ -21,11 +21,22 @@ func FetchCameraPresets() {
 				sentry.CaptureException(err)
 				continue
 			}
-			for _, preset := range presets {
-				preset.LectureHallId = lectureHall.ID
+			for i, _ := range presets {
+				findExistingImageForPreset(&presets[i], lectureHall.CameraPresets)
+				presets[i].LectureHallId = lectureHall.ID
 			}
 			lectureHall.CameraPresets = presets
 			dao.SaveLectureHallFullAssoc(lectureHall)
+		}
+	}
+}
+
+//findExistingImageForPreset applies an image to the preset if it already existed.
+func findExistingImageForPreset(m *model.CameraPreset, presets []model.CameraPreset) {
+	for _, preset := range presets {
+		if preset.Name == m.Name && preset.PresetID == m.PresetID {
+			m.Image = preset.Image
+			return
 		}
 	}
 }
