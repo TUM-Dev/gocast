@@ -6,6 +6,16 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+func FindPreset(lectureHallID string, presetID string) (model.CameraPreset, error) {
+	var preset model.CameraPreset
+	err := DB.First(&preset, "preset_id = ? AND lecture_hall_id = ?", presetID, lectureHallID).Error
+	return preset, err
+}
+
+func SavePreset(preset model.CameraPreset) error {
+	return DB.Clauses(clause.OnConflict{UpdateAll: true}).Save(&preset).Error
+}
+
 func GetAllLectureHalls() []model.LectureHall {
 	var lectureHalls []model.LectureHall
 	_ = DB.Preload("CameraPresets").Find(&lectureHalls)

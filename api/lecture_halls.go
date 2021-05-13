@@ -6,6 +6,8 @@ import (
 	"TUM-Live/tools"
 	"context"
 	"encoding/json"
+	"fmt"
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
@@ -15,6 +17,26 @@ import (
 func configGinLectureHallApiRouter(router gin.IRoutes) {
 	router.POST("/api/createLectureHall", createLectureHall)
 	router.POST("/api/updateLecturesLectureHall", updateLecturesLectureHall)
+	router.POST("/api/takeSnapshot/:lectureHallID/:presetID", takeSnapshot)
+}
+
+func takeSnapshot(c *gin.Context) {
+	if user, err := tools.GetUser(c); err != nil || user.Role != model.AdminType {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+	preset, err := dao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		sentry.CaptureException(err)
+	}
+	tools.TakeSnapshot(preset)
+	preset, err = dao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		sentry.CaptureException(err)
+	}
+	c.JSONP(http.StatusOK, gin.H{"path": fmt.Sprintf("/public/%s", preset.Image)})
 }
 
 func updateLecturesLectureHall(c *gin.Context) {

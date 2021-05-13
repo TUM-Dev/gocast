@@ -5,7 +5,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	uuid "github.com/satori/go.uuid"
 	"log"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -22,6 +24,27 @@ type Camera struct {
 //auth: username and password of the camera (e.g. "user:password")
 func NewCamera(ip string, auth string) *Camera {
 	return &Camera{Ip: ip, Auth: auth}
+}
+
+func (c *Camera) TakeSnapshot(outDir string) (filename string, err error) {
+	filename = fmt.Sprintf("%s%s", uuid.NewV4().String(), ".jpg")
+	request, err := c.makeAuthenticatedRequest("GET", "", "/axis-cgi/jpg/image.cgi?compression=75")
+	if err != nil {
+		return "", err
+	}
+	imageFile, err := os.Create(fmt.Sprintf("%s/%s", outDir, filename))
+	if err != nil {
+		return "", err
+	}
+	_, err = imageFile.Write(request.Bytes())
+	if err != nil {
+		return "", err
+	}
+	err = imageFile.Close()
+	if err != nil {
+		return "", err
+	}
+	return filename, nil
 }
 
 //SetPreset tells the camera to use a preset specified by presetId
