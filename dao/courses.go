@@ -10,6 +10,12 @@ import (
 	"time"
 )
 
+func GetAllCourses() ([]model.Course, error) {
+	var courses []model.Course
+	err := DB.Find(&courses).Error
+	return courses, err
+}
+
 func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Course, err error) {
 	cachedCourses, found := Cache.Get(fmt.Sprintf("coursesByUserID%v", userid))
 	if found {

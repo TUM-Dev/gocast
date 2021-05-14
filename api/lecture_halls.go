@@ -21,7 +21,7 @@ import (
 func configGinLectureHallApiRouter(router gin.IRoutes) {
 	router.POST("/api/createLectureHall", createLectureHall)
 	router.POST("/api/updateLecturesLectureHall", updateLecturesLectureHall)
-	router.GET("/api/hall/:lectureHallID/export.ics", lectureHallIcal)
+	router.GET("/api/hall/all.ics", lectureHallIcal)
 	router.POST("/api/takeSnapshot/:lectureHallID/:presetID", takeSnapshot)
 	router.POST("/api/switchPreset/:lectureHallID/:presetID/:streamID", switchPreset)
 }
@@ -34,25 +34,30 @@ func lectureHallIcal(c *gin.Context) {
 	if err != nil {
 		return
 	}
-	lhID, err := strconv.Atoi(c.Param("lectureHallID"))
+	/*lhID, err := strconv.Atoi(c.Param("lectureHallID"))
+	if err != nil {
+		return
+	}*/
+	lectureHalls := dao.GetAllLectureHalls()
+	streams, err := dao.GetAllStreams()
 	if err != nil {
 		return
 	}
-	lectureHall, err := dao.GetLectureHallByID(uint(lhID))
-	streams, err := dao.GetAllStreamsForLectureHall(c.Param("lectureHallID"))
+	courses, err := dao.GetAllCourses()
 	if err != nil {
 		return
 	}
 	c.Header("content-type", "text/calendar")
-	err = templ.ExecuteTemplate(c.Writer, "ical.gotemplate", ICALData{streams, lectureHall})
+	err = templ.ExecuteTemplate(c.Writer, "ical.gotemplate", ICALData{streams, lectureHalls, courses})
 	if err != nil {
 		log.Printf("%v", err)
 	}
 }
 
 type ICALData struct {
-	Streams     []model.Stream
-	LectureHall model.LectureHall
+	Streams      []model.Stream
+	LectureHalls []model.LectureHall
+	Courses      []model.Course
 }
 
 func switchPreset(c *gin.Context) {
