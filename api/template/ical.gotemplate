@@ -1,4 +1,5 @@
 BEGIN:VCALENDAR
+PRODID:Homemade Garbage ICAL generator
 VERSION:2.0
 BEGIN:VTIMEZONE
 TZID:W. Europe Standard Time
@@ -14,16 +15,13 @@ TZOFFSETFROM:+0100
 TZOFFSETTO:+0200
 RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=-1SU;BYMONTH=3
 END:DAYLIGHT
-END:VTIMEZONE
-{{- /*gotype: TUM-Live/api.ICALData*/ -}}
-{{$lectureHalls := .LectureHalls}}
-{{$courses := .Courses}}
-{{range $stream := .Streams}}
-BEGIN:VEVENT
+END:VTIMEZONE{{- /*gotype: TUM-Live/api.ICALData*/ -}}{{$lectureHalls := .LectureHalls}}{{$courses := .Courses}}
+{{range $stream := .Streams}}BEGIN:VEVENT
+UID:sdfg9438wpwoskegt{{$stream.Model.ID}}
 DTSTART;TZID=W. Europe Standard Time:{{$stream.IsoStart}}
-DTSTART;TZID=W. Europe Standard Time:{{$stream.IsoEnd}}
+DTEND;TZID=W. Europe Standard Time:{{$stream.IsoEnd}}
+DTSTAMP:{{$stream.IsoCreated}}
 LOCATION:{{if $stream.LectureHallID}}{{range $hall := $lectureHalls}}{{if eq $hall.Model.ID $stream.LectureHallID}}{{$hall.Name}}{{end}}{{end}}{{else}}Selfstream{{end}}
 SUMMARY:Livestream {{range $course := $courses}}{{if eq $course.Model.ID $stream.CourseID}}{{$course.Name}}{{end}}{{end}}
 END:VEVENT
-{{end}}
-END:VCALENDAR
+{{end}}END:VCALENDAR

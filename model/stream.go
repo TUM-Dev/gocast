@@ -55,3 +55,7 @@ func (s Stream) IsoStart() string {
 func (s Stream) IsoEnd() string {
 	return s.End.Format("20060102T150405")
 }
+
+func (s Stream) IsoCreated() string {
+	return s.Model.CreatedAt.Format("20060102T150405")
+}
