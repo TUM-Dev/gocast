@@ -8,6 +8,14 @@
                 <div class="bg-secondary font-thin text-xl text-white p-2 px-6">{{$lectureHall.Name}}</div>
                 <div class="text-gray-300 px-4 p-2">
                     <div class="flex flex-row">
+                        <div class="w-1/4 font-semibold text-white">Calendar:</div>
+                        <div class="w-3/4">
+                            <a href="/api/hall/{{$lectureHall.ID}}/export.ics">https://live.mm.rbg.tum.de/api/hall/{{$lectureHall.ID}}/export.ics</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-gray-300 px-4 p-2">
+                    <div class="flex flex-row">
                         <div class="w-1/4 font-semibold text-white">Sources:</div>
                         <div class="w-3/4">
                             <ul class="flex">

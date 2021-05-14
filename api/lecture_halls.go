@@ -21,7 +21,7 @@ import (
 func configGinLectureHallApiRouter(router gin.IRoutes) {
 	router.POST("/api/createLectureHall", createLectureHall)
 	router.POST("/api/updateLecturesLectureHall", updateLecturesLectureHall)
-	router.GET("/api/hall/:lectureHallID/export.ical", lectureHallIcal)
+	router.GET("/api/hall/:lectureHallID/export.ics", lectureHallIcal)
 	router.POST("/api/takeSnapshot/:lectureHallID/:presetID", takeSnapshot)
 	router.POST("/api/switchPreset/:lectureHallID/:presetID/:streamID", switchPreset)
 }
@@ -43,6 +43,7 @@ func lectureHallIcal(c *gin.Context) {
 	if err != nil {
 		return
 	}
+	c.Header("content-type", "text/calendar")
 	err = templ.ExecuteTemplate(c.Writer, "ical.gotemplate", ICALData{streams, lectureHall})
 	if err != nil {
 		log.Printf("%v", err)
