@@ -1,12 +1,27 @@
 BEGIN:VCALENDAR
 VERSION:2.0
+BEGIN:VTIMEZONE
+TZID:W. Europe Standard Time
+BEGIN:STANDARD
+DTSTART:16010101T030000
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=-1SU;BYMONTH=10
+END:STANDARD
+BEGIN:DAYLIGHT
+DTSTART:16010101T020000
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=-1SU;BYMONTH=3
+END:DAYLIGHT
+END:VTIMEZONE
 {{- /*gotype: TUM-Live/api.ICALData*/ -}}
 {{$lectureHalls := .LectureHalls}}
 {{$courses := .Courses}}
 {{range $stream := .Streams}}
 BEGIN:VEVENT
-DTSTART:{{$stream.IsoStart}}
-DTEND:{{$stream.IsoEnd}}
+DTSTART;TZID=W. Europe Standard Time:{{$stream.IsoStart}}
+DTSTART;TZID=W. Europe Standard Time:{{$stream.IsoEnd}}
 LOCATION:{{if $stream.LectureHallID}}{{range $hall := $lectureHalls}}{{if eq $hall.Model.ID $stream.LectureHallID}}{{$hall.Name}}{{end}}{{end}}{{else}}Selfstream{{end}}
 SUMMARY:Livestream {{range $course := $courses}}{{if eq $course.Model.ID $stream.CourseID}}{{$course.Name}}{{end}}{{end}}
 END:VEVENT

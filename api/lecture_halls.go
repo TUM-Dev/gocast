@@ -10,11 +10,11 @@ import (
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
+	"text/template"
 	"time"
 )
 
