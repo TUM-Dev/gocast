@@ -20,7 +20,7 @@
     {{if .LiveStreams}}
         <h2 class="text-2xl text-white">Currently Live</h2>{{end}}
     {{range $liveStream := .LiveStreams }}
-        <div class="py-2 px-4">
+        <div class="py-2 px-4 course{{$liveStream.Course.Model.ID}}">
             <a href="/w/{{$liveStream.Course.Slug}}/{{$liveStream.Stream.Model.ID}}">
                 <h3 class="text-xl text-gray-300 hover:text-white inline">{{$liveStream.Course.Name}}
                     : {{if $liveStream.Stream.Name}}{{$liveStream.Stream.Name}}{{else}}Lecture: {{$liveStream.Stream.Start.Month}} {{printf "%02d." $liveStream.Stream.Start.Day}} {{$liveStream.Stream.Start.Year}}{{end}}</h3>
@@ -34,9 +34,14 @@
         <h2 class="text-2xl text-white">My Courses</h2>
     {{end}}
     {{range $course := .Courses }}
-        <div class="py-2 px-4">
-            <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
+        <div class="py-2 group course{{$course.Model.ID}}">
+            <div class="flex items-center">
+                <i class="fas fancyeye opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white mr-2 cursor-pointer" title="Hide this course" onclick="hideCourse({{$course.Model.ID}}, {{$course.Name}})"></i>
+                <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                 <h3 class="text-xl text-gray-300 hover:text-white">{{$course.Name}}</h3></a>
+            </div>
+            <div class="flex">
+                <i class="fas fa-eye opacity-0 hidden mr-2"></i>
             <p class="text-gray-400 font-sans font-light">
                 {{if $course.IsLive}}
                     Live now.
@@ -48,25 +53,42 @@
                     {{end}}
                 {{end}}
             </p>
+            </div>
         </div>
     {{end}}
     {{if .PublicCourses}}
         <h2 class="text-2xl text-white pt-4">Public Courses</h2>
         {{range $course := .PublicCourses }}
-            <div class="py-2 px-4">
-                <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
-                    <h3 class="text-xl text-gray-300 hover:text-gray-200">{{$course.Name}}</h3>
-                </a>
-                <p class="text-gray-400 font-light">
-                    {{if $course.HasNextLecture}}
-                        {{$next := $course.GetNextLectureDate}}Next Lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
-                    {{else}}
-                        No upcoming Lectures
-                    {{end}}
-                </p>
+            <div class="py-2 group course{{$course.Model.ID}}">
+                <div class="flex items-center">
+                    <i class="fas fancyeye opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white mr-2 cursor-pointer" title="Hide this course" onclick="hideCourse({{$course.Model.ID}}, {{$course.Name}})"></i>
+                    <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
+                        <h3 class="text-xl text-gray-300 hover:text-white">{{$course.Name}}</h3></a>
+                </div>
+                <div class="flex">
+                    <i class="fas fa-eye opacity-0 hidden mr-2"></i>
+                    <p class="text-gray-400 font-sans font-light">
+                        {{if $course.IsLive}}
+                            Live now.
+                        {{else}}
+                            {{if $course.HasNextLecture}}
+                                {{$next := $course.GetNextLectureDate}}Next Lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
+                            {{else}}
+                                No upcoming Lectures
+                            {{end}}
+                        {{end}}
+                    </p>
+                </div>
             </div>
         {{end}}
     {{end}}
+    <div class="group">
+        <p class="text-gray-400 hover:text-white cursor-pointer" id="hiddenCoursesText"></p>
+        <div class="hidden group-hover:block text-gray-400">
+            <ul id="hiddenCoursesRestoreList">
+            </ul>
+        </div>
+    </div>
 </div>
 <div class="flex justify-center absolute bottom-0 w-full p-2">
     {{$currentYear := .CurrentYear}}

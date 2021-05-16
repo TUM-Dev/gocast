@@ -31,3 +31,45 @@ function copyToClipboard(text: string) {
     document.execCommand("copy");
     document.body.removeChild(dummy);
 }
+
+function hideCourse(id: number, name: string) {
+    let hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses") ? JSON.parse(localStorage.getItem("hiddenCourses")) : new Array<Array<string>>()
+    if (!(hidden.indexOf([id.toString(), name]) !== -1)) {
+        hidden.push([id.toString(), name])
+        localStorage.setItem("hiddenCourses", JSON.stringify(hidden))
+    }
+    document.location.reload()
+}
+
+function unhideCourse(id: string, name: string) {
+    let hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses") ? JSON.parse(localStorage.getItem("hiddenCourses")) : new Array<Array<string>>()
+    let newHidden: Array<Array<string>> = hidden.filter(e => {
+        return (e[0] !== id)
+    })
+    localStorage.setItem("hiddenCourses", JSON.stringify(newHidden))
+    document.location.reload()
+}
+
+function initHiddenCourses() {
+    let hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses") ? JSON.parse(localStorage.getItem("hiddenCourses")) : new Array<Array<string>>()
+    const hiddenCoursesRestoreList = document.getElementById("hiddenCoursesRestoreList") as HTMLUListElement
+    const hiddenCoursesText = document.getElementById("hiddenCoursesText") as HTMLParagraphElement
+    hidden.forEach(h => {
+        const liElem = document.createElement("li")
+        liElem.classList.add("hover:text-white", "cursor-pointer")
+        liElem.innerText = "restore " + h[1]
+        liElem.onclick = function () {
+            unhideCourse(h[0], h[1])
+        }
+        hiddenCoursesRestoreList.appendChild(liElem)
+        const elems = document.getElementsByClassName("course" + h[0])
+        for (let i = 0; i < elems.length; i++) {
+            elems[i].classList.add("hidden")
+        }
+    })
+    if (hidden.length !== 0) {
+        hiddenCoursesText.innerText = hidden.length + " hidden courses"
+    }
+}
+
+initHiddenCourses()

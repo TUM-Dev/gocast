@@ -143,3 +143,10 @@ input[type='checkbox']:checked + label {
 .video-description a {
     @apply text-gray-300 hover:text-white hover:underline;
 }
+
+.fancyeye:before{
+    content:"\f06e";
+}
+.fancyeye:hover:before{
+    content: "\f070";
+}
