@@ -4,6 +4,7 @@ import (
 	"TUM-Live/dao"
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
@@ -128,9 +129,18 @@ func putVod(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	stream, _ := dao.GetStreamByID(context.Background(), strconv.Itoa(int(req.StreamId)))
+	stream, _ := dao.GetStreamByID(context.Background(), req.StreamId)
 	stream.Recording = true
-	stream.PlaylistUrl = req.HlsUrl
+	switch req.Version {
+	case "COMB":
+		stream.PlaylistUrl = req.HlsUrl
+	case "PRES":
+		stream.PlaylistUrlPRES = req.HlsUrl
+	case "CAM":
+		stream.PlaylistUrlCAM = req.HlsUrl
+	default:
+		sentry.CaptureException(errors.New("invalid source type: " + req.Version))
+	}
 	stream.FilePath = req.FilePath
 	_ = dao.SaveStream(&stream)
 }
@@ -168,9 +178,8 @@ type jobData struct {
 }
 
 type putVodData struct {
-	Name     string
-	Start    time.Time
 	HlsUrl   string
+	Version  string
 	FilePath string
-	StreamId uint
+	StreamId string
 }

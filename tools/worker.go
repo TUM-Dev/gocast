@@ -15,7 +15,7 @@ import (
 func NotifyWorkers() {
 	log.Println("getting streams for workers")
 	streams := dao.GetDueStreamsFromLectureHalls()
-	workers := dao.GetWorkersOrderedByWorkload()
+	workers := dao.GetAliveWorkersOrderedByWorkload()
 	for i, stream := range streams {
 		assignedWorker := workers[i%len(workers)]
 		log.Printf("stream %v assigned to %v", stream.Model.ID, assignedWorker.Host)
@@ -39,7 +39,8 @@ func NotifyWorkers() {
 			ID:         fmt.Sprintf("%v", stream.Model.ID),
 			Sources:    sources,
 			StreamEnd:  stream.End,
-			StreamName: fmt.Sprintf("%s%v", course.Slug, stream.Start.Format("02012006")), // again, wtf go
+			StreamName: fmt.Sprintf("%s%v", course.Slug, stream.Start.Format("2006_01_02_15_04")), // again, wtf go
+			Upload:     course.VODEnabled,
 		}); err == nil {
 			_, err := http.Post(fmt.Sprintf("https://%s/%s/streamLectureHall", assignedWorker.Host, assignedWorker.WorkerID), "application/json", bytes.NewBuffer(req))
 			if err != nil {
@@ -58,4 +59,5 @@ type streamLectureHallRequest struct {
 	StreamEnd  time.Time         `json:"streamEnd"`
 	StreamName string            `json:"streamName"`
 	ID         string            `json:"id"`
+	Upload     bool              `json:"upload"`
 }

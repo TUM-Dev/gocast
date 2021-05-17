@@ -6,6 +6,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"gorm.io/gorm"
 	"log"
+	"time"
 )
 
 func SaveWorker(worker model.Worker) {
@@ -21,9 +22,9 @@ func GetAllWorkers() ([]model.Worker, error) {
 	return workers, err
 }
 
-func GetWorkersOrderedByWorkload() []model.Worker {
+func GetAliveWorkersOrderedByWorkload() []model.Worker {
 	var workers []model.Worker
-	DB.Model(&model.Worker{}).Order("workload").Scan(&workers)
+	DB.Model(&model.Worker{}).Where("last_seen > ?", time.Now().Add(time.Minute*-5)).Order("workload").Scan(&workers)
 	return workers
 }
 
