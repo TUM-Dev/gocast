@@ -23,8 +23,6 @@
                 preload="auto">
             <source src="{{if eq .Version "PRES"}}{{.Stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{.Stream.PlaylistUrlCAM}}{{else}}{{.Stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if .Stream.StartOffset}}?wowzaplaystart={{.Stream.StartOffset}}&wowzaplayduration={{.Stream.EndOffset}}{{end}}"
                     type="application/x-mpegURL"/>
-            <source src="{{if eq .Version "PRES"}}{{.Stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{.Stream.PlaylistUrlCAM}}{{else}}{{.Stream.PlaylistUrl}}{{end}}?anc{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if .Stream.StartOffset}}?wowzaplaystart={{.Stream.StartOffset}}&wowzaplayduration={{.Stream.EndOffset}}{{end}}"
-                    type="application/x-mpegURL"/>
             <p class="vjs-no-js">
                 To view this video please enable JavaScript.
             </p>
@@ -62,7 +60,7 @@
         </div>
         <a href="/course/{{.Course.Year}}/{{.Course.TeachingTerm}}/{{.Course.Slug}}"><h2
                     class="text-gray-300 hover:text-white hover:underline text-xl">{{.Course.Name}}</h2></a>
-        {{if and .IsAdminOfCourse and ( .Stream.LectureHallID .Stream.LiveNow)}}
+        {{if and .IsAdminOfCourse (and .Stream.LectureHallID .Stream.LiveNow)}}
             <div class="border-t-2 border-secondary p-4">
                 <h3 class="text-gray-400 mb-2">Administration:</h3>
                 <a href="?restart=1" title="Issues with the stream? Restart it."
