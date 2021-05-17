@@ -62,7 +62,7 @@
         </div>
         <a href="/course/{{.Course.Year}}/{{.Course.TeachingTerm}}/{{.Course.Slug}}"><h2
                     class="text-gray-300 hover:text-white hover:underline text-xl">{{.Course.Name}}</h2></a>
-        {{if and .IsAdminOfCourse .Stream.LectureHallID}}
+        {{if and .IsAdminOfCourse and ( .Stream.LectureHallID .Stream.LiveNow)}}
             <div class="border-t-2 border-secondary p-4">
                 <h3 class="text-gray-400 mb-2">Administration:</h3>
                 <a href="?restart=1" title="Issues with the stream? Restart it."
