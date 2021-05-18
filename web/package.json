@@ -9,7 +9,6 @@
   "scripts": {
     "postinstall": "npm run typescript-compile && npm run tailwind-compile && npm prune --production",
     "typescript-compile": "npx tsc",
-    "typescript-minify": "npx google-closure-compiler -O ADVANCED --js 'assets/ts-dist-temp/**.js' --js_output_file assets/ts-dist/main.min.js && rm -rf assets/ts-dist-temp",
     "tailwind-compile": "NODE_ENV=production npx tailwindcss build assets/css/main.css -o ./assets/css-dist/main.css"
   },
   "author": "Joscha Henningsen",
@@ -29,7 +28,6 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.2.5",
-    "google-closure-compiler": "^20210406.0.0",
     "postcss": "^8.2.9",
     "tailwindcss": "^2.0.4",
     "typescript": "^4.2.3"
