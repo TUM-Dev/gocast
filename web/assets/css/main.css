@@ -122,6 +122,7 @@ input[type='checkbox']:checked + label {
 .scrollbarThin:hover {
     margin-bottom: 0;
 }
+
 .watchContent::-webkit-scrollbar {
     display: none;
 }
@@ -144,10 +145,11 @@ input[type='checkbox']:checked + label {
     @apply text-gray-300 hover:text-white hover:underline;
 }
 
-.fancyeye:before{
-    content:"\f06e";
+.fancyeye:before {
+    content: "\f06e";
 }
-.fancyeye:hover:before{
+
+.fancyeye:hover:before {
     content: "\f070";
 }
 
@@ -159,6 +161,14 @@ input[type='checkbox']:checked + label {
     border-color: #474747 !important;
 }
 
-.fc-scroller{
+.fc-scroller {
     @apply scrollbarThin;
+}
+
+.fc-v-event {
+    background-color: #3070b3 !important;
+}
+
+.fc-timegrid-event {
+    box-shadow: 0 0 0 1px #ffffff60 !important;
 }
