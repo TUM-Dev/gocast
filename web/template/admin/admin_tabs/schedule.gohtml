@@ -20,8 +20,8 @@
                     if (eventLocation !== undefined && eventLocation !== "") {
                         e.el.title = e.el.title + " Location: " + eventLocation;
                         const locationElem = document.createElement("i");
-                        locationElem.innerText = eventLocation;
-                        e.el.getElementsByClassName("fc-event-title-container")[0].appendChild(locationElem);
+                        locationElem.innerHTML = "&#183;" + eventLocation;
+                        e.el.getElementsByClassName("fc-event-time")[0].appendChild(locationElem);
                     }
                 }
             });
