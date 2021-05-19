@@ -1,11 +1,11 @@
 {{define "schedule"}}
-    <link href="static/node_modules/fullcalendar/main.min.css" rel="stylesheet" />
+    <link href="static/node_modules/fullcalendar/main.min.css" rel="stylesheet"/>
     <script src="/static/node_modules/ical.js/build/ical.min.js"></script>
     <script src="/static/node_modules/fullcalendar/main.min.js"></script>
     <script src="/static/node_modules/@fullcalendar/icalendar/main.global.min.js"></script>
     <div id="calendar" class="pt-4"></div>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             var calendarEl = document.getElementById("calendar");
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: "timeGridWeek",
@@ -13,6 +13,16 @@
                 events: {
                     url: "/api/hall/all.ics",
                     format: "ics"
+                },
+                eventDidMount: function (e) {
+                    e.el.title = e.event.title;
+                    const eventLocation = e.event.extendedProps.location;
+                    if (eventLocation !== undefined && eventLocation !== "") {
+                        e.el.title = e.el.title + " Location: " + eventLocation;
+                        const locationElem = document.createElement("i");
+                        locationElem.innerText = eventLocation;
+                        e.el.getElementsByClassName("fc-event-title-container")[0].appendChild(locationElem);
+                    }
                 }
             });
             calendar.render();

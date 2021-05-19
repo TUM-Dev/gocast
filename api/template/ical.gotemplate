@@ -22,6 +22,6 @@ DTSTART;TZID=W. Europe Standard Time:{{$stream.IsoStart}}
 DTEND;TZID=W. Europe Standard Time:{{$stream.IsoEnd}}
 DTSTAMP:{{$stream.IsoCreated}}
 LOCATION:{{if $stream.LectureHallID}}{{range $hall := $lectureHalls}}{{if eq $hall.Model.ID $stream.LectureHallID}}{{$hall.Name}}{{end}}{{end}}{{else}}Selfstream{{end}}
-SUMMARY:Livestream {{range $course := $courses}}{{if eq $course.Model.ID $stream.CourseID}}{{$course.Name}}{{end}}{{end}}
+SUMMARY:{{range $course := $courses}}{{if eq $course.Model.ID $stream.CourseID}}{{$course.Name}}{{end}}{{end}}
 END:VEVENT
 {{end}}END:VCALENDAR
