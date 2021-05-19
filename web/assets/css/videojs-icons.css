@@ -1,0 +1,208 @@
+@font-face {
+  font-family: TUM-Live;
+  src: url(data:application/font-woff;charset=utf-8;base64,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) format("woff");
+  font-weight: normal;
+  font-style: normal; }
+
+.vjs-icon-play {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-play:before {
+  content: "\f101"; }
+
+.vjs-icon-play-circle {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-play-circle:before {
+  content: "\f102"; }
+
+.vjs-icon-pause {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-pause:before {
+  content: "\f103"; }
+
+.vjs-icon-volume-mute {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-volume-mute:before {
+  content: "\f104"; }
+
+.vjs-icon-volume-low {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-volume-low:before {
+  content: "\f105"; }
+
+.vjs-icon-volume-mid {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-volume-mid:before {
+  content: "\f106"; }
+
+.vjs-icon-volume-high {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-volume-high:before {
+  content: "\f107"; }
+
+.vjs-icon-fullscreen-enter {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-fullscreen-enter:before {
+  content: "\f108"; }
+
+.vjs-icon-fullscreen-exit {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-fullscreen-exit:before {
+  content: "\f109"; }
+
+.vjs-icon-square {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-square:before {
+  content: "\f10a"; }
+
+.vjs-icon-spinner {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-spinner:before {
+  content: "\f10b"; }
+
+.vjs-icon-subtitles {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-subtitles:before {
+  content: "\f10c"; }
+
+.vjs-icon-captions {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-captions:before {
+  content: "\f10d"; }
+
+.vjs-icon-chapters {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-chapters:before {
+  content: "\f10e"; }
+
+.vjs-icon-share {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-share:before {
+  content: "\f10f"; }
+
+.vjs-icon-cog {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-cog:before {
+  content: "\f110"; }
+
+.vjs-icon-circle {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-circle:before {
+  content: "\f111"; }
+
+.vjs-icon-circle-outline {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-circle-outline:before {
+  content: "\f112"; }
+
+.vjs-icon-circle-inner-circle {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-circle-inner-circle:before {
+  content: "\f113"; }
+
+.vjs-icon-hd {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-hd:before {
+  content: "\f114"; }
+
+.vjs-icon-cancel {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-cancel:before {
+  content: "\f115"; }
+
+.vjs-icon-replay {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-replay:before {
+  content: "\f116"; }
+
+.vjs-icon-audio-description {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-audio-description:before {
+  content: "\f117"; }
+
+.vjs-icon-audio {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-audio:before {
+  content: "\f118"; }
+
+.vjs-icon-next-item {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-next-item:before {
+  content: "\f119"; }
+
+.vjs-icon-previous-item {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-previous-item:before {
+  content: "\f11a"; }
+
+.vjs-icon-picture-in-picture-enter {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-picture-in-picture-enter:before {
+  content: "\f11b"; }
+
+.vjs-icon-picture-in-picture-exit {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-picture-in-picture-exit:before {
+  content: "\f11c"; }
+
+.vjs-icon-theater-toggle {
+  font-family: TUM-Live;
+  font-weight: normal;
+  font-style: normal; }
+.vjs-icon-theater-toggle:before {
+  content: "\f11d"; }

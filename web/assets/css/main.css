@@ -172,3 +172,15 @@ input[type='checkbox']:checked + label {
 .fc-timegrid-event {
     box-shadow: 0 0 0 1px #ffffff60 !important;
 }
+
+.vjs-theater-mode-control>.vjs-icon-placeholder {
+    font-family: TUM-Live;
+}
+.vjs-theater-mode-control>.vjs-icon-placeholder:before {
+    content: "\f11d";
+}
+
+.theater-mode {
+    height: calc((9 / 16) * 100vw)!important;
+    max-height: calc(100vh - 169px)!important;
+}
