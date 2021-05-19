@@ -23,6 +23,8 @@
                     <a href="?lectureHalls"
                        class="flex-grow p-2 px-2 hover:bg-primary{{if eq .Page "lectureHalls"}} bg-primary p-2 px-4 border-b-2 border-white text-white{{else}} text-gray-400{{end}}">Lecture
                         Halls</a>
+                    <a href="?schedule"
+                       class="flex-grow p-2 px-2 hover:bg-primary{{if eq .Page "schedule"}} bg-primary p-2 px-4 border-b-2 border-white text-white{{else}} text-gray-400{{end}}">Schedule</a>
                     <a href="?workers"
                        class="flex-grow p-2 px-2 hover:bg-primary{{if eq .Page "workers"}} bg-primary p-2 px-4 border-b-2 border-white text-white{{else}} text-gray-400{{end}}">Workers</a>
                 </div>
@@ -35,6 +37,8 @@
                 {{template "lectureHalls" .LectureHalls}}
             {{else if and (eq .User.Role 1) (eq .Page "workers")}}
                 {{template "workers" .Workers}}
+            {{else if and (eq .User.Role 1) (eq .Page "schedule")}}
+                {{template "schedule"}}
             {{end}}
         </div>
     </div>

@@ -47,6 +47,9 @@ func AdminPage(c *gin.Context) {
 	if _, ok := c.Request.URL.Query()["workers"]; ok {
 		page = "workers"
 	}
+	if _, ok := c.Request.URL.Query()["schedule"]; ok {
+		page = "schedule"
+	}
 	_ = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{User: user, Users: users, Courses: courses, IndexData: indexData, LectureHalls: lectureHalls, Page: page, Workers: workers})
 }
 

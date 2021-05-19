@@ -1,0 +1,21 @@
+{{define "schedule"}}
+    <link href="static/node_modules/fullcalendar/main.min.css" rel="stylesheet" />
+    <script src="/static/node_modules/ical.js/build/ical.min.js"></script>
+    <script src="/static/node_modules/fullcalendar/main.min.js"></script>
+    <script src="/static/node_modules/@fullcalendar/icalendar/main.global.min.js"></script>
+    <div id="calendar" class="pt-4"></div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var calendarEl = document.getElementById("calendar");
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: "timeGridWeek",
+                allDaySlot: false,
+                events: {
+                    url: "/api/hall/all.ics",
+                    format: "ics"
+                }
+            });
+            calendar.render();
+        });
+    </script>
+{{end}}

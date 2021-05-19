@@ -150,3 +150,15 @@ input[type='checkbox']:checked + label {
 .fancyeye:hover:before{
     content: "\f070";
 }
+
+#calendar {
+    @apply text-white;
+}
+
+#calendar table, #calendar td, .fc-theme-standard td, .fc-theme-standard th, .fc-col-header-cell {
+    border-color: #474747 !important;
+}
+
+.fc-scroller{
+    @apply scrollbarThin;
+}
