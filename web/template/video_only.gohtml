@@ -48,6 +48,21 @@
         back: 15
     });
     {{end}}
-    player.createQualityButton()
+    // handle volume store:
+    player.on("volumechange", function () {
+        window.localStorage.setItem("volume", player.volume());
+        window.localStorage.setItem("muted", player.muted());
+    });
+
+    player.ready(function () {
+        const persistedVolume = window.localStorage.getItem("volume");
+        if (persistedVolume !== null) {
+            player.volume(persistedVolume);
+        }
+        const persistedMute = window.localStorage.getItem("muted");
+        if (persistedMute !== null) {
+            player.muted('true' === persistedMute);
+        }
+    });
 </script>
 </html>
