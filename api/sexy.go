@@ -19,6 +19,9 @@ func getStreamInfo(context *gin.Context) {
 	}
 	var resp []course
 	for _, c := range courses {
+		if c.Visibility != "public" {
+			continue
+		}
 		currentCourse := course{c.Name, []stream{}}
 		for _, s := range c.Streams {
 			if !s.LiveNow && !s.Recording {
