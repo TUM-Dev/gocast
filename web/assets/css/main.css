@@ -145,12 +145,18 @@ input[type='checkbox']:checked + label {
     @apply text-gray-300 hover:text-white hover:underline;
 }
 
+.fancyeye {
+    font-family: TUM-Live;
+    font-weight: normal;
+    font-style: normal;
+}
+
 .fancyeye:before {
-    content: "\f06e";
+    content: "\f11f";
 }
 
 .fancyeye:hover:before {
-    content: "\f070";
+    content: "\f120";
 }
 
 #calendar {
@@ -171,13 +177,6 @@ input[type='checkbox']:checked + label {
 
 .fc-timegrid-event {
     box-shadow: 0 0 0 1px #ffffff60 !important;
-}
-
-.vjs-theater-mode-control>.vjs-icon-placeholder {
-    font-family: TUM-Live;
-}
-.vjs-theater-mode-control>.vjs-icon-placeholder:before {
-    content: "\f11d";
 }
 
 .theater-mode {

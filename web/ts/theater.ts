@@ -13,6 +13,7 @@ class TheaterModeToggle extends Button {
     constructor(player, options) {
         super(player, options);
         this.controlText('Big picture mode');
+        this.el().firstChild.classList.add("vjs-icon-theater-toggle")
     }
 
     buildCSSClass() {
@@ -41,7 +42,6 @@ videojs.registerComponent('TheaterModeToggle', TheaterModeToggle);
 
 const onPlayerReady = (player, options) => {
     player.addClass('vjs-theater-mode');
-
     let toggle = player.controlBar.addChild(componentName, options);
     player.controlBar.el().insertBefore(toggle.el(), player.controlBar.fullscreenToggle.el());
 };

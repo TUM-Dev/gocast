@@ -11,22 +11,22 @@
 {{- /*gotype: TUM-Live/web.IndexData*/ -}}
 {{template "header" .}}
 
-<div class="container flex flex-col">
+<div class="container flex flex-col pb-16">
     {{if not (or .IsUser .IsStudent)}}
         <p class="text-gray-300">Log in to see your courses</p>
     {{else if .UserName}}
         <p class="text-gray-300">Moin {{.UserName}}, nice to see you!</p>
     {{end}}
     {{if .LiveStreams}}
-        <h2 class="text-2xl text-white">Currently Live</h2>{{end}}
+        <h2 class="text-2xl text-white">Active Livestreams:</h2>{{end}}
     {{range $liveStream := .LiveStreams }}
-        <div class="py-2 px-4 course{{$liveStream.Course.Model.ID}}">
+        <div class="pt-1 px-4 course{{$liveStream.Course.Model.ID}}">
             <a href="/w/{{$liveStream.Course.Slug}}/{{$liveStream.Stream.Model.ID}}">
-                <h3 class="text-xl text-gray-200 hover:text-white inline">{{$liveStream.Course.Name}}
-                    : {{if $liveStream.Stream.Name}}{{$liveStream.Stream.Name}}{{else}}Lecture: {{$liveStream.Stream.Start.Month}} {{printf "%02d." $liveStream.Stream.Start.Day}} {{$liveStream.Stream.Start.Year}}{{end}}</h3>
+                <h3 class="text-lg text-gray-200 hover:text-white inline">{{$liveStream.Course.Name}}{{if $liveStream.Stream.Name}}: {{$liveStream.Stream.Name}}{{end}}</h3>
             </a>
-            <p class="text-gray-400 font-sans font-light">
-                {{printf "%v %02d. %02d:%02d" $liveStream.Stream.Start.Month $liveStream.Stream.Start.Day $liveStream.Stream.Start.Hour $liveStream.Stream.Start.Minute}}
+            <p class="text-gray-400 font-sans font-light text-sm">
+                <span class="bg-danger px-2 mr-1 text-white capitalize rounded-full font-semibold">Live</span>
+                <span class="font-light">{{printf "until %2d:%02d" $liveStream.Stream.End.Hour $liveStream.Stream.End.Minute }}</span>
             </p>
         </div>
     {{end}}
@@ -34,15 +34,15 @@
         <h2 class="text-2xl text-white">My Courses</h2>
     {{end}}
     {{range $course := .Courses }}
-        <div class="py-2 group course{{$course.Model.ID}}">
+        <div class="pt-1 group course{{$course.Model.ID}}">
             <div class="flex items-center">
-                <i class="fas fancyeye opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white mr-2 cursor-pointer" title="Hide this course" onclick="hideCourse({{$course.Model.ID}}, {{$course.Name}})"></i>
+                <i class="fancyeye opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white mr-2 cursor-pointer" title="Hide this course" onclick="hideCourse({{$course.Model.ID}}, {{$course.Name}})"></i>
                 <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
-                <h3 class="text-xl text-gray-300 hover:text-white">{{$course.Name}}</h3></a>
+                <h3 class="text-lg text-gray-300 hover:text-white">{{$course.Name}}</h3></a>
             </div>
             <div class="flex">
-                <i class="fas fa-eye opacity-0 hidden mr-2"></i>
-            <p class="text-gray-400 font-sans font-light">
+                <i class="icon-eye invisible mr-2"></i>
+            <p class="text-gray-400 font-sans font-light text-sm">
                 {{if $course.IsLive}}
                     Live now.
                 {{else}}
@@ -59,15 +59,15 @@
     {{if .PublicCourses}}
         <h2 class="text-2xl text-white pt-4">Public Courses</h2>
         {{range $course := .PublicCourses }}
-            <div class="py-2 group course{{$course.Model.ID}}">
+            <div class="pt-1 group course{{$course.Model.ID}}">
                 <div class="flex items-center">
-                    <i class="fas fancyeye opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white mr-2 cursor-pointer" title="Hide this course" onclick="hideCourse({{$course.Model.ID}}, {{$course.Name}})"></i>
+                    <i class="fancyeye opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white mr-2 cursor-pointer" title="Hide this course" onclick="hideCourse({{$course.Model.ID}}, {{$course.Name}})"></i>
                     <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
-                        <h3 class="text-xl text-gray-300 hover:text-white">{{$course.Name}}</h3></a>
+                        <h3 class="text-lg text-gray-300 hover:text-white">{{$course.Name}}</h3></a>
                 </div>
                 <div class="flex">
-                    <i class="fas fa-eye opacity-0 hidden mr-2"></i>
-                    <p class="text-gray-400 font-sans font-light">
+                    <i class="icon-eye invisible mr-2"></i>
+                    <p class="text-gray-400 font-sans font-light text-sm">
                         {{if $course.IsLive}}
                             Live now.
                         {{else}}
