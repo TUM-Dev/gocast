@@ -11,8 +11,16 @@ import (
 )
 
 func GetAllCourses() ([]model.Course, error) {
+	log.Printf("here")
+	cachedCourses, found := Cache.Get("allCourses")
+	if found {
+		return cachedCourses.([]model.Course), nil
+	}
 	var courses []model.Course
-	err := DB.Find(&courses).Error
+	err := DB.Preload("Streams").Find(&courses).Error
+	if err == nil {
+		Cache.SetWithTTL("allCourses", courses, 1, time.Minute)
+	}
 	return courses, err
 }
 

@@ -37,6 +37,7 @@ func ConfigGinRouter(router gin.IRoutes) {
 	configGinWorkerRouter(router)
 	configGinDownloadRouter(router)
 	configGinLectureHallApiRouter(router)
+	configGinSexyApiRouter(router)
 	return
 }
 
