@@ -76,6 +76,10 @@ func InitCourse(c *gin.Context) {
 	if course.Visibility == "public" || (tumLiveContext.User != nil && tumLiveContext.User.IsEligibleToWatchCourse(course)) {
 		tumLiveContext.Course = &course
 		c.Set("TUMLiveContext", tumLiveContext)
+	} else if tumLiveContext.User == nil {
+		c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
+		c.Abort()
+		return
 	} else {
 		c.AbortWithStatus(http.StatusForbidden)
 	}

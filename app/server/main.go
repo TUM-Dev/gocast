@@ -140,7 +140,7 @@ func main() {
 	}
 	dao.Cache = *cache
 	initCron()
-	tum.FetchCourses()
+
 	go GinServer()
 	LoopForever()
 }

@@ -38,7 +38,6 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			return
 		}
 		tumLiveContext := foundContext.(tools.TUMLiveContext)
-		log.Printf("ws for stream %v", tumLiveContext.Stream.ID)
 		if tumLiveContext.Stream.LiveNow {
 			statsLock.Lock()
 			if statMsg, err := json.Marshal(gin.H{"viewers": stats[ctx.(*gin.Context).Param("streamID")]}); err == nil {

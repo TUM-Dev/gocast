@@ -23,7 +23,11 @@ func LoginHandler(c *gin.Context) {
 			s.Set("Name", u.Name)
 			_ = s.Save()
 			if c.Request.FormValue("return") != "" {
-				log.Println(url.QueryUnescape(c.Request.FormValue("return")))
+				red, err := url.QueryUnescape(c.Request.FormValue("return"))
+				if err == nil {
+					c.Redirect(http.StatusFound, red)
+					return
+				}
 			}
 			c.Redirect(http.StatusFound, "/")
 			return
@@ -45,6 +49,13 @@ func LoginHandler(c *gin.Context) {
 		s.Set("UserID", user.ID)
 		s.Set("Name", user.Name)
 		_ = s.Save()
+		if c.Request.FormValue("return") != "" {
+			red, err := url.QueryUnescape(c.Request.FormValue("return"))
+			if err == nil {
+				c.Redirect(http.StatusFound, red)
+				return
+			}
+		}
 		c.Redirect(http.StatusFound, "/")
 		return
 	}

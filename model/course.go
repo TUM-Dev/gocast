@@ -27,7 +27,7 @@ func (c Course) CompareTo(other Course) bool {
 	if !other.HasNextLecture() {
 		return true
 	}
-	return c.HasNextLecture() || c.GetNextLectureDate().Before(other.GetNextLectureDate())
+	return c.GetNextLectureDate().Before(other.GetNextLectureDate())
 }
 
 func (c Course) IsLive() bool {
