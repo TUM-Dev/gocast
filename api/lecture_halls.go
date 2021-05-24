@@ -7,6 +7,7 @@ import (
 	"context"
 	"embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
@@ -18,12 +19,20 @@ import (
 	"time"
 )
 
-func configGinLectureHallApiRouter(router gin.IRoutes) {
-	router.POST("/api/createLectureHall", createLectureHall)
-	router.POST("/api/updateLecturesLectureHall", updateLecturesLectureHall)
+func configGinLectureHallApiRouter(router *gin.Engine) {
+	admins := router.Group("/api")
+	admins.Use(tools.Admin)
+	admins.POST("/createLectureHall", createLectureHall)
+	admins.POST("/takeSnapshot/:lectureHallID/:presetID", takeSnapshot)
+	admins.POST("/updateLecturesLectureHall", updateLecturesLectureHall)
+
+	adminsOfCourse := router.Group("/api/course/:courseID/")
+	adminsOfCourse.Use(tools.InitCourse)
+	adminsOfCourse.Use(tools.InitStream)
+	adminsOfCourse.Use(tools.AdminOfCourse)
+	adminsOfCourse.POST("/switchPreset/:lectureHallID/:presetID/:streamID", switchPreset)
+
 	router.GET("/api/hall/all.ics", lectureHallIcal)
-	router.POST("/api/takeSnapshot/:lectureHallID/:presetID", takeSnapshot)
-	router.POST("/api/switchPreset/:lectureHallID/:presetID/:streamID", switchPreset)
 }
 
 //go:embed template
@@ -34,10 +43,6 @@ func lectureHallIcal(c *gin.Context) {
 	if err != nil {
 		return
 	}
-	/*lhID, err := strconv.Atoi(c.Param("lectureHallID"))
-	if err != nil {
-		return
-	}*/
 	lectureHalls := dao.GetAllLectureHalls()
 	streams, err := dao.GetAllStreams()
 	if err != nil {
@@ -61,19 +66,15 @@ type ICALData struct {
 }
 
 func switchPreset(c *gin.Context) {
-	stream, err := dao.GetStreamByID(c, c.Param("streamID"))
-	if err != nil || !stream.LiveNow {
-		c.AbortWithStatus(http.StatusNotFound)
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	course, err := dao.GetCourseById(c, stream.CourseID)
-	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
-		return
-	}
-	user, err := tools.GetUser(c)
-	if err != nil || !(user.Role == model.AdminType || user.ID == course.UserID) {
-		c.AbortWithStatus(http.StatusForbidden)
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	if tumLiveContext.Stream == nil || !tumLiveContext.Stream.LiveNow {
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 	preset, err := dao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
@@ -82,14 +83,10 @@ func switchPreset(c *gin.Context) {
 		return
 	}
 	tools.UsePreset(preset)
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * 10)
 }
 
 func takeSnapshot(c *gin.Context) {
-	if user, err := tools.GetUser(c); err != nil || user.Role != model.AdminType {
-		c.AbortWithStatus(http.StatusForbidden)
-		return
-	}
 	preset, err := dao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
@@ -105,57 +102,49 @@ func takeSnapshot(c *gin.Context) {
 }
 
 func updateLecturesLectureHall(c *gin.Context) {
-	if user, err := tools.GetUser(c); err == nil && user.Role == model.AdminType {
-		body, err := ioutil.ReadAll(c.Request.Body)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
-			return
-		}
-		var req updateLecturesLectureHallRequest
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
+		return
+	}
+	var req updateLecturesLectureHallRequest
 
-		if err = json.Unmarshal(body, &req); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
-			return
-		}
-		lecture, err := dao.GetStreamByID(context.Background(), strconv.Itoa(int(req.LectureID)))
-		if err != nil {
-			c.AbortWithStatus(http.StatusNotFound)
-			return
-		}
-		lectureHall, err := dao.GetLectureHallByID(req.LectureHallID)
-		if err != nil {
-			dao.UnsetLectureHall(lecture.Model.ID)
-			return
-		} else {
-			lectureHall.Streams = append(lectureHall.Streams, lecture)
-			dao.SaveLectureHall(lectureHall)
-		}
+	if err = json.Unmarshal(body, &req); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
+		return
+	}
+	lecture, err := dao.GetStreamByID(context.Background(), strconv.Itoa(int(req.LectureID)))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	lectureHall, err := dao.GetLectureHallByID(req.LectureHallID)
+	if err != nil {
+		dao.UnsetLectureHall(lecture.Model.ID)
+		return
 	} else {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "Forbidden"})
+		lectureHall.Streams = append(lectureHall.Streams, lecture)
+		dao.SaveLectureHall(lectureHall)
 	}
 }
 
 func createLectureHall(c *gin.Context) {
-	if user, err := tools.GetUser(c); err == nil && user.Role == model.AdminType {
-		body, err := ioutil.ReadAll(c.Request.Body)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
-			return
-		}
-		var req createLectureHallRequest
-		if err = json.Unmarshal(body, &req); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
-			return
-		}
-		dao.CreateLectureHall(model.LectureHall{
-			Name:   req.Name,
-			CombIP: req.CombIP,
-			PresIP: req.PresIP,
-			CamIP:  req.CamIP,
-		})
-	} else {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "Forbidden"})
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
+		return
 	}
+	var req createLectureHallRequest
+	if err = json.Unmarshal(body, &req); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
+		return
+	}
+	dao.CreateLectureHall(model.LectureHall{
+		Name:   req.Name,
+		CombIP: req.CombIP,
+		PresIP: req.PresIP,
+		CamIP:  req.CamIP,
+	})
 }
 
 type createLectureHallRequest struct {

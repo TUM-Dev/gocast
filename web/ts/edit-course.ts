@@ -13,8 +13,7 @@ class EditCourse {
     private createLecture(): void {
         const id = (document.getElementById("courseID") as HTMLInputElement).value
         const name = (document.getElementById("name") as HTMLInputElement).value
-        postData("/api/createLecture", {
-            "id": id,
+        postData("/api/course/"+id +"/createLecture", {
             "name": name,
             "start": this.start.selectedDates[0].toISOString(),
             "end": this.end.selectedDates[0].toISOString(),
@@ -39,13 +38,13 @@ function saveLectureHall(lectureID: number) {
     })
 }
 
-function saveLectureDescription(e: Event, id: number) {
+function saveLectureDescription(e: Event, cID: number, lID: number) {
     e.preventDefault()
-    const input = (document.getElementById("lectureDescriptionInput" + id) as HTMLInputElement).value
-    postData("/api/updateDescription", {"id": id, "name": input})
+    const input = (document.getElementById("lectureDescriptionInput" + lID) as HTMLInputElement).value
+    postData("/api/course/" + cID + "/updateDescription/" + lID, {"name": input})
         .then(res => {
             if (res.status == 200) {
-                document.getElementById("descriptionSubmitBtn" + id).classList.add("invisible")
+                document.getElementById("descriptionSubmitBtn" + lID).classList.add("invisible")
             } else {
                 res.text().then(t => showMessage(t))
             }
@@ -53,13 +52,13 @@ function saveLectureDescription(e: Event, id: number) {
     return false
 }
 
-function saveLectureName(e: Event, id: number) {
+function saveLectureName(e: Event, cID: number, lID: number) {
     e.preventDefault()
-    const input = (document.getElementById("lectureNameInput" + id) as HTMLInputElement).value
-    postData("/api/renameLecture", {"id": id, "name": input})
+    const input = (document.getElementById("lectureNameInput" + lID) as HTMLInputElement).value
+    postData("/api/course/" + cID + "/renameLecture/" + lID, {"name": input})
         .then(res => {
             if (res.status == 200) {
-                document.getElementById("nameSubmitBtn" + id).classList.add("invisible")
+                document.getElementById("nameSubmitBtn" + lID).classList.add("invisible")
             } else {
                 res.text().then(t => showMessage(t))
             }
@@ -97,9 +96,9 @@ function toggleExtraInfos(btn: HTMLElement, id: number) {
     }
 }
 
-function deleteLecture(id: number) {
+function deleteLecture(cid: number, lid: number) {
     if (confirm("Confirm deleting video?")) {
-        postData("/api/deleteLecture/" + id).then(r => {
+        postData("/api/course/" + cid + "/deleteLecture/" + lid).then(r => {
             document.location.reload()
         })
     }

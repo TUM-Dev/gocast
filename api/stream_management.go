@@ -17,14 +17,9 @@ func configGinStreamAuthRouter(router gin.IRoutes) {
 	router.POST("/stream-management/on_publish", StartStream)
 	router.POST("/stream-management/on_publish_done", EndStream)
 	router.POST("/stream-management/on_record_done", OnRecordingFinished)
-	router.POST("/api/createStream", CreateStream)
 }
 
-func CreateStream(c *gin.Context) {
-
-}
-
-/**
+/*StartStream
 * This function is called when a user attempts to push a stream to the server.
 * @w: response writer. Status code determines wether streaming is approved: 200 if yes, 402 otherwise.
 * @r: request. Form if valid: POST /on_publish/app/kurs-key example: {/on_publish/eidi-3zt45z452h4754nj2q74}

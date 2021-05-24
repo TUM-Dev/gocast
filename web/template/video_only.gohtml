@@ -5,7 +5,9 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
     {{- /*gotype: TUM-Live/web.WatchPageData*/ -}}
-    <title>{{.Course.Name}} | {{.Stream.Name}}</title>
+    {{$stream := .IndexData.TUMLiveContext.Stream}}
+    {{$course := .IndexData.TUMLiveContext.Course}}
+    <title>{{$course.Name}} | {{$stream.Name}}</title>
     <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
     <link rel="stylesheet" href="/static/assets/css-dist/main.css">
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
@@ -13,14 +15,14 @@
     <script async src="/static/assets/ts-dist/watch.js?v={{.IndexData.VersionTag}}"></script>
 </head>
 <body class="overflow-hidden">
-<input type="hidden" id="streamID" value="{{.Stream.Model.ID}}">
+<input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
 <video
         id="my-video"
         class="video-js w-full"
         controls
         preload="auto"
         data-setup='{"fluid": true}'>
-    <source src="{{if eq .Version "PRES"}}{{.Stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{.Stream.PlaylistUrlCAM}}{{else}}{{.Stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if .Stream.StartOffset}}?wowzaplaystart={{.Stream.StartOffset}}&wowzaplayduration={{.Stream.EndOffset}}{{end}}"
+    <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
             type="application/x-mpegURL"/>
     <p class="vjs-no-js">
         To view this video please enable JavaScript.
@@ -41,7 +43,7 @@
             nativeTextTracks: false
         }
     });
-    {{if not .Stream.LiveNow}}
+    {{if not $stream.LiveNow}}
     player.seekButtons({
         backIndex: 0,
         forward: 15,

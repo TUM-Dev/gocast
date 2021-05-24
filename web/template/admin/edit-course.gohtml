@@ -13,20 +13,21 @@
 <body class="bg-primary">
 
 {{- /*gotype: TUM-Live/web.EditCourseData*/ -}}
-{{template "header" .IndexData}}
+{{template "header" .IndexData.TUMLiveContext}}
+{{$course := .IndexData.TUMLiveContext.Course}}
 
 <div class="text-white container mx-auto">
     <div class="min-w-screen flex items-center justify-center">
         <div class="w-full lg:w-5/6">
-            <h1 class="mb-4">{{.Course.Name}}</h1>
+            <h1 class="mb-4">{{$course.Name}}</h1>
             <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
-                                                                value="{{.Course.Model.ID}}"></label>
+                                                                value="{{$course.Model.ID}}"></label>
 
             <form class="p-4" method="post">
-                {{template "course_settings" .Course}}
+                {{template "course_settings" $course}}
                 <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
                     <input name="submit" class="btn border-0" type="submit" value="Save Settings">
-                    {{if .Course.TUMOnlineIdentifier}}
+                    {{if $course.TUMOnlineIdentifier}}
                         <input name="submit" class="btn border-0" type="submit"
                                value="Reload Enrollments">
                         <input name="submit" class="btn border-0" type="submit" value="Reload Lectures From TUMOnline">
@@ -37,27 +38,27 @@
             <h2>Lectures</h2>
             <div>
                 <ul class="bg-secondary rounded">
-                    {{$course := .Course}}
                     {{$ingestBase := .IngestBase}}
                     {{$lectureHalls := .LectureHalls}}
-                    {{$user := .User}}
-                    {{if not .Course.Streams}}
+                    {{$user := .IndexData.TUMLiveContext.User}}
+                    {{if not $course.Streams}}
                         <p class="text-gray-300 p-4">It might take a minute to load your lectures from TUMOnline</p>
                     {{end}}
-                    {{range $lecture := .Course.Streams }}
+                    {{range $lecture := $course.Streams }}
                         <li class="p-6 hover:bg-primary border-b-2 border-primary">
                             <div class="flex">
                                 <div class="w-1/4">
                                     <div class="text-white font-semibold">{{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
                                         <i class="fas fa-trash hover:text-purple-500 px-2"
                                            title="Delete Lecture"
-                                           onclick="deleteLecture({{$lecture.Model.ID}})"></i>
+                                           onclick="deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}})"></i>
                                     </div>
                                     <div class="text-gray-300 font-sans">
                                         {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
                                     </div>
                                     {{if $lecture.Recording}}
-                                        {{if $lecture.VodViews}}<p class="text-gray-400 text-sm">{{$lecture.VodViews}} VoD views</p>{{end}}
+                                        {{if $lecture.VodViews}}<p class="text-gray-400 text-sm">{{$lecture.VodViews}}
+                                            VoD views</p>{{end}}
                                         <div class="font-semibold bg-success w-auto inline-block px-2 text-white rounded-full">
                                             VoD
                                         </div>
@@ -76,7 +77,7 @@
                                     {{end}}
                                 </div>
                                 <div class="w-3/4">
-                                    <form onsubmit="saveLectureName(event, {{$lecture.Model.ID}})"
+                                    <form onsubmit="saveLectureName(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
                                           class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
                                         <label for="lectureNameInput{{$lecture.Model.ID}}" class="hidden">Lecture
                                             title</label>
@@ -94,7 +95,7 @@
                                                class="fas fa-angle-double-down hover:text-purple-500"></i>
                                         </div>
                                         <div id="extraInfos{{$lecture.Model.ID}}" class="hidden">
-                                            <form onsubmit="saveLectureDescription(event, {{$lecture.Model.ID}})"
+                                            <form onsubmit="saveLectureDescription(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
                                                   class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
                                                 <label for="lectureDescriptionInput{{$lecture.Model.ID}}"
                                                        class="hidden">Lecture description</label>
@@ -163,12 +164,12 @@
                                                 {{end}}
                                                 <a title="Cut lecture"
                                                    class="flex"
-                                                   href="/admin/cut/{{$lecture.Model.ID}}">
+                                                   href="/admin/cut/{{$course.Model.ID}}/{{$lecture.Model.ID}}">
                                                     <i class="fas fa-cut text-gray-300 hover:text-purple-500 px-2"></i>
                                                 </a>
                                                 <a title="Cut lecture into units"
                                                    class="flex"
-                                                   href="/admin/units/{{$lecture.Model.ID}}">
+                                                   href="/admin/units/{{$course.Model.ID}}/{{$lecture.Model.ID}}">
                                                     <i class="fas fa-puzzle-piece text-gray-300 hover:text-purple-500 px-2"></i>
                                                 </a>
                                             </p>
@@ -240,7 +241,7 @@
                         <p class="text-gray-300 p-4">Add participants. They'll get notified about your invitation to
                             your lecture via mail.</p>
                         <form method="post" action="/api/createUserForCourse" class="flex">
-                            <input type="hidden" name="courseID" value="{{.Course.Model.ID}}">
+                            <input type="hidden" name="courseID" value="{{$course.Model.ID}}">
                             <label class="w-full">
                                 <span class="hidden">First Name</span>
                                 <input class="mx-2 px-2" type="text" name="newUserFirstName"
@@ -256,7 +257,7 @@
                         </form>
                         <p class="text-gray-300 p-4">Batch insert (this takes about two seconds per user.)</p>
                         <form method="post" action="/api/createUserForCourse" class="flex">
-                            <input type="hidden" name="courseID" value="{{.Course.Model.ID}}">
+                            <input type="hidden" name="courseID" value="{{$course.Model.ID}}">
                             <label class="w-full">
                                 <span class="hidden">Batch insert users</span>
                                 <textarea name="batchUserInput"
@@ -282,10 +283,10 @@
                             </tr>
                             </thead>
                             <tbody>
-                            {{range $user := .Course.Users }}
+                            {{range $user := $course.Users }}
                                 <tr class="px-3 hover:bg-primary">
                                     <td>{{$user.Name}}</td>
-                                    <td class="px-2">{{$user.Email}}</td>
+                                    <td class="px-2">{{$user.Email.String}}</td>
                                     <td>{{if eq $user.Password ""}}No{{else}}Yes{{end}}</td>
                                 </tr>
                             {{end}}

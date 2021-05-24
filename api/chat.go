@@ -6,12 +6,13 @@ import (
 	"TUM-Live/tools"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"gopkg.in/olahol/melody.v1"
 	"log"
+	"net/http"
 	"strconv"
 	"sync"
 	"time"
@@ -21,18 +22,26 @@ var m *melody.Melody
 var stats = map[string]int{}
 var statsLock = sync.RWMutex{}
 
-func configGinChatRouter(router gin.IRoutes) {
-	router.GET("/:vidId/ws", ChatStream)
+func configGinChatRouter(router *gin.RouterGroup) {
+	wsGroup := router.Group("/:streamID")
+	wsGroup.Use(tools.InitStream)
+	wsGroup.GET("/ws", ChatStream)
 	if m == nil {
 		log.Printf("creating melody")
 		m = melody.New()
 	}
 	m.HandleConnect(func(s *melody.Session) {
 		ctx, _ := s.Get("ctx") // get gin context
-		vid := ctx.(*gin.Context).Param("vidId")
-		if stream, err := dao.GetStreamByID(context.Background(), vid); err == nil && stream.LiveNow {
+		foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
+		if !exists {
+			sentry.CaptureException(errors.New("context should exist but doesn't"))
+			return
+		}
+		tumLiveContext := foundContext.(tools.TUMLiveContext)
+		log.Printf("ws for stream %v", tumLiveContext.Stream.ID)
+		if tumLiveContext.Stream.LiveNow {
 			statsLock.Lock()
-			if statMsg, err := json.Marshal(gin.H{"viewers": stats[vid]}); err == nil {
+			if statMsg, err := json.Marshal(gin.H{"viewers": stats[ctx.(*gin.Context).Param("streamID")]}); err == nil {
 				_ = s.Write(statMsg)
 			} else {
 				sentry.CaptureException(err)
@@ -43,6 +52,13 @@ func configGinChatRouter(router gin.IRoutes) {
 
 	m.HandleMessage(func(s *melody.Session, msg []byte) {
 		ctx, _ := s.Get("ctx") // get gin context
+		foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
+		if !exists {
+			sentry.CaptureException(errors.New("context should exist but doesn't"))
+			ctx.(*gin.Context).AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		tumLiveContext := foundContext.(tools.TUMLiveContext)
 		var chat ChatReq
 		if err := json.Unmarshal(msg, &chat); err != nil {
 			return
@@ -50,47 +66,28 @@ func configGinChatRouter(router gin.IRoutes) {
 		if chat.Msg == "" || len(chat.Msg) > 200 {
 			return
 		}
-		user, uErr := tools.GetUser(ctx.(*gin.Context))
-		student, sErr := tools.GetStudent(ctx.(*gin.Context))
-		var uid string
-		if uErr == nil {
-			uid = strconv.Itoa(int(user.ID))
-		} else if sErr == nil {
-			uid = student.ID
-		} else {
+		if dao.IsUserCooledDown(fmt.Sprintf("%v", tumLiveContext.User.ID)) {
 			return
 		}
-		if dao.IsUserCooledDown(uid) {
+		if !tumLiveContext.Stream.LiveNow || !tumLiveContext.Course.ChatEnabled {
 			return
 		}
-		vID, err := strconv.Atoi(ctx.(*gin.Context).Param("vidId"))
-		if err != nil {
-			return
-		}
-		stream, err := dao.GetStreamByID(context.Background(), fmt.Sprintf("%v", vID))
-		if err != nil {
-			return
-		}
-		if course, err := dao.GetCourseById(context.Background(), stream.CourseID); err != nil || !course.ChatEnabled {
-			return
-		}
-		session := sessions.Default(ctx.(*gin.Context))
-		uname := session.Get("Name").(string)
+		uname := tumLiveContext.User.Name
 		if chat.Anonymous {
 			uname = "Anonymous"
 		}
 		dao.AddMessage(model.Chat{
-			UserID:   uid,
+			UserID:   strconv.Itoa(int(tumLiveContext.User.ID)),
 			UserName: uname,
 			Message:  chat.Msg,
-			StreamID: uint(vID),
-			Admin:    uErr == nil && user.IsAdminOfCourse(stream.CourseID),
+			StreamID: tumLiveContext.Stream.ID,
+			Admin:    tumLiveContext.User.ID == tumLiveContext.Course.UserID,
 			SendTime: time.Now().In(tools.Loc),
 		})
 		broadcast, err := json.Marshal(ChatRep{
 			Msg:   chat.Msg,
 			Name:  uname,
-			Admin: uErr == nil && user.IsAdminOfCourse(stream.CourseID),
+			Admin: tumLiveContext.User.ID == tumLiveContext.Course.UserID,
 		})
 		if err == nil {
 			_ = m.BroadcastFilter(broadcast, func(q *melody.Session) bool { // filter broadcasting to same lecture.
@@ -146,9 +143,9 @@ func ChatStream(c *gin.Context) {
 	if m.Len() > 10000 {
 		return
 	}
-	go addUser(c.Param("vidId"))
+	go addUser(c.Param("streamID"))
 	joinTime := time.Now()
-	defer removeUser(c.Param("vidId"), joinTime)
+	defer removeUser(c.Param("streamID"), joinTime)
 	ctxMap := make(map[string]interface{}, 1)
 	ctxMap["ctx"] = c
 

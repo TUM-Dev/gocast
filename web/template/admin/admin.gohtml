@@ -9,12 +9,13 @@
 <body class="bg-primary dark">
 
 {{- /*gotype: TUM-Live/web.AdminPageData*/ -}}
-{{template "header" .IndexData}}
+{{$curUser := .IndexData.TUMLiveContext.User}}
+{{template "header" .IndexData.TUMLiveContext}}
 
 <div class="container mx-auto">
     <div class="min-w-screen flex items-center justify-center">
         <div class="w-full lg:w-5/6">
-            {{if eq .User.Role 1}}
+            {{if eq $curUser.Role 1}}
                 <div class="flex w-full bg-secondary">
                     <a href="/admin"
                        class="flex-grow p-2 px-4 hover:bg-primary{{if eq .Page "courses"}} bg-primary p-2 px-4 border-b-2 border-white text-white{{else}} text-gray-400{{end}}">Courses</a>
@@ -29,15 +30,15 @@
                        class="flex-grow p-2 px-2 hover:bg-primary{{if eq .Page "workers"}} bg-primary p-2 px-4 border-b-2 border-white text-white{{else}} text-gray-400{{end}}">Workers</a>
                 </div>
             {{end}}
-            {{if and (eq .User.Role 1) (eq .Page "users")}}
+            {{if and (eq $curUser.Role 1) (eq .Page "users")}}
                 {{template "users" .Users}}
-            {{else if and (or (eq .User.Role 1) (eq .User.Role 2)) (eq .Page "courses")}}
+            {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "courses")}}
                 {{template "courses" .Courses}}
-            {{else if and (eq .User.Role 1) (eq .Page "lectureHalls")}}
+            {{else if and (eq $curUser.Role 1) (eq .Page "lectureHalls")}}
                 {{template "lectureHalls" .LectureHalls}}
-            {{else if and (eq .User.Role 1) (eq .Page "workers")}}
+            {{else if and (eq $curUser.Role 1) (eq .Page "workers")}}
                 {{template "workers" .Workers}}
-            {{else if and (eq .User.Role 1) (eq .Page "schedule")}}
+            {{else if and (eq $curUser.Role 1) (eq .Page "schedule")}}
                 {{template "schedule"}}
             {{end}}
         </div>

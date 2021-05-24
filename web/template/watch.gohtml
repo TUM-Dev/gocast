@@ -3,7 +3,9 @@
 {{- /*gotype: TUM-Live/web.WatchPageData*/ -}}
 <head>
     <meta charset="UTF-8">
-    <title>{{.Course.Name}}: {{.Stream.Name}} | TUM Live</title>
+    {{$stream := .IndexData.TUMLiveContext.Stream}}
+    {{$course := .IndexData.TUMLiveContext.Course}}
+    <title>{{$course.Name}}: {{$stream.Name}} | TUM Live</title>
     {{template "headImports" .IndexData.VersionTag}}
     <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
     <script async src="/static/assets/ts-dist/watch.js?v={{.IndexData.VersionTag}}"></script>
@@ -13,16 +15,17 @@
     <script async src="/static/assets/ts-dist/watch-admin.js?v={{.IndexData.VersionTag}}"></script>{{end}}
 </head>
 <body class="bg-primary h-full overflow-hidden">
-{{template "header" .IndexData}}
+{{template "header" .IndexData.TUMLiveContext}}
 <div class="flex h-full md:flex-row w-full flex-wrap pt-20">
-    <input type="hidden" id="streamID" value="{{.Stream.Model.ID}}">
-    <div id="watchWrapper" class="watchContent w-full pt-3 px-2 md:px-8 {{if .Course.ChatEnabled}}md:w-4/6{{end}} lg:w-8/12 2xl:max-w-screen-xl mx-auto mx:h-full overflow-scroll overflow-x-hidden">
+    <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
+    <div id="watchWrapper"
+         class="watchContent w-full pt-3 px-2 md:px-8 {{if $course.ChatEnabled}}md:w-4/6{{end}} lg:w-8/12 2xl:max-w-screen-xl mx-auto mx:h-full overflow-scroll overflow-x-hidden">
         <video
                 id="my-video"
                 class="video-js w-full"
                 controls
                 preload="auto">
-            <source src="{{if eq .Version "PRES"}}{{.Stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{.Stream.PlaylistUrlCAM}}{{else}}{{.Stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if .Stream.StartOffset}}?wowzaplaystart={{.Stream.StartOffset}}&wowzaplayduration={{.Stream.EndOffset}}{{end}}"
+            <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
                     type="application/x-mpegURL"/>
             <p class="vjs-no-js">
                 To view this video please enable JavaScript.
@@ -30,38 +33,38 @@
         </video>
         <div class="flex justify-between align-middle mt-4">
             <h1 class="text-gray-300 text-2xl">
-                {{if .Stream.Name}}{{.Stream.Name}}{{else}}Lecture: {{.Stream.Start.Month}} {{printf "%02d." .Stream.Start.Day}} {{.Stream.Start.Year}}{{end}}
+                {{if $stream.Name}}{{$stream.Name}}{{else}}Lecture: {{$stream.Start.Month}} {{printf "%02d." $stream.Start.Day}} {{$stream.Start.Year}}{{end}}
             </h1>
             <p class="text-xl text-gray-400 flex space-x-2">
-                {{if .Stream.LiveNow}}
+                {{if $stream.LiveNow}}
                     <span class="flex m-auto" id="viewerCount"></span>
                     <i class="fas fa-users text-gray-400 flex m-auto"></i>
-                {{else if .Course.DownloadsEnabled}}
+                {{else if $course.DownloadsEnabled}}
                     <a class="flex m-auto"
                        title="Download Lecture"
-                       href="/api/download/{{.Stream.Model.ID}}/{{.Course.Slug}}/{{.Course.Slug}}-{{printf "%v-%02d-%04d" .Stream.Start.Month .Stream.Start.Day .Stream.Start.Year}}"
+                       href="/api/download/{{$stream.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $stream.Start.Month $stream.Start.Day $stream.Start.Year}}"
                        download>
                         <i class="fas fa-download text-gray-400 hover:text-purple-500"></i>
                     </a>
                 {{end}}
-                {{if .Stream.PlaylistUrlPRES}}
+                {{if $stream.PlaylistUrlPRES}}
                     <a class="flex m-auto" title="Presentation only"
-                       href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}/PRES"><i
+                       href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/PRES"><i
                                 class="fas fa-edit hover:text-purple-500"></i></a>
                 {{end}}
-                {{if .Stream.PlaylistUrlCAM}}
-                    <a class="flex m-auto" title="Camera only" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}/CAM"><i
+                {{if $stream.PlaylistUrlCAM}}
+                    <a class="flex m-auto" title="Camera only" href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/CAM"><i
                                 class="fas fa-camera hover:text-purple-500"></i></a>
                 {{end}}
-                {{if .Stream.PlaylistUrl}}
-                    <a class="flex m-auto" title="Combined view" href="/w/{{.Course.Slug}}/{{.Stream.Model.ID}}"><i
+                {{if $stream.PlaylistUrl}}
+                    <a class="flex m-auto" title="Combined view" href="/w/{{$course.Slug}}/{{$stream.Model.ID}}"><i
                                 class="fas fa-object-group hover:text-purple-500"></i></a>
                 {{end}}
             </p>
         </div>
-        <a href="/course/{{.Course.Year}}/{{.Course.TeachingTerm}}/{{.Course.Slug}}"><h2
-                    class="text-gray-300 hover:text-white hover:underline text-xl">{{.Course.Name}}</h2></a>
-        {{if and .IsAdminOfCourse (and .Stream.LectureHallID .Stream.LiveNow)}}
+        <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}"><h2
+                    class="text-gray-300 hover:text-white hover:underline text-xl">{{$course.Name}}</h2></a>
+        {{if and .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
             <div class="border-t-2 border-secondary p-4">
                 <h3 class="text-gray-400 mb-2">Administration:</h3>
                 <a href="?restart=1" title="Issues with the stream? Restart it."
@@ -74,7 +77,7 @@
                                 <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
                                      src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
                                      alt="prev" width="150px">
-                                <i onclick="usePreset({{$preset.LectureHallId}}, {{$preset.PresetID}})"
+                                <i onclick="usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}}, {{$stream.Model.ID}})"
                                    title="Switch to this preset"
                                    class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-exchange-alt cursor-pointer"></i>
                             </div>
@@ -83,17 +86,17 @@
                 </div>
             </div>
         {{end}}
-        {{if .Stream.Description}}
+        {{if $stream.Description}}
             <div class="text-gray-300 p-4 border-t-2 border-secondary video-description">
                 <span class="font-semibold">Video Description:</span>
                 {{.Description}}
             </div>
         {{end}}
     </div>
-    {{if .Course.ChatEnabled}}
+    {{if $course.ChatEnabled}}
         <div class="hidden md:flex flex-col w-full md:h-full border-t-2 mt-2 md:mt-0 md:border-t-0 md:border-l-2 border-secondary md:w-2/6 lg:w-1/6 text-white pt-3">
             <div id="chatBox" class="overflow-scroll overflow-x-hidden overflow-y-scroll" style="flex: 2;">
-                {{range $chat := .Stream.Chats}}
+                {{range $chat := $stream.Chats}}
                     <div class="rounded p-2 mx-2">
                         <div class="flex flex-row">
                             <p class="flex-grow font-semibold {{if $chat.Admin}}text-warn{{end}}">{{$chat.UserName}}</p>
@@ -117,7 +120,7 @@
                 </label>
                 <label for="chatInput" class="hidden">Chat input</label><input
                         maxlength="200"
-                        {{if not (or .IndexData.IsStudent .IndexData.IsUser)}}disabled
+                        {{if not (.IndexData.TUMLiveContext.User)}}disabled
                         placeholder="Log in to chat" {{else}}
                         placeholder="Send a message" {{end}}autocomplete="off" id="chatInput" type="text"
                         class="border-none">
@@ -149,7 +152,7 @@
         },
     });
     player.play();
-    if (!{{.Stream.LiveNow}}) {
+    if (!{{$stream.LiveNow}}) {
         player.seekButtons({
             backIndex: 0,
             forward: 15,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/subtle"
+	"database/sql"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -18,17 +19,19 @@ const (
 	AdminType    = 1
 	LecturerType = 2
 	GenericType  = 3
+	StudentType  = 4
 )
 
 type User struct {
 	gorm.Model
 
-	Name           string
-	Email          string `gorm:"unique"`
-	Role           int    //1:admin 2:lecturer 3:others
-	Password       string
-	Courses        []Course
-	InvitedCourses []Course `gorm:"many2many:course_users;"` // courses a lecturer invited this user to
+	Name                string
+	Email               sql.NullString `gorm:"unique;default:null"`
+	MatriculationNumber string         `gorm:"unique;default:null"`
+	LrzID               string
+	Role                int      //1:admin 2:lecturer 3:others
+	Password            string   `gorm:"default:null"`
+	Courses             []Course `gorm:"many2many:course_users;"` // courses a lecturer invited this user to
 }
 
 type argonParams struct {
@@ -40,10 +43,10 @@ type argonParams struct {
 }
 
 func (u *User) IsEligibleToWatchCourse(course Course) bool {
-	if course.Visibility == "enrolled" || course.Visibility == "public" {
+	if course.Visibility == "loggedin" || course.Visibility == "public" {
 		return true
 	}
-	for _, invCourse := range u.InvitedCourses {
+	for _, invCourse := range u.Courses {
 		if invCourse.ID == course.ID {
 			return true
 		}
@@ -56,11 +59,6 @@ func (u *User) CoursesForSemester(year int, term string, context context.Context
 	defer span.Finish()
 	var cRes []Course
 	for _, c := range u.Courses {
-		if c.Year == year && c.TeachingTerm == term {
-			cRes = append(cRes, c)
-		}
-	}
-	for _, c := range u.InvitedCourses {
 		if c.Year == year && c.TeachingTerm == term {
 			cRes = append(cRes, c)
 		}
@@ -81,16 +79,6 @@ var (
 	emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 )
 
-func (u User) ValidateFields() bool {
-	if u.Role > 3 || u.Role < 1 {
-		return false
-	}
-	if len(u.Email) < 3 || len(u.Email) > 254 {
-		return false
-	}
-	return emailRegex.MatchString(u.Email)
-}
-
 func (u *User) SetPassword(password string) (err error) {
 	if len(password) < 8 {
 		return errors.New("password length insufficient")
@@ -104,6 +92,9 @@ func (u *User) SetPassword(password string) (err error) {
 }
 
 func (u *User) ComparePasswordAndHash(password string) (match bool, err error) {
+	if u.Password == "" {
+		return false, nil
+	}
 	// Extract the parameters, salt and derived key from the encoded password
 	// hash.
 	salt, hash, err := decodeHash(u.Password)
@@ -121,15 +112,6 @@ func (u *User) ComparePasswordAndHash(password string) (match bool, err error) {
 		return true, nil
 	}
 	return false, nil
-}
-
-func (u *User) IsAdminOfCourse(courseID uint) bool {
-	for _, course := range u.Courses {
-		if course.ID == courseID {
-			return true
-		}
-	}
-	return false
 }
 
 func decodeHash(encodedHash string) (salt, hash []byte, err error) {

@@ -7,13 +7,13 @@
 </head>
 <body class="bg-primary">
 {{- /*gotype: TUM-Live/web.CoursePageData*/ -}}
-{{template "header" .IndexData}}
-{{$course := .Course}}
+{{template "header" .IndexData.TUMLiveContext}}
+{{$course := .IndexData.TUMLiveContext.Course}}
 <div class="container">
-    <h1 class="text-gray-200">{{.Course.Name}}</h1>
+    <h1 class="text-gray-200">{{$course.Name}}</h1>
     <ul class="w-full md:w-5/6 m-auto mb-4">
         {{$lastMonth := -1}}
-        {{range $lecture := .Course.Streams }}
+        {{range $lecture := $course.Streams }}
             {{if or (or (not $lecture.IsPast) $lecture.Recording) $lecture.LiveNow}}
                 {{if ne $lecture.Start.Month $lastMonth}}
                     {{$lastMonth = $lecture.Start.Month}}

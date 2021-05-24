@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 func LoginHandler(c *gin.Context) {
@@ -21,19 +22,28 @@ func LoginHandler(c *gin.Context) {
 			s.Set("UserID", u.ID)
 			s.Set("Name", u.Name)
 			_ = s.Save()
+			if c.Request.FormValue("return") != "" {
+				log.Println(url.QueryUnescape(c.Request.FormValue("return")))
+			}
 			c.Redirect(http.StatusFound, "/")
 			return
 		}
 	}
-	if sId, name, err := tum.LoginWithTumCredentials(username, password); err == nil {
-		student := model.Student{
-			ID:   sId,
-			Name: name,
+	if sId, lrzID, name, err := tum.LoginWithTumCredentials(username, password); err == nil {
+		user := model.User{
+			Name:                name,
+			MatriculationNumber: sId,
+			LrzID:               lrzID,
+			Role:                model.GenericType,
 		}
-		dao.UpdateStudent(student)
+		err = dao.UpsertUser(&user)
+		if err != nil {
+			log.Printf("%v", err)
+			return
+		}
 		s := sessions.Default(c)
-		s.Set("StudentID", sId)
-		s.Set("Name", name)
+		s.Set("UserID", user.ID)
+		s.Set("Name", user.Name)
 		_ = s.Save()
 		c.Redirect(http.StatusFound, "/")
 		return

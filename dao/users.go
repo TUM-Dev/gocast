@@ -4,10 +4,12 @@ import (
 	"TUM-Live/model"
 	"context"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"log"
+	"time"
 )
 
 func AreUsersEmpty(ctx context.Context) (isEmpty bool, err error) {
@@ -54,9 +56,6 @@ func IsUserAdmin(ctx context.Context, uid uint) (res bool, err error) {
 }
 
 func GetUserByEmail(ctx context.Context, email string) (user model.User, err error) {
-	if Logger != nil {
-		Logger(ctx, "find user by email.")
-	}
 	var res model.User
 	err = DB.First(&res, "email = ?", email).Error
 	return res, err
@@ -67,29 +66,15 @@ func GetAllAdminsAndLecturers(users *[]model.User) (err error) {
 	return err
 }
 
-func GetAllUsers(ctx context.Context, users *[]model.User) (err error) {
-	if Logger != nil {
-		Logger(ctx, "Get all users.")
-	}
-	err = DB.Find(users).Error
-	return err
-}
-
-func GetStudent(ctx context.Context, id string) (s model.Student, err error) {
-	if Logger != nil {
-		Logger(ctx, "find student by id: "+id)
-	}
-	var student model.Student
-	dbErr := DB.Preload("Courses.Streams").Find(&student, "id = ?", id).Error
-	return student, dbErr
-}
-
 func GetUserByID(ctx context.Context, id uint) (user model.User, err error) {
-	if Logger != nil {
-		Logger(ctx, fmt.Sprintf("find user by id %v", id))
+	if cached, found := Cache.Get(fmt.Sprintf("userById%d", id)); found {
+		return cached.(model.User), nil
 	}
 	var foundUser model.User
-	dbErr := DB.Preload("Courses.Streams").Preload("InvitedCourses.Streams").Find(&foundUser, "id = ?", id).Error
+	dbErr := DB.Preload("Courses.Streams").Preload("Courses.Streams").Find(&foundUser, "id = ?", id).Error
+	if dbErr == nil {
+		Cache.SetWithTTL(fmt.Sprintf("userById%d", id), foundUser, 1, time.Second*10)
+	}
 	return foundUser, dbErr
 }
 
@@ -128,7 +113,58 @@ func UpdateUser(user model.User) {
 	}
 }
 
-func UpdateStudent(student model.Student) {
-	// insert student if they don't exist yet.
-	DB.Clauses(clause.OnConflict{DoNothing: true}).Create(&student)
+func UpsertUser(user *model.User) error {
+	var foundUser *model.User
+	err := DB.Model(&model.User{}).Where("matriculation_number = ?", user.MatriculationNumber).First(&foundUser).Error
+	if err == nil && foundUser != nil {
+		log.Println("user found, setting model")
+		user.Model = foundUser.Model
+		foundUser.LrzID = user.LrzID
+		foundUser.Name = user.Name
+		err := DB.Save(&foundUser).Error
+		if err != nil {
+			log.Printf("%v", err)
+		}
+		return nil
+	}
+	log.Println("user not found, creating.")
+	err = DB.
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "matriculation_number"}},
+			DoUpdates: clause.Assignments(map[string]interface{}{"name": user.Name}),
+		}).
+		Create(&user).Error
+	log.Printf("id is %v", user.ID)
+	return err
+}
+
+func AddUsersToCourseByTUMIDs(TumIDs []string, courseID uint) error {
+	// create empty users for ids that are not yet registered:
+	stubUsers := make([]model.User, len(TumIDs))
+	for i, id := range TumIDs {
+		stubUsers[i] = model.User{MatriculationNumber: id, Role: model.StudentType}
+	}
+	DB.Model(&model.User{}).Clauses(clause.OnConflict{DoNothing: true}).Create(&stubUsers)
+
+	// find users for current course:
+	var foundUsersIDs []courseUsers
+	err := DB.Model(&model.User{}).Where("matriculation_number in ?", TumIDs).Select("? as course_id, id as user_id", courseID).Scan(&foundUsersIDs).Error
+	if err != nil {
+		sentry.CaptureException(err)
+		log.Printf("%v", err)
+		return err
+	}
+	// add users to course
+	err = DB.Table("course_users").Clauses(clause.OnConflict{DoNothing: true}).Create(&foundUsersIDs).Error
+	if err != nil {
+		sentry.CaptureException(err)
+		log.Printf("%v", err)
+		return err
+	}
+	return nil
+}
+
+type courseUsers struct {
+	CourseID uint
+	UserID   uint
 }

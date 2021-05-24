@@ -4,7 +4,7 @@ import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
-	"context"
+	"errors"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"html/template"
@@ -15,33 +15,32 @@ import (
 )
 
 func WatchPage(c *gin.Context) {
-	log.Printf("watchpage")
 	span := sentry.StartSpan(c, "GET /w", sentry.TransactionName("GET /w"))
 	defer span.Finish()
 	var data WatchPageData
-	user, userErr := tools.GetUser(c)
-	student, studentErr := tools.GetStudent(c)
-	data.IndexData = NewIndexData()
-	if userErr == nil {
-		data.IndexData.IsUser = true
-		data.IndexData.IsAdmin = user.Role == model.AdminType || user.Role == model.LecturerType
-	}
-	if studentErr == nil {
-		data.IndexData.IsStudent = true
-	}
-	vodID := c.Param("id")
-	vod, err := dao.GetStreamByID(context.Background(), vodID)
-	if err != nil {
-		c.Status(http.StatusNotFound)
-		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status: http.StatusNotFound, Message: "Couldn't find stream."})
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	data.Stream = vod
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	data.IndexData = NewIndexData()
+	data.IndexData.TUMLiveContext = tumLiveContext
+	data.IsAdminOfCourse = tumLiveContext.User != nil && (tumLiveContext.User.Role == model.AdminType || tumLiveContext.User.ID == tumLiveContext.Course.UserID)
+	if data.IsAdminOfCourse && tumLiveContext.Stream.LectureHallID != 0 {
+		lectureHall, err := dao.GetLectureHallByID(tumLiveContext.Stream.LectureHallID)
+		if err != nil {
+			sentry.CaptureException(err)
+		} else {
+			data.Presets = lectureHall.CameraPresets
+		}
+	}
 	if c.Param("version") != "" {
 		data.Version = c.Param("version")
 		if strings.HasPrefix(data.Version, "unit-") {
-			if unitID, err := strconv.Atoi(strings.ReplaceAll(data.Version, "unit-", "")); err == nil && unitID < len(vod.Units) {
-				data.Unit = &vod.Units[unitID]
+			if unitID, err := strconv.Atoi(strings.ReplaceAll(data.Version, "unit-", "")); err == nil && unitID < len(tumLiveContext.Stream.Units) {
+				data.Unit = &tumLiveContext.Stream.Units[unitID]
 			}
 		}
 	}
@@ -49,55 +48,28 @@ func WatchPage(c *gin.Context) {
 		c.Redirect(http.StatusFound, strings.Split(c.Request.RequestURI, "?")[0])
 		return
 	}
-	course, err := dao.GetCourseById(context.Background(), vod.CourseID)
-	if err != nil {
-		log.Printf("couldn't find course for stream: %v\n", err)
-		c.Status(http.StatusNotFound)
-		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status: http.StatusNotFound, Message: "Couldn't find stream."})
-		return
-	}
-	if userErr == nil {
-		data.IsAdminOfCourse = user.Role == model.AdminType || user.ID == course.UserID
-		if data.IsAdminOfCourse {
-			lectureHall, err := dao.GetLectureHallByID(vod.LectureHallID)
-			if err != nil {
-				sentry.CaptureException(err)
-			}
-			data.Presets = lectureHall.CameraPresets
-		}
-	}
-	if course.Visibility == "loggedin" && userErr != nil && studentErr != nil {
-		c.Status(http.StatusForbidden)
-		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status: http.StatusForbidden, Message: "Please log in to access this resource."})
-		return
-	}
-	if course.Visibility == "enrolled" && !dao.IsUserAllowedToWatchPrivateCourse(course.ID, user, userErr, student, studentErr) {
-		c.Status(http.StatusForbidden)
-		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{IndexData: data.IndexData, Status: http.StatusForbidden, Message: "You are not allowed to watch this lecture. Please log in or contact your instructor."})
-		return
-	}
-	data.Course = course
 	if strings.HasPrefix(data.Version, "unit-") {
 		data.Description = template.HTML(data.Unit.GetDescriptionHTML())
 	} else {
-		data.Description = template.HTML(data.Stream.GetDescriptionHTML())
+		data.Description = template.HTML(data.IndexData.TUMLiveContext.Stream.GetDescriptionHTML())
 	}
 	if c.Query("video_only") == "1" {
-		err = templ.ExecuteTemplate(c.Writer, "video_only.gohtml", data)
+		err := templ.ExecuteTemplate(c.Writer, "video_only.gohtml", data)
+		if err != nil {
+			log.Printf("couldn't render template: %v\n", err)
+		}
 	} else {
-		err = templ.ExecuteTemplate(c.Writer, "watch.gohtml", data)
-	}
-	if err != nil {
-		log.Printf("couldn't render template: %v\n", err)
+		err := templ.ExecuteTemplate(c.Writer, "watch.gohtml", data)
+		if err != nil {
+			log.Printf("couldn't render template: %v\n", err)
+		}
 	}
 }
 
 type WatchPageData struct {
 	IndexData       IndexData
-	Stream          model.Stream
 	Unit            *model.StreamUnit
 	Description     template.HTML
-	Course          model.Course
 	Version         string
 	IsAdminOfCourse bool // is current user admin or lecturer who created this course
 	Presets         []model.CameraPreset

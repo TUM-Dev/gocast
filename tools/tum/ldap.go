@@ -13,7 +13,7 @@ import (
 /**
  * returns student id if login and password match, err otherwise
  */
-func LoginWithTumCredentials(username string, password string) (userId string, firstName string, err error) {
+func LoginWithTumCredentials(username string, password string) (userId string, lrzIdent string, firstName string, err error) {
 	defer sentry.Flush(time.Second * 2)
 	l, err := ldap.DialURL(tools.Cfg.LdapUrl)
 	if err != nil {
@@ -41,12 +41,12 @@ func LoginWithTumCredentials(username string, password string) (userId string, f
 	sr, err := l.Search(searchRequest)
 	if err != nil {
 		sentry.CaptureException(err)
-		return "", "", errors.New("couldn't query user")
+		return "", "", "", errors.New("couldn't query user")
 	}
 
 	if len(sr.Entries) != 1 {
 		log.Printf("User does not exist or too many entries returned: %v\n", len(sr.Entries))
-		return "", "", errors.New("couldn't find single user")
+		return "", "", "", errors.New("couldn't find single user")
 	}
 
 	userdn := sr.Entries[0].DN
@@ -54,7 +54,7 @@ func LoginWithTumCredentials(username string, password string) (userId string, f
 	err = l.Bind(userdn, password)
 	if err != nil {
 		log.Printf("%v\n", err)
-		return "", "", errors.New("couldn't login with tum credentials")
+		return "", "", "", errors.New("couldn't login with tum credentials")
 	}
 	res, err := l.Search(&ldap.SearchRequest{
 		BaseDN:   userdn,
@@ -63,23 +63,24 @@ func LoginWithTumCredentials(username string, password string) (userId string, f
 	})
 	if err != nil {
 		log.Printf("%v\n", err)
-		return "", "", errors.New("couldn't login with tum credentials")
+		return "", "", "", errors.New("couldn't login with tum credentials")
 	} else {
 		if len(res.Entries) != 1 {
 			sentry.CaptureMessage(fmt.Sprintf("bad response from ldap server. User: %v", username))
-			return "", "", errors.New("bad response from ldap server")
+			return "", "", "", errors.New("bad response from ldap server")
 		}
 		mNr := res.Entries[0].GetAttributeValue("imMatrikelNr")
 		mwnID := res.Entries[0].GetAttributeValue("imMWNID")
+		lrzID := res.Entries[0].GetAttributeValue("imLRZKennung")
 		name := res.Entries[0].GetAttributeValue("imVorname")
 		if mNr != "" {
-			return mNr, name, nil
+			return mNr, lrzID, name, nil
 		}
 		if mwnID != "" {
 			log.Println("Falling back to mwn id.")
-			return mwnID, name, nil
+			return mwnID, lrzID, name, nil
 		}
 	}
 	sentry.CaptureMessage(fmt.Sprintf("LDAP: reached unexpected codepoint. User: %v", username))
-	return "", "", errors.New("something went wrong")
+	return "", "", "", errors.New("something went wrong")
 }

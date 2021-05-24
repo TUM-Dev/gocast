@@ -4,16 +4,25 @@ import (
 	"TUM-Live/dao"
 	"TUM-Live/tools"
 	"context"
+	"errors"
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 )
 
-func configGinDownloadRouter(router gin.IRoutes) {
+func configGinDownloadRouter(router *gin.Engine) {
 	router.GET("/api/download/:id/:slug/:name", downloadVod)
 }
 
 func downloadVod(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	stream, err := dao.GetStreamByID(context.Background(), c.Param("id"))
 	if err != nil || !stream.Recording {
 		log.Printf("Deny download, cause: error or not recording: %v", err)
@@ -31,30 +40,29 @@ func downloadVod(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	user, uerr := tools.GetUser(c)
-	student, serr := tools.GetStudent(c)
+	//student, serr := tools.GetStudent(c)
 	if !course.DownloadsEnabled {
 		// only allow for owner or admin
-		if uerr != nil {
+		if tumLiveContext.User == nil {
 			log.Printf("Deny download, cause: download disabled but not logged in")
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		} else {
-			if user.Role > 1 && !user.IsAdminOfCourse(course.ID) {
+			if tumLiveContext.User.Role > 1 && tumLiveContext.User.ID != course.UserID {
 				log.Printf("Deny download, cause: download disabled and user not admin or owner.")
 				c.AbortWithStatus(http.StatusNotFound)
 				return
 			}
 		}
 	} else if course.Visibility != "public" {
-		if uerr == nil {
-			if user.Role > 1 && !user.IsAdminOfCourse(course.ID) {
+		if tumLiveContext.User != nil {
+			if tumLiveContext.User.Role > 1 && tumLiveContext.User.ID != course.UserID {
 				log.Printf("Deny download, cause: user but not admin or owner")
 				// logged in as user but not owner of course or admin
 				c.AbortWithStatus(http.StatusNotFound)
 				return
 			}
-		} else if serr == nil {
+		} /*else if serr == nil { todo
 			canDownload := false
 			for _, studentCourse := range student.Courses {
 				if studentCourse.ID == course.ID {
@@ -73,7 +81,7 @@ func downloadVod(c *gin.Context) {
 			// not logged in to a course that is private.
 			c.AbortWithStatus(http.StatusNotFound)
 			return
-		}
+		}*/
 	}
 	// public -> download
 	log.Printf("Download stream: %v", stream.FilePath)

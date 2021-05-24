@@ -95,10 +95,14 @@ func GetPublicCourses(year int, term string) (courses []model.Course, err error)
 
 func GetCourseById(ctx context.Context, id uint) (courses model.Course, err error) {
 	var foundCourse model.Course
-	dbErr := DB.Preload("Users").Preload("Streams.Stats").Preload("Streams", func(db *gorm.DB) *gorm.DB {
+	dbErr := DB.Preload("Streams.Stats").Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("streams.start asc")
 	}).Find(&foundCourse, "id = ?", id).Error
 	return foundCourse, dbErr
+}
+
+func GetInvitedUsersForCourse(course *model.Course) error {
+	return DB.Preload("Users", "role = ?", model.GenericType).Find(course).Error
 }
 
 func GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year string) (model.Course, error) {
@@ -188,22 +192,14 @@ func GetAvailableSemesters(c context.Context) []Semester {
 	}
 }
 
-func IsUserAllowedToWatchPrivateCourse(courseid uint, user model.User, userErr error, student model.Student, studentErr error) bool {
-	if userErr == nil {
-		for _, c := range user.InvitedCourses {
-			if c.ID == courseid {
+func IsUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {
+	if user != nil {
+		for _, c := range user.Courses {
+			if c.ID == course.ID {
 				return true
 			}
 		}
-		return user.Role == 1 || user.IsAdminOfCourse(courseid)
-	}
-	if studentErr == nil {
-		log.Printf("%v, %v", student.ID, courseid)
-		for _, sCourse := range student.Courses {
-			if sCourse.ID == courseid {
-				return true
-			}
-		}
+		return user.Role == model.AdminType || user.ID == course.UserID
 	}
 	return false
 }

@@ -11,8 +11,10 @@
 </head>
 <body class="bg-primary">
 
-{{- /*gotype: TUM-Live/web.LectureUnitsPageData*/ -}}
-{{template "header" .IndexData}}
+{{- /*gotype: TUM-Live/tools.TUMLiveContext*/ -}}
+{{template "header" .}}
+{{$course := .Course}}
+{{$stream := .Stream}}
 
 <div class="text-white container mx-auto">
     <div class="min-w-screen flex items-center justify-center">
@@ -25,7 +27,7 @@
                     muted
                     preload="auto"
                     data-setup='{"fluid": true}'>
-                <source src="{{if .Lecture.PlaylistUrl}}{{.Lecture.PlaylistUrl}}{{else if .Lecture.PlaylistUrlPRES}}{{.Lecture.PlaylistUrlPRES}}{{else}}{{.Lecture.PlaylistUrlCAM}}{{end}}"
+                <source src="{{if $stream.PlaylistUrl}}{{$stream.PlaylistUrl}}{{else if $stream.PlaylistUrlPRES}}{{$stream.PlaylistUrlPRES}}{{else}}{{$stream.PlaylistUrlCAM}}{{end}}"
                         type="application/x-mpegURL"/>
                 <p class="vjs-no-js">
                     To view this video please enable JavaScript.
@@ -34,7 +36,7 @@
             <div class="mt-4">
                 <form id="cutForm" class="border-gray-300 border-t-2"
                       onkeydown="return event.key !== 'Enter';"
-                      onsubmit="return submitCut({{.Lecture.Model.ID}}, {{.Lecture.CourseID}})">
+                      onsubmit="return submitCut({{$stream.Model.ID}}, {{$stream.CourseID}})">
                     <div id="sliderNew" class="mt-4"></div>
                     <input type="submit"
                            value="Save"

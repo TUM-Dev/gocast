@@ -12,7 +12,7 @@
     "tailwind-compile": "NODE_ENV=production npx tailwindcss build assets/css/main.css -o ./assets/css-dist/main.css"
   },
   "author": "Joscha Henningsen",
-  "license": "GPL-3.0-or-later",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/joschahenningsen/TUM-Live/issues"
   },

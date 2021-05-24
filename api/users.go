@@ -5,6 +5,7 @@ import (
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,15 +13,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 )
 
-func configGinUsersRouter(router gin.IRoutes) {
-	router.POST("/api/createUser", CreateUser)
-	router.POST("/api/createUserForCourse", CreateUserForCourse)
-	router.POST("/api/deleteUser", DeleteUser)
+func configGinUsersRouter(router *gin.Engine) {
+	admins := router.Group("/api")
+	admins.Use(tools.Admin)
+	admins.POST("/createUser", CreateUser)
+	admins.POST("/deleteUser", DeleteUser)
+
+	courseAdmins := router.Group("/api/course/:courseID")
+	courseAdmins.Use(tools.InitCourse)
+	courseAdmins.Use(tools.AdminOfCourse)
+	courseAdmins.POST("/createUserForCourse", CreateUserForCourse)
 }
 
 func DeleteUser(c *gin.Context) {
@@ -28,11 +34,6 @@ func DeleteUser(c *gin.Context) {
 	err := json.NewDecoder(c.Request.Body).Decode(&deleteRequest)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-	err = tools.RequirePermission(c, 1) // require admin
-	if err != nil {
-		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
 	// currently admins can not be deleted.
@@ -57,36 +58,24 @@ func DeleteUser(c *gin.Context) {
 }
 
 func CreateUserForCourse(c *gin.Context) {
-	user, userErr := tools.GetUser(c)
-	if userErr != nil {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "Not Logged in."})
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	courseID, err := strconv.Atoi(c.PostForm("courseID"))
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
-		return
-	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	batchUsers := c.PostForm("batchUserInput")
 	userName := c.PostForm("newUserFirstName")
 	userEmail := c.PostForm("newUserEmail")
-	if user.Role != model.AdminType && !user.IsAdminOfCourse(uint(courseID)) {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "forbidden"})
-		return
-	}
-	course, err := dao.GetCourseById(context.Background(), uint(courseID))
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "no such course."})
-		return
-	}
 
 	if batchUsers != "" {
-		go addUserBatchToCourse(batchUsers, course)
-		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", courseID))
+		go addUserBatchToCourse(batchUsers, *tumLiveContext.Course)
+		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 		return
 	} else if userName != "" && userEmail != "" {
-		addSingleUserToCourse(userName, userEmail, course)
-		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", courseID))
+		addSingleUserToCourse(userName, userEmail, *tumLiveContext.Course)
+		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 		return
 	} else {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
@@ -111,12 +100,11 @@ func addSingleUserToCourse(name string, email string, course model.Course) {
 	if foundUser, err := dao.GetUserByEmail(context.Background(), email); err != nil {
 		// user not in database yet. Create them & send registration link
 		createdUser := model.User{
-			Name:           name,
-			Email:          email,
-			Role:           model.GenericType,
-			Password:       "",
-			Courses:        nil,
-			InvitedCourses: []model.Course{course},
+			Name:     name,
+			Email:    sql.NullString{String: email, Valid: true},
+			Role:     model.GenericType,
+			Password: "",
+			Courses:  []model.Course{course},
 		}
 		if err = dao.CreateUser(context.Background(), createdUser); err != nil {
 			log.Printf("%v", err)
@@ -125,7 +113,7 @@ func addSingleUserToCourse(name string, email string, course model.Course) {
 		}
 	} else {
 		// user Found, append the new course and notify via mail.
-		foundUser.InvitedCourses = append(foundUser.InvitedCourses, course)
+		foundUser.Courses = append(foundUser.Courses, course)
 		dao.UpdateUser(foundUser)
 		err = tools.SendPasswordMail(email,
 			fmt.Sprintf("Hello!\n"+
@@ -153,24 +141,19 @@ func CreateUser(c *gin.Context) {
 	if usersEmpty {
 		createdUser, err = createUserHelper(request, model.AdminType)
 	} else {
-		requestUser, err := tools.GetUser(c)
-		if err != nil || requestUser.Role > model.AdminType {
-			c.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
 		createdUser, err = createUserHelper(request, model.LecturerType)
 	}
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	c.JSON(200, createUserResponse{Name: createdUser.Name, Email: createdUser.Email, Role: createdUser.Role})
+	c.JSON(200, createUserResponse{Name: createdUser.Name, Email: createdUser.Email.String, Role: createdUser.Role})
 }
 
 func createUserHelper(request createUserRequest, userType int) (user model.User, err error) {
 	var u = model.User{
 		Name:  request.Name,
-		Email: request.Email,
+		Email: sql.NullString{String: request.Email, Valid: true},
 		Role:  userType,
 	}
 	if userType == 1 {
@@ -178,9 +161,6 @@ func createUserHelper(request createUserRequest, userType int) (user model.User,
 		if err != nil {
 			return u, errors.New("user could not be created")
 		}
-	}
-	if !u.ValidateFields() {
-		return u, errors.New("user data rejected")
 	}
 	dbErr := dao.CreateUser(context.Background(), u)
 	if dbErr != nil {

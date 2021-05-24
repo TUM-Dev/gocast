@@ -4,9 +4,9 @@ import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
-	"context"
 	"fmt"
 	"github.com/antchfx/xmlquery"
+	"github.com/getsentry/sentry-go"
 	"log"
 )
 
@@ -15,15 +15,15 @@ func FindStudentsForCourses(courses []model.Course) {
 		studentIDs, err := findStudentsForCourse(courses[i].TUMOnlineIdentifier)
 		if err != nil {
 			log.Printf("Could not get Students for course with id %v: %v\n", courses[i].TUMOnlineIdentifier, err)
-			break
+			sentry.CaptureException(err)
+			continue
 		}
-		students := make([]model.Student, len(studentIDs))
-		for j := range students {
-			students[j] = model.Student{ID: studentIDs[j]}
+		err = dao.AddUsersToCourseByTUMIDs(studentIDs, courses[i].ID)
+		if err != nil {
+			log.Printf("%v", err)
+			sentry.CaptureException(err)
 		}
-		courses[i].Students = students
 	}
-	dao.UpdateCourses(context.Background(), courses)
 }
 
 /**

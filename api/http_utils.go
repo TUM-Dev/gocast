@@ -2,70 +2,11 @@ package api
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"strings"
 )
-
-// SendJSON will return take a value and serialize it to json and return the http response.
-func SendJSON(w http.ResponseWriter, r *http.Request, code int, val interface{}) {
-	w.Header().Set("Cache-Control", "no-cache, no-store")
-	w.Header().Set("Pragma", "no-cache")
-	w.Header().Set("Expires", "0")
-
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(code)
-
-	bytesSent, err := json.Marshal(val)
-	if err != nil {
-		InternalServerError(w, nil)
-		return
-	}
-
-	_, _ = w.Write(bytesSent)
-}
-
-// InternalServerError will return an error to the client, sending 500 error code to the client with generic string
-func InternalServerError(w http.ResponseWriter, err error) {
-	log.Printf("return http status 500 because: %v\n", err)
-	w.Header().Set("Cache-Control", "no-cache, no-store")
-	w.Header().Set("Pragma", "no-cache")
-	w.Header().Set("Expires", "0")
-	http.Error(w, "Internal server error", 500)
-}
-
-// InternalServerError will return an error to the client, sending 500 error code to the client with generic string
-func ForbiddenError(w http.ResponseWriter, err error) {
-	log.Printf("return http status 403 because: %v\n", err)
-	w.Header().Set("Cache-Control", "no-cache, no-store")
-	w.Header().Set("Pragma", "no-cache")
-	w.Header().Set("Expires", "0")
-	http.Error(w, "Forbidden", http.StatusForbidden)
-}
-
-// InternalServerError will return an error to the client, sending 500 error code to the client with generic string
-func BadRequestError(w http.ResponseWriter) {
-	w.Header().Set("Cache-Control", "no-cache, no-store")
-	w.Header().Set("Pragma", "no-cache")
-	w.Header().Set("Expires", "0")
-	http.Error(w, "Bad Request", http.StatusBadRequest)
-}
-
-// AddHeadersHandler will take a map of string/string and use it to set the key and value as the header name and value respectively.
-func AddHeadersHandler(addHeaders map[string]string, h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		for key, value := range addHeaders {
-			w.Header().Set(key, value)
-		}
-
-		h.ServeHTTP(w, r)
-	})
-}
 
 // ipRange - a structure that holds the start and end of a range of ip addresses
 type ipRange struct {

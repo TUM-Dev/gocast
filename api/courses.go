@@ -7,7 +7,9 @@ import (
 	"TUM-Live/tools/tum"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
@@ -19,25 +21,25 @@ import (
 	"time"
 )
 
-func configGinCourseRouter(router gin.IRoutes) {
-	router.POST("/api/courseInfo", courseInfo)
-	router.GET("/api/courseSchedule/:year/:term/:slug", courseSchedule)
-	router.POST("/api/createCourse", createCourse)
-	router.POST("/api/createLecture", createLecture)
-	router.POST("/api/deleteLecture/:id", deleteLecture)
-	router.POST("/api/renameLecture", renameLecture)
-	router.POST("/api/updateDescription", updateDescription)
-	router.POST("/api/addUnit", addUnit)
-	router.POST("/api/submitCut", submitCut)
-	router.POST("/api/deleteUnit/:unitID", deleteUnit)
+func configGinCourseRouter(router *gin.Engine) {
+	atLeastLecturerGroup := router.Group("/")
+	atLeastLecturerGroup.Use(tools.AtLeastLecturer)
+	atLeastLecturerGroup.POST("/api/courseInfo", courseInfo)
+	atLeastLecturerGroup.POST("/api/createCourse", createCourse)
+
+	adminOfCourseGroup := router.Group("/api/course/:courseID")
+	adminOfCourseGroup.Use(tools.InitCourse)
+	adminOfCourseGroup.Use(tools.AdminOfCourse)
+	adminOfCourseGroup.POST("/createLecture", createLecture)
+	adminOfCourseGroup.POST("/deleteLecture/:streamID", deleteLecture)
+	adminOfCourseGroup.POST("/renameLecture/:streamID", renameLecture)
+	adminOfCourseGroup.POST("/updateDescription/:streamID", updateDescription)
+	adminOfCourseGroup.POST("/addUnit", addUnit)
+	adminOfCourseGroup.POST("/submitCut", submitCut)
+	adminOfCourseGroup.POST("/deleteUnit/:unitID", deleteUnit)
 }
 
 func submitCut(c *gin.Context) {
-	user, uErr := tools.GetUser(c)
-	if uErr != nil {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "login is required to perform this operation."})
-		return
-	}
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
@@ -53,10 +55,6 @@ func submitCut(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "stream not found"})
 		return
 	}
-	if user.Role != model.AdminType && !user.IsAdminOfCourse(stream.CourseID) {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "login is required to perform this operation."})
-		return
-	}
 	stream.StartOffset = req.From
 	stream.EndOffset = req.To
 	if err = dao.SaveStream(&stream); err != nil {
@@ -64,31 +62,22 @@ func submitCut(c *gin.Context) {
 	}
 }
 
+type submitCutRequest struct {
+	LectureID uint `json:"lectureID"`
+	From      uint `json:"from"`
+	To        uint `json:"to"`
+}
+
 func deleteUnit(c *gin.Context) {
-	user, uErr := tools.GetUser(c)
-	if uErr != nil {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "login is required to perform this operation."})
-		return
-	}
 	unit, err := dao.GetUnitByID(c.Param("unitID"))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "not found"})
-		return
-	}
-	stream, err := dao.GetStreamByID(context.Background(), strconv.Itoa(int(unit.StreamID)))
-	if err != nil || (user.Role != model.AdminType && !user.IsAdminOfCourse(stream.CourseID)) {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "forbidden"})
 		return
 	}
 	dao.DeleteUnit(unit.Model.ID)
 }
 
 func addUnit(c *gin.Context) {
-	user, uErr := tools.GetUser(c)
-	if uErr != nil {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "login is required to perform this operation."})
-		return
-	}
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
@@ -104,10 +93,6 @@ func addUnit(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "stream not found"})
 		return
 	}
-	if user.Role != model.AdminType && !user.IsAdminOfCourse(stream.CourseID) {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "login is required to perform this operation."})
-		return
-	}
 	stream.Units = append(stream.Units, model.StreamUnit{
 		UnitName:        req.Title,
 		UnitDescription: req.Description,
@@ -118,6 +103,14 @@ func addUnit(c *gin.Context) {
 	if err = dao.UpdateStreamFullAssoc(&stream); err != nil {
 		panic(err)
 	}
+}
+
+type addUnitRequest struct {
+	LectureID   uint   `json:"lectureID"`
+	From        uint   `json:"from"`
+	To          uint   `json:"to"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
 }
 
 func updateDescription(c *gin.Context) {
@@ -131,19 +124,9 @@ func updateDescription(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	u, err := tools.GetUser(c)
-	if err != nil {
-		c.AbortWithStatus(http.StatusForbidden)
-		return
-	}
-	stream, err := dao.GetStreamByID(context.Background(), strconv.Itoa(int(req.Id)))
+	stream, err := dao.GetStreamByID(context.Background(), c.Param("streamID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
-		return
-	}
-	course, _ := dao.GetCourseById(context.Background(), stream.CourseID)
-	if u.Role != 1 && course.UserID != u.ID {
-		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
 	stream.Description = req.Name
@@ -164,19 +147,9 @@ func renameLecture(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	u, err := tools.GetUser(c)
-	if err != nil {
-		c.AbortWithStatus(http.StatusForbidden)
-		return
-	}
-	stream, err := dao.GetStreamByID(context.Background(), strconv.Itoa(int(req.Id)))
+	stream, err := dao.GetStreamByID(context.Background(), c.Param("streamID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
-		return
-	}
-	course, _ := dao.GetCourseById(context.Background(), stream.CourseID)
-	if u.Role != 1 && course.UserID != u.ID {
-		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
 	stream.Name = req.Name
@@ -186,35 +159,35 @@ func renameLecture(c *gin.Context) {
 	}
 }
 
+type renameLectureRequest struct {
+	Name string
+}
+
 func deleteLecture(c *gin.Context) {
-	user, err := tools.GetUser(c)
-	if err != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	stream, err := dao.GetStreamByID(context.Background(), c.Param("id"))
-	if err != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	stream, err := dao.GetStreamByID(context.Background(), c.Param("streamID"))
+	if err != nil || stream.CourseID != tumLiveContext.Course.ID {
+		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
-	if user.Role != 1 && !user.IsAdminOfCourse(stream.CourseID) {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-	stream.Model.DeletedAt = gorm.DeletedAt{Time: time.Now()}
+	stream.Model.DeletedAt = gorm.DeletedAt{Time: time.Now()} // todo ?!
 	dao.DeleteStream(strconv.Itoa(int(stream.ID)))
 }
 
 func createLecture(c *gin.Context) {
-	user, err := tools.GetUser(c)
-	if err != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	if user.Role > 2 { // not lecturer or admin
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	var req createLectureRequest
 	jsonData, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
@@ -226,42 +199,35 @@ func createLecture(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	u64, err := strconv.Atoi(req.Id)
-	courseID := uint(u64)
-	course, err := dao.GetCourseById(context.Background(), courseID)
-	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
-		return
-	}
-	if user.Role != 1 && course.UserID != user.ID {
-		c.AbortWithStatus(http.StatusForbidden)
-		return
-	}
 	streamKey := uuid.NewV4().String()
 	streamKey = strings.ReplaceAll(streamKey, "-", "")
 	lecture := model.Stream{
 		Name:        req.Name,
-		CourseID:    uint(u64),
+		CourseID:    tumLiveContext.Course.ID,
 		Start:       req.Start,
 		End:         req.End,
 		StreamKey:   streamKey,
 		PlaylistUrl: "",
 		LiveNow:     false,
 	}
-	course.Streams = append(course.Streams, lecture)
-	dao.UpdateCourse(context.Background(), course)
+	tumLiveContext.Course.Streams = append(tumLiveContext.Course.Streams, lecture)
+	dao.UpdateCourse(context.Background(), *tumLiveContext.Course)
+}
+
+type createLectureRequest struct {
+	Name  string
+	Start time.Time
+	End   time.Time
 }
 
 func createCourse(c *gin.Context) {
-	user, err := tools.GetUser(c)
-	if err != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	if user.Role > 2 { // not lecturer or admin
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	jsonData, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -297,9 +263,8 @@ func createCourse(c *gin.Context) {
 	} else {
 		semester = "S"
 	}
-
 	course := model.Course{
-		UserID:              user.ID,
+		UserID:              tumLiveContext.User.ID,
 		Name:                req.Name,
 		Slug:                req.Slug,
 		Year:                year,
@@ -310,7 +275,6 @@ func createCourse(c *gin.Context) {
 		ChatEnabled:         req.EnChat,
 		Visibility:          req.Access,
 		Streams:             []model.Stream{},
-		Students:            []model.Student{},
 	}
 	err = dao.CreateCourse(context.Background(), course)
 	if err != nil {
@@ -326,16 +290,18 @@ func createCourse(c *gin.Context) {
 	go tum.FetchCourses()
 }
 
+type createCourseRequest struct {
+	Access       string //enrolled, public or loggedin
+	CourseID     string
+	EnChat       bool
+	EnDL         bool
+	EnVOD        bool
+	Name         string
+	Slug         string
+	TeachingTerm string
+}
+
 func courseInfo(c *gin.Context) {
-	user, userErr := tools.GetUser(c)
-	if userErr != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-	if user.Role > 2 {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
 	jsonData, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -355,82 +321,6 @@ func courseInfo(c *gin.Context) {
 	c.JSON(200, courseInfo)
 }
 
-func courseSchedule(c *gin.Context) {
-	course, err := dao.GetCourseBySlugYearAndTerm(context.Background(), c.Param("slug"), c.Param("term"), c.Param("year"))
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "not found"})
-		return
-	}
-	u, uerr := tools.GetUser(c)
-	if uerr != nil {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "you don't have permission to access this resource"})
-		return
-	}
-	if u.Role != 1 && !u.IsAdminOfCourse(course.ID) {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"msg": "you don't have permission to access this resource"})
-		return
-	}
-
-	var resp []courseScheduleResp
-	for _, stream := range course.Streams {
-		if stream.End.After(time.Now()) {
-			resp = append(resp, courseScheduleResp{
-				Start:        stream.Start,
-				End:          stream.End,
-				Name:         stream.Name,
-				StreamSecret: stream.StreamKey,
-				StreamKey:    course.Slug,
-			})
-		}
-	}
-	c.JSON(http.StatusOK, resp)
-}
-
-type courseScheduleResp struct {
-	Start        time.Time
-	End          time.Time
-	Name         string
-	StreamSecret string
-	StreamKey    string
-}
-
-type submitCutRequest struct {
-	LectureID uint `json:"lectureID"`
-	From      uint `json:"from"`
-	To        uint `json:"to"`
-}
-
 type getCourseRequest struct {
 	CourseID string `json:"courseID"`
-}
-
-type createCourseRequest struct {
-	Access       string //enrolled, public or loggedin
-	CourseID     string
-	EnChat       bool
-	EnDL         bool
-	EnVOD        bool
-	Name         string
-	Slug         string
-	TeachingTerm string
-}
-
-type createLectureRequest struct {
-	Id    string
-	Name  string
-	Start time.Time
-	End   time.Time
-}
-
-type renameLectureRequest struct {
-	Id   uint
-	Name string
-}
-
-type addUnitRequest struct {
-	LectureID   uint   `json:"lectureID"`
-	From        uint   `json:"from"`
-	To          uint   `json:"to"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
 }

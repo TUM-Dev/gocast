@@ -1,6 +1,7 @@
 package web
 
 import (
+	"TUM-Live/dao"
 	"TUM-Live/tools"
 	"embed"
 	"github.com/gin-gonic/gin"
@@ -17,7 +18,7 @@ var templateFS embed.FS
 //go:embed node_modules
 var staticFS embed.FS
 
-func ConfigGinRouter(router gin.IRoutes) {
+func ConfigGinRouter(router *gin.Engine) {
 	templ = template.Must(template.ParseFS(templateFS, "template/*.gohtml", "template/admin/*.gohtml", "template/admin/admin_tabs/*.gohtml"))
 	configGinStaticRouter(router)
 	configMainRoute(router)
@@ -33,32 +34,66 @@ func configGinStaticRouter(router gin.IRoutes) {
 	})
 }
 
-func configMainRoute(router gin.IRoutes) {
+func configMainRoute(router *gin.Engine) {
+	streamGroup := router.Group("/")
+
+	atLeastLecturerGroup := router.Group("/")
+	atLeastLecturerGroup.Use(tools.AtLeastLecturer)
+	atLeastLecturerGroup.GET("/admin", AdminPage)
+	atLeastLecturerGroup.GET("/admin/create-course", CreateCoursePage)
 	router.GET("/about", AboutPage)
-	router.GET("/admin", AdminPage)
-	router.GET("/admin/create-course", CreateCoursePage)
-	router.GET("/admin/course/:id", EditCoursePage)
-	router.GET("/admin/units/:streamID", LectureUnitsPage)
-	router.GET("/admin/cut/:streamID", LectureCutPage)
-	router.POST("/admin/course/:id", UpdateCourse)
+
+	courseAdminGroup := router.Group("/")
+	courseAdminGroup.Use(tools.InitCourse)
+	courseAdminGroup.Use(tools.AdminOfCourse)
+	courseAdminGroup.GET("/admin/course/:courseID", EditCoursePage)
+	courseAdminGroup.POST("/admin/course/:courseID", UpdateCourse)
+
+	withStream := courseAdminGroup.Group("/")
+	withStream.Use(tools.InitStream)
+	withStream.GET("/admin/units/:courseID/:streamID", LectureUnitsPage)
+	withStream.GET("/admin/cut/:courseID/:streamID", LectureCutPage)
+
 	router.POST("/login", LoginHandler)
 	router.GET("/login", LoginPage)
 	router.GET("/logout", LogoutPage)
 	router.GET("/setPassword/:key", CreatePasswordPage)
 	router.POST("/setPassword/:key", CreatePasswordPage)
-	router.GET("/w/:slug/:id", WatchPage)
-	router.GET("/w/:slug/:id/:version", WatchPage)
+	streamGroup.Use(tools.InitStream)
+	streamGroup.GET("/w/:slug/:streamID", WatchPage)
+	streamGroup.GET("/w/:slug/:streamID/:version", WatchPage)
 	router.GET("/", MainPage)
 	router.GET("/semester/:year/:term", MainPage)
 	router.GET("/healthcheck", HealthCheck)
+
+	// redirect from old site:
+	router.GET("/cgi-bin/streams/*x", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/")
+	})
 }
 
-func configCourseRoute(router gin.IRoutes) {
-	router.GET("/course/:year/:teachingTerm/:slug", CoursePage)
+func configCourseRoute(router *gin.Engine) {
+	g := router.Group("/course")
+	g.Use(tools.InitCourse)
+	g.GET("/:year/:teachingTerm/:slug", CoursePage)
 }
 
 func HealthCheck(context *gin.Context) {
-	context.JSON(http.StatusOK, gin.H{"version": VersionTag})
+	resp := HealthCheckData{
+		Version:      VersionTag,
+		CacheMetrics: CacheMetrics{Hits: dao.Cache.Metrics.Hits(), Misses: dao.Cache.Metrics.Misses(), KeysAdded: dao.Cache.Metrics.KeysAdded()},
+	}
+	context.JSON(http.StatusOK, resp)
+}
+
+type HealthCheckData struct {
+	Version      string       `json:"version"`
+	CacheMetrics CacheMetrics `json:"cacheMetrics"`
+}
+type CacheMetrics struct {
+	Hits      uint64 `json:"hits"`
+	Misses    uint64 `json:"misses"`
+	KeysAdded uint64 `json:"keysAdded"`
 }
 
 type ErrorPageData struct {
