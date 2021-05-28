@@ -20,6 +20,7 @@ func InitContext(c *gin.Context) {
 		strings.HasPrefix(c.Request.RequestURI, "/favicon") {
 		return
 	}
+
 	session := sessions.Default(c)
 	userID := session.Get("UserID")
 	if userID != nil {
@@ -72,7 +73,7 @@ func InitCourse(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
-	// check if course is accessible by user: (todo: already done in middleware?)
+	// check if course is accessible by user:
 	if course.Visibility == "public" || (tumLiveContext.User != nil && tumLiveContext.User.IsEligibleToWatchCourse(course)) {
 		tumLiveContext.Course = &course
 		c.Set("TUMLiveContext", tumLiveContext)
@@ -162,7 +163,7 @@ func Admin(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(TUMLiveContext)
-	if tumLiveContext.User.Role != model.AdminType {
+	if tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType {
 		c.AbortWithStatus(http.StatusForbidden)
 	}
 }

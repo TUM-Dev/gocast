@@ -74,13 +74,18 @@ func main() {
 	OsSignal = make(chan os.Signal, 1)
 
 	goopt.Parse(nil)
+	env := "production"
+	if VersionTag == "development" {
+		env = "development"
+	}
 	if os.Getenv("SentryDSN") != "" {
 		err := sentry.Init(sentry.ClientOptions{
 			Dsn:              os.Getenv("SentryDSN"),
 			Release:          VersionTag,
-			TracesSampleRate: 0.1,
+			TracesSampleRate: 0.15,
 			Debug:            true,
 			AttachStacktrace: true,
+			Environment:      env,
 		})
 		if err != nil {
 			log.Fatalf("sentry.Init: %s", err)
