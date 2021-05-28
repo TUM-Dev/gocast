@@ -14,6 +14,8 @@ import (
  * returns student id if login and password match, err otherwise
  */
 func LoginWithTumCredentials(username string, password string) (userId string, lrzIdent string, firstName string, err error) {
+	// sanitize possibly malicious username
+	username = ldap.EscapeFilter(username)
 	defer sentry.Flush(time.Second * 2)
 	l, err := ldap.DialURL(tools.Cfg.LdapUrl)
 	if err != nil {
