@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
@@ -33,10 +34,30 @@ type Stream struct {
 	StartOffset      uint `gorm:"default:null"`
 	EndOffset        uint `gorm:"default:null"`
 	LectureHallID    uint `gorm:"default:null"`
+	Silences         []Silence
 }
 
 func (s Stream) IsPast() bool {
 	return s.End.Before(time.Now())
+}
+
+type silence struct {
+	Start uint `json:"start"`
+	End   uint `json:"end"`
+}
+
+func (s Stream) GetSilencesJson() string {
+	forServe := make([]silence, len(s.Silences))
+	for i, _ := range forServe {
+		forServe[i] = silence{
+			Start: s.Silences[i].Start,
+			End:   s.Silences[i].End,
+		}
+	}
+	if m, err := json.Marshal(forServe); err == nil {
+		return string(m)
+	}
+	return "[]"
 }
 
 func (s Stream) GetDescriptionHTML() string {

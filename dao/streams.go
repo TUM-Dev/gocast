@@ -58,7 +58,7 @@ func GetStreamByID(ctx context.Context, id string) (stream model.Stream, err err
 		return cached.(model.Stream), nil
 	}
 	var res model.Stream
-	err = DB.Preload("Chats").Preload("Units", func(db *gorm.DB) *gorm.DB {
+	err = DB.Preload("Silences").Preload("Chats").Preload("Units", func(db *gorm.DB) *gorm.DB {
 		return db.Order("unit_start asc")
 	}).First(&res, "id = ?", id).Error
 	if err != nil {
@@ -149,4 +149,9 @@ func InsertConvertJob(ctx context.Context, job *model.ProcessingJob) {
 func DeleteStream(streamID string) {
 	DB.Where("id = ?", streamID).Delete(&model.Stream{})
 	Cache.Clear()
+}
+
+func UpdateSilences(silences []model.Silence, streamID string) error {
+	DB.Delete(&model.Silence{}, "stream_id = ?", streamID)
+	return DB.Save(&silences).Error
 }

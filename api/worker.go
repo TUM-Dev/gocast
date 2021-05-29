@@ -2,11 +2,14 @@ package api
 
 import (
 	"TUM-Live/dao"
+	"TUM-Live/model"
+	"TUM-Live/tools"
 	"context"
 	"encoding/json"
 	"errors"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -14,12 +17,41 @@ import (
 	"time"
 )
 
-func configGinWorkerRouter(r gin.IRoutes) {
+func configGinWorkerRouter(r *gin.Engine) {
+	workers := r.Group("/api/worker")
+	workers.Use(tools.Worker)
 	r.GET("/api/worker/getJobs/:workerID", getJob)
 	r.POST("/api/worker/putVOD/:workerID", putVod)
 	r.POST("/api/worker/ping/:workerID", ping)
 	r.POST("/api/worker/notifyLive/:workerID", notifyLive)
 	r.POST("/api/worker/notifyLiveEnd/:workerID/:streamID", notifyLiveEnd)
+	workers.POST("/silenceResults/:workerID", silenceResults)
+}
+
+type SilenceReq struct {
+	StreamID string          `json:"stream_id"`
+	Silences []model.Silence `json:"silences"`
+}
+
+func silenceResults(c *gin.Context) {
+	var req SilenceReq
+	err := c.MustBindWith(&req, binding.JSON)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	if s, err := dao.GetStreamByID(c, req.StreamID); err == nil {
+		s.Silences = req.Silences
+		for i, _ := range req.Silences {
+			req.Silences[i].StreamID = s.ID
+		}
+		err = dao.UpdateSilences(req.Silences, req.StreamID)
+		if err != nil {
+			log.Printf("%v", err)
+			sentry.CaptureException(err)
+			return
+		}
+	}
 }
 
 func ping(c *gin.Context) {

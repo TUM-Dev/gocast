@@ -132,7 +132,7 @@
 
 <script src="/static/node_modules/video.js/dist/video.min.js"></script>
 <script src="/static/node_modules/videojs-seek-buttons-google-free/dist/videojs-seek-buttons-google-free.min.js"></script>
-<script src="/static/assets/ts-dist/theater.js"></script>
+<script src="/static/assets/ts-dist/TUMLiveVjs.js?v={{.IndexData.VersionTag}}"></script>
 <script>
     // @ts-ignore
     let player = videojs('my-video', {
@@ -178,6 +178,9 @@
         }
     });
 
+    {{if $stream.Silences}}
+    player.skipSilence({{$stream.GetSilencesJson}});
+    {{end}}
 </script>
 </body>
 </html>
