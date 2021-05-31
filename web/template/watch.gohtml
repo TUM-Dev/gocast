@@ -62,8 +62,8 @@
                 {{end}}
             </p>
         </div>
-        <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}"><h2
-                    class="text-gray-300 hover:text-white hover:underline text-xl">{{$course.Name}}</h2></a>
+        <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}"
+                    class="text-gray-300 hover:text-white hover:underline text-xl">{{$course.Name}}</a>
         {{if and .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
             <div class="border-t-2 border-secondary p-4">
                 <h3 class="text-gray-400 mb-2">Administration:</h3>
