@@ -66,6 +66,8 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/semester/:year/:term", MainPage)
 	router.GET("/healthcheck", HealthCheck)
 
+	router.GET("/:shortLink", HighlightPage)
+
 	// redirect from old site:
 	router.GET("/cgi-bin/streams/*x", func(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/")

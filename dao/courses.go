@@ -204,6 +204,16 @@ func IsUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bo
 	return false
 }
 
+func GetCourseByShortLink(link string) (model.Course, error) {
+	var courseId uint
+	err := DB.Model(&model.ShortLink{}).Select("course_id").Where("link = ?", link).Scan(&courseId).Error
+	if err != nil {
+		return model.Course{}, err
+	}
+	course, err := GetCourseById(context.Background(), courseId)
+	return course, err
+}
+
 type Semester struct {
 	TeachingTerm string
 	Year         int

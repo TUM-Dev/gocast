@@ -112,6 +112,7 @@ func main() {
 		&model.Chat{},
 		&model.RegisterLink{},
 		&model.Silence{},
+		&model.ShortLink{},
 		&model.Stat{},
 		&model.StreamUnit{},
 		&model.LectureHall{},
