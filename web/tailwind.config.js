@@ -11,7 +11,7 @@ module.exports = {
             colors: {
                 'primary': '#0d1117',
                 'secondary': '#161b22',
-                'secondary-lighter': '#161b22',
+                'secondary-lighter': '#0d1117',
                 'success': '#2fe395',
                 'info': '#2f56e3',
                 'danger': '#e3342f',
@@ -33,6 +33,7 @@ module.exports = {
         extend: {
             backgroundColor: ['odd'],
             display:['group-hover'],
+            textColor: ['visited'],
         },
     },
     plugins: [],

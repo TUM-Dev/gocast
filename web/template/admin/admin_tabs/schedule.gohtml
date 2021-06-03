@@ -3,12 +3,18 @@
     <script src="/static/node_modules/ical.js/build/ical.min.js"></script>
     <script src="/static/node_modules/fullcalendar/main.min.js"></script>
     <script src="/static/node_modules/@fullcalendar/icalendar/main.global.min.js"></script>
-    <div id="calendar" class="pt-4"></div>
+    <div class="flex w-full pt-4">
+        <div id="calendar" class="lg:w-5/6 w-full"></div>
+        <div id="details" class="w-0 lg-w-1/6"></div>
+    </div>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             var calendarEl = document.getElementById("calendar");
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: "timeGridWeek",
+                nowIndicator: true,
+                firstDay: 1,
+                height: "85vh",
                 allDaySlot: false,
                 events: {
                     url: "/api/hall/all.ics",
@@ -23,7 +29,10 @@
                         locationElem.innerHTML = "&#183;" + eventLocation;
                         e.el.getElementsByClassName("fc-event-time")[0].appendChild(locationElem);
                     }
-                }
+                },
+                eventClick:function (info) {
+                    //todo
+                },
             });
             calendar.render();
         });

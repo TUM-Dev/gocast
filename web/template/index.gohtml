@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>TUM Live</title>
@@ -7,10 +7,10 @@
     <meta name="description"
           content="TUM-Live, the livestreaming and VoD service of the Rechnerbetriebsgruppe at the department of informatics and mathematics at the Technical University of Munich"/>
 </head>
-<body class="bg-primary">
-{{- /*gotype: TUM-Live/web.IndexData*/ -}}
+<body class="bg-primary dark">
 {{template "header" .TUMLiveContext}}
 
+{{- /*gotype: TUM-Live/web.IndexData*/ -}}
 <div class="container flex flex-col pb-16">
     {{if not .TUMLiveContext.User}}
         <p class="text-gray-300">Log in to see your courses</p>
@@ -36,10 +36,10 @@
     {{range $course := .Courses }}
         <div class="pt-1 group course{{$course.Model.ID}}">
             <div class="flex items-center">
-                <i class="fancyeye opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white mr-2 cursor-pointer"
+                <i class="fancyeye opacity-0 group-hover:opacity-100 transition-colors duration-200 hover:text-white text-gray-400 mr-2 cursor-pointer"
                    title="Hide this course" onclick="hideCourse({{$course.Model.ID}}, {{$course.Name}})"></i>
                 <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
-                    <h3 class="text-lg text-gray-300 hover:text-white">{{$course.Name}}</h3></a>
+                    <h3 class="text-lg hover:text-white text-gray-300">{{$course.Name}}</h3></a>
             </div>
             <div class="flex">
                 <i class="icon-eye invisible mr-2"></i>

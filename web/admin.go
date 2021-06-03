@@ -41,20 +41,31 @@ func AdminPage(c *gin.Context) {
 	lectureHalls := dao.GetAllLectureHalls()
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
-	page := "courses"
-	if _, ok := c.Request.URL.Query()["users"]; ok {
+	page := "schedule"
+	if c.Request.URL.Path == "/admin/users"{
 		page = "users"
 	}
-	if _, ok := c.Request.URL.Query()["lectureHalls"]; ok {
+	if c.Request.URL.Path == "/admin/lectureHalls"{
 		page = "lectureHalls"
 	}
-	if _, ok := c.Request.URL.Query()["workers"]; ok {
+	if c.Request.URL.Path == "/admin/workers"{
 		page = "workers"
 	}
-	if _, ok := c.Request.URL.Query()["schedule"]; ok {
-		page = "schedule"
+	semesters := dao.GetAvailableSemesters(c)
+	y, t := tum.GetCurrentSemester()
+	err = templ.ExecuteTemplate(c.Writer, "admin.gohtml",
+		AdminPageData{Users: users,
+			Courses:      courses,
+			IndexData:    indexData,
+			LectureHalls: lectureHalls,
+			Page:         page,
+			Workers:      workers,
+			Semesters:    semesters,
+			CurY:         y,
+			CurT:         t})
+	if err != nil {
+		log.Printf("%v", err)
 	}
-	_ = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{Users: users, Courses: courses, IndexData: indexData, LectureHalls: lectureHalls, Page: page, Workers: workers})
 }
 
 func LectureCutPage(c *gin.Context) {
@@ -104,7 +115,21 @@ func EditCoursePage(c *gin.Context) {
 	}
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
-	err = templ.ExecuteTemplate(c.Writer, "edit-course.gohtml", EditCourseData{IndexData: indexData, IngestBase: tools.Cfg.IngestBase, LectureHalls: lectureHalls})
+	courses, err := dao.GetCoursesByUserId(context.Background(), tumLiveContext.User.ID)
+	if err != nil {
+		log.Printf("couldn't query courses for user. %v\n", err)
+		courses = []model.Course{}
+	}
+	semesters := dao.GetAvailableSemesters(c)
+	err = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
+		IndexData:      indexData,
+		Courses:        courses,
+		Page:           "course",
+		Semesters:      semesters,
+		CurY:           tumLiveContext.Course.Year,
+		CurT:           tumLiveContext.Course.TeachingTerm,
+		EditCourseData: EditCourseData{IndexData: indexData, IngestBase: tools.Cfg.IngestBase, LectureHalls: lectureHalls},
+	})
 	if err != nil {
 		log.Printf("%v\n", err)
 	}
@@ -160,12 +185,16 @@ func CreateCoursePage(c *gin.Context) {
 }
 
 type AdminPageData struct {
-	IndexData    IndexData
-	Users        []model.User
-	Courses      []model.Course
-	LectureHalls []model.LectureHall
-	Page         string
-	Workers      []model.Worker
+	IndexData      IndexData
+	Users          []model.User
+	Courses        []model.Course
+	LectureHalls   []model.LectureHall
+	Page           string
+	Workers        []model.Worker
+	Semesters      []dao.Semester
+	CurY           int
+	CurT           string
+	EditCourseData EditCourseData
 }
 
 type CreateCourseData struct {

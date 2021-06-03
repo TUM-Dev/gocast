@@ -30,6 +30,7 @@ func ConfigChatRouter(router *gin.RouterGroup) {
 }
 func ConfigGinRouter(router *gin.Engine) {
 	configGinStreamAuthRouter(router)
+	configGinStreamRestRouter(router)
 	configGinUsersRouter(router)
 	configGinCourseRouter(router)
 	configGinWorkerRouter(router)

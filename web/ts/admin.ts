@@ -2,6 +2,14 @@ class Admin {
 
 }
 
+function toggleSemester(year: number, term: string) {
+    const list = document.getElementsByClassName("semesterCourses");
+    for (let i = 0; i < list.length; i++) {
+        list[i].classList.add("hidden");
+    }
+    document.getElementById("semesterCourses"+year+term).classList.remove("hidden");
+}
+
 function createLectureHall() {
     postData("/api/createLectureHall", {
         "name": (document.getElementById("newLectureHallName") as HTMLInputElement).value,

@@ -8,39 +8,96 @@
 </head>
 <body class="bg-primary dark">
 
-{{- /*gotype: TUM-Live/web.AdminPageData*/ -}}
 {{$curUser := .IndexData.TUMLiveContext.User}}
+{{$courses := .Courses}}
+{{$y := .CurY}}
+{{$t := .CurT}}
+{{$page := .Page}}
+{{$indexData := .IndexData}}
 {{template "header" .IndexData.TUMLiveContext}}
-
-<div class="container mx-auto">
-    <div class="min-w-screen flex items-center justify-center">
-        <div class="w-full lg:w-5/6">
-            {{if eq $curUser.Role 1}}
-                <div class="flex w-full bg-secondary">
-                    <a href="/admin"
-                       class="flex-grow p-2 px-4 hover:bg-primary{{if eq .Page "courses"}} bg-primary p-2 px-4 border-b-2 border-white text-white{{else}} text-gray-400{{end}}">Courses</a>
-                    <a href="?users"
-                       class="flex-grow p-2 px-4 hover:bg-primary{{if eq .Page "users"}} bg-primary p-2 px-4 border-b-2 border-white text-white{{else}} text-gray-400{{end}}">Users</a>
-                    <a href="?lectureHalls"
-                       class="flex-grow p-2 px-2 hover:bg-primary{{if eq .Page "lectureHalls"}} bg-primary p-2 px-4 border-b-2 border-white text-white{{else}} text-gray-400{{end}}">Lecture
-                        Halls</a>
-                    <a href="?schedule"
-                       class="flex-grow p-2 px-2 hover:bg-primary{{if eq .Page "schedule"}} bg-primary p-2 px-4 border-b-2 border-white text-white{{else}} text-gray-400{{end}}">Schedule</a>
-                    <a href="?workers"
-                       class="flex-grow p-2 px-2 hover:bg-primary{{if eq .Page "workers"}} bg-primary p-2 px-4 border-b-2 border-white text-white{{else}} text-gray-400{{end}}">Workers</a>
-                </div>
-            {{end}}
-            {{if and (eq $curUser.Role 1) (eq .Page "users")}}
-                {{template "users" .Users}}
-            {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "courses")}}
-                {{template "courses" .Courses}}
-            {{else if and (eq $curUser.Role 1) (eq .Page "lectureHalls")}}
-                {{template "lectureHalls" .LectureHalls}}
-            {{else if and (eq $curUser.Role 1) (eq .Page "workers")}}
-                {{template "workers" .Workers}}
-            {{else if and (eq $curUser.Role 1) (eq .Page "schedule")}}
-                {{template "schedule"}}
-            {{end}}
+{{- /*gotype: TUM-Live/web.AdminPageData*/ -}}
+<div class="flex">
+    <div class="fixed z-40 inset-0 flex-none h-full w-full lg:static lg:h-auto lg:overflow-y-visible lg:pt-0 lg:w-60 xl:w-72 lg:block hidden">
+        <div class="h-full overflow-y-auto scrolling-touch lg:h-auto lg:block lg:relative lg:sticky overflow-hidden lg:top-18 mr-24 lg:mr-0">
+            <nav class="px-1 overflow-y-auto font-medium text-base sm:px-3 xl:px-5 lg:text-sm pb-10 lg:pb-14 sticky?lg:h-(screen-18)">
+                <ul>
+                    <li class="mt-8"><h5
+                                class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-gray-200">
+                            Courses</h5>
+                        <ul>
+                            <li>
+                                <a class="mx-3 my-2 transition-colors duration-200 hover:text-gray-200{{if eq $page "schedule"}} text-gray-200{{else}} text-gray-500{{end}} relative block"
+                                   href="/admin"><span
+                                            class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
+                                            class="relative">Schedule</span></a>
+                            </li>
+                            {{range $semester := .Semesters}}
+                                <li>
+                                    <a class="px-3 mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs transition-colors duration-200 text-gray-300 hover:text-white"
+                                       onclick='toggleSemester({{$semester.Year}}, "{{$semester.TeachingTerm}}")'
+                                       href="#"><span
+                                                class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
+                                                class="relative">{{$semester.Year}} - {{$semester.TeachingTerm}}</span></a>
+                                    <ul id="{{printf "semesterCourses%d%s" $semester.Year $semester.TeachingTerm}}"
+                                        class="semesterCourses pl-4 {{if not (and (eq $semester.Year $y) (eq $semester.TeachingTerm $t))}}hidden{{end}}">
+                                        {{range $course := $courses}}
+                                            {{if and (eq $course.Year $semester.Year) (eq $course.TeachingTerm $semester.TeachingTerm)}}
+                                                <li>
+                                                    <a class="mx-3 my-2 transition-colors duration-200 hover:text-gray-200 {{if eq $page "course"}} {{if eq $indexData.TUMLiveContext.Course.Model.ID $course.Model.ID}}text-gray-200{{else}} text-gray-500 {{end}} {{else}}text-gray-500{{end}} relative block"
+                                                       href="/admin/course/{{$course.Model.ID}}"><span
+                                                                class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
+                                                                class="relative">{{$course.Name}}</span></a>
+                                                </li>
+                                            {{end}}
+                                        {{end}}
+                                    </ul>
+                                </li>
+                            {{end}}
+                        </ul>
+                    </li>
+                    {{if eq $curUser.Role 1}}
+                        <li class="mt-8"><h5
+                                    class="px-3 mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-gray-200">
+                                Administration</h5>
+                            <ul>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 hover:text-gray-200 {{if eq $page "users"}}text-gray-200{{else}}text-gray-500{{end}} relative block"
+                                       href="/admin/users"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Users</span></a></li>
+                                <li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 hover:text-gray-200 {{if eq $page "lectureHalls"}}text-gray-200{{else}}text-gray-500{{end}} relative block"
+                                       href="/admin/lectureHalls"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Lecture Halls</span></a></li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 hover:text-gray-200 {{if eq $page "workers"}}text-gray-200{{else}}text-gray-500{{end}} relative block"
+                                       href="/admin/workers"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Workers</span></a></li>
+                            </ul>
+                        </li>
+                    {{end}}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    <div class="min-w-0 w-full flex-auto lg:static max-h-full lg:overflow-visible">
+        <div class="px-4 sm:px-6 xl:px-8">
+            <div class="w-full lg:w-5/6">
+                {{if and (eq $curUser.Role 1) (eq .Page "users")}}
+                    {{template "users" .Users}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "course")}}
+                    {{template "edit-course" .EditCourseData}}
+                {{else if and (eq $curUser.Role 1) (eq .Page "lectureHalls")}}
+                    {{template "lectureHalls" .LectureHalls}}
+                {{else if and (eq $curUser.Role 1) (eq .Page "workers")}}
+                    {{template "workers" .Workers}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "schedule")}}
+                    {{template "schedule"}}
+                {{end}}
+            </div>
         </div>
     </div>
 </div>

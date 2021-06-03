@@ -43,14 +43,23 @@ func lectureHallIcal(c *gin.Context) {
 	if err != nil {
 		return
 	}
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	lectureHalls := dao.GetAllLectureHalls()
-	streams, err := dao.GetAllStreams()
+	var streams []model.Stream
+	courses, err := dao.GetAllCourses(true)
 	if err != nil {
 		return
 	}
-	courses, err := dao.GetAllCourses()
-	if err != nil {
-		return
+	for _, course := range courses {
+		if tumLiveContext.User == nil || tumLiveContext.User.Role == model.AdminType || course.UserID == tumLiveContext.User.ID {
+			streams = append(streams, course.Streams...)
+		}
 	}
 	c.Header("content-type", "text/calendar")
 	err = templ.ExecuteTemplate(c.Writer, "ical.gotemplate", ICALData{streams, lectureHalls, courses})

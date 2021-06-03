@@ -5,13 +5,33 @@ import (
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"context"
+	"errors"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"strings"
 	"time"
 )
+
+func configGinStreamRestRouter(router *gin.Engine) {
+	g := router.Group("/")
+	g.Use(tools.InitStream)
+	g.Use(tools.AdminOfCourse)
+	g.GET("/api/stream/:streamID", getStream)
+}
+
+func getStream(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	c.JSON(http.StatusOK, *tumLiveContext.Stream)
+}
 
 func configGinStreamAuthRouter(router gin.IRoutes) {
 	router.POST("/stream-management/on_publish", StartStream)

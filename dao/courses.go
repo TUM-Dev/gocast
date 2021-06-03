@@ -10,14 +10,21 @@ import (
 	"time"
 )
 
-func GetAllCourses() ([]model.Course, error) {
-	log.Printf("here")
+// GetAllCourses retrieves all courses from the database
+// @limit bool true if streams should be limited to -1 month, +3 months
+func GetAllCourses(limit bool) ([]model.Course, error) {
 	cachedCourses, found := Cache.Get("allCourses")
 	if found {
 		return cachedCourses.([]model.Course), nil
 	}
 	var courses []model.Course
-	err := DB.Preload("Streams").Find(&courses).Error
+	var err error
+	if !limit {
+		err = DB.Preload("Streams").Find(&courses).Error
+	} else {
+		// limit 3 months in the future and one month in the past
+		err = DB.Preload("Streams", "start BETWEEN ? and ?", time.Now().Add(time.Minute*60*24*30*-1), time.Now().Add(time.Minute*60*24*30*3)).Find(&courses).Error
+	}
 	if err == nil {
 		Cache.SetWithTTL("allCourses", courses, 1, time.Minute)
 	}

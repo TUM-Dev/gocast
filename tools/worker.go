@@ -16,6 +16,9 @@ func NotifyWorkers() {
 	log.Println("getting streams for workers")
 	streams := dao.GetDueStreamsFromLectureHalls()
 	workers := dao.GetAliveWorkersOrderedByWorkload()
+	if len(workers) == 0 {
+		return
+	}
 	for i, stream := range streams {
 		assignedWorker := workers[i%len(workers)]
 		log.Printf("stream %v assigned to %v", stream.Model.ID, assignedWorker.Host)

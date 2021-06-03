@@ -9,12 +9,6 @@ import (
 	"time"
 )
 
-func GetAllStreams() ([]model.Stream, error) {
-	var streams []model.Stream
-	err := DB.Find(&streams).Error
-	return streams, err
-}
-
 func GetDueStreamsFromLectureHalls() []model.Stream {
 	var res []model.Stream
 	DB.Model(&model.Stream{}).

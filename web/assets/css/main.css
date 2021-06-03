@@ -20,11 +20,10 @@ input, textarea {
 
 .btn {
     @apply flex-1 bg-gray-800 text-white w-full p-3 text-center text-sm cursor-pointer hover:bg-primary;
-
 }
 
 .container {
-    @apply mt-24;
+    @apply mt-4;
 }
 
 @import "tailwindcss/components";
@@ -203,4 +202,8 @@ button.vjs-skip-silence-control {
 .vjs-skip-silence-control > span:before {
     font-size: 1em !important;
     line-height: 1.5em !important;
+}
+
+a.fc-event, a.fc-event:hover {
+    cursor: pointer;
 }
