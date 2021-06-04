@@ -168,6 +168,7 @@ input[type='checkbox']:checked + label {
 
 .fc-scroller {
     @apply scrollbarThin;
+    margin-bottom: 0!important;
 }
 
 .fc-v-event {

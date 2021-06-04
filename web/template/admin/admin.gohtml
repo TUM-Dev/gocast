@@ -40,15 +40,13 @@
                                                 class="relative">{{$semester.Year}} - {{$semester.TeachingTerm}}</span></a>
                                     <ul id="{{printf "semesterCourses%d%s" $semester.Year $semester.TeachingTerm}}"
                                         class="semesterCourses pl-4 {{if not (and (eq $semester.Year $y) (eq $semester.TeachingTerm $t))}}hidden{{end}}">
-                                        {{range $course := $courses}}
-                                            {{if and (eq $course.Year $semester.Year) (eq $course.TeachingTerm $semester.TeachingTerm)}}
-                                                <li>
-                                                    <a class="mx-3 my-2 transition-colors duration-200 hover:text-gray-200 {{if eq $page "course"}} {{if eq $indexData.TUMLiveContext.Course.Model.ID $course.Model.ID}}text-gray-200{{else}} text-gray-500 {{end}} {{else}}text-gray-500{{end}} relative block"
-                                                       href="/admin/course/{{$course.Model.ID}}"><span
-                                                                class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
-                                                                class="relative">{{$course.Name}}</span></a>
-                                                </li>
-                                            {{end}}
+                                        {{range $course := $courses}}{{if and (eq $course.Year $semester.Year) (eq $course.TeachingTerm $semester.TeachingTerm)}}
+                                            <li>
+                                                <a class="mx-3 my-2 transition-colors duration-200 hover:text-gray-200 {{if eq $page "course"}} {{if eq $indexData.TUMLiveContext.Course.Model.ID $course.Model.ID}}text-gray-200{{else}} text-gray-500 {{end}} {{else}}text-gray-500{{end}} relative block"
+                                                   href="/admin/course/{{$course.Model.ID}}"><span
+                                                            class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
+                                                            class="relative">{{$course.Name}}</span></a></li>
+                                        {{end}}
                                         {{end}}
                                     </ul>
                                 </li>
@@ -85,7 +83,7 @@
     </div>
     <div class="min-w-0 w-full flex-auto lg:static max-h-full lg:overflow-visible">
         <div class="px-4 sm:px-6 xl:px-8">
-            <div class="w-full lg:w-5/6">
+            <div class="w-full">
                 {{if and (eq $curUser.Role 1) (eq .Page "users")}}
                     {{template "users" .Users}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "course")}}
@@ -95,7 +93,7 @@
                 {{else if and (eq $curUser.Role 1) (eq .Page "workers")}}
                     {{template "workers" .Workers}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "schedule")}}
-                    {{template "schedule"}}
+                    {{template "schedule" .IndexData}}
                 {{end}}
             </div>
         </div>
