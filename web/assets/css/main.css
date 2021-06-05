@@ -117,6 +117,8 @@ input[type='checkbox']:checked + label {
     margin-bottom: 9px;
 }
 
+
+
 #chatBox {
     scrollbar-width: 6px;
     scrollbar-color: #5b5b5b #0d1117;

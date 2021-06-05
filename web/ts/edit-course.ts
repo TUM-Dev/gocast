@@ -3,17 +3,20 @@ class EditCourse {
     private end
 
     constructor() {
-        document.getElementById("createLectureBtn").addEventListener("click", (e: Event) => this.createLecture())
-        // @ts-ignore
-        this.start = flatpickr("#start", {enableTime: true, time_24hr: true});
-        // @ts-ignore
-        this.end = flatpickr("#end", {enableTime: true, time_24hr: true});
+        let createBtn = document.getElementById("createLectureBtn");
+        if (createBtn !== undefined) {
+            createBtn.addEventListener("click", (e: Event) => this.createLecture())
+            // @ts-ignore
+            this.start = flatpickr("#start", {enableTime: true, time_24hr: true});
+            // @ts-ignore
+            this.end = flatpickr("#end", {enableTime: true, time_24hr: true});
+        }
     }
 
     private createLecture(): void {
         const id = (document.getElementById("courseID") as HTMLInputElement).value
         const name = (document.getElementById("name") as HTMLInputElement).value
-        postData("/api/course/"+id +"/createLecture", {
+        postData("/api/course/" + id + "/createLecture", {
             "name": name,
             "start": this.start.selectedDates[0].toISOString(),
             "end": this.end.selectedDates[0].toISOString(),
@@ -114,8 +117,6 @@ function showHideUnits(id: number) {
 }
 
 function addUnit(streamID: number): boolean {
-
-
     return false
 }
 

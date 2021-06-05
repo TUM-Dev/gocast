@@ -19,7 +19,10 @@
 <div id="watchPageMainWrapper" class="flex md:flex-row w-full flex-wrap">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
     <div id="watchWrapper" class="w-full {{if $course.ChatEnabled}}md:w-4/6 lg:w-5/6{{end}} overflow-scroll overflow-x-hidden scrollbarThin">
-        <div id="watchContent" class="w-full pt-3 px-2 md:px-8 {{if $course.ChatEnabled}}md:w-4/6{{end}} lg:w-8/12 2xl:max-w-screen-xl mx-auto mx:h-full">
+        <noscript><p class="vjs-no-js">
+                To view this video please enable JavaScript.
+            </p></noscript>
+        <div id="watchContent" class="transition-all motion-reduce:transition-none duration-300 ease w-full pt-3 px-2 md:px-8 {{if $course.ChatEnabled}}md:w-4/6{{end}} lg:w-8/12 2xl:max-w-screen-xl mx-auto mx:h-full">
             <video
                     id="my-video"
                     class="video-js w-full"

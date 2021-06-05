@@ -22,6 +22,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         },
         eventClick: function (data) {
+            Get("/api/stream/"+data.event.extendedProps.description)
             const details = document.getElementById("popoverContent")
             details.classList.remove("hidden")
             const c = this;

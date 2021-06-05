@@ -68,7 +68,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 		if dao.IsUserCooledDown(fmt.Sprintf("%v", tumLiveContext.User.ID)) {
 			return
 		}
-		if !tumLiveContext.Stream.LiveNow || !tumLiveContext.Course.ChatEnabled {
+		if !tumLiveContext.Course.ChatEnabled {
 			return
 		}
 		uname := tumLiveContext.User.Name
@@ -83,12 +83,11 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			Admin:    tumLiveContext.User.ID == tumLiveContext.Course.UserID,
 			SendTime: time.Now().In(tools.Loc),
 		})
-		broadcast, err := json.Marshal(ChatRep{
+		if broadcast, err := json.Marshal(ChatRep{
 			Msg:   chat.Msg,
 			Name:  uname,
 			Admin: tumLiveContext.User.ID == tumLiveContext.Course.UserID,
-		})
-		if err == nil {
+		}); err == nil {
 			_ = m.BroadcastFilter(broadcast, func(q *melody.Session) bool { // filter broadcasting to same lecture.
 				return q.Request.URL.Path == s.Request.URL.Path
 			})

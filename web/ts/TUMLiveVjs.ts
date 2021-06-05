@@ -32,7 +32,7 @@ class TheaterModeToggle extends Button {
     constructor(player, options) {
         super(player, options);
         this.controlText('Big picture mode');
-        this.el().firstChild.classList.add("vjs-icon-theater-toggle")
+        this.el().firstChild.classList.add("vjs-icon-theater-toggle");
     }
 
     buildCSSClass() {
