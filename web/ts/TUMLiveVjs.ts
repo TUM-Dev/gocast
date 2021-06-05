@@ -48,10 +48,10 @@ class TheaterModeToggle extends Button {
         this.player().trigger('theaterMode', {'theaterModeIsOn': theaterModeIsOn});
 
         if (theaterModeIsOn) {
-            document.getElementById("watchWrapper").classList.remove("md:w-4/6", "lg:w-8/12", "2xl:max-w-screen-xl")
+            document.getElementById("watchContent").classList.remove("md:w-4/6", "lg:w-8/12", "2xl:max-w-screen-xl")
             this.player().fluid(false);
         } else {
-            document.getElementById("watchWrapper").classList.add("md:w-4/6", "lg:w-8/12", "2xl:max-w-screen-xl")
+            document.getElementById("watchContent").classList.add("md:w-4/6", "lg:w-8/12", "2xl:max-w-screen-xl")
             this.player().fluid(true);
         }
     }

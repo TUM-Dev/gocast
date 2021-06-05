@@ -16,85 +16,88 @@
 </head>
 <body class="bg-primary h-full overflow-hidden">
 {{template "header" .IndexData.TUMLiveContext}}
-<div class="flex h-full md:flex-row w-full flex-wrap">
+<div id="watchPageMainWrapper" class="flex md:flex-row w-full flex-wrap">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
-    <div id="watchWrapper"
-         class="watchContent w-full pt-3 px-2 md:px-8 {{if $course.ChatEnabled}}md:w-4/6{{end}} lg:w-8/12 2xl:max-w-screen-xl mx-auto mx:h-full overflow-scroll overflow-x-hidden">
-        <video
-                id="my-video"
-                class="video-js w-full"
-                controls
-                preload="auto">
-            <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
-                    type="application/x-mpegURL"/>
-            <p class="vjs-no-js">
-                To view this video please enable JavaScript.
-            </p>
-        </video>
-        <div class="flex justify-between align-middle mt-4">
-            <h1 class="text-gray-300 text-2xl">
-                {{if $stream.Name}}{{$stream.Name}}{{else}}Lecture: {{$stream.Start.Month}} {{printf "%02d." $stream.Start.Day}} {{$stream.Start.Year}}{{end}}
-            </h1>
-            <p class="text-xl text-gray-400 flex space-x-2">
-                {{if $stream.LiveNow}}
-                    <span class="flex m-auto" id="viewerCount"></span>
-                    <i class="fas fa-users text-gray-400 flex m-auto"></i>
-                {{else if $course.DownloadsEnabled}}
-                    <a class="flex m-auto"
-                       title="Download Lecture"
-                       href="/api/download/{{$stream.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $stream.Start.Month $stream.Start.Day $stream.Start.Year}}"
-                       download>
-                        <i class="fas fa-download text-gray-400 hover:text-purple-500"></i>
-                    </a>
-                {{end}}
-                {{if $stream.PlaylistUrlPRES}}
-                    <a class="flex m-auto" title="Presentation only"
-                       href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/PRES"><i
-                                class="fas fa-edit hover:text-purple-500"></i></a>
-                {{end}}
-                {{if $stream.PlaylistUrlCAM}}
-                    <a class="flex m-auto" title="Camera only" href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/CAM"><i
-                                class="fas fa-camera hover:text-purple-500"></i></a>
-                {{end}}
-                {{if $stream.PlaylistUrl}}
-                    <a class="flex m-auto" title="Combined view" href="/w/{{$course.Slug}}/{{$stream.Model.ID}}"><i
-                                class="fas fa-object-group hover:text-purple-500"></i></a>
-                {{end}}
-            </p>
-        </div>
-        <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}"
-                    class="text-gray-300 hover:text-white hover:underline text-xl">{{$course.Name}}</a>
-        {{if and .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
-            <div class="border-t-2 border-secondary p-4">
-                <h3 class="text-gray-400 mb-2">Administration:</h3>
-                <a href="?restart=1" title="Issues with the stream? Restart it."
-                   class="bg-danger text-white rounded cursor-pointer p-2 text-sm">Restart stream</a>
-                <p class="text-gray-400 my-2">Presets:</p>
-                <div class="w-full overflow-x-scroll scrollbarThin">
-                    <div class="flex flex-row gap-x-2">
-                        {{range $preset := .Presets}}
-                            <div style="min-width: 150px" class="text-center relative group">
-                                <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
-                                     src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
-                                     alt="prev" width="150px">
-                                <i onclick="usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}}, {{$stream.Model.ID}})"
-                                   title="Switch to this preset"
-                                   class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-exchange-alt cursor-pointer"></i>
-                            </div>
-                        {{end}}
+    <div id="watchWrapper" class="w-full {{if $course.ChatEnabled}}md:w-4/6 lg:w-5/6{{end}} overflow-scroll overflow-x-hidden scrollbarThin">
+        <div id="watchContent" class="w-full pt-3 px-2 md:px-8 {{if $course.ChatEnabled}}md:w-4/6{{end}} lg:w-8/12 2xl:max-w-screen-xl mx-auto mx:h-full">
+            <video
+                    id="my-video"
+                    class="video-js w-full"
+                    controls
+                    preload="auto">
+                <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
+                        type="application/x-mpegURL"/>
+                <p class="vjs-no-js">
+                    To view this video please enable JavaScript.
+                </p>
+            </video>
+            <div class="flex justify-between align-middle mt-4">
+                <h1 class="text-gray-300 text-2xl">
+                    {{if $stream.Name}}{{$stream.Name}}{{else}}Lecture: {{$stream.Start.Month}} {{printf "%02d." $stream.Start.Day}} {{$stream.Start.Year}}{{end}}
+                </h1>
+                <p class="text-xl text-gray-400 flex space-x-2">
+                    {{if $stream.LiveNow}}
+                        <span class="flex m-auto" id="viewerCount"></span>
+                        <i class="fas fa-users text-gray-400 flex m-auto"></i>
+                    {{else if $course.DownloadsEnabled}}
+                        <a class="flex m-auto"
+                           title="Download Lecture"
+                           href="/api/download/{{$stream.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $stream.Start.Month $stream.Start.Day $stream.Start.Year}}"
+                           download>
+                            <i class="fas fa-download text-gray-400 hover:text-purple-500"></i>
+                        </a>
+                    {{end}}
+                    {{if $stream.PlaylistUrlPRES}}
+                        <a class="flex m-auto" title="Presentation only"
+                           href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/PRES"><i
+                                    class="fas fa-edit hover:text-purple-500"></i></a>
+                    {{end}}
+                    {{if $stream.PlaylistUrlCAM}}
+                        <a class="flex m-auto" title="Camera only"
+                           href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/CAM"><i
+                                    class="fas fa-camera hover:text-purple-500"></i></a>
+                    {{end}}
+                    {{if $stream.PlaylistUrl}}
+                        <a class="flex m-auto" title="Combined view" href="/w/{{$course.Slug}}/{{$stream.Model.ID}}"><i
+                                    class="fas fa-object-group hover:text-purple-500"></i></a>
+                    {{end}}
+                </p>
+            </div>
+            <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}"
+               class="text-gray-300 hover:text-white hover:underline text-xl">{{$course.Name}}</a>
+            {{if and .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
+                <div class="border-t-2 border-secondary p-4">
+                    <h3 class="text-gray-400 mb-2">Administration:</h3>
+                    <a href="?restart=1" title="Issues with the stream? Restart it."
+                       class="bg-danger text-white rounded cursor-pointer p-2 text-sm">Restart stream</a>
+                    <p class="text-gray-400 my-2">Presets:</p>
+                    <div class="w-full overflow-x-scroll scrollbarThin">
+                        <div class="flex flex-row gap-x-2">
+                            {{range $preset := .Presets}}
+                                <div style="min-width: 150px" class="text-center relative group">
+                                    <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
+                                         src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
+                                         alt="prev" width="150px">
+                                    <i onclick="usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}}, {{$stream.Model.ID}})"
+                                       title="Switch to this preset"
+                                       class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-exchange-alt cursor-pointer"></i>
+                                </div>
+                            {{end}}
+                        </div>
                     </div>
                 </div>
-            </div>
-        {{end}}
-        {{if $stream.Description}}
-            <div class="text-gray-300 p-4 border-t-2 border-secondary video-description">
-                <span class="font-semibold">Video Description:</span>
-                {{.Description}}
-            </div>
-        {{end}}
+            {{end}}
+            {{if $stream.Description}}
+                <div class="text-gray-300 p-4 border-t-2 border-secondary video-description">
+                    <span class="font-semibold">Video Description:</span>
+                    {{.Description}}
+                </div>
+            {{end}}
+        </div>
     </div>
     {{if $course.ChatEnabled}}
-        <div class="hidden md:flex flex-col w-full md:h-full border-t-2 mt-2 md:mt-0 md:border-t-0 md:border-l-2 border-secondary md:w-2/6 lg:w-1/6 text-white pt-3">
+        <div id="chatWrapper"
+             class="hidden md:flex flex-col w-full md:h-full border-t-2 mt-2 md:mt-0 md:border-t-0 md:border-l border-secondary bg-secondary-lighter md:w-2/6 lg:w-1/6 text-white pt-3">
             <div id="chatBox" class="overflow-scroll overflow-x-hidden overflow-y-scroll" style="flex: 2;">
                 {{range $chat := $stream.Chats}}
                     <div class="rounded p-2 mx-2">
@@ -111,7 +114,7 @@
                 {{end}}
             </div>
             <form id="chatForm"
-                  class="border-b-2 focus-within:border-gray-300 border-secondary bg-primary inset-x-0 flex px-3"
+                  class="border-b-2 focus-within:border-gray-300 border-secondary bg-secondary-lighter inset-x-0 flex px-3"
                   style="">
                 <input type="checkbox" name="anonymous" id="anonymous" class="hidden">
                 <label for="anonymous" class="flex items-center cursor-pointer text-gray-400 hover:text-white"

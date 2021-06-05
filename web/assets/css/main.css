@@ -93,9 +93,8 @@ input[type='checkbox']:checked + label {
     background: #5b5b5b;
 }
 
-.scrollbarThin:hover::-webkit-scrollbar {
-    width: 8px;
-    height: 12px;
+#chatWrapper, #watchWrapper, #watchPageMainWrapper {
+    height: calc(100vh - theme('spacing.20'));
 }
 
 .scrollbarThin::-webkit-scrollbar {
@@ -116,19 +115,6 @@ input[type='checkbox']:checked + label {
     scrollbar-width: 3px;
     scrollbar-color: #5b5b5b #0d1117;
     margin-bottom: 9px;
-}
-
-.scrollbarThin:hover {
-    margin-bottom: 0;
-}
-
-.watchContent::-webkit-scrollbar {
-    display: none;
-}
-
-/* firefox */
-.watchContent {
-    scrollbar-width: none;
 }
 
 #chatBox {
