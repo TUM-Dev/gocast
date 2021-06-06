@@ -1,6 +1,7 @@
 {{define "schedule"}}
+    {{.VersionTag}}
     <link href="static/node_modules/fullcalendar/main.min.css" rel="stylesheet"/>
-    <script src="/static/assets/ts-dist/edit-course.js"></script>
+    <script src="/static/assets/ts-dist/edit-course.js?v={{if .}}{{.VersionTag}}{{end}}"></script>
     <script src="/static/node_modules/ical.js/build/ical.min.js"></script>
     <script src="/static/node_modules/fullcalendar/main.min.js"></script>
     <script src="/static/node_modules/@fullcalendar/icalendar/main.global.min.js"></script>
