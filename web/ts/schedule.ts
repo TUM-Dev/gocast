@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
         eventDidMount: function (e) {
             e.el.title = e.event.title;
             const eventLocation = e.event.extendedProps.location;
-            if (eventLocation !== undefined && eventLocation !== "") {
+            if (eventLocation !== null && eventLocation !== undefined && eventLocation !== "") {
                 e.el.title = e.el.title + " Location: " + eventLocation;
                 const locationElem = document.createElement("i");
                 locationElem.innerHTML = "&#183;" + eventLocation;
@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         },
         eventClick: function (data) {
-            Get("/api/stream/"+data.event.extendedProps.description)
+            Get("/api/stream/" + data.event.extendedProps.description)
             const details = document.getElementById("popoverContent")
             details.classList.remove("hidden")
             const c = this;

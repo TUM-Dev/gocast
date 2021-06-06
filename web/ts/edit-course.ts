@@ -4,7 +4,7 @@ class EditCourse {
 
     constructor() {
         let createBtn = document.getElementById("createLectureBtn");
-        if (createBtn !== undefined) {
+        if (createBtn !== null && createBtn !== undefined) {
             createBtn.addEventListener("click", (e: Event) => this.createLecture())
             // @ts-ignore
             this.start = flatpickr("#start", {enableTime: true, time_24hr: true});

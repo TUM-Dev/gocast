@@ -16,7 +16,7 @@ class CreateCourse {
         this.slugInput = document.getElementById("slug") as HTMLInputElement
         this.tumOnlineInfo = document.getElementById("TUMOnlineInfo") as HTMLSpanElement
         this.enrolledRadio = document.getElementById("enrolled") as HTMLInputElement
-        document.getElementById("createCourseBtn").addEventListener("click", (e: Event) => this.createCourse())
+        document.getElementById("createCourseBtn")?.addEventListener("click", (e: Event) => this.createCourse())
     }
 
     private loadCourseInfo(): void {
