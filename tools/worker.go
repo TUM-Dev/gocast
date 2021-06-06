@@ -39,11 +39,14 @@ func NotifyWorkers() {
 			sources["COMB"] = lectureHall.CombIP
 		}
 		if req, err := json.Marshal(streamLectureHallRequest{
-			ID:         fmt.Sprintf("%v", stream.Model.ID),
-			Sources:    sources,
-			StreamEnd:  stream.End,
-			StreamName: fmt.Sprintf("%s%v", course.Slug, stream.Start.Format("2006_01_02_15_04")), // again, wtf go
-			Upload:     course.VODEnabled,
+			Sources:      sources,
+			StreamEnd:    stream.End,
+			StreamName:   fmt.Sprintf("%s%v", course.Slug, stream.Start.Format("2006_01_02_15_04")), // again, wtf go
+			ID:           fmt.Sprintf("%v", stream.Model.ID),
+			Upload:       course.VODEnabled,
+			Semester:     course.Year,
+			TeachingTerm: course.TeachingTerm,
+			Slug:         course.Slug,
 		}); err == nil {
 			_, err := http.Post(fmt.Sprintf("https://%s/%s/streamLectureHall", assignedWorker.Host, assignedWorker.WorkerID), "application/json", bytes.NewBuffer(req))
 			if err != nil {
@@ -58,9 +61,12 @@ func NotifyWorkers() {
 }
 
 type streamLectureHallRequest struct {
-	Sources    map[string]string `json:"sources"` //CAM->123.4.5.6/extron5
-	StreamEnd  time.Time         `json:"streamEnd"`
-	StreamName string            `json:"streamName"`
-	ID         string            `json:"id"`
-	Upload     bool              `json:"upload"`
+	Sources      map[string]string `json:"sources"` //CAM->123.4.5.6/extron5
+	StreamEnd    time.Time         `json:"streamEnd"`
+	StreamName   string            `json:"streamName"`
+	ID           string            `json:"id"`
+	Upload       bool              `json:"upload"`
+	Semester     int               `json:"semester"`
+	TeachingTerm string            `json:"teachingTerm"`
+	Slug         string            `json:"slug"`
 }
