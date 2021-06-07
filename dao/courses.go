@@ -31,6 +31,12 @@ func GetAllCourses(limit bool) ([]model.Course, error) {
 	return courses, err
 }
 
+func GetCourseForLecturerIdByYearAndTerm(c context.Context, year int, term string, userId uint) ([]model.Course, error) {
+	var res []model.Course
+	err := DB.Model(&model.Course{}).Find(&res, "user_id = ? AND year = ? AND teaching_term = ?", userId, year, term).Error
+	return res, err
+}
+
 func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Course, err error) {
 	cachedCourses, found := Cache.Get(fmt.Sprintf("coursesByUserID%v", userid))
 	if found {

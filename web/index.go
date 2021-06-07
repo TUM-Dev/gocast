@@ -57,6 +57,12 @@ func MainPage(c *gin.Context) {
 	} else if tumLiveContext.User != nil {
 		indexData.Courses = tumLiveContext.User.CoursesForSemester(year, term, spanMain.Context())
 	}
+	if tumLiveContext.User != nil && tumLiveContext.User.Role == model.LecturerType { // add course for lecturer as well
+		coursesForLecturer, err := dao.GetCourseForLecturerIdByYearAndTerm(c, year, term, tumLiveContext.User.ID)
+		if err == nil {
+			indexData.Courses = append(indexData.Courses, coursesForLecturer...)
+		}
+	}
 	streams, err := dao.GetCurrentLive(context.Background())
 	var livestreams []CourseStream
 
