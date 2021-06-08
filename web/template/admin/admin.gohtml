@@ -21,6 +21,30 @@
         <div class="h-full overflow-y-auto scrolling-touch lg:h-auto lg:block lg:relative lg:sticky overflow-hidden lg:top-18 mr-24 lg:mr-0">
             <nav class="px-1 overflow-y-auto font-medium text-base sm:px-3 xl:px-5 lg:text-sm pb-10 lg:pb-14 sticky?lg:h-(screen-18)">
                 <ul>
+                    {{if eq $curUser.Role 1}}
+                        <li class="mt-8"><h5
+                                    class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-gray-200">
+                                Administration</h5>
+                            <ul>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 hover:text-gray-200 {{if eq $page "users"}}text-gray-200{{else}}text-gray-500{{end}} relative block"
+                                       href="/admin/users"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Users</span></a></li>
+                                <li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 hover:text-gray-200 {{if eq $page "lectureHalls"}}text-gray-200{{else}}text-gray-500{{end}} relative block"
+                                       href="/admin/lectureHalls"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Lecture Halls</span></a></li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 hover:text-gray-200 {{if eq $page "workers"}}text-gray-200{{else}}text-gray-500{{end}} relative block"
+                                       href="/admin/workers"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Workers</span></a></li>
+                            </ul>
+                        </li>
+                    {{end}}
                     <li class="mt-8"><span
                                 class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-gray-200 flex">
                             <span class="flex-grow">Courses</span><a href="/admin/create-course"><i class="fas fa-plus"></i></a></span>
@@ -53,30 +77,6 @@
                             {{end}}
                         </ul>
                     </li>
-                    {{if eq $curUser.Role 1}}
-                        <li class="mt-8"><h5
-                                    class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-gray-200">
-                                Administration</h5>
-                            <ul>
-                                <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 hover:text-gray-200 {{if eq $page "users"}}text-gray-200{{else}}text-gray-500{{end}} relative block"
-                                       href="/admin/users"><span
-                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                                class="relative">Users</span></a></li>
-                                <li>
-                                <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 hover:text-gray-200 {{if eq $page "lectureHalls"}}text-gray-200{{else}}text-gray-500{{end}} relative block"
-                                       href="/admin/lectureHalls"><span
-                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                                class="relative">Lecture Halls</span></a></li>
-                                <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 hover:text-gray-200 {{if eq $page "workers"}}text-gray-200{{else}}text-gray-500{{end}} relative block"
-                                       href="/admin/workers"><span
-                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                                class="relative">Workers</span></a></li>
-                            </ul>
-                        </li>
-                    {{end}}
                 </ul>
             </nav>
         </div>
