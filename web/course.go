@@ -6,6 +6,7 @@ import (
 	"TUM-Live/tools"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
+	"html/template"
 	"log"
 	"net/http"
 )
@@ -27,10 +28,19 @@ func HighlightPage(c *gin.Context) {
 		return
 	}
 	indexData.TUMLiveContext.Course = &course
-
-	d := CoursePageData{IndexData: indexData, HighlightPage: true}
-
-	if err = templ.ExecuteTemplate(c.Writer, "course.gohtml", d); err != nil {
+	indexData.TUMLiveContext.Stream = course.GetNextLecture()
+	description := ""
+	if indexData.TUMLiveContext.Stream != nil {
+		description = indexData.TUMLiveContext.Stream.GetDescriptionHTML()
+	}
+	_ = CoursePageData{IndexData: indexData, HighlightPage: true}
+	d2 := WatchPageData{
+		IndexData:       indexData,
+		Description:     template.HTML(description),
+		Version:         "",
+		IsHighlightPage: true,
+	}
+	if err = templ.ExecuteTemplate(c.Writer, "watch.gohtml", d2); err != nil {
 		log.Printf("%v", err)
 		return
 	}

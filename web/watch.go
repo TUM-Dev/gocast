@@ -73,4 +73,5 @@ type WatchPageData struct {
 	Version         string
 	IsAdminOfCourse bool // is current user admin or lecturer who created this course
 	Presets         []model.CameraPreset
+	IsHighlightPage bool
 }

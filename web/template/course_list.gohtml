@@ -1,0 +1,91 @@
+{{define "course_list"}}
+    {{- /*gotype: TUM-Live/tools.TUMLiveContext*/ -}}
+    {{$course := .Course}}
+    {{$lastMonth := -1}}
+
+    {{range $lecture := $course.Streams }}
+        {{if or (or (not $lecture.IsPast) $lecture.Recording) $lecture.LiveNow}}
+            {{if ne $lecture.Start.Month $lastMonth}}
+                {{$lastMonth = $lecture.Start.Month}}
+                <p class="p-2 text-lg text-gray-300 border-b-2 border-gray-800">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
+            {{end}}
+            <li class="pl-4 p-2 hover:bg-secondary">
+                <div class="flex justify-between">
+                    {{if or $lecture.LiveNow $lecture.Recording}}
+                        <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}">
+                            <h3 class="text-l text-gray-300 hover:text-white hover:underline p-0">
+                                {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
+                            </h3>
+                        </a>
+                    {{else}}
+                        <h3 class="text-l text-gray-300 p-0">
+                            {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
+                        </h3>
+                    {{end}}
+                    <div class="flex text-gray-400 space-x-2">
+                        {{if (and $course.DownloadsEnabled $lecture.FilePath) }}
+                            <a class="flex"
+                               title="Download Lecture"
+                               href="/api/download/{{$lecture.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $lecture.Start.Month $lecture.Start.Day $lecture.Start.Year}}"
+                               download>
+                                <i class="fas fa-download text-gray-400 hover:text-purple-500"></i>
+                            </a>
+                        {{end}}
+                        {{if $lecture.PlaylistUrlCAM}}
+                            <a class="flex"
+                               title="Camera Only"
+                               href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/CAM">
+                                <i class="fas fa-camera text-gray-400 hover:text-purple-500"></i>
+                            </a>
+                        {{end}}
+                        {{if $lecture.PlaylistUrlPRES}}
+                            <a class="flex"
+                               title="Presentation Only"
+                               href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/PRES">
+                                <i class="fas fa-edit text-gray-400 hover:text-purple-500"></i>
+                            </a>
+                        {{end}}
+                        {{if and $course.ChatEnabled (or $lecture.LiveNow $lecture.Recording)}}
+                            <a class="flex"
+                               title="Chat Only"
+                               href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/chat">
+                                <i class="fas fa-comments text-gray-400 hover:text-purple-500"></i>
+                            </a>
+                        {{end}}
+                    </div>
+                </div>
+                {{if $lecture.Units}}
+                    <div>
+                        <ul>
+                            {{range $i, $unit := $lecture.Units}}
+                                <li>
+                                    <p>
+                                        <a class="hover:text-white hover:underline text-gray-300 px-2 mx-2 mr-0"
+                                           href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/unit-{{$i}}">
+                                            {{$unit.UnitName}}
+                                        </a>
+                                        <span class="text-sm text-gray-400">
+                                                {{$unit.GetRoundedUnitLen}}</span>
+                                    </p>
+                                </li>
+                            {{end}}
+                        </ul>
+                    </div>
+                {{end}}
+                <p class="text-gray-400 text-sm">
+                    {{if $lecture.Recording}}
+                        <span class="bg-success rounded-full text-gray-800 px-2">VoD</span>
+                    {{else if $lecture.LiveNow}}
+                        <span class="bg-danger rounded-full text-gray-200 px-2">Live</span>
+                    {{else if $lecture.IsPast}}
+                        <span class="bg-warn rounded-full text-gray-200 px-2">Past</span>
+                    {{else}}
+                        <span class="bg-info rounded-full text-gray-200 px-2">Planned</span>
+                    {{end}}
+                    {{printf "%v %02d. %v" $lecture.Start.Month $lecture.Start.Day $lecture.Start.Year}}
+                    {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
+                </p>
+            </li>
+        {{end}}
+    {{end}}
+{{end}}

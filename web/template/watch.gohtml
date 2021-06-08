@@ -18,18 +18,22 @@
 {{template "header" .IndexData.TUMLiveContext}}
 <div id="watchPageMainWrapper" class="flex md:flex-row w-full flex-wrap">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
-    <div id="watchWrapper" class="w-full {{if $course.ChatEnabled}}md:w-4/6 lg:w-5/6{{end}} overflow-scroll overflow-x-hidden scrollbarThin">
+    <div id="watchWrapper"
+         class="w-full {{if $course.ChatEnabled}}md:w-4/6 lg:w-5/6{{end}} overflow-scroll overflow-x-hidden scrollbarThin">
         <noscript><p class="vjs-no-js">
                 To view this video please enable JavaScript.
             </p></noscript>
-        <div id="watchContent" class="transition-all motion-reduce:transition-none duration-300 ease w-full pt-3 px-2 md:px-8 {{if $course.ChatEnabled}}md:w-4/6{{end}} lg:w-8/12 2xl:max-w-screen-xl mx-auto mx:h-full">
+        <div id="watchContent"
+             class="transition-all motion-reduce:transition-none duration-300 ease w-full pt-3 px-2 md:px-8 {{if $course.ChatEnabled}}md:w-4/6{{end}} lg:w-8/12 2xl:max-w-screen-xl mx-auto mx:h-full">
             <video
                     id="my-video"
                     class="video-js w-full"
                     controls
-                    preload="auto">
-                <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
-                        type="application/x-mpegURL"/>
+                    preload="auto"
+            poster="/public/no_active_stream.jpg">
+                {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}<source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
+                                                                          type="application/x-mpegURL"/>
+                {{end}}
                 <p class="vjs-no-js">
                     To view this video please enable JavaScript.
                 </p>
@@ -95,6 +99,11 @@
                     <span class="font-semibold">Video Description:</span>
                     {{.Description}}
                 </div>
+            {{end}}
+            {{if .IsHighlightPage}}
+                <ul class="w-full m-auto mb-4">
+                    {{template "course_list" .IndexData.TUMLiveContext}}
+                </ul>
             {{end}}
         </div>
     </div>

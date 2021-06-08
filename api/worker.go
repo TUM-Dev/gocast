@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -120,7 +121,7 @@ func notifyLive(c *gin.Context) {
 	}
 	stream, err := dao.GetStreamByID(context.Background(), req.StreamID)
 	if err != nil {
-		sentry.CaptureException(err)
+		sentry.CaptureException(errors.New(err.Error() + fmt.Sprintf("streamID: %v, streamVersion: %v, streamURL: %v", req.StreamID, req.Version, req.Version)))
 		return
 	}
 	stream.LiveNow = true

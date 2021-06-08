@@ -49,6 +49,18 @@ func (c Course) GetNextLectureDate() time.Time {
 	return earliestLecture
 }
 
+func (c Course) GetNextLecture() *Stream {
+	earliestLectureDate := time.Now().Add(time.Hour * 24 * 365 * 10) // 10 years from now.
+	var earliestLecture *Stream
+	for _, s := range c.Streams {
+		if s.Start.Before(earliestLectureDate) && s.End.After(time.Now()) {
+			earliestLectureDate = s.Start
+			earliestLecture = &s
+		}
+	}
+	return earliestLecture
+}
+
 func (c Course) HasNextLecture() bool {
 	n := time.Now()
 	for _, s := range c.Streams {
