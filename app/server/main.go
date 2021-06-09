@@ -162,6 +162,7 @@ func initCron() {
 	_, _ = cronService.AddFunc("0-59/5 * * * *", func() { sentry.Flush(time.Minute * 2) })
 	//Look for due streams and notify workers about them
 	_, _ = cronService.AddFunc("0-59 * * * *", tools.NotifyWorkers)
+	tools.NotifyWorkers()
 	cronService.Start()
 }
 
