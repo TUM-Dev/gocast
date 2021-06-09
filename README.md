@@ -1,14 +1,15 @@
 # TUM-Live
 
-**Work in progress** of TUMs lecture streaming service
+TUMs lecture streaming service, in beta since summer semester 2021. 
+Currently serving 12 courses with up to 1500 active students.
 
-## Target Architecture:
+## Architecture:
 
-![Target Architecture](https://raw.githubusercontent.com/joschahenningsen/TUM-Live/dev/target_architecture.png "Target Architecture")
+![Architecture](https://raw.githubusercontent.com/joschahenningsen/TUM-Live/dev/target_architecture.png "Architecture")
 
 ## Development
 
-Developing on this locally is a pain (because we can't just provide the secrets). 
+Developing on this locally is a pain (because there are a few secrets involved). 
 There is a dockerfile/docker-compose.yml. I don't guarantee that it works because we can't currently use it in production.
 To get this running locally follow these steps:
 
@@ -29,7 +30,7 @@ In `/etc/hosts` add this:
 - Install go1.16
 - Preferably use Jetbrains GoLand and open this project
 - Edit Configuration > Environment 
-  - Add environment variables from `variables-backend.example.env`. Sentry is currently required but if you just want to test stuff, edit it out of main.go.
+  - Add environment variables from `variables-backend.example.env`.
 - Start the app
 - Head over to localhost:8081
 - Happy coding! :sparkles:
@@ -37,4 +38,3 @@ In `/etc/hosts` add this:
 ## Credit & Licenses
 
 - [Check out our dependencies](https://github.com/joschahenningsen/TUM-Live/network/dependencies)
-- Also, check out Mariadb, Go and `go.mod`
