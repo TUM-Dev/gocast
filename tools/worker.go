@@ -35,7 +35,7 @@ func NotifyWorkers() {
 		if lectureHall.PresIP != "" {
 			sources["PRES"] = lectureHall.PresIP
 		}
-		if lectureHall.CombIP != "" {
+		if lectureHall.CamIP != "" {
 			sources["COMB"] = lectureHall.CombIP
 		}
 		if req, err := json.Marshal(streamLectureHallRequest{
@@ -48,7 +48,7 @@ func NotifyWorkers() {
 			TeachingTerm: course.TeachingTerm,
 			Slug:         course.Slug,
 		}); err == nil {
-			_, err := http.Post(fmt.Sprintf("http://%s/%s/streamLectureHall", assignedWorker.Host, assignedWorker.WorkerID), "application/json", bytes.NewBuffer(req))
+			_, err := http.Post(fmt.Sprintf("https://%s/%s/streamLectureHall", assignedWorker.Host, assignedWorker.WorkerID), "application/json", bytes.NewBuffer(req))
 			if err != nil {
 				// todo: pick new worker for stream
 				sentry.CaptureException(err)
