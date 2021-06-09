@@ -35,7 +35,7 @@ func NotifyWorkers() {
 		if lectureHall.PresIP != "" {
 			sources["PRES"] = lectureHall.PresIP
 		}
-		if lectureHall.CamIP != "" {
+		if lectureHall.CombIP != "" {
 			sources["COMB"] = lectureHall.CombIP
 		}
 		if req, err := json.Marshal(streamLectureHallRequest{
