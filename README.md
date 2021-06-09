@@ -1,7 +1,24 @@
 # TUM-Live
 
-TUMs lecture streaming service, in beta since summer semester 2021. 
+[TUM-Live](https://live.mm.rbg.tum.de)
+
+[status](https://tum-live.betteruptime.com/)
+
+TUMs lecture streaming service, in beta since summer semester 2021.
 Currently serving 12 courses with up to 1500 active students.
+
+Features include:
+- Automatic lecture scheduling and access management coupled with [CAMPUSOnline](https://www.tugraz.at/tu-graz/organisationsstruktur/serviceeinrichtungen-und-stabsstellen/campusonline/)
+- Livestreaming from lecture halls
+  - Support for Extron SMPs and automatic backup recordings on them.
+  - Support for preset management on ip cameras
+  - Automatic recordings and video on demand with granular access control.
+- Self-streaming
+  - Stream ingest from Home using OBS or similar software.
+- Live chat 
+- Statistics (live and VoD view count)
+- Self-service dashboard for lecturers 
+  - schedule streams, manage access...
 
 ## Architecture:
 
