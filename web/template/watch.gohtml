@@ -41,13 +41,18 @@
                 </p>
             </video>
             <div class="flex justify-between align-middle mt-4">
-                <h1 class="text-gray-300 text-2xl">
+                <h1 class="text-gray-300 text-xl">
                     {{if $stream.Name}}{{$stream.Name}}{{else}}Lecture: {{$stream.Start.Month}} {{printf "%02d." $stream.Start.Day}} {{$stream.Start.Year}}{{end}}
                 </h1>
-                <p class="text-xl text-gray-400 flex space-x-2">
-                    {{if $stream.LiveNow}}
+                <p class="text-lg text-gray-400 flex space-x-2">
+                    {{if not $stream.Recording}}
                         <span class="flex m-auto" id="viewerCount"></span>
-                        <i class="fas fa-users text-gray-400 flex m-auto"></i>
+                        {{if not $stream.LiveNow}}
+                            <span class="flex m-auto" id="ViewerDescText"> Waiting</span>
+                            <span class="flex m-auto" id="timer"></span>
+                        {{else}}
+                            <span class="flex m-auto" id="ViewerDescText"> Viewers</span>
+                        {{end}}
                     {{else if $course.DownloadsEnabled}}
                         <a class="flex m-auto"
                            title="Download Lecture"
@@ -73,7 +78,7 @@
                 </p>
             </div>
             <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}"
-               class="text-gray-300 hover:text-white hover:underline text-xl">{{$course.Name}}</a>
+               class="text-gray-300 hover:text-white hover:underline text-lg">{{$course.Name}}</a>
             {{if and .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
                 <div class="border-t-2 border-secondary p-4">
                     <h3 class="text-gray-400 mb-2">Administration:</h3>
@@ -151,6 +156,16 @@
 <script src="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.min.js"></script>
 <script src="/static/assets/ts-dist/TUMLiveVjs.js?v={{.IndexData.VersionTag}}"></script>
 <script>
+    function docReady(fn) {
+        // see if DOM is already available
+        if (document.readyState === "complete" || document.readyState === "interactive") {
+            // call on next available tick
+            setTimeout(fn, 1);
+        } else {
+            document.addEventListener("DOMContentLoaded", fn);
+        }
+    }
+
     // @ts-ignore
     let player = videojs('my-video', {
         fluid: true,
@@ -197,6 +212,11 @@
 
     {{if $stream.Silences}}
     player.skipSilence({{$stream.GetSilencesJson}});
+    {{end}}
+    {{if not (or $stream.LiveNow $stream.Recording)}}
+    docReady(function (){
+        new Timer({{$stream.Start}});
+    });
     {{end}}
 </script>
 </body>

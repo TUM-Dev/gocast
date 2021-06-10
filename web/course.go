@@ -28,7 +28,7 @@ func HighlightPage(c *gin.Context) {
 		return
 	}
 	indexData.TUMLiveContext.Course = &course
-	indexData.TUMLiveContext.Stream = course.GetNextLecture()
+	indexData.TUMLiveContext.Stream = course.GetCurrentOrNextLecture()
 	description := ""
 	if indexData.TUMLiveContext.Stream != nil {
 		description = indexData.TUMLiveContext.Stream.GetDescriptionHTML()

@@ -95,6 +95,8 @@ func notifyLiveEnd(c *gin.Context) {
 			sentry.CaptureException(err)
 			return
 		}
+		notifyViewersLiveEnd(sid)
+
 		return
 
 	}
@@ -102,6 +104,7 @@ func notifyLiveEnd(c *gin.Context) {
 	return
 
 }
+
 func notifyLive(c *gin.Context) {
 	_, err := dao.GetWorkerByID(context.Background(), c.Param("workerID"))
 	if err != nil {
@@ -124,6 +127,7 @@ func notifyLive(c *gin.Context) {
 		sentry.CaptureException(errors.New(err.Error() + fmt.Sprintf("streamID: %v, streamVersion: %v, streamURL: %v", req.StreamID, req.Version, req.Version)))
 		return
 	}
+	alreadyLive := stream.LiveNow
 	stream.LiveNow = true
 	switch req.Version {
 	case "COMB":
@@ -134,6 +138,9 @@ func notifyLive(c *gin.Context) {
 		stream.PlaylistUrlCAM = req.URL
 	}
 	err = dao.SaveStream(&stream)
+	if !alreadyLive{
+		notifyViewersLiveStart(stream.ID)
+	}
 	if err != nil {
 		sentry.CaptureException(err)
 	}

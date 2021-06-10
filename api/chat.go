@@ -38,7 +38,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			return
 		}
 		tumLiveContext := foundContext.(tools.TUMLiveContext)
-		if tumLiveContext.Stream.LiveNow {
+		if !tumLiveContext.Stream.Recording {
 			statsLock.Lock()
 			if statMsg, err := json.Marshal(gin.H{"viewers": stats[ctx.(*gin.Context).Param("streamID")]}); err == nil {
 				_ = s.Write(statMsg)
@@ -115,15 +115,17 @@ func CollectStats() {
 			Viewers: numWatchers,
 		}
 		if s, err := dao.GetStreamByID(context.Background(), sID); err == nil {
-			if !s.LiveNow { // collect stats for livestreams only
+			if s.Recording { // broadcast stats for livestreams and upcoming videos only
 				log.Printf("stream not live, skipping stats\n")
 				delete(stats, strconv.Itoa(int(s.ID)))
 				continue
 			}
-			s.Stats = append(s.Stats, stat)
-			if err = dao.SaveStream(&s); err != nil {
-				sentry.CaptureException(err)
-				log.Printf("Error saving stats: %v\n", err)
+			if s.LiveNow { // store stats for livestreams only
+				s.Stats = append(s.Stats, stat)
+				if err = dao.SaveStream(&s); err != nil {
+					sentry.CaptureException(err)
+					log.Printf("Error saving stats: %v\n", err)
+				}
 			}
 			if mStat, err := json.Marshal(gin.H{"viewers": numWatchers}); err == nil {
 				_ = m.BroadcastFilter(mStat, func(q *melody.Session) bool { // filter broadcasting to same lecture.
@@ -136,12 +138,26 @@ func CollectStats() {
 	}
 }
 
+func notifyViewersLiveStart(streamId uint)  {
+	req, _ := json.Marshal(gin.H{"live": true})
+	_ = m.BroadcastFilter(req, func(s *melody.Session) bool {
+		return s.Request.URL.Path == fmt.Sprintf("/api/chat/%v/ws", streamId)
+	})
+}
+
+func notifyViewersLiveEnd(streamId string)  {
+	req, _ := json.Marshal(gin.H{"live": false})
+	_ = m.BroadcastFilter(req, func(s *melody.Session) bool {
+		return s.Request.URL.Path == fmt.Sprintf("/api/chat/%v/ws", streamId)
+	})
+}
+
 func ChatStream(c *gin.Context) {
 	// max participants in chat to prevent attacks
 	if m.Len() > 10000 {
 		return
 	}
-	go addUser(c.Param("streamID"))
+	addUser(c.Param("streamID"))
 	joinTime := time.Now()
 	defer removeUser(c.Param("streamID"), joinTime)
 	ctxMap := make(map[string]interface{}, 1)
