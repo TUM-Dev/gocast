@@ -8,7 +8,6 @@
     <title>{{$course.Name}}: {{$stream.Name}} | TUM Live</title>
     {{template "headImports" .IndexData.VersionTag}}
     <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
-    <script async src="/static/assets/ts-dist/watch.js?v={{.IndexData.VersionTag}}"></script>
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
     <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
     {{if .IsAdminOfCourse}}
@@ -156,14 +155,19 @@
 <script src="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.min.js"></script>
 <script src="/static/assets/ts-dist/TUMLiveVjs.js?v={{.IndexData.VersionTag}}"></script>
 <script>
-    function docReady(fn) {
-        // see if DOM is already available
-        if (document.readyState === "complete" || document.readyState === "interactive") {
-            // call on next available tick
-            setTimeout(fn, 1);
-        } else {
-            document.addEventListener("DOMContentLoaded", fn);
-        }
+    function loadScript(scriptUrl) {
+        const script = document.createElement('script');
+        script.src = scriptUrl;
+        document.body.appendChild(script);
+
+        return new Promise((res, rej) => {
+            script.onload = function () {
+                res();
+            }
+            script.onerror = function () {
+                rej();
+            }
+        });
     }
 
     // @ts-ignore
@@ -213,11 +217,12 @@
     {{if $stream.Silences}}
     player.skipSilence({{$stream.GetSilencesJson}});
     {{end}}
-    {{if not (or $stream.LiveNow $stream.Recording)}}
-    docReady(function (){
-        new Timer({{$stream.Start}});
-    });
-    {{end}}
+    loadScript("/static/assets/ts-dist/watch.js?v={{.IndexData.VersionTag}}")
+        .then(() => {
+            {{if not (or $stream.LiveNow $stream.Recording)}}
+            new Timer({{$stream.Start}});
+            {{end}}
+        })
 </script>
 </body>
 </html>
