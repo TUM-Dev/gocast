@@ -51,6 +51,17 @@ function unhideCourse(id: string, name: string) {
 }
 
 function initHiddenCourses() {
+    document.getElementById("hiddenCoursesText").onclick = function () {
+        const clickableParent: HTMLElement = document.getElementById("hiddenCoursesRestoreList").parentElement;
+        if (clickableParent === undefined || clickableParent === null) {
+            return // not on index page
+        }
+        if (clickableParent.classList.contains("hidden")) {
+            clickableParent.classList.remove("hidden");
+        } else {
+            clickableParent.classList.add("hidden");
+        }
+    }
     let hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses") ? JSON.parse(localStorage.getItem("hiddenCourses")) : new Array<Array<string>>()
     const hiddenCoursesRestoreList = document.getElementById("hiddenCoursesRestoreList") as HTMLUListElement
     const hiddenCoursesText = document.getElementById("hiddenCoursesText") as HTMLParagraphElement
