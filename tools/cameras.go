@@ -21,7 +21,7 @@ func FetchCameraPresets() {
 				sentry.CaptureException(err)
 				continue
 			}
-			for i, _ := range presets {
+			for i := range presets {
 				findExistingImageForPreset(&presets[i], lectureHall.CameraPresets)
 				presets[i].LectureHallId = lectureHall.ID
 			}

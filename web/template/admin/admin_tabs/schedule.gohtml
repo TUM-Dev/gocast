@@ -5,15 +5,8 @@
     <script src="/static/node_modules/ical.js/build/ical.min.js"></script>
     <script src="/static/node_modules/fullcalendar/main.min.js"></script>
     <script src="/static/node_modules/@fullcalendar/icalendar/main.global.min.js"></script>
-    <div class="flex flex-col lg:flex-row w-full pt-4">
+    <div class="flex flex-col lg:flex-row w-full pt-4 relative">
         <div id="calendar" class="w-full"></div>
-        <div id="popoverContent" class="transition transition-all hidden w-full lg:w-1/4 p-4">
-            <p class="flex text-white">
-                <span class="flex-grow text-lg">work in progress</span>
-                <i id="closeBtn" class="transition-colors duration-200 hover:text-white text-gray-400 icon-close"></i>
-            </p>
-            <h2 class="text-gray-400"></h2>
-        </div>
     </div>
     {{- /*gotype: TUM-Live/web.IndexData*/ -}}
     <script src="/static/assets/ts-dist/schedule.js?v={{if .}}{{.VersionTag}}{{end}}"></script>
