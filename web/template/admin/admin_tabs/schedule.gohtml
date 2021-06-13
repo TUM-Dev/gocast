@@ -7,6 +7,7 @@
     <script src="/static/node_modules/@fullcalendar/icalendar/main.global.min.js"></script>
     <div class="flex flex-col lg:flex-row w-full pt-4 relative">
         <div id="calendar" class="w-full"></div>
+        <div id="popoverContent" class="cursor-auto absolute transform -translate-x-1/2 left-1/2 top-1/2 p-4 bg-secondary-lighter rounded z-10 border border-gray-500 hidden"></div>
     </div>
     {{- /*gotype: TUM-Live/web.IndexData*/ -}}
     <script src="/static/assets/ts-dist/schedule.js?v={{if .}}{{.VersionTag}}{{end}}"></script>

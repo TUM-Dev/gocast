@@ -30,6 +30,9 @@ module.exports = {
             transitionProperty: {
                 'width': 'width',
                 'height': 'height',
+            },
+            blur: {
+                xxs: '1px',
             }
         }
     },
