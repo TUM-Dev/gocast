@@ -13,6 +13,27 @@
     h3 {
         @apply text-lg;
     }
+
+    .scrollbarThin::-webkit-scrollbar-track {
+        background: #0d1117;
+    }
+
+    .scrollbarThin::-webkit-scrollbar-thumb {
+        background: #5b5b5b;
+    }
+
+    .scrollbarThin {
+        scrollbar-height: 3px;
+        scrollbar-width: 3px;
+        scrollbar-color: #5b5b5b #0d1117;
+        margin-bottom: 9px;
+    }
+
+    .scrollbarThin::-webkit-scrollbar {
+        width: 3px;
+        height: 3px;
+    }
+
 }
 input, textarea {
     @apply focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500 text-white;
@@ -96,28 +117,6 @@ input[type='checkbox']:checked + label {
 #chatWrapper, #watchWrapper, #watchPageMainWrapper {
     height: calc(100vh - theme('spacing.20'));
 }
-
-.scrollbarThin::-webkit-scrollbar {
-    width: 3px;
-    height: 3px;
-}
-
-.scrollbarThin::-webkit-scrollbar-track {
-    background: #0d1117;
-}
-
-.scrollbarThin::-webkit-scrollbar-thumb {
-    background: #5b5b5b;
-}
-
-.scrollbarThin {
-    scrollbar-height: 3px;
-    scrollbar-width: 3px;
-    scrollbar-color: #5b5b5b #0d1117;
-    margin-bottom: 9px;
-}
-
-
 
 #chatBox {
     scrollbar-width: 6px;
