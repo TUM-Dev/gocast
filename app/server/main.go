@@ -7,6 +7,7 @@ import (
 	"TUM-Live/tools"
 	"TUM-Live/tools/tum"
 	"TUM-Live/web"
+	"TUM-Live/worker"
 	"context"
 	"fmt"
 	"github.com/dgraph-io/ristretto"
@@ -153,6 +154,7 @@ func main() {
 }
 
 func initCron() {
+	worker.NotifyWorkersProto()
 	cronService := cron.New()
 	//Fetch students every 12 hours
 	_, _ = cronService.AddFunc("0 */12 * * *", tum.FetchCourses)
