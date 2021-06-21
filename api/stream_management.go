@@ -32,7 +32,17 @@ func getStream(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	stream := *tumLiveContext.Stream
 	course := *tumLiveContext.Course
-	c.JSON(http.StatusOK, gin.H{"course": course.Name, "name": stream.Name, "start": stream.Start, "end": stream.End, "key": stream.StreamKey, "live": stream.LiveNow, "vod": stream.Recording})
+	c.JSON(http.StatusOK,
+		gin.H{"course": course.Name,
+			"courseID":    course.ID,
+			"streamID":    stream.ID,
+			"name":        stream.Name,
+			"description": stream.Description,
+			"start":       stream.Start,
+			"end":         stream.End,
+			"ingest":      fmt.Sprintf("%sstream?secret=%s", tools.Cfg.IngestBase, stream.StreamKey),
+			"live":        stream.LiveNow,
+			"vod":         stream.Recording})
 }
 
 func configGinStreamAuthRouter(router gin.IRoutes) {

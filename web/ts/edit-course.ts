@@ -52,7 +52,6 @@ function saveLectureDescription(e: Event, cID: number, lID: number) {
                 res.text().then(t => showMessage(t))
             }
         })
-    return false
 }
 
 function saveLectureName(e: Event, cID: number, lID: number) {

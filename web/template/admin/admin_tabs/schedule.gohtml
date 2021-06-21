@@ -2,12 +2,13 @@
     {{.VersionTag}}
     <link href="static/node_modules/fullcalendar/main.min.css" rel="stylesheet"/>
     <script src="/static/assets/ts-dist/edit-course.js?v={{if .}}{{.VersionTag}}{{end}}"></script>
+    <script defer async src="/static/assets/ts-dist/edit-course.js?v={{if .}}{{.VersionTag}}{{end}}"></script>
     <script src="/static/node_modules/ical.js/build/ical.min.js"></script>
     <script src="/static/node_modules/fullcalendar/main.min.js"></script>
     <script src="/static/node_modules/@fullcalendar/icalendar/main.global.min.js"></script>
     <div class="flex flex-col lg:flex-row w-full pt-4 relative">
         <div id="calendar" class="w-full"></div>
-        <div id="popoverContent" class="cursor-auto absolute transform -translate-x-1/2 left-1/2 top-1/2 p-4 bg-secondary-lighter rounded z-10 border border-gray-500 hidden"></div>
+        <div id="popoverContent" class="cursor-auto absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 p-4 bg-secondary-lighter rounded z-10 border border-gray-500 hidden"></div>
     </div>
     {{- /*gotype: TUM-Live/web.IndexData*/ -}}
     <script src="/static/assets/ts-dist/schedule.js?v={{if .}}{{.VersionTag}}{{end}}"></script>
