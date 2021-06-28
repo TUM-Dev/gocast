@@ -113,6 +113,7 @@ func CollectStats() {
 		stat := model.Stat{
 			Time:    time.Now(),
 			Viewers: numWatchers,
+			Live:    true,
 		}
 		if s, err := dao.GetStreamByID(context.Background(), sID); err == nil {
 			if s.Recording { // broadcast stats for livestreams and upcoming videos only
@@ -138,14 +139,14 @@ func CollectStats() {
 	}
 }
 
-func notifyViewersLiveStart(streamId uint)  {
+func notifyViewersLiveStart(streamId uint) {
 	req, _ := json.Marshal(gin.H{"live": true})
 	_ = m.BroadcastFilter(req, func(s *melody.Session) bool {
 		return s.Request.URL.Path == fmt.Sprintf("/api/chat/%v/ws", streamId)
 	})
 }
 
-func notifyViewersLiveEnd(streamId string)  {
+func notifyViewersLiveEnd(streamId string) {
 	req, _ := json.Marshal(gin.H{"live": false})
 	_ = m.BroadcastFilter(req, func(s *melody.Session) bool {
 		return s.Request.URL.Path == fmt.Sprintf("/api/chat/%v/ws", streamId)
@@ -177,9 +178,9 @@ func addUser(id string) {
 
 func removeUser(id string, jointime time.Time) {
 	// watched at least 5 minutes of the lecture? Count as view.
-	if jointime.Before(time.Now().Add(time.Minute * -5)) {
+	//if jointime.Before(time.Now().Add(time.Minute * -5)) {
 		dao.AddVodView(id)
-	}
+	//}
 	statsLock.Lock()
 	stats[id] -= 1
 	if stats[id] <= 0 {

@@ -10,4 +10,5 @@ type Stat struct {
 	Time     time.Time
 	StreamID uint
 	Viewers  int
+	Live     bool
 }
