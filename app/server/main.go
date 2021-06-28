@@ -7,7 +7,7 @@ import (
 	"TUM-Live/tools"
 	"TUM-Live/tools/tum"
 	"TUM-Live/web"
-	"TUM-Live/worker"
+	"TUM-Live/api_grpc"
 	"context"
 	"fmt"
 	"github.com/dgraph-io/ristretto"
@@ -154,7 +154,6 @@ func main() {
 }
 
 func initCron() {
-	worker.NotifyWorkersProto()
 	cronService := cron.New()
 	//Fetch students every 12 hours
 	_, _ = cronService.AddFunc("0 */12 * * *", tum.FetchCourses)
@@ -163,7 +162,7 @@ func initCron() {
 	//Flush stale sentry exceptions and transactions every 5 minutes
 	_, _ = cronService.AddFunc("0-59/5 * * * *", func() { sentry.Flush(time.Minute * 2) })
 	//Look for due streams and notify workers about them
-	_, _ = cronService.AddFunc("0-59 * * * *", tools.NotifyWorkers)
+	_, _ = cronService.AddFunc("0-59 * * * *", api_grpc.NotifyWorkers)
 	cronService.Start()
 }
 

@@ -19,13 +19,13 @@ import (
 )
 
 func configGinWorkerRouter(r *gin.Engine) {
-	workers := r.Group("/api/worker")
+	workers := r.Group("/api/api_grpc")
 	workers.Use(tools.Worker)
-	r.GET("/api/worker/getJobs/:workerID", getJob)
-	r.POST("/api/worker/putVOD/:workerID", putVod)
-	r.POST("/api/worker/ping/:workerID", ping)
-	r.POST("/api/worker/notifyLive/:workerID", notifyLive)
-	r.POST("/api/worker/notifyLiveEnd/:workerID/:streamID", notifyLiveEnd)
+	r.GET("/api/api_grpc/getJobs/:workerID", getJob)
+	r.POST("/api/api_grpc/putVOD/:workerID", putVod)
+	r.POST("/api/api_grpc/ping/:workerID", ping)
+	r.POST("/api/api_grpc/notifyLive/:workerID", notifyLive)
+	r.POST("/api/api_grpc/notifyLiveEnd/:workerID/:streamID", notifyLiveEnd)
 	workers.POST("/silenceResults/:workerID", silenceResults)
 }
 
