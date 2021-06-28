@@ -178,9 +178,9 @@ func addUser(id string) {
 
 func removeUser(id string, jointime time.Time) {
 	// watched at least 5 minutes of the lecture? Count as view.
-	//if jointime.Before(time.Now().Add(time.Minute * -5)) {
+	if jointime.Before(time.Now().Add(time.Minute * -5)) {
 		dao.AddVodView(id)
-	//}
+	}
 	statsLock.Lock()
 	stats[id] -= 1
 	if stats[id] <= 0 {

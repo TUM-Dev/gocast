@@ -76,7 +76,6 @@ func DeleteStreamsWithTumID(ids []uint) {
 }
 
 func AddVodView(id string) {
-	log.Print("adding view for stream")
 	intId, err := strconv.Atoi(id)
 	if err != nil {
 		log.Printf("Invalid stream id when saving vod view %v", err)
