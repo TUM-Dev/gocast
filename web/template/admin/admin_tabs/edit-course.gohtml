@@ -173,10 +173,10 @@
                                                 new Chart(
                                                     document.getElementById("stats{{$lecture.Model.ID}}"), {
                                                         "type": "line", "data": {
-                                                            "labels": [{{range $stat := $lecture.Stats}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}", {{end}}],
+                                                            "labels": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}",{{end}} {{end}}],
                                                             "datasets": [{
                                                                 "label": "Viewers",
-                                                                "data": [{{range $stat := $lecture.Stats}}{{$stat.Viewers}}, {{end}}],
+                                                                "data": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}{{$stat.Viewers}}, {{end}}{{end}}],
                                                                 "fill": false,
                                                                 "borderColor": "rgb(75, 192, 192)",
                                                                 "lineTension": 0.1
