@@ -7,18 +7,16 @@
         {{if or (or (not $lecture.IsPast) $lecture.Recording) $lecture.LiveNow}}
             {{if ne $lecture.Start.Month $lastMonth}}
                 {{$lastMonth = $lecture.Start.Month}}
-                <p class="p-2 text-lg text-gray-300 border-b-2 border-gray-800">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
+                <p class="p-2 text-lg text-2 border-b-2 border-gray-800">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
             {{end}}
-            <li class="pl-4 p-2 hover:bg-secondary">
+            <li class="pl-4 p-2">
                 <div class="flex justify-between">
                     {{if or $lecture.LiveNow $lecture.Recording}}
-                        <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}">
-                            <h3 class="text-l text-gray-300 hover:text-white hover:underline p-0">
+                        <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}" class="text-l text-3 p-0">
                                 {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
-                            </h3>
                         </a>
                     {{else}}
-                        <h3 class="text-l text-gray-300 p-0">
+                        <h3 class="text-l text-3 p-0">
                             {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
                         </h3>
                     {{end}}
@@ -72,7 +70,7 @@
                         </ul>
                     </div>
                 {{end}}
-                <p class="text-gray-400 text-sm">
+                <p class="text-5 text-sm">
                     {{if $lecture.Recording}}
                         <span class="bg-success rounded-full text-gray-800 px-2">VoD</span>
                     {{else if $lecture.LiveNow}}

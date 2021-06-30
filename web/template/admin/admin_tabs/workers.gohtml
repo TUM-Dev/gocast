@@ -1,27 +1,27 @@
 {{define "workers"}}
-    <div class="bg-secondary rounded my-6 overflow-x-auto">
-        <h2 class="text-2xl bg-primary text-gray-300">Workers</h2>
+    <div class="dark:bg-secondary rounded my-6 overflow-x-auto">
+        <h2 class="text-2xl text-1">Workers</h2>
         <table class="table-auto w-full">
             <thead>
-            <tr class="bg-primary text-gray-300 uppercase text-sm leading-normal">
+            <tr class="dark:bg-primary bg-gray-100 text-3 uppercase text-sm leading-normal">
                 <th class="py-3 px-6 text-left">Name</th>
                 <th class="py-3 px-6 text-left">Status</th>
                 <th class="py-3 px-6 text-left">Workload</th>
                 <th class="py-3 px-6 text-left">Actions</th>
             </tr>
             </thead>
-            <tbody class="text-gray-300 text-sm font-light">
+            <tbody class="text-4 text-sm font-light">
             {{- /*gotype: TUM-Live/model.Worker[]*/ -}}
             {{range $worker := .}}
-                <tr class="border-gray-500 hover:bg-primary">
+                <tr class="border-gray-500 dark:hover:bg-primary hover:bg-gray-100">
                     <td class="py-3 px-6">{{$worker.Host}}</td>
-                    <td class="py-3 px-6">{{if $worker.IsAlive}}<span
-                                class="bg-success rounded-full px-2 mr-2 text-gray-600">Alive</span>{{else}}
-                            <span class="bg-danger rounded-full px-2 mr-2 text-gray-200">Dead</span>{{end}}{{$worker.Status}}
+                    <td class="py-3 px-6">{{if $worker.IsAlive}}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Alive</span>{{else}}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Dead</span>{{end}}{{$worker.Status}}
                     </td>
                     <td class="py-3 px-6">{{$worker.Workload}}</td>
                     <td class="py-3 px-6"><i
-                                class="fas fa-trash text-gray-400 cursor-pointer hover:text-purple-500"></i>
+                                class="fas fa-trash text-5 cursor-pointer hover:text-1"></i>
                     </td>
                 </tr>
             {{end}}

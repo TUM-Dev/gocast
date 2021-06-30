@@ -7,7 +7,7 @@
 
 {{$course := .IndexData.TUMLiveContext.Course}}
 
-<div class="text-white mt-4">
+<div class="text-1 mt-4">
     <div class="min-w-screen flex items-center justify-center">
         <div class="w-full lg:w-5/6">
             <h1 class="mb-4">{{$course.Name}}</h1>
@@ -28,41 +28,41 @@
 
             <h2>Lectures</h2>
             <div>
-                <ul class="bg-secondary rounded">
+                <ul class="dark:bg-secondary bg-gray-100 rounded">
                     {{$ingestBase := .IngestBase}}
                     {{$lectureHalls := .LectureHalls}}
                     {{$user := .IndexData.TUMLiveContext.User}}
                     {{if not $course.Streams}}
-                        <p class="text-gray-300 p-4">It might take a minute to load your lectures from TUMOnline</p>
+                        <p class="text-3 p-4">It might take a minute to load your lectures from TUMOnline</p>
                     {{end}}
                     {{range $lecture := $course.Streams }}
-                        <li class="p-6 hover:bg-primary border-b-2 border-primary">
+                        <li class="p-6 dark:hover:bg-primary hover:bg-white border-b-2 dark:border-primary border-white">
                             <div class="flex">
                                 <div class="w-1/4">
-                                    <div class="text-white font-semibold">{{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
-                                        <i class="fas fa-trash hover:text-purple-500 px-2"
+                                    <div class="text-3 font-semibold">{{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
+                                        <i class="fas fa-trash hover:text-1 px-2"
                                            title="Delete Lecture"
                                            onclick="deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}})"></i>
                                     </div>
-                                    <div class="text-gray-300 font-sans">
+                                    <div class="text-3 font-sans">
                                         {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
                                     </div>
                                     {{if $lecture.Recording}}
-                                        {{if $lecture.VodViews}}<p class="text-gray-400 text-sm">{{$lecture.VodViews}}
+                                        {{if $lecture.VodViews}}<p class="text-4 text-sm">{{$lecture.VodViews}}
                                             VoD views</p>{{end}}
-                                        <div class="font-semibold bg-success w-auto inline-block px-2 text-white rounded-full">
+                                        <div class="font-semibold bg-success w-auto inline-block px-2 text-1 rounded-full">
                                             VoD
                                         </div>
                                     {{else if $lecture.LiveNow}}
-                                        <div class="font-semibold bg-danger w-auto inline-block px-2 text-white rounded-full">
+                                        <div class="font-semibold bg-danger w-auto inline-block px-2 text-1 rounded-full">
                                             Live
                                         </div>
                                     {{else if $lecture.IsPast}}
-                                        <div class="font-semibold bg-warn w-auto inline-block px-2 text-white rounded-full">
+                                        <div class="font-semibold bg-warn w-auto inline-block px-2 text-1 rounded-full">
                                             Past
                                         </div>
                                     {{else}}
-                                        <div class="font-semibold bg-info w-auto inline-block px-2 text-white rounded-full">
+                                        <div class="font-semibold bg-info w-auto inline-block px-2 text-1 rounded-full">
                                             Scheduled
                                         </div>
                                     {{end}}
@@ -103,7 +103,7 @@
                                             <div class="flex">
                                                 <label class="mx-2">
                                                     <span>Select Lecture Hall</span>
-                                                    <select class="text-gray-300 bg-secondary p-2"
+                                                    <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
                                                             id="lectureHallSelector{{$lecture.Model.ID}}"
                                                             onchange="document.getElementById('applyLectureHall{{$lecture.Model.ID}}').classList.remove('hidden')">
                                                         <option class="text-gray-300" value="">Self streaming
@@ -197,13 +197,13 @@
                             </div>
                         </li>
                     {{end}}
-                    <li class="p-6 hover:bg-primary border-b-2 border-primary">
+                    <li class="p-6 dark:hover:bg-primary hover:bg-white border-b-2 border-primary">
                         <div class="flex">
                             <div class="w-1/4">
-                                <div class="text-white font-semibold">Create Lecture</div>
+                                <div class="text-1 font-semibold">Create Lecture</div>
                             </div>
                             <div class="w-3/4">
-                                <div class="hover:bg-primary">
+                                <div class="dark:hover:bg-primary hover:bg-white">
                                     <div class="flex flex-col md:flex-row">
                                         <label for="name" class="md:w-1/2 w-full">
                                             <span class="font-semibold p-2">Lecture Name</span>
@@ -218,7 +218,7 @@
                                             <input name="end" type="text" placeholder="2021-04-08 16:00" id="end"/>
                                         </label>
                                         <button type="submit" id="createLectureBtn">
-                                            <i class="fas fa-check text-gray-300 hover:text-purple-500"></i>
+                                            <i class="fas fa-check text-4 hover:text-purple-500"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -227,9 +227,9 @@
                     </li>
                 </ul>
                 <h2>External Participants</h2>
-                <ul class="bg-secondary mb-6">
+                <ul class="dark:bg-secondary bg-gray-100 mb-6">
                     <li>
-                        <p class="text-gray-300 p-4">Add participants. They'll get notified about your invitation to
+                        <p class="text-4 p-4">Add participants. They'll get notified about your invitation to
                             your lecture via mail.</p>
                         <form method="post" action="/api/createUserForCourse" class="flex">
                             <input type="hidden" name="courseID" value="{{$course.Model.ID}}">
@@ -243,10 +243,10 @@
                                 <input class="mx-2 px-2" type="email" autocomplete="off" name="newUserEmail"
                                        id="newUserEmail" placeholder="tim@lmu.de">
                             </label>
-                            <button type="submit" class="btn bg-secondary hover:bg-primary"><i
+                            <button type="submit" class="btn dark:bg-secondary dark:hover:bg-primary bg-gray-100 hover:bg-white"><i
                                         class="fas fa-check "></i></button>
                         </form>
-                        <p class="text-gray-300 p-4">Batch insert (this takes about two seconds per user.)</p>
+                        <p class="text-4 p-4">Batch insert (this takes about two seconds per user.)</p>
                         <form method="post" action="/api/createUserForCourse" class="flex">
                             <input type="hidden" name="courseID" value="{{$course.Model.ID}}">
                             <label class="w-full">
@@ -254,13 +254,13 @@
                                 <textarea name="batchUserInput"
                                           placeholder="Tim,tim69@hotmail.com&#10;Anja,anja@lmu.de"></textarea>
                             </label>
-                            <button type="submit" class="btn bg-secondary hover:bg-primary"><i
+                            <button type="submit" class="btn text-4 hover:text-1"><i
                                         class="fas fa-check "></i></button>
                         </form>
                     </li>
                     <li class="flex px-4">
                         <p onclick="document.getElementById('usersTable').classList.remove('hidden')"
-                           class="underline text-gray-300 hover:text-white">
+                           class="underline text-4 hover:1">
                             Show Invitations
                         </p>
                     </li>
@@ -275,7 +275,7 @@
                             </thead>
                             <tbody>
                             {{range $user := $course.Users }}
-                                <tr class="px-3 hover:bg-primary">
+                                <tr class="px-3 dark:hover:bg-primary hover:bg-white">
                                     <td>{{$user.Name}}</td>
                                     <td class="px-2">{{$user.Email.String}}</td>
                                     <td>{{if eq $user.Password ""}}No{{else}}Yes{{end}}</td>

@@ -14,19 +14,31 @@
         @apply text-lg;
     }
 
+    .dark .scrollbarThin::-webkit-scrollbar-track {
+        background: #0d1117 !important;
+    }
+
     .scrollbarThin::-webkit-scrollbar-track {
-        background: #0d1117;
+        background: #cbcbcb;
+    }
+
+    .dark .scrollbarThin::-webkit-scrollbar-thumb {
+        background: #5b5b5b;
     }
 
     .scrollbarThin::-webkit-scrollbar-thumb {
-        background: #5b5b5b;
+        background: #fff;
     }
 
     .scrollbarThin {
         scrollbar-height: 3px;
         scrollbar-width: 3px;
-        scrollbar-color: #5b5b5b #0d1117;
+        scrollbar-color: #fff #ddd;
         margin-bottom: 9px;
+    }
+
+    .dark .scrollbarThin {
+        scrollbar-color: #5b5b5b #0d1117 !important;
     }
 
     .scrollbarThin::-webkit-scrollbar {
@@ -34,9 +46,59 @@
         height: 3px;
     }
 
+    /*full contrast text*/
+    .text-1 {
+        @apply text-black dark:text-white;
+    }
+
+    /*high contrast text*/
+    .text-2 {
+        @apply text-gray-900 dark:text-gray-100;
+    }
+
+    /*medium contrast text*/
+    .text-3 {
+        @apply text-gray-800 dark:text-gray-200;
+    }
+
+    /*low contrast text*/
+    .text-4 {
+        @apply text-gray-700 dark:text-gray-300;
+    }
+
+    /*full contrast text*/
+    .text-5 {
+        @apply text-gray-600 dark:text-gray-400;
+    }
+
+    /*full contrast text*/
+    .text-6 {
+        @apply text-gray-500 dark:text-gray-500;
+    }
+
+    /*full contrast text*/
+    .text-7 {
+        @apply text-gray-400 dark:text-gray-600;
+    }
+
+    .text-8 {
+        @apply text-gray-300 dark:text-gray-700;
+    }
+
+    .text-9 {
+        @apply text-gray-200 dark:text-gray-800;
+    }
+
+    a {
+        @apply hover:text-black dark:hover:text-white;
+    }
+
+    body {
+        @apply bg-gray-50 dark:bg-primary;
+    }
 }
 input, textarea {
-    @apply focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500 text-white;
+    @apply focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500 dark:text-white text-primary;
 }
 
 .btn {
@@ -145,17 +207,17 @@ input[type='checkbox']:checked + label {
     content: "\f120";
 }
 
-#calendar {
-    @apply text-white;
+.dark #calendar {
+    color: #fff !important;
 }
 
-#calendar table, #calendar td, .fc-theme-standard td, .fc-theme-standard th, .fc-col-header-cell {
+.dark #calendar table, .dark #calendar td, .dark .fc-theme-standard td, .dark .fc-theme-standard th, .dark .fc-col-header-cell {
     border-color: #474747 !important;
 }
 
-.fc-scroller {
+.dark .fc-scroller {
     @apply scrollbarThin;
-    margin-bottom: 0!important;
+    margin-bottom: 0 !important;
 }
 
 .fc-v-event {

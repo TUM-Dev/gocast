@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <title>TUM Live | Administration</title>
     {{template "headImports" .IndexData.VersionTag}}
     <script src="/static/assets/ts-dist/admin.js?v={{.IndexData.VersionTag}}"></script>
 </head>
-<body class="bg-primary dark">
+<body>
 
 {{$curUser := .IndexData.TUMLiveContext.User}}
 {{$courses := .Courses}}
@@ -17,28 +17,29 @@
 {{template "header" .IndexData.TUMLiveContext}}
 {{- /*gotype: TUM-Live/web.AdminPageData*/ -}}
 <div class="flex">
-    <div class="fixed z-40 inset-0 flex-none h-full w-full lg:static lg:h-auto lg:overflow-y-visible lg:pt-0 lg:w-60 xl:w-72 lg:block hidden bg-secondary-lighter border-r border-secondary">
+    <div style="min-height: calc(100vh - 5rem);"
+         class="fixed z-40 inset-0 flex-none w-full lg:static lg:h-auto lg:overflow-y-visible lg:pt-0 lg:w-60 xl:w-72 lg:block hidden bg-gray-100 dark:bg-secondary-lighter dark:border-r dark:border-secondary">
         <div class="overflow-y-auto scrolling-touch lg:h-auto lg:block lg:relative lg:sticky overflow-hidden lg:top-18 mr-24 lg:mr-0">
             <nav class="px-1 overflow-y-auto font-medium text-base sm:px-3 xl:px-5 lg:text-sm pb-10 lg:pb-14 sticky?lg:h-(screen-18)">
                 <ul>
                     {{if eq $curUser.Role 1}}
                         <li class="mt-8"><h5
-                                    class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-gray-200">
+                                    class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2">
                                 Administration</h5>
                             <ul>
                                 <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 hover:text-gray-200 {{if eq $page "users"}}text-gray-200{{else}}text-gray-500{{end}} relative block"
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "users"}}text-1{{else}}text-5{{end}} relative block"
                                        href="/admin/users"><span
                                                 class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                                 class="relative">Users</span></a></li>
                                 <li>
                                 <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 hover:text-gray-200 {{if eq $page "lectureHalls"}}text-gray-200{{else}}text-gray-500{{end}} relative block"
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "lectureHalls"}}text-1{{else}}text-5{{end}} relative block"
                                        href="/admin/lectureHalls"><span
                                                 class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                                 class="relative">Lecture Halls</span></a></li>
                                 <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 hover:text-gray-200 {{if eq $page "workers"}}text-gray-200{{else}}text-gray-500{{end}} relative block"
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "workers"}}text-1{{else}}text-5{{end}} relative block"
                                        href="/admin/workers"><span
                                                 class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                                 class="relative">Workers</span></a></li>
@@ -46,18 +47,19 @@
                         </li>
                     {{end}}
                     <li class="mt-8"><span
-                                class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-gray-200 flex">
-                            <span class="flex-grow">Courses</span><a href="/admin/create-course"><i class="fas fa-plus"></i></a></span>
+                                class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2 flex">
+                            <span class="flex-grow">Courses</span><a href="/admin/create-course"><i
+                                        class="fas fa-plus"></i></a></span>
                         <ul>
                             <li>
-                                <a class="mx-3 my-2 transition-colors duration-200 hover:text-gray-200{{if eq $page "schedule"}} text-gray-200{{else}} text-gray-500{{end}} relative block"
+                                <a class="mx-3 my-2 transition-colors duration-200 {{if eq $page "schedule"}} text-1{{else}} text-5{{end}} relative block"
                                    href="/admin"><span
                                             class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
                                             class="relative">Schedule</span></a>
                             </li>
                             {{range $semester := .Semesters}}
                                 <li>
-                                    <a class="px-3 mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs transition-colors duration-200 text-gray-300 hover:text-white"
+                                    <a class="px-3 mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs transition-colors duration-200 text-5"
                                        onclick='toggleSemester({{$semester.Year}}, "{{$semester.TeachingTerm}}")'
                                        href="#"><span
                                                 class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
@@ -66,7 +68,7 @@
                                         class="semesterCourses pl-4 {{if not (and (eq $semester.Year $y) (eq $semester.TeachingTerm $t))}}hidden{{end}}">
                                         {{range $course := $courses}}{{if and (eq $course.Year $semester.Year) (eq $course.TeachingTerm $semester.TeachingTerm)}}
                                             <li>
-                                                <a class="mx-3 my-2 transition-colors duration-200 hover:text-gray-200 {{if eq $page "course"}} {{if eq $indexData.TUMLiveContext.Course.Model.ID $course.Model.ID}}text-gray-200{{else}} text-gray-500 {{end}} {{else}}text-gray-500{{end}} relative block"
+                                                <a class="mx-3 my-2 transition-colors duration-200 {{if eq $page "course"}} {{if eq $indexData.TUMLiveContext.Course.Model.ID $course.Model.ID}}text-1{{else}} text-5 {{end}} {{else}}text-5{{end}} relative block"
                                                    href="/admin/course/{{$course.Model.ID}}"><span
                                                             class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
                                                             class="relative">{{$course.Name}}</span></a></li>
