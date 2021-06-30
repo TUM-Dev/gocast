@@ -37,7 +37,7 @@
         {{template "course-card" $course}}
     {{end}}
     {{if .PublicCourses}}
-        <h2 class="text-2xl text-white mt-2">Public Courses</h2>
+        <h2 class="text-2xl text-1 mt-2">Public Courses</h2>
         {{range $course := .PublicCourses }}
             {{template "course-card" $course}}
         {{end}}
