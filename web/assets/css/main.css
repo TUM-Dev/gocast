@@ -96,6 +96,10 @@
     body {
         @apply bg-gray-50 dark:bg-primary;
     }
+
+    .video-description a {
+        @apply text-gray-500 dark:hover:text-white hover:text-black hover:underline;
+    }
 }
 input, textarea {
     @apply focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500 dark:text-white text-primary;
@@ -187,10 +191,6 @@ input[type='checkbox']:checked + label {
 
 .vjs-button, .vjs-control {
     color: #fff !important;
-}
-
-.video-description a {
-    @apply text-gray-300 hover:text-white hover:underline;
 }
 
 .fancyeye {
