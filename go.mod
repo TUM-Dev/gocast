@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/antchfx/xmlquery v1.3.6
 	github.com/antchfx/xpath v1.1.11 // indirect
-	github.com/dgraph-io/ristretto v0.0.3
+	github.com/dgraph-io/ristretto v0.1.0
 	github.com/droundy/goopt v0.0.0-20170604162106-0b8effe182da
 	github.com/getsentry/sentry-go v0.11.0
 	github.com/gin-contrib/gzip v0.0.3
