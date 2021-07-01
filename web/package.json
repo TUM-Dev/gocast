@@ -26,7 +26,7 @@
     "hls.js": "^1.0.4",
     "ical.js": "^1.4.0",
     "nouislider": "^15.1.1",
-    "video.js": "^7.12.3",
+    "video.js": "^7.13.3",
     "videojs-seek-buttons": "^2.0.0"
   },
   "devDependencies": {
