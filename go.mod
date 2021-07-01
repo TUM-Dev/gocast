@@ -32,5 +32,5 @@ require (
 	gopkg.in/olahol/melody.v1 v1.0.0-20170518105555-d52139073376
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gorm.io/driver/mysql v1.1.0
-	gorm.io/gorm v1.21.10
+	gorm.io/gorm v1.21.11
 )
