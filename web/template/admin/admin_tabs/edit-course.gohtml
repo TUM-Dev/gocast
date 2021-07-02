@@ -231,7 +231,7 @@
                     <li>
                         <p class="text-4 p-4">Add participants. They'll get notified about your invitation to
                             your lecture via mail.</p>
-                        <form method="post" action="/api/createUserForCourse" class="flex">
+                        <form method="post" action="/api/course/{{$course.Model.ID}}/createUserForCourse" class="flex">
                             <input type="hidden" name="courseID" value="{{$course.Model.ID}}">
                             <label class="w-full">
                                 <span class="hidden">First Name</span>
@@ -247,7 +247,7 @@
                                         class="fas fa-check "></i></button>
                         </form>
                         <p class="text-4 p-4">Batch insert (this takes about two seconds per user.)</p>
-                        <form method="post" action="/api/createUserForCourse" class="flex">
+                        <form method="post" action="/api/course/{{$course.Model.ID}}/createUserForCourse" class="flex">
                             <input type="hidden" name="courseID" value="{{$course.Model.ID}}">
                             <label class="w-full">
                                 <span class="hidden">Batch insert users</span>
