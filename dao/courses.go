@@ -11,7 +11,7 @@ import (
 )
 
 //GetCurrentOrNextLectureForCourse Gets the next lecture for a course or the lecture that is currently live. Error otherwise.
-func GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint)  (model.Stream, error){
+func GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model.Stream, error) {
 	var res model.Stream
 	err := DB.Model(&model.Stream{}).Order("start").First(&res, "course_id = ? AND (end > ? OR live_now)", courseID, time.Now()).Error
 	return res, err
@@ -232,6 +232,18 @@ func GetCourseByShortLink(link string) (model.Course, error) {
 	}
 	course, err := GetCourseById(context.Background(), courseId)
 	return course, err
+}
+
+func GetCourseStatsHourly(courseID uint) (*[]*[]int, error) {
+	var res *[]*[]int
+	err := DB.Raw(`SELECT HOUR(stats.time), SUM(stats.viewers)
+		FROM stats
+			JOIN streams s ON s.id = stats.stream_id
+			JOIN courses c ON c.id = s.course_id
+		WHERE course_id = ? AND stats.live = 0
+		GROUP BY HOUR(stats.time);`,
+		courseID).Scan(&res).Error
+	return res, err
 }
 
 type Semester struct {

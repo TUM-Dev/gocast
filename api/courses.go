@@ -12,6 +12,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"io/ioutil"
 	"net/http"
@@ -37,6 +38,36 @@ func configGinCourseRouter(router *gin.Engine) {
 	adminOfCourseGroup.POST("/addUnit", addUnit)
 	adminOfCourseGroup.POST("/submitCut", submitCut)
 	adminOfCourseGroup.POST("/deleteUnit/:unitID", deleteUnit)
+	adminOfCourseGroup.GET("/stats", getStats)
+}
+
+type statReq struct {
+	Interval string `gin:"interval"`
+}
+
+func getStats(c *gin.Context) {
+	ctx, _ := c.Get("TUMLiveContext")
+	var req statReq
+	if c.ShouldBindQuery(&req) != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	cid := ctx.(tools.TUMLiveContext).Course.ID
+	switch req.Interval {
+	case "week":
+
+	case "day":
+	case "hour":
+		res, err := dao.GetCourseStatsHourly(cid)
+		if err != nil {
+			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsHourly failed")
+		}
+		c.JSON(http.StatusOK, res)
+	default:
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+
+	}
 }
 
 func submitCut(c *gin.Context) {
