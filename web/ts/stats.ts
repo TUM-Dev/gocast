@@ -25,3 +25,12 @@ function initStatsPage() {
         );
     });
 }
+
+async function getAsync(url = '') {
+    return await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    });
+}

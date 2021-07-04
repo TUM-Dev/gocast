@@ -9,15 +9,6 @@ async function postData(url = '', data = {}) {
     return response;
 }
 
-async function getAsync(url = '') {
-    return await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-    });
-}
-
 function Get(yourUrl) {
     let HttpReq = new XMLHttpRequest();
     HttpReq.open("GET", yourUrl, false);
