@@ -1,292 +1,313 @@
 {{define "edit-course"}}
-<script defer async src="/static/assets/ts-dist/edit-course.js?v={{.IndexData.VersionTag}}"></script>
-<script defer async src="/static/assets/ts-dist/admin.js?v={{.IndexData.VersionTag}}"></script>
-<script src="/static/node_modules/chart.js/dist/chart.min.js"></script>
-<link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
-<script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
+    <script defer async src="/static/assets/ts-dist/stats.js?v={{.IndexData.VersionTag}}"></script>
+    <script defer async src="/static/assets/ts-dist/edit-course.js?v={{.IndexData.VersionTag}}"></script>
+    <script defer async src="/static/assets/ts-dist/admin.js?v={{.IndexData.VersionTag}}"></script>
+    <script src="/static/node_modules/chart.js/dist/chart.min.js"></script>
+    <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
+    <script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
 
-{{$course := .IndexData.TUMLiveContext.Course}}
+    {{$course := .IndexData.TUMLiveContext.Course}}
 
-<div class="text-1 mt-4">
-    <div class="min-w-screen flex items-center justify-center">
-        <div class="w-full lg:w-5/6">
-            <h1 class="mb-4">{{$course.Name}}</h1>
-            <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
-                                                                value="{{$course.Model.ID}}"></label>
+    <div class="text-1 mt-4">
+        <div class="min-w-screen flex items-center justify-center">
+            <div class="w-full lg:w-5/6">
+                <h1 class="mb-4">{{$course.Name}}</h1>
+                <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
+                                                                    value="{{$course.Model.ID}}"></label>
 
-            <form class="p-4" method="post">
-                {{template "course_settings" $course}}
-                <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
-                    <input name="submit" class="btn border-0" type="submit" value="Save Settings">
-                    {{if $course.TUMOnlineIdentifier}}
-                        <input name="submit" class="btn border-0" type="submit"
-                               value="Reload Enrollments">
-                        <input name="submit" class="btn border-0" type="submit" value="Reload Lectures From TUMOnline">
-                    {{end}}
+                <form class="p-4" method="post">
+                    {{template "course_settings" $course}}
+                    <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
+                        <input name="submit" class="btn border-0" type="submit" value="Save Settings">
+                        {{if $course.TUMOnlineIdentifier}}
+                            <input name="submit" class="btn border-0" type="submit"
+                                   value="Reload Enrollments">
+                            <input name="submit" class="btn border-0" type="submit"
+                                   value="Reload Lectures From TUMOnline">
+                        {{end}}
+                    </div>
+                </form>
+
+                <h2>Viewers per week</h2>
+                <a href="{{$course.ID}}/stats" class="text-3 dark:hover:text-white hover:text-black underline">More
+                    stats</a>
+                <div class="flex w-full">
+                    <div class="w-full m-auto" style="min-height: 200px">
+                        <canvas id="courseGeneralStatsLive" width="400" height="100" aria-label="Viewer stats"
+                                role="img"></canvas>
+                    </div>
                 </div>
-            </form>
 
-            <h2>Lectures</h2>
-            <div>
-                <ul class="dark:bg-secondary bg-gray-100 rounded">
-                    {{$ingestBase := .IngestBase}}
-                    {{$lectureHalls := .LectureHalls}}
-                    {{$user := .IndexData.TUMLiveContext.User}}
-                    {{if not $course.Streams}}
-                        <p class="text-3 p-4">It might take a minute to load your lectures from TUMOnline</p>
-                    {{end}}
-                    {{range $lecture := $course.Streams }}
-                        <li class="p-6 dark:hover:bg-primary hover:bg-white border-b-2 dark:border-primary border-white">
+                <h2>Lectures</h2>
+                <div>
+                    <ul class="dark:bg-secondary bg-gray-100 rounded">
+                        {{$ingestBase := .IngestBase}}
+                        {{$lectureHalls := .LectureHalls}}
+                        {{$user := .IndexData.TUMLiveContext.User}}
+                        {{if not $course.Streams}}
+                            <p class="text-3 p-4">It might take a minute to load your lectures from TUMOnline</p>
+                        {{end}}
+                        {{range $lecture := $course.Streams }}
+                            <li class="p-6 dark:hover:bg-primary hover:bg-white border-b-2 dark:border-primary border-white">
+                                <div class="flex">
+                                    <div class="w-1/4">
+                                        <div class="text-3 font-semibold">{{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
+                                            <i class="fas fa-trash hover:text-1 px-2"
+                                               title="Delete Lecture"
+                                               onclick="deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}})"></i>
+                                        </div>
+                                        <div class="text-3 font-sans">
+                                            {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
+                                        </div>
+                                        {{if $lecture.Recording}}
+                                            {{if $lecture.VodViews}}<p class="text-4 text-sm">{{$lecture.VodViews}}
+                                                VoD views</p>{{end}}
+                                            <div class="font-semibold bg-success w-auto inline-block px-2 text-1 rounded-full">
+                                                VoD
+                                            </div>
+                                        {{else if $lecture.LiveNow}}
+                                            <div class="font-semibold bg-danger w-auto inline-block px-2 text-1 rounded-full">
+                                                Live
+                                            </div>
+                                        {{else if $lecture.IsPast}}
+                                            <div class="font-semibold bg-warn w-auto inline-block px-2 text-1 rounded-full">
+                                                Past
+                                            </div>
+                                        {{else}}
+                                            <div class="font-semibold bg-info w-auto inline-block px-2 text-1 rounded-full">
+                                                Scheduled
+                                            </div>
+                                        {{end}}
+                                    </div>
+                                    <div class="w-3/4">
+                                        <form onsubmit="saveLectureName(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
+                                              class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                                            <label for="lectureNameInput{{$lecture.Model.ID}}" class="hidden">Lecture
+                                                title</label>
+                                            <input id="lectureNameInput{{$lecture.Model.ID}}"
+                                                   onfocus="focusNameInput(this, {{$lecture.Model.ID}})"
+                                                   class="flex-grow border-none" type="text" value="{{$lecture.Name}}"
+                                                   placeholder="Lecture 2: Dark-Patterns I"
+                                                   autocomplete="off">
+                                            <button id="nameSubmitBtn{{$lecture.Model.ID}}"
+                                                    class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
+                                        </form>
+                                        <div class="w-full mt-3">
+                                            <div class="w-full flex justify-center">
+                                                <i onclick="toggleExtraInfos(this, {{$lecture.Model.ID}})"
+                                                   class="fas fa-angle-double-down hover:text-purple-500"></i>
+                                            </div>
+                                            <div id="extraInfos{{$lecture.Model.ID}}" class="hidden">
+                                                <form onsubmit="saveLectureDescription(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
+                                                      class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                                                    <label for="lectureDescriptionInput{{$lecture.Model.ID}}"
+                                                           class="hidden">Lecture description</label>
+                                                    <textarea id="lectureDescriptionInput{{$lecture.Model.ID}}"
+                                                              onfocus="focusDescriptionInput(this, {{$lecture.Model.ID}})"
+                                                              class="flex-grow border-none"
+                                                              placeholder="Add a nice description, links, and more. You can use Markdown."
+                                                              autocomplete="off">{{$lecture.Description}}</textarea>
+                                                    <button id="descriptionSubmitBtn{{$lecture.Model.ID}}"
+                                                            class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
+                                                </form>
+                                                {{if and (not $lecture.IsPast) (not $lecture.Recording)}}
+                                                {{if eq $user.Role 1}}
+                                                <div class="flex">
+                                                    <label class="mx-2">
+                                                        <span>Select Lecture Hall</span>
+                                                        <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
+                                                                id="lectureHallSelector{{$lecture.Model.ID}}"
+                                                                onchange="document.getElementById('applyLectureHall{{$lecture.Model.ID}}').classList.remove('hidden')">
+                                                            <option class="text-gray-300" value="">Self streaming
+                                                            </option>
+                                                            {{range $lectureHall := $lectureHalls}}
+                                                                <option class="text-gray-300"
+                                                                        value="{{$lectureHall.Model.ID}}"{{if eq $lecture.LectureHallID $lectureHall.Model.ID}} selected{{end}}>
+                                                                    {{$lectureHall.Name}}
+                                                                </option>
+                                                            {{end}}
+                                                        </select>
+                                                    </label>
+                                                    <a id="applyLectureHall{{$lecture.Model.ID}}"
+                                                       class="flex items-center hidden"
+                                                       onclick="saveLectureHall({{$lecture.Model.ID}})">
+                                                        <i class="align-middle fas fa-check text-gray-300 hover:text-purple-500"></i>
+                                                    </a>
+                                                </div>
+                                                {{end}}
+                                                {{if not $lecture.LectureHallID}}
+                                                <p class="mt-2">
+                                                    <span class="font-semibold">Stream Server:</span>
+                                                    <span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
+                                                    <i class="fas fa-clipboard hover:text-purple-500"
+                                                       onclick="copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
+                                                    <br>
+                                                    <span class="font-semibold">Stream Key:</span>
+                                                    <span>{{$course.Slug}}</span><br>
+                                                    {{if ne $user.Role 1}}
+                                                        <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
+                                                    {{end}}
+                                                </p>
+                                                {{else if eq $user.Role 2}}
+                                                This lecture will be streamed from <span
+                                                        class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}{{if eq $lectureHall.Model.ID $lecture.LectureHallID}}{{$lectureHall.Name}}{{end}}{{end}}</span>.
+                                                If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
+                                                {{end}}
+                                                {{else if $lecture.Recording}}
+                                                <p class="mt-2 flex">
+                                                    <a class="flex"
+                                                       href="/api/download/{{$lecture.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $lecture.Start.Month $lecture.Start.Day $lecture.Start.Year}}"
+                                                       download>
+                                                        <i class="fas fa-download hover:text-purple-500 px-2"
+                                                           title="Download VoD"></i>
+                                                    </a>
+                                                    {{if $lecture.Stats}}
+                                                        <i class="fas fa-chart-line hover:text-purple-500 px-2"
+                                                           title="Live Statistics"
+                                                           onclick="showStats({{$lecture.Model.ID}})"></i>
+                                                    {{end}}
+                                                    <a title="Cut lecture"
+                                                       class="flex"
+                                                       href="/admin/cut/{{$course.Model.ID}}/{{$lecture.Model.ID}}">
+                                                        <i class="fas fa-cut text-gray-300 hover:text-purple-500 px-2"></i>
+                                                    </a>
+                                                    <a title="Cut lecture into units"
+                                                       class="flex"
+                                                       href="/admin/units/{{$course.Model.ID}}/{{$lecture.Model.ID}}">
+                                                        <i class="fas fa-puzzle-piece text-gray-300 hover:text-purple-500 px-2"></i>
+                                                    </a>
+                                                </p>
+                                                {{if $lecture.Stats}}
+                                                <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
+                                                    <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
+                                                            width="undefined" height="undefined"></canvas>
+                                                </div>
+                                                <script>
+                                                    new Chart(
+                                                        document.getElementById("stats{{$lecture.Model.ID}}"), {
+                                                            "type": "line",
+                                                            "data": {
+                                                                "labels": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}",{{end}} {{end}}],
+                                                                "datasets": [{
+                                                                    "label": "Viewers",
+                                                                    "data": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}{{$stat.Viewers}}, {{end}}{{end}}],
+                                                                    "fill": false,
+                                                                    "borderColor": "rgb(75, 192, 192)",
+                                                                    "lineTension": 0.1
+                                                                }]
+                                                            },
+                                                            "options": {scales: {yAxes: [{ticks: {beginAtZero: true}}]}}
+                                                        });
+                                                </script>
+                                                {{end}}
+                                                {{else}}
+                                                <p class="mt-2 flex">
+                                                    <i class="fas fa-upload hover:text-purple-500 px-2"
+                                                       title="Upload VoD"></i>
+                                                </p>
+                                                {{end}}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        {{end}}
+                        <li class="p-6 dark:hover:bg-primary hover:bg-white border-b-2 border-primary">
                             <div class="flex">
                                 <div class="w-1/4">
-                                    <div class="text-3 font-semibold">{{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
-                                        <i class="fas fa-trash hover:text-1 px-2"
-                                           title="Delete Lecture"
-                                           onclick="deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}})"></i>
-                                    </div>
-                                    <div class="text-3 font-sans">
-                                        {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
-                                    </div>
-                                    {{if $lecture.Recording}}
-                                        {{if $lecture.VodViews}}<p class="text-4 text-sm">{{$lecture.VodViews}}
-                                            VoD views</p>{{end}}
-                                        <div class="font-semibold bg-success w-auto inline-block px-2 text-1 rounded-full">
-                                            VoD
-                                        </div>
-                                    {{else if $lecture.LiveNow}}
-                                        <div class="font-semibold bg-danger w-auto inline-block px-2 text-1 rounded-full">
-                                            Live
-                                        </div>
-                                    {{else if $lecture.IsPast}}
-                                        <div class="font-semibold bg-warn w-auto inline-block px-2 text-1 rounded-full">
-                                            Past
-                                        </div>
-                                    {{else}}
-                                        <div class="font-semibold bg-info w-auto inline-block px-2 text-1 rounded-full">
-                                            Scheduled
-                                        </div>
-                                    {{end}}
+                                    <div class="text-1 font-semibold">Create Lecture</div>
                                 </div>
                                 <div class="w-3/4">
-                                    <form onsubmit="saveLectureName(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
-                                          class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
-                                        <label for="lectureNameInput{{$lecture.Model.ID}}" class="hidden">Lecture
-                                            title</label>
-                                        <input id="lectureNameInput{{$lecture.Model.ID}}"
-                                               onfocus="focusNameInput(this, {{$lecture.Model.ID}})"
-                                               class="flex-grow border-none" type="text" value="{{$lecture.Name}}"
-                                               placeholder="Lecture 2: Dark-Patterns I"
-                                               autocomplete="off">
-                                        <button id="nameSubmitBtn{{$lecture.Model.ID}}"
-                                                class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
-                                    </form>
-                                    <div class="w-full mt-3">
-                                        <div class="w-full flex justify-center">
-                                            <i onclick="toggleExtraInfos(this, {{$lecture.Model.ID}})"
-                                               class="fas fa-angle-double-down hover:text-purple-500"></i>
-                                        </div>
-                                        <div id="extraInfos{{$lecture.Model.ID}}" class="hidden">
-                                            <form onsubmit="saveLectureDescription(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
-                                                  class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
-                                                <label for="lectureDescriptionInput{{$lecture.Model.ID}}"
-                                                       class="hidden">Lecture description</label>
-                                                <textarea id="lectureDescriptionInput{{$lecture.Model.ID}}"
-                                                          onfocus="focusDescriptionInput(this, {{$lecture.Model.ID}})"
-                                                          class="flex-grow border-none"
-                                                          placeholder="Add a nice description, links, and more. You can use Markdown."
-                                                          autocomplete="off">{{$lecture.Description}}</textarea>
-                                                <button id="descriptionSubmitBtn{{$lecture.Model.ID}}"
-                                                        class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
-                                            </form>
-                                            {{if and (not $lecture.IsPast) (not $lecture.Recording)}}
-                                            {{if eq $user.Role 1}}
-                                            <div class="flex">
-                                                <label class="mx-2">
-                                                    <span>Select Lecture Hall</span>
-                                                    <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
-                                                            id="lectureHallSelector{{$lecture.Model.ID}}"
-                                                            onchange="document.getElementById('applyLectureHall{{$lecture.Model.ID}}').classList.remove('hidden')">
-                                                        <option class="text-gray-300" value="">Self streaming
-                                                        </option>
-                                                        {{range $lectureHall := $lectureHalls}}
-                                                            <option class="text-gray-300"
-                                                                    value="{{$lectureHall.Model.ID}}"{{if eq $lecture.LectureHallID $lectureHall.Model.ID}} selected{{end}}>
-                                                                {{$lectureHall.Name}}
-                                                            </option>
-                                                        {{end}}
-                                                    </select>
-                                                </label>
-                                                <a id="applyLectureHall{{$lecture.Model.ID}}"
-                                                   class="flex items-center hidden"
-                                                   onclick="saveLectureHall({{$lecture.Model.ID}})">
-                                                    <i class="align-middle fas fa-check text-gray-300 hover:text-purple-500"></i>
-                                                </a>
-                                            </div>
-                                            {{end}}
-                                            {{if not $lecture.LectureHallID}}
-                                            <p class="mt-2">
-                                                <span class="font-semibold">Stream Server:</span> <span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
-                                                <i class="fas fa-clipboard hover:text-purple-500"
-                                                   onclick="copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
-                                                <br>
-                                                <span class="font-semibold">Stream Key:</span>
-                                                <span>{{$course.Slug}}</span><br>
-                                                {{if ne $user.Role 1}}
-                                                    <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
-                                                {{end}}
-                                            </p>
-                                            {{else if eq $user.Role 2}}
-                                            This lecture will be streamed from <span
-                                                    class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}{{if eq $lectureHall.Model.ID $lecture.LectureHallID}}{{$lectureHall.Name}}{{end}}{{end}}</span>.
-                                            If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
-                                            {{end}}
-                                            {{else if $lecture.Recording}}
-                                            <p class="mt-2 flex">
-                                                <a class="flex"
-                                                   href="/api/download/{{$lecture.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $lecture.Start.Month $lecture.Start.Day $lecture.Start.Year}}"
-                                                   download>
-                                                    <i class="fas fa-download hover:text-purple-500 px-2"
-                                                       title="Download VoD"></i>
-                                                </a>
-                                                {{if $lecture.Stats}}
-                                                    <i class="fas fa-chart-line hover:text-purple-500 px-2"
-                                                       title="Live Statistics"
-                                                       onclick="showStats({{$lecture.Model.ID}})"></i>
-                                                {{end}}
-                                                <a title="Cut lecture"
-                                                   class="flex"
-                                                   href="/admin/cut/{{$course.Model.ID}}/{{$lecture.Model.ID}}">
-                                                    <i class="fas fa-cut text-gray-300 hover:text-purple-500 px-2"></i>
-                                                </a>
-                                                <a title="Cut lecture into units"
-                                                   class="flex"
-                                                   href="/admin/units/{{$course.Model.ID}}/{{$lecture.Model.ID}}">
-                                                    <i class="fas fa-puzzle-piece text-gray-300 hover:text-purple-500 px-2"></i>
-                                                </a>
-                                            </p>
-                                            {{if $lecture.Stats}}
-                                            <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
-                                                <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
-                                                        width="undefined" height="undefined"></canvas>
-                                            </div>
-                                            <script>
-                                                new Chart(
-                                                    document.getElementById("stats{{$lecture.Model.ID}}"), {
-                                                        "type": "line", "data": {
-                                                            "labels": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}",{{end}} {{end}}],
-                                                            "datasets": [{
-                                                                "label": "Viewers",
-                                                                "data": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}{{$stat.Viewers}}, {{end}}{{end}}],
-                                                                "fill": false,
-                                                                "borderColor": "rgb(75, 192, 192)",
-                                                                "lineTension": 0.1
-                                                            }]
-                                                        }, "options": {scales: {yAxes: [{ticks: {beginAtZero: true}}]}}
-                                                    });
-                                            </script>
-                                            {{end}}
-                                            {{else}}
-                                            <p class="mt-2 flex">
-                                                <i class="fas fa-upload hover:text-purple-500 px-2"
-                                                   title="Upload VoD"></i>
-                                            </p>
-                                            {{end}}
+                                    <div class="dark:hover:bg-primary hover:bg-white">
+                                        <div class="flex flex-col md:flex-row">
+                                            <label for="name" class="md:w-1/2 w-full">
+                                                <span class="font-semibold p-2">Lecture Name</span>
+                                                <input name="name" id="name" type="text"
+                                                       placeholder="L01: Binary Trees"/>
+                                            </label>
+                                            <label for="start" class="md:w-1/4 w-full">
+                                                <span class="font-semibold p-2">Start</span>
+                                                <input name="start" type="text" placeholder="2021-04-08 14:00"
+                                                       id="start"/>
+                                            </label>
+                                            <label for="end" class="md:w-1/4 w-full">
+                                                <span class="font-semibold p-2">End</span>
+                                                <input name="end" type="text" placeholder="2021-04-08 16:00" id="end"/>
+                                            </label>
+                                            <button type="submit" id="createLectureBtn">
+                                                <i class="fas fa-check text-4 hover:text-purple-500"></i>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </li>
-                    {{end}}
-                    <li class="p-6 dark:hover:bg-primary hover:bg-white border-b-2 border-primary">
-                        <div class="flex">
-                            <div class="w-1/4">
-                                <div class="text-1 font-semibold">Create Lecture</div>
-                            </div>
-                            <div class="w-3/4">
-                                <div class="dark:hover:bg-primary hover:bg-white">
-                                    <div class="flex flex-col md:flex-row">
-                                        <label for="name" class="md:w-1/2 w-full">
-                                            <span class="font-semibold p-2">Lecture Name</span>
-                                            <input name="name" id="name" type="text" placeholder="L01: Binary Trees"/>
-                                        </label>
-                                        <label for="start" class="md:w-1/4 w-full">
-                                            <span class="font-semibold p-2">Start</span>
-                                            <input name="start" type="text" placeholder="2021-04-08 14:00" id="start"/>
-                                        </label>
-                                        <label for="end" class="md:w-1/4 w-full">
-                                            <span class="font-semibold p-2">End</span>
-                                            <input name="end" type="text" placeholder="2021-04-08 16:00" id="end"/>
-                                        </label>
-                                        <button type="submit" id="createLectureBtn">
-                                            <i class="fas fa-check text-4 hover:text-purple-500"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </li>
-                </ul>
-                <h2>External Participants</h2>
-                <ul class="dark:bg-secondary bg-gray-100 mb-6">
-                    <li>
-                        <p class="text-4 p-4">Add participants. They'll get notified about your invitation to
-                            your lecture via mail.</p>
-                        <form method="post" action="/api/course/{{$course.Model.ID}}/createUserForCourse" class="flex">
-                            <input type="hidden" name="courseID" value="{{$course.Model.ID}}">
-                            <label class="w-full">
-                                <span class="hidden">First Name</span>
-                                <input class="mx-2 px-2" type="text" name="newUserFirstName"
-                                       id="newUserFirstName" autocomplete="off" placeholder="Tim">
-                            </label>
-                            <label class="w-full">
-                                <span class="hidden">Email</span>
-                                <input class="mx-2 px-2" type="email" autocomplete="off" name="newUserEmail"
-                                       id="newUserEmail" placeholder="tim@lmu.de">
-                            </label>
-                            <button type="submit" class="btn dark:bg-secondary dark:hover:bg-primary bg-gray-100 hover:bg-white"><i
-                                        class="fas fa-check "></i></button>
-                        </form>
-                        <p class="text-4 p-4">Batch insert (this takes about two seconds per user.)</p>
-                        <form method="post" action="/api/course/{{$course.Model.ID}}/createUserForCourse" class="flex">
-                            <input type="hidden" name="courseID" value="{{$course.Model.ID}}">
-                            <label class="w-full">
-                                <span class="hidden">Batch insert users</span>
-                                <textarea name="batchUserInput"
-                                          placeholder="Tim,tim69@hotmail.com&#10;Anja,anja@lmu.de"></textarea>
-                            </label>
-                            <button type="submit" class="btn text-4 hover:text-1"><i
-                                        class="fas fa-check "></i></button>
-                        </form>
-                    </li>
-                    <li class="flex px-4">
-                        <p onclick="document.getElementById('usersTable').classList.remove('hidden')"
-                           class="underline text-4 hover:1">
-                            Show Invitations
-                        </p>
-                    </li>
-                    <li class="p-4">
-                        <table class="hidden w-full" id="usersTable">
-                            <thead>
-                            <tr class="font-semibold">
-                                <td>Name</td>
-                                <td>Email</td>
-                                <td>Finished Acc. Setup</td>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {{range $user := $course.Users }}
-                                <tr class="px-3 dark:hover:bg-primary hover:bg-white">
-                                    <td>{{$user.Name}}</td>
-                                    <td class="px-2">{{$user.Email.String}}</td>
-                                    <td>{{if eq $user.Password ""}}No{{else}}Yes{{end}}</td>
+                    </ul>
+                    <h2>External Participants</h2>
+                    <ul class="dark:bg-secondary bg-gray-100 mb-6">
+                        <li>
+                            <p class="text-4 p-4">Add participants. They'll get notified about your invitation to
+                                your lecture via mail.</p>
+                            <form method="post" action="/api/course/{{$course.Model.ID}}/createUserForCourse"
+                                  class="flex">
+                                <input type="hidden" name="courseID" value="{{$course.Model.ID}}">
+                                <label class="w-full">
+                                    <span class="hidden">First Name</span>
+                                    <input class="mx-2 px-2" type="text" name="newUserFirstName"
+                                           id="newUserFirstName" autocomplete="off" placeholder="Tim">
+                                </label>
+                                <label class="w-full">
+                                    <span class="hidden">Email</span>
+                                    <input class="mx-2 px-2" type="email" autocomplete="off" name="newUserEmail"
+                                           id="newUserEmail" placeholder="tim@lmu.de">
+                                </label>
+                                <button type="submit"
+                                        class="btn dark:bg-secondary dark:hover:bg-primary bg-gray-100 hover:bg-white">
+                                    <i
+                                            class="fas fa-check "></i></button>
+                            </form>
+                            <p class="text-4 p-4">Batch insert (this takes about two seconds per user.)</p>
+                            <form method="post" action="/api/course/{{$course.Model.ID}}/createUserForCourse"
+                                  class="flex">
+                                <input type="hidden" name="courseID" value="{{$course.Model.ID}}">
+                                <label class="w-full">
+                                    <span class="hidden">Batch insert users</span>
+                                    <textarea name="batchUserInput"
+                                              placeholder="Tim,tim69@hotmail.com&#10;Anja,anja@lmu.de"></textarea>
+                                </label>
+                                <button type="submit" class="btn text-4 hover:text-1"><i
+                                            class="fas fa-check "></i></button>
+                            </form>
+                        </li>
+                        <li class="flex px-4">
+                            <p onclick="document.getElementById('usersTable').classList.remove('hidden')"
+                               class="underline text-4 hover:1">
+                                Show Invitations
+                            </p>
+                        </li>
+                        <li class="p-4">
+                            <table class="hidden w-full" id="usersTable">
+                                <thead>
+                                <tr class="font-semibold">
+                                    <td>Name</td>
+                                    <td>Email</td>
+                                    <td>Finished Acc. Setup</td>
                                 </tr>
-                            {{end}}
-                            </tbody>
-                        </table>
-                    </li>
-                </ul>
+                                </thead>
+                                <tbody>
+                                {{range $user := $course.Users }}
+                                    <tr class="px-3 dark:hover:bg-primary hover:bg-white">
+                                        <td>{{$user.Name}}</td>
+                                        <td class="px-2">{{$user.Email.String}}</td>
+                                        <td>{{if eq $user.Password ""}}No{{else}}Yes{{end}}</td>
+                                    </tr>
+                                {{end}}
+                                </tbody>
+                            </table>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
-</div>
 {{end}}

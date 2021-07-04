@@ -11,7 +11,7 @@ import (
 )
 
 //GetCurrentOrNextLectureForCourse Gets the next lecture for a course or the lecture that is currently live. Error otherwise.
-func GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint)  (model.Stream, error){
+func GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model.Stream, error) {
 	var res model.Stream
 	err := DB.Model(&model.Stream{}).Order("start").First(&res, "course_id = ? AND (end > ? OR live_now)", courseID, time.Now()).Error
 	return res, err

@@ -51,6 +51,9 @@ func AdminPage(c *gin.Context) {
 	if c.Request.URL.Path == "/admin/workers"{
 		page = "workers"
 	}
+	if c.Request.URL.Path == "/admin/"{
+		page = "workers"
+	}
 	semesters := dao.GetAvailableSemesters(c)
 	y, t := tum.GetCurrentSemester()
 	err = templ.ExecuteTemplate(c.Writer, "admin.gohtml",
@@ -97,6 +100,35 @@ func LectureUnitsPage(c *gin.Context) {
 		Units:     tumLiveContext.Stream.Units,
 	}); err != nil {
 		sentry.CaptureException(err)
+	}
+}
+
+func CourseStatsPage(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	indexData := NewIndexData()
+	indexData.TUMLiveContext = tumLiveContext
+	courses, err := dao.GetCoursesByUserId(context.Background(), tumLiveContext.User.ID)
+	if err != nil {
+		log.Printf("couldn't query courses for user. %v\n", err)
+		courses = []model.Course{}
+	}
+	semesters := dao.GetAvailableSemesters(c)
+	err = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
+		IndexData:      indexData,
+		Courses:        courses,
+		Page:           "stats",
+		Semesters:      semesters,
+		CurY:           tumLiveContext.Course.Year,
+		CurT:           tumLiveContext.Course.TeachingTerm,
+	})
+	if err != nil {
+		log.Printf("%v\n", err)
 	}
 }
 

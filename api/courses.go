@@ -37,6 +37,7 @@ func configGinCourseRouter(router *gin.Engine) {
 	adminOfCourseGroup.POST("/addUnit", addUnit)
 	adminOfCourseGroup.POST("/submitCut", submitCut)
 	adminOfCourseGroup.POST("/deleteUnit/:unitID", deleteUnit)
+	adminOfCourseGroup.GET("/stats", getStats)
 }
 
 func submitCut(c *gin.Context) {
