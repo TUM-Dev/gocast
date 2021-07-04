@@ -51,9 +51,6 @@ func AdminPage(c *gin.Context) {
 	if c.Request.URL.Path == "/admin/workers"{
 		page = "workers"
 	}
-	if c.Request.URL.Path == "/admin/"{
-		page = "workers"
-	}
 	semesters := dao.GetAvailableSemesters(c)
 	y, t := tum.GetCurrentSemester()
 	err = templ.ExecuteTemplate(c.Writer, "admin.gohtml",
