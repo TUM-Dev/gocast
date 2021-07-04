@@ -11,6 +11,7 @@ class EditCourse {
             // @ts-ignore
             this.end = flatpickr("#end", {enableTime: true, time_24hr: true});
         }
+        EditCourse.loadGeneralStats();
     }
 
     private createLecture(): void {
@@ -27,6 +28,14 @@ class EditCourse {
                 window.location.reload()
             }
         })
+    }
+
+    /**
+     * loadGeneralStats gets the audience of the course from the api (live and vod) and renders it into a graph
+     * @private
+     */
+    private static loadGeneralStats() {
+        loadStats("activity", "courseGeneralStatsLive");
     }
 }
 

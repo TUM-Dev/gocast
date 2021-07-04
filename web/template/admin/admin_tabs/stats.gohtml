@@ -1,0 +1,65 @@
+{{define "stats"}}
+    {{- /*gotype: TUM-Live/web.IndexData*/ -}}
+    <script src="/static/node_modules/chart.js/dist/chart.min.js"></script>
+    <script src="/static/assets/ts-dist/stats.js?v={{.VersionTag}}"></script>
+    <div class="mt-2"><a href="." class="text-3 dark:hover:text-white hover:text-black underline"><i
+                    class="fas fa-arrow-left"></i> back</a></div>
+    <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
+                                                        value="{{.TUMLiveContext.Course.Model.ID}}"></label>
+    <div class="grid grid-cols-4 gap-4 w-full pt-4 relative">
+        <div class="col-span-1">
+            <h2 class="text-2">Quick stats:</h2>
+            <table class="m-2 text-sm">
+                <tbody>
+                <tr>
+                    <td class="text-3 px-1">Enrolled Students</td>
+                    <td class="text-2 font-semibold px-1" id="numStudents"><i
+                                class="fas fa-spinner animate-spin text-3"></i></td>
+                </tr>
+                <tr>
+                    <td class="text-3 p-1">Lectures</td>
+                    <td class="text-2 font-semibold px-1">{{.TUMLiveContext.Course.NumStreams}}</td>
+                </tr>
+                <tr>
+                    <td class="text-3 px-1">Vod Views</td>
+                    <td class="text-2 font-semibold px-1" id="vodViews"><i
+                                class="fas fa-spinner animate-spin text-3"></i></td>
+                </tr>
+                <tr>
+                    <td class="text-3 px-1">Live Views</td>
+                    <td class="text-2 font-semibold px-1" id="liveViews"><i
+                                class="fas fa-spinner animate-spin text-3"></i></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="col-span-3">
+            <h2 class="text-2">Student activity per week</h2>
+            <div class="w-full m-auto" style="min-height: 200px">
+                <canvas id="courseGeneralStatsLive" width="400" height="100" aria-label="Viewer stats"
+                        role="img"></canvas>
+            </div>
+        </div>
+        <div class="col-span-4 md:col-span-2">
+            <h2 class="text-2">VoD activity throughout the day:</h2>
+            <div class="w-full m-auto" style="min-height: 200px">
+                <canvas id="hours" width="400" height="100" aria-label="Viewer stats"
+                        role="img"></canvas>
+            </div>
+        </div>
+        <div class="col-span-4 md:col-span-2">
+            <h2 class="text-2">VoD Activity per day of Week:</h2>
+            <div class="w-full m-auto" style="min-height: 200px">
+                <canvas id="weekdays" width="400" height="100" aria-label="Viewer stats"
+                        role="img"></canvas>
+            </div>
+        </div>
+    </div>
+    <p class="text-5"><i class="fas fa-info-circle text-warn"></i> Some of this data is only captured from June 28th 2021 onwards.</p>
+    <script>
+        loadStats("activity", "courseGeneralStatsLive");
+        loadStats("hour", "hours");
+        loadStats("day", "weekdays");
+        initStatsPage();
+    </script>
+{{end}}

@@ -9,6 +9,15 @@ async function postData(url = '', data = {}) {
     return response;
 }
 
+async function getAsync(url = '') {
+    return await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    });
+}
+
 function Get(yourUrl) {
     let HttpReq = new XMLHttpRequest();
     HttpReq.open("GET", yourUrl, false);
@@ -63,15 +72,12 @@ function toggleColorScheme() {
     }
 }
 
-function initColorScheme() {
-    let darkTheme: boolean = localStorage.getItem("darkTheme") ? JSON.parse(localStorage.getItem("darkTheme")) : true;
-    if(!darkTheme) {
-        document.documentElement.classList.remove("dark");
-    }
-}
-
 function initHiddenCourses() {
-    document.getElementById("hiddenCoursesText").onclick = function () {
+    let el = document.getElementById("hiddenCoursesText");
+    if (!el){
+        return;
+    }
+    el.onclick = function () {
         const clickableParent: HTMLElement = document.getElementById("hiddenCoursesRestoreList")?.parentElement;
         if (clickableParent === undefined || clickableParent === null) {
             return; // not on index page
@@ -102,5 +108,7 @@ function initHiddenCourses() {
         hiddenCoursesText.innerText = hidden.length + " hidden courses";
     }
 }
-initColorScheme();
-initHiddenCourses();
+
+window.onload = function () {
+    initHiddenCourses();
+}

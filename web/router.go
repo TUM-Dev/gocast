@@ -52,6 +52,7 @@ func configMainRoute(router *gin.Engine) {
 	courseAdminGroup.Use(tools.InitCourse)
 	courseAdminGroup.Use(tools.AdminOfCourse)
 	courseAdminGroup.GET("/admin/course/:courseID", EditCoursePage)
+	courseAdminGroup.GET("/admin/course/:courseID/stats", CourseStatsPage)
 	courseAdminGroup.POST("/admin/course/:courseID", UpdateCourse)
 
 	withStream := courseAdminGroup.Group("/")
