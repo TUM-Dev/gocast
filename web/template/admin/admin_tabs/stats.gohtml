@@ -7,7 +7,7 @@
     <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
                                                         value="{{.TUMLiveContext.Course.Model.ID}}"></label>
     <div class="grid grid-cols-4 gap-4 w-full pt-4 relative">
-        <div class="col-span-1">
+        <div class="col-span-4 sm:col-span-1">
             <h2 class="text-2">Quick stats:</h2>
             <table class="m-2 text-sm">
                 <tbody>
@@ -33,7 +33,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="col-span-3">
+        <div class="col-span-4 sm:col-span-3">
             <h2 class="text-2">Student activity per week</h2>
             <div class="w-full m-auto" style="min-height: 200px">
                 <canvas id="courseGeneralStatsLive" width="400" height="100" aria-label="Viewer stats"
