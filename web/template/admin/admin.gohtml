@@ -94,7 +94,7 @@
                     {{template "lectureHalls" .LectureHalls}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "workers")}}
                     {{template "workers" .Workers}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "stats")}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "stats")}}
                     {{template "stats" .IndexData}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "schedule")}}
                     {{template "schedule" .IndexData}}
