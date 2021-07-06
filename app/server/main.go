@@ -120,6 +120,7 @@ func main() {
 		&model.ProcessingJob{},
 		&model.Worker{},
 		&model.CameraPreset{},
+		&model.ServerNotification{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
