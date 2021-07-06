@@ -3,6 +3,7 @@ package api
 import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
+	"TUM-Live/tools"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 
 func configServerNotificationsRoutes(engine *gin.Engine) {
 	adminGroup := engine.Group("/api/serverNotification")
+	adminGroup.Use(tools.Admin)
 	adminGroup.POST("/:notificationId", updateNotification)
 	adminGroup.POST("/create", createNotification)
 }
