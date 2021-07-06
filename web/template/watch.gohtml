@@ -75,6 +75,8 @@
                         <a class="flex m-auto" title="Combined view" href="/w/{{$course.Slug}}/{{$stream.Model.ID}}"><i
                                     class="fas fa-object-group hover:text-1"></i></a>
                     {{end}}
+                    <i title="Copy HLS URL" class="flex m-auto fas fa-link text-4 dark:hover:text-white hover:text-black cursor-pointer"
+                                              onclick="copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}')"></i>
                 </p>
             </div>
             <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
