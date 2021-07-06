@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/olahol/melody.v1"
-	"log"
 	"net/http"
 	"strconv"
 	"sync"
@@ -113,6 +113,7 @@ func CollectStats() {
 		stat := model.Stat{
 			Time:    time.Now(),
 			Viewers: numWatchers,
+			Live:    true,
 		}
 		if s, err := dao.GetStreamByID(context.Background(), sID); err == nil {
 			if s.Recording { // broadcast stats for livestreams and upcoming videos only
@@ -138,14 +139,14 @@ func CollectStats() {
 	}
 }
 
-func notifyViewersLiveStart(streamId uint)  {
+func notifyViewersLiveStart(streamId uint) {
 	req, _ := json.Marshal(gin.H{"live": true})
 	_ = m.BroadcastFilter(req, func(s *melody.Session) bool {
 		return s.Request.URL.Path == fmt.Sprintf("/api/chat/%v/ws", streamId)
 	})
 }
 
-func notifyViewersLiveEnd(streamId string)  {
+func notifyViewersLiveEnd(streamId string) {
 	req, _ := json.Marshal(gin.H{"live": false})
 	_ = m.BroadcastFilter(req, func(s *melody.Session) bool {
 		return s.Request.URL.Path == fmt.Sprintf("/api/chat/%v/ws", streamId)
@@ -159,7 +160,14 @@ func ChatStream(c *gin.Context) {
 	}
 	addUser(c.Param("streamID"))
 	joinTime := time.Now()
-	defer removeUser(c.Param("streamID"), joinTime)
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	defer removeUser(c.Param("streamID"), joinTime, tumLiveContext.Stream.Recording)
 	ctxMap := make(map[string]interface{}, 1)
 	ctxMap["ctx"] = c
 
@@ -175,9 +183,9 @@ func addUser(id string) {
 	statsLock.Unlock()
 }
 
-func removeUser(id string, jointime time.Time) {
-	// watched at least 5 minutes of the lecture? Count as view.
-	if jointime.Before(time.Now().Add(time.Minute * -5)) {
+func removeUser(id string, jointime time.Time, recording bool) {
+	// watched at least 5 minutes of the lecture and stream is VoD? Count as view.
+	if recording && jointime.Before(time.Now().Add(time.Minute*-5)) {
 		dao.AddVodView(id)
 	}
 	statsLock.Lock()

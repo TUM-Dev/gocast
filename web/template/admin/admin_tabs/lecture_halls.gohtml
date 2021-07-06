@@ -2,21 +2,21 @@
     <script src="/static/assets/ts-dist/lecture-hall-management.js"></script>
     {{- /*gotype: TUM-Live/[]model.LectureHall*/ -}}
     <div class="rounded my-6 overflow-x-auto">
-        <h2 class="text-2xl bg-primary text-gray-300 mb-6">Lecture Halls</h2>
+        <h2 class="text-2xl text-1 mb-6">Lecture Halls</h2>
         {{range $lectureHall := .}}
-            <div class="w-full border-2 border-secondary rounded mb-6">
-                <div class="bg-secondary font-thin text-xl text-white p-2 px-6">{{$lectureHall.Name}}</div>
-                <div class="text-gray-300 px-4 p-2">
+            <div class="w-full border-2 dark:border-secondary border-gray-200 rounded mb-6">
+                <div class="dark:bg-secondary bg-gray-100 font-thin text-xl text-3 p-2 px-6">{{$lectureHall.Name}}</div>
+                <div class="text-4 px-4 p-2">
                     <div class="flex flex-row">
-                        <div class="w-1/4 font-semibold text-white">Calendar:</div>
+                        <div class="w-1/4 font-semibold text-1">Calendar:</div>
                         <div class="w-3/4">
                             <a href="/api/hall/{{$lectureHall.ID}}/export.ics">https://live.mm.rbg.tum.de/api/hall/{{$lectureHall.ID}}/export.ics</a>
                         </div>
                     </div>
                 </div>
-                <div class="text-gray-300 px-4 p-2">
+                <div class="text-4 px-4 p-2">
                     <div class="flex flex-row">
-                        <div class="w-1/4 font-semibold text-white">Sources:</div>
+                        <div class="w-1/4 font-semibold text-1">Sources:</div>
                         <div class="w-3/4">
                             <ul class="flex">
                                 <li>
@@ -42,7 +42,7 @@
                     </div>
                     {{if $lectureHall.CameraIP}}
                         <div class="flex flex-row mt-6">
-                            <div class="w-1/4 font-semibold text-white">
+                            <div class="w-1/4 font-semibold text-1">
                                 <p class="mb-2">Presets:</p>
                                 <a title="Refresh list" class="py-1 px-2 text-white rounded bg-info">
                                     <i class="fas fa-sync"></i>

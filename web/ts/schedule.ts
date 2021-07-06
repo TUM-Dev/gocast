@@ -26,14 +26,37 @@ document.addEventListener("DOMContentLoaded", function () {
             let popover = document.getElementById("popoverContent");
             const streamInfo = JSON.parse(Get("/api/stream/" + data.event.extendedProps.description))
             let html = `
-            <p class="flex text-white text-lg">
+            <p class="flex text-1 text-lg">
                 <span class="flex-grow">${streamInfo["course"]}</span>
-                <i id="closeBtn" class="transition-colors duration-200 hover:text-white text-gray-400 icon-close"></i>
+                <i id="closeBtn" class="transition-colors duration-200 hover:text-1 text-4 icon-close"></i>
             </p>
-                <div class="text-gray-200">
+                <div class="text-2">
                     <div class="flex"><p>${new Date(streamInfo["start"]).toLocaleString()}</p></div>
-                    <div class="flex"><span class="mr-2 font-semibold">Key: </span><p>${streamInfo["key"]}</p><i class="fas fa-copy ml-2 text-gray-400 transition transition-colors hover:text-white" title="copy" onclick="copyToClipboard('${streamInfo['key']}')"></i></div>
+                    <div class="flex"><span class="mr-2 font-semibold">Server: </span><p>${streamInfo["ingest"]}</p><i class="fas fa-copy ml-2 text-4 transition transition-colors hover:text-1" title="copy" onclick="copyToClipboard('${streamInfo["ingest"]}')"></i></div>
                 </div>
+                <form onsubmit="saveLectureName(event, ${streamInfo["courseID"]}, ${streamInfo["streamID"]})"
+                    class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                    <label for="lectureNameInput${streamInfo["streamID"]}" class="hidden">Lecture title</label>
+                    <input id="lectureNameInput${streamInfo["streamID"]}"
+                        onfocus="focusNameInput(this, ${streamInfo["streamID"]})"
+                        class="flex-grow border-none" type="text" value="${streamInfo["name"]}"
+                        placeholder="Lecture 2: Dark-Patterns I"
+                        autocomplete="off">
+                    <button id="nameSubmitBtn${streamInfo["streamID"]}"
+                        class="fas fa-check ml-2 invisible text-gray-400 hover:text-purple-500"></button>
+                </form>
+                <form onsubmit="saveLectureDescription(event, ${streamInfo["courseID"]}, ${streamInfo["streamID"]})"
+                    class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                    <label for="lectureDescriptionInput${streamInfo["streamID"]}" class="hidden">Lecture description</label>
+                    <textarea id="lectureDescriptionInput${streamInfo["streamID"]}"
+                        rows="3"
+                        onfocus="focusDescriptionInput(this, ${streamInfo["streamID"]})"
+                        class="flex-grow border-none"
+                        placeholder="Add a nice description, links, and more. You can use Markdown."
+                        autocomplete="off">${streamInfo["description"]}</textarea>
+                    <button id="descriptionSubmitBtn${streamInfo["streamID"]}"
+                        class="fas fa-check ml-2 invisible text-4 hover:text-1"></button>
+                </form>
             `;
             popover.innerHTML = html;
             document.getElementsByClassName("fc-timegrid").item(0)?.classList.add("filter", "blur-xxs");

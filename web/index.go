@@ -8,6 +8,8 @@ import (
 	"context"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"net/http"
 	"sort"
 	"strconv"
@@ -28,6 +30,14 @@ func MainPage(c *gin.Context) {
 		return
 	}
 	indexData := NewIndexData()
+
+	// load current notifications:
+	if notifications, err := dao.GetCurrentServerNotifications(); err == nil {
+		indexData.ServerNotifications = notifications
+	} else if err != gorm.ErrRecordNotFound {
+		log.WithError(err).Warn("could not get server notifications")
+	}
+
 	var tumLiveContext tools.TUMLiveContext
 	tumLiveContextQueried, found := c.Get("TUMLiveContext")
 	if found {
@@ -130,18 +140,19 @@ func AboutPage(c *gin.Context) {
 }
 
 type IndexData struct {
-	VersionTag     string
-	TUMLiveContext tools.TUMLiveContext
-	IsUser         bool
-	IsAdmin        bool
-	IsStudent      bool
-	LiveStreams    []CourseStream
-	Courses        []model.Course
-	PublicCourses  []model.Course
-	Semesters      []dao.Semester
-	CurrentYear    int
-	CurrentTerm    string
-	UserName       string
+	VersionTag          string
+	TUMLiveContext      tools.TUMLiveContext
+	IsUser              bool
+	IsAdmin             bool
+	IsStudent           bool
+	LiveStreams         []CourseStream
+	Courses             []model.Course
+	PublicCourses       []model.Course
+	Semesters           []dao.Semester
+	CurrentYear         int
+	CurrentTerm         string
+	UserName            string
+	ServerNotifications []model.ServerNotification
 }
 
 func NewIndexData() IndexData {

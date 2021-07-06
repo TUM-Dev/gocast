@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"regexp"
 )
@@ -42,27 +42,37 @@ func AdminPage(c *gin.Context) {
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
 	page := "schedule"
-	if c.Request.URL.Path == "/admin/users"{
+	if c.Request.URL.Path == "/admin/users" {
 		page = "users"
 	}
-	if c.Request.URL.Path == "/admin/lectureHalls"{
+	if c.Request.URL.Path == "/admin/lectureHalls" {
 		page = "lectureHalls"
 	}
-	if c.Request.URL.Path == "/admin/workers"{
+	if c.Request.URL.Path == "/admin/workers" {
 		page = "workers"
+	}
+	var notifications []model.ServerNotification
+	if c.Request.URL.Path == "/admin/server-notifications" {
+		page = "serverNotifications"
+		if res, err := dao.GetAllServerNotifications(); err == nil {
+			notifications = res
+		} else {
+			log.WithError(err).Warn("could not get all server notifications")
+		}
 	}
 	semesters := dao.GetAvailableSemesters(c)
 	y, t := tum.GetCurrentSemester()
 	err = templ.ExecuteTemplate(c.Writer, "admin.gohtml",
 		AdminPageData{Users: users,
-			Courses:      courses,
-			IndexData:    indexData,
-			LectureHalls: lectureHalls,
-			Page:         page,
-			Workers:      workers,
-			Semesters:    semesters,
-			CurY:         y,
-			CurT:         t})
+			Courses:             courses,
+			IndexData:           indexData,
+			LectureHalls:        lectureHalls,
+			Page:                page,
+			Workers:             workers,
+			Semesters:           semesters,
+			CurY:                y,
+			CurT:                t,
+			ServerNotifications: notifications})
 	if err != nil {
 		log.Printf("%v", err)
 	}
@@ -97,6 +107,35 @@ func LectureUnitsPage(c *gin.Context) {
 		Units:     tumLiveContext.Stream.Units,
 	}); err != nil {
 		sentry.CaptureException(err)
+	}
+}
+
+func CourseStatsPage(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	indexData := NewIndexData()
+	indexData.TUMLiveContext = tumLiveContext
+	courses, err := dao.GetCoursesByUserId(context.Background(), tumLiveContext.User.ID)
+	if err != nil {
+		log.Printf("couldn't query courses for user. %v\n", err)
+		courses = []model.Course{}
+	}
+	semesters := dao.GetAvailableSemesters(c)
+	err = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
+		IndexData: indexData,
+		Courses:   courses,
+		Page:      "stats",
+		Semesters: semesters,
+		CurY:      tumLiveContext.Course.Year,
+		CurT:      tumLiveContext.Course.TeachingTerm,
+	})
+	if err != nil {
+		log.Printf("%v\n", err)
 	}
 }
 
@@ -185,16 +224,17 @@ func CreateCoursePage(c *gin.Context) {
 }
 
 type AdminPageData struct {
-	IndexData      IndexData
-	Users          []model.User
-	Courses        []model.Course
-	LectureHalls   []model.LectureHall
-	Page           string
-	Workers        []model.Worker
-	Semesters      []dao.Semester
-	CurY           int
-	CurT           string
-	EditCourseData EditCourseData
+	IndexData           IndexData
+	Users               []model.User
+	Courses             []model.Course
+	LectureHalls        []model.LectureHall
+	Page                string
+	Workers             []model.Worker
+	Semesters           []dao.Semester
+	CurY                int
+	CurT                string
+	EditCourseData      EditCourseData
+	ServerNotifications []model.ServerNotification
 }
 
 type CreateCourseData struct {

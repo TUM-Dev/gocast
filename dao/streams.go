@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"log"
+	"strconv"
 	"time"
 )
 
@@ -73,12 +75,13 @@ func DeleteStreamsWithTumID(ids []uint) {
 	})
 }
 
-func CreateStream(ctx context.Context, stream model.Stream) (err error) {
-	dbErr := DB.Create(stream).Error
-	return dbErr
-}
-
 func AddVodView(id string) {
+	intId, err := strconv.Atoi(id)
+	if err != nil {
+		log.Printf("Invalid stream id when saving vod view %v", err)
+		return
+	}
+	// todo: legacy stat collection, delete me.
 	_ = DB.Transaction(func(tx *gorm.DB) error {
 		var stream model.Stream
 		if err := tx.Where("id = ? AND live_now = 0", id).First(&stream).Error; err != nil {
@@ -89,6 +92,30 @@ func AddVodView(id string) {
 		}
 		return nil
 	})
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		t := time.Now()
+		tFrom := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, time.Local)
+		tUntil := tFrom.Add(time.Hour)
+		var stat *model.Stat
+		err := DB.First(&stat, "live = 0 AND time BETWEEN ? and ?", tFrom, tUntil).Error
+		if err != nil { // first view this hour, create
+			stat := model.Stat{
+				Time:     tFrom,
+				StreamID: uint(intId),
+				Viewers:  1,
+				Live:     false,
+			}
+			err = tx.Create(&stat).Error
+			return err
+		} else {
+			stat.Viewers += 1
+			err = tx.Save(&stat).Error
+			return err
+		}
+	})
+	if err != nil {
+		log.Printf("error saving vod view: %v", err)
+	}
 }
 
 func UpdateStream(stream model.Stream) error {

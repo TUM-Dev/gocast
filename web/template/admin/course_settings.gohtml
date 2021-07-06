@@ -1,6 +1,6 @@
 {{define "course_settings"}}
     <h3>Visibility of this course</h3>
-    <div class="p-4 text-gray-300">
+    <div class="p-4 text-4">
         <label class="inline-flex items-center w-full" for="public">
             <input class="mr-3 w-auto form-radio" type="radio" id="public" name="access" value="public"
                     {{if .}} {{if eq .Visibility "public"}}checked{{end}}{{else}}checked{{end}}>

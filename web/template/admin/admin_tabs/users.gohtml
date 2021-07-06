@@ -1,18 +1,18 @@
 {{define "users"}}
-    <div class="bg-secondary rounded my-6 overflow-x-auto">
-        <h2 class="text-2xl bg-primary text-gray-300">User Management</h2>
+    <div class="dark:bg-secondary bg-white rounded my-6 overflow-x-auto">
+        <h2 class="text-2xl text-1">User Management</h2>
         <table class="table-auto w-full">
             <thead>
-            <tr class="bg-primary text-gray-300 uppercase text-sm leading-normal">
+            <tr class="text-4 uppercase text-sm leading-normal">
                 <th class="py-3 px-6 text-left">Name</th>
                 <th class="py-3 px-6 text-left">Email</th>
                 <th class="py-3 px-6 text-center">Role</th>
                 <th class="py-3 px-6 text-center">Actions</th>
             </tr>
             </thead>
-            <tbody class="text-gray-300 text-sm font-light">
+            <tbody class="text-4 text-sm font-light">
             {{range $user := .}}
-                <tr id="user{{$user.Model.ID}}" class="border-gray-500 hover:bg-primary">
+                <tr id="user{{$user.Model.ID}}" class="border-gray-500 dark:hover:bg-primary hover:bg-white">
                     <td class="py-3 px-6 text-left whitespace-nowrap">
                         <div class="flex items-center">
                             <span class="font-medium p-3">{{$user.Name}}</span>
@@ -44,7 +44,7 @@
                 </tr>
             {{end}}
 
-            <tr class="hover:bg-primary">
+            <tr class="dark:hover:bg-primary">
                 <td class="py-3 px-6 text-left whitespace-nowrap">
                     <div class="flex items-center">
                         <input id="name" name="name" placeholder="Name" type="text" autocomplete="off"

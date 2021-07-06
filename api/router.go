@@ -37,4 +37,5 @@ func ConfigGinRouter(router *gin.Engine) {
 	configGinDownloadRouter(router)
 	configGinLectureHallApiRouter(router)
 	configGinSexyApiRouter(router)
+	configServerNotificationsRoutes(router)
 }

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 	"time"
@@ -32,7 +32,17 @@ func getStream(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	stream := *tumLiveContext.Stream
 	course := *tumLiveContext.Course
-	c.JSON(http.StatusOK, gin.H{"course": course.Name, "name": stream.Name, "start": stream.Start, "end": stream.End, "key": stream.StreamKey, "live": stream.LiveNow, "vod": stream.Recording})
+	c.JSON(http.StatusOK,
+		gin.H{"course": course.Name,
+			"courseID":    course.ID,
+			"streamID":    stream.ID,
+			"name":        stream.Name,
+			"description": stream.Description,
+			"start":       stream.Start,
+			"end":         stream.End,
+			"ingest":      fmt.Sprintf("%sstream?secret=%s", tools.Cfg.IngestBase, stream.StreamKey),
+			"live":        stream.LiveNow,
+			"vod":         stream.Recording})
 }
 
 func configGinStreamAuthRouter(router gin.IRoutes) {
@@ -55,6 +65,12 @@ func StartStream(c *gin.Context) {
 	if err != nil {
 		c.AbortWithStatus(http.StatusForbidden)
 		fmt.Printf("stream rejected. cause: %v\n", err)
+		return
+	}
+	// reject streams that are more than 30 minutes in the future or more than 30 minutes past
+	if !(time.Now().After(res.Start.Add(time.Minute*-30)) && time.Now().Before(res.End.Add(time.Minute*30))) {
+		c.AbortWithStatus(http.StatusForbidden)
+		log.WithFields(log.Fields{"streamId": res.ID}).Info("Stream rejected, time out of bounds")
 		return
 	}
 	fmt.Printf("stream approved: id=%d\n", res.ID)

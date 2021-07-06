@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en" class="h-full dark">
 {{- /*gotype: TUM-Live/web.WatchPageData*/ -}}
 <head>
     <meta charset="UTF-8">
@@ -13,7 +13,7 @@
     {{if .IsAdminOfCourse}}
     <script async src="/static/assets/ts-dist/watch-admin.js?v={{.IndexData.VersionTag}}"></script>{{end}}
 </head>
-<body class="bg-primary h-full overflow-hidden">
+<body class="h-full overflow-hidden">
 {{template "header" .IndexData.TUMLiveContext}}
 <div id="watchPageMainWrapper" class="flex md:flex-row w-full flex-wrap">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
@@ -40,10 +40,10 @@
                 </p>
             </video>
             <div class="flex justify-between align-middle mt-4">
-                <h1 class="text-gray-300 text-xl">
+                <h1 class="text-4 text-xl">
                     {{if $stream.Name}}{{$stream.Name}}{{else}}Lecture: {{$stream.Start.Month}} {{printf "%02d." $stream.Start.Day}} {{$stream.Start.Year}}{{end}}
                 </h1>
-                <p class="text-lg text-gray-400 flex space-x-2">
+                <p class="text-lg text-4 flex space-x-2">
                     {{if not $stream.Recording}}
                         <span class="flex m-auto" id="viewerCount"></span>
                         {{if not $stream.LiveNow}}
@@ -58,33 +58,35 @@
                            title="Download Lecture"
                            href="/api/download/{{$stream.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $stream.Start.Month $stream.Start.Day $stream.Start.Year}}"
                            download>
-                            <i class="fas fa-download text-gray-400 hover:text-purple-500"></i>
+                            <i class="fas fa-download text-4 hover:text-1"></i>
                         </a>
                     {{end}}
                     {{if $stream.PlaylistUrlPRES}}
                         <a class="flex m-auto" title="Presentation only"
                            href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/PRES"><i
-                                    class="fas fa-edit hover:text-purple-500"></i></a>
+                                    class="fas fa-edit hover:text-1"></i></a>
                     {{end}}
                     {{if $stream.PlaylistUrlCAM}}
                         <a class="flex m-auto" title="Camera only"
                            href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/CAM"><i
-                                    class="fas fa-camera hover:text-purple-500"></i></a>
+                                    class="fas fa-camera hover:text-1"></i></a>
                     {{end}}
                     {{if $stream.PlaylistUrl}}
                         <a class="flex m-auto" title="Combined view" href="/w/{{$course.Slug}}/{{$stream.Model.ID}}"><i
-                                    class="fas fa-object-group hover:text-purple-500"></i></a>
+                                    class="fas fa-object-group hover:text-1"></i></a>
                     {{end}}
+                    <i title="Copy HLS URL" class="flex m-auto fas fa-link text-4 dark:hover:text-white hover:text-black cursor-pointer"
+                                              onclick="copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}')"></i>
                 </p>
             </div>
-            <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}"
-               class="text-gray-300 hover:text-white hover:underline text-lg">{{$course.Name}}</a>
+            <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
+                <span class="text-5 hover:text-1 hover:underline text-lg">{{$course.Name}}</span></a>
             {{if and .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
                 <div class="border-t-2 border-secondary p-4">
-                    <h3 class="text-gray-400 mb-2">Administration:</h3>
+                    <h3 class="text-4 mb-2">Administration:</h3>
                     <a href="?restart=1" title="Issues with the stream? Restart it."
                        class="bg-danger text-white rounded cursor-pointer p-2 text-sm">Restart stream</a>
-                    <p class="text-gray-400 my-2">Presets:</p>
+                    <p class="text-4 my-2">Presets:</p>
                     <div class="w-full overflow-x-scroll scrollbarThin">
                         <div class="flex flex-row gap-x-2">
                             {{range $preset := .Presets}}
@@ -102,7 +104,7 @@
                 </div>
             {{end}}
             {{if $stream.Description}}
-                <div class="text-gray-300 p-4 border-t-2 border-secondary video-description">
+                <div class="text-3 p-4 border-t-2 border-secondary video-description">
                     <span class="font-semibold">Video Description:</span>
                     {{.Description}}
                 </div>
@@ -116,27 +118,27 @@
     </div>
     {{if $course.ChatEnabled}}
         <div id="chatWrapper"
-             class="hidden md:flex flex-col w-full md:h-full border-t-2 mt-2 md:mt-0 md:border-t-0 md:border-l border-secondary bg-secondary-lighter md:w-2/6 lg:w-1/6 text-white pt-3">
+             class="hidden md:flex flex-col w-full md:h-full border-t-2 mt-2 md:mt-0 md:border-t-0 md:dark:border-l dark:border-secondary dark:bg-secondary-lighter bg-gray-100 md:w-2/6 lg:w-1/6 text-1 pt-3">
             <div id="chatBox" class="overflow-scroll overflow-x-hidden overflow-y-scroll" style="flex: 2;">
                 {{range $chat := $stream.Chats}}
                     <div class="rounded p-2 mx-2">
                         <div class="flex flex-row">
                             <p class="flex-grow font-semibold {{if $chat.Admin}}text-warn{{end}}">{{$chat.UserName}}</p>
-                            <p class="text-gray-500 font-thin">
+                            <p class="text-5 font-thin">
                                 {{printf "%02d:%02d" $chat.SendTime.Hour $chat.SendTime.Minute}}
                             </p>
                         </div>
-                        <p class="text-gray-300 break-words">
+                        <p class="text-3 break-words">
                             {{$chat.Message}}
                         </p>
                     </div>
                 {{end}}
             </div>
             <form id="chatForm"
-                  class="border-b-2 focus-within:border-gray-300 border-secondary bg-secondary-lighter inset-x-0 flex px-3"
+                  class="border-b-2 focus-within:border-gray-300 dark:border-secondary dark:bg-secondary-lighter inset-x-0 flex px-3"
                   style="">
                 <input type="checkbox" name="anonymous" id="anonymous" class="hidden">
-                <label for="anonymous" class="flex items-center cursor-pointer text-gray-400 hover:text-white"
+                <label for="anonymous" class="flex items-center cursor-pointer text-4 hover:text-1"
                        title="Don't show my name.">
                     <i class="fas fa-ghost"></i>
                 </label>
@@ -146,7 +148,7 @@
                         placeholder="Log in to chat" {{else}}
                         placeholder="Send a message" {{end}}autocomplete="off" id="chatInput" type="text"
                         class="border-none">
-                <button class="fas fa-paper-plane text-gray-400 hover:text-purple-500 focus:outline-none"></button>
+                <button class="fas fa-paper-plane text-4 hover:text-1 focus:outline-none"></button>
             </form>
         </div>
     {{end}}

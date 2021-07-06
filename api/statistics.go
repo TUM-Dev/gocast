@@ -1,0 +1,160 @@
+package api
+
+import (
+	"TUM-Live/dao"
+	"TUM-Live/tools"
+	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
+	"net/http"
+)
+
+type statReq struct {
+	Interval string `form:"interval" json:"interval" xml:"interval"  binding:"required"`
+}
+
+func getStats(c *gin.Context) {
+	ctx, _ := c.Get("TUMLiveContext")
+	var req statReq
+	if c.ShouldBindQuery(&req) != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+	}
+	cid := ctx.(tools.TUMLiveContext).Course.ID
+	switch req.Interval {
+	case "week":
+	case "day":
+		res, err := dao.GetCourseStatsWeekdays(cid)
+		if err != nil {
+			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsWeekdays failed")
+		}
+		resp := chartJs{
+			ChartType: "bar",
+			Data:      chartJsData{Datasets: []chartJsDataset{newChartJsDataset()}},
+			Options:   newChartJsOptions(),
+		}
+		resp.Data.Datasets[0].Label = "Sum(viewers)"
+		resp.Data.Datasets[0].Data = res
+		c.JSON(http.StatusOK, resp)
+	case "hour":
+		res, err := dao.GetCourseStatsHourly(cid)
+		if err != nil {
+			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsHourly failed")
+		}
+		resp := chartJs{
+			ChartType: "bar",
+			Data:      chartJsData{Datasets: []chartJsDataset{newChartJsDataset()}},
+			Options:   newChartJsOptions(),
+		}
+		resp.Data.Datasets[0].Label = "Sum(viewers)"
+		resp.Data.Datasets[0].Data = res
+		c.JSON(http.StatusOK, resp)
+	case "activity":
+		resLive, err := dao.GetStudentActivityCourseStats(cid, true)
+		if err != nil {
+			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsLive failed")
+		}
+		resVod, err := dao.GetStudentActivityCourseStats(cid, false)
+		if err != nil {
+			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsVod failed")
+		}
+		resp := chartJs{
+			ChartType: "line",
+			Data:      chartJsData{Datasets: []chartJsDataset{newChartJsDataset()}},
+			Options:   newChartJsOptions(),
+		}
+		resp.Data.Datasets[0].Label = "Live"
+		resp.Data.Datasets[0].Data = resLive
+		resp.Data.Datasets[0].BorderColor = "#d12a5c"
+		resp.Data.Datasets[0].BackgroundColor = ""
+		resp.Data.Datasets = append(resp.Data.Datasets, newChartJsDataset())
+		resp.Data.Datasets[1].Label = "VoD"
+		resp.Data.Datasets[1].Data = resVod
+		resp.Data.Datasets[1].BorderColor = "#2a7dd1"
+		resp.Data.Datasets[1].BackgroundColor = ""
+		c.JSON(http.StatusOK, resp)
+	case "numStudents":
+		res, err := dao.GetCourseNumStudents(cid)
+		if err != nil {
+			log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumStudents failed")
+			c.AbortWithStatus(http.StatusInternalServerError)
+		} else {
+			c.JSON(http.StatusOK, gin.H{"res": res})
+		}
+	case "vodViews":
+		res, err := dao.GetCourseNumVodViews(cid)
+		if err != nil {
+			log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumVodViews failed")
+			c.AbortWithStatus(http.StatusInternalServerError)
+		} else {
+			c.JSON(http.StatusOK, gin.H{"res": res})
+		}
+	case "liveViews":
+		res, err := dao.GetCourseNumLiveViews(cid)
+		if err != nil {
+			log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
+			c.AbortWithStatus(http.StatusInternalServerError)
+		} else {
+			c.JSON(http.StatusOK, gin.H{"res": res})
+		}
+	default:
+		c.AbortWithStatus(http.StatusBadRequest)
+	}
+}
+
+//
+// Chart.js datastructures:
+//
+
+type chartJsData struct {
+	Datasets []chartJsDataset `json:"datasets"`
+}
+
+type chartJs struct {
+	ChartType string         `json:"type"`
+	Data      chartJsData    `json:"data"`
+	Options   chartJsOptions `json:"options"`
+}
+
+type chartJsScales struct {
+	Y struct {
+		BeginAtZero bool `json:"beginAtZero"`
+	} `json:"y"`
+}
+
+func newChartJsScales() chartJsScales {
+	return chartJsScales{Y: struct {
+		BeginAtZero bool `json:"beginAtZero"`
+	}{BeginAtZero: true}}
+}
+
+type chartJsOptions struct {
+	Responsive          bool          `json:"responsive"`
+	MaintainAspectRatio bool          `json:"maintainAspectRatio"`
+	Scales              chartJsScales `json:"scales,omitempty"`
+}
+
+func newChartJsOptions() chartJsOptions {
+	return chartJsOptions{
+		Responsive:          true,
+		MaintainAspectRatio: false,
+		Scales:              newChartJsScales(),
+	}
+}
+
+//chartJsDataset is a single dataset ready to be used in a Chart.js chart
+type chartJsDataset struct {
+	Label           string         `json:"label"`
+	Fill            bool           `json:"fill"`
+	BorderColor     string         `json:"borderColor,omitempty"`
+	BackgroundColor string         `json:"backgroundColor,omitempty"`
+	Data            interface{}    `json:"data"` // whatever data
+	Options         chartJsOptions `json:"options"`
+}
+
+//New creates a chartJsDataset with some defaults
+func newChartJsDataset() chartJsDataset {
+	return chartJsDataset{
+		Fill:            false,
+		BorderColor:     "#427dbd",
+		BackgroundColor: "#427dbd",
+	}
+}

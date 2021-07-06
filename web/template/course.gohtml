@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <title>{{.IndexData.TUMLiveContext.Course.Name}} | TUM Live</title>
     {{template "headImports" .IndexData.VersionTag}}
 </head>
-<body class="bg-primary">
+<body>
 {{- /*gotype: TUM-Live/web.CoursePageData*/ -}}
 {{template "header" .IndexData.TUMLiveContext}}
 {{$course := .IndexData.TUMLiveContext.Course}}
 <div class="container">
-    <h1 class="text-gray-200">{{$course.Name}}</h1>
+    <h1 class="text-1">{{$course.Name}}</h1>
     <ul class="w-full md:w-5/6 m-auto mb-4">
         {{template "course_list" .IndexData.TUMLiveContext}}
     </ul>

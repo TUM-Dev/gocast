@@ -1,0 +1,23 @@
+{{define "course-card"}}{{- /*gotype: TUM-Live/model.Course*/ -}}
+<div class="pt-1 group course{{.Model.ID}}">
+    <div class="flex items-center">
+        <i class="fancyeye opacity-0 group-hover:opacity-100 transition-colors duration-200 dark:hover:text-white hover:text-black text-gray-500 mr-2 cursor-pointer"
+           title="Hide this course" onclick="hideCourse({{.Model.ID}}, {{.Name}})"></i>
+        <a href="/course/{{.Year}}/{{.TeachingTerm}}/{{.Slug}}" class="text-lg text-3">{{.Name}}</a>
+    </div>
+    <div class="flex">
+        <i class="icon-eye invisible mr-2"></i>
+        <p class="text-5 font-sans font-light text-sm">
+            {{if .IsLive}}
+                Live now.
+            {{else}}
+                {{if .HasNextLecture}}
+                    {{$next := .GetNextLectureDate}}Next Lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
+                {{else}}
+                    No upcoming Lectures
+                {{end}}
+            {{end}}
+        </p>
+    </div>
+</div>
+{{end}}

@@ -47,11 +47,13 @@ func configMainRoute(router *gin.Engine) {
 	adminGroup.GET("/admin/users", AdminPage)
 	adminGroup.GET("/admin/lectureHalls", AdminPage)
 	adminGroup.GET("/admin/workers", AdminPage)
+	adminGroup.GET("/admin/server-notifications", AdminPage)
 
 	courseAdminGroup := router.Group("/")
 	courseAdminGroup.Use(tools.InitCourse)
 	courseAdminGroup.Use(tools.AdminOfCourse)
 	courseAdminGroup.GET("/admin/course/:courseID", EditCoursePage)
+	courseAdminGroup.GET("/admin/course/:courseID/stats", CourseStatsPage)
 	courseAdminGroup.POST("/admin/course/:courseID", UpdateCourse)
 
 	withStream := courseAdminGroup.Group("/")

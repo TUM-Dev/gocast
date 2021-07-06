@@ -40,6 +40,22 @@ func (c Course) IsLive() bool {
 	return false
 }
 
+//NumStreams returns the number of streams for the course that are VoDs or live
+func (c Course) NumStreams() int {
+	res := 0
+	for i := range c.Streams {
+		if c.Streams[i].Recording || c.Streams[i].LiveNow {
+			res++
+		}
+	}
+	return res
+}
+
+//NumUsers returns the number of users enrolled in the course
+func (c Course) NumUsers() int {
+	return len(c.Users)
+}
+
 func (c Course) GetNextLectureDate() time.Time {
 	earliestLecture := time.Now().Add(time.Hour * 24 * 365 * 10) // 10 years from now.
 	for _, s := range c.Streams {

@@ -30,7 +30,7 @@ type Stream struct {
 	Chats            []Chat
 	Stats            []Stat
 	Units            []StreamUnit
-	VodViews         uint `gorm:"default:0"`
+	VodViews         uint `gorm:"default:0"` // todo: remove me before next semester
 	StartOffset      uint `gorm:"default:null"`
 	EndOffset        uint `gorm:"default:null"`
 	LectureHallID    uint `gorm:"default:null"`
