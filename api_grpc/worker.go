@@ -2,17 +2,20 @@
 package api_grpc
 
 import (
+	"TUM-Live/api"
 	"TUM-Live/dao"
 	"container/heap"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/joschahenningsen/TUM-Live-Worker-v2/pb"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"log"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -21,11 +24,31 @@ type server struct {
 	pb.UnimplementedHeartbeatServer
 }
 
-//SendHeartBeat serves heartbeat messages sent by workers
+func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
+	//todo
+	return nil, nil
+}
+
+func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFinished) (*pb.Status, error) {
+	if _, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
+		log.Printf("Got stream Finished with invalid workerID %v", request.WorkerID)
+		return nil, errors.New("authentication failed: invalid worker id")
+	} else {
+		err := dao.SetStreamNotLiveById(strconv.Itoa(int(request.StreamID))) // todo change signature to uint
+		if err != nil {
+			log.Printf("Couldn't set stream not live: %v\n", err)
+			sentry.CaptureException(err)
+		}
+		api.NotifyViewersLiveEnd(strconv.Itoa(int(request.StreamID)))
+	}
+	return &pb.Status{Ok: true}, nil
+}
+
+//SendHeartBeat receives heartbeat messages sent by workers
 func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.Status, error) {
 	if worker, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		log.Printf("Got heartbeat with invalid workerID %v", request.WorkerID)
-		return nil, err
+		return nil, errors.New("authentication failed: invalid worker id")
 	} else {
 		worker.Workload = int(request.Workload)
 		worker.LastSeen = time.Now()
@@ -35,12 +58,12 @@ func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.S
 	}
 }
 
-// init initializes a gRPC server on port 50052 which is routed to :443/api_grpc
+// init initializes a gRPC server on port 50052
 func init() {
 	log.Printf("Serving heartbeat")
 	lis, err := net.Listen("tcp", ":50052")
 	if err != nil {
-		log.Printf("Failed to init heartbeat server %v", err)
+		log.WithError(err).Errorf("Failed to init heartbeat server %v", err)
 		return
 	}
 	grpcServer := grpc.NewServer()
@@ -56,6 +79,7 @@ func init() {
 // NotifyWorkers collects all streams that are due to stream
 // (starts in the next 10 minutes from a lecture hall)
 // and invokes the corresponding calls at the workers with the least workload via gRPC
+// todo: split up
 func NotifyWorkers() {
 	streams := dao.GetDueStreamsFromLectureHalls()
 	workers := dao.GetAliveWorkersOrderedByWorkload()
@@ -72,13 +96,13 @@ func NotifyWorkers() {
 	for i := range streams {
 		courseForStream, err := dao.GetCourseById(context.Background(), streams[i].CourseID)
 		if err != nil {
-			log.Printf("Can't get course for stream, skipping: %v", err)
+			log.WithError(err).Warn("Can't get course for stream, skipping")
 			sentry.CaptureException(err)
 			continue
 		}
 		lectureHallForStream, err := dao.GetLectureHallByID(streams[i].LectureHallID)
 		if err != nil {
-			log.Printf("Can't get lecture hall for stream, skipping: %v", err)
+			log.WithError(err).Error("Can't get lecture hall for stream, skipping")
 			sentry.CaptureException(err)
 			continue
 		}
@@ -109,24 +133,33 @@ func NotifyWorkers() {
 
 	for i := range requests {
 		if priorityQueue.Len() == 0 {
-			log.Printf("Not enough alive workers to serve stream!")
+			log.Error("Not enough alive workers to serve stream!")
+			// this would be a huge issue, notify me.
+			sentry.CaptureException(errors.New("not enough alive workers to serve stream"))
 			continue
 		}
 		item := heap.Pop(&priorityQueue).(*Item)
 		conn, err := grpc.Dial(fmt.Sprintf("%s:50051", item.Worker.Host), grpc.WithInsecure())
 		if err != nil {
-			log.Printf("Unable to dial server %v", err)
+			log.WithError(err).Error("Unable to dial server")
+			sentry.CaptureException(err)
+			item.Expiry += 2
+			heap.Push(&priorityQueue, item)
 			continue
 		}
 
 		client := pb.NewStreamClient(conn)
+		log.WithFields(log.Fields{"r": &requests[i]}).Info("req")
+		requests[i].WorkerId = item.Worker.WorkerID
 		resp, err := client.RequestStream(context.Background(), &requests[i])
 		if err != nil || !resp.Ok {
-			log.Printf("could not assign stream!")
+			log.WithError(err).Error("could not assign stream!")
+			item.Expiry += 2
+			heap.Push(&priorityQueue, item)
 			continue
 		}
 		_ = conn.Close()
 		item.Expiry += 2
-		heap.Push(&priorityQueue, *item)
+		heap.Push(&priorityQueue, item)
 	}
 }
