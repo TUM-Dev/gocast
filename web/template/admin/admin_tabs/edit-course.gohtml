@@ -48,7 +48,7 @@
                             <p class="text-3 p-4">It might take a minute to load your lectures from TUMOnline</p>
                         {{end}}
                         {{range $lecture := $course.Streams }}
-                            <li class="p-6 dark:hover:bg-primary hover:bg-white border-b-2 dark:border-primary border-white">
+                            <li id="lecture-li-{{$lecture.Model.ID}}" class="p-6 dark:hover:bg-primary hover:bg-white border-b-2 dark:border-primary border-white">
                                 <div class="flex">
                                     <div class="w-1/4">
                                         <div class="text-3 font-semibold">{{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
