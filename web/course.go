@@ -4,8 +4,11 @@ import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
+	"fmt"
+	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"html/template"
 	"log"
 	"net/http"
@@ -31,7 +34,11 @@ func HighlightPage(c *gin.Context) {
 	s, err := dao.GetCurrentOrNextLectureForCourse(c, course.ID)
 	if err == nil {
 		indexData.TUMLiveContext.Stream = &s
-	}else {
+	}else if err == gorm.ErrRecordNotFound {
+		c.Redirect(http.StatusFound, fmt.Sprintf("/course/%d/%s/%s", course.Year, course.TeachingTerm, course.Slug))
+		return
+	} else {
+		sentry.CaptureException(err)
 		log.Printf("%v", err)
 	}
 	description := ""
