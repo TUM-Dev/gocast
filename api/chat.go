@@ -38,6 +38,8 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			return
 		}
 		tumLiveContext := foundContext.(tools.TUMLiveContext)
+		log.Printf("setting stream id: %d", tumLiveContext.Stream.ID)
+		s.Set("streamID", fmt.Sprintf("%d", tumLiveContext.Stream.ID)) // persist stream id into melody context for stats
 		if !tumLiveContext.Stream.Recording {
 			statsLock.Lock()
 			if statMsg, err := json.Marshal(gin.H{"viewers": stats[ctx.(*gin.Context).Param("streamID")]}); err == nil {
@@ -108,6 +110,8 @@ type ChatRep struct {
 func CollectStats() {
 	log.Printf("Collecting stats\n")
 	defer sentry.Flush(time.Second * 2)
+	statsLock.Lock()
+	defer statsLock.Unlock()
 	for sID, numWatchers := range stats {
 		log.Printf("Collecting stats for stream %v, viewers:%v\n", sID, numWatchers)
 		stat := model.Stat{
@@ -118,7 +122,7 @@ func CollectStats() {
 		if s, err := dao.GetStreamByID(context.Background(), sID); err == nil {
 			if s.Recording { // broadcast stats for livestreams and upcoming videos only
 				log.Printf("stream not live, skipping stats\n")
-				delete(stats, strconv.Itoa(int(s.ID)))
+				//delete(stats, strconv.Itoa(int(s.ID)))
 				continue
 			}
 			if s.LiveNow { // store stats for livestreams only
@@ -129,10 +133,20 @@ func CollectStats() {
 				}
 			}
 			if mStat, err := json.Marshal(gin.H{"viewers": numWatchers}); err == nil {
-				_ = m.BroadcastFilter(mStat, func(q *melody.Session) bool { // filter broadcasting to same lecture.
-					return q.Request.URL.Path == fmt.Sprintf("/api/chat/%v/ws", sID)
+				bcErr := m.BroadcastFilter(mStat, func(q *melody.Session) bool { // filter broadcasting to same lecture.
+					if streamIdFromContext, found := q.Get("streamID"); found {
+						return streamIdFromContext.(string) == sID
+					}
+					log.Error("no stream id in context")
+					sentry.CaptureException(errors.New("no stream id in context"))
+					return false
 				})
+				if bcErr != nil {
+					log.WithError(err).Error("Error while broadcasting stream stats")
+					sentry.CaptureException(err)
+				}
 			} else {
+				log.Error(err.Error())
 				sentry.CaptureException(err)
 			}
 		}
