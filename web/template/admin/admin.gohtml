@@ -105,6 +105,8 @@
                     {{template "schedule" .IndexData}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "serverNotifications")}}
                     {{template "server-notifications-admin-list" .ServerNotifications}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "createCourse")}}
+                    {{template "create-course" .IndexData.VersionTag}}
                 {{end}}
             </div>
         </div>

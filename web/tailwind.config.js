@@ -39,9 +39,10 @@ module.exports = {
     },
     variants: {
         extend: {
-            backgroundColor: ['odd'],
+            backgroundColor: ['odd', 'disabled'],
             display: ['group-hover'],
             textColor: ['visited'],
+            opacity: ['disabled'],
         },
     },
     plugins: [],

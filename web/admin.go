@@ -51,6 +51,9 @@ func AdminPage(c *gin.Context) {
 	if c.Request.URL.Path == "/admin/workers" {
 		page = "workers"
 	}
+	if c.Request.URL.Path == "/admin/create-course" {
+		page = "createCourse"
+	}
 	var notifications []model.ServerNotification
 	if c.Request.URL.Path == "/admin/server-notifications" {
 		page = "serverNotifications"
@@ -207,22 +210,6 @@ func UpdateCourse(c *gin.Context) {
 	c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 }
 
-func CreateCoursePage(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	indexData := NewIndexData()
-	indexData.TUMLiveContext = tumLiveContext
-	err := templ.ExecuteTemplate(c.Writer, "create-course.gohtml", CreateCourseData{IndexData: indexData})
-	if err != nil {
-		log.Printf("%v", err)
-	}
-}
-
 type AdminPageData struct {
 	IndexData           IndexData
 	Users               []model.User
@@ -235,10 +222,6 @@ type AdminPageData struct {
 	CurT                string
 	EditCourseData      EditCourseData
 	ServerNotifications []model.ServerNotification
-}
-
-type CreateCourseData struct {
-	IndexData IndexData
 }
 
 type EditCourseData struct {
