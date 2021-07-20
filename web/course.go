@@ -34,7 +34,7 @@ func HighlightPage(c *gin.Context) {
 	s, err := dao.GetCurrentOrNextLectureForCourse(c, course.ID)
 	if err == nil {
 		indexData.TUMLiveContext.Stream = &s
-	}else if err == gorm.ErrRecordNotFound {
+	} else if err == gorm.ErrRecordNotFound {
 		c.Redirect(http.StatusFound, fmt.Sprintf("/course/%d/%s/%s", course.Year, course.TeachingTerm, course.Slug))
 		return
 	} else {

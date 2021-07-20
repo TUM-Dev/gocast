@@ -138,7 +138,7 @@ func notifyLive(c *gin.Context) {
 		stream.PlaylistUrlCAM = req.URL
 	}
 	err = dao.SaveStream(&stream)
-	if !alreadyLive{
+	if !alreadyLive {
 		notifyViewersLiveStart(stream.ID)
 	}
 	if err != nil {
