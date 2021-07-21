@@ -2,6 +2,7 @@ package api
 
 import (
 	"TUM-Live/dao"
+	"TUM-Live/model"
 	"TUM-Live/tools"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -18,7 +19,18 @@ func getStats(c *gin.Context) {
 	if c.ShouldBindQuery(&req) != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 	}
-	cid := ctx.(tools.TUMLiveContext).Course.ID
+	var cid uint
+	// check if request is for server -> validate
+	cidFromContext := c.Param("courseId")
+	if cidFromContext == "0" {
+		if ctx.(tools.TUMLiveContext).User.Role != model.AdminType {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+		cid = 0
+	} else { // use course from context
+		cid = ctx.(tools.TUMLiveContext).Course.ID
+	}
 	switch req.Interval {
 	case "week":
 	case "day":
@@ -95,6 +107,23 @@ func getStats(c *gin.Context) {
 		} else {
 			c.JSON(http.StatusOK, gin.H{"res": res})
 		}
+	case "allDays": {
+		res, err := dao.GetCourseNumVodViewsPerDay(cid)
+		if err != nil {
+			log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
+			c.AbortWithStatus(http.StatusInternalServerError)
+		} else {
+			resp := chartJs{
+				ChartType: "bar",
+				Data:      chartJsData{Datasets: []chartJsDataset{newChartJsDataset()}},
+				Options:   newChartJsOptions(),
+			}
+			resp.Data.Datasets[0].Label = "views"
+			resp.Data.Datasets[0].Data = res
+			resp.Data.Datasets[0].BackgroundColor = "#d12a5c"
+			c.JSON(http.StatusOK, resp)
+		}
+	}
 	default:
 		c.AbortWithStatus(http.StatusBadRequest)
 	}

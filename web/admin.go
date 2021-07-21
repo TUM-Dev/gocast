@@ -11,6 +11,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"net/http"
 	"regexp"
 )
@@ -53,6 +54,19 @@ func AdminPage(c *gin.Context) {
 	}
 	if c.Request.URL.Path == "/admin/create-course" {
 		page = "createCourse"
+	}
+	if c.Request.URL.Path == "/admin/server-stats" {
+		page = "serverStats"
+		streams, err := dao.GetAllStreams()
+		if err != nil {
+			log.WithError(err).Error("Can't get all streams")
+			sentry.CaptureException(err)
+			streams = []model.Stream{}
+		}
+		indexData.TUMLiveContext.Course = &model.Course{
+			Model:   gorm.Model{ID: 0},
+			Streams: streams,
+		}
 	}
 	var notifications []model.ServerNotification
 	if c.Request.URL.Path == "/admin/server-notifications" {
