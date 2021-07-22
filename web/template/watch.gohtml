@@ -175,6 +175,7 @@
 
     // @ts-ignore
     let player = videojs('my-video', {
+        {{if $stream.LiveNow}}liveui:true,{{end}}
         fluid: true,
         playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
         html5: {
