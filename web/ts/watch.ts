@@ -3,7 +3,8 @@ class Watch {
     private ws: WebSocket
 
     constructor() {
-        this.ws = new WebSocket("wss://live.mm.rbg.tum.de/api/chat/" + (document.getElementById("streamID") as HTMLInputElement).value + "/ws")
+        let streamid = (document.getElementById("streamID") as HTMLInputElement).value;
+        this.ws = new WebSocket("wss://live.rbg.tum.de/api/chat/" + streamid + "/ws")
         if (document.getElementById("chatForm") != null) {
             (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", e => this.submitChat(e))
             document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight
