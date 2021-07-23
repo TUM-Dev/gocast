@@ -54,12 +54,20 @@
                         role="img"></canvas>
             </div>
         </div>
+        <div class="col-span-4">
+            <h2 class="text-2">VoD activity per day:</h2>
+            <div class="w-full m-auto" style="min-height: 200px">
+                <canvas id="allDays" width="400" height="100" aria-label="Viewer stats"
+                        role="img"></canvas>
+            </div>
+        </div>
     </div>
     <p class="text-5"><i class="fas fa-info-circle text-warn"></i> Some of this data is only captured from June 28th 2021 onwards.</p>
     <script>
         loadStats("activity", "courseGeneralStatsLive");
         loadStats("hour", "hours");
         loadStats("day", "weekdays");
+        loadStats("allDays", "allDays");
         initStatsPage();
     </script>
 {{end}}

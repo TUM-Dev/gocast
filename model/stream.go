@@ -5,6 +5,7 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
+	"strings"
 	"time"
 )
 
@@ -27,6 +28,7 @@ type Stream struct {
 	FilePath         string
 	LiveNow          bool
 	Recording        bool
+	Premiere         bool `gorm:"default:null"`
 	Chats            []Chat
 	Stats            []Stat
 	Units            []StreamUnit
@@ -35,6 +37,42 @@ type Stream struct {
 	EndOffset        uint `gorm:"default:null"`
 	LectureHallID    uint `gorm:"default:null"`
 	Silences         []Silence
+}
+
+func (s Stream) GetUrlSourceCOMB() string {
+	return strings.ReplaceAll(s.PlaylistUrl, "{{quality}}", "")
+}
+
+func (s Stream) GetUrl720COMB() string {
+	return strings.ReplaceAll(s.PlaylistUrl, "{{quality}}", "_720p")
+}
+
+func (s Stream) GetUrl360COMB() string {
+	return strings.ReplaceAll(s.PlaylistUrl, "{{quality}}", "_360p")
+}
+
+func (s Stream) GetUrlSourcePRES() string {
+	return strings.ReplaceAll(s.PlaylistUrlPRES, "{{quality}}", "")
+}
+
+func (s Stream) GetUrl720PRES() string {
+	return strings.ReplaceAll(s.PlaylistUrlPRES, "{{quality}}", "_720p")
+}
+
+func (s Stream) GetUrl360PRES() string {
+	return strings.ReplaceAll(s.PlaylistUrlPRES, "{{quality}}", "_360p")
+}
+
+func (s Stream) GetUrlSourceCAM() string {
+	return strings.ReplaceAll(s.PlaylistUrlCAM, "{{quality}}", "")
+}
+
+func (s Stream) GetUrl720CAM() string {
+	return strings.ReplaceAll(s.PlaylistUrlCAM, "{{quality}}", "_720p")
+}
+
+func (s Stream) GetUrl360CAM() string {
+	return strings.ReplaceAll(s.PlaylistUrlCAM, "{{quality}}", "_360p")
 }
 
 func (s Stream) IsPast() bool {

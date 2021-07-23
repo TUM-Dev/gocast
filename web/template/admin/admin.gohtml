@@ -48,6 +48,11 @@
                                        href="/admin/server-notifications"><span
                                                 class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                                 class="relative">Server Notifications</span></a></li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "serverStats"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/server-stats"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Server Statistics</span></a></li>
                             </ul>
                         </li>
                     {{end}}
@@ -101,10 +106,14 @@
                     {{template "workers" .Workers}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "stats")}}
                     {{template "stats" .IndexData}}
+                {{else if and (eq $curUser.Role 1) (eq .Page "serverStats")}}
+                    {{template "stats" .IndexData}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "schedule")}}
                     {{template "schedule" .IndexData}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "serverNotifications")}}
                     {{template "server-notifications-admin-list" .ServerNotifications}}
+                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "createCourse")}}
+                    {{template "create-course" .IndexData.VersionTag}}
                 {{end}}
             </div>
         </div>

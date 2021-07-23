@@ -20,17 +20,21 @@
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.3",
     "@fullcalendar/icalendar": "^5.8.0",
-    "chart.js": "^3.4.0",
+    "@silvermine/videojs-quality-selector": "^1.2.5",
+    "alpinejs": "^3.2.2",
+    "chart.js": "^3.4.1",
     "flatpickr": "^4.6.9",
     "fullcalendar": "^5.8.0",
     "hls.js": "^1.0.7",
     "ical.js": "^1.4.0",
     "nouislider": "^15.2.0",
-    "video.js": "^7.13.3",
-    "videojs-seek-buttons": "^2.0.1"
+    "video.js": "^7.13.3"
   },
   "devDependencies": {
     "autoprefixer": "^10.2.6",
+    "videojs-contrib-quality-levels": "^2.1.0",
+    "videojs-hls-quality-selector": "^1.1.4",
+    "videojs-seek-buttons": "^2.0.1",
     "postcss": "^8.3.5",
     "tailwindcss": "^2.2.4",
     "typescript": "^4.3.5"

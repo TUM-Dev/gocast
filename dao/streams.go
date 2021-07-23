@@ -128,6 +128,13 @@ func UpdateStream(stream model.Stream) error {
 	return err
 }
 
+//GetAllStreams returns all streams of the server
+func GetAllStreams() ([]model.Stream, error) {
+	var res []model.Stream
+	err := DB.Find(&res).Error
+	return res, err
+}
+
 func SetStreamLive(ctx context.Context, streamKey string, playlistUrl string) (err error) {
 	dbErr := DB.Model(&model.Stream{}).
 		Where("stream_key = ?", streamKey).

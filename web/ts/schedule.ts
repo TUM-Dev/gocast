@@ -57,6 +57,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     <button id="descriptionSubmitBtn${streamInfo["streamID"]}"
                         class="fas fa-check ml-2 invisible text-4 hover:text-1"></button>
                 </form>
+            <a class="text-3 hover:text-black dark:hover:text-white" href="/admin/course/${streamInfo["courseID"]}#lecture-li-${streamInfo["streamID"]}">Edit <i class="fas fa-external-link-alt"></i></a>
             `;
             popover.innerHTML = html;
             document.getElementsByClassName("fc-timegrid").item(0)?.classList.add("filter", "blur-xxs");

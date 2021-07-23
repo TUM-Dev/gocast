@@ -1,6 +1,6 @@
 class CreateCourse {
     private courseIDInput: HTMLInputElement
-    private loadFromTUMOnlineBtn: HTMLDivElement
+    private loadFromTUMOnlineBtn: HTMLButtonElement
     private courseNameInput: HTMLInputElement
     private teachingTermInput: HTMLInputElement;
     private slugInput: HTMLInputElement;
@@ -8,7 +8,7 @@ class CreateCourse {
     private enrolledRadio: HTMLInputElement;
 
     constructor() {
-        this.loadFromTUMOnlineBtn = document.getElementById("loadCourseInfoBtn") as HTMLDivElement
+        this.loadFromTUMOnlineBtn = document.getElementById("loadCourseInfoBtn") as HTMLButtonElement
         this.loadFromTUMOnlineBtn.addEventListener("click", (e: Event) => this.loadCourseInfo())
         this.courseIDInput = document.getElementById("courseID") as HTMLInputElement
         this.courseNameInput = document.getElementById("name") as HTMLInputElement
@@ -16,10 +16,17 @@ class CreateCourse {
         this.slugInput = document.getElementById("slug") as HTMLInputElement
         this.tumOnlineInfo = document.getElementById("TUMOnlineInfo") as HTMLSpanElement
         this.enrolledRadio = document.getElementById("enrolled") as HTMLInputElement
-        document.getElementById("createCourseBtn")?.addEventListener("click", (e: Event) => this.createCourse())
+        document.getElementById("createCourseBtn")?.addEventListener("click", (e: Event) => {
+            e.preventDefault();
+            this.createCourse();
+            return false;
+        });
     }
 
     private loadCourseInfo(): void {
+        if (this.loadFromTUMOnlineBtn.disabled) {
+            return
+        }
         postData("/api/courseInfo", {"courseID": this.courseIDInput.value})
             .then(data => {
                 if (data.status != 200) {

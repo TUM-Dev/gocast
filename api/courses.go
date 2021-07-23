@@ -12,9 +12,13 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -190,35 +194,69 @@ func createLecture(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	var req createLectureRequest
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
+	if err := c.ShouldBind(&req); err != nil {
+		log.WithError(err).Error("invalid form")
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	err = json.Unmarshal(jsonData, &req)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
+	// name for folder for premiere file if needed
+	premiereFolder := fmt.Sprintf("%s/%d/%s/%s",
+		tools.Cfg.MassStorage,
+		tumLiveContext.Course.Year,
+		tumLiveContext.Course.TeachingTerm,
+		tumLiveContext.Course.Slug)
+	premiereFileName := fmt.Sprintf("%s_%s.mp4",
+		tumLiveContext.Course.Slug,
+		req.Start.Format("2006-01-02_15-04"))
+	if req.Premiere {
+		err := os.MkdirAll(premiereFolder, os.ModePerm)
+		if err != nil {
+			c.AbortWithStatus(http.StatusInternalServerError)
+			log.WithError(err).Error("Can't create folder for premiere")
+			return
+		}
+		// Copy file to shared storage
+		file, err := os.Create(fmt.Sprintf("%s/%s", premiereFolder, premiereFileName))
+		if err != nil {
+			log.WithError(err).Error("Can't create file for premiere")
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		reqFile, _ := req.File.Open()
+		_, err = io.Copy(file, reqFile)
+		if err != nil {
+			log.WithError(err).Error("Can't write file for premiere")
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
+		_ = file.Close()
 	}
 	streamKey := uuid.NewV4().String()
 	streamKey = strings.ReplaceAll(streamKey, "-", "")
 	lecture := model.Stream{
-		Name:        req.Name,
+		Name:        req.Title,
 		CourseID:    tumLiveContext.Course.ID,
 		Start:       req.Start,
 		End:         req.End,
 		StreamKey:   streamKey,
 		PlaylistUrl: "",
 		LiveNow:     false,
+		Premiere:    req.Premiere,
+		FilePath:    fmt.Sprintf("%s/%s", premiereFolder, premiereFileName),
+	}
+	// remove file path if not premiere
+	if !req.Premiere {
+		lecture.FilePath = ""
 	}
 	tumLiveContext.Course.Streams = append(tumLiveContext.Course.Streams, lecture)
 	dao.UpdateCourse(context.Background(), *tumLiveContext.Course)
 }
 
 type createLectureRequest struct {
-	Name  string
-	Start time.Time
-	End   time.Time
+	Title    string                `form:"title"`
+	Start    time.Time             `form:"start"`
+	End      time.Time             `form:"end"`
+	Premiere bool                  `form:"premiere"`
+	File     *multipart.FileHeader `form:"file"`
 }
 
 func createCourse(c *gin.Context) {
