@@ -20,8 +20,9 @@ import (
 	"time"
 )
 
+
 type server struct {
-	pb.UnimplementedHeartbeatServer
+	pb.UnimplementedFromWorkerServer
 }
 
 func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
@@ -67,7 +68,7 @@ func init() {
 		return
 	}
 	grpcServer := grpc.NewServer()
-	pb.RegisterHeartbeatServer(grpcServer, &server{})
+	pb.RegisterFromWorkerServer(grpcServer, &server{})
 	reflection.Register(grpcServer)
 	go func() {
 		if err = grpcServer.Serve(lis); err != nil {
@@ -148,7 +149,7 @@ func NotifyWorkers() {
 			continue
 		}
 
-		client := pb.NewStreamClient(conn)
+		client := pb.NewToWorkerClient(conn)
 		log.WithFields(log.Fields{"r": &requests[i]}).Info("req")
 		requests[i].WorkerId = item.Worker.WorkerID
 		resp, err := client.RequestStream(context.Background(), &requests[i])

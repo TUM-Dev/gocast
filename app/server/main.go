@@ -2,12 +2,12 @@ package main
 
 import (
 	"TUM-Live/api"
+	"TUM-Live/api_grpc"
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"TUM-Live/tools/tum"
 	"TUM-Live/web"
-	"TUM-Live/api_grpc"
 	"context"
 	"fmt"
 	"github.com/dgraph-io/ristretto"
