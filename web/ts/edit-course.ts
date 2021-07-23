@@ -1,33 +1,7 @@
 class EditCourse {
-    private start
-    private end
 
     constructor() {
-        let createBtn = document.getElementById("createLectureBtn");
-        if (createBtn !== null && createBtn !== undefined) {
-            createBtn.addEventListener("click", (e: Event) => this.createLecture())
-            // @ts-ignore
-            this.start = flatpickr("#start", {enableTime: true, time_24hr: true});
-            // @ts-ignore
-            this.end = flatpickr("#end", {enableTime: true, time_24hr: true});
-        }
         EditCourse.loadGeneralStats();
-    }
-
-    private createLecture(): void {
-        const id = (document.getElementById("courseID") as HTMLInputElement).value
-        const name = (document.getElementById("name") as HTMLInputElement).value
-        postData("/api/course/" + id + "/createLecture", {
-            "name": name,
-            "start": this.start.selectedDates[0].toISOString(),
-            "end": this.end.selectedDates[0].toISOString(),
-        }).then(data => {
-            if (data.status != 200) {
-                data.text().then(t => showMessage(t))
-            } else {
-                window.location.reload()
-            }
-        })
     }
 
     /**
@@ -126,6 +100,46 @@ function showHideUnits(id: number) {
 
 function addUnit(streamID: number): boolean {
     return false
+}
+
+function createLectureForm() {
+    return {
+        formData: {
+            title: '',
+            start: '',
+            end: '',
+            premiere: false,
+            file: null,
+        },
+        loading: false,
+        error: false,
+        courseID: -1,
+        submitData() {
+            this.loading = true;
+            console.log(this.formData);
+            let body = new FormData();
+            body.set("title", this.formData.title);
+            body.set("premiere", this.formData.premiere)
+            body.set("start", this.formData.start)
+            body.set("end", this.formData.end)
+            if (this.formData.premiere){
+                body.set("file", this.formData.file[0]);
+                body.set("end", this.formData.start); // premieres have no explicit end set -> use start here
+            }
+            fetch("/api/course/" + this.courseID + "/createLecture", {
+                method: 'POST',
+                body: body,
+            })
+                .then(() => {
+                    this.loading = false;
+                    window.location.reload();
+                })
+                .catch(() => {
+                    this.loading = false;
+                    this.error = true;
+                });
+        }
+    }
 }
 
 window.onload = function () {

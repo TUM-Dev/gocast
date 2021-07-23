@@ -28,6 +28,7 @@ type Stream struct {
 	FilePath         string
 	LiveNow          bool
 	Recording        bool
+	Premiere         bool `gorm:"default:null"`
 	Chats            []Chat
 	Stats            []Stat
 	Units            []StreamUnit

@@ -37,6 +37,7 @@ func init() {
 		IngestBase:           os.Getenv("IngestBase"),
 		CameraAuthentication: os.Getenv("CAMERA_AUTH"),
 		StaticPath:           os.Getenv("STATIC_PATH"),
+		MassStorage:          os.Getenv("MASS_STORAGE"),
 	}
 }
 
@@ -62,4 +63,5 @@ type Config struct {
 	IngestBase           string
 	CameraAuthentication string
 	StaticPath           string
+	MassStorage          string
 }
