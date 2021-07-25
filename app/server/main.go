@@ -61,15 +61,6 @@ var (
 	OsSignal chan os.Signal
 )
 
-// User struct to store database related info in context
-type User struct {
-	Name string
-}
-
-func (u *User) String() string {
-	return u.Name
-}
-
 func main() {
 	web.VersionTag = VersionTag
 	OsSignal = make(chan os.Signal, 1)
@@ -122,6 +113,7 @@ func main() {
 		&model.Worker{},
 		&model.CameraPreset{},
 		&model.ServerNotification{},
+		&model.File{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)

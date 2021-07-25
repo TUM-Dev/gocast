@@ -40,6 +40,7 @@ func SaveStream(vod *model.Stream) error {
 		StartOffset:     vod.StartOffset,
 		EndOffset:       vod.EndOffset,
 		Silences:        vod.Silences,
+		Files:           vod.Files,
 	}).Error
 	return err
 }

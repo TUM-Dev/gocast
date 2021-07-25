@@ -108,7 +108,6 @@ type ChatRep struct {
 }
 
 func CollectStats() {
-	log.Printf("Collecting stats\n")
 	defer sentry.Flush(time.Second * 2)
 	statsLock.Lock()
 	defer statsLock.Unlock()

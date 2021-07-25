@@ -5,7 +5,6 @@ import (
 	"context"
 	"github.com/getsentry/sentry-go"
 	"gorm.io/gorm"
-	"log"
 	"time"
 )
 
@@ -29,12 +28,8 @@ func GetAliveWorkersOrderedByWorkload() []model.Worker {
 }
 
 func GetWorkerByID(ctx context.Context, workerID string) (model.Worker, error) {
-	if Logger != nil {
-		Logger(ctx, "Getting worker by id.")
-	}
 	var worker model.Worker
 	dbErr := DB.First(&worker, "worker_id = ?", workerID).Error
-	log.Printf("%v", dbErr)
 	return worker, dbErr
 }
 
