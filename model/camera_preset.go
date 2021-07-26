@@ -1,8 +1,8 @@
 package model
 
 type CameraPreset struct {
-	Name          string // eg. Krusche Pult
-	PresetID      int    `gorm:"primaryKey;autoIncrement:false"` // eg. 2
-	Image         string // currently unused
+	Name          string
+	PresetID      int    `gorm:"primaryKey;autoIncrement:false"`
+	Image         string
 	LectureHallId uint   `gorm:"primaryKey;autoIncrement:false"`
 }

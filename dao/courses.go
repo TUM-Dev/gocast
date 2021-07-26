@@ -157,22 +157,6 @@ func GetAllCoursesWithTUMIDForSemester(ctx context.Context, year int, term strin
 	return foundCourses, nil
 }
 
-// UpdateCourses Saves all provided courses into database.
-func UpdateCourses(ctx context.Context, courses []model.Course) {
-	defer Cache.Clear()
-	if Logger != nil {
-		Logger(ctx, "Updating multiple courses.")
-	}
-	for i := range courses {
-		dbErr := DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&courses[i]).Error
-		if dbErr != nil {
-			if Logger != nil {
-				Logger(ctx, fmt.Sprintf("Failed to save a course: %v\n", dbErr))
-			}
-		}
-	}
-}
-
 func UpdateCourseMetadata(ctx context.Context, course model.Course) {
 	defer Cache.Clear()
 	DB.Save(&course)
