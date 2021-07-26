@@ -241,11 +241,10 @@ func createLecture(c *gin.Context) {
 		PlaylistUrl: "",
 		LiveNow:     false,
 		Premiere:    req.Premiere,
-		FilePath:    fmt.Sprintf("%s/%s", premiereFolder, premiereFileName),
 	}
-	// remove file path if not premiere
-	if !req.Premiere {
-		lecture.FilePath = ""
+	// add file if premiere
+	if req.Premiere {
+		lecture.Files = []model.File{{Path: fmt.Sprintf("%s/%s", premiereFolder, premiereFileName)}}
 	}
 	tumLiveContext.Course.Streams = append(tumLiveContext.Course.Streams, lecture)
 	dao.UpdateCourse(context.Background(), *tumLiveContext.Course)

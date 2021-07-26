@@ -8,7 +8,7 @@ import (
 //GetCurrentServerNotifications returns all server notifications that are active
 func GetCurrentServerNotifications() ([]model.ServerNotification, error) {
 	var res []model.ServerNotification
-	err := DB.Debug().Model(&model.ServerNotification{}).Where("start < ? AND expires > ?", time.Now(), time.Now()).Scan(&res).Error
+	err := DB.Model(&model.ServerNotification{}).Where("start < ? AND expires > ?", time.Now(), time.Now()).Scan(&res).Error
 	return res, err
 }
 

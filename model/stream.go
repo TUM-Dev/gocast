@@ -37,6 +37,7 @@ type Stream struct {
 	EndOffset        uint `gorm:"default:null"`
 	LectureHallID    uint `gorm:"default:null"`
 	Silences         []Silence
+	Files            []File `gorm:"foreignKey:StreamID"`
 }
 
 func (s Stream) GetUrlSourceCOMB() string {
