@@ -5,7 +5,6 @@ import (
 	"TUM-Live/api"
 	"TUM-Live/dao"
 	"TUM-Live/model"
-	"container/heap"
 	"context"
 	"errors"
 	"fmt"
@@ -229,21 +228,14 @@ func init() {
 // NotifyWorkers collects all streams that are due to stream
 // (starts in the next 10 minutes from a lecture hall)
 // and invokes the corresponding calls at the workers with the least workload via gRPC
-// todo: split up
 func NotifyWorkers() {
-	streams := dao.GetDueStreamsFromLectureHalls()
-	workers := dao.GetAliveWorkersOrderedByWorkload()
+	notifyWorkersPremieres()
+	streams := dao.GetDueStreamsForWorkers()
+	workers := dao.GetAliveWorkers()
 	if len(workers) == 0 && len(streams) != 0 {
 		log.Error("not enough workers to handle streams")
 		return
 	}
-	priorityQueue := make(PriorityQueue, len(workers))
-	for i, worker := range workers {
-		priorityQueue[i] = &Item{Worker: worker, Expiry: worker.Workload}
-		priorityQueue[i].Index = i
-	}
-	heap.Init(&priorityQueue)
-	var requests []pb.StreamRequest
 	for i := range streams {
 		courseForStream, err := dao.GetCourseById(context.Background(), streams[i].CourseID)
 		if err != nil {
@@ -270,7 +262,7 @@ func NotifyWorkers() {
 			} else {
 				sourceType = "COMB"
 			}
-			requests = append(requests, pb.StreamRequest{
+			req := pb.StreamRequest{
 				SourceType:    sourceType,
 				SourceUrl:     source,
 				CourseSlug:    courseForStream.Slug,
@@ -281,38 +273,75 @@ func NotifyWorkers() {
 				StreamID:      uint32(streams[i].ID),
 				CourseTerm:    courseForStream.TeachingTerm,
 				CourseYear:    uint32(courseForStream.Year),
-			})
+			}
+			workerIndex := getWorkerWithLeastWorkload(workers)
+			workers[workerIndex].Workload += 3
+			conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithInsecure())
+			if err != nil {
+				log.WithError(err).Error("Unable to dial server")
+				workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
+				continue
+			}
+			client := pb.NewToWorkerClient(conn)
+			req.WorkerId = workers[workerIndex].WorkerID
+			resp, err := client.RequestStream(context.Background(), &req)
+			if err != nil || !resp.Ok {
+				log.WithError(err).Error("could not assign stream!")
+				workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
+				continue
+			}
+			_ = conn.Close()
 		}
 	}
+}
 
-	for i := range requests {
-		if priorityQueue.Len() == 0 {
-			log.Error("Not enough alive workers to serve stream!")
-			// this would be a huge issue, notify me.
-			sentry.CaptureException(errors.New("not enough alive workers to serve stream"))
+func notifyWorkersPremieres() {
+	streams := dao.GetDuePremieresForWorkers()
+	workers := dao.GetAliveWorkers()
+
+	if len(workers) == 0 && len(streams) != 0 {
+		log.Error("Not enough alive workers for premiere")
+		return
+	}
+	for i := range streams {
+		if len(streams[i].Files) == 0 {
+			log.WithField("streamID", streams[i].ID).Warn("Request to self stream without file")
 			continue
 		}
-		item := heap.Pop(&priorityQueue).(*Item)
-		conn, err := grpc.Dial(fmt.Sprintf("%s:50051", item.Worker.Host), grpc.WithInsecure())
+		workerIndex := getWorkerWithLeastWorkload(workers)
+		workers[workerIndex].Workload += 3
+		req := pb.PremiereRequest{
+			StreamID: uint32(streams[i].ID),
+			FilePath: streams[i].Files[0].Path,
+		}
+		conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithInsecure())
 		if err != nil {
 			log.WithError(err).Error("Unable to dial server")
-			sentry.CaptureException(err)
-			item.Expiry += 2
-			heap.Push(&priorityQueue, item)
+			_ = conn.Close()
+			workers[workerIndex].Workload -= 1
 			continue
 		}
-
 		client := pb.NewToWorkerClient(conn)
-		requests[i].WorkerId = item.Worker.WorkerID
-		resp, err := client.RequestStream(context.Background(), &requests[i])
+		req.WorkerID = workers[workerIndex].WorkerID
+		resp, err := client.RequestPremiere(context.Background(), &req)
 		if err != nil || !resp.Ok {
-			log.WithError(err).Error("could not assign stream!")
-			item.Expiry += 2
-			heap.Push(&priorityQueue, item)
+			log.WithError(err).Error("could not assign premiere!")
+			workers[workerIndex].Workload -= 1
+			_ = conn.Close()
 			continue
 		}
 		_ = conn.Close()
-		item.Expiry += 2
-		heap.Push(&priorityQueue, item)
 	}
+}
+
+//getWorkerWithLeastWorkload Gets the index of the worker from workers with the least workload.
+//workers must not be empty!
+func getWorkerWithLeastWorkload(workers []model.Worker) int {
+	foundWorker := 0
+	for i := range workers {
+		if workers[i].Workload < workers[foundWorker].Workload {
+			foundWorker = i
+		}
+	}
+	return foundWorker
 }

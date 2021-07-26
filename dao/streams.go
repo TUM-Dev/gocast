@@ -5,17 +5,23 @@ import (
 	"context"
 	"fmt"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	"log"
 	"strconv"
 	"time"
 )
 
-func GetDueStreamsFromLectureHalls() []model.Stream {
+func GetDueStreamsForWorkers() []model.Stream {
 	var res []model.Stream
 	DB.Model(&model.Stream{}).
 		Where("lecture_hall_id IS NOT NULL AND start BETWEEN ? AND ? AND live_now = false AND recording = false", time.Now(), time.Now().Add(time.Minute*10)).
 		Scan(&res)
+	return res
+}
+
+func GetDuePremieresForWorkers() []model.Stream {
+	var res []model.Stream
+	DB.Preload("Files").
+		Find(&res, "premiere AND start BETWEEN ? AND ? AND live_now = false AND recording = false", time.Now(), time.Now().Add(time.Minute*10))
 	return res
 }
 
@@ -131,15 +137,6 @@ func GetAllStreams() ([]model.Stream, error) {
 	return res, err
 }
 
-func SetStreamLive(ctx context.Context, streamKey string, playlistUrl string) (err error) {
-	dbErr := DB.Model(&model.Stream{}).
-		Where("stream_key = ?", streamKey).
-		Update("live_now", true).
-		Update("playlist_url", playlistUrl).
-		Error
-	return dbErr
-}
-
 func GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error) {
 	if streams, found := Cache.Get("AllCurrentlyLiveStreams"); found {
 		return streams.([]model.Stream), nil
@@ -150,24 +147,6 @@ func GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error)
 	}
 	Cache.SetWithTTL("AllCurrentlyLiveStreams", streams, 1, time.Minute)
 	return streams, err
-}
-
-func SetStreamNotLive(ctx context.Context, streamKey string) (err error) {
-	Cache.Clear() // costs a bit but hey
-	dbErr := DB.Model(&model.Stream{}).
-		Where("stream_key = ?", streamKey).
-		Update("live_now", false).
-		Error
-	return dbErr
-}
-
-func InsertConvertJob(ctx context.Context, job *model.ProcessingJob) {
-	if Logger != nil {
-		Logger(ctx, "inserting processing job.")
-	}
-	DB.Clauses(clause.OnConflict{
-		UpdateAll: true,
-	}).Create(job)
 }
 
 func DeleteStream(streamID string) {

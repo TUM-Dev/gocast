@@ -13,14 +13,13 @@ require (
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-asn1-ber/asn1-ber v1.5.3 // indirect
 	github.com/go-ldap/ldap/v3 v3.3.0
-	github.com/go-playground/validator/v10 v10.7.0 // indirect
+	github.com/go-playground/validator/v10 v10.8.0 // indirect
 	github.com/golang/glog v0.0.0-20210429001901-424d2337a529 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/gorilla/sessions v1.2.1 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
-	github.com/joschahenningsen/TUM-Live-Worker-v2 v0.0.0-20210725225726-3c822e960303
+	github.com/joschahenningsen/TUM-Live-Worker-v2 v0.0.0-20210726202856-6e3f5eeb5499
 	github.com/json-iterator/go v1.1.11 // indirect
-	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.15
 	github.com/robfig/cron/v3 v3.0.1
@@ -30,8 +29,7 @@ require (
 	github.com/ugorji/go v1.2.6 // indirect
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	golang.org/x/net v0.0.0-20210716203947-853a461950ff // indirect
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
-	google.golang.org/genproto v0.0.0-20210722135532-667f2b7c528f // indirect
+	google.golang.org/genproto v0.0.0-20210726200206-e7812ac95cc0 // indirect
 	google.golang.org/grpc v1.39.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/olahol/melody.v1 v1.0.0-20170518105555-d52139073376
