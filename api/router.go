@@ -24,16 +24,16 @@ type HTTPError struct {
 	Message string `json:"Message" example:"status bad request"`
 }
 
-// ConfigGinRouter configure gin router
+// ConfigChatRouter configure gin router for chat (without gzip)
 func ConfigChatRouter(router *gin.RouterGroup) {
 	configGinChatRouter(router)
 }
+
+//ConfigGinRouter for non ws endpoints
 func ConfigGinRouter(router *gin.Engine) {
-	configGinStreamAuthRouter(router)
 	configGinStreamRestRouter(router)
 	configGinUsersRouter(router)
 	configGinCourseRouter(router)
-	configGinWorkerRouter(router)
 	configGinDownloadRouter(router)
 	configGinLectureHallApiRouter(router)
 	configGinSexyApiRouter(router)

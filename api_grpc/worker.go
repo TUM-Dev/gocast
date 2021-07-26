@@ -25,6 +25,31 @@ type server struct {
 	pb.UnimplementedFromWorkerServer
 }
 
+func (s server) NotifySilenceResults(ctx context.Context, request *pb.SilenceResults) (*pb.Status, error) {
+	if _, err := dao.GetWorkerByID(ctx, request.WorkerID); err != nil {
+		return nil, err
+	}
+	if _, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.GetStreamID())); err == nil {
+		var silences []model.Silence
+		for i, _ := range request.Starts {
+			silences = append(silences, model.Silence{
+				Start:    uint(request.Starts[i]),
+				End:      uint(request.Ends[i]),
+				StreamID: uint(request.StreamID),
+			})
+		}
+		if len(silences) == 0 {
+			return &pb.Status{Ok: true}, nil
+		}
+		if err = dao.UpdateSilences(silences, fmt.Sprintf("%d", request.StreamID)); err != nil {
+			return nil, err
+		}
+		return &pb.Status{Ok: true}, nil
+	} else {
+		return nil, err
+	}
+}
+
 // SendSelfStreamRequest handles the request from a worker when a stream starts publishing via obs, etc.
 // returns an error if anything goes wrong OR the stream may not be published.
 func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStreamRequest) (*pb.SelfStreamResponse, error) {
