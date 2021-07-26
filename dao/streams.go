@@ -21,7 +21,7 @@ func GetDueStreamsForWorkers() []model.Stream {
 func GetDuePremieresForWorkers() []model.Stream {
 	var res []model.Stream
 	DB.Preload("Files").
-		Find(&res, "premiere AND start BETWEEN ? AND ? AND live_now = false AND recording = false", time.Now(), time.Now().Add(time.Minute*10))
+		Find(&res, "premiere AND start BETWEEN ? AND ? AND live_now = false AND recording = false", time.Now().Add(time.Minute*-10), time.Now().Add(time.Second*5))
 	return res
 }
 
@@ -157,4 +157,43 @@ func DeleteStream(streamID string) {
 func UpdateSilences(silences []model.Silence, streamID string) error {
 	DB.Delete(&model.Silence{}, "stream_id = ?", streamID)
 	return DB.Save(&silences).Error
+}
+
+func UpdateStreamFullAssoc(vod *model.Stream) error {
+	defer Cache.Clear()
+	err := DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&vod).Error
+	return err
+}
+
+func SetStreamNotLiveById(streamID string) error {
+	return DB.Table("streams").Where("id = ?", streamID).Update("live_now", "0").Error
+}
+
+func SaveStream(vod *model.Stream) error {
+	defer Cache.Clear()
+	err := DB.Model(&vod).Updates(model.Stream{
+		Name:            vod.Name,
+		Description:     vod.Description,
+		CourseID:        vod.CourseID,
+		Start:           vod.Start,
+		End:             vod.End,
+		RoomName:        vod.RoomName,
+		RoomCode:        vod.RoomCode,
+		EventTypeName:   vod.EventTypeName,
+		PlaylistUrl:     vod.PlaylistUrl,
+		PlaylistUrlPRES: vod.PlaylistUrlPRES,
+		PlaylistUrlCAM:  vod.PlaylistUrlCAM,
+		FilePath:        vod.FilePath,
+		LiveNow:         vod.LiveNow,
+		Recording:       vod.Recording,
+		Chats:           vod.Chats,
+		Stats:           vod.Stats,
+		Units:           vod.Units,
+		VodViews:        vod.VodViews,
+		StartOffset:     vod.StartOffset,
+		EndOffset:       vod.EndOffset,
+		Silences:        vod.Silences,
+		Files:           vod.Files,
+	}).Error
+	return err
 }

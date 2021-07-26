@@ -24,29 +24,30 @@ type server struct {
 	pb.UnimplementedFromWorkerServer
 }
 
+//NotifySilenceResults handles the results of silence detection sent by a worker
 func (s server) NotifySilenceResults(ctx context.Context, request *pb.SilenceResults) (*pb.Status, error) {
 	if _, err := dao.GetWorkerByID(ctx, request.WorkerID); err != nil {
 		return nil, err
 	}
-	if _, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.GetStreamID())); err == nil {
-		var silences []model.Silence
-		for i, _ := range request.Starts {
-			silences = append(silences, model.Silence{
-				Start:    uint(request.Starts[i]),
-				End:      uint(request.Ends[i]),
-				StreamID: uint(request.StreamID),
-			})
-		}
-		if len(silences) == 0 {
-			return &pb.Status{Ok: true}, nil
-		}
-		if err = dao.UpdateSilences(silences, fmt.Sprintf("%d", request.StreamID)); err != nil {
-			return nil, err
-		}
-		return &pb.Status{Ok: true}, nil
-	} else {
+	if _, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.GetStreamID())); err != nil {
 		return nil, err
 	}
+	var silences []model.Silence
+	for i, _ := range request.Starts {
+		silences = append(silences, model.Silence{
+			Start:    uint(request.Starts[i]),
+			End:      uint(request.Ends[i]),
+			StreamID: uint(request.StreamID),
+		})
+	}
+	if len(silences) == 0 {
+		return &pb.Status{Ok: true}, nil
+	}
+	if err := dao.UpdateSilences(silences, fmt.Sprintf("%d", request.StreamID)); err != nil {
+		return nil, err
+	}
+	return &pb.Status{Ok: true}, nil
+
 }
 
 // SendSelfStreamRequest handles the request from a worker when a stream starts publishing via obs, etc.
@@ -212,7 +213,7 @@ func init() {
 	log.Printf("Serving heartbeat")
 	lis, err := net.Listen("tcp", ":50052")
 	if err != nil {
-		log.WithError(err).Errorf("Failed to init heartbeat server %v", err)
+		log.WithError(err).Error("Failed to init grpc server")
 		return
 	}
 	grpcServer := grpc.NewServer()
@@ -220,7 +221,7 @@ func init() {
 	reflection.Register(grpcServer)
 	go func() {
 		if err = grpcServer.Serve(lis); err != nil {
-			log.Printf("Can't serve heartbeat: %v", err)
+			log.WithError(err).Errorf("Can't serve grpc")
 		}
 	}()
 }
@@ -295,6 +296,7 @@ func NotifyWorkers() {
 	}
 }
 
+//notifyWorkersPremieres looks for premieres that should be streamed and assigns them to workers.
 func notifyWorkersPremieres() {
 	streams := dao.GetDuePremieresForWorkers()
 	workers := dao.GetAliveWorkers()
