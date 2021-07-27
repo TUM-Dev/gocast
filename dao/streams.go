@@ -5,13 +5,12 @@ import (
 	"context"
 	"fmt"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	"log"
 	"strconv"
 	"time"
 )
 
-func GetDueStreamsFromLectureHalls() []model.Stream {
+func GetDueStreamsForWorkers() []model.Stream {
 	var res []model.Stream
 	DB.Model(&model.Stream{}).
 		Where("lecture_hall_id IS NOT NULL AND start BETWEEN ? AND ? AND live_now = false AND recording = false", time.Now(), time.Now().Add(time.Minute*10)).
@@ -19,14 +18,17 @@ func GetDueStreamsFromLectureHalls() []model.Stream {
 	return res
 }
 
+func GetDuePremieresForWorkers() []model.Stream {
+	var res []model.Stream
+	DB.Preload("Files").
+		Find(&res, "premiere AND start BETWEEN ? AND ? AND live_now = false AND recording = false", time.Now().Add(time.Minute*-10), time.Now().Add(time.Second*5))
+	return res
+}
+
 func GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error) {
 	var res model.Stream
 	err = DB.First(&res, "stream_key = ?", key).Error
-	if err != nil { // entry probably not existent -> not authenticated
-		fmt.Printf("error getting stream by key: %v\n", err)
-		return res, err
-	}
-	return res, nil
+	return res, err
 }
 
 func DeleteUnit(id uint) {
@@ -135,15 +137,6 @@ func GetAllStreams() ([]model.Stream, error) {
 	return res, err
 }
 
-func SetStreamLive(ctx context.Context, streamKey string, playlistUrl string) (err error) {
-	dbErr := DB.Model(&model.Stream{}).
-		Where("stream_key = ?", streamKey).
-		Update("live_now", true).
-		Update("playlist_url", playlistUrl).
-		Error
-	return dbErr
-}
-
 func GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error) {
 	if streams, found := Cache.Get("AllCurrentlyLiveStreams"); found {
 		return streams.([]model.Stream), nil
@@ -156,24 +149,6 @@ func GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error)
 	return streams, err
 }
 
-func SetStreamNotLive(ctx context.Context, streamKey string) (err error) {
-	Cache.Clear() // costs a bit but hey
-	dbErr := DB.Model(&model.Stream{}).
-		Where("stream_key = ?", streamKey).
-		Update("live_now", false).
-		Error
-	return dbErr
-}
-
-func InsertConvertJob(ctx context.Context, job *model.ProcessingJob) {
-	if Logger != nil {
-		Logger(ctx, "inserting processing job.")
-	}
-	DB.Clauses(clause.OnConflict{
-		UpdateAll: true,
-	}).Create(job)
-}
-
 func DeleteStream(streamID string) {
 	DB.Where("id = ?", streamID).Delete(&model.Stream{})
 	Cache.Clear()
@@ -182,4 +157,43 @@ func DeleteStream(streamID string) {
 func UpdateSilences(silences []model.Silence, streamID string) error {
 	DB.Delete(&model.Silence{}, "stream_id = ?", streamID)
 	return DB.Save(&silences).Error
+}
+
+func UpdateStreamFullAssoc(vod *model.Stream) error {
+	defer Cache.Clear()
+	err := DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&vod).Error
+	return err
+}
+
+func SetStreamNotLiveById(streamID string) error {
+	return DB.Table("streams").Where("id = ?", streamID).Update("live_now", "0").Error
+}
+
+func SaveStream(vod *model.Stream) error {
+	defer Cache.Clear()
+	err := DB.Model(&vod).Updates(model.Stream{
+		Name:            vod.Name,
+		Description:     vod.Description,
+		CourseID:        vod.CourseID,
+		Start:           vod.Start,
+		End:             vod.End,
+		RoomName:        vod.RoomName,
+		RoomCode:        vod.RoomCode,
+		EventTypeName:   vod.EventTypeName,
+		PlaylistUrl:     vod.PlaylistUrl,
+		PlaylistUrlPRES: vod.PlaylistUrlPRES,
+		PlaylistUrlCAM:  vod.PlaylistUrlCAM,
+		FilePath:        vod.FilePath,
+		LiveNow:         vod.LiveNow,
+		Recording:       vod.Recording,
+		Chats:           vod.Chats,
+		Stats:           vod.Stats,
+		Units:           vod.Units,
+		VodViews:        vod.VodViews,
+		StartOffset:     vod.StartOffset,
+		EndOffset:       vod.EndOffset,
+		Silences:        vod.Silences,
+		Files:           vod.Files,
+	}).Error
+	return err
 }

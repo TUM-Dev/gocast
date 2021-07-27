@@ -2,6 +2,7 @@ package main
 
 import (
 	"TUM-Live/api"
+	"TUM-Live/api_grpc"
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
@@ -60,15 +61,6 @@ var (
 	OsSignal chan os.Signal
 )
 
-// User struct to store database related info in context
-type User struct {
-	Name string
-}
-
-func (u *User) String() string {
-	return u.Name
-}
-
 func main() {
 	web.VersionTag = VersionTag
 	OsSignal = make(chan os.Signal, 1)
@@ -121,6 +113,7 @@ func main() {
 		&model.Worker{},
 		&model.CameraPreset{},
 		&model.ServerNotification{},
+		&model.File{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -162,7 +155,7 @@ func initCron() {
 	//Flush stale sentry exceptions and transactions every 5 minutes
 	_, _ = cronService.AddFunc("0-59/5 * * * *", func() { sentry.Flush(time.Minute * 2) })
 	//Look for due streams and notify workers about them
-	_, _ = cronService.AddFunc("0-59 * * * *", tools.NotifyWorkers)
+	_, _ = cronService.AddFunc("0-59 * * * *", api_grpc.NotifyWorkers)
 	cronService.Start()
 }
 

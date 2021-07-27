@@ -108,7 +108,6 @@ type ChatRep struct {
 }
 
 func CollectStats() {
-	log.Printf("Collecting stats\n")
 	defer sentry.Flush(time.Second * 2)
 	statsLock.Lock()
 	defer statsLock.Unlock()
@@ -160,7 +159,7 @@ func notifyViewersLiveStart(streamId uint) {
 	})
 }
 
-func notifyViewersLiveEnd(streamId string) {
+func NotifyViewersLiveEnd(streamId string) {
 	req, _ := json.Marshal(gin.H{"live": false})
 	_ = m.BroadcastFilter(req, func(s *melody.Session) bool {
 		return s.Request.URL.Path == fmt.Sprintf("/api/chat/%v/ws", streamId)

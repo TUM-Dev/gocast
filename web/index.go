@@ -39,7 +39,6 @@ func MainPage(c *gin.Context) {
 		log.WithError(err).Warn("could not get server notifications")
 	}
 
-	log.Println(c.Request.Host)
 	// todo: remove in a few days
 	if strings.HasPrefix(c.Request.Host, "live.mm.rbg.tum.de") {
 		indexData.IsOnLegacy = true

@@ -1,8 +1,7 @@
-# TUM-Live
+# [TUM-Live](https://live.rbg.tum.de)
 
-[TUM-Live](https://live.mm.rbg.tum.de)
+[![volkswagen status](https://auchenberg.github.io/volkswagen/volkswargen_ci.svg?v=1)](https://github.com/auchenberg/volkswagen) [![Better Uptime Badge](https://betteruptime.com/status-badges/v1/monitor/7hms.svg)](https://tum-live.betteruptime.com)
 
-[status](https://tum-live.betteruptime.com/)
 
 TUMs lecture streaming service, in beta since summer semester 2021.
 Currently serving 12 courses with up to 1500 active students.
