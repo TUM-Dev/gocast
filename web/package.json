@@ -22,7 +22,7 @@
     "@fullcalendar/icalendar": "^5.8.0",
     "@silvermine/videojs-quality-selector": "^1.2.5",
     "alpinejs": "^3.2.2",
-    "chart.js": "^3.4.1",
+    "chart.js": "^3.5.0",
     "flatpickr": "^4.6.9",
     "fullcalendar": "^5.8.0",
     "hls.js": "^1.0.7",
