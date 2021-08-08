@@ -247,7 +247,10 @@ func createLecture(c *gin.Context) {
 		lecture.Files = []model.File{{Path: fmt.Sprintf("%s/%s", premiereFolder, premiereFileName)}}
 	}
 	tumLiveContext.Course.Streams = append(tumLiveContext.Course.Streams, lecture)
-	dao.UpdateCourse(context.Background(), *tumLiveContext.Course)
+	err := dao.UpdateCourse(context.Background(), *tumLiveContext.Course)
+	if err != nil {
+		log.WithError(err).Warn("Can't update course")
+	}
 }
 
 type createLectureRequest struct {
@@ -353,6 +356,7 @@ func courseInfo(c *gin.Context) {
 	}
 	courseInfo, err := tum.GetCourseInformation(req.CourseID)
 	if err != nil { // course not found
+		log.WithError(err).Warn("Error getting course information")
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}

@@ -91,7 +91,7 @@ func MainPage(c *gin.Context) {
 			continue
 		}
 		if courseForLiveStream.Visibility == "enrolled" {
-			if !dao.IsUserAllowedToWatchPrivateCourse(courseForLiveStream, tumLiveContext.User) {
+			if !isUserAllowedToWatchPrivateCourse(courseForLiveStream, tumLiveContext.User) {
 				continue
 			}
 		}
@@ -138,7 +138,7 @@ func AboutPage(c *gin.Context) {
 	if found {
 		tumLiveContext = tumLiveContextQueried.(tools.TUMLiveContext)
 		indexData.TUMLiveContext = tumLiveContext
-	} else { //TODO log
+	} else {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -173,4 +173,17 @@ func NewIndexData() IndexData {
 type CourseStream struct {
 	Course model.Course
 	Stream model.Stream
+}
+
+
+func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {
+	if user != nil {
+		for _, c := range user.Courses {
+			if c.ID == course.ID {
+				return true
+			}
+		}
+		return user.Role == model.AdminType || user.ID == course.UserID
+	}
+	return false
 }

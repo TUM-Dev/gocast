@@ -7,7 +7,7 @@ import (
 	"context"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 )
@@ -33,7 +33,8 @@ func LoginHandler(c *gin.Context) {
 			return
 		}
 	}
-	if sId, lrzID, name, err := tum.LoginWithTumCredentials(username, password); err == nil {
+	sId, lrzID, name, err := tum.LoginWithTumCredentials(username, password)
+	if err == nil {
 		user := model.User{
 			Name:                name,
 			MatriculationNumber: sId,
@@ -58,6 +59,8 @@ func LoginHandler(c *gin.Context) {
 		}
 		c.Redirect(http.StatusFound, "/")
 		return
+	} else if err != tum.LdapErrBadAuth {
+		log.WithError(err).Error("Login error")
 	}
 	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", true)
 }
@@ -88,11 +91,14 @@ func CreatePasswordPage(c *gin.Context) {
 		}
 		err = u.SetPassword(p1)
 		if err != nil {
-			log.Printf("error setting password.")
+			log.WithError(err).Error("error setting password.")
 			_ = templ.ExecuteTemplate(c.Writer, "passwordreset.gohtml", PasswordResetPageData{Error: true})
 			return
 		} else {
-			dao.UpdateUser(u)
+			err := dao.UpdateUser(u)
+			if err != nil {
+				log.WithError(err).Error("CreatePasswordPage: Can't update user")
+			}
 			dao.DeleteResetKey(c.Param("key"))
 			c.Redirect(http.StatusFound, "/")
 		}

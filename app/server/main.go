@@ -8,7 +8,6 @@ import (
 	"TUM-Live/tools"
 	"TUM-Live/tools/tum"
 	"TUM-Live/web"
-	"context"
 	"fmt"
 	"github.com/dgraph-io/ristretto"
 	"github.com/droundy/goopt"
@@ -19,9 +18,9 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -29,8 +28,6 @@ import (
 )
 
 var VersionTag = "development"
-
-const UserKey = "RBG-Default-User" // UserKey key used for storing User struct in context
 
 // GinServer launch gin server
 func GinServer() (err error) {
@@ -52,7 +49,7 @@ func GinServer() (err error) {
 	err = router.Run(":8081")
 	if err != nil {
 		sentry.CaptureException(err)
-		log.Fatalf("Error starting server, the error is '%v'", err)
+		log.WithError(err).Fatal("Error starting server")
 	}
 	return
 }
@@ -62,6 +59,9 @@ var (
 )
 
 func main() {
+	// log with time, fmt "23.09.2021 10:00:00"
+	log.SetFormatter(&log.TextFormatter{TimestampFormat: "02.01.2006 15:04:05", FullTimestamp: true})
+
 	web.VersionTag = VersionTag
 	OsSignal = make(chan os.Signal, 1)
 
@@ -118,13 +118,10 @@ func main() {
 	if err != nil {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second * 5)
-		log.Fatalf("%v", err)
+		log.WithError(err).Fatal("can't migrate database")
 	}
 
 	dao.DB = db
-	dao.Logger = func(ctx context.Context, sql string) {
-		fmt.Printf("SQL: %s\n", sql)
-	}
 
 	// tools.SwitchPreset()
 
@@ -161,10 +158,10 @@ func initCron() {
 
 // LoopForever on signal processing
 func LoopForever() {
-	fmt.Printf("Entering infinite loop\n")
+	log.Info("Entering infinite loop\n")
 
 	signal.Notify(OsSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
 	_ = <-OsSignal
 
-	fmt.Printf("Exiting infinite loop received OsSignal\n")
+	log.Info("Exiting infinite loop received OsSignal\n")
 }

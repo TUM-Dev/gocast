@@ -1,7 +1,7 @@
 package tools
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"time"
 )
@@ -13,7 +13,7 @@ func init() {
 	var err error
 	Loc, err = time.LoadLocation("Europe/Berlin")
 	if err != nil {
-		log.Printf("%v", err)
+		log.WithError(err).Error("tools.config.init: can't get time.location")
 	}
 	Cfg = Config{
 		MailUser:             os.Getenv("MAIL_USER"),

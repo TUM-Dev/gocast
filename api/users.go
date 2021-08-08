@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 	"time"
@@ -114,7 +114,11 @@ func addSingleUserToCourse(name string, email string, course model.Course) {
 	} else {
 		// user Found, append the new course and notify via mail.
 		foundUser.Courses = append(foundUser.Courses, course)
-		dao.UpdateUser(foundUser)
+		err := dao.UpdateUser(foundUser)
+		if err != nil {
+			log.WithError(err).Error("Can't update user")
+			return
+		}
 		err = tools.SendPasswordMail(email,
 			fmt.Sprintf("Hello!\n"+
 				"You have been invited to participate in the course \"%v\" on TUM-Live. Check it out at <a href=\"https://live.mm.rbg.tum.de/\">https://live.mm.rbg.tum.de/</a>",

@@ -112,13 +112,11 @@ func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted
 //NotifyStreamFinished handles workers notification about streams being finished
 func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFinished) (*pb.Status, error) {
 	if _, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
-		log.Printf("Got stream Finished with invalid workerID %v", request.WorkerID)
 		return nil, errors.New("authentication failed: invalid worker id")
 	} else {
-		err := dao.SetStreamNotLiveById(strconv.Itoa(int(request.StreamID))) // todo change signature to uint
+		err := dao.SetStreamNotLiveById(uint(request.StreamID))
 		if err != nil {
-			log.Printf("Couldn't set stream not live: %v\n", err)
-			sentry.CaptureException(err)
+			log.WithError(err).Error("Can't set stream not live")
 		}
 		api.NotifyViewersLiveEnd(strconv.Itoa(int(request.StreamID)))
 	}
@@ -128,13 +126,15 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 //SendHeartBeat receives heartbeat messages sent by workers
 func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.Status, error) {
 	if worker, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
-		log.Printf("Got heartbeat with invalid workerID %v", request.WorkerID)
 		return nil, errors.New("authentication failed: invalid worker id")
 	} else {
 		worker.Workload = int(request.Workload)
 		worker.LastSeen = time.Now()
 		worker.Status = strings.Join(request.Jobs, ", ")
-		dao.SaveWorker(worker)
+		err := dao.SaveWorker(worker)
+		if err != nil {
+			return nil, err
+		}
 		return &pb.Status{Ok: true}, nil
 	}
 }
@@ -210,7 +210,7 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 
 // init initializes a gRPC server on port 50052
 func init() {
-	log.Printf("Serving heartbeat")
+	log.Info("Serving heartbeat")
 	lis, err := net.Listen("tcp", ":50052")
 	if err != nil {
 		log.WithError(err).Error("Failed to init grpc server")

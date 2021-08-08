@@ -4,21 +4,23 @@ import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools/camera"
+	"context"
 	"github.com/getsentry/sentry-go"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"time"
 )
 
 //FetchCameraPresets Queries all cameras of lecture halls for their camera presets and saves them to the database
-func FetchCameraPresets() {
+func FetchCameraPresets(ctx context.Context) {
+	span := sentry.StartSpan(ctx, "FetchCameraPresets")
+	defer span.Finish()
 	lectureHalls := dao.GetAllLectureHalls()
 	for _, lectureHall := range lectureHalls {
-		log.Printf("camera: %s", lectureHall.CameraIP)
 		if lectureHall.CameraIP != "" {
 			cam := camera.NewCamera(lectureHall.CameraIP, Cfg.CameraAuthentication)
 			presets, err := cam.GetPresets()
 			if err != nil {
-				sentry.CaptureException(err)
+				log.WithError(err).WithField("Camera", cam.Ip).Warn("FetchCameraPresets: failed to get Presets")
 				continue
 			}
 			for i := range presets {
@@ -50,7 +52,7 @@ func UsePreset(preset model.CameraPreset) {
 	c := camera.NewCamera(lectureHall.CameraIP, Cfg.CameraAuthentication)
 	err = c.SetPreset(preset.PresetID)
 	if err != nil {
-		log.Printf("%v", err)
+		log.WithError(err).Error("UsePreset: unable to set preset for camera")
 	}
 }
 
@@ -67,15 +69,13 @@ func TakeSnapshot(preset model.CameraPreset) {
 	c := camera.NewCamera(lectureHall.CameraIP, Cfg.CameraAuthentication)
 	fileName, err := c.TakeSnapshot(Cfg.StaticPath)
 	if err != nil {
-		log.Printf("%v", err)
-		sentry.CaptureException(err)
+		log.WithField("Camera", c.Ip).WithError(err).Error("TakeSnapshot: failed to get camera snapshot")
 		return
 	}
 	preset.Image = fileName
 	err = dao.SavePreset(preset)
 	if err != nil {
-		log.Printf("failed to save preset image: %v", err)
-		sentry.CaptureException(err)
+		log.WithField("Camera", c.Ip).WithError(err).Error("TakeSnapshot: failed to save snapshot file")
 		return
 	}
 }

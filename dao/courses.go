@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"gorm.io/gorm"
-	"log"
 	"time"
 )
 
@@ -102,7 +101,6 @@ func GetPublicCourses(year int, term string) (courses []model.Course, err error)
 	if found {
 		return cachedCourses.([]model.Course), err
 	}
-	log.Printf("not using cache!")
 	var publicCourses []model.Course
 	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start asc")
@@ -143,18 +141,9 @@ func GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, y
 }
 
 func GetAllCoursesWithTUMIDForSemester(ctx context.Context, year int, term string) (courses []model.Course, err error) {
-	if Logger != nil {
-		Logger(ctx, "Find all courses with tum_online_identifier")
-	}
 	var foundCourses []model.Course
 	dbErr := DB.Where("tum_online_identifier <> '' AND year = ? AND teaching_term = ?", year, term).Find(&foundCourses).Error
-	if dbErr != nil {
-		if Logger != nil {
-			Logger(ctx, fmt.Sprintf("Unable to query courses with tum_online_identifier:%v\n", dbErr))
-		}
-		return nil, err
-	}
-	return foundCourses, nil
+	return foundCourses, dbErr
 }
 
 func UpdateCourseMetadata(ctx context.Context, course model.Course) {
@@ -162,28 +151,18 @@ func UpdateCourseMetadata(ctx context.Context, course model.Course) {
 	DB.Save(&course)
 }
 
-func UpdateCourse(ctx context.Context, course model.Course) {
+func UpdateCourse(ctx context.Context, course model.Course) error {
 	defer Cache.Clear()
-	dbErr := DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&course).Error
-	if dbErr != nil {
-		if Logger != nil {
-			Logger(ctx, fmt.Sprintf("Failed to save a course: %v\n", dbErr))
-		}
-	}
+	return DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&course).Error
 }
 
 func CreateCourse(ctx context.Context, course model.Course) error {
 	defer Cache.Clear()
-	if Logger != nil {
-		Logger(ctx, "Creating course.")
-	}
 	err := DB.Create(&course).Error
 	return err
 }
 
 func GetAvailableSemesters(c context.Context) []Semester {
-	span := sentry.StartSpan(c, "SQL: GetAvailableSemesters")
-	defer span.Finish()
 	if cached, found := Cache.Get("getAllSemesters"); found {
 		return cached.([]Semester)
 	} else {
@@ -194,18 +173,6 @@ func GetAvailableSemesters(c context.Context) []Semester {
 		Cache.SetWithTTL("getAllSemesters", semesters, 1, time.Hour)
 		return semesters
 	}
-}
-
-func IsUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {
-	if user != nil {
-		for _, c := range user.Courses {
-			if c.ID == course.ID {
-				return true
-			}
-		}
-		return user.Role == model.AdminType || user.ID == course.UserID
-	}
-	return false
 }
 
 func GetCourseByShortLink(link string) (model.Course, error) {

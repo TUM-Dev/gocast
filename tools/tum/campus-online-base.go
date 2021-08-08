@@ -7,14 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/antchfx/xmlquery"
-	"log"
+	log "github.com/sirupsen/logrus"
 )
 
 func GetCourseInformation(courseID string) (CourseInfo, error) {
 	doc, err := xmlquery.LoadURL(fmt.Sprintf("%v/cdm/course/students/xml?token=%v&courseID=%v", tools.Cfg.CampusBase, tools.Cfg.CampusToken, courseID))
 	if err != nil {
-		log.Printf("couldn't load TUMOnline xml: %v\n", err)
-		return CourseInfo{}, err
+		return CourseInfo{}, fmt.Errorf("GetCourseInformation: Can't LoadURL: %v", err)
 	}
 	var isError = len(xmlquery.Find(doc, "//Error")) != 0
 	if isError {
@@ -33,7 +32,7 @@ func FetchCourses() {
 	y, t := GetCurrentSemester()
 	courses, err := dao.GetAllCoursesWithTUMIDForSemester(context.Background(), y, t)
 	if err != nil {
-		log.Printf("Could not get courses with TUM online identifier: %v", err)
+		log.WithError(err).Error("Could not get courses with TUM online identifier: %v", err)
 		return
 	}
 	FindStudentsForCourses(courses)

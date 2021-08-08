@@ -8,17 +8,16 @@ import (
 	"fmt"
 	"github.com/antchfx/xmlquery"
 	uuid "github.com/satori/go.uuid"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"time"
 )
 
 func getEventsForCourse(courseID string) (events map[time.Time]Event, deleted []Event) {
-	println(fmt.Sprintf("%v/rdm/course/events/xml?token=%v&courseID=%v", tools.Cfg.CampusBase, tools.Cfg.CampusToken, courseID))
 	doc, err := xmlquery.LoadURL(fmt.Sprintf("%v/rdm/course/events/xml?token=%v&courseID=%v", tools.Cfg.CampusBase, tools.Cfg.CampusToken, courseID))
 	if err != nil {
-		log.Printf("Couldn't query TUMOnline xml: %v\n", err)
+		log.WithError(err).Warn("Couldn't query TUMOnline xml: %v", err)
 		return map[time.Time]Event{}, []Event{}
 	}
 	eventsMap := make(map[time.Time]Event)
@@ -29,14 +28,13 @@ func getEventsForCourse(courseID string) (events map[time.Time]Event, deleted []
 		// whoever came up with this way of parsing times is a psychopath
 		start, timeErr1 := time.ParseInLocation("20060102T150405", xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='dtstart']").InnerText(), tools.Loc)
 		end, timeErr2 := time.ParseInLocation("20060102T150405", xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='dtend']").InnerText(), tools.Loc)
-		log.Printf("%v- %v", start, end)
 		if timeErr1 != nil || timeErr2 != nil {
-			log.Printf("couldn't parse time: %v or %v\n", timeErr1, timeErr2)
+			log.WithFields(log.Fields{"timeErr1": timeErr1, "timeErr2": timeErr2}).Warn("getEventsForCourse: couldn't parse time")
 			break
 		}
 		eventID64, err := strconv.Atoi(xmlquery.FindOne(event, "//cor:attribute[@cor:attrID='singleEventID']").InnerText())
 		if err != nil {
-			log.Printf("EventID not an int %v\n", err)
+			log.WithField("TUMOnlineCourseID", courseID).WithError(err).Error("getEventsForCourse: EventID not an int")
 			break
 		}
 		var eventTypeName, status, roomCode, roomName string
@@ -82,7 +80,7 @@ func GetEventsForCourses(courses []model.Course) {
 		for _, event := range events {
 			stream, err := dao.GetStreamByTumOnlineID(context.Background(), event.SingleEventID)
 			if err != nil { // Lecture does not exist yet
-				println("adding a course")
+				log.Info("Adding course")
 				course.Streams = append(course.Streams, model.Stream{
 					CourseID:         course.ID,
 					Start:            event.Start,
@@ -103,7 +101,10 @@ func GetEventsForCourses(courses []model.Course) {
 				stream.EventTypeName = event.SingleEventTypeName
 			}
 		}
-		dao.UpdateCourse(context.Background(), course)
+		err := dao.UpdateCourse(context.Background(), course)
+		if err != nil {
+			log.WithError(err).WithField("CourseID", course.ID).Warn("Can't update course")
+		}
 	}
 }
 

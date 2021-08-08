@@ -199,7 +199,10 @@ func addUser(id string) {
 func removeUser(id string, jointime time.Time, recording bool) {
 	// watched at least 5 minutes of the lecture and stream is VoD? Count as view.
 	if recording && jointime.Before(time.Now().Add(time.Minute*-5)) {
-		dao.AddVodView(id)
+		err := dao.AddVodView(id)
+		if err != nil {
+			log.WithError(err).Error("Can't save vod view")
+		}
 	}
 	statsLock.Lock()
 	stats[id] -= 1

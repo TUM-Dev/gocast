@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
-	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -68,7 +67,6 @@ func (c Camera) GetPresets() ([]model.CameraPreset, error) {
 		if presetSplit := strings.Split(preset, "="); len(presetSplit) == 2 {
 			idParts := strings.Split(presetSplit[0], ".")
 			if len(idParts) != 7 {
-				log.Printf("parts for camera presets: {%s} could not be processed.", idParts)
 				return nil, errors.New("wrong format for camera preset response")
 			}
 			presetId, err := strconv.ParseInt(strings.Replace(idParts[len(idParts)-2], "P", "", 1), 10, 0)
@@ -115,3 +113,5 @@ func (c Camera) makeAuthenticatedRequest(method string, body string, url string)
 	}
 	return buf, nil
 }
+
+

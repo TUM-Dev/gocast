@@ -3,15 +3,11 @@ package dao
 import (
 	"TUM-Live/model"
 	"context"
-	"github.com/getsentry/sentry-go"
 	"time"
 )
 
-func SaveWorker(worker model.Worker) {
-	err := DB.Save(&worker).Error
-	if err != nil {
-		sentry.CaptureException(err)
-	}
+func SaveWorker(worker model.Worker) error {
+	return DB.Save(&worker).Error
 }
 
 func GetAllWorkers() ([]model.Worker, error) {

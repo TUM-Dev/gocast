@@ -2,10 +2,8 @@ package dao
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"gorm.io/gorm"
-	"reflect"
 )
 
 // BuildInfo is used to define the application build info, and inject values into via the build process.
@@ -56,40 +54,4 @@ var (
 
 	// AppBuildInfo reference to build info
 	AppBuildInfo *BuildInfo
-
-	// Logger function that will be invoked before executing sql
-	Logger LogSql
 )
-
-// Copy a src struct into a destination struct
-func Copy(dst interface{}, src interface{}) error {
-	dstV := reflect.Indirect(reflect.ValueOf(dst))
-	srcV := reflect.Indirect(reflect.ValueOf(src))
-
-	if !dstV.CanAddr() {
-		return errors.New("copy to value is unaddressable")
-	}
-
-	if srcV.Type() != dstV.Type() {
-		return errors.New("different types can be copied")
-	}
-
-	for i := 0; i < dstV.NumField(); i++ {
-		f := srcV.Field(i)
-		if !isZeroOfUnderlyingType(f.Interface()) {
-			dstV.Field(i).Set(f)
-		}
-	}
-
-	return nil
-}
-
-func isZeroOfUnderlyingType(x interface{}) bool {
-	return x == nil || reflect.DeepEqual(x, reflect.Zero(reflect.TypeOf(x)).Interface())
-}
-
-func GetRowCount(ctx context.Context, tableName string) (int, error) {
-	context.TODO()
-	return 0, nil
-	//TODO
-}

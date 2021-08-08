@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"gorm.io/gorm"
-	"log"
 	"strconv"
 	"time"
 )
@@ -77,23 +76,12 @@ func DeleteStreamsWithTumID(ids []uint) {
 	})
 }
 
-func AddVodView(id string) {
+//AddVodView Adds a stat entry to the database or increases the one existing for this hour
+func AddVodView(id string) error {
 	intId, err := strconv.Atoi(id)
 	if err != nil {
-		log.Printf("Invalid stream id when saving vod view %v", err)
-		return
+		return err
 	}
-	// todo: legacy stat collection, delete me.
-	_ = DB.Transaction(func(tx *gorm.DB) error {
-		var stream model.Stream
-		if err := tx.Where("id = ? AND live_now = 0", id).First(&stream).Error; err != nil {
-			return err
-		}
-		if err := tx.Model(&stream).Update("VodViews", stream.VodViews+1).Error; err != nil {
-			return err
-		}
-		return nil
-	})
 	err = DB.Transaction(func(tx *gorm.DB) error {
 		t := time.Now()
 		tFrom := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, time.Local)
@@ -115,9 +103,7 @@ func AddVodView(id string) {
 			return err
 		}
 	})
-	if err != nil {
-		log.Printf("error saving vod view: %v", err)
-	}
+	return err
 }
 
 func UpdateStream(stream model.Stream) error {
@@ -165,7 +151,7 @@ func UpdateStreamFullAssoc(vod *model.Stream) error {
 	return err
 }
 
-func SetStreamNotLiveById(streamID string) error {
+func SetStreamNotLiveById(streamID uint) error {
 	return DB.Table("streams").Where("id = ?", streamID).Update("live_now", "0").Error
 }
 
