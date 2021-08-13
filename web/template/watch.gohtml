@@ -152,7 +152,7 @@
                         <div class="flex flex-row">
                             <p class="flex-grow font-semibold {{if $chat.Admin}}text-warn{{end}}">{{$chat.UserName}}</p>
                             <p class="text-5 font-thin">
-                                {{printf "%02d:%02d" $chat.SendTime.Hour $chat.SendTime.Minute}}
+                                {{printf "%02d:%02d" $chat.CreatedAt.Hour $chat.CreatedAt.Minute}}
                             </p>
                         </div>
                         <p class="text-3 break-words">
@@ -220,7 +220,7 @@
         userActions: {
             hotkeys: {}
         },
-        nativeControlsForTouch: true,
+        //nativeControlsForTouch: true,
     });
     player.controlBar.addChild('QualitySelector');
     player.on('resolutionchange', function () {
