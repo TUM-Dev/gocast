@@ -33,31 +33,15 @@
                 {{else}}poster="/public/no_active_stream.jpg">{{end}}
                 {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
                     {{if not $stream.LiveNow}}
-                        <source label='1080p' res='1080'
-                                src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
+                        <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
                                 type="application/x-mpegURL"/>
                     {{else}}
                         {{if eq .Version "CAM"}}
-                            <source src="{{$stream.GetUrlSourceCAM}}"
-                                    type='application/x-mpegURL' label='1080' res='1080'/>
-                            <source src="{{$stream.GetUrl720CAM}}"
-                                    type='application/x-mpegURL' label='720p' res='720'/>
-                            <source src="{{$stream.GetUrl360CAM}}"
-                                    type='application/x-mpegURL' label='360p' res='360'/>
+                            <source src="{{$stream.PlaylistUrlCAM}}" type="application/x-mpegURL"/>
                         {{else if eq .Version "PRES"}}
-                            <source src="{{$stream.GetUrlSourcePRES}}"
-                                    type='application/x-mpegURL' label='1080' res='1080'/>
-                            <source src="{{$stream.GetUrl720PRES}}"
-                                    type='application/x-mpegURL' label='720p' res='720'/>
-                            <source src="{{$stream.GetUrl360PRES}}"
-                                    type='application/x-mpegURL' label='360p' res='360'/>
+                            <source src="{{$stream.PlaylistUrlPRES}}" type="application/x-mpegURL"/>
                         {{else}}
-                            <source src="{{$stream.GetUrlSourceCOMB}}"
-                                    type='application/x-mpegURL' label='1080' res='1080'/>
-                            <source src="{{$stream.GetUrl720COMB}}"
-                                    type='application/x-mpegURL' label='720p' res='720'/>
-                            <source src="{{$stream.GetUrl360COMB}}"
-                                    type='application/x-mpegURL' label='360p' res='360'/>
+                            <source src="{{$stream.PlaylistUrl}}" type="application/x-mpegURL"/>
                         {{end}}
                     {{end}}
                 {{end}}
@@ -184,8 +168,8 @@
 <script src="/static/node_modules/video.js/dist/video.min.js"></script>
 <script src="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.min.js"></script>
 <script src="/static/node_modules/videojs-contrib-quality-levels/dist/videojs-contrib-quality-levels.min.js"></script>
-<link rel="stylesheet" href="/static/node_modules/@silvermine/videojs-quality-selector/dist/css/quality-selector.css">
-<script src="/static/node_modules/@silvermine/videojs-quality-selector/dist/js/silvermine-videojs-quality-selector.min.js"></script>
+<link rel="stylesheet" href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
+<script src="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.min.js"></script>
 <script src="/static/assets/ts-dist/TUMLiveVjs.js?v={{.IndexData.VersionTag}}"></script>
 <script>
     function loadScript(scriptUrl) {
@@ -222,10 +206,7 @@
         },
         //nativeControlsForTouch: true,
     });
-    player.controlBar.addChild('QualitySelector');
-    player.on('resolutionchange', function () {
-        console.info('Source changed to %s', player.src())
-    });
+    player.hlsQualitySelector();
     player.play();
     if (!{{$stream.LiveNow}}) {
         player.seekButtons({
