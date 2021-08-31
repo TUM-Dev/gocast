@@ -152,6 +152,14 @@ func CollectStats() {
 	}
 }
 
+
+func notifyViewersPause(streamId uint, paused bool) {
+	req, _ := json.Marshal(gin.H{"paused": paused})
+	_ = m.BroadcastFilter(req, func(s *melody.Session) bool {
+		return s.Request.URL.Path == fmt.Sprintf("/api/chat/%v/ws", streamId)
+	})
+}
+
 func notifyViewersLiveStart(streamId uint) {
 	req, _ := json.Marshal(gin.H{"live": true})
 	_ = m.BroadcastFilter(req, func(s *melody.Session) bool {

@@ -15,6 +15,13 @@ class Watch {
                     document.getElementById("viewerCount").innerText = data["viewers"]
                 } else if ("live" in data) {
                     window.location.reload();
+                } else if ("paused" in data) {
+                    const paused: boolean = data["paused"];
+                    if (paused) {
+                        window.dispatchEvent(new CustomEvent("pausestart"))
+                    } else {
+                        window.dispatchEvent(new CustomEvent("pauseend"))
+                    }
                 } else {
                     const chatElem = Watch.createMessageElement(data)
                     document.getElementById("chatBox").appendChild(chatElem)

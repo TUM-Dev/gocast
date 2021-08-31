@@ -175,7 +175,6 @@ type CourseStream struct {
 	Stream model.Stream
 }
 
-
 func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {
 	if user != nil {
 		for _, c := range user.Courses {

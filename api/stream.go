@@ -1,12 +1,16 @@
 package api
 
 import (
+	"TUM-Live/dao"
 	"TUM-Live/tools"
 	"errors"
 	"fmt"
+	goextron "github.com/RBG-TUM/go-extron"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"net/http"
+	"strings"
 )
 
 func configGinStreamRestRouter(router *gin.Engine) {
@@ -14,6 +18,36 @@ func configGinStreamRestRouter(router *gin.Engine) {
 	g.Use(tools.InitStream)
 	g.Use(tools.AdminOfCourse)
 	g.GET("/api/stream/:streamID", getStream)
+	g.GET("/api/stream/:streamID/pause", pauseStream)
+}
+
+func pauseStream(c *gin.Context) {
+	pause := c.Request.URL.Query().Get("pause")=="true"
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	stream := tumLiveContext.Stream
+	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
+	if err != nil {
+		log.WithError(err).Error("request to pause stream without lecture hall")
+		return
+	}
+	ge := goextron.New(fmt.Sprintf("http://%s", strings.ReplaceAll(lectureHall.CombIP, "extron3", "")), tools.Cfg.SMPUser, tools.Cfg.SMPPassword) // todo
+	err = ge.SetMute(pause)
+	if err != nil {
+		log.WithError(err).Error("Can't mute/unmute")
+		return
+	}
+	err = dao.SavePauseState(stream.ID, pause)
+	if err != nil {
+		log.WithError(err).Error("Pause: Can't save stream")
+	} else {
+		notifyViewersPause(stream.ID, stream.Paused)
+	}
 }
 
 func getStream(c *gin.Context) {

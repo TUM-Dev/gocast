@@ -38,6 +38,8 @@ func init() {
 		CameraAuthentication: os.Getenv("CAMERA_AUTH"),
 		StaticPath:           os.Getenv("STATIC_PATH"),
 		MassStorage:          os.Getenv("MASS_STORAGE"),
+		SMPUser:          os.Getenv("SMP_USER"),
+		SMPPassword:          os.Getenv("SMP_PASSWORD"),
 	}
 }
 
@@ -64,4 +66,6 @@ type Config struct {
 	CameraAuthentication string
 	StaticPath           string
 	MassStorage          string
+	SMPUser              string
+	SMPPassword          string
 }

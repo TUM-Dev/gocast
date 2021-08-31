@@ -261,3 +261,5 @@ button.vjs-skip-silence-control {
 a.fc-event, a.fc-event:hover {
     cursor: pointer;
 }
+
+[x-cloak] { display: none !important; }

@@ -155,6 +155,11 @@ func SetStreamNotLiveById(streamID uint) error {
 	return DB.Table("streams").Where("id = ?", streamID).Update("live_now", "0").Error
 }
 
+func SavePauseState(streamid uint, paused bool) error {
+	defer Cache.Clear()
+	return DB.Model(model.Stream{}).Where("id = ?", streamid).Updates(map[string]interface{}{"Paused":paused}).Error
+}
+
 func SaveStream(vod *model.Stream) error {
 	defer Cache.Clear()
 	err := DB.Model(&vod).Updates(model.Stream{
@@ -180,6 +185,7 @@ func SaveStream(vod *model.Stream) error {
 		EndOffset:       vod.EndOffset,
 		Silences:        vod.Silences,
 		Files:           vod.Files,
+		Paused:          vod.Paused,
 	}).Error
 	return err
 }

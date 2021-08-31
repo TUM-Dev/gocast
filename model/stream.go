@@ -37,6 +37,7 @@ type Stream struct {
 	LectureHallID    uint `gorm:"default:null"`
 	Silences         []Silence
 	Files            []File `gorm:"foreignKey:StreamID"`
+	Paused           bool   `gorm:"default:false"`
 }
 
 func (s Stream) IsPast() bool {
@@ -50,7 +51,7 @@ type silence struct {
 
 func (s Stream) GetSilencesJson() string {
 	forServe := make([]silence, len(s.Silences))
-	for i, _ := range forServe {
+	for i := range forServe {
 		forServe[i] = silence{
 			Start: s.Silences[i].Start,
 			End:   s.Silences[i].End,
