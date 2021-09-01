@@ -3,6 +3,7 @@ module TUM-Live
 go 1.17
 
 require (
+	github.com/RBG-TUM/go-extron v0.0.0-20210831075837-bc150c5f7462
 	github.com/antchfx/xmlquery v1.3.6
 	github.com/antchfx/xpath v1.2.0 // indirect
 	github.com/dgraph-io/ristretto v0.1.0
@@ -34,12 +35,11 @@ require (
 	gopkg.in/olahol/melody.v1 v1.0.0-20170518105555-d52139073376
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gorm.io/driver/mysql v1.1.2
-	gorm.io/gorm v1.21.13
+	gorm.io/gorm v1.21.14
 )
 
 require (
 	github.com/Azure/go-ntlmssp v0.0.0-20200615164410-66371956d46c // indirect
-	github.com/RBG-TUM/go-extron v0.0.0-20210831075837-bc150c5f7462 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
