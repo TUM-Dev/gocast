@@ -154,10 +154,18 @@ func CollectStats() {
 
 
 func notifyViewersPause(streamId uint, paused bool) {
-	req, _ := json.Marshal(gin.H{"paused": paused})
-	_ = m.BroadcastFilter(req, func(s *melody.Session) bool {
-		return s.Request.URL.Path == fmt.Sprintf("/api/chat/%v/ws", streamId)
+	req, err := json.Marshal(gin.H{"paused": paused})
+	if err != nil {
+		log.WithError(err).Error("Can't Marshal pause msg")
+	}
+	err = m.BroadcastFilter(req, func(s *melody.Session) bool {
+		userStreamID, found := s.Get("streamID")
+		log.WithFields(log.Fields{"userStreamID":userStreamID, "found": found, "streamId": streamId}).Info("dings")
+		return found && userStreamID == fmt.Sprintf("%d", streamId)
 	})
+	if err != nil {
+		log.WithError(err).Error("Can't broadcast")
+	}
 }
 
 func notifyViewersLiveStart(streamId uint) {

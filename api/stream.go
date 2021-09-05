@@ -46,7 +46,7 @@ func pauseStream(c *gin.Context) {
 	if err != nil {
 		log.WithError(err).Error("Pause: Can't save stream")
 	} else {
-		notifyViewersPause(stream.ID, stream.Paused)
+		notifyViewersPause(stream.ID, pause)
 	}
 }
 
