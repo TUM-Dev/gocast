@@ -19,6 +19,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -35,7 +36,7 @@ func (s server) NotifySilenceResults(ctx context.Context, request *pb.SilenceRes
 		return nil, err
 	}
 	var silences []model.Silence
-	for i, _ := range request.Starts {
+	for i := range request.Starts {
 		silences = append(silences, model.Silence{
 			Start:    uint(request.Starts[i]),
 			End:      uint(request.Ends[i]),
@@ -82,6 +83,8 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 	}, nil
 }
 
+var lightLock = sync.Mutex{}
+
 //NotifyStreamStart handles workers notification about streams being started
 func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
 	_, err := dao.GetWorkerByID(ctx, request.GetWorkerID())
@@ -97,12 +100,14 @@ func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted
 	if dao.HasStreamLectureHall(stream.ID) {
 		if lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID); err != nil {
 			return nil, err
-		}else {
+		} else {
+			lightLock.Lock()
 			client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
 			err := client.TurnOn(lectureHall.LiveLightIndex)
 			if err != nil {
 				log.WithError(err).Error("Can't turn on live light.")
 			}
+			lightLock.Unlock()
 		}
 	}
 	stream.LiveNow = true
@@ -130,16 +135,18 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 		stream, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
 		if err != nil {
 			log.WithError(err).Error("Can't find stream to set not live")
-		}else {
+		} else {
 			if dao.HasStreamLectureHall(stream.ID) {
 				if lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID); err != nil {
 					return nil, err
 				} else {
 					client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
+					lightLock.Lock()
 					err := client.TurnOff(lectureHall.LiveLightIndex)
 					if err != nil {
 						log.WithError(err).Error("Can't turn off live light.")
 					}
+					lightLock.Unlock()
 				}
 			}
 		}
