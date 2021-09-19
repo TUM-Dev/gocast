@@ -85,7 +85,8 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 
 var lightLock = sync.Mutex{}
 
-//NotifyStreamStart handles workers notification about streams being started
+// NotifyStreamStart handles workers notification about streams being started
+// Deprecated: this is now "NotifyStreamStarted"
 func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
 	_, err := dao.GetWorkerByID(ctx, request.GetWorkerID())
 	if err != nil {
@@ -96,19 +97,6 @@ func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted
 	if err != nil {
 		log.WithError(err).Warn("Can't get stream by ID to set live")
 		return nil, err
-	}
-	if dao.HasStreamLectureHall(stream.ID) {
-		if lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID); err != nil {
-			return nil, err
-		} else {
-			lightLock.Lock()
-			client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
-			err := client.TurnOn(lectureHall.LiveLightIndex)
-			if err != nil {
-				log.WithError(err).Error("Can't turn on live light.")
-			}
-			lightLock.Unlock()
-		}
 	}
 	stream.LiveNow = true
 	switch request.GetSourceType() {
@@ -226,6 +214,19 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 	if err != nil {
 		log.WithError(err).Println("Can't find stream")
 		return nil, err
+	}
+	if dao.HasStreamLectureHall(stream.ID) {
+		if lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID); err != nil {
+			return nil, err
+		} else {
+			lightLock.Lock()
+			client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
+			err := client.TurnOn(lectureHall.LiveLightIndex)
+			if err != nil {
+				log.WithError(err).Error("Can't turn on live light.")
+			}
+			lightLock.Unlock()
+		}
 	}
 	stream.LiveNow = true
 	switch request.GetSourceType() {
