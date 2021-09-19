@@ -5,9 +5,11 @@ import (
 	"TUM-Live/api"
 	"TUM-Live/dao"
 	"TUM-Live/model"
+	"TUM-Live/tools"
 	"context"
 	"errors"
 	"fmt"
+	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
 	"github.com/getsentry/sentry-go"
 	"github.com/joschahenningsen/TUM-Live-Worker-v2/pb"
 	log "github.com/sirupsen/logrus"
@@ -92,6 +94,17 @@ func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted
 		log.WithError(err).Warn("Can't get stream by ID to set live")
 		return nil, err
 	}
+	if dao.HasStreamLectureHall(stream.ID) {
+		if lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID); err != nil {
+			return nil, err
+		}else {
+			client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
+			err := client.TurnOn(lectureHall.LiveLightIndex)
+			if err != nil {
+				log.WithError(err).Error("Can't turn on live light.")
+			}
+		}
+	}
 	stream.LiveNow = true
 	switch request.GetSourceType() {
 	case "CAM":
@@ -114,7 +127,23 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 	if _, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, errors.New("authentication failed: invalid worker id")
 	} else {
-		err := dao.SetStreamNotLiveById(uint(request.StreamID))
+		stream, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
+		if err != nil {
+			log.WithError(err).Error("Can't find stream to set not live")
+		}else {
+			if dao.HasStreamLectureHall(stream.ID) {
+				if lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID); err != nil {
+					return nil, err
+				} else {
+					client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
+					err := client.TurnOff(lectureHall.LiveLightIndex)
+					if err != nil {
+						log.WithError(err).Error("Can't turn off live light.")
+					}
+				}
+			}
+		}
+		err = dao.SetStreamNotLiveById(uint(request.StreamID))
 		if err != nil {
 			log.WithError(err).Error("Can't set stream not live")
 		}

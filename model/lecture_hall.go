@@ -4,13 +4,15 @@ import "gorm.io/gorm"
 
 type LectureHall struct {
 	gorm.Model
-	Name          string
-	CombIP        string
-	PresIP        string
-	CamIP         string
-	CameraIP      string // ip of the actual camera (not smp)
-	Streams       []Stream
-	CameraPresets []CameraPreset
+	Name           string
+	CombIP         string
+	PresIP         string
+	CamIP          string
+	CameraIP       string // ip of the actual camera (not smp)
+	Streams        []Stream
+	CameraPresets  []CameraPreset
+	PwrCtrlIp      string // power control api for red live light
+	LiveLightIndex int    // id of power outlet for live light
 }
 
 func (l LectureHall) NumSources() int {

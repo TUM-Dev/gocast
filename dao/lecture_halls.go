@@ -26,6 +26,12 @@ func CreateLectureHall(lectureHall model.LectureHall) {
 	DB.Create(&lectureHall)
 }
 
+func HasStreamLectureHall(id uint) bool {
+	var isNull bool
+	DB.Raw("SELECT lecture_hall_id IS NULL FROM streams WHERE ID = ?", id).Scan(&isNull)
+	return !isNull
+}
+
 func GetLectureHallByID(id uint) (model.LectureHall, error) {
 	var lectureHall model.LectureHall
 	err := DB.Preload("CameraPresets").First(&lectureHall, id).Error
