@@ -1,0 +1,49 @@
+{{define "course-import"}}
+    <script src="/static/assets/ts-dist/course-import.js?v={{.IndexData.VersionTag}}"></script>
+    <script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
+    <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
+    <div class="text-2 m-auto mt-4 w-full lg:w-5/6" x-data="pageData()" @step2.window="alert()">
+        <div x-show="loading" class="text-center">
+            <i class="fas fa-circle-notch animate-spin animate"></i> Loading...
+        </div>
+
+        <div x-show="step===0">
+            <h1>Lecture Hall</h1>
+            <form>
+                Select Lecture Hall
+                <div class="relative inline-block w-full text-gray-700 my-2">
+                    <select x-model="lecturehall"
+                            class="w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 border rounded-lg appearance-none focus:shadow-outline">
+                        {{- /*gotype: TUM-Live/web.AdminPageData*/ -}}
+                        {{range $hs := .LectureHalls}}
+                            <option>{{$hs.Name}}</option>
+                        {{end}}
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                  clip-rule="evenodd" fill-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="flex">
+                    <label class="w-1/2" x-init="flatpickr($refs.from, {'dateFormat': 'Y-m-d'});flatpickr($refs.to)">
+                        <span>Import events from this date on:</span>
+                        <input class="text-1" type="text" x-ref="from" x-model="from">
+                    </label>
+                    <label class="w-1/2">
+                        <span>Until this date:</span>
+                        <input type="text" class="text-1" x-ref="to" x-model="to">
+                    </label>
+                </div>
+            </form>
+        </div>
+
+        <div x-show="step===1">
+            2
+        </div>
+        <button class="h-10 px-5 m-2 float-right text-blue-100 transition-colors duration-150 bg-blue-600 rounded-lg focus:shadow-outline hover:bg-blue-700 disabled:bg-blue-300"
+                @click="step++; $dispatch(`notify${step}`)" :disabled="loading">Next
+        </button>
+    </div>
+{{end}}

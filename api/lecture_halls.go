@@ -9,10 +9,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	campusonline "github.com/RBG-TUM/CAMPUSOnline"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 	"text/template"
@@ -25,6 +26,7 @@ func configGinLectureHallApiRouter(router *gin.Engine) {
 	admins.POST("/createLectureHall", createLectureHall)
 	admins.POST("/takeSnapshot/:lectureHallID/:presetID", takeSnapshot)
 	admins.POST("/updateLecturesLectureHall", updateLecturesLectureHall)
+	admins.GET("/schedule/:lectureHallId", getSchedule)
 
 	adminsOfCourse := router.Group("/api/course/:courseID/")
 	adminsOfCourse.Use(tools.InitCourse)
@@ -33,6 +35,31 @@ func configGinLectureHallApiRouter(router *gin.Engine) {
 	adminsOfCourse.POST("/switchPreset/:lectureHallID/:presetID/:streamID", switchPreset)
 
 	router.GET("/api/hall/all.ics", lectureHallIcal)
+}
+
+func getSchedule(c *gin.Context) {
+	id := c.Param("lectureHallId")
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		log.WithError(err).Info("invalid id for lecture hall schedule")
+	}
+	lectureHall, err := dao.GetLectureHallByID(uint(idUint))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	campus, err := campusonline.New(tools.Cfg.CampusToken)
+	if err != nil {
+		log.WithError(err).Error("Can't create campus client")
+		return
+	}
+	room, err := campus.GetScheduleForRoom(lectureHall.RoomID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("Can't get room schedule")
+		return
+	}
+	c.JSON(http.StatusOK, room)
 }
 
 //go:embed template

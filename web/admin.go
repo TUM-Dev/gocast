@@ -32,7 +32,7 @@ func AdminPage(c *gin.Context) {
 	_ = dao.GetAllAdminsAndLecturers(&users)
 	courses, err := dao.GetCoursesByUserId(context.Background(), tumLiveContext.User.ID)
 	if err != nil {
-		log.Printf("couldn't query courses for user. %v\n", err)
+		log.WithError(err).Error("couldn't query courses for user.")
 		courses = []model.Course{}
 	}
 	workers, err := dao.GetAllWorkers()
@@ -54,6 +54,9 @@ func AdminPage(c *gin.Context) {
 	}
 	if c.Request.URL.Path == "/admin/create-course" {
 		page = "createCourse"
+	}
+	if c.Request.URL.Path == "/admin/course-import" {
+		page = "courseImport"
 	}
 	if c.Request.URL.Path == "/admin/server-stats" {
 		page = "serverStats"

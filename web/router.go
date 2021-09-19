@@ -49,6 +49,7 @@ func configMainRoute(router *gin.Engine) {
 	adminGroup.GET("/admin/workers", AdminPage)
 	adminGroup.GET("/admin/server-notifications", AdminPage)
 	adminGroup.GET("/admin/server-stats", AdminPage)
+	adminGroup.GET("/admin/course-import", AdminPage)
 
 	courseAdminGroup := router.Group("/")
 	courseAdminGroup.Use(tools.InitCourse)
