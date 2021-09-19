@@ -112,7 +112,6 @@ func CollectStats() {
 	statsLock.Lock()
 	defer statsLock.Unlock()
 	for sID, numWatchers := range stats {
-		log.Printf("Collecting stats for stream %v, viewers:%v\n", sID, numWatchers)
 		stat := model.Stat{
 			Time:    time.Now(),
 			Viewers: numWatchers,
@@ -132,15 +131,11 @@ func CollectStats() {
 				}
 			}
 			if mStat, err := json.Marshal(gin.H{"viewers": numWatchers}); err == nil {
-				bcErr := m.BroadcastFilter(mStat, func(q *melody.Session) bool { // filter broadcasting to same lecture.
-					if streamIdFromContext, found := q.Get("streamID"); found {
-						return streamIdFromContext.(string) == sID
-					}
-					log.Error("no stream id in context")
-					sentry.CaptureException(errors.New("no stream id in context"))
-					return false
+				err := m.BroadcastFilter(mStat, func(s *melody.Session) bool {
+					userStreamID, found := s.Get("streamID")
+					return found && userStreamID == sID
 				})
-				if bcErr != nil {
+				if err != nil {
 					log.WithError(err).Error("Error while broadcasting stream stats")
 					sentry.CaptureException(err)
 				}
@@ -160,7 +155,6 @@ func notifyViewersPause(streamId uint, paused bool) {
 	}
 	err = m.BroadcastFilter(req, func(s *melody.Session) bool {
 		userStreamID, found := s.Get("streamID")
-		log.WithFields(log.Fields{"userStreamID":userStreamID, "found": found, "streamId": streamId}).Info("dings")
 		return found && userStreamID == fmt.Sprintf("%d", streamId)
 	})
 	if err != nil {
