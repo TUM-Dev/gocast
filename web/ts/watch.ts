@@ -28,7 +28,7 @@ class Watch {
                     } else {
                         window.dispatchEvent(new CustomEvent("pauseend"))
                     }
-                } else {
+                } else if ("msg" in data) {
                     const chatElem = Watch.createMessageElement(data)
                     document.getElementById("chatBox").appendChild(chatElem)
                     document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight
