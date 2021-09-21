@@ -4,7 +4,7 @@ class Watch {
 
     constructor() {
         let streamid = (document.getElementById("streamID") as HTMLInputElement).value;
-        this.ws = new WebSocket("ws://localhost:8081/api/chat/" + streamid + "/ws")
+        this.ws = new WebSocket("wss://live.rbg.tum.de/api/chat/" + streamid + "/ws")
         if (document.getElementById("chatForm") != null) {
             const appHeight = () => {
                 const doc = document.documentElement;
