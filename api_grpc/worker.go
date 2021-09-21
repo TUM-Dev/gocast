@@ -221,11 +221,13 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		} else {
 			lightLock.Lock()
 			client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
-			err := client.TurnOn(lectureHall.LiveLightIndex)
-			if err != nil {
-				log.WithError(err).Error("Can't turn on live light.")
-			}
-			lightLock.Unlock()
+			go func() {
+				err := client.TurnOn(lectureHall.LiveLightIndex)
+				if err != nil {
+					log.WithError(err).Error("Can't turn on live light.")
+				}
+			}()
+			defer lightLock.Unlock()
 		}
 	}
 	stream.LiveNow = true

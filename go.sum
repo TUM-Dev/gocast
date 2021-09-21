@@ -15,6 +15,8 @@ github.com/RBG-TUM/go-anel-pwrctrl v0.0.0-20210919130432-1c4011ca01ac h1:eqGP2xp
 github.com/RBG-TUM/go-anel-pwrctrl v0.0.0-20210919130432-1c4011ca01ac/go.mod h1:6c2j1rcryE6BWphhJtGb+yXFIGRzmIXi+31TjE9Cft4=
 github.com/RBG-TUM/go-extron v0.0.0-20210831075837-bc150c5f7462 h1:Hd9B8B38nn/9B7hlDM8Z5VNbTAYWCQlYY7hkOv9jX4w=
 github.com/RBG-TUM/go-extron v0.0.0-20210831075837-bc150c5f7462/go.mod h1:Gk99WHh7DoWzb964JwKjNGeDPe2Ulw7Vl7FP5y68wmw=
+github.com/RBG-TUM/go-extron v0.0.0-20210921103533-01eef88347a6 h1:tE218IXC9inQOn40V2or1sAoOkoFYGekaAkoo1IlpR0=
+github.com/RBG-TUM/go-extron v0.0.0-20210921103533-01eef88347a6/go.mod h1:Gk99WHh7DoWzb964JwKjNGeDPe2Ulw7Vl7FP5y68wmw=
 github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398/go.mod h1:a1uqRtAwp2Xwc6WNPJEufxJ7fx3npB4UV/JOLmbu5I0=
 github.com/ajg/form v1.5.1/go.mod h1:uL1WgH+h2mgNtvBq0339dVnzXdBETtL2LeUXaIv25UY=
 github.com/antchfx/xmlquery v1.3.6 h1:kaEVzH1mNo/2AJZrhZjAaAUTy2Nn2zxGfYYU8jWfXOo=
@@ -433,6 +435,8 @@ google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013/go.mod h1:NbSheEEY
 google.golang.org/genproto v0.0.0-20210816143620-e15ff196659d/go.mod h1:eFjDcFEctNawg4eG61bRv87N7iHBWyVhJu7u1kqDUXY=
 google.golang.org/genproto v0.0.0-20210917145530-b395a37504d4 h1:ysnBoUyeL/H6RCvNRhWHjKoDEmguI+mPU+qHgK8qv/w=
 google.golang.org/genproto v0.0.0-20210917145530-b395a37504d4/go.mod h1:eFjDcFEctNawg4eG61bRv87N7iHBWyVhJu7u1kqDUXY=
+google.golang.org/genproto v0.0.0-20210920155426-26f343e4c215 h1:bdVWLCdfDvdxf+qXZp5iip6vl2zJGgzhkULcsAiBNmE=
+google.golang.org/genproto v0.0.0-20210920155426-26f343e4c215/go.mod h1:5CzLGKJ67TSI2B9POpiiyGha0AjJvZIUgRMt1dSmuhc=
 google.golang.org/grpc v1.19.0/go.mod h1:mqu4LbDTu4XGKhr4mRzUsmM4RtVoemTSY81AxZiDr8c=
 google.golang.org/grpc v1.23.0/go.mod h1:Y5yQAOtifL1yxbo5wqy6BxZv8vAUGQwXBOALyacEbxg=
 google.golang.org/grpc v1.25.1/go.mod h1:c3i+UQWmh7LiEpx4sFZnkU36qjEYZ0imhYfXVyQciAY=

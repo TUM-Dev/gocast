@@ -5,6 +5,7 @@ import (
 	"TUM-Live/tools"
 	"errors"
 	"fmt"
+	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
 	goextron "github.com/RBG-TUM/go-extron"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
@@ -22,7 +23,7 @@ func configGinStreamRestRouter(router *gin.Engine) {
 }
 
 func pauseStream(c *gin.Context) {
-	pause := c.Request.URL.Query().Get("pause")=="true"
+	pause := c.Request.URL.Query().Get("pause") == "true"
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -38,6 +39,18 @@ func pauseStream(c *gin.Context) {
 	}
 	ge := goextron.New(fmt.Sprintf("http://%s", strings.ReplaceAll(lectureHall.CombIP, "extron3", "")), tools.Cfg.SMPUser, tools.Cfg.SMPPassword) // todo
 	err = ge.SetMute(pause)
+	client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
+	if pause {
+		err := client.TurnOff(lectureHall.LiveLightIndex)
+		if err != nil {
+			log.WithError(err).Error("can't turn off light")
+		}
+	} else {
+		err := client.TurnOn(lectureHall.LiveLightIndex)
+		if err != nil {
+			log.WithError(err).Error("can't turn on light")
+		}
+	}
 	if err != nil {
 		log.WithError(err).Error("Can't mute/unmute")
 		return

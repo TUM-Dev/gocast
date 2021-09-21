@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/RBG-TUM/go-anel-pwrctrl v0.0.0-20210919130432-1c4011ca01ac
-	github.com/RBG-TUM/go-extron v0.0.0-20210831075837-bc150c5f7462
+	github.com/RBG-TUM/go-extron v0.0.0-20210921103533-01eef88347a6
 	github.com/antchfx/xmlquery v1.3.6
 	github.com/antchfx/xpath v1.2.0 // indirect
 	github.com/dgraph-io/ristretto v0.1.0
@@ -30,7 +30,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/crypto v0.0.0-20210813211128-0a44fdfbc16e
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
-	google.golang.org/genproto v0.0.0-20210917145530-b395a37504d4 // indirect
+	google.golang.org/genproto v0.0.0-20210920155426-26f343e4c215 // indirect
 	google.golang.org/grpc v1.40.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/olahol/melody.v1 v1.0.0-20170518105555-d52139073376
