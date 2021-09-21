@@ -1,9 +1,12 @@
 package api
 
 import (
+	"TUM-Live/dao"
 	"TUM-Live/tools"
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gabstv/melody"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
@@ -36,6 +39,10 @@ var connHandler = func(s *melody.Session) {
 func BroadcastStats() {
 	for sID, sessions := range sessionsMap {
 		if len(sessions) == 0 {
+			continue
+		}
+		stream, err := dao.GetStreamByID(context.Background(), fmt.Sprintf("%d", sID))
+		if err != nil || stream.Recording {
 			continue
 		}
 		msg, _ := json.Marshal(gin.H{"viewers": len(sessions)})
