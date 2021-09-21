@@ -18,9 +18,9 @@ class Watch {
                 } else if ("paused" in data) {
                     const paused: boolean = data["paused"];
                     if (paused) {
-                        window.dispatchEvent(new CustomEvent("pausestart"))
+                        //window.dispatchEvent(new CustomEvent("pausestart"))
                     } else {
-                        window.dispatchEvent(new CustomEvent("pauseend"))
+                        //window.dispatchEvent(new CustomEvent("pauseend"))
                     }
                 } else {
                     const chatElem = Watch.createMessageElement(data)
