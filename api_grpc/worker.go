@@ -17,7 +17,6 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"net"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -142,7 +141,7 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 		if err != nil {
 			log.WithError(err).Error("Can't set stream not live")
 		}
-		api.NotifyViewersLiveEnd(strconv.Itoa(int(request.StreamID)))
+		api.NotifyViewersLiveState(uint(request.StreamID), false)
 	}
 	return &pb.Status{Ok: true}, nil
 }
@@ -244,6 +243,7 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		log.WithError(err).Println("Can't set stream live")
 		return nil, err
 	}
+	api.NotifyViewersLiveState(stream.Model.ID, true)
 	return &pb.Status{Ok: true}, nil
 }
 

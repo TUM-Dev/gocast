@@ -8,10 +8,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gabstv/melody"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/olahol/melody.v1"
 	"net/http"
 	"strconv"
 	"sync"
@@ -30,26 +30,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 		log.Printf("creating melody")
 		m = melody.New()
 	}
-	m.HandleConnect(func(s *melody.Session) {
-		ctx, _ := s.Get("ctx") // get gin context
-		foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
-		if !exists {
-			sentry.CaptureException(errors.New("context should exist but doesn't"))
-			return
-		}
-		tumLiveContext := foundContext.(tools.TUMLiveContext)
-		log.Printf("setting stream id: %d", tumLiveContext.Stream.ID)
-		s.Set("streamID", fmt.Sprintf("%d", tumLiveContext.Stream.ID)) // persist stream id into melody context for stats
-		if !tumLiveContext.Stream.Recording {
-			statsLock.Lock()
-			if statMsg, err := json.Marshal(gin.H{"viewers": stats[ctx.(*gin.Context).Param("streamID")]}); err == nil {
-				_ = s.Write(statMsg)
-			} else {
-				sentry.CaptureException(err)
-			}
-			statsLock.Unlock()
-		}
-	})
+	m.HandleConnect(connHandler)
 
 	m.HandleMessage(func(s *melody.Session, msg []byte) {
 		ctx, _ := s.Get("ctx") // get gin context
@@ -90,9 +71,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			Name:  uname,
 			Admin: tumLiveContext.User.ID == tumLiveContext.Course.UserID,
 		}); err == nil {
-			_ = m.BroadcastFilter(broadcast, func(q *melody.Session) bool { // filter broadcasting to same lecture.
-				return q.Request.URL.Path == s.Request.URL.Path
-			})
+			broadcastStream(tumLiveContext.Stream.ID, broadcast)
 		}
 	})
 }
@@ -108,21 +87,14 @@ type ChatRep struct {
 }
 
 func CollectStats() {
-	defer sentry.Flush(time.Second * 2)
-	statsLock.Lock()
-	defer statsLock.Unlock()
-	for sID, numWatchers := range stats {
+	BroadcastStats()
+	for sID, sessions := range sessionsMap {
 		stat := model.Stat{
 			Time:    time.Now(),
-			Viewers: numWatchers,
+			Viewers: len(sessions),
 			Live:    true,
 		}
-		if s, err := dao.GetStreamByID(context.Background(), sID); err == nil {
-			if s.Recording { // broadcast stats for livestreams and upcoming videos only
-				log.Printf("stream not live, skipping stats\n")
-				//delete(stats, strconv.Itoa(int(s.ID)))
-				continue
-			}
+		if s, err := dao.GetStreamByID(context.Background(), fmt.Sprintf("%d", sID)); err == nil {
 			if s.LiveNow { // store stats for livestreams only
 				s.Stats = append(s.Stats, stat)
 				if err = dao.SaveStream(&s); err != nil {
@@ -130,50 +102,18 @@ func CollectStats() {
 					log.Printf("Error saving stats: %v\n", err)
 				}
 			}
-			if mStat, err := json.Marshal(gin.H{"viewers": numWatchers}); err == nil {
-				err := m.BroadcastFilter(mStat, func(s *melody.Session) bool {
-					userStreamID, found := s.Get("streamID")
-					return found && userStreamID == sID
-				})
-				if err != nil {
-					log.WithError(err).Error("Error while broadcasting stream stats")
-					sentry.CaptureException(err)
-				}
-			} else {
-				log.Error(err.Error())
-				sentry.CaptureException(err)
-			}
 		}
 	}
 }
 
-
 func notifyViewersPause(streamId uint, paused bool) {
-	req, err := json.Marshal(gin.H{"paused": paused})
-	if err != nil {
-		log.WithError(err).Error("Can't Marshal pause msg")
-	}
-	err = m.BroadcastFilter(req, func(s *melody.Session) bool {
-		userStreamID, found := s.Get("streamID")
-		return found && userStreamID == fmt.Sprintf("%d", streamId)
-	})
-	if err != nil {
-		log.WithError(err).Error("Can't broadcast")
-	}
+	req, _ := json.Marshal(gin.H{"paused": paused})
+	broadcastStream(streamId, req)
 }
 
-func notifyViewersLiveStart(streamId uint) {
-	req, _ := json.Marshal(gin.H{"live": true})
-	_ = m.BroadcastFilter(req, func(s *melody.Session) bool {
-		return s.Request.URL.Path == fmt.Sprintf("/api/chat/%v/ws", streamId)
-	})
-}
-
-func NotifyViewersLiveEnd(streamId string) {
-	req, _ := json.Marshal(gin.H{"live": false})
-	_ = m.BroadcastFilter(req, func(s *melody.Session) bool {
-		return s.Request.URL.Path == fmt.Sprintf("/api/chat/%v/ws", streamId)
-	})
+func NotifyViewersLiveState(streamId uint, live bool) {
+	req, _ := json.Marshal(gin.H{"live": live})
+	broadcastStream(streamId, req)
 }
 
 func ChatStream(c *gin.Context) {
@@ -181,7 +121,6 @@ func ChatStream(c *gin.Context) {
 	if m.Len() > 10000 {
 		return
 	}
-	addUser(c.Param("streamID"))
 	joinTime := time.Now()
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
@@ -190,23 +129,14 @@ func ChatStream(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	defer removeUser(c.Param("streamID"), joinTime, tumLiveContext.Stream.Recording)
+	defer afterDisconnect(c.Param("streamID"), joinTime, tumLiveContext.Stream.Recording)
 	ctxMap := make(map[string]interface{}, 1)
 	ctxMap["ctx"] = c
 
 	_ = m.HandleRequestWithKeys(c.Writer, c.Request, ctxMap)
 }
 
-func addUser(id string) {
-	statsLock.Lock()
-	if _, ok := stats[id]; !ok {
-		stats[id] = 0
-	}
-	stats[id] += 1
-	statsLock.Unlock()
-}
-
-func removeUser(id string, jointime time.Time, recording bool) {
+func afterDisconnect(id string, jointime time.Time, recording bool) {
 	// watched at least 5 minutes of the lecture and stream is VoD? Count as view.
 	if recording && jointime.Before(time.Now().Add(time.Minute*-5)) {
 		err := dao.AddVodView(id)
@@ -214,10 +144,4 @@ func removeUser(id string, jointime time.Time, recording bool) {
 			log.WithError(err).Error("Can't save vod view")
 		}
 	}
-	statsLock.Lock()
-	stats[id] -= 1
-	if stats[id] <= 0 {
-		delete(stats, id)
-	}
-	statsLock.Unlock()
 }

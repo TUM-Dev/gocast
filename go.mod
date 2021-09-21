@@ -9,6 +9,7 @@ require (
 	github.com/antchfx/xpath v1.2.0 // indirect
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/droundy/goopt v0.0.0-20170604162106-0b8effe182da
+	github.com/gabstv/melody v1.0.2
 	github.com/getsentry/sentry-go v0.11.0
 	github.com/gin-contrib/gzip v0.0.3
 	github.com/gin-contrib/sessions v0.0.3
@@ -33,7 +34,6 @@ require (
 	google.golang.org/genproto v0.0.0-20210920155426-26f343e4c215 // indirect
 	google.golang.org/grpc v1.40.0
 	google.golang.org/protobuf v1.27.1
-	gopkg.in/olahol/melody.v1 v1.0.0-20170518105555-d52139073376
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gorm.io/driver/mysql v1.1.2
 	gorm.io/gorm v1.21.15

@@ -4,8 +4,14 @@ class Watch {
 
     constructor() {
         let streamid = (document.getElementById("streamID") as HTMLInputElement).value;
-        this.ws = new WebSocket("wss://live.rbg.tum.de/api/chat/" + streamid + "/ws")
+        this.ws = new WebSocket("ws://localhost:8081/api/chat/" + streamid + "/ws")
         if (document.getElementById("chatForm") != null) {
+            const appHeight = () => {
+                const doc = document.documentElement;
+                doc.style.setProperty('--chat-height', `calc(${window.innerHeight}px - 5rem)`);
+            }
+            window.addEventListener('resize', appHeight);
+            appHeight();
             (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", e => this.submitChat(e))
             document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight
             this.chatInput = document.getElementById("chatInput") as HTMLInputElement
@@ -20,7 +26,7 @@ class Watch {
                     if (paused) {
                         //window.dispatchEvent(new CustomEvent("pausestart"))
                     } else {
-                        //window.dispatchEvent(new CustomEvent("pauseend"))
+                        window.dispatchEvent(new CustomEvent("pauseend"))
                     }
                 } else {
                     const chatElem = Watch.createMessageElement(data)
@@ -71,7 +77,7 @@ class Watch {
         const d = new Date
         d.setTime(Date.now())
         let chatTimeField = document.createElement("p") as HTMLParagraphElement
-        chatTimeField.classList.add("text-gray-500", "font-thin")
+        chatTimeField.classList.add("text-4")
         chatTimeField.innerText = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2)
         chatHeader.appendChild(chatTimeField)
         chatElem.appendChild(chatHeader)

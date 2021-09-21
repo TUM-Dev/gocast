@@ -13,7 +13,9 @@
     {{if .IsAdminOfCourse}}
     <script async src="/static/assets/ts-dist/watch-admin.js?v={{.IndexData.VersionTag}}"></script>{{end}}
 </head>
-<body class="h-full overflow-hidden" x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}}" x-on:pausestart.window="paused=true" x-on:pauseend.window="paused=false">{{template "header" .IndexData.TUMLiveContext}}
+<body class="h-full overflow-hidden" x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}}"
+      x-on:pausestart.window="paused=true"
+      x-on:pauseend.window="paused=false">{{template "header" .IndexData.TUMLiveContext}}
 <div id="watchPageMainWrapper" class="flex md:flex-row w-full flex-wrap">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
     <div id="watchWrapper"
@@ -99,8 +101,10 @@
                     <h3 class="text-4 mb-2">Administration:</h3>
                     <a href="?restart=1" title="Issues with the stream? Restart it."
                        class="bg-danger text-white rounded cursor-pointer p-2 text-sm">Restart stream</a>
-                    <a @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)" href="#" :title="paused?'End Pause (Turns on video and audio)':'Pause lecture (Turns off video and audio)'"
-                       class="bg-info text-white rounded cursor-pointer p-2 text-sm" x-text="paused?'Resume Lecture':'Pause Lecture'"></a>
+                    <a @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)" href="#"
+                       :title="paused?'End Pause (Turns on video and audio)':'Pause lecture (Turns off video and audio)'"
+                       class="bg-info text-white rounded cursor-pointer p-2 text-sm"
+                       x-text="paused?'Resume Lecture':'Pause Lecture'"></a>
                     <p class="text-4 my-2">Presets:</p>
                     <div class="w-full overflow-x-scroll scrollbarThin">
                         <div class="flex flex-row gap-x-2">
@@ -139,7 +143,7 @@
                     <div class="rounded p-2 mx-2">
                         <div class="flex flex-row">
                             <p class="flex-grow font-semibold {{if $chat.Admin}}text-warn{{end}}">{{$chat.UserName}}</p>
-                            <p class="text-5 font-thin">
+                            <p class="text-4">
                                 {{printf "%02d:%02d" $chat.CreatedAt.Hour $chat.CreatedAt.Minute}}
                             </p>
                         </div>
