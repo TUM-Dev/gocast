@@ -35,9 +35,7 @@ function startWebsocket() {
         const data = JSON.parse(m.data);
         if ("viewers" in data && document.getElementById("viewerCount") != null) {
             document.getElementById("viewerCount").innerText = data["viewers"];
-        } else if ("viewers" in data){
-            document.getElementById("viewerCount").innerText = data["viewers"];
-        }else if ("live" in data) {
+        } else if ("live" in data) {
             window.location.reload();
         } else if ("paused" in data) {
             const paused: boolean = data["paused"];
