@@ -25,12 +25,15 @@ class Watch {
     }
 }
 
-let ws : WebSocket;
+let ws: WebSocket;
 
 function startWebsocket() {
     let streamid = (document.getElementById("streamID") as HTMLInputElement).value;
     ws = new WebSocket("wss://live.rbg.tum.de/api/chat/" + streamid + "/ws");
-    (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", e => submitChat(e));
+    let cf = document.getElementById("chatForm");
+    if (cf !== null && cf != undefined) {
+        (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", e => submitChat(e));
+    }
     ws.onmessage = function (m) {
         const data = JSON.parse(m.data);
         if ("viewers" in data && document.getElementById("viewerCount") != null) {
@@ -51,7 +54,7 @@ function startWebsocket() {
         }
     }
 
-    ws.onclose = function(){
+    ws.onclose = function () {
         // connection closed, discard old websocket and create a new one in 5s
         ws = null;
         setTimeout(startWebsocket, 5000);
