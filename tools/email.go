@@ -1,8 +1,10 @@
 package tools
 
 import (
-	"encoding/base64"
+	"bytes"
+	"fmt"
 	"net/smtp"
+	"os/exec"
 	"strings"
 )
 
@@ -36,12 +38,14 @@ func SendMail(addr, from, subject, body string, to []string) error {
 		return err
 	}
 
+	signed, err := openssl([]byte(body), "smime", "-text", "-sign", "-signer", Cfg.SMIMECert, "-inkey", Cfg.SMIMEKey)
+	if err != nil {
+		fmt.Printf("can't encrypt: %v", err)
+	}
 	msg := "To: " + strings.Join(to, ",") + "\r\n" +
 		"From: " + from + "\r\n" +
 		"Subject: " + subject + "\r\n" +
-		"Content-Type: text/html; charset=\"UTF-8\"\r\n" +
-		"Content-Transfer-Encoding: base64\r\n" +
-		"\r\n" + base64.StdEncoding.EncodeToString([]byte(body))
+		string(signed)
 
 	_, err = w.Write([]byte(msg))
 	if err != nil {
@@ -52,4 +56,23 @@ func SendMail(addr, from, subject, body string, to []string) error {
 		return err
 	}
 	return c.Quit()
+}
+
+func openssl(stdin []byte, args ...string) ([]byte, error) {
+	cmd := exec.Command("openssl", args...)
+
+	in := bytes.NewReader(stdin)
+	out := &bytes.Buffer{}
+	errs := &bytes.Buffer{}
+
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = in, out, errs
+
+	if err := cmd.Run(); err != nil {
+		if len(errs.Bytes()) > 0 {
+			return nil, fmt.Errorf("error running %s (%s):\n %v", cmd.Args, err, errs.String())
+		}
+		return nil, err
+	}
+
+	return out.Bytes(), nil
 }

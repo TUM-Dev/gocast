@@ -41,6 +41,8 @@ func init() {
 		SMPUser:              os.Getenv("SMP_USER"),
 		SMPPassword:          os.Getenv("SMP_PASSWORD"),
 		PWRCTRLAuth:          os.Getenv("PWRCTRL_AUTH"),
+		SMIMECert:            os.Getenv("SMIMECRT"),
+		SMIMEKey:             os.Getenv("SMIMEKEY"),
 	}
 }
 
@@ -70,4 +72,6 @@ type Config struct {
 	SMPUser              string
 	SMPPassword          string
 	PWRCTRLAuth          string
+	SMIMECert            string
+	SMIMEKey             string
 }
