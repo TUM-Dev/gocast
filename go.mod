@@ -4,11 +4,13 @@ go 1.17
 
 require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20210916110641-48f345ce1d8f
-	github.com/RBG-TUM/go-extron v0.0.0-20210831075837-bc150c5f7462
-	github.com/antchfx/xmlquery v1.3.6
+	github.com/RBG-TUM/go-anel-pwrctrl v0.0.0-20210929070211-675c39ef5a84
+	github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769
+	github.com/antchfx/xmlquery v1.3.7
 	github.com/antchfx/xpath v1.2.0 // indirect
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/droundy/goopt v0.0.0-20170604162106-0b8effe182da
+	github.com/gabstv/melody v1.0.2
 	github.com/getsentry/sentry-go v0.11.0
 	github.com/gin-contrib/gzip v0.0.3
 	github.com/gin-contrib/sessions v0.0.3
@@ -30,10 +32,9 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/crypto v0.0.0-20210813211128-0a44fdfbc16e
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
-	google.golang.org/genproto v0.0.0-20210915214522-86cf1236ec46 // indirect
-	google.golang.org/grpc v1.40.0
+	google.golang.org/genproto v0.0.0-20210928142010-c7af6a1a74c9 // indirect
+	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.27.1
-	gopkg.in/olahol/melody.v1 v1.0.0-20170518105555-d52139073376
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gorm.io/driver/mysql v1.1.2
 	gorm.io/gorm v1.21.15

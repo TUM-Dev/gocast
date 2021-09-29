@@ -109,6 +109,11 @@
         @apply dark:text-gray-400 dark:hover:bg-gray-600 dark:bg-gray-600 text-gray-500 hover:bg-gray-200 bg-gray-200;
     }
 }
+
+:root {
+    --chat-height: calc(100vh - 5rem);
+}
+
 input, textarea {
     @apply focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500 dark:text-white text-primary;
 }
@@ -160,7 +165,7 @@ input[type='checkbox']:checked + label {
 
 @media (min-width: 768px) {
     .chat {
-        max-height: calc(100vh - 5rem);
+        max-height: var(--chat-height);
     }
 }
 
@@ -168,7 +173,6 @@ input[type='checkbox']:checked + label {
     /* Hide scrollbar for IE, Edge and Firefox */
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: 3px; /* Firefox */
-    max-height: calc(100vh - 5rem);
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
@@ -185,7 +189,7 @@ input[type='checkbox']:checked + label {
 }
 
 #chatWrapper, #watchWrapper, #watchPageMainWrapper {
-    height: calc(100vh - theme('spacing.20'));
+    height: var(--chat-height);
 }
 
 #chatBox {
@@ -262,4 +266,6 @@ a.fc-event, a.fc-event:hover {
     cursor: pointer;
 }
 
-[x-cloak] { display: none !important; }
+[x-cloak] {
+    display: none !important;
+}

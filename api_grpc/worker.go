@@ -5,9 +5,11 @@ import (
 	"TUM-Live/api"
 	"TUM-Live/dao"
 	"TUM-Live/model"
+	"TUM-Live/tools"
 	"context"
 	"errors"
 	"fmt"
+	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
 	"github.com/getsentry/sentry-go"
 	"github.com/joschahenningsen/TUM-Live-Worker-v2/pb"
 	log "github.com/sirupsen/logrus"
@@ -15,8 +17,8 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"net"
-	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -33,7 +35,7 @@ func (s server) NotifySilenceResults(ctx context.Context, request *pb.SilenceRes
 		return nil, err
 	}
 	var silences []model.Silence
-	for i, _ := range request.Starts {
+	for i := range request.Starts {
 		silences = append(silences, model.Silence{
 			Start:    uint(request.Starts[i]),
 			End:      uint(request.Ends[i]),
@@ -80,7 +82,10 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 	}, nil
 }
 
-//NotifyStreamStart handles workers notification about streams being started
+var lightLock = sync.Mutex{}
+
+// NotifyStreamStart handles workers notification about streams being started
+// Deprecated: this is now "NotifyStreamStarted"
 func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
 	_, err := dao.GetWorkerByID(ctx, request.GetWorkerID())
 	if err != nil {
@@ -114,11 +119,29 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 	if _, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, errors.New("authentication failed: invalid worker id")
 	} else {
-		err := dao.SetStreamNotLiveById(uint(request.StreamID))
+		stream, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
+		if err != nil {
+			log.WithError(err).Error("Can't find stream to set not live")
+		} else {
+			if dao.HasStreamLectureHall(stream.ID) {
+				if lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID); err != nil {
+					return nil, err
+				} else {
+					client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
+					lightLock.Lock()
+					err := client.TurnOff(lectureHall.LiveLightIndex)
+					if err != nil {
+						log.WithError(err).Error("Can't turn off live light.")
+					}
+					lightLock.Unlock()
+				}
+			}
+		}
+		err = dao.SetStreamNotLiveById(uint(request.StreamID))
 		if err != nil {
 			log.WithError(err).Error("Can't set stream not live")
 		}
-		api.NotifyViewersLiveEnd(strconv.Itoa(int(request.StreamID)))
+		api.NotifyViewersLiveState(uint(request.StreamID), false)
 	}
 	return &pb.Status{Ok: true}, nil
 }
@@ -191,6 +214,21 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		log.WithError(err).Println("Can't find stream")
 		return nil, err
 	}
+	if dao.HasStreamLectureHall(stream.ID) {
+		if lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID); err != nil {
+			return nil, err
+		} else {
+			lightLock.Lock()
+			client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
+			go func() {
+				err := client.TurnOn(lectureHall.LiveLightIndex)
+				if err != nil {
+					log.WithError(err).Error("Can't turn on live light.")
+				}
+			}()
+			defer lightLock.Unlock()
+		}
+	}
 	stream.LiveNow = true
 	switch request.GetSourceType() {
 	case "CAM":
@@ -205,6 +243,7 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		log.WithError(err).Println("Can't set stream live")
 		return nil, err
 	}
+	api.NotifyViewersLiveState(stream.Model.ID, true)
 	return &pb.Status{Ok: true}, nil
 }
 
