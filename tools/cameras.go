@@ -28,10 +28,10 @@ func FetchLHPresets(lectureHall model.LectureHall){
 			log.WithError(err).WithField("Camera", cam.Ip).Warn("FetchCameraPresets: failed to get Presets")
 			return
 		}
-		for i := range presets {
+		/*for i := range presets {
 			findExistingImageForPreset(&presets[i], lectureHall.CameraPresets)
 			presets[i].LectureHallId = lectureHall.ID
-		}
+		}*/
 		lectureHall.CameraPresets = presets
 		dao.SaveLectureHallFullAssoc(lectureHall)
 	}
