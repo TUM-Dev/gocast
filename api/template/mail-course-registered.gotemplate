@@ -1,0 +1,39 @@
+English version below
+
+Hallo {{.Name}},
+Sie erhalten diese Nachricht, weil Sie als Verantwortliche/r in TUMOnline für den Kurs {{.CourseName}} eingetragen sind,
+der in einem von uns mit Livestreaming-hardware ausgestatteten Raum statt findet.
+Wir haben Ihren Kurs automatisch in unser System TUM-Live (live.rbg.tum.de) für Livestreaming und Video on Demand eingetragen.
+Sollten Sie dies nicht wünschen oder an den Einstellungen Änderungen vornehmen wollen nutzen Sie bitte diesen Link:
+{{.Link}}
+Falls Sie weitere Fragen haben sind wir jederzeit unter live@rbg.tum.de erreichbar.
+
+Mit freundlichen Grüßen,
+RBG Multimedia
+
+=======================
+
+Dear {{.Name}},
+This message was sent to you because you are listed as responsible for the course {{.CourseName}} in TUMOnline which will
+take place in a room equipped with our livestreaming hardware. Therefore we registered your lectures in TUM-Live (live.rbg.tum.de)
+for livestreaming and video on demand.
+If you want to change any of the settings below you can use this link:
+{{.Link}}
+For any further questions or help please reach out to us at live@rbg.tum.de.
+
+Best,
+RBG Multimedia
+
+Settings:
+    - Livestreaming: Yes
+    - Video on Demand: Yes
+    - Downloads: No
+    - Visibility: Enrolled students
+    - Chat: No
+
+Termine:
+    {{range $stream := .Streams}}
+        Mo. 20.10.2020 14:00, Interims I 101
+    {{end}}
+
+

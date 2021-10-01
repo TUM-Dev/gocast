@@ -32,6 +32,12 @@ func HasStreamLectureHall(id uint) bool {
 	return !isNull
 }
 
+func GetLectureHallByPartialName(name string) (model.LectureHall, error) {
+	var res model.LectureHall
+	err := DB.Where("full_name LIKE ?", "%"+name+"%").First(&res).Error
+	return res, err
+}
+
 func GetLectureHallByID(id uint) (model.LectureHall, error) {
 	var lectureHall model.LectureHall
 	err := DB.Preload("CameraPresets").First(&lectureHall, id).Error

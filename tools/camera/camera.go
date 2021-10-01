@@ -62,7 +62,8 @@ func (c Camera) GetPresets() ([]model.CameraPreset, error) {
 	if err != nil {
 		return nil, err
 	}
-	presets := strings.Split(resp.String(), "\n")
+	body := resp.String()
+	presets := strings.Split(body, "\n")
 	for _, preset := range presets {
 		if presetSplit := strings.Split(preset, "="); len(presetSplit) == 2 {
 			idParts := strings.Split(presetSplit[0], ".")

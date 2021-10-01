@@ -14,6 +14,29 @@ import (
 	"net/http"
 )
 
+type editCourseByTokenPageData struct {
+	Token     string
+	Course    model.Course
+	IndexData IndexData
+}
+
+func editCourseByTokenPage(c *gin.Context) {
+	err := c.Request.ParseForm()
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	d := editCourseByTokenPageData{
+		Token:     c.Request.Form.Get("token"),
+		IndexData: NewIndexDataWithContext(c),
+	}
+
+	err = templ.ExecuteTemplate(c.Writer, "edit-course-by-token.gohtml", d)
+	if err != nil {
+		log.Println(err)
+	}
+}
+
 func HighlightPage(c *gin.Context) {
 	course, err := dao.GetCourseByShortLink(c.Param("shortLink"))
 	if err != nil {

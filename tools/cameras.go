@@ -16,20 +16,24 @@ func FetchCameraPresets(ctx context.Context) {
 	defer span.Finish()
 	lectureHalls := dao.GetAllLectureHalls()
 	for _, lectureHall := range lectureHalls {
-		if lectureHall.CameraIP != "" {
-			cam := camera.NewCamera(lectureHall.CameraIP, Cfg.CameraAuthentication)
-			presets, err := cam.GetPresets()
-			if err != nil {
-				log.WithError(err).WithField("Camera", cam.Ip).Warn("FetchCameraPresets: failed to get Presets")
-				continue
-			}
-			for i := range presets {
-				findExistingImageForPreset(&presets[i], lectureHall.CameraPresets)
-				presets[i].LectureHallId = lectureHall.ID
-			}
-			lectureHall.CameraPresets = presets
-			dao.SaveLectureHallFullAssoc(lectureHall)
+		FetchLHPresets(lectureHall)
+	}
+}
+
+func FetchLHPresets(lectureHall model.LectureHall){
+	if lectureHall.CameraIP != "" {
+		cam := camera.NewCamera(lectureHall.CameraIP, Cfg.CameraAuthentication)
+		presets, err := cam.GetPresets()
+		if err != nil {
+			log.WithError(err).WithField("Camera", cam.Ip).Warn("FetchCameraPresets: failed to get Presets")
+			return
 		}
+		for i := range presets {
+			findExistingImageForPreset(&presets[i], lectureHall.CameraPresets)
+			presets[i].LectureHallId = lectureHall.ID
+		}
+		lectureHall.CameraPresets = presets
+		dao.SaveLectureHallFullAssoc(lectureHall)
 	}
 }
 

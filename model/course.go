@@ -18,9 +18,11 @@ type Course struct {
 	VODEnabled          bool
 	DownloadsEnabled    bool
 	ChatEnabled         bool
+	VodChatEnabled      bool
 	Visibility          string //public, loggedin or enrolled
 	Streams             []Stream
 	Users               []User `gorm:"many2many:course_users;"`
+	Token               string
 }
 
 // CompareTo used for sorting. Falling back to old java habits...

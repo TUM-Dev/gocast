@@ -26,6 +26,8 @@ import (
 )
 
 func configGinCourseRouter(router *gin.Engine) {
+	router.GET("/api/course-by-token", courseByToken)
+	router.GET("/api/lecture-halls-by-token", lectureHallsByToken)
 	atLeastLecturerGroup := router.Group("/")
 	atLeastLecturerGroup.Use(tools.AtLeastLecturer)
 	atLeastLecturerGroup.POST("/api/courseInfo", courseInfo)
@@ -42,6 +44,55 @@ func configGinCourseRouter(router *gin.Engine) {
 	adminOfCourseGroup.POST("/submitCut", submitCut)
 	adminOfCourseGroup.POST("/deleteUnit/:unitID", deleteUnit)
 	adminOfCourseGroup.GET("/stats", getStats)
+}
+
+func lectureHallsByToken(c *gin.Context) {
+	res := map[uint][]model.CameraPreset{}
+	err := c.Request.ParseForm()
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	token := c.Request.Form.Get("token")
+	if len([]rune(token)) != 15 {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	course, err := dao.GetCourseByToken(token)
+	lectureHallIDs := map[uint]bool{}
+	for _, s := range course.Streams {
+		lectureHallIDs[s.LectureHallID] = true
+	}
+	for u := range lectureHallIDs {
+		lh, err := dao.GetLectureHallByID(u)
+		if err != nil {
+			log.WithError(err).Error("Can't fetch lecture hall for stream")
+		} else {
+			res[lh.ID] = lh.CameraPresets
+		}
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func courseByToken(c *gin.Context) {
+	err := c.Request.ParseForm()
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	token := c.Request.Form.Get("token")
+	if len([]rune(token)) != 15 {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	course, err := dao.GetCourseByToken(token)
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	c.JSON(http.StatusOK, course)
 }
 
 func submitCut(c *gin.Context) {

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Course | TUM Live</title>
+    {{- /*gotype: TUM-Live/web.editCourseByTokenPageData*/ -}}
+    {{template "headImports" .IndexData.VersionTag}}
+</head>
+<body>
+{{template "header" .IndexData.TUMLiveContext}}
+<div class="w-full md:w-1/2 2xl:max-w-screen-xl mx-auto p-6 text-3"
+     x-data="{loading: true, token: '{{.Token}}', course:undefined}"
+     x-init="fetch(`/api/course-by-token?token=${token}`).then(resp => resp.json()).then(data => {course = data; loading=false})">
+    <template x-if="!loading">
+        <form>
+            <div>
+                <p class="text-lg ">General settings:</p>
+                <label class="ml-2">
+                    <input class="w-auto" type="checkbox" x-model="course.LiveEnabled">
+                    <span class="text-5">Enable Livestreams</span>
+                </label>
+                <br>
+                <label class="ml-2">
+                    <input class="w-auto" type="checkbox" x-model="course.VODEnabled">
+                    <span class="text-5">Enable Video on Demand</span>
+                </label><br>
+            </div>
+            <div x-show="course.LiveEnabled || course.VODEnabled">
+                <div class="mt-2">
+                    <p>Chat</p>
+                    <label class="ml-2">
+                        <input class="w-auto" type="checkbox" x-model="course.ChatEnabled">
+                        <span class="text-5">Enable Live Chat</span>
+                    </label>
+                    <br>
+                    <label class="ml-2" x-show="course.VODEnabled">
+                        <input class="w-auto" type="checkbox" x-model="course.VodChatEnabled">
+                        <span class="text-5">Enable VOD Chat</span>
+                    </label>
+                </div>
+                <div class="mt-2" x-show="course.VODEnabled">
+                    <p>Downloads</p>
+                    <label class="ml-2">
+                        <input class="w-auto" type="checkbox" x-model="course.DownloadsEnabled">
+                        <span class="text-5">Enable Downloads</span>
+                        <template x-if="!course.DownloadsEnabled">
+                            <span class="text-warn"><br>Enabling this helps students with weak internet - especially in remote lectures.</span>
+                        </template>
+                    </label>
+                    <br>
+                </div>
+                <div class="mt-2">
+                    <label>
+                        <span>Visibility:</span><br>
+                        <select x-model="course.Visibility"
+                                class="text-gray-300 dark:bg-secondary bg-gray-100 p-2 ml-2">
+                            <option>loggedin</option>
+                            <option>public</option>
+                            <option>enrolled</option>
+                            <option>hidden</option>
+                        </select>
+                        <span x-show="course.Visibility=='public'">The course is visible to everyone.</span>
+                        <span x-show="course.Visibility=='loggedin'">The course is visible to everyone logged in with their TUM login.</span>
+                        <span x-show="course.Visibility=='enrolled'">The course is visible to everyone enrolled to the course in TUMOnline.</span>
+                        <span x-show="course.Visibility=='hidden'">The course is visible to everyone with this link:<br>
+                            <a class="underline"
+                               :href="`https://live.rbg.tum.de/course/${course.Year}/${course.TeachingTerm}/${course.Slug}`"
+                               x-text="`https://live.rbg.tum.de/course/${course.Year}/${course.TeachingTerm}/${course.Slug}`"></a>
+                        </span>
+                    </label>
+
+                </div>
+                <div class="mt-2">
+                    <label>
+                        <span class="text-lg">Course Name:</span>
+                        <input class="ml-2 text-sm pt-1" x-model="course.Name">
+                    </label>
+                </div>
+            </div>
+            <div x-data="{halls:[]}" x-init="fetch(`/api/lecture-halls-by-token?token=${token}`).then(r=>r.json()).then(d=>halls=d)">
+
+            </div>
+            <button class="h-10 px-5 m-2 float-right transition-colors duration-150 rounded-lg focus:shadow-outline disabled:bg-blue-300"
+                    :class="(course.LiveEnabled || course.VODEnabled)?'text-blue-100 bg-blue-600 hover:bg-blue-700':'text-red-100 bg-red-600 hover:bg-red-700'"
+                    :disabled="loading"><span x-text="(course.LiveEnabled || course.VODEnabled)?'Save':'Delete Course'"></span>
+            </button>
+        </form>
+    </template>
+</div>
+</body>
+</html>

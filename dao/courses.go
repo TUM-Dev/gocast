@@ -111,7 +111,12 @@ func GetPublicCourses(year int, term string) (courses []model.Course, err error)
 	return publicCourses, err
 }
 
-func GetCourseById(ctx context.Context, id uint) (courses model.Course, err error) {
+func GetCourseByToken(token string) (course model.Course, err error) {
+	err = DB.Preload("Streams").First(&course, "token = ?", token).Error
+	return
+}
+
+func GetCourseById(ctx context.Context, id uint) (course model.Course, err error) {
 	var foundCourse model.Course
 	dbErr := DB.Preload("Streams.Stats").Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("streams.start asc")

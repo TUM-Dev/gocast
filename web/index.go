@@ -170,6 +170,19 @@ func NewIndexData() IndexData {
 	}
 }
 
+func NewIndexDataWithContext(c *gin.Context) IndexData {
+	indexData := IndexData{
+		VersionTag: VersionTag,
+	}
+	var tumLiveContext tools.TUMLiveContext
+	tumLiveContextQueried, found := c.Get("TUMLiveContext")
+	if found {
+		tumLiveContext = tumLiveContextQueried.(tools.TUMLiveContext)
+		indexData.TUMLiveContext = tumLiveContext
+	}
+	return indexData
+}
+
 type CourseStream struct {
 	Course model.Course
 	Stream model.Stream

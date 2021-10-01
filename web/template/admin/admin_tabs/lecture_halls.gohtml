@@ -44,8 +44,9 @@
                         <div class="flex flex-row mt-6">
                             <div class="w-1/4 font-semibold text-1">
                                 <p class="mb-2">Presets:</p>
-                                <a title="Refresh list" class="py-1 px-2 text-white rounded bg-info">
-                                    <i class="fas fa-sync"></i>
+                                <a x-data="{loading:false}" title="Refresh list" class="py-1 px-2 text-white rounded bg-info cursor-pointer"
+                                   @click="loading=true;fetch('/api/refreshLectureHallPresets/{{$lectureHall.Model.ID}}').then(d=>d.status==200?window.location.reload():alert('there was an error'))">
+                                    <i class="fas fa-sync" :class="loading?'animate animate-spin':''"></i>
                                 </a>
                             </div>
                             <div class="w-3/4 flex align-middle">

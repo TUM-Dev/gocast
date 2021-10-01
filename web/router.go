@@ -34,6 +34,7 @@ func configGinStaticRouter(router gin.IRoutes) {
 	})
 }
 
+//todo: un-export functions
 func configMainRoute(router *gin.Engine) {
 	streamGroup := router.Group("/")
 
@@ -76,6 +77,7 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/healthcheck", HealthCheck)
 
 	router.GET("/:shortLink", HighlightPage)
+	router.GET("/edit-course", editCourseByTokenPage)
 
 	// redirect from old site:
 	router.GET("/cgi-bin/streams/*x", func(c *gin.Context) {

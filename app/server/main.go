@@ -114,6 +114,7 @@ func main() {
 		&model.CameraPreset{},
 		&model.ServerNotification{},
 		&model.File{},
+		&model.Mail{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
