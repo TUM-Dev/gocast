@@ -9,10 +9,10 @@
 <body>
 {{template "header" .IndexData.TUMLiveContext}}
 <div class="w-full md:w-1/2 2xl:max-w-screen-xl mx-auto p-6 text-3"
-     x-data="{loading: true, token: '{{.Token}}', course:undefined}"
+     x-data="{loading: true, token: '{{.Token}}', course:undefined, halls: [], adminEmail: '', adminName: '', expandWhyEmail: false, step: 1, status: 0}"
      x-init="fetch(`/api/course-by-token?token=${token}`).then(resp => resp.json()).then(data => {course = data; loading=false})">
-    <template x-if="!loading">
-        <form>
+    <template x-if="!loading && step==1">
+        <form x-on:submit.prevent="">
             <div>
                 <p class="text-lg ">General settings:</p>
                 <label class="ml-2">
@@ -50,15 +50,23 @@
                     <br>
                 </div>
                 <div class="mt-2">
-                    <label>
-                        <span>Visibility:</span><br>
+                    <span>Visibility:</span><br>
+                    <div class="relative inline-block w-full text-gray-700 my-2 mx-2">
                         <select x-model="course.Visibility"
-                                class="text-gray-300 dark:bg-secondary bg-gray-100 p-2 ml-2">
-                            <option>loggedin</option>
+                                class="w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 border rounded-lg appearance-none focus:shadow-outline">
                             <option>public</option>
+                            <option>loggedin</option>
                             <option>enrolled</option>
                             <option>hidden</option>
                         </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                      clip-rule="evenodd" fill-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-2">
                         <span x-show="course.Visibility=='public'">The course is visible to everyone.</span>
                         <span x-show="course.Visibility=='loggedin'">The course is visible to everyone logged in with their TUM login.</span>
                         <span x-show="course.Visibility=='enrolled'">The course is visible to everyone enrolled to the course in TUMOnline.</span>
@@ -67,25 +75,75 @@
                                :href="`https://live.rbg.tum.de/course/${course.Year}/${course.TeachingTerm}/${course.Slug}`"
                                x-text="`https://live.rbg.tum.de/course/${course.Year}/${course.TeachingTerm}/${course.Slug}`"></a>
                         </span>
-                    </label>
-
+                    </div>
                 </div>
                 <div class="mt-2">
                     <label>
                         <span class="text-lg">Course Name:</span>
-                        <input class="ml-2 text-sm pt-1" x-model="course.Name">
+                        <input class="ml-2 text-sm pt-1" x-model="course.Name"
+                               :class="(course.Name=='')?'border-danger focus:boder-danger':''">
                     </label>
                 </div>
+                <div class="mt-2"
+                     x-init="fetch(`/api/lecture-halls-by-token?token=${token}`).then(r=>r.json()).then(d=>halls=d)">
+                    <p class="text-lg">Camera Presets</p>
+                    <template x-for="hall in halls">
+                        <div class="ml-2"
+                             @index-selected.window="if($event.detail.name===hall.lecture_hall_name){hall.selected_index=$event.detail.id}">
+                            <p class="font-semibold" x-text="hall.lecture_hall_name"></p>
+                            <p class="font-semibold text-danger" x-show="hall.selected_index===0">No preset selected</p>
+                            <p class="text-green-400"
+                               x-show="hall.selected_index!==0&&hall.presets.length>=hall.selected_index"
+                               x-text="`currently selected: ${hall.presets[hall.selected_index-1].Name}`"></p>
+                            <div class="overflow-x-scroll flex flex-row gap-x-2">
+                                <template x-for="preset in hall.presets">
+                                    <div class="text-center relative group">
+                                        <img :src="`/public/${preset.Image}`" alt="Preview" style="min-width: 250px;"
+                                             width="250px">
+                                        <label class="truncate block my-2">
+                                            <input @change="$dispatch('index-selected', {id: preset.PresetID, name: hall.lecture_hall_name})"
+                                                   type="radio"
+                                                   class="w-auto"
+                                                   :name="`preset${hall.lecture_hall_name.replace(/\s+/g, '')}`">
+                                            <span x-text="preset.Name"></span>
+                                        </label>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <div class="mt-2">
+                    <p class="text-lg">Administration</p>
+                    <label class="ml-2" x-show="!course.UserCreatedByToken">
+                        Create an administrative account registered to this email address: <span
+                                class="underline cursor-pointer" @click="expandWhyEmail=true" x-show="!expandWhyEmail">why?</span>:
+                        <input type="email" x-model="adminEmail" placeholder="erika.musterfrau@tum.de">
+                        <span class="text-warn" x-show="expandWhyEmail">
+                            An admin account allows you to edit your lectures at any time, see them if they are private,
+                            access statistics, participate in the chat as admin and moderate it,
+                            stream from home with OBS or ZOOM and more.
+                        <span class="underline cursor-pointer" @click="expandWhyEmail=false"> got it</span></span>
+                        <input type="text" x-model="adminName" placeholder="Team Einführung in die Informatik"
+                               :class="(adminEmail!='' && adminName=='')?'border-danger focus:boder-danger':''">
+                    </label>
+                    <p x-show="course.UserCreatedByToken" class="text-warn">An admin user was already created for this
+                        course.</p>
+                </div>
             </div>
-            <div x-data="{halls:[]}" x-init="fetch(`/api/lecture-halls-by-token?token=${token}`).then(r=>r.json()).then(d=>halls=d)">
 
-            </div>
             <button class="h-10 px-5 m-2 float-right transition-colors duration-150 rounded-lg focus:shadow-outline disabled:bg-blue-300"
                     :class="(course.LiveEnabled || course.VODEnabled)?'text-blue-100 bg-blue-600 hover:bg-blue-700':'text-red-100 bg-red-600 hover:bg-red-700'"
-                    :disabled="loading"><span x-text="(course.LiveEnabled || course.VODEnabled)?'Save':'Delete Course'"></span>
+                    :disabled="loading || (!course.UserCreatedByToken && adminEmail!='' && adminName=='') || course.Name == ''"
+                    @click="fetch(`/api/course-by-token`, {method:'POST', body: JSON.stringify({course: course, token: token, halls: halls, adminEmail: adminEmail, adminName: adminName})}).then(r=> {status = r.status;step++}).catch(err => step++)">
+                <span x-text="(course.LiveEnabled || course.VODEnabled)?'Save':'Delete Course'"></span>
             </button>
         </form>
     </template>
+    <div x-show="step==2 && status === 200" class="text-green-400 text-center w-full">Your changes have been saved successfully.</div>
+    <div x-show="step==2 && status !== 200" class="text-danger text-center w-full">There was an issue saving your changes, please reach
+        out to us. <span x-text="` status: ${status}`"></span>
+    </div>
 </div>
 </body>
 </html>

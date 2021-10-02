@@ -16,6 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"text/template"
@@ -58,6 +59,7 @@ func refreshLectureHallPresets(c *gin.Context) {
 }
 
 func postSchedule(c *gin.Context) {
+	resp := ""
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -78,8 +80,10 @@ func postSchedule(c *gin.Context) {
 		return
 	}
 	for _, courseReq := range req {
+		if !courseReq.Import {
+			continue
+		}
 		token := strings.ReplaceAll(uuid.NewV4().String(), "-", "")[:15]
-
 		course := model.Course{
 			UserID:              tumLiveContext.User.ID,
 			Name:                courseReq.Title,
@@ -107,12 +111,49 @@ func postSchedule(c *gin.Context) {
 			streams = append(streams, model.Stream{
 				Start:         event.Start,
 				End:           event.End,
+				RoomName:      event.RoomName,
 				LectureHallID: lectureHall.ID,
 			})
 		}
 		course.Streams = streams
-		log.Println(token)
+		err := dao.CreateCourse(c, course)
+		if err != nil {
+			resp += err.Error()
+		} else {
+			name := ""
+			mail := ""
+			for _, contact := range courseReq.Contacts {
+				if contact.MainContact {
+					name = contact.FirstName + " " + contact.LastName
+					mail = contact.Email
+					break
+				}
+			}
+			notifyCourseCreated(MailTmpl{
+				Name:   name,
+				Course: course,
+			}, mail)
+		}
 	}
+	if resp != "" {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, resp)
+	}
+}
+
+type MailTmpl struct {
+	Name   string
+	Course model.Course
+}
+
+func notifyCourseCreated(d MailTmpl, mail string) error {
+	templ, err := template.ParseFS(staticFS, "template/*.gotemplate")
+	if err != nil {
+		return err
+	}
+	log.Println(mail)
+	_ = templ.ExecuteTemplate(os.Stdout, "mail-course-registered.gotemplate", d)
+
+	return nil
 }
 
 func getSchedule(c *gin.Context) {
@@ -157,14 +198,12 @@ func getSchedule(c *gin.Context) {
 	}
 	for _, crs := range courses {
 		courseSlug := ""
-		print(crs.Title)
 		for _, l := range strings.Split(crs.Title, " ") {
 			runes := []rune(l)
 			if len(runes) != 0 && (unicode.IsNumber(runes[0]) || unicode.IsLetter(runes[0])) {
 				courseSlug += string(runes[0])
 			}
 		}
-		println(": ", courseSlug)
 	}
 	c.JSON(http.StatusOK, courses)
 }

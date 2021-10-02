@@ -28,6 +28,7 @@ import (
 func configGinCourseRouter(router *gin.Engine) {
 	router.GET("/api/course-by-token", courseByToken)
 	router.GET("/api/lecture-halls-by-token", lectureHallsByToken)
+	router.POST("/api/course-by-token", courseByTokenPost)
 	atLeastLecturerGroup := router.Group("/")
 	atLeastLecturerGroup.Use(tools.AtLeastLecturer)
 	atLeastLecturerGroup.POST("/api/courseInfo", courseInfo)
@@ -46,8 +47,80 @@ func configGinCourseRouter(router *gin.Engine) {
 	adminOfCourseGroup.GET("/stats", getStats)
 }
 
+type courseByTokenReq struct {
+	AdminEmail string       `json:"adminEmail"`
+	AdminName  string       `json:"adminName"`
+	Course     model.Course `json:"course"`
+	Halls      []lhResp     `json:"halls"`
+	Token      string       `json:"token"`
+}
+
+func courseByTokenPost(c *gin.Context) {
+	var req courseByTokenReq
+	err := c.BindJSON(&req)
+	if err != nil {
+		return
+	}
+	course, err := dao.GetCourseByToken(req.Token)
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	if !(req.Course.VODEnabled || req.Course.LiveEnabled) {
+		dao.DeleteCourse(course)
+		return
+	}
+
+	var user model.User
+	if req.AdminEmail != "" && !course.UserCreatedByToken {
+		user, err = dao.GetUserByEmail(c, req.AdminEmail)
+		if err != nil {
+			user, err = createUserHelper(createUserRequest{
+				Name:     req.AdminName,
+				Email:    req.AdminEmail,
+				Password: "",
+			}, model.LecturerType)
+			if err != nil {
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+		}
+		course.UserCreatedByToken = true
+	}
+	var presetSettings []model.CameraPresetPreference
+	for _, hall := range req.Halls {
+		presetSettings = append(presetSettings, model.CameraPresetPreference{
+			LectureHallID: hall.Presets[hall.SelectedIndex-1].LectureHallId, // index count starts at 1
+			PresetID:      hall.SelectedIndex,
+		})
+	}
+	course.Visibility = req.Course.Visibility
+	course.VODEnabled = req.Course.VODEnabled
+	course.LiveEnabled = req.Course.LiveEnabled
+	course.ChatEnabled = req.Course.ChatEnabled
+	course.VODEnabled = req.Course.VODEnabled
+	course.DownloadsEnabled = req.Course.DownloadsEnabled
+	course.Name = req.Course.Name
+
+	course.SetCameraPresetPreference(presetSettings)
+	course.UserID = user.ID
+
+	err = dao.UpdateCourse(c, course)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	log.Info(c)
+}
+
+type lhResp struct {
+	LectureHallName string               `json:"lecture_hall_name"`
+	Presets         []model.CameraPreset `json:"presets"`
+	SelectedIndex   int                  `json:"selected_index"`
+}
+
 func lectureHallsByToken(c *gin.Context) {
-	res := map[uint][]model.CameraPreset{}
+	var res []lhResp
 	err := c.Request.ParseForm()
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -58,20 +131,37 @@ func lectureHallsByToken(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-
 	course, err := dao.GetCourseByToken(token)
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
 	lectureHallIDs := map[uint]bool{}
 	for _, s := range course.Streams {
-		lectureHallIDs[s.LectureHallID] = true
+		if s.LectureHallID != 0 {
+			lectureHallIDs[s.LectureHallID] = true
+		}
 	}
 	for u := range lectureHallIDs {
 		lh, err := dao.GetLectureHallByID(u)
 		if err != nil {
 			log.WithError(err).Error("Can't fetch lecture hall for stream")
 		} else {
-			res[lh.ID] = lh.CameraPresets
+			res = append(res, lhResp{
+				LectureHallName: lh.Name,
+				Presets:         lh.CameraPresets,
+			})
 		}
 	}
+	for _, preference := range course.GetCameraPresetPreference() {
+		for i, re := range res {
+			if len(re.Presets) != 0 && re.Presets[0].LectureHallId == preference.LectureHallID {
+				res[i].SelectedIndex = preference.PresetID
+				break
+			}
+		}
+	}
+
 	c.JSON(http.StatusOK, res)
 }
 

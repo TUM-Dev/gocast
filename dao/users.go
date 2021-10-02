@@ -22,7 +22,7 @@ func AreUsersEmpty(ctx context.Context) (isEmpty bool, err error) {
 	return res.RowsAffected == 0, res.Error
 }
 
-func CreateUser(ctx context.Context, user model.User) (err error) {
+func CreateUser(ctx context.Context, user *model.User) (err error) {
 	res := DB.Create(&user)
 	return res.Error
 }

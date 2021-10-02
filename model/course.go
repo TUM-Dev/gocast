@@ -1,28 +1,54 @@
 package model
 
 import (
+	"encoding/json"
 	"gorm.io/gorm"
+	"log"
 	"time"
 )
 
 type Course struct {
 	gorm.Model
 
-	UserID              uint
-	Name                string
-	Slug                string //eg. eidi
-	Year                int    // eg. 2021
-	TeachingTerm        string //eg. Summer/Winter
-	TUMOnlineIdentifier string
-	LiveEnabled         bool `gorm:"default:true"`
-	VODEnabled          bool
-	DownloadsEnabled    bool
-	ChatEnabled         bool
-	VodChatEnabled      bool
-	Visibility          string //public, loggedin or enrolled
-	Streams             []Stream
-	Users               []User `gorm:"many2many:course_users;"`
-	Token               string
+	UserID                  uint
+	Name                    string
+	Slug                    string // eg. eidi
+	Year                    int    // eg. 2021
+	TeachingTerm            string // eg. Summer/Winter
+	TUMOnlineIdentifier     string
+	LiveEnabled             bool `gorm:"default:true"`
+	VODEnabled              bool
+	DownloadsEnabled        bool
+	ChatEnabled             bool
+	VodChatEnabled          bool
+	Visibility              string // public, loggedin or enrolled
+	Streams                 []Stream
+	Users                   []User `gorm:"many2many:course_users;"`
+	Token                   string
+	UserCreatedByToken      bool   `gorm:"default:false"`
+	CameraPresetPreferences string // json encoded. e.g. [{lectureHallID:1, presetID:4}, ...]
+}
+
+type CameraPresetPreference struct {
+	LectureHallID uint `json:"lecture_hall_id"`
+	PresetID      int  `json:"preset_id"`
+}
+
+func (c Course) GetCameraPresetPreference() []CameraPresetPreference {
+	var res []CameraPresetPreference
+	err := json.Unmarshal([]byte(c.CameraPresetPreferences), &res)
+	if err != nil {
+		return []CameraPresetPreference{}
+	}
+	return res
+}
+
+func (c *Course) SetCameraPresetPreference(pref []CameraPresetPreference) {
+	pBytes, err := json.Marshal(pref)
+	if err != nil {
+		log.Println(err)
+	}
+	c.CameraPresetPreferences = string(pBytes)
 }
 
 // CompareTo used for sorting. Falling back to old java habits...

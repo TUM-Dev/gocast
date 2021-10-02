@@ -1,11 +1,11 @@
 English version below
 
 Hallo {{.Name}},
-Sie erhalten diese Nachricht, weil Sie als Verantwortliche/r in TUMOnline für den Kurs {{.CourseName}} eingetragen sind,
-der in einem von uns mit Livestreaming-hardware ausgestatteten Raum statt findet.
+Sie erhalten diese Nachricht, weil Sie als Verantwortliche/r in TUMOnline für den Kurs "{{.Course.Name}}" eingetragen sind,
+der in einem von uns mit Livestreaming-hardware ausgestatteten Raum statt findet. Sollten sie hierfür nicht verantwortlich sein, lassen Sie es uns bitte schnellstmöglich wissen.
 Wir haben Ihren Kurs automatisch in unser System TUM-Live (live.rbg.tum.de) für Livestreaming und Video on Demand eingetragen.
 Sollten Sie dies nicht wünschen oder an den Einstellungen Änderungen vornehmen wollen nutzen Sie bitte diesen Link:
-{{.Link}}
+https://live.rbg.tum.de/edit-course/?token={{.Course.Token}}
 Falls Sie weitere Fragen haben sind wir jederzeit unter live@rbg.tum.de erreichbar.
 
 Mit freundlichen Grüßen,
@@ -14,11 +14,11 @@ RBG Multimedia
 =======================
 
 Dear {{.Name}},
-This message was sent to you because you are listed as responsible for the course {{.CourseName}} in TUMOnline which will
+This message was sent to you because you are listed as responsible for the course "{{.Course.Name}}" in TUMOnline which will
 take place in a room equipped with our livestreaming hardware. Therefore we registered your lectures in TUM-Live (live.rbg.tum.de)
 for livestreaming and video on demand.
 If you want to change any of the settings below you can use this link:
-{{.Link}}
+https://live.rbg.tum.de/edit-course/?token={{.Course.Token}}
 For any further questions or help please reach out to us at live@rbg.tum.de.
 
 Best,
@@ -28,12 +28,9 @@ Settings:
     - Livestreaming: Yes
     - Video on Demand: Yes
     - Downloads: No
-    - Visibility: Enrolled students
+    - Visibility: TUM-Students
     - Chat: No
 
-Termine:
-    {{range $stream := .Streams}}
-        Mo. 20.10.2020 14:00, Interims I 101
+Lectures:
+    {{range $stream := .Course.Streams}}- {{$stream.FriendlyTime}} | {{$stream.RoomName}}
     {{end}}
-
-

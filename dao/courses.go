@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/getsentry/sentry-go"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"time"
 )
@@ -109,6 +110,19 @@ func GetPublicCourses(year int, term string) (courses []model.Course, err error)
 		Cache.SetWithTTL(fmt.Sprintf("publicCourses%v%v", year, term), publicCourses, 1, time.Minute)
 	}
 	return publicCourses, err
+}
+
+func DeleteCourse(course model.Course) {
+	for _, stream := range course.Streams {
+		err := DB.Delete(&stream).Error
+		if err!=nil{
+			log.WithError(err).Error("Can't delete stream")
+		}
+	}
+	err := DB.Delete(&course).Error
+	if err != nil {
+		log.WithError(err).Error("Can't delete course")
+	}
 }
 
 func GetCourseByToken(token string) (course model.Course, err error) {

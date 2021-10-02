@@ -80,6 +80,10 @@ func (s Stream) IsoEnd() string {
 	return s.End.Format("20060102T150405")
 }
 
+func (s Stream) FriendlyTime() string {
+	return s.Start.Format("02.01.2006 15:04") + " - " + s.End.Format("15:04")
+}
+
 func (s Stream) IsoCreated() string {
 	return s.Model.CreatedAt.Format("20060102T150405")
 }

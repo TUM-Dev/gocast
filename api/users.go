@@ -106,7 +106,7 @@ func addSingleUserToCourse(name string, email string, course model.Course) {
 			Password: "",
 			Courses:  []model.Course{course},
 		}
-		if err = dao.CreateUser(context.Background(), createdUser); err != nil {
+		if err = dao.CreateUser(context.Background(), &createdUser); err != nil {
 			log.Printf("%v", err)
 		} else {
 			go forgotPassword(email)
@@ -121,7 +121,7 @@ func addSingleUserToCourse(name string, email string, course model.Course) {
 		}
 		err = tools.SendPasswordMail(email,
 			fmt.Sprintf("Hello!\n"+
-				"You have been invited to participate in the course \"%v\" on TUM-Live. Check it out at <a href=\"https://live.mm.rbg.tum.de/\">https://live.mm.rbg.tum.de/</a>",
+				"You have been invited to participate in the course \"%v\" on TUM-Live. Check it out at https://live.rbg.tum.de/",
 				course.Name))
 		if err != nil {
 			log.Printf("%v", err)
@@ -166,7 +166,7 @@ func createUserHelper(request createUserRequest, userType int) (user model.User,
 			return u, errors.New("user could not be created")
 		}
 	}
-	dbErr := dao.CreateUser(context.Background(), u)
+	dbErr := dao.CreateUser(context.Background(), &u)
 	if dbErr != nil {
 		return u, errors.New("user could not be created")
 	}
@@ -188,9 +188,9 @@ func forgotPassword(email string) {
 		return
 	}
 	log.Printf("register link: %v\n", registerLink)
-	body := fmt.Sprintf("Hello!<br>\n"+
-		"You have been invited to use TUM-Live. You can set a password for your account here: <a href=\"https://live.mm.rbg.tum.de/setPassword/%v\">https://live.mm.rbg.tum.de/setPassword/%v</a>.</br>\n"+
-		"If you have any further questions please reach out to <a href=\"multimedia@rbg.in.tum.de\">multimedia@rbg.in.tum.de</a>", registerLink.RegisterSecret, registerLink.RegisterSecret)
+	body := fmt.Sprintf("Hello!\n"+
+		"You have been invited to use TUM-Live. You can set a password for your account here: https://live.rbg.tum.de/setPassword/%v\n"+
+		"If you have any further questions please reach out to live@rbg.tum.de", registerLink.RegisterSecret)
 	err = tools.SendPasswordMail(email, body)
 }
 
