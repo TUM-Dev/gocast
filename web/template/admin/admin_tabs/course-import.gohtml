@@ -115,8 +115,12 @@
                 </template>
             </div>
         </div>
+        <div x-show="status!=0" x-data="{status: 0}" x-on:imported.window="status = $event.detail">
+            <span x-show="status==200" class="text-green-400 text-center">Courses imported successfully.</span>
+            <span x-show="status!=200" class="text-danger text-center">There was an error importing the courses, code: <span x-text="status"></span></span>
+        </div>
         <button class="h-10 px-5 m-2 float-right text-blue-100 transition-colors duration-150 bg-blue-600 rounded-lg focus:shadow-outline hover:bg-blue-700 disabled:bg-blue-300"
                 @click="step++; $dispatch(`notify${step}`)" :disabled="loading"><span
-                    x-text="step==0?'Start':(step==1?'Overview':'Confirm')"></span></button>
+                    x-text="step==0?'Start':(step==1?'Import':'Return to homepage')"></span></button>
     </div>
 {{end}}

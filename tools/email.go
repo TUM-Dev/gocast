@@ -3,6 +3,7 @@ package tools
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"net/smtp"
 	"os/exec"
 	"strings"
@@ -16,6 +17,8 @@ func SendPasswordMail(to string, body string) error {
 }
 
 func SendMail(addr, from, subject, body string, to []string) error {
+	log.Printf("sending mail to %v, subject: %s body:\n%s", to, subject, body)
+
 	r := strings.NewReplacer("\r\n", "", "\r", "", "\n", "", "%0a", "", "%0d", "")
 
 	c, err := smtp.Dial(addr)

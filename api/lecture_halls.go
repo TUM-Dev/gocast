@@ -129,10 +129,13 @@ func postSchedule(c *gin.Context) {
 					break
 				}
 			}
-			notifyCourseCreated(MailTmpl{
+			err := notifyCourseCreated(MailTmpl{
 				Name:   name,
 				Course: course,
 			}, mail, fmt.Sprintf("Vorlesungsübertragung %s | Lecture streaming %s", course.Name, course.Name))
+			if err != nil {
+				log.WithFields(log.Fields{"course": course.Name, "email": mail}).WithError(err).Error("cant send email")
+			}
 		}
 	}
 	if resp != "" {
@@ -153,8 +156,7 @@ func notifyCourseCreated(d MailTmpl, mailAddr string, subject string) error {
 	log.Println(mailAddr)
 	var body bytes.Buffer
 	_ = templ.ExecuteTemplate(&body, "mail-course-registered.gotemplate", d)
-	log.Println(body.String())
-	return nil
+	return tools.SendMail(tools.Cfg.MailServer, "live@rbg.tum.de", subject, body.String(), []string{mailAddr})
 }
 
 func getSchedule(c *gin.Context) {
