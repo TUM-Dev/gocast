@@ -21,6 +21,15 @@ func SendMail(addr, from, subject, body string, to []string) error {
 
 	r := strings.NewReplacer("\r\n", "", "\r", "", "\n", "", "%0a", "", "%0d", "")
 
+	signed, err := openssl([]byte(body), "smime", "-text", "-sign", "-signer", Cfg.SMIMECert, "-inkey", Cfg.SMIMEKey)
+	if err != nil {
+		fmt.Printf("can't encrypt: %v", err)
+	}
+	msg := "To: " + strings.Join(to, ",") + "\r\n" +
+		"From: " + from + "\r\n" +
+		"Subject: " + subject + "\r\n" +
+		strings.ReplaceAll(string(signed), "Content-Type: text/plain", "Content-Type: text/plain; charset=UTF-8")
+	// todo: Charset
 	c, err := smtp.Dial(addr)
 	if err != nil {
 		return err
@@ -40,15 +49,6 @@ func SendMail(addr, from, subject, body string, to []string) error {
 	if err != nil {
 		return err
 	}
-
-	signed, err := openssl([]byte(body), "smime", "-text", "-sign", "-signer", Cfg.SMIMECert, "-inkey", Cfg.SMIMEKey)
-	if err != nil {
-		fmt.Printf("can't encrypt: %v", err)
-	}
-	msg := "To: " + strings.Join(to, ",") + "\r\n" +
-		"From: " + from + "\r\n" +
-		"Subject: " + subject + "\r\n" +
-		string(signed)
 
 	_, err = w.Write([]byte(msg))
 	if err != nil {

@@ -1,10 +1,8 @@
 English version below
 
 Hallo {{.Name}},
-Sie erhalten diese Nachricht, weil Sie als Verantwortliche/r in TUMOnline für den Kurs "{{.Course.Name}}" eingetragen sind,
-der in einem von uns mit Livestreaming-hardware ausgestatteten Raum statt findet. Sollten sie hierfür nicht verantwortlich sein, lassen Sie es uns bitte schnellstmöglich wissen.
-Wir haben Ihren Kurs automatisch in unser System TUM-Live (live.rbg.tum.de) für Livestreaming und Video on Demand eingetragen.
-Sollten Sie dies nicht wünschen oder an den Einstellungen Änderungen vornehmen wollen nutzen Sie bitte diesen Link:
+Sie erhalten diese Nachricht, weil Sie als Verantwortliche/r in TUMOnline für den Kurs "{{.Course.Name}}" eingetragen sind, der in einem von uns mit Livestreaming-hardware ausgestatteten Raum statt findet. Sollten sie hierfür nicht verantwortlich sein, lassen Sie es uns bitte schnellstmöglich wissen.
+Wir haben Ihren Kurs automatisch in unser System TUM-Live (live.rbg.tum.de) für Livestreaming und Video on Demand eingetragen, für Sie ändert sich hierdurch am Ablauf der Veranstaltung nichts, der Raum wird zur gebuchten Zeit automatisch übertragen. Sollten Sie dies nicht wünschen oder an den Einstellungen Änderungen vornehmen wollen nutzen Sie bitte diesen Link:
 https://live.rbg.tum.de/edit-course/?token={{.Course.Token}}
 Falls Sie weitere Fragen haben sind wir jederzeit unter live@rbg.tum.de erreichbar.
 
@@ -14,10 +12,8 @@ RBG Multimedia
 =======================
 
 Dear {{.Name}},
-This message was sent to you because you are listed as responsible for the course "{{.Course.Name}}" in TUMOnline which will
-take place in a room equipped with our livestreaming hardware. Therefore we registered your lectures in TUM-Live (live.rbg.tum.de)
-for livestreaming and video on demand.
-If you want to change any of the settings below you can use this link:
+This message was sent to you because you are listed as responsible for the course "{{.Course.Name}}" in TUMOnline which will take place in a room equipped with our livestreaming hardware. If you are not responsible for this course, please forward this email or let us know as soon as possible.
+We registered your lectures in TUM-Live (live.rbg.tum.de) for livestreaming and video on demand. This doesn't affect your lecture: The room will be streamed during the booked timeslot automatically. If you want to change this or any of the settings below you can use this link:
 https://live.rbg.tum.de/edit-course/?token={{.Course.Token}}
 For any further questions or help please reach out to us at live@rbg.tum.de.
 
