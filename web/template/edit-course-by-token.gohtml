@@ -86,15 +86,15 @@
                 </div>
                 <div class="mt-2"
                      x-init="fetch(`/api/lecture-halls-by-token?token=${token}`).then(r=>r.json()).then(d=>halls=d)">
-                    <p class="text-lg">Camera Presets</p>
                     <template x-for="hall in halls">
-                        <div class="ml-2"
+                        <div class="ml-2" x-show="hall.presets.length>0"
                              @index-selected.window="if($event.detail.name===hall.lecture_hall_name){hall.selected_index=$event.detail.id}">
+                            <p class="text-lg">Camera Presets for</p>
                             <p class="font-semibold" x-text="hall.lecture_hall_name"></p>
                             <p class="font-semibold text-danger" x-show="hall.selected_index===0">No preset selected</p>
                             <p class="text-green-400"
                                x-show="hall.selected_index!==0&&hall.presets.length>=hall.selected_index"
-                               x-text="`currently selected: ${hall.presets[hall.selected_index-1].Name}`"></p>
+                               x-text="`currently selected: ${hall.presets.length==0?'':hall.presets[hall.selected_index-1].Name}`"></p>
                             <div class="overflow-x-scroll flex flex-row gap-x-2">
                                 <template x-for="preset in hall.presets">
                                     <div class="text-center relative group">

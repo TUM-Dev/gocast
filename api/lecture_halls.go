@@ -4,6 +4,7 @@ import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
+	"bytes"
 	"context"
 	"embed"
 	"encoding/json"
@@ -16,7 +17,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"text/template"
@@ -132,7 +132,7 @@ func postSchedule(c *gin.Context) {
 			notifyCourseCreated(MailTmpl{
 				Name:   name,
 				Course: course,
-			}, mail)
+			}, mail, fmt.Sprintf("Vorlesungsübertragung %s | Lecture streaming %s", course.Name, course.Name))
 		}
 	}
 	if resp != "" {
@@ -145,14 +145,15 @@ type MailTmpl struct {
 	Course model.Course
 }
 
-func notifyCourseCreated(d MailTmpl, mail string) error {
+func notifyCourseCreated(d MailTmpl, mailAddr string, subject string) error {
 	templ, err := template.ParseFS(staticFS, "template/*.gotemplate")
 	if err != nil {
 		return err
 	}
-	log.Println(mail)
-	_ = templ.ExecuteTemplate(os.Stdout, "mail-course-registered.gotemplate", d)
-
+	log.Println(mailAddr)
+	var body bytes.Buffer
+	_ = templ.ExecuteTemplate(&body, "mail-course-registered.gotemplate", d)
+	log.Println(body.String())
 	return nil
 }
 

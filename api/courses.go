@@ -71,8 +71,8 @@ func courseByTokenPost(c *gin.Context) {
 		return
 	}
 
-	var user model.User
 	if req.AdminEmail != "" && !course.UserCreatedByToken {
+		var user model.User
 		user, err = dao.GetUserByEmail(c, req.AdminEmail)
 		if err != nil {
 			user, err = createUserHelper(createUserRequest{
@@ -86,26 +86,28 @@ func courseByTokenPost(c *gin.Context) {
 			}
 		}
 		course.UserCreatedByToken = true
+		course.UserID = user.ID
 	}
 	var presetSettings []model.CameraPresetPreference
 	for _, hall := range req.Halls {
-		presetSettings = append(presetSettings, model.CameraPresetPreference{
-			LectureHallID: hall.Presets[hall.SelectedIndex-1].LectureHallId, // index count starts at 1
-			PresetID:      hall.SelectedIndex,
-		})
+		if len(hall.Presets) != 0 {
+			presetSettings = append(presetSettings, model.CameraPresetPreference{
+				LectureHallID: hall.Presets[hall.SelectedIndex-1].LectureHallId, // index count starts at 1
+				PresetID:      hall.SelectedIndex,
+			})
+		}
 	}
 	course.Visibility = req.Course.Visibility
 	course.VODEnabled = req.Course.VODEnabled
 	course.LiveEnabled = req.Course.LiveEnabled
 	course.ChatEnabled = req.Course.ChatEnabled
-	course.VODEnabled = req.Course.VODEnabled
+	course.VodChatEnabled = req.Course.VodChatEnabled
 	course.DownloadsEnabled = req.Course.DownloadsEnabled
 	course.Name = req.Course.Name
 
 	course.SetCameraPresetPreference(presetSettings)
-	course.UserID = user.ID
 
-	err = dao.UpdateCourse(c, course)
+	err = dao.UpdateCourseSettings(c, course)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return

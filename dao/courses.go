@@ -115,7 +115,7 @@ func GetPublicCourses(year int, term string) (courses []model.Course, err error)
 func DeleteCourse(course model.Course) {
 	for _, stream := range course.Streams {
 		err := DB.Delete(&stream).Error
-		if err!=nil{
+		if err != nil {
 			log.WithError(err).Error("Can't delete stream")
 		}
 	}
@@ -168,6 +168,21 @@ func GetAllCoursesWithTUMIDForSemester(ctx context.Context, year int, term strin
 func UpdateCourseMetadata(ctx context.Context, course model.Course) {
 	defer Cache.Clear()
 	DB.Save(&course)
+}
+
+func UpdateCourseSettings(ctx context.Context, course model.Course) error {
+	return DB.Model(&course).Updates(map[string]interface{}{
+		"visibility":                course.Visibility,
+		"vod_enabled":               course.VODEnabled,
+		"live_enabled":              course.LiveEnabled,
+		"downloads_enabled":         course.DownloadsEnabled,
+		"chat_enabled":              course.ChatEnabled,
+		"vod_chat_enabled":          course.VodChatEnabled,
+		"name":                      course.Name,
+		"user_id":                   course.UserID,
+		"user_created_by_token":     course.UserCreatedByToken,
+		"camera_preset_preferences": course.CameraPresetPreferences,
+	}).Error
 }
 
 func UpdateCourse(ctx context.Context, course model.Course) error {
