@@ -3,7 +3,7 @@ module TUM-Live
 go 1.17
 
 require (
-	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20211002130915-6d96bc807916
+	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20211002204505-84d9354c1274
 	github.com/RBG-TUM/go-anel-pwrctrl v0.0.0-20210929070211-675c39ef5a84
 	github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769
 	github.com/antchfx/xmlquery v1.3.7

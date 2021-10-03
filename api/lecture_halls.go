@@ -136,6 +136,7 @@ func postSchedule(c *gin.Context) {
 			if err != nil {
 				log.WithFields(log.Fields{"course": course.Name, "email": mail}).WithError(err).Error("cant send email")
 			}
+			time.Sleep(time.Millisecond * 100) // 1/10th second delay, being nice to our mailrelay
 		}
 	}
 	if resp != "" {

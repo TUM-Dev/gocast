@@ -190,6 +190,7 @@ func forgotPassword(email string) {
 	log.Printf("register link: %v\n", registerLink)
 	body := fmt.Sprintf("Hello!\n"+
 		"You have been invited to use TUM-Live. You can set a password for your account here: https://live.rbg.tum.de/setPassword/%v\n"+
+		"After setting a password you can log in with the email this message was sent to. Please note that this is not your TUMOnline account.\n" +
 		"If you have any further questions please reach out to live@rbg.tum.de", registerLink.RegisterSecret)
 	err = tools.SendPasswordMail(email, body)
 }
