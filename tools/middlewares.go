@@ -74,7 +74,7 @@ func InitCourse(c *gin.Context) {
 		return
 	}
 	// check if course is accessible by user:
-	if course.Visibility == "public" || (tumLiveContext.User != nil && tumLiveContext.User.IsEligibleToWatchCourse(course)) {
+	if course.Visibility == "public" || course.Visibility == "hidden" || (tumLiveContext.User != nil && tumLiveContext.User.IsEligibleToWatchCourse(course)) {
 		tumLiveContext.Course = &course
 		c.Set("TUMLiveContext", tumLiveContext)
 	} else if tumLiveContext.User == nil {
@@ -114,7 +114,7 @@ func InitStream(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	if course.Visibility != "public" {
+	if course.Visibility != "public" && course.Visibility != "hidden" {
 		if tumLiveContext.User == nil {
 			c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
 			c.Abort()

@@ -11,7 +11,8 @@
 <div class="w-full md:w-1/2 2xl:max-w-screen-xl mx-auto p-6 text-3"
      x-data="{loading: true, token: '{{.Token}}', course:undefined, halls: [], adminEmail: '', adminName: '', expandWhyEmail: false, step: 1, status: 0}"
      x-init="fetch(`/api/course-by-token?token=${token}`).then(resp => resp.json()).then(data => {course = data; loading=false})">
-    <template x-if="!loading && step==1">
+    <p class="text-danger" x-show="false"> Please enable javascript to use this page.</p>
+    <template x-if="!loading && step==1" x-cloak>
         <form x-on:submit.prevent="">
             <div>
                 <p class="text-lg ">General settings:</p>
@@ -94,10 +95,10 @@
                             <p class="font-semibold text-danger" x-show="hall.selected_index===0">No preset selected</p>
                             <p class="text-green-400"
                                x-show="hall.selected_index!==0&&hall.presets.length>=hall.selected_index"
-                               x-text="`currently selected: ${hall.presets.length==0?'':hall.presets[hall.selected_index-1].Name}`"></p>
+                               x-text="`currently selected: ${hall.presets.length===0||hall.selected_index===0?'':hall.presets[hall.selected_index-1].Name}`"></p>
                             <div class="overflow-x-scroll flex flex-row gap-x-2">
                                 <template x-for="preset in hall.presets">
-                                    <div class="text-center relative group">
+                                    <div class="text-center relative group" x-show="preset.Name!=='gelöscht'">
                                         <img :src="`/public/${preset.Image}`" alt="Preview" style="min-width: 250px;"
                                              width="250px">
                                         <label class="truncate block my-2">
@@ -140,9 +141,14 @@
             </button>
         </form>
     </template>
-    <div x-show="step==2 && status === 200" class="text-green-400 text-center w-full">Your changes have been saved successfully.</div>
-    <div x-show="step==2 && status !== 200" class="text-danger text-center w-full">There was an issue saving your changes, please reach
-        out to us. <span x-text="` status: ${status}`"></span>
+    <div x-show="step==2 && status === 200" class="text-green-400 text-center w-full">
+        <span x-text="'Your changes have been saved successfully'"></span>
+        <span x-show="adminEmail!==''" x-text="', check your mailbox'"></span>
+        <span x-text="'. Reload this page to edit the course again.'"></span>
+    </div>
+    <div x-show="step==2 && status !== 200" class="text-danger text-center w-full">
+        <span x-text="'There was an issue saving your changes, please reach out to us.'"></span>
+            <span x-text="` status: ${status}`"></span>
     </div>
 </div>
 </body>

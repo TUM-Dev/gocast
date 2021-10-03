@@ -90,7 +90,7 @@ func courseByTokenPost(c *gin.Context) {
 	}
 	var presetSettings []model.CameraPresetPreference
 	for _, hall := range req.Halls {
-		if len(hall.Presets) != 0 {
+		if len(hall.Presets) != 0 && hall.SelectedIndex != 0 {
 			presetSettings = append(presetSettings, model.CameraPresetPreference{
 				LectureHallID: hall.Presets[hall.SelectedIndex-1].LectureHallId, // index count starts at 1
 				PresetID:      hall.SelectedIndex,

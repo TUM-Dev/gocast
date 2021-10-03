@@ -212,7 +212,7 @@ func UpdateCourse(c *gin.Context) {
 		return
 	}
 	access := c.PostForm("access")
-	if match, err := regexp.MatchString("(public|loggedin|enrolled)", access); err != nil || !match {
+	if match, err := regexp.MatchString("(public|loggedin|enrolled|hidden)", access); err != nil || !match {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad course id"})
 		return
 	}

@@ -19,6 +19,14 @@
                     {{if .}} {{if eq .Visibility "loggedin"}}checked{{end}}{{end}}>
             <span>Logged in: Only users with a TUM account can see this course</span>
         </label>
+        <label class="inline-flex items-center w-full" for="hidden">
+            <input class="mr-3 w-auto form-radio" type="radio" id="hidden" name="access"
+                   value="hidden"
+                    {{if .}} {{if eq .Visibility "hidden"}}checked{{end}}{{end}}>
+            <span>Hidden: only visible for users with this link: <br><a class="underline"
+                        href="https://live.rbg.tum.de/course/{{.Year}}/{{.TeachingTerm}}/{{.Slug}}">https://live.rbg.tum.de/course/{{.Year}}/{{.TeachingTerm}}/{{.Slug}}</a>
+            </span>
+        </label>
     </div>
     <h3 class="mt-4">Settings</h3>
     <div class="p-4">

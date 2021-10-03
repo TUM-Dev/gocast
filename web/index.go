@@ -87,6 +87,9 @@ func MainPage(c *gin.Context) {
 	for _, stream := range streams {
 		courseForLiveStream, _ := dao.GetCourseById(context.Background(), stream.CourseID)
 		// Todo: refactor into dao
+		if courseForLiveStream.Visibility == "hidden" {
+			continue
+		}
 		if courseForLiveStream.Visibility == "loggedin" && tumLiveContext.User == nil {
 			continue
 		}
