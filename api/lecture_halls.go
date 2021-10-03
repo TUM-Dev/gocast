@@ -132,7 +132,7 @@ func postSchedule(c *gin.Context) {
 			err := notifyCourseCreated(MailTmpl{
 				Name:   name,
 				Course: course,
-			}, mail, fmt.Sprintf("Vorlesungsübertragung %s | Lecture streaming %s", course.Name, course.Name))
+			}, mail, fmt.Sprintf("Vorlesungsstreams %s | Lecture streaming %s", course.Name, course.Name))
 			if err != nil {
 				log.WithFields(log.Fields{"course": course.Name, "email": mail}).WithError(err).Error("cant send email")
 			}
