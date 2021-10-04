@@ -25,6 +25,21 @@
                     </td>
                 </tr>
             {{end}}
+            <tr class="border-gray-500 dark:hover:bg-primary hover:bg-gray-100" x-data="{hostname:'', secret:''}">
+                <td class="py-3 px-6">
+                    <input x-show="secret==''" type="text" placeholder="vmrbg456.in.tum.de" x-model="hostname">
+                    <span x-show="secret!==''" x-text="`secret for setup: ${secret}`"></span>
+                </td>
+                <td class="py-3 px-6"></td>
+                <td class="py-3 px-6"></td>
+                <td class="py-3 px-6">
+                    <button class="bg-blue-600 text-blue-100 disabled:bg-gray-400 px-2 py-1 rounded" :disabled="hostname==''"
+                            @click="secret===''?fetch('/api/worker', {method:'POST', body:JSON.stringify({'hostname': hostname})}).then(r=>r.json()).then(d=>secret=d.workerID):window.location.reload()"
+                            x-text="secret===''?'Create new worker':'got it!'">
+                        Create new worker
+                    </button>
+                </td>
+            </tr>
             </tbody>
         </table>
     </div>

@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+func CreateWorker(worker *model.Worker) error {
+	return DB.Create(worker).Error
+}
+
 func SaveWorker(worker model.Worker) error {
 	return DB.Save(&worker).Error
 }
