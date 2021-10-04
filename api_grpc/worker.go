@@ -22,6 +22,8 @@ import (
 	"time"
 )
 
+var mutex = sync.RWMutex{}
+
 type server struct {
 	pb.UnimplementedFromWorkerServer
 }
@@ -87,6 +89,8 @@ var lightLock = sync.Mutex{}
 // NotifyStreamStart handles workers notification about streams being started
 // Deprecated: this is now "NotifyStreamStarted"
 func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
 	_, err := dao.GetWorkerByID(ctx, request.GetWorkerID())
 	if err != nil {
 		log.WithField("request", request).Warn("Got stream start with invalid WorkerID")
@@ -182,6 +186,8 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 
 //NotifyUploadFinished receives and handles messages from workers about finished uploads
 func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished) (*pb.Status, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
 	if _, err := dao.GetWorkerByID(ctx, req.WorkerID); err != nil {
 		return nil, err
 	}
@@ -206,6 +212,8 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 
 //NotifyStreamStarted receives stream started events from workers
 func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
 	if _, err := dao.GetWorkerByID(ctx, request.WorkerID); err != nil {
 		return nil, err
 	}
