@@ -80,7 +80,7 @@
                     {{else}}
                         <span class="bg-info rounded-full text-gray-200 px-2">Planned</span>
                     {{end}}
-                    {{printf "%v %02d. %v" $lecture.Start.Month $lecture.Start.Day $lecture.Start.Year}}
+                    {{$lecture.FriendlyDate}}
                     {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
                 </p>
             </li>
