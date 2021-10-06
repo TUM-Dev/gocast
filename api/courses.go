@@ -423,7 +423,7 @@ func createCourse(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	match, err := regexp.MatchString("(enrolled|public|loggedin)", req.Access)
+	match, err := regexp.MatchString("(enrolled|public|loggedin|hidden)", req.Access)
 	if err != nil || !match {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
@@ -475,7 +475,7 @@ func createCourse(c *gin.Context) {
 }
 
 type createCourseRequest struct {
-	Access       string //enrolled, public or loggedin
+	Access       string //enrolled, public, hidden or loggedin
 	CourseID     string
 	EnChat       bool
 	EnDL         bool
