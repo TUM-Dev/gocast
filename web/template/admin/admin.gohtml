@@ -17,7 +17,9 @@
 {{template "header" .IndexData.TUMLiveContext}}
 {{- /*gotype: TUM-Live/web.AdminPageData*/ -}}
 <div x-data="{hidden:true}" class="lg:hidden mx-4 mt-4">
-    <button class="bg-gray-200 text-gray-700 rounded shadow px-4 py-1" @click="hidden=!hidden" x-text="hidden?'Open Menu':'Close Menu'">Open Menu</button>
+    <button class="bg-gray-200 text-gray-700 rounded shadow px-4 py-1" @click="hidden=!hidden"
+            x-text="hidden?'Open Menu':'Close Menu'">Open Menu
+    </button>
     <div class="w-full text-1" x-show="!hidden">
         <ul>
             {{if eq $curUser.Role 1}}
@@ -71,14 +73,16 @@
                                     class="relative">Schedule</span></a>
                     </li>
                     {{range $semester := .Semesters}}
-                        <li>
+                        <li x-data="{expanded: {{if not (and (eq $semester.Year $y) (eq $semester.TeachingTerm $t))}}false{{else}}true{{end}}}">
                             <a class="px-3 mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs transition-colors duration-200 text-5"
-                               onclick='toggleSemester({{$semester.Year}}, "{{$semester.TeachingTerm}}")'
-                               href="#"><span
+                               href="#" @click="expanded=!expanded">
+                                <i class="fas fa-chevron-right mr-1 transform" :class="expanded?'rotate-90':''"></i>
+                                <span
                                         class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
                                         class="relative">{{$semester.Year}} - {{$semester.TeachingTerm}}</span></a>
                             <ul id="{{printf "semesterCourses%d%s" $semester.Year $semester.TeachingTerm}}"
-                                class="semesterCourses pl-4 {{if not (and (eq $semester.Year $y) (eq $semester.TeachingTerm $t))}}hidden{{end}}">
+                                class="semesterCourses pl-4"
+                                x-show="expanded">
                                 {{range $course := $courses}}{{if and (eq $course.Year $semester.Year) (eq $course.TeachingTerm $semester.TeachingTerm)}}
                                     <li>
                                         <a class="mx-3 my-2 transition-colors duration-200 {{if eq $page "course"}} {{if eq $indexData.TUMLiveContext.Course.Model.ID $course.Model.ID}}text-1{{else}} text-5 {{end}} {{else}}text-5{{end}} relative block"
@@ -152,14 +156,16 @@
                                             class="relative">Schedule</span></a>
                             </li>
                             {{range $semester := .Semesters}}
-                                <li>
+                                <li x-data="{expanded: {{if not (and (eq $semester.Year $y) (eq $semester.TeachingTerm $t))}}false{{else}}true{{end}}}">
                                     <a class="px-3 mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs transition-colors duration-200 text-5"
-                                       onclick='toggleSemester({{$semester.Year}}, "{{$semester.TeachingTerm}}")'
-                                       href="#"><span
+                                       href="#" @click="expanded=!expanded">
+                                        <i class="fas fa-chevron-right mr-1 transform" :class="expanded?'rotate-90':''"></i>
+                                        <span
                                                 class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
                                                 class="relative">{{$semester.Year}} - {{$semester.TeachingTerm}}</span></a>
                                     <ul id="{{printf "semesterCourses%d%s" $semester.Year $semester.TeachingTerm}}"
-                                        class="semesterCourses pl-4 {{if not (and (eq $semester.Year $y) (eq $semester.TeachingTerm $t))}}hidden{{end}}">
+                                        class="semesterCourses pl-4"
+                                        x-show="expanded">
                                         {{range $course := $courses}}{{if and (eq $course.Year $semester.Year) (eq $course.TeachingTerm $semester.TeachingTerm)}}
                                             <li>
                                                 <a class="mx-3 my-2 transition-colors duration-200 {{if eq $page "course"}} {{if eq $indexData.TUMLiveContext.Course.Model.ID $course.Model.ID}}text-1{{else}} text-5 {{end}} {{else}}text-5{{end}} relative block"
