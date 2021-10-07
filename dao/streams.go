@@ -152,7 +152,8 @@ func UpdateStreamFullAssoc(vod *model.Stream) error {
 }
 
 func SetStreamNotLiveById(streamID uint) error {
-	return DB.Table("streams").Where("id = ?", streamID).Update("live_now", "0").Error
+	defer Cache.Clear()
+	return DB.Exec("UPDATE `streams` SET `live_now`='0' WHERE id = ?", streamID).Error
 }
 
 func SavePauseState(streamid uint, paused bool) error {

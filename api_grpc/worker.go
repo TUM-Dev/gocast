@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-var mutex = sync.RWMutex{}
+var mutex = sync.Mutex{}
 
 type server struct {
 	pb.UnimplementedFromWorkerServer
@@ -127,7 +127,7 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 		if err != nil {
 			log.WithError(err).Error("Can't find stream to set not live")
 		} else {
-			if dao.HasStreamLectureHall(stream.ID) {
+			if stream.LectureHallID != 0 {
 				if lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID); err != nil {
 					return nil, err
 				} else {
@@ -248,7 +248,7 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 	}
 	err = dao.SaveStream(&stream)
 	if err != nil {
-		log.WithError(err).Println("Can't set stream live")
+		log.WithError(err).Error("Can't set stream live")
 		return nil, err
 	}
 	api.NotifyViewersLiveState(stream.Model.ID, true)
