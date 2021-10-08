@@ -91,8 +91,8 @@ func postSchedule(c *gin.Context) {
 			Year:                year,
 			TeachingTerm:        term,
 			TUMOnlineIdentifier: fmt.Sprintf("%d", courseReq.CourseID),
-			LiveEnabled:         true,
-			VODEnabled:          true,
+			LiveEnabled:         false,
+			VODEnabled:          false,
 			DownloadsEnabled:    false,
 			ChatEnabled:         false,
 			Visibility:          "loggedin",
@@ -116,7 +116,8 @@ func postSchedule(c *gin.Context) {
 			})
 		}
 		course.Streams = streams
-		err := dao.CreateCourse(c, course)
+		//todo let user pick keep -> opt in/out
+		err := dao.CreateCourse(c, course, false)
 		if err != nil {
 			resp += err.Error()
 		} else {

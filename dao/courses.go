@@ -119,14 +119,20 @@ func DeleteCourse(course model.Course) {
 			log.WithError(err).Error("Can't delete stream")
 		}
 	}
-	err := DB.Delete(&course).Error
+	err := DB.Model(&course).Updates(map[string]interface{}{"live_enabled": false, "vod_enabled": false}).Error
+	if err!=nil{
+		log.WithError(err).Error("Can't update course settings when deleting")
+	}
+	err = DB.Delete(&course).Error
 	if err != nil {
 		log.WithError(err).Error("Can't delete course")
 	}
 }
 
 func GetCourseByToken(token string) (course model.Course, err error) {
-	err = DB.Preload("Streams").First(&course, "token = ?", token).Error
+	err = DB.Unscoped().
+		Preload("Streams", func(db *gorm.DB) *gorm.DB { return db.Unscoped() }).
+		First(&course, "token = ?", token).Error
 	return
 }
 
@@ -172,6 +178,7 @@ func UpdateCourseMetadata(ctx context.Context, course model.Course) {
 
 func UpdateCourseSettings(ctx context.Context, course model.Course) error {
 	return DB.Model(&course).Updates(map[string]interface{}{
+		"deleted_at":                course.DeletedAt,
 		"visibility":                course.Visibility,
 		"vod_enabled":               course.VODEnabled,
 		"live_enabled":              course.LiveEnabled,
@@ -190,10 +197,20 @@ func UpdateCourse(ctx context.Context, course model.Course) error {
 	return DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&course).Error
 }
 
-func CreateCourse(ctx context.Context, course model.Course) error {
+func CreateCourse(ctx context.Context, course model.Course, keep bool) error {
 	defer Cache.Clear()
 	err := DB.Create(&course).Error
-	return err
+	if err != nil {
+		return err
+	}
+	if !keep {
+		err = DB.Model(&course).Updates(map[string]interface{}{"live_enabled": "0"}).Error
+		if err!=nil{
+			log.WithError(err).Error("Can't update live enabled state")
+		}
+		return DB.Delete(&course).Error
+	}
+	return nil
 }
 
 func GetAvailableSemesters(c context.Context) []Semester {

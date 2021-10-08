@@ -11,8 +11,8 @@ github.com/CloudyKit/jet/v3 v3.0.0/go.mod h1:HKQPgSJmdK8hdoAbKUUWajkHyHo4RaU5rMd
 github.com/Joker/hpp v1.0.0/go.mod h1:8x5n+M1Hp5hC0g8okX3sR3vFQwynaX/UgSOM9MeBKzY=
 github.com/Joker/jade v1.0.1-0.20190614124447-d475f43051e7/go.mod h1:6E6s8o2AE4KhCrqr6GRJjdC/gNfTdxkIXvuGZZda2VM=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
-github.com/RBG-TUM/CAMPUSOnline v0.0.0-20211002204505-84d9354c1274 h1:QY1+c7hoF4qfHq4LG3fAtNONwK24QkQQal0au+PRjvE=
-github.com/RBG-TUM/CAMPUSOnline v0.0.0-20211002204505-84d9354c1274/go.mod h1:pcWaw3hQOKmvRfldxtPlYBGAFbWQXUU44+KcDYwqduc=
+github.com/RBG-TUM/CAMPUSOnline v0.0.0-20211008070701-02b601baa028 h1:z9GO7tVNPIBK/afdxoDoqRyCvVdoMpjBDwgmq7C344o=
+github.com/RBG-TUM/CAMPUSOnline v0.0.0-20211008070701-02b601baa028/go.mod h1:pcWaw3hQOKmvRfldxtPlYBGAFbWQXUU44+KcDYwqduc=
 github.com/RBG-TUM/go-anel-pwrctrl v0.0.0-20210929070211-675c39ef5a84 h1:ivKDhXnHlYk0ZOdFauuHZEG/rYNaBzj+h+4kq8TMplk=
 github.com/RBG-TUM/go-anel-pwrctrl v0.0.0-20210929070211-675c39ef5a84/go.mod h1:6c2j1rcryE6BWphhJtGb+yXFIGRzmIXi+31TjE9Cft4=
 github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769 h1:CXcHbGcaclWMbveemm6tDADXDTcBo2OWiB89lutvY/U=

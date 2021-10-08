@@ -69,6 +69,11 @@ func courseByTokenPost(c *gin.Context) {
 	if !(req.Course.VODEnabled || req.Course.LiveEnabled) {
 		dao.DeleteCourse(course)
 		return
+	}else{
+		course.DeletedAt = gorm.DeletedAt{
+			Time: time.Now(),
+			Valid: false,
+		}
 	}
 
 	if req.AdminEmail != "" && !course.UserCreatedByToken {
@@ -460,7 +465,7 @@ func createCourse(c *gin.Context) {
 		Visibility:          req.Access,
 		Streams:             []model.Stream{},
 	}
-	err = dao.CreateCourse(context.Background(), course)
+	err = dao.CreateCourse(context.Background(), course, true)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "Couldn't save course. Please reach out to us.")
 		return
