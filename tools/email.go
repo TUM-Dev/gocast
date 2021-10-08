@@ -18,7 +18,6 @@ func SendPasswordMail(to string, body string) error {
 
 func SendMail(addr, from, subject, body string, to []string) error {
 	log.Printf("sending mail to %v, subject: %s body:\n%s", to, subject, body)
-	return nil
 	r := strings.NewReplacer("\r\n", "", "\r", "", "\n", "", "%0a", "", "%0d", "")
 
 	signed, err := openssl([]byte(body), "smime", "-text", "-sign", "-signer", Cfg.SMIMECert, "-inkey", Cfg.SMIMEKey)
