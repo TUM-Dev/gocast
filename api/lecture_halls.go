@@ -182,7 +182,8 @@ func getSchedule(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	campus, err := campusonline.New(tools.Cfg.CampusToken, "")
+	//todo figure out right token
+	campus, err := campusonline.New(tools.Cfg.CampusToken[0], "")
 	if err != nil {
 		log.WithError(err).Error("Can't create campus client")
 		return

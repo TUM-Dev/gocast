@@ -10,8 +10,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func GetCourseInformation(courseID string) (CourseInfo, error) {
-	doc, err := xmlquery.LoadURL(fmt.Sprintf("%v/cdm/course/students/xml?token=%v&courseID=%v", tools.Cfg.CampusBase, tools.Cfg.CampusToken, courseID))
+func GetCourseInformation(courseID string, token string) (CourseInfo, error) {
+	doc, err := xmlquery.LoadURL(fmt.Sprintf("%v/cdm/course/students/xml?token=%v&courseID=%v", tools.Cfg.CampusBase, token, courseID))
 	if err != nil {
 		return CourseInfo{}, fmt.Errorf("GetCourseInformation: Can't LoadURL: %v", err)
 	}

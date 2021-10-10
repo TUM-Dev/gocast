@@ -3,6 +3,7 @@ package tools
 import (
 	log "github.com/sirupsen/logrus"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -27,7 +28,7 @@ func init() {
 		LrzUser:              os.Getenv("LRZ_USER"),
 		LrzPassword:          os.Getenv("LRZ_PASSWORD"),
 		CampusBase:           os.Getenv("CAMPUS_API_BASE"),
-		CampusToken:          os.Getenv("CAMPUS_API_TOKEN"),
+		CampusToken:          strings.Split(os.Getenv("CAMPUS_API_TOKEN"), ";"),
 		CookieStoreSecret:    os.Getenv("COOKIE_STORE_SECRET"),
 		LdapUrl:              os.Getenv("LDAP_URL"),
 		LdapUser:             os.Getenv("LDAP_USER"),
@@ -58,7 +59,7 @@ type Config struct {
 	LrzUser              string
 	LrzPassword          string
 	CampusBase           string
-	CampusToken          string
+	CampusToken          []string
 	CookieStoreSecret    string
 	LdapUrl              string
 	LdapUser             string

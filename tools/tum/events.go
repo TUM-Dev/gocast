@@ -5,6 +5,7 @@ import (
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/antchfx/xmlquery"
 	uuid "github.com/satori/go.uuid"
@@ -14,11 +15,13 @@ import (
 	"time"
 )
 
-func getEventsForCourse(courseID string) (events map[time.Time]Event, deleted []Event) {
-	doc, err := xmlquery.LoadURL(fmt.Sprintf("%v/rdm/course/events/xml?token=%v&courseID=%v", tools.Cfg.CampusBase, tools.Cfg.CampusToken, courseID))
+func getEventsForCourse(courseID string, token string) (events map[time.Time]Event, deleted []Event, err error) {
+	doc, err := xmlquery.LoadURL(fmt.Sprintf("%v/rdm/course/events/xml?token=%v&courseID=%v", tools.Cfg.CampusBase, token, courseID))
 	if err != nil {
-		log.WithError(err).Warn("Couldn't query TUMOnline xml: %v", err)
-		return map[time.Time]Event{}, []Event{}
+		return map[time.Time]Event{}, []Event{}, err
+	}
+	if len(xmlquery.Find(doc, "Error")) != 0 {
+		return map[time.Time]Event{}, []Event{}, errors.New("error found in xml")
 	}
 	eventsMap := make(map[time.Time]Event)
 	var deletedEvents []Event
@@ -65,13 +68,21 @@ func getEventsForCourse(courseID string) (events map[time.Time]Event, deleted []
 			deletedEvents = append(deletedEvents, e)
 		}
 	}
-	return eventsMap, deletedEvents
+	return eventsMap, deletedEvents, nil
 }
 
 func GetEventsForCourses(courses []model.Course) {
 	for i := range courses {
 		course := courses[i]
-		events, deleted := getEventsForCourse(course.TUMOnlineIdentifier)
+		var events map[time.Time]Event
+		var deleted []Event
+		var err error
+		for _, token := range tools.Cfg.CampusToken {
+			events, deleted, err = getEventsForCourse(course.TUMOnlineIdentifier, token)
+			if err == nil {
+				break
+			}
+		}
 		ids := make([]uint, len(deleted))
 		for i := range deleted {
 			ids[i] = deleted[i].SingleEventID
@@ -101,7 +112,7 @@ func GetEventsForCourses(courses []model.Course) {
 				stream.EventTypeName = event.SingleEventTypeName
 			}
 		}
-		err := dao.UpdateCourse(context.Background(), course)
+		err = dao.UpdateCourse(context.Background(), course)
 		if err != nil {
 			log.WithError(err).WithField("CourseID", course.ID).Warn("Can't update course")
 		}

@@ -69,9 +69,9 @@ func courseByTokenPost(c *gin.Context) {
 	if !(req.Course.VODEnabled || req.Course.LiveEnabled) {
 		dao.DeleteCourse(course)
 		return
-	}else{
+	} else {
 		course.DeletedAt = gorm.DeletedAt{
-			Time: time.Now(),
+			Time:  time.Now(),
 			Valid: false,
 		}
 	}
@@ -502,7 +502,13 @@ func courseInfo(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	courseInfo, err := tum.GetCourseInformation(req.CourseID)
+	var courseInfo tum.CourseInfo
+	for _, token := range tools.Cfg.CampusToken {
+		courseInfo, err = tum.GetCourseInformation(req.CourseID, token)
+		if err == nil {
+			break
+		}
+	}
 	if err != nil { // course not found
 		log.WithError(err).Warn("Error getting course information")
 		c.AbortWithStatus(http.StatusNotFound)
