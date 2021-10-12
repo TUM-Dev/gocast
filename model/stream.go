@@ -38,6 +38,7 @@ type Stream struct {
 	Silences         []Silence
 	Files            []File `gorm:"foreignKey:StreamID"`
 	Paused           bool   `gorm:"default:false"`
+	StreamName       string
 }
 
 func (s Stream) IsPast() bool {
@@ -76,7 +77,7 @@ func (s Stream) IsoStart() string {
 	return s.Start.Format("20060102T150405")
 }
 
-func (s Stream) FriendlyDate() string  {
+func (s Stream) FriendlyDate() string {
 	return s.Start.Format("Mon 02.01.2006")
 }
 

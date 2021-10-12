@@ -310,6 +310,26 @@ func NotifyWorkers() {
 			} else {
 				sourceType = "COMB"
 			}
+			server, err := dao.GetBestIngestServer()
+			if err != nil {
+				log.WithError(err).Error("Can't find ingest server")
+				continue
+			}
+			var slot model.StreamName
+			if sourceType == "COMB" { //try to find a transcoding slot for comb view:
+				slot, err = dao.GetTranscodedStreamSlot(server.ID)
+			}
+			if sourceType != "COMB" || err != nil {
+				slot, err = dao.GetStreamSlot(server.ID)
+				if err != nil {
+					log.WithError(err).Error("No free stream slot")
+					continue
+				}
+			}
+			slot.StreamID = streams[i].ID
+			server.Workload += 1
+			dao.SaveSlot(slot)
+			dao.SaveIngestServer(server)
 			req := pb.StreamRequest{
 				SourceType:    sourceType,
 				SourceUrl:     source,
@@ -321,6 +341,8 @@ func NotifyWorkers() {
 				StreamID:      uint32(streams[i].ID),
 				CourseTerm:    courseForStream.TeachingTerm,
 				CourseYear:    uint32(courseForStream.Year),
+				StreamName:    slot.StreamName,
+				IngestServer:  server.Url,
 			}
 			workerIndex := getWorkerWithLeastWorkload(workers)
 			workers[workerIndex].Workload += 3
