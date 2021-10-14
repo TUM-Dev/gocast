@@ -74,13 +74,26 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 		log.WithError(err).Warn("Can't get stream for worker")
 		return nil, err
 	}
+	ingestServer, err := dao.GetBestIngestServer()
+	if err != nil {
+		return nil, err
+	}
+	slot, err := dao.GetStreamSlot(ingestServer.ID)
+	if err != nil {
+		return nil, err
+	}
+	slot.StreamID = stream.ID
+	dao.SaveSlot(slot)
+
 	return &pb.SelfStreamResponse{
-		StreamID:    uint32(stream.ID),
-		CourseSlug:  course.Slug,
-		CourseYear:  uint32(course.Year),
-		StreamStart: timestamppb.New(stream.Start),
-		CourseTerm:  course.TeachingTerm,
-		UploadVoD:   course.VODEnabled,
+		StreamID:     uint32(stream.ID),
+		CourseSlug:   course.Slug,
+		CourseYear:   uint32(course.Year),
+		StreamStart:  timestamppb.New(stream.Start),
+		CourseTerm:   course.TeachingTerm,
+		UploadVoD:    course.VODEnabled,
+		IngestServer: ingestServer.Url,
+		StreamName:   slot.StreamName,
 	}, nil
 }
 

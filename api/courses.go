@@ -28,6 +28,7 @@ import (
 func configGinCourseRouter(router *gin.Engine) {
 	router.GET("/api/course-by-token", courseByToken)
 	router.GET("/api/lecture-halls-by-token", lectureHallsByToken)
+	router.GET("/api/lecture-halls-by-id", lectureHallsByID)
 	router.POST("/api/course-by-token", courseByTokenPost)
 	atLeastLecturerGroup := router.Group("/")
 	atLeastLecturerGroup.Use(tools.AtLeastLecturer)
@@ -126,8 +127,39 @@ type lhResp struct {
 	SelectedIndex   int                  `json:"selected_index"`
 }
 
+func lectureHallsByID(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	err := c.Request.ParseForm()
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	token := c.Request.Form.Get("id")
+	id, err := strconv.Atoi(token)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	course, err := dao.GetCourseById(c, uint(id))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	if tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.ID != course.UserID {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+
+	lectureHalls(c, course)
+}
+
 func lectureHallsByToken(c *gin.Context) {
-	var res []lhResp
 	err := c.Request.ParseForm()
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -143,6 +175,11 @@ func lectureHallsByToken(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
+	lectureHalls(c, course)
+}
+
+func lectureHalls(c *gin.Context, course model.Course) {
+	var res []lhResp
 	lectureHallIDs := map[uint]bool{}
 	for _, s := range course.Streams {
 		if s.LectureHallID != 0 {

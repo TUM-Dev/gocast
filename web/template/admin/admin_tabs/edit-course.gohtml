@@ -28,6 +28,36 @@
                     </div>
                 </form>
 
+                <h2>Camera Presets:</h2>
+                <div class="mt-2" x-data="{halls:[]}"
+                     x-init="fetch(`/api/lecture-halls-by-id?id=${document.getElementById('courseID').value}`).then(r=>r.json()).then(d=>halls=d)">
+                    <template x-for="hall in halls">
+                        <div class="ml-2" x-show="hall.presets.length>0"
+                             @index-selected.window="if($event.detail.name===hall.lecture_hall_name){hall.selected_index=$event.detail.id}">
+                            <p class="text-lg">Camera Presets for</p>
+                            <p class="font-semibold" x-text="hall.lecture_hall_name"></p>
+                            <p class="font-semibold text-danger" x-show="hall.selected_index===0">No preset selected</p>
+                            <p class="text-green-400"
+                               x-show="hall.selected_index!==0&&hall.presets.length>=hall.selected_index"
+                               x-text="`currently selected: ${hall.presets.length===0||hall.selected_index===0?'':hall.presets[hall.selected_index-1].Name}`"></p>
+                            <div class="overflow-x-scroll flex flex-row gap-x-2">
+                                <template x-for="preset in hall.presets">
+                                    <div class="text-center relative group" x-show="preset.Name!=='gelöscht'">
+                                        <img :src="`/public/${preset.Image}`" alt="Preview" style="min-width: 250px;"
+                                             width="250px">
+                                        <label class="truncate block my-2">
+                                            <input @change="$dispatch('index-selected', {id: preset.PresetID, name: hall.lecture_hall_name})"
+                                                   type="radio"
+                                                   class="w-auto"
+                                                   :name="`preset${hall.lecture_hall_name.replace(/\s+/g, '')}`">
+                                            <span x-text="preset.Name"></span>
+                                        </label>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
                 <h2>Viewers per week</h2>
                 <a href="{{$course.ID}}/stats" class="text-3 dark:hover:text-white hover:text-black underline">More
                     stats</a>
@@ -148,7 +178,7 @@
                                                        onclick="copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
                                                     <br>
                                                     <span class="font-semibold">Stream Key:</span>
-                                                    <span>{{$course.Slug}}</span><br>
+                                                    <span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
                                                     {{if ne $user.Role 1}}
                                                         <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
                                                     {{end}}
