@@ -1,10 +1,17 @@
 package dao
 
-import "TUM-Live/model"
+import (
+	"TUM-Live/model"
+	"gorm.io/gorm"
+)
 
-// GetBestIngestServer returns an appropriate ingest server for a stream of the size streamSize.
-// we assume that the streamVersion is either "CAM, COMB or PRES" where COMB holds ~3/4 of the viewers and CAM and PRES each one eighth
+// GetBestIngestServer returns the ingest-server with the least streams assigned to it
 func GetBestIngestServer() (server model.IngestServer, err error) {
+	err = DB.Raw("SELECT i.* FROM stream_names" +
+		" JOIN ingest_servers i ON i.id = stream_names.ingest_server_id" +
+		" WHERE stream_id IS NULL" +
+		" GROUP BY ingest_server_id" +
+		" ORDER BY COUNT(ingest_server_id) DESC").Scan(&server).Error
 	if err = DB.Order("workload").First(&server).Error; err != nil {
 		return
 	}
@@ -27,4 +34,8 @@ func SaveSlot(slot model.StreamName) {
 
 func SaveIngestServer(server model.IngestServer) {
 	DB.Save(&server)
+}
+
+func RemoveStreamFromSlot(streamID uint) error {
+	return DB.Model(&model.StreamName{}).Where("stream_id = ?", streamID).Update("stream_id", gorm.Expr("NULL")).Error
 }

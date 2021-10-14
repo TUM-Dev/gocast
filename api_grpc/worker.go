@@ -141,6 +141,10 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 				}
 			}
 		}
+		err = dao.RemoveStreamFromSlot(stream.ID)
+		if err != nil {
+			log.WithError(err).Error("Can't remove stream from streamName")
+		}
 		err = dao.SetStreamNotLiveById(uint(request.StreamID))
 		if err != nil {
 			log.WithError(err).Error("Can't set stream not live")
@@ -327,9 +331,7 @@ func NotifyWorkers() {
 				}
 			}
 			slot.StreamID = streams[i].ID
-			server.Workload += 1
 			dao.SaveSlot(slot)
-			dao.SaveIngestServer(server)
 			req := pb.StreamRequest{
 				SourceType:    sourceType,
 				SourceUrl:     source,

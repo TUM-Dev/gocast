@@ -203,7 +203,7 @@
         html5: {
             reloadSourceOnError: true,
             vhs: {
-                overrideNative: true
+                overrideNative: !videojs.browser.IS_SAFARI,
             },
             nativeVideoTracks: false,
             nativeAudioTracks: false,
