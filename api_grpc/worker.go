@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"net"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -231,7 +232,8 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	if _, err := dao.GetWorkerByID(ctx, request.WorkerID); err != nil {
+	worker, err := dao.GetWorkerByID(ctx, request.WorkerID)
+	if err != nil {
 		return nil, err
 	}
 	stream, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.GetStreamID()))
@@ -254,21 +256,45 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 			defer lightLock.Unlock()
 		}
 	}
-	stream.LiveNow = true
-	switch request.GetSourceType() {
-	case "CAM":
-		stream.PlaylistUrlCAM = request.HlsUrl
-	case "PRES":
-		stream.PlaylistUrlPRES = request.HlsUrl
-	default:
-		stream.PlaylistUrl = request.HlsUrl
-	}
-	err = dao.SaveStream(&stream)
-	if err != nil {
-		log.WithError(err).Error("Can't set stream live")
-		return nil, err
-	}
-	api.NotifyViewersLiveState(stream.Model.ID, true)
+	go func() {
+		// interims solution; sometimes dvr doesn't work as expected.
+		// here we check if the url 404s and remove dvr from the stream in that case
+		stream.LiveNow = true
+		time.Sleep(time.Second * 5)
+		get, err := http.Get(request.HlsUrl)
+		if err == nil {
+			log.Info(fmt.Sprintf("Status: %v", get.StatusCode))
+			if get.StatusCode == http.StatusNotFound {
+				sentry.WithScope(func(scope *sentry.Scope) {
+					scope.SetExtra("URL", request.HlsUrl)
+					scope.SetExtra("StreamID", request.StreamID)
+					scope.SetExtra("LectureHall", stream.LectureHallID)
+					scope.SetExtra("Worker", worker.Host)
+					scope.SetExtra("Version", request.SourceType)
+					sentry.CaptureException(errors.New("DVR URL 404s"))
+				})
+				request.HlsUrl = strings.ReplaceAll(request.HlsUrl, "?dvr", "")
+			}
+		} else {
+			sentry.CaptureException(err)
+		}
+
+		switch request.GetSourceType() {
+		case "CAM":
+			stream.PlaylistUrlCAM = request.HlsUrl
+		case "PRES":
+			stream.PlaylistUrlPRES = request.HlsUrl
+		default:
+			stream.PlaylistUrl = request.HlsUrl
+		}
+		err = dao.SaveStream(&stream)
+		if err != nil {
+			log.WithError(err).Error("Can't set stream live")
+			sentry.CaptureException(err)
+		}
+		api.NotifyViewersLiveState(stream.Model.ID, true)
+	}()
+
 	return &pb.Status{Ok: true}, nil
 }
 
