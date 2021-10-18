@@ -16,8 +16,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"io/ioutil"
 	"net"
 	"net/http"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -274,22 +276,16 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		// here we check if the url 404s and remove dvr from the stream in that case
 		stream.LiveNow = true
 		time.Sleep(time.Second * 5)
-		get, err := http.Get(request.HlsUrl)
-		if err == nil {
-			log.Info(fmt.Sprintf("Status: %v", get.StatusCode))
-			if get.StatusCode == http.StatusNotFound {
-				sentry.WithScope(func(scope *sentry.Scope) {
-					scope.SetExtra("URL", request.HlsUrl)
-					scope.SetExtra("StreamID", request.StreamID)
-					scope.SetExtra("LectureHall", stream.LectureHallID)
-					scope.SetExtra("Worker", worker.Host)
-					scope.SetExtra("Version", request.SourceType)
-					sentry.CaptureException(errors.New("DVR URL 404s"))
-				})
-				request.HlsUrl = strings.ReplaceAll(request.HlsUrl, "?dvr", "")
-			}
-		} else {
-			sentry.CaptureException(err)
+		if !isHlsUrlOk(request.HlsUrl) {
+			sentry.WithScope(func(scope *sentry.Scope) {
+				scope.SetExtra("URL", request.HlsUrl)
+				scope.SetExtra("StreamID", request.StreamID)
+				scope.SetExtra("LectureHall", stream.LectureHallID)
+				scope.SetExtra("Worker", worker.Host)
+				scope.SetExtra("Version", request.SourceType)
+				sentry.CaptureException(errors.New("DVR URL 404s"))
+			})
+			request.HlsUrl = strings.ReplaceAll(request.HlsUrl, "?dvr", "")
 		}
 
 		switch request.GetSourceType() {
@@ -309,6 +305,32 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 	}()
 
 	return &pb.Status{Ok: true}, nil
+}
+
+func isHlsUrlOk(url string) bool {
+	r, err := http.Get(url)
+	if err != nil {
+		return false
+	}
+	all, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return false
+	}
+	re, _ := regexp.Compile("chunklist.*\\.m3u8")
+	x := re.Find(all)
+	if x == nil {
+		return false
+	}
+	y := strings.ReplaceAll(r.Request.URL.String(), "playlist.m3u8", string(x))
+	log.Println(y)
+	get, err := http.Get(y)
+	if err != nil {
+		return false
+	}
+	if get.StatusCode == http.StatusNotFound {
+		return false
+	}
+	return true
 }
 
 // init initializes a gRPC server on port 50052
