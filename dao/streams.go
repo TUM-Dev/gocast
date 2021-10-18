@@ -55,7 +55,7 @@ func GetStreamByID(ctx context.Context, id string) (stream model.Stream, err err
 		return cached.(model.Stream), nil
 	}
 	var res model.Stream
-	err = DB.Preload("Silences").Preload("Chats").Preload("Units", func(db *gorm.DB) *gorm.DB {
+	err = DB.Preload("Files").Preload("Silences").Preload("Chats").Preload("Units", func(db *gorm.DB) *gorm.DB {
 		return db.Order("unit_start asc")
 	}).First(&res, "id = ?", id).Error
 	if err != nil {
@@ -153,7 +153,7 @@ func UpdateStreamFullAssoc(vod *model.Stream) error {
 
 func SetStreamNotLiveById(streamID uint) error {
 	defer Cache.Clear()
-	return DB.Exec("UPDATE `streams` SET `live_now`='0' WHERE id = ?", streamID).Error
+	return DB.Debug().Exec("UPDATE `streams` SET `live_now`='0' WHERE id = ?", streamID).Error
 }
 
 func SavePauseState(streamid uint, paused bool) error {

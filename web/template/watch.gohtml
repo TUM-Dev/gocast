@@ -25,7 +25,8 @@
             </p></noscript>
         <div id="watchContent"
              class="transition-all motion-reduce:transition-none duration-300 ease w-full pt-3 px-2 md:px-8 {{if $course.ChatEnabled}}md:w-4/6{{end}} lg:w-8/12 2xl:max-w-screen-xl mx-auto mx:h-full">
-            <div class="p-4 bg-indigo-700 bg-opacity-20 border-t-4 border-indigo-700 w-full font-semibold text-2 rounded-t display-none" x-show="paused" x-cloak>
+            <div class="p-4 bg-indigo-700 bg-opacity-20 border-t-4 border-indigo-700 w-full font-semibold text-2 rounded-t display-none"
+                 x-show="paused" x-cloak>
                 <i class="fas fa-info-circle"></i> This lecture is currently paused.
             </div>
             <video
@@ -67,13 +68,8 @@
                         {{else}}
                             <span class="flex m-auto" id="ViewerDescText"> Viewers</span>
                         {{end}}
-                    {{else if $course.DownloadsEnabled}}
-                        <a class="flex m-auto"
-                           title="Download Lecture"
-                           href="/api/download/{{$stream.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $stream.Start.Month $stream.Start.Day $stream.Start.Year}}"
-                           download>
-                            <i class="fas fa-download text-4 hover:text-1"></i>
-                        </a>
+                    {{else if (and $course.DownloadsEnabled .IndexData.TUMLiveContext.User)}}
+                        {{template "downloadBtn" $stream.Files}}
                     {{end}}
                     {{if $stream.PlaylistUrlPRES}}
                         <a class="flex m-auto" title="Presentation only"

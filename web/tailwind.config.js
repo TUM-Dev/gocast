@@ -2,6 +2,7 @@ module.exports = {
     purge: [
         './assets/css/*.css',
         './template/**/*.gohtml',
+        './template/**/**/*.gohtml',
         './template/**/*.html',
         './ts/**/*.ts',
     ],
