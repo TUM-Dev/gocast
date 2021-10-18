@@ -61,6 +61,9 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 	if _, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, err
 	}
+	if request.StreamKey == "" {
+		return nil, errors.New("stream key empty")
+	}
 	stream, err := dao.GetStreamByKey(ctx, request.StreamKey)
 	if err != nil {
 		return nil, err
