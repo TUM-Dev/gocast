@@ -70,15 +70,17 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 	if err != nil {
 		return nil, err
 	}
+	course, err := dao.GetCourseById(ctx, stream.CourseID)
+	if err != nil {
+		return nil, err
+	}
+	if request.CourseSlug != fmt.Sprintf("%s-%d", course.Slug, stream.ID) {
+		return nil, errors.New(fmt.Sprintf("bad stream name, should: %s, is: %s", fmt.Sprintf("%s-%d", course.Slug, stream.ID), request.CourseSlug))
+	}
 	// reject streams that are more than 30 minutes in the future or more than 30 minutes past
 	if !(time.Now().After(stream.Start.Add(time.Minute*-30)) && time.Now().Before(stream.End.Add(time.Minute*30))) {
 		log.WithFields(log.Fields{"streamId": stream.ID}).Warn("Stream rejected, time out of bounds")
 		return nil, errors.New("stream rejected")
-	}
-	course, err := dao.GetCourseById(ctx, stream.CourseID)
-	if err != nil {
-		log.WithError(err).Warn("Can't get stream for worker")
-		return nil, err
 	}
 	ingestServer, err := dao.GetBestIngestServer()
 	if err != nil {
@@ -295,11 +297,6 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 			dao.SavePRESURL(&stream, request.HlsUrl)
 		default:
 			dao.SaveCOMBURL(&stream, request.HlsUrl)
-		}
-		err = dao.SaveStream(&stream)
-		if err != nil {
-			log.WithError(err).Error("Can't set stream live")
-			sentry.CaptureException(err)
 		}
 		api.NotifyViewersLiveState(stream.Model.ID, true)
 	}()
