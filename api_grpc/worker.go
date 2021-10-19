@@ -290,11 +290,11 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 
 		switch request.GetSourceType() {
 		case "CAM":
-			stream.PlaylistUrlCAM = request.HlsUrl
+			dao.SaveCAMURL(&stream, request.HlsUrl)
 		case "PRES":
-			stream.PlaylistUrlPRES = request.HlsUrl
+			dao.SavePRESURL(&stream, request.HlsUrl)
 		default:
-			stream.PlaylistUrl = request.HlsUrl
+			dao.SaveCOMBURL(&stream, request.HlsUrl)
 		}
 		err = dao.SaveStream(&stream)
 		if err != nil {

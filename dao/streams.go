@@ -158,7 +158,25 @@ func SetStreamNotLiveById(streamID uint) error {
 
 func SavePauseState(streamid uint, paused bool) error {
 	defer Cache.Clear()
-	return DB.Model(model.Stream{}).Where("id = ?", streamid).Updates(map[string]interface{}{"Paused":paused}).Error
+	return DB.Model(model.Stream{}).Where("id = ?", streamid).Updates(map[string]interface{}{"Paused": paused}).Error
+}
+
+func SaveCOMBURL(stream *model.Stream, url string) {
+	Cache.Clear()
+	DB.Model(stream).Updates(map[string]interface{}{"playlist_url": url, "live_now": 1})
+	Cache.Clear()
+}
+
+func SaveCAMURL(stream *model.Stream, url string) {
+	Cache.Clear()
+	DB.Model(stream).Updates(map[string]interface{}{"playlist_url_cam": url, "live_now": 1})
+	Cache.Clear()
+}
+
+func SavePRESURL(stream *model.Stream, url string) {
+	Cache.Clear()
+	DB.Model(stream).Updates(map[string]interface{}{"playlist_url_pres": url, "live_now": 1})
+	Cache.Clear()
 }
 
 func SaveStream(vod *model.Stream) error {
