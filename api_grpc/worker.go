@@ -230,6 +230,10 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 	if err != nil {
 		return nil, err
 	}
+	if stream.LiveNow {
+		log.WithField("req", req).Warn("VoD not saved, stream is live.")
+		return nil, nil
+	}
 	stream.Recording = true
 	switch req.SourceType {
 	case "CAM":
