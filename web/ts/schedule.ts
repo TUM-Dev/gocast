@@ -3,7 +3,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // Init fullcallendar
     // @ts-ignore
     const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: "timeGridWeek",
+        headerToolbar: { center: 'timeGridDay,timeGridWeek' },
+        initialView: "timeGridDay",
         nowIndicator: true,
         firstDay: 1,
         height: "85vh",
