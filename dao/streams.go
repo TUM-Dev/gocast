@@ -163,19 +163,19 @@ func SavePauseState(streamid uint, paused bool) error {
 
 func SaveCOMBURL(stream *model.Stream, url string) {
 	Cache.Clear()
-	DB.Model(stream).Updates(map[string]interface{}{"playlist_url": url, "live_now": 1})
+	DB.Model(stream).Updates(map[string]interface{}{"playlist_url": url, "live_now": 1, "recording": 0})
 	Cache.Clear()
 }
 
 func SaveCAMURL(stream *model.Stream, url string) {
 	Cache.Clear()
-	DB.Model(stream).Updates(map[string]interface{}{"playlist_url_cam": url, "live_now": 1})
+	DB.Model(stream).Updates(map[string]interface{}{"playlist_url_cam": url, "live_now": 1, "recording": 0})
 	Cache.Clear()
 }
 
 func SavePRESURL(stream *model.Stream, url string) {
 	Cache.Clear()
-	DB.Model(stream).Updates(map[string]interface{}{"playlist_url_pres": url, "live_now": 1})
+	DB.Model(stream).Updates(map[string]interface{}{"playlist_url_pres": url, "live_now": 1, "recording": 0})
 	Cache.Clear()
 }
 
