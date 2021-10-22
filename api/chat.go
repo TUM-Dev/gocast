@@ -14,6 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -48,6 +49,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 		if err := json.Unmarshal(msg, &chat); err != nil {
 			return
 		}
+		chat.Msg = strings.TrimSpace(chat.Msg)
 		if chat.Msg == "" || len(chat.Msg) > 200 {
 			return
 		}
