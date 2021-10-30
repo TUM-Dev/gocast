@@ -116,6 +116,7 @@ func main() {
 		&model.ServerNotification{},
 		&model.File{},
 		&model.Mail{},
+		&model.StreamProgress{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)

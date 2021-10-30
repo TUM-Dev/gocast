@@ -121,6 +121,42 @@ const skipSilence = function (options) {
     });
 };
 
+const watchProgress = function (streamID: number) {
+    this.ready(() => {
+        // @ts-ignore
+        let n = 0;
+        let lastChecked = new Date();
+
+        this.on('timeupdate', (event) => {
+            let now = new Date();
+
+            let diff = now - lastChecked;
+
+            if (diff.valueOf() / 1000 < 5) {
+                return;
+            }
+
+            n = 0;
+            const ctime = this.currentTime();
+            const duration = this.duration();
+            let progress = ctime / duration;
+            postData("/api/progress", {
+                "video_id": streamID,
+                "progress": progress
+            }).then(r => {
+                    if (r.status != 200) {
+                        console.log(r);
+                    }
+                }
+            );
+
+            lastChecked = now;
+        });
+    });
+};
+
 // Register the plugin with video.js.
 videojs.registerPlugin('theaterMode', theaterMode);
 videojs.registerPlugin('skipSilence', skipSilence);
+videojs.registerPlugin('watchProgress', watchProgress);
+

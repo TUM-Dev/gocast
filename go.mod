@@ -40,6 +40,8 @@ require (
 	gorm.io/gorm v1.21.16
 )
 
+require github.com/pkg/profile v1.6.0
+
 require (
 	github.com/Azure/go-ntlmssp v0.0.0-20200615164410-66371956d46c // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
