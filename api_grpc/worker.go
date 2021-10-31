@@ -16,7 +16,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"io/ioutil"
 	"net"
+	"net/http"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -60,19 +63,24 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 	if _, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, err
 	}
+	if request.StreamKey == "" {
+		return nil, errors.New("stream key empty")
+	}
 	stream, err := dao.GetStreamByKey(ctx, request.StreamKey)
 	if err != nil {
 		return nil, err
+	}
+	course, err := dao.GetCourseById(ctx, stream.CourseID)
+	if err != nil {
+		return nil, err
+	}
+	if request.CourseSlug != fmt.Sprintf("%s-%d", course.Slug, stream.ID) {
+		return nil, errors.New(fmt.Sprintf("bad stream name, should: %s, is: %s", fmt.Sprintf("%s-%d", course.Slug, stream.ID), request.CourseSlug))
 	}
 	// reject streams that are more than 30 minutes in the future or more than 30 minutes past
 	if !(time.Now().After(stream.Start.Add(time.Minute*-30)) && time.Now().Before(stream.End.Add(time.Minute*30))) {
 		log.WithFields(log.Fields{"streamId": stream.ID}).Warn("Stream rejected, time out of bounds")
 		return nil, errors.New("stream rejected")
-	}
-	course, err := dao.GetCourseById(ctx, stream.CourseID)
-	if err != nil {
-		log.WithError(err).Warn("Can't get stream for worker")
-		return nil, err
 	}
 	ingestServer, err := dao.GetBestIngestServer()
 	if err != nil {
@@ -192,7 +200,17 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 	if err != nil {
 		return nil, err
 	}
-	stream.Files = append(stream.Files, model.File{StreamID: stream.ID, Path: request.FilePath})
+	// look for file to prevent duplication
+	shouldAddFile := true
+	for _, file := range stream.Files {
+		if file.Path == request.FilePath {
+			shouldAddFile = false
+			break
+		}
+	}
+	if shouldAddFile {
+		stream.Files = append(stream.Files, model.File{StreamID: stream.ID, Path: request.FilePath})
+	}
 	err = dao.SaveStream(&stream)
 	if err != nil {
 		log.WithError(err).Error("Can't save stream")
@@ -211,6 +229,10 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 	stream, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", req.StreamID))
 	if err != nil {
 		return nil, err
+	}
+	if stream.LiveNow {
+		log.WithField("req", req).Warn("VoD not saved, stream is live.")
+		return nil, nil
 	}
 	stream.Recording = true
 	switch req.SourceType {
@@ -231,7 +253,8 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	if _, err := dao.GetWorkerByID(ctx, request.WorkerID); err != nil {
+	worker, err := dao.GetWorkerByID(ctx, request.WorkerID)
+	if err != nil {
 		return nil, err
 	}
 	stream, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.GetStreamID()))
@@ -254,22 +277,61 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 			defer lightLock.Unlock()
 		}
 	}
-	stream.LiveNow = true
-	switch request.GetSourceType() {
-	case "CAM":
-		stream.PlaylistUrlCAM = request.HlsUrl
-	case "PRES":
-		stream.PlaylistUrlPRES = request.HlsUrl
-	default:
-		stream.PlaylistUrl = request.HlsUrl
-	}
-	err = dao.SaveStream(&stream)
-	if err != nil {
-		log.WithError(err).Error("Can't set stream live")
-		return nil, err
-	}
-	api.NotifyViewersLiveState(stream.Model.ID, true)
+	go func() {
+		// interims solution; sometimes dvr doesn't work as expected.
+		// here we check if the url 404s and remove dvr from the stream in that case
+		stream.LiveNow = true
+		time.Sleep(time.Second * 5)
+		if !isHlsUrlOk(request.HlsUrl) {
+			sentry.WithScope(func(scope *sentry.Scope) {
+				scope.SetExtra("URL", request.HlsUrl)
+				scope.SetExtra("StreamID", request.StreamID)
+				scope.SetExtra("LectureHall", stream.LectureHallID)
+				scope.SetExtra("Worker", worker.Host)
+				scope.SetExtra("Version", request.SourceType)
+				sentry.CaptureException(errors.New("DVR URL 404s"))
+			})
+			request.HlsUrl = strings.ReplaceAll(request.HlsUrl, "?dvr", "")
+		}
+
+		switch request.GetSourceType() {
+		case "CAM":
+			dao.SaveCAMURL(&stream, request.HlsUrl)
+		case "PRES":
+			dao.SavePRESURL(&stream, request.HlsUrl)
+		default:
+			dao.SaveCOMBURL(&stream, request.HlsUrl)
+		}
+		api.NotifyViewersLiveState(stream.Model.ID, true)
+	}()
+
 	return &pb.Status{Ok: true}, nil
+}
+
+func isHlsUrlOk(url string) bool {
+	r, err := http.Get(url)
+	if err != nil {
+		return false
+	}
+	all, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return false
+	}
+	re, _ := regexp.Compile("chunklist.*\\.m3u8")
+	x := re.Find(all)
+	if x == nil {
+		return false
+	}
+	y := strings.ReplaceAll(r.Request.URL.String(), "playlist.m3u8", string(x))
+	log.Println(y)
+	get, err := http.Get(y)
+	if err != nil {
+		return false
+	}
+	if get.StatusCode == http.StatusNotFound {
+		return false
+	}
+	return true
 }
 
 // init initializes a gRPC server on port 50052

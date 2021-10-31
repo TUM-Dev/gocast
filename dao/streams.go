@@ -55,7 +55,7 @@ func GetStreamByID(ctx context.Context, id string) (stream model.Stream, err err
 		return cached.(model.Stream), nil
 	}
 	var res model.Stream
-	err = DB.Preload("Silences").Preload("Chats").Preload("Units", func(db *gorm.DB) *gorm.DB {
+	err = DB.Preload("Files").Preload("Silences").Preload("Chats").Preload("Units", func(db *gorm.DB) *gorm.DB {
 		return db.Order("unit_start asc")
 	}).First(&res, "id = ?", id).Error
 	if err != nil {
@@ -153,12 +153,30 @@ func UpdateStreamFullAssoc(vod *model.Stream) error {
 
 func SetStreamNotLiveById(streamID uint) error {
 	defer Cache.Clear()
-	return DB.Exec("UPDATE `streams` SET `live_now`='0' WHERE id = ?", streamID).Error
+	return DB.Debug().Exec("UPDATE `streams` SET `live_now`='0' WHERE id = ?", streamID).Error
 }
 
 func SavePauseState(streamid uint, paused bool) error {
 	defer Cache.Clear()
-	return DB.Model(model.Stream{}).Where("id = ?", streamid).Updates(map[string]interface{}{"Paused":paused}).Error
+	return DB.Model(model.Stream{}).Where("id = ?", streamid).Updates(map[string]interface{}{"Paused": paused}).Error
+}
+
+func SaveCOMBURL(stream *model.Stream, url string) {
+	Cache.Clear()
+	DB.Model(stream).Updates(map[string]interface{}{"playlist_url": url, "live_now": 1, "recording": 0})
+	Cache.Clear()
+}
+
+func SaveCAMURL(stream *model.Stream, url string) {
+	Cache.Clear()
+	DB.Model(stream).Updates(map[string]interface{}{"playlist_url_cam": url, "live_now": 1, "recording": 0})
+	Cache.Clear()
+}
+
+func SavePRESURL(stream *model.Stream, url string) {
+	Cache.Clear()
+	DB.Model(stream).Updates(map[string]interface{}{"playlist_url_pres": url, "live_now": 1, "recording": 0})
+	Cache.Clear()
 }
 
 func SaveStream(vod *model.Stream) error {

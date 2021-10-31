@@ -1,0 +1,15 @@
+{{define "downloadBtn"}}
+    <span x-data="{expanded: false}" class="relative">
+        <i class="fas fa-download text-1 hover:text-purple-500" @click="expanded=!expanded"></i>
+        <span x-show="expanded" class="absolute bottom-0 left-0 bg-gray-200 shadow rounded p-3 w-48">
+            <span class="w-full"><i class="absolute top-1 right-1 fa fa-times text-black hover:text-purple-500"
+                                    @click="expanded=!expanded"></i></span>
+            {{range $file := . }}
+                {{- /*gotype: TUM-Live/model.File*/ -}}
+                <a href="/api/download/{{$file.ID}}" download>
+                    <span class="text-gray-700 hover:text-black">{{$file.GetFriendlyFileName}}</span>
+                </a><br>
+            {{end}}
+        </span>
+    </span>
+{{end}}

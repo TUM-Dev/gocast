@@ -19,7 +19,12 @@ var templateFS embed.FS
 var staticFS embed.FS
 
 func ConfigGinRouter(router *gin.Engine) {
-	templ = template.Must(template.ParseFS(templateFS, "template/*.gohtml", "template/admin/*.gohtml", "template/admin/admin_tabs/*.gohtml"))
+	templ = template.Must(template.ParseFS(templateFS,
+		"template/*.gohtml",
+		"template/admin/*.gohtml",
+		"template/admin/admin_tabs/*.gohtml",
+		"template/partial/stream/*.gohtml",
+		"template/partial/course/manage/*.gohtml"))
 	configGinStaticRouter(router)
 	configMainRoute(router)
 	configCourseRoute(router)

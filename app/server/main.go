@@ -17,10 +17,13 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/profile"
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -59,6 +62,11 @@ var (
 )
 
 func main() {
+	defer profile.Start(profile.MemProfile).Stop()
+	go func() {
+		_ = http.ListenAndServe(":8082", nil) // debug endpoint
+	}()
+
 	// log with time, fmt "23.09.2021 10:00:00"
 	log.SetFormatter(&log.TextFormatter{TimestampFormat: "02.01.2006 15:04:05", FullTimestamp: true})
 

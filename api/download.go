@@ -2,20 +2,21 @@ package api
 
 import (
 	"TUM-Live/dao"
+	"TUM-Live/model"
 	"TUM-Live/tools"
-	"context"
 	"errors"
+	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
 func configGinDownloadRouter(router *gin.Engine) {
-	router.GET("/api/download/:id/:slug/:name", downloadVod)
+	router.GET("/api/download/:id", download)
 }
 
-func downloadVod(c *gin.Context) {
+func download(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -23,67 +24,54 @@ func downloadVod(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	stream, err := dao.GetStreamByID(context.Background(), c.Param("id"))
-	if err != nil || !stream.Recording {
-		log.Printf("Deny download, cause: error or not recording: %v", err)
-		c.AbortWithStatus(http.StatusNotFound)
+	if tumLiveContext.User == nil {
+		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
-	course, err := dao.GetCourseById(context.Background(), stream.CourseID)
+	file, err := dao.GetFileById(c.Param("id"))
 	if err != nil {
-		log.Printf("Deny download, cause: error or download disabled: %v", err)
-		c.AbortWithStatus(http.StatusNotFound)
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	if course.ID != stream.CourseID {
-		log.Printf("Deny download, cause: courseid and stream-courseid don't match")
-		c.AbortWithStatus(http.StatusNotFound)
+	stream, err := dao.GetStreamByID(c, fmt.Sprintf("%d", file.StreamID))
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	//student, serr := tools.GetStudent(c)
-	if !course.DownloadsEnabled {
-		// only allow for owner or admin
-		if tumLiveContext.User == nil {
-			log.Printf("Deny download, cause: download disabled but not logged in")
-			c.AbortWithStatus(http.StatusNotFound)
+	course, err := dao.GetCourseById(c, stream.CourseID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	log.Info(fmt.Sprintf("Download request, user: %d, file: %d[%s]", tumLiveContext.User.ID, file.ID, file.Path))
+	if tumLiveContext.User.Role == model.AdminType {
+		sendFile(c, file)
+		return
+	}
+	if tumLiveContext.User.Role == model.LecturerType {
+		if tumLiveContext.User.ID == course.UserID {
+			sendFile(c, file)
 			return
-		} else {
-			if tumLiveContext.User.Role > 1 && tumLiveContext.User.ID != course.UserID {
-				log.Printf("Deny download, cause: download disabled and user not admin or owner.")
-				c.AbortWithStatus(http.StatusNotFound)
-				return
-			}
 		}
-	} else if course.Visibility != "public" {
-		if tumLiveContext.User != nil {
-			if tumLiveContext.User.Role > 1 && tumLiveContext.User.ID != course.UserID {
-				log.Printf("Deny download, cause: user but not admin or owner")
-				// logged in as user but not owner of course or admin
-				c.AbortWithStatus(http.StatusNotFound)
-				return
-			}
-		} /*else if serr == nil { todo
-			canDownload := false
-			for _, studentCourse := range student.Courses {
-				if studentCourse.ID == course.ID {
-					canDownload = true
-					break
-				}
-			}
-			if !canDownload {
-				log.Printf("Deny download, cause: student but not their course.")
-				// student but not allowed enrolled to course
-				c.AbortWithStatus(http.StatusNotFound)
-				return
-			}
-		} else {
-			log.Printf("Deny download, private course but not logged in")
-			// not logged in to a course that is private.
-			c.AbortWithStatus(http.StatusNotFound)
-			return
-		}*/
 	}
-	// public -> download
-	log.Printf("Download stream: %v", stream.FilePath)
-	c.File(stream.FilePath)
+	if course.DownloadsEnabled {
+		if course.Visibility == "hidden" || course.Visibility == "public" {
+			sendFile(c, file)
+			return
+		}
+		if tumLiveContext.User.IsEligibleToWatchCourse(course) {
+			sendFile(c, file)
+			return
+		}
+	}
+	c.AbortWithStatus(http.StatusForbidden)
+}
+
+func sendFile(c *gin.Context, file model.File) {
+	c.Header("Content-Description", "File Transfer")
+	c.Header("Content-Transfer-Encoding", "binary")
+	c.Header("Content-Disposition", "attachment; filename="+file.GetFriendlyFileName())
+	c.Header("Content-Type", "application/octet-stream")
+
+	c.File(file.Path)
 }
