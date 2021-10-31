@@ -122,32 +122,8 @@ const skipSilence = function (options) {
 };
 
 const watchProgress = function (streamID: number) {
-    // this.onclick(() => {
-    //     postData("/api/progressRequest", {
-    //         "video_id": streamID,
-    //     }).then((data) => {
-    //         if (data.status != 200) {
-    //             console.log(data);
-    //         } else {
-    //             data.text().then(data => {
-    //                 const json = JSON.parse(data);
-    //                 this.currentTime(json["progress"] * duration);
-    //             })
-    //         }
-    //     });
-    //     }
-    // );
-
     this.ready(() => {
-
-
-
-        let lastChecked = new Date();
-        let loaded = false;
-
-        this.on('timeupdate', (event) => {
-
-            if (!loaded) {
+        this.on('loadedmetadata', (event) => {
                 postData("/api/progressRequest", {
                     "video_id": streamID,
                 }).then((data) => {
@@ -164,9 +140,11 @@ const watchProgress = function (streamID: number) {
                         })
                     }
                 });
-                loaded = true;
-            }
+        });
 
+        let lastChecked = new Date();
+
+        this.on('timeupdate', (event) => {
             let now = new Date();
 
             let diff = now - lastChecked;
@@ -198,4 +176,3 @@ const watchProgress = function (streamID: number) {
 videojs.registerPlugin('theaterMode', theaterMode);
 videojs.registerPlugin('skipSilence', skipSilence);
 videojs.registerPlugin('watchProgress', watchProgress);
-
