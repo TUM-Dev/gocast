@@ -29,7 +29,7 @@ let ws: WebSocket;
 
 function startWebsocket() {
     let streamid = (document.getElementById("streamID") as HTMLInputElement).value;
-    ws = new WebSocket("ws://localhost:8081/api/chat/" + streamid + "/ws");
+    ws = new WebSocket("wss://live.rbg.tum.de/api/chat/" + streamid + "/ws");
     let cf = document.getElementById("chatForm");
     if (cf !== null && cf != undefined) {
         (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", e => submitChat(e));
