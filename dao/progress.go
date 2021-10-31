@@ -16,3 +16,9 @@ func SaveProgress(progress float64, userID uint, streamID uint) {
 		UserID:   userID,
 	})
 }
+
+func LoadProgress(userID uint, streamID uint) float64 {
+	var result float64
+	DB.Raw("SELECT progress FROM stream_progresses WHERE user_id=? AND stream_id=?", userID, streamID).Scan(&result)
+	return result
+}

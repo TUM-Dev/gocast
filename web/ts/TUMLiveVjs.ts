@@ -122,12 +122,51 @@ const skipSilence = function (options) {
 };
 
 const watchProgress = function (streamID: number) {
+    // this.onclick(() => {
+    //     postData("/api/progressRequest", {
+    //         "video_id": streamID,
+    //     }).then((data) => {
+    //         if (data.status != 200) {
+    //             console.log(data);
+    //         } else {
+    //             data.text().then(data => {
+    //                 const json = JSON.parse(data);
+    //                 this.currentTime(json["progress"] * duration);
+    //             })
+    //         }
+    //     });
+    //     }
+    // );
+
     this.ready(() => {
-        // @ts-ignore
-        let n = 0;
+
+
+
         let lastChecked = new Date();
+        let loaded = false;
 
         this.on('timeupdate', (event) => {
+
+            if (!loaded) {
+                postData("/api/progressRequest", {
+                    "video_id": streamID,
+                }).then((data) => {
+                    if (data.status != 200) {
+                        console.log(data);
+                    } else {
+                        data.text().then(data => {
+                            const json = JSON.parse(data);
+                            const skip = json["progress"] * this.duration();
+                            console.log(skip);
+                            console.log(this.duration());
+                            console.log(json["progress"]);
+                            this.currentTime(skip);
+                        })
+                    }
+                });
+                loaded = true;
+            }
+
             let now = new Date();
 
             let diff = now - lastChecked;
@@ -136,10 +175,10 @@ const watchProgress = function (streamID: number) {
                 return;
             }
 
-            n = 0;
             const ctime = this.currentTime();
             const duration = this.duration();
             let progress = ctime / duration;
+
             postData("/api/progress", {
                 "video_id": streamID,
                 "progress": progress

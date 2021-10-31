@@ -6,7 +6,7 @@ require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20211013164422-76adcbfcf8c4
 	github.com/RBG-TUM/go-anel-pwrctrl v0.0.0-20210929070211-675c39ef5a84
 	github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769
-	github.com/antchfx/xmlquery v1.3.7
+	github.com/antchfx/xmlquery v1.3.8
 	github.com/antchfx/xpath v1.2.0 // indirect
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/droundy/goopt v0.0.0-20170604162106-0b8effe182da
@@ -25,22 +25,20 @@ require (
 	github.com/joschahenningsen/TUM-Live-Worker-v2 v0.0.0-20211014065108-71e2f94b53e4
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
-	github.com/microcosm-cc/bluemonday v1.0.15
+	github.com/microcosm-cc/bluemonday v1.0.16
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/crypto v0.0.0-20210813211128-0a44fdfbc16e
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
-	google.golang.org/genproto v0.0.0-20211013025323-ce878158c4d4 // indirect
+	google.golang.org/genproto v0.0.0-20211019152133-63b7e35f4404 // indirect
 	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gorm.io/driver/mysql v1.1.2
 	gorm.io/gorm v1.21.16
 )
-
-require github.com/pkg/profile v1.6.0
 
 require (
 	github.com/Azure/go-ntlmssp v0.0.0-20200615164410-66371956d46c // indirect

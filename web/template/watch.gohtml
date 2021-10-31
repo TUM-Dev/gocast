@@ -243,7 +243,7 @@
     });
 
     {{if $stream.Recording}}
-        player.watchProgress({{ $stream.Model.ID}});
+        player.watchProgress({{$stream.Model.ID}});
     {{end}}
 
     {{if $stream.Silences}}
