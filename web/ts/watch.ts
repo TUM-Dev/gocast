@@ -26,6 +26,8 @@ class Watch {
 }
 
 let ws: WebSocket;
+let retryInt = 5000; //retry connecting to websocket after this timeout
+let pageloaded = new Date();
 
 function startWebsocket() {
     let streamid = (document.getElementById("streamID") as HTMLInputElement).value;
@@ -55,9 +57,14 @@ function startWebsocket() {
     }
 
     ws.onclose = function () {
-        // connection closed, discard old websocket and create a new one in 5s
+        // connection closed, discard old websocket and create a new one after backoff
+        // don't recreate new connection if page has been loaded more than 12 hours ago
+        if ((new Date()).valueOf() - pageloaded.valueOf() > 1000 * 60 * 60 * 12) {
+            return;
+        }
         ws = null;
-        setTimeout(startWebsocket, 5000);
+        retryInt *= 2; // exponential backoff
+        setTimeout(startWebsocket, retryInt);
     }
 }
 
