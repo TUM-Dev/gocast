@@ -13,7 +13,7 @@ require (
 	github.com/gabstv/melody v1.0.2
 	github.com/getsentry/sentry-go v0.11.0
 	github.com/gin-contrib/gzip v0.0.3
-	github.com/gin-contrib/sessions v0.0.3
+	github.com/gin-contrib/sessions v0.0.4
 	github.com/gin-gonic/gin v1.7.4
 	github.com/go-asn1-ber/asn1-ber v1.5.3 // indirect
 	github.com/go-ldap/ldap/v3 v3.4.1
@@ -26,18 +26,19 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.16
+	github.com/pkg/profile v1.6.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/crypto v0.0.0-20210813211128-0a44fdfbc16e
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
-	google.golang.org/genproto v0.0.0-20211019152133-63b7e35f4404 // indirect
+	google.golang.org/genproto v0.0.0-20211101144312-62acf1d99145 // indirect
 	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gorm.io/driver/mysql v1.1.2
-	gorm.io/gorm v1.21.16
+	gorm.io/driver/mysql v1.1.3
+	gorm.io/gorm v1.22.2
 )
 
 require (
