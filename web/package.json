@@ -26,7 +26,7 @@
     "alpinejs": "^3.4.2",
     "chart.js": "^3.5.1",
     "flatpickr": "^4.6.9",
-    "fullcalendar": "^5.9.0",
+    "fullcalendar": "^5.10.0",
     "hls.js": "^1.0.11",
     "ical.js": "^1.4.0",
     "nouislider": "^15.5.0",
