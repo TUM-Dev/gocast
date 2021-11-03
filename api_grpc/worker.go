@@ -14,6 +14,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live-Worker-v2/pb"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"io/ioutil"
@@ -334,24 +335,6 @@ func isHlsUrlOk(url string) bool {
 	return true
 }
 
-// init initializes a gRPC server on port 50052
-func init() {
-	log.Info("Serving heartbeat")
-	lis, err := net.Listen("tcp", ":50052")
-	if err != nil {
-		log.WithError(err).Error("Failed to init grpc server")
-		return
-	}
-	grpcServer := grpc.NewServer()
-	pb.RegisterFromWorkerServer(grpcServer, &server{})
-	reflection.Register(grpcServer)
-	go func() {
-		if err = grpcServer.Serve(lis); err != nil {
-			log.WithError(err).Errorf("Can't serve grpc")
-		}
-	}()
-}
-
 // NotifyWorkers collects all streams that are due to stream
 // (starts in the next 10 minutes from a lecture hall)
 // and invokes the corresponding calls at the workers with the least workload via gRPC
@@ -435,6 +418,7 @@ func NotifyWorkers() {
 			if err != nil || !resp.Ok {
 				log.WithError(err).Error("could not assign stream!")
 				workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
+				_ = conn.Close()
 				continue
 			}
 			_ = conn.Close()
@@ -492,4 +476,28 @@ func getWorkerWithLeastWorkload(workers []model.Worker) int {
 		}
 	}
 	return foundWorker
+}
+
+// init initializes a gRPC server on port 50052
+func init() {
+	log.Info("Serving heartbeat")
+	lis, err := net.Listen("tcp", ":50052")
+	if err != nil {
+		log.WithError(err).Error("Failed to init grpc server")
+		return
+	}
+	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
+		MaxConnectionIdle:     time.Minute,
+		MaxConnectionAge:      time.Minute,
+		MaxConnectionAgeGrace: time.Second * 5,
+		Time:                  time.Minute * 10,
+		Timeout:               time.Second * 20,
+	}))
+	pb.RegisterFromWorkerServer(grpcServer, &server{})
+	reflection.Register(grpcServer)
+	go func() {
+		if err = grpcServer.Serve(lis); err != nil {
+			log.WithError(err).Errorf("Can't serve grpc")
+		}
+	}()
 }
