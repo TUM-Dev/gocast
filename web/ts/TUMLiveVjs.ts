@@ -3,6 +3,7 @@
 const Button = videojs.getComponent('Button');
 
 let skipTo = 0;
+let progressRatio = 0;
 
 /**
  * Button to add a class to passed in element that will toggle "theater mode" as defined
@@ -122,23 +123,46 @@ const skipSilence = function (options) {
     });
 };
 
+
+/**
+ * @function watchProgress
+ * Saves and retrieves the watch progress of the user as a fraction of the total watch time
+ * @param streamID The ID of the currently watched stream
+ */
 const watchProgress = function (streamID: number) {
     this.ready(() => {
+        postData("/api/progressRequest", {
+            "streamID": streamID,
+        }).then((data) => {
+            if (data.status !== 200) {
+                console.log(data);
+            } else {
+                data.text().then(data => {
+                    const json = JSON.parse(data);
+                    this.progressRatio = json["progress"];
+                })
+            }
+        });
+
+        let initialized = false;
+
         // Fetch the user's stream progress from the database and set the time on load
         this.on('loadedmetadata', () => {
-                postData("/api/progressRequest", {
-                    "streamID": streamID,
-                }).then((data) => {
-                    if (data.status !== 200) {
-                        console.log(data);
-                    } else {
-                        data.text().then(data => {
-                            const json = JSON.parse(data);
-                            const skip = json["progress"] * this.duration();
-                            this.currentTime(skip);
-                        })
-                    }
-                });
+            if (initialized) {
+                return;
+            }
+            this.currentTime(this.progressRatio * this.duration());
+            initialized = true;
+        });
+
+        // iPhone/iPad need to play the video first, so they depend on a different event
+        // More info: https://www.w3.org/TR/html5/embedded-content-0.html#mediaevents
+        this.on("canplaythrough", () => {
+            if (initialized) {
+                return;
+            }
+            this.currentTime(this.progressRatio * this.duration());
+            initialized = true;
         });
 
         let lastChecked = new Date();
@@ -149,8 +173,8 @@ const watchProgress = function (streamID: number) {
 
             const diff = now - lastChecked;
 
-            // proceed with progress report every 5 seconds
-            if (diff.valueOf() / 1000 < 5) {
+            // Proceed with progress report every 10 seconds
+            if (diff.valueOf() / 1000 < 10) {
                 return;
             }
 
