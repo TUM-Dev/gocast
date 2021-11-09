@@ -74,7 +74,7 @@ const theaterMode = function (options) {
         this.controlBar.el().insertBefore(toggle.el(), this.controlBar.fullscreenToggle.el());
     });
 
-    this.on('fullscreenchange', (event) => {
+    this.on('fullscreenchange', () => {
         if (this.isFullscreen()) {
             this.controlBar.getChild("theaterModeToggle").hide();
         } else {
@@ -96,7 +96,7 @@ const skipSilence = function (options) {
         const len = silences.length
         let i = 0;
         let n = 0;
-        this.on('timeupdate', (event) => {
+        this.on('timeupdate', () => {
             if (n++ % 5 != 0) {
                 return;
             }
@@ -123,19 +123,16 @@ const skipSilence = function (options) {
 
 const watchProgress = function (streamID: number) {
     this.ready(() => {
-        this.on('loadedmetadata', (event) => {
+        this.on('loadedmetadata', () => {
                 postData("/api/progressRequest", {
-                    "video_id": streamID,
+                    "streamID": streamID,
                 }).then((data) => {
-                    if (data.status != 200) {
+                    if (data.status !== 200) {
                         console.log(data);
                     } else {
                         data.text().then(data => {
                             const json = JSON.parse(data);
                             const skip = json["progress"] * this.duration();
-                            console.log(skip);
-                            console.log(this.duration());
-                            console.log(json["progress"]);
                             this.currentTime(skip);
                         })
                     }
@@ -144,10 +141,10 @@ const watchProgress = function (streamID: number) {
 
         let lastChecked = new Date();
 
-        this.on('timeupdate', (event) => {
-            let now = new Date();
+        this.on('timeupdate', () => {
+            const now = new Date();
 
-            let diff = now - lastChecked;
+            const diff = now - lastChecked;
 
             if (diff.valueOf() / 1000 < 5) {
                 return;
@@ -155,13 +152,13 @@ const watchProgress = function (streamID: number) {
 
             const ctime = this.currentTime();
             const duration = this.duration();
-            let progress = ctime / duration;
+            const progress = ctime / duration;
 
-            postData("/api/progress", {
-                "video_id": streamID,
+            postData("/api/progressReport", {
+                "streamID": streamID,
                 "progress": progress
             }).then(r => {
-                    if (r.status != 200) {
+                    if (r.status !== 200) {
                         console.log(r);
                     }
                 }

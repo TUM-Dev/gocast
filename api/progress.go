@@ -4,29 +4,55 @@ import (
 	"TUM-Live/dao"
 	"TUM-Live/tools"
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
 func configProgressRouter(router *gin.Engine) {
-	router.POST("/api/progress", postProgress)
-	router.POST("/api/progressRequest", requestProgress)
+	router.POST("/api/progressReport", saveProgress)
+	router.POST("/api/progressRequest", fetchProgress)
 }
 
-type progressRequest struct {
-	VideoID  uint    `json:"video_id"`
+type ProgressRequest struct {
+	StreamID uint    `json:"streamID"`
 	Progress float64 `json:"progress"`
 }
-type progressReply struct {
-	VideoID  uint    `json:"video_id"`
+
+type ProgressReply struct {
+	StreamID uint `json:"streamID"`
 }
 
 type Response struct {
 	Progress float64 `json:"progress"`
 }
 
-func requestProgress(c *gin.Context) {
-	var reply progressReply
+func saveProgress(c *gin.Context) {
+	var request ProgressRequest
+
+	err := c.BindJSON(&request)
+
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	foundContext, exists := c.Get("TUMLiveContext")
+
+	if !exists {
+		return
+	}
+
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+
+	if tumLiveContext.User == nil {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+
+	dao.SaveProgress(request.Progress, tumLiveContext.User.ID, request.StreamID)
+}
+
+func fetchProgress(c *gin.Context) {
+	var reply ProgressReply
 
 	err := c.BindJSON(&reply)
 
@@ -50,40 +76,7 @@ func requestProgress(c *gin.Context) {
 
 	var progress float64
 
-	log.Info("VideoID")
-	log.Info(reply.VideoID)
-
-	progress = dao.LoadProgress(tumLiveContext.User.ID, reply.VideoID)
-
-	log.Info("Progress:")
-	log.Info(progress)
+	progress = dao.LoadProgress(tumLiveContext.User.ID, reply.StreamID)
 
 	c.JSON(http.StatusOK, gin.H{"progress": progress})
-}
-
-func postProgress(c *gin.Context) {
-	var req progressRequest
-
-	err := c.BindJSON(&req)
-
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-
-	foundContext, exists := c.Get("TUMLiveContext")
-
-	if !exists {
-		return
-	}
-
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-
-	if tumLiveContext.User == nil {
-		c.AbortWithStatus(http.StatusForbidden)
-		return
-	}
-
-	dao.SaveProgress(req.Progress, tumLiveContext.User.ID, req.VideoID)
-	log.Info(req.Progress)
 }
