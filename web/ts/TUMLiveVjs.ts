@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 const Button = videojs.getComponent('Button');
 
 let skipTo = 0;
@@ -123,6 +124,7 @@ const skipSilence = function (options) {
 
 const watchProgress = function (streamID: number) {
     this.ready(() => {
+        // Fetch the user's stream progress from the database and set the time on load
         this.on('loadedmetadata', () => {
                 postData("/api/progressRequest", {
                     "streamID": streamID,
@@ -141,11 +143,13 @@ const watchProgress = function (streamID: number) {
 
         let lastChecked = new Date();
 
+        // Fetch the user's stream progress from the database and set the time on load
         this.on('timeupdate', () => {
             const now = new Date();
 
             const diff = now - lastChecked;
 
+            // proceed with progress report every 5 seconds
             if (diff.valueOf() / 1000 < 5) {
                 return;
             }
