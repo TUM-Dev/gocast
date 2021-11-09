@@ -60,7 +60,7 @@
                 </h1>
                 <p class="text-lg text-4 flex space-x-2">
                     {{if not $stream.Recording}}
-                        <span class="flex m-auto" id="viewerCount"></span>
+                        <span class="flex m-auto mr-2" id="viewerCount"></span>
                         {{if not $stream.LiveNow}}
                             <span class="flex m-auto" id="ViewerDescText"> Waiting</span>
                             <span class="flex m-auto">&#183;</span>
@@ -72,18 +72,18 @@
                         {{template "downloadBtn" $stream.Files}}
                     {{end}}
                     {{if $stream.PlaylistUrlPRES}}
-                        <a class="flex m-auto" title="Presentation only"
+                        <a class="flex m-auto mr-2" title="Presentation only"
                            href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/PRES"><i
-                                    class="fas fa-edit hover:text-1"></i></a>
+                                    class="fas fa-edit text-4 hover:text-1"></i></a>
                     {{end}}
                     {{if $stream.PlaylistUrlCAM}}
-                        <a class="flex m-auto" title="Camera only"
+                        <a class="flex m-auto mr-2" title="Camera only"
                            href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/CAM"><i
-                                    class="fas fa-camera hover:text-1"></i></a>
+                                    class="fas fa-camera text-4 hover:text-1"></i></a>
                     {{end}}
                     {{if $stream.PlaylistUrl}}
-                        <a class="flex m-auto" title="Combined view" href="/w/{{$course.Slug}}/{{$stream.Model.ID}}"><i
-                                    class="fas fa-object-group hover:text-1"></i></a>
+                        <a class="flex m-auto mr-2" title="Combined view" href="/w/{{$course.Slug}}/{{$stream.Model.ID}}"><i
+                                    class="fas fa-object-group text-4 hover:text-1"></i></a>
                     {{end}}
                     <i title="Copy HLS URL"
                        class="flex m-auto fas fa-link text-4 dark:hover:text-white hover:text-black cursor-pointer"
