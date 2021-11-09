@@ -1,15 +1,25 @@
 {{define "downloadBtn"}}
-    <span x-data="{expanded: false}" class="relative">
-        <i class="fas fa-download text-1 hover:text-purple-500" @click="expanded=!expanded"></i>
-        <span x-show="expanded" class="absolute bottom-0 left-0 bg-gray-200 shadow rounded p-3 w-48">
-            <span class="w-full"><i class="absolute top-1 right-1 fa fa-times text-black hover:text-purple-500"
-                                    @click="expanded=!expanded"></i></span>
-            {{range $file := . }}
-                {{- /*gotype: TUM-Live/model.File*/ -}}
-                <a href="/api/download/{{$file.ID}}" download>
-                    <span class="text-gray-700 hover:text-black">{{$file.GetFriendlyFileName}}</span>
-                </a><br>
-            {{end}}
-        </span>
-    </span>
+    <div class="mx-1 m-auto">
+        <div class="relative inline-block text-left" x-data="{expand:false}">
+            <div>
+                <button @click="expand=!expand" type="button"
+                        class="inline-flex justify-center w-full"
+                        id="menu-button" aria-expanded="true" aria-haspopup="true">
+                    <i class="fas fa-download text-4 dark:hover:text-white hover:text-black"></i>
+                </button>
+            </div>
+
+            <div x-show="expand" @click.outside="expand = false"
+                 class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+                 role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+                <div class="py-1" role="none">
+                    <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
+                    {{range $file := . }}
+                    <a href="/api/download/{{$file.ID}}" download class="hover:bg-gray-100 hover:text-gray-700 text-gray-700 block px-4 py-2 text-sm"
+                       role="menuitem" tabindex="-1" id="menu-item-0">{{$file.GetFriendlyFileName}}</a>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </div>
 {{end}}

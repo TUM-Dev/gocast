@@ -55,7 +55,7 @@
                 </p>
             </video>
             <div class="flex justify-between align-middle mt-4">
-                <h1 class="text-4 text-xl">
+                <h1 class="text-4 text-xl flex-grow">
                     {{if $stream.Name}}{{$stream.Name}}{{else}}Lecture: {{$stream.Start.Month}} {{printf "%02d." $stream.Start.Day}} {{$stream.Start.Year}}{{end}}
                 </h1>
                 <p class="text-lg text-4 flex space-x-2">
