@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"os"
 )
 
 func configGinDownloadRouter(router *gin.Engine) {
@@ -68,10 +69,21 @@ func download(c *gin.Context) {
 }
 
 func sendFile(c *gin.Context, file model.File) {
+	f, err := os.Open(file.Path)
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	defer f.Close()
+	stat, err := f.Stat()
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
 	c.Header("Content-Description", "File Transfer")
 	c.Header("Content-Transfer-Encoding", "binary")
-	c.Header("Content-Disposition", "attachment; filename="+file.GetFriendlyFileName())
+	c.Header("Content-Disposition", "attachment; filename="+file.GetDownloadFileName())
 	c.Header("Content-Type", "application/octet-stream")
-
+	c.Header("Content-Length", fmt.Sprintf("%d", stat.Size()))
 	c.File(file.Path)
 }
