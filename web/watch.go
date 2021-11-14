@@ -81,12 +81,12 @@ func WatchPage(c *gin.Context) {
 }
 
 type WatchPageData struct {
-	IndexData       IndexData
-	Unit            *model.StreamUnit
-	Description     template.HTML
-	Version         string
 	IsAdminOfCourse bool // is current user admin or lecturer who created this course
-	Presets         []model.CameraPreset
 	IsHighlightPage bool
+	Version         string
+	Unit            *model.StreamUnit
+	Presets         []model.CameraPreset
 	Progress        model.StreamProgress
+	IndexData       IndexData
+	Description     template.HTML
 }
