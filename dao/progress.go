@@ -5,20 +5,20 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func SaveProgress(progress float64, userID uint, streamID uint) {
+func SaveProgress(progress float64, userID uint, streamID uint) (err error) {
 	// Update columns to new value on `id` conflict
-	DB.Clauses(clause.OnConflict{
+	err = DB.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "stream_id"}, {Name: "user_id"}}, // key column
-		DoUpdates: clause.AssignmentColumns([]string{"progress"}), // column needed to be updated
+		DoUpdates: clause.AssignmentColumns([]string{"progress"}),          // column needed to be updated
 	}).Create(&model.StreamProgress{
 		Progress: progress,
 		StreamID: streamID,
 		UserID:   userID,
-	})
+	}).Error
+	return err
 }
 
-func LoadProgress(userID uint, streamID uint) float64 {
-	var result float64
-	DB.Raw("SELECT progress FROM stream_progresses WHERE user_id=? AND stream_id=?", userID, streamID).Scan(&result)
-	return result
+func LoadProgress(userID uint, streamID uint) (streamProgress model.StreamProgress, err error) {
+	err = DB.First(&streamProgress, "user_id = ? AND stream_id = ?", userID, streamID).Error
+	return streamProgress, err
 }

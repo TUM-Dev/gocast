@@ -238,8 +238,8 @@
         }
     });
 
-    {{if $stream.Recording}}
-        player.watchProgress({{$stream.Model.ID}});
+    {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
+        player.watchProgress({{$stream.Model.ID}}, {{.Progress.Progress}});
     {{end}}
 
     {{if $stream.Silences}}

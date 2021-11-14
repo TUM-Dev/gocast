@@ -3,7 +3,6 @@
 const Button = videojs.getComponent('Button');
 
 let skipTo = 0;
-let progressRatio = 0;
 
 /**
  * Button to add a class to passed in element that will toggle "theater mode" as defined
@@ -38,11 +37,7 @@ class TheaterModeToggle extends Button {
     }
 
     buildCSSClass() {
-        if (document.getElementById(this.options_.elementToToggle).classList.contains(this.options_.className)) {
-            return `vjs-theater-mode-control ${super.buildCSSClass()}`;
-        } else {
-            return `vjs-theater-mode-control ${super.buildCSSClass()}`;
-        }
+        return `vjs-theater-mode-control ${super.buildCSSClass()}`;
     }
 
     handleClick() {
@@ -123,79 +118,65 @@ const skipSilence = function (options) {
     });
 };
 
-
 /**
  * @function watchProgress
  * Saves and retrieves the watch progress of the user as a fraction of the total watch time
  * @param streamID The ID of the currently watched stream
+ * @param lastProgress The last progress fetched from the database
  */
-const watchProgress = function (streamID: number) {
+const watchProgress = function (streamID: number, lastProgress: float64) {
     this.ready(() => {
-        postData("/api/progressRequest", {
-            "streamID": streamID,
-        }).then((data) => {
-            if (data.status !== 200) {
-                console.log(data);
-            } else {
-                data.text().then(data => {
-                    const json = JSON.parse(data);
-                    this.progressRatio = json["progress"];
-                })
-            }
-        });
-
         let initialized = false;
+        let interval = 10000;
+        let duration;
+        let run;
 
         // Fetch the user's stream progress from the database and set the time on load
         this.on('loadedmetadata', () => {
-            if (initialized) {
-                return;
-            }
-            this.currentTime(this.progressRatio * this.duration());
-            initialized = true;
+            duration = this.duration();
+            setProgress();
         });
 
         // iPhone/iPad need to play the video first, so they depend on a different event
         // More info: https://www.w3.org/TR/html5/embedded-content-0.html#mediaevents
-        this.on("canplaythrough", () => {
-            if (initialized) {
-                return;
+        this.on('canplaythrough', () => {
+            duration = this.duration();
+            setProgress();
+        });
+
+        const setProgress = () => {
+            if (!initialized) {
+                this.currentTime(lastProgress * duration);
             }
-            this.currentTime(this.progressRatio * this.duration());
             initialized = true;
-        });
+        }
 
-        let lastChecked = new Date();
-
-        // Fetch the user's stream progress from the database and set the time on load
-        this.on('timeupdate', () => {
-            const now = new Date();
-
-            const diff = now - lastChecked;
-
-            // Proceed with progress report every 10 seconds
-            if (diff.valueOf() / 1000 < 10) {
-                return;
-            }
-
-            const ctime = this.currentTime();
-            const duration = this.duration();
-            const progress = ctime / duration;
-
-            postData("/api/progressReport", {
-                "streamID": streamID,
-                "progress": progress
-            }).then(r => {
-                    if (r.status !== 200) {
-                        console.log(r);
+        this.on('play', () => {
+            run = setInterval(() => {
+                const progress = this.currentTime() / duration;
+                postData("/api/progressReport", {
+                    "streamID": streamID,
+                    "progress": progress
+                }).then(r => {
+                        if (r.status !== 200) {
+                            console.log(r);
+                            interval *= 2; // Binary exponential backoff for load balancing
+                        }
                     }
-                }
-            );
-
-            lastChecked = now;
+                ); }, interval);
         });
+
+        this.on('paused', () => {
+            reportProgress();
+            clearInterval(run);
+        })
+
+        this.on('ended', () => {
+            clearInterval(run);
+        })
     });
 };
+
 
 // Register the plugin with video.js.
 videojs.registerPlugin('theaterMode', theaterMode);
