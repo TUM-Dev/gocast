@@ -126,10 +126,10 @@ const skipSilence = function (options) {
  */
 const watchProgress = function (streamID: number, lastProgress: float64) {
     this.ready(() => {
+        let duration;
+        let timer;
         let initialized = false;
         let interval = 10000;
-        let duration;
-        let run;
 
         // Fetch the user's stream progress from the database and set the time on load
         this.on('loadedmetadata', () => {
@@ -151,28 +151,36 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
             initialized = true;
         }
 
-        this.on('play', () => {
-            run = setInterval(() => {
-                const progress = this.currentTime() / duration;
-                postData("/api/progressReport", {
-                    "streamID": streamID,
-                    "progress": progress
-                }).then(r => {
-                        if (r.status !== 200) {
-                            console.log(r);
-                            interval *= 2; // Binary exponential backoff for load balancing
-                        }
+        const reportProgress = (currentTime) => {
+            const progress = currentTime / duration;
+            postData("/api/progressReport", {
+                "streamID": streamID,
+                "progress": progress
+            }).then(r => {
+                    if (r.status !== 200) {
+                        console.log(r);
+                        interval *= 2; // Binary exponential backoff for load balancing
                     }
-                ); }, interval);
+                }
+            );
+        }
+
+        // Triggered when user presses play
+        this.on('play', () => {
+            timer = setInterval(() => { reportProgress(this.currentTime()) }, interval);
         });
 
-        this.on('paused', () => {
-            reportProgress();
-            clearInterval(run);
+        // Triggered on pause and skipping the video
+        this.on('pause', () => {
+            reportProgress(this.currentTime());
+            clearInterval(timer);
         })
 
+        // Triggered when the video has no time left
         this.on('ended', () => {
-            clearInterval(run);
+            // Maybe we want to set a flag here in the future to mark the video as watched
+            reportProgress(0);
+            clearInterval(timer);
         })
     });
 };
