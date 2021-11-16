@@ -135,7 +135,7 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
         let iOSReady = false;
         let intervalInSeconds = 10000;
 
-        // Fetch the user's stream progress from the database
+        // Fetch the user's video progress from the database and set the time in the player
         this.on('loadedmetadata', () => {
             duration = this.duration();
             this.currentTime(lastProgress * duration);
