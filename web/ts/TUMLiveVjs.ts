@@ -4,10 +4,6 @@ const Button = videojs.getComponent('Button');
 
 let skipTo = 0;
 
-function isIOSDevice(){
-    return !!navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform);
-}
-
 /**
  * Button to add a class to passed in element that will toggle "theater mode" as defined
  * in app's CSS (larger player, dimmed background, etc...)
@@ -144,9 +140,8 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
         // iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
         // not sufficient here.
         // See https://stackoverflow.com/questions/28823567/how-to-set-currenttime-in-video-js-in-safari-for-ios.
-        if (isIOSDevice()) {
+        if (videojs.browser.IS_IOS) {
             this.on('canplaythrough', () => {
-                duration = this.duration();
                 // Can be executed multiple times during playback
                 if (!iOSReady) {
                     this.currentTime(lastProgress * duration);
@@ -178,7 +173,7 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
         this.on('pause', () => {
             clearInterval(timer);
             // "Bug" on iOS: The video is automatically paused at the beginning
-            if (!iOSReady && isIOSDevice()) {
+            if (!iOSReady && videojs.browser.IS_IOS) {
                 return;
             }
             reportProgress();
