@@ -12,11 +12,11 @@ func configProgressRouter(router *gin.Engine) {
 	router.POST("/api/progressReport", saveProgress)
 }
 
-// ProgressRequest corresponds the request that is sent by the video player when it reports its progress for VODs.
+// ProgressRequest corresponds the request that is sent by the video player when it reports its progress for VODs
 type ProgressRequest struct {
 	StreamID uint    `json:"streamID"`
-	Progress float64 `json:"progress"` // A fraction that represents currentTime / totalTime for a given video.
-	// Note: To be able to save the progress, we also need the userID, but it`s already contained in the Gin context.
+	Progress float64 `json:"progress"` // A fraction that represents currentTime / totalTime for a given video
+	// Note: To be able to save the progress, we also need the userID, but it`s already contained in the Gin context
 }
 
 func saveProgress(c *gin.Context) {

@@ -7,7 +7,7 @@ import (
 
 // SaveProgress saves the users progress for a given streamID in the database.
 func SaveProgress(progress float64, userID uint, streamID uint) (err error) {
-	// Update columns to new value on `id` conflict
+	// Update all columns, except primary keys, to new progress on conflict
 	err = DB.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "stream_id"}, {Name: "user_id"}}, // key column
 		DoUpdates: clause.AssignmentColumns([]string{"progress"}),          // column needed to be updated

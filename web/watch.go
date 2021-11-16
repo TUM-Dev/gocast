@@ -79,7 +79,7 @@ func WatchPage(c *gin.Context) {
 	}
 }
 
-// WatchPageData contains all the metadata that is related to the watch page
+// WatchPageData contains all the metadata that is related to the watch page.
 type WatchPageData struct {
 	IsAdminOfCourse bool // is current user admin or lecturer who created this course
 	IsHighlightPage bool
