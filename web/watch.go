@@ -46,7 +46,7 @@ func WatchPage(c *gin.Context) {
 		}
 	}
 	// Check for fetching progress
-	if tumLiveContext.User != nil {
+	if tumLiveContext.User != nil && tumLiveContext.Stream.Recording {
 		progress, err := dao.LoadProgress(tumLiveContext.User.ID, tumLiveContext.Stream.ID)
 		if err != nil {
 			data.Progress = model.StreamProgress{Progress: 0}
@@ -57,7 +57,6 @@ func WatchPage(c *gin.Context) {
 			data.Progress = progress
 		}
 	}
-
 	if c.Query("restart") == "1" {
 		c.Redirect(http.StatusFound, strings.Split(c.Request.RequestURI, "?")[0])
 		return
@@ -80,6 +79,7 @@ func WatchPage(c *gin.Context) {
 	}
 }
 
+// WatchPageData contains all the metadata that is related to the watch page
 type WatchPageData struct {
 	IsAdminOfCourse bool // is current user admin or lecturer who created this course
 	IsHighlightPage bool

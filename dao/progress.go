@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// SaveProgress saves the users progress for a given streamID in the database.
 func SaveProgress(progress float64, userID uint, streamID uint) (err error) {
 	// Update columns to new value on `id` conflict
 	err = DB.Clauses(clause.OnConflict{
@@ -18,6 +19,7 @@ func SaveProgress(progress float64, userID uint, streamID uint) (err error) {
 	return err
 }
 
+// LoadProgress retrieves the current StreamProgress from the database for a given user and stream.
 func LoadProgress(userID uint, streamID uint) (streamProgress model.StreamProgress, err error) {
 	err = DB.First(&streamProgress, "user_id = ? AND stream_id = ?", userID, streamID).Error
 	return streamProgress, err

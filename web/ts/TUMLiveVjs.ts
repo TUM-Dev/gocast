@@ -4,6 +4,10 @@ const Button = videojs.getComponent('Button');
 
 let skipTo = 0;
 
+function isIOSDevice(){
+    return !!navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform);
+}
+
 /**
  * Button to add a class to passed in element that will toggle "theater mode" as defined
  * in app's CSS (larger player, dimmed background, etc...)
@@ -128,38 +132,38 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
     this.ready(() => {
         let duration;
         let timer;
-        let initialized = false;
-        let interval = 10000;
+        let iOSReady = false;
+        let intervalInSeconds = 10000;
 
-        // Fetch the user's stream progress from the database and set the time on load
+        // Fetch the user's stream progress from the database
         this.on('loadedmetadata', () => {
             duration = this.duration();
-            setProgress();
+            this.currentTime(lastProgress * duration);
         });
 
-        // iPhone/iPad need to play the video first, so they depend on a different event
-        // More info: https://www.w3.org/TR/html5/embedded-content-0.html#mediaevents
-        this.on('canplaythrough', () => {
-            duration = this.duration();
-            setProgress();
-        });
-
-        const setProgress = () => {
-            if (!initialized) {
-                this.currentTime(lastProgress * duration);
-            }
-            initialized = true;
+        // iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
+        // not sufficient here.
+        // See https://stackoverflow.com/questions/28823567/how-to-set-currenttime-in-video-js-in-safari-for-ios.
+        if (isIOSDevice()) {
+            this.on('canplaythrough', () => {
+                duration = this.duration();
+                // Can be executed multiple times during playback
+                if (!iOSReady) {
+                    this.currentTime(lastProgress * duration);
+                    iOSReady = true;
+                }
+            });
         }
 
-        const reportProgress = (currentTime) => {
-            const progress = currentTime / duration;
+        const reportProgress = () => {
+            const progress = this.currentTime() / duration;
             postData("/api/progressReport", {
                 "streamID": streamID,
                 "progress": progress
             }).then(r => {
                     if (r.status !== 200) {
                         console.log(r);
-                        interval *= 2; // Binary exponential backoff for load balancing
+                        intervalInSeconds *= 2; // Binary exponential backoff for load balancing
                     }
                 }
             );
@@ -167,21 +171,23 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
 
         // Triggered when user presses play
         this.on('play', () => {
-            timer = setInterval(() => { reportProgress(this.currentTime()) }, interval);
+            timer = setInterval(() => { reportProgress() }, intervalInSeconds);
         });
 
         // Triggered on pause and skipping the video
         this.on('pause', () => {
-            reportProgress(this.currentTime());
+            // "Bug" on iOS: The video is automatically paused at the beginning
+            if (!iOSReady && isIOSDevice()) {
+                return;
+            }
+            reportProgress();
             clearInterval(timer);
-        })
+        });
 
         // Triggered when the video has no time left
         this.on('ended', () => {
-            // Maybe we want to set a flag here in the future to mark the video as watched
-            reportProgress(0);
             clearInterval(timer);
-        })
+        });
     });
 };
 
