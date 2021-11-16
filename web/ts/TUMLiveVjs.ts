@@ -176,12 +176,12 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
 
         // Triggered on pause and skipping the video
         this.on('pause', () => {
+            clearInterval(timer);
             // "Bug" on iOS: The video is automatically paused at the beginning
             if (!iOSReady && isIOSDevice()) {
                 return;
             }
             reportProgress();
-            clearInterval(timer);
         });
 
         // Triggered when the video has no time left
