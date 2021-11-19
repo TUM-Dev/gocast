@@ -76,7 +76,7 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 		return nil, err
 	}
 	if request.CourseSlug != fmt.Sprintf("%s-%d", course.Slug, stream.ID) {
-		return nil, errors.New(fmt.Sprintf("bad stream name, should: %s, is: %s", fmt.Sprintf("%s-%d", course.Slug, stream.ID), request.CourseSlug))
+		return nil, fmt.Errorf("bad stream name, should: %s, is: %s", fmt.Sprintf("%s-%d", course.Slug, stream.ID), request.CourseSlug)
 	}
 	// reject streams that are more than 30 minutes in the future or more than 30 minutes past
 	if !(time.Now().After(stream.Start.Add(time.Minute*-30)) && time.Now().Before(stream.End.Add(time.Minute*30))) {

@@ -74,5 +74,5 @@ func LoginWithTumCredentials(username string, password string) (userId string, l
 			return mwnID, lrzID, name, nil
 		}
 	}
-	return "", "", "", errors.New(fmt.Sprintf("LDAP: reached unexpected codepoint. User: %v", username))
+	return "", "", "", fmt.Errorf("LDAP: reached unexpected codepoint. User: %v", username)
 }
