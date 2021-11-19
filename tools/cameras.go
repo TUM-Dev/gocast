@@ -37,6 +37,7 @@ func FetchLHPresets(lectureHall model.LectureHall) {
 	}
 }
 
+//lint:ignore U1000 We might want to use this later
 // findExistingImageForPreset applies an image to the preset if it already existed.
 func findExistingImageForPreset(m *model.CameraPreset, presets []model.CameraPreset) {
 	for _, preset := range presets {
