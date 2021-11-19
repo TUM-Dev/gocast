@@ -74,6 +74,9 @@ func MainPage(c *gin.Context) {
 		}
 	}
 	streams, err := dao.GetCurrentLive(context.Background())
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
+	}
 	var livestreams []CourseStream
 
 	for _, stream := range streams {

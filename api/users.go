@@ -54,7 +54,7 @@ func DeleteUser(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	c.Status(200)
+	c.Status(http.StatusOK)
 }
 
 func CreateUserForCourse(c *gin.Context) {
@@ -151,7 +151,7 @@ func CreateUser(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	c.JSON(200, createUserResponse{Name: createdUser.Name, Email: createdUser.Email.String, Role: createdUser.Role})
+	c.JSON(http.StatusOK, createUserResponse{Name: createdUser.Name, Email: createdUser.Email.String, Role: createdUser.Role})
 }
 
 func createUserHelper(request createUserRequest, userType int) (user model.User, err error) {
@@ -179,20 +179,23 @@ func createUserHelper(request createUserRequest, userType int) (user model.User,
 func forgotPassword(email string) {
 	u, err := dao.GetUserByEmail(context.Background(), email)
 	if err != nil {
-		log.Printf("couldn't get user by email")
+		log.Println("couldn't get user by email")
 		return
 	}
 	registerLink, err := dao.CreateRegisterLink(context.Background(), u)
 	if err != nil {
-		log.Printf("couldn't create register link\n")
+		log.Println("couldn't create register link")
 		return
 	}
-	log.Printf("register link: %v\n", registerLink)
+	log.Println("register link: %v", registerLink)
 	body := fmt.Sprintf("Hello!\n"+
 		"You have been invited to use TUM-Live. You can set a password for your account here: https://live.rbg.tum.de/setPassword/%v\n"+
-		"After setting a password you can log in with the email this message was sent to. Please note that this is not your TUMOnline account.\n" +
+		"After setting a password you can log in with the email this message was sent to. Please note that this is not your TUMOnline account.\n"+
 		"If you have any further questions please reach out to live@rbg.tum.de", registerLink.RegisterSecret)
 	err = tools.SendPasswordMail(email, body)
+	if err != nil {
+		log.Println("couldn't send password mail")
+	}
 }
 
 type deleteUserRequest struct {

@@ -15,13 +15,12 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
 var m *melody.Melody
-var stats = map[string]int{}
-var statsLock = sync.RWMutex{}
+
+// TODO: Use stats
 
 func configGinChatRouter(router *gin.RouterGroup) {
 	wsGroup := router.Group("/:streamID")

@@ -318,7 +318,7 @@ func isHlsUrlOk(url string) bool {
 	if err != nil {
 		return false
 	}
-	re, _ := regexp.Compile("chunklist.*\\.m3u8")
+	re, _ := regexp.Compile(`chunklist.*\\.m3u8`)
 	x := re.Find(all)
 	if x == nil {
 		return false
