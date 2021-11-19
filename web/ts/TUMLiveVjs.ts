@@ -147,6 +147,7 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
         let timer;
         let iOSReady = false;
         let intervalMillis = 10000;
+        let lastReport = 0; // timestamp of last report
 
         // Fetch the user's video progress from the database and set the time in the player
         this.on("loadedmetadata", () => {
@@ -168,6 +169,11 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
         }
 
         const reportProgress = () => {
+            // Don't report progress too often in case some browser goes nuts
+            if (lastReport + (1000 * intervalMillis) > Date.now()) {
+                return;
+            }
+            lastReport = Date.now();
             const progress = this.currentTime() / duration;
             postData("/api/progressReport", {
                 streamID: streamID,
