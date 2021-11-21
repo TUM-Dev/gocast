@@ -1,3 +1,5 @@
+import { postData, showMessage } from './global'
+
 class CreateCourse {
     private courseIDInput: HTMLInputElement
     private loadFromTUMOnlineBtn: HTMLButtonElement

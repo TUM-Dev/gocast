@@ -1,4 +1,5 @@
 // @ts-nocheck
+import {StatusCodes} from "http-status-codes";
 
 const Button = videojs.getComponent('Button');
 
@@ -171,7 +172,7 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
                 "streamID": streamID,
                 "progress": progress
             }).then(r => {
-                    if (r.status !== 200) {
+                    if (r.status !== StatusCodes.OK) {
                         console.log(r);
                         intervalMillis *= 2; // Binary exponential backoff for load balancing
                     }

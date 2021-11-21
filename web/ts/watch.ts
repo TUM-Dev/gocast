@@ -1,3 +1,4 @@
+// @ts-nocheck
 class Watch {
     private chatInput: HTMLInputElement;
 

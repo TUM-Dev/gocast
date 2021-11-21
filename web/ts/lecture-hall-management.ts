@@ -1,3 +1,5 @@
+import { postData } from './global'
+
 function takeSnapshot(lectureHallID: number, presetID: number) {
     if (confirm("Do you want to take a snapshot? Make sure no lecture is live in this lecture hall.")) {
         (document.getElementById("presetImage" + lectureHallID + "-" + presetID) as HTMLImageElement).classList.add("animate-pulse")
