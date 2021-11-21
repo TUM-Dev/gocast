@@ -1,9 +1,11 @@
 {
   "compilerOptions": {
-    "module": "none",
+    "module": "es6",
     "target": "es5",
     "sourceMap": true,
-    "outDir": "assets/ts-dist"
+    "outDir": "assets/ts-dist",
+    "noImplicitAny": false,
+    "moduleResolution": "node",
   },
   "include": [
     "ts/*"
