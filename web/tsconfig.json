@@ -6,6 +6,8 @@
     "outDir": "assets/ts-dist",
     "noImplicitAny": false,
     "moduleResolution": "node",
+    "sourceRoot": "./ts/",
+    "rootDir": "./ts/"
   },
   "include": [
     "ts/*"
