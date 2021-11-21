@@ -1,6 +1,8 @@
 // @ts-nocheck
 import {StatusCodes} from "http-status-codes";
 
+export module Player {
+
 const Button = videojs.getComponent('Button');
 
 let skipTo = 0;
@@ -207,3 +209,4 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
 videojs.registerPlugin('theaterMode', theaterMode);
 videojs.registerPlugin('skipSilence', skipSilence);
 videojs.registerPlugin('watchProgress', watchProgress);
+}

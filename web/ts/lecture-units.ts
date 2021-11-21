@@ -1,11 +1,11 @@
 import { postData } from './global'
-import {StatusCodes} from "http-status-codes";
+import { StatusCodes } from "http-status-codes";
 
+export module LectureUnits {
+    let slider
 
-let slider
-
-// @ts-ignore
-let player = videojs('my-video', {
+    // @ts-ignore
+    let player = videojs('my-video', {
     html5: {
         hls: {
             overrideNative: true
@@ -14,9 +14,9 @@ let player = videojs('my-video', {
         nativeAudioTracks: false,
         nativeTextTracks: false
     }
-});
-player.play()
-player.one("loadedmetadata", function () {
+    });
+    player.play()
+    player.one("loadedmetadata", function () {
     slider = document.getElementById('sliderNew');
     // @ts-ignore
     noUiSlider.create(slider, {
@@ -42,9 +42,9 @@ player.one("loadedmetadata", function () {
         tooltipInputs[handle].value = values[handle];
         player.currentTime(timeToS(values[handle]));
     });
-})
+    })
 
-function submitNewUnit(lectureID: number) {
+    export function submitNewUnit(lectureID: number) {
     //convert from and to to milliseconds relatively to beginning of video.
     let from = timeToS(slider.noUiSlider.get()[0]) * 1000;
     let to = timeToS(slider.noUiSlider.get()[1]) * 1000;
@@ -68,9 +68,9 @@ function submitNewUnit(lectureID: number) {
         }
     })
     return false
-}
+    }
 
-function submitCut(lectureID: number, courseID: number) {
+    export function submitCut(lectureID: number, courseID: number) {
     let from = timeToS(slider.noUiSlider.get()[0]) * 1000;
     let to = timeToS(slider.noUiSlider.get()[1]) * 1000;
     postData("/api/submitCut", {
@@ -89,35 +89,35 @@ function submitCut(lectureID: number, courseID: number) {
         }
     })
     return false
-}
+    }
 
-function deleteUnit(unitID: number) {
+    export function deleteUnit(unitID: number) {
     postData("/api/deleteUnit/" + unitID).then(r => {
         if (r.status == StatusCodes.OK) {
             window.location.reload()
         }
     })
-}
+    }
 
-function timeToS(s) {
+    function timeToS(s) {
     let parts = s.split(":")
     return parseInt(parts[0]) * 60 * 60 + parseInt(parts[1]) * 60 + parseInt(parts[2])
-}
+    }
 
-function sToTime(s) {
+    function sToTime(s) {
     s = Math.floor(s)
     let secs = s % 60;
     s = (s - secs) / 60;
     let mins = s % 60;
     let hrs = (s - mins) / 60;
     return ("0" + hrs).slice(-2) + ':' + ("0" + mins).slice(-2) + ':' + ("0" + secs).slice(-2);
-}
+    }
 
-function sp(event) {
+    function sp(event) {
     event.stopPropagation();
-}
+    }
 
-function makeTT(i, slider) {
+    function makeTT(i, slider) {
     let tooltip = document.createElement('div');
     let input = document.createElement('input');
 
@@ -128,7 +128,7 @@ function makeTT(i, slider) {
 
     // On change, set the slider
     input.addEventListener('change', function () {
-        var values = [null, null];
+        const values = [null, null];
         values[i] = timeToS(this.value);
         slider.noUiSlider.set(values)
     });
@@ -142,9 +142,10 @@ function makeTT(i, slider) {
     // Find the lower/upper slider handle and insert the tooltip
     slider.querySelector(i ? '.noUi-handle-upper' : '.noUi-handle-lower').appendChild(tooltip);
     return input;
-}
+    }
 
-function toggleNewUnitForm(elem) {
+    function toggleNewUnitForm(elem) {
     elem.classList.add("hidden")
     document.getElementById("unitNew").classList.remove("hidden")
+    }
 }
