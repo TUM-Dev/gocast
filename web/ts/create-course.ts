@@ -1,4 +1,5 @@
 import { postData, showMessage } from './global'
+import { StatusCodes } from "http-status-codes";
 
 class CreateCourse {
     private courseIDInput: HTMLInputElement
@@ -31,7 +32,7 @@ class CreateCourse {
         }
         postData("/api/courseInfo", {"courseID": this.courseIDInput.value})
             .then(data => {
-                if (data.status != 200) {
+                if (data.status != StatusCodes.OK) {
                     showMessage("The course with this ID was not found in TUMOnline. Please verify the ID or reach out to us.")
                 } else {
                     data.text().then(data => {
@@ -58,7 +59,7 @@ class CreateCourse {
             "enChat": f.get("enChat") === "on",
         })
             .then(data => {
-                if (data.status != 200) {
+                if (data.status != StatusCodes.OK) {
                     data.text().then(t => showMessage(t))
                 } else {
                     window.location.href = "/admin"

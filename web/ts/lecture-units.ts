@@ -1,4 +1,5 @@
 import { postData } from './global'
+import {StatusCodes} from "http-status-codes";
 
 
 let slider
@@ -56,7 +57,7 @@ function submitNewUnit(lectureID: number) {
         "title": title,
         "description": description,
     }).then(data => {
-        if (data.status == 200) {
+        if (data.status == StatusCodes.OK) {
             window.location.reload()
         } else {
             data.text().then(
@@ -77,7 +78,7 @@ function submitCut(lectureID: number, courseID: number) {
         "from": from,
         "to": to,
     }).then(data => {
-        if (data.status == 200) {
+        if (data.status == StatusCodes.OK) {
             window.location.replace("/admin/course/" + courseID)
         } else {
             data.text().then(
@@ -92,7 +93,7 @@ function submitCut(lectureID: number, courseID: number) {
 
 function deleteUnit(unitID: number) {
     postData("/api/deleteUnit/" + unitID).then(r => {
-        if (r.status == 200) {
+        if (r.status == StatusCodes.OK) {
             window.location.reload()
         }
     })
