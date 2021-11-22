@@ -18,14 +18,7 @@
                         class="fas fa-exclamation-triangle mr-2"></i><span>{{$notification.Text}}</span></p>
         {{end}}
     {{end}}
-    {{if .IsOnLegacy}}
-        <p class="text-yellow-400"><i class="fas fa-exclamation-triangle mr-2"></i><span>We moved to <a
-                        href="https://live.rbg.tum.de" class="underline">https://live.rbg.tum.de</a> :)</span></p>
-    {{else}}
-        <p class="text-yellow-400"><i class="fas fa-exclamation-triangle mr-2"></i><span>The previous version of this website is still available at <a
-                        href="https://oldlive.mm.rbg.tum.de" class="underline">https://oldlive.mm.rbg.tum.de</a>, if you miss anything on this website let us know! <a
-                        class="underline" href="mailto:live@rbg.tum.de">live@rbg.tum.de</a> :)</span></p>
-    {{end}}
+    <p class="text-success font-semibold">We're looking for a developer with focus on frontend and usability improvements (up to 20 hrs.), read about our <a class="underline" href="https://github.com/joschahenningsen/TUM-Live/blob/dev/stack.md">Tech-Stack</a> and drop us some <a class="underline" href="mailto:live@rbg.tum.de">mail</a>!</p>
     {{if not .TUMLiveContext.User}}
         <p class="text-2"><a href="/login" class="underline">Log in</a> to see your courses</p>
     {{else if .TUMLiveContext.User.Name}}
