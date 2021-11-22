@@ -30,6 +30,7 @@ There is a dockerfile/docker-compose.yml. I don't guarantee that it works becaus
 To get this running locally follow these steps:
 
 ### Setup IPs
+
 In `/etc/hosts` add this: 
 ```
 127.0.0.1  db

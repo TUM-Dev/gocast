@@ -238,6 +238,10 @@
         }
     });
 
+    {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
+        player.watchProgress({{$stream.Model.ID}}, {{.Progress.Progress}});
+    {{end}}
+
     {{if $stream.Silences}}
     player.skipSilence({{$stream.GetSilencesJson}});
     {{end}}

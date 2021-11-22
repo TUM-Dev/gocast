@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 const Button = videojs.getComponent('Button');
 
 let skipTo = 0;
@@ -36,11 +37,7 @@ class TheaterModeToggle extends Button {
     }
 
     buildCSSClass() {
-        if (document.getElementById(this.options_.elementToToggle).classList.contains(this.options_.className)) {
-            return `vjs-theater-mode-control ${super.buildCSSClass()}`;
-        } else {
-            return `vjs-theater-mode-control ${super.buildCSSClass()}`;
-        }
+        return `vjs-theater-mode-control ${super.buildCSSClass()}`;
     }
 
     handleClick() {
@@ -74,7 +71,7 @@ const theaterMode = function (options) {
         this.controlBar.el().insertBefore(toggle.el(), this.controlBar.fullscreenToggle.el());
     });
 
-    this.on('fullscreenchange', (event) => {
+    this.on('fullscreenchange', () => {
         if (this.isFullscreen()) {
             this.controlBar.getChild("theaterModeToggle").hide();
         } else {
@@ -96,7 +93,7 @@ const skipSilence = function (options) {
         const len = silences.length
         let i = 0;
         let n = 0;
-        this.on('timeupdate', (event) => {
+        this.on('timeupdate', () => {
             if (n++ % 5 != 0) {
                 return;
             }
@@ -121,6 +118,76 @@ const skipSilence = function (options) {
     });
 };
 
+/**
+ * @function watchProgress
+ * Saves and retrieves the watch progress of the user as a fraction of the total watch time
+ * @param streamID The ID of the currently watched stream
+ * @param lastProgress The last progress fetched from the database
+ */
+const watchProgress = function (streamID: number, lastProgress: float64) {
+    this.ready(() => {
+        let duration;
+        let timer;
+        let iOSReady = false;
+        let intervalInSeconds = 10000;
+
+        // Fetch the user's video progress from the database and set the time in the player
+        this.on('loadedmetadata', () => {
+            duration = this.duration();
+            this.currentTime(lastProgress * duration);
+        });
+
+        // iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
+        // not sufficient here.
+        // See https://stackoverflow.com/questions/28823567/how-to-set-currenttime-in-video-js-in-safari-for-ios.
+        if (videojs.browser.IS_IOS) {
+            this.on('canplaythrough', () => {
+                // Can be executed multiple times during playback
+                if (!iOSReady) {
+                    this.currentTime(lastProgress * duration);
+                    iOSReady = true;
+                }
+            });
+        }
+
+        const reportProgress = () => {
+            const progress = this.currentTime() / duration;
+            postData("/api/progressReport", {
+                "streamID": streamID,
+                "progress": progress
+            }).then(r => {
+                    if (r.status !== 200) {
+                        console.log(r);
+                        intervalInSeconds *= 2; // Binary exponential backoff for load balancing
+                    }
+                }
+            );
+        }
+
+        // Triggered when user presses play
+        this.on('play', () => {
+            timer = setInterval(() => { reportProgress() }, intervalInSeconds);
+        });
+
+        // Triggered on pause and skipping the video
+        this.on('pause', () => {
+            clearInterval(timer);
+            // "Bug" on iOS: The video is automatically paused at the beginning
+            if (!iOSReady && videojs.browser.IS_IOS) {
+                return;
+            }
+            reportProgress();
+        });
+
+        // Triggered when the video has no time left
+        this.on('ended', () => {
+            clearInterval(timer);
+        });
+    });
+};
+
+
 // Register the plugin with video.js.
 videojs.registerPlugin('theaterMode', theaterMode);
 videojs.registerPlugin('skipSilence', skipSilence);
+videojs.registerPlugin('watchProgress', watchProgress);
