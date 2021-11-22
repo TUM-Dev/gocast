@@ -1,4 +1,4 @@
-# Techstack
+# Tech Stack
 
 TUM-Live is primarily developed in Go. We mainly use these frameworks and libraries:
 - Gin (our HTTP router)
