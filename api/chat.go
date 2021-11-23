@@ -20,6 +20,9 @@ import (
 
 var m *melody.Melody
 
+const maxParticipants = 10000
+const maxMessageLength = 200
+
 // TODO: Use stats
 
 func configGinChatRouter(router *gin.RouterGroup) {
@@ -49,7 +52,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			return
 		}
 		chat.Msg = strings.TrimSpace(chat.Msg)
-		if chat.Msg == "" || len(chat.Msg) > 200 {
+		if chat.Msg == "" || len(chat.Msg) > maxMessageLength {
 			return
 		}
 		if dao.IsUserCooledDown(fmt.Sprintf("%v", tumLiveContext.User.ID)) {
@@ -122,7 +125,7 @@ func NotifyViewersLiveState(streamId uint, live bool) {
 
 func ChatStream(c *gin.Context) {
 	// max participants in chat to prevent attacks
-	if m.Len() > 10000 {
+	if m.Len() > maxParticipants {
 		return
 	}
 	joinTime := time.Now()
