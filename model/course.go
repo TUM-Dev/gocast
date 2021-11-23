@@ -10,10 +10,10 @@ import (
 type Course struct {
 	gorm.Model
 
-	UserID                  uint
-	Name                    string
-	Slug                    string // eg. eidi
-	Year                    int    // eg. 2021
+	UserID                  uint   `gorm:"not null;"`
+	Name                    string `gorm:"not null;"`
+	Slug                    string `gorm:"not null;"` // eg. eidi
+	Year                    int    `gorm:"not null;"` // eg. 2021
 	TeachingTerm            string // eg. Summer/Winter
 	TUMOnlineIdentifier     string
 	LiveEnabled             bool `gorm:"default:true"`

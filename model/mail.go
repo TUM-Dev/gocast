@@ -4,6 +4,6 @@ import "gorm.io/gorm"
 
 type Mail struct {
 	gorm.Model
-	To   string
-	Body string
+	To   string `gorm:"not null;"`
+	Body string `gorm:"not null;"`
 }
