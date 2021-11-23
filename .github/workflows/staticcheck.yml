@@ -1,14 +1,16 @@
-name: "CI"
+name: "staticcheck"
 on: ["push", "pull_request"]
 
 jobs:
   ci:
-    name: "Run CI"
+    name: "Run staticcheck"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
         with:
           fetch-depth: 1
-      - uses: dominikh/staticcheck-action@v1.0.0
+      # go:embed node_modules in router.go does not work as node_modules is not generated yet
+      - run: mkdir web/node_modules && touch web/node_modules/sca.txt
+      - uses: dominikh/staticcheck-action@v1.1.0
         with:
           version: "2021.1.1"
