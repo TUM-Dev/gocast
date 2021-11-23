@@ -10,7 +10,7 @@ jobs:
         with:
           fetch-depth: 1
       # create node_module for "go:embed node_modules" in web/router.go
-      - run:  npm i --no-dev;
+      - run: npm_dependencies;
       - uses: dominikh/staticcheck-action@v1.1.0
         with:
           version: "2021.1.1"
