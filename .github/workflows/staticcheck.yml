@@ -9,8 +9,8 @@ jobs:
       - uses: actions/checkout@v1
         with:
           fetch-depth: 1
-      # go:embed node_modules in router.go does not work as node_modules is not generated yet
-      - run: mkdir web/node_modules && touch web/node_modules/sca.txt
+      # create node_module for "go:embed node_modules" in web/router.go
+      - run:  npm i --no-dev;
       - uses: dominikh/staticcheck-action@v1.1.0
         with:
           version: "2021.1.1"
