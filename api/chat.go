@@ -53,7 +53,13 @@ func configGinChatRouter(router *gin.RouterGroup) {
 		if chat.Msg == "" || len(chat.Msg) > 200 {
 			return
 		}
-		if dao.IsUserCooledDown(fmt.Sprintf("%v", tumLiveContext.User.ID)) {
+		isCooledDown, err := dao.IsUserCooledDown(fmt.Sprintf("%v", tumLiveContext.User.ID))
+		if err != nil {
+			sentry.CaptureException(errors.New("could not determine whether user has cooled down"))
+			ctx.(*gin.Context).AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		if isCooledDown {
 			return
 		}
 		if !tumLiveContext.Course.ChatEnabled {
