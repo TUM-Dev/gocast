@@ -1,9 +1,9 @@
 package dao
 
 //GetCourseNumStudents returns the number of students enrolled in the course
-func GetCourseNumStudents(courseID uint) (int, error) {
-	var res int
-	err := DB.Raw(`SELECT count(*) FROM course_users WHERE course_id = ? OR ? = 0`, courseID, courseID).Scan(&res).Error
+func GetCourseNumStudents(courseID uint) (int64, error) {
+	var res int64
+	err := DB.Raw(`SELECT * FROM course_users WHERE course_id = ? OR ? = 0`, courseID, courseID).Count(&res).Error
 	return res, err
 }
 
