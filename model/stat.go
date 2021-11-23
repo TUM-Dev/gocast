@@ -7,6 +7,7 @@ import (
 
 type Stat struct {
 	gorm.Model
+
 	Time     time.Time
 	StreamID uint
 	Viewers  int

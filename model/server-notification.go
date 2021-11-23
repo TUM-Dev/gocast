@@ -7,6 +7,7 @@ import (
 
 type ServerNotification struct {
 	gorm.Model
+
 	Text    string
 	Warn    bool // if false -> Info
 	Start   time.Time

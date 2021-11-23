@@ -10,7 +10,8 @@ import (
 
 type StreamUnit struct {
 	gorm.Model
-	UnitName        string
+
+	UnitName        string `gorm:"not null;"`
 	UnitDescription string
 	UnitStart       uint
 	UnitEnd         uint

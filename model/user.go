@@ -25,7 +25,7 @@ const (
 type User struct {
 	gorm.Model
 
-	Name                string
+	Name                string         `gorm:"not null;"`
 	Email               sql.NullString `gorm:"unique;default:null"`
 	MatriculationNumber string         `gorm:"unique;default:null"`
 	LrzID               string
