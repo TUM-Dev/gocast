@@ -1,9 +1,9 @@
 package dao
 
 //GetCourseNumStudents returns the number of students enrolled in the course
-func GetCourseNumStudents(courseID uint) (int, error) {
-	var res int
-	err := DB.Raw(`SELECT count(*) FROM course_users WHERE course_id = ? OR ? = 0`, courseID, courseID).Scan(&res).Error
+func GetCourseNumStudents(courseID uint) (int64, error) {
+	var res int64
+	err := DB.Raw(`SELECT * FROM course_users WHERE course_id = ? OR ? = 0`, courseID, courseID).Count(&res).Error
 	return res, err
 }
 
@@ -30,10 +30,10 @@ func GetCourseNumLiveViews(courseID uint) (int, error) {
 	return res, err
 }
 
-//GetCourseNumVodViewsPerDay Returns the daily amount of vod views for each day
+//GetCourseNumVodViewsPerDay returns the daily amount of vod views for each day
 func GetCourseNumVodViewsPerDay(courseID uint) ([]Stat, error) {
 	var res []Stat
-	err := DB.Raw(`SELECT CONCAT(DAY(stats.time), '.', MONTH(stats.time), '.', YEAR(stats.time)) AS x, sum(viewers) AS y
+	err := DB.Raw(`SELECT DATE_FORMAT(stats.time, "%e.%m.%Y") AS x, sum(viewers) AS y
 		FROM stats
 			JOIN streams s ON s.id = stats.stream_id
 		WHERE (s.course_id = ? OR ? = 0) AND live = 0
@@ -68,25 +68,15 @@ func GetCourseStatsHourly(courseID uint) ([]Stat, error) {
 
 func GetStudentActivityCourseStats(courseID uint, live bool) ([]Stat, error) {
 	var res []Stat
-	if live {
-		err := DB.Raw(`SELECT CONCAT(YEAR(stats.time), ' w', WEEK(stats.time)) AS x, MAX(stats.viewers) AS y
+
+	err := DB.Raw(`SELECT DATE_FORMAT(stats.time, "%Yw%v") AS x, MAX(stats.viewers) AS y
 		FROM stats
         	JOIN streams s ON s.id = stats.stream_id
-		WHERE (s.course_id = ? OR ? = 0) AND stats.live = 1
+		WHERE (s.course_id = ? OR ? = 0) AND stats.live = ?
 		GROUP BY year(stats.time), week(stats.time)
 		ORDER BY stats.time;`,
-			courseID, courseID).Scan(&res).Error
-		return res, err
-	} else {
-		err := DB.Raw(`SELECT CONCAT(YEAR(stats.time), ' w', WEEK(stats.time)) AS x, SUM(stats.viewers) AS y
-		FROM stats
-        	JOIN streams s ON s.id = stats.stream_id
-		WHERE (s.course_id = ? OR ? = 0) AND stats.live = 0
-		GROUP BY year(stats.time), week(stats.time)
-		ORDER BY stats.time;`,
-			courseID, courseID).Scan(&res).Error
-		return res, err
-	}
+		courseID, courseID, live).Scan(&res).Error
+	return res, err
 }
 
 //Stat key value struct that is parsable by Chart.js without further modifications.
