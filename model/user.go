@@ -75,7 +75,6 @@ var (
 		saltLength:  16,
 		keyLength:   32,
 	}
-	// emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 )
 
 func (u *User) SetPassword(password string) (err error) {
