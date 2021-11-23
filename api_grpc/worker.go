@@ -163,10 +163,15 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 				}
 			}
 		}
-		err = dao.RemoveStreamFromSlot(stream.ID)
-		if err != nil {
-			log.WithError(err).Error("Can't remove stream from streamName")
-		}
+		// wait 2 hours to clear the dvr cache
+		go func() {
+			time.Sleep(time.Hour * 2)
+			err := dao.RemoveStreamFromSlot(stream.ID)
+			if err != nil {
+				log.WithError(err).Error("Can't remove stream from streamName")
+			}
+		}()
+
 		err = dao.SetStreamNotLiveById(uint(request.StreamID))
 		if err != nil {
 			log.WithError(err).Error("Can't set stream not live")
