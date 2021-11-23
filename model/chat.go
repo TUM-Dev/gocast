@@ -8,10 +8,10 @@ import (
 type Chat struct {
 	gorm.Model
 
-	UserID   string
-	UserName string
-	Message  string
-	StreamID uint
-	Admin    bool
-	SendTime time.Time
+	UserID   string    `gorm:"not null;"`
+	UserName string    `gorm:"not null;"`
+	Message  string    `gorm:"not null;"`
+	StreamID uint      `gorm:"not null;"`
+	Admin    bool      `gorm:"not null;"`
+	SendTime time.Time `gorm:"not null;"`
 }
