@@ -21,7 +21,7 @@ func GetAllWorkers() ([]model.Worker, error) {
 
 func GetAliveWorkers() []model.Worker {
 	var workers []model.Worker
-	DB.Model(&model.Worker{}).Where("last_seen > DATESUB(minute, 5, NOW())").Scan(&workers)
+	DB.Model(&model.Worker{}).Where("last_seen > DATE_SUB(NOW(), INTERVAL 5 MINUTE)").Scan(&workers)
 	return workers
 }
 
