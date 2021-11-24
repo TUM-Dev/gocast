@@ -30,7 +30,7 @@ func GetAllCourses(limit bool) ([]model.Course, error) {
 		err = DB.Preload("Streams").Find(&courses).Error
 	} else {
 		// limit 3 months in the future and one month in the past
-		err = DB.Preload("Streams", "start BETWEEN DATEADD(month, -1, start) and DATEADD(month, 3, start)").Find(&courses).Error
+		err = DB.Preload("Streams", "start BETWEEN DATESUB(month, 1, NOW()) and DATEADD(month, 3, NOW())").Find(&courses).Error
 	}
 	if err == nil {
 		Cache.SetWithTTL("allCourses", courses, 1, time.Minute)

@@ -68,7 +68,6 @@ func GetCourseStatsHourly(courseID uint) ([]Stat, error) {
 
 func GetStudentActivityCourseStats(courseID uint, live bool) ([]Stat, error) {
 	var res []Stat
-
 	err := DB.Raw(`SELECT DATE_FORMAT(stats.time, "%Yw%v") AS x, MAX(stats.viewers) AS y
 		FROM stats
         	JOIN streams s ON s.id = stats.stream_id
