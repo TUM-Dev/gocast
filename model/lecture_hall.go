@@ -5,8 +5,8 @@ import "gorm.io/gorm"
 type LectureHall struct {
 	gorm.Model
 
-	Name           string `gorm:"not null;"` //as in smp (e.g. room_00_13_009A)
-	FullName       string `gorm:"not null;"` //e.g. '5613.EG.009A (00.13.009A, Seminarraum), Boltzmannstr. 3(5613), 85748 Garching b. München'
+	Name           string `gorm:"not null"` //as in smp (e.g. room_00_13_009A)
+	FullName       string `gorm:"not null"` //e.g. '5613.EG.009A (00.13.009A, Seminarraum), Boltzmannstr. 3(5613), 85748 Garching b. München'
 	CombIP         string
 	PresIP         string
 	CamIP          string

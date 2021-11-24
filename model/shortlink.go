@@ -7,5 +7,5 @@ type ShortLink struct {
 	gorm.Model
 
 	Link     string `gorm:"not null unique"`
-	CourseId uint   `gorm:"not null;"`
+	CourseId uint   `gorm:"not null"`
 }

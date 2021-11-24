@@ -8,10 +8,10 @@ import (
 type ServerNotification struct {
 	gorm.Model
 
-	Text    string
-	Warn    bool // if false -> Info
-	Start   time.Time
-	Expires time.Time
+	Text    string    `gorm:"not null"`
+	Warn    bool      `gorm:"not null"` // if false -> Info
+	Start   time.Time `gorm:"not null"`
+	Expires time.Time `gorm:"not null"`
 }
 
 func (s ServerNotification) FormatFrom() string {

@@ -25,13 +25,13 @@ const (
 type User struct {
 	gorm.Model
 
-	Name                string         `gorm:"not null;"`
+	Name                string         `gorm:"not null"`
 	Email               sql.NullString `gorm:"unique;default:null"`
 	MatriculationNumber string         `gorm:"unique;default:null"`
 	LrzID               string
 	Role                int      //1:admin 2:lecturer 3:others
 	Password            string   `gorm:"default:null"`
-	Courses             []Course `gorm:"many2many:course_users;"` // courses a lecturer invited this user to
+	Courses             []Course `gorm:"many2many:course_users"` // courses a lecturer invited this user to
 }
 
 type argonParams struct {

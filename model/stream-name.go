@@ -6,8 +6,8 @@ import "gorm.io/gorm"
 type StreamName struct {
 	gorm.Model
 
-	StreamName     string
-	IsTranscoding  bool
-	IngestServerID uint
-	StreamID       uint
+	StreamName     string `gorm:"not null"`
+	IsTranscoding  bool   `gorm:"not null"`
+	IngestServerID uint   `gorm:"not null"`
+	StreamID       uint   `gorm:"not null"`
 }
