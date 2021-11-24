@@ -5,3 +5,4 @@ repos:
       - id: go-fmt-import
       - id: go-vet
       - id: go-static-check # install https://staticcheck.io/docs/
+      - id: gofumpt # requires github.com/mvdan/gofumpt
