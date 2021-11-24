@@ -19,6 +19,7 @@ func GetAllWorkers() ([]model.Worker, error) {
 	return workers, err
 }
 
+// GetAliveWorkers returns all workers that were active within the last 5 minutes
 func GetAliveWorkers() []model.Worker {
 	var workers []model.Worker
 	DB.Model(&model.Worker{}).Where("last_seen > DATE_SUB(NOW(), INTERVAL 5 MINUTE)").Scan(&workers)

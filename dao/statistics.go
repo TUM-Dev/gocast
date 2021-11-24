@@ -33,7 +33,7 @@ func GetCourseNumLiveViews(courseID uint) (int, error) {
 //GetCourseNumVodViewsPerDay returns the daily amount of vod views for each day
 func GetCourseNumVodViewsPerDay(courseID uint) ([]Stat, error) {
 	var res []Stat
-	err := DB.Raw(`SELECT DATE_FORMAT(stats.time, "%e.%m.%Y") AS x, sum(viewers) AS y
+	err := DB.Raw(`SELECT DATE_FORMAT(stats.time, GET_FORMAT(DATE, 'EUR')) AS x, sum(viewers) AS y
 		FROM stats
 			JOIN streams s ON s.id = stats.stream_id
 		WHERE (s.course_id = ? OR ? = 0) AND live = 0
@@ -68,7 +68,7 @@ func GetCourseStatsHourly(courseID uint) ([]Stat, error) {
 
 func GetStudentActivityCourseStats(courseID uint, live bool) ([]Stat, error) {
 	var res []Stat
-	err := DB.Raw(`SELECT DATE_FORMAT(stats.time, "%Yw%v") AS x, MAX(stats.viewers) AS y
+	err := DB.Raw(`SELECT DATE_FORMAT(stats.time, "%Y w%v") AS x, MAX(stats.viewers) AS y
 		FROM stats
         	JOIN streams s ON s.id = stats.stream_id
 		WHERE (s.course_id = ? OR ? = 0) AND stats.live = ?
