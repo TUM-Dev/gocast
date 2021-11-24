@@ -44,7 +44,7 @@ class TheaterModeToggle extends Button {
     }
 
     handleClick() {
-        let theaterModeIsOn = document.getElementById(this.options_.elementToToggle).classList.toggle(this.options_.className);
+        const theaterModeIsOn = document.getElementById(this.options_.elementToToggle).classList.toggle(this.options_.className);
         this.player().trigger('theaterMode', {'theaterModeIsOn': theaterModeIsOn});
 
         if (theaterModeIsOn) {
@@ -87,15 +87,16 @@ const skipSilence = function (options) {
     this.ready(() => {
         // @ts-ignore
         this.addClass('vjs-skip-silence');
-        let toggle = this.addChild("SkipSilenceToggle");
+        const toggle = this.addChild("SkipSilenceToggle");
         toggle.el().classList.add("invisible");
         this.el().insertBefore(toggle.el(), this.bigPlayButton.el());
 
         let isShowing = false;
         const silences = JSON.parse(options);
         const len = silences.length;
+        const intervalMillis = 100;
+
         let i = 0;
-        let intervalMillis = 100;
         let timer;
 
         // Triggered when user presses play

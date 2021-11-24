@@ -20,8 +20,8 @@ export module Admin {
     }
 
     export function createUser() {
-        let userName: string = (document.getElementById("name") as HTMLInputElement).value
-        let email: string = (document.getElementById("email") as HTMLInputElement).value
+        const userName: string = (document.getElementById("name") as HTMLInputElement).value
+        const email: string = (document.getElementById("email") as HTMLInputElement).value
         postData("/api/createUser", {"name": userName, "email": email, "password": null})
             .then(data => {
                 if (data.status === StatusCodes.OK) {

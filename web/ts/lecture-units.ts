@@ -5,7 +5,7 @@ export module LectureUnits {
     let slider
 
     // @ts-ignore
-    let player = videojs('my-video', {
+    const player = videojs('my-video', {
     html5: {
         hls: {
             overrideNative: true
@@ -36,7 +36,7 @@ export module LectureUnits {
         }
     });
 
-    let tooltipInputs = [makeTT(0, slider), makeTT(1, slider)];
+    const tooltipInputs = [makeTT(0, slider), makeTT(1, slider)];
     // @ts-ignore
     slider.noUiSlider.on('update', function (values, handle) {
         tooltipInputs[handle].value = values[handle];
@@ -46,10 +46,10 @@ export module LectureUnits {
 
     export function submitNewUnit(lectureID: number) {
     //convert from and to to milliseconds relatively to beginning of video.
-    let from = timeToS(slider.noUiSlider.get()[0]) * 1000;
-    let to = timeToS(slider.noUiSlider.get()[1]) * 1000;
-    let title = (document.getElementById("newUnitTitle") as HTMLInputElement).value
-    let description = (document.getElementById("newUnitDescription") as HTMLInputElement).value
+    const from = timeToS(slider.noUiSlider.get()[0]) * 1000;
+    const to = timeToS(slider.noUiSlider.get()[1]) * 1000;
+    const title = (document.getElementById("newUnitTitle") as HTMLInputElement).value
+    const description = (document.getElementById("newUnitDescription") as HTMLInputElement).value
     postData("/api/addUnit", {
         "lectureID": lectureID,
         "from": from,
@@ -71,8 +71,8 @@ export module LectureUnits {
     }
 
     export function submitCut(lectureID: number, courseID: number) {
-    let from = timeToS(slider.noUiSlider.get()[0]) * 1000;
-    let to = timeToS(slider.noUiSlider.get()[1]) * 1000;
+    const from = timeToS(slider.noUiSlider.get()[0]) * 1000;
+    const to = timeToS(slider.noUiSlider.get()[1]) * 1000;
     postData("/api/submitCut", {
         "lectureID": lectureID,
         "from": from,
@@ -100,16 +100,16 @@ export module LectureUnits {
     }
 
     function timeToS(s) {
-    let parts = s.split(":")
+    const parts = s.split(":")
     return parseInt(parts[0]) * 60 * 60 + parseInt(parts[1]) * 60 + parseInt(parts[2])
     }
 
     function sToTime(s) {
     s = Math.floor(s)
-    let secs = s % 60;
+    const secs = s % 60;
     s = (s - secs) / 60;
-    let mins = s % 60;
-    let hrs = (s - mins) / 60;
+    const mins = s % 60;
+    const hrs = (s - mins) / 60;
     return ("0" + hrs).slice(-2) + ':' + ("0" + mins).slice(-2) + ':' + ("0" + secs).slice(-2);
     }
 
@@ -118,8 +118,8 @@ export module LectureUnits {
     }
 
     function makeTT(i, slider) {
-    let tooltip = document.createElement('div');
-    let input = document.createElement('input');
+    const tooltip = document.createElement('div');
+    const input = document.createElement('input');
 
     input.className = 'w-auto bg-secondary text-gray-400 p-0';
     // Add the input to the tooltip

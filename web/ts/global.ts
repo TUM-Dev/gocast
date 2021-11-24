@@ -10,15 +10,15 @@ export async function postData(url = '', data = {}) {
 }
 
 export function Get(yourUrl) {
-    let HttpReq = new XMLHttpRequest();
+    const HttpReq = new XMLHttpRequest();
     HttpReq.open("GET", yourUrl, false);
     HttpReq.send(null);
     return HttpReq.responseText;
 }
 
 export function showMessage(msg: string) {
-    let alertBox: HTMLElement = document.getElementById("alertBox");
-    let alertText: HTMLSpanElement = document.getElementById("alertText");
+    const alertBox: HTMLElement = document.getElementById("alertBox");
+    const alertText: HTMLSpanElement = document.getElementById("alertText");
     alertText.innerText = msg;
     alertBox.classList.remove("hidden");
 }
@@ -33,7 +33,7 @@ export function copyToClipboard(text: string) {
 }
 
 export function hideCourse(id: number, name: string) {
-    let hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses") ? JSON.parse(localStorage.getItem("hiddenCourses")) : new Array<Array<string>>();
+    const hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses") ? JSON.parse(localStorage.getItem("hiddenCourses")) : new Array<Array<string>>();
     if (!(hidden.indexOf([id.toString(), name]) !== -1)) {
         hidden.push([id.toString(), name]);
         localStorage.setItem("hiddenCourses", JSON.stringify(hidden));
@@ -42,8 +42,8 @@ export function hideCourse(id: number, name: string) {
 }
 
 export function unhideCourse(id: string, name: string) {
-    let hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses") ? JSON.parse(localStorage.getItem("hiddenCourses")) : new Array<Array<string>>();
-    let newHidden: Array<Array<string>> = hidden.filter(e => {
+    const hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses") ? JSON.parse(localStorage.getItem("hiddenCourses")) : new Array<Array<string>>();
+    const newHidden: Array<Array<string>> = hidden.filter(e => {
         return (e[0] !== id);
     })
     localStorage.setItem("hiddenCourses", JSON.stringify(newHidden));
@@ -52,7 +52,7 @@ export function unhideCourse(id: string, name: string) {
 
 export function toggleColorScheme() {
     //initial theme preference:
-    let darkTheme: boolean = localStorage.getItem("darkTheme") ? JSON.parse(localStorage.getItem("darkTheme")) : true;
+    const darkTheme: boolean = localStorage.getItem("darkTheme") ? JSON.parse(localStorage.getItem("darkTheme")) : true;
     //store opposite
     localStorage.setItem("darkTheme", JSON.stringify(!darkTheme));
     //set opposite class
@@ -64,7 +64,7 @@ export function toggleColorScheme() {
 }
 
 export function initHiddenCourses() {
-    let el = document.getElementById("hiddenCoursesText");
+    const el = document.getElementById("hiddenCoursesText");
     if (!el){
         return;
     }
@@ -79,7 +79,7 @@ export function initHiddenCourses() {
             clickableParent.classList.add("hidden");
         }
     }
-    let hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses") ? JSON.parse(localStorage.getItem("hiddenCourses")) : new Array<Array<string>>();
+    const hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses") ? JSON.parse(localStorage.getItem("hiddenCourses")) : new Array<Array<string>>();
     const hiddenCoursesRestoreList = document.getElementById("hiddenCoursesRestoreList") as HTMLUListElement;
     const hiddenCoursesText = document.getElementById("hiddenCoursesText") as HTMLParagraphElement;
     hidden?.forEach(h => {

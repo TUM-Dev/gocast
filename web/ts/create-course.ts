@@ -13,7 +13,7 @@ export module CreateCourse {
 
         constructor() {
             this.loadFromTUMOnlineBtn = document.getElementById("loadCourseInfoBtn") as HTMLButtonElement
-            this.loadFromTUMOnlineBtn.addEventListener("click", (e: Event) => this.loadCourseInfo())
+            this.loadFromTUMOnlineBtn.addEventListener("click", () => this.loadCourseInfo())
             this.courseIDInput = document.getElementById("courseID") as HTMLInputElement
             this.courseNameInput = document.getElementById("name") as HTMLInputElement
             this.teachingTermInput = document.getElementById("teachingTerm") as HTMLInputElement

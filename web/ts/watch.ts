@@ -29,12 +29,12 @@ export module Watch {
 
     let ws: WebSocket;
     let retryInt = 5000; //retry connecting to websocket after this timeout
-    let pageloaded = new Date();
+    const pageloaded = new Date();
 
     function startWebsocket() {
-        let streamid = (document.getElementById("streamID") as HTMLInputElement).value;
+        const streamid = (document.getElementById("streamID") as HTMLInputElement).value;
         ws = new WebSocket("wss://live.rbg.tum.de/api/chat/" + streamid + "/ws");
-        let cf = document.getElementById("chatForm");
+        const cf = document.getElementById("chatForm");
         if (cf !== null && cf != undefined) {
             (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", e => submitChat(e));
         }
@@ -77,11 +77,11 @@ export module Watch {
     */
     function createMessageElement(m): HTMLDivElement {
         // Header:
-        let chatElem = document.createElement("div") as HTMLDivElement
+        const chatElem = document.createElement("div") as HTMLDivElement
         chatElem.classList.add("rounded", "p-2", "mx-2")
-        let chatHeader = document.createElement("div") as HTMLDivElement
+        const chatHeader = document.createElement("div") as HTMLDivElement
         chatHeader.classList.add("flex", "flex-row")
-        let chatNameField = document.createElement("p") as HTMLParagraphElement
+        const chatNameField = document.createElement("p") as HTMLParagraphElement
         chatNameField.classList.add("flex-grow", "font-semibold")
         if (m["admin"]) {
             chatNameField.classList.add("text-warn")
@@ -91,14 +91,14 @@ export module Watch {
 
         const d = new Date
         d.setTime(Date.now())
-        let chatTimeField = document.createElement("p") as HTMLParagraphElement
+        const chatTimeField = document.createElement("p") as HTMLParagraphElement
         chatTimeField.classList.add("text-4")
         chatTimeField.innerText = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2)
         chatHeader.appendChild(chatTimeField)
         chatElem.appendChild(chatHeader)
 
         // Message:
-        let chatMessage = document.createElement("p") as HTMLParagraphElement
+        const chatMessage = document.createElement("p") as HTMLParagraphElement
         chatMessage.classList.add("text-gray-300", "break-words")
         chatMessage.innerText = m["msg"]
         chatElem.appendChild(chatMessage)
@@ -118,7 +118,7 @@ export module Watch {
     class Timer {
 
         constructor(date: string) {
-            let d = new Date(date);
+            const d = new Date(date);
             d.setMinutes(d.getMinutes() - 10);
             this.countdown(d.getTime());
         }

@@ -16,7 +16,7 @@ export module Stats {
     }
 
     export function initStatsPage() {
-        let dates = ["numStudents", "vodViews", "liveViews"];
+        const dates = ["numStudents", "vodViews", "liveViews"];
         dates.forEach(endpoint => {
             getAsync(`/api/course/${(document.getElementById("courseID") as HTMLInputElement).value}/stats?interval=${endpoint}`).then(res => {
                     if (res.status === StatusCodes.OK) {

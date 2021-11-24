@@ -13,15 +13,15 @@ export module Onboarding {
         }
     }
 
-    let nameBox: HTMLInputElement = document.querySelector('#name');
+    const nameBox: HTMLInputElement = document.querySelector('#name');
     nameBox.onfocus = function () {
         document.querySelector("#nameError").innerHTML = "";
     }
-    let emailBox: HTMLInputElement = document.querySelector('#email');
+    const emailBox: HTMLInputElement = document.querySelector('#email');
     emailBox.onfocus = function () {
         document.querySelector("#emailError").innerHTML = "";
     }
-    let passwordBox: HTMLInputElement = document.querySelector('#password');
+    const passwordBox: HTMLInputElement = document.querySelector('#password');
     passwordBox.onfocus = function () {
         document.querySelector("#passwordError").innerHTML = "";
     }

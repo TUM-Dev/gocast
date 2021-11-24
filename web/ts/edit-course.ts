@@ -122,7 +122,7 @@ export module EditCourse {
             submitData() {
                 this.loading = true;
                 console.log(this.formData);
-                let body = new FormData();
+                const body = new FormData();
                 body.set("title", this.formData.title);
                 body.set("premiere", this.formData.premiere)
                 body.set("start", this.formData.start)

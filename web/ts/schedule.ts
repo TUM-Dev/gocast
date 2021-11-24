@@ -26,9 +26,9 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         },
         eventClick: function (data) { // load some extra info on click
-            let popover = document.getElementById("popoverContent");
+            const popover = document.getElementById("popoverContent");
             const streamInfo = JSON.parse(Get("/api/stream/" + data.event.extendedProps.description))
-            let html = `
+            const html = `
             <p class="flex text-1 text-lg">
                 <span class="flex-grow">${streamInfo["course"]}</span>
                 <i id="closeBtn" class="transition-colors duration-200 hover:text-1 text-4 icon-close"></i>
