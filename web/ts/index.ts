@@ -1,12 +1,12 @@
-export { Stats } from './stats'
-export { CourseImport } from './course-import'
-export { Admin } from './admin'
-export { LectureHallManagement } from './lecture-hall-management'
-export { LectureUnits } from './lecture-units'
-export { Watch } from './watch'
-export { WatchAdmin } from './watch-admin'
-export { CreateCourse } from './create-course'
-export { EditCourse } from './edit-course'
-export { Onboarding } from './onboarding'
-export { ServerNofications } from './server-notifications'
-export { Player } from './TUMLiveVjs'
+export * from './stats';
+export * from './course-import';
+export * from './admin';
+export * from './lecture-hall-management';
+export * from './lecture-units';
+export * from './watch';
+export * from './watch-admin';
+export * from './create-course';
+export * from './edit-course';
+export * from './onboarding';
+export * from './server-notifications';
+export * from './TUMLiveVjs';

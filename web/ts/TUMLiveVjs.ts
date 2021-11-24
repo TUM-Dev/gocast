@@ -1,7 +1,5 @@
 // @ts-nocheck
-import {StatusCodes} from "http-status-codes";
-
-export module Player {
+import { StatusCodes } from "http-status-codes";
 
 const Button = videojs.getComponent('Button');
 
@@ -70,7 +68,7 @@ const theaterMode = function (options) {
     this.ready(() => {
         // @ts-ignore
         this.addClass('vjs-theater-mode');
-        let toggle = this.controlBar.addChild("theaterModeToggle", options);
+        const toggle = this.controlBar.addChild("theaterModeToggle", options);
         this.controlBar.el().insertBefore(toggle.el(), this.controlBar.fullscreenToggle.el());
     });
 
@@ -210,4 +208,3 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
 videojs.registerPlugin('theaterMode', theaterMode);
 videojs.registerPlugin('skipSilence', skipSilence);
 videojs.registerPlugin('watchProgress', watchProgress);
-}

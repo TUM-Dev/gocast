@@ -1,6 +1,6 @@
 import {StatusCodes} from "http-status-codes";
 
-export module Stats {
+export namespace Stats {
     export function loadStats(endpoint: string, targetEl: string) {
         getAsync(`/api/course/${(document.getElementById("courseID") as HTMLInputElement).value}/stats?interval=${endpoint}`).then(res => {
                 if (res.status === StatusCodes.OK) {

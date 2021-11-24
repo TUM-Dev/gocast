@@ -1,4 +1,4 @@
-export module ServerNofications {
+export namespace ServerNofications {
     class ServerNotifications {
         constructor() {
             ["from", "expires"].forEach(value => {
