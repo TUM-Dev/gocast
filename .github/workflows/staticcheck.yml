@@ -1,4 +1,5 @@
 name: "staticcheck"
+
 on:
   push:
     branches: [ dev ]
