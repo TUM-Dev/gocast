@@ -109,6 +109,7 @@ function createLectureForm() {
             start: '',
             end: '',
             premiere: false,
+            vodup: false,
             file: null,
         },
         loading: false,
@@ -120,9 +121,10 @@ function createLectureForm() {
             let body = new FormData();
             body.set("title", this.formData.title);
             body.set("premiere", this.formData.premiere)
+            body.set("vodup", this.formData.vodup)
             body.set("start", this.formData.start)
             body.set("end", this.formData.end)
-            if (this.formData.premiere){
+            if (this.formData.premiere || this.formData.vodup) {
                 body.set("file", this.formData.file[0]);
                 body.set("end", this.formData.start); // premieres have no explicit end set -> use start here
             }

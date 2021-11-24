@@ -25,7 +25,6 @@ func init() {
 		VersionTag:           os.Getenv("VERSION_TAG"),
 		LrzServerIngest:      os.Getenv("LRZ_SERVER_INGEST"),
 		LrzServerHls:         os.Getenv("LRZ_SERVER_HLS"),
-		LrzUser:              os.Getenv("LRZ_USER"),
 		LrzPassword:          os.Getenv("LRZ_PASSWORD"),
 		CampusBase:           os.Getenv("CAMPUS_API_BASE"),
 		CampusToken:          strings.Split(os.Getenv("CAMPUS_API_TOKEN"), ";"),
@@ -44,6 +43,11 @@ func init() {
 		PWRCTRLAuth:          os.Getenv("PWRCTRL_AUTH"),
 		SMIMECert:            os.Getenv("SMIMECRT"),
 		SMIMEKey:             os.Getenv("SMIMEKEY"),
+		LRZUploadURL:         os.Getenv("LRZ_UPLOAD_URL"),
+		LrzUser:              os.Getenv("LRZ_USER"),
+		LRZPhone:             os.Getenv("LRZ_PHONE"),
+		LRZMail:              os.Getenv("LRZ_MAIL"),
+		LRZSubDir:            os.Getenv("LRZ_SUBDIR"),
 	}
 }
 
@@ -75,4 +79,8 @@ type Config struct {
 	PWRCTRLAuth          string
 	SMIMECert            string
 	SMIMEKey             string
+	LRZUploadURL         string
+	LRZPhone             string
+	LRZMail              string
+	LRZSubDir            string
 }

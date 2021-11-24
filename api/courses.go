@@ -393,7 +393,7 @@ func createLecture(c *gin.Context) {
 	premiereFileName := fmt.Sprintf("%s_%s.mp4",
 		tumLiveContext.Course.Slug,
 		req.Start.Format("2006-01-02_15-04"))
-	if req.Premiere {
+	if req.Premiere || req.Vodup {
 		err := os.MkdirAll(premiereFolder, os.ModePerm)
 		if err != nil {
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -417,18 +417,29 @@ func createLecture(c *gin.Context) {
 	}
 	streamKey := uuid.NewV4().String()
 	streamKey = strings.ReplaceAll(streamKey, "-", "")
+	playlist := ""
+	if req.Vodup {
+		err := tools.UploadLRZ(fmt.Sprintf("%s/%s", premiereFolder, premiereFileName))
+		if err != nil {
+			log.WithError(err).Error("Can't upload file for premiere")
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		playlist = fmt.Sprintf("https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s/playlist.m3u8", premiereFileName)
+	}
 	lecture := model.Stream{
 		Name:        req.Title,
 		CourseID:    tumLiveContext.Course.ID,
 		Start:       req.Start,
 		End:         req.End,
 		StreamKey:   streamKey,
-		PlaylistUrl: "",
+		PlaylistUrl: playlist,
 		LiveNow:     false,
+		Recording:   req.Vodup,
 		Premiere:    req.Premiere,
 	}
 	// add file if premiere
-	if req.Premiere {
+	if req.Premiere || req.Vodup {
 		lecture.Files = []model.File{{Path: fmt.Sprintf("%s/%s", premiereFolder, premiereFileName)}}
 	}
 	tumLiveContext.Course.Streams = append(tumLiveContext.Course.Streams, lecture)
@@ -444,6 +455,7 @@ type createLectureRequest struct {
 	End      time.Time             `form:"end"`
 	Premiere bool                  `form:"premiere"`
 	File     *multipart.FileHeader `form:"file"`
+	Vodup    bool                  `form:"vodup"`
 }
 
 func createCourse(c *gin.Context) {
