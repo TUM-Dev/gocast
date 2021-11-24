@@ -149,7 +149,6 @@ func main() {
 	}
 	dao.Cache = *cache
 	initCron()
-
 	go func() {
 		err := GinServer()
 		if err != nil {
@@ -179,6 +178,6 @@ func LoopForever() {
 	log.Info("Entering infinite loop\n")
 
 	signal.Notify(OsSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
-
+	<-OsSignal
 	log.Info("Exiting infinite loop received OsSignal\n")
 }
