@@ -23,8 +23,6 @@ var m *melody.Melody
 const maxParticipants = 10000
 const maxMessageLength = 200
 
-// TODO: Use stats
-
 func configGinChatRouter(router *gin.RouterGroup) {
 	wsGroup := router.Group("/:streamID")
 	wsGroup.Use(tools.InitStream)
