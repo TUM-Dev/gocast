@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import { postData, showMessage } from './global'
-import { Stats } from './stats'
+import { loadStats } from "./stats";
 
 class EditCourse {
 
@@ -13,7 +13,7 @@ class EditCourse {
      * @private
      */
     private static loadGeneralStats() {
-        Stats.loadStats("activity", "courseGeneralStatsLive");
+        loadStats("activity", "courseGeneralStatsLive");
     }
 }
 

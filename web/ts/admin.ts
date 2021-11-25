@@ -1,8 +1,12 @@
-import { postData, showMessage } from './global'
-import { StatusCodes } from "http-status-codes";
+import {postData, showMessage} from './global'
+import {StatusCodes} from "http-status-codes";
 
 class Admin {
 
+}
+
+export default function printMoin(): number {
+   return 42;
 }
 
 export function createLectureHall() {
