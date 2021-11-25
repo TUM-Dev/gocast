@@ -10,7 +10,8 @@
     "postinstall": "npm run typescript-compile && npm run tailwind-compile",
     "typescript-compile": "npx tsc",
     "tailwind-compile": "NODE_ENV=production npx tailwindcss build -i assets/css/main.css --minify -o ./assets/css-dist/main.css",
-    "build": "webpack --config webpack.config.js"
+    "build": "webpack --config webpack.config.js",
+    "lint": "eslint . --ext .ts"
   },
   "author": "Joscha Henningsen",
   "license": "MIT",
