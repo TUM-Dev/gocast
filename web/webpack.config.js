@@ -1,9 +1,7 @@
 const path = require('path');
 
 module.exports = {
-    mode: 'development',
     entry: './ts/index.ts',
-    devtool: 'inline-source-map',
     module: {
         rules: [
             {
@@ -18,6 +16,14 @@ module.exports = {
     },
     output: {
         filename: 'bundle.js',
-        path: path.resolve(__dirname, 'assets/ts-dist'),
+        path: path.resolve(__dirname, './assets/ts-dist'),
+        library: {
+            name: 'UI',
+            type: 'umd',
+        },
+    },
+    optimization: {
+        minimize: false
     },
 };
+
