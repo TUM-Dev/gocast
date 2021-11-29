@@ -13,9 +13,9 @@ type StreamUnit struct {
 
 	UnitName        string `gorm:"not null"`
 	UnitDescription string
-	UnitStart       uint
-	UnitEnd         uint
-	StreamID        uint
+	UnitStart       uint `gorm:"not null"`
+	UnitEnd         uint `gorm:"not null"`
+	StreamID        uint `gorm:"not null"`
 }
 
 func (s StreamUnit) GetUnitDurationMS() uint {
