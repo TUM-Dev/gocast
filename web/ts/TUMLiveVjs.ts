@@ -1,5 +1,7 @@
 // @ts-nocheck
 import { StatusCodes } from "http-status-codes";
+import { postData } from "./global";
+import videojs from 'video.js';
 
 const Button = videojs.getComponent('Button');
 
@@ -10,7 +12,7 @@ let skipTo = 0;
  * in app's CSS (larger player, dimmed background, etc...)
  */
 
-class SkipSilenceToggle extends Button {
+export class SkipSilenceToggle extends Button {
     private p;
 
     constructor(player, options) {
@@ -29,7 +31,7 @@ class SkipSilenceToggle extends Button {
     }
 }
 
-class TheaterModeToggle extends Button {
+export class TheaterModeToggle extends Button {
 
     constructor(player, options) {
         super(player, options);
@@ -64,9 +66,8 @@ videojs.registerComponent('SkipSilenceToggle', SkipSilenceToggle);
  * @param    {Object} [options={}]
  *           elementToToggle, the name of the DOM element to add/remove the 'theater-mode' CSS class
  */
-const theaterMode = function (options) {
+export const theaterMode = function (options) {
     this.ready(() => {
-        // @ts-ignore
         this.addClass('vjs-theater-mode');
         const toggle = this.controlBar.addChild("theaterModeToggle", options);
         this.controlBar.el().insertBefore(toggle.el(), this.controlBar.fullscreenToggle.el());
@@ -81,9 +82,8 @@ const theaterMode = function (options) {
     });
 };
 
-const skipSilence = function (options) {
+export const skipSilence = function (options) {
     this.ready(() => {
-        // @ts-ignore
         this.addClass('vjs-skip-silence');
         const toggle = this.addChild("SkipSilenceToggle");
         toggle.el().classList.add("invisible");
@@ -141,8 +141,8 @@ const skipSilence = function (options) {
  * @param streamID The ID of the currently watched stream
  * @param lastProgress The last progress fetched from the database
  */
-const watchProgress = function (streamID: number, lastProgress: float64) {
-    this.ready(() => {
+export const watchProgress = function (streamID: number, lastProgress: number, player) {
+    player.ready(() => {
         let duration;
         let timer;
         let iOSReady = false;
@@ -151,29 +151,29 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
         // Fetch the user's video progress from the database and set the time in the player
         this.on('loadedmetadata', () => {
             duration = this.duration();
-            this.currentTime(lastProgress * duration);
+            player.currentTime(lastProgress * duration);
         });
 
         // iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
         // not sufficient here.
         // See https://stackoverflow.com/questions/28823567/how-to-set-currenttime-in-video-js-in-safari-for-ios.
         if (videojs.browser.IS_IOS) {
-            this.on('canplaythrough', () => {
+            player.on('canplaythrough', () => {
                 // Can be executed multiple times during playback
                 if (!iOSReady) {
-                    this.currentTime(lastProgress * duration);
+                    player.currentTime(lastProgress * duration);
                     iOSReady = true;
                 }
             });
         }
 
         const reportProgress = () => {
-            const progress = this.currentTime() / duration;
+            const progress = player.currentTime() / duration;
             postData("/api/progressReport", {
                 "streamID": streamID,
                 "progress": progress
             }).then(r => {
-                    if (r.status !== StatusCodes.OK) {
+                    if (r.status !== 200) {
                         console.log(r);
                         intervalMillis *= 2; // Binary exponential backoff for load balancing
                     }
@@ -202,7 +202,6 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
         });
     });
 };
-
 
 // Register the plugin with video.js.
 videojs.registerPlugin('theaterMode', theaterMode);

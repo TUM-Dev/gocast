@@ -5,10 +5,6 @@ class Admin {
 
 }
 
-export default function printMoin(): number {
-   return 42;
-}
-
 export function createLectureHall() {
     postData("/api/createLectureHall", {
         "name": (document.getElementById("newLectureHallName") as HTMLInputElement).value,
