@@ -1,13 +1,14 @@
 import { StatusCodes } from "http-status-codes";
+import { Chart, registerables} from 'chart.js'
+Chart.register(...registerables); // TODO: Tree shaking
 
 export function loadStats(endpoint: string, targetEl: string) {
+    const canvas = <HTMLCanvasElement> document.getElementById(targetEl);
+    const ctx = canvas.getContext('2d');
     getAsync(`/api/course/${(document.getElementById("courseID") as HTMLInputElement).value}/stats?interval=${endpoint}`).then(res => {
             if (res.status === StatusCodes.OK) {
                 res.text().then(value => {
-                    // @ts-ignore
-                    new Chart(
-                        document.getElementById(targetEl), JSON.parse(value),
-                    );
+                    new Chart(ctx, JSON.parse(value));
                 });
             }
         }
