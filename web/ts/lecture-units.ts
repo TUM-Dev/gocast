@@ -1,9 +1,9 @@
 import { postData } from './global'
 import { StatusCodes } from "http-status-codes";
+import videojs from 'video.js';
 
 let slider
 
-// @ts-ignore
 const player = videojs('my-video', {
 html5: {
     hls: {

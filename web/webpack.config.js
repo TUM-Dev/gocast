@@ -9,6 +9,38 @@ module.exports = {
                 use: 'ts-loader',
                 exclude: /node_modules/,
             },
+            {
+                test: require.resolve('jquery'),
+                loader: 'expose-loader',
+                options:  {
+                    exposes: ["$", "jQuery"]
+                }
+            },
+            {
+                test: require.resolve('moment'),
+                loader: 'expose-loader',
+                options:  {
+                    exposes: "moment"
+                }
+            },
+            {
+                test: require.resolve('fullcalendar'),
+                use: [
+                    {
+                        loader: 'script-loader',
+                        options: 'fullcalendar/dist/fullcalendar.js'
+                    }
+                ]
+            },
+            {
+                test: require.resolve('fullcalendar-scheduler'),
+                use: [
+                    {
+                        loader: 'script-loader',
+                        options: 'fullcalendar/dist/fullcalendar-scheduler.js'
+                    }
+                ]
+            },
         ],
     },
     resolve: {
@@ -25,5 +57,6 @@ module.exports = {
     optimization: {
         minimize: false
     },
+
 };
 

@@ -1,9 +1,9 @@
 import {postData, showMessage} from './global'
 import {StatusCodes} from "http-status-codes";
 
-class Admin {
-
-}
+// class Admin {
+//
+// }
 
 export function createLectureHall() {
     postData("/api/createLectureHall", {

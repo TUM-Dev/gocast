@@ -2,7 +2,7 @@ import { StatusCodes } from "http-status-codes";
 import { postData, showMessage } from './global'
 import { loadStats } from "./stats";
 
-class EditCourse {
+export class EditCourse {
 
     constructor() {
         EditCourse.loadGeneralStats();
@@ -74,7 +74,7 @@ export function focusDescriptionInput(input: HTMLInputElement, id: number) {
     }
 }
 
-function toggleExtraInfos(btn: HTMLElement, id: number) {
+export function toggleExtraInfos(btn: HTMLElement, id: number) {
     btn.classList.add("transform", "transition", "duration-500", "ease-in-out")
     if (btn.classList.contains("rotate-180")) {
         btn.classList.remove("rotate-180")
@@ -85,7 +85,7 @@ function toggleExtraInfos(btn: HTMLElement, id: number) {
     }
 }
 
-function deleteLecture(cid: number, lid: number) {
+export function deleteLecture(cid: number, lid: number) {
     if (confirm("Confirm deleting video?")) {
         postData("/api/course/" + cid + "/deleteLecture/" + lid).then(r => {
             document.location.reload()
@@ -93,7 +93,7 @@ function deleteLecture(cid: number, lid: number) {
     }
 }
 
-function showHideUnits(id: number) {
+export function showHideUnits(id: number) {
     const container = document.getElementById('unitsContainer' + id)
     if (container.classList.contains("hidden")) {
         container.classList.remove("hidden")
@@ -102,11 +102,11 @@ function showHideUnits(id: number) {
     }
 }
 
-function addUnit(streamID: number): boolean {
+export function addUnit(streamID: number): boolean {
     return false
 }
 
-function createLectureForm() {
+export function createLectureForm() {
     return {
         formData: {
             title: '',

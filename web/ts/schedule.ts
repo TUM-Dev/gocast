@@ -1,16 +1,15 @@
 import { Get } from './global'
+import { Calendar } from '@fullcalendar/core';
 
 document.addEventListener("DOMContentLoaded", function () {
     const calendarEl = document.getElementById("calendar");
-    // Init fullcallendar
-    // @ts-ignore
-    const calendar = new FullCalendar.Calendar(calendarEl, {
+    // Init fullcalendar
+    const calendar = new Calendar(calendarEl, {
         headerToolbar: { center: 'timeGridDay,timeGridWeek' },
         initialView: "timeGridDay",
         nowIndicator: true,
         firstDay: 1,
         height: "85vh",
-        allDaySlot: false,
         events: {
             url: "/api/hall/all.ics",
             format: "ics"

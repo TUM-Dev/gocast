@@ -1,7 +1,7 @@
 import { postData, showMessage } from './global'
 import { StatusCodes } from "http-status-codes";
 
-class CreateCourse {
+export class CreateCourse {
     private courseIDInput: HTMLInputElement
     private loadFromTUMOnlineBtn: HTMLButtonElement
     private courseNameInput: HTMLInputElement

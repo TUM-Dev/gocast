@@ -1,6 +1,6 @@
 import { postData } from './global'
 
-class OnboardingFormData {
+export class OnboardingFormData {
     public name: string;
     public email: string;
     public password: string;
@@ -12,24 +12,24 @@ class OnboardingFormData {
     }
 }
 
-const nameBox: HTMLInputElement = document.querySelector('#name');
+export const nameBox: HTMLInputElement = document.querySelector('#name');
 nameBox.onfocus = function () {
     document.querySelector("#nameError").innerHTML = "";
 }
-const emailBox: HTMLInputElement = document.querySelector('#email');
+export const emailBox: HTMLInputElement = document.querySelector('#email');
 emailBox.onfocus = function () {
     document.querySelector("#emailError").innerHTML = "";
 }
-const passwordBox: HTMLInputElement = document.querySelector('#password');
+export const passwordBox: HTMLInputElement = document.querySelector('#password');
 passwordBox.onfocus = function () {
     document.querySelector("#passwordError").innerHTML = "";
 }
 
-const form: HTMLFormElement = document.querySelector('#onboardingForm');
+export const form: HTMLFormElement = document.querySelector('#onboardingForm');
 form.onsubmit = (e: Event) => {
     e.preventDefault()
     const formData = new FormData(form);
-    let success: boolean = true;
+    let success = true;
     const data = new OnboardingFormData(formData.get("name") as string, formData.get("email") as string, formData.get("password") as string);
     if (data.name.length < 5 || !data.name.match("^.* .*")) {
         document.querySelector("#nameError").innerHTML = "<p>Provided name is invalid.</p>";
