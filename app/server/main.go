@@ -99,7 +99,9 @@ func main() {
 		tools.Cfg.DatabaseUser,
 		tools.Cfg.DatabasePassword,
 		tools.Cfg.DatabaseName),
-	), &gorm.Config{})
+	), &gorm.Config{
+		PrepareStmt: true,
+	})
 	if err != nil {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second * 5)
