@@ -1,4 +1,5 @@
 {{define "users"}}
+    <script src="/static/assets/ts-dist/bundle.js"></script>
     <div class="dark:bg-secondary bg-white p-2 shadow rounded my-6 overflow-x-auto">
         <h2 class="text-2xl text-1">User Management</h2>
         <table class="table-auto w-full">
@@ -36,7 +37,7 @@
                         <div class="flex item-center justify-center">
                             {{if ne $user.Role 1}}
                                 <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
-                                    <i onclick="deleteUser({{$user.Model.ID}})" class="fas fa-trash"></i>
+                                    <i onclick="UI.deleteUser({{$user.Model.ID}})" class="fas fa-trash"></i>
                                 </div>
                             {{end}}
                         </div>
@@ -61,7 +62,7 @@
                 <td class="py-3 px-6 text-center">
                     <div class="flex item-center justify-center">
                         <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
-                            <i onclick="createUser()" id="createUser" class="fas fa-plus"></i>
+                            <i onclick="UI.createUser()" id="createUser" class="fas fa-plus"></i>
                         </div>
                     </div>
                 </td>

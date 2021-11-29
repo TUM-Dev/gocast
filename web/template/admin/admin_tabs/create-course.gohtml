@@ -1,7 +1,6 @@
 {{- /*gotype: TUM-Live/web.CreateCourseData*/ -}}
 {{template "header" .IndexData.TUMLiveContext}}
 {{define "create-course"}}
-    <script defer async src="/static/assets/ts-dist/create-course.js?v={{.}}"></script>
     <div class="text-1 container mx-auto" x-data="{ semester: '', tumonlineid: '', slug: '', title: '' }">
         <div class="min-w-screen flex items-center justify-center">
             <div class="w-full lg:w-5/6 p-3 bg-gray-100 dark:bg-secondary rounded dark:border dark:border-gray-500 shadow">

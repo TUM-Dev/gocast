@@ -1,5 +1,4 @@
 {{define "lectureHalls"}}
-    <script src="/static/assets/ts-dist/lecture-hall-management.js"></script>
     {{- /*gotype: TUM-Live/[]model.LectureHall*/ -}}
     <div class="rounded my-6 overflow-x-auto">
         <h2 class="text-2xl text-1 mb-6">Lecture Halls</h2>
@@ -56,7 +55,7 @@
                                             <div style="min-width: 150px" class="text-center relative group">
                                                 <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}" src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
                                                      alt="prev" width="150px">
-                                                <i onclick="takeSnapshot({{$preset.LectureHallId}}, {{$preset.PresetID}})" title="Take new snapshot"
+                                                <i onclick="UI.takeSnapshot({{$preset.LectureHallId}}, {{$preset.PresetID}})" title="Take new snapshot"
                                                    class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-sync"></i>
                                                 <span title="{{$preset.Name}}" class="truncate block my-2">{{$preset.Name}}</span>
                                             </div>
