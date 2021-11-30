@@ -86,7 +86,7 @@
                                 class="p-6 dark:hover:bg-primary hover:bg-white border-b-2 dark:border-primary border-white">
                                 <div class="flex">
                                     <div class="w-1/4">
-                                        <div class="text-3 font-semibold">{{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
+                                        <div class="text-3 font-semibold">{{$lecture.Start.Weekday}} {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
                                             <i class="fas fa-trash hover:text-1 px-2"
                                                title="Delete Lecture"
                                                onclick="deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}})"></i>
