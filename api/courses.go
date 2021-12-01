@@ -520,6 +520,9 @@ func createCourse(c *gin.Context) {
 		return
 	}
 	courseWithID, err := dao.GetCourseBySlugYearAndTerm(context.Background(), req.Slug, semester, fmt.Sprintf("%v", year))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "Could not get course for slug and term. Please reach out to us.")
+	}
 	// refresh enrollments and lectures
 	courses := make([]model.Course, 1)
 	courses[0] = courseWithID

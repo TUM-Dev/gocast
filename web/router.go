@@ -28,7 +28,6 @@ func ConfigGinRouter(router *gin.Engine) {
 	configGinStaticRouter(router)
 	configMainRoute(router)
 	configCourseRoute(router)
-	return
 }
 
 func configGinStaticRouter(router gin.IRoutes) {

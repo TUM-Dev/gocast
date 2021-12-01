@@ -52,6 +52,15 @@ In `/etc/hosts` add this:
 - Head over to localhost:8081
 - Happy coding! :sparkles:
 
+### Enable pre-commit hooks
+
+- **Prerequisites**: Make sure you have [staticcheck](https://staticcheck.io/docs/getting-started/)
+and [pre-commit](https://pre-commit.com/#install) installed.
+- Run`pre-commit install`. It will install the pre-commit hook scripts for this repository.
+
+Now the hook scripts will be triggered for every new commit, which should improve overall code quality.
+You can also run the pre-commit hooks manually for all files by executing `pre-commit run --all-files`.
+
 ## Credit & Licenses
 
 - [Check out our dependencies](https://github.com/joschahenningsen/TUM-Live/network/dependencies)
