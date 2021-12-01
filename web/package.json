@@ -19,7 +19,7 @@
   "homepage": "https://github.com/joschahenningsen/TUM-Live#readme",
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.4",
-    "@fullcalendar/core": "^5.10.0",
+    "@fullcalendar/core": "^5.10.1",
     "@fullcalendar/icalendar": "^5.10.0",
     "@fullcalendar/resource-timeline": "^5.10.0",
     "@silvermine/videojs-quality-selector": "^1.2.5",
