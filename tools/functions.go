@@ -6,16 +6,15 @@ import (
 	"os/exec"
 )
 
-// CourseListContains
-// not terribly efficient, might use a map later, but as every user only has a handful of courses fast enough
+// CourseListContains checks whether courses contain a course with a given courseId
 func CourseListContains(courses []model.Course, courseId uint) bool {
-	if courses != nil {
-		for _, c := range courses {
-			if c.ID == courseId {
-				return true
-			}
+	// not terribly efficient, might use a map later, but as every user only has a handful of courses fast enough
+	for _, c := range courses {
+		if c.ID == courseId {
+			return true
 		}
 	}
+
 	return false
 }
 

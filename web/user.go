@@ -59,7 +59,7 @@ func LoginHandler(c *gin.Context) {
 		}
 		c.Redirect(http.StatusFound, "/")
 		return
-	} else if err != tum.LdapErrBadAuth {
+	} else if err != tum.ErrLdapBadAuth {
 		log.WithError(err).Error("Login error")
 	}
 	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", true)

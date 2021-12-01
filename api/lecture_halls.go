@@ -69,6 +69,11 @@ func postSchedule(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	var req []campusonline.Course
 	err := c.BindJSON(&req)
+	if err != nil {
+		sentry.CaptureException(errors.New("could not bind JSON request"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
 	yearStr := c.Param("year")
 	year, err := strconv.Atoi(yearStr)
 	term := c.Param("term")

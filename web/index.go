@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
-	"strings"
 )
 
 var VersionTag string
@@ -37,13 +36,6 @@ func MainPage(c *gin.Context) {
 		indexData.ServerNotifications = notifications
 	} else if err != gorm.ErrRecordNotFound {
 		log.WithError(err).Warn("could not get server notifications")
-	}
-
-	// todo: remove in a few days
-	if strings.HasPrefix(c.Request.Host, "live.mm.rbg.tum.de") {
-		indexData.IsOnLegacy = true
-	} else {
-		indexData.IsOnLegacy = false
 	}
 
 	var tumLiveContext tools.TUMLiveContext
@@ -82,6 +74,9 @@ func MainPage(c *gin.Context) {
 		}
 	}
 	streams, err := dao.GetCurrentLive(context.Background())
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
+	}
 	var livestreams []CourseStream
 
 	for _, stream := range streams {
@@ -164,7 +159,6 @@ type IndexData struct {
 	CurrentTerm         string
 	UserName            string
 	ServerNotifications []model.ServerNotification
-	IsOnLegacy          bool
 }
 
 func NewIndexData() IndexData {

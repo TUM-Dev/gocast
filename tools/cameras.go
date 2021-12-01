@@ -20,7 +20,7 @@ func FetchCameraPresets(ctx context.Context) {
 	}
 }
 
-func FetchLHPresets(lectureHall model.LectureHall){
+func FetchLHPresets(lectureHall model.LectureHall) {
 	if lectureHall.CameraIP != "" {
 		cam := camera.NewCamera(lectureHall.CameraIP, Cfg.CameraAuthentication)
 		presets, err := cam.GetPresets()
@@ -34,16 +34,6 @@ func FetchLHPresets(lectureHall model.LectureHall){
 		}*/
 		lectureHall.CameraPresets = presets
 		dao.SaveLectureHallFullAssoc(lectureHall)
-	}
-}
-
-//findExistingImageForPreset applies an image to the preset if it already existed.
-func findExistingImageForPreset(m *model.CameraPreset, presets []model.CameraPreset) {
-	for _, preset := range presets {
-		if preset.Name == m.Name && preset.PresetID == m.PresetID {
-			m.Image = preset.Image
-			return
-		}
 	}
 }
 
