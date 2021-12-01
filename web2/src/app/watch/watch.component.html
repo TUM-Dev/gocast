@@ -1,0 +1,14 @@
+<p class="text-1">watch works!</p>
+
+<div class="w-full flex flex-row">
+  <div class="flex-grow" #videoContainer><!-- videoarea -->
+    <app-player
+      [options]="{ autoplay: true, fill:true, aspectRatio:'16:9', liveui: true, controls: true, sources: [{ src: 'https://live.stream.lrz.de/livetum/smil:14-f44648a3_all.smil/playlist.m3u8?dvr', type: 'application/vnd.apple.mpegurl' }]}"></app-player>
+    <h1>GBS</h1>
+  </div>
+
+  <div class="flex-1"> <!-- chatarea -->
+    <app-chat></app-chat>
+  </div>
+</div>
+

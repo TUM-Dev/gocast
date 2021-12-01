@@ -10,7 +10,11 @@ const routes: Routes = [
   {
     path: 'admin',
     loadChildren: () => import('./admin/admin.module').then((m) => m.AdminModule),
-  }
+  },
+  {
+    path: 'w',
+    loadChildren: () => import('./watch/watch.module').then((m) => m.WatchModule),
+  },
 ];
 
 // configures NgModule imports and exports
