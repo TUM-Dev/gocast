@@ -38,7 +38,7 @@ require (
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gorm.io/driver/mysql v1.1.3
-	gorm.io/gorm v1.22.2
+	gorm.io/gorm v1.22.4
 )
 
 require (
@@ -55,7 +55,7 @@ require (
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.2 // indirect
+	github.com/jinzhu/now v1.1.3 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
