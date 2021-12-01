@@ -24,7 +24,7 @@
     "@fullcalendar/resource-timeline": "^5.10.0",
     "@silvermine/videojs-quality-selector": "^1.2.5",
     "alpinejs": "^3.4.2",
-    "chart.js": "^3.6.0",
+    "chart.js": "^3.6.1",
     "flatpickr": "^4.6.9",
     "fullcalendar": "^5.10.0",
     "hls.js": "^1.0.12",
