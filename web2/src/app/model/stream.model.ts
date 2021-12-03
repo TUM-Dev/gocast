@@ -1,4 +1,10 @@
-import Chat from "./chat.model";
+export class Playlist {
+  constructor(
+    public type: string,
+    public url: string,
+  ) {
+  }
+}
 
 export default class Stream {
 
@@ -8,7 +14,7 @@ export default class Stream {
     public start: Date,
     public end: Date,
     public description: string,
-    public Chats: Chat[]
+    public playlists: Playlist[],
   ) {
   }
 }

@@ -3,11 +3,11 @@ import Stream from "./stream.model";
 export default class Course {
 
   constructor(
-    public Id: number,
-    public Slug: string,
-    public ChatEnabled: boolean,
-    public Title: string,
-    public Streams: Stream[],
+    public id: number,
+    public slug: string,
+    public chatEnabled: boolean,
+    public title: string,
+    public streams: Stream[],
   ) {
   }
 

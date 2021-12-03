@@ -35,6 +35,8 @@ var VersionTag = "development"
 // GinServer launch gin server
 func GinServer() (err error) {
 	router := gin.Default()
+	log.Println(VersionTag)
+
 	// capture performance with sentry
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
 	store := cookie.NewStore([]byte(tools.Cfg.CookieStoreSecret))

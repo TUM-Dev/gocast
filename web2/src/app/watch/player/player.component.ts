@@ -1,6 +1,8 @@
 import {Component, ElementRef, Input, OnDestroy, OnInit, ViewChild, ViewEncapsulation} from '@angular/core';
 import videojs from 'video.js';
 import {debounceTime, fromEvent, map, startWith} from "rxjs";
+import {theaterMode, TheaterModeToggle} from './TUMLiveVjs'
+import {WatchComponent} from "../watch.component";
 
 function windowSizeObserver(dTime = 300) {
   return fromEvent(window, 'resize').pipe(
@@ -18,7 +20,7 @@ function windowSizeObserver(dTime = 300) {
   selector: 'app-player',
   template: `
     <div #wrap>
-    <video #target class="video-js" controls preload="none"></video>
+      <video #target class="video-js" controls preload="none"></video>
     </div>
   `,
   styleUrls: ['./player.component.less'],
@@ -41,22 +43,32 @@ export class PlayerComponent implements OnInit, OnDestroy {
     }[];
   } | undefined;
   player: videojs.Player | undefined;
+  @Input() caller: WatchComponent | undefined;
 
   constructor(
     private elementRef: ElementRef,
   ) {
     windowSizeObserver().subscribe(size => {
       console.log(size);
-      //this.player?.height(size.height);
-      this.wrap? this.wrap.nativeElement.style.maxHeight = `calc(7rem - 5rem)`: null;
     });
   }
 
   ngOnInit() {
     // instantiate Video.js
+    videojs.registerComponent('theaterModeToggle', TheaterModeToggle);
+    videojs.registerPlugin('theaterMode', theaterMode);
     this.player = videojs(this.target!.nativeElement, this.options, function onPlayerReady() {
       console.log('onPlayerReady', this);
     });
+
+    // @ts-ignore
+    this.player.theaterMode({elementToToggle: 'my-video', className: 'theater-mode', caller: this});
+  }
+
+  toggleTheaterMode() {
+    this.caller!.theaterMode = !this.caller!.theaterMode;
+    this.player?.fluid(this.caller!.theaterMode);
+    console.log(this.caller!.theaterMode);
   }
 
   ngOnDestroy() {

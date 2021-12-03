@@ -40,4 +40,5 @@ func ConfigGinRouter(router *gin.Engine) {
 	configGinSexyApiRouter(router)
 	configServerNotificationsRoutes(router)
 	configWorkerRouter(router)
+	configWatchRouter(router)
 }

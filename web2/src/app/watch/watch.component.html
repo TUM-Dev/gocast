@@ -1,14 +1,51 @@
-<p class="text-1">watch works!</p>
+<div id="watchPageMainWrapper" class="flex md:flex-row w-full flex-wrap" *ngIf="course && stream">
+  <div id="watchWrapper"
+       class="w-full overflow-scroll overflow-x-hidden scrollbarThin"
+       [class]="course.chatEnabled?'md:w-4/6 lg:w-5/6':''">
+    <noscript><p class="vjs-no-js">
+      To view this video please enable JavaScript.
+    </p></noscript>
+    <div id="watchContent"
+         [ngClass]="{'md:w-4/6 lg:w-8/12 2xl:max-w-screen-xl':!theaterMode}"
+         [class]="course.chatEnabled?'md:w-4/6':''"
+      class="transition-all motion-reduce:transition-none duration-300 ease w-full pt-3 px-2 md:px-8 lg:w-8/12 2xl:max-w-screen-xl mx-auto mx:h-full">
+      <div
+        class="p-4 bg-indigo-700 bg-opacity-20 border-t-4 border-indigo-700 w-full font-semibold text-2 rounded-t display-none"
+        x-show="paused" x-cloak>
+        <i class="fas fa-info-circle"></i> This lecture is currently paused.
+      </div>
+      <app-player
+        [caller]="this"
+        [options]="{autoplay: true, fill:true, aspectRatio:'16:9', liveui: true, controls: true, sources: [{ src: getPlaylistURL(), type: 'application/vnd.apple.mpegurl' }]}"></app-player>
 
-<div class="w-full flex flex-row">
-  <div class="flex-grow" #videoContainer><!-- videoarea -->
-    <app-player
-      [options]="{ autoplay: true, fill:true, aspectRatio:'16:9', liveui: true, controls: true, sources: [{ src: 'https://live.stream.lrz.de/livetum/smil:14-f44648a3_all.smil/playlist.m3u8?dvr', type: 'application/vnd.apple.mpegurl' }]}"></app-player>
-    <h1>GBS</h1>
+      <div class="flex justify-between align-middle mt-4">
+        <h1 class="text-4 text-xl flex-grow">
+          {{stream.name ? stream.name : 'Lecture ' + stream.start}}
+        </h1>
+        <p class="text-lg text-4 flex space-x-2">
+          <span class="flex m-auto" id="viewerCount">5 viewers</span>
+          <a class="flex m-auto mr-2" title="Presentation only"
+             href="PRES"><i
+            class="fas fa-edit text-4 hover:text-1"></i></a>
+          <a class="flex m-auto mr-2" title="Camera only"
+             href="CAM"><i
+            class="fas fa-camera text-4 hover:text-1"></i></a>
+          <a class="flex m-auto mr-2" title="Combined view" href="./"><i
+            class="fas fa-object-group text-4 hover:text-1"></i></a>
+          <i title="Copy HLS URL"
+             class="flex m-auto fas fa-link text-4 dark:hover:text-white hover:text-black cursor-pointer"></i>
+        </p>
+      </div>
+      <a href="/course/{{course.slug}}">
+        <span class="text-5 hover:text-1 hover:underline text-lg">{{course.title}}</span></a>
+      <div class="text-3 p-4 border-t-2 border-secondary video-description">
+        <span class="font-semibold">Video Description:</span>
+        <p [innerHTML]="stream.description"></p>
+      </div>
+    </div>
   </div>
-
-  <div class="flex-1"> <!-- chatarea -->
+  <div *ngIf="chatEnabled" id="chatWrapper"
+       class="hidden md:flex flex-col w-full md:h-full border-t-2 mt-2 md:mt-0 md:border-t-0 md:dark:border-l dark:border-secondary dark:bg-secondary-lighter bg-gray-100 md:w-2/6 lg:w-1/6 text-1 pt-3">
     <app-chat></app-chat>
   </div>
 </div>
-
