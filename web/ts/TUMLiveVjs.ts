@@ -16,7 +16,7 @@ class SkipSilenceToggle extends Button {
         this.p = player;
         super(player, options);
         this.controlText('Skip pause');
-        this.el().firstChild.classList.add("icon-forward")
+        this.el().firstChild.classList.add("icon-forward");
     }
 
     buildCSSClass() {
@@ -41,14 +41,14 @@ class TheaterModeToggle extends Button {
     }
 
     handleClick() {
-        let theaterModeIsOn = document.getElementById(this.options_.elementToToggle).classList.toggle(this.options_.className);
+        const theaterModeIsOn = document.getElementById(this.options_.elementToToggle).classList.toggle(this.options_.className);
         this.player().trigger('theaterMode', {'theaterModeIsOn': theaterModeIsOn});
 
         if (theaterModeIsOn) {
-            document.getElementById("watchContent").classList.remove("md:w-4/6", "lg:w-8/12", "2xl:max-w-screen-xl")
+            document.getElementById("watchContent").classList.remove("md:w-4/6", "lg:w-8/12", "2xl:max-w-screen-xl");
             this.player().fluid(false);
         } else {
-            document.getElementById("watchContent").classList.add("md:w-4/6", "lg:w-8/12", "2xl:max-w-screen-xl")
+            document.getElementById("watchContent").classList.add("md:w-4/6", "lg:w-8/12", "2xl:max-w-screen-xl");
             this.player().fluid(true);
         }
     }
@@ -82,38 +82,53 @@ const theaterMode = function (options) {
 
 const skipSilence = function (options) {
     this.ready(() => {
-        // @ts-ignore
         this.addClass('vjs-skip-silence');
-        let toggle = this.addChild("SkipSilenceToggle");
-        toggle.el().classList.add("invisible")
+        const toggle = this.addChild("SkipSilenceToggle");
+        toggle.el().classList.add("invisible");
         this.el().insertBefore(toggle.el(), this.bigPlayButton.el());
 
         let isShowing = false;
-        const silences = JSON.parse(options)
-        const len = silences.length
+        const silences = JSON.parse(options);
+        const len = silences.length;
+        const intervalMillis = 100;
+
         let i = 0;
-        let n = 0;
-        this.on('timeupdate', () => {
-            if (n++ % 5 != 0) {
-                return;
-            }
-            n = 0;
+        let timer;
+
+        // Triggered when user presses play
+        this.on('play', () => {
+            timer = setInterval(() => { toggleSkipSilence() }, intervalMillis);
+        });
+
+        const toggleSkipSilence = () => {
             const ctime = this.currentTime();
             let shouldShow = false;
             for (i = 0; i < len; i++) {
                 if (ctime >= silences[i].start && ctime < silences[i].end) {
                     shouldShow = true;
-                    skipTo = silences[i].end
-                    break
+                    skipTo = silences[i].end;
+                    break;
                 }
             }
             if (isShowing && !shouldShow) {
+                console.log("Not showing.");
                 isShowing = false;
                 toggle.el().classList.add("invisible");
             } else if (!isShowing && shouldShow) {
+                console.log("Showing.");
                 isShowing = true;
                 toggle.el().classList.remove("invisible");
             }
+        }
+
+        // Triggered on pause and skipping the video
+        this.on('pause', () => {
+            clearInterval(timer);
+        });
+
+        // Triggered when the video has no time left
+        this.on('ended', () => {
+            clearInterval(timer);
         });
     });
 };
@@ -129,7 +144,7 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
         let duration;
         let timer;
         let iOSReady = false;
-        let intervalInSeconds = 10000;
+        let intervalMillis = 10000;
 
         // Fetch the user's video progress from the database and set the time in the player
         this.on('loadedmetadata', () => {
@@ -158,7 +173,7 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
             }).then(r => {
                     if (r.status !== 200) {
                         console.log(r);
-                        intervalInSeconds *= 2; // Binary exponential backoff for load balancing
+                        intervalMillis *= 2; // Binary exponential backoff for load balancing
                     }
                 }
             );
@@ -166,7 +181,7 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
 
         // Triggered when user presses play
         this.on('play', () => {
-            timer = setInterval(() => { reportProgress() }, intervalInSeconds);
+            timer = setInterval(() => { reportProgress() }, intervalMillis);
         });
 
         // Triggered on pause and skipping the video
