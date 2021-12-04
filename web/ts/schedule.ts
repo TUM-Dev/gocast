@@ -36,8 +36,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 <div class="text-2">
                     <div class="flex"><p>${new Date(streamInfo["start"]).toLocaleString()}</p></div>
                     <div class="flex"><span class="mr-2 font-semibold">Server: </span><p>${
-                streamInfo["ingest"]
-            }</p><i class="fas fa-copy ml-2 text-4 transition transition-colors hover:text-1" title="copy" onclick="copyToClipboard('${
+                        streamInfo["ingest"]
+                    }</p><i class="fas fa-copy ml-2 text-4 transition transition-colors hover:text-1" title="copy" onclick="copyToClipboard('${
                 streamInfo["ingest"]
             }')"></i></div>
                 </div>
@@ -55,8 +55,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 <form onsubmit="saveLectureDescription(event, ${streamInfo["courseID"]}, ${streamInfo["streamID"]})"
                     class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
                     <label for="lectureDescriptionInput${
-                streamInfo["streamID"]
-            }" class="hidden">Lecture description</label>
+                        streamInfo["streamID"]
+                    }" class="hidden">Lecture description</label>
                     <textarea id="lectureDescriptionInput${streamInfo["streamID"]}"
                         rows="3"
                         onfocus="focusDescriptionInput(this, ${streamInfo["streamID"]})"
