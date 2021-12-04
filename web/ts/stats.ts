@@ -1,13 +1,11 @@
 function loadStats(endpoint: string, targetEl: string) {
-    const canvas = <HTMLCanvasElement>document.getElementById(targetEl);
-    const ctx = canvas.getContext("2d");
     getAsync(
         `/api/course/${(document.getElementById("courseID") as HTMLInputElement).value}/stats?interval=${endpoint}`,
     ).then((res) => {
         if (res.status === 200) {
             res.text().then((value) => {
                 // @ts-ignore
-                new Chart(ctx, JSON.parse(value));
+                new Chart(document.getElementById(targetEl), JSON.parse(value));
             });
         }
     });
