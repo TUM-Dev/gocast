@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-const Button = videojs.getComponent('Button');
+const Button = videojs.getComponent("Button");
 
 let skipTo = 0;
 
@@ -15,7 +15,7 @@ class SkipSilenceToggle extends Button {
     constructor(player, options) {
         this.p = player;
         super(player, options);
-        this.controlText('Skip pause');
+        this.controlText("Skip pause");
         this.el().firstChild.classList.add("icon-forward");
     }
 
@@ -29,10 +29,9 @@ class SkipSilenceToggle extends Button {
 }
 
 class TheaterModeToggle extends Button {
-
     constructor(player, options) {
         super(player, options);
-        this.controlText('Big picture mode');
+        this.controlText("Big picture mode");
         this.el().firstChild.classList.add("vjs-icon-theater-toggle");
     }
 
@@ -41,8 +40,10 @@ class TheaterModeToggle extends Button {
     }
 
     handleClick() {
-        const theaterModeIsOn = document.getElementById(this.options_.elementToToggle).classList.toggle(this.options_.className);
-        this.player().trigger('theaterMode', {'theaterModeIsOn': theaterModeIsOn});
+        const theaterModeIsOn = document
+            .getElementById(this.options_.elementToToggle)
+            .classList.toggle(this.options_.className);
+        this.player().trigger("theaterMode", { theaterModeIsOn: theaterModeIsOn });
 
         if (theaterModeIsOn) {
             document.getElementById("watchContent").classList.remove("md:w-4/6", "lg:w-8/12", "2xl:max-w-screen-xl");
@@ -54,9 +55,8 @@ class TheaterModeToggle extends Button {
     }
 }
 
-videojs.registerComponent('TheaterModeToggle', TheaterModeToggle);
-videojs.registerComponent('SkipSilenceToggle', SkipSilenceToggle);
-
+videojs.registerComponent("TheaterModeToggle", TheaterModeToggle);
+videojs.registerComponent("SkipSilenceToggle", SkipSilenceToggle);
 
 /**
  * @function theaterMode
@@ -66,12 +66,12 @@ videojs.registerComponent('SkipSilenceToggle', SkipSilenceToggle);
 const theaterMode = function (options) {
     this.ready(() => {
         // @ts-ignore
-        this.addClass('vjs-theater-mode');
-        let toggle = this.controlBar.addChild("theaterModeToggle", options);
+        this.addClass("vjs-theater-mode");
+        const toggle = this.controlBar.addChild("theaterModeToggle", options);
         this.controlBar.el().insertBefore(toggle.el(), this.controlBar.fullscreenToggle.el());
     });
 
-    this.on('fullscreenchange', () => {
+    this.on("fullscreenchange", () => {
         if (this.isFullscreen()) {
             this.controlBar.getChild("theaterModeToggle").hide();
         } else {
@@ -82,7 +82,7 @@ const theaterMode = function (options) {
 
 const skipSilence = function (options) {
     this.ready(() => {
-        this.addClass('vjs-skip-silence');
+        this.addClass("vjs-skip-silence");
         const toggle = this.addChild("SkipSilenceToggle");
         toggle.el().classList.add("invisible");
         this.el().insertBefore(toggle.el(), this.bigPlayButton.el());
@@ -96,8 +96,10 @@ const skipSilence = function (options) {
         let timer;
 
         // Triggered when user presses play
-        this.on('play', () => {
-            timer = setInterval(() => { toggleSkipSilence() }, intervalMillis);
+        this.on("play", () => {
+            timer = setInterval(() => {
+                toggleSkipSilence();
+            }, intervalMillis);
         });
 
         const toggleSkipSilence = () => {
@@ -119,15 +121,15 @@ const skipSilence = function (options) {
                 isShowing = true;
                 toggle.el().classList.remove("invisible");
             }
-        }
+        };
 
         // Triggered on pause and skipping the video
-        this.on('pause', () => {
+        this.on("pause", () => {
             clearInterval(timer);
         });
 
         // Triggered when the video has no time left
-        this.on('ended', () => {
+        this.on("ended", () => {
             clearInterval(timer);
         });
     });
@@ -147,7 +149,7 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
         let intervalMillis = 10000;
 
         // Fetch the user's video progress from the database and set the time in the player
-        this.on('loadedmetadata', () => {
+        this.on("loadedmetadata", () => {
             duration = this.duration();
             this.currentTime(lastProgress * duration);
         });
@@ -156,7 +158,7 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
         // not sufficient here.
         // See https://stackoverflow.com/questions/28823567/how-to-set-currenttime-in-video-js-in-safari-for-ios.
         if (videojs.browser.IS_IOS) {
-            this.on('canplaythrough', () => {
+            this.on("canplaythrough", () => {
                 // Can be executed multiple times during playback
                 if (!iOSReady) {
                     this.currentTime(lastProgress * duration);
@@ -168,24 +170,25 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
         const reportProgress = () => {
             const progress = this.currentTime() / duration;
             postData("/api/progressReport", {
-                "streamID": streamID,
-                "progress": progress
-            }).then(r => {
-                    if (r.status !== 200) {
-                        console.log(r);
-                        intervalMillis *= 2; // Binary exponential backoff for load balancing
-                    }
+                streamID: streamID,
+                progress: progress,
+            }).then((r) => {
+                if (r.status !== 200) {
+                    console.log(r);
+                    intervalMillis *= 2; // Binary exponential backoff for load balancing
                 }
-            );
-        }
+            });
+        };
 
         // Triggered when user presses play
-        this.on('play', () => {
-            timer = setInterval(() => { reportProgress() }, intervalMillis);
+        this.on("play", () => {
+            timer = setInterval(() => {
+                reportProgress();
+            }, intervalMillis);
         });
 
         // Triggered on pause and skipping the video
-        this.on('pause', () => {
+        this.on("pause", () => {
             clearInterval(timer);
             // "Bug" on iOS: The video is automatically paused at the beginning
             if (!iOSReady && videojs.browser.IS_IOS) {
@@ -195,14 +198,13 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
         });
 
         // Triggered when the video has no time left
-        this.on('ended', () => {
+        this.on("ended", () => {
             clearInterval(timer);
         });
     });
 };
 
-
 // Register the plugin with video.js.
-videojs.registerPlugin('theaterMode', theaterMode);
-videojs.registerPlugin('skipSilence', skipSilence);
-videojs.registerPlugin('watchProgress', watchProgress);
+videojs.registerPlugin("theaterMode", theaterMode);
+videojs.registerPlugin("skipSilence", skipSilence);
+videojs.registerPlugin("watchProgress", watchProgress);

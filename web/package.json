@@ -9,7 +9,10 @@
   "scripts": {
     "postinstall": "npm run typescript-compile && npm run tailwind-compile",
     "typescript-compile": "npx tsc",
-    "tailwind-compile": "NODE_ENV=production npx tailwindcss build -i assets/css/main.css --minify -o ./assets/css-dist/main.css"
+    "tailwind-compile": "NODE_ENV=production npx tailwindcss build -i assets/css/main.css --minify -o ./assets/css-dist/main.css",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint-fix": "eslint . --ext .ts,.tsx --quiet --fix"
+
   },
   "author": "Joscha Henningsen",
   "license": "MIT",
