@@ -13,6 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install modules
-        run: make npm_dependencies
+        working-directory: ./web
+        run: npm i
       - name: Run ESLint
+        working-directory: ./web
         run: eslint . --ext .ts,.tsx
