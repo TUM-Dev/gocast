@@ -12,7 +12,6 @@
     "tailwind-compile": "NODE_ENV=production npx tailwindcss build -i assets/css/main.css --minify -o ./assets/css-dist/main.css",
     "lint": "eslint . --ext .ts,.tsx",
     "lint-fix": "eslint . --ext .ts,.tsx --quiet --fix"
-
   },
   "author": "Joscha Henningsen",
   "license": "MIT",
@@ -39,8 +38,12 @@
     "videojs-seek-buttons": "^2.2.0"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.5.0",
+    "@typescript-eslint/parser": "^5.5.0",
     "autoprefixer": "^10.4.0",
+    "eslint": "^8.4.0",
     "postcss": "^8.3.11",
+    "prettier": "^2.5.0",
     "tailwindcss": "^2.2.19",
     "typescript": "^4.4.4"
   }
