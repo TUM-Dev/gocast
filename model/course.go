@@ -68,6 +68,15 @@ func (c Course) IsLive() bool {
 	return false
 }
 
+func (c Course) IsComingUp() bool {
+	for _, s := range c.Streams {
+		if s.IsComingUp() {
+			return true
+		}
+	}
+	return false
+}
+
 //NumStreams returns the number of streams for the course that are VoDs or live
 func (c Course) NumStreams() int {
 	res := 0
