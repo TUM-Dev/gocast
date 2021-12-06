@@ -45,12 +45,16 @@ func (s Stream) IsPast() bool {
 	return s.End.Before(time.Now())
 }
 
+func (s Stream) IsToday() bool {
+	return !s.IsPast() && s.Start.Before(time.Now().Add(24*time.Hour))
+}
+
 func (s Stream) IsComingUp() bool {
-	return !s.IsPast() && s.Start.Before(time.Now().Add(2*time.Hour))
+	return !s.IsPast() && s.Start.Before(time.Now().Add(8*time.Hour)) // TODO: Make this ~ 30 minutes
 }
 
 func (s Stream) MinutesUntilStart() uint {
-	return uint(s.Start.Sub(time.Now()).Minutes())
+	return uint(time.Until(s.Start).Minutes())
 }
 
 type silence struct {
