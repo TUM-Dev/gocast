@@ -61,6 +61,16 @@ and [pre-commit](https://pre-commit.com/#install) installed.
 Now the hook scripts will be triggered for every new commit, which should improve overall code quality.
 You can also run the pre-commit hooks manually for all files by executing `pre-commit run --all-files`.
 
+### Linting and formatting typescript files
+
+The following scripts are provided:
+
+- `npm run lint`: Runs `eslint` and `prettier` on the code to find stylistic issues.
+- `npm run lint-fix`: Same as above but also fixes the found issues.
+
+If you use Goland Ultimate, you can use follow this [guide](https://www.jetbrains.com/help/idea/prettier.html).
+The provided config runs `prettier` on formatting actions as well as on saving.
+
 ## Credit & Licenses
 
 - [Check out our dependencies](https://github.com/joschahenningsen/TUM-Live/network/dependencies)
