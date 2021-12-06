@@ -170,7 +170,7 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
 
         const reportProgress = () => {
             // Don't report progress too often in case some browser goes nuts
-            if (lastReport + (1000 * intervalMillis) > Date.now()) {
+            if (lastReport + 1000 * intervalMillis > Date.now()) {
                 return;
             }
             lastReport = Date.now();
