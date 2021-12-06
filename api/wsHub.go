@@ -34,6 +34,20 @@ var connHandler = func(s *melody.Session) {
 	if err != nil {
 		log.WithError(err).Error("can't write initial stats to session")
 	}
+	if tumLiveContext.Course.ChatEnabled {
+		sendServerMessage(s, "Welcome to the chatroom! Please be nice to each other and stay on topic if you want this feature to stay active.")
+	}
+	if !tumLiveContext.Course.AnonymousChatEnabled {
+		sendServerMessage(s, "The Broadcaster disabled anonymous messaging for this room.")
+	}
+}
+
+func sendServerMessage(session *melody.Session, msg string) {
+	msgBytes, _ := json.Marshal(gin.H{"server": msg})
+	err := session.Write(msgBytes)
+	if err != nil {
+		log.WithError(err).Error("can't write server message to session")
+	}
 }
 
 func BroadcastStats() {
