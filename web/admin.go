@@ -219,10 +219,12 @@ func UpdateCourse(c *gin.Context) {
 	enVOD := c.PostForm("enVOD") == "on"
 	enDL := c.PostForm("enDL") == "on"
 	enChat := c.PostForm("enChat") == "on"
+	enChatAnon := c.PostForm("enChatAnon") == "on"
 	tumLiveContext.Course.Visibility = access
 	tumLiveContext.Course.VODEnabled = enVOD
 	tumLiveContext.Course.DownloadsEnabled = enDL
 	tumLiveContext.Course.ChatEnabled = enChat
+	tumLiveContext.Course.AnonymousChatEnabled = enChatAnon
 	dao.UpdateCourseMetadata(context.Background(), *tumLiveContext.Course)
 	c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 }

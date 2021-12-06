@@ -82,7 +82,8 @@
                                     class="fas fa-camera text-4 hover:text-1"></i></a>
                     {{end}}
                     {{if $stream.PlaylistUrl}}
-                        <a class="flex m-auto mr-2" title="Combined view" href="/w/{{$course.Slug}}/{{$stream.Model.ID}}"><i
+                        <a class="flex m-auto mr-2" title="Combined view"
+                           href="/w/{{$course.Slug}}/{{$stream.Model.ID}}"><i
                                     class="fas fa-object-group text-4 hover:text-1"></i></a>
                     {{end}}
                     <i title="Copy HLS URL"
@@ -132,40 +133,7 @@
         </div>
     </div>
     {{if $course.ChatEnabled}}
-        <div id="chatWrapper"
-             class="hidden md:flex flex-col w-full md:h-full border-t-2 mt-2 md:mt-0 md:border-t-0 md:dark:border-l dark:border-secondary dark:bg-secondary-lighter bg-gray-100 md:w-2/6 lg:w-1/6 text-1 pt-3">
-            <div id="chatBox" class="overflow-scroll overflow-x-hidden overflow-y-scroll" style="flex: 2;">
-                {{range $chat := $stream.Chats}}
-                    <div class="rounded p-2 mx-2">
-                        <div class="flex flex-row">
-                            <p class="flex-grow font-semibold {{if $chat.Admin}}text-warn{{end}}">{{$chat.UserName}}</p>
-                            <p class="text-4">
-                                {{printf "%02d:%02d" $chat.CreatedAt.Hour $chat.CreatedAt.Minute}}
-                            </p>
-                        </div>
-                        <p class="text-3 break-words">
-                            {{$chat.Message}}
-                        </p>
-                    </div>
-                {{end}}
-            </div>
-            <form id="chatForm"
-                  class="border-b-2 focus-within:border-gray-300 dark:border-secondary dark:bg-secondary-lighter inset-x-0 flex px-3"
-                  style="">
-                <input type="checkbox" name="anonymous" id="anonymous" class="hidden">
-                <label for="anonymous" class="flex items-center cursor-pointer text-4 hover:text-1"
-                       title="Don't show my name.">
-                    <i class="fas fa-ghost"></i>
-                </label>
-                <label for="chatInput" class="hidden">Chat input</label><input
-                        maxlength="200"
-                        {{if not (.IndexData.TUMLiveContext.User)}}disabled
-                        placeholder="Log in to chat" {{else}}
-                        placeholder="Send a message" {{end}}autocomplete="off" id="chatInput" type="text"
-                        class="border-none">
-                <button class="fas fa-paper-plane text-4 hover:text-1 focus:outline-none"></button>
-            </form>
-        </div>
+        {{template "chat" .}}
     {{end}}
 </div>
 
@@ -239,7 +207,7 @@
     });
 
     {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
-        player.watchProgress({{$stream.Model.ID}}, {{.Progress.Progress}});
+    player.watchProgress({{$stream.Model.ID}}, {{.Progress.Progress}});
     {{end}}
 
     {{if $stream.Silences}}
