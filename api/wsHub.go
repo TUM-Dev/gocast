@@ -34,6 +34,14 @@ var connHandler = func(s *melody.Session) {
 	if err != nil {
 		log.WithError(err).Error("can't write initial stats to session")
 	}
+	if tumLiveContext.Course.ChatEnabled {
+		// todo: edit this message through the admin interface
+		msg, _ := json.Marshal(gin.H{"server": "Welcome to the chatroom! If you want this feature to stay active, please be nice to each other and stay on topic."})
+		err := s.Write(msg)
+		if err != nil {
+			return
+		}
+	}
 }
 
 func BroadcastStats() {

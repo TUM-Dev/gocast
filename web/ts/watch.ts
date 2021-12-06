@@ -16,9 +16,10 @@ class Watch {
 
     submitChat(e: Event) {
         e.preventDefault();
+        const anonymousCheckBox: HTMLInputElement = document.getElementById("anonymous") as HTMLInputElement;
         ws.send(JSON.stringify({
             "msg": this.chatInput.value,
-            "anonymous": (document.getElementById("anonymous") as HTMLInputElement).checked
+            "anonymous": anonymousCheckBox ? anonymousCheckBox.checked : false,
         }))
         this.chatInput.value = "";
         return false;//prevent form submission
