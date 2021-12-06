@@ -39,6 +39,10 @@ function startWebsocket() {
             } else {
                 window.dispatchEvent(new CustomEvent("pauseend"));
             }
+        } else if ("server" in data) {
+            const serverElem = createServerMessage(data["server"]);
+            document.getElementById("chatBox").appendChild(serverElem);
+            document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
         } else if ("msg" in data) {
             const chatElem = createMessageElement(data);
             document.getElementById("chatBox").appendChild(chatElem);
@@ -59,6 +63,13 @@ function startWebsocket() {
 }
 
 startWebsocket();
+
+function createServerMessage(msg: string) {
+    const serverElem = document.createElement("div");
+    serverElem.classList.add("text-info", "text-sm");
+    serverElem.innerText = msg;
+    return serverElem;
+}
 
 /*
     while I'm not a fan of huge frontend frameworks, this is a good example why they can be useful.
