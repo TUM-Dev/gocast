@@ -75,7 +75,6 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			Message:  chat.Msg,
 			StreamID: tumLiveContext.Stream.ID,
 			Admin:    tumLiveContext.User.ID == tumLiveContext.Course.UserID,
-			SendTime: time.Now().In(tools.Loc),
 		})
 		if broadcast, err := json.Marshal(ChatRep{
 			Msg:   chat.Msg,
@@ -102,7 +101,7 @@ func CollectStats() {
 	for sID, sessions := range sessionsMap {
 		stat := model.Stat{
 			Time:    time.Now(),
-			Viewers: len(sessions),
+			Viewers: uint(len(sessions)),
 			Live:    true,
 		}
 		if s, err := dao.GetStreamByID(context.Background(), fmt.Sprintf("%d", sID)); err == nil {
