@@ -60,7 +60,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			return
 		}
 		uname := tumLiveContext.User.Name
-		if chat.Anonymous {
+		if chat.Anonymous && tumLiveContext.Course.AnonymousChatEnabled {
 			uname = "Anonymous"
 		}
 		dao.AddMessage(model.Chat{
