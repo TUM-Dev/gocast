@@ -11,6 +11,9 @@
             {{if .IsLive}}
                 Live now.
             {{else}}
+                {{if .IsComingUp}}
+                    <span class="bg-warn rounded-full text-gray-800 px-2">Coming up</span>
+                {{end}}
                 {{if .HasNextLecture}}
                     {{$next := .GetNextLectureDate}}Next Lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
                 {{else}}
