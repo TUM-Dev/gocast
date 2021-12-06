@@ -15,13 +15,13 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
 var m *melody.Melody
-var stats = map[string]int{}
-var statsLock = sync.RWMutex{}
+
+const maxParticipants = 10000
+const maxMessageLength = 200
 
 func configGinChatRouter(router *gin.RouterGroup) {
 	wsGroup := router.Group("/:streamID")
@@ -50,7 +50,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			return
 		}
 		chat.Msg = strings.TrimSpace(chat.Msg)
-		if chat.Msg == "" || len(chat.Msg) > 200 {
+		if chat.Msg == "" || len(chat.Msg) > maxMessageLength {
 			return
 		}
 		isCooledDown, err := dao.IsUserCooledDown(fmt.Sprintf("%v", tumLiveContext.User.ID))
@@ -66,7 +66,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			return
 		}
 		uname := tumLiveContext.User.Name
-		if chat.Anonymous {
+		if chat.Anonymous && tumLiveContext.Course.AnonymousChatEnabled {
 			uname = "Anonymous"
 		}
 		dao.AddMessage(model.Chat{
@@ -129,7 +129,7 @@ func NotifyViewersLiveState(streamId uint, live bool) {
 
 func ChatStream(c *gin.Context) {
 	// max participants in chat to prevent attacks
-	if m.Len() > 10000 {
+	if m.Len() > maxParticipants {
 		return
 	}
 	joinTime := time.Now()

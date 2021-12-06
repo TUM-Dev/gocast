@@ -1,0 +1,22 @@
+name: "staticcheck"
+
+on:
+  push:
+    branches: [ dev ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ dev ]
+
+jobs:
+  ci:
+    name: "Run staticcheck"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      # create node_module for "go:embed node_modules" in web/router.go
+      - run: make npm_dependencies
+      - uses: dominikh/staticcheck-action@v1.1.0
+        with:
+          version: "2021.1.1"

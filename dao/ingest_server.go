@@ -7,11 +7,13 @@ import (
 
 // GetBestIngestServer returns the ingest-server with the least streams assigned to it
 func GetBestIngestServer() (server model.IngestServer, err error) {
-	err = DB.Raw("SELECT i.* FROM stream_names" +
+	if err = DB.Raw("SELECT i.* FROM stream_names" +
 		" JOIN ingest_servers i ON i.id = stream_names.ingest_server_id" +
 		" WHERE stream_id IS NULL" +
 		" GROUP BY ingest_server_id" +
-		" ORDER BY COUNT(ingest_server_id) DESC").Scan(&server).Error
+		" ORDER BY COUNT(ingest_server_id) DESC").Scan(&server).Error; err != nil {
+		return
+	}
 	if err = DB.Order("workload").First(&server).Error; err != nil {
 		return
 	}

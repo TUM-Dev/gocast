@@ -18,7 +18,6 @@
                         class="fas fa-exclamation-triangle mr-2"></i><span>{{$notification.Text}}</span></p>
         {{end}}
     {{end}}
-    <p class="text-success font-semibold">We're looking for a developer with focus on frontend and usability improvements (up to 20 hrs.), read about our <a class="underline" href="https://github.com/joschahenningsen/TUM-Live/blob/dev/stack.md">Tech-Stack</a> and drop us some <a class="underline" href="mailto:live@rbg.tum.de">mail</a>!</p>
     {{if not .TUMLiveContext.User}}
         <p class="text-2"><a href="/login" class="underline">Log in</a> to see your courses</p>
     {{else if .TUMLiveContext.User.Name}}

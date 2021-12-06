@@ -99,7 +99,7 @@ func (c Camera) makeAuthenticatedRequest(method string, body string, url string)
 			"-d", body,
 			fmt.Sprintf("http://%s%s", c.Ip, url))
 	default:
-		return nil, errors.New(fmt.Sprintf("unsupported protocol: %v", method))
+		return nil, fmt.Errorf("unsupported protocol: %v", method)
 	}
 	var bts []byte
 	buf := bytes.NewBuffer(bts)
@@ -114,5 +114,3 @@ func (c Camera) makeAuthenticatedRequest(method string, body string, url string)
 	}
 	return buf, nil
 }
-
-

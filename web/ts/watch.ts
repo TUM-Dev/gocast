@@ -13,16 +13,6 @@ class Watch {
             this.chatInput = document.getElementById("chatInput") as HTMLInputElement
         }
     }
-
-    submitChat(e: Event) {
-        e.preventDefault();
-        ws.send(JSON.stringify({
-            "msg": this.chatInput.value,
-            "anonymous": (document.getElementById("anonymous") as HTMLInputElement).checked
-        }))
-        this.chatInput.value = "";
-        return false;//prevent form submission
-    }
 }
 
 let ws: WebSocket;
@@ -105,9 +95,10 @@ function createMessageElement(m): HTMLDivElement {
 
 function submitChat(e: Event) {
     e.preventDefault();
+    const anonCheckbox: HTMLInputElement = document.getElementById("anonymous") as HTMLInputElement;
     ws.send(JSON.stringify({
         "msg": this.chatInput.value,
-        "anonymous": (document.getElementById("anonymous") as HTMLInputElement).checked
+        "anonymous": anonCheckbox ? anonCheckbox.checked : false,
     }))
     this.chatInput.value = "";
     return false;//prevent form submission
