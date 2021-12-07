@@ -1,28 +1,28 @@
-export async function postData(url = '', data = {}) {
+async function postData(url = "", data = {}) {
     return await fetch(url, {
-        method: 'POST',
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
     });
 }
 
-export function Get(yourUrl) {
+function Get(yourUrl) {
     const HttpReq = new XMLHttpRequest();
     HttpReq.open("GET", yourUrl, false);
     HttpReq.send(null);
     return HttpReq.responseText;
 }
 
-export function showMessage(msg: string) {
+function showMessage(msg: string) {
     const alertBox: HTMLElement = document.getElementById("alertBox");
     const alertText: HTMLSpanElement = document.getElementById("alertText");
     alertText.innerText = msg;
     alertBox.classList.remove("hidden");
 }
 
-export function copyToClipboard(text: string) {
+function copyToClipboard(text: string) {
     const dummy = document.createElement("input");
     document.body.appendChild(dummy);
     dummy.value = text;
@@ -31,8 +31,10 @@ export function copyToClipboard(text: string) {
     document.body.removeChild(dummy);
 }
 
-export function hideCourse(id: number, name: string) {
-    const hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses") ? JSON.parse(localStorage.getItem("hiddenCourses")) : new Array<Array<string>>();
+function hideCourse(id: number, name: string) {
+    const hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses")
+        ? JSON.parse(localStorage.getItem("hiddenCourses"))
+        : new Array<Array<string>>();
     if (!(hidden.indexOf([id.toString(), name]) !== -1)) {
         hidden.push([id.toString(), name]);
         localStorage.setItem("hiddenCourses", JSON.stringify(hidden));
@@ -40,16 +42,18 @@ export function hideCourse(id: number, name: string) {
     document.location.reload();
 }
 
-export function unhideCourse(id: string, name: string) {
-    const hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses") ? JSON.parse(localStorage.getItem("hiddenCourses")) : new Array<Array<string>>();
-    const newHidden: Array<Array<string>> = hidden.filter(e => {
-        return (e[0] !== id);
-    })
+function unhideCourse(id: string) {
+    const hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses")
+        ? JSON.parse(localStorage.getItem("hiddenCourses"))
+        : new Array<Array<string>>();
+    const newHidden: Array<Array<string>> = hidden.filter((e) => {
+        return e[0] !== id;
+    });
     localStorage.setItem("hiddenCourses", JSON.stringify(newHidden));
     document.location.reload();
 }
 
-export function toggleColorScheme() {
+function toggleColorScheme() {
     //initial theme preference:
     const darkTheme: boolean = localStorage.getItem("darkTheme") ? JSON.parse(localStorage.getItem("darkTheme")) : true;
     //store opposite
@@ -62,9 +66,9 @@ export function toggleColorScheme() {
     }
 }
 
-export function initHiddenCourses() {
+function initHiddenCourses() {
     const el = document.getElementById("hiddenCoursesText");
-    if (!el){
+    if (!el) {
         return;
     }
     el.onclick = function () {
@@ -77,23 +81,25 @@ export function initHiddenCourses() {
         } else {
             clickableParent.classList.add("hidden");
         }
-    }
-    const hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses") ? JSON.parse(localStorage.getItem("hiddenCourses")) : new Array<Array<string>>();
+    };
+    const hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses")
+        ? JSON.parse(localStorage.getItem("hiddenCourses"))
+        : new Array<Array<string>>();
     const hiddenCoursesRestoreList = document.getElementById("hiddenCoursesRestoreList") as HTMLUListElement;
     const hiddenCoursesText = document.getElementById("hiddenCoursesText") as HTMLParagraphElement;
-    hidden?.forEach(h => {
+    hidden?.forEach((h) => {
         const liElem = document.createElement("li");
         liElem.classList.add("hover:text-1", "cursor-pointer");
         liElem.innerText = "restore " + h[1];
         liElem.onclick = function () {
-            unhideCourse(h[0], h[1]);
-        }
+            unhideCourse(h[0]);
+        };
         hiddenCoursesRestoreList.appendChild(liElem);
         const elems = document.getElementsByClassName("course" + h[0]);
         for (let i = 0; i < elems.length; i++) {
             elems[i].classList.add("hidden");
         }
-    })
+    });
     if (hidden.length !== 0) {
         hiddenCoursesText.innerText = hidden.length + " hidden courses";
     }
@@ -101,4 +107,4 @@ export function initHiddenCourses() {
 
 window.onload = function () {
     initHiddenCourses();
-}
+};

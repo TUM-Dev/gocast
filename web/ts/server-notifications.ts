@@ -1,11 +1,10 @@
-import flatpickr from "flatpickr";
-
-export class ServerNotifications {
+class ServerNotifications {
     constructor() {
-        ["from", "expires"].forEach(value => {
+        ["from", "expires"].forEach((value) => {
             Array.prototype.forEach.call(document.getElementsByClassName(value), function (el) {
                 console.log(el.id);
-                flatpickr(`#${el.id}`, {enableTime: true, time_24hr: true});
+                // @ts-ignore
+                flatpickr(`#${el.id}`, { enableTime: true, time_24hr: true });
             });
         });
     }
@@ -13,5 +12,4 @@ export class ServerNotifications {
 
 window.onload = function () {
     new ServerNotifications();
-}
-
+};

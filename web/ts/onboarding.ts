@@ -1,6 +1,4 @@
-import { postData } from './global'
-
-export class OnboardingFormData {
+class OnboardingFormData {
     public name: string;
     public email: string;
     public password: string;
@@ -12,25 +10,29 @@ export class OnboardingFormData {
     }
 }
 
-export const nameBox: HTMLInputElement = document.querySelector('#name');
+const nameBox: HTMLInputElement = document.querySelector("#name");
 nameBox.onfocus = function () {
     document.querySelector("#nameError").innerHTML = "";
-}
-export const emailBox: HTMLInputElement = document.querySelector('#email');
+};
+const emailBox: HTMLInputElement = document.querySelector("#email");
 emailBox.onfocus = function () {
     document.querySelector("#emailError").innerHTML = "";
-}
-export const passwordBox: HTMLInputElement = document.querySelector('#password');
+};
+const passwordBox: HTMLInputElement = document.querySelector("#password");
 passwordBox.onfocus = function () {
     document.querySelector("#passwordError").innerHTML = "";
-}
+};
 
-export const form: HTMLFormElement = document.querySelector('#onboardingForm');
+const form: HTMLFormElement = document.querySelector("#onboardingForm");
 form.onsubmit = (e: Event) => {
-    e.preventDefault()
+    e.preventDefault();
     const formData = new FormData(form);
     let success = true;
-    const data = new OnboardingFormData(formData.get("name") as string, formData.get("email") as string, formData.get("password") as string);
+    const data = new OnboardingFormData(
+        formData.get("name") as string,
+        formData.get("email") as string,
+        formData.get("password") as string,
+    );
     if (data.name.length < 5 || !data.name.match("^.* .*")) {
         document.querySelector("#nameError").innerHTML = "<p>Provided name is invalid.</p>";
         success = false;
@@ -50,9 +52,9 @@ form.onsubmit = (e: Event) => {
     postData("api/createUser", data)
         .then(() => {
             location.reload();
-        }).catch(error => {
-        console.log(error)
-    })
+        })
+        .catch((error) => {
+            console.log(error);
+        });
     return false; // prevent reload
-}
-
+};

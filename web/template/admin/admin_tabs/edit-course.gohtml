@@ -83,7 +83,7 @@
                                 class="p-6 dark:hover:bg-primary hover:bg-white border-b-2 dark:border-primary border-white">
                                 <div class="flex">
                                     <div class="w-1/4">
-                                        <div class="text-3 font-semibold">{{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
+                                        <div class="text-3 font-semibold">{{$lecture.Start.Weekday}} {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
                                             <i class="fas fa-trash hover:text-1 px-2"
                                                title="Delete Lecture"
                                                onclick="UI.deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}})"></i>
@@ -219,11 +219,6 @@
                                                         });
                                                 </script>
                                                 {{end}}
-                                                {{else}}
-                                                <p class="mt-2 flex">
-                                                    <i class="fas fa-upload hover:text-purple-500 px-2"
-                                                       title="Upload VoD"></i>
-                                                </p>
                                                 {{end}}
                                             </div>
                                         </div>
@@ -241,6 +236,10 @@
                                     <label>
                                         <input type="checkbox" x-model="formData.premiere" class="w-auto">
                                         <span class="text-3">Video Premiere</span>
+                                    </label><br>
+                                    <label>
+                                        <input type="checkbox" x-model="formData.vodup" class="w-auto">
+                                        <span class="text-3">VoD Upload</span>
                                     </label>
                                 </div>
                                 <div class="w-3/4">
@@ -257,14 +256,14 @@
                                                        id="start" x-model="formData.start" x-ref="start"
                                                        x-init="flatpickr($refs.start, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})"/>
                                             </label>
-                                            <label x-show="!formData.premiere && !loading" for="end" class="md:w-1/4 w-full">
+                                            <label x-show="!formData.premiere && !formData.vodup && !loading" for="end" class="md:w-1/4 w-full">
                                                 <span class="font-semibold p-2">End</span>
                                                 <input name="end" type="text" placeholder="2021-04-08 16:00" id="end"
                                                        x-model="formData.end"
                                                        x-ref="end"
                                                        x-init="flatpickr($refs.end, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})"/>
                                             </label>
-                                            <label class="relative" x-show="formData.premiere && !loading" x-data="{ showTooltip:false }">
+                                            <label class="relative" x-show="formData.premiere || formData.vodup && !loading" x-data="{ showTooltip:false }">
                                                 <span class="font-semibold p-2">Video File <i class="text-warn fas fa-exclamation-triangle" @mouseover="showTooltip=true" @mouseleave="showTooltip=false">
                                                         <span class="absolute left-0 top-0 text-gray-700 transform -translate-y-6 bg-white rounded p-1 shadow font-light" x-show="showTooltip">If possible: mp4, H.264, 1080p @ 30fps</span>
                                                     </i></span>

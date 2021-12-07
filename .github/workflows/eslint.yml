@@ -1,0 +1,20 @@
+name: "Eslint"
+
+on:
+  push:
+    branches: [ dev ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ dev ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install modules
+        working-directory: ./web
+        run: npm ci
+      - name: Run ESLint
+        working-directory: ./web
+        run: npx eslint . --ext .ts,.tsx

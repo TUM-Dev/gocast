@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var LdapErrBadAuth = errors.New("login failed")
+var ErrLdapBadAuth = errors.New("login failed")
 
 //LoginWithTumCredentials returns student id if login and password match, err otherwise
 func LoginWithTumCredentials(username string, password string) (userId string, lrzIdent string, firstName string, err error) {
@@ -43,14 +43,14 @@ func LoginWithTumCredentials(username string, password string) (userId string, l
 	}
 
 	if len(sr.Entries) != 1 {
-		return "", "", "", LdapErrBadAuth
+		return "", "", "", ErrLdapBadAuth
 	}
 
 	userdn := sr.Entries[0].DN
 	// Bind as the user to verify their password
 	err = l.Bind(userdn, password)
 	if err != nil {
-		return "", "", "", LdapErrBadAuth
+		return "", "", "", ErrLdapBadAuth
 	}
 	res, err := l.Search(&ldap.SearchRequest{
 		BaseDN:   userdn,
@@ -74,5 +74,5 @@ func LoginWithTumCredentials(username string, password string) (userId string, l
 			return mwnID, lrzID, name, nil
 		}
 	}
-	return "", "", "", errors.New(fmt.Sprintf("LDAP: reached unexpected codepoint. User: %v", username))
+	return "", "", "", fmt.Errorf("LDAP: reached unexpected codepoint. User: %v", username)
 }

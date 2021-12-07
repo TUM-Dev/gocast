@@ -10,8 +10,8 @@
     "postinstall": "npm run typescript-compile && npm run tailwind-compile",
     "typescript-compile": "npx tsc",
     "tailwind-compile": "NODE_ENV=production npx tailwindcss build -i assets/css/main.css --minify -o ./assets/css-dist/main.css",
-    "build": "webpack --config webpack.config.js",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint-fix": "eslint . --ext .ts,.tsx --quiet --fix"
   },
   "author": "Joscha Henningsen",
   "license": "MIT",
@@ -21,29 +21,30 @@
   "homepage": "https://github.com/joschahenningsen/TUM-Live#readme",
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.4",
-    "@fullcalendar/core": "^5.10.0",
-    "@fullcalendar/icalendar": "^5.10.0",
-    "@fullcalendar/resource-timeline": "^5.10.0",
+    "@fullcalendar/core": "^5.10.1",
+    "@fullcalendar/icalendar": "^5.10.1",
     "@silvermine/videojs-quality-selector": "^1.2.5",
-    "alpinejs": "^3.4.2",
-    "chart.js": "^3.6.0",
+    "alpinejs": "^3.7.0",
+    "chart.js": "^3.6.2",
     "flatpickr": "^4.6.9",
-    "fullcalendar": "^5.10.0",
-    "hls.js": "^1.0.12",
+    "fullcalendar": "^5.10.1",
     "ical.js": "^1.4.0",
     "nouislider": "^15.5.0",
-    "video.js": "^7.15.4",
+    "video.js": "^7.17.0",
     "videojs-contrib-quality-levels": "^2.1.0",
     "videojs-hls-quality-selector": "^1.1.4",
     "videojs-seek-buttons": "^2.2.0"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.6.0",
+    "@typescript-eslint/parser": "^5.6.0",
     "autoprefixer": "^10.4.0",
-    "postcss": "^8.3.11",
+    "eslint": "^8.4.1",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "postcss": "^8.4.4",
+    "prettier": "^2.5.1",
     "tailwindcss": "^2.2.19",
-    "ts-loader": "^9.2.6",
-    "typescript": "^4.5.2",
-    "webpack": "^5.64.2",
-    "webpack-cli": "^4.9.1"
+    "typescript": "^4.5.2"
   }
 }
