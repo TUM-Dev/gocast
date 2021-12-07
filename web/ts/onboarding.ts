@@ -10,25 +10,29 @@ class OnboardingFormData {
     }
 }
 
-let nameBox: HTMLInputElement = document.querySelector('#name');
+const nameBox: HTMLInputElement = document.querySelector("#name");
 nameBox.onfocus = function () {
     document.querySelector("#nameError").innerHTML = "";
-}
-let emailBox: HTMLInputElement = document.querySelector('#email');
+};
+const emailBox: HTMLInputElement = document.querySelector("#email");
 emailBox.onfocus = function () {
     document.querySelector("#emailError").innerHTML = "";
-}
-let passwordBox: HTMLInputElement = document.querySelector('#password');
+};
+const passwordBox: HTMLInputElement = document.querySelector("#password");
 passwordBox.onfocus = function () {
     document.querySelector("#passwordError").innerHTML = "";
-}
+};
 
-const form: HTMLFormElement = document.querySelector('#onboardingForm');
+const form: HTMLFormElement = document.querySelector("#onboardingForm");
 form.onsubmit = (e: Event) => {
-    e.preventDefault()
+    e.preventDefault();
     const formData = new FormData(form);
-    let success: boolean = true;
-    const data = new OnboardingFormData(formData.get("name") as string, formData.get("email") as string, formData.get("password") as string);
+    let success = true;
+    const data = new OnboardingFormData(
+        formData.get("name") as string,
+        formData.get("email") as string,
+        formData.get("password") as string,
+    );
     if (data.name.length < 5 || !data.name.match("^.* .*")) {
         document.querySelector("#nameError").innerHTML = "<p>Provided name is invalid.</p>";
         success = false;
@@ -46,10 +50,11 @@ form.onsubmit = (e: Event) => {
     }
     console.log(JSON.stringify(data));
     postData("api/createUser", data)
-        .then(data => {
+        .then(() => {
             location.reload();
-        }).catch(error => {
-            console.log(error)
         })
+        .catch((error) => {
+            console.log(error);
+        });
     return false; // prevent reload
-}
+};
