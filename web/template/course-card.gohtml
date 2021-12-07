@@ -8,17 +8,15 @@
     <div class="flex">
         <i class="icon-eye invisible mr-2"></i>
         <p class="text-5 font-sans font-light text-sm">
+            {{ /* Order of conditions is important */ }}
             {{if .IsLive}}
                 Live now.
+            {{else if and .IsNextLectureStartingSoon .HasNextLecture}}
+                {{$next := .GetNextLectureDate}}Starting soon at {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}.
+            {{else if .HasNextLecture}}
+                {{$next := .GetNextLectureDate}}Next Lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
             {{else}}
-                {{if .IsComingUp}}
-                    <span class="bg-warn rounded-full text-gray-800 px-2">Coming up</span>
-                {{end}}
-                {{if .HasNextLecture}}
-                    {{$next := .GetNextLectureDate}}Next Lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
-                {{else}}
-                    No upcoming Lectures
-                {{end}}
+                No upcoming Lectures
             {{end}}
         </p>
     </div>

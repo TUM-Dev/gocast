@@ -46,6 +46,10 @@
         height: 3px;
     }
 
+    /* Waiting room pill color */
+    .bg-wait {
+        background-color: darkorange;
+    }
     /*full contrast text*/
     .text-1 {
         @apply text-black dark:text-white;

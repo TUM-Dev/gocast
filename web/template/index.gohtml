@@ -37,22 +37,21 @@
             </p>
         </div>
     {{end}}
-    <h2 class="text-2xl text-1">My lectures today</h2>
-    {{range $course := .Courses }}
-        {{range $liveStream := $course.Streams }}
-            {{if $liveStream.IsToday}}
+    {{if and .HasLectureSoon .TUMLiveContext.User}}
+        <h2 class="text-2xl text-1">My Upcoming Lectures</h2>
+        {{range $course := .Courses }}
+            {{range $liveStream := $course.Streams }}
+                {{if and $liveStream.IsComingUp (not $liveStream.LiveNow)}}
                     <div class="pt-1 px-4 mb-2 course{{$course.Model.ID}}">
                         <a href="/w/{{$course.Slug}}/{{$liveStream.Model.ID}}">
-                            {{if $liveStream.IsComingUp}}
-                                <span class="bg-warn rounded-full text-gray-800 px-2 ">Coming up soon</span>
-{{/*                                    in {{$liveStream.MinutesUntilStart}} Minutes<*/}}
-                            {{end}}
                             <h3 class="text-lg text-2 inline">{{$course.Name}}{{if $liveStream.Name}}: {{$liveStream.Name}}{{end}}</h3>
                         </a>
-                        <div class="font-sans font-light text-sm text-gray-200">
-                            {{$next := $course.GetNextLectureDate}}Next Lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
+                        <div class="font-sans text-sm">
+                            <span class="bg-wait text-black px-2 rounded-full">Waiting room</span>
+                            <span class="font-light text-3">{{$next := $course.GetNextLectureDate}}Starts at {{printf "%02d:%02d" $next.Hour $next.Minute}}</span>
                         </div>
                     </div>
+                {{end}}
             {{end}}
         {{end}}
     {{end}}
