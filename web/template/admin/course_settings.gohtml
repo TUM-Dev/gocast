@@ -24,7 +24,7 @@
                    value="hidden"
                     {{if .}} {{if eq .Visibility "hidden"}}checked{{end}}{{end}}>
             <span>Hidden: only visible for users with this link: <br><a class="underline"
-                        href="https://live.rbg.tum.de/course/{{.Year}}/{{.TeachingTerm}}/{{.Slug}}">https://live.rbg.tum.de/course/{{.Year}}/{{.TeachingTerm}}/{{.Slug}}</a>
+                                                                        href="https://live.rbg.tum.de/course/{{.Year}}/{{.TeachingTerm}}/{{.Slug}}">https://live.rbg.tum.de/course/{{.Year}}/{{.TeachingTerm}}/{{.Slug}}</a>
             </span>
         </label>
     </div>
@@ -46,12 +46,24 @@
                 <span class="ml-2">Enable Downloads</span>
             </label>
         </div>
-        <div>
+        <div x-data="{enChat:{{.ChatEnabled}}}">
             <label class="inline-flex items-center" for="enChat">
-                <input class="w-auto form-checkbox" id="enChat" name="enChat" type="checkbox"
+                <input x-model="enChat"
+                       class="w-auto form-checkbox"
+                       id="enChat" name="enChat"
+                       type="checkbox"
                        {{if and . .ChatEnabled}}checked{{end}}
                         {{if not .}}checked{{end}}>
                 <span class="ml-2">Enable Live Chat</span>
+            </label>
+            <label class="inline-flex items-center pl-2" for="enChatAnon">
+                <input :disabled="!enChat"
+                       class="w-auto form-checkbox"
+                       id="enChatAnon" name="enChatAnon"
+                       type="checkbox"
+                       {{if and . .AnonymousChatEnabled}}checked{{end}}
+                        {{if not .}}checked{{end}}>
+                <span class="ml-2">Allow Anonymous Messages</span>
             </label>
         </div>
     </div>

@@ -20,6 +20,7 @@ type Course struct {
 	VODEnabled              bool
 	DownloadsEnabled        bool
 	ChatEnabled             bool
+	AnonymousChatEnabled    bool `gorm:"not null;default:true"`
 	VodChatEnabled          bool
 	Visibility              string // public, loggedin or enrolled
 	Streams                 []Stream
