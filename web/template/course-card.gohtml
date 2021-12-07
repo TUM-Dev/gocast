@@ -8,7 +8,7 @@
     <div class="flex">
         <i class="icon-eye invisible mr-2"></i>
         <p class="text-5 font-sans font-light text-sm">
-            {{ /* Order of conditions is important */ }}
+            {{/*Order of conditions is important*/}}
             {{if .IsLive}}
                 Live now.
             {{else if and .IsNextLectureStartingSoon .HasNextLecture}}
