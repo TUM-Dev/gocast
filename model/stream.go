@@ -41,9 +41,9 @@ type Stream struct {
 	StreamName       string
 }
 
-// IsRegularStream returns whether the stream is a scheduled stream in a lecture hall
-func (s Stream) IsRegularStream() bool {
-	return s.LectureHallID != 0
+// IsSelfStream returns whether the stream is a scheduled stream in a lecture hall
+func (s Stream) IsSelfStream() bool {
+	return s.LectureHallID == 0
 }
 
 // IsPast returns whether the stream end time was reached
@@ -53,15 +53,23 @@ func (s Stream) IsPast() bool {
 
 // IsComingUp returns whether the stream begins in 30 minutes
 func (s Stream) IsComingUp() bool {
-	eligibleForWait := s.Start.Before(time.Now().Add(30*time.Minute)) && time.Now().Before(s.End)
+	eligibleForWait := s.Start.Before(time.Now().Add(3000*time.Minute)) && time.Now().Before(s.End)
 	return !s.IsPast() && !s.Recording && !s.LiveNow && eligibleForWait
 }
 
-func (s Stream) StartsInOneDay() bool {
+// TimeSlotReached returns whether stream has passed the starting time
+func (s Stream) TimeSlotReached() bool {
+	// Used to stop displaying the timer when there is less than 1 minute left
+	return time.Now().After(s.Start.Add(-time.Minute)) && time.Now().Before(s.End)
+}
+
+// IsStartingInOneDay returns whether the stream starts within 1 day
+func (s Stream) IsStartingInOneDay() bool {
 	return s.Start.After(time.Now().Add(24 * time.Hour))
 }
 
-func (s Stream) StartsInMoreThanOneDay() bool {
+// IsStartingInMoreThanOneDay returns whether the stream starts in at least 2 days
+func (s Stream) IsStartingInMoreThanOneDay() bool {
 	return s.Start.After(time.Now().Add(48 * time.Hour))
 }
 

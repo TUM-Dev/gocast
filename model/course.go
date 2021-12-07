@@ -98,6 +98,11 @@ func (c Course) NumUsers() int {
 	return len(c.Users)
 }
 
+// NextLectureHasReachedTimeSlot returns whether the courses next lecture arrived at its timeslot
+func (c Course) NextLectureHasReachedTimeSlot() bool {
+	return c.GetNextLecture().TimeSlotReached()
+}
+
 // GetNextLecture returns the next lecture of the course
 func (c Course) GetNextLecture() Stream {
 	var earliestLecture Stream
@@ -111,9 +116,21 @@ func (c Course) GetNextLecture() Stream {
 	return earliestLecture
 }
 
-// GetNextLectureDate returns the start date of the next lecture
+// GetNextLectureDate returns the next lecture date of the course
 func (c Course) GetNextLectureDate() time.Time {
-	return c.GetNextLecture().Start
+	// TODO: Refactor this with IsNextLectureSelfStream when the sorting error fixed
+	earliestLectureDate := time.Now().Add(time.Hour * 24 * 365 * 10) // 10 years from now.
+	for _, s := range c.Streams {
+		if s.Start.Before(earliestLectureDate) && s.End.After(time.Now()) {
+			earliestLectureDate = s.Start
+		}
+	}
+	return earliestLectureDate
+}
+
+// IsNextLectureSelfStream checks whether the next lecture is a self stream
+func (c Course) IsNextLectureSelfStream() bool {
+	return c.GetNextLecture().IsSelfStream()
 }
 
 // GetNextLectureDateFormatted returns a JavaScript friendly formatted date string
