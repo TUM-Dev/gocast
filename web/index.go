@@ -73,6 +73,12 @@ func MainPage(c *gin.Context) {
 			indexData.Courses = append(indexData.Courses, coursesForLecturer...)
 		}
 	}
+	// Used to decide whether there should be an upcoming segment on the startpage
+	if tumLiveContext.User != nil {
+		indexData.HasLectureSoon = hasLectureSoon(indexData.Courses)
+	} else {
+		indexData.HasLectureSoon = false
+	}
 	streams, err := dao.GetCurrentLive(context.Background())
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
@@ -151,6 +157,7 @@ type IndexData struct {
 	IsUser              bool
 	IsAdmin             bool
 	IsStudent           bool
+	HasLectureSoon      bool
 	LiveStreams         []CourseStream
 	Courses             []model.Course
 	PublicCourses       []model.Course
@@ -183,6 +190,16 @@ func NewIndexDataWithContext(c *gin.Context) IndexData {
 type CourseStream struct {
 	Course model.Course
 	Stream model.Stream
+}
+
+// hasLectureSoon returns whether there is a lecture in less than an hour
+func hasLectureSoon(courses []model.Course) bool {
+	for _, c := range courses {
+		if c.IsNextLectureStartingSoon() {
+			return true
+		}
+	}
+	return false
 }
 
 func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {

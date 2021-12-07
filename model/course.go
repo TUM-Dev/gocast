@@ -69,7 +69,8 @@ func (c Course) IsLive() bool {
 	return false
 }
 
-func (c Course) IsComingUp() bool {
+// IsNextLectureStartingSoon checks whether the course has a lecture that starts soon
+func (c Course) IsNextLectureStartingSoon() bool {
 	for _, s := range c.Streams {
 		if s.IsComingUp() {
 			return true
