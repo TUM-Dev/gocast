@@ -186,7 +186,7 @@ func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.S
 	if worker, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, errors.New("authentication failed: invalid worker id")
 	} else {
-		worker.Workload = int(request.Workload)
+		worker.Workload = uint(request.Workload)
 		worker.LastSeen = time.Now()
 		worker.Status = strings.Join(request.Jobs, ", ")
 		err := dao.SaveWorker(worker)
