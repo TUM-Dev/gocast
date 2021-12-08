@@ -73,13 +73,16 @@ func sendServerMessageWithBackoff(session *melody.Session, userId uint, streamId
 	tools.SetCacheItem(cacheKey, true, time.Minute*10)
 }
 
-//sendServerMessage sends a server message to the client
-func sendServerMessage(session *melody.Session, msg string, t string) {
+//sendServerMessage sends a server message to the client(s)
+func sendServerMessage(msg string, t string, sessions ...*melody.Session) {
 	msgBytes, _ := json.Marshal(gin.H{"server": msg, "type": t})
-	err := session.Write(msgBytes)
-	if err != nil {
-		log.WithError(err).Error("can't write server message to session")
+	for _, session := range sessions {
+		err := session.Write(msgBytes)
+		if err != nil {
+			log.WithError(err).Error("can't write server message to session")
+		}
 	}
+
 }
 
 func BroadcastStats() {
