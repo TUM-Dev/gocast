@@ -125,7 +125,6 @@ func main() {
 		&model.CameraPreset{},
 		&model.ServerNotification{},
 		&model.File{},
-		&model.Mail{},
 		&model.StreamProgress{},
 	)
 	if err != nil {
