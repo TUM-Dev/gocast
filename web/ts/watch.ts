@@ -21,7 +21,7 @@ const pageloaded = new Date();
 
 function startWebsocket() {
     const streamid = (document.getElementById("streamID") as HTMLInputElement).value;
-    ws = new WebSocket("wss://live.rbg.tum.de/api/chat/" + streamid + "/ws");
+    ws = new WebSocket("ws://localhost:8081/api/chat/" + streamid + "/ws");
     const cf = document.getElementById("chatForm");
     if (cf !== null && cf != undefined) {
         (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", (e) => submitChat(e));
@@ -40,7 +40,7 @@ function startWebsocket() {
                 window.dispatchEvent(new CustomEvent("pauseend"));
             }
         } else if ("server" in data) {
-            const serverElem = createServerMessage(data["server"]);
+            const serverElem = createServerMessage(data);
             document.getElementById("chatBox").appendChild(serverElem);
             document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
         } else if ("msg" in data) {
@@ -64,10 +64,21 @@ function startWebsocket() {
 
 startWebsocket();
 
-function createServerMessage(msg: string) {
+function createServerMessage(msg) {
     const serverElem = document.createElement("div");
-    serverElem.classList.add("text-info", "text-sm");
-    serverElem.innerText = msg;
+    switch (msg["type"]) {
+        case "error":
+            serverElem.classList.add("text-danger", "font-semibold");
+            break;
+        case "info":
+            serverElem.classList.add("text-4");
+            break;
+        case "warn":
+            serverElem.classList.add("text-warn", "font-semibold");
+            break;
+    }
+    serverElem.classList.add("text-sm", "p-2");
+    serverElem.innerText = msg["server"];
     return serverElem;
 }
 
