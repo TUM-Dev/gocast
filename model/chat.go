@@ -11,5 +11,5 @@ type Chat struct {
 	UserName string `gorm:"not null"`
 	Message  string `gorm:"not null"`
 	StreamID uint   `gorm:"not null"`
-	Admin    bool   `gorm:"not null"`
+	Admin    bool   `gorm:"not null;default:false"`
 }

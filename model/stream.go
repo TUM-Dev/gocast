@@ -11,7 +11,7 @@ import (
 type Stream struct {
 	gorm.Model
 
-	Name             string `gorm:"not null"`
+	Name             string
 	Description      string
 	CourseID         uint
 	Start            time.Time `gorm:"not null"`

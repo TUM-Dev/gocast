@@ -10,6 +10,6 @@ type Stat struct {
 
 	Time     time.Time `gorm:"not null"`
 	StreamID uint      `gorm:"not null"`
-	Viewers  uint      `gorm:"not null"`
-	Live     bool      `gorm:"not null"`
+	Viewers  uint      `gorm:"not null;default:0"`
+	Live     bool      `gorm:"not null;default:false"`
 }

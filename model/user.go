@@ -28,7 +28,7 @@ type User struct {
 	Email               sql.NullString `gorm:"unique;default:null"`
 	MatriculationNumber string         `gorm:"unique;default:null"`
 	LrzID               string
-	Role                int      //1:admin 2:lecturer 3:others
+	Role                uint     `gorm:"default:4"` // AdminType = 1, LecturerType = 2, GenericType = 3, StudentType  = 4
 	Password            string   `gorm:"default:null"`
 	Courses             []Course `gorm:"many2many:course_users"` // courses a lecturer invited this user to
 }

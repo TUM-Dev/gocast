@@ -9,7 +9,7 @@ type ServerNotification struct {
 	gorm.Model
 
 	Text    string    `gorm:"not null"`
-	Warn    bool      `gorm:"not null"` // if false -> Info
+	Warn    bool      `gorm:"not null;default:false"` // if false -> Info
 	Start   time.Time `gorm:"not null"`
 	Expires time.Time `gorm:"not null"`
 }

@@ -8,7 +8,7 @@ import (
 type File struct {
 	gorm.Model
 
-	StreamID uint
+	StreamID uint   `gorm:"not null"`
 	Path     string `gorm:"not null"`
 }
 
