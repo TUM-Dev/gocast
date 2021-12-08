@@ -11,10 +11,12 @@
             {{/*Order of conditions is important*/}}
             {{if .IsLive}}
                 Live now.
-            {{else if and .IsNextLectureStartingSoon .HasNextLecture}}
-                {{$next := .GetNextLectureDate}}Starting soon at {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}.
             {{else if .HasNextLecture}}
-                {{$next := .GetNextLectureDate}}Next Lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
+                {{$next := .GetNextLectureDate}}
+                {{if .IsNextLectureStartingSoon}}Lecture starts soon:
+                {{else}}Next lecture:
+                {{end}}
+                {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
             {{else}}
                 No upcoming Lectures
             {{end}}

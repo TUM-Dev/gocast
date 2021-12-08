@@ -48,7 +48,7 @@
                         </a>
                         <div class="font-sans text-sm">
                             <span class="bg-wait text-black px-2 rounded-full">Waiting room</span>
-                            <span class="font-light text-3">{{$next := $course.GetNextLectureDate}}Starts at {{printf "%02d:%02d" $next.Hour $next.Minute}}</span>
+                            <span class="font-light text-3">{{$next := $course.GetNextLectureDate}}Starts at {{printf "%02d:%02d" $next.Hour $next.Minute}}.</span>
                         </div>
                     </div>
                 {{end}}
