@@ -1,6 +1,9 @@
 package tools
 
-import "github.com/dgraph-io/ristretto"
+import (
+	"github.com/dgraph-io/ristretto"
+	"time"
+)
 
 var cache *ristretto.Cache
 
@@ -19,4 +22,9 @@ func initCache() {
 // GetCacheItem returns the value of the key if it exists in the cache. (nil, err) otherwise
 func GetCacheItem(key string) (interface{}, bool) {
 	return cache.Get(key)
+}
+
+// SetCacheItem adds the key and value to the cache with the given expiration time.
+func SetCacheItem(key string, value interface{}, ttl time.Duration) {
+	cache.SetWithTTL(key, value, 1, ttl)
 }
