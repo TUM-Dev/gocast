@@ -46,10 +46,6 @@
         height: 3px;
     }
 
-    /* Waiting room pill color */
-    .bg-wait {
-        background-color: darkorange;
-    }
     /*full contrast text*/
     .text-1 {
         @apply text-black dark:text-white;
@@ -238,6 +234,15 @@ input[type='checkbox']:checked + label {
 
 .fc-timegrid-event {
     box-shadow: 0 0 0 1px #ffffff60 !important;
+}
+
+.timer {
+    display:flex;
+    font-variant-numeric: tabular-nums; /* Otherwise the counter will "jump" */
+}
+
+.timer span + span:before {
+    content:":"
 }
 
 .theater-mode {

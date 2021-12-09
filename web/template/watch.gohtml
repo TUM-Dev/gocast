@@ -64,7 +64,21 @@
                         {{if not $stream.LiveNow}}
                             <span class="flex m-auto" id="ViewerDescText"> Waiting</span>
                             <span class="flex m-auto">&#183;</span>
-                            <span class="flex m-auto" id="timer"></span>
+                            {{if $stream.StartsInOneDay}}
+                                <span class="text-4 flex m-auto">Live in one day</span>
+                            {{else}}
+                                <div class="timer text-lg px-2 text-4 flex m-auto" x-data="timer('{{$course.GetNextLectureDateFormatted}}', true)" x-init="init();">
+                                {{if $stream.StartsInMoreThanOneDay}}
+                                     Live in <span class="px-2" x-text="time().day"></span> days
+                                {{else}}
+                                    {{if not $stream.IsSelfStream}}
+                                        <span x-text="time().hours"></span>
+                                        <span x-text="time().minutes"></span>
+                                        <span x-text="time().seconds"> </span>
+                                    {{end}}
+                                {{end}}
+                                </div>
+                            {{end}}
                         {{else}}
                             <span class="flex m-auto" id="ViewerDescText"> Viewers</span>
                         {{end}}
@@ -213,12 +227,6 @@
     {{if $stream.Silences}}
     player.skipSilence({{$stream.GetSilencesJson}});
     {{end}}
-    loadScript("/static/assets/ts-dist/watch.js?v={{.IndexData.VersionTag}}")
-        .then(() => {
-            {{if not (or $stream.LiveNow $stream.Recording)}}
-            new Timer({{$stream.Start}});
-            {{end}}
-        })
 </script>
 </body>
 </html>

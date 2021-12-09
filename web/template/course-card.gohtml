@@ -12,11 +12,17 @@
             {{if .IsLive}}
                 Live now.
             {{else if .HasNextLecture}}
-                {{$next := .GetNextLectureDate}}
-                {{if .IsNextLectureStartingSoon}}Lecture starts soon:
-                {{else}}Next lecture:
+                {{if .IsNextLectureStartingSoon}}
+                    <div class="timer text-5 font-sans font-light text-sm" x-data="timer('{{.GetNextLectureDateFormatted}}')" x-init="init();">
+                        <span x-text="time().minutes"></span>
+                    </div>
+                    <div class="text-5 font-sans font-light text-sm px-1"> minutes left  •</div>
+                    <a class="text-5 font-sans text-sm" href="/w/{{.Slug}}/{{.GetNextLecture.Model.ID}}">
+                        Join waiting room
+                    </a>
+                {{else}}
+                    {{$next := .GetNextLectureDate}}Next lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
                 {{end}}
-                {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
             {{else}}
                 No upcoming Lectures
             {{end}}

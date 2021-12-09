@@ -41,13 +41,29 @@ type Stream struct {
 	StreamName       string
 }
 
+// IsSelfStream returns whether the stream is a scheduled stream in a lecture hall
+func (s Stream) IsSelfStream() bool {
+	return s.LectureHallID == 0
+}
+
+// IsPast returns whether the stream end time was reached
 func (s Stream) IsPast() bool {
 	return s.End.Before(time.Now())
 }
 
-// IsComingUp returns whether the stream begins within an hour
+// IsComingUp returns whether the stream begins soon
 func (s Stream) IsComingUp() bool {
-	return !s.IsPast() && s.Start.Before(time.Now().Add(time.Hour))
+	isIncoming := s.Start.Before(time.Now().Add(2000 * time.Minute))
+	hasStarted := time.Now().After(s.Start) && time.Now().Before(s.End)
+	return !s.IsPast() && !s.Recording && !s.LiveNow && !hasStarted && isIncoming
+}
+
+func (s Stream) StartsInOneDay() bool {
+	return s.Start.After(time.Now().Add(24 * time.Hour))
+}
+
+func (s Stream) StartsInMoreThanOneDay() bool {
+	return s.Start.After(time.Now().Add(48 * time.Hour))
 }
 
 type silence struct {
