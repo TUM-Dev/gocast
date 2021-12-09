@@ -11,6 +11,7 @@ var Cfg Config
 var Loc *time.Location
 
 func init() {
+	initCache()
 	var err error
 	Loc, err = time.LoadLocation("Europe/Berlin")
 	if err != nil {

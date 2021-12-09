@@ -54,6 +54,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			return
 		}
 		if dao.IsUserCooledDown(fmt.Sprintf("%v", tumLiveContext.User.ID)) {
+			sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, s)
 			return
 		}
 		if !tumLiveContext.Course.ChatEnabled {
