@@ -35,6 +35,7 @@ type CameraPresetPreference struct {
 	PresetID      int  `json:"preset_id"`
 }
 
+// GetCameraPresetPreference retrieves the camera preset preferences
 func (c Course) GetCameraPresetPreference() []CameraPresetPreference {
 	var res []CameraPresetPreference
 	err := json.Unmarshal([]byte(c.CameraPresetPreferences), &res)
@@ -44,6 +45,7 @@ func (c Course) GetCameraPresetPreference() []CameraPresetPreference {
 	return res
 }
 
+// SetCameraPresetPreference updates the camera preset preferences
 func (c *Course) SetCameraPresetPreference(pref []CameraPresetPreference) {
 	pBytes, err := json.Marshal(pref)
 	if err != nil {
@@ -60,6 +62,7 @@ func (c Course) CompareTo(other Course) bool {
 	return c.GetNextLectureDate().Before(other.GetNextLectureDate())
 }
 
+// IsLive returns whether the course has a lecture that is live
 func (c Course) IsLive() bool {
 	for _, s := range c.Streams {
 		if s.LiveNow {
@@ -79,7 +82,7 @@ func (c Course) IsNextLectureStartingSoon() bool {
 	return false
 }
 
-//NumStreams returns the number of streams for the course that are VoDs or live
+// NumStreams returns the number of streams for the course that are VoDs or live
 func (c Course) NumStreams() int {
 	res := 0
 	for i := range c.Streams {
@@ -90,33 +93,33 @@ func (c Course) NumStreams() int {
 	return res
 }
 
-//NumUsers returns the number of users enrolled in the course
+// NumUsers returns the number of users enrolled in the course
 func (c Course) NumUsers() int {
 	return len(c.Users)
 }
 
-func (c Course) GetNextLectureDate() time.Time {
-	earliestLecture := time.Now().Add(time.Hour * 24 * 365 * 10) // 10 years from now.
-	for _, s := range c.Streams {
-		if s.Start.Before(earliestLecture) && s.End.After(time.Now()) {
-			earliestLecture = s.Start
-		}
-	}
-	return earliestLecture
-}
-
-func (c Course) GetNextLecture() *Stream {
+// GetNextLecture returns the next lecture of the course
+func (c Course) GetNextLecture() Stream {
+	var earliestLecture Stream
 	earliestLectureDate := time.Now().Add(time.Hour * 24 * 365 * 10) // 10 years from now.
-	var earliestLecture *Stream
 	for _, s := range c.Streams {
 		if s.Start.Before(earliestLectureDate) && s.End.After(time.Now()) {
 			earliestLectureDate = s.Start
-			earliestLecture = &s
+			earliestLecture = s
 		}
 	}
 	return earliestLecture
 }
 
+func (c Course) GetNextLectureDate() time.Time {
+	return c.GetNextLecture().Start
+}
+
+func (c Course) GetNextLectureDateFormatted() string {
+	return c.GetNextLectureDate().Format("2006-01-02 15:04:05")
+}
+
+// HasNextLecture checks whether there is another upcoming lecture
 func (c Course) HasNextLecture() bool {
 	n := time.Now()
 	for _, s := range c.Streams {
@@ -127,6 +130,7 @@ func (c Course) HasNextLecture() bool {
 	return false
 }
 
+// GetRecordings returns all recording of this course as streams
 func (c Course) GetRecordings() []Stream {
 	var recordings []Stream
 	for _, s := range c.Streams {
