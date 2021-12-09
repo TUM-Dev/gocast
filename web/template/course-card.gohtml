@@ -1,7 +1,7 @@
 {{define "course-card"}}{{- /*gotype: TUM-Live/model.Course*/ -}}
 <div class="pt-1 group course{{.Model.ID}}">
     <div class="flex items-center">
-        <i class="fancyeye opacity-0 group-hover:opacity-100 transition-colors duration-200 dark:hover:text-white hover:text-black text-gray-500 mr-2 cursor-pointer"
+        <i class="fancyeye opacity-0 group-hover:opacity-100 transition-colors duration-200 dark:hover:text-whitehover:text-black text-gray-500 mr-2 cursor-pointer"
            title="Hide this course" onclick="hideCourse({{.Model.ID}}, {{.Name}})"></i>
         <a href="/course/{{.Year}}/{{.TeachingTerm}}/{{.Slug}}" class="text-lg text-3">{{.Name}}</a>
     </div>
@@ -13,7 +13,9 @@
                 Live now.
             {{else if .HasNextLecture}}
                 {{if .IsNextLectureStartingSoon}}
-                    <div class="timer text-5 font-sans font-light text-sm" x-data="timer('{{.GetNextLectureDateFormatted}}')" x-init="init();">
+                    <div class="timer text-5 font-sans font-light text-sm"
+                         x-data="timer('{{.GetNextLectureDateFormatted}}', '{{.GetNextLecture.IsRegularStream}}', false)"
+                         x-init="init();">
                         <span x-text="time().minutes"></span>
                     </div>
                     <div class="text-5 font-sans font-light text-sm px-1"> minutes left  •</div>

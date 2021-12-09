@@ -111,10 +111,12 @@ func (c Course) GetNextLecture() Stream {
 	return earliestLecture
 }
 
+// GetNextLectureDate returns the start date of the next lecture
 func (c Course) GetNextLectureDate() time.Time {
 	return c.GetNextLecture().Start
 }
 
+// GetNextLectureDateFormatted returns a JavaScript friendly formatted date string
 func (c Course) GetNextLectureDateFormatted() string {
 	return c.GetNextLectureDate().Format("2006-01-02 15:04:05")
 }

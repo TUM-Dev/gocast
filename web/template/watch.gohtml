@@ -71,11 +71,9 @@
                                 {{if $stream.StartsInMoreThanOneDay}}
                                      Live in <span class="px-2" x-text="time().day"></span> days
                                 {{else}}
-                                    {{if not $stream.IsSelfStream}}
-                                        <span x-text="time().hours"></span>
-                                        <span x-text="time().minutes"></span>
-                                        <span x-text="time().seconds"> </span>
-                                    {{end}}
+                                    <span x-text="time().hours"></span>
+                                    <span x-text="time().minutes"></span>
+                                    <span x-text="time().seconds"> </span>
                                 {{end}}
                                 </div>
                             {{end}}

@@ -105,12 +105,14 @@ function initHiddenCourses() {
     }
 }
 
-function timer(expiry: string, leadingZeros: boolean) {
+// Adapted from https://codepen.io/harsh/pen/KKdEVPV
+function timer(expiry: string, regular: boolean, leadingZero: boolean) {
     return {
         expiry: new Date(expiry),
         remaining: null,
         init() {
-            this.expiry.setMinutes(this.expiry.getMinutes() - 10);
+            const offsetInMinutes = regular ? 10 : 0;
+            this.expiry.setMinutes(this.expiry.getMinutes() - offsetInMinutes);
             this.setRemaining();
             setInterval(() => {
                 this.setRemaining();
@@ -144,7 +146,7 @@ function timer(expiry: string, leadingZeros: boolean) {
             };
         },
         format(value) {
-            if (leadingZeros) {
+            if (leadingZero) {
                 return ("0" + parseInt(value)).slice(-2);
             } else {
                 return parseInt(value);
