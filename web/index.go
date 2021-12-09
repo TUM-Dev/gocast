@@ -151,7 +151,6 @@ type IndexData struct {
 	IsUser              bool
 	IsAdmin             bool
 	IsStudent           bool
-	HasLectureSoon      bool
 	LiveStreams         []CourseStream
 	Courses             []model.Course
 	PublicCourses       []model.Course
