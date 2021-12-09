@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"gorm.io/gorm"
 	"time"
 )
@@ -12,6 +13,13 @@ type ServerNotification struct {
 	Warn    bool      `gorm:"not null;default:false"` // if false -> Info
 	Start   time.Time `gorm:"not null"`
 	Expires time.Time `gorm:"not null"`
+}
+
+func (s ServerNotification) BeforeCreate(tx *gorm.DB) (err error) {
+	if s.Expires.Before(s.Start) {
+		err = errors.New("can't save notification where expires is before start")
+	}
+	return
 }
 
 func (s ServerNotification) FormatFrom() string {

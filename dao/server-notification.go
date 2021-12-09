@@ -2,7 +2,6 @@ package dao
 
 import (
 	"TUM-Live/model"
-	"errors"
 	"time"
 )
 
@@ -30,14 +29,4 @@ func UpdateServerNotification(notification model.ServerNotification, id string) 
 func DeleteServerNotification(notificationId string) error {
 	err := DB.Delete(&model.ServerNotification{}, notificationId).Error
 	return err
-}
-
-//CreateServerNotification creates a new ServerNotification
-func CreateServerNotification(notification model.ServerNotification) error {
-	if notification.Expires.Before(notification.Start) {
-		return errors.New("expiration before start is invalid")
-	} else {
-		err := DB.Create(&notification).Error
-		return err
-	}
 }

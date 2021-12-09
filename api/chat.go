@@ -55,7 +55,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 		}
 		isCooledDown, err := dao.IsUserCooledDown(fmt.Sprintf("%v", tumLiveContext.User.ID))
 		if err != nil {
-			sentry.CaptureException(errors.New("could not determine whether user has cooled down"))
+			log.WithError(err).Error("could not determine whether user is cooled down")
 			ctx.(*gin.Context).AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
