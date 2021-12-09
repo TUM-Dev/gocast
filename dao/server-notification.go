@@ -30,3 +30,9 @@ func DeleteServerNotification(notificationId string) error {
 	err := DB.Delete(&model.ServerNotification{}, notificationId).Error
 	return err
 }
+
+//CreateServerNotification creates a new ServerNotification
+func CreateServerNotification(notification model.ServerNotification) error {
+	err := DB.Create(&notification).Error
+	return err
+}
