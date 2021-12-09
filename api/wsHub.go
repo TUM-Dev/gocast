@@ -48,7 +48,7 @@ var connHandler = func(s *melody.Session) {
 	if tumLiveContext.Course.ChatEnabled {
 		sendServerMessageWithBackoff(s, uid, tumLiveContext.Stream.ID, "Welcome to the chatroom! Please be nice to each other and stay on topic if you want this feature to stay active.", TypeServerInfo)
 	}
-	if !tumLiveContext.Course.AnonymousChatEnabled {
+	if !tumLiveContext.Course.AnonymousChatEnabled && tumLiveContext.Course.ChatEnabled {
 		sendServerMessageWithBackoff(s, uid, tumLiveContext.Stream.ID, "The broadcaster disabled anonymous messaging for this stream.", TypeServerWarn)
 	}
 }
