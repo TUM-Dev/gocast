@@ -24,7 +24,8 @@ func ConfigGinRouter(router *gin.Engine) {
 		"template/admin/*.gohtml",
 		"template/admin/admin_tabs/*.gohtml",
 		"template/partial/stream/*.gohtml",
-		"template/partial/course/manage/*.gohtml"))
+		"template/partial/course/manage/*.gohtml",
+		"template/partial/admin/*.gohtml"))
 	configGinStaticRouter(router)
 	configMainRoute(router)
 	configCourseRoute(router)

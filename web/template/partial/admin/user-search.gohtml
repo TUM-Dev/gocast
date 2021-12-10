@@ -1,0 +1,40 @@
+{{define "user-search"}}
+    <div x-data="{loading:false, input:'', results:[], c:0}" class="relative">
+        <form class="flex flex-row">
+            <div class="w-4 flex">
+                <i class="fas fa-circle-notch text-4 m-auto animate-spin" x-show="loading"></i>
+            </div>
+            <label>
+                <span class="sr-only">Search</span>
+                <input type="text" x-model="input" @keyup="if (input.length<3) {results=[]};
+                if (input.length > 2) {
+                    loading=true;
+                    fetch('/api/searchUser?q='+input)
+                      .then(response => {
+                        loading=false;
+                        if (!response.ok) {
+                        console.log(response);
+                      }
+                      return response.json()
+                      }).then(r => {results = r; c++})
+                  }">
+            </label>
+        </form>
+        <ul class="absolute divide-y divide-solid rounded shadow">
+            <template x-for="user in results">
+                <li class="py-2 px-5 bg-gray-100 hover:bg-white cursor-pointer">
+                    <div>
+                        <span class="text-gray-700 font-semibold"
+                              x-text="user.name"></span>
+                        <span class="ml-2 text-gray-500"
+                              x-show="user.lrz_id !== ''"
+                              x-text="user.lrz_id"></span>
+                    </div>
+                    <div x-show="user.email!==''"
+                         class="text-black"
+                         x-text="user.email"></div>
+                </li>
+            </template>
+        </ul>
+    </div>
+{{end}}

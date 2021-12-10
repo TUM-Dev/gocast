@@ -32,6 +32,12 @@ func DeleteUser(ctx context.Context, uid uint) (err error) {
 	return res.Error
 }
 
+func SearchUser(query string) (users []model.User, err error) {
+	q := "%" + query + "%"
+	res := DB.Where("UPPER(lrz_id) LIKE UPPER(?) OR UPPER(email) LIKE UPPER(?) OR UPPER(name) LIKE UPPER(?)", q, q, q).Limit(10).Find(&users)
+	return users, res.Error
+}
+
 func IsUserAdmin(ctx context.Context, uid uint) (res bool, err error) {
 	var user model.User
 	err = DB.Find(&user, "id = ?", uid).Error

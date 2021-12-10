@@ -12,7 +12,9 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -22,11 +24,46 @@ func configGinUsersRouter(router *gin.Engine) {
 	admins.Use(tools.Admin)
 	admins.POST("/createUser", CreateUser)
 	admins.POST("/deleteUser", DeleteUser)
+	admins.GET("/searchUser", SearchUser)
 
 	courseAdmins := router.Group("/api/course/:courseID")
 	courseAdmins.Use(tools.InitCourse)
 	courseAdmins.Use(tools.AdminOfCourse)
 	courseAdmins.POST("/createUserForCourse", CreateUserForCourse)
+}
+
+func SearchUser(c *gin.Context) {
+	q := c.Query("q")
+	reg, _ := regexp.Compile("[^a-zA-Z0-9 ]+")
+	q = reg.ReplaceAllString(q, "")
+	log.Println("Searching for user: ", q)
+	if len(q) < 3 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "query too short"})
+		return
+	}
+	users, err := dao.SearchUser(q)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+	res := make([]userSearchDTO, len(users))
+	for i, user := range users {
+		res[i] = userSearchDTO{
+			ID:    user.ID,
+			LrzID: user.LrzID,
+			Email: user.Email.String,
+			Name:  user.Name,
+			Role:  user.Role,
+		}
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+type userSearchDTO struct {
+	ID    uint   `json:"id"`
+	LrzID string `json:"lrz_id"`
+	Email string `json:"email"`
+	Name  string `json:"name"`
+	Role  int    `json:"role"`
 }
 
 func DeleteUser(c *gin.Context) {
