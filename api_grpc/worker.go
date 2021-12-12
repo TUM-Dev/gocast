@@ -153,7 +153,7 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 				if lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID); err != nil {
 					return nil, err
 				} else {
-					client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
+					client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.Auths.PwrCrtlAuth)
 					lightLock.Lock()
 					err := client.TurnOff(lectureHall.LiveLightIndex)
 					if err != nil {
@@ -273,7 +273,7 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 			return nil, err
 		} else {
 			lightLock.Lock()
-			client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
+			client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.Auths.PwrCrtlAuth)
 			go func() {
 				err := client.TurnOn(lectureHall.LiveLightIndex)
 				if err != nil {

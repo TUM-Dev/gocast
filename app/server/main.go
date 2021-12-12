@@ -96,13 +96,14 @@ func main() {
 	}
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
 		"%v:%v@tcp(db:3306)/%v?parseTime=true&loc=Local",
-		tools.Cfg.DatabaseUser,
-		tools.Cfg.DatabasePassword,
-		tools.Cfg.DatabaseName),
+		tools.Cfg.Db.User,
+		tools.Cfg.Db.Password,
+		tools.Cfg.Db.Database),
 	), &gorm.Config{
 		PrepareStmt: true,
 	})
-	if err != nil {
+
+  if err != nil {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second * 5)
 		log.Fatalf("%v", err)

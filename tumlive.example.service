@@ -5,7 +5,6 @@ Requires=mariadb.service
 
 [Service]
 LimitNOFILE=1048576:2097152
-EnvironmentFile=/path/to/your/variables-backend.env
 Type=simple
 ExecStart=/bin/tum-live
 TimeoutStopSec=5
