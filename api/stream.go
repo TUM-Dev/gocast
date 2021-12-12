@@ -37,9 +37,9 @@ func pauseStream(c *gin.Context) {
 		log.WithError(err).Error("request to pause stream without lecture hall")
 		return
 	}
-	ge := goextron.New(fmt.Sprintf("http://%s", strings.ReplaceAll(lectureHall.CombIP, "extron3", "")), tools.Cfg.SMPUser, tools.Cfg.SMPPassword) // todo
+	ge := goextron.New(fmt.Sprintf("http://%s", strings.ReplaceAll(lectureHall.CombIP, "extron3", "")), tools.Cfg.Auths.SmpUser, tools.Cfg.Auths.SmpUser) // todo
 	err = ge.SetMute(pause)
-	client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
+	client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.Auths.PwrCrtlAuth)
 	if pause {
 		err := client.TurnOff(lectureHall.LiveLightIndex)
 		if err != nil {

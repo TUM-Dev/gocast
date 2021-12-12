@@ -10,7 +10,7 @@ import (
 )
 
 func SendPasswordMail(to string, body string) error {
-	err := SendMail(Cfg.MailServer, Cfg.MailUser, "Setup your TUM-Live Account",
+	err := SendMail(Cfg.Mail.Server, Cfg.Mail.Sender, "Setup your TUM-Live Account",
 		body,
 		[]string{to})
 	return err
@@ -20,7 +20,7 @@ func SendMail(addr, from, subject, body string, to []string) error {
 	log.Printf("sending mail to %v, subject: %s body:\n%s", to, subject, body)
 	r := strings.NewReplacer("\r\n", "", "\r", "", "\n", "", "%0a", "", "%0d", "")
 
-	signed, err := openssl([]byte(body), "smime", "-text", "-sign", "-signer", Cfg.SMIMECert, "-inkey", Cfg.SMIMEKey)
+	signed, err := openssl([]byte(body), "smime", "-text", "-sign", "-signer", Cfg.Mail.SMIMECert, "-inkey", Cfg.Mail.SMIMEKey)
 	if err != nil {
 		fmt.Printf("can't encrypt: %v", err)
 	}
