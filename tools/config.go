@@ -1,9 +1,9 @@
 package tools
 
 import (
+	"fmt"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"strings"
+	"github.com/spf13/viper"
 	"time"
 )
 
@@ -17,71 +17,70 @@ func init() {
 	if err != nil {
 		log.WithError(err).Error("tools.config.init: can't get time.location")
 	}
-	Cfg = Config{
-		MailUser:             os.Getenv("MAIL_USER"),
-		MailServer:           os.Getenv("MAIL_SERVER"),
-		DatabaseUser:         os.Getenv("MYSQL_USER"),
-		DatabasePassword:     os.Getenv("MYSQL_PASSWORD"),
-		DatabaseName:         os.Getenv("MYSQL_DATABASE"),
-		VersionTag:           os.Getenv("VERSION_TAG"),
-		LrzServerIngest:      os.Getenv("LRZ_SERVER_INGEST"),
-		LrzServerHls:         os.Getenv("LRZ_SERVER_HLS"),
-		LrzPassword:          os.Getenv("LRZ_PASSWORD"),
-		CampusBase:           os.Getenv("CAMPUS_API_BASE"),
-		CampusToken:          strings.Split(os.Getenv("CAMPUS_API_TOKEN"), ";"),
-		CookieStoreSecret:    os.Getenv("COOKIE_STORE_SECRET"),
-		LdapUrl:              os.Getenv("LDAP_URL"),
-		LdapUser:             os.Getenv("LDAP_USER"),
-		LdapPassword:         os.Getenv("LDAP_PASSWORD"),
-		LdapBaseDN:           os.Getenv("LDAP_BASE_DN"),
-		LdapUserDN:           os.Getenv("LDAP_USER_DN"),
-		IngestBase:           os.Getenv("IngestBase"),
-		CameraAuthentication: os.Getenv("CAMERA_AUTH"),
-		StaticPath:           os.Getenv("STATIC_PATH"),
-		MassStorage:          os.Getenv("MASS_STORAGE"),
-		SMPUser:              os.Getenv("SMP_USER"),
-		SMPPassword:          os.Getenv("SMP_PASSWORD"),
-		PWRCTRLAuth:          os.Getenv("PWRCTRL_AUTH"),
-		SMIMECert:            os.Getenv("SMIMECRT"),
-		SMIMEKey:             os.Getenv("SMIMEKEY"),
-		LRZUploadURL:         os.Getenv("LRZ_UPLOAD_URL"),
-		LrzUser:              os.Getenv("LRZ_USER"),
-		LRZPhone:             os.Getenv("LRZ_PHONE"),
-		LRZMail:              os.Getenv("LRZ_MAIL"),
-		LRZSubDir:            os.Getenv("LRZ_SUBDIR"),
+	initConfig()
+}
+
+func initConfig() {
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath("/etc/TUM-Live/")
+	viper.AddConfigPath("$HOME/.TUM-Live")
+	viper.AddConfigPath(".")
+	err := viper.ReadInConfig()
+	if err != nil {
+		if err == err.(viper.ConfigFileNotFoundError) {
+			log.WithError(err).Warn("tools.config.init: can't find config file")
+
+		} else {
+			panic(fmt.Errorf("Fatal error config file: %w \n", err))
+		}
+	}
+	err = viper.Unmarshal(&Cfg)
+	if err != nil {
+		panic(fmt.Errorf("Fatal error config file: %w \n", err))
 	}
 }
 
 type Config struct {
-	MailUser             string
-	MailServer           string
-	DatabaseUser         string
-	DatabasePassword     string
-	DatabaseName         string
-	VersionTag           string
-	LrzServerIngest      string
-	LrzServerHls         string
-	LrzUser              string
-	LrzPassword          string
-	CampusBase           string
-	CampusToken          []string
-	CookieStoreSecret    string
-	LdapUrl              string
-	LdapUser             string
-	LdapPassword         string
-	LdapBaseDN           string
-	LdapUserDN           string
-	IngestBase           string
-	CameraAuthentication string
-	StaticPath           string
-	MassStorage          string
-	SMPUser              string
-	SMPPassword          string
-	PWRCTRLAuth          string
-	SMIMECert            string
-	SMIMEKey             string
-	LRZUploadURL         string
-	LRZPhone             string
-	LRZMail              string
-	LRZSubDir            string
+	Lrz struct {
+		Name      string `yaml:"name"`
+		Email     string `yaml:"email"`
+		Phone     string `yaml:"phone"`
+		UploadURL string `yaml:"uploadUrl"`
+		SubDir    string `yaml:"subDir"`
+	} `yaml:"lrz"`
+	Mail struct {
+		Sender    string `yaml:"sender"`
+		Server    string `yaml:"server"`
+		SMIMECert string `yaml:"SMIMECert"`
+		SMIMEKey  string `yaml:"SMIMEKey"`
+	} `yaml:"mail"`
+	Db struct {
+		User     string `yaml:"user"`
+		Password string `yaml:"password"`
+		Database string `yaml:"database"`
+	} `yaml:"db"`
+	Campus struct {
+		Base   string   `yaml:"base"`
+		Tokens []string `yaml:"tokens"`
+	} `yaml:"campus"`
+	Ldap struct {
+		URL      string `yaml:"url"`
+		User     string `yaml:"user"`
+		Password string `yaml:"password"`
+		BaseDn   string `yaml:"baseDn"`
+		UserDn   string `yaml:"userDn"`
+	} `yaml:"ldap"`
+	Paths struct {
+		Static string `yaml:"static"`
+		Mass   string `yaml:"mass"`
+	} `yaml:"paths"`
+	Auths struct {
+		SmpUser     string `yaml:"smpUser"`
+		SmpPassword string `yaml:"smpPassword"`
+		PwrCrtlAuth string `yaml:"pwrCrtlAuth"`
+		CamAuth     string `yaml:"camAuth"`
+	} `yaml:"auths"`
+	IngestBase string `yaml:"ingestBase"`
+	CookieStoreSecret string `yaml:"cookieStoreSecret"`
 }

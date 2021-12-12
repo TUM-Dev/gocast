@@ -14,7 +14,7 @@ func FindStudentsForCourses(courses []model.Course) {
 	for i := range courses {
 		var studentIDs []string
 		var err error
-		for _, token := range tools.Cfg.CampusToken {
+		for _, token := range tools.Cfg.Campus.Tokens {
 			studentIDs, err = findStudentsForCourse(courses[i].TUMOnlineIdentifier, token)
 			if err == nil {
 				break
@@ -35,7 +35,7 @@ func FindStudentsForCourses(courses []model.Course) {
  * scans the CampusOnline API for enrolled students in one course
  */
 func findStudentsForCourse(courseID string, token string) (obfuscatedIDs []string, err error) {
-	doc, err := xmlquery.LoadURL(fmt.Sprintf("%v/cdm/course/students/xml?token=%v&courseID=%v", tools.Cfg.CampusBase, token, courseID))
+	doc, err := xmlquery.LoadURL(fmt.Sprintf("%v/cdm/course/students/xml?token=%v&courseID=%v", tools.Cfg.Campus.Base, token, courseID))
 	if err != nil {
 		return []string{}, fmt.Errorf("findStudentsForCourse: couldn't load TUMOnline xml: %v", err)
 	}

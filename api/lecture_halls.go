@@ -163,7 +163,7 @@ func notifyCourseCreated(d MailTmpl, mailAddr string, subject string) error {
 	log.Println(mailAddr)
 	var body bytes.Buffer
 	_ = templ.ExecuteTemplate(&body, "mail-course-registered.gotemplate", d)
-	return tools.SendMail(tools.Cfg.MailServer, "live@rbg.tum.de", subject, body.String(), []string{mailAddr})
+	return tools.SendMail(tools.Cfg.Mail.Server, "live@rbg.tum.de", subject, body.String(), []string{mailAddr})
 }
 
 func getSchedule(c *gin.Context) {
@@ -188,7 +188,7 @@ func getSchedule(c *gin.Context) {
 		return
 	}
 	//todo figure out right token
-	campus, err := campusonline.New(tools.Cfg.CampusToken[0], "")
+	campus, err := campusonline.New(tools.Cfg.Campus.Tokens[0], "")
 	if err != nil {
 		log.WithError(err).Error("Can't create campus client")
 		return
