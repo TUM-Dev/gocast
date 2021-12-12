@@ -163,7 +163,7 @@ func notifyCourseCreated(d MailTmpl, mailAddr string, subject string) error {
 	log.Println(mailAddr)
 	var body bytes.Buffer
 	_ = templ.ExecuteTemplate(&body, "mail-course-registered.gotemplate", d)
-	return tools.SendMail(tools.Cfg.Mail.Server, "live@rbg.tum.de", subject, body.String(), []string{mailAddr})
+	return tools.SendMail(tools.Cfg.Mail.Server, tools.Cfg.Mail.Sender, subject, body.String(), []string{mailAddr})
 }
 
 func getSchedule(c *gin.Context) {
