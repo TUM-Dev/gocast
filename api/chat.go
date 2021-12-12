@@ -53,8 +53,12 @@ func configGinChatRouter(router *gin.RouterGroup) {
 		if chat.Msg == "" || len(chat.Msg) > maxMessageLength {
 			return
 		}
-    isCooledDown, err := dao.IsUserCooledDown(fmt.Sprintf("%v", tumLiveContext.User.ID))
+		isCooledDown, err := dao.IsUserCooledDown(fmt.Sprintf("%v", tumLiveContext.User.ID))
 		if err != nil {
+			errorMessage := fmt.Sprintf("Could not determine whether a user %d is cooled down.", tumLiveContext.User.ID)
+			log.WithError(err).Error(errorMessage)
+			return
+		} else if isCooledDown {
 			sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, s)
 			return
 		}
