@@ -30,14 +30,13 @@ func initConfig() {
 	if err != nil {
 		if err == err.(viper.ConfigFileNotFoundError) {
 			log.WithError(err).Warn("tools.config.init: can't find config file")
-
 		} else {
-			panic(fmt.Errorf("Fatal error config file: %w \n", err))
+			panic(fmt.Errorf("fatal error config file: %v", err))
 		}
 	}
 	err = viper.Unmarshal(&Cfg)
 	if err != nil {
-		panic(fmt.Errorf("Fatal error config file: %w \n", err))
+		panic(fmt.Errorf("fatal error config file: %v", err))
 	}
 }
 
@@ -81,6 +80,6 @@ type Config struct {
 		PwrCrtlAuth string `yaml:"pwrCrtlAuth"`
 		CamAuth     string `yaml:"camAuth"`
 	} `yaml:"auths"`
-	IngestBase string `yaml:"ingestBase"`
+	IngestBase        string `yaml:"ingestBase"`
 	CookieStoreSecret string `yaml:"cookieStoreSecret"`
 }
