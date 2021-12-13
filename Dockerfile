@@ -1,4 +1,4 @@
-FROM node:16.6.0 as node
+FROM node:17 as node
 
 WORKDIR /app
 COPY web web
@@ -10,7 +10,7 @@ RUN rm -rf web/assets/css-dist
 WORKDIR /app/web
 RUN npm i --no-dev
 
-FROM golang:1.16.7-alpine as build-env
+FROM golang:1.17.5-alpine as build-env
 RUN mkdir /gostuff
 WORKDIR /gostuff
 COPY go.mod .
