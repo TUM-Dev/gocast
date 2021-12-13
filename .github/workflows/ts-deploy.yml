@@ -23,9 +23,6 @@ jobs:
         uses: actions-ecosystem/action-remove-labels@v1
         with:
           labels: testserver
-      - name: Install modules
-        working-directory: ./web
-        run: npm ci
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v3
