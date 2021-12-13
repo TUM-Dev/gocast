@@ -21,7 +21,7 @@ RUN go mod download
 
 WORKDIR /go/src/app
 COPY . .
-COPY --from=node /app/web/assets ./web
+COPY --from=node /app/web/assets ./web/assets
 COPY --from=node /app/web/node_modules ./web/node_modules
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /go/bin/server app/server/main.go

@@ -7,15 +7,14 @@ services:
       - db
     build: .
     ports:
-      - 8080:8080
+      - 8081:8081
     networks:
       backend-network:
     volumes:
+      - ./config.yaml:/etc/TUM-Live/config.yaml
       - type: volume
         source: recordings
         target: /recordings
-    env_file:
-      - variables-backend.env
     restart: always
 
   db:
