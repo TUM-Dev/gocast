@@ -29,9 +29,6 @@ jobs:
         with:
           images: ghcr.io/joschahenningsen/tum-live/test-server
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
             type=sha
           flavor: |
             latest=true
