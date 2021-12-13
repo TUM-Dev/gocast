@@ -65,3 +65,7 @@ require (
 	golang.org/x/sys v0.0.0-20210816183151-1e6c022a8912 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
+
+replace (
+	github.com/joschahenningsen/TUM-Live-Worker-v2 => /home/joschahenningsen/GolandProjects/TUM-Live-Worker-v2
+)
