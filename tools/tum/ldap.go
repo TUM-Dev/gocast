@@ -16,14 +16,14 @@ func LoginWithTumCredentials(username string, password string) (userId string, l
 	// sanitize possibly malicious username
 	username = ldap.EscapeFilter(username)
 	defer sentry.Flush(time.Second * 2)
-	l, err := ldap.DialURL(tools.Cfg.LdapUrl)
+	l, err := ldap.DialURL(tools.Cfg.Ldap.URL)
 	if err != nil {
 		return "", "", "", err
 	}
 	defer l.Close()
 
 	// First bind with a read only user
-	err = l.Bind(tools.Cfg.LdapUser, tools.Cfg.LdapPassword)
+	err = l.Bind(tools.Cfg.Ldap.User, tools.Cfg.Ldap.Password)
 	if err != nil {
 		return "", "", "", err
 	}

@@ -386,7 +386,7 @@ func createLecture(c *gin.Context) {
 	}
 	// name for folder for premiere file if needed
 	premiereFolder := fmt.Sprintf("%s/%d/%s/%s",
-		tools.Cfg.MassStorage,
+		tools.Cfg.Paths.Mass,
 		tumLiveContext.Course.Year,
 		tumLiveContext.Course.TeachingTerm,
 		tumLiveContext.Course.Slug)
@@ -555,7 +555,7 @@ func courseInfo(c *gin.Context) {
 		return
 	}
 	var courseInfo tum.CourseInfo
-	for _, token := range tools.Cfg.CampusToken {
+	for _, token := range tools.Cfg.Campus.Tokens {
 		courseInfo, err = tum.GetCourseInformation(req.CourseID, token)
 		if err == nil {
 			break
