@@ -11,8 +11,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: test script
-        run: echo Hello, world!
       - name: 'Ack'
         uses: actions/github-script@0.3.0
         if: github.event_name == 'pull_request'
@@ -25,6 +23,9 @@ jobs:
         uses: actions-ecosystem/action-remove-labels@v1
         with:
           labels: testserver
+      - name: Install modules
+        working-directory: ./web
+        run: npm ci
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v3
