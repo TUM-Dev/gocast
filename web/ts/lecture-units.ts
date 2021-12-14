@@ -1,3 +1,5 @@
+import { postData } from "./global";
+
 let slider;
 
 // @ts-ignore

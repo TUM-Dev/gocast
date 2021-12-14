@@ -1,4 +1,4 @@
-async function postData(url = "", data = {}) {
+export async function postData(url = "", data = {}) {
     return await fetch(url, {
         method: "POST",
         headers: {
@@ -8,21 +8,21 @@ async function postData(url = "", data = {}) {
     });
 }
 
-function Get(yourUrl) {
+export function Get(yourUrl) {
     const HttpReq = new XMLHttpRequest();
     HttpReq.open("GET", yourUrl, false);
     HttpReq.send(null);
     return HttpReq.responseText;
 }
 
-function showMessage(msg: string) {
+export function showMessage(msg: string) {
     const alertBox: HTMLElement = document.getElementById("alertBox");
     const alertText: HTMLSpanElement = document.getElementById("alertText");
     alertText.innerText = msg;
     alertBox.classList.remove("hidden");
 }
 
-function copyToClipboard(text: string) {
+export function copyToClipboard(text: string) {
     const dummy = document.createElement("input");
     document.body.appendChild(dummy);
     dummy.value = text;
@@ -31,7 +31,7 @@ function copyToClipboard(text: string) {
     document.body.removeChild(dummy);
 }
 
-function hideCourse(id: number, name: string) {
+export function hideCourse(id: number, name: string) {
     const hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses")
         ? JSON.parse(localStorage.getItem("hiddenCourses"))
         : new Array<Array<string>>();
@@ -42,7 +42,7 @@ function hideCourse(id: number, name: string) {
     document.location.reload();
 }
 
-function unhideCourse(id: string) {
+export function unhideCourse(id: string) {
     const hidden: Array<Array<string>> = localStorage.getItem("hiddenCourses")
         ? JSON.parse(localStorage.getItem("hiddenCourses"))
         : new Array<Array<string>>();
@@ -53,7 +53,7 @@ function unhideCourse(id: string) {
     document.location.reload();
 }
 
-function toggleColorScheme() {
+export function toggleColorScheme() {
     //initial theme preference:
     const darkTheme: boolean = localStorage.getItem("darkTheme") ? JSON.parse(localStorage.getItem("darkTheme")) : true;
     //store opposite
@@ -66,7 +66,7 @@ function toggleColorScheme() {
     }
 }
 
-function initHiddenCourses() {
+export function initHiddenCourses() {
     const el = document.getElementById("hiddenCoursesText");
     if (!el) {
         return;

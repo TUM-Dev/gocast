@@ -1,3 +1,5 @@
+import { postData, showMessage } from "./global";
+
 class Admin {}
 
 function createLectureHall() {

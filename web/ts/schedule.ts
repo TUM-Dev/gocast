@@ -1,3 +1,5 @@
+import { Get } from "./global";
+
 document.addEventListener("DOMContentLoaded", function () {
     const calendarEl = document.getElementById("calendar");
     // Init fullcallendar

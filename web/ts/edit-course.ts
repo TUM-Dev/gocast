@@ -1,4 +1,5 @@
 import { loadStats } from "./stats";
+import { postData, showMessage } from "./global";
 
 class EditCourse {
     constructor() {

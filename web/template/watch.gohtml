@@ -168,11 +168,12 @@
     {{end}}
 </div>
 
-<script src="/static/node_modules/video.js/dist/video.min.js"></script>
-<script src="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.min.js"></script>
-<script src="/static/node_modules/videojs-contrib-quality-levels/dist/videojs-contrib-quality-levels.min.js"></script>
-<link rel="stylesheet" href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
-<script src="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.min.js"></script>
+{{/*<script src="/static/node_modules/video.js/dist/video.min.js"></script>*/}}
+{{/*<script src="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.min.js"></script>*/}}
+{{/*<script src="/static/node_modules/videojs-contrib-quality-levels/dist/videojs-contrib-quality-levels.min.js"></script>*/}}
+{{/*<link rel="stylesheet" href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">*/}}
+{{/*<script src="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.min.js"></script>*/}}
+
 <script>
     function loadScript(scriptUrl) {
         const script = document.createElement('script');
@@ -237,11 +238,11 @@
     });
 
     {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
-        UI.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, player);
+        UI.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
     {{end}}
 
     {{if $stream.Silences}}
-    player.skipSilence({{$stream.GetSilencesJson}});
+        UI.skipSilence({{$stream.GetSilencesJson}});
     {{end}}
     {{/*loadScript("/static/assets/ts-dist/watch.js?v={{.IndexData.VersionTag}}")*/}}
     {{/*    .then(() => {*/}}

@@ -1,3 +1,5 @@
+import { postData } from "./global";
+
 class OnboardingFormData {
     public name: string;
     public email: string;

@@ -1,3 +1,5 @@
+import { postData } from "./global";
+
 function usePreset(cID: number, lectureHallID: number, presetID: number) {
     const streamID = (document.getElementById("streamID") as HTMLInputElement).value;
     const presetPath = "/api/course/" + cID + "/switchPreset/" + lectureHallID + "/" + presetID + "/" + streamID;
