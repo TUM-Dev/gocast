@@ -16,7 +16,7 @@ import (
 )
 
 func getEventsForCourse(courseID string, token string) (events map[time.Time]Event, deleted []Event, err error) {
-	doc, err := xmlquery.LoadURL(fmt.Sprintf("%v/rdm/course/events/xml?token=%v&courseID=%v", tools.Cfg.CampusBase, token, courseID))
+	doc, err := xmlquery.LoadURL(fmt.Sprintf("%v/rdm/course/events/xml?token=%v&courseID=%v", tools.Cfg.Campus.Base, token, courseID))
 	if err != nil {
 		return map[time.Time]Event{}, []Event{}, err
 	}
@@ -77,7 +77,7 @@ func GetEventsForCourses(courses []model.Course) {
 		var events map[time.Time]Event
 		var deleted []Event
 		var err error
-		for _, token := range tools.Cfg.CampusToken {
+		for _, token := range tools.Cfg.Campus.Tokens {
 			events, deleted, err = getEventsForCourse(course.TUMOnlineIdentifier, token)
 			if err == nil {
 				break
