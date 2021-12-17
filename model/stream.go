@@ -14,18 +14,18 @@ type Stream struct {
 	Name             string
 	Description      string
 	CourseID         uint
-	Start            time.Time
-	End              time.Time
+	Start            time.Time `gorm:"not null"`
+	End              time.Time `gorm:"not null"`
 	RoomName         string
 	RoomCode         string
 	EventTypeName    string
 	TUMOnlineEventID uint
-	StreamKey        string
+	StreamKey        string `gorm:"not null"`
 	PlaylistUrl      string
 	PlaylistUrlPRES  string
 	PlaylistUrlCAM   string
 	FilePath         string //deprecated
-	LiveNow          bool
+	LiveNow          bool   `gorm:"not null"`
 	Recording        bool
 	Premiere         bool `gorm:"default:null"`
 	Chats            []Chat

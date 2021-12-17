@@ -7,8 +7,9 @@ import (
 
 type Stat struct {
 	gorm.Model
-	Time     time.Time
-	StreamID uint
-	Viewers  int
-	Live     bool
+
+	Time     time.Time `gorm:"not null"`
+	StreamID uint      `gorm:"not null"`
+	Viewers  uint      `gorm:"not null;default:0"`
+	Live     bool      `gorm:"not null;default:false"`
 }

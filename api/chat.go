@@ -53,7 +53,12 @@ func configGinChatRouter(router *gin.RouterGroup) {
 		if chat.Msg == "" || len(chat.Msg) > maxMessageLength {
 			return
 		}
-		if dao.IsUserCooledDown(fmt.Sprintf("%v", tumLiveContext.User.ID)) {
+		isCooledDown, err := dao.IsUserCooledDown(fmt.Sprintf("%v", tumLiveContext.User.ID))
+		if err != nil {
+			errorMessage := fmt.Sprintf("Could not determine whether a user %d is cooled down.", tumLiveContext.User.ID)
+			log.WithError(err).Error(errorMessage)
+			return
+		} else if isCooledDown {
 			sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, s)
 			return
 		}
@@ -70,7 +75,6 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			Message:  chat.Msg,
 			StreamID: tumLiveContext.Stream.ID,
 			Admin:    tumLiveContext.User.ID == tumLiveContext.Course.UserID,
-			SendTime: time.Now().In(tools.Loc),
 		})
 		if broadcast, err := json.Marshal(ChatRep{
 			Msg:   chat.Msg,
@@ -97,7 +101,7 @@ func CollectStats() {
 	for sID, sessions := range sessionsMap {
 		stat := model.Stat{
 			Time:    time.Now(),
-			Viewers: len(sessions),
+			Viewers: uint(len(sessions)),
 			Live:    true,
 		}
 		if s, err := dao.GetStreamByID(context.Background(), fmt.Sprintf("%d", sID)); err == nil {

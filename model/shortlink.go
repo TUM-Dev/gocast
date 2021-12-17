@@ -6,6 +6,6 @@ import "gorm.io/gorm"
 type ShortLink struct {
 	gorm.Model
 
-	Link     string `gorm:"unique"`
-	CourseId uint
+	Link     string `gorm:"not null unique"`
+	CourseId uint   `gorm:"not null"`
 }

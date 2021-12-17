@@ -99,8 +99,11 @@ func main() {
 		tools.Cfg.Db.User,
 		tools.Cfg.Db.Password,
 		tools.Cfg.Db.Database),
-	), &gorm.Config{})
-	if err != nil {
+	), &gorm.Config{
+		PrepareStmt: true,
+	})
+
+  if err != nil {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second * 5)
 		log.Fatalf("%v", err)
@@ -123,7 +126,6 @@ func main() {
 		&model.CameraPreset{},
 		&model.ServerNotification{},
 		&model.File{},
-		&model.Mail{},
 		&model.StreamProgress{},
 	)
 	if err != nil {
