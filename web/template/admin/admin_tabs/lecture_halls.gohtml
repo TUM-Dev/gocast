@@ -78,7 +78,7 @@
             </div>
             <div class="flex justify-end items-center">
                 <span x-show="saved"
-                      x-transition.delay.100ms
+                      x-transition.delay.200ms
                       class="mr-4 text-green-400">
                     Saved Successfully
                 </span>
@@ -88,13 +88,12 @@
                       class="mr-4 text-red-400">
                     Error updating lecture hall
                 </span>
-
                 <button @click="fetch('/api/lectureHall/'+id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({presIp: presIp,camIp: camIp, combIp: combIp})})
                                     .then(r => {
                                         saved = r.status === 200
                                         savingFailed = !saved
-                                    });"
-                        :disabled="!changed"
+                                    });timeout = setTimeout(() => { saved = false; savingFailed = false; }, 3000)"
+                        :disabled="changed"
                         class="rounded disabled:bg-blue-300 shadow text-white bg-blue-600 px-3 py-2 mr-2 mb-2">
                     Save
                 </button>
