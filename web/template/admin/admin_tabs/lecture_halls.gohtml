@@ -80,7 +80,7 @@
                 <span x-show="saved" class="mr-4 text-green-400">Saved Successfully</span>
                 <button @click="fetch('/api/lectureHall/'+id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({presIp: presIp,camIp: camIp, combIp: combIp})}).then(r=>{saved=r.status===200})"
                         :disabled="!changed"
-                        class="rounded disabled:bg-blue-300 shadow text-white bg-blue-600 p-3 mr-2 mb-2">Save
+                        class="rounded disabled:bg-blue-300 shadow text-white bg-blue-600 px-3 py-2 mr-2 mb-2">Save
                 </button>
             </div>
         </div>
