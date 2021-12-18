@@ -12,7 +12,7 @@ import (
 func GetDueStreamsForWorkers() []model.Stream {
 	var res []model.Stream
 	DB.Model(&model.Stream{}).
-		Where("lecture_hall_id IS NOT NULL AND start BETWEEN ? AND ? AND live_now = false AND recording = false", time.Now(), time.Now().Add(time.Minute*10)).
+		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE) AND live_now = false AND recording = false").
 		Scan(&res)
 	return res
 }
@@ -20,7 +20,7 @@ func GetDueStreamsForWorkers() []model.Stream {
 func GetDuePremieresForWorkers() []model.Stream {
 	var res []model.Stream
 	DB.Preload("Files").
-		Find(&res, "premiere AND start BETWEEN ? AND ? AND live_now = false AND recording = false", time.Now().Add(time.Minute*-10), time.Now().Add(time.Second*5))
+		Find(&res, "premiere AND start BETWEEN DATE_SUB(NOW(), INTERVAL 10 MINUTE) AND DATE_ADD(NOW(), INTERVAL 5 SECOND) AND live_now = false AND recording = false")
 	return res
 }
 

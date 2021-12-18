@@ -154,7 +154,7 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 				if lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID); err != nil {
 					return nil, err
 				} else {
-					client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
+					client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.Auths.PwrCrtlAuth)
 					lightLock.Lock()
 					err := client.TurnOff(lectureHall.LiveLightIndex)
 					if err != nil {
@@ -187,7 +187,7 @@ func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.S
 	if worker, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, errors.New("authentication failed: invalid worker id")
 	} else {
-		worker.Workload = int(request.Workload)
+		worker.Workload = uint(request.Workload)
 		worker.LastSeen = time.Now()
 		worker.Status = strings.Join(request.Jobs, ", ")
 		err := dao.SaveWorker(worker)
@@ -274,7 +274,7 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 			return nil, err
 		} else {
 			lightLock.Lock()
-			client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
+			client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.Auths.PwrCrtlAuth)
 			go func() {
 				err := client.TurnOn(lectureHall.LiveLightIndex)
 				if err != nil {

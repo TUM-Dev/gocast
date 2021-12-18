@@ -22,7 +22,7 @@ func FetchCameraPresets(ctx context.Context) {
 
 func FetchLHPresets(lectureHall model.LectureHall) {
 	if lectureHall.CameraIP != "" {
-		cam := camera.NewCamera(lectureHall.CameraIP, Cfg.CameraAuthentication)
+		cam := camera.NewCamera(lectureHall.CameraIP, Cfg.Auths.CamAuth)
 		presets, err := cam.GetPresets()
 		if err != nil {
 			log.WithError(err).WithField("Camera", cam.Ip).Warn("FetchCameraPresets: failed to get Presets")
@@ -43,7 +43,7 @@ func UsePreset(preset model.CameraPreset) {
 		sentry.CaptureException(err)
 		return
 	}
-	c := camera.NewCamera(lectureHall.CameraIP, Cfg.CameraAuthentication)
+	c := camera.NewCamera(lectureHall.CameraIP, Cfg.Auths.CamAuth)
 	err = c.SetPreset(preset.PresetID)
 	if err != nil {
 		log.WithError(err).Error("UsePreset: unable to set preset for camera")
@@ -60,8 +60,8 @@ func TakeSnapshot(preset model.CameraPreset) {
 		sentry.CaptureException(err)
 		return
 	}
-	c := camera.NewCamera(lectureHall.CameraIP, Cfg.CameraAuthentication)
-	fileName, err := c.TakeSnapshot(Cfg.StaticPath)
+	c := camera.NewCamera(lectureHall.CameraIP, Cfg.Auths.CamAuth)
+	fileName, err := c.TakeSnapshot(Cfg.Paths.Static)
 	if err != nil {
 		log.WithField("Camera", c.Ip).WithError(err).Error("TakeSnapshot: failed to get camera snapshot")
 		return

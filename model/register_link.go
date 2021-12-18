@@ -5,6 +5,6 @@ import "gorm.io/gorm"
 type RegisterLink struct {
 	gorm.Model
 
-	UserID         uint
-	RegisterSecret string
+	UserID         uint   `gorm:"not null"`
+	RegisterSecret string `gorm:"not null"`
 }

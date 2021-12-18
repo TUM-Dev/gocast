@@ -1,0 +1,36 @@
+lrz:
+  name: "Erika Mustermann"
+  email: "erika.mustermann@example.com"
+  phone: "0123456789"
+  uploadUrl: "https://example.lrz.de/upload"
+  subDir: "RBG"
+mail:
+  sender: "noreply@example.org"
+  server: "mailrelay.example.org"
+  SMIMECert: "/path/to/cert.pem"
+  SMIMEKey: "/path/to/key.pem"
+db:
+  user: "root"
+  password: "example"
+  database: "tumlive"
+campus:
+  base: "https://example.tum.de/api/v1/"
+  tokens:
+    - "secret1"
+    - "secret2"
+ldap:
+  url: "ldap://abc.de"
+  user: "user"
+  password: "secret"
+  baseDn: "dc=example,dc=de"
+  userDn: "uid=%s,ou=people,dc=example,dc=de"
+paths:
+  static: "/var/www/static"
+  mass: "/srv/ceph/live"
+auths:
+  smpUser: "username"
+  smpPassword: "password"
+  pwrCrtlAuth: "user:password"
+  camAuth: "user:password"
+ingestBase: "rtmp://ingest.tum.live/"
+cookieStoreSecret: "put 40 random characters here"
