@@ -4,7 +4,7 @@
     <div class="rounded my-6 overflow-x-auto">
         <h2 class="text-2xl text-1 mb-6">Lecture Halls</h2>
         {{range $lectureHall := .}}'
-        <div x-data="{changed:false, saved:false, name: '{{$lectureHall.Name}}', presIp: '{{$lectureHall.PresIP}}',camIp: '{{$lectureHall.CamIP}}' , combIp: '{{$lectureHall.CombIP}}', id: '{{$lectureHall.ID}}'}"
+        <div x-data="{changed:false, saved:false, savingFailed:false, name: '{{$lectureHall.Name}}', presIp: '{{$lectureHall.PresIP}}',camIp: '{{$lectureHall.CamIP}}' , combIp: '{{$lectureHall.CombIP}}', id: '{{$lectureHall.ID}}'}"
              class="w-full border-2 dark:border-secondary border-gray-200 rounded mb-6">
             <div class="dark:bg-secondary bg-gray-100 font-thin text-xl text-3 p-2 px-6">{{$lectureHall.Name}}</div>
             <div class="text-4 px-4 p-2">
@@ -77,10 +77,26 @@
                 {{end}}
             </div>
             <div class="flex justify-end items-center">
-                <span x-show="saved" class="mr-4 text-green-400">Saved Successfully</span>
-                <button @click="fetch('/api/lectureHall/'+id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({presIp: presIp,camIp: camIp, combIp: combIp})}).then(r=>{saved=r.status===200})"
+                <span x-show="saved"
+                      x-transition.delay.100ms
+                      class="mr-4 text-green-400">
+                    Saved Successfully
+                </span>
+
+                <span x-show="savingFailed"
+                      x-transition.delay.100ms
+                      class="mr-4 text-red-400">
+                    Error updating lecture hall
+                </span>
+
+                <button @click="fetch('/api/lectureHall/'+id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({presIp: presIp,camIp: camIp, combIp: combIp})})
+                                    .then(r => {
+                                        saved = r.status === 200
+                                        savingFailed = !saved
+                                    });"
                         :disabled="!changed"
-                        class="rounded disabled:bg-blue-300 shadow text-white bg-blue-600 px-3 py-2 mr-2 mb-2">Save
+                        class="rounded disabled:bg-blue-300 shadow text-white bg-blue-600 px-3 py-2 mr-2 mb-2">
+                    Save
                 </button>
             </div>
         </div>
