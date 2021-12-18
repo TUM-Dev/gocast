@@ -22,7 +22,7 @@ func GetAllWorkers() ([]model.Worker, error) {
 
 func GetAliveWorkers() []model.Worker {
 	var workers []model.Worker
-	DB.Model(&model.Worker{}).Where("last_seen > ?", time.Now().Add(time.Minute*-5)).Scan(&workers)
+	DB.Model(&model.Worker{}).Where("last_seen > ?", time.Now().Add(time.Hour*-2)).Scan(&workers)
 	return workers
 }
 
