@@ -77,7 +77,7 @@
                                 {{if $stream.IsStartingInMoreThanOneDay}}
                                     Live in <span x-text="time().day"></span> days
                                 {{else if $stream.TimeSlotReached}}
-                                    Stream is late
+                                    Stream is about to start
                                 {{else}}
                                     <div class="tabular-nums flex">
                                         <span x-text="time().hours"></span>:
