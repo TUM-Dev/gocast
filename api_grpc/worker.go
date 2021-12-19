@@ -431,6 +431,46 @@ func NotifyWorkers() {
 	}
 }
 
+func getWorkerForStream(streamName string, workers []model.Worker) model.Worker {
+	foundWorker := 0
+	for i := range workers {
+		if workers[i].Status == streamName {
+			foundWorker = i
+		}
+	}
+	return workers[foundWorker]
+}
+
+func NotifyWorkerToStopStream(stream model.Stream) {
+	workers := dao.GetAliveWorkers()
+	worker := getWorkerForStream(stream.StreamName, workers)
+
+	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", worker.Host), grpc.WithInsecure())
+	if err != nil {
+		log.WithError(err).Error("Unable to dial server")
+		_ = conn.Close()
+		worker.Workload -= 1
+		return
+	}
+
+	client := pb.NewToWorkerClient(conn)
+
+	req := pb.EndStreamRequest{
+		StreamID:   uint32(stream.ID),
+		WorkerID:   worker.WorkerID,
+		StreamName: stream.StreamName,
+	}
+
+	resp, err := client.RequestStreamEnd(context.Background(), &req)
+	if err != nil || !resp.Ok {
+		log.WithError(err).Error("could not end stream!")
+		worker.Workload -= 1
+		_ = conn.Close()
+		return
+	}
+	_ = conn.Close()
+}
+
 //notifyWorkersPremieres looks for premieres that should be streamed and assigns them to workers.
 func notifyWorkersPremieres() {
 	streams := dao.GetDuePremieresForWorkers()
