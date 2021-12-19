@@ -4,7 +4,17 @@
     <div class="rounded my-6 overflow-x-auto">
         <h2 class="text-2xl text-1 mb-6">Lecture Halls</h2>
         {{range $lectureHall := .}}'
-        <div x-data="{changed:false, saved:false, savingFailed:false, name: '{{$lectureHall.Name}}', presIp: '{{$lectureHall.PresIP}}',camIp: '{{$lectureHall.CamIP}}' , combIp: '{{$lectureHall.CombIP}}', id: '{{$lectureHall.ID}}'}"
+        <div x-data="{
+            changed:false,
+            saved:false,
+            savingFailed:false,
+            name: '{{$lectureHall.Name}}',
+            presIp: '{{$lectureHall.PresIP}}',
+            camIp: '{{$lectureHall.CamIP}}',
+            combIp: '{{$lectureHall.CombIP}}',
+            cameraIp: '{{$lectureHall.CameraIP}}',
+            pwrCtrlIp: '{{$lectureHall.PwrCtrlIp}}',
+            id: '{{$lectureHall.ID}}',}"
              class="w-full border-2 dark:border-secondary border-gray-200 rounded mb-6">
             <div class="dark:bg-secondary bg-gray-100 font-thin text-xl text-3 p-2 px-6">{{$lectureHall.Name}}</div>
             <div class="text-4 px-4 p-2">
@@ -40,6 +50,20 @@
                                     <input @keyup="changed=true " x-model="combIp"
                                            value="{{if $lectureHall.CombIP}}{{$lectureHall.CombIP}}{{end}}">
                                     <span class="px-4">Combined</span>
+                                </label>
+                            </li>
+                        </ul>
+                        <ul class="flex">
+                            <li>
+                                <label>
+                                    <input x-model="cameraIp" value="{{if $lectureHall.CameraIP}}{{$lectureHall.CameraIP}}{{end}}">
+                                    <span class="px-4">Axis Cam</span>
+                                </label>
+                            </li>
+                            <li>
+                                <label>
+                                    <input x-model="pwrCtrlIp" value="{{if $lectureHall.PwrCtrlIp}}{{$lectureHall.PwrCtrlIp}}{{end}}">
+                                    <span class="px-4">Anel PWR-Ctrl</span>
                                 </label>
                             </li>
                         </ul>
@@ -84,7 +108,8 @@
                 <span x-show="savingFailed" x-transition.delay.200ms class="mr-4 text-red-400">
                     Error updating lecture hall
                 </span>
-                <button @click="fetch('/api/lectureHall/'+id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({presIp: presIp,camIp: camIp, combIp: combIp})})
+                <button @click="fetch('/api/lectureHall/'+id, {method: 'PUT', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({presIp: presIp,camIp: camIp, combIp: combIp, cameraIp: cameraIp, pwrCtrlIp: pwrCtrlIp})})
                                     .then(r => {
                                         saved = r.status === 200
                                         savingFailed = !saved

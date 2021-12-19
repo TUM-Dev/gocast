@@ -45,9 +45,11 @@ func configGinLectureHallApiRouter(router *gin.Engine) {
 }
 
 type updateLectureHallReq struct {
-	CamIp  string `json:"camIp"`
-	CombIp string `json:"combIp"`
-	PresIP string `json:"presIp"`
+	CamIp     string `json:"camIp"`
+	CombIp    string `json:"combIp"`
+	PresIP    string `json:"presIp"`
+	CameraIp  string `json:"cameraIp"`
+	PwrCtrlIp string `json:"pwrCtrlIp"`
 }
 
 func updateLectureHall(c *gin.Context) {
@@ -71,6 +73,8 @@ func updateLectureHall(c *gin.Context) {
 	lectureHall.CamIP = req.CamIp
 	lectureHall.CombIP = req.CombIp
 	lectureHall.PresIP = req.PresIP
+	lectureHall.CameraIP = req.CameraIp
+	lectureHall.PwrCtrlIp = req.PwrCtrlIp
 	err = dao.SaveLectureHall(lectureHall)
 	if err != nil {
 		log.WithError(err).Error("Error while updating lecture hall")
