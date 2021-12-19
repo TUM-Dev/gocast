@@ -1,7 +1,7 @@
 {{define "course-card"}}{{- /*gotype: TUM-Live/model.Course*/ -}}
 <div class="pt-1 group course{{.Model.ID}}">
     <div class="flex items-center">
-        <i class="fancyeye opacity-0 group-hover:opacity-100 transition-colors duration-200 dark:hover:text-whitehover:text-black text-gray-500 mr-2 cursor-pointer"
+        <i class="fancyeye opacity-0 group-hover:opacity-100 transition-colors duration-200 dark:hover:text-white hover:text-black text-gray-500 mr-2 cursor-pointer"
            title="Hide this course" onclick="hideCourse({{.Model.ID}}, {{.Name}})"></i>
         <a href="/course/{{.Year}}/{{.TeachingTerm}}/{{.Slug}}" class="text-lg text-3">{{.Name}}</a>
     </div>
@@ -13,14 +13,20 @@
                 Live now.
             {{else if .HasNextLecture}}
                 {{if .IsNextLectureStartingSoon}}
-                    <div class="timer text-5 font-sans font-light text-sm" x-data="timer('{{.GetNextLectureDateFormatted}}', '{{.GetNextLecture.IsRegularStream}}', false)" x-init="init();">
-                        In&nbsp;<span x-text="time().minutes"></span>&nbsp;Minutes •&nbsp;
+                    <div class="text-5 font-sans font-light text-sm"
+                         x-data="timer('{{.GetNextLectureDateFormatted}}', false, true)"
+                         x-init="init();">
+                   {{if .NextLectureHasReachedTimeSlot}}
+                       Starting soon&nbsp;
+                   {{else}}
+                       In&nbsp;<span x-text="time().minutes"></span>&nbsp;•&nbsp;
+                   {{end}}
                     </div>
-                    <a class="text-5 font-sans text-sm" href="/w/{{.Slug}}/{{.GetNextLecture.Model.ID}}">
+                    <a class="text-5 font-sans text-sm underline" href="/w/{{.Slug}}/{{.GetNextLecture.Model.ID}}">
                         Join waiting room
                     </a>
                 {{else}}
-                    {{$next := .GetNextLectureDate}}Next lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
+                    {{$next := .GetNextLecture.Start}}Next lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
                 {{end}}
             {{else}}
                 No upcoming Lectures
