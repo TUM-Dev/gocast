@@ -93,15 +93,18 @@
             </div>
             <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                 <span class="text-5 hover:text-1 hover:underline text-lg">{{$course.Name}}</span></a>
-            {{if and .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
+            {{if and .IsAdminOfCourse (or $stream.LectureHallID $stream.LiveNow)}}
                 <div class="border-t-2 border-secondary p-4">
                     <h3 class="text-4 mb-2">Administration:</h3>
                     <a href="?restart=1" title="Issues with the stream? Restart it."
-                       class="bg-danger text-white rounded cursor-pointer p-2 text-sm">Restart stream</a>
+                       class="bg-danger text-white rounded cursor-pointer p-2 mr-2 text-sm">Restart</a>
+                    <a @click="?end=1" title="Already finished? End the stream early."
+                       class="bg-danger text-white rounded cursor-pointer p-2  mr-2 text-sm">End</a>
                     <a @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)" href="#"
                        :title="paused?'End Pause (Turns on video and audio)':'Pause lecture (Turns off video and audio)'"
                        class="bg-info text-white rounded cursor-pointer p-2 text-sm"
-                       x-text="paused?'Resume Lecture':'Pause Lecture'"></a>
+                       x-text="paused?'Resume':'Pause'"></a>
+
                     <p class="text-4 my-2">Presets:</p>
                     <div class="w-full overflow-x-scroll scrollbarThin">
                         <div class="flex flex-row gap-x-2">
