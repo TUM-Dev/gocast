@@ -106,13 +106,12 @@ function initHiddenCourses() {
 }
 
 // Adapted from https://codepen.io/harsh/pen/KKdEVPV
-function timer(expiry: string, regular: boolean, leadingZero: boolean) {
+function timer(expiry: string, leadingZero: boolean, units = false) {
+    const date = new Date(expiry);
     return {
-        expiry: new Date(expiry),
+        expiry: date,
         remaining: null,
         init() {
-            const offsetInMinutes = regular ? 10 : 0;
-            this.expiry.setMinutes(this.expiry.getMinutes() - offsetInMinutes);
             this.setRemaining();
             setInterval(() => {
                 this.setRemaining();
@@ -153,12 +152,27 @@ function timer(expiry: string, regular: boolean, leadingZero: boolean) {
             }
         },
         time() {
-            return {
-                days: this.format(this.days().value),
-                hours: this.format(this.hours().value),
-                minutes: this.format(this.minutes().value),
-                seconds: this.format(this.seconds().value),
-            };
+            if (units) {
+                // Could be shortened, but it is more readable this way (I think)
+                const unitMinute = this.minutes() == 1 ? " Minute" : " Minutes";
+                const unitSecond = this.seconds() == 1 ? " Second" : " Seconds";
+                const unitHour = this.hours() == 1 ? " Hour" : " Hours";
+                const unitDay = this.days() == 1 ? " Day" : " Days";
+
+                return {
+                    days: this.format(this.days().value) + unitDay,
+                    hours: this.format(this.hours().value) + unitHour,
+                    minutes: this.format(this.minutes().value) + unitMinute,
+                    seconds: this.format(this.seconds().value) + unitSecond,
+                };
+            } else {
+                return {
+                    days: this.format(this.days().value),
+                    hours: this.format(this.hours().value),
+                    minutes: this.format(this.minutes().value),
+                    seconds: this.format(this.seconds().value),
+                };
+            }
         },
     };
 }

@@ -236,15 +236,6 @@ input[type='checkbox']:checked + label {
     box-shadow: 0 0 0 1px #ffffff60 !important;
 }
 
-.timer {
-    display:flex;
-    font-variant-numeric: tabular-nums; /* Otherwise the counter will "jump" */
-}
-
-.timer span + span:before {
-    content:":"
-}
-
 .theater-mode {
     height: calc((9 / 16) * 100vw) !important;
     max-height: calc(100vh - 169px) !important;
