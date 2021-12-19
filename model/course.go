@@ -10,19 +10,19 @@ import (
 type Course struct {
 	gorm.Model
 
-	UserID                  uint
-	Name                    string
-	Slug                    string // eg. eidi
-	Year                    int    // eg. 2021
-	TeachingTerm            string // eg. Summer/Winter
+	UserID                  uint   `gorm:"not null"`
+	Name                    string `gorm:"not null"`
+	Slug                    string `gorm:"not null"` // eg. eidi
+	Year                    int    `gorm:"not null"` // eg. 2021
+	TeachingTerm            string `gorm:"not null"` // eg. Summer/Winter
 	TUMOnlineIdentifier     string
 	LiveEnabled             bool `gorm:"default:true"`
-	VODEnabled              bool
-	DownloadsEnabled        bool
-	ChatEnabled             bool
+	VODEnabled              bool `gorm:"default:true"`
+	DownloadsEnabled        bool `gorm:"default:false"`
+	ChatEnabled             bool `gorm:"default:false"`
 	AnonymousChatEnabled    bool `gorm:"not null;default:true"`
 	VodChatEnabled          bool
-	Visibility              string // public, loggedin or enrolled
+	Visibility              string `gorm:"default:loggedin"` // public, loggedin or enrolled
 	Streams                 []Stream
 	Users                   []User `gorm:"many2many:course_users;"`
 	Token                   string
