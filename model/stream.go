@@ -53,7 +53,7 @@ func (s Stream) IsPast() bool {
 
 // IsComingUp returns whether the stream begins in 30 minutes
 func (s Stream) IsComingUp() bool {
-	eligibleForWait := s.Start.Before(time.Now().Add(3000*time.Minute)) && time.Now().Before(s.End)
+	eligibleForWait := s.Start.Before(time.Now().Add(30*time.Minute)) && time.Now().Before(s.End)
 	return !s.IsPast() && !s.Recording && !s.LiveNow && eligibleForWait
 }
 

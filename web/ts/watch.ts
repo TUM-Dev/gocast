@@ -21,7 +21,7 @@ const pageloaded = new Date();
 
 function startWebsocket() {
     const streamid = (document.getElementById("streamID") as HTMLInputElement).value;
-    ws = new WebSocket("ws://localhost:8081/api/chat/" + streamid + "/ws");
+    ws = new WebSocket("wss://live.rbg.tum.de/api/chat/" + streamid + "/ws");
     const cf = document.getElementById("chatForm");
     if (cf !== null && cf != undefined) {
         (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", (e) => submitChat(e));
