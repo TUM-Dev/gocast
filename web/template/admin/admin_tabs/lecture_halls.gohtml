@@ -77,15 +77,11 @@
                 {{end}}
             </div>
             <div class="flex justify-end items-center">
-                <span x-show="saved"
-                      x-transition.delay.200ms
-                      class="mr-4 text-green-400">
+                <span x-show="saved" x-transition.delay.200ms class="mr-4 text-green-400">
                     Saved Successfully
                 </span>
 
-                <span x-show="savingFailed"
-                      x-transition.delay.100ms
-                      class="mr-4 text-red-400">
+                <span x-show="savingFailed" x-transition.delay.200ms class="mr-4 text-red-400">
                     Error updating lecture hall
                 </span>
                 <button @click="fetch('/api/lectureHall/'+id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({presIp: presIp,camIp: camIp, combIp: combIp})})
