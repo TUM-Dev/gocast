@@ -20,6 +20,32 @@ func configGinStreamRestRouter(router *gin.Engine) {
 	g.Use(tools.AdminOfCourse)
 	g.GET("/api/stream/:streamID", getStream)
 	g.GET("/api/stream/:streamID/pause", pauseStream)
+	g.GET("/api/stream/:streamID/end", endStream)
+
+}
+
+func endStream(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	stream := tumLiveContext.Stream
+
+	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
+	if err != nil {
+		log.WithError(err).Error("request to pause stream without lecture hall")
+		return
+	}
+
+	client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.Auths.PwrCrtlAuth)
+	err = client.TurnOff(lectureHall.LiveLightIndex)
+	if err != nil {
+		log.WithError(err).Error("can't turn off light")
+	}
+	//api_grpc.NotifyWorkerToStopStream(*stream)
 }
 
 func pauseStream(c *gin.Context) {
