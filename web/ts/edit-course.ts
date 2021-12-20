@@ -88,6 +88,15 @@ function deleteLecture(cid: number, lid: number) {
     }
 }
 
+async function deleteLectures(cid: number, lids: number[]) {
+    if (confirm("Confirm deleting " + lids.length + " video" + (lids.length == 1 ? "" : "s") + "?")) {
+        for (const lid of lids) {
+            await postData("/api/course/" + cid + "/deleteLecture/" + lid)
+        }
+        document.location.reload();
+    }
+}
+
 function showHideUnits(id: number) {
     const container = document.getElementById("unitsContainer" + id);
     if (container.classList.contains("hidden")) {
