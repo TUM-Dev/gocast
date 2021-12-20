@@ -63,15 +63,17 @@ func UnsetLectureHall(lectureID uint) {
 
 // GetStreamsForLectureHallIcal returns an instance of []calendarResult for the ical export.
 // if a user id is given, only streams of the user are returned. All streams are returned otherwise.
+// streams that happened more than on month ago and streams that are more than 3 months in the future are omitted.
 func GetStreamsForLectureHallIcal(userId uint) ([]CalendarResult, error) {
 	var res []CalendarResult
 	err := DB.Model(&model.Stream{}).
 		Joins("LEFT JOIN lecture_halls ON lecture_halls.id = streams.lecture_hall_id").
 		Joins("JOIN courses ON courses.id = streams.course_id").
 		Select("streams.id as stream_id, streams.created_at as created, "+
-			" lecture_halls.name as lecture_hall_name, "+
-			" streams.start, streams.end, courses.name as course_name").
-		Where("courses.user_id = ? OR 0 = ?", userId, userId).
+			"lecture_halls.name as lecture_hall_name, "+
+			"streams.start, streams.end, courses.name as course_name").
+		Where("(streams.start BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) and DATE_ADD(NOW(), INTERVAL 3 MONTH)) "+
+			"AND (courses.user_id = ? OR 0 = ?)", userId, userId).
 		Scan(&res).Error
 	return res, err
 }
