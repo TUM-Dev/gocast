@@ -234,28 +234,20 @@ func lectureHallIcal(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	lectureHalls := dao.GetAllLectureHalls()
-	var streams []model.Stream
-	courses, err := dao.GetAllCourses(true)
+	// pass 0 to db query to get all lectures if user is not logged in or admin
+	queryUid := uint(0)
+	if tumLiveContext.User != nil && tumLiveContext.User.Role != model.AdminType {
+		queryUid = tumLiveContext.User.ID
+	}
+	icalData, err := dao.GetStreamsForLectureHallIcal(queryUid)
 	if err != nil {
 		return
 	}
-	for _, course := range courses {
-		if tumLiveContext.User == nil || tumLiveContext.User.Role == model.AdminType || course.UserID == tumLiveContext.User.ID {
-			streams = append(streams, course.Streams...)
-		}
-	}
 	c.Header("content-type", "text/calendar")
-	err = templ.ExecuteTemplate(c.Writer, "ical.gotemplate", ICALData{streams, lectureHalls, courses})
+	err = templ.ExecuteTemplate(c.Writer, "ical.gotemplate", icalData)
 	if err != nil {
 		log.Printf("%v", err)
 	}
-}
-
-type ICALData struct {
-	Streams      []model.Stream
-	LectureHalls []model.LectureHall
-	Courses      []model.Course
 }
 
 func switchPreset(c *gin.Context) {
