@@ -50,8 +50,8 @@ func SaveLectureHallFullAssoc(lectureHall model.LectureHall) {
 	DB.Clauses(clause.OnConflict{UpdateAll: true}).Session(&gorm.Session{FullSaveAssociations: true}).Updates(&lectureHall)
 }
 
-func SaveLectureHall(lectureHall model.LectureHall) {
-	DB.Save(&lectureHall)
+func SaveLectureHall(lectureHall model.LectureHall) error {
+	return DB.Save(&lectureHall).Error
 }
 
 func UnsetLectureHall(lectureID uint) {

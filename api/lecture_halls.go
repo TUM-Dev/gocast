@@ -27,6 +27,7 @@ import (
 func configGinLectureHallApiRouter(router *gin.Engine) {
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
+	admins.PUT("/lectureHall/:id", updateLectureHall)
 	admins.POST("/createLectureHall", createLectureHall)
 	admins.POST("/takeSnapshot/:lectureHallID/:presetID", takeSnapshot)
 	admins.POST("/updateLecturesLectureHall", updateLecturesLectureHall)
@@ -41,6 +42,44 @@ func configGinLectureHallApiRouter(router *gin.Engine) {
 	adminsOfCourse.POST("/switchPreset/:lectureHallID/:presetID/:streamID", switchPreset)
 
 	router.GET("/api/hall/all.ics", lectureHallIcal)
+}
+
+type updateLectureHallReq struct {
+	CamIp     string `json:"camIp"`
+	CombIp    string `json:"combIp"`
+	PresIP    string `json:"presIp"`
+	CameraIp  string `json:"cameraIp"`
+	PwrCtrlIp string `json:"pwrCtrlIp"`
+}
+
+func updateLectureHall(c *gin.Context) {
+	var req updateLectureHallReq
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	id := c.Param("id")
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	lectureHall, err := dao.GetLectureHallByID(uint(idUint))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	lectureHall.CamIP = req.CamIp
+	lectureHall.CombIP = req.CombIp
+	lectureHall.PresIP = req.PresIP
+	lectureHall.CameraIP = req.CameraIp
+	lectureHall.PwrCtrlIp = req.PwrCtrlIp
+	err = dao.SaveLectureHall(lectureHall)
+	if err != nil {
+		log.WithError(err).Error("Error while updating lecture hall")
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
 }
 
 func refreshLectureHallPresets(c *gin.Context) {
