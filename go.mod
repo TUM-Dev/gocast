@@ -12,7 +12,6 @@ require (
 	github.com/droundy/goopt v0.0.0-20170604162106-0b8effe182da
 	github.com/gabstv/melody v1.0.2
 	github.com/getsentry/sentry-go v0.11.0
-	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/gzip v0.0.3
 	github.com/gin-contrib/sessions v0.0.4
 	github.com/gin-gonic/gin v1.7.7
@@ -23,7 +22,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/gorilla/sessions v1.2.1 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
-	github.com/joschahenningsen/TUM-Live-Worker-v2 v0.0.0-20211014065108-71e2f94b53e4
+	github.com/joschahenningsen/TUM-Live-Worker-v2 v0.0.0-20211213075834-9ef06909d37a
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.16
