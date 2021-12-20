@@ -68,12 +68,24 @@
                     </div>
                 </div>
 
-                <h2>Lectures</h2>
-                <div x-data="{ filterPast: false }">
-                    <label class="inline-flex items-center">
-                        <input class="w-auto form-checkbox" type="checkbox" x-model="filterPast">
-                        <span class="ml-2">Filter past lectures</span>
-                    </label>
+                <div x-data="{ filterPast: false, selectedLectures: [] }">
+                    <div class="flex justify-between mt-2">
+                        <div>
+                            <h2>Lectures</h2>
+                            <label class="inline-flex items-center">
+                                <input class="w-auto form-checkbox" type="checkbox" x-model="filterPast">
+                                <span class="ml-2">Filter past lectures</span>
+                            </label>
+                        </div>
+                        <div>
+                            <button :disabled="selectedLectures.length == 0" class="btn">
+                                Delete
+                                <b x-text="selectedLectures.length.toString()"></b>
+                                <span x-text="selectedLectures.length == 1 ? 'Lecture' : 'Lectures'"></span>
+                            </button>
+                        </div>
+                    </div>
+
                     <ul class="dark:bg-secondary bg-gray-100 rounded">
                         {{$ingestBase := .IngestBase}}
                         {{$lectureHalls := .LectureHalls}}
@@ -83,10 +95,12 @@
                         {{end}}
                         {{range $lecture := $course.Streams }}
                             <li x-show="!filterPast || !{{$lecture.IsPast}}" id="lecture-li-{{$lecture.Model.ID}}"
-                                class="p-6 dark:hover:bg-primary hover:bg-white border-b-2 dark:border-primary border-white">
+                                class="p-6 dark:hover:bg-primary hover:bg-white border-b-2 dark:border-primary border-white relative">
                                 <div class="flex">
                                     <div class="w-1/4">
-                                        <div class="text-3 font-semibold">{{$lecture.Start.Weekday}} {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
+                                        <input @change="$event.target.checked ? selectedLectures.push('{{$lecture.Model.ID}}') : (selectedLectures = selectedLectures.filter(x => x != '{{$lecture.Model.ID}}'))" class="w-auto absolute top-0 right-0 m-4" type="checkbox" />
+                                        <div class="text-3 font-semibold">
+                                            {{$lecture.Start.Weekday}} {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
                                             <i class="fas fa-trash hover:text-1 px-2"
                                                title="Delete Lecture"
                                                onclick="deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}})"></i>
