@@ -1,0 +1,45 @@
+{{define "createLectureHalls"}}
+    <script src="/static/assets/ts-dist/lecture-hall-management.js"></script>
+    <div class = "p-5 dark:border-gray-500 rounded border border-gray-300 mt-4 sm:mt-6 xl:mt-8">
+        <h2 class="text-2xl text-1 mb-6">New Lecture Hall</h2>
+        <form   x-data="{name:'',combIP:'', presIP:'', camIP:''}"
+                @submit.prevent="createLectureHall(name, combIP, presIP, camIP)"
+                class = "grid gap-3 w-4/5 mx-auto">
+            <label>
+                <span class="dark:text-gray-400 text-gray-800 text-sm font-medium mb-1">Name</span>
+                <input type="text"
+                       x-model="name"
+                       class = "dark:bg-gray-800 dark:focus:border-gray-500 bg-gray-100 rounded border-2 border-transparent
+                        focus:border-gray-300 placeholder:text-sm placeholder:font-light"
+                       placeholder="FMI_HS1"
+                       autofocus required>
+            </label>
+            <label class = "block">
+                <span class="dark:text-gray-400 text-gray-800 text-sm font-medium mb-1">Presentation</span>
+                <input type="text"
+                       x-model="presIP"
+                       class = "dark:bg-gray-800 dark:focus:border-gray-500 bg-gray-100 rounded border-2 border-transparent
+                        focus:border-gray-300 placeholder:text-sm placeholder:font-light"
+                       placeholder="0.0.0.0">
+            </label>
+            <label class = "block">
+                <span class="dark:text-gray-400 text-gray-800 text-sm font-medium mb-1">Camera</span>
+                <input type="text"
+                       x-model="camIP"
+                       class = "dark:bg-gray-800 dark:focus:border-gray-500 bg-gray-100 rounded border-2 border-transparent
+                        focus:border-gray-300 placeholder:text-sm placeholder:font-light"
+                       placeholder="0.0.0.0">
+            </label>
+            <label class = "block">
+                <span class="dark:text-gray-400 text-gray-800 text-sm font-medium mb-1">Combined</span>
+                <input type="text"
+                       x-model="combIP"
+                       class = "dark:bg-gray-800 dark:focus:border-gray-500 bg-gray-100 rounded border-2 border-transparent
+                       focus:border-gray-300 placeholder:text-sm placeholder:font-light"
+                       placeholder="0.0.0.0">
+            </label>
+            <button type="submit"
+                    class = "w-full dark:bg-gray-600 dark:border-slate-800 bg-black text-white border border-gray-600 p-2 rounded text-sm font-semibold mt-4">Create</button>
+        </form>
+    </div>
+{{end}}
