@@ -452,6 +452,7 @@ func notifyWorkersPremieres() {
 		ingestServer, err := dao.GetBestIngestServer()
 		if err != nil {
 			log.WithError(err).Error("Can't find ingest server")
+			continue
 		}
 		req := pb.PremiereRequest{
 			StreamID:     uint32(streams[i].ID),
