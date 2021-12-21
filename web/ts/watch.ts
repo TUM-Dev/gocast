@@ -125,58 +125,8 @@ function submitChat(e: Event) {
             anonymous: anonCheckbox ? anonCheckbox.checked : false,
         }),
     );
-
     this.chatInput.value = "";
     return false; //prevent form submission
-}
-
-class Timer {
-    constructor(date: string) {
-        const d = new Date(date);
-        d.setMinutes(d.getMinutes() - 10);
-        this.countdown(d.getTime());
-    }
-
-    private countdown(countDownDate): void {
-        const intervalMillis = 1000;
-        // Update the count down every 1 second
-        const x = setInterval(function () {
-            // Get today's date and time
-            const now = new Date().getTime();
-
-            // Find the distance between now and the count down date
-            const distance = countDownDate - now;
-
-            // Time calculations for days, hours, minutes and seconds
-            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            // Display the result in the element with id="demo"
-            let out = "";
-            if (days === 1) {
-                out = "Live in one day";
-            } else if (days > 1) {
-                out = "Live in " + days + " days";
-            } else {
-                if (hours !== 0) {
-                    out += hours.toLocaleString("en-US", { minimumIntegerDigits: 2 }) + ":";
-                }
-                out +=
-                    minutes.toLocaleString("en-US", { minimumIntegerDigits: 2 }) +
-                    ":" +
-                    seconds.toLocaleString("en-US", { minimumIntegerDigits: 2 });
-            }
-            document.getElementById("timer").innerText = out;
-
-            // If the count down is finished, write some text
-            if (distance < 0) {
-                clearInterval(x);
-                document.getElementById("timer").innerText = "";
-            }
-        }, intervalMillis);
-    }
 }
 
 new Watch();

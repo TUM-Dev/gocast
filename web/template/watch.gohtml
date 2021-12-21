@@ -56,15 +56,37 @@
             </video>
             <div class="flex justify-between align-middle mt-4">
                 <h1 class="text-4 text-xl flex-grow">
-                    {{if $stream.Name}}{{$stream.Name}}{{else}}Lecture: {{$stream.Start.Month}} {{printf "%02d." $stream.Start.Day}} {{$stream.Start.Year}}{{end}}
+                    {{if $stream.Name}}
+                        {{$stream.Name}}
+                    {{else}}
+                        Lecture: {{$stream.Start.Month}} {{printf "%02d." $stream.Start.Day}} {{$stream.Start.Year}}
+                    {{end}}
                 </h1>
                 <p class="text-lg text-4 flex space-x-2">
                     {{if not $stream.Recording}}
                         <span class="flex m-auto" id="viewerCount"></span>
                         {{if not $stream.LiveNow}}
-                            <span class="flex m-auto" id="ViewerDescText"> Waiting</span>
+                            <span class="flex m-auto" id="ViewerDescText">Waiting</span>
                             <span class="flex m-auto">&#183;</span>
-                            <span class="flex m-auto" id="timer"></span>
+                            {{if $stream.IsStartingInOneDay}}
+                                <span class="text-4 flex m-auto">Live in one day</span>
+                            {{else}}
+                                <div class="flex text-lg px-2 text-4 m-auto"
+                                     x-data="timer('{{$course.GetNextLectureDateFormatted}}', true, false)"
+                                     x-init="init();">
+                                {{if $stream.IsStartingInMoreThanOneDay}}
+                                    Live in <span x-text="time().day"></span> days
+                                {{else if $stream.TimeSlotReached}}
+                                    Stream is about to start
+                                {{else}}
+                                    <div class="tabular-nums flex">
+                                        <span x-text="time().hours"></span>:
+                                        <span x-text="time().minutes"></span>:
+                                        <span x-text="time().seconds"> </span>
+                                    </div>
+                                {{end}}
+                                </div>
+                            {{end}}
                         {{else}}
                             <span class="flex m-auto" id="ViewerDescText"> Viewers</span>
                         {{end}}
@@ -137,28 +159,15 @@
     {{end}}
 </div>
 
+<link rel="stylesheet" href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
 <script src="/static/node_modules/video.js/dist/video.min.js"></script>
 <script src="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.min.js"></script>
 <script src="/static/node_modules/videojs-contrib-quality-levels/dist/videojs-contrib-quality-levels.min.js"></script>
-<link rel="stylesheet" href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
 <script src="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.min.js"></script>
 <script src="/static/assets/ts-dist/TUMLiveVjs.js?v={{.IndexData.VersionTag}}"></script>
+<script src="/static/assets/ts-dist/watch.js?v={{.IndexData.VersionTag}}"></script>
+
 <script>
-    function loadScript(scriptUrl) {
-        const script = document.createElement('script');
-        script.src = scriptUrl;
-        document.body.appendChild(script);
-
-        return new Promise((res, rej) => {
-            script.onload = function () {
-                res();
-            }
-            script.onerror = function () {
-                rej();
-            }
-        });
-    }
-
     // @ts-ignore
     let player = videojs('my-video', {
         {{if $stream.LiveNow}}liveui: true,{{end}}
@@ -213,12 +222,6 @@
     {{if $stream.Silences}}
     player.skipSilence({{$stream.GetSilencesJson}});
     {{end}}
-    loadScript("/static/assets/ts-dist/watch.js?v={{.IndexData.VersionTag}}")
-        .then(() => {
-            {{if not (or $stream.LiveNow $stream.Recording)}}
-            new Timer({{$stream.Start}});
-            {{end}}
-        })
 </script>
 </body>
 </html>

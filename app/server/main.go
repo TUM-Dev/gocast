@@ -103,7 +103,7 @@ func main() {
 		PrepareStmt: true,
 	})
 
-  if err != nil {
+	if err != nil {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second * 5)
 		log.Fatalf("%v", err)
