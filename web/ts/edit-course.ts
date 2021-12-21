@@ -82,7 +82,7 @@ function toggleExtraInfos(btn: HTMLElement, id: number) {
 
 function deleteLecture(cid: number, lid: number) {
     if (confirm("Confirm deleting video?")) {
-        postData("/api/course/" + cid + "/deleteLecture/" + lid).then(() => {
+        postData("/api/course/" + cid + "/deleteLectures", { streamIDs: [lid.toString()] }).then(() => {
             document.location.reload();
         });
     }
@@ -90,9 +90,7 @@ function deleteLecture(cid: number, lid: number) {
 
 async function deleteLectures(cid: number, lids: number[]) {
     if (confirm("Confirm deleting " + lids.length + " video" + (lids.length == 1 ? "" : "s") + "?")) {
-        for (const lid of lids) {
-            await postData("/api/course/" + cid + "/deleteLecture/" + lid);
-        }
+        await postData("/api/course/" + cid + "/deleteLectures", { streamIDs: lids.map(n => n.toString()) });
         document.location.reload();
     }
 }
