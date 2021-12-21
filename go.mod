@@ -12,7 +12,6 @@ require (
 	github.com/droundy/goopt v0.0.0-20170604162106-0b8effe182da
 	github.com/gabstv/melody v1.0.2
 	github.com/getsentry/sentry-go v0.11.0
-	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/gzip v0.0.3
 	github.com/gin-contrib/sessions v0.0.4
 	github.com/gin-gonic/gin v1.7.7
@@ -23,7 +22,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/gorilla/sessions v1.2.1 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
-	github.com/joschahenningsen/TUM-Live-Worker-v2 v0.0.0-20211014065108-71e2f94b53e4
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.16
@@ -35,12 +33,13 @@ require (
 	github.com/spf13/viper v1.3.2
 	golang.org/x/crypto v0.0.0-20210813211128-0a44fdfbc16e
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
-	google.golang.org/genproto v0.0.0-20211206220100-3cb06788ce7f // indirect
+	google.golang.org/genproto v0.0.0-20211208223120-3a66f561d7aa // indirect
 	google.golang.org/grpc v1.42.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gorm.io/driver/mysql v1.2.1
 	gorm.io/gorm v1.22.4
+	github.com/joschahenningsen/TUM-Live-Worker-v2 v0.0.0-20211220155501-e81dd32f5a9f
 )
 
 require (
