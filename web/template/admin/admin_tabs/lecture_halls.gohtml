@@ -8,71 +8,123 @@
                 <button class = "dark:bg-gray-600 dark:border-slate-800 dark:border-slate-800 bg-black text-white border border-slate-300 pl-3 pr-3 rounded pt-1 pb-1 text-sm font-semibold">&#43; New Lecture Hall</button>
             </a>
         </div>
-        {{range $lectureHall := .}}
-            <div class="w-full border-2 dark:border-secondary border-gray-200 rounded mb-6">
-                <div class="dark:bg-secondary bg-gray-100 font-thin text-xl text-3 p-2 px-6">{{$lectureHall.Name}}</div>
-                <div class="text-4 px-4 p-2">
-                    <div class="flex flex-row">
-                        <div class="w-1/4 font-semibold text-1">Calendar:</div>
-                        <div class="w-3/4">
-                            <a href="/api/hall/{{$lectureHall.ID}}/export.ics">https://live.mm.rbg.tum.de/api/hall/{{$lectureHall.ID}}/export.ics</a>
-                        </div>
+        {{range $lectureHall := .}}'
+        <div x-data="{
+            changed:false,
+            saved:false,
+            savingFailed:false,
+            name: '{{$lectureHall.Name}}',
+            presIp: '{{$lectureHall.PresIP}}',
+            camIp: '{{$lectureHall.CamIP}}',
+            combIp: '{{$lectureHall.CombIP}}',
+            cameraIp: '{{$lectureHall.CameraIP}}',
+            pwrCtrlIp: '{{$lectureHall.PwrCtrlIp}}',
+            id: '{{$lectureHall.ID}}',}"
+             class="w-full border-2 dark:border-secondary border-gray-200 rounded mb-6">
+            <div class="dark:bg-secondary bg-gray-100 font-thin text-xl text-3 p-2 px-6">{{$lectureHall.Name}}</div>
+            <div class="text-4 px-4 p-2">
+                <div class="flex flex-row">
+                    <div class="w-1/4 font-semibold text-1">Calendar:</div>
+                    <div class="w-3/4">
+                        <a href="/api/hall/{{$lectureHall.ID}}/export.ics">https://live.mm.rbg.tum.de/api/hall/{{$lectureHall.ID}}
+                            /export.ics</a>
                     </div>
                 </div>
-                <div class="text-4 px-4 p-2">
-                    <div class="flex flex-row">
-                        <div class="w-1/4 font-semibold text-1">Sources:</div>
-                        <div class="w-3/4">
-                            <ul class="flex">
-                                <li>
-                                    <label>
-                                        <input value="{{if $lectureHall.PresIP}}{{$lectureHall.PresIP}}{{end}}">
-                                        <span class="px-4">Presentation</span>
-                                    </label>
-                                </li>
-                                <li>
-                                    <label>
-                                        <input value="{{if $lectureHall.CamIP}}{{$lectureHall.CamIP}}{{end}}">
-                                        <span class="px-4">Camera</span>
-                                    </label>
-                                </li>
-                                <li>
-                                    <label>
-                                        <input value="{{if $lectureHall.CombIP}}{{$lectureHall.CombIP}}{{end}}">
-                                        <span class="px-4">Combined</span>
-                                    </label>
-                                </li>
-                            </ul>
-                        </div>
+            </div>
+            <div class="text-4 px-4 p-2">
+                <div class="flex flex-row">
+                    <div class="w-1/4 font-semibold text-1">Sources:</div>
+                    <div class="w-3/4">
+                        <ul class="flex">
+                            <li>
+                                <label>
+                                    <input @keyup="changed=true " x-model="presIp"
+                                           value="{{if $lectureHall.PresIP}}{{$lectureHall.PresIP}}{{end}}">
+                                    <span class="px-4">Presentation</span>
+                                </label>
+                            </li>
+                            <li>
+                                <label>
+                                    <input @keyup="changed=true " x-model="camIp"
+                                           value="{{if $lectureHall.CamIP}}{{$lectureHall.CamIP}}{{end}}">
+                                    <span class="px-4">Camera</span>
+                                </label>
+                            </li>
+                            <li>
+                                <label>
+                                    <input @keyup="changed=true " x-model="combIp"
+                                           value="{{if $lectureHall.CombIP}}{{$lectureHall.CombIP}}{{end}}">
+                                    <span class="px-4">Combined</span>
+                                </label>
+                            </li>
+                        </ul>
+                        <ul class="flex">
+                            <li>
+                                <label>
+                                    <input x-model="cameraIp" value="{{if $lectureHall.CameraIP}}{{$lectureHall.CameraIP}}{{end}}">
+                                    <span class="px-4">Axis Cam</span>
+                                </label>
+                            </li>
+                            <li>
+                                <label>
+                                    <input x-model="pwrCtrlIp" value="{{if $lectureHall.PwrCtrlIp}}{{$lectureHall.PwrCtrlIp}}{{end}}">
+                                    <span class="px-4">Anel PWR-Ctrl</span>
+                                </label>
+                            </li>
+                        </ul>
                     </div>
-                    {{if $lectureHall.CameraIP}}
-                        <div class="flex flex-row mt-6">
-                            <div class="w-1/4 font-semibold text-1">
-                                <p class="mb-2">Presets:</p>
-                                <a x-data="{loading:false}" title="Refresh list" class="py-1 px-2 text-white rounded bg-info cursor-pointer"
-                                   @click="loading=true;fetch('/api/refreshLectureHallPresets/{{$lectureHall.Model.ID}}').then(d=>d.status==200?window.location.reload():alert('there was an error'))">
-                                    <i class="fas fa-sync" :class="loading?'animate animate-spin':''"></i>
-                                </a>
-                            </div>
-                            <div class="w-3/4 flex align-middle">
-                                <div class="w-full overflow-x-scroll scrollbarThin">
-                                    <div class="flex flex-row gap-x-2">
-                                        {{range $preset := $lectureHall.CameraPresets}}
-                                            <div style="min-width: 150px" class="text-center relative group">
-                                                <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}" src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
-                                                     alt="prev" width="150px">
-                                                <i onclick="takeSnapshot({{$preset.LectureHallId}}, {{$preset.PresetID}})" title="Take new snapshot"
-                                                   class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-sync"></i>
-                                                <span title="{{$preset.Name}}" class="truncate block my-2">{{$preset.Name}}</span>
-                                            </div>
-                                        {{end}}
-                                    </div>
+                </div>
+                {{if $lectureHall.CameraIP}}
+                    <div class="flex flex-row mt-6">
+                        <div class="w-1/4 font-semibold text-1">
+                            <p class="mb-2">Presets:</p>
+                            <a x-data="{loading:false}" title="Refresh list"
+                               class="py-1 px-2 text-white rounded bg-info cursor-pointer"
+                               @click="loading=true;fetch('/api/refreshLectureHallPresets/{{$lectureHall.Model.ID}}').then(d=>d.status==200?window.location.reload():alert('there was an error'))">
+                                <i class="fas fa-sync" :class="loading?'animate animate-spin':''"></i>
+                            </a>
+                        </div>
+                        <div class="w-3/4 flex align-middle">
+                            <div class="w-full overflow-x-scroll scrollbarThin">
+                                <div class="flex flex-row gap-x-2">
+                                    {{range $preset := $lectureHall.CameraPresets}}
+                                        <div style="min-width: 150px" class="text-center relative group">
+                                            <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
+                                                 src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
+                                                 alt="prev" width="150px">
+                                            <i onclick="takeSnapshot({{$preset.LectureHallId}}, {{$preset.PresetID}})"
+                                               title="Take new snapshot"
+                                               class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-sync"></i>
+                                            <span title="{{$preset.Name}}"
+                                                  class="truncate block my-2">{{$preset.Name}}</span>
+                                        </div>
+                                    {{end}}
                                 </div>
                             </div>
                         </div>
-                    {{end}}
-                </div>
+                    </div>
+                {{end}}
             </div>
+            <div class="flex justify-end items-center">
+                <span x-show="saved" x-transition.delay.200ms class="mr-4 text-green-400">
+                    Saved Successfully
+                </span>
+
+                <span x-show="savingFailed" x-transition.delay.200ms class="mr-4 text-red-400">
+                    Error updating lecture hall
+                </span>
+                <button @click="fetch('/api/lectureHall/'+id, {method: 'PUT', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({presIp: presIp,camIp: camIp, combIp: combIp, cameraIp: cameraIp, pwrCtrlIp: pwrCtrlIp})})
+                                    .then(r => {
+                                        saved = r.status === 200
+                                        savingFailed = !saved
+                                    });timeout = setTimeout(() => { saved = false; savingFailed = false; }, 3000)"
+                        :disabled="changed"
+                        class="rounded disabled:bg-blue-300 shadow text-white bg-blue-600 px-3 py-2 mr-2 mb-2">
+                    Save
+                </button>
+            </div>
+        </div>
         {{end}}
     </div>
 {{end}}

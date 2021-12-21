@@ -103,6 +103,7 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 		UploadVoD:    course.VODEnabled,
 		IngestServer: ingestServer.Url,
 		StreamName:   slot.StreamName,
+		OutUrl:       ingestServer.OutUrl,
 	}, nil
 }
 
@@ -408,6 +409,7 @@ func NotifyWorkers() {
 				CourseYear:    uint32(courseForStream.Year),
 				StreamName:    slot.StreamName,
 				IngestServer:  server.Url,
+				OutUrl:        server.OutUrl,
 			}
 			workerIndex := getWorkerWithLeastWorkload(workers)
 			workers[workerIndex].Workload += 3
@@ -447,9 +449,16 @@ func notifyWorkersPremieres() {
 		}
 		workerIndex := getWorkerWithLeastWorkload(workers)
 		workers[workerIndex].Workload += 3
+		ingestServer, err := dao.GetBestIngestServer()
+		if err != nil {
+			log.WithError(err).Error("Can't find ingest server")
+			continue
+		}
 		req := pb.PremiereRequest{
-			StreamID: uint32(streams[i].ID),
-			FilePath: streams[i].Files[0].Path,
+			StreamID:     uint32(streams[i].ID),
+			FilePath:     streams[i].Files[0].Path,
+			IngestServer: ingestServer.Url,
+			OutUrl:       ingestServer.OutUrl,
 		}
 		conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithInsecure())
 		if err != nil {

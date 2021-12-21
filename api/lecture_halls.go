@@ -27,6 +27,7 @@ import (
 func configGinLectureHallApiRouter(router *gin.Engine) {
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
+	admins.PUT("/lectureHall/:id", updateLectureHall)
 	admins.POST("/createLectureHall", createLectureHall)
 	admins.POST("/takeSnapshot/:lectureHallID/:presetID", takeSnapshot)
 	admins.POST("/updateLecturesLectureHall", updateLecturesLectureHall)
@@ -41,6 +42,44 @@ func configGinLectureHallApiRouter(router *gin.Engine) {
 	adminsOfCourse.POST("/switchPreset/:lectureHallID/:presetID/:streamID", switchPreset)
 
 	router.GET("/api/hall/all.ics", lectureHallIcal)
+}
+
+type updateLectureHallReq struct {
+	CamIp     string `json:"camIp"`
+	CombIp    string `json:"combIp"`
+	PresIP    string `json:"presIp"`
+	CameraIp  string `json:"cameraIp"`
+	PwrCtrlIp string `json:"pwrCtrlIp"`
+}
+
+func updateLectureHall(c *gin.Context) {
+	var req updateLectureHallReq
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	id := c.Param("id")
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	lectureHall, err := dao.GetLectureHallByID(uint(idUint))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	lectureHall.CamIP = req.CamIp
+	lectureHall.CombIP = req.CombIp
+	lectureHall.PresIP = req.PresIP
+	lectureHall.CameraIP = req.CameraIp
+	lectureHall.PwrCtrlIp = req.PwrCtrlIp
+	err = dao.SaveLectureHall(lectureHall)
+	if err != nil {
+		log.WithError(err).Error("Error while updating lecture hall")
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
 }
 
 func refreshLectureHallPresets(c *gin.Context) {
@@ -234,28 +273,20 @@ func lectureHallIcal(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	lectureHalls := dao.GetAllLectureHalls()
-	var streams []model.Stream
-	courses, err := dao.GetAllCourses(true)
+	// pass 0 to db query to get all lectures if user is not logged in or admin
+	queryUid := uint(0)
+	if tumLiveContext.User != nil && tumLiveContext.User.Role != model.AdminType {
+		queryUid = tumLiveContext.User.ID
+	}
+	icalData, err := dao.GetStreamsForLectureHallIcal(queryUid)
 	if err != nil {
 		return
 	}
-	for _, course := range courses {
-		if tumLiveContext.User == nil || tumLiveContext.User.Role == model.AdminType || course.UserID == tumLiveContext.User.ID {
-			streams = append(streams, course.Streams...)
-		}
-	}
 	c.Header("content-type", "text/calendar")
-	err = templ.ExecuteTemplate(c.Writer, "ical.gotemplate", ICALData{streams, lectureHalls, courses})
+	err = templ.ExecuteTemplate(c.Writer, "ical.gotemplate", icalData)
 	if err != nil {
 		log.Printf("%v", err)
 	}
-}
-
-type ICALData struct {
-	Streams      []model.Stream
-	LectureHalls []model.LectureHall
-	Courses      []model.Course
 }
 
 func switchPreset(c *gin.Context) {
