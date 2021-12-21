@@ -2,8 +2,8 @@
     <script src="/static/assets/ts-dist/lecture-hall-management.js"></script>
     <div class = "p-5 dark:border-gray-500 rounded border border-gray-300 mt-4 sm:mt-6 xl:mt-8">
         <h2 class="text-2xl text-1 mb-6">New Lecture Hall</h2>
-        <form   x-data="{name:'',combIP:'', presIP:'', camIP:''}"
-                @submit.prevent="createLectureHall(name, combIP, presIP, camIP)"
+        <form   x-data="{name:'',combIP:'', presIP:'', camIP:'',cameraIp:'', pwrCtrlIp:''}"
+                @submit.prevent="createLectureHall(name, combIP, presIP, camIP, cameraIp, pwrCtrlIp)"
                 class = "grid gap-3 w-4/5 mx-auto">
             <label>
                 <span class="dark:text-gray-400 text-gray-800 text-sm font-medium mb-1">Name</span>
@@ -34,6 +34,22 @@
                 <span class="dark:text-gray-400 text-gray-800 text-sm font-medium mb-1">Combined</span>
                 <input type="text"
                        x-model="combIP"
+                       class = "dark:bg-gray-800 dark:focus:border-gray-500 bg-gray-100 rounded border-2 border-transparent
+                       focus:border-gray-300 placeholder:text-sm placeholder:font-light"
+                       placeholder="0.0.0.0">
+            </label>
+            <label class = "block">
+                <span class="dark:text-gray-400 text-gray-800 text-sm font-medium mb-1">Axis Cam</span>
+                <input type="text"
+                       x-model="cameraIp"
+                       class = "dark:bg-gray-800 dark:focus:border-gray-500 bg-gray-100 rounded border-2 border-transparent
+                       focus:border-gray-300 placeholder:text-sm placeholder:font-light"
+                       placeholder="0.0.0.0">
+            </label>
+            <label class = "block">
+                <span class="dark:text-gray-400 text-gray-800 text-sm font-medium mb-1">Anel PWR-Ctrl</span>
+                <input type="text"
+                       x-model="pwrCtrlIp"
                        class = "dark:bg-gray-800 dark:focus:border-gray-500 bg-gray-100 rounded border-2 border-transparent
                        focus:border-gray-300 placeholder:text-sm placeholder:font-light"
                        placeholder="0.0.0.0">

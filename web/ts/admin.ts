@@ -1,7 +1,14 @@
 class Admin {}
 
-function createLectureHall(name: string, combIP: string, presIP: string, camIP: string) {
-    postData("/api/createLectureHall", { name, presIP, camIP, combIP }).then((e) => {
+function createLectureHall(
+    name: string,
+    combIP: string,
+    presIP: string,
+    camIP: string,
+    cameraIp: string,
+    pwrCtrlIp: string,
+) {
+    postData("/api/createLectureHall", { name, presIP, camIP, combIP, cameraIp, pwrCtrlIp }).then((e) => {
         if (e.status === 200) {
             window.location.reload();
         }

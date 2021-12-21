@@ -119,7 +119,7 @@
                                         saved = r.status === 200
                                         savingFailed = !saved
                                     });timeout = setTimeout(() => { saved = false; savingFailed = false; }, 3000)"
-                        :disabled="changed"
+                        :disabled="!changed"
                         class="rounded disabled:bg-blue-300 shadow text-white bg-blue-600 px-3 py-2 mr-2 mb-2">
                     Save
                 </button>
