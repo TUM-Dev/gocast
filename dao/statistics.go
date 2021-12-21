@@ -85,7 +85,7 @@ func GetStudentActivityCourseStats(courseID uint, live bool) ([]Stat, error) {
 	if !live {
 		countMethod = "SUM" // vod views are summed up
 	}
-	err := DB.Debug().Raw(`SELECT year(stats.time) AS year, week(stats.time) AS week, `+countMethod+`(stats.viewers) AS count
+	err := DB.Raw(`SELECT year(stats.time) AS year, week(stats.time) AS week, `+countMethod+`(stats.viewers) AS count
 		FROM stats
         	JOIN streams s ON s.id = stats.stream_id
 		WHERE (s.course_id = ? OR ? = 0) AND stats.live = ?
