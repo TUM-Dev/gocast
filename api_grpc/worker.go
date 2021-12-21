@@ -2,7 +2,6 @@
 package api_grpc
 
 import (
-	"TUM-Live/api"
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
@@ -176,7 +175,7 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 		if err != nil {
 			log.WithError(err).Error("Can't set stream not live")
 		}
-		api.NotifyViewersLiveState(uint(request.StreamID), false)
+		//api.NotifyViewersLiveState(uint(request.StreamID), false)
 	}
 	return &pb.Status{Ok: true}, nil
 }
@@ -308,7 +307,7 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		default:
 			dao.SaveCOMBURL(&stream, request.HlsUrl)
 		}
-		api.NotifyViewersLiveState(stream.Model.ID, true)
+		//api.NotifyViewersLiveState(stream.Model.ID, true)
 	}()
 
 	return &pb.Status{Ok: true}, nil
@@ -442,14 +441,14 @@ func getWorkerForStream(streamName string, workers []model.Worker) model.Worker 
 }
 
 func NotifyWorkerToStopStream(stream model.Stream) {
-	workers := dao.GetAliveWorkers()
-	worker := getWorkerForStream(stream.StreamName, workers)
+	//workers := dao.GetAliveWorkers()
+	//worker := getWorkerForStream(stream.StreamName, workers)
 
-	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", worker.Host), grpc.WithInsecure())
+	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", "localhost"), grpc.WithInsecure())
 	if err != nil {
 		log.WithError(err).Error("Unable to dial server")
 		_ = conn.Close()
-		worker.Workload -= 1
+		//worker.Workload -= 1
 		return
 	}
 
@@ -457,14 +456,14 @@ func NotifyWorkerToStopStream(stream model.Stream) {
 
 	req := pb.EndStreamRequest{
 		StreamID:   uint32(stream.ID),
-		WorkerID:   worker.WorkerID,
+		WorkerID:   string(rune(0)), //worker.WorkerID,
 		StreamName: stream.StreamName,
 	}
 
 	resp, err := client.RequestStreamEnd(context.Background(), &req)
 	if err != nil || !resp.Ok {
 		log.WithError(err).Error("could not end stream!")
-		worker.Workload -= 1
+		//worker.Workload -= 1
 		_ = conn.Close()
 		return
 	}

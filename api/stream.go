@@ -1,6 +1,7 @@
 package api
 
 import (
+	"TUM-Live/api_grpc"
 	"TUM-Live/dao"
 	"TUM-Live/tools"
 	"errors"
@@ -33,19 +34,7 @@ func endStream(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	stream := tumLiveContext.Stream
-
-	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
-	if err != nil {
-		log.WithError(err).Error("request to pause stream without lecture hall")
-		return
-	}
-
-	client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.Auths.PwrCrtlAuth)
-	err = client.TurnOff(lectureHall.LiveLightIndex)
-	if err != nil {
-		log.WithError(err).Error("can't turn off light")
-	}
-	//api_grpc.NotifyWorkerToStopStream(*stream)
+	api_grpc.NotifyWorkerToStopStream(*stream)
 }
 
 func pauseStream(c *gin.Context) {
