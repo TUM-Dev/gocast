@@ -1,6 +1,6 @@
 class Admin {}
 
-function createLectureHall(
+async function createLectureHall(
     name: string,
     combIP: string,
     presIP: string,
@@ -8,10 +8,11 @@ function createLectureHall(
     cameraIp: string,
     pwrCtrlIp: string,
 ) {
-    postData("/api/createLectureHall", { name, presIP, camIP, combIP, cameraIp, pwrCtrlIp }).then((e) => {
+    return postData("/api/createLectureHall", { name, presIP, camIP, combIP, cameraIp, pwrCtrlIp }).then((e) => {
         if (e.status === 200) {
-            window.location.reload();
+            return true;
         }
+        return false;
     });
 }
 

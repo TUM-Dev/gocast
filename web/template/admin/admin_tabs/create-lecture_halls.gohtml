@@ -1,9 +1,18 @@
 {{define "createLectureHalls"}}
     <script src="/static/assets/ts-dist/lecture-hall-management.js"></script>
-    <div class = "p-5 dark:border-gray-500 rounded border border-gray-300 mt-4 sm:mt-6 xl:mt-8">
+    <div x-data="{showSuccess: false}" class = "p-5 dark:border-gray-500 rounded border border-gray-300 mt-4 sm:mt-6 xl:mt-8">
+        <div class = "alerts fixed w-fit left-0 right-0 mx-auto top-3 z-50">
+            <div x-show="showSuccess" class = "flex success bg-green-400 border border-green-600 pl-3 pr-3 pt-2 pb-2 rounded-lg shadow-md">
+                <span class = "text-sm font-semibold text-slate-100 my-auto">
+                    &#10003; Added lecture hall successfully.
+                </span>
+            </div>
+        </div>
         <h2 class="text-2xl text-1 mb-6">New Lecture Hall</h2>
         <form   x-data="{name:'',combIP:'', presIP:'', camIP:'',cameraIp:'', pwrCtrlIp:''}"
-                @submit.prevent="createLectureHall(name, combIP, presIP, camIP, cameraIp, pwrCtrlIp)"
+                @submit.prevent="
+                    showSuccess = await createLectureHall(name, combIP, presIP, camIP, cameraIp, pwrCtrlIp);
+                    setTimeout(() => {window.location.reload();}, 2000);"
                 class = "grid gap-3 w-4/5 mx-auto">
             <label>
                 <span class="dark:text-gray-400 text-gray-800 text-sm font-medium mb-1">Name</span>
