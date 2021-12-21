@@ -90,7 +90,7 @@ function deleteLecture(cid: number, lid: number) {
 
 async function deleteLectures(cid: number, lids: number[]) {
     if (confirm("Confirm deleting " + lids.length + " video" + (lids.length == 1 ? "" : "s") + "?")) {
-        await postData("/api/course/" + cid + "/deleteLectures", { streamIDs: lids.map(n => n.toString()) });
+        await postData("/api/course/" + cid + "/deleteLectures", { streamIDs: lids.map((n) => n.toString()) });
         document.location.reload();
     }
 }
