@@ -72,7 +72,7 @@
                                 <span class="text-4 flex m-auto">Live in one day</span>
                             {{else}}
                                 <div class="flex text-lg px-2 text-4 m-auto"
-                                     x-data="timer('{{$course.GetNextLectureDateFormatted}}', true, false)"
+                                     x-data="timer('{{$course.GetNextLectureDateFormatted}}', true)"
                                      x-init="init();">
                                 {{if $stream.IsStartingInMoreThanOneDay}}
                                     Live in <span x-text="time().day"></span> days
