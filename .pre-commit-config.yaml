@@ -1,6 +1,6 @@
 repos:
   - repo: git://github.com/Bahjat/pre-commit-golang
-    rev: master
+    rev: c3086ee
     hooks:
       - id: go-fmt-import
       - id: go-vet
