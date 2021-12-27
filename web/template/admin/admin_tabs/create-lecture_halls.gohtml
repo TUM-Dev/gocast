@@ -12,7 +12,7 @@
         <form   x-data="{name:'',combIP:'', presIP:'', camIP:'',cameraIp:'', pwrCtrlIp:''}"
                 @submit.prevent="
                     showSuccess = await createLectureHall(name, combIP, presIP, camIP, cameraIp, pwrCtrlIp);
-                    setTimeout(() => {window.location.reload();}, 2000);"
+                    setTimeout(() => {window.location = '/admin/lectureHalls';}, 2000);"
                 class = "grid gap-3 w-4/5 mx-auto">
             <label>
                 <span class="dark:text-gray-400 text-gray-800 text-sm font-medium mb-1">Name</span>
