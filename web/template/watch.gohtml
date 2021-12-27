@@ -13,13 +13,13 @@
     {{if .IsAdminOfCourse}}
     <script async src="/static/assets/ts-dist/watch-admin.js?v={{.IndexData.VersionTag}}"></script>{{end}}
 </head>
-<body class="h-full overflow-hidden" x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}}"
+<body class="h-full md:overflow-hidden" x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}}"
       x-on:pausestart.window="paused=true"
       x-on:pauseend.window="paused=false">{{template "header" .IndexData.TUMLiveContext}}
-<div id="watchPageMainWrapper" class="flex md:flex-row w-full flex-wrap">
+<div id="watchPageMainWrapper" class="flex md:flex-nowrap w-full flex-wrap justify-between">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
     <div id="watchWrapper"
-         class="w-full {{if $course.ChatEnabled}}md:w-4/6 lg:w-5/6{{end}} overflow-scroll overflow-x-hidden scrollbarThin">
+         class="grow overflow-scroll overflow-x-hidden h-fit md:h-full">
         <noscript><p class="vjs-no-js">
                 To view this video please enable JavaScript.
             </p></noscript>
@@ -64,53 +64,53 @@
                 </h1>
                 <p class="text-lg text-4 flex space-x-2">
                     {{if not $stream.Recording}}
-                        <span class="flex m-auto" id="viewerCount"></span>
-                        {{if not $stream.LiveNow}}
-                            <span class="flex m-auto" id="ViewerDescText">Waiting</span>
-                            <span class="flex m-auto">&#183;</span>
-                            {{if $stream.IsStartingInOneDay}}
-                                <span class="text-4 flex m-auto">Live in one day</span>
-                            {{else}}
-                                <div class="flex text-lg px-2 text-4 m-auto"
-                                     x-data="timer('{{$course.GetNextLectureDateFormatted}}', true, false)"
-                                     x-init="init();">
-                                {{if $stream.IsStartingInMoreThanOneDay}}
-                                    Live in <span x-text="time().day"></span> days
-                                {{else if $stream.TimeSlotReached}}
-                                    Stream is about to start
-                                {{else}}
-                                    <div class="tabular-nums flex">
-                                        <span x-text="time().hours"></span>:
-                                        <span x-text="time().minutes"></span>:
-                                        <span x-text="time().seconds"> </span>
-                                    </div>
-                                {{end}}
-                                </div>
-                            {{end}}
-                        {{else}}
-                            <span class="flex m-auto" id="ViewerDescText"> Viewers</span>
-                        {{end}}
-                    {{else if (and $course.DownloadsEnabled .IndexData.TUMLiveContext.User)}}
-                        {{template "downloadBtn" $stream.Files}}
+                    <span class="flex m-auto" id="viewerCount"></span>
+                    {{if not $stream.LiveNow}}
+                    <span class="flex m-auto" id="ViewerDescText">Waiting</span>
+                    <span class="flex m-auto">&#183;</span>
+                    {{if $stream.IsStartingInOneDay}}
+                    <span class="text-4 flex m-auto">Live in one day</span>
+                    {{else}}
+                <div class="flex text-lg px-2 text-4 m-auto"
+                     x-data="timer('{{$course.GetNextLectureDateFormatted}}', true, false)"
+                     x-init="init();">
+                    {{if $stream.IsStartingInMoreThanOneDay}}
+                        Live in <span x-text="time().day"></span> days
+                    {{else if $stream.TimeSlotReached}}
+                        Stream is about to start
+                    {{else}}
+                        <div class="tabular-nums flex">
+                            <span x-text="time().hours"></span>:
+                            <span x-text="time().minutes"></span>:
+                            <span x-text="time().seconds"> </span>
+                        </div>
                     {{end}}
-                    {{if $stream.PlaylistUrlPRES}}
-                        <a class="flex m-auto mr-2" title="Presentation only"
-                           href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/PRES"><i
-                                    class="fas fa-edit text-4 hover:text-1"></i></a>
-                    {{end}}
-                    {{if $stream.PlaylistUrlCAM}}
-                        <a class="flex m-auto mr-2" title="Camera only"
-                           href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/CAM"><i
-                                    class="fas fa-camera text-4 hover:text-1"></i></a>
-                    {{end}}
-                    {{if $stream.PlaylistUrl}}
-                        <a class="flex m-auto mr-2" title="Combined view"
-                           href="/w/{{$course.Slug}}/{{$stream.Model.ID}}"><i
-                                    class="fas fa-object-group text-4 hover:text-1"></i></a>
-                    {{end}}
-                    <i title="Copy HLS URL"
-                       class="flex m-auto fas fa-link text-4 dark:hover:text-white hover:text-black cursor-pointer"
-                       onclick="copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))"></i>
+                </div>
+                {{end}}
+                {{else}}
+                    <span class="flex m-auto" id="ViewerDescText"> Viewers</span>
+                {{end}}
+                {{else if (and $course.DownloadsEnabled .IndexData.TUMLiveContext.User)}}
+                    {{template "downloadBtn" $stream.Files}}
+                {{end}}
+                {{if $stream.PlaylistUrlPRES}}
+                    <a class="flex m-auto mr-2" title="Presentation only"
+                       href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/PRES"><i
+                                class="fas fa-edit text-4 hover:text-1"></i></a>
+                {{end}}
+                {{if $stream.PlaylistUrlCAM}}
+                    <a class="flex m-auto mr-2" title="Camera only"
+                       href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/CAM"><i
+                                class="fas fa-camera text-4 hover:text-1"></i></a>
+                {{end}}
+                {{if $stream.PlaylistUrl}}
+                    <a class="flex m-auto mr-2" title="Combined view"
+                       href="/w/{{$course.Slug}}/{{$stream.Model.ID}}"><i
+                                class="fas fa-object-group text-4 hover:text-1"></i></a>
+                {{end}}
+                <i title="Copy HLS URL"
+                   class="flex m-auto fas fa-link text-4 dark:hover:text-white hover:text-black cursor-pointer"
+                   onclick="copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))"></i>
                 </p>
             </div>
             <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">

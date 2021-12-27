@@ -189,7 +189,6 @@ input[type='checkbox']:checked + label {
 }
 
 #chatWrapper, #watchWrapper, #watchPageMainWrapper {
-    height: var(--chat-height);
 }
 
 #chatBox {
