@@ -1,15 +1,18 @@
 class Admin {}
 
-function createLectureHall() {
-    postData("/api/createLectureHall", {
-        name: (document.getElementById("newLectureHallName") as HTMLInputElement).value,
-        combIP: (document.getElementById("newLectureHallCombIP") as HTMLInputElement).value,
-        presIP: (document.getElementById("newLectureHallPresIP") as HTMLInputElement).value,
-        camIP: (document.getElementById("newLectureHallCamIP") as HTMLInputElement).value,
-    }).then((e) => {
+async function createLectureHall(
+    name: string,
+    combIP: string,
+    presIP: string,
+    camIP: string,
+    cameraIp: string,
+    pwrCtrlIp: string,
+) {
+    return postData("/api/createLectureHall", { name, presIP, camIP, combIP, cameraIp, pwrCtrlIp }).then((e) => {
         if (e.status === 200) {
-            window.location.reload();
+            return true;
         }
+        return false;
     });
 }
 

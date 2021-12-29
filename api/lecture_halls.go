@@ -368,6 +368,8 @@ func createLectureHall(c *gin.Context) {
 		CombIP: req.CombIP,
 		PresIP: req.PresIP,
 		CamIP:  req.CamIP,
+		CameraIP: req.CameraIP,
+		PwrCtrlIp: req.PwrCtrlIP,
 	})
 }
 
@@ -376,6 +378,8 @@ type createLectureHallRequest struct {
 	CombIP string `json:"combIP"`
 	PresIP string `json:"presIP"`
 	CamIP  string `json:"camIP"`
+	CameraIP string `json:"cameraIP"`
+	PwrCtrlIP string `json:"pwrCtrlIp"`
 }
 
 type updateLecturesLectureHallRequest struct {
