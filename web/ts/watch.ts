@@ -26,6 +26,10 @@ function startWebsocket() {
     if (cf !== null && cf != undefined) {
         (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", (e) => submitChat(e));
     }
+    ws.onopen = function (e) {
+        hideDisconnectMsg();
+    };
+
     ws.onmessage = function (m) {
         const data = JSON.parse(m.data);
         if ("viewers" in data && document.getElementById("viewerCount") != null) {
@@ -56,9 +60,14 @@ function startWebsocket() {
         if (new Date().valueOf() - pageloaded.valueOf() > 1000 * 60 * 60 * 12) {
             return;
         }
+        showDisconnectMsg();
         ws = null;
         retryInt *= 2; // exponential backoff
         setTimeout(startWebsocket, retryInt);
+    };
+
+    ws.onerror = function (err) {
+        showDisconnectMsg();
     };
 }
 
@@ -127,6 +136,14 @@ function submitChat(e: Event) {
     );
     this.chatInput.value = "";
     return false; //prevent form submission
+}
+
+function showDisconnectMsg() {
+    document.getElementById("disconnectMsg").style.display = "block";
+}
+
+function hideDisconnectMsg() {
+    document.getElementById("disconnectMsg").style.display = "none";
 }
 
 new Watch();
