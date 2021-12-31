@@ -386,7 +386,6 @@ func deleteLectures(c *gin.Context) {
 	}
 
 	for _, stream := range streams {
-		stream.Model.DeletedAt = gorm.DeletedAt{Time: time.Now()} // todo ?!
 		dao.DeleteStream(strconv.Itoa(int(stream.ID)))
 	}
 }
