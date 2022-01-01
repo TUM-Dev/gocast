@@ -25,7 +25,7 @@ require (
 	github.com/joschahenningsen/TUM-Live-Worker-v2 v0.0.0-20211213075834-9ef06909d37a
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
-	github.com/microcosm-cc/bluemonday v1.0.16
+	github.com/microcosm-cc/bluemonday v1.0.17
 	github.com/pkg/profile v1.6.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/russross/blackfriday/v2 v2.1.0
