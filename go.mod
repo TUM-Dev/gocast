@@ -12,7 +12,7 @@ require (
 	github.com/droundy/goopt v0.0.0-20170604162106-0b8effe182da
 	github.com/gabstv/melody v1.0.2
 	github.com/getsentry/sentry-go v0.11.0
-	github.com/gin-contrib/gzip v0.0.3
+	github.com/gin-contrib/gzip v0.0.5
 	github.com/gin-contrib/sessions v0.0.4
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-asn1-ber/asn1-ber v1.5.3 // indirect
