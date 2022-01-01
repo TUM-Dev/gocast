@@ -6,7 +6,7 @@ require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20211013164422-76adcbfcf8c4
 	github.com/RBG-TUM/go-anel-pwrctrl v0.0.0-20210929070211-675c39ef5a84
 	github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769
-	github.com/antchfx/xmlquery v1.3.8
+	github.com/antchfx/xmlquery v1.3.9
 	github.com/antchfx/xpath v1.2.0 // indirect
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/droundy/goopt v0.0.0-20170604162106-0b8effe182da

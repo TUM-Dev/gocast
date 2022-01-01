@@ -3,6 +3,7 @@ cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMT
 github.com/AndreasBriese/bbloom v0.0.0-20190306092124-e2d15f34fcf9/go.mod h1:bOvUY6CB00SOBii9/FifXqc0awNKxLFCL/+pkDPuyl8=
 github.com/Azure/go-ntlmssp v0.0.0-20200615164410-66371956d46c h1:/IBSNwUN8+eKzUzbJPqhK839ygXJ82sde8x3ogr6R28=
 github.com/Azure/go-ntlmssp v0.0.0-20200615164410-66371956d46c/go.mod h1:chxPXzSsl7ZWRAuOIE23GDNzjWuZquvFlgA8xmpunjU=
+github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/CloudyKit/fastprinter v0.0.0-20170127035650-74b38d55f37a/go.mod h1:EFZQ978U7x8IRnstaskI3IysnWY5Ao3QgZUKOXlsAdw=
 github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53/go.mod h1:+3IMCy2vIlbG1XG/0ggNQv0SvxCAIpPM5b1nCz56Xno=
@@ -19,8 +20,8 @@ github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769 h1:CXcHbGcaclWMb
 github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769/go.mod h1:Gk99WHh7DoWzb964JwKjNGeDPe2Ulw7Vl7FP5y68wmw=
 github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398/go.mod h1:a1uqRtAwp2Xwc6WNPJEufxJ7fx3npB4UV/JOLmbu5I0=
 github.com/ajg/form v1.5.1/go.mod h1:uL1WgH+h2mgNtvBq0339dVnzXdBETtL2LeUXaIv25UY=
-github.com/antchfx/xmlquery v1.3.8 h1:dRnBQM3Vk5BVJFvFwsHOLAox+mEiNw5ZusaUNCrEdoU=
-github.com/antchfx/xmlquery v1.3.8/go.mod h1:wojC/BxjEkjJt6dPiAqUzoXO5nIMWtxHS8PD8TmN4ks=
+github.com/antchfx/xmlquery v1.3.9 h1:Y+zyMdiUZ4fasTQTkDb3DflOXP7+obcYEh80SISBmnQ=
+github.com/antchfx/xmlquery v1.3.9/go.mod h1:wojC/BxjEkjJt6dPiAqUzoXO5nIMWtxHS8PD8TmN4ks=
 github.com/antchfx/xpath v1.2.0 h1:mbwv7co+x0RwgeGAOHdrKy89GvHaGvxxBtPK0uF9Zr8=
 github.com/antchfx/xpath v1.2.0/go.mod h1:i54GszH55fYfBmoZXapTHN8T8tkcHfRgLyVwwqzXNcs=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
