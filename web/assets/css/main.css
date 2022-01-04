@@ -224,7 +224,6 @@ input[type='checkbox']:checked + label {
 }
 
 .dark .fc-scroller {
-    @apply scrollbarThin;
     margin-bottom: 0 !important;
 }
 
@@ -268,4 +267,8 @@ a.fc-event, a.fc-event:hover {
 
 [x-cloak] {
     display: none !important;
+}
+
+.grow {
+    flex-grow: 1;
 }
