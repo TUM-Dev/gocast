@@ -14,6 +14,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live-Worker-v2/pb"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -413,7 +414,8 @@ func NotifyWorkers() {
 			}
 			workerIndex := getWorkerWithLeastWorkload(workers)
 			workers[workerIndex].Workload += 3
-			conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithInsecure())
+			credentials := insecure.NewCredentials()
+			conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithTransportCredentials(credentials))
 			if err != nil {
 				log.WithError(err).Error("Unable to dial server")
 				workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
@@ -460,7 +462,8 @@ func notifyWorkersPremieres() {
 			IngestServer: ingestServer.Url,
 			OutUrl:       ingestServer.OutUrl,
 		}
-		conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithInsecure())
+		credentials := insecure.NewCredentials()
+		conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithTransportCredentials(credentials))
 		if err != nil {
 			log.WithError(err).Error("Unable to dial server")
 			_ = conn.Close()
