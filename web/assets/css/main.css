@@ -268,7 +268,3 @@ a.fc-event, a.fc-event:hover {
 [x-cloak] {
     display: none !important;
 }
-
-.grow {
-    flex-grow: 1;
-}
