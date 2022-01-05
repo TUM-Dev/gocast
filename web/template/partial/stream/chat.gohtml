@@ -7,7 +7,7 @@
             {{range $chat := $stream.Chats}}
                 <div class="rounded p-2 mx-2">
                     <div class="flex flex-row">
-                        <p class="flex-grow font-semibold {{if $chat.Admin}}text-warn{{end}}">{{$chat.UserName}}</p>
+                        <p class="grow font-semibold {{if $chat.Admin}}text-warn{{end}}">{{$chat.UserName}}</p>
                         <p class="text-4">
                             {{printf "%02d:%02d" $chat.CreatedAt.Hour $chat.CreatedAt.Minute}}
                         </p>

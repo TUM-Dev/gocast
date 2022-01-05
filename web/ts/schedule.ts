@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const streamInfo = JSON.parse(Get("/api/stream/" + data.event.extendedProps.description));
             popover.innerHTML = `;
             <p class="flex text-1 text-lg">
-                <span class="flex-grow">${streamInfo["course"]}</span>
+                <span class="grow">${streamInfo["course"]}</span>
                 <i id="closeBtn" class="transition-colors duration-200 hover:text-1 text-4 icon-close"></i>
             </p>
                 <div class="text-2">
@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     <label for="lectureNameInput${streamInfo["streamID"]}" class="hidden">Lecture title</label>
                     <input id="lectureNameInput${streamInfo["streamID"]}"
                         onfocus="focusNameInput(this, ${streamInfo["streamID"]})"
-                        class="flex-grow border-none" type="text" value="${streamInfo["name"]}"
+                        class="grow border-none" type="text" value="${streamInfo["name"]}"
                         placeholder="Lecture 2: Dark-Patterns I"
                         autocomplete="off">
                     <button id="nameSubmitBtn${streamInfo["streamID"]}"
@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     <textarea id="lectureDescriptionInput${streamInfo["streamID"]}"
                         rows="3"
                         onfocus="focusDescriptionInput(this, ${streamInfo["streamID"]})"
-                        class="flex-grow border-none"
+                        class="grow border-none"
                         placeholder="Add a nice description, links, and more. You can use Markdown."
                         autocomplete="off">${streamInfo["description"]}</textarea>
                     <button id="descriptionSubmitBtn${streamInfo["streamID"]}"

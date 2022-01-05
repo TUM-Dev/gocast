@@ -2,7 +2,12 @@
     <script src="/static/assets/ts-dist/lecture-hall-management.js"></script>
     {{- /*gotype: TUM-Live/[]model.LectureHall*/ -}}
     <div class="rounded my-6 overflow-x-auto">
-        <h2 class="text-2xl text-1 mb-6">Lecture Halls</h2>
+        <div class = 'flex mb-3'>
+            <h2 class="text-2xl text-1 my-auto">Lecture Halls</h2>
+            <a href = "/admin/lectureHalls/new" class = "ml-auto my-auto">
+                <button class = "dark:bg-gray-600 dark:border-slate-800 dark:border-slate-800 bg-black text-white border border-slate-300 pl-3 pr-3 rounded pt-1 pb-1 text-sm font-semibold">&#43; New Lecture Hall</button>
+            </a>
+        </div>
         {{range $lectureHall := .}}'
         <div x-data="{
             changed:false,
@@ -114,7 +119,7 @@
                                         saved = r.status === 200
                                         savingFailed = !saved
                                     });timeout = setTimeout(() => { saved = false; savingFailed = false; }, 3000)"
-                        :disabled="changed"
+                        :disabled="!changed"
                         class="rounded disabled:bg-blue-300 shadow text-white bg-blue-600 px-3 py-2 mr-2 mb-2">
                     Save
                 </button>

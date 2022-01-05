@@ -49,6 +49,9 @@ func AdminPage(c *gin.Context) {
 	if c.Request.URL.Path == "/admin/lectureHalls" {
 		page = "lectureHalls"
 	}
+	if c.Request.URL.Path == "/admin/lectureHalls/new" {
+		page = "createLectureHalls"
+	}
 	if c.Request.URL.Path == "/admin/workers" {
 		page = "workers"
 	}

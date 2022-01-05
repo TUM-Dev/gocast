@@ -11,7 +11,7 @@
             {{end}}
             <li class="pl-4 p-2">
                 <div class="flex justify-between">
-                    {{if or $lecture.LiveNow $lecture.Recording}}
+               {{if or (or $lecture.LiveNow $lecture.Recording) $lecture.IsComingUp}}
                         <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}" class="text-l text-3 p-0">
                                 {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
                         </a>
@@ -63,7 +63,8 @@
                                             {{$unit.UnitName}}
                                         </a>
                                         <span class="text-sm text-gray-400">
-                                                {{$unit.GetRoundedUnitLen}}</span>
+                                            {{$unit.GetRoundedUnitLen}}
+                                        </span>
                                     </p>
                                 </li>
                             {{end}}
@@ -77,6 +78,8 @@
                         <span class="bg-danger rounded-full text-gray-200 px-2">Live</span>
                     {{else if $lecture.IsPast}}
                         <span class="bg-warn rounded-full text-gray-200 px-2">Past</span>
+                    {{else if $lecture.IsComingUp}}
+                        <span class="bg-wait rounded-full text-gray-800 px-2">Waiting room</span>
                     {{else}}
                         <span class="bg-info rounded-full text-gray-200 px-2">Planned</span>
                     {{end}}

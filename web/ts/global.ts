@@ -105,6 +105,78 @@ function initHiddenCourses() {
     }
 }
 
+// Adapted from https://codepen.io/harsh/pen/KKdEVPV
+function timer(expiry: string, leadingZero: boolean, units = false) {
+    const date = new Date(expiry);
+    return {
+        expiry: date,
+        remaining: null,
+        init() {
+            this.setRemaining();
+            setInterval(() => {
+                this.setRemaining();
+            }, 1000);
+        },
+        setRemaining() {
+            const diff = this.expiry - new Date().getTime();
+            this.remaining = parseInt(String(diff / 1000));
+        },
+        days() {
+            return {
+                value: this.remaining / 86400,
+                remaining: this.remaining % 86400,
+            };
+        },
+        hours() {
+            return {
+                value: this.days().remaining / 3600,
+                remaining: this.days().remaining % 3600,
+            };
+        },
+        minutes() {
+            return {
+                value: this.hours().remaining / 60,
+                remaining: this.hours().remaining % 60,
+            };
+        },
+        seconds() {
+            return {
+                value: this.minutes().remaining,
+            };
+        },
+        format(value) {
+            if (leadingZero) {
+                return ("0" + parseInt(value)).slice(-2);
+            } else {
+                return parseInt(value);
+            }
+        },
+        time() {
+            if (units) {
+                // Could be shortened, but it is more readable this way (I think)
+                const unitMinute = this.minutes() == 1 ? " Minute" : " Minutes";
+                const unitSecond = this.seconds() == 1 ? " Second" : " Seconds";
+                const unitHour = this.hours() == 1 ? " Hour" : " Hours";
+                const unitDay = this.days() == 1 ? " Day" : " Days";
+
+                return {
+                    days: this.format(this.days().value) + unitDay,
+                    hours: this.format(this.hours().value) + unitHour,
+                    minutes: this.format(this.minutes().value) + unitMinute,
+                    seconds: this.format(this.seconds().value) + unitSecond,
+                };
+            } else {
+                return {
+                    days: this.format(this.days().value),
+                    hours: this.format(this.hours().value),
+                    minutes: this.format(this.minutes().value),
+                    seconds: this.format(this.seconds().value),
+                };
+            }
+        },
+    };
+}
+
 window.onload = function () {
     initHiddenCourses();
 };

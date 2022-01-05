@@ -121,7 +121,7 @@
                                                 title</label>
                                             <input id="lectureNameInput{{$lecture.Model.ID}}"
                                                    onfocus="focusNameInput(this, {{$lecture.Model.ID}})"
-                                                   class="flex-grow border-none" type="text" value="{{$lecture.Name}}"
+                                                   class="grow border-none" type="text" value="{{$lecture.Name}}"
                                                    placeholder="Lecture 2: Dark-Patterns I"
                                                    autocomplete="off">
                                             <button id="nameSubmitBtn{{$lecture.Model.ID}}"
@@ -139,7 +139,7 @@
                                                            class="hidden">Lecture description</label>
                                                     <textarea id="lectureDescriptionInput{{$lecture.Model.ID}}"
                                                               onfocus="focusDescriptionInput(this, {{$lecture.Model.ID}})"
-                                                              class="flex-grow border-none"
+                                                              class="grow border-none"
                                                               placeholder="Add a nice description, links, and more. You can use Markdown."
                                                               autocomplete="off">{{$lecture.Description}}</textarea>
                                                     <button id="descriptionSubmitBtn{{$lecture.Model.ID}}"
