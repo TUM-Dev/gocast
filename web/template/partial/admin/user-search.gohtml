@@ -44,12 +44,30 @@
                             <span class="font-medium p-3" x-text="user.email?user.email:user.lrz_id"></span>
                         </div>
                     </td>
-                    <td class="py-3 px-6 text-center">
+                    <td class="py-3 px-6 text-center" @click="user.changing=true">
                         <span x-show="user.role===1"
                               class="bg-info text-gray-100 py-1 px-3 rounded-full text-xs">Admin</span>
                         <span x-show="user.role===2" class="bg-success text-gray-100 py-1 px-3 rounded-full text-xs">Lecturer</span>
                         <span x-show="user.role===3" class="bg-gray-100 text-gray-800 py-1 px-3 rounded-full text-xs">Invited</span>
                         <span x-show="user.role===4" class="bg-gray-100 text-gray-800 py-1 px-3 rounded-full text-xs">Student</span>
+                        <div x-show="user.changing" x-cloak @click.outside="user.changing=false">
+                            <div x-data="{dropdownMenu: true}" class="relative">
+                                <div x-show="dropdownMenu" class="absolute left-0 py-2 mt-2 bg-white bg-gray-50 rounded-md shadow w-44">
+                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
+                                       @click="updateUser(user.id, 1).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
+                                        Admin
+                                    </a>
+                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
+                                       @click="updateUser(user.id, 2).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
+                                        Lecturer
+                                    </a>
+                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
+                                       @click="updateUser(user.id, 4).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
+                                        Student
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                     </td>
                     <td class="py-3 px-6 text-center">
                         <div class="flex item-center justify-center">

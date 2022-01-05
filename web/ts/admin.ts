@@ -41,3 +41,28 @@ function deleteUser(deletedUserID: number) {
         });
     }
 }
+
+async function updateUser(userID: number, role: number) {
+    let success = true;
+    await fetch("/api/users/update", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            id: userID,
+            role: role,
+        }),
+    })
+        .then((res) => {
+            if (res.status !== 200) {
+                success = false;
+                showMessage("There was an error updating the user: " + res.body);
+            }
+        })
+        .catch((err) => {
+            success = false;
+            showMessage("There was an error updating the user: " + err);
+        });
+    return success ? role : -1;
+}

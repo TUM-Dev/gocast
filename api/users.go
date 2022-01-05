@@ -25,11 +25,35 @@ func configGinUsersRouter(router *gin.Engine) {
 	admins.POST("/createUser", CreateUser)
 	admins.POST("/deleteUser", DeleteUser)
 	admins.GET("/searchUser", SearchUser)
+	admins.POST("/users/update", updateUser)
 
 	courseAdmins := router.Group("/api/course/:courseID")
 	courseAdmins.Use(tools.InitCourse)
 	courseAdmins.Use(tools.AdminOfCourse)
 	courseAdmins.POST("/createUserForCourse", CreateUserForCourse)
+}
+
+func updateUser(c *gin.Context) {
+	var req = struct {
+		ID   uint `json:"id"`
+		Role uint `json:"role"`
+	}{}
+	if err := c.BindJSON(&req); err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	user, err := dao.GetUserByID(c, req.ID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	user.Role = req.Role
+	err = dao.UpdateUser(user)
+	if err != nil {
+		log.WithError(err).Error("Error while updating user")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
 }
 
 func SearchUser(c *gin.Context) {
@@ -63,7 +87,10 @@ type userSearchDTO struct {
 	LrzID string `json:"lrz_id"`
 	Email string `json:"email"`
 	Name  string `json:"name"`
-	Role  int    `json:"role"`
+	Role  uint   `json:"role"`
+
+	// used by alpine
+	Changing bool `json:"changing"`
 }
 
 func DeleteUser(c *gin.Context) {
