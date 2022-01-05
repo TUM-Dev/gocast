@@ -1,11 +1,9 @@
 package dao
 
-import "fmt"
-
-const WeeksPerYear = 52
-
-// todo? Figure out how many weeks the year has (https://en.wikipedia.org/wiki/ISO_week_date#Weeks_per_year)
-// not doing this here rn because no lectures take place in week 53 anyways
+import (
+	"TUM-Live/tools/timing"
+	"fmt"
+)
 
 //GetCourseNumStudents returns the number of students enrolled in the course
 func GetCourseNumStudents(courseID uint) (int64, error) {
@@ -100,14 +98,14 @@ func GetStudentActivityCourseStats(courseID uint, live bool) ([]Stat, error) {
 	for i, week := range res {
 		if i != 0 {
 			// Fill gaps between weeks within a year
-			if week.Week > lastWeek+1 && week.Week != WeeksPerYear {
+			if week.Week > lastWeek+1 && int(week.Week) != timing.GetWeeksInYear(int(week.Year)) {
 				for j := lastWeek + 1; j < week.Week; j++ {
 					retVal = append(retVal, Stat{X: fmt.Sprintf("%d %d", week.Year, j), Y: 0})
 				}
 			}
 			// fill gap until end of year
-			if lastYear != week.Year && lastWeek != WeeksPerYear {
-				for j := lastWeek + 1; j <= WeeksPerYear; j++ {
+			if lastYear != week.Year && int(lastWeek) != timing.GetWeeksInYear(int(lastYear)) {
+				for j := lastWeek + 1; int(j) <= timing.GetWeeksInYear(int(lastYear)); j++ {
 					retVal = append(retVal, Stat{X: fmt.Sprintf("%d %d", lastYear, j), Y: 0})
 				}
 			}
