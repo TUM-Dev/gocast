@@ -8,8 +8,8 @@ import (
 type File struct {
 	gorm.Model
 
-	StreamID uint
-	Path     string
+	StreamID uint   `gorm:"not null"`
+	Path     string `gorm:"not null"`
 }
 
 func (f File) GetDownloadFileName() string {

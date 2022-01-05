@@ -191,7 +191,7 @@ func CreateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, createUserResponse{Name: createdUser.Name, Email: createdUser.Email.String, Role: createdUser.Role})
 }
 
-func createUserHelper(request createUserRequest, userType int) (user model.User, err error) {
+func createUserHelper(request createUserRequest, userType uint) (user model.User, err error) {
 	var u = model.User{
 		Name:  request.Name,
 		Email: sql.NullString{String: request.Email, Valid: true},
@@ -248,5 +248,5 @@ type createUserRequest struct {
 type createUserResponse struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
-	Role  int    `json:"role"`
+	Role  uint   `json:"role"`
 }

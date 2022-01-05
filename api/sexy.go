@@ -12,7 +12,7 @@ func configGinSexyApiRouter(router gin.IRoutes) {
 }
 
 func getStreamInfo(context *gin.Context) {
-	courses, err := dao.GetAllCourses(false)
+	courses, err := dao.GetAllCourses()
 	if err != nil {
 		context.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"status": "something went wrong"})
 		return
