@@ -233,7 +233,6 @@ input[type='checkbox']:checked + label {
 }
 
 .dark .fc-scroller {
-    @apply scrollbarThin;
     margin-bottom: 0 !important;
 }
 

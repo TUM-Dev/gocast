@@ -101,7 +101,7 @@ function createMessageElement(m): HTMLDivElement {
     const chatHeader = document.createElement("div") as HTMLDivElement;
     chatHeader.classList.add("flex", "flex-row");
     const chatNameField = document.createElement("p") as HTMLParagraphElement;
-    chatNameField.classList.add("flex-grow", "font-semibold");
+    chatNameField.classList.add("grow", "font-semibold");
     if (m["admin"]) {
         chatNameField.classList.add("text-warn");
     }
