@@ -73,6 +73,11 @@ func (s Stream) IsStartingInMoreThanOneDay() bool {
 	return s.Start.After(time.Now().Add(48 * time.Hour))
 }
 
+// IsPlanned returns whether the stream is planned or not
+func (s Stream) IsPlanned() bool {
+	return !s.Recording && !s.LiveNow && !s.IsPast() && !s.IsComingUp()
+}
+
 type silence struct {
 	Start uint `json:"start"`
 	End   uint `json:"end"`

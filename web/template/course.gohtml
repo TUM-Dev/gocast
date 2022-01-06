@@ -10,9 +10,24 @@
 {{template "header" .IndexData.TUMLiveContext}}
 {{$course := .IndexData.TUMLiveContext.Course}}
 <div class="container">
-    <h1 class="text-1">{{$course.Name}}</h1>
-    <ul class="w-full md:w-5/6 m-auto mb-4">
-        {{template "course_list" .IndexData.TUMLiveContext}}
+    <h1 class="font-bold text-3xl mb-5 dark:text-white">{{$course.Name}}</h1>
+    <ul class="m-auto mb-4 mt-4 flex justify-between">
+        <!-- order.false = DESC, order.true = ASC -->
+        <div x-data="{order: false}" class = "w-1/2 bg-white dark:bg-secondary-lighter py-3 px-5 rounded-lg shadow-md">
+            <div class = "flex justify-between border-b mb-3 py-2">
+                <span class="bg-success rounded-full text-lg font-bold text-white px-5">VoD</span>
+                <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2 my-auto" @click="order = !order;">
+                    <span class = "text-sm font-semibold uppercase dark:text-white"
+                          x-text="order ? '&#x25B2; asc' : '&#x25BC; desc'">&#x25BC; desc</span>
+                </button>
+            </div>
+            <div class = "flex" :class="order ? 'flex-col-reverse' : 'flex-col'">
+                {{template "vod_course_list" .IndexData.TUMLiveContext}}
+            </div>
+        </div>
+        <div class = "">
+            {{template "planned_course_list" .IndexData.TUMLiveContext}}
+        </div>
     </ul>
 </div>
 </body>
