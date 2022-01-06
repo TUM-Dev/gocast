@@ -29,7 +29,7 @@
             {{range $chat := $stream.Chats}}
                 <div class="rounded py-2">
                     <div class="flex flex-row">
-                        <p class="text-sm flex-grow font-semibold {{if $chat.Admin}}text-warn{{end}}">{{$chat.UserName}}</p>
+                        <p class="text-sm grow font-semibold {{if $chat.Admin}}text-warn{{end}}">{{$chat.UserName}}</p>
                         <p class="text-4 text-xs">
                             {{printf "%02d:%02d" $chat.CreatedAt.Hour $chat.CreatedAt.Minute}}
                         </p>
