@@ -10,23 +10,59 @@
 {{template "header" .IndexData.TUMLiveContext}}
 {{$course := .IndexData.TUMLiveContext.Course}}
 <div class="container">
-    <h1 class="font-bold text-3xl mb-5 dark:text-white">{{$course.Name}}</h1>
-    <ul class="m-auto mb-4 mt-4 flex justify-between">
+    <div class="mb-8">
+        {{ range $lecture := $course.Streams }}
+            {{if $lecture.LiveNow}}
+                <div class="mb-3">
+                    <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}">
+                        <span class="bg-danger text-lg font-bold rounded text-white px-3 my-auto py-1">Live Now</span>
+                    </a>
+                </div>
+            {{end}}
+        {{end}}
+        <h1 class="font-bold text-3xl dark:text-white my-auto">{{$course.Name}}</h1>
+    </div>
+    <ul class="m-auto mb-4 mt-4 flex flex-wrap md:justify-between md:flex-nowrap ">
         <!-- order.false = DESC, order.true = ASC -->
-        <div x-data="{order: false}" class = "w-1/2 bg-white dark:bg-secondary-lighter py-3 px-5 rounded-lg shadow-md">
-            <div class = "flex justify-between border-b mb-3 py-2">
+        <div x-data="{order: false}"
+             class="w-full md:w-1/2 bg-white dark:bg-secondary-lighter py-3 px-5 rounded-lg shadow-md h-fit">
+            <div class="flex justify-between border-b dark:border-gray-600 mb-3 py-2">
                 <span class="bg-success rounded-full text-lg font-bold text-white px-5">VoD</span>
                 <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2 my-auto" @click="order = !order;">
-                    <span class = "text-sm font-semibold uppercase dark:text-white"
+                    <span class="text-sm font-semibold uppercase dark:text-white"
                           x-text="order ? '&#x25B2; asc' : '&#x25BC; desc'">&#x25BC; desc</span>
                 </button>
             </div>
-            <div class = "flex" :class="order ? 'flex-col-reverse' : 'flex-col'">
+            <div class="flex" :class="order ? 'flex-col-reverse' : 'flex-col'">
                 {{template "vod_course_list" .IndexData.TUMLiveContext}}
             </div>
         </div>
-        <div class = "">
-            {{template "planned_course_list" .IndexData.TUMLiveContext}}
+        <div class="w-full md:w-1/2 md:ml-3 h-fit mt-3 md:mt-0">
+            <div class="bg-white dark:bg-secondary-lighter rounded-lg shadow-md py-3 px-5 mb-3">
+                {{$firstPlanned := true}} <!-- better way to do that? -->
+                {{ range $lecture := $course.Streams }}
+                    {{if and $lecture.IsPlanned $firstPlanned}}
+                        {{$firstPlanned = false}}
+                        <h1 class = "text-3xl font-bold dark:text-white">
+                            {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
+                        </h1>
+                        <span class = "font-light text-sm dark:text-white">Next Lecture</span>
+                    {{end}}
+                {{end}}
+            </div>
+            <div x-data="{showPlanned: true}" class="bg-white dark:bg-secondary-lighter rounded-lg shadow-md py-3 px-5">
+                <div class="flex justify-between py-2" :class="showPlanned && 'border-b dark:border-gray-600 mb-3'">
+                    <span class="bg-info rounded-full text-lg font-bold text-white px-5">Upcoming</span>
+                    <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2 my-auto"
+                            @click="showPlanned = !showPlanned;">
+                        <span class="text-sm font-semibold uppercase dark:text-white"
+                              x-text="showPlanned ? '&#x25B2; hide' : '&#x25BC; show'">&#x25BC; hide</span>
+                    </button>
+                </div>
+                <div x-show="showPlanned">
+                    {{template "planned_course_list" .IndexData.TUMLiveContext}}
+                </div>
+            </div>
         </div>
     </ul>
 </div>

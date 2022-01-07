@@ -4,24 +4,32 @@
     {{$lastMonth := -1}}
 
     {{range $lecture := $course.Streams }}
-        {{if or (or (not $lecture.IsPast) $lecture.Recording) $lecture.LiveNow}}
+        {{if or $lecture.IsPlanned $lecture.IsComingUp}}
             {{if ne $lecture.Start.Month $lastMonth}}
                 {{$lastMonth = $lecture.Start.Month}}
-                <p class="p-2 text-lg text-2 border-b-2 border-gray-800">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
+                <p class="font-semibold text-gray-400">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
             {{end}}
-            {{if $lecture.IsPlanned}}
-            <li class="pl-4 p-2">
+            <li class="p-2">
                 <div class="flex justify-between">
-               {{if or (or $lecture.LiveNow $lecture.Recording) $lecture.IsComingUp}}
-                        <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}" class="text-l text-3 p-0">
-                                {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
-                        </a>
-                    {{else}}
-                        <h3 class="text-l text-3 p-0">
-                            {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
-                        </h3>
-                    {{end}}
-                    <div class="flex text-gray-400 space-x-2">
+                    <div>
+                        <div>
+                            {{if $lecture.IsComingUp}}
+                                <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}" class="text-l text-3 dark:text-white text-black p-0">
+                                    {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
+                                </a>
+                            {{else}}
+                                <span class="text-l text-3 dark:text-white text-black p-0">
+                                    {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
+                                </span>
+                            {{end}}
+                        </div>
+                        <div>
+                            <span class = 'dark:text-gray-200 font-light text-sm'>
+                                {{$lecture.FriendlyDate}} {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2 my-auto">
                         {{if (and $course.DownloadsEnabled $lecture.FilePath) }}
                             <a class="flex"
                                title="Download Lecture"
@@ -84,11 +92,8 @@
                     {{else}}
                         <span class="bg-info rounded-full text-gray-200 px-2">Planned</span>
                     {{end}}
-                    {{$lecture.FriendlyDate}}
-                    {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
                 </p>-->
             </li>
-            {{end}}
         {{end}}
     {{end}}
 {{end}}
