@@ -1,7 +1,62 @@
 import videojs from "video.js";
 import { postData } from "./global";
 
+require("videojs-seek-buttons");
+require("videojs-hls-quality-selector");
+require("videojs-contrib-quality-levels");
+
 const Button = videojs.getComponent("Button");
+let player;
+
+/**
+ * Initialize the player and bind it to a DOM object my-video
+ */
+export const initPlayer = function () {
+    player = videojs("my-video", {
+        liveui: true,
+        fluid: true,
+        playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+        html5: {
+            reloadSourceOnError: true,
+            vhs: {
+                overrideNative: !videojs.browser.IS_SAFARI,
+            },
+            nativeVideoTracks: false,
+            nativeAudioTracks: false,
+            nativeTextTracks: false,
+        },
+        userActions: {
+            hotkeys: {},
+        },
+        //nativeControlsForTouch: true,a
+    });
+    player.hlsQualitySelector();
+
+    player.play();
+    player.seekButtons({
+        backIndex: 0,
+        forward: 15,
+        back: 15,
+    });
+
+    player.theaterMode({ elementToToggle: "my-video", className: "theater-mode" });
+    // handle volume store:
+    player.on("volumechange", function () {
+        window.localStorage.setItem("volume", player.volume());
+        window.localStorage.setItem("muted", player.muted());
+    });
+
+    player.ready(function () {
+        const persistedVolume = window.localStorage.getItem("volume");
+        if (persistedVolume !== null) {
+            player.volume(persistedVolume);
+        }
+        const persistedMute = window.localStorage.getItem("muted");
+        if (persistedMute !== null) {
+            player.muted("true" === persistedMute);
+        }
+    });
+};
 
 let skipTo = 0;
 
@@ -9,8 +64,7 @@ let skipTo = 0;
  * Button to add a class to passed in element that will toggle "theater mode" as defined
  * in app's CSS (larger player, dimmed background, etc...)
  */
-
-const SkipSilenceToggle = videojs.extend(Button, {
+export const SkipSilenceToggle = videojs.extend(Button, {
     constructor: function () {
         Button.apply(this, arguments);
         this.controlText("Skip pause");
@@ -31,9 +85,7 @@ export const TheaterModeToggle = videojs.extend(Button, {
         this.el().firstChild.classList.add("vjs-icon-theater-toggle");
     },
     handleClick: function () {
-        const theaterModeIsOn = document
-            .getElementById(videojs.options_.elementToToggle)
-            .classList.toggle(videojs.options_.className);
+        const theaterModeIsOn = document.getElementById("my-video").classList.toggle("theater-mode");
         videojs("my-video").trigger("theaterMode", { theaterModeIsOn: theaterModeIsOn });
 
         if (theaterModeIsOn) {
@@ -52,33 +104,6 @@ export const TheaterModeToggle = videojs.extend(Button, {
 videojs.registerComponent("TheaterModeToggle", TheaterModeToggle);
 videojs.registerComponent("SkipSilenceToggle", SkipSilenceToggle);
 
-// export class TheaterModeToggle extends Button {
-//     constructor(player, options) {
-//         super(player, options);
-//         videojs.controlText("Big picture mode");
-//         videojs.el().firstChild.classList.add("vjs-icon-theater-toggle");
-//     }
-//
-//     buildCSSClass() {
-//         return `vjs-theater-mode-control ${super.buildCSSClass()}`;
-//     }
-//
-//     handleClick() {
-//         const theaterModeIsOn = document
-//             .getElementById(videojs.options_.elementToToggle)
-//             .classList.toggle(videojs.options_.className);
-//         videojs.trigger("theaterMode", { theaterModeIsOn: theaterModeIsOn });
-//
-//         if (theaterModeIsOn) {
-//             document.getElementById("watchContent").classList.remove("md:w-4/6", "lg:w-8/12", "2xl:max-w-screen-xl");
-//             videojs.player().fluid(false);
-//         } else {
-//             document.getElementById("watchContent").classList.add("md:w-4/6", "lg:w-8/12", "2xl:max-w-screen-xl");
-//             videojs.player().fluid(true);
-//         }
-//     }
-// }
-
 /**
  * @function theaterMode
  * @param    {Object} [options={}]
@@ -87,8 +112,6 @@ videojs.registerComponent("SkipSilenceToggle", SkipSilenceToggle);
 export const theaterMode = function (options) {
     const player = videojs("my-video");
     player.ready(() => {
-        console.log("Adding theatre mode");
-        console.log(player.getChild("theaterModeToggle"));
         player.addClass("vjs-theater-mode");
         const toggle = player.controlBar.addChild("theaterModeToggle", options);
         player.controlBar.el().insertBefore(toggle.el(), player.controlBar.fullscreenToggle.el());
@@ -103,7 +126,7 @@ export const theaterMode = function (options) {
     });
 };
 
-export const skipSilence = function (any, options) {
+export const skipSilence = function (options) {
     const player = videojs("my-video");
     player.ready(() => {
         player.addClass("vjs-skip-silence");
