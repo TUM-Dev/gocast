@@ -44,7 +44,7 @@
                             <span class="font-medium p-3" x-text="user.email?user.email:user.lrz_id"></span>
                         </div>
                     </td>
-                    <td class="py-3 px-6 text-center" @click="user.changing=true">
+                    <td class="py-3 px-6 text-center cursor-pointer" @click="user.changing=true" >
                         <span x-show="user.role===1"
                               class="bg-info text-gray-100 py-1 px-3 rounded-full text-xs">Admin</span>
                         <span x-show="user.role===2" class="bg-success text-gray-100 py-1 px-3 rounded-full text-xs">Lecturer</span>

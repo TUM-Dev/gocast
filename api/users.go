@@ -71,10 +71,15 @@ func SearchUser(c *gin.Context) {
 	}
 	res := make([]userSearchDTO, len(users))
 	for i, user := range users {
+		email, err := tools.MaskEmail(user.Email.String)
+		if err != nil {
+			email = ""
+		}
+		lrzID := tools.MaskLogin(user.LrzID)
 		res[i] = userSearchDTO{
 			ID:    user.ID,
-			LrzID: user.LrzID,
-			Email: user.Email.String,
+			LrzID: lrzID,
+			Email: email,
 			Name:  user.Name,
 			Role:  user.Role,
 		}
