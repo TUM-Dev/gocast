@@ -191,6 +191,11 @@ func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.S
 		worker.Workload = uint(request.Workload)
 		worker.LastSeen = time.Now()
 		worker.Status = strings.Join(request.Jobs, ", ")
+		worker.CPU = request.CPU
+		worker.Memory = request.Memory
+		worker.Disk = request.Disk
+		worker.Uptime = request.Uptime
+		worker.Version = request.Version
 		err := dao.SaveWorker(worker)
 		if err != nil {
 			return nil, err
