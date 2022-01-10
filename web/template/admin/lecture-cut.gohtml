@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
     <link rel="stylesheet" href="/static/node_modules/nouislider/distribute/nouislider.min.css">
     <script src="/static/node_modules/nouislider/distribute/nouislider.min.js"></script>
+    <script src="/static/assets/ts-dist/index.bundle.js"></script>
 </head>
 <body class="bg-primary">
 
@@ -36,7 +37,7 @@
             <div class="mt-4">
                 <form id="cutForm" class="border-gray-300 border-t-2"
                       onkeydown="return event.key !== 'Enter';"
-                      onsubmit="return submitCut({{$stream.Model.ID}}, {{$stream.CourseID}})">
+                      onsubmit="return UI.submitCut({{$stream.Model.ID}}, {{$stream.CourseID}})">
                     <div id="sliderNew" class="mt-4"></div>
                     <input type="submit"
                            value="Save"
