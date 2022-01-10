@@ -1,6 +1,6 @@
 import { postData } from "./global";
 
-class OnboardingFormData {
+export class OnboardingFormData {
     public name: string;
     public email: string;
     public password: string;

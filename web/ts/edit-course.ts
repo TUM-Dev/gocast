@@ -1,7 +1,7 @@
 import { loadStats } from "./stats";
 import { postData, showMessage } from "./global";
 
-class EditCourse {
+export class EditCourse {
     constructor() {
         EditCourse.loadGeneralStats();
     }
@@ -15,7 +15,7 @@ class EditCourse {
     }
 }
 
-function saveLectureHall(lectureID: number) {
+export async function saveLectureHall(lectureID: number) {
     postData("/api/updateLecturesLectureHall", {
         lecture: lectureID,
         lectureHall: parseInt(
@@ -28,7 +28,7 @@ function saveLectureHall(lectureID: number) {
     });
 }
 
-function saveLectureDescription(e: Event, cID: number, lID: number) {
+export function saveLectureDescription(e: Event, cID: number, lID: number) {
     e.preventDefault();
     const input = (document.getElementById("lectureDescriptionInput" + lID) as HTMLInputElement).value;
     postData("/api/course/" + cID + "/updateDescription/" + lID, { name: input }).then((res) => {
@@ -40,7 +40,7 @@ function saveLectureDescription(e: Event, cID: number, lID: number) {
     });
 }
 
-function saveLectureName(e: Event, cID: number, lID: number) {
+export function saveLectureName(e: Event, cID: number, lID: number) {
     e.preventDefault();
     const input = (document.getElementById("lectureNameInput" + lID) as HTMLInputElement).value;
     postData("/api/course/" + cID + "/renameLecture/" + lID, { name: input }).then((res) => {
@@ -52,7 +52,7 @@ function saveLectureName(e: Event, cID: number, lID: number) {
     });
 }
 
-function showStats(id: number): void {
+export function showStats(id: number): void {
     if (document.getElementById("statsBox" + id).classList.contains("hidden")) {
         document.getElementById("statsBox" + id).classList.remove("hidden");
     } else {
@@ -60,19 +60,19 @@ function showStats(id: number): void {
     }
 }
 
-function focusNameInput(input: HTMLInputElement, id: number) {
+export function focusNameInput(input: HTMLInputElement, id: number) {
     input.oninput = function () {
         document.getElementById("nameSubmitBtn" + id).classList.remove("invisible");
     };
 }
 
-function focusDescriptionInput(input: HTMLInputElement, id: number) {
+export function focusDescriptionInput(input: HTMLInputElement, id: number) {
     input.oninput = function () {
         document.getElementById("descriptionSubmitBtn" + id).classList.remove("invisible");
     };
 }
 
-function toggleExtraInfos(btn: HTMLElement, id: number) {
+export function toggleExtraInfos(btn: HTMLElement, id: number) {
     btn.classList.add("transform", "transition", "duration-500", "ease-in-out");
     if (btn.classList.contains("rotate-180")) {
         btn.classList.remove("rotate-180");
@@ -83,7 +83,7 @@ function toggleExtraInfos(btn: HTMLElement, id: number) {
     }
 }
 
-function deleteLecture(cid: number, lid: number) {
+export function deleteLecture(cid: number, lid: number) {
     if (confirm("Confirm deleting video?")) {
         postData("/api/course/" + cid + "/deleteLecture/" + lid).then(() => {
             document.location.reload();
@@ -91,7 +91,7 @@ function deleteLecture(cid: number, lid: number) {
     }
 }
 
-function showHideUnits(id: number) {
+export function showHideUnits(id: number) {
     const container = document.getElementById("unitsContainer" + id);
     if (container.classList.contains("hidden")) {
         container.classList.remove("hidden");
@@ -100,7 +100,7 @@ function showHideUnits(id: number) {
     }
 }
 
-function createLectureForm() {
+export function createLectureForm() {
     return {
         formData: {
             title: "",

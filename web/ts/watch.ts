@@ -1,4 +1,4 @@
-class Watch {
+export class Watch {
     private chatInput: HTMLInputElement;
 
     constructor() {
@@ -19,7 +19,7 @@ let ws: WebSocket;
 let retryInt = 5000; //retry connecting to websocket after this timeout
 const pageloaded = new Date();
 
-function startWebsocket() {
+export function startWebsocket() {
     const streamid = (document.getElementById("streamID") as HTMLInputElement).value;
     ws = new WebSocket("ws://localhost:8081/api/chat/" + streamid + "/ws");
     const cf = document.getElementById("chatForm");
@@ -62,9 +62,7 @@ function startWebsocket() {
     };
 }
 
-startWebsocket();
-
-function createServerMessage(msg) {
+export function createServerMessage(msg) {
     const serverElem = document.createElement("div");
     switch (msg["type"]) {
         case "error":
@@ -85,7 +83,7 @@ function createServerMessage(msg) {
 /*
     while I'm not a fan of huge frontend frameworks, this is a good example why they can be useful.
      */
-function createMessageElement(m): HTMLDivElement {
+export function createMessageElement(m): HTMLDivElement {
     // Header:
     const chatElem = document.createElement("div") as HTMLDivElement;
     chatElem.classList.add("rounded", "p-2", "mx-2");
@@ -115,7 +113,7 @@ function createMessageElement(m): HTMLDivElement {
     return chatElem;
 }
 
-function submitChat(e: Event) {
+export function submitChat(e: Event) {
     e.preventDefault();
 
     const anonCheckbox: HTMLInputElement = document.getElementById("anonymous") as HTMLInputElement;
@@ -130,7 +128,7 @@ function submitChat(e: Event) {
     return false; //prevent form submission
 }
 
-class Timer {
+export class Timer {
     constructor(date: string) {
         const d = new Date(date);
         d.setMinutes(d.getMinutes() - 10);
@@ -178,5 +176,3 @@ class Timer {
         }, intervalMillis);
     }
 }
-
-new Watch();

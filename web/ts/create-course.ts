@@ -1,6 +1,6 @@
 import { postData, showMessage } from "./global";
 
-class CreateCourse {
+export class CreateCourse {
     private courseIDInput: HTMLInputElement;
     private loadFromTUMOnlineBtn: HTMLButtonElement;
     private courseNameInput: HTMLInputElement;
