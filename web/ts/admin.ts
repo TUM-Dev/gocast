@@ -29,7 +29,7 @@ function createUser() {
 
 function deleteUser(deletedUserID: number) {
     if (confirm("Confirm deleting user.")) {
-        postData("api/deleteUser", { id: deletedUserID }).then((data) => {
+        postData("/api/deleteUser", { id: deletedUserID }).then((data) => {
             if (data.status === 200) {
                 showMessage("User was deleted successfully.");
                 const row = document.getElementById("user" + deletedUserID);
