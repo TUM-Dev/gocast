@@ -2,7 +2,7 @@ import { postData, showMessage } from "./global";
 
 class Admin {}
 
-function createLectureHall() {
+export function createLectureHall() {
     postData("/api/createLectureHall", {
         name: (document.getElementById("newLectureHallName") as HTMLInputElement).value,
         combIP: (document.getElementById("newLectureHallCombIP") as HTMLInputElement).value,
@@ -15,7 +15,7 @@ function createLectureHall() {
     });
 }
 
-function createUser() {
+export function createUser() {
     const userName: string = (document.getElementById("name") as HTMLInputElement).value;
     const email: string = (document.getElementById("email") as HTMLInputElement).value;
     postData("/api/createUser", { name: userName, email: email, password: null }).then((data) => {
@@ -27,7 +27,7 @@ function createUser() {
     });
 }
 
-function deleteUser(deletedUserID: number) {
+export function deleteUser(deletedUserID: number) {
     if (confirm("Confirm deleting user.")) {
         postData("/api/deleteUser", { id: deletedUserID }).then((data) => {
             if (data.status === 200) {
