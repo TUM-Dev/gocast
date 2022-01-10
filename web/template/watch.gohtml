@@ -10,11 +10,13 @@
     <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
     <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
-    <script src="/static/assets/ts-dist/bundle.js"></script>
 </head>
+
 <body class="h-full overflow-hidden" x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}}"
       x-on:pausestart.window="paused=true"
-      x-on:pauseend.window="paused=false">{{template "header" .IndexData.TUMLiveContext}}
+      x-on:pauseend.window="paused=false"
+      x-init="new Watch()">
+{{template "header" .IndexData.TUMLiveContext}}
 <div id="watchPageMainWrapper" class="flex md:flex-row w-full flex-wrap">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
     <div id="watchWrapper"
@@ -108,7 +110,7 @@
                                     <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
                                          src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
                                          alt="prev" width="150px">
-                                    <i onclick="usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}})"
+                                    <i onclick="UI.usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}})"
                                        title="Switch to this preset"
                                        class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-exchange-alt cursor-pointer"></i>
                                 </div>
@@ -132,6 +134,7 @@
     </div>
     {{if $course.ChatEnabled}}
         <div id="chatWrapper"
+             x-init="UI.startWebsocket()"
              class="hidden md:flex flex-col w-full md:h-full border-t-2 mt-2 md:mt-0 md:border-t-0 md:dark:border-l dark:border-secondary dark:bg-secondary-lighter bg-gray-100 md:w-2/6 lg:w-1/6 text-1 pt-3">
             <div id="chatBox" class="overflow-scroll overflow-x-hidden overflow-y-scroll" style="flex: 2;">
                 {{range $chat := $stream.Chats}}
@@ -167,89 +170,18 @@
         </div>
     {{end}}
 </div>
-
-{{/*<script src="/static/node_modules/video.js/dist/video.min.js"></script>*/}}
-{{/*<script src="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.min.js"></script>*/}}
-{{/*<script src="/static/node_modules/videojs-contrib-quality-levels/dist/videojs-contrib-quality-levels.min.js"></script>*/}}
-{{/*<link rel="stylesheet" href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">*/}}
-{{/*<script src="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.min.js"></script>*/}}
+<script src="/static/assets/ts-dist/video.bundle.js"></script>
+<link rel="stylesheet" href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
 
 <script>
-    function loadScript(scriptUrl) {
-        const script = document.createElement('script');
-        script.src = scriptUrl;
-        document.body.appendChild(script);
-
-        return new Promise((res, rej) => {
-            script.onload = function () {
-                res();
-            }
-            script.onerror = function () {
-                rej();
-            }
-        });
-    }
-
-    // @ts-ignore
-    let player = videojs('my-video', {
-        {{if $stream.LiveNow}}liveui: true,{{end}}
-        fluid: true,
-        playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
-        html5: {
-            reloadSourceOnError: true,
-            vhs: {
-                overrideNative: !videojs.browser.IS_SAFARI,
-            },
-            nativeVideoTracks: false,
-            nativeAudioTracks: false,
-            nativeTextTracks: false
-        },
-        userActions: {
-            hotkeys: {}
-        },
-        //nativeControlsForTouch: true,
-    });
-    player.hlsQualitySelector();
-    player.play();
-    if (!{{$stream.LiveNow}}) {
-        player.seekButtons({
-            backIndex: 0,
-            forward: 15,
-            back: 15
-        });
-    }
-    //player.theaterMode({elementToToggle: 'my-video', className: 'theater-mode'});
-
-    // handle volume store:
-    player.on("volumechange", function () {
-        window.localStorage.setItem("volume", player.volume());
-        window.localStorage.setItem("muted", player.muted());
-    });
-
-    player.ready(function () {
-        const persistedVolume = window.localStorage.getItem("volume");
-        if (persistedVolume !== null) {
-            player.volume(persistedVolume);
-        }
-        const persistedMute = window.localStorage.getItem("muted");
-        if (persistedMute !== null) {
-            player.muted('true' === persistedMute);
-        }
-    });
-
+    UI.initPlayer();
     {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
-        UI.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
+    UI.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
     {{end}}
-
     {{if $stream.Silences}}
-        UI.skipSilence({{$stream.GetSilencesJson}});
+    UI.skipSilence({{$stream.GetSilencesJson}});
     {{end}}
-    {{/*loadScript("/static/assets/ts-dist/watch.js?v={{.IndexData.VersionTag}}")*/}}
-    {{/*    .then(() => {*/}}
-    {{/*        {{if not (or $stream.LiveNow $stream.Recording)}}*/}}
-    {{/*        new Timer({{$stream.Start}});*/}}
-    {{/*        {{end}}*/}}
-    {{/*    })*/}}
 </script>
+
 </body>
 </html>
