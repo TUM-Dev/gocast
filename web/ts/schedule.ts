@@ -1,10 +1,14 @@
 import { Get } from "./global";
+import { saveLectureName, saveLectureDescription } from "./edit-course";
+import { Calendar } from "@fullcalendar/core";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
 
 document.addEventListener("DOMContentLoaded", function () {
     const calendarEl = document.getElementById("calendar");
     // Init fullcallendar
-    // @ts-ignore
-    const calendar = new FullCalendar.Calendar(calendarEl, {
+    const calendar = new Calendar(calendarEl, {
+        plugins: [dayGridPlugin, timeGridPlugin],
         headerToolbar: { center: "timeGridDay,timeGridWeek" },
         initialView: "timeGridDay",
         nowIndicator: true,
