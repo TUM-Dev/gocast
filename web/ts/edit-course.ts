@@ -141,7 +141,3 @@ export function createLectureForm() {
         },
     };
 }
-
-window.onload = function () {
-    new EditCourse();
-};

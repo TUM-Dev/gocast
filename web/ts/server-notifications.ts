@@ -9,7 +9,3 @@ class ServerNotifications {
         });
     }
 }
-
-window.onload = function () {
-    new ServerNotifications();
-};

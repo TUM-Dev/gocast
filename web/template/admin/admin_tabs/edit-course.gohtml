@@ -4,8 +4,7 @@
     <script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
 
     {{$course := .IndexData.TUMLiveContext.Course}}
-
-    <div class="text-1 mt-4">
+    <div class="text-1 mt-4" x-init="new EditCourse();">
         <div class="min-w-screen flex items-center justify-center">
             <div class="w-full lg:w-5/6">
                 <h1 class="mb-4">{{$course.Name}}</h1>
