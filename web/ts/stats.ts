@@ -1,6 +1,4 @@
-import { StatusCodes } from "http-status-codes";
-import { Chart, registerables } from "chart.js";
-Chart.register(...registerables); // TODO: Tree shaking
+import Chart from "chart.js/auto";
 
 export function loadStats(endpoint: string, targetEl: string) {
     const canvas = <HTMLCanvasElement>document.getElementById(targetEl);
@@ -8,7 +6,7 @@ export function loadStats(endpoint: string, targetEl: string) {
     getAsync(
         `/api/course/${(document.getElementById("courseID") as HTMLInputElement).value}/stats?interval=${endpoint}`,
     ).then((res) => {
-        if (res.status === StatusCodes.OK) {
+        if (res.status === 200) {
             res.text().then((value) => {
                 new Chart(ctx, JSON.parse(value));
             });
@@ -22,7 +20,7 @@ export function initStatsPage() {
         getAsync(
             `/api/course/${(document.getElementById("courseID") as HTMLInputElement).value}/stats?interval=${endpoint}`,
         ).then((res) => {
-            if (res.status === StatusCodes.OK) {
+            if (res.status === 200) {
                 res.text().then((value) => {
                     document.getElementById(endpoint).innerHTML = `<span>${JSON.parse(value)["res"]}</span>`;
                 });
