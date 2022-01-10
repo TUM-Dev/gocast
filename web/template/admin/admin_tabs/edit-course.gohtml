@@ -1,8 +1,6 @@
 {{define "edit-course"}}
-    <script src="/static/node_modules/chart.js/dist/chart.min.js"></script>
     <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
-    <script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
-
+    <script src="/static/assets/ts-dist/index.bundle.js"></script>
     {{$course := .IndexData.TUMLiveContext.Course}}
     <div class="text-1 mt-4" x-init="new EditCourse();">
         <div class="min-w-screen flex items-center justify-center">
@@ -227,17 +225,17 @@
                         {{end}}
                         <li class="p-6 dark:hover:bg-primary hover:bg-white border-b-2 border-primary">
                             <form class="flex" method="post" action="/api/createLecture"
-                                  x-data="createLectureForm()"
-                                  @submit.prevent="submitData"
+                                  x-data="UI.createLectureForm()"
+                                  @submit.prevent="UI.submitData"
                                   x-init="courseID = {{$course.Model.ID}}">
                                 <div class="w-1/4">
                                     <div class="text-1 font-semibold">Create Lecture</div>
                                     <label>
-                                        <input type="checkbox" x-model="formData.premiere" class="w-auto">
+                                        <input type="checkbox" x-model="UI.formData.premiere" class="w-auto">
                                         <span class="text-3">Video Premiere</span>
                                     </label><br>
                                     <label>
-                                        <input type="checkbox" x-model="formData.vodup" class="w-auto">
+                                        <input type="checkbox" x-model="UI.formData.vodup" class="w-auto">
                                         <span class="text-3">VoD Upload</span>
                                     </label>
                                 </div>
