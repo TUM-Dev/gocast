@@ -9,7 +9,6 @@ class Watch {
             };
             window.addEventListener("resize", appHeight);
             appHeight();
-            document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
             this.chatInput = document.getElementById("chatInput") as HTMLInputElement;
         }
     }
@@ -139,11 +138,11 @@ function submitChat(e: Event) {
 }
 
 function showDisconnectMsg() {
-    document.getElementById("disconnectMsg").style.display = "block";
+    document.getElementById("disconnectMsg").classList.remove("hidden");
 }
 
 function hideDisconnectMsg() {
-    document.getElementById("disconnectMsg").style.display = "none";
+    document.getElementById("disconnectMsg").classList.add("hidden");
 }
 
 new Watch();
