@@ -2,7 +2,8 @@
 {{template "header" .IndexData.TUMLiveContext}}
 {{define "create-course"}}
     <script src="/static/assets/ts-dist/index.bundle.js"></script>
-    <div class="text-1 container mx-auto" x-data="{ semester: '', tumonlineid: '', slug: '', title: '' }">
+    <div class="text-1 container mx-auto" x-init="new UI.CreateCourse()"
+         x-data="{ semester: '', tumonlineid: '', slug: '', title: '' }">
         <div class="min-w-screen flex items-center justify-center">
             <div class="w-full lg:w-5/6 p-3 bg-gray-100 dark:bg-secondary rounded dark:border dark:border-gray-500 shadow">
                 <h1>Create a new course:</h1>
@@ -57,8 +58,5 @@
                 </form>
             </div>
         </div>
-        <script>
-            new UI.CreateCourse();
-        </script>
     </div>
 {{end}}
