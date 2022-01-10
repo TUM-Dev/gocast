@@ -8,11 +8,5 @@
     "moduleResolution": "node",
     "sourceRoot": "./ts/",
     "rootDir": "./ts/"
-  },
-  "include": [
-    "ts/*"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  }
 }
