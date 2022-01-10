@@ -1,7 +1,14 @@
 const path = require("path");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const BundleAnalyzerPlugin = require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
 
 module.exports = {
-    entry: "./ts/index.ts",
+    mode: "development",
+    watch: true,
+    entry: {
+        index: "./ts/index.ts",
+        video: "./ts/video.ts",
+    },
     module: {
         rules: [
             {
@@ -17,22 +24,16 @@ module.exports = {
                 },
             },
             {
-                test: require.resolve("fullcalendar"),
+                test: /\.css$/i,
                 use: [
-                    {
-                        loader: "script-loader",
-                        options: "fullcalendar/dist/fullcalendar.js",
-                    },
+                    "handlebars-loader", // handlebars loader expects raw resource string
+                    "extract-loader",
+                    "css-loader",
                 ],
             },
             {
-                test: require.resolve("fullcalendar-scheduler"),
-                use: [
-                    {
-                        loader: "script-loader",
-                        options: "fullcalendar/dist/fullcalendar-scheduler.js",
-                    },
-                ],
+                test: /\.css$/,
+                use: [{ loader: MiniCssExtractPlugin.loader }, { loader: "css-loader", options: { importLoaders: 1 } }],
             },
         ],
     },
@@ -40,7 +41,8 @@ module.exports = {
         extensions: [".tsx", ".ts", ".js"],
     },
     output: {
-        filename: "bundle.js",
+        filename: "[name].bundle.js",
+
         path: path.resolve(__dirname, "./assets/ts-dist"),
         library: {
             name: "UI",
@@ -49,5 +51,13 @@ module.exports = {
     },
     optimization: {
         minimize: false,
+        usedExports: true,
     },
+    plugins: [
+        // For fullcalendar
+        new MiniCssExtractPlugin({
+            filename: "main.css",
+        }),
+        // new BundleAnalyzerPlugin(),
+    ],
 };
