@@ -11,15 +11,6 @@
 {{$course := .IndexData.TUMLiveContext.Course}}
 <div class="container" style="height: calc(100vh - (5.75rem));"> <!-- 5.75 = nav height + padding -->
     <div class="mb-8 mt-3">
-        {{ range $lecture := $course.Streams }}
-            {{if $lecture.LiveNow}}
-                <div class="mb-3">
-                    <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}">
-                        <span class="bg-danger text-lg font-bold rounded text-white px-3 my-auto py-1">Live Now</span>
-                    </a>
-                </div>
-            {{end}}
-        {{end}}
         <h1 class="font-bold text-3xl dark:text-white my-auto">{{$course.Name}}</h1>
     </div>
     <div class="md:h-5/6 md:grid md:grid-rows-6 md:grid-cols-2 md:gap-4 m-auto">
@@ -28,7 +19,8 @@
              class="md:row-span-6 bg-white border dark:bg-secondary-lighter dark:border-gray-900 rounded-lg
                     shadow-sm h-full overflow-y-scroll">
 
-            <div class="flex justify-between sticky top-0 bg-white dark:bg-secondary-lighter py-4 px-3 border-b dark:border-gray-900">
+            <div class="flex justify-between sticky top-0 bg-white dark:bg-secondary-lighter py-4 px-3 border-b
+                dark:border-gray-900 mb-3">
                 <span class="bg-success rounded-full text-lg font-bold text-white px-5">VoD</span>
                 <button class="hover:bg-gray-200 dark:hover:bg-gray-900 rounded px-2 my-auto"
                         @click="asc = !asc;">
@@ -41,13 +33,39 @@
                 {{template "vod_course_list" .IndexData.TUMLiveContext}}
             </ul>
         </div>
-        <div class="bg-white border dark:bg-secondary-lighter dark:border-gray-900 rounded-lg shadow-sm
+        <div class="flex relative bg-white border dark:bg-secondary-lighter dark:border-gray-900 rounded-lg shadow-sm
                     py-3 px-5 mt-3 md:mt-0 md:row-span-1">
             {{$lecture := $course.GetNextLecture}}
-            <h1 class="text-3xl font-bold dark:text-white">
-                {{$next := $lecture.Start}} {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
-            </h1>
-            <span class="font-light text-sm dark:text-white">Next Livestream</span>
+            {{if $lecture.LiveNow}}
+                <span class="absolute -top-2 -right-2 flex h-6 w-6">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-700 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-6 w-6 bg-danger"></span>
+                </span>
+                <div class="my-auto">
+                    <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}">
+                        <h1 class="text-3xl font-bold dark:text-white"><i class="fas fa-angle-right"></i> Live Now!</h1>
+                    </a>
+                </div>
+            {{else if $lecture.IsComingUp}}
+                <span class="absolute -top-2 -right-2 flex h-6 w-6">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-6 w-6 bg-wait"></span>
+                </span>
+                <div class="my-auto">
+                    <h1 class="text-3xl font-bold dark:text-white">Live Soon!</h1>
+                    <a class="font-light text-sm dark:text-white" href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}">
+                        <i class="fas fa-angle-right"></i>
+                        <span>Join waiting room</span>
+                    </a>
+                </div>
+            {{else}}
+                <div class="my-auto">
+                    <h1 class="text-3xl font-bold dark:text-white">
+                        {{$next := $lecture.Start}} {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
+                    </h1>
+                    <span class="font-light text-sm dark:text-white">Next Livestream</span>
+                </div>
+            {{end}}
         </div>
         <div class="md:row-span-5">
             <div x-data="{showPlanned: false}"
