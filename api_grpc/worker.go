@@ -440,20 +440,23 @@ func NotifyWorkers() {
 }
 
 func getWorkerForStream(streamName string, workers []model.Worker) model.Worker {
-	foundWorker := 0
+	foundWorker := -1
 	for i := range workers {
 		if workers[i].Status == streamName {
 			foundWorker = i
 		}
 	}
+	if foundWorker == -1 {
+		log.Error("Unable to dial server")
+	}
 	return workers[foundWorker]
 }
 
 func NotifyWorkerToStopStream(stream model.Stream) {
-	//workers := dao.GetAliveWorkers()
-	//worker := getWorkerForStream(stream.StreamName, workers)
-
-	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", "localhost"), grpc.WithInsecure())
+	workers := dao.GetAliveWorkers()
+	worker := getWorkerForStream(stream.StreamName, workers)
+	credentials := insecure.NewCredentials()
+	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", worker.Host), grpc.WithTransportCredentials(credentials))
 	if err != nil {
 		log.WithError(err).Error("Unable to dial server")
 		_ = conn.Close()
