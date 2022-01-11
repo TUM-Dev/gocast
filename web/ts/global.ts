@@ -8,6 +8,12 @@ async function postData(url = "", data = {}) {
     });
 }
 
+async function Delete(url = "") {
+    return await fetch(url, {
+        method: "DELETE"
+    });
+}
+
 function Get(yourUrl) {
     const HttpReq = new XMLHttpRequest();
     HttpReq.open("GET", yourUrl, false);

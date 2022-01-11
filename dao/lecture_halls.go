@@ -45,6 +45,10 @@ func GetLectureHallByID(id uint) (model.LectureHall, error) {
 	return lectureHall, err
 }
 
+func DeleteLectureHall(id uint) error {
+	return DB.Delete(model.LectureHall{}, "id = ?", id).Error
+}
+
 func SaveLectureHallFullAssoc(lectureHall model.LectureHall) {
 	DB.Delete(model.CameraPreset{}, "lecture_hall_id = ?", lectureHall.ID)
 	DB.Clauses(clause.OnConflict{UpdateAll: true}).Session(&gorm.Session{FullSaveAssociations: true}).Updates(&lectureHall)
