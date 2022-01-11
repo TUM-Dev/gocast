@@ -2,7 +2,6 @@
     {{- /*gotype: TUM-Live/tools.TUMLiveContext*/ -}}
     {{$course := .Course}}
     {{$lastMonth := -1}}
-
     {{range $lecture := $course.Streams }}
         {{if or $lecture.IsPlanned $lecture.IsComingUp}}
             {{if ne $lecture.Start.Month $lastMonth}}
@@ -14,7 +13,8 @@
                     <div>
                         <div>
                             {{if $lecture.IsComingUp}}
-                                <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}" class="text-l text-3 dark:text-white text-black p-0">
+                                <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}"
+                                   class="text-l text-3 dark:text-white text-black p-0">
                                     {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
                                 </a>
                             {{else}}
@@ -24,7 +24,7 @@
                             {{end}}
                         </div>
                         <div>
-                            <span class = 'dark:text-gray-200 font-light text-sm'>
+                            <span class='dark:text-gray-200 font-light text-sm'>
                                 {{$lecture.FriendlyDate}} {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
                             </span>
                         </div>
