@@ -103,31 +103,34 @@
                     <h3 class="text-4 mb-2 font-bold">Stream actions</h3>
                     <a @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)" href="#"
                        :title="paused?'End Pause (Turns on video and audio)':'Pause lecture (Turns off video and audio)'"
-                       class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-700 rounded font-bold cursor-pointer mr-3 p-2 text-sm"
-                       x-text="paused?'Resume':'Pause'"></a><i x-show="paused" class="fas fa-stop-circle">
-                        <a href="?restart=1" title="Issues with the stream? Restart it."
-                           class="bg-indigo-500 inline-block text-center text-white w-24 font-bold hover:bg-indigo-700 rounded cursor-pointer p-2 mr-3 text-sm"><i
-                                    class="fas fa-redo"></i> Restart</a>
-                        <a @click="fetch(`/api/stream/${streamID}/end`)" href="#"
-                           title="Already finished? End the stream early."
-                           class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-700 font-bold rounded cursor-pointer p-2 text-sm"><i
-                                    class="fas fa-power-off"></i> Stop</a>
-
-                        <p class="text-4 my-3 font-bold">Presets</p>
-                        <div class="w-full overflow-x-scroll scrollbarThin">
-                            <div class="flex flex-row gap-x-2">
-                                {{range $preset := .Presets}}
-                                    <div style="min-width: 150px" class="text-center relative group">
-                                        <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
-                                             src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
-                                             alt="prev" width="150px">
-                                        <i onclick="usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}})"
-                                           title="Switch to this preset"
-                                           class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-exchange-alt cursor-pointer"></i>
-                                    </div>
-                                {{end}}
-                            </div>
+                       class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-700 rounded font-bold cursor-pointer mr-3 p-2 text-sm">
+                        <span x-show="!paused"><i class="fas fa-pause mr-1"></i>Pause</span>
+                        <span x-show="paused"><i class="fas fa-play mr-1"></i>Resume</span>
+                    </a>
+                    <a href="?restart=1" title="Issues with the stream? Restart it."
+                       class="bg-indigo-500 inline-block text-center text-white w-24 font-bold hover:bg-indigo-700 rounded cursor-pointer p-2 mr-3 text-sm">
+                        <i class="fas fa-redo mr-1"></i>Restart
+                    </a>
+                    <a @click="fetch(`/api/stream/${streamID}/end`)" href="#"
+                       title="Already finished? End the stream early."
+                       class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-700 font-bold rounded cursor-pointer p-2 text-sm">
+                        <i class="fas fa-power-off mr-1"></i>Stop
+                    </a>
+                    <p class="text-4 my-3 font-bold">Presets</p>
+                    <div class="w-full overflow-x-scroll scrollbarThin">
+                        <div class="flex flex-row gap-x-2">
+                            {{range $preset := .Presets}}
+                                <div style="min-width: 150px" class="text-center relative group">
+                                    <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
+                                         src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
+                                         alt="prev" width="150px">
+                                    <i onclick="usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}})"
+                                       title="Switch to this preset"
+                                       class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-exchange-alt cursor-pointer"></i>
+                                </div>
+                            {{end}}
                         </div>
+                    </div>
                 </div>
             {{end}}
             {{if $stream.Description}}
