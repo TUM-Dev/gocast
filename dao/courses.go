@@ -18,20 +18,13 @@ func GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model
 }
 
 // GetAllCourses retrieves all courses from the database
-// @limit bool true if streams should be limited to -1 month, +3 months
-func GetAllCourses(limit bool) ([]model.Course, error) {
+func GetAllCourses() ([]model.Course, error) {
 	cachedCourses, found := Cache.Get("allCourses")
 	if found {
 		return cachedCourses.([]model.Course), nil
 	}
 	var courses []model.Course
-	var err error
-	if !limit {
-		err = DB.Preload("Streams").Find(&courses).Error
-	} else {
-		// limit 3 months in the future and one month in the past
-		err = DB.Preload("Streams", "start BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) and DATE_ADD(NOW(), INTERVAL 3 MONTH)").Find(&courses).Error
-	}
+	err := DB.Preload("Streams").Find(&courses).Error
 	if err == nil {
 		Cache.SetWithTTL("allCourses", courses, 1, time.Minute)
 	}

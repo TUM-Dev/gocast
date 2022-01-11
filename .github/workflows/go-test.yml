@@ -1,0 +1,25 @@
+on:
+  push:
+    branches: [ dev ]
+  pull_request:
+    branches: [ dev ]
+name: go test
+jobs:
+  test:
+    strategy:
+      matrix:
+        go-version: [ 1.17.x ]
+        os: [ ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install modules
+        working-directory: ./web
+        run: npm ci
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: go test
+        run: go test ./...

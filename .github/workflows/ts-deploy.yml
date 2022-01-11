@@ -12,13 +12,17 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: 'Ack'
-        uses: actions/github-script@0.3.0
+        uses: actions/github-script@v5
         if: github.event_name == 'pull_request'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { issue: { number: issue_number }, repo: { owner, repo }  } = context;
-            github.issues.createComment({ issue_number, owner, repo, body: 'I\'ll build a container that will be deployed to the test server in a few minutes!' });
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'I\'ll build a container that will be deployed to the test server in a few minutes!'
+            })
       - name: remove label
         uses: actions-ecosystem/action-remove-labels@v1
         with:

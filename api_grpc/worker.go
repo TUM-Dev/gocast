@@ -13,6 +13,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live-Worker-v2/pb"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -102,6 +103,7 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 		UploadVoD:    course.VODEnabled,
 		IngestServer: ingestServer.Url,
 		StreamName:   slot.StreamName,
+		OutUrl:       ingestServer.OutUrl,
 	}, nil
 }
 
@@ -188,6 +190,11 @@ func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.S
 		worker.Workload = uint(request.Workload)
 		worker.LastSeen = time.Now()
 		worker.Status = strings.Join(request.Jobs, ", ")
+		worker.CPU = request.CPU
+		worker.Memory = request.Memory
+		worker.Disk = request.Disk
+		worker.Uptime = request.Uptime
+		worker.Version = request.Version
 		err := dao.SaveWorker(worker)
 		if err != nil {
 			return nil, err
@@ -407,10 +414,12 @@ func NotifyWorkers() {
 				CourseYear:    uint32(courseForStream.Year),
 				StreamName:    slot.StreamName,
 				IngestServer:  server.Url,
+				OutUrl:        server.OutUrl,
 			}
 			workerIndex := getWorkerWithLeastWorkload(workers)
 			workers[workerIndex].Workload += 3
-			conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithInsecure())
+			credentials := insecure.NewCredentials()
+			conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithTransportCredentials(credentials))
 			if err != nil {
 				log.WithError(err).Error("Unable to dial server")
 				workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
@@ -486,11 +495,19 @@ func notifyWorkersPremieres() {
 		}
 		workerIndex := getWorkerWithLeastWorkload(workers)
 		workers[workerIndex].Workload += 3
-		req := pb.PremiereRequest{
-			StreamID: uint32(streams[i].ID),
-			FilePath: streams[i].Files[0].Path,
+		ingestServer, err := dao.GetBestIngestServer()
+		if err != nil {
+			log.WithError(err).Error("Can't find ingest server")
+			continue
 		}
-		conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithInsecure())
+		req := pb.PremiereRequest{
+			StreamID:     uint32(streams[i].ID),
+			FilePath:     streams[i].Files[0].Path,
+			IngestServer: ingestServer.Url,
+			OutUrl:       ingestServer.OutUrl,
+		}
+		credentials := insecure.NewCredentials()
+		conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithTransportCredentials(credentials))
 		if err != nil {
 			log.WithError(err).Error("Unable to dial server")
 			_ = conn.Close()

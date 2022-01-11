@@ -1,9 +1,14 @@
 package dao
 
+import (
+	"TUM-Live/tools/timing"
+	"fmt"
+)
+
 //GetCourseNumStudents returns the number of students enrolled in the course
 func GetCourseNumStudents(courseID uint) (int64, error) {
 	var res int64
-	err := DB.Raw(`SELECT * FROM course_users WHERE course_id = ? OR ? = 0`, courseID, courseID).Count(&res).Error
+	err := DB.Table("course_users").Where("course_id = ? OR ? = 0", courseID, courseID).Count(&res).Error
 	return res, err
 }
 
@@ -66,16 +71,50 @@ func GetCourseStatsHourly(courseID uint) ([]Stat, error) {
 	return res, err
 }
 
+// GetStudentActivityCourseStats fetches statistics on the activity of the course specified by courseID
+// if courseID is 0, stats for all courses are fetched. live specifies whether to get live or vod stats.
 func GetStudentActivityCourseStats(courseID uint, live bool) ([]Stat, error) {
-	var res []Stat
-	err := DB.Raw(`SELECT DATE_FORMAT(stats.time, "%Y w%v") AS x, MAX(stats.viewers) AS y
+	var res []struct {
+		Year  uint
+		Week  uint
+		Count int
+	}
+	countMethod := "MAX" // livestream viewers are the peak viewers of a livestream
+	if !live {
+		countMethod = "SUM" // vod views are summed up
+	}
+	err := DB.Raw(`SELECT year(stats.time) AS year, week(stats.time) AS week, `+countMethod+`(stats.viewers) AS count
 		FROM stats
         	JOIN streams s ON s.id = stats.stream_id
 		WHERE (s.course_id = ? OR ? = 0) AND stats.live = ?
-		GROUP BY year(stats.time), week(stats.time)
-		ORDER BY stats.time;`,
+		GROUP BY year, week
+		ORDER BY year, week;`, //or ? = 0 -> if courseID is 0, all stats are selected
 		courseID, courseID, live).Scan(&res).Error
-	return res, err
+
+	var retVal []Stat
+	// fill gaps between weeks with 0 values
+	var lastWeek uint
+	var lastYear uint
+	for i, week := range res {
+		if i != 0 {
+			// Fill gaps between weeks within a year
+			if week.Week > lastWeek+1 && int(week.Week) != timing.GetWeeksInYear(int(week.Year)) {
+				for j := lastWeek + 1; j < week.Week; j++ {
+					retVal = append(retVal, Stat{X: fmt.Sprintf("%d %d", week.Year, j), Y: 0})
+				}
+			}
+			// fill gap until end of year
+			if lastYear != week.Year && int(lastWeek) != timing.GetWeeksInYear(int(lastYear)) {
+				for j := lastWeek + 1; int(j) <= timing.GetWeeksInYear(int(lastYear)); j++ {
+					retVal = append(retVal, Stat{X: fmt.Sprintf("%d %d", lastYear, j), Y: 0})
+				}
+			}
+		}
+		retVal = append(retVal, Stat{X: fmt.Sprintf("%d %02d", week.Year, week.Week), Y: week.Count})
+		lastWeek = week.Week
+		lastYear = week.Year
+	}
+	return retVal, err
 }
 
 //Stat key value struct that is parsable by Chart.js without further modifications.
