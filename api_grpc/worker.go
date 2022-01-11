@@ -443,7 +443,7 @@ func NotifyWorkers() {
 // getStreamName returns the stream name for the worker status
 func getStreamNamePrefix(courseSlug string, stream model.Stream) string {
 	if !stream.IsSelfStream() {
-		return fmt.Sprintf("%s-%s",
+		return "streaming " + fmt.Sprintf("%s-%s",
 			courseSlug,
 			stream.Start.Format("2006-01-02-15-04"),
 		)
