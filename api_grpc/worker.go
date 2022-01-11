@@ -177,6 +177,7 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 		if err != nil {
 			log.WithError(err).Error("Can't set stream not live")
 		}
+		// TODO: Resolve cyclic dependency
 		//api.NotifyViewersLiveState(uint(request.StreamID), false)
 	}
 	return &pb.Status{Ok: true}, nil
@@ -439,28 +440,38 @@ func NotifyWorkers() {
 	}
 }
 
-func getWorkerForStream(streamName string, workers []model.Worker) model.Worker {
-	foundWorker := -1
-	for i := range workers {
-		if workers[i].Status == streamName {
-			foundWorker = i
-		}
+// getStreamName returns the stream name for the worker status
+func getStreamNamePrefix(courseSlug string, stream model.Stream) string {
+	if !stream.IsSelfStream() {
+		return fmt.Sprintf("%s-%s",
+			courseSlug,
+			stream.Start.Format("2006-01-02-15-04"),
+		)
 	}
-	if foundWorker == -1 {
-		log.Error("Unable to dial server")
-	}
-	return workers[foundWorker]
+	return courseSlug
 }
 
-func NotifyWorkerToStopStream(stream model.Stream) {
+func NotifyWorkerToStopStream(course model.Course, stream model.Stream) {
 	workers := dao.GetAliveWorkers()
-	worker := getWorkerForStream(stream.StreamName, workers)
+	log.Error("Worker Count:" + fmt.Sprintf("%d", len(workers)))
+
+	workerIndex := -1
+	for i := range workers {
+		if strings.HasPrefix(workers[i].Status, getStreamNamePrefix(course.Slug, stream)) {
+			workerIndex = i
+		}
+	}
+	if workerIndex == -1 {
+		log.Error("No worker found")
+		return
+	}
+	workerForStream := workers[workerIndex]
 	credentials := insecure.NewCredentials()
-	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", worker.Host), grpc.WithTransportCredentials(credentials))
+	log.Error("Connecting to:" + fmt.Sprintf("%s:50051", workerForStream.Host))
+	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workerForStream.Host), grpc.WithTransportCredentials(credentials))
 	if err != nil {
 		log.WithError(err).Error("Unable to dial server")
 		_ = conn.Close()
-		//worker.Workload -= 1
 		return
 	}
 
@@ -471,11 +482,9 @@ func NotifyWorkerToStopStream(stream model.Stream) {
 		WorkerID:   string(rune(0)), //worker.WorkerID,
 		StreamName: stream.StreamName,
 	}
-
 	resp, err := client.RequestStreamEnd(context.Background(), &req)
 	if err != nil || !resp.Ok {
-		log.WithError(err).Error("could not end stream!")
-		//worker.Workload -= 1
+		log.WithError(err).Error("Could not end stream!")
 		_ = conn.Close()
 		return
 	}

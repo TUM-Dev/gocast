@@ -33,8 +33,8 @@ func endStream(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	stream := tumLiveContext.Stream
-	api_grpc.NotifyWorkerToStopStream(*stream)
+
+	api_grpc.NotifyWorkerToStopStream(*tumLiveContext.Course, *tumLiveContext.Stream)
 }
 
 func pauseStream(c *gin.Context) {
