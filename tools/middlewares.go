@@ -168,16 +168,6 @@ func Admin(c *gin.Context) {
 	}
 }
 
-func Worker(c *gin.Context) {
-	if wid := c.Param("workerID"); wid != "" {
-		_, err := dao.GetWorkerByID(c, wid)
-		if err == nil {
-			return
-		}
-	}
-	c.AbortWithStatus(http.StatusForbidden)
-}
-
 type TUMLiveContext struct {
 	User   *model.User
 	Course *model.Course
