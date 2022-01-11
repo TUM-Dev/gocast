@@ -10,7 +10,7 @@ async function postData(url = "", data = {}) {
 
 async function Delete(url = "") {
     return await fetch(url, {
-        method: "DELETE"
+        method: "DELETE",
     });
 }
 
