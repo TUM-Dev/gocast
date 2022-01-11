@@ -18,8 +18,12 @@ async function createLectureHall(
 
 async function deleteLectureHall(lectureHallID: number) {
     if (confirm("Do you really want to remove this lecture hall?")) {
-        await Delete("/api/lectureHall/" + lectureHallID);
-        document.location.reload();
+        try {
+            await Delete("/api/lectureHall/" + lectureHallID);
+            document.location.reload();
+        } catch (e) {
+            alert("Something went wrong while deleting!");
+        }
     }
 }
 

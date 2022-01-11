@@ -46,7 +46,7 @@ func GetLectureHallByID(id uint) (model.LectureHall, error) {
 }
 
 func DeleteLectureHall(id uint) error {
-	return DB.Delete(model.LectureHall{}, "id = ?", id).Error
+	return DB.Delete(&model.LectureHall{}, id).Error
 }
 
 func SaveLectureHallFullAssoc(lectureHall model.LectureHall) {

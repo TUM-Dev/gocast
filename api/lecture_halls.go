@@ -84,13 +84,18 @@ func updateLectureHall(c *gin.Context) {
 }
 
 func deleteLectureHall(c *gin.Context) {
-	lhIDStr := c.Param("lectureHallID")
+	lhIDStr := c.Param("id")
 	lhID, err := strconv.Atoi(lhIDStr)
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	dao.DeleteLectureHall(uint(lhID))
+
+	err = dao.DeleteLectureHall(uint(lhID))
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
 }
 
 func refreshLectureHallPresets(c *gin.Context) {
