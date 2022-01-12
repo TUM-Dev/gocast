@@ -1,4 +1,5 @@
 import { postData, showMessage } from "./global";
+import { StatusCodes } from "http-status-codes";
 
 class Admin {}
 
@@ -9,7 +10,7 @@ export function createLectureHall() {
         presIP: (document.getElementById("newLectureHallPresIP") as HTMLInputElement).value,
         camIP: (document.getElementById("newLectureHallCamIP") as HTMLInputElement).value,
     }).then((e) => {
-        if (e.status === 200) {
+        if (e.status === StatusCodes.OK) {
             window.location.reload();
         }
     });
@@ -19,7 +20,7 @@ export function createUser() {
     const userName: string = (document.getElementById("name") as HTMLInputElement).value;
     const email: string = (document.getElementById("email") as HTMLInputElement).value;
     postData("/api/createUser", { name: userName, email: email, password: null }).then((data) => {
-        if (data.status === 200) {
+        if (data.status === StatusCodes.OK) {
             showMessage("User was created successfully. Reload to see them.");
         } else {
             showMessage("There was an error creating the user: " + data.body);
@@ -30,7 +31,7 @@ export function createUser() {
 export function deleteUser(deletedUserID: number) {
     if (confirm("Confirm deleting user.")) {
         postData("/api/deleteUser", { id: deletedUserID }).then((data) => {
-            if (data.status === 200) {
+            if (data.status === StatusCodes.OK) {
                 showMessage("User was deleted successfully.");
                 const row = document.getElementById("user" + deletedUserID);
                 row.parentElement.removeChild(row);

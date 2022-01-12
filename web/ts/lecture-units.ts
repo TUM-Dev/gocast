@@ -1,6 +1,7 @@
 import { postData } from "./global";
 import videojs from "video.js";
 import noUiSlider from "nouislider";
+import { StatusCodes } from "http-status-codes";
 
 let slider;
 let player;
@@ -58,7 +59,7 @@ export function submitNewUnit(lectureID: number) {
         title: title,
         description: description,
     }).then((data) => {
-        if (data.status == 200) {
+        if (data.status == StatusCodes.OK) {
             window.location.reload();
         } else {
             data.text().then((text) => {
@@ -77,7 +78,7 @@ export function submitCut(lectureID: number, courseID: number) {
         from: from,
         to: to,
     }).then((data) => {
-        if (data.status == 200) {
+        if (data.status == StatusCodes.OK) {
             window.location.replace("/admin/course/" + courseID);
         } else {
             data.text().then((text) => {
@@ -90,7 +91,7 @@ export function submitCut(lectureID: number, courseID: number) {
 
 export function deleteUnit(unitID: number) {
     postData("/api/deleteUnit/" + unitID).then((r) => {
-        if (r.status == 200) {
+        if (r.status == StatusCodes.OK) {
             window.location.reload();
         }
     });

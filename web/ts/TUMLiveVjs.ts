@@ -1,5 +1,6 @@
 import videojs from "video.js";
 import { postData } from "./global";
+import { StatusCodes } from "http-status-codes";
 
 require("videojs-seek-buttons");
 require("videojs-hls-quality-selector");
@@ -221,7 +222,7 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
                 streamID: streamID,
                 progress: progress,
             }).then((r) => {
-                if (r.status !== 200) {
+                if (r.status !== StatusCodes.OK) {
                     console.log(r);
                     intervalMillis *= 2; // Binary exponential backoff for load balancing
                 }

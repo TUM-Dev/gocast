@@ -1,5 +1,6 @@
 import { loadStats } from "./stats";
 import { postData, showMessage } from "./global";
+import { StatusCodes } from "http-status-codes";
 
 export class EditCourse {
     constructor() {
@@ -22,7 +23,7 @@ export async function saveLectureHall(lectureID: number) {
             (document.getElementById("lectureHallSelector" + lectureID) as HTMLSelectElement).selectedOptions[0].value,
         ),
     }).then((res) => {
-        if (res.status === 200) {
+        if (res.status === StatusCodes.OK) {
             document.getElementById("applyLectureHall" + lectureID).classList.add("hidden");
         }
     });
@@ -32,7 +33,7 @@ export function saveLectureDescription(e: Event, cID: number, lID: number) {
     e.preventDefault();
     const input = (document.getElementById("lectureDescriptionInput" + lID) as HTMLInputElement).value;
     postData("/api/course/" + cID + "/updateDescription/" + lID, { name: input }).then((res) => {
-        if (res.status == 200) {
+        if (res.status == StatusCodes.OK) {
             document.getElementById("descriptionSubmitBtn" + lID).classList.add("invisible");
         } else {
             res.text().then((t) => showMessage(t));
@@ -44,7 +45,7 @@ export function saveLectureName(e: Event, cID: number, lID: number) {
     e.preventDefault();
     const input = (document.getElementById("lectureNameInput" + lID) as HTMLInputElement).value;
     postData("/api/course/" + cID + "/renameLecture/" + lID, { name: input }).then((res) => {
-        if (res.status == 200) {
+        if (res.status == StatusCodes.OK) {
             document.getElementById("nameSubmitBtn" + lID).classList.add("invisible");
         } else {
             res.text().then((t) => showMessage(t));

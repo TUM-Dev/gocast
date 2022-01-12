@@ -1,4 +1,5 @@
 import { postData, showMessage } from "./global";
+import { StatusCodes } from "http-status-codes";
 
 export class CreateCourse {
     private courseIDInput: HTMLInputElement;
@@ -30,7 +31,7 @@ export class CreateCourse {
             return;
         }
         postData("/api/courseInfo", { courseID: this.courseIDInput.value }).then((data) => {
-            if (data.status != 200) {
+            if (data.status != StatusCodes.OK) {
                 showMessage(
                     "The course with this ID was not found in TUMOnline. Please verify the ID or reach out to us.",
                 );
@@ -61,7 +62,7 @@ export class CreateCourse {
             enDL: f.get("enDL") === "on",
             enChat: f.get("enChat") === "on",
         }).then((data) => {
-            if (data.status != 200) {
+            if (data.status != StatusCodes.OK) {
                 data.text().then((t) => showMessage(t));
             } else {
                 window.location.href = "/admin";
