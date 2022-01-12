@@ -26,6 +26,8 @@ import (
 	"time"
 )
 
+var workersForStream = make(map[uint][]model.Worker)
+
 var mutex = sync.Mutex{}
 
 type server struct {
@@ -419,6 +421,7 @@ func NotifyWorkers() {
 			}
 			workerIndex := getWorkerWithLeastWorkload(workers)
 			workers[workerIndex].Workload += 3
+			workersForStream[streams[i].ID] = append(workersForStream[streams[i].ID], workers[workerIndex])
 			credentials := insecure.NewCredentials()
 			conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithTransportCredentials(credentials))
 			if err != nil {
@@ -440,55 +443,47 @@ func NotifyWorkers() {
 	}
 }
 
-// getStreamName returns the stream name for the worker status
-func getStreamNamePrefix(courseSlug string, stream model.Stream) string {
-	if !stream.IsSelfStream() {
-		return "streaming " + fmt.Sprintf("%s-%s",
-			courseSlug,
-			stream.Start.Format("2006-01-02-15-04"),
-		)
+func NotifyWorkerToStopStream(stream model.Stream) {
+	workers := workersForStream[stream.ID]
+	if len(workers) == 0 {
+		log.Error("Can't get lecture hall for stream")
+		return
 	}
-	return courseSlug
-}
 
-func NotifyWorkerToStopStream(course model.Course, stream model.Stream) {
-	workers := dao.GetAliveWorkers()
-	log.Error("Worker Count:" + fmt.Sprintf("%d", len(workers)))
+	// Iterate over all workers that are used for the given stream
+	for _, currentWorker := range workers {
+		credentials := insecure.NewCredentials()
 
-	workerIndex := -1
-	for i := range workers {
-		if strings.HasPrefix(workers[i].Status, getStreamNamePrefix(course.Slug, stream)) {
-			workerIndex = i
+		// Connect to the worker and tell it to end the stream
+		log.Error("Connecting to:" + fmt.Sprintf("%s:50051", currentWorker.Host))
+		conn, err := grpc.Dial(fmt.Sprintf("%s:50051", currentWorker.Host), grpc.WithTransportCredentials(credentials))
+		if err != nil {
+			log.WithError(err).Error("Unable to dial server")
+			_ = conn.Close()
+			return
 		}
-	}
-	if workerIndex == -1 {
-		log.Error("No worker found")
-		return
-	}
-	workerForStream := workers[workerIndex]
-	credentials := insecure.NewCredentials()
-	log.Error("Connecting to:" + fmt.Sprintf("%s:50051", workerForStream.Host))
-	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workerForStream.Host), grpc.WithTransportCredentials(credentials))
-	if err != nil {
-		log.WithError(err).Error("Unable to dial server")
-		_ = conn.Close()
-		return
-	}
 
-	client := pb.NewToWorkerClient(conn)
+		client := pb.NewToWorkerClient(conn)
 
-	req := pb.EndStreamRequest{
-		StreamID:   uint32(stream.ID),
-		WorkerID:   string(rune(0)), //worker.WorkerID,
-		StreamName: stream.StreamName,
-	}
-	resp, err := client.RequestStreamEnd(context.Background(), &req)
-	if err != nil || !resp.Ok {
-		log.WithError(err).Error("Could not end stream!")
+		req := pb.EndStreamRequest{
+			StreamID: uint32(stream.ID),
+			WorkerID: string(rune(0)),
+		}
+		resp, err := client.RequestStreamEnd(context.Background(), &req)
+
+		// Was ending the stream successful?
+		if err != nil || !resp.Ok {
+			log.WithError(err).Error("Could not end stream!")
+			_ = conn.Close()
+			return
+		}
+
 		_ = conn.Close()
-		return
+
 	}
-	_ = conn.Close()
+	// All workers for stream are assumed to done
+	// TODO: Remove individual workers in NotifyStreamFinished?
+	workersForStream[stream.ID] = []model.Worker{}
 }
 
 //notifyWorkersPremieres looks for premieres that should be streamed and assigns them to workers.
