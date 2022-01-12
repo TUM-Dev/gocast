@@ -9,7 +9,6 @@ class Watch {
             };
             window.addEventListener("resize", appHeight);
             appHeight();
-            document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
             this.chatInput = document.getElementById("chatInput") as HTMLInputElement;
         }
     }
@@ -26,6 +25,10 @@ function startWebsocket() {
     if (cf !== null && cf != undefined) {
         (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", (e) => submitChat(e));
     }
+    ws.onopen = function (e) {
+        hideDisconnectedMsg();
+    };
+
     ws.onmessage = function (m) {
         const data = JSON.parse(m.data);
         if ("viewers" in data && document.getElementById("viewerCount") != null) {
@@ -56,9 +59,14 @@ function startWebsocket() {
         if (new Date().valueOf() - pageloaded.valueOf() > 1000 * 60 * 60 * 12) {
             return;
         }
+        showDisconnectedMsg();
         ws = null;
         retryInt *= 2; // exponential backoff
         setTimeout(startWebsocket, retryInt);
+    };
+
+    ws.onerror = function (err) {
+        showDisconnectedMsg();
     };
 }
 
@@ -127,6 +135,14 @@ function submitChat(e: Event) {
     );
     this.chatInput.value = "";
     return false; //prevent form submission
+}
+
+function showDisconnectedMsg() {
+    document.getElementById("disconnectMsg").classList.remove("hidden");
+}
+
+function hideDisconnectedMsg() {
+    document.getElementById("disconnectMsg").classList.add("hidden");
 }
 
 new Watch();
