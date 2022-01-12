@@ -467,7 +467,7 @@ func NotifyWorkerToStopStream(stream model.Stream) {
 
 		req := pb.EndStreamRequest{
 			StreamID: uint32(stream.ID),
-			WorkerID: string(rune(0)),
+			WorkerID: currentWorker.WorkerID,
 		}
 		resp, err := client.RequestStreamEnd(context.Background(), &req)
 
