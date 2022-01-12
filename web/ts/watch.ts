@@ -1,6 +1,5 @@
+let chatInput;
 export class Watch {
-    private chatInput: HTMLInputElement;
-
     constructor() {
         if (document.getElementById("chatForm") != null) {
             const appHeight = () => {
@@ -10,7 +9,7 @@ export class Watch {
             window.addEventListener("resize", appHeight);
             appHeight();
             document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
-            this.chatInput = document.getElementById("chatInput") as HTMLInputElement;
+            chatInput = document.getElementById("chatInput") as HTMLInputElement;
         }
     }
 }
@@ -119,12 +118,12 @@ export function submitChat(e: Event) {
     const anonCheckbox: HTMLInputElement = document.getElementById("anonymous") as HTMLInputElement;
     ws.send(
         JSON.stringify({
-            msg: this.chatInput.value,
+            msg: chatInput.value,
             anonymous: anonCheckbox ? anonCheckbox.checked : false,
         }),
     );
 
-    this.chatInput.value = "";
+    chatInput.value = "";
     return false; //prevent form submission
 }
 
