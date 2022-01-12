@@ -1,5 +1,5 @@
 // Package api_grpc handles communication with workers
-package api_grpc
+package api
 
 import (
 	"TUM-Live/dao"

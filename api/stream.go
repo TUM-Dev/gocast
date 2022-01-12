@@ -1,7 +1,6 @@
 package api
 
 import (
-	"TUM-Live/api_grpc"
 	"TUM-Live/dao"
 	"TUM-Live/tools"
 	"errors"
@@ -34,7 +33,7 @@ func endStream(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 
-	api_grpc.NotifyWorkerToStopStream(*tumLiveContext.Stream)
+	NotifyWorkerToStopStream(*tumLiveContext.Stream)
 }
 
 func pauseStream(c *gin.Context) {
