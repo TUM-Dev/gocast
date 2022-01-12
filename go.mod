@@ -22,7 +22,8 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/gorilla/sessions v1.2.1 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
-	github.com/joschahenningsen/TUM-Live-Worker-v2 v0.0.0-20220109083144-4bdf47969afb
+	github.com/jinzhu/now v1.1.4
+	github.com/joschahenningsen/TUM-Live-Worker-v2 v0.0.0-20220110081459-37f1761287ed
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.17
@@ -34,11 +35,11 @@ require (
 	github.com/spf13/viper v1.10.1
 	golang.org/x/crypto v0.0.0-20211108221036-ceb1ce70b4fa
 	golang.org/x/net v0.0.0-20211008194852-3b03d305991f // indirect
-	google.golang.org/genproto v0.0.0-20211223182754-3ac035c7e7cb // indirect
+	google.golang.org/genproto v0.0.0-20220107163113-42d7afdf6368 // indirect
 	google.golang.org/grpc v1.43.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gorm.io/driver/mysql v1.2.2
+	gorm.io/driver/mysql v1.2.3
 	gorm.io/gorm v1.22.4
 )
 
@@ -58,7 +59,6 @@ require (
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.4 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
