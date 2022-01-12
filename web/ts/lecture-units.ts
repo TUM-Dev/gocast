@@ -38,7 +38,6 @@ export const initLecturePlayer = function () {
         });
 
         const tooltipInputs = [makeTT(0, slider), makeTT(1, slider)];
-        // @ts-ignore
         slider.noUiSlider.on("update", function (values, handle) {
             tooltipInputs[handle].value = values[handle];
             player.currentTime(timeToS(values[handle]));
