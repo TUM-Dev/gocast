@@ -32,7 +32,7 @@
             </div>
             <div class="p-4 bg-indigo-700 bg-opacity-20 border-t-4 border-indigo-700 w-full font-semibold text-2 rounded-t display-none"
                  x-show="!live" x-cloak>
-                <i class="fas fa-info-circle"></i> This lecture is currently not live anymore.
+                <i class="fas fa-info-circle"></i> This lecture is currently not live.
             </div>
             <video
                     id="my-video"
@@ -120,7 +120,7 @@
             </div>
             <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                 <span class="text-5 hover:text-1 hover:underline text-lg">{{$course.Name}}</span></a>
-            {{if and .IsAdminOfCourse (or $stream.LectureHallID $stream.LiveNow)}}
+            {{if and .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
                 <div class="border-t-2 border-secondary p-4">
                     <h3 class="text-4 mb-2 font-bold">Stream actions</h3>
                     <a @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)" href="#"

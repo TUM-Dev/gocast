@@ -10,37 +10,37 @@
         <p class="text-5 font-sans font-light text-sm">
             {{/*Order of conditions is important*/}}
             {{if .IsLive}}
-            Live now.
+                Live now.
             {{else if .HasNextLecture}}
-            {{if .IsNextLectureStartingSoon}}
-            {{if .NextLectureHasReachedTimeSlot}}
-            {{/* Avoid scripts when possible */}}
-            Starting soon
+                {{if .IsNextLectureStartingSoon}}
+                    {{if .NextLectureHasReachedTimeSlot}}
+                        {{/* Avoid scripts when possible */}}
+                        Starting soon
+                    {{else}}
+                        <div class="text-5 font-sans font-light text-sm"
+                            x-data="timer('{{.GetNextLectureDateFormatted}}', false)"
+                            x-init="init();">
+                            <template x-if="time().minutes < 1">
+                                <span>Starting soon</span>
+                            </template>
+                            <template x-if="time().minutes == 1">
+                                <span>Starting in <span class="tabular-nums" x-text="time().minutes"></span> Minute</span>
+                            </template>
+                            <template x-if="time().minutes > 1">
+                                <span>Starting in <span class="tabular-nums" x-text="time().minutes"></span> Minutes</span>
+                            </template>
+                        </div>
+                    {{end}}
+                    <a class="text-5 font-sans text-sm ml-1" href="/w/{{.Slug}}/{{.GetNextLecture.Model.ID}}">
+                        <i class="fas fa-angle-right"></i>
+                        <span class="underline">Join waiting room</span>
+                    </a>
+                {{else}}
+                    {{$next := .GetNextLecture.Start}}Next lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
+                {{end}}
             {{else}}
-        <div class="text-5 font-sans font-light text-sm"
-             x-data="timer('{{.GetNextLectureDateFormatted}}', false)"
-             x-init="init();">
-            <template x-if="time().minutes < 1">
-                <span>Starting soon</span>
-            </template>
-            <template x-if="time().minutes == 1">
-                <span>Starting in <span class="tabular-nums" x-text="time().minutes"></span> Minute</span>
-            </template>
-            <template x-if="time().minutes > 1">
-                <span>Starting in <span class="tabular-nums" x-text="time().minutes"></span> Minutes</span>
-            </template>
-        </div>
-        {{end}}
-        <a class="text-5 font-sans text-sm ml-1" href="/w/{{.Slug}}/{{.GetNextLecture.Model.ID}}">
-            <i class="fas fa-angle-right"></i>
-            <span class="underline">Join waiting room</span>
-        </a>
-        {{else}}
-            {{$next := .GetNextLecture.Start}}Next lecture: {{printf "%v %02d. %02d:%02d" $next.Month $next.Day $next.Hour $next.Minute}}
-        {{end}}
-        {{else}}
-            No upcoming Lectures
-        {{end}}
+                No upcoming Lectures
+            {{end}}
         </p>
     </div>
 </div>

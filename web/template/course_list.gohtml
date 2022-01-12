@@ -11,15 +11,15 @@
             {{end}}
             <li class="pl-4 p-2">
                 <div class="flex justify-between">
-                    {{if or (or $lecture.LiveNow $lecture.Recording) $lecture.IsComingUp}}
-                        <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}" class="text-l text-3 p-0">
-                            {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
-                        </a>
-                    {{else}}
-                        <h3 class="text-l text-3 p-0">
-                            {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
-                        </h3>
-                    {{end}}
+               {{if or (or $lecture.LiveNow $lecture.Recording) $lecture.IsComingUp}}
+                   <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}" class="text-l text-3 p-0">
+                       {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
+                   </a>
+               {{else}}
+                   <h3 class="text-l text-3 p-0">
+                       {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
+                   </h3>
+               {{end}}
                     <div class="flex text-gray-400 space-x-2">
                         {{if (and $course.DownloadsEnabled $lecture.FilePath) }}
                             <a class="flex"

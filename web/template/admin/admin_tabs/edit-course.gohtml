@@ -72,8 +72,7 @@
                     <h2>Lectures</h2>
                     <div class="flex justify-between mt-2 mb-2">
                         <div>
-                            <button @click="deleteLectures({{$course.Model.ID}}, selectedLectures)"
-                                    :disabled="selectedLectures.length == 0" class="btn">
+                            <button @click="deleteLectures({{$course.Model.ID}}, selectedLectures)" :disabled="selectedLectures.length == 0" class="btn">
                                 Delete
                                 <b x-text="selectedLectures.length.toString()"></b>
                                 <span x-text="selectedLectures.length == 1 ? 'Lecture' : 'Lectures'"></span>
@@ -100,8 +99,7 @@
                                 <div class="flex">
                                     <div class="w-1/4">
                                         <div class="text-3 font-semibold">
-                                            <input @change="$event.target.checked ? selectedLectures.push({{$lecture.Model.ID}}) : (selectedLectures = selectedLectures.filter(x => x != {{$lecture.Model.ID}}))"
-                                                   class="w-auto mr-2" type="checkbox"/>
+                                            <input @change="$event.target.checked ? selectedLectures.push({{$lecture.Model.ID}}) : (selectedLectures = selectedLectures.filter(x => x != {{$lecture.Model.ID}}))" class="w-auto mr-2" type="checkbox" />
                                             {{$lecture.Start.Weekday}} {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
                                             <i class="fas fa-trash hover:text-1 px-2"
                                                title="Delete Lecture"
