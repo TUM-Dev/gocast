@@ -277,3 +277,10 @@ a.fc-event, a.fc-event:hover {
 [x-cloak] {
     display: none !important;
 }
+
+/* copy of Tailwind's .truncate, but apply to all children */
+.truncate-children > *{
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

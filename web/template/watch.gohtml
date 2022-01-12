@@ -147,7 +147,7 @@
                 {{$isMinLen := gt (len $stream.Description) 128}}
                 <div x-data="{less: {{$isMinLen}}}" class="text-3 p-4 border-t-2 border-secondary video-description">
                     <span class="font-semibold">Video Description:</span>
-                    <p :class="less && 'truncate'">{{$stream.Description}}</p>
+                    <div :class="less && 'truncate-children'">{{.Description}}</div>
                     <template x-if="{{$isMinLen}}">
                         <button class='text-xs text-gray-500 dark:text-gray-400 uppercase mt-2'
                                 @click="less = !less" x-text="less ? 'show more' : 'show less'">show less

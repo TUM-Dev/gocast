@@ -26,7 +26,7 @@ function startWebsocket() {
         (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", (e) => submitChat(e));
     }
     ws.onopen = function (e) {
-        hideDisconnectMsg();
+        hideDisconnectedMsg();
     };
 
     ws.onmessage = function (m) {
@@ -59,14 +59,14 @@ function startWebsocket() {
         if (new Date().valueOf() - pageloaded.valueOf() > 1000 * 60 * 60 * 12) {
             return;
         }
-        showDisconnectMsg();
+        showDisconnectedMsg();
         ws = null;
         retryInt *= 2; // exponential backoff
         setTimeout(startWebsocket, retryInt);
     };
 
     ws.onerror = function (err) {
-        showDisconnectMsg();
+        showDisconnectedMsg();
     };
 }
 
@@ -137,11 +137,11 @@ function submitChat(e: Event) {
     return false; //prevent form submission
 }
 
-function showDisconnectMsg() {
+function showDisconnectedMsg() {
     document.getElementById("disconnectMsg").classList.remove("hidden");
 }
 
-function hideDisconnectMsg() {
+function hideDisconnectedMsg() {
     document.getElementById("disconnectMsg").classList.add("hidden");
 }
 
