@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Setup</title>
     {{template "headImports"}}
+    <script src="/static/assets/ts-dist/index.bundle.js"></script>
 </head>
-<body class="bg-primary">
+<body class="bg-primary" x-init="UI.initElements()">
 
 {{template "header"}}
 
@@ -39,9 +40,7 @@
                 Finish Setup
             </button>
         </form>
-
     </div>
 </div>
 </body>
-<script src="/static/assets/ts-dist/index.bundle.js"></script>
 </html>
