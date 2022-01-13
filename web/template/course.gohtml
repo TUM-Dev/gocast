@@ -9,15 +9,16 @@
 {{- /*gotype: TUM-Live/web.CoursePageData*/ -}}
 {{template "header" .IndexData.TUMLiveContext}}
 {{$course := .IndexData.TUMLiveContext.Course}}
-<div class="container" style="height: calc(100vh - (5.75rem));"> <!-- 5.75 = nav height + padding -->
+<!-- 5.75 = nav height + padding -->
+<div class="container" style="height: calc(100vh - (5.75rem));">
     <div class="mb-8 mt-3">
         <h1 class="font-bold text-3xl dark:text-white my-auto">{{$course.Name}}</h1>
     </div>
-    <div class="md:h-5/6 md:grid md:grid-rows-6 md:grid-cols-2 md:gap-4 m-auto">
+    <div class="m-auto flex flex-wrap pb-3 md:h-5/6 md:grid md:grid-rows-6 md:grid-cols-2 md:gap-4 md:pb-0">
         <!-- order.false = DESC, order.true = ASC -->
         <div x-data="{asc: false}"
-             class="md:row-span-6 bg-white border dark:bg-secondary-lighter dark:border-gray-900 rounded-lg
-                    shadow-sm h-full overflow-y-scroll">
+             class="bg-white h-full w-full border dark:bg-secondary-lighter dark:border-gray-900 rounded-lg
+                    shadow-sm overflow-y-scroll md:row-span-6 md:w-auto">
 
             <div class="flex justify-between sticky top-0 bg-white dark:bg-secondary-lighter py-4 px-3 border-b
                 dark:border-gray-900 mb-3">
@@ -33,13 +34,13 @@
                 {{template "vod_course_list" .IndexData.TUMLiveContext}}
             </ul>
         </div>
-        <div class="flex relative bg-white border dark:bg-secondary-lighter dark:border-gray-900 rounded-lg shadow-sm
-                    py-3 px-5 mt-3 md:mt-0 md:row-span-1">
+        <div class="flex w-full relative bg-white border dark:bg-secondary-lighter dark:border-gray-900 rounded-lg
+                    shadow-sm py-3 px-5 my-3 order-first md:my-0 md:row-span-1 md:w-auto md:order-none">
             {{$lecture := $course.GetNextLecture}}
             {{if $lecture.LiveNow}}
-                <span class="absolute -top-2 -right-2 flex h-6 w-6">
+                <span class="absolute -top-2 -right-2 flex h-5 w-5">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-700 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-6 w-6 bg-danger"></span>
+                  <span class="relative inline-flex rounded-full h-5 w-5 bg-danger"></span>
                 </span>
                 <div class="my-auto">
                     <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}">
@@ -47,9 +48,9 @@
                     </a>
                 </div>
             {{else if $lecture.IsComingUp}}
-                <span class="absolute -top-2 -right-2 flex h-6 w-6">
+                <span class="absolute -top-2 -right-2 flex h-5 w-5">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-6 w-6 bg-wait"></span>
+                  <span class="relative inline-flex rounded-full h-5 w-5 bg-wait"></span>
                 </span>
                 <div class="my-auto">
                     <h1 class="text-3xl font-bold dark:text-white">Live Soon!</h1>
@@ -67,10 +68,10 @@
                 </div>
             {{end}}
         </div>
-        <div class="md:row-span-5">
+        <div class="md:row-span-5 w-full md:w-auto">
             <div x-data="{showPlanned: false}"
                  class="bg-white border dark:bg-secondary-lighter dark:border-gray-900 rounded-lg shadow-sm
-                 overflow-y-scroll max-h-full my-3 md:my-0">
+                 overflow-y-scroll my-3 max-h-full md:my-0">
 
                 <div class="flex justify-between py-4 px-3 sticky top-0 bg-white dark:bg-secondary-lighter"
                      :class="showPlanned && 'border-b dark:border-gray-900 mb-3'">

@@ -5,8 +5,10 @@
     {{range $lecture := $course.Streams }}
         {{if or $lecture.IsPlanned $lecture.IsComingUp}}
             {{if ne $lecture.Start.Month $lastMonth}}
+                {{if ne $lastMonth -1}} </div> {{end}}
                 {{$lastMonth = $lecture.Start.Month}}
-                <p class="font-semibold text-gray-400">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
+                <div class = "mb-5 last:mb-0">
+                <p class="text-gray-500 text-sm uppercase">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
             {{end}}
             <li class="p-2">
                 <div class="flex justify-between">
@@ -14,51 +16,20 @@
                         <div>
                             {{if $lecture.IsComingUp}}
                                 <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}"
-                                   class="text-l text-3 dark:text-white text-black p-0">
+                                   class="text-l text-3 font-semibold p-0">
                                     {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
                                 </a>
                             {{else}}
-                                <span class="text-l text-3 dark:text-white text-black p-0">
+                                <span class="text-l text-3 font-semibold p-0">
                                     {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
                                 </span>
                             {{end}}
                         </div>
                         <div>
-                            <span class='dark:text-gray-200 font-light text-sm'>
+                            <span class='font-light text-sm dark:text-gray-200'>
                                 {{$lecture.FriendlyDate}} {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
                             </span>
                         </div>
-                    </div>
-                    <div class="flex space-x-2 my-auto">
-                        {{if (and $course.DownloadsEnabled $lecture.FilePath) }}
-                            <a class="flex"
-                               title="Download Lecture"
-                               href="/api/download/{{$lecture.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $lecture.Start.Month $lecture.Start.Day $lecture.Start.Year}}"
-                               download>
-                                <i class="fas fa-download text-gray-400 hover:text-purple-500"></i>
-                            </a>
-                        {{end}}
-                        {{if $lecture.PlaylistUrlCAM}}
-                            <a class="flex"
-                               title="Camera Only"
-                               href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/CAM">
-                                <i class="fas fa-camera text-gray-400 hover:text-purple-500"></i>
-                            </a>
-                        {{end}}
-                        {{if $lecture.PlaylistUrlPRES}}
-                            <a class="flex"
-                               title="Presentation Only"
-                               href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/PRES">
-                                <i class="fas fa-edit text-gray-400 hover:text-purple-500"></i>
-                            </a>
-                        {{end}}
-                        {{if and $course.ChatEnabled (or $lecture.LiveNow $lecture.Recording)}}
-                            <a class="flex"
-                               title="Chat Only"
-                               href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/chat">
-                                <i class="fas fa-comments text-gray-400 hover:text-purple-500"></i>
-                            </a>
-                        {{end}}
                     </div>
                 </div>
                 {{if $lecture.Units}}
