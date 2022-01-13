@@ -364,21 +364,21 @@ func createLectureHall(c *gin.Context) {
 		return
 	}
 	dao.CreateLectureHall(model.LectureHall{
-		Name:      req.Name,
-		CombIP:    req.CombIP,
-		PresIP:    req.PresIP,
-		CamIP:     req.CamIP,
-		CameraIP:  req.CameraIP,
+		Name:   req.Name,
+		CombIP: req.CombIP,
+		PresIP: req.PresIP,
+		CamIP:  req.CamIP,
+		CameraIP: req.CameraIP,
 		PwrCtrlIp: req.PwrCtrlIP,
 	})
 }
 
 type createLectureHallRequest struct {
-	Name      string `json:"name"`
-	CombIP    string `json:"combIP"`
-	PresIP    string `json:"presIP"`
-	CamIP     string `json:"camIP"`
-	CameraIP  string `json:"cameraIP"`
+	Name   string `json:"name"`
+	CombIP string `json:"combIP"`
+	PresIP string `json:"presIP"`
+	CamIP  string `json:"camIP"`
+	CameraIP string `json:"cameraIP"`
 	PwrCtrlIP string `json:"pwrCtrlIp"`
 }
 

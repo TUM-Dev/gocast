@@ -26,8 +26,6 @@ import (
 	"time"
 )
 
-var workersForStream = make(map[uint][]model.Worker)
-
 var mutex = sync.Mutex{}
 
 type server struct {
