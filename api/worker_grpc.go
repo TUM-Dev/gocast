@@ -417,7 +417,7 @@ func NotifyWorkers() {
 			}
 			workerIndex := getWorkerWithLeastWorkload(workers)
 			workers[workerIndex].Workload += 3
-			err = dao.SaveWorkerForStream(uint(req.StreamID), workers[workerIndex])
+			err = dao.SaveWorkerForStream(streams[i], workers[workerIndex])
 			if err != nil {
 				log.WithError(err).Error("Could not save worker for stream")
 				return
@@ -439,8 +439,8 @@ func NotifyWorkers() {
 }
 
 // NotifyWorkersToStopStream notifies all workers for a given stream to quit encoding
-func NotifyWorkersToStopStream(stream model.Stream) {
-	workers, err := dao.GetWorkersForStream(stream.ID)
+func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool) {
+	workers, err := dao.GetWorkersForStream(stream)
 	if err != nil {
 		log.WithError(err).Error("Could not save stream")
 		return
@@ -454,8 +454,9 @@ func NotifyWorkersToStopStream(stream model.Stream) {
 	// Iterate over all workers that are used for the given stream
 	for _, currentWorker := range workers {
 		req := pb.EndStreamRequest{
-			StreamID: uint32(stream.ID),
-			WorkerID: currentWorker.WorkerID,
+			StreamID:   uint32(stream.ID),
+			WorkerID:   currentWorker.WorkerID,
+			DiscardVoD: discardVoD,
 		}
 		conn, err := dialIn(currentWorker)
 		if err != nil {
@@ -470,7 +471,7 @@ func NotifyWorkersToStopStream(stream model.Stream) {
 	}
 
 	// All workers for stream are assumed to be done
-	err = dao.DeleteWorkersForStream(stream.ID)
+	err = dao.ClearWorkersForStream(stream)
 	if err != nil {
 		log.WithError(err).Error("Could not delete workers for stream")
 		return

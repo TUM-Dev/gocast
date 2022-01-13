@@ -118,33 +118,63 @@
             <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                 <span class="text-5 hover:text-1 hover:underline text-lg">{{$course.Name}}</span></a>
             {{if and .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
-                <div class="border-t-2 border-secondary p-4">
-                    <h3 class="text-4 mb-2 font-bold">Stream actions</h3>
-                    <a @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)" href="#"
-                       :title="paused?'End Pause (Turns on video and audio)':'Pause lecture (Turns off video and audio)'"
-                       class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-700 rounded font-bold cursor-pointer mr-3 p-2 text-sm">
-                        <span x-show="!paused"><i class="fas fa-pause mr-1"></i>Pause</span>
-                        <span x-show="paused"><i class="fas fa-play mr-1"></i>Resume</span>
-                    </a>
-                    <a href="?restart=1" title="Issues with the stream? Restart it."
-                       class="bg-indigo-500 inline-block text-center text-white w-24 font-bold hover:bg-indigo-700 rounded cursor-pointer p-2 mr-3 text-sm">
-                        <i class="fas fa-redo mr-1"></i>Restart
-                    </a>
-                    <a @click="fetch(`/api/stream/${streamID}/end`)" href="#"
+            <div class="border-t-2 border-secondary p-4">
+                <h3 class="text-4 mb-2 font-bold">Stream actions</h3>
+                <a @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)" href="#"
+                   :title="paused?'End Pause (Turns on video and audio)':'Pause lecture (Turns off video and audio)'"
+                   class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-700 rounded font-bold cursor-pointer mr-3 p-2 text-sm">
+                    <span x-show="!paused"><i class="fas fa-pause mr-1"></i>Pause</span>
+                    <span x-show="paused"><i class="fas fa-play mr-1"></i>Resume</span>
+                </a>
+                <a href="?restart=1" title="Issues with the stream? Restart it."
+                   class="bg-indigo-500 inline-block text-center text-white w-24 font-bold hover:bg-indigo-700 rounded cursor-pointer p-2 mr-3 text-sm">
+                    <i class="fas fa-redo mr-1"></i>Restart
+                </a>
+                <span x-data="{ 'showModal': false }" @keydown.escape="showModal = false" x-cloak>
+                    <a @click="showModal = true"
                        title="Already finished? End the stream early."
                        class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-700 font-bold rounded cursor-pointer p-2 text-sm">
                         <i class="fas fa-power-off mr-1"></i>Stop
                     </a>
-                    <p class="text-4 my-2">Presets:</p>
-                    <div class="w-full overflow-x-scroll scrollbarThin">
-                        <div class="flex flex-row gap-x-2">
-                            {{range $preset := .Presets}}
-                                <div style="min-width: 150px" class="text-center relative group">
-                                    <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
-                                         src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
-                                         alt="prev" width="150px">
-                                    <i onclick="usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}})"
-                                       title="Switch to this preset"
+                    <section class="flex flex-wrap p-4 h-full">
+                        <div class="overflow-auto" style="background-color: rgba(0,0,0,0.5)" x-show="showModal"
+                             :class="{ 'absolute inset-0 z-10 flex items-center justify-center': showModal }">
+                            <div class="bg-secondary text-3 w-3/12 md:max-w-md mx-auto rounded shadow-lg py-4 text-left px-6"
+                                 x-show="showModal" @click.away="showModal = false"
+                                 x-transition:enter="ease-out duration-300"
+                                 x-transition:enter-start="opacity-0 scale-90">
+                                <!--Title-->
+                                <div class="flex justify-between pb-3">
+                                    <p class="text-2 font-bold">Discard the recording?</p>
+                                    <div class="cursor-pointer z-50" @click="showModal = false">
+                                        <svg class="fill-current" xmlns="http://www.w3.org/2000/svg" width="18"
+                                             height="18" viewBox="0 0 18 18">
+                                            <path d="M14.53 4.53l-1.06-1.06L9 7.94 4.53 3.47 3.47 4.53 7.94 9l-4.47 4.47 1.06 1.06L9 10.06l4.47 4.47 1.06-1.06L10.06 9z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <!--Footer-->
+                                <div class="flex justify-start pt-2">
+                                    <button class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-700 font-bold rounded cursor-pointer p-1 text-sm mr-3"
+                                            @click="fetch(`/api/stream/${streamID}/end?discard=${false}`).then(showModal = false)">Keep</button>
+                                    <button class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-700 font-bold rounded cursor-pointer p-1 text-sm"
+                                            @click="fetch(`/api/stream/${streamID}/end?discard=${true}`).then(showModal = false)">Discard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </span>
+            </div>
+            <p class="text-4 my-2">Presets:</p>
+            <div class="w-full overflow-x-scroll scrollbarThin">
+                <div class="flex flex-row gap-x-2">
+                    {{range $preset := .Presets}}
+                        <div style="min-width: 150px" class="text-center relative group">
+                            <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
+                                 src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
+                                 alt="prev" width="150px">
+                            <i onclick="usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}})"
+                               title="Switch to this preset"
                                        class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-exchange-alt cursor-pointer"></i>
                                 </div>
                             {{end}}

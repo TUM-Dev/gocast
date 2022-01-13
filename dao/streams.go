@@ -119,9 +119,9 @@ func UpdateStream(stream model.Stream) error {
 }
 
 // GetWorkersForStream retrieves all workers for a given stream with streamID
-func GetWorkersForStream(streamID uint) ([]model.Worker, error) {
+func GetWorkersForStream(stream model.Stream) ([]model.Worker, error) {
 	var res []model.Worker
-	err := DB.Preload(clause.Associations).Model(model.Stream{}).Where("id = ?", streamID).Association("StreamWorkers").Find(&res)
+	err := DB.Preload(clause.Associations).Model(&stream).Association("StreamWorkers").Find(&res)
 	if err != nil {
 		log.WithError(err).Error("Could not get workers for stream")
 	}
@@ -129,15 +129,15 @@ func GetWorkersForStream(streamID uint) ([]model.Worker, error) {
 }
 
 // SaveWorkerForStream associates a worker with a stream with streamID
-func SaveWorkerForStream(streamID uint, worker model.Worker) error {
+func SaveWorkerForStream(stream model.Stream, worker model.Worker) error {
 	defer Cache.Clear()
-	return DB.Model(model.Stream{}).Where("id = ?", streamID).Association("StreamWorkers").Append(worker)
+	return DB.Model(&stream).Association("StreamWorkers").Append(worker)
 }
 
-// DeleteWorkersForStream deletes all workers for a stream with streamID
-func DeleteWorkersForStream(streamID uint) error {
+// ClearWorkersForStream deletes all workers for a stream with streamID
+func ClearWorkersForStream(stream model.Stream) error {
 	defer Cache.Clear()
-	return DB.Model(model.Stream{}).Where("id = ?", streamID).Association("StreamWorkers").Delete(&model.Worker{})
+	return DB.Model(&stream).Association("StreamWorkers").Clear()
 }
 
 //GetAllStreams returns all streams of the server

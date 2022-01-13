@@ -31,8 +31,10 @@ func endStream(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
+	discardVoD := c.Request.URL.Query().Get("discard") == "true"
+	log.Info(discardVoD)
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	NotifyWorkersToStopStream(*tumLiveContext.Stream)
+	NotifyWorkersToStopStream(*tumLiveContext.Stream, discardVoD)
 }
 
 func pauseStream(c *gin.Context) {
