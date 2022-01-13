@@ -179,8 +179,7 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 		if err != nil {
 			log.WithError(err).Error("Can't set stream not live")
 		}
-		// TODO: Resolve cyclic dependency
-		//api.NotifyViewersLiveState(uint(request.StreamID), false)
+		NotifyViewersLiveState(uint(request.StreamID), false)
 	}
 	return &pb.Status{Ok: true}, nil
 }
@@ -317,7 +316,7 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		default:
 			dao.SaveCOMBURL(&stream, request.HlsUrl)
 		}
-		//api.NotifyViewersLiveState(stream.Model.ID, true)
+		NotifyViewersLiveState(stream.Model.ID, true)
 	}()
 
 	return &pb.Status{Ok: true}, nil
@@ -338,7 +337,6 @@ func isHlsUrlOk(url string) bool {
 		return false
 	}
 	y := strings.ReplaceAll(r.Request.URL.String(), "playlist.m3u8", string(x))
-	log.Println(y)
 	get, err := http.Get(y)
 	if err != nil {
 		return false
@@ -421,12 +419,13 @@ func NotifyWorkers() {
 			}
 			workerIndex := getWorkerWithLeastWorkload(workers)
 			workers[workerIndex].Workload += 3
-			workersForStream[streams[i].ID] = append(workersForStream[streams[i].ID], workers[workerIndex])
-			credentials := insecure.NewCredentials()
-			conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithTransportCredentials(credentials))
+			err = dao.SaveWorkerForStream(uint(req.StreamID), workers[workerIndex])
 			if err != nil {
-				log.WithError(err).Error("Unable to dial server")
-				workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
+				log.WithError(err).Error("Could not save worker for stream")
+				return
+			}
+			conn, err := dialIn(workers[workerIndex])
+			if err != nil {
 				continue
 			}
 			client := pb.NewToWorkerClient(conn)
@@ -435,55 +434,66 @@ func NotifyWorkers() {
 			if err != nil || !resp.Ok {
 				log.WithError(err).Error("could not assign stream!")
 				workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
-				_ = conn.Close()
-				continue
 			}
-			_ = conn.Close()
+			endConnection(conn)
 		}
 	}
 }
 
-func NotifyWorkerToStopStream(stream model.Stream) {
-	workers := workersForStream[stream.ID]
+// NotifyWorkersToStopStream notifies all workers for a given stream to quit encoding
+func NotifyWorkersToStopStream(stream model.Stream) {
+	workers, err := dao.GetWorkersForStream(stream.ID)
+	if err != nil {
+		log.WithError(err).Error("Could not save stream")
+		return
+	}
+
 	if len(workers) == 0 {
-		log.Error("Can't get lecture hall for stream")
+		log.Error("No workers for stream found")
 		return
 	}
 
 	// Iterate over all workers that are used for the given stream
 	for _, currentWorker := range workers {
-		credentials := insecure.NewCredentials()
-
-		// Connect to the worker and tell it to end the stream
-		log.Error("Connecting to:" + fmt.Sprintf("%s:50051", currentWorker.Host))
-		conn, err := grpc.Dial(fmt.Sprintf("%s:50051", currentWorker.Host), grpc.WithTransportCredentials(credentials))
-		if err != nil {
-			log.WithError(err).Error("Unable to dial server")
-			_ = conn.Close()
-			return
-		}
-
-		client := pb.NewToWorkerClient(conn)
-
 		req := pb.EndStreamRequest{
 			StreamID: uint32(stream.ID),
 			WorkerID: currentWorker.WorkerID,
 		}
-		resp, err := client.RequestStreamEnd(context.Background(), &req)
-
-		// Was ending the stream successful?
-		if err != nil || !resp.Ok {
-			log.WithError(err).Error("Could not end stream!")
-			_ = conn.Close()
-			return
+		conn, err := dialIn(currentWorker)
+		if err != nil {
+			continue
 		}
-
-		_ = conn.Close()
-
+		client := pb.NewToWorkerClient(conn)
+		resp, err := client.RequestStreamEnd(context.Background(), &req)
+		if err != nil || !resp.Ok {
+			log.WithError(err).Error("Could not end stream")
+		}
+		endConnection(conn)
 	}
-	// All workers for stream are assumed to done
-	// TODO: Remove individual workers in NotifyStreamFinished?
-	workersForStream[stream.ID] = []model.Worker{}
+
+	// All workers for stream are assumed to be done
+	err = dao.DeleteWorkersForStream(stream.ID)
+	if err != nil {
+		log.WithError(err).Error("Could not delete workers for stream")
+		return
+	}
+}
+
+func dialIn(targetWorker model.Worker) (*grpc.ClientConn, error) {
+	credentials := insecure.NewCredentials()
+	log.Error("Connecting to:" + fmt.Sprintf("%s:50051", targetWorker.Host))
+	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", targetWorker.Host), grpc.WithTransportCredentials(credentials))
+	log.WithError(err).Error("Unable to dial server")
+	targetWorker.Workload -= 1 // decrease workers load only by one (backoff)
+	return conn, err
+}
+
+func endConnection(conn *grpc.ClientConn) {
+	defer func(c *grpc.ClientConn) {
+		if err := c.Close(); err != nil {
+			log.WithError(err).Error("Could not close connection to worker")
+		}
+	}(conn)
 }
 
 //notifyWorkersPremieres looks for premieres that should be streamed and assigns them to workers.
@@ -513,12 +523,8 @@ func notifyWorkersPremieres() {
 			IngestServer: ingestServer.Url,
 			OutUrl:       ingestServer.OutUrl,
 		}
-		credentials := insecure.NewCredentials()
-		conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithTransportCredentials(credentials))
+		conn, err := dialIn(workers[workerIndex])
 		if err != nil {
-			log.WithError(err).Error("Unable to dial server")
-			_ = conn.Close()
-			workers[workerIndex].Workload -= 1
 			continue
 		}
 		client := pb.NewToWorkerClient(conn)
@@ -526,11 +532,8 @@ func notifyWorkersPremieres() {
 		resp, err := client.RequestPremiere(context.Background(), &req)
 		if err != nil || !resp.Ok {
 			log.WithError(err).Error("could not assign premiere!")
-			workers[workerIndex].Workload -= 1
-			_ = conn.Close()
-			continue
 		}
-		_ = conn.Close()
+		endConnection(conn)
 	}
 }
 

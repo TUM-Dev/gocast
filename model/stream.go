@@ -39,6 +39,7 @@ type Stream struct {
 	Files            []File `gorm:"foreignKey:StreamID"`
 	Paused           bool   `gorm:"default:false"`
 	StreamName       string
+	StreamWorkers    []Worker `gorm:"many2many:stream_workers;"`
 }
 
 // IsSelfStream returns whether the stream is a scheduled stream in a lecture hall

@@ -4,7 +4,9 @@ import (
 	"TUM-Live/model"
 	"context"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"strconv"
 	"time"
 )
@@ -114,6 +116,28 @@ func UpdateStream(stream model.Stream) error {
 		"start":       stream.Start,
 		"end":         stream.End}).Error
 	return err
+}
+
+// GetWorkersForStream retrieves all workers for a given stream with streamID
+func GetWorkersForStream(streamID uint) ([]model.Worker, error) {
+	var res []model.Worker
+	err := DB.Preload(clause.Associations).Model(model.Stream{}).Where("id = ?", streamID).Association("StreamWorkers").Find(&res)
+	if err != nil {
+		log.WithError(err).Error("Could not get workers for stream")
+	}
+	return res, err
+}
+
+// SaveWorkerForStream associates a worker with a stream with streamID
+func SaveWorkerForStream(streamID uint, worker model.Worker) error {
+	defer Cache.Clear()
+	return DB.Model(model.Stream{}).Where("id = ?", streamID).Association("StreamWorkers").Append(worker)
+}
+
+// DeleteWorkersForStream deletes all workers for a stream with streamID
+func DeleteWorkersForStream(streamID uint) error {
+	defer Cache.Clear()
+	return DB.Model(model.Stream{}).Where("id = ?", streamID).Association("StreamWorkers").Delete(&model.Worker{})
 }
 
 //GetAllStreams returns all streams of the server
