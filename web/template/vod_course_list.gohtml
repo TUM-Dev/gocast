@@ -27,7 +27,7 @@
                     </div>
                     <div class="flex space-x-2 my-auto">
                         {{if (and $course.DownloadsEnabled $lecture.FilePath) }}
-                            <a class="flex text-3 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full p-2"
+                            <a class="flex text-3 rounded-full"
                                title="Download Lecture"
                                href="/api/download/{{$lecture.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $lecture.Start.Month $lecture.Start.Day $lecture.Start.Year}}"
                                download>
@@ -35,21 +35,21 @@
                             </a>
                         {{end}}
                         {{if $lecture.PlaylistUrlCAM}}
-                            <a class="flex text-3 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full p-2"
+                            <a class="flex text-3"
                                title="Camera Only"
                                href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/CAM">
                                 <i class="fas fa-camera"></i>
                             </a>
                         {{end}}
                         {{if $lecture.PlaylistUrlPRES}}
-                            <a class="flex text-3 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full p-2"
+                            <a class="flex text-3"
                                title="Presentation Only"
                                href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/PRES">
                                 <i class="fas fa-edit"></i>
                             </a>
                         {{end}}
                         {{if and $course.ChatEnabled (or $lecture.LiveNow $lecture.Recording)}}
-                            <a class="flex text-3 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full p-2"
+                            <a class="flex text-3"
                                title="Chat Only"
                                href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/chat">
                                 <i class="fas fa-comments"></i>
