@@ -127,7 +127,7 @@ func GetWorkersForStream(stream model.Stream) ([]model.Worker, error) {
 // SaveWorkerForStream associates a worker with a stream with streamID
 func SaveWorkerForStream(stream model.Stream, worker model.Worker) error {
 	defer Cache.Clear()
-	return DB.Model(&stream).Association("StreamWorkers").Append(worker)
+	return DB.Model(&stream).Association("StreamWorkers").Append(&worker)
 }
 
 // ClearWorkersForStream deletes all workers for a stream with streamID

@@ -32,6 +32,21 @@ type server struct {
 	pb.UnimplementedFromWorkerServer
 }
 
+func dialIn(targetWorker model.Worker) (*grpc.ClientConn, error) {
+	credentials := insecure.NewCredentials()
+	log.Error("Connecting to:" + fmt.Sprintf("%s:50051", targetWorker.Host))
+	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", targetWorker.Host), grpc.WithTransportCredentials(credentials))
+	log.WithError(err).Error("Unable to dial server")
+	targetWorker.Workload -= 1 // decrease workers load only by one (backoff)
+	return conn, err
+}
+
+func endConnection(conn *grpc.ClientConn) {
+	if err := conn.Close(); err != nil {
+		log.WithError(err).Error("Could not close connection to worker")
+	}
+}
+
 //NotifySilenceResults handles the results of silence detection sent by a worker
 func (s server) NotifySilenceResults(ctx context.Context, request *pb.SilenceResults) (*pb.Status, error) {
 	if _, err := dao.GetWorkerByID(ctx, request.WorkerID); err != nil {
@@ -446,7 +461,7 @@ func NotifyWorkers() {
 func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool) {
 	workers, err := dao.GetWorkersForStream(stream)
 	if err != nil {
-		log.WithError(err).Error("Could not save stream")
+		log.WithError(err).Error("Could not get workers for stream")
 		return
 	}
 
@@ -479,21 +494,6 @@ func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool) {
 	if err != nil {
 		log.WithError(err).Error("Could not delete workers for stream")
 		return
-	}
-}
-
-func dialIn(targetWorker model.Worker) (*grpc.ClientConn, error) {
-	credentials := insecure.NewCredentials()
-	log.Error("Connecting to:" + fmt.Sprintf("%s:50051", targetWorker.Host))
-	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", targetWorker.Host), grpc.WithTransportCredentials(credentials))
-	log.WithError(err).Error("Unable to dial server")
-	targetWorker.Workload -= 1 // decrease workers load only by one (backoff)
-	return conn, err
-}
-
-func endConnection(conn *grpc.ClientConn) {
-	if err := conn.Close(); err != nil {
-		log.WithError(err).Error("Could not close connection to worker")
 	}
 }
 
