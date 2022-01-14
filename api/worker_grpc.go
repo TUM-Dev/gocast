@@ -492,11 +492,9 @@ func dialIn(targetWorker model.Worker) (*grpc.ClientConn, error) {
 }
 
 func endConnection(conn *grpc.ClientConn) {
-	defer func(c *grpc.ClientConn) {
-		if err := c.Close(); err != nil {
-			log.WithError(err).Error("Could not close connection to worker")
-		}
-	}(conn)
+	if err := conn.Close(); err != nil {
+		log.WithError(err).Error("Could not close connection to worker")
+	}
 }
 
 //notifyWorkersPremieres looks for premieres that should be streamed and assigns them to workers.

@@ -4,7 +4,6 @@ import (
 	"TUM-Live/model"
 	"context"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strconv"
@@ -122,9 +121,6 @@ func UpdateStream(stream model.Stream) error {
 func GetWorkersForStream(stream model.Stream) ([]model.Worker, error) {
 	var res []model.Worker
 	err := DB.Preload(clause.Associations).Model(&stream).Association("StreamWorkers").Find(&res)
-	if err != nil {
-		log.WithError(err).Error("Could not get workers for stream")
-	}
 	return res, err
 }
 
