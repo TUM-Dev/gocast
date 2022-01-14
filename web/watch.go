@@ -16,6 +16,7 @@ import (
 )
 
 func WatchPage(c *gin.Context) {
+	// todo
 	span := sentry.StartSpan(c, "GET /w", sentry.TransactionName("GET /w"))
 	defer span.Finish()
 	var data WatchPageData
