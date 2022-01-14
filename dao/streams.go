@@ -160,6 +160,10 @@ func DeleteStream(streamID string) {
 	Cache.Clear()
 }
 
+func SetEarlyEnd(streamID uint) error {
+	return DB.Model(&model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"ended_early": true}).Error
+}
+
 func UpdateSilences(silences []model.Silence, streamID string) error {
 	DB.Delete(&model.Silence{}, "stream_id = ?", streamID)
 	return DB.Save(&silences).Error

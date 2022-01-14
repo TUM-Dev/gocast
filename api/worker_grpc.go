@@ -176,6 +176,12 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 						log.WithError(err).Error("Can't turn off live light.")
 					}
 					lightLock.Unlock()
+					if request.EndedEarly {
+						err = dao.SetEarlyEnd(stream.ID)
+						if err != nil {
+							log.WithError(err).Error("Can't set early end")
+						}
+					}
 				}
 			}
 		}
@@ -200,7 +206,7 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 //SendHeartBeat receives heartbeat messages sent by workers
 func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.Status, error) {
 	if worker, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
-		return nil, errors.New("authentication failed: invalid worker id")
+		return nil, errors.New("authentication failed: wrong worker id")
 	} else {
 		worker.Workload = uint(request.Workload)
 		worker.LastSeen = time.Now()

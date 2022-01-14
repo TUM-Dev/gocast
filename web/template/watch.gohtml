@@ -13,7 +13,7 @@
     {{if .IsAdminOfCourse}}
     <script async src="/static/assets/ts-dist/watch-admin.js?v={{.IndexData.VersionTag}}"></script>{{end}}
 </head>
-<body x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}}"
+<body x-data="{'paused': {{$stream.Paused}}, 'stopped': false, 'streamID': {{$stream.Model.ID}}}"
       x-on:pausestart.window="paused=true"
       x-on:pauseend.window="paused=false">
 {{template "header" .IndexData.TUMLiveContext}}
@@ -30,6 +30,10 @@
             <div class="p-4 bg-indigo-700 bg-opacity-20 border-t-4 border-indigo-700 w-full font-semibold text-2 rounded-t display-none"
                  x-show="paused" x-cloak>
                 <i class="fas fa-info-circle"></i> This lecture is currently paused.
+            </div>
+            <div class="p-4 bg-indigo-700 bg-opacity-20 border-t-4 border-indigo-700 w-full font-semibold text-2 rounded-t display-none"
+                 x-show="stopped" x-cloak>
+                <i class="fas fa-info-circle"></i> This lecture has been stopped. Please reload in a couple seconds.
             </div>
             <video
                     id="my-video"
@@ -122,43 +126,39 @@
                 <h3 class="text-4 mb-2 font-bold">Stream actions</h3>
                 <a @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)" href="#"
                    :title="paused?'End Pause (Turns on video and audio)':'Pause lecture (Turns off video and audio)'"
-                   class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-700 rounded font-bold cursor-pointer mr-3 p-2 text-sm">
+                   class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-700 rounded font-bold cursor-pointer p-2 mr-3">
                     <span x-show="!paused"><i class="fas fa-pause mr-1"></i>Pause</span>
                     <span x-show="paused"><i class="fas fa-play mr-1"></i>Resume</span>
                 </a>
                 <a href="?restart=1" title="Issues with the stream? Restart it."
-                   class="bg-indigo-500 inline-block text-center text-white w-24 font-bold hover:bg-indigo-700 rounded cursor-pointer p-2 mr-3 text-sm">
+                   class="bg-indigo-500 inline-block text-center w-24 text-white font-bold hover:bg-indigo-700 rounded cursor-pointer p-2 mr-3">
                     <i class="fas fa-redo mr-1"></i>Restart
                 </a>
                 <span x-data="{ 'showModal': false }" @keydown.escape="showModal = false" x-cloak>
                     <a @click="showModal = true"
                        title="Already finished? End the stream early."
-                       class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-700 font-bold rounded cursor-pointer p-2 text-sm">
+                       class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-700 font-bold rounded cursor-pointer p-2">
                         <i class="fas fa-power-off mr-1"></i>Stop
                     </a>
                     <section class="flex flex-wrap p-4 h-full">
                         <div class="overflow-auto" style="background-color: rgba(0,0,0,0.5)" x-show="showModal"
                              :class="{ 'absolute inset-0 z-10 flex items-center justify-center': showModal }">
-                            <div class="bg-secondary text-3 w-3/12 md:max-w-md mx-auto rounded shadow-lg py-4 text-left px-6"
+                            <div class="dark:bg-secondary bg-gray-200 text-3 w-auto md:max-w-md mx-auto rounded shadow-lg py-4 text-left px-6"
                                  x-show="showModal" @click.away="showModal = false"
                                  x-transition:enter="ease-out duration-300"
                                  x-transition:enter-start="opacity-0 scale-90">
                                 <!--Title-->
                                 <div class="flex justify-between pb-3">
-                                    <p class="text-2 font-bold">Discard the recording?</p>
-                                    <div class="cursor-pointer z-50" @click="showModal = false">
-                                        <svg class="fill-current" xmlns="http://www.w3.org/2000/svg" width="18"
-                                             height="18" viewBox="0 0 18 18">
-                                            <path d="M14.53 4.53l-1.06-1.06L9 7.94 4.53 3.47 3.47 4.53 7.94 9l-4.47 4.47 1.06 1.06L9 10.06l4.47 4.47 1.06-1.06L10.06 9z"></path>
-                                        </svg>
-                                    </div>
+                                    <p class="text-2 font-bold">Keep the recording?</p>
                                 </div>
                                 <!--Footer-->
                                 <div class="flex justify-start pt-2">
-                                    <button class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-700 font-bold rounded cursor-pointer p-1 text-sm mr-3"
-                                            @click="fetch(`/api/stream/${streamID}/end?discard=${false}`).then(showModal = false)">Keep</button>
-                                    <button class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-700 font-bold rounded cursor-pointer p-1 text-sm"
-                                            @click="fetch(`/api/stream/${streamID}/end?discard=${true}`).then(showModal = false)">Discard</button>
+                                    <button class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-700 font-bold rounded cursor-pointer p-1 mr-3"
+                                            @click="fetch(`/api/stream/${streamID}/end?discard=${false}`).then(showModal = false).then(stopped = true)">Yes</button>
+                                    <button class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-700 font-bold rounded cursor-pointer p-1 mr-3"
+                                            @click="fetch(`/api/stream/${streamID}/end?discard=${true}`).then(showModal = false).then(stopped = true)">No</button>
+                                    <button class="bg-gray-500 inline-block text-center w-24 text-white hover:bg-gray-700 font-bold rounded cursor-pointer p-1"
+                                            @click="showModal = false">Cancel</button>
                                 </div>
                             </div>
                         </div>
