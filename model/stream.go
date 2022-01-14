@@ -39,6 +39,7 @@ type Stream struct {
 	Files            []File `gorm:"foreignKey:StreamID"`
 	Paused           bool   `gorm:"default:false"`
 	StreamName       string
+	Duration         uint32 `gorm:"default:null"`
 	StreamWorkers    []Worker `gorm:"many2many:stream_workers;"`
 }
 

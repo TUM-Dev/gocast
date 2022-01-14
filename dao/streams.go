@@ -205,6 +205,7 @@ func SavePRESURL(stream *model.Stream, url string) {
 
 func SaveStream(vod *model.Stream) error {
 	defer Cache.Clear()
+	// todo: what is this?
 	err := DB.Model(&vod).Updates(model.Stream{
 		Name:            vod.Name,
 		Description:     vod.Description,
@@ -217,7 +218,6 @@ func SaveStream(vod *model.Stream) error {
 		PlaylistUrl:     vod.PlaylistUrl,
 		PlaylistUrlPRES: vod.PlaylistUrlPRES,
 		PlaylistUrlCAM:  vod.PlaylistUrlCAM,
-		FilePath:        vod.FilePath,
 		LiveNow:         vod.LiveNow,
 		Recording:       vod.Recording,
 		Chats:           vod.Chats,
@@ -229,6 +229,7 @@ func SaveStream(vod *model.Stream) error {
 		Silences:        vod.Silences,
 		Files:           vod.Files,
 		Paused:          vod.Paused,
+		Duration:        vod.Duration,
 	}).Error
 	return err
 }
