@@ -46,7 +46,14 @@ func GetLectureHallByID(id uint) (model.LectureHall, error) {
 }
 
 func DeleteLectureHall(id uint) error {
-	return DB.Delete(&model.LectureHall{}, id).Error
+	err := DB.Delete(&model.LectureHall{}, id).Error
+	if err != nil {
+		return err
+	}
+
+	DB.Delete(model.CameraPreset{}, "lecture_hall_id = ?", id)
+	DB.Exec("UPDATE streams SET lecture_hall_id = NULL WHERE lecture_hall_id = ?", id)
+	return nil
 }
 
 func SaveLectureHallFullAssoc(lectureHall model.LectureHall) {
