@@ -122,7 +122,7 @@
             <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                 <span class="text-5 hover:text-1 hover:underline text-lg">{{$course.Name}}</span></a>
             {{if and .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
-            <div class="border-t-2 border-secondary p-4">
+            <div class="border-t-2 border-secondary p-4 mt-2">
                 <h3 class="text-4 mb-2 font-bold">Stream actions</h3>
                 <a @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)" href="#"
                    :title="paused?'End Pause (Turns on video and audio)':'Pause lecture (Turns off video and audio)'"
@@ -165,23 +165,25 @@
                     </section>
                 </span>
             </div>
-            <p class="text-4 my-2">Presets:</p>
-            <div class="w-full overflow-x-scroll scrollbarThin">
-                <div class="flex flex-row gap-x-2">
-                    {{range $preset := .Presets}}
-                        <div style="min-width: 150px" class="text-center relative group">
-                            <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
-                                 src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
-                                 alt="prev" width="150px">
-                            <i onclick="usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}})"
-                               title="Switch to this preset"
-                                       class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-exchange-alt cursor-pointer"></i>
-                                </div>
-                            {{end}}
-                        </div>
+            <div class="border-t-2 border-secondary p-4">
+                <h3 class="text-4 mb-2 font-bold">Presets</h3>
+                <div class="w-full overflow-x-scroll scrollbarThin">
+                    <div class="flex flex-row gap-x-2">
+                        {{range $preset := .Presets}}
+                            <div style="min-width: 150px" class="text-center relative group">
+                                <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
+                                     src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
+                                     alt="prev" width="150px">
+                                <i onclick="usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}})"
+                                   title="Switch to this preset"
+                                   class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-exchange-alt cursor-pointer"></i>
+                            </div>
+                        {{end}}
                     </div>
                 </div>
-            {{end}}
+            </div>
+        </div>
+        {{end}}
             {{if $stream.Description}}
                 {{$isMinLen := gt (len $stream.Description) 128}}
                 <div x-data="{less: {{$isMinLen}}}" class="text-3 p-4 border-t-2 border-secondary video-description">
