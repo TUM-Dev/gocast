@@ -68,15 +68,40 @@
                     </div>
                 </div>
 
-                <div x-data="{ filterPast: false, selectedLectures: [] }">
+                <div x-data="{ filterPast: false, selectedLectures: [], selectedLectureHallId: null }">
+                    {{$user := .IndexData.TUMLiveContext.User}}
+                    {{$ingestBase := .IngestBase}}
+                    {{$lectureHalls := .LectureHalls}}
+
                     <h2>Lectures</h2>
                     <div class="flex justify-between mt-2 mb-2">
-                        <div>
-                            <button @click="deleteLectures({{$course.Model.ID}}, selectedLectures)" :disabled="selectedLectures.length == 0" class="btn">
+                        <div class="flex">
+                            <button @click="deleteLectures({{$course.Model.ID}}, selectedLectures.map(({id}) => id))" :disabled="selectedLectures.length == 0" class="btn">
                                 Delete
                                 <b x-text="selectedLectures.length.toString()"></b>
                                 <span x-text="selectedLectures.length == 1 ? 'Lecture' : 'Lectures'"></span>
                             </button>
+
+                            {{if eq $user.Role 1}}
+                                <div class="flex items-center">
+                                    <label class="mx-2">
+                                        <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
+                                                id="lectureHallBulkSelect"
+                                                :disabled="selectedLectures.length == 0 || selectedLectures.some(({isPast}) => isPast)">
+                                            <option class="text-gray-300" value="">Self streaming
+                                            </option>
+                                            {{range $lectureHall := $lectureHalls}}
+                                                <option class="text-gray-300">
+                                                    {{$lectureHall.Name}}
+                                                </option>
+                                            {{end}}
+                                        </select>
+                                    </label>
+                                    <button :disabled="selectedLectures.length == 0 || selectedLectures.some(({isPast}) => isPast)" onclick="saveLectureHall(0)">
+                                        <i class="align-middle fas fa-check text-gray-300 hover:text-purple-500"></i>
+                                    </button>
+                                </div>
+                            {{end}}
                         </div>
                         <div>
                             <label class="inline-flex items-center">
@@ -87,9 +112,6 @@
                     </div>
 
                     <ul class="dark:bg-secondary bg-gray-100 rounded">
-                        {{$ingestBase := .IngestBase}}
-                        {{$lectureHalls := .LectureHalls}}
-                        {{$user := .IndexData.TUMLiveContext.User}}
                         {{if not $course.Streams}}
                             <p class="text-3 p-4">It might take a minute to load your lectures from TUMOnline</p>
                         {{end}}
@@ -99,7 +121,7 @@
                                 <div class="flex">
                                     <div class="w-1/4">
                                         <div class="text-3 font-semibold">
-                                            <input @change="$event.target.checked ? selectedLectures.push({{$lecture.Model.ID}}) : (selectedLectures = selectedLectures.filter(x => x != {{$lecture.Model.ID}}))" class="w-auto mr-2" type="checkbox" />
+                                            <input @change="$event.target.checked ? selectedLectures.push({ id: {{$lecture.Model.ID}}, isPast: {{$lecture.IsPast}} }) : (selectedLectures = selectedLectures.filter(({id}) => id != {{$lecture.Model.ID}}))" class="w-auto mr-2" type="checkbox" />
                                             {{$lecture.Start.Weekday}} {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
                                             <i class="fas fa-trash hover:text-1 px-2"
                                                title="Delete Lecture"
