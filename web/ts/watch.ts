@@ -9,7 +9,6 @@ class Watch {
             };
             window.addEventListener("resize", appHeight);
             appHeight();
-            document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
             this.chatInput = document.getElementById("chatInput") as HTMLInputElement;
         }
     }
@@ -26,6 +25,10 @@ function startWebsocket() {
     if (cf !== null && cf != undefined) {
         (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", (e) => submitChat(e));
     }
+    ws.onopen = function (e) {
+        hideDisconnectedMsg();
+    };
+
     ws.onmessage = function (m) {
         const data = JSON.parse(m.data);
         if ("viewers" in data && document.getElementById("viewerCount") != null) {
@@ -56,9 +59,14 @@ function startWebsocket() {
         if (new Date().valueOf() - pageloaded.valueOf() > 1000 * 60 * 60 * 12) {
             return;
         }
+        showDisconnectedMsg();
         ws = null;
         retryInt *= 2; // exponential backoff
         setTimeout(startWebsocket, retryInt);
+    };
+
+    ws.onerror = function (err) {
+        showDisconnectedMsg();
     };
 }
 
@@ -88,11 +96,11 @@ function createServerMessage(msg) {
 function createMessageElement(m): HTMLDivElement {
     // Header:
     const chatElem = document.createElement("div") as HTMLDivElement;
-    chatElem.classList.add("rounded", "p-2", "mx-2");
+    chatElem.classList.add("rounded", "py-2");
     const chatHeader = document.createElement("div") as HTMLDivElement;
     chatHeader.classList.add("flex", "flex-row");
     const chatNameField = document.createElement("p") as HTMLParagraphElement;
-    chatNameField.classList.add("grow", "font-semibold");
+    chatNameField.classList.add("text-sm", "grow", "font-semibold");
     if (m["admin"]) {
         chatNameField.classList.add("text-warn");
     }
@@ -102,14 +110,14 @@ function createMessageElement(m): HTMLDivElement {
     const d = new Date();
     d.setTime(Date.now());
     const chatTimeField = document.createElement("p") as HTMLParagraphElement;
-    chatTimeField.classList.add("text-4");
+    chatTimeField.classList.add("text-4", "text-xs");
     chatTimeField.innerText = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
     chatHeader.appendChild(chatTimeField);
     chatElem.appendChild(chatHeader);
 
     // Message:
     const chatMessage = document.createElement("p") as HTMLParagraphElement;
-    chatMessage.classList.add("text-gray-300", "break-words");
+    chatMessage.classList.add("text-3", "break-words");
     chatMessage.innerText = m["msg"];
     chatElem.appendChild(chatMessage);
     return chatElem;
@@ -127,6 +135,14 @@ function submitChat(e: Event) {
     );
     this.chatInput.value = "";
     return false; //prevent form submission
+}
+
+function showDisconnectedMsg() {
+    document.getElementById("disconnectMsg").classList.remove("hidden");
+}
+
+function hideDisconnectedMsg() {
+    document.getElementById("disconnectMsg").classList.add("hidden");
 }
 
 new Watch();

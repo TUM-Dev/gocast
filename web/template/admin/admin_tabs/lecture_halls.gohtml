@@ -8,7 +8,7 @@
                 <button class = "dark:bg-gray-600 dark:border-slate-800 dark:border-slate-800 bg-black text-white border border-slate-300 pl-3 pr-3 rounded pt-1 pb-1 text-sm font-semibold">&#43; New Lecture Hall</button>
             </a>
         </div>
-        {{range $lectureHall := .}}'
+        {{range $lectureHall := .}}
         <div x-data="{
             changed:false,
             saved:false,
@@ -21,7 +21,12 @@
             pwrCtrlIp: '{{$lectureHall.PwrCtrlIp}}',
             id: '{{$lectureHall.ID}}',}"
              class="w-full border-2 dark:border-secondary border-gray-200 rounded mb-6">
-            <div class="dark:bg-secondary bg-gray-100 font-thin text-xl text-3 p-2 px-6">{{$lectureHall.Name}}</div>
+            <div class="dark:bg-secondary bg-gray-100 font-thin text-xl text-3 p-2 px-6">
+                {{$lectureHall.Name}}
+                <i class="fas fa-trash hover:text-1 px-2"
+                   title="Delete Lecture Hall"
+                   onclick="deleteLectureHall({{$lectureHall.Model.ID}})"></i>
+            </div>
             <div class="text-4 px-4 p-2">
                 <div class="flex flex-row">
                     <div class="w-1/4 font-semibold text-1">Calendar:</div>

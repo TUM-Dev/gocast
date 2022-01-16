@@ -16,6 +16,17 @@ async function createLectureHall(
     });
 }
 
+async function deleteLectureHall(lectureHallID: number) {
+    if (confirm("Do you really want to remove this lecture hall?")) {
+        try {
+            await Delete("/api/lectureHall/" + lectureHallID);
+            document.location.reload();
+        } catch (e) {
+            alert("Something went wrong while deleting!");
+        }
+    }
+}
+
 function createUser() {
     const userName: string = (document.getElementById("name") as HTMLInputElement).value;
     const email: string = (document.getElementById("email") as HTMLInputElement).value;

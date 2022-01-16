@@ -28,6 +28,7 @@ func configGinLectureHallApiRouter(router *gin.Engine) {
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
 	admins.PUT("/lectureHall/:id", updateLectureHall)
+	admins.DELETE("/lectureHall/:id", deleteLectureHall)
 	admins.POST("/createLectureHall", createLectureHall)
 	admins.POST("/takeSnapshot/:lectureHallID/:presetID", takeSnapshot)
 	admins.POST("/updateLecturesLectureHall", updateLecturesLectureHall)
@@ -79,6 +80,21 @@ func updateLectureHall(c *gin.Context) {
 	if err != nil {
 		log.WithError(err).Error("Error while updating lecture hall")
 		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+}
+
+func deleteLectureHall(c *gin.Context) {
+	lhIDStr := c.Param("id")
+	lhID, err := strconv.Atoi(lhIDStr)
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	err = dao.DeleteLectureHall(uint(lhID))
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -364,21 +380,21 @@ func createLectureHall(c *gin.Context) {
 		return
 	}
 	dao.CreateLectureHall(model.LectureHall{
-		Name:   req.Name,
-		CombIP: req.CombIP,
-		PresIP: req.PresIP,
-		CamIP:  req.CamIP,
-		CameraIP: req.CameraIP,
+		Name:      req.Name,
+		CombIP:    req.CombIP,
+		PresIP:    req.PresIP,
+		CamIP:     req.CamIP,
+		CameraIP:  req.CameraIP,
 		PwrCtrlIp: req.PwrCtrlIP,
 	})
 }
 
 type createLectureHallRequest struct {
-	Name   string `json:"name"`
-	CombIP string `json:"combIP"`
-	PresIP string `json:"presIP"`
-	CamIP  string `json:"camIP"`
-	CameraIP string `json:"cameraIP"`
+	Name      string `json:"name"`
+	CombIP    string `json:"combIP"`
+	PresIP    string `json:"presIP"`
+	CamIP     string `json:"camIP"`
+	CameraIP  string `json:"cameraIP"`
 	PwrCtrlIP string `json:"pwrCtrlIp"`
 }
 
