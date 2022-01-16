@@ -16,7 +16,6 @@ import (
 )
 
 func WatchPage(c *gin.Context) {
-	// todo
 	span := sentry.StartSpan(c, "GET /w", sentry.TransactionName("GET /w"))
 	defer span.Finish()
 	var data WatchPageData
@@ -62,6 +61,13 @@ func WatchPage(c *gin.Context) {
 		c.Redirect(http.StatusFound, strings.Split(c.Request.RequestURI, "?")[0])
 		return
 	}
+	if _, dvr := c.GetQuery("dvr"); dvr {
+		data.DVR = "?dvr"
+	} else {
+		data.DVR = ""
+	}
+	log.Printf("DVR: %s", data.DVR)
+
 	if strings.HasPrefix(data.Version, "unit-") {
 		data.Description = template.HTML(data.Unit.GetDescriptionHTML())
 	} else {
@@ -90,4 +96,5 @@ type WatchPageData struct {
 	Progress        model.StreamProgress
 	IndexData       IndexData
 	Description     template.HTML
+	DVR             string // ?dvr if dvr is enabled, empty string otherwise
 }

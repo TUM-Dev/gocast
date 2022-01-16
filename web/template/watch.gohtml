@@ -44,11 +44,11 @@
                                 type="application/x-mpegURL"/>
                     {{else}}
                         {{if eq .Version "CAM"}}
-                            <source src="{{$stream.PlaylistUrlCAM}}" type="application/x-mpegURL"/>
+                            <source src="{{$stream.PlaylistUrlCAM}}{{.DVR}}" type="application/x-mpegURL"/>
                         {{else if eq .Version "PRES"}}
-                            <source src="{{$stream.PlaylistUrlPRES}}" type="application/x-mpegURL"/>
+                            <source src="{{$stream.PlaylistUrlPRES}}{{.DVR}}" type="application/x-mpegURL"/>
                         {{else}}
-                            <source src="{{$stream.PlaylistUrl}}" type="application/x-mpegURL"/>
+                            <source src="{{$stream.PlaylistUrl}}{{.DVR}}" type="application/x-mpegURL"/>
                         {{end}}
                     {{end}}
                 {{end}}
@@ -115,8 +115,17 @@
                    onclick="copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))"></i>
                 </p>
             </div>
+            <div class="flex justify-between">
             <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                 <span class="text-5 hover:text-1 hover:underline text-lg">{{$course.Name}}</span></a>
+                {{if $stream.LiveNow}}
+                    {{if .DVR}}
+                        <a class="underline text-gray-300 hover:text-black dark:text-gray-400 dark:hover:text-white" href="./{{$stream.Model.ID}}">Disable Beta stream</a>
+                    {{else}}
+                        <a class="underline text-gray-300 hover:text-black dark:text-gray-400 dark:hover:text-white" href="?dvr">Enable Timeshift (beta)</a>
+                    {{end}}
+                {{end}}
+            </div>
             {{if and .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
                 <div class="border-t-2 border-secondary p-4">
                     <h3 class="text-4 mb-2">Administration:</h3>
