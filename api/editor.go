@@ -57,7 +57,12 @@ func configOpencastReceiverRoute(router *gin.Engine) {
 			context.AbortWithStatus(http.StatusNotFound)
 			return
 		}
-		file, err := os.OpenFile(stream.Files[0].Path, os.O_RDONLY, 0666)
+		defaultFile, err := stream.GetDefaultFile()
+		if err != nil {
+			context.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+		file, err := os.OpenFile(defaultFile.Path, os.O_RDONLY, 0666)
 		if err != nil {
 			context.AbortWithStatus(http.StatusNotFound)
 			return
@@ -94,7 +99,8 @@ func getEditJson(c *gin.Context) {
 	}
 	stream, err := dao.GetStreamByID(c, sid)
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		c.Status(http.StatusNotFound)
+		c.Writer.Write([]byte(("Video not found, please check the stream id or reach out to us.")))
 		return
 	}
 
@@ -129,7 +135,7 @@ func getEditJson(c *gin.Context) {
 		Title:          "Edit Video",
 		Date:           stream.Start,
 		Duration:       stream.Duration * 1000, // seconds to milliseconds
-		Series:         Series{},
+		Series:         series{},
 		WorkflowActive: false,
 	})
 }
@@ -141,7 +147,7 @@ type editData struct {
 	Title          string        `json:"title"`
 	Date           time.Time     `json:"date"`
 	Duration       uint32        `json:"duration"`
-	Series         Series        `json:"series"`
+	Series         series        `json:"series"`
 	WorkflowActive bool          `json:"workflow_active"`
 }
 type workflow struct {
@@ -171,7 +177,7 @@ type track struct {
 	URI         string      `json:"uri"`
 	ID          string      `json:"id"`
 }
-type Series struct {
+type series struct {
 	ID    interface{} `json:"id"`
 	Title interface{} `json:"title"`
 }

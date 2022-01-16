@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
@@ -108,4 +109,13 @@ func (s Stream) FriendlyDate() string {
 
 func (s Stream) FriendlyTime() string {
 	return s.Start.Format("02.01.2006 15:04") + " - " + s.End.Format("15:04")
+}
+
+func (s Stream) GetDefaultFile() (File, error) {
+	for i, file := range s.Files {
+		if file.Type == "video" && file.GetFriendlyFileName() == "Default view" {
+			return s.Files[i], nil
+		}
+	}
+	return File{}, errors.New("no default video")
 }
