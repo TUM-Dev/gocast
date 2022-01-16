@@ -27,6 +27,7 @@ func configOpencastReceiverRoute(router *gin.Engine) {
 		log.Info(c.Request.URL.Path)
 		c.Status(http.StatusOK)
 	})
+	g.GET("/editor/waveform/:stream_id", getWaveform)
 	g.GET("/editor/metadata.json", func(c *gin.Context) {
 		c.Header("Content-Type", "application/json")
 		c.Writer.Write([]byte(`[{"flavor":"dublincore/episode","title":"EVENTS.EVENTS.DETAILS.CATALOG.EPISODE","fields":[{"readOnly":false,"id":"duration","label":"EVENTS.EVENTS.DETAILS.METADATA.DURATION","type":"text","value":"09:09:57","required":false},{"readOnly":true,"id":"identifier","label":"EVENTS.EVENTS.DETAILS.METADATA.ID","type":"text","value":"ID-dual-stream-demo","required":false}]}]`))
@@ -67,6 +68,22 @@ func configOpencastReceiverRoute(router *gin.Engine) {
 		context.Header("Content-Type", "video/mp4")
 		http.ServeContent(context.Writer, context.Request, "file.mp4", time.Now(), file)
 	})
+}
+
+func getWaveform(context *gin.Context) {
+	streamId := context.Param("stream_id")
+	stream, err := dao.GetStreamByID(context, streamId)
+	if err != nil {
+		context.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	for _, file := range stream.Files {
+		if file.Type == "waveform" {
+			context.Header("Content-Type", "image/png")
+			context.File(file.Path)
+			return
+		}
+	}
 }
 
 func getEditJson(c *gin.Context) {
