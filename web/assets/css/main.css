@@ -180,19 +180,28 @@ input[type='checkbox']:checked + label {
     width: 6px;
 }
 
+/* light mode scrollbar */
 #chatBox::-webkit-scrollbar-track {
-    background: #0d1117;
+    background: white;
 }
 
 #chatBox::-webkit-scrollbar-thumb {
+    background: #d1d5db; /* hex code for bg-gray-300 */
+}
+#chatBox {
+    scrollbar-width: 6px;
+    scrollbar-color: #d1d5db white;
+}
+
+/* dark mode scrollbar */
+.dark #chatBox::-webkit-scrollbar-track {
+    background: #0d1117;
+}
+
+.dark #chatBox::-webkit-scrollbar-thumb {
     background: #5b5b5b;
 }
-
-#chatWrapper, #watchWrapper, #watchPageMainWrapper {
-    height: var(--chat-height);
-}
-
-#chatBox {
+.dark #chatBox {
     scrollbar-width: 6px;
     scrollbar-color: #5b5b5b #0d1117;
 }
@@ -267,4 +276,11 @@ a.fc-event, a.fc-event:hover {
 
 [x-cloak] {
     display: none !important;
+}
+
+/* copy of Tailwind's .truncate, but apply to all children */
+.truncate-children > *{
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

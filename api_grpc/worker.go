@@ -224,6 +224,10 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 	if shouldAddFile {
 		stream.Files = append(stream.Files, model.File{StreamID: stream.ID, Path: request.FilePath})
 	}
+
+	if request.Duration != 0 {
+		stream.Duration = request.Duration
+	}
 	err = dao.SaveStream(&stream)
 	if err != nil {
 		log.WithError(err).Error("Can't save stream")
