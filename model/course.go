@@ -10,7 +10,7 @@ import (
 type Course struct {
 	gorm.Model
 
-	UserID                  uint   `gorm:"not null"`
+	UserID                  uint   `gorm:"not null"` // Owner of the course
 	Name                    string `gorm:"not null"`
 	Slug                    string `gorm:"not null"` // eg. eidi
 	Year                    int    `gorm:"not null"` // eg. 2021

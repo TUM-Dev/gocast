@@ -63,7 +63,7 @@ func GetUserByID(ctx context.Context, id uint) (user model.User, err error) {
 		return cached.(model.User), nil
 	}
 	var foundUser model.User
-	dbErr := DB.Preload("Courses.Streams").Preload("Courses.Streams").Find(&foundUser, "id = ?", id).Error
+	dbErr := DB.Preload("AdministeredCourses").Preload("Courses.Streams").Preload("Courses.Streams").Find(&foundUser, "id = ?", id).Error
 	if dbErr == nil {
 		Cache.SetWithTTL(fmt.Sprintf("userById%d", id), foundUser, 1, time.Second*10)
 	}
