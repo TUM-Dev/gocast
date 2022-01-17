@@ -259,6 +259,9 @@ sudo service tum-live restart
 ### Gotchas:
 
 Some things we discovered when testing TUM-Live:
+
+#### File Discriptor limits
+
 Large numbers of concurrent websockets can exhaust the available file descriptors. To mitigate this, increase the number of file descriptors like this:
 
 in `/etc/sysctl.conf` add
