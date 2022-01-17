@@ -139,7 +139,9 @@ function submitChat(e: Event) {
 }
 
 function showDisconnectedMsg() {
-    document.getElementById("disconnectMsg").classList.remove("hidden");
+    if (document.getElementById("disconnectMsg") !== null) {
+        document.getElementById("disconnectMsg").classList.remove("hidden");
+    }
 }
 
 function hideDisconnectedMsg() {
