@@ -34,9 +34,8 @@ type server struct {
 
 func dialIn(targetWorker model.Worker) (*grpc.ClientConn, error) {
 	credentials := insecure.NewCredentials()
-	log.Error("Connecting to:" + fmt.Sprintf("%s:50051", targetWorker.Host))
+	log.Info("Connecting to:" + fmt.Sprintf("%s:50051", targetWorker.Host))
 	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", targetWorker.Host), grpc.WithTransportCredentials(credentials))
-	log.WithError(err).Error("Unable to dial server")
 	targetWorker.Workload -= 1 // decrease workers load only by one (backoff)
 	return conn, err
 }
@@ -453,6 +452,7 @@ func NotifyWorkers() {
 			}
 			conn, err := dialIn(workers[workerIndex])
 			if err != nil {
+				log.WithError(err).Error("Unable to dial server")
 				continue
 			}
 			client := pb.NewToWorkerClient(conn)
@@ -502,6 +502,7 @@ func notifyWorkersPremieres() {
 		}
 		conn, err := dialIn(workers[workerIndex])
 		if err != nil {
+			log.WithError(err).Error("Unable to dial server")
 			continue
 		}
 		client := pb.NewToWorkerClient(conn)
@@ -536,6 +537,7 @@ func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool) {
 		}
 		conn, err := dialIn(currentWorker)
 		if err != nil {
+			log.WithError(err).Error("Unable to dial server")
 			continue
 		}
 		client := pb.NewToWorkerClient(conn)
