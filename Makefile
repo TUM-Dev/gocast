@@ -1,4 +1,6 @@
-all: npm_dependencies go_dependencies bundle
+.PHONY: docs
+
+all: npm_dependencies go_dependencies bundle docs
 
 VERSION := $(shell git rev-parse --short origin/HEAD)
 
@@ -17,3 +19,7 @@ clean:
 
 install:
 	mv main /bin/tum-live
+
+docs:
+	cd docs; \
+	mkdocs build;
