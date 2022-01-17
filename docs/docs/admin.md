@@ -229,7 +229,7 @@ auths:
   pwrCrtlAuth: "user:password"
   camAuth: "user:password"
 ingestBase: "rtmp://ingest.some.tum.de/"
-cookieStoreSecret: "put a bunch of secred characters here"
+cookieStoreSecret: "put a bunch of secret characters here"
 ```
 
 ### Installation:
