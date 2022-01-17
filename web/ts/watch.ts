@@ -19,8 +19,9 @@ let retryInt = 5000; //retry connecting to websocket after this timeout
 const pageloaded = new Date();
 
 function startWebsocket() {
+    const wsProto = window.location.protocol === "https:" ? `wss://` : `ws://`;
     const streamid = (document.getElementById("streamID") as HTMLInputElement).value;
-    ws = new WebSocket("wss://live.rbg.tum.de/api/chat/" + streamid + "/ws");
+    ws = new WebSocket(`${wsProto}${window.location.host}/api/chat/${streamid}/ws`);
     const cf = document.getElementById("chatForm");
     if (cf !== null && cf != undefined) {
         (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", (e) => submitChat(e));
@@ -96,11 +97,11 @@ function createServerMessage(msg) {
 function createMessageElement(m): HTMLDivElement {
     // Header:
     const chatElem = document.createElement("div") as HTMLDivElement;
-    chatElem.classList.add("rounded", "p-2", "mx-2");
+    chatElem.classList.add("rounded", "py-2");
     const chatHeader = document.createElement("div") as HTMLDivElement;
     chatHeader.classList.add("flex", "flex-row");
     const chatNameField = document.createElement("p") as HTMLParagraphElement;
-    chatNameField.classList.add("grow", "font-semibold");
+    chatNameField.classList.add("text-sm", "grow", "font-semibold");
     if (m["admin"]) {
         chatNameField.classList.add("text-warn");
     }
@@ -110,14 +111,14 @@ function createMessageElement(m): HTMLDivElement {
     const d = new Date();
     d.setTime(Date.now());
     const chatTimeField = document.createElement("p") as HTMLParagraphElement;
-    chatTimeField.classList.add("text-4");
+    chatTimeField.classList.add("text-4", "text-xs");
     chatTimeField.innerText = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
     chatHeader.appendChild(chatTimeField);
     chatElem.appendChild(chatHeader);
 
     // Message:
     const chatMessage = document.createElement("p") as HTMLParagraphElement;
-    chatMessage.classList.add("text-gray-300", "break-words");
+    chatMessage.classList.add("text-3", "break-words");
     chatMessage.innerText = m["msg"];
     chatElem.appendChild(chatMessage);
     return chatElem;
@@ -138,11 +139,15 @@ function submitChat(e: Event) {
 }
 
 function showDisconnectedMsg() {
-    document.getElementById("disconnectMsg").classList.remove("hidden");
+    if (document.getElementById("disconnectMsg") !== null) {
+        document.getElementById("disconnectMsg").classList.remove("hidden");
+    }
 }
 
 function hideDisconnectedMsg() {
-    document.getElementById("disconnectMsg").classList.add("hidden");
+    if (document.getElementById("disconnectMsg") !== null) {
+        document.getElementById("disconnectMsg").classList.add("hidden");
+    }
 }
 
 new Watch();
