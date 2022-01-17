@@ -19,7 +19,7 @@ let retryInt = 5000; //retry connecting to websocket after this timeout
 const pageloaded = new Date();
 
 function startWebsocket() {
-    const wsProto = window.location.protocol.indexOf("https") !== -1 ? `wss://` : `ws://`;
+    const wsProto = window.location.protocol === "https:" ? `wss://` : `ws://`;
     const streamid = (document.getElementById("streamID") as HTMLInputElement).value;
     ws = new WebSocket(`${wsProto}${window.location.host}/api/chat/${streamid}/ws`);
     const cf = document.getElementById("chatForm");
