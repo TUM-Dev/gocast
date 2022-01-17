@@ -43,7 +43,7 @@ ffmpeg version 4.2.4-1ubuntu0.1 Copyright (c) 2000-2020 the FFmpeg developers
   libpostproc    55.  5.100 / 55.  5.100
 ```
 
-#### nginx
+### nginx
 
 Nginx proxies the requests to TUM-Live. We a config similar to this:
 
@@ -160,7 +160,7 @@ http {
 }
 ```
 
-#### Systemd service:
+### Systemd service:
 
 This is our systemd service definition:
 
@@ -184,11 +184,11 @@ StandardError=append:/path/to/log/tum-live/error.log
 WantedBy=multi-user.target
 ```
 
-#### Setup the database
+### Setup the database
 
 Create a database in MariaDB and setup a user with read and write permissions.
 
-#### Configure the server
+### Configure the server
 
 Create a config file for the server located at /etc/TUM-Live/config.yaml
 
@@ -232,7 +232,7 @@ ingestBase: "rtmp://ingest.some.tum.de/"
 cookieStoreSecret: "put a bunch of secred characters here"
 ```
 
-#### Installation:
+### Installation:
 
 TUM-Live can easily be installed with the following commands:
 
@@ -254,4 +254,21 @@ git pull -X theirs
 make all
 sudo make install
 sudo service tum-live restart
+```
+
+### Gotchas:
+
+Some things we discovered when testing TUM-Live:
+Large numbers of concurrent websockets can exhaust the available file descriptors. To mitigate this, increase the number of file descriptors like this:
+
+in `/etc/sysctl.conf` add
+```
+fs.file-max=2000000
+```
+
+Reboot the system and verify that the number of file descriptors is increased:
+
+```bash
+$ cat /proc/sys/fs/file-max
+> 2000000
 ```
