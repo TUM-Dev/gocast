@@ -96,11 +96,32 @@ func GetPublicCourses(year int, term string) (courses []model.Course, err error)
 		return cachedCourses.([]model.Course), err
 	}
 	var publicCourses []model.Course
+
 	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start asc")
-	}).Find(&publicCourses, "visibility = 'public' AND teaching_term = ? AND year = ?", term, year).Error
+	}).Find(&publicCourses, "visibility = 'public' AND teaching_term = ? AND year = ?",
+		term, year).Error
+
 	if err == nil {
 		Cache.SetWithTTL(fmt.Sprintf("publicCourses%v%v", year, term), publicCourses, 1, time.Minute)
+	}
+	return publicCourses, err
+}
+
+func GetPublicCoursesWithoutOwn(year int, term string, myCourses []uint) (courses []model.Course, err error) {
+	cachedCourses, found := Cache.Get(fmt.Sprintf("publicCoursesWithoutOwn%v%v", year, term))
+	if found {
+		return cachedCourses.([]model.Course), err
+	}
+	var publicCourses []model.Course
+
+	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
+		return db.Order("start asc")
+	}).Find(&publicCourses, "visibility = 'public' AND teaching_term = ? AND year = ? AND id NOT IN ?",
+		term, year, myCourses).Error
+
+	if err == nil {
+		Cache.SetWithTTL(fmt.Sprintf("publicCoursesWithoutOwn%v%v", year, term), publicCourses, 1, time.Minute)
 	}
 	return publicCourses, err
 }

@@ -41,7 +41,7 @@
         <h2 class="text-2xl text-1">My Courses</h2>
     {{end}}
     {{range $course := .Courses }}
-        {{if ne $course.Visibility "hidden"}}
+        {{if not $course.IsHidden}}
             {{template "course-card" $course}}
         {{end}}
     {{end}}

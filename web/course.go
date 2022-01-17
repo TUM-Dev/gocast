@@ -26,9 +26,11 @@ func editCourseByTokenPage(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+
+	indexData, _ := NewIndexDataWithContext(c)
 	d := editCourseByTokenPageData{
 		Token:     c.Request.Form.Get("token"),
-		IndexData: NewIndexDataWithContext(c),
+		IndexData: indexData,
 	}
 
 	err = templ.ExecuteTemplate(c.Writer, "edit-course-by-token.gohtml", d)

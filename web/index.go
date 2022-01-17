@@ -17,10 +17,7 @@ import (
 
 var VersionTag string
 
-func MainPage(c *gin.Context) {
-	tName := sentry.TransactionName("GET /")
-	spanMain := sentry.StartSpan(c.Request.Context(), "MainPageHandler", tName)
-	defer spanMain.Finish()
+func IsFreshInstallation(c *gin.Context) {
 	res, err := dao.AreUsersEmpty(context.Background()) // fresh installation?
 	if err != nil {
 		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", nil)
@@ -29,26 +26,21 @@ func MainPage(c *gin.Context) {
 		_ = templ.ExecuteTemplate(c.Writer, "onboarding.gohtml", nil)
 		return
 	}
-	indexData := NewIndexData()
+}
 
-	// load current notifications:
+func LoadCurrentNotifications() []model.ServerNotification {
 	if notifications, err := dao.GetCurrentServerNotifications(); err == nil {
-		indexData.ServerNotifications = notifications
+		return notifications
 	} else if err != gorm.ErrRecordNotFound {
 		log.WithError(err).Warn("could not get server notifications")
 	}
+	return nil
+}
 
-	var tumLiveContext tools.TUMLiveContext
-	tumLiveContextQueried, found := c.Get("TUMLiveContext")
-	if found {
-		tumLiveContext = tumLiveContextQueried.(tools.TUMLiveContext)
-		indexData.TUMLiveContext = tumLiveContext
-	} else { //TODO log
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
+func GetYearAndTerm(c *gin.Context) (int, string) {
 	var year int
 	var term string
+	var err error
 	if c.Param("year") == "" {
 		year, term = tum.GetCurrentSemester()
 	} else {
@@ -56,27 +48,18 @@ func MainPage(c *gin.Context) {
 		year, err = strconv.Atoi(c.Param("year"))
 		if err != nil || (term != "W" && term != "S") {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Bad semester format in url."})
-			return
 		}
 	}
-	indexData.Semesters = dao.GetAvailableSemesters(spanMain.Context())
-	indexData.CurrentYear = year
-	indexData.CurrentTerm = term
-	if tumLiveContext.User != nil && tumLiveContext.User.Role == model.AdminType {
-		indexData.Courses = dao.GetAllCoursesForSemester(year, term, spanMain.Context())
-	} else if tumLiveContext.User != nil {
-		indexData.Courses = tumLiveContext.User.CoursesForSemester(year, term, spanMain.Context())
-	}
-	if tumLiveContext.User != nil && tumLiveContext.User.Role == model.LecturerType { // add course for lecturer as well
-		coursesForLecturer, err := dao.GetCourseForLecturerIdByYearAndTerm(c, year, term, tumLiveContext.User.ID)
-		if err == nil {
-			indexData.Courses = append(indexData.Courses, coursesForLecturer...)
-		}
-	}
+
+	return year, term
+}
+
+func LoadLivestreams(tumLiveContext tools.TUMLiveContext, c *gin.Context) []CourseStream {
 	streams, err := dao.GetCurrentLive(context.Background())
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
 	}
+
 	var livestreams []CourseStream
 
 	for _, stream := range streams {
@@ -98,18 +81,86 @@ func MainPage(c *gin.Context) {
 			Stream: stream,
 		})
 	}
-	indexData.LiveStreams = livestreams
-	public, err := dao.GetPublicCourses(year, term)
+
+	return livestreams
+}
+
+// TODO: Too many parameters
+func LoadCoursesForRole(tumLiveContext tools.TUMLiveContext, year int, term string, spanMain *sentry.Span, c *gin.Context) []model.Course {
+	var courses []model.Course
+
+	if tumLiveContext.User != nil {
+		switch tumLiveContext.User.Role {
+		case model.AdminType:
+			courses = dao.GetAllCoursesForSemester(year, term, spanMain.Context())
+		case model.LecturerType:
+			{
+				courses = tumLiveContext.User.CoursesForSemester(year, term, spanMain.Context())
+				coursesForLecturer, err := dao.GetCourseForLecturerIdByYearAndTerm(c, year, term, tumLiveContext.User.ID)
+				if err == nil {
+					courses = append(courses, coursesForLecturer...)
+				}
+			}
+		default:
+			courses = tumLiveContext.User.CoursesForSemester(year, term, spanMain.Context())
+		}
+	}
+
+	return courses
+}
+
+func CourseListToIdList(courses []model.Course) []uint {
+	var idList []uint
+	for _, c := range courses {
+		idList = append(idList, c.ID)
+	}
+	return idList
+}
+
+func MainPage(c *gin.Context) {
+	tName := sentry.TransactionName("GET /")
+	spanMain := sentry.StartSpan(c.Request.Context(), "MainPageHandler", tName)
+	defer spanMain.Finish()
+
+	IsFreshInstallation(c)
+
+	indexData, tumLiveContext := NewIndexDataWithContext(c)
+	indexData.ServerNotifications = LoadCurrentNotifications()
+
+	year, term := GetYearAndTerm(c)
+
+	indexData.Semesters = dao.GetAvailableSemesters(spanMain.Context())
+	indexData.CurrentYear = year
+	indexData.CurrentTerm = term
+
+	indexData.Courses = LoadCoursesForRole(tumLiveContext, year, term, spanMain, c)
+	indexData.LiveStreams = LoadLivestreams(tumLiveContext, c)
+
+	var public []model.Course
+	var err error
+	myCourses := CourseListToIdList(indexData.Courses)
+	if len(myCourses) > 0 {
+		public, err = dao.GetPublicCoursesWithoutOwn(year, term, myCourses)
+	} else {
+		public, err = dao.GetPublicCourses(year, term)
+	}
+
+	// TODO:
+	/*
+		Possibilites
+		myCourses.len = 0
+			- loggedIn
+			- not loggedIn
+		myCourses.len > 0
+			- loggedIn
+			- not loggedIn
+	 */
+
 	if err != nil {
 		indexData.PublicCourses = []model.Course{}
 	} else {
-		// filter out courses that already are in "my courses"
-		var publicFiltered []model.Course
-		for _, c := range public {
-			if !tools.CourseListContains(indexData.Courses, c.ID) {
-				publicFiltered = append(publicFiltered, c)
-			}
-		}
+		var publicFiltered = public
+
 		if tumLiveContext.User != nil {
 			loggedIn, _ := dao.GetCoursesForLoggedInUsers(year, term)
 			for _, c := range loggedIn {
@@ -123,6 +174,7 @@ func MainPage(c *gin.Context) {
 	sort.Slice(indexData.PublicCourses, func(i, j int) bool {
 		return indexData.PublicCourses[i].CompareTo(indexData.PublicCourses[j])
 	})
+
 	sort.Slice(indexData.Courses, func(i, j int) bool {
 		return indexData.Courses[i].CompareTo(indexData.Courses[j])
 	})
@@ -167,17 +219,22 @@ func NewIndexData() IndexData {
 	}
 }
 
-func NewIndexDataWithContext(c *gin.Context) IndexData {
+func NewIndexDataWithContext(c *gin.Context) (IndexData, tools.TUMLiveContext) {
 	indexData := IndexData{
 		VersionTag: VersionTag,
 	}
+
 	var tumLiveContext tools.TUMLiveContext
 	tumLiveContextQueried, found := c.Get("TUMLiveContext")
 	if found {
 		tumLiveContext = tumLiveContextQueried.(tools.TUMLiveContext)
 		indexData.TUMLiveContext = tumLiveContext
+	} else {
+		log.Warn("could not get TUMLiveContext")
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
-	return indexData
+
+	return indexData, tumLiveContext
 }
 
 type CourseStream struct {
