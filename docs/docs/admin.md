@@ -2,6 +2,8 @@
 
 ## Server Setup
 
+Follow this guide if you don't use (the currently unstable) docker deployment
+
 ### Tested server software
 
 Currently, we successfully run TUM-Live on/with:
@@ -158,3 +160,98 @@ http {
 }
 ```
 
+#### Systemd service:
+
+This is our systemd service definition:
+
+```
+Unit]
+Description=TUM-Live
+After=network.target
+Requires=mariadb.service
+
+[Service]
+LimitNOFILE=1048576:2097152
+Type=simple
+ExecStart=/bin/tum-live
+TimeoutStopSec=5
+KillMode=mixed
+Restart=on-failure
+StandardOutput=append:/path/to/log/tum-live/logs.log
+StandardError=append:/path/to/log/tum-live/error.log
+
+[Install]
+WantedBy=multi-user.target
+```
+
+#### Setup the database
+
+Create a database in MariaDB and setup a user with read and write permissions.
+
+#### Configure the server
+
+Create a config file for the server located at /etc/TUM-Live/config.yaml
+
+```yaml
+lrz:
+  name: "LRZ Uploader Name"
+  email: "example@tum.de"
+  phone: "555-123-456"
+  uploadUrl: "https://server.of.lrz.de/video_upload.cgi"
+  subDir: "RBG"
+mail:
+  sender: "server sender @ domain"
+  server: "mailrelay.your.org:25"
+  SMIMECert: "/path/to/mail.p12.crt.pem"
+  SMIMEKey: "/path/to/mail.p12.key.pem"
+db:
+  user: "user"
+  password: "password"
+  database: "database"
+campus:
+  base: "https://campus.tum.de/tumonlinej/ws/webservice_v1.0"
+  tokens:
+    - "token"
+    - "token2"
+    - "token3"
+ldap:
+  url: "ldaps://iauth.somewhere:636"
+  user: "cn=abv,ou=bindDNs,ou=iauth,dc=tum,dc=de"
+  password: "secret_password"
+  baseDn: "ou=users,ou=data,ou=prod,ou=iauth,dc=tum,dc=de"
+  userDn: "cn=%v,ou=users,ou=data,ou=prod,ou=iauth,dc=tum,dc=de"
+paths:
+  static: "/var/www/public"
+  mass: "/path/to/cephfs/livestream/rec/TUM-Live/"
+auths:
+  smpUser: "user"
+  smpPassword: "password"
+  pwrCrtlAuth: "user:password"
+  camAuth: "user:password"
+ingestBase: "rtmp://ingest.some.tum.de/"
+cookieStoreSecret: "put a bunch of secred characters here"
+```
+
+#### Installation:
+
+TUM-Live can easily be installed with the following commands:
+
+```bash
+git clone git@github.com:joschahenningsen/TUM-Live.git
+cd TUM-Live#
+make all
+sudo make install
+sudo service tum-live restart
+```
+
+#### Update:
+
+Updating TUM-Live works by pulling and rebuilding the source code:
+
+```bash
+cd TUM-Live
+git pull -X theirs
+make all
+sudo make install
+sudo service tum-live restart
+```
