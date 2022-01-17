@@ -28,7 +28,7 @@ type Stream struct {
 	LiveNow          bool   `gorm:"not null"`
 	Recording        bool
 	Premiere         bool `gorm:"default:null"`
-	EndedEarly       bool `gorm:"default:null"`
+	Ended            bool `gorm:"default:null"`
 	Chats            []Chat
 	Stats            []Stat
 	Units            []StreamUnit
@@ -51,7 +51,7 @@ func (s Stream) IsSelfStream() bool {
 
 // IsPast returns whether the stream end time was reached
 func (s Stream) IsPast() bool {
-	return s.End.Before(time.Now()) || s.EndedEarly
+	return s.End.Before(time.Now()) || s.Ended
 }
 
 // IsComingUp returns whether the stream begins in 30 minutes

@@ -23,7 +23,7 @@ require (
 	github.com/gorilla/sessions v1.2.1 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jinzhu/now v1.1.4
-	github.com/joschahenningsen/TUM-Live-Worker-v2 v0.0.0-20220114214454-14282d97c824
+	github.com/joschahenningsen/TUM-Live-Worker-v2 v0.0.0-20220116221448-50a692f7a809
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.17

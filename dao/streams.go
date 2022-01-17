@@ -160,10 +160,6 @@ func DeleteStream(streamID string) {
 	Cache.Clear()
 }
 
-func SetEarlyEnd(streamID uint) error {
-	return DB.Model(&model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"ended_early": true}).Error
-}
-
 func UpdateSilences(silences []model.Silence, streamID string) error {
 	DB.Delete(&model.Silence{}, "stream_id = ?", streamID)
 	return DB.Save(&silences).Error
@@ -180,9 +176,15 @@ func SetStreamNotLiveById(streamID uint) error {
 	return DB.Debug().Exec("UPDATE `streams` SET `live_now`='0' WHERE id = ?", streamID).Error
 }
 
-func SavePauseState(streamid uint, paused bool) error {
+func SavePauseState(streamID uint, paused bool) error {
 	defer Cache.Clear()
-	return DB.Model(model.Stream{}).Where("id = ?", streamid).Updates(map[string]interface{}{"Paused": paused}).Error
+	return DB.Model(model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"Paused": paused}).Error
+}
+
+// SaveDoneState updates the Done field of a stream model to the value of done when a stream finishes
+func SaveDoneState(streamID uint, done bool) error {
+	defer Cache.Clear()
+	return DB.Model(&model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"Ended": done}).Error
 }
 
 func SaveCOMBURL(stream *model.Stream, url string) {

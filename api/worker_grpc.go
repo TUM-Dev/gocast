@@ -176,11 +176,9 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 						log.WithError(err).Error("Can't turn off live light.")
 					}
 					lightLock.Unlock()
-					if request.EndedEarly {
-						err = dao.SetEarlyEnd(stream.ID)
-						if err != nil {
-							log.WithError(err).Error("Can't set early end")
-						}
+					err = dao.SaveDoneState(stream.ID, true)
+					if err != nil {
+						log.WithError(err).Error("Can't set stream done")
 					}
 				}
 			}
@@ -382,6 +380,12 @@ func NotifyWorkers() {
 		return
 	}
 	for i := range streams {
+		err := dao.SaveDoneState(streams[i].ID, false)
+		if err != nil {
+			log.WithError(err).Warn("Can't set stream undone")
+			sentry.CaptureException(err)
+			continue
+		}
 		courseForStream, err := dao.GetCourseById(context.Background(), streams[i].CourseID)
 		if err != nil {
 			log.WithError(err).Warn("Can't get course for stream, skipping")
@@ -463,6 +467,53 @@ func NotifyWorkers() {
 	}
 }
 
+//notifyWorkersPremieres looks for premieres that should be streamed and assigns them to workers.
+func notifyWorkersPremieres() {
+	streams := dao.GetDuePremieresForWorkers()
+	workers := dao.GetAliveWorkers()
+
+	if len(workers) == 0 && len(streams) != 0 {
+		log.Error("Not enough alive workers for premiere")
+		return
+	}
+	for i := range streams {
+		err := dao.SaveDoneState(streams[i].ID, false)
+		if err != nil {
+			log.WithError(err).Warn("Can't set stream undone")
+			sentry.CaptureException(err)
+			continue
+		}
+		if len(streams[i].Files) == 0 {
+			log.WithField("streamID", streams[i].ID).Warn("Request to self stream without file")
+			continue
+		}
+		workerIndex := getWorkerWithLeastWorkload(workers)
+		workers[workerIndex].Workload += 3
+		ingestServer, err := dao.GetBestIngestServer()
+		if err != nil {
+			log.WithError(err).Error("Can't find ingest server")
+			continue
+		}
+		req := pb.PremiereRequest{
+			StreamID:     uint32(streams[i].ID),
+			FilePath:     streams[i].Files[0].Path,
+			IngestServer: ingestServer.Url,
+			OutUrl:       ingestServer.OutUrl,
+		}
+		conn, err := dialIn(workers[workerIndex])
+		if err != nil {
+			continue
+		}
+		client := pb.NewToWorkerClient(conn)
+		req.WorkerID = workers[workerIndex].WorkerID
+		resp, err := client.RequestPremiere(context.Background(), &req)
+		if err != nil || !resp.Ok {
+			log.WithError(err).Error("could not assign premiere!")
+		}
+		endConnection(conn)
+	}
+}
+
 // NotifyWorkersToStopStream notifies all workers for a given stream to quit encoding
 func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool) {
 	workers, err := dao.GetWorkersForStream(stream)
@@ -500,47 +551,6 @@ func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool) {
 	if err != nil {
 		log.WithError(err).Error("Could not delete workers for stream")
 		return
-	}
-}
-
-//notifyWorkersPremieres looks for premieres that should be streamed and assigns them to workers.
-func notifyWorkersPremieres() {
-	streams := dao.GetDuePremieresForWorkers()
-	workers := dao.GetAliveWorkers()
-
-	if len(workers) == 0 && len(streams) != 0 {
-		log.Error("Not enough alive workers for premiere")
-		return
-	}
-	for i := range streams {
-		if len(streams[i].Files) == 0 {
-			log.WithField("streamID", streams[i].ID).Warn("Request to self stream without file")
-			continue
-		}
-		workerIndex := getWorkerWithLeastWorkload(workers)
-		workers[workerIndex].Workload += 3
-		ingestServer, err := dao.GetBestIngestServer()
-		if err != nil {
-			log.WithError(err).Error("Can't find ingest server")
-			continue
-		}
-		req := pb.PremiereRequest{
-			StreamID:     uint32(streams[i].ID),
-			FilePath:     streams[i].Files[0].Path,
-			IngestServer: ingestServer.Url,
-			OutUrl:       ingestServer.OutUrl,
-		}
-		conn, err := dialIn(workers[workerIndex])
-		if err != nil {
-			continue
-		}
-		client := pb.NewToWorkerClient(conn)
-		req.WorkerID = workers[workerIndex].WorkerID
-		resp, err := client.RequestPremiere(context.Background(), &req)
-		if err != nil || !resp.Ok {
-			log.WithError(err).Error("could not assign premiere!")
-		}
-		endConnection(conn)
 	}
 }
 
