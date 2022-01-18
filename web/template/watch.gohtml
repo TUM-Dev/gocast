@@ -13,7 +13,7 @@
     {{if .IsAdminOfCourse}}
     <script async src="/static/assets/ts-dist/watch-admin.js?v={{.IndexData.VersionTag}}"></script>{{end}}
 </head>
-<body x-data="{'paused': {{$stream.Paused}}, 'stopped': false, 'streamID': {{$stream.Model.ID}}}"
+<body x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}}"
       x-on:pausestart.window="paused=true"
       x-on:pauseend.window="paused=false">
 {{template "header" .IndexData.TUMLiveContext}}
@@ -30,10 +30,6 @@
             <div class="p-4 bg-indigo-700 bg-opacity-20 border-t-4 border-indigo-700 w-full font-semibold text-2 rounded-t display-none"
                  x-show="paused" x-cloak>
                 <i class="fas fa-info-circle"></i> This lecture is currently paused.
-            </div>
-            <div class="p-4 bg-indigo-700 bg-opacity-20 border-t-4 border-indigo-700 w-full font-semibold text-2 rounded-t display-none"
-                 x-show="stopped" x-cloak>
-                <i class="fas fa-info-circle"></i> Waiting until lecture is stopped.
             </div>
             <video
                     id="my-video"
@@ -70,33 +66,45 @@
                 </h1>
                 <p class="text-lg text-4 flex space-x-2">
                     {{if not $stream.Recording}}
-                    <span class="flex m-auto" id="viewerCount"></span>
                     {{if not $stream.LiveNow}}
+                    {{if $stream.Ended}}
+                    {{/*When the stream ends its automatically reloaded, so we can use the template*/}}
+                    <span class="text-4 flex m-auto">Stream over</span>
+                    {{else}}
+                    <span class="flex m-auto" id="viewerCount"></span>
                     <span class="flex m-auto" id="ViewerDescText">Waiting</span>
                     <span class="flex m-auto">&#183;</span>
-                    {{if $stream.IsStartingInOneDay}}
-                    <span class="text-4 flex m-auto">Live in one day</span>
+                    {{if not $stream.StartsWithinOneDay}}
+                    <span x-data="timer('{{$course.GetNextLectureDateFormatted}}', false)"
+                          class="text-4 flex m-auto">
+                                        Live in&nbsp;<span x-text="time().days"></span>&nbsp;day<template
+                                x-if="time().days > 1"><span>s</span></template>
+                                    </span>
+                    {{else if $stream.TimeSlotReached}}
+                    Stream should start any moment
                     {{else}}
                 <div class="flex text-lg px-2 text-4 m-auto"
                      x-data="timer('{{$course.GetNextLectureDateFormatted}}', true)"
                      x-init="init();">
-                    {{if $stream.IsStartingInMoreThanOneDay}}
-                        Live in <span x-text="time().day"></span> days
-                    {{else if $stream.TimeSlotReached}}
-                        Stream is about to start
-                    {{else}}
+                    <template x-if="time().minutes === 0 && time().hours === 0 && time().seconds === 0">
+                        <span>Stream should start any moment</span>
+                    </template>
+                    <template x-if="!(time().minutes === 0 && time().hours === 0 && time().seconds === 0)">
                         <div class="tabular-nums flex">
                             <span x-text="time().hours"></span>:
                             <span x-text="time().minutes"></span>:
-                            <span x-text="time().seconds"> </span>
+                            <span x-text="time().seconds"></span>
                         </div>
-                    {{end}}
+                    </template>
                 </div>
                 {{end}}
-                {{else}}
-                    <span class="flex m-auto" id="ViewerDescText"> Viewers</span>
                 {{end}}
-                {{else if (and $course.DownloadsEnabled .IndexData.TUMLiveContext.User)}}
+                {{else}}
+                    <span class="flex m-auto" id="viewerCount"></span>
+                    <span class="flex m-auto" id="ViewerDescText">Viewers</span>
+                {{end}}
+                {{end}}
+                {{if (and $course.DownloadsEnabled .IndexData.TUMLiveContext.User)}}
                     {{template "downloadBtn" $stream.Files}}
                 {{end}}
                 {{if $stream.PlaylistUrlPRES}}
@@ -150,51 +158,51 @@
                         </button>
                     </a>
                     <span x-data="{ 'showModal': false }" @keydown.escape="showModal = false" x-cloak>
-                    <button @click="showModal = true"
-                            title="Already finished? End the stream early."
-                            class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-600 font-bold dark:hover:bg-red-600 rounded cursor-pointer p-2">
-                        <i class="fas fa-power-off mr-1"></i>Stop
-                    </button>
-                    <section class="flex flex-wrap h-full">
-                        <div class="overflow-auto" style="background-color: rgba(0,0,0,0.5)" x-show="showModal"
-                             :class="{ 'absolute inset-0 z-10 flex items-center justify-center': showModal }">
-                            <div class="dark:bg-secondary bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 w-auto md:max-w-md mx-auto rounded shadow-lg py-4 text-left px-6"
-                                 x-show="showModal" @click.away="showModal = false">
-                                <!--Title-->
-                                <div class="flex justify-between pb-3">
-                                    <p class="text-2 font-bold">Keep the recording after ending the stream?</p>
-                                </div>
-                                <!--Footer-->
-                                <div class="flex justify-start pt-2">
-                                    <button class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-600 dark:hover:bg-green-600 font-bold rounded cursor-pointer p-1 mr-3"
-                                            @click="fetch(`/api/stream/${streamID}/end?discard=${false}`).then(showModal = false).then(stopped = true)">Yes</button>
-                                    <button class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-600 dark:hover:bg-red-600 font-bold rounded cursor-pointer p-1 mr-3"
-                                            @click="fetch(`/api/stream/${streamID}/end?discard=${true}`).then(showModal = false).then(stopped = true)">No</button>
-                                    <button class="bg-gray-500 inline-block text-center w-24 text-white hover:bg-gray-600 dark:hover:bg-gray-600 font-bold rounded cursor-pointer p-1"
-                                            @click="showModal = false">Cancel</button>
+                        <button @click="showModal = true"
+                                title="Already finished? End the stream early."
+                                class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-600 font-bold dark:hover:bg-red-600 rounded cursor-pointer p-2">
+                            <i class="fas fa-power-off mr-1"></i>Stop
+                        </button>
+                        <section class="flex flex-wrap h-full">
+                            <div class="overflow-auto" style="background-color: rgba(0,0,0,0.5)" x-show="showModal"
+                                 :class="{ 'absolute inset-0 z-10 flex items-center justify-center': showModal }">
+                                <div class="dark:bg-secondary bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 w-auto md:max-w-md mx-auto rounded shadow-lg py-4 text-left px-6"
+                                     x-show="showModal" @click.away="showModal = false">
+                                    <!--Title-->
+                                    <div class="flex justify-between pb-3">
+                                        <p class="text-2 font-bold">Keep the recording after ending the stream?</p>
+                                    </div>
+                                    <!--Footer-->
+                                    <div class="flex justify-start pt-2">
+                                        <button class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-600 dark:hover:bg-green-600 font-bold rounded cursor-pointer p-1 mr-3"
+                                                @click="fetch(`/api/stream/${streamID}/end?discard=${false}`).then(showModal = false)">Yes</button>
+                                        <button class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-600 dark:hover:bg-red-600 font-bold rounded cursor-pointer p-1 mr-3"
+                                                @click="fetch(`/api/stream/${streamID}/end?discard=${true}`).then(showModal = false)">No</button>
+                                        <button class="bg-gray-500 inline-block text-center w-24 text-white hover:bg-gray-600 dark:hover:bg-gray-600 font-bold rounded cursor-pointer p-1"
+                                                @click="showModal = false">Cancel</button>
+                                    </div>
                                 </div>
                             </div>
+                        </section>
+                    </span>
+                </div>
+                <div class="border-t-2 border-secondary p-4">
+                    <h3 class="text-4 mb-2 font-bold">Presets</h3>
+                    <div class="w-full overflow-x-scroll scrollbarThin">
+                        <div class="flex flex-row gap-x-2">
+                            {{range $preset := .Presets}}
+                                <div style="min-width: 150px" class="text-center relative group">
+                                    <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
+                                         src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
+                                         alt="prev" width="150px">
+                                    <i onclick="usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}})"
+                                       title="Switch to this preset"
+                                       class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-exchange-alt cursor-pointer"></i>
+                                </div>
+                            {{end}}
                         </div>
-                    </section>
-                </span>
-            </div>
-            <div class="border-t-2 border-secondary p-4">
-                <h3 class="text-4 mb-2 font-bold">Presets</h3>
-                <div class="w-full overflow-x-scroll scrollbarThin">
-                    <div class="flex flex-row gap-x-2">
-                        {{range $preset := .Presets}}
-                            <div style="min-width: 150px" class="text-center relative group">
-                                <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
-                                     src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
-                                     alt="prev" width="150px">
-                                <i onclick="usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}})"
-                                   title="Switch to this preset"
-                                   class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-exchange-alt cursor-pointer"></i>
-                            </div>
-                        {{end}}
                     </div>
                 </div>
-            </div>
             {{end}}
             {{if $stream.Description}}
                 {{$isMinLen := gt (len $stream.Description) 128}}

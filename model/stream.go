@@ -66,14 +66,9 @@ func (s Stream) TimeSlotReached() bool {
 	return time.Now().After(s.Start.Add(-time.Minute)) && time.Now().Before(s.End)
 }
 
-// IsStartingInOneDay returns whether the stream starts within 1 day
-func (s Stream) IsStartingInOneDay() bool {
-	return s.Start.After(time.Now().Add(24 * time.Hour))
-}
-
-// IsStartingInMoreThanOneDay returns whether the stream starts in at least 2 days
-func (s Stream) IsStartingInMoreThanOneDay() bool {
-	return s.Start.After(time.Now().Add(48 * time.Hour))
+// StartsWithinOneDay returns whether the stream starts in at least 2 days
+func (s Stream) StartsWithinOneDay() bool {
+	return s.Start.Before(time.Now().Add(24 * time.Hour))
 }
 
 type silence struct {

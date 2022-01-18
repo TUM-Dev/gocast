@@ -10,10 +10,12 @@ import (
 	"time"
 )
 
+// GetDueStreamsForWorkers retrieves all streams that due to be streamed in a lecture hall.
 func GetDueStreamsForWorkers() []model.Stream {
 	var res []model.Stream
 	DB.Model(&model.Stream{}).
-		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE) AND live_now = false AND recording = false").
+		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE)" +
+			"AND live_now = false AND recording = false AND (done = false OR done IS NULL)").
 		Scan(&res)
 	return res
 }
