@@ -74,30 +74,27 @@
                     <span class="flex m-auto" id="viewerCount"></span>
                     <span class="flex m-auto" id="ViewerDescText">Waiting</span>
                     <span class="flex m-auto">&#183;</span>
-                    {{if not $stream.StartsWithinOneDay}}
-                    <span x-data="timer('{{$course.GetNextLectureDateFormatted}}', false)"
-                          class="text-4 flex m-auto">
-                                        Live in&nbsp;<span x-text="time().days"></span>&nbsp;day<template
-                                x-if="time().days > 1"><span>s</span></template>
-                                    </span>
-                    {{else if $stream.TimeSlotReached}}
-                    Stream should start any moment
-                    {{else}}
-                <div class="flex text-lg px-2 text-4 m-auto"
+                <div class="flex text-lg px-2 text-4"
                      x-data="timer('{{$course.GetNextLectureDateFormatted}}', true)"
                      x-init="init();">
-                    <template x-if="time().minutes === 0 && time().hours === 0 && time().seconds === 0">
-                        <span>Stream should start any moment</span>
+                    <template x-if="time().days !== '00'">
+                        <span>More than a day left</span>
                     </template>
-                    <template x-if="!(time().minutes === 0 && time().hours === 0 && time().seconds === 0)">
-                        <div class="tabular-nums flex">
-                            <span x-text="time().hours"></span>:
-                            <span x-text="time().minutes"></span>:
-                            <span x-text="time().seconds"></span>
+                    <template
+                            x-if="time().days === '00' && time().minutes === '00' && time().hours === '00' && time().seconds === '00'">
+                        <span>Stream is due</span>
+                    </template>
+                    <template
+                            x-if="time().days === '00' && !(time().minutes === '00' && time().hours === '00' && time().seconds === '00')">
+                        <div>
+                            <div class="tabular-nums flex m-auto">
+                                <span x-text="time().hours"></span>:
+                                <span x-text="time().minutes"></span>:
+                                <span x-text="time().seconds"></span>
+                            </div>
                         </div>
                     </template>
                 </div>
-                {{end}}
                 {{end}}
                 {{else}}
                     <span class="flex m-auto" id="viewerCount"></span>
