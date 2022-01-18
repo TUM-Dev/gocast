@@ -2,7 +2,7 @@ package model
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
@@ -116,15 +116,11 @@ func (s Stream) FriendlyTime() string {
 }
 
 func (s Stream) FriendlyNextDate() string {
-	nowy, nowm, nowd := time.Now().Date()
-	tmrwy, tmrwm, tmrwd := time.Now().Add(time.Hour * 24).Date()
-	starty, startm, startd := s.Start.Date()
-
-	if nowy == starty && nowm == startm && nowd == startd {
+	if now.With(s.Start).EndOfDay() == now.EndOfDay() {
 		return "Today,"
-	} else if tmrwy == starty && tmrwm == startm && tmrwd == startd {
+	}
+	if now.With(s.Start).EndOfDay() == now.With(time.Now().Add(time.Hour*24)).EndOfDay() {
 		return "Tomorrow,"
 	}
-
-	return fmt.Sprintf("%v %02d.", s.Start.Month(), s.Start.Day())
+	return s.Start.Format("Mon, January 02.")
 }

@@ -159,3 +159,21 @@ func (c Course) GetRecordings() []Stream {
 	}
 	return recordings
 }
+
+func (c Course) hasVoDs() bool {
+	for _, s := range c.Streams {
+		if s.Recording {
+			return true
+		}
+	}
+	return false
+}
+
+func (c Course) hasPlannedOrComingUp() bool {
+	for _, s := range c.Streams {
+		if s.IsPlanned() || s.IsComingUp() {
+			return true
+		}
+	}
+	return false
+}

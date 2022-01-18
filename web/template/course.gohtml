@@ -78,7 +78,7 @@
         <div class="w-full md:row-span-5 md:w-auto">
             <div x-data="{showPlanned: true}"
                  class="bg-white dark:bg-secondary-lighter border dark:border-gray-900 rounded-lg shadow-sm my-3 md:my-0"
-                :class="showPlanned ? 'h-full' : 'h-fit'">
+                 :class="showPlanned ? 'h-full' : 'h-fit'">
 
                 <div class="flex justify-between h-16 px-3"
                      :class="showPlanned && 'border-b dark:border-gray-900'">
@@ -90,7 +90,8 @@
                     </button>
                 </div>
 
-                <ul x-show="showPlanned" class="flex flex-col px-5 py-3 overflow-y-scroll" style="height: calc(100% - 4rem)">
+                <ul x-show="showPlanned" class="flex flex-col px-5 py-3 overflow-y-scroll"
+                    style="height: calc(100% - 4rem)">
                     {{template "planned_course_list" .IndexData.TUMLiveContext}}
                 </ul>
             </div>
