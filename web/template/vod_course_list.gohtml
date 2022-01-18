@@ -3,7 +3,7 @@
     {{$course := .Course}}
     {{$lastMonth := -1}}
     {{range $lecture := $course.Streams }}
-        {{if or $lecture.Recording $lecture.IsPast}}
+        {{if $lecture.Recording}}
             {{if ne $lecture.Start.Month $lastMonth}}
                 {{if ne $lastMonth -1}} </div> {{end}}
                 {{$lastMonth = $lecture.Start.Month}}

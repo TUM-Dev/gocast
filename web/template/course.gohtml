@@ -76,7 +76,7 @@
         </div>
         <!-- Planned -->
         <div class="w-full md:row-span-5 md:w-auto">
-            <div x-data="{showPlanned: false}"
+            <div x-data="{showPlanned: true}"
                  class="bg-white dark:bg-secondary-lighter border dark:border-gray-900 rounded-lg shadow-sm my-3 md:my-0"
                 :class="showPlanned ? 'h-full' : 'h-fit'">
 
@@ -86,7 +86,7 @@
                     <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2 my-auto"
                             @click="showPlanned = !showPlanned;">
                         <span class="text-sm font-semibold uppercase dark:text-white"
-                              x-text="showPlanned ? '&#x25B2; hide' : '&#x25BC; show'">&#x25BC; show</span>
+                              x-text="showPlanned ? '&#x25B2; hide' : '&#x25BC; show'">&#x25B2; hide</span>
                     </button>
                 </div>
 
