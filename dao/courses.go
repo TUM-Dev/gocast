@@ -108,21 +108,14 @@ func GetPublicCourses(year int, term string) (courses []model.Course, err error)
 	return publicCourses, err
 }
 
-func GetPublicCoursesWithoutOwn(year int, term string, myCourses []uint) (courses []model.Course, err error) {
-	cachedCourses, found := Cache.Get(fmt.Sprintf("publicCoursesWithoutOwn%v%v", year, term))
-	if found {
-		return cachedCourses.([]model.Course), err
-	}
+func GetPublicCoursesWithoutOwn(year int, term string, courseIds []uint) (courses []model.Course, err error) {
 	var publicCourses []model.Course
 
 	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start asc")
-	}).Find(&publicCourses, "visibility = 'public' AND teaching_term = ? AND year = ? AND id NOT IN ?",
-		term, year, myCourses).Error
+	}).Find(&publicCourses, "visibility = 'public' AND teaching_term = ? AND year = ? AND id NOT IN (?)",
+		term, year, courseIds).Error
 
-	if err == nil {
-		Cache.SetWithTTL(fmt.Sprintf("publicCoursesWithoutOwn%v%v", year, term), publicCourses, 1, time.Minute)
-	}
 	return publicCourses, err
 }
 
@@ -151,6 +144,14 @@ func GetCourseByToken(token string) (course model.Course, err error) {
 }
 
 func GetCourseById(ctx context.Context, id uint) (course model.Course, err error) {
+	var foundCourse model.Course
+	dbErr := DB.Preload("Streams.Stats").Preload("Streams.Files").Preload("Streams", func(db *gorm.DB) *gorm.DB {
+		return db.Order("streams.start asc")
+	}).Find(&foundCourse, "id = ?", id).Error
+	return foundCourse, dbErr
+}
+
+func GetNonHiddenCourseById(ctx context.Context, id uint) (course model.Course, err error) {
 	var foundCourse model.Course
 	dbErr := DB.Preload("Streams.Stats").Preload("Streams.Files").Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("streams.start asc")

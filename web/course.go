@@ -27,7 +27,7 @@ func editCourseByTokenPage(c *gin.Context) {
 		return
 	}
 
-	indexData, _ := NewIndexDataWithContext(c)
+	indexData := NewIndexDataWithContext(c)
 	d := editCourseByTokenPageData{
 		Token:     c.Request.Form.Get("token"),
 		IndexData: indexData,
