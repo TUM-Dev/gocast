@@ -175,7 +175,7 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 						log.WithError(err).Error("Can't turn off live light.")
 					}
 					lightLock.Unlock()
-					err = dao.SaveDoneState(stream.ID, true)
+					err = dao.SaveEndedState(stream.ID, true)
 					if err != nil {
 						log.WithError(err).Error("Can't set stream done")
 					}
@@ -379,7 +379,7 @@ func NotifyWorkers() {
 		return
 	}
 	for i := range streams {
-		err := dao.SaveDoneState(streams[i].ID, false)
+		err := dao.SaveEndedState(streams[i].ID, false)
 		if err != nil {
 			log.WithError(err).Warn("Can't set stream undone")
 			sentry.CaptureException(err)
@@ -477,7 +477,7 @@ func notifyWorkersPremieres() {
 		return
 	}
 	for i := range streams {
-		err := dao.SaveDoneState(streams[i].ID, false)
+		err := dao.SaveEndedState(streams[i].ID, false)
 		if err != nil {
 			log.WithError(err).Warn("Can't set stream undone")
 			sentry.CaptureException(err)

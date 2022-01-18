@@ -15,7 +15,7 @@ func GetDueStreamsForWorkers() []model.Stream {
 	var res []model.Stream
 	DB.Model(&model.Stream{}).
 		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE)" +
-			"AND live_now = false AND recording = false AND (done = false OR done IS NULL)").
+			"AND live_now = false AND recording = false AND (ended = false OR ended IS NULL)").
 		Scan(&res)
 	return res
 }
@@ -183,10 +183,10 @@ func SavePauseState(streamID uint, paused bool) error {
 	return DB.Model(model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"Paused": paused}).Error
 }
 
-// SaveDoneState updates the Done field of a stream model to the value of done when a stream finishes
-func SaveDoneState(streamID uint, done bool) error {
+// SaveEndedState updates the boolean Ended field of a stream model to the value of hasEnded when a stream finishes.
+func SaveEndedState(streamID uint, hasEnded bool) error {
 	defer Cache.Clear()
-	return DB.Model(&model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"Ended": done}).Error
+	return DB.Model(&model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"Ended": hasEnded}).Error
 }
 
 func SaveCOMBURL(stream *model.Stream, url string) {
