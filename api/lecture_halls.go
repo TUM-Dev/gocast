@@ -35,6 +35,7 @@ func configGinLectureHallApiRouter(router *gin.Engine) {
 	admins.GET("/course-schedule", getSchedule)
 	admins.POST("/course-schedule/:year/:term", postSchedule)
 	admins.GET("/refreshLectureHallPresets/:lectureHallID", refreshLectureHallPresets)
+	admins.POST("/setLectureHall", setLectureHall)
 
 	adminsOfCourse := router.Group("/api/course/:courseID/")
 	adminsOfCourse.Use(tools.InitCourse)
@@ -368,6 +369,43 @@ func updateLecturesLectureHall(c *gin.Context) {
 	}
 }
 
+func setLectureHall(c *gin.Context) {
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
+		return
+	}
+
+	var req setLectureHallRequest
+	if err = json.Unmarshal(body, &req); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
+		return
+	}
+
+	var streams []model.Stream
+	for _, streamID := range req.StreamIDs {
+		stream, err := dao.GetStreamByID(context.Background(), strconv.Itoa(int(streamID)))
+		// Todo: Clarify: Do we need this:  "|| stream.CourseID != tumLiveContext.Course.ID" here -> + status to "StatusForbidden" !?
+		if err != nil {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+		streams = append(streams, stream)
+	}
+
+	lectureHall, err := dao.GetLectureHallByID(req.LectureHallID)
+	if err != nil {
+		for _, stream := range streams {
+			dao.UnsetLectureHall(stream.Model.ID)
+		}
+		return
+	} else {
+		// Todo: Clarify: Is this enough, dont we need to update stream? is this done automatically? How is checked that there are no duplicate streams?
+		lectureHall.Streams = append(lectureHall.Streams, streams...)
+		dao.SaveLectureHall(lectureHall)
+	}
+}
+
 func createLectureHall(c *gin.Context) {
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
@@ -401,4 +439,9 @@ type createLectureHallRequest struct {
 type updateLecturesLectureHallRequest struct {
 	LectureID     uint `json:"lecture"`
 	LectureHallID uint `json:"lectureHall"`
+}
+
+type setLectureHallRequest struct {
+	StreamIDs     []uint `json:"streamIDs"`
+	LectureHallID uint   `json:"lectureHall"`
 }
