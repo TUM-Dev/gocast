@@ -132,7 +132,7 @@ func GetCourseByToken(token string) (course model.Course, err error) {
 func GetCourseById(ctx context.Context, id uint) (course model.Course, err error) {
 	var foundCourse model.Course
 	dbErr := DB.Preload("Streams.Stats").Preload("Streams.Files").Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("streams.start asc")
+		return db.Order("streams.start desc")
 	}).Find(&foundCourse, "id = ?", id).Error
 	return foundCourse, dbErr
 }
@@ -148,9 +148,9 @@ func GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, y
 	}
 	var course model.Course
 	err := DB.Preload("Streams.Units", func(db *gorm.DB) *gorm.DB {
-		return db.Order("unit_start asc")
+		return db.Order("unit_start desc")
 	}).Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("start asc")
+		return db.Order("start desc")
 	}).Where("teaching_term = ? AND slug = ? AND year = ?", term, slug, year).First(&course).Error
 	if err == nil {
 		Cache.SetWithTTL(fmt.Sprintf("courseBySlugYearAndTerm%v%v%v", slug, term, year), course, 1, time.Minute)
