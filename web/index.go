@@ -185,9 +185,8 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span) {
 			courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
 		}
 	}
-	sort.Slice(courses, func(i, j int) bool {
-		return courses[i].CompareTo(courses[j])
-	})
+
+	sortCourses(courses)
 
 	d.Courses = courses
 }
@@ -196,33 +195,27 @@ func (d *IndexData) LoadPublicCourses() {
 	var public []model.Course
 	var err error
 
-	if len(d.Courses) > 0 {
-		courseIds := CourseListToIdList(d.Courses)
-		if d.TUMLiveContext.User != nil {
-			public, err = dao.GetPublicAndLoggedInCoursesFiltered(d.CurrentYear, d.CurrentTerm, courseIds)
-		} else {
-			public, err = dao.GetPublicCoursesFiltered(d.CurrentYear, d.CurrentTerm, courseIds)
-		}
+	if d.TUMLiveContext.User != nil {
+		public, err = dao.GetPublicAndLoggedInCourses(d.CurrentYear, d.CurrentTerm)
 	} else {
-		if d.TUMLiveContext.User != nil {
-			public, err = dao.GetPublicAndLoggedInCourses(d.CurrentYear, d.CurrentTerm)
-		} else {
-			public, err = dao.GetPublicCourses(d.CurrentYear, d.CurrentTerm)
-		}
+		public, err = dao.GetPublicCourses(d.CurrentYear, d.CurrentTerm)
 	}
+
 	if err != nil {
 		d.PublicCourses = []model.Course{}
 	} else {
-		d.PublicCourses = public
-	}
-}
+		var publicFiltered []model.Course
 
-func CourseListToIdList(courses []model.Course) []uint {
-	var idList []uint
-	for _, c := range courses {
-		idList = append(idList, c.ID)
+		for _, c := range public {
+			if !tools.CourseListContains(d.Courses, c.ID) {
+				publicFiltered = append(publicFiltered, c)
+			}
+		}
+
+		sortCourses(publicFiltered)
+
+		d.PublicCourses = publicFiltered
 	}
-	return idList
 }
 
 type CourseStream struct {
@@ -240,4 +233,10 @@ func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bo
 		return user.Role == model.AdminType || user.ID == course.UserID
 	}
 	return false
+}
+
+func sortCourses(courses []model.Course){
+	sort.Slice(courses, func(i, j int) bool {
+		return courses[i].CompareTo(courses[j])
+	})
 }
