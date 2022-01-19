@@ -32,16 +32,6 @@ func MainPage(c *gin.Context) {
 	indexData.LoadLivestreams(c)
 	indexData.LoadPublicCourses()
 
-	// TODO:
-	/*
-		Possibilites
-		myCourses.len = 0
-			- loggedIn
-			- not loggedIn
-		myCourses.len > 0
-			- loggedIn
-			- not loggedIn
-	*/
 	_ = templ.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
 }
 
@@ -177,27 +167,24 @@ func (d *IndexData) LoadLivestreams(c *gin.Context) {
 
 func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span) {
 	var courses []model.Course
-	tumLiveContext := d.TUMLiveContext
-	year := d.CurrentYear
-	term := d.CurrentTerm
 
-	if tumLiveContext.User != nil {
-		switch tumLiveContext.User.Role {
+	if d.TUMLiveContext.User != nil {
+		switch d.TUMLiveContext.User.Role {
 		case model.AdminType:
-			courses = dao.GetAllCoursesForSemester(year, term, spanMain.Context())
+			courses = dao.GetAllCoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
 		case model.LecturerType:
 			{
-				courses = tumLiveContext.User.CoursesForSemester(year, term, spanMain.Context())
-				coursesForLecturer, err := dao.GetCourseForLecturerIdByYearAndTerm(c, year, term, tumLiveContext.User.ID)
+				courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
+				coursesForLecturer, err :=
+					dao.GetCourseForLecturerIdByYearAndTerm(c, d.CurrentYear, d.CurrentTerm, d.TUMLiveContext.User.ID)
 				if err == nil {
 					courses = append(courses, coursesForLecturer...)
 				}
 			}
 		default:
-			courses = tumLiveContext.User.CoursesForSemester(year, term, spanMain.Context())
+			courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
 		}
 	}
-
 	sort.Slice(courses, func(i, j int) bool {
 		return courses[i].CompareTo(courses[j])
 	})
@@ -206,38 +193,27 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span) {
 }
 
 func (d *IndexData) LoadPublicCourses() {
-	year := d.CurrentYear
-	term := d.CurrentTerm
-	tumLiveContext := d.TUMLiveContext
-	courses := d.Courses
-
 	var public []model.Course
 	var err error
 
 	if len(d.Courses) > 0 {
-		public, err = dao.GetPublicCoursesWithoutOwn(year, term, CourseListToIdList(d.Courses))
+		courseIds := CourseListToIdList(d.Courses)
+		if d.TUMLiveContext.User != nil {
+			public, err = dao.GetPublicAndLoggedInCoursesFiltered(d.CurrentYear, d.CurrentTerm, courseIds)
+		} else {
+			public, err = dao.GetPublicCoursesFiltered(d.CurrentYear, d.CurrentTerm, courseIds)
+		}
 	} else {
-		public, err = dao.GetPublicCourses(year, term)
+		if d.TUMLiveContext.User != nil {
+			public, err = dao.GetPublicAndLoggedInCourses(d.CurrentYear, d.CurrentTerm)
+		} else {
+			public, err = dao.GetPublicCourses(d.CurrentYear, d.CurrentTerm)
+		}
 	}
 	if err != nil {
 		d.PublicCourses = []model.Course{}
 	} else {
-		var publicFiltered = public
-
-		if tumLiveContext.User != nil {
-			loggedIn, _ := dao.GetCoursesForLoggedInUsers(year, term)
-			for _, c := range loggedIn {
-				if !tools.CourseListContains(courses, c.ID) {
-					publicFiltered = append(publicFiltered, c)
-				}
-			}
-		}
-
-		sort.Slice(publicFiltered, func(i, j int) bool {
-			return publicFiltered[i].CompareTo(publicFiltered[j])
-		})
-
-		d.PublicCourses = publicFiltered
+		d.PublicCourses = public
 	}
 }
 

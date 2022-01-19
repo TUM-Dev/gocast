@@ -108,12 +108,41 @@ func GetPublicCourses(year int, term string) (courses []model.Course, err error)
 	return publicCourses, err
 }
 
-func GetPublicCoursesWithoutOwn(year int, term string, courseIds []uint) (courses []model.Course, err error) {
+func GetPublicAndLoggedInCourses(year int, term string) (courses []model.Course, err error) {
+	cachedCourses, found := Cache.Get(fmt.Sprintf("publicAndLoggedInCourses%v%v", year, term))
+	if found {
+		return cachedCourses.([]model.Course), err
+	}
+	var publicCourses []model.Course
+
+	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
+		return db.Order("start asc")
+	}).Find(&publicCourses, "(visibility = 'public' OR visibility = 'loggedin') AND teaching_term = ? AND year = ?",
+		term, year).Error
+
+	if err == nil {
+		Cache.SetWithTTL(fmt.Sprintf("publicAndLoggedInCourses%v%v", year, term), publicCourses, 1, time.Minute)
+	}
+	return publicCourses, err
+}
+
+func GetPublicCoursesFiltered(year int, term string, courseIds []uint) (courses []model.Course, err error) {
 	var publicCourses []model.Course
 
 	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start asc")
 	}).Find(&publicCourses, "visibility = 'public' AND teaching_term = ? AND year = ? AND id NOT IN (?)",
+		term, year, courseIds).Error
+
+	return publicCourses, err
+}
+
+func GetPublicAndLoggedInCoursesFiltered(year int, term string, courseIds []uint) (courses []model.Course, err error) {
+	var publicCourses []model.Course
+
+	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
+		return db.Order("start asc")
+	}).Find(&publicCourses, "(visibility = 'public' OR visibility = 'loggedin') AND teaching_term = ? AND year = ? AND id NOT IN (?)",
 		term, year, courseIds).Error
 
 	return publicCourses, err
