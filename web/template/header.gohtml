@@ -1,56 +1,122 @@
 {{define "header"}}
-    <nav class="flex z-40 lg:z-50 sticky top-0 w-full items-center justify-between dark:bg-secondary bg-white shadow p-3 h-20 z-40">
-        <a title="Start" href="/" class="flex items-center flex-no-shrink text-white mr-6">
-            <svg class="mr-2" width="100" height="54" viewBox="0 0 100 54" xmlns="http://www.w3.org/2000/svg">
-                <path fill="#3070B3"
-                      d="M49.986,7v31h8V7h37v38h-7V14h-8v31h-7V14h-8v31h-22V14h-7v31h-7V14h-7V7H49.986z"></path>
-            </svg>
-        </a>
-        <div class="block grow flex items-center w-auto">
-            <div class="text-sm grow">
-                <a href="/"
-                   class="block inline-block align-middle mt-0 mr-4 dark:hover:text-white text-gray-400">
-                    Start
-                </a>
-                {{- /*gotype: TUM-Live/tools.TUMLiveContext*/ -}}
-                {{if not .User}}
-                    <a href="/login"
+    <div x-data="{showMobNav: false}" class = "inline">
+        <nav class="flex z-40 lg:z-50 sticky top-0 w-full items-center justify-between dark:bg-secondary bg-white shadow p-3 h-20 z-40">
+            <a title="Start" href="/" class="flex items-center flex-no-shrink text-white mr-6">
+                <svg class="mr-2" width="100" height="54" viewBox="0 0 100 54" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#3070B3"
+                          d="M49.986,7v31h8V7h37v38h-7V14h-8v31h-7V14h-8v31h-22V14h-7v31h-7V14h-7V7H49.986z"></path>
+                </svg>
+            </a>
+            <div class="hidden md:flex grow items-center w-auto">
+                <div class="text-sm grow">
+                    <a href="/"
                        class="block inline-block align-middle mt-0 mr-4 dark:hover:text-white text-gray-400">
-                        Login
+                        Start
                     </a>
-                {{else}}
-                    <a href="/logout"
-                       class="inline-block align-middle mt-0 mr-4 dark:hover:text-white text-gray-400">
-                        Logout
-                    </a>
-                    {{if or (eq .User.Role 1) (eq .User.Role 2) }}
-                        <a href="/admin"
-                           class="inline-block align-middle mt-0 mr-4 dark:hover:text-white text-gray-400">
-                            Admin
+                    {{- /*gotype: TUM-Live/tools.TUMLiveContext*/ -}}
+                    {{if not .User}}
+                        <a href="/login"
+                           class="block inline-block align-middle mt-0 mr-4 dark:hover:text-white text-gray-400">
+                            Login
                         </a>
+                    {{else}}
+                        <a href="/logout"
+                           class="inline-block align-middle mt-0 mr-4 dark:hover:text-white text-gray-400">
+                            Logout
+                        </a>
+                        {{if or (eq .User.Role 1) (eq .User.Role 2) }}
+                            <a href="/admin"
+                               class="inline-block align-middle mt-0 mr-4 dark:hover:text-white text-gray-400">
+                                Admin
+                            </a>
+                        {{end}}
                     {{end}}
-                {{end}}
-                <a href="/about"
-                   class="inline-block align-middle mt-0 mr-4 dark:hover:text-white text-gray-400">
-                    About
+                    <a href="/about"
+                       class="inline-block align-middle mt-0 mr-4 dark:hover:text-white text-gray-400">
+                        About
+                    </a>
+                </div>
+                <div class="flex">
+                    <a title="Toggle color scheme" onclick="toggleColorScheme()"><i
+                                class="transition-colors duration-200 hover:text-gray-600
+                            dark:hover:text-white text-gray-400 fas fa-sun mr-2 cursor-pointer"></i></a>
+                    <a class="mr-3" rel="noopener" href="https://github.com/joschahenningsen/TUM-Live"
+                       aria-label="GitHub"><i
+                                class="transition-colors duration-200 hover:text-gray-600
+                            dark:hover:text-white text-gray-400 vjs-icon-github"></i></a>
+                </div>
+            </div>
+            <div class="md:hidden mr-3">
+                <button class = "text-3" @click = "showMobNav = !showMobNav"
+                        :class = "showMobNav ? 'text-2xl' : 'text-4xl'"
+                        x-text="showMobNav ? '&#x2715;' : '&#8801;'">
+                    &#8801;
+                </button>
+            </div>
+        </nav>
+        <div id="hamburger" class="md:hidden z-30 sticky top-20 bg-white dark:bg-secondary shadow"
+        :class="showMobNav || 'hidden'"
+        style="height: calc(100vh - 5rem);">
+            <div class="pl-4 py-3 border-b dark:border-secondary">
+                <a href="/"
+                   class="font-semibold text-gray-400">
+                    <i class="fas fa-home w-8"></i>
+                    <span class = "ml-3">Start</span>
                 </a>
             </div>
-            <div class="flex">
-                <a title="Toggle color scheme" onclick="toggleColorScheme()"><i
-                            class="transition-colors duration-200 hover:text-gray-600
-                            dark:hover:text-white text-gray-400 fas fa-sun mr-2 cursor-pointer"></i></a>
-                <a class="mr-3" rel="noopener" href="https://github.com/joschahenningsen/TUM-Live" aria-label="GitHub"><i
-                            class="transition-colors duration-200 hover:text-gray-600
+            {{- /*gotype: TUM-Live/tools.TUMLiveContext*/ -}}
+            {{if not .User}}
+                <div class="pl-4 py-3 border-b dark:border-secondary">
+                    <a href="/login"
+                       class="font-semibold text-gray-400">
+                        <i class="fas fa-sign-in-alt w-8"></i>
+                        <span>Login</span>
+                    </a>
+                </div>
+            {{else}}
+                <div class="pl-4 py-3 border-b dark:border-secondary">
+                    <a href="/logout"
+                       class="font-semibold text-gray-400">
+                        <i class="fas fa-sign-out-alt w-8"></i>
+                        <span class = "ml-3">Logout</span>
+                    </a>
+                </div>
+                {{if or (eq .User.Role 1) (eq .User.Role 2) }}
+                    <div class="pl-4 py-3 border-b dark:border-secondary">
+                        <a href="/admin"
+                           class="font-semibold text-gray-400">
+                            <i class="fas fa-user-shield w-8"></i>
+                            <span class = "ml-3">Admin</span>
+                        </a>
+                    </div>
+                {{end}}
+            {{end}}
+            <div class="pl-4 py-3 border-b dark:border-secondary">
+                <a href="/about"
+                   class="font-semibold text-gray-400">
+                    <i class="fas fa-info-circle w-8"></i>
+                    <span class = "ml-3">About</span>
+                </a>
+            </div>
+            <div class="flex p-3">
+                <div class="flex m-auto">
+                    <a class="text-xl" title="Toggle color scheme" onclick="toggleColorScheme()"><i
+                                class="transition-colors duration-200 hover:text-gray-600
+                            dark:hover:text-white text-gray-400 fas fa-sun mr-4 cursor-pointer"></i></a>
+                    <a class="text-xl" rel="noopener" href="https://github.com/joschahenningsen/TUM-Live"
+                       aria-label="GitHub"><i
+                                class="transition-colors duration-200 hover:text-gray-600
                             dark:hover:text-white text-gray-400 vjs-icon-github"></i></a>
+                </div>
             </div>
         </div>
-    </nav>
-    <div id="alertBox" class="hidden text-center">
-        <div class="p-2 bg-indigo-800 items-center text-indigo-100 leading-none lg:rounded-full flex lg:inline-flex"
-             role="alert">
-            <span id="alertText" class="font-semibold mx-2 text-left flex-auto"></span>
-            <span id="alertOk" onclick="document.getElementById('alertBox').classList.add('hidden')"
-                  class="cursor-pointer flex rounded-full bg-indigo-500 uppercase px-2 py-1 text-xs font-bold mr-3">Dismiss</span>
+        <div id="alertBox" class="hidden text-center">
+            <div class="p-2 bg-indigo-800 items-center text-indigo-100 leading-none lg:rounded-full flex lg:inline-flex"
+                 role="alert">
+                <span id="alertText" class="font-semibold mx-2 text-left flex-auto"></span>
+                <span id="alertOk" onclick="document.getElementById('alertBox').classList.add('hidden')"
+                      class="cursor-pointer flex rounded-full bg-indigo-500 uppercase px-2 py-1 text-xs font-bold mr-3">Dismiss</span>
+            </div>
         </div>
     </div>
 {{end}}
