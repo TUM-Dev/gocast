@@ -116,10 +116,9 @@ func GetPublicAndLoggedInCourses(year int, term string) (courses []model.Course,
 	var publicCourses []model.Course
 
 	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("start")
-	}).Find(&publicCourses, "(visibility = 'public' OR visibility = 'loggedin') AND teaching_term = ? AND year = ?",
-		term, year).Error
-
+		return db.Order("start asc")
+	}).Find(&publicCourses,
+		"(visibility = 'public' OR visibility = 'loggedin') AND teaching_term = ? AND year = ?", term, year).Error
 	if err == nil {
 		Cache.SetWithTTL(fmt.Sprintf("publicAndLoggedInCourses%v%v", year, term), publicCourses, 1, time.Minute)
 	}

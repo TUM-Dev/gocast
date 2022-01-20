@@ -59,7 +59,6 @@ func (u *User) CoursesForSemester(year int, term string, context context.Context
 	var cRes []Course
 	for _, c := range u.Courses {
 		if c.Year == year && c.TeachingTerm == term {
-			fmt.Println(c)
 			cRes = append(cRes, c)
 		}
 	}
