@@ -237,3 +237,10 @@ func SaveStream(vod *model.Stream) error {
 	}).Error
 	return err
 }
+
+// GetLiveStreamsInLectureHall returns all streams that are live and in the lecture hall
+func GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Stream, error) {
+	var streams []model.Stream
+	err := DB.Where("lecture_hall_id = ? AND live_now", lectureHallId).Find(&streams).Error
+	return streams, err
+}
