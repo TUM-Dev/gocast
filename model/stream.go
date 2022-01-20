@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
@@ -74,6 +75,11 @@ func (s Stream) IsStartingInMoreThanOneDay() bool {
 	return s.Start.After(time.Now().Add(48 * time.Hour))
 }
 
+// IsPlanned returns whether the stream is planned or not
+func (s Stream) IsPlanned() bool {
+	return !s.Recording && !s.LiveNow && !s.IsPast() && !s.IsComingUp()
+}
+
 type silence struct {
 	Start uint `json:"start"`
 	End   uint `json:"end"`
@@ -108,4 +114,14 @@ func (s Stream) FriendlyDate() string {
 
 func (s Stream) FriendlyTime() string {
 	return s.Start.Format("02.01.2006 15:04") + " - " + s.End.Format("15:04")
+}
+
+func (s Stream) FriendlyNextDate() string {
+	if now.With(s.Start).EndOfDay() == now.EndOfDay() {
+		return "Today,"
+	}
+	if now.With(s.Start).EndOfDay() == now.With(time.Now().Add(time.Hour*24)).EndOfDay() {
+		return "Tomorrow,"
+	}
+	return s.Start.Format("Mon, January 02.")
 }

@@ -29,6 +29,8 @@ import (
 
 var mutex = sync.Mutex{}
 
+var lightIndices = []int{0, 1, 2} // turn on all 3 outlets. TODO: make configurable
+
 type server struct {
 	pb.UnimplementedFromWorkerServer
 }
@@ -151,19 +153,12 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 		if err != nil {
 			log.WithError(err).Error("Can't find stream to set not live")
 		} else {
-			if stream.LectureHallID != 0 {
-				if lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID); err != nil {
-					return nil, err
-				} else {
-					client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.Auths.PwrCrtlAuth)
-					lightLock.Lock()
-					err := client.TurnOff(lectureHall.LiveLightIndex)
-					if err != nil {
-						log.WithError(err).Error("Can't turn off live light.")
-					}
-					lightLock.Unlock()
+			go func() {
+				err := handleLightOffSwitch(stream)
+				if err != nil {
+					log.WithError(err).Error("Can't handle light off switch")
 				}
-			}
+			}()
 		}
 		// wait 2 hours to clear the dvr cache
 		go func() {
@@ -181,6 +176,63 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 		api.NotifyViewersLiveState(uint(request.StreamID), false)
 	}
 	return &pb.Status{Ok: true}, nil
+}
+
+func handleLightOnSwitch(stream model.Stream) error {
+	if stream.LectureHallID == 0 {
+		return nil // no light to switch
+	}
+	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
+	if err != nil {
+		return err
+	}
+	lightLock.Lock()
+	defer lightLock.Unlock()
+
+	var errs []error
+	client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.Auths.PwrCrtlAuth)
+	for _, lightIndex := range lightIndices {
+		err := client.TurnOn(lightIndex)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("can't turn on lights: %v", errs)
+	}
+	return nil
+}
+
+func handleLightOffSwitch(stream model.Stream) error {
+	if stream.LectureHallID == 0 {
+		return nil // no light to switch
+	}
+	lightLock.Lock()
+	defer lightLock.Unlock()
+	liveStreamsInLectureHall, err := dao.GetLiveStreamsInLectureHall(stream.LectureHallID)
+	if err != nil {
+		return err
+	}
+	if len(liveStreamsInLectureHall) > 1 {
+		return nil // another stream is live, don't turn off the light
+	}
+	if len(liveStreamsInLectureHall) == 1 && liveStreamsInLectureHall[0].ID != stream.ID {
+		return nil // the one different live stream is not this one, don't turn off the light
+	}
+	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
+	if err != nil {
+		return err
+	}
+	client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.Auths.PwrCrtlAuth)
+	for _, index := range lightIndices {
+		err := client.TurnOff(index)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 //SendHeartBeat receives heartbeat messages sent by workers
@@ -279,21 +331,12 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		log.WithError(err).Println("Can't find stream")
 		return nil, err
 	}
-	if dao.HasStreamLectureHall(stream.ID) {
-		if lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID); err != nil {
-			return nil, err
-		} else {
-			lightLock.Lock()
-			client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.Auths.PwrCrtlAuth)
-			go func() {
-				err := client.TurnOn(lectureHall.LiveLightIndex)
-				if err != nil {
-					log.WithError(err).Error("Can't turn on live light.")
-				}
-			}()
-			defer lightLock.Unlock()
+	go func() {
+		err := handleLightOnSwitch(stream)
+		if err != nil {
+			log.WithError(err).Error("Can't handle light on switch")
 		}
-	}
+	}()
 	go func() {
 		// interims solution; sometimes dvr doesn't work as expected.
 		// here we check if the url 404s and remove dvr from the stream in that case

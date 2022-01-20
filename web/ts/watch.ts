@@ -19,8 +19,9 @@ let retryInt = 5000; //retry connecting to websocket after this timeout
 const pageloaded = new Date();
 
 function startWebsocket() {
+    const wsProto = window.location.protocol === "https:" ? `wss://` : `ws://`;
     const streamid = (document.getElementById("streamID") as HTMLInputElement).value;
-    ws = new WebSocket("wss://live.rbg.tum.de/api/chat/" + streamid + "/ws");
+    ws = new WebSocket(`${wsProto}${window.location.host}/api/chat/${streamid}/ws`);
     const cf = document.getElementById("chatForm");
     if (cf !== null && cf != undefined) {
         (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", (e) => submitChat(e));
@@ -138,11 +139,15 @@ function submitChat(e: Event) {
 }
 
 function showDisconnectedMsg() {
-    document.getElementById("disconnectMsg").classList.remove("hidden");
+    if (document.getElementById("disconnectMsg") !== null) {
+        document.getElementById("disconnectMsg").classList.remove("hidden");
+    }
 }
 
 function hideDisconnectedMsg() {
-    document.getElementById("disconnectMsg").classList.add("hidden");
+    if (document.getElementById("disconnectMsg") !== null) {
+        document.getElementById("disconnectMsg").classList.add("hidden");
+    }
 }
 
 new Watch();
