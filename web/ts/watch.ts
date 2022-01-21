@@ -18,6 +18,16 @@ let ws: WebSocket;
 let retryInt = 5000; //retry connecting to websocket after this timeout
 const pageloaded = new Date();
 
+function scrollChat() {
+    const c = document.getElementById("chatBox");
+    if (c.scrollHeight - c.scrollTop <= c.offsetHeight + 150) {
+        c.scrollTop = c.scrollHeight;
+    } else {
+        console.log("not at bottom, skipping scroll");
+        // todo: add some visual indicator that the chat is not at the bottom and there are new messages
+    }
+}
+
 function startWebsocket() {
     const wsProto = window.location.protocol === "https:" ? `wss://` : `ws://`;
     const streamid = (document.getElementById("streamID") as HTMLInputElement).value;
@@ -46,11 +56,11 @@ function startWebsocket() {
         } else if ("server" in data) {
             const serverElem = createServerMessage(data);
             document.getElementById("chatBox").appendChild(serverElem);
-            document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
+            scrollChat();
         } else if ("msg" in data) {
             const chatElem = createMessageElement(data);
             document.getElementById("chatBox").appendChild(chatElem);
-            document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
+            scrollChat();
         }
     };
 
