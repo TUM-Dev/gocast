@@ -52,7 +52,7 @@ func GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, 
 
 func GetStreamsByIds(ids []uint) ([]model.Stream, error) {
 	var streams []model.Stream
-	err := DB.Debug().Find(&streams, ids).Error
+	err := DB.Find(&streams, ids).Error
 	return streams, err
 }
 
