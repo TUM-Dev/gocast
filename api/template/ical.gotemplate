@@ -15,14 +15,14 @@ TZOFFSETFROM:+0100
 TZOFFSETTO:+0200
 RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=-1SU;BYMONTH=3
 END:DAYLIGHT
-END:VTIMEZONE{{- /*gotype: TUM-Live/api.ICALData*/ -}}{{$lectureHalls := .LectureHalls}}{{$courses := .Courses}}
-{{range $stream := .Streams}}BEGIN:VEVENT
-UID:sdfg9438wpwoskegt{{$stream.Model.ID}}
-DTSTART;TZID=W. Europe Standard Time:{{$stream.IsoStart}}
-DTEND;TZID=W. Europe Standard Time:{{$stream.IsoEnd}}
-DTSTAMP:{{$stream.IsoCreated}}
-LOCATION:{{if $stream.LectureHallID}}{{range $hall := $lectureHalls}}{{if eq $hall.Model.ID $stream.LectureHallID}}{{$hall.Name}}{{end}}{{end}}{{else}}Selfstream{{end}}
-SUMMARY:{{range $course := $courses}}{{if eq $course.Model.ID $stream.CourseID}}{{$course.Name}}{{end}}{{end}}
-DESCRIPTION:{{$stream.Model.ID}}
+END:VTIMEZONE
+{{range $event := .}}BEGIN:VEVENT
+UID:sdfg9438wpwoskegt{{$event.StreamID}}
+DTSTART;TZID=W. Europe Standard Time:{{$event.IsoStart}}
+DTEND;TZID=W. Europe Standard Time:{{$event.IsoEnd}}
+DTSTAMP:{{$event.IsoCreated}}
+LOCATION:{{if $event.LectureHallName}}{{$event.LectureHallName}}{{else}}Selfstream{{end}}
+SUMMARY:{{$event.CourseName}}
+DESCRIPTION:{{$event.StreamID}}
 END:VEVENT
 {{end}}END:VCALENDAR

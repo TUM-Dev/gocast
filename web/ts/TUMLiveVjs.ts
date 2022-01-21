@@ -66,8 +66,8 @@ let skipTo = 0;
  * in app's CSS (larger player, dimmed background, etc...)
  */
 export const SkipSilenceToggle = videojs.extend(Button, {
-    constructor: function () {
-        Button.apply(this, arguments);
+    constructor: function (...args) {
+        Button.apply(this, args);
         this.controlText("Skip pause");
         this.el().firstChild.classList.add("icon-forward");
     },
@@ -80,8 +80,8 @@ export const SkipSilenceToggle = videojs.extend(Button, {
 });
 
 export const TheaterModeToggle = videojs.extend(Button, {
-    constructor: function () {
-        Button.apply(this, arguments);
+    constructor: function (...args) {
+        Button.apply(this, args);
         this.controlText("Big picture mode");
         this.el().firstChild.classList.add("vjs-icon-theater-toggle");
     },

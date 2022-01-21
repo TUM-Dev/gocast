@@ -62,7 +62,7 @@
             {{end}}
             <li class="mt-8"><span
                         class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2 flex">
-                            <span class="flex-grow">Courses</span><a href="/admin/create-course"><i
+                            <span class="grow">Courses</span><a href="/admin/create-course"><i
                                 class="fas fa-plus"></i></a></span>
                 <ul>
                     <li>
@@ -145,7 +145,7 @@
                     {{end}}
                     <li class="mt-8"><span
                                 class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2 flex">
-                            <span class="flex-grow">Courses</span><a href="/admin/create-course"><i
+                            <span class="grow">Courses</span><a href="/admin/create-course"><i
                                         class="fas fa-plus"></i></a></span>
                         <ul>
                             <li>
@@ -191,6 +191,8 @@
                     {{template "edit-course" .EditCourseData}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "lectureHalls")}}
                     {{template "lectureHalls" .LectureHalls}}
+                {{else if and (eq $curUser.Role 1) (eq .Page "createLectureHalls")}}
+                    {{template "createLectureHalls" .LectureHalls}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "workers")}}
                     {{template "workers" .Workers}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "stats")}}

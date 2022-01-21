@@ -1,4 +1,5 @@
 let chatInput;
+
 export class Watch {
     constructor() {
         if (document.getElementById("chatForm") != null) {
@@ -8,7 +9,6 @@ export class Watch {
             };
             window.addEventListener("resize", appHeight);
             appHeight();
-            document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
             chatInput = document.getElementById("chatInput") as HTMLInputElement;
         }
     }
@@ -19,12 +19,17 @@ let retryInt = 5000; //retry connecting to websocket after this timeout
 const pageloaded = new Date();
 
 export function startWebsocket() {
+    const wsProto = window.location.protocol === "https:" ? `wss://` : `ws://`;
     const streamid = (document.getElementById("streamID") as HTMLInputElement).value;
-    ws = new WebSocket("ws://localhost:8081/api/chat/" + streamid + "/ws");
+    ws = new WebSocket(`${wsProto}${window.location.host}/api/chat/${streamid}/ws`);
     const cf = document.getElementById("chatForm");
     if (cf !== null && cf != undefined) {
         (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", (e) => submitChat(e));
     }
+    ws.onopen = function (e) {
+        hideDisconnectedMsg();
+    };
+
     ws.onmessage = function (m) {
         const data = JSON.parse(m.data);
         if ("viewers" in data && document.getElementById("viewerCount") != null) {
@@ -55,9 +60,14 @@ export function startWebsocket() {
         if (new Date().valueOf() - pageloaded.valueOf() > 1000 * 60 * 60 * 12) {
             return;
         }
+        showDisconnectedMsg();
         ws = null;
         retryInt *= 2; // exponential backoff
         setTimeout(startWebsocket, retryInt);
+    };
+
+    ws.onerror = function (err) {
+        showDisconnectedMsg();
     };
 }
 
@@ -85,11 +95,11 @@ export function createServerMessage(msg) {
 export function createMessageElement(m): HTMLDivElement {
     // Header:
     const chatElem = document.createElement("div") as HTMLDivElement;
-    chatElem.classList.add("rounded", "p-2", "mx-2");
+    chatElem.classList.add("rounded", "py-2");
     const chatHeader = document.createElement("div") as HTMLDivElement;
     chatHeader.classList.add("flex", "flex-row");
     const chatNameField = document.createElement("p") as HTMLParagraphElement;
-    chatNameField.classList.add("flex-grow", "font-semibold");
+    chatNameField.classList.add("text-sm", "grow", "font-semibold");
     if (m["admin"]) {
         chatNameField.classList.add("text-warn");
     }
@@ -99,14 +109,14 @@ export function createMessageElement(m): HTMLDivElement {
     const d = new Date();
     d.setTime(Date.now());
     const chatTimeField = document.createElement("p") as HTMLParagraphElement;
-    chatTimeField.classList.add("text-4");
+    chatTimeField.classList.add("text-4", "text-xs");
     chatTimeField.innerText = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
     chatHeader.appendChild(chatTimeField);
     chatElem.appendChild(chatHeader);
 
     // Message:
     const chatMessage = document.createElement("p") as HTMLParagraphElement;
-    chatMessage.classList.add("text-gray-300", "break-words");
+    chatMessage.classList.add("text-3", "break-words");
     chatMessage.innerText = m["msg"];
     chatElem.appendChild(chatMessage);
     return chatElem;
@@ -127,51 +137,14 @@ export function submitChat(e: Event) {
     return false; //prevent form submission
 }
 
-export class Timer {
-    constructor(date: string) {
-        const d = new Date(date);
-        d.setMinutes(d.getMinutes() - 10);
-        this.countdown(d.getTime());
+export function showDisconnectedMsg() {
+    if (document.getElementById("disconnectMsg") !== null) {
+        document.getElementById("disconnectMsg").classList.remove("hidden");
     }
+}
 
-    private countdown(countDownDate): void {
-        const intervalMillis = 1000;
-        // Update the count down every 1 second
-        const x = setInterval(function () {
-            // Get today's date and time
-            const now = new Date().getTime();
-
-            // Find the distance between now and the count down date
-            const distance = countDownDate - now;
-
-            // Time calculations for days, hours, minutes and seconds
-            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            // Display the result in the element with id="demo"
-            let out = "";
-            if (days === 1) {
-                out = "Live in one day";
-            } else if (days > 1) {
-                out = "Live in " + days + " days";
-            } else {
-                if (hours !== 0) {
-                    out += hours.toLocaleString("en-US", { minimumIntegerDigits: 2 }) + ":";
-                }
-                out +=
-                    minutes.toLocaleString("en-US", { minimumIntegerDigits: 2 }) +
-                    ":" +
-                    seconds.toLocaleString("en-US", { minimumIntegerDigits: 2 });
-            }
-            document.getElementById("timer").innerText = out;
-
-            // If the count down is finished, write some text
-            if (distance < 0) {
-                clearInterval(x);
-                document.getElementById("timer").innerText = "";
-            }
-        }, intervalMillis);
+export function hideDisconnectedMsg() {
+    if (document.getElementById("disconnectMsg") !== null) {
+        document.getElementById("disconnectMsg").classList.add("hidden");
     }
 }

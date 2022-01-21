@@ -1,8 +1,7 @@
 // Package api_grpc handles communication with workers
-package api_grpc
+package api
 
 import (
-	"TUM-Live/api"
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
@@ -14,6 +13,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live-Worker-v2/pb"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -28,8 +28,23 @@ import (
 
 var mutex = sync.Mutex{}
 
+var lightIndices = []int{0, 1, 2} // turn on all 3 outlets. TODO: make configurable
+
 type server struct {
 	pb.UnimplementedFromWorkerServer
+}
+
+func dialIn(targetWorker model.Worker) (*grpc.ClientConn, error) {
+	credentials := insecure.NewCredentials()
+	log.Info("Connecting to:" + fmt.Sprintf("%s:50051", targetWorker.Host))
+	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", targetWorker.Host), grpc.WithTransportCredentials(credentials))
+	return conn, err
+}
+
+func endConnection(conn *grpc.ClientConn) {
+	if err := conn.Close(); err != nil {
+		log.WithError(err).Error("Could not close connection to worker")
+	}
 }
 
 //NotifySilenceResults handles the results of silence detection sent by a worker
@@ -103,6 +118,7 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 		UploadVoD:    course.VODEnabled,
 		IngestServer: ingestServer.Url,
 		StreamName:   slot.StreamName,
+		OutUrl:       ingestServer.OutUrl,
 	}, nil
 }
 
@@ -149,20 +165,26 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 		if err != nil {
 			log.WithError(err).Error("Can't find stream to set not live")
 		} else {
-			if stream.LectureHallID != 0 {
-				if lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID); err != nil {
-					return nil, err
-				} else {
-					client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
-					lightLock.Lock()
-					err := client.TurnOff(lectureHall.LiveLightIndex)
-					if err != nil {
-						log.WithError(err).Error("Can't turn off live light.")
-					}
-					lightLock.Unlock()
+			go func() {
+				err := handleLightOffSwitch(stream)
+				if err != nil {
+					log.WithError(err).Error("Can't handle light off switch")
 				}
-			}
+				err = dao.SaveEndedState(stream.ID, true)
+				if err != nil {
+					log.WithError(err).Error("Can't set stream done")
+				}
+			}()
 		}
+		// wait 2 hours to clear the dvr cache
+		go func() {
+			time.Sleep(time.Hour * 2)
+			err := dao.RemoveStreamFromSlot(stream.ID)
+			if err != nil {
+				log.WithError(err).Error("Can't remove stream from streamName")
+			}
+		}()
+
 		// wait 2 hours to clear the dvr cache
 		go func() {
 			time.Sleep(time.Hour * 2)
@@ -176,9 +198,66 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 		if err != nil {
 			log.WithError(err).Error("Can't set stream not live")
 		}
-		api.NotifyViewersLiveState(uint(request.StreamID), false)
+		NotifyViewersLiveState(uint(request.StreamID), false)
 	}
 	return &pb.Status{Ok: true}, nil
+}
+
+func handleLightOnSwitch(stream model.Stream) error {
+	if stream.LectureHallID == 0 {
+		return nil // no light to switch
+	}
+	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
+	if err != nil {
+		return err
+	}
+	lightLock.Lock()
+	defer lightLock.Unlock()
+
+	var errs []error
+	client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.Auths.PwrCrtlAuth)
+	for _, lightIndex := range lightIndices {
+		err := client.TurnOn(lightIndex)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("can't turn on lights: %v", errs)
+	}
+	return nil
+}
+
+func handleLightOffSwitch(stream model.Stream) error {
+	if stream.LectureHallID == 0 {
+		return nil // no light to switch
+	}
+	lightLock.Lock()
+	defer lightLock.Unlock()
+	liveStreamsInLectureHall, err := dao.GetLiveStreamsInLectureHall(stream.LectureHallID)
+	if err != nil {
+		return err
+	}
+	if len(liveStreamsInLectureHall) > 1 {
+		return nil // another stream is live, don't turn off the light
+	}
+	if len(liveStreamsInLectureHall) == 1 && liveStreamsInLectureHall[0].ID != stream.ID {
+		return nil // the one different live stream is not this one, don't turn off the light
+	}
+	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
+	if err != nil {
+		return err
+	}
+	client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.Auths.PwrCrtlAuth)
+	for _, index := range lightIndices {
+		err := client.TurnOff(index)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 //SendHeartBeat receives heartbeat messages sent by workers
@@ -186,9 +265,14 @@ func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.S
 	if worker, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, errors.New("authentication failed: invalid worker id")
 	} else {
-		worker.Workload = int(request.Workload)
+		worker.Workload = uint(request.Workload)
 		worker.LastSeen = time.Now()
 		worker.Status = strings.Join(request.Jobs, ", ")
+		worker.CPU = request.CPU
+		worker.Memory = request.Memory
+		worker.Disk = request.Disk
+		worker.Uptime = request.Uptime
+		worker.Version = request.Version
 		err := dao.SaveWorker(worker)
 		if err != nil {
 			return nil, err
@@ -216,6 +300,10 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 	}
 	if shouldAddFile {
 		stream.Files = append(stream.Files, model.File{StreamID: stream.ID, Path: request.FilePath})
+	}
+
+	if request.Duration != 0 {
+		stream.Duration = request.Duration
 	}
 	err = dao.SaveStream(&stream)
 	if err != nil {
@@ -268,21 +356,12 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		log.WithError(err).Println("Can't find stream")
 		return nil, err
 	}
-	if dao.HasStreamLectureHall(stream.ID) {
-		if lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID); err != nil {
-			return nil, err
-		} else {
-			lightLock.Lock()
-			client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
-			go func() {
-				err := client.TurnOn(lectureHall.LiveLightIndex)
-				if err != nil {
-					log.WithError(err).Error("Can't turn on live light.")
-				}
-			}()
-			defer lightLock.Unlock()
+	go func() {
+		err := handleLightOnSwitch(stream)
+		if err != nil {
+			log.WithError(err).Error("Can't handle light on switch")
 		}
-	}
+	}()
 	go func() {
 		// interims solution; sometimes dvr doesn't work as expected.
 		// here we check if the url 404s and remove dvr from the stream in that case
@@ -308,7 +387,7 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		default:
 			dao.SaveCOMBURL(&stream, request.HlsUrl)
 		}
-		api.NotifyViewersLiveState(stream.Model.ID, true)
+		NotifyViewersLiveState(stream.Model.ID, true)
 	}()
 
 	return &pb.Status{Ok: true}, nil
@@ -329,7 +408,6 @@ func isHlsUrlOk(url string) bool {
 		return false
 	}
 	y := strings.ReplaceAll(r.Request.URL.String(), "playlist.m3u8", string(x))
-	log.Println(y)
 	get, err := http.Get(y)
 	if err != nil {
 		return false
@@ -352,6 +430,12 @@ func NotifyWorkers() {
 		return
 	}
 	for i := range streams {
+		err := dao.SaveEndedState(streams[i].ID, false)
+		if err != nil {
+			log.WithError(err).Warn("Can't set stream undone")
+			sentry.CaptureException(err)
+			continue
+		}
 		courseForStream, err := dao.GetCourseById(context.Background(), streams[i].CourseID)
 		if err != nil {
 			log.WithError(err).Warn("Can't get course for stream, skipping")
@@ -408,10 +492,16 @@ func NotifyWorkers() {
 				CourseYear:    uint32(courseForStream.Year),
 				StreamName:    slot.StreamName,
 				IngestServer:  server.Url,
+				OutUrl:        server.OutUrl,
 			}
 			workerIndex := getWorkerWithLeastWorkload(workers)
 			workers[workerIndex].Workload += 3
-			conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithInsecure())
+			err = dao.SaveWorkerForStream(streams[i], workers[workerIndex])
+			if err != nil {
+				log.WithError(err).Error("Could not save worker for stream")
+				return
+			}
+			conn, err := dialIn(workers[workerIndex])
 			if err != nil {
 				log.WithError(err).Error("Unable to dial server")
 				workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
@@ -423,10 +513,8 @@ func NotifyWorkers() {
 			if err != nil || !resp.Ok {
 				log.WithError(err).Error("could not assign stream!")
 				workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
-				_ = conn.Close()
-				continue
 			}
-			_ = conn.Close()
+			endConnection(conn)
 		}
 	}
 }
@@ -441,20 +529,33 @@ func notifyWorkersPremieres() {
 		return
 	}
 	for i := range streams {
+		err := dao.SaveEndedState(streams[i].ID, false)
+		if err != nil {
+			log.WithError(err).Warn("Can't set stream undone")
+			sentry.CaptureException(err)
+			continue
+		}
 		if len(streams[i].Files) == 0 {
 			log.WithField("streamID", streams[i].ID).Warn("Request to self stream without file")
 			continue
 		}
 		workerIndex := getWorkerWithLeastWorkload(workers)
 		workers[workerIndex].Workload += 3
-		req := pb.PremiereRequest{
-			StreamID: uint32(streams[i].ID),
-			FilePath: streams[i].Files[0].Path,
+		ingestServer, err := dao.GetBestIngestServer()
+		if err != nil {
+			log.WithError(err).Error("Can't find ingest server")
+			continue
 		}
-		conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithInsecure())
+		req := pb.PremiereRequest{
+			StreamID:     uint32(streams[i].ID),
+			FilePath:     streams[i].Files[0].Path,
+			IngestServer: ingestServer.Url,
+			OutUrl:       ingestServer.OutUrl,
+		}
+		conn, err := dialIn(workers[workerIndex])
 		if err != nil {
 			log.WithError(err).Error("Unable to dial server")
-			_ = conn.Close()
+			endConnection(conn)
 			workers[workerIndex].Workload -= 1
 			continue
 		}
@@ -464,10 +565,49 @@ func notifyWorkersPremieres() {
 		if err != nil || !resp.Ok {
 			log.WithError(err).Error("could not assign premiere!")
 			workers[workerIndex].Workload -= 1
-			_ = conn.Close()
+		}
+		endConnection(conn)
+	}
+}
+
+// NotifyWorkersToStopStream notifies all workers for a given stream to quit encoding
+func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool) {
+	workers, err := dao.GetWorkersForStream(stream)
+	if err != nil {
+		log.WithError(err).Error("Could not get workers for stream")
+		return
+	}
+
+	if len(workers) == 0 {
+		log.Error("No workers for stream found")
+		return
+	}
+
+	// Iterate over all workers that are used for the given stream
+	for _, currentWorker := range workers {
+		req := pb.EndStreamRequest{
+			StreamID:   uint32(stream.ID),
+			WorkerID:   currentWorker.WorkerID,
+			DiscardVoD: discardVoD,
+		}
+		conn, err := dialIn(currentWorker)
+		if err != nil {
+			log.WithError(err).Error("Unable to dial server")
 			continue
 		}
-		_ = conn.Close()
+		client := pb.NewToWorkerClient(conn)
+		resp, err := client.RequestStreamEnd(context.Background(), &req)
+		if err != nil || !resp.Ok {
+			log.WithError(err).Error("Could not end stream")
+		}
+		endConnection(conn)
+	}
+
+	// All workers for stream are assumed to be done
+	err = dao.ClearWorkersForStream(stream)
+	if err != nil {
+		log.WithError(err).Error("Could not delete workers for stream")
+		return
 	}
 }
 

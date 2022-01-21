@@ -13,25 +13,18 @@ import (
 //GetCurrentOrNextLectureForCourse Gets the next lecture for a course or the lecture that is currently live. Error otherwise.
 func GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model.Stream, error) {
 	var res model.Stream
-	err := DB.Model(&model.Stream{}).Preload("Chats").Order("start").First(&res, "course_id = ? AND (end > ? OR live_now)", courseID, time.Now()).Error
+	err := DB.Model(&model.Stream{}).Preload("Chats").Order("start").First(&res, "course_id = ? AND (end > NOW() OR live_now)", courseID).Error
 	return res, err
 }
 
 // GetAllCourses retrieves all courses from the database
-// @limit bool true if streams should be limited to -1 month, +3 months
-func GetAllCourses(limit bool) ([]model.Course, error) {
+func GetAllCourses() ([]model.Course, error) {
 	cachedCourses, found := Cache.Get("allCourses")
 	if found {
 		return cachedCourses.([]model.Course), nil
 	}
 	var courses []model.Course
-	var err error
-	if !limit {
-		err = DB.Preload("Streams").Find(&courses).Error
-	} else {
-		// limit 3 months in the future and one month in the past
-		err = DB.Preload("Streams", "start BETWEEN ? and ?", time.Now().Add(time.Minute*60*24*30*-1), time.Now().Add(time.Minute*60*24*30*3)).Find(&courses).Error
-	}
+	err := DB.Preload("Streams").Find(&courses).Error
 	if err == nil {
 		Cache.SetWithTTL("allCourses", courses, 1, time.Minute)
 	}
@@ -120,7 +113,7 @@ func DeleteCourse(course model.Course) {
 		}
 	}
 	err := DB.Model(&course).Updates(map[string]interface{}{"live_enabled": false, "vod_enabled": false}).Error
-	if err!=nil{
+	if err != nil {
 		log.WithError(err).Error("Can't update course settings when deleting")
 	}
 	err = DB.Delete(&course).Error
@@ -139,7 +132,7 @@ func GetCourseByToken(token string) (course model.Course, err error) {
 func GetCourseById(ctx context.Context, id uint) (course model.Course, err error) {
 	var foundCourse model.Course
 	dbErr := DB.Preload("Streams.Stats").Preload("Streams.Files").Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("streams.start asc")
+		return db.Order("streams.start desc")
 	}).Find(&foundCourse, "id = ?", id).Error
 	return foundCourse, dbErr
 }
@@ -155,9 +148,9 @@ func GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, y
 	}
 	var course model.Course
 	err := DB.Preload("Streams.Units", func(db *gorm.DB) *gorm.DB {
-		return db.Order("unit_start asc")
+		return db.Order("unit_start desc")
 	}).Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("start asc")
+		return db.Order("start desc")
 	}).Where("teaching_term = ? AND slug = ? AND year = ?", term, slug, year).First(&course).Error
 	if err == nil {
 		Cache.SetWithTTL(fmt.Sprintf("courseBySlugYearAndTerm%v%v%v", slug, term, year), course, 1, time.Minute)
@@ -205,7 +198,7 @@ func CreateCourse(ctx context.Context, course model.Course, keep bool) error {
 	}
 	if !keep {
 		err = DB.Model(&course).Updates(map[string]interface{}{"live_enabled": "0"}).Error
-		if err!=nil{
+		if err != nil {
 			log.WithError(err).Error("Can't update live enabled state")
 		}
 		return DB.Delete(&course).Error

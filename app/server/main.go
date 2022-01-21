@@ -2,7 +2,6 @@ package main
 
 import (
 	"TUM-Live/api"
-	"TUM-Live/api_grpc"
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
@@ -96,10 +95,13 @@ func main() {
 	}
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
 		"%v:%v@tcp(db:3306)/%v?parseTime=true&loc=Local",
-		tools.Cfg.DatabaseUser,
-		tools.Cfg.DatabasePassword,
-		tools.Cfg.DatabaseName),
-	), &gorm.Config{})
+		tools.Cfg.Db.User,
+		tools.Cfg.Db.Password,
+		tools.Cfg.Db.Database),
+	), &gorm.Config{
+		PrepareStmt: true,
+	})
+
 	if err != nil {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second * 5)
@@ -123,7 +125,6 @@ func main() {
 		&model.CameraPreset{},
 		&model.ServerNotification{},
 		&model.File{},
-		&model.Mail{},
 		&model.StreamProgress{},
 	)
 	if err != nil {
@@ -169,7 +170,7 @@ func initCron() {
 	//Flush stale sentry exceptions and transactions every 5 minutes
 	_, _ = cronService.AddFunc("0-59/5 * * * *", func() { sentry.Flush(time.Minute * 2) })
 	//Look for due streams and notify workers about them
-	_, _ = cronService.AddFunc("0-59 * * * *", api_grpc.NotifyWorkers)
+	_, _ = cronService.AddFunc("0-59 * * * *", api.NotifyWorkers)
 	cronService.Start()
 }
 

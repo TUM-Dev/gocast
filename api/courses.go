@@ -39,7 +39,7 @@ func configGinCourseRouter(router *gin.Engine) {
 	adminOfCourseGroup.Use(tools.InitCourse)
 	adminOfCourseGroup.Use(tools.AdminOfCourse)
 	adminOfCourseGroup.POST("/createLecture", createLecture)
-	adminOfCourseGroup.POST("/deleteLecture/:streamID", deleteLecture)
+	adminOfCourseGroup.POST("/deleteLectures", deleteLectures)
 	adminOfCourseGroup.POST("/renameLecture/:streamID", renameLecture)
 	adminOfCourseGroup.POST("/updateDescription/:streamID", updateDescription)
 	adminOfCourseGroup.POST("/addUnit", addUnit)
@@ -353,7 +353,7 @@ type renameLectureRequest struct {
 	Name string
 }
 
-func deleteLecture(c *gin.Context) {
+func deleteLectures(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -361,13 +361,33 @@ func deleteLecture(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	stream, err := dao.GetStreamByID(context.Background(), c.Param("streamID"))
-	if err != nil || stream.CourseID != tumLiveContext.Course.ID {
-		c.AbortWithStatus(http.StatusForbidden)
+
+	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	stream.Model.DeletedAt = gorm.DeletedAt{Time: time.Now()} // todo ?!
-	dao.DeleteStream(strconv.Itoa(int(stream.ID)))
+
+	var req deleteLecturesRequest
+	err = json.Unmarshal(jsonData, &req)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	var streams []model.Stream
+	for _, streamID := range req.StreamIDs {
+		stream, err := dao.GetStreamByID(context.Background(), streamID)
+		if err != nil || stream.CourseID != tumLiveContext.Course.ID {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+		streams = append(streams, stream)
+	}
+
+	for _, stream := range streams {
+		dao.DeleteStream(strconv.Itoa(int(stream.ID)))
+	}
 }
 
 func createLecture(c *gin.Context) {
@@ -386,7 +406,7 @@ func createLecture(c *gin.Context) {
 	}
 	// name for folder for premiere file if needed
 	premiereFolder := fmt.Sprintf("%s/%d/%s/%s",
-		tools.Cfg.MassStorage,
+		tools.Cfg.Paths.Mass,
 		tumLiveContext.Course.Year,
 		tumLiveContext.Course.TeachingTerm,
 		tumLiveContext.Course.Slug)
@@ -555,7 +575,7 @@ func courseInfo(c *gin.Context) {
 		return
 	}
 	var courseInfo tum.CourseInfo
-	for _, token := range tools.Cfg.CampusToken {
+	for _, token := range tools.Cfg.Campus.Tokens {
 		courseInfo, err = tum.GetCourseInformation(req.CourseID, token)
 		if err == nil {
 			break
@@ -571,4 +591,8 @@ func courseInfo(c *gin.Context) {
 
 type getCourseRequest struct {
 	CourseID string `json:"courseID"`
+}
+
+type deleteLecturesRequest struct {
+	StreamIDs []string `json:"streamIDs"`
 }

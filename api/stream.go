@@ -20,6 +20,20 @@ func configGinStreamRestRouter(router *gin.Engine) {
 	g.Use(tools.AdminOfCourse)
 	g.GET("/api/stream/:streamID", getStream)
 	g.GET("/api/stream/:streamID/pause", pauseStream)
+	g.GET("/api/stream/:streamID/end", endStream)
+}
+
+func endStream(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	discardVoD := c.Request.URL.Query().Get("discard") == "true"
+	log.Info(discardVoD)
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	NotifyWorkersToStopStream(*tumLiveContext.Stream, discardVoD)
 }
 
 func pauseStream(c *gin.Context) {
@@ -37,9 +51,9 @@ func pauseStream(c *gin.Context) {
 		log.WithError(err).Error("request to pause stream without lecture hall")
 		return
 	}
-	ge := goextron.New(fmt.Sprintf("http://%s", strings.ReplaceAll(lectureHall.CombIP, "extron3", "")), tools.Cfg.SMPUser, tools.Cfg.SMPPassword) // todo
+	ge := goextron.New(fmt.Sprintf("http://%s", strings.ReplaceAll(lectureHall.CombIP, "extron3", "")), tools.Cfg.Auths.SmpUser, tools.Cfg.Auths.SmpUser) // todo
 	err = ge.SetMute(pause)
-	client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.PWRCTRLAuth)
+	client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.Auths.PwrCrtlAuth)
 	if pause {
 		err := client.TurnOff(lectureHall.LiveLightIndex)
 		if err != nil {

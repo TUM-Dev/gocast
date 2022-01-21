@@ -1,0 +1,60 @@
+{{define "planned_course_list"}}
+    {{- /*gotype: TUM-Live/tools.TUMLiveContext*/ -}}
+    {{$course := .Course}}
+    {{$lastMonth := -1}}
+    {{range $lecture := $course.Streams }}
+        {{if or $lecture.IsPlanned $lecture.IsComingUp}}
+            {{if ne $lecture.Start.Month $lastMonth}}
+                {{if ne $lastMonth -1}} </div> {{end}}
+                {{$lastMonth = $lecture.Start.Month}}
+                <div class = "mb-5 last:mb-0">
+                <p class="text-gray-500 text-sm uppercase">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
+            {{end}}
+            <li class="p-2">
+                <div class="flex justify-between">
+                    <div>
+                        <div>
+                            {{if $lecture.IsComingUp}}
+                                <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}"
+                                   class="text-l text-3 font-semibold p-0">
+                                    {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
+                                </a>
+                            {{else}}
+                                <span class="text-l text-3 font-semibold p-0">
+                                    {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
+                                </span>
+                            {{end}}
+                        </div>
+                        <div>
+                            <span class='font-light text-sm dark:text-gray-200'>
+                                {{$lecture.FriendlyDate}} {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {{if $lecture.Units}}
+                    <div>
+                        <ul>
+                            {{range $i, $unit := $lecture.Units}}
+                                <li>
+                                    <p>
+                                        <a class="hover:text-white hover:underline text-gray-300 px-2 mx-2 mr-0"
+                                           href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/unit-{{$i}}">
+                                            {{$unit.UnitName}}
+                                        </a>
+                                        <span class="text-sm text-gray-400">
+                                            {{$unit.GetRoundedUnitLen}}
+                                        </span>
+                                    </p>
+                                </li>
+                            {{end}}
+                        </ul>
+                    </div>
+                {{end}}
+            </li>
+        {{end}}
+    {{end}}
+    {{if eq $lastMonth -1}}
+        <div class = "font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">No upcoming streams</div>
+    {{end}}
+{{end}}

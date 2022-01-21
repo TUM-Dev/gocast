@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="Mysql" uuid="5b4a3b84-c54b-46d9-841b-ced33ad15c6e">
-      <driver-ref>postgresql</driver-ref>
-      <synchronize>true</synchronize>
-      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:mysql://localhost:5431/rbglive</jdbc-url>
-      <working-dir>$ProjectFileDir$</working-dir>
-    </data-source>
     <data-source source="LOCAL" name="tumlive@localhost" uuid="9d9e7882-ed2a-49e0-ab8b-f92a0503e244">
       <driver-ref>mysql</driver-ref>
       <synchronize>true</synchronize>

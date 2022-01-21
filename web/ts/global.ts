@@ -8,6 +8,12 @@ export async function postData(url = "", data = {}) {
     });
 }
 
+export async function Delete(url = "") {
+    return await fetch(url, {
+        method: "DELETE",
+    });
+}
+
 export function Get(yourUrl) {
     const HttpReq = new XMLHttpRequest();
     HttpReq.open("GET", yourUrl, false);
@@ -103,6 +109,67 @@ export function initHiddenCourses() {
     if (hidden.length !== 0) {
         hiddenCoursesText.innerText = hidden.length + " hidden courses";
     }
+}
+
+// Adapted from https://codepen.io/harsh/pen/KKdEVPV
+export function timer(expiry: string, leadingZero: boolean) {
+    const date = new Date(expiry);
+    return {
+        expiry: date,
+        remaining: null,
+        init() {
+            this.setRemaining();
+            setInterval(() => {
+                this.setRemaining();
+            }, 1000);
+        },
+        setRemaining() {
+            const diff = this.expiry - new Date().getTime();
+            if (diff >= 0) {
+                this.remaining = parseInt(String(diff / 1000));
+            } else {
+                this.remaining = 0;
+            }
+        },
+        days() {
+            return {
+                value: this.remaining / 86400,
+                remaining: this.remaining % 86400,
+            };
+        },
+        hours() {
+            return {
+                value: this.days().remaining / 3600,
+                remaining: this.days().remaining % 3600,
+            };
+        },
+        minutes() {
+            return {
+                value: this.hours().remaining / 60,
+                remaining: this.hours().remaining % 60,
+            };
+        },
+        seconds() {
+            return {
+                value: this.minutes().remaining,
+            };
+        },
+        format(value) {
+            if (leadingZero) {
+                return ("0" + parseInt(value)).slice(-2);
+            } else {
+                return parseInt(value);
+            }
+        },
+        time() {
+            return {
+                days: this.format(this.days().value),
+                hours: this.format(this.hours().value),
+                minutes: this.format(this.minutes().value),
+                seconds: this.format(this.seconds().value),
+            };
+        },
+    };
 }
 
 window.onload = function () {

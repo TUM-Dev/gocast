@@ -1,21 +1,31 @@
-import { postData, showMessage } from "./global";
+import { Delete, postData, showMessage } from "./global";
 import { StatusCodes } from "http-status-codes";
 
 class Admin {}
 
-export function createLectureHall() {
-    postData("/api/createLectureHall", {
-        name: (document.getElementById("newLectureHallName") as HTMLInputElement).value,
-        combIP: (document.getElementById("newLectureHallCombIP") as HTMLInputElement).value,
-        presIP: (document.getElementById("newLectureHallPresIP") as HTMLInputElement).value,
-        camIP: (document.getElementById("newLectureHallCamIP") as HTMLInputElement).value,
-    }).then((e) => {
-        if (e.status === StatusCodes.OK) {
-            window.location.reload();
-        }
+export async function createLectureHall(
+    name: string,
+    combIP: string,
+    presIP: string,
+    camIP: string,
+    cameraIp: string,
+    pwrCtrlIp: string,
+) {
+    return postData("/api/createLectureHall", { name, presIP, camIP, combIP, cameraIp, pwrCtrlIp }).then((e) => {
+        return e.status === StatusCodes.OK;
     });
 }
 
+export async function deleteLectureHall(lectureHallID: number) {
+    if (confirm("Do you really want to remove this lecture hall?")) {
+        try {
+            await Delete("/api/lectureHall/" + lectureHallID);
+            document.location.reload();
+        } catch (e) {
+            alert("Something went wrong while deleting!");
+        }
+    }
+}
 export function createUser() {
     const userName: string = (document.getElementById("name") as HTMLInputElement).value;
     const email: string = (document.getElementById("email") as HTMLInputElement).value;

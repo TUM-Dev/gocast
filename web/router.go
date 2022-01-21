@@ -31,7 +31,7 @@ func ConfigGinRouter(router *gin.Engine) {
 }
 
 func configGinStaticRouter(router gin.IRoutes) {
-	router.Static("/public", tools.Cfg.StaticPath)
+	router.Static("/public", tools.Cfg.Paths.Static)
 	router.StaticFS("/static", http.FS(staticFS))
 	router.GET("/favicon.ico", func(c *gin.Context) {
 		c.FileFromFS("assets/favicon.ico", http.FS(staticFS))
@@ -51,6 +51,7 @@ func configMainRoute(router *gin.Engine) {
 	adminGroup := router.Group("/")
 	adminGroup.GET("/admin/users", AdminPage)
 	adminGroup.GET("/admin/lectureHalls", AdminPage)
+	adminGroup.GET("/admin/lectureHalls/new", AdminPage)
 	adminGroup.GET("/admin/workers", AdminPage)
 	adminGroup.GET("/admin/server-notifications", AdminPage)
 	adminGroup.GET("/admin/server-stats", AdminPage)

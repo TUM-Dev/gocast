@@ -21,13 +21,13 @@ func CourseListContains(courses []model.Course, courseId uint) bool {
 func UploadLRZ(file string) error {
 	cmd := exec.Command("curl", "-F",
 		"filename=@"+file,
-		"-F", "benutzer="+Cfg.LrzUser,
-		"-F", "mailadresse="+Cfg.LRZMail,
-		"-F", "telefon="+Cfg.LRZPhone,
+		"-F", "benutzer="+Cfg.Lrz.Name,
+		"-F", "mailadresse="+Cfg.Lrz.Email,
+		"-F", "telefon="+Cfg.Lrz.Phone,
 		"-F", "unidir=tum",
-		"-F", "subdir="+Cfg.LRZSubDir,
+		"-F", "subdir="+Cfg.Lrz.SubDir,
 		"-F", "info=",
-		Cfg.LRZUploadURL)
+		Cfg.Lrz.UploadURL)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Println(string(out))

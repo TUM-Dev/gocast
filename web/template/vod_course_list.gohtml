@@ -1,53 +1,58 @@
-{{define "course_list"}}
+{{define "vod_course_list"}}
     {{- /*gotype: TUM-Live/tools.TUMLiveContext*/ -}}
     {{$course := .Course}}
     {{$lastMonth := -1}}
-
     {{range $lecture := $course.Streams }}
-        {{if or (or (not $lecture.IsPast) $lecture.Recording) $lecture.LiveNow}}
+        {{if $lecture.Recording}}
             {{if ne $lecture.Start.Month $lastMonth}}
+                {{if ne $lastMonth -1}} </div> {{end}}
                 {{$lastMonth = $lecture.Start.Month}}
-                <p class="p-2 text-lg text-2 border-b-2 border-gray-800">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
+                <div class="mb-5 last:mb-0">
+                <p class="text-gray-500 text-sm uppercase">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
             {{end}}
-            <li class="pl-4 p-2">
+            <li class="p-2">
                 <div class="flex justify-between">
-               {{if or (or $lecture.LiveNow $lecture.Recording) $lecture.IsComingUp}}
-                        <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}" class="text-l text-3 p-0">
+                    <div>
+                        <div>
+                            <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}"
+                               class="text-l text-3 font-semibold p-0">
                                 {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
-                        </a>
-                    {{else}}
-                        <h3 class="text-l text-3 p-0">
-                            {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
-                        </h3>
-                    {{end}}
-                    <div class="flex text-gray-400 space-x-2">
+                            </a>
+                        </div>
+                        <div>
+                                <span class='dark:text-gray-200 font-light text-sm'>
+                                    {{$lecture.FriendlyDate}} {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
+                                </span>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2 my-auto">
                         {{if (and $course.DownloadsEnabled $lecture.FilePath) }}
-                            <a class="flex"
+                            <a class="flex text-3 rounded-full"
                                title="Download Lecture"
                                href="/api/download/{{$lecture.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $lecture.Start.Month $lecture.Start.Day $lecture.Start.Year}}"
                                download>
-                                <i class="fas fa-download text-gray-400 hover:text-purple-500"></i>
+                                <i class="fas fa-download"></i>
                             </a>
                         {{end}}
                         {{if $lecture.PlaylistUrlCAM}}
-                            <a class="flex"
+                            <a class="flex text-3"
                                title="Camera Only"
                                href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/CAM">
-                                <i class="fas fa-camera text-gray-400 hover:text-purple-500"></i>
+                                <i class="fas fa-camera"></i>
                             </a>
                         {{end}}
                         {{if $lecture.PlaylistUrlPRES}}
-                            <a class="flex"
+                            <a class="flex text-3"
                                title="Presentation Only"
                                href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/PRES">
-                                <i class="fas fa-edit text-gray-400 hover:text-purple-500"></i>
+                                <i class="fas fa-edit"></i>
                             </a>
                         {{end}}
                         {{if and $course.ChatEnabled (or $lecture.LiveNow $lecture.Recording)}}
-                            <a class="flex"
+                            <a class="flex text-3"
                                title="Chat Only"
                                href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/chat">
-                                <i class="fas fa-comments text-gray-400 hover:text-purple-500"></i>
+                                <i class="fas fa-comments"></i>
                             </a>
                         {{end}}
                     </div>
@@ -63,30 +68,18 @@
                                             {{$unit.UnitName}}
                                         </a>
                                         <span class="text-sm text-gray-400">
-                                            {{$unit.GetRoundedUnitLen}}
-                                        </span>
+                                                {{$unit.GetRoundedUnitLen}}
+                                            </span>
                                     </p>
                                 </li>
                             {{end}}
                         </ul>
                     </div>
                 {{end}}
-                <p class="text-5 text-sm">
-                    {{if $lecture.Recording}}
-                        <span class="bg-success rounded-full text-gray-800 px-2">VoD</span>
-                    {{else if $lecture.LiveNow}}
-                        <span class="bg-danger rounded-full text-gray-200 px-2">Live</span>
-                    {{else if $lecture.IsPast}}
-                        <span class="bg-warn rounded-full text-gray-200 px-2">Past</span>
-                    {{else if $lecture.IsComingUp}}
-                        <span class="bg-wait rounded-full text-gray-800 px-2">Waiting room</span>
-                    {{else}}
-                        <span class="bg-info rounded-full text-gray-200 px-2">Planned</span>
-                    {{end}}
-                    {{$lecture.FriendlyDate}}
-                    {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
-                </p>
             </li>
         {{end}}
+    {{end}}
+    {{if eq $lastMonth -1}}
+        <div class = "font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">No VoDs yet</div>
     {{end}}
 {{end}}

@@ -86,9 +86,16 @@ export function toggleExtraInfos(btn: HTMLElement, id: number) {
 
 export function deleteLecture(cid: number, lid: number) {
     if (confirm("Confirm deleting video?")) {
-        postData("/api/course/" + cid + "/deleteLecture/" + lid).then(() => {
+        postData("/api/course/" + cid + "/deleteLectures", { streamIDs: [lid.toString()] }).then(() => {
             document.location.reload();
         });
+    }
+}
+
+export async function deleteLectures(cid: number, lids: number[]) {
+    if (confirm("Confirm deleting " + lids.length + " video" + (lids.length == 1 ? "" : "s") + "?")) {
+        await postData("/api/course/" + cid + "/deleteLectures", { streamIDs: lids.map((n) => n.toString()) });
+        document.location.reload();
     }
 }
 

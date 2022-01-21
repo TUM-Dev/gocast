@@ -154,7 +154,7 @@ func CreateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, createUserResponse{Name: createdUser.Name, Email: createdUser.Email.String, Role: createdUser.Role})
 }
 
-func createUserHelper(request createUserRequest, userType int) (user model.User, err error) {
+func createUserHelper(request createUserRequest, userType uint) (user model.User, err error) {
 	var u = model.User{
 		Name:  request.Name,
 		Email: sql.NullString{String: request.Email, Valid: true},
@@ -191,7 +191,7 @@ func forgotPassword(email string) {
 	body := fmt.Sprintf("Hello!\n"+
 		"You have been invited to use TUM-Live. You can set a password for your account here: https://live.rbg.tum.de/setPassword/%v\n"+
 		"After setting a password you can log in with the email this message was sent to. Please note that this is not your TUMOnline account.\n"+
-		"If you have any further questions please reach out to live@rbg.tum.de", registerLink.RegisterSecret)
+		"If you have any further questions please reach out to "+tools.Cfg.Mail.Sender, registerLink.RegisterSecret)
 	err = tools.SendPasswordMail(email, body)
 	if err != nil {
 		log.Println("couldn't send password mail")
@@ -211,5 +211,5 @@ type createUserRequest struct {
 type createUserResponse struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
-	Role  int    `json:"role"`
+	Role  uint   `json:"role"`
 }
