@@ -411,11 +411,6 @@ type createLectureHallRequest struct {
 	PwrCtrlIP string `json:"pwrCtrlIp"`
 }
 
-type updateLecturesLectureHallRequest struct {
-	LectureID     uint `json:"lecture"`
-	LectureHallID uint `json:"lectureHall"`
-}
-
 type setLectureHallRequest struct {
 	StreamIDs     []uint `json:"streamIDs"`
 	LectureHallID uint   `json:"lectureHall"`
