@@ -65,13 +65,6 @@ func SaveLectureHall(lectureHall model.LectureHall) error {
 	return DB.Save(&lectureHall).Error
 }
 
-func UnsetLectureHall(lectureID uint) {
-	DB.Model(&model.Stream{}).
-		Where("id = ?", lectureID).
-		Select("lecture_hall_id").
-		Updates(map[string]interface{}{"lecture_hall_id": nil})
-}
-
 // GetStreamsForLectureHallIcal returns an instance of []calendarResult for the ical export.
 // if a user id is given, only streams of the user are returned. All streams are returned otherwise.
 // streams that happened more than on month ago and streams that are more than 3 months in the future are omitted.

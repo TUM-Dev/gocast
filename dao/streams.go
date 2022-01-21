@@ -50,6 +50,20 @@ func GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, 
 	return res, nil
 }
 
+func GetStreamsByIds(ids []uint) ([]model.Stream, error) {
+	var streams []model.Stream
+	err := DB.Debug().Find(&streams, ids).Error
+	return streams, err
+}
+
+func SetLectureHall(streamIDs []uint, lectureHallID uint) error {
+	return DB.Model(&model.Stream{}).Where("id IN ?", streamIDs).Update("lecture_hall_id", lectureHallID).Error
+}
+
+func UnsetLectureHall(streamIDs []uint) error {
+	return DB.Model(&model.Stream{}).Where("id IN ?", streamIDs).Update("lecture_hall_id", nil).Error
+}
+
 func GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error) {
 	if cached, found := Cache.Get(fmt.Sprintf("streambyid%v", id)); found {
 		return cached.(model.Stream), nil

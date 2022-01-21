@@ -68,7 +68,7 @@
                     </div>
                 </div>
 
-                <div x-data="{ filterPast: false, selectedLectures: [], selectedLectureHallId: null }">
+                <div x-data="{ filterPast: false, selectedLectures: [], selectedLectureHallId: 0 }">
                     {{$user := .IndexData.TUMLiveContext.User}}
                     {{$ingestBase := .IngestBase}}
                     {{$lectureHalls := .LectureHalls}}
@@ -87,17 +87,21 @@
                                     <label class="mx-2">
                                         <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
                                                 id="lectureHallBulkSelect"
+                                                x-model="selectedLectureHallId"
                                                 :disabled="selectedLectures.length == 0 || selectedLectures.some(({isPast}) => isPast)">
-                                            <option class="text-gray-300" value="">Self streaming
+                                            <option class="text-gray-300" value="0">Self streaming
                                             </option>
                                             {{range $lectureHall := $lectureHalls}}
-                                                <option class="text-gray-300">
+                                                <option value="{{$lectureHall.Model.ID}}" class="text-gray-300">
                                                     {{$lectureHall.Name}}
                                                 </option>
                                             {{end}}
                                         </select>
                                     </label>
-                                    <button x-show="selectedLectures.length > 0 && !selectedLectures.some(({isPast}) => isPast)" :onclick="() => console.log(selectedLectures.map(({id}) => id))">
+                                    <button
+                                        x-show="selectedLectures.length > 0 && !selectedLectures.some(({isPast}) => isPast)"
+                                        @click="saveLectureHall(selectedLectures.map(({id}) => id), selectedLectureHallId).then(() => { window.location.reload(); })"
+                                    >
                                         <i class="align-middle fas fa-check text-gray-300"></i>
                                     </button>
                                 </div>
@@ -183,13 +187,14 @@
                                                 </form>
                                                 {{if and (not $lecture.IsPast) (not $lecture.Recording)}}
                                                 {{if eq $user.Role 1}}
-                                                <div class="flex">
+                                                <div class="flex" x-data="{ streamSelectedLectureHallId: {{$lecture.LectureHallID}}, showSubmit: false }">
                                                     <label class="mx-2">
                                                         <span>Select Lecture Hall</span>
                                                         <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
                                                                 id="lectureHallSelector{{$lecture.Model.ID}}"
-                                                                onchange="document.getElementById('applyLectureHall{{$lecture.Model.ID}}').classList.remove('hidden')">
-                                                            <option class="text-gray-300" value="">Self streaming
+                                                                @change="showSubmit = true"
+                                                                x-model="streamSelectedLectureHallId">
+                                                            <option class="text-gray-300" value="0">Self streaming
                                                             </option>
                                                             {{range $lectureHall := $lectureHalls}}
                                                                 <option class="text-gray-300"
@@ -200,8 +205,9 @@
                                                         </select>
                                                     </label>
                                                     <a id="applyLectureHall{{$lecture.Model.ID}}"
-                                                       class="flex items-center hidden"
-                                                       onclick="saveLectureHall({{$lecture.Model.ID}})">
+                                                       class="flex items-center"
+                                                       x-show="showSubmit"
+                                                       @click="saveLectureHall([{{$lecture.Model.ID}}], streamSelectedLectureHallId).then(() => { showSubmit = false; })">
                                                         <i class="align-middle fas fa-check text-gray-300 hover:text-purple-500"></i>
                                                     </a>
                                                 </div>
