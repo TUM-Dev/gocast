@@ -137,7 +137,7 @@ func AdminOfCourse(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(TUMLiveContext)
-	if tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.Model.ID != tumLiveContext.Course.UserID {
+	if tumLiveContext.User == nil || (tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.Model.ID != tumLiveContext.Course.UserID) {
 		c.AbortWithStatus(http.StatusForbidden)
 	}
 }
@@ -166,16 +166,6 @@ func Admin(c *gin.Context) {
 	if tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType {
 		c.AbortWithStatus(http.StatusForbidden)
 	}
-}
-
-func Worker(c *gin.Context) {
-	if wid := c.Param("workerID"); wid != "" {
-		_, err := dao.GetWorkerByID(c, wid)
-		if err == nil {
-			return
-		}
-	}
-	c.AbortWithStatus(http.StatusForbidden)
 }
 
 type TUMLiveContext struct {
