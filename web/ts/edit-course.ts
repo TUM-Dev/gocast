@@ -13,7 +13,7 @@ class EditCourse {
 }
 
 function saveLectureHall(streamIds: number[], lectureHall: string) {
-    return postData('/api/setLectureHall', { streamIds, lectureHall: parseInt(lectureHall) });
+    return postData("/api/setLectureHall", { streamIds, lectureHall: parseInt(lectureHall) });
 }
 
 function saveLectureDescription(e: Event, cID: number, lID: number) {
