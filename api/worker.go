@@ -38,5 +38,5 @@ func createWorker(c *gin.Context) {
 		log.WithError(err).Error("can't save worker")
 		return
 	}
-	c.JSON(200, gin.H{"workerID": id})
+	c.JSON(http.StatusOK, gin.H{"workerID": id})
 }

@@ -29,6 +29,7 @@ type Stream struct {
 	LiveNow          bool   `gorm:"not null"`
 	Recording        bool
 	Premiere         bool `gorm:"default:null"`
+	Ended            bool `gorm:"default:null"`
 	Chats            []Chat
 	Stats            []Stat
 	Units            []StreamUnit
@@ -40,7 +41,8 @@ type Stream struct {
 	Files            []File `gorm:"foreignKey:StreamID"`
 	Paused           bool   `gorm:"default:false"`
 	StreamName       string
-	Duration         uint32 `gorm:"default:null"`
+	Duration         uint32   `gorm:"default:null"`
+	StreamWorkers    []Worker `gorm:"many2many:stream_workers;"`
 }
 
 // IsSelfStream returns whether the stream is a scheduled stream in a lecture hall
@@ -50,7 +52,7 @@ func (s Stream) IsSelfStream() bool {
 
 // IsPast returns whether the stream end time was reached
 func (s Stream) IsPast() bool {
-	return s.End.Before(time.Now())
+	return s.End.Before(time.Now()) || s.Ended
 }
 
 // IsComingUp returns whether the stream begins in 30 minutes

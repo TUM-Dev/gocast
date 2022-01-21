@@ -5,14 +5,17 @@ import (
 	"context"
 	"fmt"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"strconv"
 	"time"
 )
 
+// GetDueStreamsForWorkers retrieves all streams that due to be streamed in a lecture hall.
 func GetDueStreamsForWorkers() []model.Stream {
 	var res []model.Stream
 	DB.Model(&model.Stream{}).
-		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE) AND live_now = false AND recording = false").
+		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE)" +
+			"AND live_now = false AND recording = false AND (ended = false OR ended IS NULL)").
 		Scan(&res)
 	return res
 }
@@ -116,6 +119,25 @@ func UpdateStream(stream model.Stream) error {
 	return err
 }
 
+// GetWorkersForStream retrieves all workers for a given stream with streamID
+func GetWorkersForStream(stream model.Stream) ([]model.Worker, error) {
+	var res []model.Worker
+	err := DB.Preload(clause.Associations).Model(&stream).Association("StreamWorkers").Find(&res)
+	return res, err
+}
+
+// SaveWorkerForStream associates a worker with a stream with streamID
+func SaveWorkerForStream(stream model.Stream, worker model.Worker) error {
+	defer Cache.Clear()
+	return DB.Model(&stream).Association("StreamWorkers").Append(&worker)
+}
+
+// ClearWorkersForStream deletes all workers for a stream with streamID
+func ClearWorkersForStream(stream model.Stream) error {
+	defer Cache.Clear()
+	return DB.Model(&stream).Association("StreamWorkers").Clear()
+}
+
 //GetAllStreams returns all streams of the server
 func GetAllStreams() ([]model.Stream, error) {
 	var res []model.Stream
@@ -156,9 +178,15 @@ func SetStreamNotLiveById(streamID uint) error {
 	return DB.Debug().Exec("UPDATE `streams` SET `live_now`='0' WHERE id = ?", streamID).Error
 }
 
-func SavePauseState(streamid uint, paused bool) error {
+func SavePauseState(streamID uint, paused bool) error {
 	defer Cache.Clear()
-	return DB.Model(model.Stream{}).Where("id = ?", streamid).Updates(map[string]interface{}{"Paused": paused}).Error
+	return DB.Model(model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"Paused": paused}).Error
+}
+
+// SaveEndedState updates the boolean Ended field of a stream model to the value of hasEnded when a stream finishes.
+func SaveEndedState(streamID uint, hasEnded bool) error {
+	defer Cache.Clear()
+	return DB.Model(&model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"Ended": hasEnded}).Error
 }
 
 func SaveCOMBURL(stream *model.Stream, url string) {
