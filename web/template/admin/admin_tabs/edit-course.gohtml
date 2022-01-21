@@ -97,7 +97,7 @@
                                             {{end}}
                                         </select>
                                     </label>
-                                    <button x-show="selectedLectures.length > 0 && !selectedLectures.some(({isPast}) => isPast)" onclick="saveLectureHall(0)">
+                                    <button x-show="selectedLectures.length > 0 && !selectedLectures.some(({isPast}) => isPast)" :onclick="() => console.log(selectedLectures.map(({id}) => id))">
                                         <i class="align-middle fas fa-check text-gray-300"></i>
                                     </button>
                                 </div>
