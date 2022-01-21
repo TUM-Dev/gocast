@@ -341,14 +341,9 @@ func takeSnapshot(c *gin.Context) {
 }
 
 func setLectureHall(c *gin.Context) {
-	body, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
-		return
-	}
-
 	var req setLectureHallRequest
-	if err = json.Unmarshal(body, &req); err != nil {
+	err := c.BindJSON(&req)
+	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
 		return
 	}
