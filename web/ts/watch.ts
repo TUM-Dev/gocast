@@ -18,6 +18,34 @@ let ws: WebSocket;
 let retryInt = 5000; //retry connecting to websocket after this timeout
 const pageloaded = new Date();
 
+function initChatScrollListener() {
+    const chatBox = document.getElementById("chatBox") as HTMLDivElement;
+    if (!chatBox) {
+        return;
+    }
+    chatBox.addEventListener("scroll", function (e) {
+        if (chatBox.scrollHeight - chatBox.scrollTop === chatBox.offsetHeight) {
+            window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
+        }
+    });
+}
+
+function scrollChatIfNeeded() {
+    const c = document.getElementById("chatBox");
+    // 150px grace offset to avoid showing message when close to bottom
+    if (c.scrollHeight - c.scrollTop <= c.offsetHeight + 150) {
+        c.scrollTop = c.scrollHeight;
+    } else {
+        window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: true } }));
+    }
+}
+
+function scrollToLatestMessage() {
+    const c = document.getElementById("chatBox");
+    c.scrollTo({ top: c.scrollHeight, behavior: "smooth" });
+    window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
+}
+
 export function startWebsocket() {
     const wsProto = window.location.protocol === "https:" ? `wss://` : `ws://`;
     const streamid = (document.getElementById("streamID") as HTMLInputElement).value;
@@ -26,6 +54,7 @@ export function startWebsocket() {
     if (cf !== null && cf != undefined) {
         (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", (e) => submitChat(e));
     }
+    initChatScrollListener();
     ws.onopen = function (e) {
         hideDisconnectedMsg();
     };
@@ -46,11 +75,11 @@ export function startWebsocket() {
         } else if ("server" in data) {
             const serverElem = createServerMessage(data);
             document.getElementById("chatBox").appendChild(serverElem);
-            document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
+            scrollChatIfNeeded();
         } else if ("msg" in data) {
             const chatElem = createMessageElement(data);
             document.getElementById("chatBox").appendChild(chatElem);
-            document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
+            scrollChatIfNeeded();
         }
     };
 

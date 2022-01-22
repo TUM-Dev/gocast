@@ -16,17 +16,8 @@ export class EditCourse {
     }
 }
 
-export async function saveLectureHall(lectureID: number) {
-    postData("/api/updateLecturesLectureHall", {
-        lecture: lectureID,
-        lectureHall: parseInt(
-            (document.getElementById("lectureHallSelector" + lectureID) as HTMLSelectElement).selectedOptions[0].value,
-        ),
-    }).then((res) => {
-        if (res.status === StatusCodes.OK) {
-            document.getElementById("applyLectureHall" + lectureID).classList.add("hidden");
-        }
-    });
+export function saveLectureHall(streamIds: number[], lectureHall: string) {
+    return postData("/api/setLectureHall", { streamIds, lectureHall: parseInt(lectureHall) });
 }
 
 export function saveLectureDescription(e: Event, cID: number, lID: number) {

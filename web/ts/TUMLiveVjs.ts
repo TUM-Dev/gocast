@@ -232,10 +232,10 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
         // Triggered when user presses play
         player.on("play", () => {
             // See https://developer.mozilla.org/en-US/docs/Web/API/setInterval#ensure_that_execution_duration_is_shorter_than_interval_frequency
-            (function progressLoop() {
+            (function reportNextProgress() {
                 timer = setTimeout(function () {
                     reportProgress();
-                    progressLoop();
+                    reportNextProgress();
                 }, intervalMillis);
             })();
         });
