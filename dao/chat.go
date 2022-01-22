@@ -4,8 +4,8 @@ import (
 	"TUM-Live/model"
 )
 
-func AddMessage(chat model.Chat) {
-	DB.Save(&chat)
+func AddMessage(chat model.Chat) error {
+	return DB.Save(&chat).Error
 }
 
 //IsUserCooledDown returns true if a user sent 5 messages within the last two minutes

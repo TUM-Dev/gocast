@@ -5,6 +5,7 @@ import (
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -34,6 +35,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 	m.HandleConnect(connHandler)
 
 	m.HandleMessage(func(s *melody.Session, msg []byte) {
+		log.Info(string(msg))
 		ctx, _ := s.Get("ctx") // get gin context
 		foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 		if !exists {
@@ -43,10 +45,11 @@ func configGinChatRouter(router *gin.RouterGroup) {
 		}
 		tumLiveContext := foundContext.(tools.TUMLiveContext)
 		if tumLiveContext.User == nil {
-			return
+			//return
 		}
 		var chat ChatReq
 		if err := json.Unmarshal(msg, &chat); err != nil {
+			log.Info(err)
 			return
 		}
 		chat.Msg = strings.TrimSpace(chat.Msg)
@@ -69,13 +72,26 @@ func configGinChatRouter(router *gin.RouterGroup) {
 		if chat.Anonymous && tumLiveContext.Course.AnonymousChatEnabled {
 			uname = "Anonymous"
 		}
-		dao.AddMessage(model.Chat{
+		replyTo := sql.NullInt64{}
+		if chat.ReplyTo == 0 {
+			replyTo.Int64 = 0
+			replyTo.Valid = false
+		} else {
+			replyTo.Int64 = chat.ReplyTo
+			replyTo.Valid = true
+		}
+		err = dao.AddMessage(model.Chat{
 			UserID:   strconv.Itoa(int(tumLiveContext.User.ID)),
 			UserName: uname,
 			Message:  chat.Msg,
 			StreamID: tumLiveContext.Stream.ID,
 			Admin:    tumLiveContext.User.ID == tumLiveContext.Course.UserID,
+			ReplyTo:  replyTo,
 		})
+		if err != nil {
+			log.Info(err)
+			sendServerMessage("Message could not be sent.", TypeServerErr, s)
+		}
 		if broadcast, err := json.Marshal(ChatRep{
 			Msg:   chat.Msg,
 			Name:  uname,
@@ -89,6 +105,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 type ChatReq struct {
 	Msg       string `json:"msg"`
 	Anonymous bool   `json:"anonymous"`
+	ReplyTo   int64  `json:"replyTo"`
 }
 type ChatRep struct {
 	Msg   string `json:"msg"`

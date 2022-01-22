@@ -26,6 +26,7 @@
         <div x-show="show" id="chatBox" class="overflow-scroll overflow-x-hidden overflow-y-scroll px-3 h-60 md:auto"
              style="flex: 2;">
             {{range $chat := $stream.Chats}}
+                {{if not $chat.ReplyTo.Valid}} <!-- Don't show chat that is a reply in list -->
                 <div class="rounded py-2">
                     <div class="flex flex-row">
                         <p class="text-sm grow font-semibold {{if $chat.Admin}}text-warn{{end}}">{{$chat.UserName}}</p>
@@ -36,7 +37,25 @@
                     <p class="text-3 break-words">
                         {{$chat.Message}}
                     </p>
+                    <!-- replies -->
+                    <div x-cloak class="ml-2" x-data="{showReplies:false, numReplies:{{len $chat.Replies}}}">
+                        <p class="cursor-pointer text-1" x-show="numReplies>0" x-text="showReplies?'hide replies':'show replies'" @click="showReplies=!showReplies"></p>
+                        <div x-show="showReplies" class="border-l border-gray-300 pl-2">
+                            {{range $reply := $chat.Replies}}
+                                <div class="flex flex-row">
+                                    <p class="text-sm grow font-semibold text-secondary-lighter">{{$reply.UserName}}</p>
+                                    <p class="text-4 text-xs">
+                                        {{printf "%02d:%02d" $reply.CreatedAt.Hour $reply.CreatedAt.Minute}}
+                                    </p>
+                                </div>
+                                <p class="text-3 break-words">
+                                    {{$reply.Message}}
+                                </p>
+                            {{end}}
+                        </div>
+                    </div>
                 </div>
+                {{end}}
             {{end}}
         </div>
         <div x-cloak x-show="show"
