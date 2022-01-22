@@ -45,7 +45,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 		}
 		tumLiveContext := foundContext.(tools.TUMLiveContext)
 		if tumLiveContext.User == nil {
-			//return
+			return
 		}
 		var chat ChatReq
 		if err := json.Unmarshal(msg, &chat); err != nil {
