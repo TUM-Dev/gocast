@@ -18,14 +18,32 @@ let ws: WebSocket;
 let retryInt = 5000; //retry connecting to websocket after this timeout
 const pageloaded = new Date();
 
+function initChatScrollListener() {
+    const chatBox = document.getElementById("chatBox") as HTMLDivElement;
+    if (chatBox === undefined || chatBox === null) {
+        return;
+    }
+    chatBox.addEventListener("scroll", function (e) {
+        if (chatBox.scrollHeight - chatBox.scrollTop === chatBox.offsetHeight) {
+            window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
+        }
+    });
+}
+
 function scrollChat() {
     const c = document.getElementById("chatBox");
+    // 150px grace offset to avoid showing message when close to bottom
     if (c.scrollHeight - c.scrollTop <= c.offsetHeight + 150) {
         c.scrollTop = c.scrollHeight;
     } else {
-        console.log("not at bottom, skipping scroll");
-        // todo: add some visual indicator that the chat is not at the bottom and there are new messages
+        window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: true } }));
     }
+}
+
+function scrollToLatestMessage() {
+    const c = document.getElementById("chatBox");
+    c.scrollTo({ top: c.scrollHeight, behavior: "smooth" });
+    window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
 }
 
 function startWebsocket() {
@@ -36,6 +54,7 @@ function startWebsocket() {
     if (cf !== null && cf != undefined) {
         (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", (e) => submitChat(e));
     }
+    initChatScrollListener();
     ws.onopen = function (e) {
         hideDisconnectedMsg();
     };

@@ -18,7 +18,8 @@
             <span x-show="show" class="font-semibold text-sm my-auto">Chat</span>
         </div>
         <div x-show="show">
-            <div id="disconnectMsg" class="text-white shadow-lg py-1 px-3 bg-red-500 border-2 border-red-600 rounded-b-lg hidden">
+            <div id="disconnectMsg"
+                 class="text-white shadow-lg py-1 px-3 bg-red-500 border-2 border-red-600 rounded-b-lg hidden">
                 <span class="text-sm font-semibold">Connection to chat lost! Reconnecting...</span>
             </div>
         </div>
@@ -38,9 +39,18 @@
                 </div>
             {{end}}
         </div>
+        <div x-cloak x-show="show"
+             x-on:messageindicator.window="e => {showNewMsgIndicator = e.detail.show}"
+             class="relative -top-8 h-0 w-full text-center"
+             x-data="{showNewMsgIndicator:true}">
+                <span @click="scrollToLatestMessage()"
+                      x-show="showNewMsgIndicator"
+                      class="bg-blue-600 rounded-full px-4 py-1 text-white shadow cursor-pointer hover:bg-blue-700">
+                    <i class="fas fa-arrow-down"></i> New messages
+                </span>
+        </div>
         <form x-show="show" id="chatForm"
-              class="2xl:flex 2xl:justify-between inset-x-0 px-2 pb-4 pt-5 bg-white dark:bg-secondary-lighter"
-              style="">
+              class="2xl:flex 2xl:justify-between inset-x-0 px-2 pb-4 pt-5 bg-white dark:bg-secondary-lighter">
             <div class="bg-gray-200 dark:bg-gray-600 focus-within:border-sky-600 dark:focus-within:border-sky-700
                         rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
                 {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
