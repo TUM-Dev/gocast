@@ -20,7 +20,7 @@ const pageloaded = new Date();
 
 function initChatScrollListener() {
     const chatBox = document.getElementById("chatBox") as HTMLDivElement;
-    if (chatBox) {
+    if (!chatBox) {
         return;
     }
     chatBox.addEventListener("scroll", function (e) {
