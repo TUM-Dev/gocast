@@ -15,14 +15,12 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 )
 
 var m *melody.Melody
 
 const maxParticipants = 10000
-const maxMessageLength = 200
 
 func configGinChatRouter(router *gin.RouterGroup) {
 	wsGroup := router.Group("/:streamID")
@@ -52,19 +50,6 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			log.Info(err)
 			return
 		}
-		chat.Msg = strings.TrimSpace(chat.Msg)
-		if chat.Msg == "" || len(chat.Msg) > maxMessageLength {
-			return
-		}
-		isCooledDown, err := dao.IsUserCooledDown(fmt.Sprintf("%v", tumLiveContext.User.ID))
-		if err != nil {
-			errorMessage := fmt.Sprintf("Could not determine whether a user %d is cooled down.", tumLiveContext.User.ID)
-			log.WithError(err).Error(errorMessage)
-			return
-		} else if isCooledDown {
-			sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, s)
-			return
-		}
 		if !tumLiveContext.Course.ChatEnabled {
 			return
 		}
@@ -80,7 +65,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			replyTo.Int64 = chat.ReplyTo
 			replyTo.Valid = true
 		}
-		err = dao.AddMessage(model.Chat{
+		err := dao.AddMessage(model.Chat{
 			UserID:   strconv.Itoa(int(tumLiveContext.User.ID)),
 			UserName: uname,
 			Message:  chat.Msg,
@@ -89,8 +74,10 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			ReplyTo:  replyTo,
 		})
 		if err != nil {
-			log.Info(err)
-			sendServerMessage("Message could not be sent.", TypeServerErr, s)
+			if errors.Is(err, model.ErrCooledDown) {
+				sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, s)
+			}
+			return
 		}
 		if broadcast, err := json.Marshal(ChatRep{
 			Msg:   chat.Msg,
