@@ -30,7 +30,7 @@ function initChatScrollListener() {
     });
 }
 
-function scrollChat() {
+function scrollChatIfNeeded() {
     const c = document.getElementById("chatBox");
     // 150px grace offset to avoid showing message when close to bottom
     if (c.scrollHeight - c.scrollTop <= c.offsetHeight + 150) {
@@ -75,11 +75,11 @@ function startWebsocket() {
         } else if ("server" in data) {
             const serverElem = createServerMessage(data);
             document.getElementById("chatBox").appendChild(serverElem);
-            scrollChat();
+            scrollChatIfNeeded();
         } else if ("msg" in data) {
             const chatElem = createMessageElement(data);
             document.getElementById("chatBox").appendChild(chatElem);
-            scrollChat();
+            scrollChatIfNeeded();
         }
     };
 
