@@ -24,27 +24,27 @@
     "@fullcalendar/core": "^5.10.1",
     "@fullcalendar/icalendar": "^5.10.1",
     "@silvermine/videojs-quality-selector": "^1.2.5",
-    "alpinejs": "^3.7.1",
+    "alpinejs": "^3.8.1",
     "chart.js": "^3.7.0",
     "flatpickr": "^4.6.9",
     "fullcalendar": "^5.10.1",
-    "ical.js": "^1.4.0",
-    "nouislider": "^15.5.0",
+    "ical.js": "^1.5.0",
+    "nouislider": "^15.5.1",
     "video.js": "^7.17.0",
     "videojs-contrib-quality-levels": "^2.1.0",
     "videojs-hls-quality-selector": "^1.1.4",
     "videojs-seek-buttons": "^2.2.0"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.9.0",
-    "@typescript-eslint/parser": "^5.9.0",
-    "autoprefixer": "^10.4.1",
-    "eslint": "^8.6.0",
+    "@typescript-eslint/eslint-plugin": "^5.10.0",
+    "@typescript-eslint/parser": "^5.10.0",
+    "autoprefixer": "^10.4.2",
+    "eslint": "^8.7.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
     "postcss": "^8.4.5",
     "prettier": "^2.5.1",
-    "tailwindcss": "^3.0.9",
-    "typescript": "^4.5.4"
+    "tailwindcss": "^3.0.15",
+    "typescript": "^4.5.5"
   }
 }

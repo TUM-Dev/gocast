@@ -74,5 +74,5 @@ require (
 	github.com/ugorji/go/codec v1.2.6 // indirect
 	golang.org/x/sys v0.0.0-20211210111614-af8b64212486 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	gopkg.in/ini.v1 v1.66.2 // indirect
+	gopkg.in/ini.v1 v1.66.3 // indirect
 )
