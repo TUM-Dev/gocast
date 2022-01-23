@@ -50,10 +50,6 @@ function startWebsocket() {
     const wsProto = window.location.protocol === "https:" ? `wss://` : `ws://`;
     const streamid = (document.getElementById("streamID") as HTMLInputElement).value;
     ws = new WebSocket(`${wsProto}${window.location.host}/api/chat/${streamid}/ws`);
-    const cf = document.getElementById("chatForm");
-    if (cf !== null && cf != undefined) {
-        (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", (e) => submitChat(e));
-    }
     initChatScrollListener();
     ws.onopen = function (e) {
         hideDisconnectedMsg();
@@ -153,18 +149,17 @@ function createMessageElement(m): HTMLDivElement {
     return chatElem;
 }
 
-function submitChat(e: Event) {
-    e.preventDefault();
-
-    const anonCheckbox: HTMLInputElement = document.getElementById("anonymous") as HTMLInputElement;
+function sendMessage(message: string, anonymous: boolean, replyTo: number) {
+    console.log("message: " + message);
+    console.log("anonymous: " + anonymous);
+    console.log("sendMessage to: " + replyTo);
     ws.send(
         JSON.stringify({
-            msg: this.chatInput.value,
-            anonymous: anonCheckbox ? anonCheckbox.checked : false,
+            msg: message,
+            anonymous: anonymous,
+            replyTo: replyTo,
         }),
     );
-    this.chatInput.value = "";
-    return false; //prevent form submission
 }
 
 function showDisconnectedMsg() {
