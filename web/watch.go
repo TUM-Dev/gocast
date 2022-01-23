@@ -66,7 +66,6 @@ func WatchPage(c *gin.Context) {
 	} else {
 		data.DVR = ""
 	}
-	log.Printf("DVR: %s", data.DVR)
 
 	if strings.HasPrefix(data.Version, "unit-") {
 		data.Description = template.HTML(data.Unit.GetDescriptionHTML())
