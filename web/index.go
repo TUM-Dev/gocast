@@ -26,7 +26,7 @@ func MainPage(c *gin.Context) {
 		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", nil)
 		return
 	} else if res {
-		_ = templ.ExecuteTemplate(c.Writer, "onboarding.gohtml", nil)
+		_ = templ.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData())
 		return
 	}
 	indexData := NewIndexData()
