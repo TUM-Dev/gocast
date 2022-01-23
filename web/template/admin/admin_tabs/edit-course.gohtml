@@ -1,9 +1,8 @@
 {{define "edit-course"}}
     <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
-    <script src="/static/assets/ts-dist/index.bundle.js"></script>
     <script src="/static/node_modules/chart.js/dist/chart.min.js"></script>
     {{$course := .IndexData.TUMLiveContext.Course}}
-    <div class="text-1 mt-4" x-init="new UI.EditCourse();">
+    <div class="text-1 mt-4" x-init="new admin.EditCourse();">
         <div class="min-w-screen flex items-center justify-center">
             <div class="w-full lg:w-5/6">
                 <h1 class="mb-4">{{$course.Name}}</h1>
@@ -77,7 +76,7 @@
                     <h2>Lectures</h2>
                     <div class="flex justify-between mt-2 mb-2">
                         <div class="flex">
-                            <button @click="deleteLectures({{$course.Model.ID}}, selectedLectures.map(({id}) => id))" :disabled="selectedLectures.length == 0" class="btn">
+                            <button @click="admin.deleteLectures({{$course.Model.ID}}, selectedLectures.map(({id}) => id))" :disabled="selectedLectures.length == 0" class="btn">
                                 Delete
                                 <b x-text="selectedLectures.length.toString()"></b>
                                 <span x-text="selectedLectures.length == 1 ? 'Lecture' : 'Lectures'"></span>
@@ -100,8 +99,8 @@
                                         </select>
                                     </label>
                                     <button
-                                        x-show="selectedLectures.length > 0 && !UI.selectedLectures.some(({isPast}) => isPast)"
-                                        @click="UI.saveLectureHall(selectedLectures.map(({id}) => id), selectedLectureHallId).then(() => { window.location.reload(); })"
+                                        x-show="selectedLectures.length > 0 && !admin.selectedLectures.some(({isPast}) => isPast)"
+                                        @click="admin.saveLectureHall(selectedLectures.map(({id}) => id), selectedLectureHallId).then(() => { window.location.reload(); })"
                                     >
                                         <i class="align-middle fas fa-check text-gray-300"></i>
                                     </button>
@@ -130,7 +129,7 @@
                                             {{$lecture.Start.Weekday}} {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
                                             <i class="fas fa-trash hover:text-1 px-2"
                                                title="Delete Lecture"
-                                               onclick="UI.deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}})"></i>
+                                               onclick="admin.deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}})"></i>
                                         </div>
                                         <div class="text-3 font-sans">
                                             {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
@@ -156,12 +155,12 @@
                                         {{end}}
                                     </div>
                                     <div class="w-3/4">
-                                        <form onsubmit="UI.saveLectureName(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
+                                        <form onsubmit="admin.saveLectureName(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
                                               class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
                                             <label for="lectureNameInput{{$lecture.Model.ID}}" class="hidden">Lecture
                                                 title</label>
                                             <input id="lectureNameInput{{$lecture.Model.ID}}"
-                                                   onfocus="UI.focusNameInput(this, {{$lecture.Model.ID}})"
+                                                   onfocus="admin.focusNameInput(this, {{$lecture.Model.ID}})"
                                                    class="grow border-none" type="text" value="{{$lecture.Name}}"
                                                    placeholder="Lecture 2: Dark-Patterns I"
                                                    autocomplete="off">
@@ -170,16 +169,16 @@
                                         </form>
                                         <div class="w-full mt-3">
                                             <div class="w-full flex justify-center">
-                                                <i onclick="UI.toggleExtraInfos(this, {{$lecture.Model.ID}})"
+                                                <i onclick="admin.toggleExtraInfos(this, {{$lecture.Model.ID}})"
                                                    class="fas fa-angle-double-down hover:text-purple-500"></i>
                                             </div>
                                             <div id="extraInfos{{$lecture.Model.ID}}" class="hidden">
-                                                <form onsubmit="UI.saveLectureDescription(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
+                                                <form onsubmit="admin.saveLectureDescription(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
                                                       class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
                                                     <label for="lectureDescriptionInput{{$lecture.Model.ID}}"
                                                            class="hidden">Lecture description</label>
                                                     <textarea id="lectureDescriptionInput{{$lecture.Model.ID}}"
-                                                              onfocus="UI.focusDescriptionInput(this, {{$lecture.Model.ID}})"
+                                                              onfocus="admin.focusDescriptionInput(this, {{$lecture.Model.ID}})"
                                                               class="grow border-none"
                                                               placeholder="Add a nice description, links, and more. You can use Markdown."
                                                               autocomplete="off">{{$lecture.Description}}</textarea>
@@ -208,7 +207,7 @@
                                                     <a id="applyLectureHall{{$lecture.Model.ID}}"
                                                        class="flex items-center"
                                                        x-show="showSubmit"
-                                                       @click="UI.saveLectureHall([{{$lecture.Model.ID}}], streamSelectedLectureHallId).then(() => { showSubmit = false; })">
+                                                       @click="admin.saveLectureHall([{{$lecture.Model.ID}}], streamSelectedLectureHallId).then(() => { showSubmit = false; })">
                                                         <i class="align-middle fas fa-check text-gray-300 hover:text-purple-500"></i>
                                                     </a>
                                                 </div>
@@ -218,7 +217,7 @@
                                                     <span class="font-semibold">Stream Server:</span>
                                                     <span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
                                                     <i class="fas fa-clipboard hover:text-purple-500"
-                                                       onclick="UI.copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
+                                                       onclick="admin.copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
                                                     <br>
                                                     <span class="font-semibold">Stream Key:</span>
                                                     <span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
@@ -239,7 +238,7 @@
                                                     {{if $lecture.Stats}}
                                                         <i class="fas fa-chart-line hover:text-purple-500 px-2"
                                                            title="Live Statistics"
-                                                           onclick="UI.showStats({{$lecture.Model.ID}})"></i>
+                                                           onclick="admin.showStats({{$lecture.Model.ID}})"></i>
                                                     {{end}}
                                                 </p>
                                                 {{if $lecture.Stats}}
@@ -277,14 +276,14 @@
                         {{end}}
                         <li class="p-6 dark:hover:bg-primary hover:bg-white border-b-2 border-primary">
                             <form class="flex" method="post" action="/api/createLecture"
-                                  x-data="UI.createLectureForm()"
-                                  @submit.prevent="UI.submitData"
+                                  x-data="admin.createLectureForm()"
+                                  @submit.prevent="admin.submitData"
                                   x-init="courseID = {{$course.Model.ID}}">
                                 <div class="w-1/4">
                                     <div class="text-1 font-semibold">Create Lecture</div>
                                     <label>
                                         <input type="checkbox" x-model="formData.premiere" class="w-auto">
-                                        <span class="text-3">Video Premiere</span>
+                                        <span class="text-3">watch Premiere</span>
                                     </label><br>
                                     <label>
                                         <input type="checkbox" x-model="formData.vodup" class="w-auto">
@@ -313,10 +312,10 @@
                                                        x-init="flatpickr($refs.end, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})"/>
                                             </label>
                                             <label class="relative" x-show="formData.premiere || formData.vodup && !loading" x-data="{ showTooltip:false }">
-                                                <span class="font-semibold p-2">Video File <i class="text-warn fas fa-exclamation-triangle" @mouseover="showTooltip=true" @mouseleave="showTooltip=false">
+                                                <span class="font-semibold p-2">watch File <i class="text-warn fas fa-exclamation-triangle" @mouseover="showTooltip=true" @mouseleave="showTooltip=false">
                                                         <span class="absolute left-0 top-0 text-gray-700 transform -translate-y-6 bg-white rounded p-1 shadow font-light" x-show="showTooltip">If possible: mp4, H.264, 1080p @ 30fps</span>
                                                     </i></span>
-                                                <input type="file" accept="video/mp4" x-on:change="formData.file = Object.values($event.target.files)">
+                                                <input type="file" accept="watch/mp4" x-on:change="formData.file = Object.values($event.target.files)">
                                             </label>
                                             <button type="submit" id="createLectureBtn">
                                                 <i class="fas fa-check text-4 hover:text-purple-500" x-show="!loading"></i>

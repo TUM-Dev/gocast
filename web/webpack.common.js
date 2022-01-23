@@ -1,13 +1,13 @@
 const path = require("path");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const BundleAnalyzerPlugin = require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
 
 module.exports = {
     mode: "development",
-    watch: true,
+    target: "web",
     entry: {
-        index: "./ts/index.ts",
-        video: "./ts/video.ts",
+        admin: "./ts/entry/admins.ts",
+        watch: "./ts/entry/video.ts",
+        global: "./ts/entry/user.ts",
     },
     module: {
         rules: [
@@ -42,22 +42,14 @@ module.exports = {
     },
     output: {
         filename: "[name].bundle.js",
-
         path: path.resolve(__dirname, "./assets/ts-dist"),
-        library: {
-            name: "UI",
-            type: "umd",
-        },
-    },
-    optimization: {
-        minimize: false,
-        usedExports: true,
+        library: ["[name]"],
+        libraryTarget: "umd",
     },
     plugins: [
         // For fullcalendar
         new MiniCssExtractPlugin({
             filename: "main.css",
         }),
-        // new BundleAnalyzerPlugin(),
     ],
 };

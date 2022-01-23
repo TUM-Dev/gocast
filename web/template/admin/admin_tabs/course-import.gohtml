@@ -1,9 +1,8 @@
 {{define "course-import"}}
-    <script src="/static/assets/ts-dist/index.bundle.js"></script>
     <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
-    <div class="text-2 m-auto mt-4 w-full lg:w-5/6" x-data="UI.pageData()" x-on:loading-start.window="loading=true"
+    <div class="text-2 m-auto mt-4 w-full lg:w-5/6" x-data="admin.pageData()" x-on:loading-start.window="loading=true"
          x-on:loading-end.window="loading=false;courses=$event.detail.courses"
-         x-init="UI.addNotifyEventListeners()">
+         x-init="admin.addNotifyEventListeners()">
         <div x-show="loading" class="text-center">
             <i class="fas fa-circle-notch animate-spin animate"></i> Loading...
         </div>

@@ -1,7 +1,7 @@
 import { postData } from "./global";
+import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import noUiSlider from "nouislider";
-import { StatusCodes } from "http-status-codes";
 
 let slider;
 let player;

@@ -1,5 +1,5 @@
-import Chart from "chart.js/auto";
 import { StatusCodes } from "http-status-codes";
+import Chart from "chart.js/auto";
 
 export function loadStats(endpoint: string, targetEl: string) {
     const canvas = <HTMLCanvasElement>document.getElementById(targetEl);

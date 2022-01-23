@@ -1,6 +1,6 @@
-import videojs from "video.js";
 import { postData } from "./global";
 import { StatusCodes } from "http-status-codes";
+import videojs from "video.js";
 
 require("videojs-seek-buttons");
 require("videojs-hls-quality-selector");

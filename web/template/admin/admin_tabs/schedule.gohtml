@@ -1,7 +1,6 @@
 {{define "schedule"}}
     <link href="static/node_modules/fullcalendar/main.min.css" rel="stylesheet"/>
-    <script src="/static/assets/ts-dist/index.bundle.js"></script>
-    <div x-init="UI.addScheduleListener()" class="flex flex-col lg:flex-row w-full pt-4 relative">
+    <div x-init="admin.addScheduleListener()" class="flex flex-col lg:flex-row w-full pt-4 relative">
         <div id="calendar" class="w-full"></div>
         <div id="popoverContent"
              class="cursor-auto absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 p-4 bg-white dark:bg-secondary-lighter rounded z-10 border dark:border-gray-500 border-gray-300 hidden"></div>

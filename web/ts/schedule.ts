@@ -1,5 +1,5 @@
-import { Get } from "./global";
 import { saveLectureName, saveLectureDescription } from "./edit-course";
+import { Get } from "./global";
 import { Calendar } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";

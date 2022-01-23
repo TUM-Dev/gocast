@@ -1,6 +1,5 @@
 {{define "stats"}}
     {{- /*gotype: TUM-Live/web.IndexData*/ -}}
-    <script src="/static/assets/ts-dist/index.bundle.js"></script>
     <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
                                                         value="{{.TUMLiveContext.Course.Model.ID}}"></label>
     <div class="grid grid-cols-4 gap-4 w-full pt-4 relative">
@@ -61,10 +60,10 @@
     </div>
     <p class="text-5"><i class="fas fa-info-circle text-warn"></i> Some of this data is only captured from June 28th 2021 onwards.</p>
     <script>
-        UI.loadStats("activity", "courseGeneralStatsLive")
-        UI.loadStats("hour", "hours");
-        UI.loadStats("day", "weekdays");
-        UI.loadStats("allDays", "allDays");
-        UI.initStatsPage();
+        admin.loadStats("activity", "courseGeneralStatsLive")
+        admin.loadStats("hour", "hours");
+        admin.loadStats("day", "weekdays");
+        admin.loadStats("allDays", "allDays");
+        admin.initStatsPage();
     </script>
 {{end}}

@@ -1,5 +1,5 @@
-import { postData, showMessage } from "./global";
 import { StatusCodes } from "http-status-codes";
+import { postData, showMessage } from "./global";
 
 export class CreateCourse {
     private courseIDInput: HTMLInputElement;

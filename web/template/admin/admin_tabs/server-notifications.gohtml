@@ -1,7 +1,6 @@
 {{define "server-notifications-admin-list"}}
-    <script src="/static/assets/ts-dist/index.bundle.js"></script>
     <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
-    <h1 class="text-2" x-init="new UI.ServerNotifications()">Server notifications</h1>
+    <h1 class="text-2" x-init="new admin.ServerNotifications()">Server notifications</h1>
     {{range $notification := .}}
         {{template "server-notification-edit" $notification}}
     {{end}}
@@ -11,11 +10,10 @@
 
 {{- /*gotype: TUM-Live/model.ServerNotification*/ -}}
 {{define "server-notification-edit"}}
-    <script src="/static/assets/ts-dist/index.bundle.js"></script>
     <form class="text-3 grid grid-cols-4 mb-2 p-2"
           action="/api/serverNotification/{{if .Model.ID}}{{.Model.ID}}{{else}}create{{end}}"
           method="post"
-          x-init="new UI.ServerNotifications();">
+          x-init="new admin.ServerNotifications();">
         <input type="hidden" name="id" value="{{if .}}{{.Model.ID}}{{end}}">
         <label class="col-span-4">
             <span>Message</span>

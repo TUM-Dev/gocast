@@ -8,17 +8,16 @@
     <title>{{$course.Name}}: {{$stream.Name}} | TUM Live</title>
     {{template "headImports" .IndexData.VersionTag}}
     <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
-    <script src="/static/assets/ts-dist/video.bundle.js"></script>
+    <script src="/static/assets/ts-dist/watch.bundle.js?v={{.IndexData.VersionTag}}"></script>
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
     <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
-    <link rel="stylesheet"
-          href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
+    <link rel="stylesheet" href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
 </head>
 
 <body x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}}"
       x-on:pausestart.window="paused=true"
       x-on:pauseend.window="paused=false"
-      x-init="new UI.Watch()">
+      x-init="new watch.Watch(); watch.startWebsocket()">
 {{template "header" .IndexData.TUMLiveContext}}
 <div id="watchPageMainWrapper" class="w-full md:flex md:flex-nowrap md:justify-between"
      style="height: calc(100vh - 5rem)">
@@ -125,7 +124,7 @@
                 {{end}}
                     <i title="Copy HLS URL"
                        class="flex m-auto fas fa-link text-4 dark:hover:text-white hover:text-black cursor-pointer"
-                       onclick="UI.copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))"></i>
+                       onclick="global.copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))"></i>
                 </p>
             </div>
             <div class="flex justify-between">
@@ -196,7 +195,7 @@
                                     <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
                                          src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
                                          alt="prev" width="150px">
-                                    <i onclick="UI.usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}})"
+                                    <i onclick="watch.usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}})"
                                        title="Switch to this preset"
                                        class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-exchange-alt cursor-pointer"></i>
                                 </div>
@@ -229,22 +228,12 @@
     {{end}}
 </div>
 <script>
-    UI.initPlayer();
+    watch.initPlayer();
     {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
-    UI.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
+    watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
     {{end}}
     {{if $stream.Silences}}
-    UI.skipSilence({{$stream.GetSilencesJson}});
-    {{end}}
-</script>
-
-<script>
-    UI.initPlayer();
-    {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
-    UI.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
-    {{end}}
-    {{if $stream.Silences}}
-    UI.skipSilence({{$stream.GetSilencesJson}});
+    watch.skipSilence({{$stream.GetSilencesJson}});
     {{end}}
 </script>
 </body>
