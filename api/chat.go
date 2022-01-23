@@ -65,14 +65,15 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			replyTo.Int64 = chat.ReplyTo
 			replyTo.Valid = true
 		}
-		err := dao.AddMessage(model.Chat{
+		chatForDb := model.Chat{
 			UserID:   strconv.Itoa(int(tumLiveContext.User.ID)),
 			UserName: uname,
 			Message:  chat.Msg,
 			StreamID: tumLiveContext.Stream.ID,
 			Admin:    tumLiveContext.User.ID == tumLiveContext.Course.UserID,
 			ReplyTo:  replyTo,
-		})
+		}
+		err := dao.AddMessage(&chatForDb)
 		if err != nil {
 			if errors.Is(err, model.ErrCooledDown) {
 				sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, s)
@@ -80,9 +81,11 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			return
 		}
 		if broadcast, err := json.Marshal(ChatRep{
-			Msg:   chat.Msg,
-			Name:  uname,
-			Admin: tumLiveContext.User.ID == tumLiveContext.Course.UserID,
+			ID:      chatForDb.ID,
+			ReplyTo: uint(chatForDb.ReplyTo.Int64),
+			Msg:     chatForDb.Message,
+			Name:    chatForDb.UserName,
+			Admin:   tumLiveContext.User.ID == tumLiveContext.Course.UserID,
 		}); err == nil {
 			broadcastStream(tumLiveContext.Stream.ID, broadcast)
 		}
@@ -95,9 +98,11 @@ type ChatReq struct {
 	ReplyTo   int64  `json:"replyTo"`
 }
 type ChatRep struct {
-	Msg   string `json:"msg"`
-	Name  string `json:"name"`
-	Admin bool   `json:"admin"`
+	ID      uint   `json:"id"`
+	Msg     string `json:"msg"`
+	Name    string `json:"name"`
+	Admin   bool   `json:"admin"`
+	ReplyTo uint   `json:"replyTo"`
 }
 
 func CollectStats() {

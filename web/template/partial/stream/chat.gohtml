@@ -2,7 +2,8 @@
     {{- /*gotype: TUM-Live/web.WatchPageData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     <script src="/static/assets/ts-dist/chat.js?v={{.IndexData.VersionTag}}"></script>
-    <div x-cloak x-data="{show: false, replyTo: 0, message: '', anonymous: false}" x-init="show = initChat();" id="chatWrapper"
+    <div x-cloak x-data="{show: false, replyTo: 0, message: '', anonymous: false}" x-init="show = initChat();"
+         id="chatWrapper"
          class="md:h-full relative flex-col w-full border-t mt-5 text-1 border-l bg-white dark:bg-secondary-lighter
                 dark:border-gray-900 md:flex md:mt-0 md:border-t-0"
          :class="show ? 'w-full md:w-2/6 2xl:w-1/5 h-80 pb-3' : 'md:w-14 lg:w-14 h-fit'"
@@ -38,21 +39,16 @@
                     <p class="text-3 break-words">
                         {{$chat.Message}}
                     </p>
-                    <p class="text-center mt.0.5">
-                        <a @click="replyTo==={{$chat.Model.ID}}?replyTo=0:replyTo={{$chat.Model.ID}}; $refs.chatInput.focus()" title="Reply" class="cursor-pointer hover:text-1 text-4">
-                            <i class="fas" :class="replyTo==={{$chat.Model.ID}}?'fa-times':'fa-reply'"></i> <span x-text="replyTo==={{$chat.Model.ID}}?'Cancel':'Reply'"></span>
-                        </a>
-                    </p>
                     <!-- replies -->
                     <div x-cloak class="ml-2" x-data="{showReplies:false, numReplies:{{len $chat.Replies}}}">
-                        <p class="cursor-pointer text-1"
+                        <p class="cursor-pointer text-1 text-center text-sm"
                            x-show="numReplies>0"
                            x-text="showReplies?`hide replies (${numReplies})`:`show replies (${numReplies})`"
                            @click="showReplies=!showReplies"></p>
                         <div x-show="showReplies" class="border-l border-gray-300 pl-2">
                             {{range $reply := $chat.Replies}}
                                 <div class="flex flex-row">
-                                    <p class="text-sm grow font-semibold text-secondary-lighter">{{$reply.UserName}}</p>
+                                    <p class="text-sm grow font-semibold">{{$reply.UserName}}</p>
                                     <p class="text-4 text-xs">
                                         {{printf "%02d:%02d" $reply.CreatedAt.Hour $reply.CreatedAt.Minute}}
                                     </p>
@@ -63,6 +59,13 @@
                             {{end}}
                         </div>
                     </div>
+                    <p class="text-center mt.0.5">
+                        <a @click="replyTo==={{$chat.Model.ID}}?replyTo=0:replyTo={{$chat.Model.ID}}; $refs.chatInput.focus()"
+                           title="Reply" class="cursor-pointer hover:text-1 text-4">
+                            <i class="fas" :class="replyTo==={{$chat.Model.ID}}?'fa-times':'fa-reply'"></i> <span
+                                    x-text="replyTo==={{$chat.Model.ID}}?'Cancel':'Reply'"></span>
+                        </a>
+                    </p>
                 </div>
                 {{end}}
             {{end}}
@@ -96,13 +99,15 @@
                        class="py-2 px-4 border-0 text-sm font-normal placeholder:text-sm"
                        {{if not (.IndexData.TUMLiveContext.User)}}disabled
                        placeholder="Log in to chat" {{else}}
-                       :placeholder="replyTo===0?'Send a message':'Reply [escape to cancel]'" {{end}}autocomplete="off" id="chatInput" type="text">
+                       :placeholder="replyTo===0?'Send a message':'Reply [escape to cancel]'" {{end}}autocomplete="off"
+                       id="chatInput" type="text">
             </div>
             {{if (.IndexData.TUMLiveContext.User)}}
                 <div class="flex justify-end 2xl:flex-none 2xl:my-auto mt-2">
                     <button class="bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
+                                   disabled:bg-sky-300 disabled:hover:bg-sky-300 dark:disabled:bg-sky-300 dark:disabled:hover:bg-sky-300
                                    rounded border-0 focus:outline-none px-4 text-white text-sm py-2
-                                   w-full 2xl:w-auto">
+                                   w-full 2xl:w-auto" :disabled="message===''">
                         <span class="font-semibold">Send</span>
                         <span class="fas fa-paper-plane ml-2"></span>
                     </button>
