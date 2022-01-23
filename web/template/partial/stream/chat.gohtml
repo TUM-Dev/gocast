@@ -44,7 +44,7 @@
         </div>
         <form x-show="show" id="chatForm"
               class="2xl:flex 2xl:justify-between inset-x-0 px-2 pb-4 pt-5 bg-white dark:bg-secondary-lighter"
-              @submit.prevent="sendMessage(message, anonymous, replyTo);replyTo=0;message=''">
+              @submit.prevent="sendMessage(message, anonymous, replyTo);message=''">
             <div class="bg-gray-200 dark:bg-gray-600 focus-within:border-sky-600 dark:focus-within:border-sky-700
                         rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
                 {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}

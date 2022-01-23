@@ -1,6 +1,6 @@
 {{define "messageTemplate"}}
     <template x-for="m in messages">
-        <div class="rounded py-2 px-2" :class="replyTo===m.ID && 'ring ring-blue-500/50'" x-data="{showReplies:false, m: m}" x-show="m.replyTo && !m.replyTo.Valid">
+        <div class="last:mb-1 rounded py-2 px-2" :class="replyTo===m.ID && 'ring ring-blue-500/50'" x-data="{showReplies:false, m: m}" x-show="m.replyTo && !m.replyTo.Valid">
             <p class="text-4 text-sm">
                 <span class="text-2 font-semibold" :class="m.admin && 'text-warn'" x-text="m.name"></span>
                 <span x-text="m.message"></span>
