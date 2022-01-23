@@ -24,7 +24,9 @@ COPY . .
 COPY --from=node /app/web/assets ./web/assets
 COPY --from=node /app/web/node_modules ./web/node_modules
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /go/bin/server app/server/main.go
+# bundle version into binary if specified in build-args, dev otherwise.
+ARG version=dev
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-w -extldflags '-static' -X main.Version=${version}" -o /go/bin/server app/server/main.go
 
 FROM alpine:3.15
 RUN apk add --no-cache tzdata

@@ -50,5 +50,6 @@ jobs:
           context: .
           pull: true
           push: true
+          build-args: version=${{ github.sha }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
