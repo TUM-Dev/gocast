@@ -30,42 +30,38 @@
             {{range $chat := $stream.Chats}}
                 {{if not $chat.ReplyTo.Valid}} <!-- Don't show chat that is a reply in list -->
                 <div class="rounded py-2 px-2" :class="replyTo==={{$chat.Model.ID}} && 'ring ring-blue-500/50'">
-                    <div class="flex flex-row">
-                        <p class="text-sm grow font-semibold {{if $chat.Admin}}text-warn{{end}}">{{$chat.UserName}}</p>
-                        <p class="text-4 text-xs">
-                            {{printf "%02d:%02d" $chat.CreatedAt.Hour $chat.CreatedAt.Minute}}
-                        </p>
-                    </div>
-                    <p class="text-3 break-words">
+                    <p class="text-4 text-sm">
+                        <span class="text-2 font-semibold {{if $chat.Admin}}text-warn{{end}}">{{$chat.UserName}}</span>
                         {{$chat.Message}}
+                    </p>
+                    <p class="flex flex-row text-sm font-semibold gap-3 text-5 mt-1">
+                        <span>{{printf "%02d:%02d" $chat.CreatedAt.Hour $chat.CreatedAt.Minute}}</span>
+                        <a @click="replyTo==={{$chat.Model.ID}}?replyTo=0:replyTo={{$chat.Model.ID}}; $refs.chatInput.focus()"
+                           title="Reply" class="cursor-pointer hover:text-1">
+                            <span x-text="replyTo==={{$chat.Model.ID}}?'Cancel':'Reply'"></span>
+                        </a>
                     </p>
                     <!-- replies -->
                     <div x-cloak class="ml-2" x-data="{showReplies:false, numReplies:{{len $chat.Replies}}}">
-                        <p class="cursor-pointer text-1 text-center text-sm"
-                           x-show="numReplies>0"
-                           x-text="showReplies?`hide replies (${numReplies})`:`show replies (${numReplies})`"
-                           @click="showReplies=!showReplies"></p>
-                        <div x-show="showReplies" class="border-l border-gray-300 pl-2">
+                        <div x-show="numReplies > 0" class="flex items-center mt-2">
+                            <div class="w-5 bg-gray-500 h-0.5"></div>
+                            <div class="flex-grow-0 ml-2 text-sm text-5 font-semibold text-1 cursor-pointer"
+                               x-show="numReplies>0"
+                               x-text="showReplies?`hide replies (${numReplies})`:`show replies (${numReplies})`"
+                               @click="showReplies=!showReplies"></div>
+                        </div>
+                        <div x-show="showReplies" class="pl-2">
                             {{range $reply := $chat.Replies}}
-                                <div class="flex flex-row">
-                                    <p class="text-sm grow font-semibold">{{$reply.UserName}}</p>
-                                    <p class="text-4 text-xs">
-                                        {{printf "%02d:%02d" $reply.CreatedAt.Hour $reply.CreatedAt.Minute}}
-                                    </p>
-                                </div>
-                                <p class="text-3 break-words">
+                                <p class="text-4 text-sm">
+                                    <span class="text-2 font-semibold {{if $reply.Admin}}text-warn{{end}}">{{$reply.UserName}}</span>
                                     {{$reply.Message}}
+                                </p>
+                                <p class="flex flex-row text-sm font-semibold gap-3 text-5">
+                                    <span>{{printf "%02d:%02d" $reply.CreatedAt.Hour $reply.CreatedAt.Minute}}</span>
                                 </p>
                             {{end}}
                         </div>
                     </div>
-                    <p class="text-center mt.0.5">
-                        <a @click="replyTo==={{$chat.Model.ID}}?replyTo=0:replyTo={{$chat.Model.ID}}; $refs.chatInput.focus()"
-                           title="Reply" class="cursor-pointer hover:text-1 text-4">
-                            <i class="fas" :class="replyTo==={{$chat.Model.ID}}?'fa-times':'fa-reply'"></i> <span
-                                    x-text="replyTo==={{$chat.Model.ID}}?'Cancel':'Reply'"></span>
-                        </a>
-                    </p>
                 </div>
                 {{end}}
             {{end}}
