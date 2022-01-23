@@ -11,6 +11,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: 'Ack'
         uses: actions/github-script@v5
         if: github.event_name == 'pull_request'
