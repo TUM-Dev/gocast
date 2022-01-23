@@ -30,7 +30,7 @@
         </div>
         <div x-show="show" id="chatBox" class="overflow-scroll overflow-x-hidden overflow-y-scroll px-1 h-60 md:auto"
              style="flex: 2;">
-             {{template "messageTemplate"}}
+            {{template "messageTemplate"}}
         </div>
         <div x-cloak x-show="show"
              x-on:messageindicator.window="e => {showNewMsgIndicator = e.detail.show}"

@@ -77,12 +77,10 @@ function startWebsocket() {
             // reply
             if (data["replyTo"].Valid) {
                 // reply
-                console.log(data);
                 const event = new CustomEvent("chatreply", { detail: data });
                 window.dispatchEvent(event);
             } else {
                 // message
-                console.log(data);
                 const event = new CustomEvent("chatmessage", { detail: data });
                 window.dispatchEvent(event);
                 scrollChatIfNeeded();
