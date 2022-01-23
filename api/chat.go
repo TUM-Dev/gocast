@@ -25,6 +25,7 @@ const maxParticipants = 10000
 func configGinChatRouter(router *gin.RouterGroup) {
 	wsGroup := router.Group("/:streamID")
 	wsGroup.Use(tools.InitStream)
+	wsGroup.GET("/messages", getMessages)
 	wsGroup.GET("/ws", ChatStream)
 	if m == nil {
 		log.Printf("creating melody")
@@ -33,7 +34,6 @@ func configGinChatRouter(router *gin.RouterGroup) {
 	m.HandleConnect(connHandler)
 
 	m.HandleMessage(func(s *melody.Session, msg []byte) {
-		log.Info(string(msg))
 		ctx, _ := s.Get("ctx") // get gin context
 		foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 		if !exists {
@@ -47,7 +47,6 @@ func configGinChatRouter(router *gin.RouterGroup) {
 		}
 		var chat ChatReq
 		if err := json.Unmarshal(msg, &chat); err != nil {
-			log.Info(err)
 			return
 		}
 		if !tumLiveContext.Course.ChatEnabled {
@@ -80,16 +79,20 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			}
 			return
 		}
-		if broadcast, err := json.Marshal(ChatRep{
-			ID:      chatForDb.ID,
-			ReplyTo: uint(chatForDb.ReplyTo.Int64),
-			Msg:     chatForDb.Message,
-			Name:    chatForDb.UserName,
-			Admin:   tumLiveContext.User.ID == tumLiveContext.Course.UserID,
-		}); err == nil {
+		if broadcast, err := json.Marshal(chatForDb); err == nil {
 			broadcastStream(tumLiveContext.Stream.ID, broadcast)
 		}
 	})
+}
+
+func getMessages(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	c.JSON(http.StatusOK, tumLiveContext.Stream.Chats)
 }
 
 type ChatReq struct {

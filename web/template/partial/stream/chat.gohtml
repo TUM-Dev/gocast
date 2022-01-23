@@ -2,7 +2,10 @@
     {{- /*gotype: TUM-Live/web.WatchPageData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     <script src="/static/assets/ts-dist/chat.js?v={{.IndexData.VersionTag}}"></script>
-    <div x-cloak x-data="{show: false, replyTo: 0, message: '', anonymous: false}" x-init="show = initChat();"
+    <div x-cloak x-data="{show: false, replyTo: 0, message: '', anonymous: false, messages: []}"
+         x-init="show = initChat(); fetch('/api/chat/{{$stream.ID}}/messages').then(res => res.json()).then(d => {messages=d});$nextTick(() => { scrollToBottom() })"
+         x-on:chatmessage.window="e => {messages.push(e.detail);}"
+         x-on:chatreply.window="e => {messages.find(m=>m.ID===e.detail.replyTo.Int64).replies.push(e.detail);}"
          id="chatWrapper"
          class="md:h-full relative flex-col w-full border-t mt-5 text-1 border-l bg-white dark:bg-secondary-lighter
                 dark:border-gray-900 md:flex md:mt-0 md:border-t-0"
@@ -27,44 +30,7 @@
         </div>
         <div x-show="show" id="chatBox" class="overflow-scroll overflow-x-hidden overflow-y-scroll px-1 h-60 md:auto"
              style="flex: 2;">
-            {{range $chat := $stream.Chats}}
-                {{if not $chat.ReplyTo.Valid}} <!-- Don't show chat that is a reply in list -->
-                <div class="rounded py-2 px-2" :class="replyTo==={{$chat.Model.ID}} && 'ring ring-blue-500/50'">
-                    <p class="text-4 text-sm">
-                        <span class="text-2 font-semibold {{if $chat.Admin}}text-warn{{end}}">{{$chat.UserName}}</span>
-                        {{$chat.Message}}
-                    </p>
-                    <p class="flex flex-row text-sm font-semibold gap-3 text-5 mt-1">
-                        <span>{{printf "%02d:%02d" $chat.CreatedAt.Hour $chat.CreatedAt.Minute}}</span>
-                        <a @click="replyTo==={{$chat.Model.ID}}?replyTo=0:replyTo={{$chat.Model.ID}}; $refs.chatInput.focus()"
-                           title="Reply" class="cursor-pointer hover:text-1">
-                            <span x-text="replyTo==={{$chat.Model.ID}}?'Cancel':'Reply'"></span>
-                        </a>
-                    </p>
-                    <!-- replies -->
-                    <div x-cloak class="ml-2" x-data="{showReplies:false, numReplies:{{len $chat.Replies}}}">
-                        <div x-show="numReplies > 0" class="flex items-center mt-2">
-                            <div class="w-5 bg-gray-500 h-0.5"></div>
-                            <div class="flex-grow-0 ml-2 text-sm text-5 font-semibold text-1 cursor-pointer"
-                               x-show="numReplies>0"
-                               x-text="showReplies?`hide replies (${numReplies})`:`show replies (${numReplies})`"
-                               @click="showReplies=!showReplies"></div>
-                        </div>
-                        <div x-show="showReplies" class="pl-2">
-                            {{range $reply := $chat.Replies}}
-                                <p class="text-4 text-sm">
-                                    <span class="text-2 font-semibold {{if $reply.Admin}}text-warn{{end}}">{{$reply.UserName}}</span>
-                                    {{$reply.Message}}
-                                </p>
-                                <p class="flex flex-row text-sm font-semibold gap-3 text-5">
-                                    <span>{{printf "%02d:%02d" $reply.CreatedAt.Hour $reply.CreatedAt.Minute}}</span>
-                                </p>
-                            {{end}}
-                        </div>
-                    </div>
-                </div>
-                {{end}}
-            {{end}}
+             {{template "messageTemplate"}}
         </div>
         <div x-cloak x-show="show"
              x-on:messageindicator.window="e => {showNewMsgIndicator = e.detail.show}"
@@ -78,7 +44,7 @@
         </div>
         <form x-show="show" id="chatForm"
               class="2xl:flex 2xl:justify-between inset-x-0 px-2 pb-4 pt-5 bg-white dark:bg-secondary-lighter"
-              @submit.prevent="sendMessage(message, anonymous, replyTo);replyTo=0">
+              @submit.prevent="sendMessage(message, anonymous, replyTo);replyTo=0;message=''">
             <div class="bg-gray-200 dark:bg-gray-600 focus-within:border-sky-600 dark:focus-within:border-sky-700
                         rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
                 {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}

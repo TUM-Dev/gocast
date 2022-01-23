@@ -27,14 +27,14 @@ const (
 type Chat struct {
 	gorm.Model
 
-	UserID   string `gorm:"not null"`
-	UserName string `gorm:"not null"`
-	Message  string `gorm:"not null"`
-	StreamID uint   `gorm:"not null"`
-	Admin    bool   `gorm:"not null;default:false"`
+	UserID   string `gorm:"not null" json:"-"`
+	UserName string `gorm:"not null" json:"name"`
+	Message  string `gorm:"not null" json:"message"`
+	StreamID uint   `gorm:"not null" json:"-"`
+	Admin    bool   `gorm:"not null;default:false" json:"admin"`
 
-	Replies []Chat `gorm:"foreignkey:ReplyTo"`
-	ReplyTo sql.NullInt64
+	Replies []Chat        `gorm:"foreignkey:ReplyTo" json:"replies"`
+	ReplyTo sql.NullInt64 `json:"replyTo"`
 }
 
 // BeforeCreate is a GORM hook that is called before a new chat is created.
