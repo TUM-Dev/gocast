@@ -87,14 +87,14 @@ export const TheaterModeToggle = videojs.extend(Button, {
     },
     handleClick: function () {
         const theaterModeIsOn = document.getElementById("my-video").classList.toggle("theater-mode");
-        videojs("my-video").trigger("theaterMode", { theaterModeIsOn: theaterModeIsOn });
+        player.trigger("theaterMode", { theaterModeIsOn: theaterModeIsOn });
 
         if (theaterModeIsOn) {
             document.getElementById("watchContent").classList.remove("md:w-4/6", "lg:w-8/12", "2xl:max-w-screen-xl");
-            videojs("my-video").fluid(false);
+            player.fluid(false);
         } else {
             document.getElementById("watchContent").classList.add("md:w-4/6", "lg:w-8/12", "2xl:max-w-screen-xl");
-            videojs("my-video").fluid(true);
+            player.fluid(true);
         }
     },
     buildCSSClass: function () {
@@ -111,7 +111,6 @@ videojs.registerComponent("SkipSilenceToggle", SkipSilenceToggle);
  *           elementToToggle, the name of the DOM element to add/remove the 'theater-mode' CSS class
  */
 export const theaterMode = function (options) {
-    const player = videojs("my-video");
     player.ready(() => {
         player.addClass("vjs-theater-mode");
         const toggle = player.controlBar.addChild("theaterModeToggle", options);
@@ -128,7 +127,6 @@ export const theaterMode = function (options) {
 };
 
 export const skipSilence = function (options) {
-    const player = videojs("my-video");
     player.ready(() => {
         player.addClass("vjs-skip-silence");
         const toggle = player.addChild("SkipSilenceToggle");
