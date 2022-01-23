@@ -11,22 +11,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: 'Ack'
-        uses: actions/github-script@v5
-        if: github.event_name == 'pull_request'
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'I\'ll build a container that will be deployed to the test server in a few minutes!'
-            })
-      - name: remove label
-        uses: actions-ecosystem/action-remove-labels@v1
-        with:
-          labels: testserver
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v3
@@ -44,11 +30,18 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Add SHORT_SHA
+        run: echo "SHORT_SHA=`git rev-parse --short HEAD`" >> $GITHUB_ENV
       - name: Build and push Docker images
         uses: docker/build-push-action@v2
         with:
           context: .
           pull: true
           push: true
+          build-args: version=${{ SHORT_SHA }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+      - name: remove label
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+          labels: testserver
