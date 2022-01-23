@@ -38,7 +38,7 @@ jobs:
           context: .
           pull: true
           push: true
-          build-args: version=${{ SHORT_SHA }}
+          build-args: version=${{ github.SHORT_SHA }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: remove label
