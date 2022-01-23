@@ -99,6 +99,7 @@ function createLectureForm() {
     return {
         formData: {
             title: "",
+            lectureHallId: 0,
             start: "",
             end: "",
             premiere: false,
@@ -113,6 +114,7 @@ function createLectureForm() {
             console.log(this.formData);
             const body = new FormData();
             body.set("title", this.formData.title);
+            body.set("lectureHallId", this.formData.lectureHallId);
             body.set("premiere", this.formData.premiere);
             body.set("vodup", this.formData.vodup);
             body.set("start", this.formData.start);

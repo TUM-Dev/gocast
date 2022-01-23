@@ -318,9 +318,27 @@
 
                                             </div>
                                         </div>
+                                        <div class="mt-4">
+                                            <div class="flex items-center">
+                                                <label class="mx-2" x-show="!loading">
+                                                    <span class="font-semibold p-2">Lecture Hall:</span>
+                                                    <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
+                                                            id="lectureHallBulkSelect"
+                                                            x-model="formData.lectureHallId">
+                                                        <option class="text-gray-300" value="0">Self streaming
+                                                        </option>
+                                                        {{range $lectureHall := $lectureHalls}}
+                                                            <option value="{{$lectureHall.Model.ID}}" class="text-gray-300">
+                                                                {{$lectureHall.Name}}
+                                                            </option>
+                                                        {{end}}
+                                                    </select>
+                                                </label>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="mt-2">
+                                <div class="mt-8">
                                     <button class="btn" type="submit" id="createLectureBtn">
                                         <span x-show="!loading">
                                             <i class="fas fa-check"></i>
