@@ -2,10 +2,15 @@
     {{- /*gotype: TUM-Live/web.WatchPageData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     <script src="/static/assets/ts-dist/chat.js?v={{.IndexData.VersionTag}}"></script>
-    <div x-cloak x-data="{show: false}" x-init="show = initChat();" id="chatWrapper"
+    <div x-cloak x-data="{show: false, replyTo: 0, message: '', anonymous: false, messages: []}"
+         x-init="show = initChat(); fetch('/api/chat/{{$stream.ID}}/messages').then(res => res.json()).then(d => {messages=d});$nextTick(() => { scrollToBottom() })"
+         x-on:chatmessage.window="e => {messages.push(e.detail);}"
+         x-on:chatreply.window="e => {messages.find(m=>m.ID===e.detail.replyTo.Int64).replies.push(e.detail);}"
+         id="chatWrapper"
          class="md:h-full relative flex-col w-full border-t mt-5 text-1 border-l bg-white dark:bg-secondary-lighter
                 dark:border-gray-900 md:flex md:mt-0 md:border-t-0"
-         :class="show ? 'w-full md:w-2/6 2xl:w-1/5 h-80 pb-3' : 'md:w-14 lg:w-14 h-fit'">
+         :class="show ? 'w-full md:w-2/6 2xl:w-1/5 h-80 pb-3' : 'md:w-14 lg:w-14 h-fit'"
+         @keyup.escape="replyTo=0">
         <div class='pt-1 pb-1 flex px-3 border-b md:border-b-0 dark:border-gray-900'
              :class="show ? 'md:border-b justify-between' : 'md:justify-center bg-white dark:bg-secondary-lighter'">
             <div class="my-auto">
@@ -18,33 +23,32 @@
             <span x-show="show" class="font-semibold text-sm my-auto">Chat</span>
         </div>
         <div x-show="show">
-            <div id="disconnectMsg" class="text-white shadow-lg py-1 px-3 bg-red-500 border-2 border-red-600 rounded-b-lg hidden">
+            <div id="disconnectMsg"
+                 class="text-white shadow-lg py-1 px-3 bg-red-500 border-2 border-red-600 rounded-b-lg hidden">
                 <span class="text-sm font-semibold">Connection to chat lost! Reconnecting...</span>
             </div>
         </div>
-        <div x-show="show" id="chatBox" class="overflow-scroll overflow-x-hidden overflow-y-scroll px-3 h-60 md:auto"
+        <div x-show="show" id="chatBox" class="overflow-scroll overflow-x-hidden overflow-y-scroll px-1 h-60 md:auto"
              style="flex: 2;">
-            {{range $chat := $stream.Chats}}
-                <div class="rounded py-2">
-                    <div class="flex flex-row">
-                        <p class="text-sm grow font-semibold {{if $chat.Admin}}text-warn{{end}}">{{$chat.UserName}}</p>
-                        <p class="text-4 text-xs">
-                            {{printf "%02d:%02d" $chat.CreatedAt.Hour $chat.CreatedAt.Minute}}
-                        </p>
-                    </div>
-                    <p class="text-3 break-words">
-                        {{$chat.Message}}
-                    </p>
-                </div>
-            {{end}}
+            {{template "messageTemplate"}}
+        </div>
+        <div x-cloak x-show="show"
+             x-on:messageindicator.window="e => {showNewMsgIndicator = e.detail.show}"
+             class="relative -top-8 h-0 w-full text-center"
+             x-data="{showNewMsgIndicator:false}">
+                <span @click="scrollToLatestMessage()"
+                      x-show="showNewMsgIndicator"
+                      class="bg-blue-600 rounded-full px-4 py-1 text-white shadow cursor-pointer hover:bg-blue-700 whitespace-nowrap">
+                    <i class="fas fa-arrow-down"></i> New messages
+                </span>
         </div>
         <form x-show="show" id="chatForm"
               class="2xl:flex 2xl:justify-between inset-x-0 px-2 pb-4 pt-5 bg-white dark:bg-secondary-lighter"
-              style="">
+              @submit.prevent="sendMessage(message, anonymous, replyTo);message=''">
             <div class="bg-gray-200 dark:bg-gray-600 focus-within:border-sky-600 dark:focus-within:border-sky-700
                         rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
                 {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
-                    <input type="checkbox" name="anonymous" id="anonymous" class="hidden">
+                    <input type="checkbox" name="anonymous" id="anonymous" class="hidden" x-model="anonymous">
                     <label for="anonymous" class="flex items-center cursor-pointer text-4 hover:text-1 ml-3"
                            title="Don't show my name.">
                         <i class="fas fa-ghost"></i>
@@ -52,16 +56,20 @@
                 {{end}}
                 <label for="chatInput" class="hidden">Chat input</label>
                 <input maxlength="200"
+                       x-ref="chatInput"
+                       x-model="message"
                        class="py-2 px-4 border-0 text-sm font-normal placeholder:text-sm"
                        {{if not (.IndexData.TUMLiveContext.User)}}disabled
                        placeholder="Log in to chat" {{else}}
-                       placeholder="Send a message" {{end}}autocomplete="off" id="chatInput" type="text">
+                       :placeholder="replyTo===0?'Send a message':'Reply [escape to cancel]'" {{end}}autocomplete="off"
+                       id="chatInput" type="text">
             </div>
             {{if (.IndexData.TUMLiveContext.User)}}
                 <div class="flex justify-end 2xl:flex-none 2xl:my-auto mt-2">
                     <button class="bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
+                                   disabled:bg-sky-300 disabled:hover:bg-sky-300 dark:disabled:bg-sky-300 dark:disabled:hover:bg-sky-300
                                    rounded border-0 focus:outline-none px-4 text-white text-sm py-2
-                                   w-full 2xl:w-auto">
+                                   w-full 2xl:w-auto" :disabled="message===''">
                         <span class="font-semibold">Send</span>
                         <span class="fas fa-paper-plane ml-2"></span>
                     </button>

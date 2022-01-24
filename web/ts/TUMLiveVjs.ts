@@ -147,7 +147,6 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
         let timer;
         let iOSReady = false;
         let intervalMillis = 10000;
-        let lastReport = 0; // timestamp of last report
 
         // Fetch the user's video progress from the database and set the time in the player
         this.on("loadedmetadata", () => {
@@ -169,11 +168,6 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
         }
 
         const reportProgress = () => {
-            // Don't report progress too often in case some browser goes nuts
-            if (lastReport + 1000 * intervalMillis > Date.now()) {
-                return;
-            }
-            lastReport = Date.now();
             const progress = this.currentTime() / duration;
             postData("/api/progressReport", {
                 streamID: streamID,
@@ -187,10 +181,14 @@ const watchProgress = function (streamID: number, lastProgress: float64) {
         };
 
         // Triggered when user presses play
-        this.on("play", () => {
-            timer = setInterval(() => {
-                reportProgress();
-            }, intervalMillis);
+        player.on("play", () => {
+            // See https://developer.mozilla.org/en-US/docs/Web/API/setInterval#ensure_that_execution_duration_is_shorter_than_interval_frequency
+            (function reportNextProgress() {
+                timer = setTimeout(function () {
+                    reportProgress();
+                    reportNextProgress();
+                }, intervalMillis);
+            })();
         });
 
         // Triggered on pause and skipping the video
