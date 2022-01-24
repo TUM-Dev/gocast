@@ -12,17 +12,8 @@ class EditCourse {
     }
 }
 
-function saveLectureHall(lectureID: number) {
-    postData("/api/updateLecturesLectureHall", {
-        lecture: lectureID,
-        lectureHall: parseInt(
-            (document.getElementById("lectureHallSelector" + lectureID) as HTMLSelectElement).selectedOptions[0].value,
-        ),
-    }).then((res) => {
-        if (res.status === 200) {
-            document.getElementById("applyLectureHall" + lectureID).classList.add("hidden");
-        }
-    });
+function saveLectureHall(streamIds: number[], lectureHall: string) {
+    return postData("/api/setLectureHall", { streamIds, lectureHall: parseInt(lectureHall) });
 }
 
 function saveLectureDescription(e: Event, cID: number, lID: number) {

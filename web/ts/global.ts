@@ -129,7 +129,11 @@ function timer(expiry: string, leadingZero: boolean) {
         },
         setRemaining() {
             const diff = this.expiry - new Date().getTime();
-            this.remaining = parseInt(String(diff / 1000));
+            if (diff >= 0) {
+                this.remaining = parseInt(String(diff / 1000));
+            } else {
+                this.remaining = 0;
+            }
         },
         days() {
             return {

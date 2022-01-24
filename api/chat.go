@@ -5,6 +5,7 @@ import (
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,18 +15,17 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 )
 
 var m *melody.Melody
 
 const maxParticipants = 10000
-const maxMessageLength = 200
 
 func configGinChatRouter(router *gin.RouterGroup) {
 	wsGroup := router.Group("/:streamID")
 	wsGroup.Use(tools.InitStream)
+	wsGroup.GET("/messages", getMessages)
 	wsGroup.GET("/ws", ChatStream)
 	if m == nil {
 		log.Printf("creating melody")
@@ -49,19 +49,6 @@ func configGinChatRouter(router *gin.RouterGroup) {
 		if err := json.Unmarshal(msg, &chat); err != nil {
 			return
 		}
-		chat.Msg = strings.TrimSpace(chat.Msg)
-		if chat.Msg == "" || len(chat.Msg) > maxMessageLength {
-			return
-		}
-		isCooledDown, err := dao.IsUserCooledDown(fmt.Sprintf("%v", tumLiveContext.User.ID))
-		if err != nil {
-			errorMessage := fmt.Sprintf("Could not determine whether a user %d is cooled down.", tumLiveContext.User.ID)
-			log.WithError(err).Error(errorMessage)
-			return
-		} else if isCooledDown {
-			sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, s)
-			return
-		}
 		if !tumLiveContext.Course.ChatEnabled {
 			return
 		}
@@ -69,31 +56,56 @@ func configGinChatRouter(router *gin.RouterGroup) {
 		if chat.Anonymous && tumLiveContext.Course.AnonymousChatEnabled {
 			uname = "Anonymous"
 		}
-		dao.AddMessage(model.Chat{
+		replyTo := sql.NullInt64{}
+		if chat.ReplyTo == 0 {
+			replyTo.Int64 = 0
+			replyTo.Valid = false
+		} else {
+			replyTo.Int64 = chat.ReplyTo
+			replyTo.Valid = true
+		}
+		chatForDb := model.Chat{
 			UserID:   strconv.Itoa(int(tumLiveContext.User.ID)),
 			UserName: uname,
 			Message:  chat.Msg,
 			StreamID: tumLiveContext.Stream.ID,
 			Admin:    tumLiveContext.User.ID == tumLiveContext.Course.UserID,
-		})
-		if broadcast, err := json.Marshal(ChatRep{
-			Msg:   chat.Msg,
-			Name:  uname,
-			Admin: tumLiveContext.User.ID == tumLiveContext.Course.UserID,
-		}); err == nil {
+			ReplyTo:  replyTo,
+		}
+		err := dao.AddMessage(&chatForDb)
+		if err != nil {
+			if errors.Is(err, model.ErrCooledDown) {
+				sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, s)
+			}
+			return
+		}
+		if broadcast, err := json.Marshal(chatForDb); err == nil {
 			broadcastStream(tumLiveContext.Stream.ID, broadcast)
 		}
 	})
 }
 
+func getMessages(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	c.JSON(http.StatusOK, tumLiveContext.Stream.Chats)
+}
+
 type ChatReq struct {
 	Msg       string `json:"msg"`
 	Anonymous bool   `json:"anonymous"`
+	ReplyTo   int64  `json:"replyTo"`
 }
 type ChatRep struct {
-	Msg   string `json:"msg"`
-	Name  string `json:"name"`
-	Admin bool   `json:"admin"`
+	ID      uint   `json:"id"`
+	Msg     string `json:"msg"`
+	Name    string `json:"name"`
+	Admin   bool   `json:"admin"`
+	ReplyTo uint   `json:"replyTo"`
 }
 
 func CollectStats() {

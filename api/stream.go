@@ -20,6 +20,20 @@ func configGinStreamRestRouter(router *gin.Engine) {
 	g.Use(tools.AdminOfCourse)
 	g.GET("/api/stream/:streamID", getStream)
 	g.GET("/api/stream/:streamID/pause", pauseStream)
+	g.GET("/api/stream/:streamID/end", endStream)
+}
+
+func endStream(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	discardVoD := c.Request.URL.Query().Get("discard") == "true"
+	log.Info(discardVoD)
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	NotifyWorkersToStopStream(*tumLiveContext.Stream, discardVoD)
 }
 
 func pauseStream(c *gin.Context) {

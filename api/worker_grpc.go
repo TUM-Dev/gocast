@@ -1,8 +1,7 @@
 // Package api_grpc handles communication with workers
-package api_grpc
+package api
 
 import (
-	"TUM-Live/api"
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
@@ -33,6 +32,19 @@ var lightIndices = []int{0, 1, 2} // turn on all 3 outlets. TODO: make configura
 
 type server struct {
 	pb.UnimplementedFromWorkerServer
+}
+
+func dialIn(targetWorker model.Worker) (*grpc.ClientConn, error) {
+	credentials := insecure.NewCredentials()
+	log.Info("Connecting to:" + fmt.Sprintf("%s:50051", targetWorker.Host))
+	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", targetWorker.Host), grpc.WithTransportCredentials(credentials))
+	return conn, err
+}
+
+func endConnection(conn *grpc.ClientConn) {
+	if err := conn.Close(); err != nil {
+		log.WithError(err).Error("Could not close connection to worker")
+	}
 }
 
 //NotifySilenceResults handles the results of silence detection sent by a worker
@@ -158,8 +170,21 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 				if err != nil {
 					log.WithError(err).Error("Can't handle light off switch")
 				}
+				err = dao.SaveEndedState(stream.ID, true)
+				if err != nil {
+					log.WithError(err).Error("Can't set stream done")
+				}
 			}()
 		}
+		// wait 2 hours to clear the dvr cache
+		go func() {
+			time.Sleep(time.Hour * 2)
+			err := dao.RemoveStreamFromSlot(stream.ID)
+			if err != nil {
+				log.WithError(err).Error("Can't remove stream from streamName")
+			}
+		}()
+
 		// wait 2 hours to clear the dvr cache
 		go func() {
 			time.Sleep(time.Hour * 2)
@@ -173,7 +198,7 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 		if err != nil {
 			log.WithError(err).Error("Can't set stream not live")
 		}
-		api.NotifyViewersLiveState(uint(request.StreamID), false)
+		NotifyViewersLiveState(uint(request.StreamID), false)
 	}
 	return &pb.Status{Ok: true}, nil
 }
@@ -362,7 +387,7 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		default:
 			dao.SaveCOMBURL(&stream, request.HlsUrl)
 		}
-		api.NotifyViewersLiveState(stream.Model.ID, true)
+		NotifyViewersLiveState(stream.Model.ID, true)
 	}()
 
 	return &pb.Status{Ok: true}, nil
@@ -383,7 +408,6 @@ func isHlsUrlOk(url string) bool {
 		return false
 	}
 	y := strings.ReplaceAll(r.Request.URL.String(), "playlist.m3u8", string(x))
-	log.Println(y)
 	get, err := http.Get(y)
 	if err != nil {
 		return false
@@ -406,6 +430,12 @@ func NotifyWorkers() {
 		return
 	}
 	for i := range streams {
+		err := dao.SaveEndedState(streams[i].ID, false)
+		if err != nil {
+			log.WithError(err).Warn("Can't set stream undone")
+			sentry.CaptureException(err)
+			continue
+		}
 		courseForStream, err := dao.GetCourseById(context.Background(), streams[i].CourseID)
 		if err != nil {
 			log.WithError(err).Warn("Can't get course for stream, skipping")
@@ -466,8 +496,12 @@ func NotifyWorkers() {
 			}
 			workerIndex := getWorkerWithLeastWorkload(workers)
 			workers[workerIndex].Workload += 3
-			credentials := insecure.NewCredentials()
-			conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithTransportCredentials(credentials))
+			err = dao.SaveWorkerForStream(streams[i], workers[workerIndex])
+			if err != nil {
+				log.WithError(err).Error("Could not save worker for stream")
+				return
+			}
+			conn, err := dialIn(workers[workerIndex])
 			if err != nil {
 				log.WithError(err).Error("Unable to dial server")
 				workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
@@ -479,10 +513,8 @@ func NotifyWorkers() {
 			if err != nil || !resp.Ok {
 				log.WithError(err).Error("could not assign stream!")
 				workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
-				_ = conn.Close()
-				continue
 			}
-			_ = conn.Close()
+			endConnection(conn)
 		}
 	}
 }
@@ -497,6 +529,12 @@ func notifyWorkersPremieres() {
 		return
 	}
 	for i := range streams {
+		err := dao.SaveEndedState(streams[i].ID, false)
+		if err != nil {
+			log.WithError(err).Warn("Can't set stream undone")
+			sentry.CaptureException(err)
+			continue
+		}
 		if len(streams[i].Files) == 0 {
 			log.WithField("streamID", streams[i].ID).Warn("Request to self stream without file")
 			continue
@@ -514,11 +552,10 @@ func notifyWorkersPremieres() {
 			IngestServer: ingestServer.Url,
 			OutUrl:       ingestServer.OutUrl,
 		}
-		credentials := insecure.NewCredentials()
-		conn, err := grpc.Dial(fmt.Sprintf("%s:50051", workers[workerIndex].Host), grpc.WithTransportCredentials(credentials))
+		conn, err := dialIn(workers[workerIndex])
 		if err != nil {
 			log.WithError(err).Error("Unable to dial server")
-			_ = conn.Close()
+			endConnection(conn)
 			workers[workerIndex].Workload -= 1
 			continue
 		}
@@ -528,10 +565,49 @@ func notifyWorkersPremieres() {
 		if err != nil || !resp.Ok {
 			log.WithError(err).Error("could not assign premiere!")
 			workers[workerIndex].Workload -= 1
-			_ = conn.Close()
+		}
+		endConnection(conn)
+	}
+}
+
+// NotifyWorkersToStopStream notifies all workers for a given stream to quit encoding
+func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool) {
+	workers, err := dao.GetWorkersForStream(stream)
+	if err != nil {
+		log.WithError(err).Error("Could not get workers for stream")
+		return
+	}
+
+	if len(workers) == 0 {
+		log.Error("No workers for stream found")
+		return
+	}
+
+	// Iterate over all workers that are used for the given stream
+	for _, currentWorker := range workers {
+		req := pb.EndStreamRequest{
+			StreamID:   uint32(stream.ID),
+			WorkerID:   currentWorker.WorkerID,
+			DiscardVoD: discardVoD,
+		}
+		conn, err := dialIn(currentWorker)
+		if err != nil {
+			log.WithError(err).Error("Unable to dial server")
 			continue
 		}
-		_ = conn.Close()
+		client := pb.NewToWorkerClient(conn)
+		resp, err := client.RequestStreamEnd(context.Background(), &req)
+		if err != nil || !resp.Ok {
+			log.WithError(err).Error("Could not end stream")
+		}
+		endConnection(conn)
+	}
+
+	// All workers for stream are assumed to be done
+	err = dao.ClearWorkersForStream(stream)
+	if err != nil {
+		log.WithError(err).Error("Could not delete workers for stream")
+		return
 	}
 }
 
