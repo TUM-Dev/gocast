@@ -30,15 +30,16 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Add SHORT_SHA
-        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+      - name: Set outputs
+        id: vars
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
       - name: Build and push Docker images
         uses: docker/build-push-action@v2
         with:
           context: .
           pull: true
           push: true
-          build-args: version=${SHORT_SHA}
+          build-args: version=${{ steps.vars.outputs.sha_short }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Pull new Container
