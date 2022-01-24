@@ -59,9 +59,13 @@ function unhideCourse(id: string) {
     document.location.reload();
 }
 
+function isDark() {
+    return localStorage.getItem("darkTheme") ? JSON.parse(localStorage.getItem("darkTheme")) : true;
+}
+
 function toggleColorScheme() {
     //initial theme preference:
-    const darkTheme: boolean = localStorage.getItem("darkTheme") ? JSON.parse(localStorage.getItem("darkTheme")) : true;
+    const darkTheme: boolean = isDark();
     //store opposite
     localStorage.setItem("darkTheme", JSON.stringify(!darkTheme));
     //set opposite class
