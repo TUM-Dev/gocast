@@ -31,14 +31,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Add SHORT_SHA
-        run: echo "SHORT_SHA=`git rev-parse --short HEAD`" >> $GITHUB_ENV
+        run: echo "SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
       - name: Build and push Docker images
         uses: docker/build-push-action@v2
         with:
           context: .
           pull: true
           push: true
-          build-args: version=${{ github.SHORT_SHA }}
+          build-args: version=${SHORT_SHA}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Pull new Container
