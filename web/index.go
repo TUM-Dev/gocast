@@ -91,6 +91,7 @@ func NewIndexDataWithContext(c *gin.Context) IndexData {
 	return indexData
 }
 
+// IsFreshInstallation Checks whether there are users in the database and executes the appropriate template for it
 func IsFreshInstallation(c *gin.Context) {
 	res, err := dao.AreUsersEmpty(context.Background()) // fresh installation?
 	if err != nil {
@@ -102,6 +103,7 @@ func IsFreshInstallation(c *gin.Context) {
 	}
 }
 
+// LoadCurrentNotifications Loads notifications from the database into the IndexData object
 func (d *IndexData) LoadCurrentNotifications() {
 	if notifications, err := dao.GetCurrentServerNotifications(); err == nil {
 		d.ServerNotifications = notifications
@@ -110,6 +112,8 @@ func (d *IndexData) LoadCurrentNotifications() {
 	}
 }
 
+// SetYearAndTerm Sets year and term on the IndexData object from the URL.
+// Aborts with 404 if invalid
 func (d *IndexData) SetYearAndTerm(c *gin.Context) {
 	var year int
 	var term string
@@ -128,10 +132,14 @@ func (d *IndexData) SetYearAndTerm(c *gin.Context) {
 	d.CurrentTerm = term
 }
 
+// LoadSemesters Load available Semesters from the database into the IndexData object
 func (d *IndexData) LoadSemesters(spanMain *sentry.Span) {
 	d.Semesters = dao.GetAvailableSemesters(spanMain.Context())
 }
 
+// LoadLivestreams Load non-hidden, currently live streams into the IndexData object.
+// LoggedIn streams can only be seen by logged-in users.
+// Enrolled streams can only be seen by users which are allowed to.
 func (d *IndexData) LoadLivestreams(c *gin.Context) {
 	streams, err := dao.GetCurrentLiveNonHidden(context.Background())
 	if err != nil {
@@ -162,6 +170,7 @@ func (d *IndexData) LoadLivestreams(c *gin.Context) {
 	d.LiveStreams = livestreams
 }
 
+// LoadCoursesForRole Load all courses of user. Distinguishes between admin, lecturer, and normal users.
 func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span) {
 	var courses []model.Course
 
@@ -188,6 +197,7 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span) {
 	d.Courses = courses
 }
 
+// LoadPublicCourses Load public courses of user. Filter courses which are already in IndexData.Courses
 func (d *IndexData) LoadPublicCourses() {
 	var public []model.Course
 	var err error

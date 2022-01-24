@@ -157,14 +157,6 @@ func GetCourseById(ctx context.Context, id uint) (course model.Course, err error
 	return foundCourse, dbErr
 }
 
-func GetNonHiddenCourseById(ctx context.Context, id uint) (course model.Course, err error) {
-	var foundCourse model.Course
-	dbErr := DB.Preload("Streams.Stats").Preload("Streams.Files").Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("streams.start asc")
-	}).Find(&foundCourse, "id = ?", id).Error
-	return foundCourse, dbErr
-}
-
 func GetInvitedUsersForCourse(course *model.Course) error {
 	return DB.Preload("Users", "role = ?", model.GenericType).Find(course).Error
 }
