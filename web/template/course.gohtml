@@ -32,7 +32,7 @@
 
                 <ul class="flex px-5 py-3 overflow-y-scroll"
                     :class="asc ? 'flex-col-reverse' : 'flex-col'"
-                    style="height: calc(100% - 4rem)"> <!-- 4rem = h-16 -->
+                    style="max-height: calc(100% - 4rem)"> <!-- 4rem = h-16 -->
                     {{template "vod_course_list" .IndexData.TUMLiveContext}}
                 </ul>
             </div>
@@ -65,12 +65,11 @@
                 </div>
             {{else}}
                 <div class="my-auto">
-                    <h1 class="text-3xl font-bold dark:text-white">
+                    <h1 class="text-3xl font-bold text-3">
                         {{$next := $lecture.Start}}
                         {{$lecture.FriendlyNextDate}}
-                        {{printf " %02d:%02d" $next.Hour $next.Minute}}
                     </h1>
-                    <span class="font-light text-sm dark:text-white">Next Livestream</span>
+                    <span class="font-light text-sm text-3">Next Livestream</span>
                 </div>
             {{end}}
         </div>
@@ -91,7 +90,7 @@
                 </div>
 
                 <ul x-show="showPlanned" class="flex flex-col px-5 py-3 overflow-y-scroll"
-                    style="height: calc(100% - 4rem)">
+                    style="max-height: calc(100% - 4rem)">
                     {{template "planned_course_list" .IndexData.TUMLiveContext}}
                 </ul>
             </div>
