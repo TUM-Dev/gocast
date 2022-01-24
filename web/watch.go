@@ -105,7 +105,7 @@ type WatchPageData struct {
 }
 
 // Prepare populates the data for the watch page.
-func (d WatchPageData) Prepare(c *gin.Context) error {
+func (d *WatchPageData) Prepare(c *gin.Context) error {
 	// todo prepare rest of data here as well
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
