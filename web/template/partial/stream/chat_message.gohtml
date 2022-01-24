@@ -7,7 +7,7 @@
                 <span x-text="m.message"></span>
             </p>
             <p class="flex flex-row text-sm font-semibold gap-3 text-5 mt-1">
-                <span x-text="let d = new Date(m.CreatedAt); return ('0'+d.getHours()).slice(1)+':'+('0' + d.getMinutes()).slice(1)"></span>
+                <span x-text="let d = new Date(m.CreatedAt); return ('0'+d.getHours()).slice(-2)+':'+('0' + d.getMinutes()).slice(-2)"></span>
                 <a @click="replyTo === m.ID ? replyTo=0: replyTo=m.ID; $refs.chatInput.focus()"
                    title="Reply" class="cursor-pointer hover:text-1">
                     <span x-text="replyTo === m.ID ? 'Cancel': 'Reply'"></span>
@@ -30,7 +30,7 @@
                                 <span x-text="reply.message"></span>
                             </p>
                             <p class="flex flex-row text-sm font-semibold gap-3 text-5">
-                                <span x-text="let d = new Date(reply.CreatedAt); return ('0'+d.getHours()).slice(1)+':'+('0' + d.getMinutes()).slice(1)"></span>
+                                <span x-text="let d = new Date(reply.CreatedAt); return ('0'+d.getHours()).slice(-2)+':'+('0' + d.getMinutes()).slice(-2)"></span>
                             </p>
                         </div>
                     </template>
