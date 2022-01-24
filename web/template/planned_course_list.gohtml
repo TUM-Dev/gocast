@@ -7,7 +7,7 @@
             {{if ne $lecture.Start.Month $lastMonth}}
                 {{if ne $lastMonth -1}} </div> {{end}}
                 {{$lastMonth = $lecture.Start.Month}}
-                <div class = "my-2">
+                <div class="my-2">
                 <p class="text-gray-500 text-sm uppercase">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
             {{end}}
             <li class="p-2">
@@ -55,6 +55,10 @@
         {{end}}
     {{end}}
     {{if eq $lastMonth -1}}
-        <div class = "font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">No upcoming streams</div>
+        <div class="h-screen flex">
+            <div class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">
+                No upcoming streams
+            </div>
+        </div>
     {{end}}
 {{end}}
