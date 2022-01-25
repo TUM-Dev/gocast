@@ -3,7 +3,7 @@
         <div class="last:mb-1 rounded py-2 px-2" :class="replyTo === m.ID && 'ring ring-blue-500/50'"
              x-data="{ showReplies: false, m: m }" x-show="m.replyTo && !m.replyTo.Valid">
             <p class="text-4 text-sm">
-                <span class="text-2 font-semibold" :class="m.admin && 'text-warn'" x-text="m.name"></span>
+                <span class="text-2 font-semibold" :class="m.admin && 'text-warn'" x-text="m.name" :style="'color:'+m.color"></span>
                 <span x-text="m.message"></span>
             </p>
             <p class="flex flex-row text-sm font-semibold gap-3 text-5 mt-1">
@@ -26,7 +26,8 @@
                         <div>
                             <p class="text-4 text-sm">
                                 <span class="text-2 font-semibold" :class="reply.admin && 'text-warn'"
-                                      x-text="reply.name"></span>
+                                      x-text="reply.name"
+                                      :style="'color:'+reply.color"></span>
                                 <span x-text="reply.message"></span>
                             </p>
                             <p class="flex flex-row text-sm font-semibold gap-3 text-5">

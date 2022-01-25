@@ -4,9 +4,12 @@ import (
 	"database/sql"
 	"errors"
 	"gorm.io/gorm"
+	"strconv"
 	"strings"
 	"time"
 )
+
+var chatColors = []string{"#368bd6", "#ac3ba8", "#0dbd8b", "#e64f7a", "#ff812d", "#2dc2c5", "#5c56f5", "#74d12c"}
 
 var (
 	ErrReplyToReply       = errors.New("reply to reply not allowed")
@@ -32,6 +35,7 @@ type Chat struct {
 	Message  string `gorm:"not null" json:"message"`
 	StreamID uint   `gorm:"not null" json:"-"`
 	Admin    bool   `gorm:"not null;default:false" json:"admin"`
+	Color    string `gorm:"not null;default:'#368bd6'" json:"color"`
 
 	Replies []Chat        `gorm:"foreignkey:ReplyTo" json:"replies"`
 	ReplyTo sql.NullInt64 `json:"replyTo"`
@@ -64,6 +68,16 @@ func (c *Chat) BeforeCreate(tx *gorm.DB) (err error) {
 	if recentMessages >= coolDownMessages {
 		return ErrCooledDown
 	}
+
+	// set chat color:
+	userIdInt, err := strconv.Atoi(c.UserID)
+	if err != nil {
+		c.Color = chatColors[0]
+	} else {
+		c.Color = chatColors[userIdInt%len(chatColors)]
+	}
+
+	// not a reply, no need for more checks
 	if !c.ReplyTo.Valid {
 		return nil
 	}
