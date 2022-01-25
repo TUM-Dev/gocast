@@ -19,6 +19,11 @@ func WatchPage(c *gin.Context) {
 	span := sentry.StartSpan(c, "GET /w", sentry.TransactionName("GET /w"))
 	defer span.Finish()
 	var data WatchPageData
+	err := data.Prepare(c)
+	if err != nil {
+		log.WithError(err).Error("Can't prepare data for watch page")
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -96,4 +101,31 @@ type WatchPageData struct {
 	IndexData       IndexData
 	Description     template.HTML
 	DVR             string // ?dvr if dvr is enabled, empty string otherwise
+	LectureHallName string
+}
+
+// Prepare populates the data for the watch page.
+func (d *WatchPageData) Prepare(c *gin.Context) error {
+	// todo prepare rest of data here as well
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		return errors.New("context should exist but doesn't")
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	err := d.prepareLectureHall(tumLiveContext)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *WatchPageData) prepareLectureHall(c tools.TUMLiveContext) error {
+	if c.Stream.LectureHallID != 0 {
+		lectureHall, err := dao.GetLectureHallByID(c.Stream.LectureHallID)
+		if err != nil {
+			return err
+		}
+		d.LectureHallName = lectureHall.Name
+	}
+	return nil
 }
