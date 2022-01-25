@@ -99,7 +99,7 @@
                                         </select>
                                     </label>
                                     <button
-                                        x-show="selectedLectures.length > 0 && !admin.selectedLectures.some(({isPast}) => isPast)"
+                                        x-show="selectedLectures.length > 0 && !selectedLectures.some(({isPast}) => isPast)"
                                         @click="admin.saveLectureHall(selectedLectures.map(({id}) => id), selectedLectureHallId).then(() => { window.location.reload(); })"
                                     >
                                         <i class="align-middle fas fa-check text-gray-300"></i>

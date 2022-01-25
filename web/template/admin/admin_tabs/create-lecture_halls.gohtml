@@ -10,7 +10,7 @@
         <h2 class="text-2xl text-1 mb-6">New Lecture Hall</h2>
         <form   x-data="{name:'',combIP:'', presIP:'', camIP:'',cameraIp:'', pwrCtrlIp:''}"
                 @submit.prevent="
-                    showSuccess = await createLectureHall(name, combIP, presIP, camIP, cameraIp, pwrCtrlIp);
+                    showSuccess = await admin.createLectureHall(name, combIP, presIP, camIP, cameraIp, pwrCtrlIp);
                     setTimeout(() => {window.location = '/admin/lectureHalls';}, 2000);"
                 class = "grid gap-3 w-4/5 mx-auto">
             <label>
