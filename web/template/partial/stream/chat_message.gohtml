@@ -3,7 +3,8 @@
         <div class="last:mb-1 rounded py-2 px-2" :class="replyTo === m.ID && 'ring ring-blue-500/50'"
              x-data="{ showReplies: false, m: m }" x-show="m.replyTo && !m.replyTo.Valid">
             <p class="text-4 text-sm">
-                <span class="text-2 font-semibold" :class="m.admin && 'text-warn'" x-text="m.name" :style="'color:'+m.color"></span>
+                <span x-show="m.admin" class="text-white rounded-full bg-danger px-2 fas fa-video"></span>
+                <span class="text-2 font-semibold" x-text="m.name" :style="'color:'+m.color"></span>
                 <span x-text="m.message"></span>
             </p>
             <p class="flex flex-row text-sm font-semibold gap-3 text-5 mt-1">

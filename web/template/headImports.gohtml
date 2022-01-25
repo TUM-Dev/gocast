@@ -5,7 +5,7 @@
     <link href="/static/assets/css-dist/main.css?v={{if .}}{{.}}{{else}}development{{end}}" rel="stylesheet">
     <link href="/static/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
     <link href="/static/assets/css/icons.css?v={{if .}}{{.}}{{else}}development{{end}}" rel="stylesheet">
-    <script defer src="/static/node_modules/alpinejs/dist/cdn.min.js"></script>
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.js"></script>
     <script> // init in dom to prevent screen flickering
         let darkTheme = localStorage.getItem("darkTheme") ? JSON.parse(localStorage.getItem("darkTheme")) : true;
         if (!darkTheme) {
