@@ -5,7 +5,12 @@
         <div class = 'flex mb-3'>
             <h2 class="text-2xl text-1 my-auto">Lecture Halls</h2>
             <a href = "/admin/lectureHalls/new" class = "ml-auto my-auto">
-                <button class = "dark:bg-gray-600 dark:border-slate-800 dark:border-slate-800 bg-black text-white border border-slate-300 pl-3 pr-3 rounded pt-1 pb-1 text-sm font-semibold">&#43; New Lecture Hall</button>
+                <button class="border bg-white border-gray-300 rounded px-3 my-auto shadow-sm text-gray-600
+                                       hover:border-black hover:text-black
+                                       dark:bg-gray-700 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
+                                        dark:hover:text-white">
+                            <span class="text-sm font-semibold uppercase m-auto">&#43; New Lecture Hall</span>
+                </button>
             </a>
         </div>
         {{range $lectureHall := .}}
