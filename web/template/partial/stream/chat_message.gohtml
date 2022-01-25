@@ -27,9 +27,7 @@
                         <div>
                             <p class="text-4 text-sm">
                                 <span x-show="reply.admin" class="text-white rounded-full bg-danger px-2 fas fa-video"></span>
-                                <span class="text-2 font-semibold" :class="reply.admin && 'text-warn'"
-                                      x-text="reply.name"
-                                      :style="'color:'+reply.color"></span>
+                                <span class="text-2 font-semibold" x-text="reply.name":style="'color:'+reply.color"></span>
                                 <span x-text="reply.message"></span>
                             </p>
                             <p class="flex flex-row text-sm font-semibold gap-3 text-5">
