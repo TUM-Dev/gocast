@@ -2,18 +2,11 @@ import { loadStats } from "./stats";
 import { postData, showMessage } from "./global";
 import { StatusCodes } from "http-status-codes";
 
-export class EditCourse {
-    constructor() {
-        EditCourse.loadGeneralStats();
-    }
-
-    /**
-     * loadGeneralStats gets the audience of the course from the api (live and vod) and renders it into a graph
-     * @private
-     */
-    private static loadGeneralStats() {
-        loadStats("activity", "courseGeneralStatsLive");
-    }
+/**
+ * loadGeneralStats gets the audience of the course from the api (live and vod) and renders it into a graph.
+ */
+export function loadGeneralStats() {
+    loadStats("activity", "courseGeneralStatsLive");
 }
 
 export function saveLectureHall(streamIds: number[], lectureHall: string) {
