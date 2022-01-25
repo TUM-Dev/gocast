@@ -141,7 +141,7 @@ func GetInvitedUsersForCourse(course *model.Course) error {
 	return DB.Preload("Users", "role = ?", model.GenericType).Find(course).Error
 }
 
-func GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year string) (model.Course, error) {
+func GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int) (model.Course, error) {
 	cachedCourses, found := Cache.Get(fmt.Sprintf("courseBySlugYearAndTerm%v%v%v", slug, term, year))
 	if found {
 		return cachedCourses.(model.Course), nil

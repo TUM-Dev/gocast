@@ -61,7 +61,13 @@ func InitCourse(c *gin.Context) {
 			course = foundCourse
 		}
 	} else if c.Param("year") != "" && c.Param("teachingTerm") != "" && c.Param("slug") != "" {
-		foundCourse, err := dao.GetCourseBySlugYearAndTerm(c, c.Param("slug"), c.Param("teachingTerm"), c.Param("year"))
+		y := c.Param("year")
+		yInt, err := strconv.Atoi(y)
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+		foundCourse, err := dao.GetCourseBySlugYearAndTerm(c, c.Param("slug"), c.Param("teachingTerm"), yInt)
 		if err != nil {
 			c.AbortWithStatus(http.StatusNotFound)
 		} else {

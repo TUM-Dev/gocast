@@ -23,7 +23,7 @@
      style="height: calc(100vh - 5rem)">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
     <div id="watchWrapper"
-         class="grow overflow-scroll overflow-x-hidden h-fit md:h-full">
+         class="grow overflow-x-hidden h-fit md:h-full">
         <noscript><p class="vjs-no-js">
                 To view this video please enable JavaScript.
             </p></noscript>
@@ -187,7 +187,7 @@
                     </span>
                 </div>
                 <div class="border-t-2 border-secondary p-4">
-                    <h3 class="text-4 mb-2 font-bold">Presets</h3>
+                    <h3 class="text-4 mb-2 font-bold">Presets for {{.LectureHallName}}</h3>
                     <div class="w-full overflow-x-scroll scrollbarThin">
                         <div class="flex flex-row gap-x-2">
                             {{range $preset := .Presets}}

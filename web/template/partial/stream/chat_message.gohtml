@@ -1,0 +1,41 @@
+{{define "messageTemplate"}}
+    <template x-for="m in messages">
+        <div class="last:mb-1 rounded py-2 px-2" :class="replyTo === m.ID && 'ring ring-blue-500/50'"
+             x-data="{ showReplies: false, m: m }" x-show="m.replyTo && !m.replyTo.Valid">
+            <p class="text-4 text-sm">
+                <span class="text-2 font-semibold" :class="m.admin && 'text-warn'" x-text="m.name"></span>
+                <span x-text="m.message"></span>
+            </p>
+            <p class="flex flex-row text-sm font-semibold gap-3 text-5 mt-1">
+                <span x-text="let d = new Date(m.CreatedAt); return ('0'+d.getHours()).slice(-2)+':'+('0' + d.getMinutes()).slice(-2)"></span>
+                <a @click="replyTo === m.ID ? replyTo=0: replyTo=m.ID; $refs.chatInput.focus()"
+                   title="Reply" class="cursor-pointer hover:text-1">
+                    <span x-text="replyTo === m.ID ? 'Cancel': 'Reply'"></span>
+                </a>
+            </p>
+            <div x-cloak class="ml-2">
+                <div x-show="m.replies.length > 0" class="flex items-center mt-2">
+                    <div class="w-5 bg-gray-500 h-0.5"></div>
+                    <div class="flex-grow-0 ml-2 text-sm text-5 font-semibold text-1 cursor-pointer"
+                         x-show="m.replies.length>0"
+                         x-text="showReplies? `hide replies (${m.replies.length})`: `show replies (${m.replies.length})`"
+                         @click="showReplies=!showReplies"></div>
+                </div>
+                <div x-show="showReplies" class="pl-2">
+                    <template x-for="reply in m.replies">
+                        <div>
+                            <p class="text-4 text-sm">
+                                <span class="text-2 font-semibold" :class="reply.admin && 'text-warn'"
+                                      x-text="reply.name"></span>
+                                <span x-text="reply.message"></span>
+                            </p>
+                            <p class="flex flex-row text-sm font-semibold gap-3 text-5">
+                                <span x-text="let d = new Date(reply.CreatedAt); return ('0'+d.getHours()).slice(-2)+':'+('0' + d.getMinutes()).slice(-2)"></span>
+                            </p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </template>
+{{end}}
