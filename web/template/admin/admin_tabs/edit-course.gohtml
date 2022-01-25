@@ -68,7 +68,8 @@
                     </div>
                 </div>
 
-                <div x-data="{ filterPast: false, selectedLectures: [], selectedLectureHallId: 0, sortAsc: false }"
+                <div x-data="{ filterPast: false, selectedLectures: [], selectedLectureHallId: 0,
+                               sortAsc: $persist(false).as('courseStreamsSortOrder') }"
                      class="mt-8">
                     {{$user := .IndexData.TUMLiveContext.User}}
                     {{$ingestBase := .IngestBase}}
