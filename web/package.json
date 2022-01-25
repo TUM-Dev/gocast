@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/joschahenningsen/TUM-Live#readme",
   "dependencies": {
+    "@alpinejs/persist": "^3.8.1",
     "@fortawesome/fontawesome-free": "^5.15.4",
     "@fullcalendar/core": "^5.10.1",
     "@fullcalendar/daygrid": "^5.10.1",
