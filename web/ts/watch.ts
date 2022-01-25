@@ -18,7 +18,7 @@ let ws: WebSocket;
 let retryInt = 5000; //retry connecting to websocket after this timeout
 const pageloaded = new Date();
 
-function initChatScrollListener() {
+export function initChatScrollListener() {
     const chatBox = document.getElementById("chatBox") as HTMLDivElement;
     if (!chatBox) {
         return;
@@ -30,7 +30,7 @@ function initChatScrollListener() {
     });
 }
 
-function scrollChatIfNeeded() {
+export function scrollChatIfNeeded() {
     const c = document.getElementById("chatBox");
     // 150px grace offset to avoid showing message when close to bottom
     if (c.scrollHeight - c.scrollTop <= c.offsetHeight + 150) {
@@ -40,7 +40,7 @@ function scrollChatIfNeeded() {
     }
 }
 
-function scrollToLatestMessage() {
+export function scrollToLatestMessage() {
     const c = document.getElementById("chatBox");
     c.scrollTo({ top: c.scrollHeight, behavior: "smooth" });
     window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));

@@ -2,7 +2,7 @@
     {{- /*gotype: TUM-Live/web.WatchPageData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     <div x-cloak x-data="{show: false, replyTo: 0, message: '', anonymous: false, messages: []}"
-         x-init="show = watch.initChat(); fetch('/api/chat/{{$stream.ID}}/messages').then(res => res.json()).then(d => {messages=d});$nextTick(() => { scrollToBottom() })"
+         x-init="show = watch.initChat(); fetch('/api/chat/{{$stream.ID}}/messages').then(res => res.json()).then(d => {messages=d});$nextTick(() => { watch.scrollToBottom() })"
          x-on:chatmessage.window="e => {messages.push(e.detail);}"
          x-on:chatreply.window="e => {messages.find(m=>m.ID===e.detail.replyTo.Int64).replies.push(e.detail);}"
          id="chatWrapper"
