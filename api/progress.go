@@ -13,7 +13,7 @@ import (
 
 var progressBuff *progressBuffer
 
-// progressWorker contains progresses to be written to the database
+// progressBuff contains progresses to be written to the database
 type progressBuffer struct {
 	lock       sync.Mutex
 	progresses []model.StreamProgress
