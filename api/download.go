@@ -36,6 +36,7 @@ func download(c *gin.Context) {
 	}
 	if err != nil {
 		c.AbortWithStatus(http.StatusExpectationFailed)
+		return
 	}
 	stream, err := dao.GetStreamByID(c, fmt.Sprintf("%d", file.StreamID))
 	if err != nil {
