@@ -11,29 +11,29 @@
             <div class="hidden md:flex grow items-center w-auto">
                 <div class="text-sm grow">
                     <a href="/"
-                       class="block inline-block align-middle mt-0 mr-4 dark:hover:text-white text-gray-400">
+                       class="block inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
                         Start
                     </a>
                     {{- /*gotype: TUM-Live/tools.TUMLiveContext*/ -}}
                     {{if not .User}}
                         <a href="/login"
-                           class="block inline-block align-middle mt-0 mr-4 dark:hover:text-white text-gray-400">
+                           class="block inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
                             Login
                         </a>
                     {{else}}
                         <a href="/logout"
-                           class="inline-block align-middle mt-0 mr-4 dark:hover:text-white text-gray-400">
+                           class="inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
                             Logout
                         </a>
                         {{if or (eq .User.Role 1) (eq .User.Role 2) }}
                             <a href="/admin"
-                               class="inline-block align-middle mt-0 mr-4 dark:hover:text-white text-gray-400">
+                               class="inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
                                 Admin
                             </a>
                         {{end}}
                     {{end}}
                     <a href="/about"
-                       class="inline-block align-middle mt-0 mr-4 dark:hover:text-white text-gray-400">
+                       class="inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
                         About
                     </a>
                 </div>
