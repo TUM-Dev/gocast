@@ -15,24 +15,67 @@ import (
 func LoginHandler(c *gin.Context) {
 	username := c.Request.FormValue("username")
 	password := c.Request.FormValue("password")
-	if u, err := dao.GetUserByEmail(context.Background(), username); err == nil {
-		// user with this email found.
-		if match, err := u.ComparePasswordAndHash(password); err == nil && match {
-			s := sessions.Default(c)
-			s.Set("UserID", u.ID)
-			s.Set("Name", u.Name)
-			_ = s.Save()
-			if c.Request.FormValue("return") != "" {
-				red, err := url.QueryUnescape(c.Request.FormValue("return"))
-				if err == nil {
-					c.Redirect(http.StatusFound, red)
-					return
-				}
-			}
-			c.Redirect(http.StatusFound, "/")
+
+	var data *sessionData
+
+	if data = loginWithUserCredentials(c, username, password); data != nil {
+		startSession(c, data)
+		c.Redirect(http.StatusFound, getRedirectUrl(c))
+		return
+	}
+
+	if data = loginWithTumCredentials(username, password); data != nil {
+		startSession(c, data)
+		c.Redirect(http.StatusFound, getRedirectUrl(c))
+		return
+	}
+
+	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", true)
+}
+
+func getRedirectUrl(c *gin.Context) string {
+	ref := c.Request.FormValue("ref")
+	if ref == "" {
+		return "/"
+	}
+	return ref
+}
+
+type sessionData struct {
+	userid uint
+	name   string
+}
+
+func startSession(c *gin.Context, data *sessionData) {
+	s := sessions.Default(c)
+	s.Set("UserID", data.userid)
+	s.Set("Name", data.name)
+	_ = s.Save()
+	if c.Request.FormValue("return") != "" {
+		red, err := url.QueryUnescape(c.Request.FormValue("return"))
+		if err == nil {
+			c.Redirect(http.StatusFound, red)
 			return
 		}
 	}
+}
+
+// loginWithUserCredentials Try to login with non-tum credentials
+// Returns pointer to sessionData object if successful or nil if not.
+func loginWithUserCredentials(c *gin.Context, username, password string) *sessionData {
+	if u, err := dao.GetUserByEmail(context.Background(), username); err == nil {
+		// user with this email found.
+		if match, err := u.ComparePasswordAndHash(password); err == nil && match {
+			return &sessionData{u.ID, u.Name}
+		}
+	}
+
+	return nil
+}
+
+// loginWithTumCredentials Try to login with tum credentials
+// Returns pointer to sessionData if successful and nil if not
+func loginWithTumCredentials(username, password string) *sessionData {
 	sId, lrzID, name, err := tum.LoginWithTumCredentials(username, password)
 	if err == nil {
 		user := model.User{
@@ -44,25 +87,16 @@ func LoginHandler(c *gin.Context) {
 		err = dao.UpsertUser(&user)
 		if err != nil {
 			log.Printf("%v", err)
-			return
+			return nil
 		}
-		s := sessions.Default(c)
-		s.Set("UserID", user.ID)
-		s.Set("Name", user.Name)
-		_ = s.Save()
-		if c.Request.FormValue("return") != "" {
-			red, err := url.QueryUnescape(c.Request.FormValue("return"))
-			if err == nil {
-				c.Redirect(http.StatusFound, red)
-				return
-			}
-		}
-		c.Redirect(http.StatusFound, "/")
-		return
+
+		return &sessionData{user.ID, user.Name}
+
 	} else if err != tum.ErrLdapBadAuth {
 		log.WithError(err).Error("Login error")
 	}
-	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", true)
+
+	return nil
 }
 
 func LoginPage(c *gin.Context) {

@@ -11,7 +11,8 @@
 <div class="dark:bg-secondary bg-gray-50 lg:w-4/12 md:6/12 w-10/12 m-auto my-10 mt-24 shadow-md">
     <div class="py-8 px-8 rounded border border-gray-500">
         <h1 class="font-medium text-2xl mt-3 text-center text-2">Login</h1>
-        <form id="loginForm" method="post" class="mt-6">
+        <form x-data="{ref: document.referrer}" id="loginForm" method="post" class="mt-6">
+            <input x-model="ref" type="hidden" name="ref">
             <div class="my-5 text-sm">
                 <label for="username" class="hidden">Username</label>
                 <input type="text" name="username" id="username"
