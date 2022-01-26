@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
@@ -119,11 +120,14 @@ func (s Stream) FriendlyTime() string {
 }
 
 func (s Stream) FriendlyNextDate() string {
+	if now.With(s.Start).Before(time.Now()) {
+		return "No upcoming stream"
+	}
 	if now.With(s.Start).EndOfDay() == now.EndOfDay() {
-		return "Today,"
+		return fmt.Sprintf("Today, %02d:%02d", s.Start.Hour(), s.Start.Minute())
 	}
 	if now.With(s.Start).EndOfDay() == now.With(time.Now().Add(time.Hour*24)).EndOfDay() {
-		return "Tomorrow,"
+		return fmt.Sprintf("Tomorrow, %02d:%02d", s.Start.Hour(), s.Start.Minute())
 	}
-	return s.Start.Format("Mon, January 02.")
+	return s.Start.Format("Mon, January 02. 15:04")
 }

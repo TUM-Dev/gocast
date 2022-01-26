@@ -3,11 +3,12 @@
         <div class="last:mb-1 rounded py-2 px-2" :class="replyTo === m.ID && 'ring ring-blue-500/50'"
              x-data="{ showReplies: false, m: m }" x-show="m.replyTo && !m.replyTo.Valid">
             <p class="text-4 text-sm">
-                <span class="text-2 font-semibold" :class="m.admin && 'text-warn'" x-text="m.name"></span>
+                <span x-show="m.admin" class="text-white rounded-full bg-danger px-2 fas fa-video"></span>
+                <span class="text-2 font-semibold" x-text="m.name" :style="'color:'+m.color"></span>
                 <span x-text="m.message"></span>
             </p>
             <p class="flex flex-row text-sm font-semibold gap-3 text-5 mt-1">
-                <span x-text="let d = new Date(m.CreatedAt); return ('0'+d.getHours()).slice(1)+':'+('0' + d.getMinutes()).slice(1)"></span>
+                <span x-text="let d = new Date(m.CreatedAt); return ('0'+d.getHours()).slice(-2)+':'+('0' + d.getMinutes()).slice(-2)"></span>
                 <a @click="replyTo === m.ID ? replyTo=0: replyTo=m.ID; $refs.chatInput.focus()"
                    title="Reply" class="cursor-pointer hover:text-1">
                     <span x-text="replyTo === m.ID ? 'Cancel': 'Reply'"></span>
@@ -25,12 +26,12 @@
                     <template x-for="reply in m.replies">
                         <div>
                             <p class="text-4 text-sm">
-                                <span class="text-2 font-semibold" :class="reply.admin && 'text-warn'"
-                                      x-text="reply.name"></span>
+                                <span x-show="reply.admin" class="text-white rounded-full bg-danger px-2 fas fa-video"></span>
+                                <span class="text-2 font-semibold" x-text="reply.name":style="'color:'+reply.color"></span>
                                 <span x-text="reply.message"></span>
                             </p>
                             <p class="flex flex-row text-sm font-semibold gap-3 text-5">
-                                <span x-text="let d = new Date(reply.CreatedAt); return ('0'+d.getHours()).slice(1)+':'+('0' + d.getMinutes()).slice(1)"></span>
+                                <span x-text="let d = new Date(reply.CreatedAt); return ('0'+d.getHours()).slice(-2)+':'+('0' + d.getMinutes()).slice(-2)"></span>
                             </p>
                         </div>
                     </template>

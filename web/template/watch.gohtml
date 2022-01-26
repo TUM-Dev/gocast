@@ -130,11 +130,9 @@
                     <span class="text-5 hover:text-1 hover:underline text-lg">{{$course.Name}}</span></a>
                 {{if $stream.LiveNow}}
                     {{if .DVR}}
-                        <a class="underline text-gray-300 hover:text-black dark:text-gray-400 dark:hover:text-white"
-                           href="./{{$stream.Model.ID}}">Disable Beta stream</a>
+                        <a href="./{{$stream.Model.ID}}"><span class="text-5 hover:text-1 hover:underline text-lg">Disable Beta stream</span></a>
                     {{else}}
-                        <a class="underline text-gray-300 hover:text-black dark:text-gray-400 dark:hover:text-white"
-                           href="?dvr">Enable Timeshift (beta)</a>
+                        <a href="?dvr{{$stream.Model.ID}}"><span class="text-5 hover:text-1 hover:underline text-lg">Enable Timeshift (beta)</span></a>
                     {{end}}
                 {{end}}
             </div>
@@ -185,7 +183,7 @@
                     </span>
                 </div>
                 <div class="border-t-2 border-secondary p-4">
-                    <h3 class="text-4 mb-2 font-bold">Presets</h3>
+                    <h3 class="text-4 mb-2 font-bold">Presets for {{.LectureHallName}}</h3>
                     <div class="w-full overflow-x-scroll scrollbarThin">
                         <div class="flex flex-row gap-x-2">
                             {{range $preset := .Presets}}
