@@ -1,5 +1,4 @@
 {{define "lectureHalls"}}
-    <script src="/static/assets/ts-dist/lecture-hall-management.js"></script>
     {{- /*gotype: TUM-Live/[]model.LectureHall*/ -}}
     <div class="rounded my-6 overflow-x-auto">
         <div class = 'flex mb-3'>
@@ -30,7 +29,7 @@
                 {{$lectureHall.Name}}
                 <i class="fas fa-trash hover:text-1 px-2"
                    title="Delete Lecture Hall"
-                   onclick="deleteLectureHall({{$lectureHall.Model.ID}})"></i>
+                   onclick="admin.deleteLectureHall({{$lectureHall.Model.ID}})"></i>
             </div>
             <div class="text-4 px-4 p-2">
                 <div class="flex flex-row">
@@ -102,7 +101,7 @@
                                             <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
                                                  src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
                                                  alt="prev" width="150px">
-                                            <i onclick="takeSnapshot({{$preset.LectureHallId}}, {{$preset.PresetID}})"
+                                            <i onclick="admin.takeSnapshot({{$preset.LectureHallId}}, {{$preset.PresetID}})"
                                                title="Take new snapshot"
                                                class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-sync"></i>
                                             <span title="{{$preset.Name}}"
