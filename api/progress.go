@@ -48,7 +48,7 @@ func (b *progressBuffer) flush() error {
 }
 
 // Run flushes the progress buffer every interval
-func (b *progressBuffer) Run() {
+func (b *progressBuffer) run() {
 	for {
 		time.Sleep(b.interval)
 		err := b.flush()
@@ -60,7 +60,7 @@ func (b *progressBuffer) Run() {
 
 func configProgressRouter(router *gin.Engine) {
 	progressBuff = newProgressBuffer()
-	go progressBuff.Run()
+	go progressBuff.run()
 	router.POST("/api/progressReport", saveProgress)
 }
 
