@@ -18,8 +18,8 @@
                         Starting soon
                     {{else}}
                         <div class="text-5 font-sans font-light text-sm"
-                            x-data="timer('{{.GetNextLectureDateFormatted}}', false)"
-                            x-init="init();">
+                            x-data="global.timer('{{.GetNextLectureDateFormatted}}', false)"
+                            x-init="global.init();">
                             <template x-if="time().minutes < 1">
                                 <span>Starting soon</span>
                             </template>

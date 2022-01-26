@@ -77,7 +77,7 @@
                             <span class="flex m-auto" id="ViewerDescText">Waiting</span>
                             <span class="flex m-auto">&#183;</span>
                             <div class="flex text-lg px-2 text-4"
-                                 x-data="timer('{{$course.GetNextLectureDateFormatted}}', true)"
+                                 x-data="global.timer('{{$course.GetNextLectureDateFormatted}}', true)"
                                  x-init="init();">
                                 <template x-if="time().days !== '00'">
                                     <span>More than a day left</span>

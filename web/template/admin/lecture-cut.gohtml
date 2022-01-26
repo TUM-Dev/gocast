@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <title>TUM Live | Edit Units</title>
     {{template "headImports"}}
-    <script>window.HELP_IMPROVE_watchJS = false;</script>
-    <link rel="stylesheet" href="/static/node_modules/watch.js/dist/watch-js.min.css">
+    <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
+    <link rel="stylesheet" href="//static/node_modules/video.js/dist/video-js.min.css">
     <link rel="stylesheet" href="/static/node_modules/nouislider/distribute/nouislider.min.css">
     <script src="/static/assets/ts-dist/admin.bundle.js?v={{.IndexData.VersionTag}}"></script>
 </head>
@@ -19,10 +19,10 @@
 <div class="text-white container mx-auto">
     <div class="min-w-screen flex items-center justify-center">
         <div class="w-full lg:w-5/6">
-            <p class="text-gray-300">Reference watch:</p>
-            <watch
-                    id="my-watch"
-                    class="watch-js w-full"
+            <p class="text-gray-300">Reference video:</p>
+            <video
+                    id="my-video"
+                    class="video-js w-full"
                     controls
                     muted
                     preload="auto"

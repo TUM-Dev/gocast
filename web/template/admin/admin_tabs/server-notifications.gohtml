@@ -12,8 +12,7 @@
 {{define "server-notification-edit"}}
     <form class="text-3 grid grid-cols-4 mb-2 p-2"
           action="/api/serverNotification/{{if .Model.ID}}{{.Model.ID}}{{else}}create{{end}}"
-          method="post"
-          x-init="new admin.ServerNotifications();">
+          method="post">
         <input type="hidden" name="id" value="{{if .}}{{.Model.ID}}{{end}}">
         <label class="col-span-4">
             <span>Message</span>
