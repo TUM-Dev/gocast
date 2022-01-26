@@ -47,6 +47,7 @@ func (b *progressBuffer) flush() error {
 	return err
 }
 
+// Run flushes the progress buffer every interval
 func (b *progressBuffer) Run() {
 	for {
 		time.Sleep(b.interval)
