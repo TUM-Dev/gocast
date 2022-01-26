@@ -15,35 +15,35 @@ var progressBuff *progressBuffer
 
 // progressWorker contains progresses to be written to the database
 type progressBuffer struct {
-	Lock       sync.Mutex
-	Progresses []model.StreamProgress
+	lock       sync.Mutex
+	progresses []model.StreamProgress
 	interval   time.Duration
 }
 
 func newProgressBuffer() *progressBuffer {
 	return &progressBuffer{
-		Lock:       sync.Mutex{},
-		Progresses: []model.StreamProgress{},
+		lock:       sync.Mutex{},
+		progresses: []model.StreamProgress{},
 		interval:   time.Second * 5,
 	}
 }
 
 // add new progress to the list to be flushed eventually
 func (b *progressBuffer) add(progress model.StreamProgress) {
-	b.Lock.Lock()
-	defer b.Lock.Unlock()
-	b.Progresses = append(b.Progresses, progress)
+	b.lock.Lock()
+	defer b.lock.Unlock()
+	b.progresses = append(b.progresses, progress)
 }
 
 // flush writes the collected progresses to the database
 func (b *progressBuffer) flush() error {
-	b.Lock.Lock()
-	defer b.Lock.Unlock()
-	if len(b.Progresses) == 0 {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+	if len(b.progresses) == 0 {
 		return nil
 	}
-	err := dao.SaveProgresses(b.Progresses)
-	b.Progresses = []model.StreamProgress{}
+	err := dao.SaveProgresses(b.progresses)
+	b.progresses = []model.StreamProgress{}
 	return err
 }
 
