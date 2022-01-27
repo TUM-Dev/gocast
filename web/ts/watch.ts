@@ -1,6 +1,6 @@
-class Watch {
-    private chatInput: HTMLInputElement;
+let chatInput;
 
+export class Watch {
     constructor() {
         if (document.getElementById("chatForm") != null) {
             const appHeight = () => {
@@ -9,7 +9,7 @@ class Watch {
             };
             window.addEventListener("resize", appHeight);
             appHeight();
-            this.chatInput = document.getElementById("chatInput") as HTMLInputElement;
+            chatInput = document.getElementById("chatInput") as HTMLInputElement;
         }
     }
 }
@@ -18,7 +18,7 @@ let ws: WebSocket;
 let retryInt = 5000; //retry connecting to websocket after this timeout
 const pageloaded = new Date();
 
-function initChatScrollListener() {
+export function initChatScrollListener() {
     const chatBox = document.getElementById("chatBox") as HTMLDivElement;
     if (!chatBox) {
         return;
@@ -30,7 +30,7 @@ function initChatScrollListener() {
     });
 }
 
-function scrollChatIfNeeded() {
+export function scrollChatIfNeeded() {
     const c = document.getElementById("chatBox");
     // 150px grace offset to avoid showing message when close to bottom
     if (c.scrollHeight - c.scrollTop <= c.offsetHeight + 150) {
@@ -40,20 +40,16 @@ function scrollChatIfNeeded() {
     }
 }
 
-function scrollToLatestMessage() {
+export function scrollToLatestMessage() {
     const c = document.getElementById("chatBox");
     c.scrollTo({ top: c.scrollHeight, behavior: "smooth" });
     window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
 }
 
-function startWebsocket() {
+export function startWebsocket() {
     const wsProto = window.location.protocol === "https:" ? `wss://` : `ws://`;
     const streamid = (document.getElementById("streamID") as HTMLInputElement).value;
     ws = new WebSocket(`${wsProto}${window.location.host}/api/chat/${streamid}/ws`);
-    const cf = document.getElementById("chatForm");
-    if (cf !== null && cf != undefined) {
-        (document.getElementById("chatForm") as HTMLFormElement).addEventListener("submit", (e) => submitChat(e));
-    }
     initChatScrollListener();
     ws.onopen = function (e) {
         hideDisconnectedMsg();
@@ -76,10 +72,19 @@ function startWebsocket() {
             const serverElem = createServerMessage(data);
             document.getElementById("chatBox").appendChild(serverElem);
             scrollChatIfNeeded();
-        } else if ("msg" in data) {
-            const chatElem = createMessageElement(data);
-            document.getElementById("chatBox").appendChild(chatElem);
-            scrollChatIfNeeded();
+        } else if ("message" in data) {
+            data["replies"] = []; // go serializes this empty list as `null`
+            // reply
+            if (data["replyTo"].Valid) {
+                // reply
+                const event = new CustomEvent("chatreply", { detail: data });
+                window.dispatchEvent(event);
+            } else {
+                // message
+                const event = new CustomEvent("chatmessage", { detail: data });
+                window.dispatchEvent(event);
+                scrollChatIfNeeded();
+            }
         }
     };
 
@@ -100,9 +105,7 @@ function startWebsocket() {
     };
 }
 
-startWebsocket();
-
-function createServerMessage(msg) {
+export function createServerMessage(msg) {
     const serverElem = document.createElement("div");
     switch (msg["type"]) {
         case "error":
@@ -120,63 +123,24 @@ function createServerMessage(msg) {
     return serverElem;
 }
 
-/*
-    while I'm not a fan of huge frontend frameworks, this is a good example why they can be useful.
-     */
-function createMessageElement(m): HTMLDivElement {
-    // Header:
-    const chatElem = document.createElement("div") as HTMLDivElement;
-    chatElem.classList.add("rounded", "py-2");
-    const chatHeader = document.createElement("div") as HTMLDivElement;
-    chatHeader.classList.add("flex", "flex-row");
-    const chatNameField = document.createElement("p") as HTMLParagraphElement;
-    chatNameField.classList.add("text-sm", "grow", "font-semibold");
-    if (m["admin"]) {
-        chatNameField.classList.add("text-warn");
-    }
-    chatNameField.innerText = m["name"];
-    chatHeader.appendChild(chatNameField);
-
-    const d = new Date();
-    d.setTime(Date.now());
-    const chatTimeField = document.createElement("p") as HTMLParagraphElement;
-    chatTimeField.classList.add("text-4", "text-xs");
-    chatTimeField.innerText = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
-    chatHeader.appendChild(chatTimeField);
-    chatElem.appendChild(chatHeader);
-
-    // Message:
-    const chatMessage = document.createElement("p") as HTMLParagraphElement;
-    chatMessage.classList.add("text-3", "break-words");
-    chatMessage.innerText = m["msg"];
-    chatElem.appendChild(chatMessage);
-    return chatElem;
-}
-
-function submitChat(e: Event) {
-    e.preventDefault();
-
-    const anonCheckbox: HTMLInputElement = document.getElementById("anonymous") as HTMLInputElement;
+export function sendMessage(message: string, anonymous: boolean, replyTo: number) {
     ws.send(
         JSON.stringify({
-            msg: this.chatInput.value,
-            anonymous: anonCheckbox ? anonCheckbox.checked : false,
+            msg: message,
+            anonymous: anonymous,
+            replyTo: replyTo,
         }),
     );
-    this.chatInput.value = "";
-    return false; //prevent form submission
 }
 
-function showDisconnectedMsg() {
+export function showDisconnectedMsg() {
     if (document.getElementById("disconnectMsg") !== null) {
         document.getElementById("disconnectMsg").classList.remove("hidden");
     }
 }
 
-function hideDisconnectedMsg() {
+export function hideDisconnectedMsg() {
     if (document.getElementById("disconnectMsg") !== null) {
         document.getElementById("disconnectMsg").classList.add("hidden");
     }
 }
-
-new Watch();

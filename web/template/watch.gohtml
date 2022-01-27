@@ -8,20 +8,22 @@
     <title>{{$course.Name}}: {{$stream.Name}} | TUM Live</title>
     {{template "headImports" .IndexData.VersionTag}}
     <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
+    <script src="/static/assets/ts-dist/watch.bundle.js?v={{.IndexData.VersionTag}}"></script>
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
     <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
-    {{if .IsAdminOfCourse}}
-    <script async src="/static/assets/ts-dist/watch-admin.js?v={{.IndexData.VersionTag}}"></script>{{end}}
+    <link rel="stylesheet" href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
 </head>
+
 <body x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}}"
       x-on:pausestart.window="paused=true"
-      x-on:pauseend.window="paused=false">
+      x-on:pauseend.window="paused=false"
+      x-init="new watch.Watch(); watch.startWebsocket()">
 {{template "header" .IndexData.TUMLiveContext}}
 <div id="watchPageMainWrapper" class="w-full md:flex md:flex-nowrap md:justify-between"
      style="height: calc(100vh - 5rem)">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
     <div id="watchWrapper"
-         class="grow overflow-scroll overflow-x-hidden h-fit md:h-full">
+         class="grow overflow-x-hidden h-fit md:h-full">
         <noscript><p class="vjs-no-js">
                 To view this video please enable JavaScript.
             </p></noscript>
@@ -75,7 +77,7 @@
                             <span class="flex m-auto" id="ViewerDescText">Waiting</span>
                             <span class="flex m-auto">&#183;</span>
                             <div class="flex text-lg px-2 text-4"
-                                 x-data="timer('{{$course.GetNextLectureDateFormatted}}', true)"
+                                 x-data="global.timer('{{$course.GetNextLectureDateFormatted}}', true)"
                                  x-init="init();">
                                 <template x-if="time().days !== '00'">
                                     <span>More than a day left</span>
@@ -122,7 +124,7 @@
                 {{end}}
                     <i title="Copy HLS URL"
                        class="flex m-auto fas fa-link text-4 dark:hover:text-white hover:text-black cursor-pointer"
-                       onclick="copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))"></i>
+                       onclick="global.copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))"></i>
                 </p>
             </div>
             <div class="flex justify-between">
@@ -130,11 +132,9 @@
                     <span class="text-5 hover:text-1 hover:underline text-lg">{{$course.Name}}</span></a>
                 {{if $stream.LiveNow}}
                     {{if .DVR}}
-                        <a class="underline text-gray-300 hover:text-black dark:text-gray-400 dark:hover:text-white"
-                           href="./{{$stream.Model.ID}}">Disable Beta stream</a>
+                        <a href="./{{$stream.Model.ID}}"><span class="text-5 hover:text-1 hover:underline text-lg">Disable Beta stream</span></a>
                     {{else}}
-                        <a class="underline text-gray-300 hover:text-black dark:text-gray-400 dark:hover:text-white"
-                           href="?dvr">Enable Timeshift (beta)</a>
+                        <a href="?dvr"><span class="text-5 hover:text-1 hover:underline text-lg">Enable Timeshift (beta)</span></a>
                     {{end}}
                 {{end}}
             </div>
@@ -185,7 +185,7 @@
                     </span>
                 </div>
                 <div class="border-t-2 border-secondary p-4">
-                    <h3 class="text-4 mb-2 font-bold">Presets</h3>
+                    <h3 class="text-4 mb-2 font-bold">Presets for {{.LectureHallName}}</h3>
                     <div class="w-full overflow-x-scroll scrollbarThin">
                         <div class="flex flex-row gap-x-2">
                             {{range $preset := .Presets}}
@@ -193,7 +193,7 @@
                                     <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
                                          src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
                                          alt="prev" width="150px">
-                                    <i onclick="usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}})"
+                                    <i onclick="watch.usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}})"
                                        title="Switch to this preset"
                                        class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-exchange-alt cursor-pointer"></i>
                                 </div>
@@ -225,69 +225,13 @@
         {{template "chat" .}}
     {{end}}
 </div>
-
-<link rel="stylesheet" href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
-<script src="/static/node_modules/video.js/dist/video.min.js"></script>
-<script src="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.min.js"></script>
-<script src="/static/node_modules/videojs-contrib-quality-levels/dist/videojs-contrib-quality-levels.min.js"></script>
-<script src="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.min.js"></script>
-<script src="/static/assets/ts-dist/TUMLiveVjs.js?v={{.IndexData.VersionTag}}"></script>
-<script src="/static/assets/ts-dist/watch.js?v={{.IndexData.VersionTag}}"></script>
-
 <script>
-    // @ts-ignore
-    let player = videojs('my-video', {
-        {{if $stream.LiveNow}}liveui: true,{{end}}
-        fluid: true,
-        playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
-        html5: {
-            reloadSourceOnError: true,
-            vhs: {
-                overrideNative: !videojs.browser.IS_SAFARI,
-            },
-            nativeVideoTracks: false,
-            nativeAudioTracks: false,
-            nativeTextTracks: false
-        },
-        userActions: {
-            hotkeys: {}
-        },
-        //nativeControlsForTouch: true,
-    });
-    player.hlsQualitySelector();
-    player.play();
-    if (!{{$stream.LiveNow}}) {
-        player.seekButtons({
-            backIndex: 0,
-            forward: 15,
-            back: 15
-        });
-    }
-    player.theaterMode({elementToToggle: 'my-video', className: 'theater-mode'});
-
-    // handle volume store:
-    player.on("volumechange", function () {
-        window.localStorage.setItem("volume", player.volume());
-        window.localStorage.setItem("muted", player.muted());
-    });
-
-    player.ready(function () {
-        const persistedVolume = window.localStorage.getItem("volume");
-        if (persistedVolume !== null) {
-            player.volume(persistedVolume);
-        }
-        const persistedMute = window.localStorage.getItem("muted");
-        if (persistedMute !== null) {
-            player.muted('true' === persistedMute);
-        }
-    });
-
+    watch.initPlayer();
     {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
-    player.watchProgress({{$stream.Model.ID}}, {{.Progress.Progress}});
+    watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
     {{end}}
-
     {{if $stream.Silences}}
-    player.skipSilence({{$stream.GetSilencesJson}});
+    watch.skipSilence({{$stream.GetSilencesJson}});
     {{end}}
 </script>
 </body>

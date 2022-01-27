@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>{{.IndexData.TUMLiveContext.Course.Name}} | TUM Live</title>
+    <script src="/static/assets/ts-dist/course.js" defer async></script>
     {{template "headImports" .IndexData.VersionTag}}
 </head>
 <body class="md:overflow-hidden">
@@ -24,15 +25,15 @@
                 <div class="flex justify-between h-16 px-3 border-b dark:border-gray-900">
                     <span class="bg-success rounded-full text-lg font-bold text-white my-auto px-5">VoD</span>
                     <button class="hover:bg-gray-200 dark:hover:bg-gray-900 rounded px-2 my-auto"
-                            @click="asc = !asc;">
+                            @click="asc = changeVoDOrder(asc);">
                     <span class="text-sm font-semibold uppercase dark:text-white my-auto"
                           x-text="asc ? '&#x25B2; asc' : '&#x25BC; desc'">&#x25BC; desc</span>
                     </button>
                 </div>
 
-                <ul class="flex px-5 py-3 overflow-y-scroll"
+                <ul id = "vod-list" class="flex px-5 py-3 overflow-y-scroll"
                     :class="asc ? 'flex-col-reverse' : 'flex-col'"
-                    style="height: calc(100% - 4rem)"> <!-- 4rem = h-16 -->
+                    style="max-height: calc(100% - 4rem)"> <!-- 4rem = h-16 -->
                     {{template "vod_course_list" .IndexData.TUMLiveContext}}
                 </ul>
             </div>
@@ -41,14 +42,17 @@
         <div class="flex w-full relative bg-white border dark:bg-secondary-lighter dark:border-gray-900 rounded-lg
                     shadow-sm py-3 px-5 my-3 order-first md:my-0 md:row-span-1 md:w-auto md:order-none">
             {{$lecture := $course.GetNextLecture}}
-            {{if $lecture.LiveNow}}
+            {{if $course.IsLive}}
+                {{$lecture = $course.GetLiveStream}}
                 <span class="absolute -top-1 -right-1 flex h-5 w-5">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-700 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-5 w-5 bg-danger"></span>
                 </span>
                 <div class="my-auto">
-                    <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}">
-                        <h1 class="text-3xl font-bold text-3"><i class="fas fa-angle-right"></i> Live Now!</h1>
+                    <h1 class="text-3xl font-bold text-3">Live Now!</h1>
+                    <a class="font-light text-sm dark:text-white" href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}">
+                        <i class="fas fa-angle-right"></i>
+                        <span>Open stream</span>
                     </a>
                 </div>
             {{else if $lecture.IsComingUp}}
@@ -65,12 +69,11 @@
                 </div>
             {{else}}
                 <div class="my-auto">
-                    <h1 class="text-3xl font-bold dark:text-white">
+                    <h1 class="text-3xl font-bold text-3">
                         {{$next := $lecture.Start}}
                         {{$lecture.FriendlyNextDate}}
-                        {{printf " %02d:%02d" $next.Hour $next.Minute}}
                     </h1>
-                    <span class="font-light text-sm dark:text-white">Next Livestream</span>
+                    <span class="font-light text-sm text-3">Next Livestream</span>
                 </div>
             {{end}}
         </div>
@@ -91,7 +94,7 @@
                 </div>
 
                 <ul x-show="showPlanned" class="flex flex-col px-5 py-3 overflow-y-scroll"
-                    style="height: calc(100% - 4rem)">
+                    style="max-height: calc(100% - 4rem)">
                     {{template "planned_course_list" .IndexData.TUMLiveContext}}
                 </ul>
             </div>

@@ -1,14 +1,8 @@
 {{define "edit-course"}}
-    <script defer async src="/static/assets/ts-dist/stats.js?v={{.IndexData.VersionTag}}"></script>
-    <script src="/static/assets/ts-dist/edit-course.js?v={{.IndexData.VersionTag}}"></script>
-    <script defer async src="/static/assets/ts-dist/admin.js?v={{.IndexData.VersionTag}}"></script>
-    <script src="/static/node_modules/chart.js/dist/chart.min.js"></script>
     <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
-    <script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
-
+    <script src="/static/node_modules/chart.js/dist/chart.min.js"></script>
     {{$course := .IndexData.TUMLiveContext.Course}}
-
-    <div class="text-1 mt-4">
+    <div class="text-1 mt-4" x-init="admin.loadGeneralStats()">
         <div class="min-w-screen flex items-center justify-center">
             <div class="w-full lg:w-5/6">
                 <h1 class="mb-4">{{$course.Name}}</h1>
@@ -31,31 +25,37 @@
                 <h2>Camera Presets:</h2>
                 <div class="mt-2" x-data="{halls:[]}"
                      x-init="fetch(`/api/lecture-halls-by-id?id=${document.getElementById('courseID').value}`).then(r=>r.json()).then(d=>halls=d)">
-                    <template x-for="hall in halls">
-                        <div class="ml-2" x-show="hall.presets.length>0"
-                             @index-selected.window="if($event.detail.name===hall.lecture_hall_name){hall.selected_index=$event.detail.id}">
-                            <p class="text-lg">Camera Presets for</p>
-                            <p class="font-semibold" x-text="hall.lecture_hall_name"></p>
-                            <p class="font-semibold text-danger" x-show="hall.selected_index===0">No preset selected</p>
-                            <p class="text-green-400"
-                               x-show="hall.selected_index!==0&&hall.presets.length>=hall.selected_index"
-                               x-text="`currently selected: ${hall.presets.length===0||hall.selected_index===0?'':hall.presets[hall.selected_index-1].Name}`"></p>
-                            <div class="overflow-x-scroll flex flex-row gap-x-2">
-                                <template x-for="preset in hall.presets">
-                                    <div class="text-center relative group" x-show="preset.Name!=='gelöscht'">
-                                        <img :src="`/public/${preset.Image}`" alt="Preview" style="min-width: 250px;"
-                                             width="250px">
-                                        <label class="truncate block my-2">
-                                            <input @change="$dispatch('index-selected', {id: preset.PresetID, name: hall.lecture_hall_name})"
-                                                   type="radio"
-                                                   class="w-auto"
-                                                   :name="`preset${hall.lecture_hall_name.replace(/\s+/g, '')}`">
-                                            <span x-text="preset.Name"></span>
-                                        </label>
-                                    </div>
-                                </template>
+                    <template x-if="halls !== null && halls.length > 0">
+                        <template x-for="hall in halls">
+                            <div class="ml-2" x-show="hall.presets.length>0"
+                                 @index-selected.window="if($event.detail.name===hall.lecture_hall_name){hall.selected_index=$event.detail.id}">
+                                <p class="text-lg">Camera Presets for</p>
+                                <p class="font-semibold" x-text="hall.lecture_hall_name"></p>
+                                <p class="font-semibold text-danger" x-show="hall.selected_index===0">No preset selected</p>
+                                <p class="text-green-400"
+                                   x-show="hall.selected_index !==0 && hall.presets.length >= hall.selected_index"
+                                   x-text="`currently selected: ${hall.presets.length===0 || hall.selected_index === 0?'':hall.presets[hall.selected_index-1].Name}`"></p>
+                                <div class="overflow-x-scroll flex flex-row gap-x-2">
+                                    <template x-for="preset in hall.presets">
+                                        <div class="text-center relative group" x-show="preset.Name!=='gelöscht'">
+                                            <img :src="`/public/${preset.Image}`" alt="Preview"
+                                                 style="min-width: 250px;"
+                                                 width="250px">
+                                            <label class="truncate block my-2">
+                                                <input @change="$dispatch('index-selected', {id: preset.PresetID, name: hall.lecture_hall_name})"
+                                                       type="radio"
+                                                       class="w-auto"
+                                                       :name="`preset${hall.lecture_hall_name.replace(/\s+/g, '')}`">
+                                                <span x-text="preset.Name"></span>
+                                            </label>
+                                        </div>
+                                    </template>
+                                </div>
                             </div>
-                        </div>
+                        </template>
+                    </template>
+                    <template x-if="halls === null">
+                        <div class="mb-2">No camera presets to show since all streams were self-streams.</div>
                     </template>
                 </div>
                 <h2>Viewers per week</h2>
@@ -68,15 +68,27 @@
                     </div>
                 </div>
 
-                <div x-data="{ filterPast: false, selectedLectures: [], selectedLectureHallId: 0 }">
+                <div x-data="{ filterPast: false, selectedLectures: [], selectedLectureHallId: 0,
+                               sortAsc: $persist(false).as('courseStreamsSortOrder') }"
+                     class="mt-8">
                     {{$user := .IndexData.TUMLiveContext.User}}
                     {{$ingestBase := .IngestBase}}
                     {{$lectureHalls := .LectureHalls}}
-
-                    <h2>Lectures</h2>
+                    <div class="flex justify-between h-14 border-b dark:border-secondary mb-2">
+                        <h2 class = "my-auto font-bold">Lectures</h2>
+                        <button class="border bg-white border-gray-300 rounded w-20 my-auto shadow-sm text-gray-600
+                                       hover:border-black hover:text-black
+                                       dark:bg-gray-700 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
+                                       dark:hover:text-white"
+                                @click="sortAsc = !sortAsc;">
+                            <span class="text-sm font-semibold uppercase m-auto"
+                                  x-text="sortAsc ? '&#x25B2; asc' : '&#x25BC; desc'">&#x25BC; desc</span>
+                        </button>
+                    </div>
                     <div class="flex justify-between mt-2 mb-2">
                         <div class="flex">
-                            <button @click="deleteLectures({{$course.Model.ID}}, selectedLectures.map(({id}) => id))" :disabled="selectedLectures.length == 0" class="btn">
+                            <button @click="admin.deleteLectures({{$course.Model.ID}}, selectedLectures.map(({id}) => id))"
+                                    :disabled="selectedLectures.length == 0" class="btn">
                                 Delete
                                 <b x-text="selectedLectures.length.toString()"></b>
                                 <span x-text="selectedLectures.length == 1 ? 'Lecture' : 'Lectures'"></span>
@@ -100,7 +112,7 @@
                                     </label>
                                     <button
                                         x-show="selectedLectures.length > 0 && !selectedLectures.some(({isPast}) => isPast)"
-                                        @click="saveLectureHall(selectedLectures.map(({id}) => id), selectedLectureHallId).then(() => { window.location.reload(); })"
+                                        @click="admin.saveLectureHall(selectedLectures.map(({id}) => id), selectedLectureHallId).then(() => { window.location.reload(); })"
                                     >
                                         <i class="align-middle fas fa-check text-gray-300"></i>
                                     </button>
@@ -114,131 +126,137 @@
                             </label>
                         </div>
                     </div>
-
                     <ul class="dark:bg-secondary bg-gray-100 rounded">
                         {{if not $course.Streams}}
                             <p class="text-3 p-4">It might take a minute to load your lectures from TUMOnline</p>
                         {{end}}
-                        {{range $lecture := $course.Streams }}
-                            <li x-show="!filterPast || !{{$lecture.IsPast}}" id="lecture-li-{{$lecture.Model.ID}}"
-                                class="p-6 dark:hover:bg-primary hover:bg-white border-b-2 dark:border-primary border-white relative">
-                                <div class="flex">
-                                    <div class="w-1/4">
-                                        <div class="text-3 font-semibold">
-                                            <input @change="$event.target.checked ? selectedLectures.push({ id: {{$lecture.Model.ID}}, isPast: {{$lecture.IsPast}} }) : (selectedLectures = selectedLectures.filter(({id}) => id != {{$lecture.Model.ID}}))" class="w-auto mr-2" type="checkbox" />
-                                            {{$lecture.Start.Weekday}} {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
-                                            <i class="fas fa-trash hover:text-1 px-2"
-                                               title="Delete Lecture"
-                                               onclick="deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}})"></i>
-                                        </div>
-                                        <div class="text-3 font-sans">
-                                            {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
-                                        </div>
-                                        {{if $lecture.Recording}}
-                                            {{if $lecture.VodViews}}<p class="text-4 text-sm">{{$lecture.VodViews}}
-                                                VoD views</p>{{end}}
-                                            <div class="font-semibold bg-success w-auto inline-block px-2 text-1 rounded-full">
-                                                VoD
+                        <div class="flex" :class="sortAsc ? 'flex-col' : 'flex-col-reverse'">
+                            {{range $lecture := $course.Streams }}
+                                <li x-show="!filterPast || !{{$lecture.IsPast}}"
+                                    id="lecture-li-{{$lecture.Model.ID}}"
+                                    class="w-full p-6 dark:hover:bg-primary hover:bg-white border-b-2 dark:border-primary border-white relative">
+                                    <div class="flex">
+                                        <div class="w-1/4">
+                                            <div class="text-3 font-semibold">
+                                                <input @change="$event.target.checked ? selectedLectures.push({ id: {{$lecture.Model.ID}}, isPast: {{$lecture.IsPast}} }) : (selectedLectures = selectedLectures.filter(({id}) => id != {{$lecture.Model.ID}}))"
+                                                       class="w-auto mr-2" type="checkbox"/>
+                                                {{$lecture.Start.Weekday}} {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
+                                                <i class="fas fa-trash hover:text-1 px-2"
+                                                   title="Delete Lecture"
+                                                   onclick="admin.deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}})"></i>
                                             </div>
-                                        {{else if $lecture.LiveNow}}
-                                            <div class="font-semibold bg-danger w-auto inline-block px-2 text-1 rounded-full">
-                                                Live
+                                            <div class="text-3 font-sans">
+                                                {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
                                             </div>
-                                        {{else if $lecture.IsPast}}
-                                            <div class="font-semibold bg-warn w-auto inline-block px-2 text-1 rounded-full">
-                                                Past
-                                            </div>
-                                        {{else}}
-                                            <div class="font-semibold bg-info w-auto inline-block px-2 text-1 rounded-full">
-                                                Scheduled
-                                            </div>
-                                        {{end}}
-                                    </div>
-                                    <div class="w-3/4">
-                                        <form onsubmit="saveLectureName(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
-                                              class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
-                                            <label for="lectureNameInput{{$lecture.Model.ID}}" class="hidden">Lecture
-                                                title</label>
-                                            <input id="lectureNameInput{{$lecture.Model.ID}}"
-                                                   onfocus="focusNameInput(this, {{$lecture.Model.ID}})"
-                                                   class="grow border-none" type="text" value="{{$lecture.Name}}"
-                                                   placeholder="Lecture 2: Dark-Patterns I"
-                                                   autocomplete="off">
-                                            <button id="nameSubmitBtn{{$lecture.Model.ID}}"
-                                                    class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
-                                        </form>
-                                        <div class="w-full mt-3">
-                                            <div class="w-full flex justify-center">
-                                                <i onclick="toggleExtraInfos(this, {{$lecture.Model.ID}})"
-                                                   class="fas fa-angle-double-down hover:text-purple-500"></i>
-                                            </div>
-                                            <div id="extraInfos{{$lecture.Model.ID}}" class="hidden">
-                                                <form onsubmit="saveLectureDescription(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
-                                                      class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
-                                                    <label for="lectureDescriptionInput{{$lecture.Model.ID}}"
-                                                           class="hidden">Lecture description</label>
-                                                    <textarea id="lectureDescriptionInput{{$lecture.Model.ID}}"
-                                                              onfocus="focusDescriptionInput(this, {{$lecture.Model.ID}})"
-                                                              class="grow border-none"
-                                                              placeholder="Add a nice description, links, and more. You can use Markdown."
-                                                              autocomplete="off">{{$lecture.Description}}</textarea>
-                                                    <button id="descriptionSubmitBtn{{$lecture.Model.ID}}"
-                                                            class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
-                                                </form>
-                                                {{if and (not $lecture.IsPast) (not $lecture.Recording)}}
-                                                {{if eq $user.Role 1}}
-                                                <div class="flex" x-data="{ streamSelectedLectureHallId: {{$lecture.LectureHallID}}, showSubmit: false }">
-                                                    <label class="mx-2">
-                                                        <span>Select Lecture Hall</span>
-                                                        <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
-                                                                id="lectureHallSelector{{$lecture.Model.ID}}"
-                                                                @change="showSubmit = true"
-                                                                x-model="streamSelectedLectureHallId">
-                                                            <option class="text-gray-300" value="0">Self streaming
-                                                            </option>
-                                                            {{range $lectureHall := $lectureHalls}}
-                                                                <option class="text-gray-300"
-                                                                        value="{{$lectureHall.Model.ID}}"{{if eq $lecture.LectureHallID $lectureHall.Model.ID}} selected{{end}}>
-                                                                    {{$lectureHall.Name}}
-                                                                </option>
-                                                            {{end}}
-                                                        </select>
-                                                    </label>
-                                                    <a id="applyLectureHall{{$lecture.Model.ID}}"
-                                                       class="flex items-center"
-                                                       x-show="showSubmit"
-                                                       @click="saveLectureHall([{{$lecture.Model.ID}}], streamSelectedLectureHallId).then(() => { showSubmit = false; })">
-                                                        <i class="align-middle fas fa-check text-gray-300 hover:text-purple-500"></i>
-                                                    </a>
+                                            {{if $lecture.Recording}}
+                                                {{if $lecture.VodViews}}<p
+                                                        class="text-4 text-sm">{{$lecture.VodViews}}
+                                                    VoD views</p>{{end}}
+                                                <div class="font-semibold bg-success w-auto inline-block px-2 text-1 rounded-full">
+                                                    VoD
                                                 </div>
-                                                {{end}}
-                                                {{if not $lecture.LectureHallID}}
-                                                <p class="mt-2">
-                                                    <span class="font-semibold">Stream Server:</span>
-                                                    <span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
-                                                    <i class="fas fa-clipboard hover:text-purple-500"
-                                                       onclick="copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
-                                                    <br>
-                                                    <span class="font-semibold">Stream Key:</span>
-                                                    <span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
-                                                    {{if ne $user.Role 1}}
-                                                        <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
+                                            {{else if $lecture.LiveNow}}
+                                                <div class="font-semibold bg-danger w-auto inline-block px-2 text-1 rounded-full">
+                                                    Live
+                                                </div>
+                                            {{else if $lecture.IsPast}}
+                                                <div class="font-semibold bg-warn w-auto inline-block px-2 text-1 rounded-full">
+                                                    Past
+                                                </div>
+                                            {{else}}
+                                                <div class="font-semibold bg-info w-auto inline-block px-2 text-1 rounded-full">
+                                                    Scheduled
+                                                </div>
+                                            {{end}}
+                                        </div>
+                                        <div class="w-3/4">
+                                            <form onsubmit="admin.saveLectureName(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
+                                                  class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                                                <label for="lectureNameInput{{$lecture.Model.ID}}" class="hidden">Lecture
+                                                    title</label>
+                                                <input id="lectureNameInput{{$lecture.Model.ID}}"
+                                                       onfocus="admin.focusNameInput(this, {{$lecture.Model.ID}})"
+                                                       class="grow border-none" type="text"
+                                                       value="{{$lecture.Name}}"
+                                                       placeholder="Lecture 2: Dark-Patterns I"
+                                                       autocomplete="off">
+                                                <button id="nameSubmitBtn{{$lecture.Model.ID}}"
+                                                        class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
+                                            </form>
+                                            <div class="w-full mt-3">
+                                                <div class="w-full flex justify-center">
+                                                    <i onclick="admin.toggleExtraInfos(this, {{$lecture.Model.ID}})"
+                                                       class="fas fa-angle-double-down hover:text-purple-500"></i>
+                                                </div>
+                                                <div id="extraInfos{{$lecture.Model.ID}}" class="hidden">
+                                                    <form onsubmit="admin.saveLectureDescription(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
+                                                          class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                                                        <label for="lectureDescriptionInput{{$lecture.Model.ID}}"
+                                                               class="hidden">Lecture description</label>
+                                                        <textarea id="lectureDescriptionInput{{$lecture.Model.ID}}"
+                                                                  onfocus="admin.focusDescriptionInput(this, {{$lecture.Model.ID}})"
+                                                                  class="grow border-none"
+                                                                  placeholder="Add a nice description, links, and more. You can use Markdown."
+                                                                  autocomplete="off">{{$lecture.Description}}</textarea>
+                                                        <button id="descriptionSubmitBtn{{$lecture.Model.ID}}"
+                                                                class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
+                                                    </form>
+                                                    {{if and (not $lecture.IsPast) (not $lecture.Recording)}}
+                                                    {{if eq $user.Role 1}}
+                                                    <div class="flex"
+                                                         x-data="{ streamSelectedLectureHallId: {{$lecture.LectureHallID}}, showSubmit: false }">
+                                                        <label class="mx-2">
+                                                            <span>Select Lecture Hall</span>
+                                                            <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
+                                                                    id="lectureHallSelector{{$lecture.Model.ID}}"
+                                                                    @change="showSubmit = true"
+                                                                    x-model="streamSelectedLectureHallId">
+                                                                <option class="text-gray-300" value="0">Self
+                                                                    streaming
+                                                                </option>
+                                                                {{range $lectureHall := $lectureHalls}}
+                                                                    <option class="text-gray-300"
+                                                                            value="{{$lectureHall.Model.ID}}"{{if eq $lecture.LectureHallID $lectureHall.Model.ID}} selected{{end}}>
+                                                                        {{$lectureHall.Name}}
+                                                                    </option>
+                                                                {{end}}
+                                                            </select>
+                                                        </label>
+                                                        <a id="applyLectureHall{{$lecture.Model.ID}}"
+                                                           class="flex items-center"
+                                                           x-show="showSubmit"
+                                                           @click="admin.saveLectureHall([{{$lecture.Model.ID}}], streamSelectedLectureHallId).then(() => { showSubmit = false; })">
+                                                            <i class="align-middle fas fa-check text-gray-300 hover:text-purple-500"></i>
+                                                        </a>
+                                                    </div>
                                                     {{end}}
-                                                </p>
-                                                {{else if eq $user.Role 2}}
-                                                This lecture will be streamed from <span
-                                                        class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}{{if eq $lectureHall.Model.ID $lecture.LectureHallID}}{{$lectureHall.Name}}{{end}}{{end}}</span>.
-                                                If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
-                                                {{end}}
-                                                {{else if $lecture.Recording}}
-                                                <p class="mt-2 flex">
-                                                    {{if $lecture.Files}}
-                                                        {{template "downloadBtn" $lecture.Files}}
+                                                    {{if not $lecture.LectureHallID}}
+                                                    <p class="mt-2">
+                                                        <span class="font-semibold">Stream Server:</span>
+                                                        <span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
+                                                        <i class="fas fa-clipboard hover:text-purple-500"
+                                                           onclick="admin.copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
+                                                        <br>
+                                                        <span class="font-semibold">Stream Key:</span>
+                                                        <span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
+                                                        {{if ne $user.Role 1}}
+                                                            <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
+                                                        {{end}}
+                                                    </p>
+                                                    {{else if eq $user.Role 2}}
+                                                    This lecture will be streamed from <span
+                                                            class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}{{if eq $lectureHall.Model.ID $lecture.LectureHallID}}{{$lectureHall.Name}}{{end}}{{end}}</span>.
+                                                    If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
                                                     {{end}}
-                                                    {{if $lecture.Stats}}
-                                                        <i class="fas fa-chart-line hover:text-purple-500 px-2"
-                                                           title="Live Statistics"
-                                                           onclick="showStats({{$lecture.Model.ID}})"></i>
+                                                    {{else if $lecture.Recording}}
+                                                    <p class="mt-2 flex">
+                                                        {{if $lecture.Files}}
+                                                            {{template "downloadBtn" $lecture.Files}}
+                                                        {{end}}
+                                                        {{if $lecture.Stats}}
+                                                            <i class="fas fa-chart-line hover:text-purple-500 px-2"
+                                                               title="Live Statistics"
+                                                               onclick="admin.showStats({{$lecture.Model.ID}})"></i>
                                                     {{end}}
                                                 </p>
                                                 {{if $lecture.Stats}}
@@ -260,20 +278,24 @@
                                                                     "lineTension": 0.1
                                                                 }]
                                                             },
-                                                            "options": {scales: {yAxes: [{ticks: {beginAtZero: true}}]}}
-                                                        });
-                                                </script>
-                                                {{end}}
-                                                {{end}}
+                                                            "options": {
+                                                                scales: {y: {beginAtZero: true}}
+                                                            }
+                                                        }
+                                                    );
+                                                    </script>
+                                                    {{end}}
+                                                    {{end}}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </li>
-                        {{end}}
-                        <li class="p-6 dark:hover:bg-primary hover:bg-white border-b-2 border-primary">
+                                </li>
+                            {{end}}
+                        </div>
+                        <li class="w-full p-6 dark:hover:bg-primary hover:bg-white border-b-2 border-primary">
                             <form method="post" action="/api/createLecture"
-                                  x-data="createLectureForm()"
+                                  x-data="admin.createLectureForm()"
                                   @submit.prevent="submitData"
                                   x-init="courseID = {{$course.Model.ID}}">
                                 <div class="flex">

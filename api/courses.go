@@ -540,6 +540,12 @@ func createCourse(c *gin.Context) {
 	} else {
 		semester = "S"
 	}
+	_, err = dao.GetCourseBySlugYearAndTerm(c, req.Slug, semester, year)
+	if err == nil {
+		c.AbortWithStatusJSON(http.StatusConflict, gin.H{"message": "Course with slug already exists"})
+		return
+	}
+
 	course := model.Course{
 		UserID:              tumLiveContext.User.ID,
 		Name:                req.Name,
@@ -558,7 +564,7 @@ func createCourse(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "Couldn't save course. Please reach out to us.")
 		return
 	}
-	courseWithID, err := dao.GetCourseBySlugYearAndTerm(context.Background(), req.Slug, semester, fmt.Sprintf("%v", year))
+	courseWithID, err := dao.GetCourseBySlugYearAndTerm(context.Background(), req.Slug, semester, year)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "Could not get course for slug and term. Please reach out to us.")
 	}
