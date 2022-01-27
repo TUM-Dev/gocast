@@ -3,7 +3,7 @@
     Calls 'scrollToBottom' after 250ms, so that the 'chatBox' is already
     visible.
 */
-function initChat() {
+export function initChat() {
     const val = window.localStorage.getItem("chatOpen");
     if (val) {
         setTimeout(scrollToBottom, 250);
@@ -14,7 +14,7 @@ function initChat() {
 /*
     Scroll to the bottom of the 'chatBox'
  */
-function scrollToBottom() {
+export function scrollToBottom() {
     document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
 }
 
@@ -24,7 +24,7 @@ function scrollToBottom() {
     Calls 'scrollToBottom' after 250ms, so that the 'chatBox' is already
     visible.
  */
-function toggleChat(show: boolean) {
+export function toggleChat(show: boolean) {
     const neg = !show;
     if (neg) {
         setTimeout(scrollToBottom, 250);

@@ -1,5 +1,5 @@
 {{define "header"}}
-    <div x-cloak x-data="{showMobNav: false, dark: false}" x-init="dark = isDark()" class="inline">
+    <div x-cloak x-data="{showMobNav: false, dark: false}" x-init="dark = global.isDark()" class="inline">
         <nav class="flex z-40 lg:z-50 sticky top-0 w-full items-center justify-between dark:bg-secondary bg-white
                     shadow border-b dark:border-0 p-3 h-20 z-40">
             <a title="Start" href="/" class="flex items-center flex-no-shrink text-white mr-6">
@@ -38,7 +38,7 @@
                     </a>
                 </div>
                 <div class="flex">
-                    <button class="flex my-auto text-xl mr-6" title="Toggle color scheme" onclick="toggleColorScheme()"
+                    <button class="flex my-auto text-xl mr-6" title="Toggle color scheme" onclick="global.toggleColorScheme()"
                             @click="dark = !dark">
                         <i class="text-gray-400 text-xl fas" :class="dark ? 'fa-toggle-on' :  'fa-toggle-off'"></i>
                     </button>
@@ -94,7 +94,7 @@
                 <div class="flex justify-end px-5 py-2 border-b dark:border-gray-600">
                     <span class="text-sm text-gray-500 uppercase mr-2 my-auto">Dark Mode</span>
                     <button class="flex my-auto w-12 justify-end" title="Toggle color scheme"
-                            onclick="toggleColorScheme()"
+                            onclick="global.toggleColorScheme()"
                             @click="dark = !dark">
                         <i class="text-3 text-2xl fas "
                            :class="dark ? 'fa-toggle-on' :  'fa-toggle-off'"></i>

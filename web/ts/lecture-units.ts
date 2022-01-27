@@ -1,46 +1,51 @@
+import { postData } from "./global";
+import { StatusCodes } from "http-status-codes";
+import videojs from "video.js";
+import noUiSlider from "nouislider";
+
 let slider;
+let player;
 
-// @ts-ignore
-const player = videojs("my-video", {
-    html5: {
-        hls: {
-            overrideNative: true,
-        },
-        nativeVideoTracks: false,
-        nativeAudioTracks: false,
-        nativeTextTracks: false,
-    },
-});
-player.play();
-player.one("loadedmetadata", function () {
-    slider = document.getElementById("sliderNew");
-    // @ts-ignore
-    noUiSlider.create(slider, {
-        format: {
-            to: function (value) {
-                return sToTime(value);
+export const initLecturePlayer = function () {
+    player = videojs("my-video", {
+        html5: {
+            hls: {
+                overrideNative: true,
             },
-            from: function (value) {
-                return value;
-            },
-        },
-        start: [0, player.duration()],
-        connect: true,
-        range: {
-            min: 0,
-            max: player.duration(),
+            nativeVideoTracks: false,
+            nativeAudioTracks: false,
+            nativeTextTracks: false,
         },
     });
+    player.play();
+    player.one("loadedmetadata", function () {
+        slider = document.getElementById("sliderNew");
+        noUiSlider.create(slider, {
+            format: {
+                to: function (value) {
+                    return sToTime(value);
+                },
+                from: function (value): number {
+                    return Number(value);
+                },
+            },
+            start: [0, player.duration()],
+            connect: true,
+            range: {
+                min: 0,
+                max: player.duration(),
+            },
+        });
 
-    const tooltipInputs = [makeTT(0, slider), makeTT(1, slider)];
-    // @ts-ignore
-    slider.noUiSlider.on("update", function (values, handle) {
-        tooltipInputs[handle].value = values[handle];
-        player.currentTime(timeToS(values[handle]));
+        const tooltipInputs = [makeTT(0, slider), makeTT(1, slider)];
+        slider.noUiSlider.on("update", function (values, handle) {
+            tooltipInputs[handle].value = values[handle];
+            player.currentTime(timeToS(values[handle]));
+        });
     });
-});
+};
 
-function submitNewUnit(lectureID: number) {
+export function submitNewUnit(lectureID: number) {
     //convert from and to milliseconds relatively to beginning of video.
     const from = timeToS(slider.noUiSlider.get()[0]) * 1000;
     const to = timeToS(slider.noUiSlider.get()[1]) * 1000;
@@ -53,7 +58,7 @@ function submitNewUnit(lectureID: number) {
         title: title,
         description: description,
     }).then((data) => {
-        if (data.status == 200) {
+        if (data.status == StatusCodes.OK) {
             window.location.reload();
         } else {
             data.text().then((text) => {
@@ -64,7 +69,7 @@ function submitNewUnit(lectureID: number) {
     return false;
 }
 
-function submitCut(lectureID: number, courseID: number) {
+export function submitCut(lectureID: number, courseID: number) {
     const from = timeToS(slider.noUiSlider.get()[0]) * 1000;
     const to = timeToS(slider.noUiSlider.get()[1]) * 1000;
     postData("/api/submitCut", {
@@ -72,7 +77,7 @@ function submitCut(lectureID: number, courseID: number) {
         from: from,
         to: to,
     }).then((data) => {
-        if (data.status == 200) {
+        if (data.status == StatusCodes.OK) {
             window.location.replace("/admin/course/" + courseID);
         } else {
             data.text().then((text) => {
@@ -83,20 +88,20 @@ function submitCut(lectureID: number, courseID: number) {
     return false;
 }
 
-function deleteUnit(unitID: number) {
+export function deleteUnit(unitID: number) {
     postData("/api/deleteUnit/" + unitID).then((r) => {
-        if (r.status == 200) {
+        if (r.status == StatusCodes.OK) {
             window.location.reload();
         }
     });
 }
 
-function timeToS(s) {
+export function timeToS(s) {
     const parts = s.split(":");
     return parseInt(parts[0]) * 60 * 60 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
 }
 
-function sToTime(s) {
+export function sToTime(s) {
     s = Math.floor(s);
     const secs = s % 60;
     s = (s - secs) / 60;
@@ -105,11 +110,11 @@ function sToTime(s) {
     return ("0" + hrs).slice(-2) + ":" + ("0" + mins).slice(-2) + ":" + ("0" + secs).slice(-2);
 }
 
-function sp(event) {
+export function sp(event) {
     event.stopPropagation();
 }
 
-function makeTT(i, slider) {
+export function makeTT(i, slider) {
     const tooltip = document.createElement("div");
     const input = document.createElement("input");
 
@@ -136,7 +141,7 @@ function makeTT(i, slider) {
     return input;
 }
 
-function toggleNewUnitForm(elem) {
+export function toggleNewUnitForm(elem) {
     elem.classList.add("hidden");
     document.getElementById("unitNew").classList.remove("hidden");
 }

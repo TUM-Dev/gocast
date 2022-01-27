@@ -1,6 +1,6 @@
-class Watch {
-    private chatInput: HTMLInputElement;
+let chatInput;
 
+export class Watch {
     constructor() {
         if (document.getElementById("chatForm") != null) {
             const appHeight = () => {
@@ -9,7 +9,7 @@ class Watch {
             };
             window.addEventListener("resize", appHeight);
             appHeight();
-            this.chatInput = document.getElementById("chatInput") as HTMLInputElement;
+            chatInput = document.getElementById("chatInput") as HTMLInputElement;
         }
     }
 }
@@ -18,7 +18,7 @@ let ws: WebSocket;
 let retryInt = 5000; //retry connecting to websocket after this timeout
 const pageloaded = new Date();
 
-function initChatScrollListener() {
+export function initChatScrollListener() {
     const chatBox = document.getElementById("chatBox") as HTMLDivElement;
     if (!chatBox) {
         return;
@@ -30,7 +30,7 @@ function initChatScrollListener() {
     });
 }
 
-function scrollChatIfNeeded() {
+export function scrollChatIfNeeded() {
     const c = document.getElementById("chatBox");
     // 150px grace offset to avoid showing message when close to bottom
     if (c.scrollHeight - c.scrollTop <= c.offsetHeight + 150) {
@@ -40,13 +40,13 @@ function scrollChatIfNeeded() {
     }
 }
 
-function scrollToLatestMessage() {
+export function scrollToLatestMessage() {
     const c = document.getElementById("chatBox");
     c.scrollTo({ top: c.scrollHeight, behavior: "smooth" });
     window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
 }
 
-function startWebsocket() {
+export function startWebsocket() {
     const wsProto = window.location.protocol === "https:" ? `wss://` : `ws://`;
     const streamid = (document.getElementById("streamID") as HTMLInputElement).value;
     ws = new WebSocket(`${wsProto}${window.location.host}/api/chat/${streamid}/ws`);
@@ -105,9 +105,7 @@ function startWebsocket() {
     };
 }
 
-startWebsocket();
-
-function createServerMessage(msg) {
+export function createServerMessage(msg) {
     const serverElem = document.createElement("div");
     switch (msg["type"]) {
         case "error":
@@ -125,7 +123,7 @@ function createServerMessage(msg) {
     return serverElem;
 }
 
-function sendMessage(message: string, anonymous: boolean, replyTo: number) {
+export function sendMessage(message: string, anonymous: boolean, replyTo: number) {
     ws.send(
         JSON.stringify({
             msg: message,
@@ -135,16 +133,14 @@ function sendMessage(message: string, anonymous: boolean, replyTo: number) {
     );
 }
 
-function showDisconnectedMsg() {
+export function showDisconnectedMsg() {
     if (document.getElementById("disconnectMsg") !== null) {
         document.getElementById("disconnectMsg").classList.remove("hidden");
     }
 }
 
-function hideDisconnectedMsg() {
+export function hideDisconnectedMsg() {
     if (document.getElementById("disconnectMsg") !== null) {
         document.getElementById("disconnectMsg").classList.add("hidden");
     }
 }
-
-new Watch();

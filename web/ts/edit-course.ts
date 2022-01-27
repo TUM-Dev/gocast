@@ -1,26 +1,23 @@
-class EditCourse {
-    constructor() {
-        EditCourse.loadGeneralStats();
-    }
+import { loadStats } from "./stats";
+import { postData, showMessage } from "./global";
+import { StatusCodes } from "http-status-codes";
 
-    /**
-     * loadGeneralStats gets the audience of the course from the api (live and vod) and renders it into a graph
-     * @private
-     */
-    private static loadGeneralStats() {
-        loadStats("activity", "courseGeneralStatsLive");
-    }
+/**
+ * loadGeneralStats gets the audience of the course from the api (live and vod) and renders it into a graph.
+ */
+export function loadGeneralStats() {
+    loadStats("activity", "courseGeneralStatsLive");
 }
 
-function saveLectureHall(streamIds: number[], lectureHall: string) {
+export function saveLectureHall(streamIds: number[], lectureHall: string) {
     return postData("/api/setLectureHall", { streamIds, lectureHall: parseInt(lectureHall) });
 }
 
-function saveLectureDescription(e: Event, cID: number, lID: number) {
+export function saveLectureDescription(e: Event, cID: number, lID: number) {
     e.preventDefault();
     const input = (document.getElementById("lectureDescriptionInput" + lID) as HTMLInputElement).value;
     postData("/api/course/" + cID + "/updateDescription/" + lID, { name: input }).then((res) => {
-        if (res.status == 200) {
+        if (res.status == StatusCodes.OK) {
             document.getElementById("descriptionSubmitBtn" + lID).classList.add("invisible");
         } else {
             res.text().then((t) => showMessage(t));
@@ -28,11 +25,11 @@ function saveLectureDescription(e: Event, cID: number, lID: number) {
     });
 }
 
-function saveLectureName(e: Event, cID: number, lID: number) {
+export function saveLectureName(e: Event, cID: number, lID: number) {
     e.preventDefault();
     const input = (document.getElementById("lectureNameInput" + lID) as HTMLInputElement).value;
     postData("/api/course/" + cID + "/renameLecture/" + lID, { name: input }).then((res) => {
-        if (res.status == 200) {
+        if (res.status == StatusCodes.OK) {
             document.getElementById("nameSubmitBtn" + lID).classList.add("invisible");
         } else {
             res.text().then((t) => showMessage(t));
@@ -40,7 +37,7 @@ function saveLectureName(e: Event, cID: number, lID: number) {
     });
 }
 
-function showStats(id: number): void {
+export function showStats(id: number): void {
     if (document.getElementById("statsBox" + id).classList.contains("hidden")) {
         document.getElementById("statsBox" + id).classList.remove("hidden");
     } else {
@@ -48,19 +45,19 @@ function showStats(id: number): void {
     }
 }
 
-function focusNameInput(input: HTMLInputElement, id: number) {
+export function focusNameInput(input: HTMLInputElement, id: number) {
     input.oninput = function () {
         document.getElementById("nameSubmitBtn" + id).classList.remove("invisible");
     };
 }
 
-function focusDescriptionInput(input: HTMLInputElement, id: number) {
+export function focusDescriptionInput(input: HTMLInputElement, id: number) {
     input.oninput = function () {
         document.getElementById("descriptionSubmitBtn" + id).classList.remove("invisible");
     };
 }
 
-function toggleExtraInfos(btn: HTMLElement, id: number) {
+export function toggleExtraInfos(btn: HTMLElement, id: number) {
     btn.classList.add("transform", "transition", "duration-500", "ease-in-out");
     if (btn.classList.contains("rotate-180")) {
         btn.classList.remove("rotate-180");
@@ -71,7 +68,7 @@ function toggleExtraInfos(btn: HTMLElement, id: number) {
     }
 }
 
-function deleteLecture(cid: number, lid: number) {
+export function deleteLecture(cid: number, lid: number) {
     if (confirm("Confirm deleting video?")) {
         postData("/api/course/" + cid + "/deleteLectures", { streamIDs: [lid.toString()] }).then(() => {
             document.location.reload();
@@ -79,14 +76,14 @@ function deleteLecture(cid: number, lid: number) {
     }
 }
 
-async function deleteLectures(cid: number, lids: number[]) {
+export async function deleteLectures(cid: number, lids: number[]) {
     if (confirm("Confirm deleting " + lids.length + " video" + (lids.length == 1 ? "" : "s") + "?")) {
         await postData("/api/course/" + cid + "/deleteLectures", { streamIDs: lids.map((n) => n.toString()) });
         document.location.reload();
     }
 }
 
-function showHideUnits(id: number) {
+export function showHideUnits(id: number) {
     const container = document.getElementById("unitsContainer" + id);
     if (container.classList.contains("hidden")) {
         container.classList.remove("hidden");
@@ -95,7 +92,7 @@ function showHideUnits(id: number) {
     }
 }
 
-function createLectureForm() {
+export function createLectureForm() {
     return {
         formData: {
             title: "",
@@ -136,7 +133,3 @@ function createLectureForm() {
         },
     };
 }
-
-window.onload = function () {
-    new EditCourse();
-};
