@@ -111,8 +111,8 @@
                                         </select>
                                     </label>
                                     <button
-                                        x-show="selectedLectures.length > 0 && !selectedLectures.some(({isPast}) => isPast)"
-                                        @click="admin.saveLectureHall(selectedLectures.map(({id}) => id), selectedLectureHallId).then(() => { window.location.reload(); })"
+                                            x-show="selectedLectures.length > 0 && !selectedLectures.some(({isPast}) => isPast)"
+                                            @click="admin.saveLectureHall(selectedLectures.map(({id}) => id), selectedLectureHallId).then(() => { window.location.reload(); })"
                                     >
                                         <i class="align-middle fas fa-check text-gray-300"></i>
                                     </button>
@@ -257,156 +257,32 @@
                                                             <i class="fas fa-chart-line hover:text-purple-500 px-2"
                                                                title="Live Statistics"
                                                                onclick="admin.showStats({{$lecture.Model.ID}})"></i>
-                        {{range $lecture := $course.Streams }}
-                            <li x-show="!filterPast || !{{$lecture.IsPast}}" id="lecture-li-{{$lecture.Model.ID}}"
-                                class="p-6 dark:hover:bg-primary hover:bg-white border-b-2 dark:border-primary border-white relative">
-                                <div class="flex">
-                                    <div class="w-1/4">
-                                        <div class="text-3 font-semibold">
-                                            <input @change="$event.target.checked ? selectedLectures.push({ id: {{$lecture.Model.ID}}, isPast: {{$lecture.IsPast}} }) : (selectedLectures = selectedLectures.filter(({id}) => id != {{$lecture.Model.ID}}))" class="w-auto mr-2" type="checkbox" />
-                                            {{$lecture.Start.Weekday}} {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
-                                            <i class="fas fa-trash hover:text-1 px-2"
-                                               title="Delete Lecture"
-                                               onclick="deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}})"></i>
-                                        </div>
-                                        <div class="text-3 font-sans">
-                                            {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
-                                        </div>
-                                        {{if $lecture.Recording}}
-                                            {{if $lecture.VodViews}}<p class="text-4 text-sm">{{$lecture.VodViews}}
-                                                VoD views</p>{{end}}
-                                            <div class="font-semibold bg-success w-auto inline-block px-2 text-1 rounded-full">
-                                                VoD
-                                            </div>
-                                        {{else if $lecture.LiveNow}}
-                                            <div class="font-semibold bg-danger w-auto inline-block px-2 text-1 rounded-full">
-                                                Live
-                                            </div>
-                                        {{else if $lecture.IsPast}}
-                                            <div class="font-semibold bg-warn w-auto inline-block px-2 text-1 rounded-full">
-                                                Past
-                                            </div>
-                                        {{else}}
-                                            <div class="font-semibold bg-info w-auto inline-block px-2 text-1 rounded-full">
-                                                Scheduled
-                                            </div>
-                                        {{end}}
-                                    </div>
-                                    <div class="w-3/4">
-                                        <form onsubmit="saveLectureName(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
-                                              class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
-                                            <label for="lectureNameInput{{$lecture.Model.ID}}" class="hidden">Lecture
-                                                title</label>
-                                            <input id="lectureNameInput{{$lecture.Model.ID}}"
-                                                   onfocus="focusNameInput(this, {{$lecture.Model.ID}})"
-                                                   class="grow border-none" type="text" value="{{$lecture.Name}}"
-                                                   placeholder="Lecture 2: Dark-Patterns I"
-                                                   autocomplete="off">
-                                            <button id="nameSubmitBtn{{$lecture.Model.ID}}"
-                                                    class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
-                                        </form>
-                                        <div class="w-full mt-3">
-                                            <div class="w-full flex justify-center">
-                                                <i onclick="toggleExtraInfos(this, {{$lecture.Model.ID}})"
-                                                   class="fas fa-angle-double-down hover:text-purple-500"></i>
-                                            </div>
-                                            <div id="extraInfos{{$lecture.Model.ID}}" class="hidden">
-                                                <form onsubmit="saveLectureDescription(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
-                                                      class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
-                                                    <label for="lectureDescriptionInput{{$lecture.Model.ID}}"
-                                                           class="hidden">Lecture description</label>
-                                                    <textarea id="lectureDescriptionInput{{$lecture.Model.ID}}"
-                                                              onfocus="focusDescriptionInput(this, {{$lecture.Model.ID}})"
-                                                              class="grow border-none"
-                                                              placeholder="Add a nice description, links, and more. You can use Markdown."
-                                                              autocomplete="off">{{$lecture.Description}}</textarea>
-                                                    <button id="descriptionSubmitBtn{{$lecture.Model.ID}}"
-                                                            class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
-                                                </form>
-                                                {{if and (not $lecture.IsPast) (not $lecture.Recording)}}
-                                                {{if eq $user.Role 1}}
-                                                <div class="flex" x-data="{ streamSelectedLectureHallId: {{$lecture.LectureHallID}}, showSubmit: false }">
-                                                    <label class="mx-2">
-                                                        <span>Select Lecture Hall</span>
-                                                        <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
-                                                                id="lectureHallSelector{{$lecture.Model.ID}}"
-                                                                @change="showSubmit = true"
-                                                                x-model="streamSelectedLectureHallId">
-                                                            <option class="text-gray-300" value="0">Self streaming
-                                                            </option>
-                                                            {{range $lectureHall := $lectureHalls}}
-                                                                <option class="text-gray-300"
-                                                                        value="{{$lectureHall.Model.ID}}"{{if eq $lecture.LectureHallID $lectureHall.Model.ID}} selected{{end}}>
-                                                                    {{$lectureHall.Name}}
-                                                                </option>
-                                                            {{end}}
-                                                        </select>
-                                                    </label>
-                                                    <a id="applyLectureHall{{$lecture.Model.ID}}"
-                                                       class="flex items-center"
-                                                       x-show="showSubmit"
-                                                       @click="saveLectureHall([{{$lecture.Model.ID}}], streamSelectedLectureHallId).then(() => { showSubmit = false; })">
-                                                        <i class="align-middle fas fa-check text-gray-300 hover:text-purple-500"></i>
-                                                    </a>
-                                                </div>
-                                                {{end}}
-                                                {{if not $lecture.LectureHallID}}
-                                                <p class="mt-2">
-                                                    <span class="font-semibold">Stream Server:</span>
-                                                    <span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
-                                                    <i class="fas fa-clipboard hover:text-purple-500"
-                                                       onclick="copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
-                                                    <br>
-                                                    <span class="font-semibold">Stream Key:</span>
-                                                    <span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
-                                                    {{if ne $user.Role 1}}
-                                                        <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
-                                                    {{end}}
-                                                </p>
-                                                {{else if eq $user.Role 2}}
-                                                This lecture will be streamed from <span
-                                                        class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}{{if eq $lectureHall.Model.ID $lecture.LectureHallID}}{{$lectureHall.Name}}{{end}}{{end}}</span>.
-                                                If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
-                                                {{end}}
-                                                {{else if $lecture.Recording}}
-                                                <p class="mt-2 flex">
-                                                    <div>
+                                                        {{end}}
+                                                    </p>
                                                     {{if $lecture.Stats}}
-                                                        <div class = "flex m-auto ml-2 mr-2">
-                                                            <i class="fas fa-chart-line hover:text-purple-500 px-2"
-                                                               title="Live Statistics"
-                                                               onclick="showStats({{$lecture.Model.ID}})"></i>
-                                                        </div>
-                                                    {{end}}
-                                                     {{if $lecture.Files}}
-                                                        {{template "downloadBtn" $lecture.Files}}
-                                                    {{end}}
+                                                    <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
+                                                        <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
+                                                                width="undefined" height="undefined"></canvas>
                                                     </div>
-                                                </p>
-                                                {{if $lecture.Stats}}
-                                                <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
-                                                    <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
-                                                            width="undefined" height="undefined"></canvas>
-                                                </div>
-                                                <script>
-                                                    new Chart(
-                                                        document.getElementById("stats{{$lecture.Model.ID}}"), {
-                                                            "type": "line",
-                                                            "data": {
-                                                                "labels": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}",{{end}} {{end}}],
-                                                                "datasets": [{
-                                                                    "label": "Viewers",
-                                                                    "data": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}{{$stat.Viewers}}, {{end}}{{end}}],
-                                                                    "fill": false,
-                                                                    "borderColor": "rgb(75, 192, 192)",
-                                                                    "lineTension": 0.1
-                                                                }]
-                                                            },
-                                                            "options": {
-                                                                scales: {y: {beginAtZero: true}}
+                                                    <script>
+                                                        new Chart(
+                                                            document.getElementById("stats{{$lecture.Model.ID}}"), {
+                                                                "type": "line",
+                                                                "data": {
+                                                                    "labels": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}",{{end}} {{end}}],
+                                                                    "datasets": [{
+                                                                        "label": "Viewers",
+                                                                        "data": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}{{$stat.Viewers}}, {{end}}{{end}}],
+                                                                        "fill": false,
+                                                                        "borderColor": "rgb(75, 192, 192)",
+                                                                        "lineTension": 0.1
+                                                                    }]
+                                                                },
+                                                                "options": {
+                                                                    scales: {y: {beginAtZero: true}}
+                                                                }
                                                             }
-                                                        }
-                                                    );
+                                                        );
                                                     </script>
                                                     {{end}}
                                                     {{end}}
