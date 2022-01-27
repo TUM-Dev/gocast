@@ -1,4 +1,7 @@
-class CreateCourse {
+import { StatusCodes } from "http-status-codes";
+import { postData, showMessage } from "./global";
+
+export class CreateCourse {
     private courseIDInput: HTMLInputElement;
     private loadFromTUMOnlineBtn: HTMLButtonElement;
     private courseNameInput: HTMLInputElement;
@@ -28,7 +31,7 @@ class CreateCourse {
             return;
         }
         postData("/api/courseInfo", { courseID: this.courseIDInput.value }).then((data) => {
-            if (data.status != 200) {
+            if (data.status != StatusCodes.OK) {
                 showMessage(
                     "The course with this ID was not found in TUMOnline. Please verify the ID or reach out to us.",
                 );
@@ -59,7 +62,7 @@ class CreateCourse {
             enDL: f.get("enDL") === "on",
             enChat: f.get("enChat") === "on",
         }).then((data) => {
-            if (data.status != 200) {
+            if (data.status != StatusCodes.OK) {
                 data.text().then((t) => showMessage(t));
             } else {
                 window.location.href = "/admin";
@@ -67,5 +70,3 @@ class CreateCourse {
         });
     }
 }
-
-new CreateCourse();

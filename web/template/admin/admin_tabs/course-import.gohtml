@@ -1,15 +1,14 @@
 {{define "course-import"}}
-    <script src="/static/assets/ts-dist/course-import.js?v={{.IndexData.VersionTag}}"></script>
-    <script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
     <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
-    <h2 class="text-2xl text-1 my-auto mt-3">Course Import</h2>
-    <div class="text-2 m-auto my-3 w-full dark:bg-secondary rounded my-3 overflow-x-auto p-6" x-data="pageData()" x-on:loading-start.window="loading=true"
-         x-on:loading-end.window="loading=false;courses=$event.detail.courses">
+    <div class="text-2 m-auto my-3 w-full dark:bg-secondary rounded my-3 overflow-x-auto p-6" x-data="admin.pageData()" x-on:loading-start.window="loading=true"
+         x-on:loading-end.window="loading=false;courses=$event.detail.courses"
+         x-init="admin.addNotifyEventListeners()">
         <div x-show="loading" class="text-center">
             <i class="fas fa-circle-notch animate-spin animate"></i> Loading...
         </div>
 
         <div x-show="step===0">
+            <h1>Course import</h1>
             <form>
                 <h3>Select semester:</h3>
                 <div class="flex ">
@@ -110,7 +109,6 @@
                                 </div>
                             </template>
                         </div>
-
                     </div>
                 </template>
             </div>
