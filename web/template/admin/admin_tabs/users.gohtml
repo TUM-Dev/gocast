@@ -1,16 +1,16 @@
 {{define "users"}}
-    <div class="dark:bg-secondary bg-white p-2 shadow rounded my-6 overflow-x-auto">
-        <h2 class="text-2xl text-1">User Management</h2>
+    <h2 class="text-2xl text-1 my-auto mt-4">User Management</h2>
+    <div class="border-2 dark:border-secondary border-gray-200 rounded mb-6overflow-x-auto mb-6 my-3">
         <table class="table-auto w-full">
             <thead>
-            <tr class="text-4 uppercase text-sm leading-normal">
+            <tr class="text-4 uppercase text-sm leading-normal dark:bg-secondary bg-gray-100 font-thin">
                 <th class="py-3 px-6 text-left">Name</th>
                 <th class="py-3 px-6 text-left">Email</th>
                 <th class="py-3 px-6 text-center">Role</th>
                 <th class="py-3 px-6 text-center">Actions</th>
             </tr>
             </thead>
-            <tbody class="text-4 text-sm font-light">
+            <tbody class="text-4 text-s m font-light">
             {{range $user := .}}
                 <tr id="user{{$user.Model.ID}}" class="border-gray-500 dark:hover:bg-primary hover:bg-white">
                     <td class="py-3 px-6 text-left whitespace-nowrap">

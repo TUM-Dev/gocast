@@ -232,37 +232,41 @@
                                                 {{end}}
                                                 {{else if $lecture.Recording}}
                                                 <p class="mt-2 flex">
-                                                    {{if $lecture.Files}}
+                                                    <div>
+                                                    {{if $lecture.Stats}}
+                                                        <div class = "flex m-auto ml-2 mr-2">
+                                                            <i class="fas fa-chart-line hover:text-purple-500 px-2"
+                                                               title="Live Statistics"
+                                                               onclick="showStats({{$lecture.Model.ID}})"></i>
+                                                        </div>
+                                                    {{end}}
+                                                     {{if $lecture.Files}}
                                                         {{template "downloadBtn" $lecture.Files}}
                                                     {{end}}
-                                                    {{if $lecture.Stats}}
-                                                        <i class="fas fa-chart-line hover:text-purple-500 px-2"
-                                                           title="Live Statistics"
-                                                           onclick="showStats({{$lecture.Model.ID}})"></i>
-                                                    {{end}}
+                                                    </div>
                                                 </p>
                                                 {{if $lecture.Stats}}
-                                                <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
-                                                    <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
-                                                            width="undefined" height="undefined"></canvas>
-                                                </div>
-                                                <script>
-                                                    new Chart(
-                                                        document.getElementById("stats{{$lecture.Model.ID}}"), {
-                                                            "type": "line",
-                                                            "data": {
-                                                                "labels": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}",{{end}} {{end}}],
-                                                                "datasets": [{
-                                                                    "label": "Viewers",
-                                                                    "data": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}{{$stat.Viewers}}, {{end}}{{end}}],
-                                                                    "fill": false,
-                                                                    "borderColor": "rgb(75, 192, 192)",
-                                                                    "lineTension": 0.1
-                                                                }]
-                                                            },
-                                                            "options": {scales: {yAxes: [{ticks: {beginAtZero: true}}]}}
-                                                        });
-                                                </script>
+                                                    <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
+                                                        <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
+                                                                width="undefined" height="undefined"></canvas>
+                                                    </div>
+                                                    <script>
+                                                        new Chart(
+                                                            document.getElementById("stats{{$lecture.Model.ID}}"), {
+                                                                "type": "line",
+                                                                "data": {
+                                                                    "labels": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}",{{end}} {{end}}],
+                                                                    "datasets": [{
+                                                                        "label": "Viewers",
+                                                                        "data": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}{{$stat.Viewers}}, {{end}}{{end}}],
+                                                                        "fill": false,
+                                                                        "borderColor": "rgb(75, 192, 192)",
+                                                                        "lineTension": 0.1
+                                                                    }]
+                                                                },
+                                                                "options": {scales: {yAxes: [{ticks: {beginAtZero: true}}]}}
+                                                            });
+                                                    </script>
                                                 {{end}}
                                                 {{end}}
                                             </div>

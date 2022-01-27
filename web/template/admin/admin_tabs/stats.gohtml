@@ -4,7 +4,8 @@
     <script src="/static/assets/ts-dist/stats.js?v={{.VersionTag}}"></script>
     <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
                                                         value="{{.TUMLiveContext.Course.Model.ID}}"></label>
-    <div class="grid grid-cols-4 gap-4 w-full pt-4 relative">
+    <h2 class="text-2xl text-1 my-auto mt-3">Server Statistics</h2>
+    <div class="grid grid-cols-4 gap-4 w-full pt-4 relative dark:bg-secondary rounded my-3 overflow-x-auto p-6">
         <div class="col-span-4 sm:col-span-1">
             <h2 class="text-2">Quick stats:</h2>
             <table class="m-2 text-sm">
