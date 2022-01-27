@@ -302,12 +302,16 @@
                                     <div class="w-1/4">
                                         <div class="text-1 font-semibold">Create Lecture</div>
                                         <label>
-                                            <input type="checkbox" x-model="formData.premiere" class="w-auto">
+                                            <input type="checkbox" x-model="formData.premiere" @change="(v) => v && (formData.recurring = false)" class="w-auto">
                                             <span class="text-3">Video Premiere</span>
                                         </label><br>
                                         <label>
-                                            <input type="checkbox" x-model="formData.vodup" class="w-auto">
+                                            <input type="checkbox" x-model="formData.vodup" @change="(v) => v && (formData.recurring = false)" class="w-auto">
                                             <span class="text-3">VoD Upload</span>
+                                        </label><br>
+                                        <label>
+                                            <input type="checkbox" :disabled="formData.premiere || formData.vodup" x-model="formData.recurring" class="w-auto">
+                                            <span class="text-3">Recurring Event</span>
                                         </label>
                                     </div>
                                     <div class="w-3/4">
@@ -343,7 +347,7 @@
                                         <div class="mt-4">
                                             <div class="flex items-center">
                                                 <label class="mx-2" x-show="!formData.premiere && !formData.vodup && !loading">
-                                                    <span class="font-semibold p-2">Lecture Hall:</span>
+                                                    <span class="font-semibold mb-2 pr-3">Lecture Hall:</span>
                                                     <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
                                                             id="lectureHallBulkSelect"
                                                             x-model="formData.lectureHallId">
@@ -358,13 +362,40 @@
                                                 </label>
                                             </div>
                                         </div>
+                                        <div class="mt-4">
+                                            <label class="mx-2" x-show="formData.recurring && !loading">
+                                                <div class="flex">
+                                                    <div class="w-1/4 pl-2">
+                                                        <span class="font-semibold mb-6">Interval</span><br>
+                                                        <label>
+                                                            <input type="radio" value="daily" x-model="formData.recurringInterval" class="w-auto">
+                                                            <span class="text-3">Repeat Daily</span>
+                                                        </label><br>
+                                                        <label>
+                                                            <input type="radio" value="weekly" x-model="formData.recurringInterval" class="w-auto">
+                                                            <span class="text-3">Repeat Weekly</span>
+                                                        </label><br>
+                                                        <label>
+                                                            <input type="radio" value="monthly" x-model="formData.recurringInterval" class="w-auto">
+                                                            <span class="text-3">Repeat Monthly</span>
+                                                        </label><br>
+                                                    </div>
+                                                    <div class="w-1/4 pl-2">
+                                                        <span class="font-semibold mb-6">Repeat period</span><br>
+                                                    </div>
+                                                    <div class="w-1/2 pl-2">
+                                                        <span class="font-semibold mb-6">Dates</span><br>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="mt-8">
                                     <button class="btn" type="submit" id="createLectureBtn">
                                         <span x-show="!loading">
                                             <i class="fas fa-check"></i>
-                                            Create Lecture
+                                            Create Lecture<span x-show="formData.recurring">s</span>
                                         </span>
                                         <i class="fas fa-circle-notch text-4 animate-spin" x-show="loading"></i>
                                     </button>

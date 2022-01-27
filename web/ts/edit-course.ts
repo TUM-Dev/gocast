@@ -101,6 +101,8 @@ export function createLectureForm() {
             end: "",
             premiere: false,
             vodup: false,
+            recurring: false,
+            recurringInterval: "weekly",
             file: null,
         },
         loading: false,
