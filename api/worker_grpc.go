@@ -1,4 +1,4 @@
-// Package api_grpc handles communication with workers
+// Handles communication with workers
 package api
 
 import (
