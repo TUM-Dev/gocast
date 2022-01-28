@@ -169,3 +169,8 @@ func (c Course) GetRecordings() []Stream {
 	}
 	return recordings
 }
+
+// IsHidden returns true if visibility is set to 'hidden' and false if not
+func (c Course) IsHidden() bool {
+	return c.Visibility == "hidden"
+}
