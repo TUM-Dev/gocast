@@ -12,12 +12,14 @@ type migrator struct {
 	migrationsAfterAutoMigrate  []*gormigrate.Migration
 }
 
+// RunBefore executes migrations before the auto-migration
 func (m migrator) RunBefore(db *gorm.DB) error {
 	log.Println("Running migrations before auto-migration")
 	mig := gormigrate.New(db, gormigrate.DefaultOptions, m.migrationsBeforeAutoMigrate)
 	return mig.Migrate()
 }
 
+// RunAfter executes migrations after the auto-migration
 func (m migrator) RunAfter(db *gorm.DB) error {
 	/*mig := gormigrate.New(db, gormigrate.DefaultOptions, m.migrationsAfterAutoMigrate)
 	return mig.Migrate()*/ // comment in when needed
