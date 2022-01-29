@@ -115,14 +115,16 @@ func (c *Chat) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
+// AfterFind is a GORM hook that sanitizes the message after it's loaded from the database.
 func (c *Chat) AfterFind(_ *gorm.DB) (err error) {
 	c.SanitiseMessage()
 	return nil
 }
 
+// SanitiseMessage sets chat.SanitizedMessage to the sanitized html version of chat.Message, including <a> tags for links
 func (c *Chat) SanitiseMessage() {
 	msg := html.EscapeString(c.Message)
-	urls := chatURLPolicy.FindAllStringIndex(msg, -1) // "golang.org"
+	urls := chatURLPolicy.FindAllStringIndex(msg, -1)
 	newMsg := ""
 	for _, urlIndex := range urls {
 		newMsg += msg[:urlIndex[0]]
@@ -136,6 +138,7 @@ func (c *Chat) SanitiseMessage() {
 	c.SanitizedMessage = newMsg
 }
 
+// getUrlHtml returns the html for urls, the <a> tag includes target="_blank" and rel="nofollow noopener"
 func (c Chat) getUrlHtml(url string) string {
 	h := blackfriday.Run([]byte(url))
 	return strings.TrimSuffix(string(chatHTMLPolicy.SanitizeBytes(h)), "\n")
