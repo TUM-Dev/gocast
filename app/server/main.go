@@ -91,7 +91,7 @@ func main() {
 		}
 		// Flush buffered events before the program terminates.
 		defer sentry.Flush(2 * time.Second)
-		//defer sentry.Recover()
+		defer sentry.Recover()
 	}
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
 		"%v:%v@tcp(db:3306)/%v?parseTime=true&loc=Local",
