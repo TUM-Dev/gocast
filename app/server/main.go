@@ -41,8 +41,9 @@ func GinServer() (err error) {
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
+		MaxAge:   86400 * 30,
 	})
-	router.Use(sessions.Sessions("TUMLiveSessionV1", store))
+	router.Use(sessions.Sessions("TUMLiveSessionV6", store))
 
 	router.Use(tools.InitContext)
 
