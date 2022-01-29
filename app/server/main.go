@@ -91,7 +91,7 @@ func main() {
 		}
 		// Flush buffered events before the program terminates.
 		defer sentry.Flush(2 * time.Second)
-		defer sentry.Recover()
+		//defer sentry.Recover()
 	}
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
 		"%v:%v@tcp(db:3306)/%v?parseTime=true&loc=Local",
@@ -106,6 +106,13 @@ func main() {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second * 5)
 		log.Fatalf("%v", err)
+	}
+	dao.DB = db
+
+	err = dao.Migrator.RunBefore(db)
+	if err != nil {
+		log.Error(err)
+		return
 	}
 
 	err = db.AutoMigrate(
@@ -132,8 +139,11 @@ func main() {
 		sentry.Flush(time.Second * 5)
 		log.WithError(err).Fatal("can't migrate database")
 	}
-
-	dao.DB = db
+	err = dao.Migrator.RunAfter(db)
+	if err != nil {
+		log.Error(err)
+		return
+	}
 
 	// tools.SwitchPreset()
 

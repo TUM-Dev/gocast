@@ -64,7 +64,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			replyTo.Int64 = chat.ReplyTo
 			replyTo.Valid = true
 		}
-		chatForDb := model.Chat{
+		chatForDb := &model.Chat{
 			UserID:   strconv.Itoa(int(tumLiveContext.User.ID)),
 			UserName: uname,
 			Message:  chat.Msg,
@@ -72,7 +72,8 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			Admin:    tumLiveContext.User.ID == tumLiveContext.Course.UserID,
 			ReplyTo:  replyTo,
 		}
-		err := dao.AddMessage(&chatForDb)
+		chatForDb.SanitiseMessage()
+		err := dao.AddMessage(chatForDb)
 		if err != nil {
 			if errors.Is(err, model.ErrCooledDown) {
 				sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, s)
