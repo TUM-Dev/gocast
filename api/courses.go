@@ -404,6 +404,22 @@ func createLecture(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+
+	// Forbid setting lectureHall for vod or premiere
+	if (req.Premiere || req.Vodup) && req.LectureHallId != "0" {
+		log.Error("Cannot set lectureHallId on 'Premiere' or 'Vodup' Lecture.")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	// try parse lectureHallId
+	lectureHallId, err := strconv.ParseInt(req.LectureHallId, 10, 32)
+	if err != nil {
+		log.WithError(err).Error("invalid LectureHallId format")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
 	// name for folder for premiere file if needed
 	premiereFolder := fmt.Sprintf("%s/%d/%s/%s",
 		tools.Cfg.Paths.Mass,
@@ -447,35 +463,38 @@ func createLecture(c *gin.Context) {
 		}
 		playlist = fmt.Sprintf("https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s/playlist.m3u8", strings.ReplaceAll(premiereFileName, "-", "_"))
 	}
+
 	lecture := model.Stream{
-		Name:        req.Title,
-		CourseID:    tumLiveContext.Course.ID,
-		Start:       req.Start,
-		End:         req.End,
-		StreamKey:   streamKey,
-		PlaylistUrl: playlist,
-		LiveNow:     false,
-		Recording:   req.Vodup,
-		Premiere:    req.Premiere,
+		Name:          req.Title,
+		CourseID:      tumLiveContext.Course.ID,
+		LectureHallID: uint(lectureHallId),
+		Start:         req.Start,
+		End:           req.End,
+		StreamKey:     streamKey,
+		PlaylistUrl:   playlist,
+		LiveNow:       false,
+		Recording:     req.Vodup,
+		Premiere:      req.Premiere,
 	}
 	// add file if premiere
 	if req.Premiere || req.Vodup {
 		lecture.Files = []model.File{{Path: fmt.Sprintf("%s/%s", premiereFolder, premiereFileName)}}
 	}
 	tumLiveContext.Course.Streams = append(tumLiveContext.Course.Streams, lecture)
-	err := dao.UpdateCourse(context.Background(), *tumLiveContext.Course)
+	err = dao.UpdateCourse(context.Background(), *tumLiveContext.Course)
 	if err != nil {
 		log.WithError(err).Warn("Can't update course")
 	}
 }
 
 type createLectureRequest struct {
-	Title    string                `form:"title"`
-	Start    time.Time             `form:"start"`
-	End      time.Time             `form:"end"`
-	Premiere bool                  `form:"premiere"`
-	File     *multipart.FileHeader `form:"file"`
-	Vodup    bool                  `form:"vodup"`
+	Title         string                `form:"title"`
+	LectureHallId string                `form:"lectureHallId"`
+	Start         time.Time             `form:"start"`
+	End           time.Time             `form:"end"`
+	Premiere      bool                  `form:"premiere"`
+	File          *multipart.FileHeader `form:"file"`
+	Vodup         bool                  `form:"vodup"`
 }
 
 func createCourse(c *gin.Context) {
@@ -521,6 +540,12 @@ func createCourse(c *gin.Context) {
 	} else {
 		semester = "S"
 	}
+	_, err = dao.GetCourseBySlugYearAndTerm(c, req.Slug, semester, year)
+	if err == nil {
+		c.AbortWithStatusJSON(http.StatusConflict, gin.H{"message": "Course with slug already exists"})
+		return
+	}
+
 	course := model.Course{
 		UserID:              tumLiveContext.User.ID,
 		Name:                req.Name,
@@ -539,7 +564,7 @@ func createCourse(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "Couldn't save course. Please reach out to us.")
 		return
 	}
-	courseWithID, err := dao.GetCourseBySlugYearAndTerm(context.Background(), req.Slug, semester, fmt.Sprintf("%v", year))
+	courseWithID, err := dao.GetCourseBySlugYearAndTerm(context.Background(), req.Slug, semester, year)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "Could not get course for slug and term. Please reach out to us.")
 	}

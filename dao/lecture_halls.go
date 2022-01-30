@@ -27,12 +27,6 @@ func CreateLectureHall(lectureHall model.LectureHall) {
 	DB.Create(&lectureHall)
 }
 
-func HasStreamLectureHall(id uint) bool {
-	var isNull bool
-	DB.Raw("SELECT lecture_hall_id IS NULL FROM streams WHERE ID = ?", id).Scan(&isNull)
-	return !isNull
-}
-
 func GetLectureHallByPartialName(name string) (model.LectureHall, error) {
 	var res model.LectureHall
 	err := DB.Where("full_name LIKE ?", "%"+name+"%").First(&res).Error
@@ -63,13 +57,6 @@ func SaveLectureHallFullAssoc(lectureHall model.LectureHall) {
 
 func SaveLectureHall(lectureHall model.LectureHall) error {
 	return DB.Save(&lectureHall).Error
-}
-
-func UnsetLectureHall(lectureID uint) {
-	DB.Model(&model.Stream{}).
-		Where("id = ?", lectureID).
-		Select("lecture_hall_id").
-		Updates(map[string]interface{}{"lecture_hall_id": nil})
 }
 
 // GetStreamsForLectureHallIcal returns an instance of []calendarResult for the ical export.

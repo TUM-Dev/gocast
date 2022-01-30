@@ -65,21 +65,6 @@ func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Cours
 	return foundCourses, dbErr
 }
 
-func GetCoursesForLoggedInUsers(year int, term string) (courses []model.Course, err error) {
-	cachedCourses, found := Cache.Get(fmt.Sprintf("loggedinCourses%v%v", year, term))
-	if found {
-		return cachedCourses.([]model.Course), err
-	}
-	var publicCourses []model.Course
-	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("start asc")
-	}).Find(&publicCourses, "visibility = 'loggedin' AND teaching_term = ? AND year = ?", term, year).Error
-	if err == nil {
-		Cache.SetWithTTL(fmt.Sprintf("loggedinCourses%v%v", year, term), publicCourses, 1, time.Minute)
-	}
-	return publicCourses, err
-}
-
 func GetAllCoursesForSemester(year int, term string, ctx context.Context) (courses []model.Course) {
 	span := sentry.StartSpan(ctx, "SQL: GetAllCoursesForSemester")
 	defer span.Finish()
@@ -91,16 +76,36 @@ func GetAllCoursesForSemester(year int, term string, ctx context.Context) (cours
 }
 
 func GetPublicCourses(year int, term string) (courses []model.Course, err error) {
-	cachedCourses, found := Cache.Get(fmt.Sprintf("publicCourses%v%v", year, term))
+	cachedCourses, found := Cache.Get(fmt.Sprintf("publicCourses%d%v", year, term))
 	if found {
 		return cachedCourses.([]model.Course), err
 	}
 	var publicCourses []model.Course
+
 	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start asc")
-	}).Find(&publicCourses, "visibility = 'public' AND teaching_term = ? AND year = ?", term, year).Error
+	}).Find(&publicCourses, "visibility = 'public' AND teaching_term = ? AND year = ?",
+		term, year).Error
+
 	if err == nil {
-		Cache.SetWithTTL(fmt.Sprintf("publicCourses%v%v", year, term), publicCourses, 1, time.Minute)
+		Cache.SetWithTTL(fmt.Sprintf("publicCourses%d%v", year, term), publicCourses, 1, time.Minute)
+	}
+	return publicCourses, err
+}
+
+func GetPublicAndLoggedInCourses(year int, term string) (courses []model.Course, err error) {
+	cachedCourses, found := Cache.Get(fmt.Sprintf("publicAndLoggedInCourses%d%v", year, term))
+	if found {
+		return cachedCourses.([]model.Course), err
+	}
+	var publicCourses []model.Course
+
+	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
+		return db.Order("start asc")
+	}).Find(&publicCourses,
+		"(visibility = 'public' OR visibility = 'loggedin') AND teaching_term = ? AND year = ?", term, year).Error
+	if err == nil {
+		Cache.SetWithTTL(fmt.Sprintf("publicAndLoggedInCourses%d%v", year, term), publicCourses, 1, time.Minute)
 	}
 	return publicCourses, err
 }
@@ -132,7 +137,7 @@ func GetCourseByToken(token string) (course model.Course, err error) {
 func GetCourseById(ctx context.Context, id uint) (course model.Course, err error) {
 	var foundCourse model.Course
 	dbErr := DB.Preload("Streams.Stats").Preload("Streams.Files").Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("streams.start asc")
+		return db.Order("streams.start desc")
 	}).Find(&foundCourse, "id = ?", id).Error
 	return foundCourse, dbErr
 }
@@ -141,16 +146,16 @@ func GetInvitedUsersForCourse(course *model.Course) error {
 	return DB.Preload("Users", "role = ?", model.GenericType).Find(course).Error
 }
 
-func GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year string) (model.Course, error) {
+func GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int) (model.Course, error) {
 	cachedCourses, found := Cache.Get(fmt.Sprintf("courseBySlugYearAndTerm%v%v%v", slug, term, year))
 	if found {
 		return cachedCourses.(model.Course), nil
 	}
 	var course model.Course
 	err := DB.Preload("Streams.Units", func(db *gorm.DB) *gorm.DB {
-		return db.Order("unit_start asc")
+		return db.Order("unit_start desc")
 	}).Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("start asc")
+		return db.Order("start desc")
 	}).Where("teaching_term = ? AND slug = ? AND year = ?", term, slug, year).First(&course).Error
 	if err == nil {
 		Cache.SetWithTTL(fmt.Sprintf("courseBySlugYearAndTerm%v%v%v", slug, term, year), course, 1, time.Minute)

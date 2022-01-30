@@ -107,23 +107,24 @@ func getStats(c *gin.Context) {
 		} else {
 			c.JSON(http.StatusOK, gin.H{"res": res})
 		}
-	case "allDays": {
-		res, err := dao.GetCourseNumVodViewsPerDay(cid)
-		if err != nil {
-			log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
-			c.AbortWithStatus(http.StatusInternalServerError)
-		} else {
-			resp := chartJs{
-				ChartType: "bar",
-				Data:      chartJsData{Datasets: []chartJsDataset{newChartJsDataset()}},
-				Options:   newChartJsOptions(),
+	case "allDays":
+		{
+			res, err := dao.GetCourseNumVodViewsPerDay(cid)
+			if err != nil {
+				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
+				c.AbortWithStatus(http.StatusInternalServerError)
+			} else {
+				resp := chartJs{
+					ChartType: "bar",
+					Data:      chartJsData{Datasets: []chartJsDataset{newChartJsDataset()}},
+					Options:   newChartJsOptions(),
+				}
+				resp.Data.Datasets[0].Label = "views"
+				resp.Data.Datasets[0].Data = res
+				resp.Data.Datasets[0].BackgroundColor = "#d12a5c"
+				c.JSON(http.StatusOK, resp)
 			}
-			resp.Data.Datasets[0].Label = "views"
-			resp.Data.Datasets[0].Data = res
-			resp.Data.Datasets[0].BackgroundColor = "#d12a5c"
-			c.JSON(http.StatusOK, resp)
 		}
-	}
 	default:
 		c.AbortWithStatus(http.StatusBadRequest)
 	}

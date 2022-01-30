@@ -116,6 +116,16 @@ func (c Course) GetNextLecture() Stream {
 	return earliestLecture
 }
 
+// GetLiveStream returns the current live stream of the course (if any)
+func (c Course) GetLiveStream() *Stream {
+	for _, s := range c.Streams {
+		if s.LiveNow {
+			return &s
+		}
+	}
+	return nil
+}
+
 // GetNextLectureDate returns the next lecture date of the course
 func (c Course) GetNextLectureDate() time.Time {
 	// TODO: Refactor this with IsNextLectureSelfStream when the sorting error fixed
@@ -158,4 +168,9 @@ func (c Course) GetRecordings() []Stream {
 		}
 	}
 	return recordings
+}
+
+// IsHidden returns true if visibility is set to 'hidden' and false if not
+func (c Course) IsHidden() bool {
+	return c.Visibility == "hidden"
 }

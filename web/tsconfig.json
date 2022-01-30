@@ -1,14 +1,12 @@
 {
   "compilerOptions": {
-    "module": "none",
+    "module": "es6",
     "target": "es5",
     "sourceMap": true,
-    "outDir": "assets/ts-dist"
-  },
-  "include": [
-    "ts/*"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+    "outDir": "assets/ts-dist",
+    "noImplicitAny": false,
+    "moduleResolution": "node",
+    "sourceRoot": "./ts/",
+    "rootDir": "./ts/"
+  }
 }

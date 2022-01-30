@@ -5,7 +5,6 @@ import (
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"bytes"
-	"context"
 	"embed"
 	"encoding/json"
 	"errors"
@@ -31,10 +30,10 @@ func configGinLectureHallApiRouter(router *gin.Engine) {
 	admins.DELETE("/lectureHall/:id", deleteLectureHall)
 	admins.POST("/createLectureHall", createLectureHall)
 	admins.POST("/takeSnapshot/:lectureHallID/:presetID", takeSnapshot)
-	admins.POST("/updateLecturesLectureHall", updateLecturesLectureHall)
 	admins.GET("/course-schedule", getSchedule)
 	admins.POST("/course-schedule/:year/:term", postSchedule)
 	admins.GET("/refreshLectureHallPresets/:lectureHallID", refreshLectureHallPresets)
+	admins.POST("/setLectureHall", setLectureHall)
 
 	adminsOfCourse := router.Group("/api/course/:courseID/")
 	adminsOfCourse.Use(tools.InitCourse)
@@ -341,30 +340,39 @@ func takeSnapshot(c *gin.Context) {
 	c.JSONP(http.StatusOK, gin.H{"path": fmt.Sprintf("/public/%s", preset.Image)})
 }
 
-func updateLecturesLectureHall(c *gin.Context) {
-	body, err := ioutil.ReadAll(c.Request.Body)
+func setLectureHall(c *gin.Context) {
+	var req setLectureHallRequest
+	err := c.BindJSON(&req)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
 		return
 	}
-	var req updateLecturesLectureHallRequest
 
-	if err = json.Unmarshal(body, &req); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
+	streams, err := dao.GetStreamsByIds(req.StreamIDs)
+	if err != nil || len(streams) != len(req.StreamIDs) {
+		log.WithError(err).Error("Can't get all streams to update lecture hall")
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	lecture, err := dao.GetStreamByID(context.Background(), strconv.Itoa(int(req.LectureID)))
+
+	if req.LectureHallID == 0 {
+		err = dao.UnsetLectureHall(req.StreamIDs)
+		if err != nil {
+			log.WithError(err).Error("Can't update lecture hall for streams")
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	_, err = dao.GetLectureHallByID(req.LectureHallID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	lectureHall, err := dao.GetLectureHallByID(req.LectureHallID)
+	err = dao.SetLectureHall(req.StreamIDs, req.LectureHallID)
 	if err != nil {
-		dao.UnsetLectureHall(lecture.Model.ID)
-		return
-	} else {
-		lectureHall.Streams = append(lectureHall.Streams, lecture)
-		dao.SaveLectureHall(lectureHall)
+		log.WithError(err).Error("can't update lecture hall")
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }
 
@@ -398,7 +406,7 @@ type createLectureHallRequest struct {
 	PwrCtrlIP string `json:"pwrCtrlIp"`
 }
 
-type updateLecturesLectureHallRequest struct {
-	LectureID     uint `json:"lecture"`
-	LectureHallID uint `json:"lectureHall"`
+type setLectureHallRequest struct {
+	StreamIDs     []uint `json:"streamIDs"`
+	LectureHallID uint   `json:"lectureHall"`
 }

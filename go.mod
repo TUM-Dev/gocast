@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20211013164422-76adcbfcf8c4
-	github.com/RBG-TUM/go-anel-pwrctrl v0.0.0-20210929070211-675c39ef5a84
+	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
 	github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769
 	github.com/antchfx/xmlquery v1.3.9
 	github.com/antchfx/xpath v1.2.0 // indirect
@@ -23,7 +23,7 @@ require (
 	github.com/gorilla/sessions v1.2.1 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jinzhu/now v1.1.4
-	github.com/joschahenningsen/TUM-Live-Worker-v2 v0.0.0-20220110081459-37f1761287ed
+	github.com/joschahenningsen/TUM-Live-Worker-v2 v1.1.0
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.17
@@ -35,12 +35,12 @@ require (
 	github.com/spf13/viper v1.10.1
 	golang.org/x/crypto v0.0.0-20211108221036-ceb1ce70b4fa
 	golang.org/x/net v0.0.0-20211008194852-3b03d305991f // indirect
-	google.golang.org/genproto v0.0.0-20220107163113-42d7afdf6368 // indirect
+	google.golang.org/genproto v0.0.0-20220118154757-00ab72f36ad5 // indirect
 	google.golang.org/grpc v1.43.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gorm.io/driver/mysql v1.2.3
-	gorm.io/gorm v1.22.4
+	gorm.io/gorm v1.22.5
 )
 
 require (
@@ -74,5 +74,5 @@ require (
 	github.com/ugorji/go/codec v1.2.6 // indirect
 	golang.org/x/sys v0.0.0-20211210111614-af8b64212486 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	gopkg.in/ini.v1 v1.66.2 // indirect
+	gopkg.in/ini.v1 v1.66.3 // indirect
 )

@@ -284,3 +284,7 @@ a.fc-event, a.fc-event:hover {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+.duration-300 {
+    transition-duration: 300ms;
+}
