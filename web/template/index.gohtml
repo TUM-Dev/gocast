@@ -8,9 +8,9 @@
           content="TUM-Live, the livestreaming and VoD service of the Rechnerbetriebsgruppe at the department of informatics and mathematics at the Technical University of Munich"/>
 </head>
 <body>
-{{template "header" .TUMLiveContext}}
-
 {{- /*gotype: TUM-Live/web.IndexData*/ -}}
+{{template "header" .}}
+
 <div class="container flex flex-col pb-16">
     {{if .ServerNotifications}}
         {{range $notification := .ServerNotifications}}
@@ -59,16 +59,7 @@
         </div>
     </div>
 </div>
-<div class="flex justify-center fixed bottom-0 border-t dark:border-gray-900 w-full p-2 bg-white dark:bg-secondary">
-    {{$currentYear := .CurrentYear}}
-    {{$currentTerm := .CurrentTerm}}
-    {{range $s := .Semesters}}
-        <a href="/semester/{{$s.Year}}/{{$s.TeachingTerm}}"
-           class="mx-2 {{if and (eq $s.Year $currentYear) (eq $s.TeachingTerm $currentTerm)}}text-black dark:text-white{{else}}text-gray-500 dark:hover:text-white{{end}}">
-            {{$s.Year}}-{{$s.TeachingTerm}}
-        </a>
-    {{end}}
-</div>
+{{template "semesterselection" .}}
 </body>
 <!--       _
        .__(.)< (MEOW)
