@@ -16,7 +16,7 @@ export class Watch {
 
 let ws: WebSocket;
 let retryInt = 5000; //retry connecting to websocket after this timeout
-let orderByLikes = true; // sorting by likes or by time
+let orderByLikes = false; // sorting by likes or by time
 
 const pageloaded = new Date();
 
