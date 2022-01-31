@@ -29,8 +29,8 @@ export function likeMessage(id: number) {
     );
 }
 
-export function sortMessages(messages, orderByLikes: boolean) {
-    return messages.sort((m1, m2) => {
+export function sortMessages(messages) {
+    messages.sort((m1, m2) => {
         if (orderByLikes) {
             if (m1.likes === m2.likes) {
                 return m2.id - m1.id; // same amount of likes -> newer messages up
