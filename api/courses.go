@@ -495,6 +495,7 @@ type createLectureRequest struct {
 	Premiere      bool                  `form:"premiere"`
 	File          *multipart.FileHeader `form:"file"`
 	Vodup         bool                  `form:"vodup"`
+	dateSeries    []time.Time           `form:"dateSeries"`
 }
 
 func createCourse(c *gin.Context) {
