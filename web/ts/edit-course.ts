@@ -112,7 +112,7 @@ export function createLectureForm() {
         courseID: -1,
         regenerateRecurringDates() {
             const result = [];
-            if (this.formData.recurring) {
+            if (this.formData.start != "") {
                 for (let i = 0; i < this.formData.recurringCount; i++) {
                     let date;
                     if (i == 0) {
@@ -149,6 +149,16 @@ export function createLectureForm() {
             body.set("vodup", this.formData.vodup);
             body.set("start", this.formData.start);
             body.set("end", this.formData.end);
+            if (this.formData.recurring) {
+                body.set(
+                    "dates",
+                    JSON.stringify(
+                        this.formData.recurringDates.filter(({ enabled }) => enabled).map((r) => r.date.toISOString()),
+                    ),
+                );
+            } else {
+                body.set("dates", JSON.stringify([this.formData.start]));
+            }
             if (this.formData.premiere || this.formData.vodup) {
                 body.set("file", this.formData.file[0]);
                 body.set("end", this.formData.start); // premieres have no explicit end set -> use start here
