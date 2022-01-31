@@ -18,12 +18,18 @@ let ws: WebSocket;
 let retryInt = 5000; //retry connecting to websocket after this timeout
 let orderByLikes = false; // sorting by likes or by time
 
+const scrollDelay = 100; // delay before scrolling to bottom to make sure chat is rendered
 const pageloaded = new Date();
+
+enum WSMessageType {
+    Message = "message",
+    Like = "like",
+}
 
 export function likeMessage(id: number) {
     ws.send(
         JSON.stringify({
-            type: "like",
+            type: WSMessageType.Like,
             id: id,
         }),
     );
@@ -114,7 +120,7 @@ export function startWebsocket() {
             const serverElem = createServerMessage(data);
             document.getElementById("chatBox").appendChild(serverElem);
             if (scroll) {
-                setTimeout(scrollChat, 100); // wait a bit to make sure the message is added before scrolling
+                setTimeout(scrollChat, scrollDelay);
             } else {
                 showNewMessageIndicator();
             }
@@ -131,7 +137,7 @@ export function startWebsocket() {
                 const event = new CustomEvent("chatmessage", { detail: data });
                 window.dispatchEvent(event);
                 if (scroll) {
-                    setTimeout(scrollChat, 100); // wait a bit to make sure the message is added before scrolling
+                    setTimeout(scrollChat, scrollDelay);
                 } else {
                     showNewMessageIndicator();
                 }
@@ -180,7 +186,7 @@ export function createServerMessage(msg) {
 export function sendMessage(message: string, anonymous: boolean, replyTo: number) {
     ws.send(
         JSON.stringify({
-            type: "message",
+            type: WSMessageType.Message,
             msg: message,
             anonymous: anonymous,
             replyTo: replyTo,

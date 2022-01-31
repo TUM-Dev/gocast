@@ -24,9 +24,9 @@ func ToggleLike(userID uint, chatID uint) error {
 }
 
 // GetNumLikes returns the number of likes for a message
-func GetNumLikes(chatID uint) (int, error) {
-	var numLikes int
-	err := DB.Raw("SELECT COUNT(*) FROM chat_user_likes WHERE chat_id = ?", chatID).Scan(&numLikes).Error
+func GetNumLikes(chatID uint) (int64, error) {
+	var numLikes int64
+	err := DB.Table("chat_user_likes").Where("chat_id = ?", chatID).Count(&numLikes).Error
 	return numLikes, err
 }
 
@@ -34,16 +34,17 @@ func GetNumLikes(chatID uint) (int, error) {
 func GetChats(userID uint, streamID uint) ([]model.Chat, error) {
 	var chats []model.Chat
 	err := DB.Preload("Replies").Preload("UserLikes").Find(&chats, "stream_id = ?", streamID).Error
-	if err == nil {
-		for i := range chats {
-			chats[i].Likes = len(chats[i].UserLikes)
-			for j := range chats[i].UserLikes {
-				if chats[i].UserLikes[j].ID == userID {
-					chats[i].Liked = true
-					break
-				}
+	if err != nil {
+		return nil, err
+	}
+	for i := range chats {
+		chats[i].Likes = len(chats[i].UserLikes)
+		for j := range chats[i].UserLikes {
+			if chats[i].UserLikes[j].ID == userID {
+				chats[i].Liked = true
+				break
 			}
 		}
 	}
-	return chats, err
+	return chats, nil
 }

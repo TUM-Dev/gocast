@@ -48,13 +48,16 @@ func configGinChatRouter(router *gin.RouterGroup) {
 		var req wsReq
 		err := json.Unmarshal(msg, &req)
 		if err != nil {
-			log.Warn(err)
+			log.WithError(err).Warn("could not unmarshal request")
 			return
 		}
-		if req.Type == "message" {
+		switch req.Type {
+		case "message":
 			handleMessage(tumLiveContext, s, msg)
-		} else if req.Type == "like" {
+		case "like":
 			handleLike(tumLiveContext, msg)
+		default:
+			log.WithField("type", req.Type).Warn("unknown websocket request type")
 		}
 	})
 }
@@ -63,6 +66,7 @@ func handleLike(ctx tools.TUMLiveContext, msg []byte) {
 	var req likeReq
 	err := json.Unmarshal(msg, &req)
 	if err != nil {
+		log.WithError(err).Warn("could not unmarshal like request")
 		return
 	}
 	err = dao.ToggleLike(ctx.User.ID, req.Id)
@@ -81,7 +85,7 @@ func handleLike(ctx tools.TUMLiveContext, msg []byte) {
 	}
 	broadcastBytes, err := json.Marshal(broadcast)
 	if err != nil {
-		log.WithError(err).Warn("Can't marshal like message")
+		log.WithError(err).Error("Can't marshal like message")
 		return
 	}
 	broadcastStream(ctx.Stream.ID, broadcastBytes)
@@ -161,14 +165,6 @@ type chatReq struct {
 type likeReq struct {
 	wsReq
 	Id uint `json:"id"`
-}
-
-type ChatRep struct {
-	ID      uint   `json:"id"`
-	Msg     string `json:"msg"`
-	Name    string `json:"name"`
-	Admin   bool   `json:"admin"`
-	ReplyTo uint   `json:"replyTo"`
 }
 
 func CollectStats() {
