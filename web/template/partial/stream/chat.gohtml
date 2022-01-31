@@ -1,8 +1,8 @@
 {{define "chat"}}
     {{- /*gotype: TUM-Live/web.WatchPageData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
-    <div x-cloak x-data="{show: false, replyTo: 0, message: '', anonymous: false, messages: []}"
-         x-init="show = watch.initChat(); fetch('/api/chat/{{$stream.ID}}/messages').then(res => res.json()).then(d => {messages=d});$nextTick(() => { watch.scrollToBottom() })"
+    <div x-cloak x-data="{show: $persist(false).as('chatOpen'), replyTo: 0, message: '', anonymous: false, messages: []}"
+         x-init="fetch('/api/chat/{{$stream.ID}}/messages').then(res => res.json()).then(d => {messages=d});$nextTick(() => { watch.scrollToBottom() })"
          x-on:chatmessage.window="e => {messages.push(e.detail);}"
          x-on:chatreply.window="e => {messages.find(m=>m.ID===e.detail.replyTo.Int64).replies.push(e.detail);}"
          id="chatWrapper"
@@ -13,7 +13,7 @@
         <div class='pt-1 pb-1 flex px-3 border-b md:border-b-0 dark:border-gray-900'
              :class="show ? 'md:border-b justify-between' : 'md:justify-center bg-white dark:bg-secondary-lighter'">
             <div class="my-auto">
-                <button @click="show = watch.toggleChat(show);"
+                <button @click="show = !show;"
                         class="bg-transparent border-0 font-semibold text-2xl pr-3 pl-3 pb-1 rounded
                                hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90 md:rotate-0"
                         title="Hide Chat" :title="show ? 'Hide Chat' : 'Show Chat'">
