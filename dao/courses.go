@@ -65,21 +65,6 @@ func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Cours
 	return foundCourses, dbErr
 }
 
-func GetCoursesForLoggedInUsers(year int, term string) (courses []model.Course, err error) {
-	cachedCourses, found := Cache.Get(fmt.Sprintf("loggedinCourses%v%v", year, term))
-	if found {
-		return cachedCourses.([]model.Course), err
-	}
-	var publicCourses []model.Course
-	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("start asc")
-	}).Find(&publicCourses, "visibility = 'loggedin' AND teaching_term = ? AND year = ?", term, year).Error
-	if err == nil {
-		Cache.SetWithTTL(fmt.Sprintf("loggedinCourses%v%v", year, term), publicCourses, 1, time.Minute)
-	}
-	return publicCourses, err
-}
-
 func GetAllCoursesForSemester(year int, term string, ctx context.Context) (courses []model.Course) {
 	span := sentry.StartSpan(ctx, "SQL: GetAllCoursesForSemester")
 	defer span.Finish()
@@ -91,16 +76,36 @@ func GetAllCoursesForSemester(year int, term string, ctx context.Context) (cours
 }
 
 func GetPublicCourses(year int, term string) (courses []model.Course, err error) {
-	cachedCourses, found := Cache.Get(fmt.Sprintf("publicCourses%v%v", year, term))
+	cachedCourses, found := Cache.Get(fmt.Sprintf("publicCourses%d%v", year, term))
 	if found {
 		return cachedCourses.([]model.Course), err
 	}
 	var publicCourses []model.Course
+
 	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start asc")
-	}).Find(&publicCourses, "visibility = 'public' AND teaching_term = ? AND year = ?", term, year).Error
+	}).Find(&publicCourses, "visibility = 'public' AND teaching_term = ? AND year = ?",
+		term, year).Error
+
 	if err == nil {
-		Cache.SetWithTTL(fmt.Sprintf("publicCourses%v%v", year, term), publicCourses, 1, time.Minute)
+		Cache.SetWithTTL(fmt.Sprintf("publicCourses%d%v", year, term), publicCourses, 1, time.Minute)
+	}
+	return publicCourses, err
+}
+
+func GetPublicAndLoggedInCourses(year int, term string) (courses []model.Course, err error) {
+	cachedCourses, found := Cache.Get(fmt.Sprintf("publicAndLoggedInCourses%d%v", year, term))
+	if found {
+		return cachedCourses.([]model.Course), err
+	}
+	var publicCourses []model.Course
+
+	err = DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
+		return db.Order("start asc")
+	}).Find(&publicCourses,
+		"(visibility = 'public' OR visibility = 'loggedin') AND teaching_term = ? AND year = ?", term, year).Error
+	if err == nil {
+		Cache.SetWithTTL(fmt.Sprintf("publicAndLoggedInCourses%d%v", year, term), publicCourses, 1, time.Minute)
 	}
 	return publicCourses, err
 }
