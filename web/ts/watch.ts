@@ -58,16 +58,25 @@ export function initChatScrollListener() {
     });
 }
 
-export function scrollChatIfNeeded() {
+export function shouldScroll(): boolean {
+    if (orderByLikes) {
+        return false; // only scroll if sorting by time
+    }
+    const c = document.getElementById("chatBox");
+    return c.scrollHeight - c.scrollTop <= c.offsetHeight;
+}
+
+function showNewMessageIndicator() {
+    window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: true } }));
+}
+
+export function scrollChat() {
+    console.log("scrollChatIfNeeded");
     if (orderByLikes) {
         return; // only scroll if sorting by time
     }
     const c = document.getElementById("chatBox");
-    if (c.scrollHeight - c.scrollTop <= c.offsetHeight) {
-        c.scrollTop = c.scrollHeight;
-    } else {
-        window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: true } }));
-    }
+    c.scrollTop = c.scrollHeight;
 }
 
 export function scrollToLatestMessage() {
@@ -86,6 +95,7 @@ export function startWebsocket() {
     };
 
     ws.onmessage = function (m) {
+        console.log("got message");
         const data = JSON.parse(m.data);
         if ("viewers" in data && document.getElementById("viewerCount") != null) {
             document.getElementById("viewerCount").innerText = data["viewers"];
@@ -99,9 +109,15 @@ export function startWebsocket() {
                 window.dispatchEvent(new CustomEvent("pauseend"));
             }
         } else if ("server" in data) {
+            const scroll = shouldScroll();
+            console.log("scroll: ", scroll);
             const serverElem = createServerMessage(data);
             document.getElementById("chatBox").appendChild(serverElem);
-            scrollChatIfNeeded();
+            if (scroll) {
+                setTimeout(scrollChat, 100); // wait a bit to make sure the message is added before scrolling
+            } else {
+                showNewMessageIndicator();
+            }
         } else if ("message" in data) {
             data["replies"] = []; // go serializes this empty list as `null`
             // reply
@@ -111,9 +127,14 @@ export function startWebsocket() {
                 window.dispatchEvent(event);
             } else {
                 // message
+                const scroll = shouldScroll();
                 const event = new CustomEvent("chatmessage", { detail: data });
                 window.dispatchEvent(event);
-                scrollChatIfNeeded();
+                if (scroll) {
+                    setTimeout(scrollChat, 100); // wait a bit to make sure the message is added before scrolling
+                } else {
+                    showNewMessageIndicator();
+                }
             }
         } else if ("likes" in data) {
             const event = new CustomEvent("chatlike", { detail: data });
