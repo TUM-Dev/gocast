@@ -77,7 +77,6 @@ function showNewMessageIndicator() {
 }
 
 export function scrollChat() {
-    console.log("scrollChatIfNeeded");
     if (orderByLikes) {
         return; // only scroll if sorting by time
     }
@@ -101,7 +100,6 @@ export function startWebsocket() {
     };
 
     ws.onmessage = function (m) {
-        console.log("got message");
         const data = JSON.parse(m.data);
         if ("viewers" in data && document.getElementById("viewerCount") != null) {
             document.getElementById("viewerCount").innerText = data["viewers"];
@@ -116,7 +114,6 @@ export function startWebsocket() {
             }
         } else if ("server" in data) {
             const scroll = shouldScroll();
-            console.log("scroll: ", scroll);
             const serverElem = createServerMessage(data);
             document.getElementById("chatBox").appendChild(serverElem);
             if (scroll) {
