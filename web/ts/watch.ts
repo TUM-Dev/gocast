@@ -16,7 +16,35 @@ export class Watch {
 
 let ws: WebSocket;
 let retryInt = 5000; //retry connecting to websocket after this timeout
+let orderByLikes = true; // sorting by likes or by time
+
 const pageloaded = new Date();
+
+export function likeMessage(id: number) {
+    ws.send(
+        JSON.stringify({
+            type: "like",
+            id: id,
+        }),
+    );
+}
+
+export function sortMessages(messages, orderByLikes: boolean) {
+    return messages.sort((m1, m2) => {
+        if (orderByLikes) {
+            if (m1.likes === m2.likes) {
+                return m2.id - m1.id; // same amount of likes -> newer messages up
+            }
+            return m2.likes - m1.likes; // more likes -> up
+        } else {
+            return m1.ID < m2.ID ? -1 : 1; // newest messages last
+        }
+    });
+}
+
+export function setOrder(obl: boolean) {
+    orderByLikes = obl;
+}
 
 export function initChatScrollListener() {
     const chatBox = document.getElementById("chatBox") as HTMLDivElement;
@@ -31,9 +59,11 @@ export function initChatScrollListener() {
 }
 
 export function scrollChatIfNeeded() {
+    if (orderByLikes) {
+        return; // only scroll if sorting by time
+    }
     const c = document.getElementById("chatBox");
-    // 150px grace offset to avoid showing message when close to bottom
-    if (c.scrollHeight - c.scrollTop <= c.offsetHeight + 150) {
+    if (c.scrollHeight - c.scrollTop <= c.offsetHeight) {
         c.scrollTop = c.scrollHeight;
     } else {
         window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: true } }));
@@ -85,6 +115,9 @@ export function startWebsocket() {
                 window.dispatchEvent(event);
                 scrollChatIfNeeded();
             }
+        } else if ("likes" in data) {
+            const event = new CustomEvent("chatlike", { detail: data });
+            window.dispatchEvent(event);
         }
     };
 
@@ -126,6 +159,7 @@ export function createServerMessage(msg) {
 export function sendMessage(message: string, anonymous: boolean, replyTo: number) {
     ws.send(
         JSON.stringify({
+            type: "message",
             msg: message,
             anonymous: anonymous,
             replyTo: replyTo,

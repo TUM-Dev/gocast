@@ -35,6 +35,10 @@ type Chat struct {
 	Admin    bool   `gorm:"not null;default:false" json:"admin"`
 	Color    string `gorm:"not null;default:'#368bd6'" json:"color"`
 
+	Likes     int    `gorm:"-" json:"likes"`
+	Liked     bool   `gorm:"-" json:"liked"`
+	UserLikes []User `gorm:"many2many:chat_user_likes" json:"-"`
+
 	Replies []Chat        `gorm:"foreignkey:ReplyTo" json:"replies"`
 	ReplyTo sql.NullInt64 `json:"replyTo"`
 }

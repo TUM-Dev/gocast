@@ -45,44 +45,88 @@ func configGinChatRouter(router *gin.RouterGroup) {
 		if tumLiveContext.User == nil {
 			return
 		}
-		var chat ChatReq
-		if err := json.Unmarshal(msg, &chat); err != nil {
-			return
-		}
-		if !tumLiveContext.Course.ChatEnabled {
-			return
-		}
-		uname := tumLiveContext.User.Name
-		if chat.Anonymous && tumLiveContext.Course.AnonymousChatEnabled {
-			uname = "Anonymous"
-		}
-		replyTo := sql.NullInt64{}
-		if chat.ReplyTo == 0 {
-			replyTo.Int64 = 0
-			replyTo.Valid = false
-		} else {
-			replyTo.Int64 = chat.ReplyTo
-			replyTo.Valid = true
-		}
-		chatForDb := model.Chat{
-			UserID:   strconv.Itoa(int(tumLiveContext.User.ID)),
-			UserName: uname,
-			Message:  chat.Msg,
-			StreamID: tumLiveContext.Stream.ID,
-			Admin:    tumLiveContext.User.ID == tumLiveContext.Course.UserID,
-			ReplyTo:  replyTo,
-		}
-		err := dao.AddMessage(&chatForDb)
+		var req wsReq
+		err := json.Unmarshal(msg, &req)
 		if err != nil {
-			if errors.Is(err, model.ErrCooledDown) {
-				sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, s)
-			}
+			log.Warn(err)
 			return
 		}
-		if broadcast, err := json.Marshal(chatForDb); err == nil {
-			broadcastStream(tumLiveContext.Stream.ID, broadcast)
+		if req.Type == "message" {
+			handleMessage(tumLiveContext, s, msg)
+		} else if req.Type == "like" {
+			handleLike(tumLiveContext, msg)
 		}
 	})
+}
+
+func handleLike(ctx tools.TUMLiveContext, msg []byte) {
+	var req likeReq
+	err := json.Unmarshal(msg, &req)
+	if err != nil {
+		return
+	}
+	err = dao.ToggleLike(ctx.User.ID, req.Id)
+	if err != nil {
+		log.WithError(err).Error("error liking/unliking message")
+		return
+	}
+	numLikes, err := dao.GetNumLikes(req.Id)
+	if err != nil {
+		log.WithError(err).Error("error getting num of chat likes")
+		return
+	}
+	broadcast := gin.H{
+		"likes": req.Id,
+		"num":   numLikes,
+	}
+	broadcastBytes, err := json.Marshal(broadcast)
+	if err != nil {
+		log.WithError(err).Warn("Can't marshal like message")
+		return
+	}
+	broadcastStream(ctx.Stream.ID, broadcastBytes)
+}
+
+func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte) {
+	var chat chatReq
+	if err := json.Unmarshal(msg, &chat); err != nil {
+		log.Info(err)
+		return
+	}
+
+	if !ctx.Course.ChatEnabled {
+		return
+	}
+	uname := ctx.User.Name
+	if chat.Anonymous && ctx.Course.AnonymousChatEnabled {
+		uname = "Anonymous"
+	}
+	replyTo := sql.NullInt64{}
+	if chat.ReplyTo == 0 {
+		replyTo.Int64 = 0
+		replyTo.Valid = false
+	} else {
+		replyTo.Int64 = chat.ReplyTo
+		replyTo.Valid = true
+	}
+	chatForDb := model.Chat{
+		UserID:   strconv.Itoa(int(ctx.User.ID)),
+		UserName: uname,
+		Message:  chat.Msg,
+		StreamID: ctx.Stream.ID,
+		Admin:    ctx.User.ID == ctx.Course.UserID,
+		ReplyTo:  replyTo,
+	}
+	err := dao.AddMessage(&chatForDb)
+	if err != nil {
+		if errors.Is(err, model.ErrCooledDown) {
+			sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, session)
+		}
+		return
+	}
+	if broadcast, err := json.Marshal(chatForDb); err == nil {
+		broadcastStream(ctx.Stream.ID, broadcast)
+	}
 }
 
 func getMessages(c *gin.Context) {
@@ -92,14 +136,30 @@ func getMessages(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	c.JSON(http.StatusOK, tumLiveContext.Stream.Chats)
+	chats, err := dao.GetChats(tumLiveContext.User.ID, tumLiveContext.Stream.ID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	c.JSON(http.StatusOK, chats)
 }
 
-type ChatReq struct {
+type wsReq struct {
+	Type string `json:"type"`
+}
+
+type chatReq struct {
+	wsReq
 	Msg       string `json:"msg"`
 	Anonymous bool   `json:"anonymous"`
 	ReplyTo   int64  `json:"replyTo"`
 }
+
+type likeReq struct {
+	wsReq
+	Id uint `json:"id"`
+}
+
 type ChatRep struct {
 	ID      uint   `json:"id"`
 	Msg     string `json:"msg"`
