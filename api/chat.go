@@ -90,10 +90,9 @@ func handleLike(ctx tools.TUMLiveContext, msg []byte) {
 func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte) {
 	var chat chatReq
 	if err := json.Unmarshal(msg, &chat); err != nil {
-		log.Info(err)
+		log.WithError(err).Error("error unmarshaling chat message")
 		return
 	}
-
 	if !ctx.Course.ChatEnabled {
 		return
 	}
@@ -136,7 +135,11 @@ func getMessages(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	chats, err := dao.GetChats(tumLiveContext.User.ID, tumLiveContext.Stream.ID)
+	var uid uint = 0 // 0 = not logged in. -> doesn't match a user
+	if tumLiveContext.User != nil {
+		uid = tumLiveContext.User.ID
+	}
+	chats, err := dao.GetChats(uid, tumLiveContext.Stream.ID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
