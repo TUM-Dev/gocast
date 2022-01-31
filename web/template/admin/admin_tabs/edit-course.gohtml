@@ -8,7 +8,6 @@
                 <h1 class="mb-4">{{$course.Name}}</h1>
                 <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
                                                                     value="{{$course.Model.ID}}"></label>
-
                 <form class="p-4" method="post">
                     {{template "course_settings" $course}}
                     <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
@@ -249,14 +248,16 @@
                                                     If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
                                                     {{end}}
                                                     {{else if $lecture.Recording}}
-                                                    <p class="mt-2 flex">
+                                                    <p class="flex mt-4">
                                                         {{if $lecture.Files}}
                                                             {{template "downloadBtn" $lecture.Files}}
                                                         {{end}}
                                                         {{if $lecture.Stats}}
-                                                            <i class="fas fa-chart-line hover:text-purple-500 px-2"
+                                                        <span class="relative inline-block ml-3">
+                                                            <i class="fas fa-chart-line text-4 dark:hover:text-white hover:text-black"
                                                                title="Live Statistics"
                                                                onclick="admin.showStats({{$lecture.Model.ID}})"></i>
+                                                        </span>
                                                         {{end}}
                                                     </p>
                                                     {{if $lecture.Stats}}

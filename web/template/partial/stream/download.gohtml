@@ -1,13 +1,11 @@
 {{define "downloadBtn"}}
-    <div class="flex m-auto ml-2 mr-2">
+    <span class="flex m-auto ml-2 mr-2">
         <div class="relative inline-block text-left" x-data="{expand:false}">
-            <div>
-                <button @click="expand=!expand" type="button"
-                        class="inline-flex justify-center w-full"
-                        id="menu-button" aria-expanded="true" aria-haspopup="true">
-                    <i class="fas fa-download text-4 dark:hover:text-white hover:text-black"></i>
-                </button>
-            </div>
+            <button @click="expand=!expand" type="button"
+                    class="inline-flex justify-center w-full"
+                    id="menu-button" aria-expanded="true" aria-haspopup="true">
+                <i class="fas fa-cloud-download-alt text-4 dark:hover:text-white hover:text-black"></i>
+            </button>
 
             <div x-show="expand" @click.outside="expand = false"
                  class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
@@ -21,5 +19,5 @@
                 </div>
             </div>
         </div>
-    </div>
+    </span>
 {{end}}
