@@ -4,8 +4,8 @@
     <link href="/static/assets/css-dist/main.css?v={{if .}}{{.}}{{else}}development{{end}}" rel="stylesheet">
     <link href="/static/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
     <link href="/static/assets/css/icons.css?v={{if .}}{{.}}{{else}}development{{end}}" rel="stylesheet">
-    <script defer src="/static/node_modules/@alpinejs/persist/dist/cdn.js"></script>
-    <script defer src="/static/node_modules/alpinejs/dist/cdn.js"></script>
+    <script defer src="/static/node_modules/@alpinejs/persist/dist/cdn.min.js"></script>
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.min.js"></script>
     <script src="/static/assets/ts-dist/global.bundle.js?v={{if .}}{{.}}{{else}}development{{end}}"></script>
     <script> // init in dom to prevent screen flickering
         let darkTheme = localStorage.getItem("darkTheme") ? JSON.parse(localStorage.getItem("darkTheme")) : true;
