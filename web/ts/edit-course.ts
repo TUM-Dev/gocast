@@ -103,11 +103,42 @@ export function createLectureForm() {
             vodup: false,
             recurring: false,
             recurringInterval: "weekly",
+            recurringCount: 10,
+            recurringDates: [],
             file: null,
         },
         loading: false,
         error: false,
         courseID: -1,
+        regenerateRecurringDates() {
+            const result = [];
+            if (this.formData.recurring) {
+                for (let i = 0; i < this.formData.recurringCount; i++) {
+                    let date;
+                    if (i == 0) {
+                        date = new Date(this.formData.start);
+                    } else {
+                        date = new Date(result[i - 1].date);
+                        switch (this.formData.recurringInterval) {
+                            case "daily":
+                                date.setDate(date.getDate() + 1);
+                                break;
+                            case "weekly":
+                                date.setDate(date.getDate() + 7);
+                                break;
+                            case "monthly":
+                                date.setMonth(date.getMonth() + 1);
+                                break;
+                        }
+                    }
+                    result.push({
+                        date,
+                        enabled: true,
+                    });
+                }
+            }
+            this.formData.recurringDates = result;
+        },
         submitData() {
             this.loading = true;
             console.log(this.formData);
