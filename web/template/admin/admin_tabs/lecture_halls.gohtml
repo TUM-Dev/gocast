@@ -2,13 +2,13 @@
     {{- /*gotype: TUM-Live/[]model.LectureHall*/ -}}
     <div class="rounded mt-4 overflow-x-auto">
         <div class = "flex mb-3">
-            <h2 class="text-2xl text-1 my-auto">Lecture Halls</h2>
+            <h2 class="text-2xl text-1 my-auto font-bold">Lecture Halls</h2>
             <a href = "/admin/lectureHalls/new" class = "ml-auto my-auto">
                 <button class="border bg-white border-gray-300 rounded px-3 my-auto shadow-sm text-gray-600
-                                       hover:border-black hover:text-black
-                                       dark:bg-gray-700 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
-                                        dark:hover:text-white">
-                            <span class="text-sm font-semibold uppercase m-auto">&#43; New Lecture Hall</span>
+                                      hover:border-black hover:text-black
+                                      dark:bg-gray-700 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
+                                      dark:hover:text-white">
+                            <span class="text-sm font-semibold m-auto">&#43; New Lecture Hall</span>
                 </button>
             </a>
         </div>
@@ -24,17 +24,14 @@
             cameraIp: '{{$lectureHall.CameraIP}}',
             pwrCtrlIp: '{{$lectureHall.PwrCtrlIp}}',
             id: '{{$lectureHall.ID}}',}"
-             class="w-full border-2 dark:border-secondary border-gray-200 rounded mb-6">
-            <div class="dark:bg-secondary bg-gray-100 text-xl text-3 p-2 px-6">
+             class="w-full dark:border-secondary rounded-sm mb-6 bg-gray-100 shadow-md dark:bg-secondary-lighter shadow-md my-auto">
+            <div class="dark:bg-secondary bg-gray-200 text-4 rounded-sm text-sm uppercase font-bold py-3 px-6 mb-3">
                 {{$lectureHall.Name}}
-                <i class="fas fa-trash hover:text-1 px-2"
-                   title="Delete Lecture Hall"
-                   onclick="admin.deleteLectureHall({{$lectureHall.Model.ID}})"></i>
             </div>
             <div class="text-4 px-4 p-2">
                 <div class="flex flex-row">
-                    <div class="w-1/4 font-semibold text-1">Calendar:</div>
-                    <div class="w-3/4">
+                    <div class="font-semibold text-1 px-5">Calendar:</div>
+                    <div class="">
                         <a href="/api/hall/{{$lectureHall.ID}}/export.ics">https://live.mm.rbg.tum.de/api/hall/{{$lectureHall.ID}}
                             /export.ics</a>
                     </div>
@@ -42,24 +39,24 @@
             </div>
             <div class="text-4 px-4 p-2">
                 <div class="flex flex-row">
-                    <div class="w-1/4 font-semibold text-1">Sources:</div>
-                    <div class="w-3/4">
+                    <div class="font-semibold text-1 px-5">Sources:</div>
+                    <div class="">
                         <ul class="flex">
-                            <li>
+                            <li class="mr-6">
                                 <label>
                                     <input @keyup="changed=true " x-model="presIp"
                                            value="{{if $lectureHall.PresIP}}{{$lectureHall.PresIP}}{{end}}">
                                     <span class="px-4">Presentation</span>
                                 </label>
                             </li>
-                            <li>
+                            <li class="mr-6">
                                 <label>
                                     <input @keyup="changed=true " x-model="camIp"
                                            value="{{if $lectureHall.CamIP}}{{$lectureHall.CamIP}}{{end}}">
                                     <span class="px-4">Camera</span>
                                 </label>
                             </li>
-                            <li>
+                            <li class="mr-6">
                                 <label>
                                     <input @keyup="changed=true " x-model="combIp"
                                            value="{{if $lectureHall.CombIP}}{{$lectureHall.CombIP}}{{end}}">
@@ -68,13 +65,13 @@
                             </li>
                         </ul>
                         <ul class="flex">
-                            <li>
+                            <li class="mr-6">
                                 <label>
                                     <input x-model="cameraIp" value="{{if $lectureHall.CameraIP}}{{$lectureHall.CameraIP}}{{end}}">
                                     <span class="px-4">Axis Cam</span>
                                 </label>
                             </li>
-                            <li>
+                            <li class="mr-6">
                                 <label>
                                     <input x-model="pwrCtrlIp" value="{{if $lectureHall.PwrCtrlIp}}{{$lectureHall.PwrCtrlIp}}{{end}}">
                                     <span class="px-4">Anel PWR-Ctrl</span>
@@ -85,15 +82,15 @@
                 </div>
                 {{if $lectureHall.CameraIP}}
                     <div class="flex flex-row mt-6">
-                        <div class="w-1/4 font-semibold text-1">
-                            <p class="mb-2">Presets:</p>
+                        <div class="font-semibold text-1 px-5">
+                            <p class="mb-2 ">Presets:</p>
                             <a x-data="{loading:false}" title="Refresh list"
-                               class="py-1 px-2 text-white rounded bg-info cursor-pointer"
+                               class="py-1 p-2 text-white rounded dark:bg-gray-700 bg-gray-500 cursor-pointer "
                                @click="loading=true;fetch('/api/refreshLectureHallPresets/{{$lectureHall.Model.ID}}').then(d=>d.status==200?window.location.reload():alert('there was an error'))">
                                 <i class="fas fa-sync" :class="loading?'animate animate-spin':''"></i>
                             </a>
                         </div>
-                        <div class="w-3/4 flex align-middle">
+                        <div class="flex align-middle">
                             <div class="w-full overflow-x-scroll scrollbarThin">
                                 <div class="flex flex-row gap-x-2">
                                     {{range $preset := $lectureHall.CameraPresets}}

@@ -1,9 +1,9 @@
 {{define "workers"}}
-    <h2 class="text-2xl text-1 my-auto mt-4">Worker Overview</h2>
-    <div class="border-2 dark:border-secondary border-gray-200 rounded mb-6 my-3">
-        <table class="w-full border-2 dark:border-secondary border-gray-200 rounded mb-6">
+    <h2 class="text-2xl text-1 my-auto mt-4 font-bold">Worker Overview</h2>
+    <div class="dark:border-secondary border-gray-200 bg-gray-100 rounded-sm mb-6 my-3 dark:bg-secondary-lighter shadow-md">
+        <table class="w-full dark:border-secondary border-gray-200 rounded mb-6 shadow-md">
             <thead>
-            <tr class="dark:bg-secondary bg-gray-100 text-4 uppercase text-sm leading-normal dark:bg-secondary bg-gray-100 font-thin">
+            <tr class="dark:bg-secondary bg-gray-200 text-4 uppercase text-sm leading-normal dark:bg-secondary">
                 <th class="py-3 px-6 text-left">Name</th>
                 <th class="py-3 px-6 text-left">Status</th>
                 <th class="py-3 px-6 text-left">Workload</th>
@@ -14,7 +14,7 @@
             <tbody class="text-4 text-sm font-light">
             {{- /*gotype: TUM-Live/model.Worker[]*/ -}}
             {{range $worker := .}}
-                <tr class="border-gray-500 dark:hover:bg-primary hover:bg-gray-100">
+                <tr class="dark:hover:bg-primary hover:bg-gray-100">
                     <td class="pt-3 px-6">
                         <div class="font-semibold text-1">{{$worker.Host}}<span class="font-normal text-4">@{{$worker.Version}}</span></div>
                         <div class="pl-2"><span class="mr-4">CPU: {{$worker.CPU}}</span><span class="mr-4">Mem: {{$worker.Memory}}</span><span class="mr-4">Disk: {{$worker.Disk}}</span></div>
@@ -28,7 +28,7 @@
                     <td class="pt-3 px-6"><i class="fas fa-trash text-5 cursor-pointer hover:text-1"></i></td>
                 </tr>
             {{end}}
-            <tr class="border-gray-500 dark:hover:bg-primary hover:bg-gray-100" x-data="{hostname:'', secret:''}">
+            <tr class="dark:hover:bg-primary hover:bg-gray-100" x-data="{hostname:'', secret:''}">
                 <td class="py-3 px-6">
                     <input x-show="secret==''" type="text" placeholder="vmrbg456.in.tum.de" x-model="hostname">
                     <span x-show="secret!==''" x-text="`secret for setup: ${secret}`"></span>

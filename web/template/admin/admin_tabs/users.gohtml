@@ -1,16 +1,16 @@
 {{define "users"}}
-    <h2 class="text-2xl text-1 my-auto mt-4">User Management</h2>
-    <div class="border-2 dark:border-secondary border-gray-200 rounded mb-6overflow-x-auto mb-6 my-3">
-        <table class="table-auto w-full">
+    <h2 class="text-2xl text-1 my-auto mt-4 font-bold">User Management</h2>
+    <div class="dark:border-secondary bg-gray-100 rounded-md mb-6overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter">
+        <table class="table-auto w-full rounded-sm">
             <thead>
-            <tr class="text-4 uppercase text-sm leading-normal dark:bg-secondary bg-gray-100 font-thin">
+            <tr class="dark:bg-secondary bg-gray-200 text-4 uppercase text-sm leading-normal dark:bg-secondary rounded-md">
                 <th class="py-3 px-6 text-left">Name</th>
                 <th class="py-3 px-6 text-left">Email</th>
                 <th class="py-3 px-6 text-center">Role</th>
                 <th class="py-3 px-6 text-center">Actions</th>
             </tr>
             </thead>
-            <tbody class="text-4 text-s m font-light">
+            <tbody class="text-4 text-s m rounded-sm font-light">
             {{range $user := .}}
                 <tr id="user{{$user.Model.ID}}" class="border-gray-500 dark:hover:bg-primary hover:bg-white">
                     <td class="py-3 px-6 text-left whitespace-nowrap">
@@ -25,11 +25,11 @@
                     </td>
                     <td class="py-3 px-6 text-center">
                         {{if eq $user.Role 1}}
-                            <span class="bg-info text-gray-100 py-1 px-3 rounded-full text-xs">Admin</span>
+                            <span class="bg-indigo-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-normal">Admin</span>
                         {{else if eq $user.Role 2}}
-                            <span class="bg-success text-gray-100 py-1 px-3 rounded-full text-xs">Lecturer</span>
+                            <span class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-normal">Lecturer</span>
                         {{else}}
-                            <span class="bg-warn text-gray-100 py-1 px-3 rounded-full text-xs">Generic</span>
+                            <span class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-normal">Generic</span>
                         {{end}}
                     </td>
                     <td class="py-3 px-6 text-center">

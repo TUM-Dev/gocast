@@ -1,16 +1,15 @@
 {{define "course-import"}}
+    <h2 class="text-2xl text-1 my-auto mt-4 font-bold">Course Import</h2>
     <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
-    <div class="text-2 m-auto my-3 w-full dark:bg-secondary rounded my-3 overflow-x-auto p-6" x-data="admin.pageData()" x-on:loading-start.window="loading=true"
+    <div class="text-2 m-auto my-3 w-full dark:bg-secondary-lighter bg-gray-100 rounded my-3 overflow-x-auto p-6" x-data="admin.pageData()" x-on:loading-start.window="loading=true"
          x-on:loading-end.window="loading=false;courses=$event.detail.courses"
          x-init="admin.addNotifyEventListeners()">
         <div x-show="loading" class="text-center">
             <i class="fas fa-circle-notch animate-spin animate"></i> Loading...
         </div>
-
         <div x-show="step===0">
-            <h1>Course import</h1>
             <form>
-                <h3>Select semester:</h3>
+                <h3 class="font-bold">Semester:</h3>
                 <div class="flex ">
                     <div class="relative inline-block w-full text-gray-700 my-2 mx-4">
                         <select x-model="year"
@@ -44,11 +43,15 @@
                         </div>
                     </div>
                 </div>
-                <div class="flex">
+                <div class="flex mt-6">
                     <label class="w-1/2" x-init="flatpickr($refs.range, {'mode': 'range'})">
-                        <span>Import events in this range:</span>
+                        <span class="font-bold">Import events in this range:</span>
                         <input class="text-1" type="text" x-ref="range" x-model="range" placeholder="click me!">
                     </label>
+                    <button class="h-10 px-5 ml-auto mr-6 m-2 float-right text-blue-100 transition-colors duration-150 bg-gray-500 rounded-lg focus:shadow-outline hover:bg-gray-600 disabled:bg-gray-300"
+                            @click="step++; $dispatch(`notify${step}`)" :disabled="loading"><span
+                                x-text="step==0?'Start Import':(step==1?'Import':'Return to homepage')"></span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -117,8 +120,5 @@
             <span x-show="status==200" class="text-green-400 text-center">Courses imported successfully.</span>
             <span x-show="status!=200" class="text-danger text-center">There was an error importing the courses, code: <span x-text="status"></span></span>
         </div>
-        <button class="h-10 px-5 m-2 float-right text-blue-100 transition-colors duration-150 bg-blue-600 rounded-lg focus:shadow-outline hover:bg-blue-700 disabled:bg-blue-300"
-                @click="step++; $dispatch(`notify${step}`)" :disabled="loading"><span
-                    x-text="step==0?'Start':(step==1?'Import':'Return to homepage')"></span></button>
     </div>
 {{end}}
