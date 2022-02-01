@@ -38,6 +38,7 @@ func configGinCourseRouter(router *gin.Engine) {
 	adminOfCourseGroup := router.Group("/api/course/:courseID")
 	adminOfCourseGroup.Use(tools.InitCourse)
 	adminOfCourseGroup.Use(tools.AdminOfCourse)
+	adminOfCourseGroup.DELETE("/", deleteCourse)
 	adminOfCourseGroup.POST("/createLecture", createLecture)
 	adminOfCourseGroup.POST("/deleteLectures", deleteLectures)
 	adminOfCourseGroup.POST("/renameLecture/:streamID", renameLecture)
@@ -574,6 +575,20 @@ func createCourse(c *gin.Context) {
 	go tum.GetEventsForCourses(courses)
 	go tum.FindStudentsForCourses(courses)
 	go tum.FetchCourses()
+}
+
+func deleteCourse(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	fmt.Println(*tumLiveContext.Course)
+
+	dao.DeleteCourse(*tumLiveContext.Course)
 }
 
 type createCourseRequest struct {
