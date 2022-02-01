@@ -1,6 +1,6 @@
-import {loadStats} from "./stats";
-import {postData, showMessage} from "./global";
-import {StatusCodes} from "http-status-codes";
+import { loadStats } from "./stats";
+import { postData, showMessage } from "./global";
+import { StatusCodes } from "http-status-codes";
 
 /**
  * loadGeneralStats gets the audience of the course from the api (live and vod) and renders it into a graph.
@@ -10,13 +10,13 @@ export function loadGeneralStats() {
 }
 
 export function saveLectureHall(streamIds: number[], lectureHall: string) {
-    return postData("/api/setLectureHall", {streamIds, lectureHall: parseInt(lectureHall)});
+    return postData("/api/setLectureHall", { streamIds, lectureHall: parseInt(lectureHall) });
 }
 
 export function saveLectureDescription(e: Event, cID: number, lID: number) {
     e.preventDefault();
     const input = (document.getElementById("lectureDescriptionInput" + lID) as HTMLInputElement).value;
-    postData("/api/course/" + cID + "/updateDescription/" + lID, {name: input}).then((res) => {
+    postData("/api/course/" + cID + "/updateDescription/" + lID, { name: input }).then((res) => {
         if (res.status == StatusCodes.OK) {
             document.getElementById("descriptionSubmitBtn" + lID).classList.add("invisible");
         } else {
@@ -28,7 +28,7 @@ export function saveLectureDescription(e: Event, cID: number, lID: number) {
 export function saveLectureName(e: Event, cID: number, lID: number) {
     e.preventDefault();
     const input = (document.getElementById("lectureNameInput" + lID) as HTMLInputElement).value;
-    postData("/api/course/" + cID + "/renameLecture/" + lID, {name: input}).then((res) => {
+    postData("/api/course/" + cID + "/renameLecture/" + lID, { name: input }).then((res) => {
         if (res.status == StatusCodes.OK) {
             document.getElementById("nameSubmitBtn" + lID).classList.add("invisible");
         } else {
@@ -70,7 +70,7 @@ export function toggleExtraInfos(btn: HTMLElement, id: number) {
 
 export function deleteLecture(cid: number, lid: number) {
     if (confirm("Confirm deleting video?")) {
-        postData("/api/course/" + cid + "/deleteLectures", {streamIDs: [lid.toString()]}).then(() => {
+        postData("/api/course/" + cid + "/deleteLectures", { streamIDs: [lid.toString()] }).then(() => {
             document.location.reload();
         });
     }
@@ -78,7 +78,7 @@ export function deleteLecture(cid: number, lid: number) {
 
 export async function deleteLectures(cid: number, lids: number[]) {
     if (confirm("Confirm deleting " + lids.length + " video" + (lids.length == 1 ? "" : "s") + "?")) {
-        await postData("/api/course/" + cid + "/deleteLectures", {streamIDs: lids.map((n) => n.toString())});
+        await postData("/api/course/" + cid + "/deleteLectures", { streamIDs: lids.map((n) => n.toString()) });
         document.location.reload();
     }
 }
