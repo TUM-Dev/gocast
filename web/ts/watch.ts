@@ -16,7 +16,41 @@ export class Watch {
 
 let ws: WebSocket;
 let retryInt = 5000; //retry connecting to websocket after this timeout
+let orderByLikes = false; // sorting by likes or by time
+
+const scrollDelay = 100; // delay before scrolling to bottom to make sure chat is rendered
 const pageloaded = new Date();
+
+enum WSMessageType {
+    Message = "message",
+    Like = "like",
+}
+
+export function likeMessage(id: number) {
+    ws.send(
+        JSON.stringify({
+            type: WSMessageType.Like,
+            id: id,
+        }),
+    );
+}
+
+export function sortMessages(messages): void {
+    messages.sort((m1, m2) => {
+        if (orderByLikes) {
+            if (m1.likes === m2.likes) {
+                return m2.id - m1.id; // same amount of likes -> newer messages up
+            }
+            return m2.likes - m1.likes; // more likes -> up
+        } else {
+            return m1.ID < m2.ID ? -1 : 1; // newest messages last
+        }
+    });
+}
+
+export function setOrder(obl: boolean) {
+    orderByLikes = obl;
+}
 
 export function initChatScrollListener() {
     const chatBox = document.getElementById("chatBox") as HTMLDivElement;
@@ -30,14 +64,24 @@ export function initChatScrollListener() {
     });
 }
 
-export function scrollChatIfNeeded() {
-    const c = document.getElementById("chatBox");
-    // 150px grace offset to avoid showing message when close to bottom
-    if (c.scrollHeight - c.scrollTop <= c.offsetHeight + 150) {
-        c.scrollTop = c.scrollHeight;
-    } else {
-        window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: true } }));
+export function shouldScroll(): boolean {
+    if (orderByLikes) {
+        return false; // only scroll if sorting by time
     }
+    const c = document.getElementById("chatBox");
+    return c.scrollHeight - c.scrollTop <= c.offsetHeight;
+}
+
+function showNewMessageIndicator() {
+    window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: true } }));
+}
+
+export function scrollChat() {
+    if (orderByLikes) {
+        return; // only scroll if sorting by time
+    }
+    const c = document.getElementById("chatBox");
+    c.scrollTop = c.scrollHeight;
 }
 
 export function scrollToLatestMessage() {
@@ -69,9 +113,14 @@ export function startWebsocket() {
                 window.dispatchEvent(new CustomEvent("pauseend"));
             }
         } else if ("server" in data) {
+            const scroll = shouldScroll();
             const serverElem = createServerMessage(data);
             document.getElementById("chatBox").appendChild(serverElem);
-            scrollChatIfNeeded();
+            if (scroll) {
+                setTimeout(scrollChat, scrollDelay);
+            } else {
+                showNewMessageIndicator();
+            }
         } else if ("message" in data) {
             data["replies"] = []; // go serializes this empty list as `null`
             // reply
@@ -81,10 +130,18 @@ export function startWebsocket() {
                 window.dispatchEvent(event);
             } else {
                 // message
+                const scroll = shouldScroll();
                 const event = new CustomEvent("chatmessage", { detail: data });
                 window.dispatchEvent(event);
-                scrollChatIfNeeded();
+                if (scroll) {
+                    setTimeout(scrollChat, scrollDelay);
+                } else {
+                    showNewMessageIndicator();
+                }
             }
+        } else if ("likes" in data) {
+            const event = new CustomEvent("chatlike", { detail: data });
+            window.dispatchEvent(event);
         }
     };
 
@@ -126,6 +183,7 @@ export function createServerMessage(msg) {
 export function sendMessage(message: string, anonymous: boolean, replyTo: number) {
     ws.send(
         JSON.stringify({
+            type: WSMessageType.Message,
             msg: message,
             anonymous: anonymous,
             replyTo: replyTo,

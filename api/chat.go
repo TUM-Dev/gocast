@@ -45,45 +45,91 @@ func configGinChatRouter(router *gin.RouterGroup) {
 		if tumLiveContext.User == nil {
 			return
 		}
-		var chat ChatReq
-		if err := json.Unmarshal(msg, &chat); err != nil {
-			return
-		}
-		if !tumLiveContext.Course.ChatEnabled {
-			return
-		}
-		uname := tumLiveContext.User.Name
-		if chat.Anonymous && tumLiveContext.Course.AnonymousChatEnabled {
-			uname = "Anonymous"
-		}
-		replyTo := sql.NullInt64{}
-		if chat.ReplyTo == 0 {
-			replyTo.Int64 = 0
-			replyTo.Valid = false
-		} else {
-			replyTo.Int64 = chat.ReplyTo
-			replyTo.Valid = true
-		}
-		chatForDb := &model.Chat{
-			UserID:   strconv.Itoa(int(tumLiveContext.User.ID)),
-			UserName: uname,
-			Message:  chat.Msg,
-			StreamID: tumLiveContext.Stream.ID,
-			Admin:    tumLiveContext.User.ID == tumLiveContext.Course.UserID,
-			ReplyTo:  replyTo,
-		}
-		chatForDb.SanitiseMessage()
-		err := dao.AddMessage(chatForDb)
+		var req wsReq
+		err := json.Unmarshal(msg, &req)
 		if err != nil {
-			if errors.Is(err, model.ErrCooledDown) {
-				sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, s)
-			}
+			log.WithError(err).Warn("could not unmarshal request")
 			return
 		}
-		if broadcast, err := json.Marshal(chatForDb); err == nil {
-			broadcastStream(tumLiveContext.Stream.ID, broadcast)
+		switch req.Type {
+		case "message":
+			handleMessage(tumLiveContext, s, msg)
+		case "like":
+			handleLike(tumLiveContext, msg)
+		default:
+			log.WithField("type", req.Type).Warn("unknown websocket request type")
 		}
 	})
+}
+
+func handleLike(ctx tools.TUMLiveContext, msg []byte) {
+	var req likeReq
+	err := json.Unmarshal(msg, &req)
+	if err != nil {
+		log.WithError(err).Warn("could not unmarshal like request")
+		return
+	}
+	err = dao.ToggleLike(ctx.User.ID, req.Id)
+	if err != nil {
+		log.WithError(err).Error("error liking/unliking message")
+		return
+	}
+	numLikes, err := dao.GetNumLikes(req.Id)
+	if err != nil {
+		log.WithError(err).Error("error getting num of chat likes")
+		return
+	}
+	broadcast := gin.H{
+		"likes": req.Id,
+		"num":   numLikes,
+	}
+	broadcastBytes, err := json.Marshal(broadcast)
+	if err != nil {
+		log.WithError(err).Error("Can't marshal like message")
+		return
+	}
+	broadcastStream(ctx.Stream.ID, broadcastBytes)
+}
+
+func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte) {
+	var chat chatReq
+	if err := json.Unmarshal(msg, &chat); err != nil {
+		log.WithError(err).Error("error unmarshaling chat message")
+		return
+	}
+	if !ctx.Course.ChatEnabled {
+		return
+	}
+	uname := ctx.User.Name
+	if chat.Anonymous && ctx.Course.AnonymousChatEnabled {
+		uname = "Anonymous"
+	}
+	replyTo := sql.NullInt64{}
+	if chat.ReplyTo == 0 {
+		replyTo.Int64 = 0
+		replyTo.Valid = false
+	} else {
+		replyTo.Int64 = chat.ReplyTo
+		replyTo.Valid = true
+	}
+	chatForDb := model.Chat{
+		UserID:   strconv.Itoa(int(ctx.User.ID)),
+		UserName: uname,
+		Message:  chat.Msg,
+		StreamID: ctx.Stream.ID,
+		Admin:    ctx.User.ID == ctx.Course.UserID,
+		ReplyTo:  replyTo,
+	}
+	err := dao.AddMessage(&chatForDb)
+	if err != nil {
+		if errors.Is(err, model.ErrCooledDown) {
+			sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, session)
+		}
+		return
+	}
+	if broadcast, err := json.Marshal(chatForDb); err == nil {
+		broadcastStream(ctx.Stream.ID, broadcast)
+	}
 }
 
 func getMessages(c *gin.Context) {
@@ -93,20 +139,32 @@ func getMessages(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	c.JSON(http.StatusOK, tumLiveContext.Stream.Chats)
+	var uid uint = 0 // 0 = not logged in. -> doesn't match a user
+	if tumLiveContext.User != nil {
+		uid = tumLiveContext.User.ID
+	}
+	chats, err := dao.GetChats(uid, tumLiveContext.Stream.ID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	c.JSON(http.StatusOK, chats)
 }
 
-type ChatReq struct {
+type wsReq struct {
+	Type string `json:"type"`
+}
+
+type chatReq struct {
+	wsReq
 	Msg       string `json:"msg"`
 	Anonymous bool   `json:"anonymous"`
 	ReplyTo   int64  `json:"replyTo"`
 }
-type ChatRep struct {
-	ID      uint   `json:"id"`
-	Msg     string `json:"msg"`
-	Name    string `json:"name"`
-	Admin   bool   `json:"admin"`
-	ReplyTo uint   `json:"replyTo"`
+
+type likeReq struct {
+	wsReq
+	Id uint `json:"id"`
 }
 
 func CollectStats() {
