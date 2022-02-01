@@ -16,6 +16,7 @@ require (
 	github.com/gin-contrib/sessions v0.0.4
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-asn1-ber/asn1-ber v1.5.3 // indirect
+	github.com/go-gormigrate/gormigrate/v2 v2.0.0
 	github.com/go-ldap/ldap/v3 v3.4.1
 	github.com/go-playground/validator/v10 v10.10.0 // indirect
 	github.com/golang/glog v1.0.0 // indirect
@@ -41,6 +42,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gorm.io/driver/mysql v1.2.3
 	gorm.io/gorm v1.22.5
+	mvdan.cc/xurls/v2 v2.3.0
 )
 
 require (
