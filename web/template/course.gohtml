@@ -31,7 +31,7 @@
                     </button>
                 </div>
 
-                <ul id = "vod-list" class="flex px-5 py-3 overflow-y-scroll"
+                <ul id="vod-list" class="flex px-5 py-3 overflow-y-scroll"
                     :class="asc ? 'flex-col-reverse' : 'flex-col'"
                     style="max-height: calc(100% - 4rem)"> <!-- 4rem = h-16 -->
                     {{template "vod_course_list" .IndexData.TUMLiveContext}}

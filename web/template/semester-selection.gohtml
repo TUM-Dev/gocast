@@ -15,7 +15,7 @@
                         <span class="text-3 text-sm">&#9660;</span>
                     </button>
                 </div>
-                <div class="my-auto w-full">
+                <div class="my-auto w-full py-2">
                     {{range $s := .Semesters}}
                         <a href="/semester/{{$s.Year}}/{{$s.TeachingTerm}}">
                             <div class="{{if and (eq $s.Year $currentYear) (eq $s.TeachingTerm $currentTerm)}}bg-gray-100 dark:bg-secondary-lighter{{end}}
