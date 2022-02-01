@@ -3,7 +3,11 @@ package model
 import (
 	"database/sql"
 	"errors"
+	"github.com/microcosm-cc/bluemonday"
+	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
+	"html"
+	"mvdan.cc/xurls/v2"
 	"strconv"
 	"strings"
 	"time"
@@ -19,8 +23,20 @@ var (
 	ErrCooledDown     = errors.New("user is cooled down")
 )
 
+var (
+	// chatHTMLPolicy defines the policy for sanitizing chat messages
+	chatHTMLPolicy = bluemonday.StrictPolicy().AllowAttrs("href").
+			OnElements("a").
+			AllowURLSchemes("http", "https").
+			AllowRelativeURLs(false).
+			RequireNoFollowOnLinks(true).
+			AddTargetBlankToFullyQualifiedLinks(true).
+			RequireParseableURLs(true)
+	chatURLPolicy = xurls.Strict() // require protocol for URLs
+)
+
 const (
-	maxMessageLength = 200
+	maxMessageLength = 250
 	coolDown         = time.Minute * 2
 	coolDownMessages = 5 // 5 messages -> 5 messages per 2 minutes max
 )
@@ -28,12 +44,13 @@ const (
 type Chat struct {
 	gorm.Model
 
-	UserID   string `gorm:"not null" json:"-"`
-	UserName string `gorm:"not null" json:"name"`
-	Message  string `gorm:"not null" json:"message"`
-	StreamID uint   `gorm:"not null" json:"-"`
-	Admin    bool   `gorm:"not null;default:false" json:"admin"`
-	Color    string `gorm:"not null;default:'#368bd6'" json:"color"`
+	UserID           string `gorm:"not null" json:"-"`
+	UserName         string `gorm:"not null" json:"name"`
+	Message          string `gorm:"not null" json:"-"`
+	SanitizedMessage string `gorm:"-" json:"message"` // don't store the sanitized message in the database
+	StreamID         uint   `gorm:"not null" json:"-"`
+	Admin            bool   `gorm:"not null;default:false" json:"admin"`
+	Color            string `gorm:"not null;default:'#368bd6'" json:"color"`
 
 	Replies []Chat        `gorm:"foreignkey:ReplyTo" json:"replies"`
 	ReplyTo sql.NullInt64 `json:"replyTo"`
@@ -96,4 +113,33 @@ func (c *Chat) BeforeCreate(tx *gorm.DB) (err error) {
 		return ErrReplyToReply // can't reply to reply
 	}
 	return nil
+}
+
+// AfterFind is a GORM hook that sanitizes the message after it's loaded from the database.
+func (c *Chat) AfterFind(_ *gorm.DB) (err error) {
+	c.SanitiseMessage()
+	return nil
+}
+
+// SanitiseMessage sets chat.SanitizedMessage to the sanitized html version of chat.Message, including <a> tags for links
+func (c *Chat) SanitiseMessage() {
+	msg := html.EscapeString(c.Message)
+	urls := chatURLPolicy.FindAllStringIndex(msg, -1)
+	newMsg := ""
+	for _, urlIndex := range urls {
+		newMsg += msg[:urlIndex[0]]
+		newMsg += c.getUrlHtml(msg[urlIndex[0]:urlIndex[1]])
+	}
+	if len(urls) > 0 {
+		newMsg += msg[urls[len(urls)-1][1]:]
+	} else {
+		newMsg = msg
+	}
+	c.SanitizedMessage = newMsg
+}
+
+// getUrlHtml returns the html for urls, the <a> tag includes target="_blank" and rel="nofollow noopener"
+func (c Chat) getUrlHtml(url string) string {
+	h := blackfriday.Run([]byte(url))
+	return strings.TrimSuffix(string(chatHTMLPolicy.SanitizeBytes(h)), "\n")
 }
