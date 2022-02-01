@@ -14,7 +14,7 @@
                     <span x-text="replyTo === m.ID ? 'Cancel': 'Reply'"></span>
                 </a>
                 <a @click="watch.likeMessage(m.ID); m.liked=!m.liked;" class="cursor-pointer">
-                    <span x-text="m.likes===1?'1 Like':`${ m.likes } Likes`" :class="m.liked && 'text-blue-500 hover:text-blue-300'"></span>
+                    <span :class="m.liked && 'text-blue-500 hover:text-blue-300'"><i class="fas fa-thumbs-up"></i> <span x-text="m.likes!==0?`(${m.likes})`:''"></span></span>
                 </a>
             </p>
             <div x-cloak class="ml-2">

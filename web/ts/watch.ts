@@ -35,7 +35,7 @@ export function likeMessage(id: number) {
     );
 }
 
-export function sortMessages(messages) {
+export function sortMessages(messages): void {
     messages.sort((m1, m2) => {
         if (orderByLikes) {
             if (m1.likes === m2.likes) {
