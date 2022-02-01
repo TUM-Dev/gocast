@@ -2,40 +2,36 @@
     {{- /*gotype: TUM-Live/web.IndexData*/ -}}
     {{$currentYear := .CurrentYear}}
     {{$currentTerm := .CurrentTerm}}
-    <div x-data="{showSemesterSelect: false}">
+    <div x-cloak x-data="{showSemesterSelect: false}">
         <div x-show="showSemesterSelect"
              class="flex content-end justify-end z-50 h-screen w-full fixed bottom-0 right-0 backdrop-blur-sm">
-            <div class="h-fit bg-white border rounded-t-lg w-full mt-auto dark:bg-secondary dark:border-gray-600">
-                <div class="flex justify-between px-4 border-b h-12 dark:border-gray-600">
-                    <div class = "my-auto">
-                        <i class = "far fa-calendar text-gray-400"></i>
-                        <span class = "ml-2 text-sm uppercase text-gray-400">Semester</span>
+            <div class="h-fit bg-white border rounded-t-lg w-full mt-auto dark:bg-secondary dark:border-0">
+                <div class="flex justify-between px-4 border-b h-12 dark:border-gray-600 shadow">
+                    <div class="flex my-auto">
+                        <i class="far fa-calendar text-gray-400"></i>
+                        <span class="ml-2 text-sm uppercase text-gray-400">Semester</span>
                     </div>
-                    <button class="text-2xl my-auto" @click="showSemesterSelect = false;">
-                        <i class="text-3 fas fa-times"></i>
+                    <button class="flex justify-end w-full items-center" @click="showSemesterSelect = false;">
+                        <span class="text-3 text-sm">&#9660;</span>
                     </button>
                 </div>
                 <div class="my-auto w-full">
                     {{range $s := .Semesters}}
-                        {{if not (and (eq $s.Year $currentYear) (eq $s.TeachingTerm $currentTerm))}}
-                            <a href="/semester/{{$s.Year}}/{{$s.TeachingTerm}}"
-                               class="text-center text-sm block font-semibold text-3 px-5 py-2 border-b dark:border-gray-600">
-                                {{$s.Year}}-{{$s.TeachingTerm}}
-                            </a>
-                        {{end}}
+                        <a href="/semester/{{$s.Year}}/{{$s.TeachingTerm}}">
+                            <div class="{{if and (eq $s.Year $currentYear) (eq $s.TeachingTerm $currentTerm)}}bg-gray-100 dark:bg-secondary-lighter{{end}}
+                                        flex justify-center items-center h-12 border-b dark:border-gray-600">
+                                <span class="text-3 font-semibold">{{$s.Year}}-{{$s.TeachingTerm}}</span>
+                            </div>
+                        </a>
                     {{end}}
                 </div>
             </div>
         </div>
         <button @click="showSemesterSelect = !showSemesterSelect"
-                class="md:hidden fixed bottom-5 right-0 bg-white dark:bg-secondary-lighter border dark:border-gray-600
-                       shadow-sm rounded-l-lg">
-            <div class="bg-gray-100 dark:bg-secondary border-b dark:border-gray-600 py-1 flex rounded-tl-lg">
-                <span class="dark:text-gray-100 text-sm font-thin mx-auto">{{$currentYear}}</span>
-            </div>
-            <div class="py-2 px-4">
-                <span class="text-3 font-semibold text-2xl">{{$currentTerm}}</span>
-            </div>
+                class="md:hidden flex w-full fixed bottom-0 bg-white border shadow-sm rounded-t-lg
+                       h-12 px-4 dark:bg-secondary dark:border-0">
+            <span class="text-3 font-semibold text-sm mx-auto my-auto">{{$currentYear}}-{{$currentTerm}}</span>
+            <span class="absolute text-sm right-3 text-3 my-auto top-0 bottom-0 h-fit">&#9650;</span>
         </button>
     </div>
     <div class="hidden md:flex justify-center fixed bottom-0 border-t dark:border-gray-900 w-full p-2 bg-white dark:bg-secondary">

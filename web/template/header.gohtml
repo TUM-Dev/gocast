@@ -1,4 +1,4 @@
-{{define "header"}} {{- /*gotype: TUM-Live/web.IndexData*/ -}}
+{{define "header"}} {{- /*gotype: TUM-Live/tools.TUMLiveContext*/ -}}
 <div x-cloak x-data="{showMobNav: false, dark: false}" x-init="dark = global.isDark()" class="inline">
     <nav class="flex z-40 lg:z-50 sticky top-0 w-full items-center justify-between dark:bg-secondary bg-white
                     shadow border-b dark:border-0 p-3 h-20 z-40">
@@ -14,7 +14,7 @@
                    class="block inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
                     Start
                 </a>
-                {{if not .TUMLiveContext.User}}
+                {{if not .User}}
                     <a href="/login"
                        class="block inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
                         Login
@@ -24,7 +24,7 @@
                        class="inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
                         Logout
                     </a>
-                    {{if or (eq .TUMLiveContext.User.Role 1) (eq .TUMLiveContext.User.Role 2) }}
+                    {{if or (eq .User.Role 1) (eq .User.Role 2) }}
                         <a href="/admin"
                            class="inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
                             Admin
@@ -65,7 +65,7 @@
                 <i class="fas fa-home w-8"></i>
                 <span class="ml-2 text-sm">Start</span>
             </a>
-            {{if not .TUMLiveContext.User}}
+            {{if not .User}}
                 <a href="/login"
                    class="block font-semibold text-3 px-5 py-2 border-b dark:border-gray-600">
                     <i class="fas fa-sign-in-alt w-8"></i>
@@ -77,7 +77,7 @@
                     <i class="fas fa-sign-out-alt w-8"></i>
                     <span class="ml-2 text-sm">Logout</span>
                 </a>
-                {{if or (eq .TUMLiveContext.User.Role 1) (eq .TUMLiveContext.User.Role 2) }}
+                {{if or (eq .User.Role 1) (eq .User.Role 2) }}
                     <a href="/admin"
                        class="block font-semibold text-3 px-5 py-2 border-b dark:border-gray-600">
                         <i class="fas fa-user-shield w-8"></i>
