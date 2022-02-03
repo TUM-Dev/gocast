@@ -193,6 +193,10 @@ input[type='checkbox']:checked + label {
     scrollbar-color: #d1d5db white;
 }
 
+.chatMsg a {
+    text-decoration: underline;
+}
+
 /* dark mode scrollbar */
 .dark #chatBox::-webkit-scrollbar-track {
     background: #0d1117;
