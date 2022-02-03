@@ -589,6 +589,7 @@ func deleteCourse(c *gin.Context) {
 	fmt.Println(*tumLiveContext.Course)
 
 	dao.DeleteCourse(*tumLiveContext.Course)
+	dao.Cache.Clear()
 }
 
 type createCourseRequest struct {
