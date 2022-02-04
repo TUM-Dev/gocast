@@ -56,10 +56,37 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			handleMessage(tumLiveContext, s, msg)
 		case "like":
 			handleLike(tumLiveContext, msg)
+		case "delete":
+			handleDelete(tumLiveContext, msg)
 		default:
 			log.WithField("type", req.Type).Warn("unknown websocket request type")
 		}
 	})
+}
+
+func handleDelete(ctx tools.TUMLiveContext, msg []byte) {
+	var req deleteReq
+	err := json.Unmarshal(msg, &req)
+	if err != nil {
+		log.WithError(err).Warn("could not unmarshal message delete request")
+		return
+	}
+	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
+		return
+	}
+	err = dao.DeleteChat(req.Id)
+	if err != nil {
+		log.WithError(err).Error("could not delete chat")
+	}
+	broadcast := gin.H{
+		"delete": req.Id,
+	}
+	broadcastBytes, err := json.Marshal(broadcast)
+	if err != nil {
+		log.WithError(err).Error("could not marshal delete message")
+		return
+	}
+	broadcastStream(ctx.Stream.ID, broadcastBytes)
 }
 
 func handleLike(ctx tools.TUMLiveContext, msg []byte) {
@@ -164,6 +191,11 @@ type chatReq struct {
 }
 
 type likeReq struct {
+	wsReq
+	Id uint `json:"id"`
+}
+
+type deleteReq struct {
 	wsReq
 	Id uint `json:"id"`
 }
