@@ -326,15 +326,19 @@
                                                     <span class="font-semibold p-2">Start</span>
                                                     <input name="start" type="text" placeholder="2021-04-08 14:00"
                                                            id="start" x-model="formData.start" x-ref="start"
-                                                           @change="() => setTimeout(() => regenerateRecurringDates(), 100)"
+                                                           @change="() => setTimeout(() => { regenerateRecurringDates(); recalculateDuration(); }, 100)"
                                                            x-init="flatpickr($refs.start, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})"/>
                                                 </label>
                                                 <label x-show="!formData.premiere && !formData.vodup && !loading" for="end" class="md:w-1/4 w-full">
                                                     <span class="font-semibold p-2">End</span>
-                                                    <input name="end" type="text" placeholder="2021-04-08 16:00" id="end"
+                                                    <span x-show="formData.formatedDuration != ''" class="text-sm font-light opacity-75">
+                                                        ( <span x-text="formData.formatedDuration"></span> )
+                                                    </span>
+                                                    <input name="end" type="text" placeholder="16:00" id="end"
                                                            x-model="formData.end"
+                                                           @change="() => setTimeout(() => recalculateDuration(), 100)"
                                                            x-ref="end"
-                                                           x-init="flatpickr($refs.end, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})"/>
+                                                           x-init="flatpickr($refs.end, {enableTime: true, noCalendar: true, dateFormat: 'H:i', time_24hr: true })"/>
                                                 </label>
                                                 <label class="relative" x-show="formData.premiere || formData.vodup && !loading" x-data="{ showTooltip:false }">
                                                     <span class="font-semibold p-2">Video File <i class="text-warn fas fa-exclamation-triangle" @mouseover="showTooltip=true" @mouseleave="showTooltip=false">

@@ -99,6 +99,8 @@ export function createLectureForm() {
             lectureHallId: 0,
             start: "",
             end: "",
+            duration: 0, // Duration in Minutes
+            formatedDuration: "", // Duration in Minutes
             premiere: false,
             vodup: false,
             recurring: false,
@@ -139,9 +141,38 @@ export function createLectureForm() {
             }
             this.formData.recurringDates = result;
         },
+        recalculateDuration() {
+            if (this.formData.start != "" && this.formData.end != "") {
+                const [hours, minutes] = this.formData.end.split(":");
+                const startDate = new Date(this.formData.start);
+                const endDate = new Date(this.formData.start);
+                endDate.setHours(hours);
+                endDate.setMinutes(minutes);
+                if (endDate.getTime() <= startDate.getTime()) {
+                    endDate.setDate(endDate.getDate() + 1);
+                }
+                this.formData.duration = (endDate.getTime() - startDate.getTime()) / 1000 / 60;
+            } else {
+                this.formData.duration = 0;
+            }
+            this.generateFormatedDuration();
+        },
+        generateFormatedDuration() {
+            const hours = Math.floor(this.formData.duration / 60);
+            const minutes = this.formData.duration - hours * 60;
+            let res = "";
+            if (hours > 0) {
+                res += `${hours}h `;
+            }
+            if (minutes > 0) {
+                res += `${minutes}min`;
+            }
+            this.formData.formatedDuration = res;
+        },
         submitData() {
             this.loading = true;
-            console.log(this.formData);
+            console.log(this.getDuration());
+            return;
             const body = new FormData();
             body.set("title", this.formData.title);
             body.set("lectureHallId", this.formData.lectureHallId);
