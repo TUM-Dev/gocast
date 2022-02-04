@@ -147,6 +147,7 @@ func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte
 		Admin:    ctx.User.ID == ctx.Course.UserID,
 		ReplyTo:  replyTo,
 	}
+	chatForDb.SanitiseMessage()
 	err := dao.AddMessage(&chatForDb)
 	if err != nil {
 		if errors.Is(err, model.ErrCooledDown) {
