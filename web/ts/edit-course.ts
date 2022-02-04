@@ -171,15 +171,13 @@ export function createLectureForm() {
         },
         submitData() {
             this.loading = true;
-            console.log(this.getDuration());
-            return;
             const body = new FormData();
             body.set("title", this.formData.title);
             body.set("lectureHallId", this.formData.lectureHallId);
             body.set("premiere", this.formData.premiere);
             body.set("vodup", this.formData.vodup);
             body.set("start", this.formData.start);
-            body.set("end", this.formData.end);
+            body.set("duration", this.formData.duration);
             if (this.formData.recurring) {
                 for (const date of this.formData.recurringDates.filter(({ enabled }) => enabled)) {
                     body.append("dateSeries[]", date.date.toISOString());
@@ -187,7 +185,7 @@ export function createLectureForm() {
             }
             if (this.formData.premiere || this.formData.vodup) {
                 body.set("file", this.formData.file[0]);
-                body.set("end", this.formData.start); // premieres have no explicit end set -> use start here
+                body.set("duration", "0"); // premieres have no explicit end set -> use "0" here
             }
             fetch("/api/course/" + this.courseID + "/createLecture", {
                 method: "POST",
