@@ -464,12 +464,14 @@ func createLecture(c *gin.Context) {
 		playlist = fmt.Sprintf("https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s/playlist.m3u8", strings.ReplaceAll(premiereFileName, "-", "_"))
 	}
 
+	endTime := req.Start.Add(time.Minute * time.Duration(req.Duration))
+
 	lecture := model.Stream{
 		Name:          req.Title,
 		CourseID:      tumLiveContext.Course.ID,
 		LectureHallID: uint(lectureHallId),
 		Start:         req.Start,
-		End:           req.End,
+		End:           endTime,
 		StreamKey:     streamKey,
 		PlaylistUrl:   playlist,
 		LiveNow:       false,
@@ -491,7 +493,7 @@ type createLectureRequest struct {
 	Title         string                `form:"title"`
 	LectureHallId string                `form:"lectureHallId"`
 	Start         time.Time             `form:"start"`
-	End           time.Time             `form:"end"`
+	Duration      int                   `form:"duration"`
 	Premiere      bool                  `form:"premiere"`
 	File          *multipart.FileHeader `form:"file"`
 	Vodup         bool                  `form:"vodup"`
