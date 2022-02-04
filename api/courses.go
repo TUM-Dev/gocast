@@ -464,25 +464,32 @@ func createLecture(c *gin.Context) {
 		playlist = fmt.Sprintf("https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s/playlist.m3u8", strings.ReplaceAll(premiereFileName, "-", "_"))
 	}
 
-	endTime := req.Start.Add(time.Minute * time.Duration(req.Duration))
+	// Add start date as first event
+	req.dateSeries = append(req.dateSeries, req.Start)
 
-	lecture := model.Stream{
-		Name:          req.Title,
-		CourseID:      tumLiveContext.Course.ID,
-		LectureHallID: uint(lectureHallId),
-		Start:         req.Start,
-		End:           endTime,
-		StreamKey:     streamKey,
-		PlaylistUrl:   playlist,
-		LiveNow:       false,
-		Recording:     req.Vodup,
-		Premiere:      req.Premiere,
+	for _, date := range req.dateSeries {
+		endTime := date.Add(time.Minute * time.Duration(req.Duration))
+
+		lecture := model.Stream{
+			Name:          req.Title,
+			CourseID:      tumLiveContext.Course.ID,
+			LectureHallID: uint(lectureHallId),
+			Start:         date,
+			End:           endTime,
+			StreamKey:     streamKey,
+			PlaylistUrl:   playlist,
+			LiveNow:       false,
+			Recording:     req.Vodup,
+			Premiere:      req.Premiere,
+		}
+
+		// add file if premiere
+		if req.Premiere || req.Vodup {
+			lecture.Files = []model.File{{Path: fmt.Sprintf("%s/%s", premiereFolder, premiereFileName)}}
+		}
+		tumLiveContext.Course.Streams = append(tumLiveContext.Course.Streams, lecture)
 	}
-	// add file if premiere
-	if req.Premiere || req.Vodup {
-		lecture.Files = []model.File{{Path: fmt.Sprintf("%s/%s", premiereFolder, premiereFileName)}}
-	}
-	tumLiveContext.Course.Streams = append(tumLiveContext.Course.Streams, lecture)
+
 	err = dao.UpdateCourse(context.Background(), *tumLiveContext.Course)
 	if err != nil {
 		log.WithError(err).Warn("Can't update course")

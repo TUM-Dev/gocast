@@ -105,7 +105,7 @@ export function createLectureForm() {
             vodup: false,
             recurring: false,
             recurringInterval: "weekly",
-            recurringCount: 10,
+            eventsCount: 10,
             recurringDates: [],
             file: null,
         },
@@ -115,23 +115,18 @@ export function createLectureForm() {
         regenerateRecurringDates() {
             const result = [];
             if (this.formData.start != "") {
-                for (let i = 0; i < this.formData.recurringCount; i++) {
-                    let date;
-                    if (i == 0) {
-                        date = new Date(this.formData.start);
-                    } else {
-                        date = new Date(result[i - 1].date);
-                        switch (this.formData.recurringInterval) {
-                            case "daily":
-                                date.setDate(date.getDate() + 1);
-                                break;
-                            case "weekly":
-                                date.setDate(date.getDate() + 7);
-                                break;
-                            case "monthly":
-                                date.setMonth(date.getMonth() + 1);
-                                break;
-                        }
+                for (let i = 0; i < this.formData.eventsCount - 1; i++) {
+                    const date = i == 0 ? new Date(this.formData.start) : new Date(result[i - 1].date);
+                    switch (this.formData.recurringInterval) {
+                        case "daily":
+                            date.setDate(date.getDate() + 1);
+                            break;
+                        case "weekly":
+                            date.setDate(date.getDate() + 7);
+                            break;
+                        case "monthly":
+                            date.setMonth(date.getMonth() + 1);
+                            break;
                     }
                     result.push({
                         date,

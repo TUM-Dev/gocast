@@ -385,15 +385,19 @@
                                                         </label><br>
                                                     </div>
                                                     <div class="w-1/4 pl-2">
-                                                        <label for="end" class="w-full">
+                                                        <label for="events-count" class="w-full">
                                                             <span class="font-semibold p-2">Count</span>
-                                                            <input name="" type="number" placeholder="14" id="end" x-model="formData.recurringCount" @change="regenerateRecurringDates" @keyup="regenerateRecurringDates"/>
+                                                            <input name="events-count" type="number" placeholder="14" id="end" min="1" x-model="formData.eventsCount" @change="regenerateRecurringDates" @keyup="regenerateRecurringDates"/>
                                                         </label>
                                                     </div>
                                                     <div class="w-1/2 pl-2">
-                                                        <span class="font-semibold mb-6">Dates</span><br>
+                                                        <span class="font-semibold mb-6">Generated Dates</span><br>
                                                         <span x-show="formData.start == ''" class="ml-2 opacity-75">- Please set "start" first -</span>
                                                         <ul class="ml-2" x-show="formData.start != ''">
+                                                            <li
+                                                                x-bind:style="{'cursor': 'default' }"
+                                                                x-text="(new Date(formData.start)).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"
+                                                            ></li>
                                                             <template x-for="date in formData.recurringDates">
                                                                 <li
                                                                     x-bind:style="{'cursor': 'pointer', 'text-decoration': date.enabled ? 'none' : 'line-through' }"
@@ -413,7 +417,7 @@
                                             <i class="fas fa-check"></i>
                                             <span
                                                     x-text="formData.recurring && formData.recurringDates.filter(({enabled}) => enabled).length > 0
-                                                        ? `Create ${formData.recurringDates.filter(({enabled}) => enabled).length.toString()} Lecture${formData.recurringDates.filter(({enabled}) => enabled).length > 1 ? 's' : ''}`
+                                                        ? `Create ${(formData.recurringDates.filter(({enabled}) => enabled).length + 1).toString()} Lectures`
                                                         : 'Create Lecture'"
                                             ></span>
                                         </span>
