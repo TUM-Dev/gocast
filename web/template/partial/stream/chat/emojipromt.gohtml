@@ -1,0 +1,8 @@
+{{define "emojipromt"}}
+    <div x-show="emojiSuggestions.length>0" class="text-left overflow-hidden whitespace-nowrap px-2">
+        <template x-for="emoji in emojiSuggestions">
+                <span x-text="emoji.v"
+                      class="cursor-pointer mr-1 p-1 bg-gray-100 dark:bg-gray-700 shadow rounded "></span>
+        </template>
+    </div>
+{{end}}

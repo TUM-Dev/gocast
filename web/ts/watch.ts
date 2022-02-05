@@ -1,3 +1,18 @@
+import { Emoji, findEmojisForInput } from "./chat";
+
+export async function getEmojisForMessage(message: string, cursorPos: number): Promise<Emoji[]> {
+    let currentWord = "";
+    // backtrack from cursor position to get the word currently being typed
+    while (cursorPos >= 0 && message.charAt(cursorPos) !== " ") {
+        currentWord = message.charAt(cursorPos--) + currentWord;
+    }
+    if (!currentWord.startsWith(":") || currentWord.length < 2) {
+        return [];
+    }
+    currentWord = currentWord.substring(1);
+    return findEmojisForInput(currentWord);
+}
+
 let chatInput;
 
 export class Watch {

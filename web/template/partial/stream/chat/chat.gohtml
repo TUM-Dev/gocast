@@ -39,18 +39,9 @@
              style="flex: 2;">
             {{template "messageTemplate"}}
         </div>
-        <div x-cloak x-show="show"
-             x-on:messageindicator.window="e => {showNewMsgIndicator = e.detail.show}"
-             class="relative -top-8 h-0 w-full text-center"
-             x-data="{showNewMsgIndicator:false}">
-                <span @click="watch.scrollToLatestMessage()"
-                      x-show="showNewMsgIndicator"
-                      class="bg-blue-600 rounded-full px-4 py-1 text-white shadow cursor-pointer hover:bg-blue-700 whitespace-nowrap">
-                    <i class="fas fa-arrow-down"></i> New messages
-                </span>
-        </div>
+        {{template "chatprompts"}}
         <form x-show="show" id="chatForm"
-              class="2xl:flex 2xl:justify-between inset-x-0 px-2 pb-4 pt-5 bg-white dark:bg-secondary-lighter"
+              class="2xl:flex 2xl:justify-between inset-x-0 px-2 pb-4 bg-white dark:bg-secondary-lighter"
               @submit.prevent="watch.sendMessage(message, anonymous, replyTo);message=''">
             <div class="bg-gray-200 dark:bg-gray-600 focus-within:border-sky-600 dark:focus-within:border-sky-700
                         rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
@@ -69,7 +60,8 @@
                        {{if not (.IndexData.TUMLiveContext.User)}}disabled
                        placeholder="Log in to chat" {{else}}
                        :placeholder="replyTo===0?'Send a message':'Reply [escape to cancel]'" {{end}}autocomplete="off"
-                       id="chatInput" type="text">
+                       id="chatInput" type="text"
+                       @keyup="e=>{watch.getEmojisForMessage(message, e.target.selectionStart).then(r => $dispatch('emojisuggestions', r))}">
             </div>
             {{if (.IndexData.TUMLiveContext.User)}}
                 <div class="flex justify-end 2xl:flex-none 2xl:my-auto mt-2">
