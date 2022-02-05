@@ -1,7 +1,7 @@
 {{define "messageTemplate"}}
     <template x-for="m in messages" :key="m.ID">
-        <div x-show="!m.deleted" class="last:mb-1 rounded py-2 px-2" :class="replyTo === m.ID && 'ring ring-blue-500/50'"
-             x-data="{ showReplies: false, m: m }" x-show="m.replyTo && !m.replyTo.Valid">
+        <div class="last:mb-1 rounded py-2 px-2" :class="replyTo === m.ID && 'ring ring-blue-500/50'"
+             x-data="{ showReplies: false, m: m }" x-show="!m.deleted && m.replyTo && !m.replyTo.Valid">
             <p class="text-4 text-sm">
                 <span x-show="m.admin" class="text-white rounded-full bg-danger px-2 fas fa-video"></span>
                 <span class="text-2 font-semibold" x-text="m.name" :style="'color:'+m.color"></span>
