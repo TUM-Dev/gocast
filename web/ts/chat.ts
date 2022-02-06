@@ -19,6 +19,13 @@ export function scrollToBottom() {
 }
 
 /*
+    Scroll to top of the 'chatBox'
+ */
+export function scrollToTop() {
+    document.getElementById("chatBox").scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/*
     Saves negated show value in localStorage with key 'chatOpen'
     and returns the value.
     Calls 'scrollToBottom' after 250ms, so that the 'chatBox' is already
