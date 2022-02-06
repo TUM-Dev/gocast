@@ -24,12 +24,22 @@ const pageloaded = new Date();
 enum WSMessageType {
     Message = "message",
     Like = "like",
+    Delete = "delete",
 }
 
 export function likeMessage(id: number) {
     ws.send(
         JSON.stringify({
             type: WSMessageType.Like,
+            id: id,
+        }),
+    );
+}
+
+export function deleteMessage(id: number) {
+    ws.send(
+        JSON.stringify({
+            type: WSMessageType.Delete,
             id: id,
         }),
     );
@@ -141,6 +151,9 @@ export function startWebsocket() {
             }
         } else if ("likes" in data) {
             const event = new CustomEvent("chatlike", { detail: data });
+            window.dispatchEvent(event);
+        } else if ("delete" in data) {
+            const event = new CustomEvent("chatdelete", { detail: data });
             window.dispatchEvent(event);
         }
     };

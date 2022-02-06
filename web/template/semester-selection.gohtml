@@ -9,7 +9,7 @@
             <div @click.outside="showSemesterSelect = false"
                  class="lg:shadow-sm lg:rounded-lg h-fit bg-white border rounded-t-lg w-full mt-auto
                         dark:bg-secondary dark:border-gray-800">
-                <div class="flex justify-between px-4 border-b h-12 dark:border-gray-600 shadow mb-1">
+                <div class="flex justify-between px-4 border-b h-12 dark:border-gray-800 shadow mb-1">
                     <div class="flex my-auto">
                         <i class="far fa-calendar text-gray-400"></i>
                         <span class="ml-2 text-sm uppercase text-gray-400">Semester</span>
@@ -23,7 +23,7 @@
                         <a href="/semester/{{$s.Year}}/{{$s.TeachingTerm}}">
                             <div class="{{if and (eq $s.Year $currentYear) (eq $s.TeachingTerm $currentTerm)}}
                                             bg-gray-100 dark:bg-secondary-lighter{{end}}
-                                        flex justify-center items-center h-12 border-b dark:border-gray-600">
+                                        flex justify-center items-center h-12 border-b dark:border-gray-800">
                                 <span class="text-3 text-sm font-semibold">{{$s.Year}}-{{$s.TeachingTerm}}</span>
                             </div>
                         </a>
