@@ -586,7 +586,11 @@ func deleteCourse(c *gin.Context) {
 	}
 
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	fmt.Println(*tumLiveContext.Course)
+
+	log.WithFields(log.Fields{
+		"user": tumLiveContext.User.ID,
+		"course": tumLiveContext.Course.ID,
+	}).Info("Delete Course Called")
 
 	dao.DeleteCourse(*tumLiveContext.Course)
 	dao.Cache.Clear()

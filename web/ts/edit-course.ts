@@ -137,7 +137,7 @@ export function createLectureForm() {
 }
 
 export function deleteCourse(courseID: string) {
-    if (confirm("Do you really want this course? This includes all associated lectures.")) {
+    if (confirm("Do you really want to delete this course? This includes all associated lectures.")) {
         const url = `/api/course/${courseID}/`;
         fetch(url, { method: "DELETE" }).then((res) => {
             if (!res.ok) {
