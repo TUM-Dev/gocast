@@ -42,7 +42,8 @@
         {{template "chatprompts"}}
         <form x-show="show" id="chatForm"
               class="2xl:flex 2xl:justify-between inset-x-0 px-2 pb-4 bg-white dark:bg-secondary-lighter"
-              @submit.prevent="watch.sendMessage(message, anonymous, replyTo);message=''">
+              x-on:sendmessage.window="watch.sendMessage(message, anonymous, replyTo);message=''"
+              @submit.prevent="">
             <div class="bg-gray-200 dark:bg-gray-600 focus-within:border-sky-600 dark:focus-within:border-sky-700
                         rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
                 {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
@@ -61,11 +62,18 @@
                        placeholder="Log in to chat" {{else}}
                        :placeholder="replyTo===0?'Send a message':'Reply [escape to cancel]'" {{end}}autocomplete="off"
                        id="chatInput" type="text"
-                       @keyup="e=>{watch.getEmojisForMessage(message, e.target.selectionStart).then(r => $dispatch('emojisuggestions', r))}">
+                       x-on:setmessage.window="e=>message=e.detail"
+                       x-on:keydown="e=>{
+                       if(e.keyCode===9){$dispatch('emojiselectiontriggered');e.preventDefault();}
+                       else if(e.keyCode===40){$dispatch('emojiarrowdown');e.preventDefault();}
+                       else if(e.keyCode===38){$dispatch('emojiarrowup');e.preventDefault();}
+                       else if(e.keyCode===13){$dispatch('chatenter');e.preventDefault();}
+                       else {$nextTick(() =>{watch.getEmojisForMessage(message, e.target.selectionStart).then(r => $dispatch('emojisuggestions', r));})}}">
             </div>
             {{if (.IndexData.TUMLiveContext.User)}}
                 <div class="flex justify-end 2xl:flex-none 2xl:my-auto mt-2">
-                    <button class="bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
+                    <button tabindex="-1"
+                            class="bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
                                    disabled:bg-sky-300 disabled:hover:bg-sky-300 dark:disabled:bg-sky-300 dark:disabled:hover:bg-sky-300
                                    rounded border-0 focus:outline-none px-4 text-white text-sm py-2
                                    w-full 2xl:w-auto" :disabled="message===''">
