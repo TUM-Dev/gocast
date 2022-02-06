@@ -12,10 +12,6 @@ export function initChat() {
     return val ? JSON.parse(val) : false;
 }
 
-export function getTopEmojis() {
-    return TopEmojis;
-}
-
 /*
     Scroll to the bottom of the 'chatBox'
  */
