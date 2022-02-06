@@ -8,7 +8,7 @@
                     flex content-end justify-end z-50 h-screen w-full fixed bottom-0 right-0 backdrop-blur-sm">
             <div @click.outside="showSemesterSelect = false"
                  class="lg:shadow-sm lg:rounded-lg h-fit bg-white border rounded-t-lg w-full mt-auto
-                        dark:bg-secondary dark:border-0">
+                        dark:bg-secondary dark:border-gray-800">
                 <div class="flex justify-between px-4 border-b h-12 dark:border-gray-600 shadow mb-1">
                     <div class="flex my-auto">
                         <i class="far fa-calendar text-gray-400"></i>
@@ -34,17 +34,9 @@
         <button @click="showSemesterSelect = !showSemesterSelect"
                 class="lg:w-1/5 lg:right-5 lg:bottom-5 lg:rounded-lg
                         flex w-full fixed bottom-0 bg-white border shadow-sm rounded-t-lg
-                        h-12 px-4 dark:bg-secondary dark:border-0">
+                        h-12 px-4 dark:bg-secondary dark:border-gray-800">
             <span class="text-3 font-semibold text-sm mx-auto my-auto">{{$currentYear}}-{{$currentTerm}}</span>
             <span class="absolute text-sm right-3 text-3 my-auto top-0 bottom-0 h-fit">&#9650;</span>
         </button>
     </div>
-    <!--<div class="hidden md:flex justify-center fixed bottom-0 border-t dark:border-gray-900 w-full p-2 bg-white dark:bg-secondary">
-        {{range $s := .Semesters}}
-            <a href="/semester/{{$s.Year}}/{{$s.TeachingTerm}}"
-               class="mx-2 {{if and (eq $s.Year $currentYear) (eq $s.TeachingTerm $currentTerm)}}text-black dark:text-white{{else}}text-gray-500 dark:hover:text-white{{end}}">
-                {{$s.Year}}-{{$s.TeachingTerm}}
-            </a>
-        {{end}}
-    </div>-->
 {{end}}

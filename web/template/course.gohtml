@@ -6,7 +6,7 @@
     <script src="/static/assets/ts-dist/course.js" defer async></script>
     {{template "headImports" .IndexData.VersionTag}}
 </head>
-<body class="md:overflow-hidden dark:bg-secondary-lighter">
+<body class="md:overflow-hidden">
 {{- /*gotype: TUM-Live/web.CoursePageData*/ -}}
 {{template "header" .IndexData.TUMLiveContext}}
 {{$course := .IndexData.TUMLiveContext.Course}}
@@ -19,10 +19,10 @@
         <!-- VoD -->
         <div class="w-full md:row-span-6 md:w-auto">
             <div x-data="{asc: false}"
-                 class="bg-white h-full border dark:bg-secondary dark:border-black rounded-lg
+                 class="bg-white h-full border dark:bg-secondary dark:border-gray-800 rounded-lg
                     shadow-sm">
 
-                <div class="flex justify-between h-16 px-3 border-b dark:border-black shadow">
+                <div class="flex justify-between h-16 px-3 border-b dark:border-gray-800 shadow">
                     <span class="bg-success rounded-full text-lg font-bold text-white my-auto px-5">VoD</span>
                     <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2 my-auto"
                             @click="asc = !asc">
@@ -39,7 +39,7 @@
             </div>
         </div>
         <!-- Next Lecture -->
-        <div class="flex w-full relative bg-white border dark:bg-secondary dark:border-black rounded-lg
+        <div class="flex w-full relative bg-white border dark:bg-secondary dark:border-gray-800 rounded-lg
                     shadow-sm py-3 px-5 my-3 order-first md:my-0 md:row-span-1 md:w-auto md:order-none">
             {{$lecture := $course.GetNextLecture}}
             {{if $course.IsLive}}
@@ -80,11 +80,11 @@
         <!-- Planned -->
         <div class="w-full md:row-span-5 md:w-auto">
             <div x-data="{showPlanned: true}"
-                 class="bg-white dark:bg-secondary border dark:border-black rounded-lg shadow-sm my-3 md:my-0"
+                 class="bg-white dark:bg-secondary border dark:border-gray-800 rounded-lg shadow-sm my-3 md:my-0"
                  :class="showPlanned ? 'h-full' : 'h-fit'">
 
                 <div class="flex justify-between h-16 px-3 shadow"
-                     :class="showPlanned && 'border-b dark:border-black'">
+                     :class="showPlanned && 'border-b dark:border-gray-800'">
                     <span class="bg-info rounded-full text-lg font-bold text-white px-5 my-auto">Upcoming</span>
                     <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2 my-auto"
                             @click="showPlanned = !showPlanned;">
