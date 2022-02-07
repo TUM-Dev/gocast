@@ -2,5 +2,4 @@
 export * from "../watch-admin";
 export * from "../TUMLiveVjs";
 export * from "../watch";
-export * from "../chat";
 // Lecture Units are currently not used, so we don't include them in the bundle at the moment
