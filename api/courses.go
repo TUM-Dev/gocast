@@ -14,9 +14,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"io"
 	"io/ioutil"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"regexp"
@@ -436,20 +434,20 @@ func createLecture(c *gin.Context) {
 			log.WithError(err).Error("Can't create folder for premiere")
 			return
 		}
-		// Copy file to shared storage
-		file, err := os.Create(fmt.Sprintf("%s/%s", premiereFolder, premiereFileName))
-		if err != nil {
-			log.WithError(err).Error("Can't create file for premiere")
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-		reqFile, _ := req.File.Open()
-		_, err = io.Copy(file, reqFile)
-		if err != nil {
-			log.WithError(err).Error("Can't write file for premiere")
-			c.AbortWithStatus(http.StatusInternalServerError)
-		}
-		_ = file.Close()
+		//// Copy file to shared storage
+		//file, err := os.Create(fmt.Sprintf("%s/%s", premiereFolder, premiereFileName))
+		//if err != nil {
+		//	log.WithError(err).Error("Can't create file for premiere")
+		//	c.AbortWithStatus(http.StatusInternalServerError)
+		//	return
+		//}
+		//reqFile, _ := req.File.Open()
+		//_, err = io.Copy(file, reqFile)
+		//if err != nil {
+		//	log.WithError(err).Error("Can't write file for premiere")
+		//	c.AbortWithStatus(http.StatusInternalServerError)
+		//}
+		//_ = file.Close()
 	}
 	streamKey := uuid.NewV4().String()
 	streamKey = strings.ReplaceAll(streamKey, "-", "")
@@ -465,9 +463,9 @@ func createLecture(c *gin.Context) {
 	}
 
 	// Add start date as first event
-	req.dateSeries = append(req.dateSeries, req.Start)
+	req.DateSeries = append(req.DateSeries, req.Start)
 
-	for _, date := range req.dateSeries {
+	for _, date := range req.DateSeries {
 		endTime := date.Add(time.Minute * time.Duration(req.Duration))
 
 		lecture := model.Stream{
@@ -497,14 +495,13 @@ func createLecture(c *gin.Context) {
 }
 
 type createLectureRequest struct {
-	Title         string                `form:"title"`
-	LectureHallId string                `form:"lectureHallId"`
-	Start         time.Time             `form:"start"`
-	Duration      int                   `form:"duration"`
-	Premiere      bool                  `form:"premiere"`
-	File          *multipart.FileHeader `form:"file"`
-	Vodup         bool                  `form:"vodup"`
-	dateSeries    []time.Time           `form:"dateSeries"`
+	Title         string      `json:"title"`
+	LectureHallId string      `json:"lectureHallId"`
+	Start         time.Time   `json:"start"`
+	Duration      int         `json:"duration"`
+	Premiere      bool        `json:"premiere"`
+	Vodup         bool        `json:"vodup"`
+	DateSeries    []time.Time `json:"dateSeries"`
 }
 
 func createCourse(c *gin.Context) {

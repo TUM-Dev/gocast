@@ -166,26 +166,26 @@ export function createLectureForm() {
         },
         submitData() {
             this.loading = true;
-            const body = new FormData();
-            body.set("title", this.formData.title);
-            body.set("lectureHallId", this.formData.lectureHallId);
-            body.set("premiere", this.formData.premiere);
-            body.set("vodup", this.formData.vodup);
-            body.set("start", this.formData.start);
-            body.set("duration", this.formData.duration);
+            const payload = {
+                title: this.formData.title,
+                lectureHallId: this.formData.lectureHallId,
+                premiere: this.formData.premiere,
+                vodup: this.formData.vodup,
+                start: this.formData.start,
+                duration: this.formData.duration,
+                dateSeries: [],
+                // todo: file: undefined,
+            };
             if (this.formData.recurring) {
                 for (const date of this.formData.recurringDates.filter(({ enabled }) => enabled)) {
-                    body.append("dateSeries[]", date.date.toISOString());
+                    payload.dateSeries.push(date.date.toISOString());
                 }
             }
             if (this.formData.premiere || this.formData.vodup) {
-                body.set("file", this.formData.file[0]);
-                body.set("duration", "0"); // premieres have no explicit end set -> use "0" here
+                // todo: payload.file = this.formData.file[0];
+                payload.duration = 0; // premieres have no explicit end set -> use "0" here
             }
-            fetch("/api/course/" + this.courseID + "/createLecture", {
-                method: "POST",
-                body: body,
-            })
+            postData("/api/course/" + this.courseID + "/createLecture", payload)
                 .then(() => {
                     this.loading = false;
                     window.location.reload();
