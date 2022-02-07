@@ -168,7 +168,7 @@ export function createLectureForm() {
             this.loading = true;
             const payload = {
                 title: this.formData.title,
-                lectureHallId: this.formData.lectureHallId,
+                lectureHallId: this.formData.lectureHallId.toString(),
                 premiere: this.formData.premiere,
                 vodup: this.formData.vodup,
                 start: this.formData.start,
