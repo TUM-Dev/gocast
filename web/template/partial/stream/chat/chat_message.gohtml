@@ -1,17 +1,23 @@
 {{define "messageTemplate"}}
-    <template x-for="m in messages">
+    <template x-for="m in messages" :key="m.ID">
         <div class="last:mb-1 rounded py-2 px-2" :class="replyTo === m.ID && 'ring ring-blue-500/50'"
-             x-data="{ showReplies: false, m: m }" x-show="m.replyTo && !m.replyTo.Valid">
+             x-data="{ showReplies: false, m: m }" x-show="!m.deleted && m.replyTo && !m.replyTo.Valid">
             <p class="text-4 text-sm">
                 <span x-show="m.admin" class="text-white rounded-full bg-danger px-2 fas fa-video"></span>
                 <span class="text-2 font-semibold" x-text="m.name" :style="'color:'+m.color"></span>
-                <span x-text="m.message"></span>
+                <span class="chatMsg" x-html="m.message"></span>
             </p>
             <p class="flex flex-row text-sm font-semibold gap-3 text-5 mt-1">
                 <span x-text="let d = new Date(m.CreatedAt); return ('0'+d.getHours()).slice(-2)+':'+('0' + d.getMinutes()).slice(-2)"></span>
                 <a @click="replyTo === m.ID ? replyTo=0: replyTo=m.ID; $refs.chatInput.focus()"
                    title="Reply" class="cursor-pointer hover:text-1">
                     <span x-text="replyTo === m.ID ? 'Cancel': 'Reply'"></span>
+                </a>
+                <a @click="watch.likeMessage(m.ID); m.liked=!m.liked;" class="cursor-pointer" :title="m.liked?'Unlike':'Like'">
+                    <span :class="m.liked && 'text-blue-500 hover:text-blue-300'"><i class="fas fa-thumbs-up"></i> <span x-text="m.likes!==0?`(${m.likes})`:''"></span></span>
+                </a>
+                <a x-show="admin" @click="watch.deleteMessage(m.ID)" title="Delete Message" class="cursor-pointer">
+                    <span class="fas fa-ban"></span>
                 </a>
             </p>
             <div x-cloak class="ml-2">
@@ -28,7 +34,7 @@
                             <p class="text-4 text-sm">
                                 <span x-show="reply.admin" class="text-white rounded-full bg-danger px-2 fas fa-video"></span>
                                 <span class="text-2 font-semibold" x-text="reply.name":style="'color:'+reply.color"></span>
-                                <span x-text="reply.message"></span>
+                                <span class="chatMsg" x-html="reply.message"></span>
                             </p>
                             <p class="flex flex-row text-sm font-semibold gap-3 text-5">
                                 <span x-text="let d = new Date(reply.CreatedAt); return ('0'+d.getHours()).slice(-2)+':'+('0' + d.getMinutes()).slice(-2)"></span>

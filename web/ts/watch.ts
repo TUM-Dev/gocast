@@ -1,4 +1,6 @@
-let chatInput;
+import { showNewMessageIndicator, scrollChat, shouldScroll, showDisconnectedMsg, hideDisconnectedMsg } from "./chat";
+
+let chatInput: HTMLInputElement;
 
 export class Watch {
     constructor() {
@@ -16,7 +18,33 @@ export class Watch {
 
 let ws: WebSocket;
 let retryInt = 5000; //retry connecting to websocket after this timeout
+
+const scrollDelay = 100; // delay before scrolling to bottom to make sure chat is rendered
 const pageloaded = new Date();
+
+enum WSMessageType {
+    Message = "message",
+    Like = "like",
+    Delete = "delete",
+}
+
+export function likeMessage(id: number) {
+    ws.send(
+        JSON.stringify({
+            type: WSMessageType.Like,
+            id: id,
+        }),
+    );
+}
+
+export function deleteMessage(id: number) {
+    ws.send(
+        JSON.stringify({
+            type: WSMessageType.Delete,
+            id: id,
+        }),
+    );
+}
 
 export function initChatScrollListener() {
     const chatBox = document.getElementById("chatBox") as HTMLDivElement;
@@ -28,22 +56,6 @@ export function initChatScrollListener() {
             window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
         }
     });
-}
-
-export function scrollChatIfNeeded() {
-    const c = document.getElementById("chatBox");
-    // 150px grace offset to avoid showing message when close to bottom
-    if (c.scrollHeight - c.scrollTop <= c.offsetHeight + 150) {
-        c.scrollTop = c.scrollHeight;
-    } else {
-        window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: true } }));
-    }
-}
-
-export function scrollToLatestMessage() {
-    const c = document.getElementById("chatBox");
-    c.scrollTo({ top: c.scrollHeight, behavior: "smooth" });
-    window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
 }
 
 export function startWebsocket() {
@@ -69,9 +81,14 @@ export function startWebsocket() {
                 window.dispatchEvent(new CustomEvent("pauseend"));
             }
         } else if ("server" in data) {
+            const scroll = shouldScroll();
             const serverElem = createServerMessage(data);
             document.getElementById("chatBox").appendChild(serverElem);
-            scrollChatIfNeeded();
+            if (scroll) {
+                setTimeout(scrollChat, scrollDelay);
+            } else {
+                showNewMessageIndicator();
+            }
         } else if ("message" in data) {
             data["replies"] = []; // go serializes this empty list as `null`
             // reply
@@ -81,10 +98,21 @@ export function startWebsocket() {
                 window.dispatchEvent(event);
             } else {
                 // message
+                const scroll = shouldScroll();
                 const event = new CustomEvent("chatmessage", { detail: data });
                 window.dispatchEvent(event);
-                scrollChatIfNeeded();
+                if (scroll) {
+                    setTimeout(scrollChat, scrollDelay);
+                } else {
+                    showNewMessageIndicator();
+                }
             }
+        } else if ("likes" in data) {
+            const event = new CustomEvent("chatlike", { detail: data });
+            window.dispatchEvent(event);
+        } else if ("delete" in data) {
+            const event = new CustomEvent("chatdelete", { detail: data });
+            window.dispatchEvent(event);
         }
     };
 
@@ -126,21 +154,10 @@ export function createServerMessage(msg) {
 export function sendMessage(message: string, anonymous: boolean, replyTo: number) {
     ws.send(
         JSON.stringify({
+            type: WSMessageType.Message,
             msg: message,
             anonymous: anonymous,
             replyTo: replyTo,
         }),
     );
-}
-
-export function showDisconnectedMsg() {
-    if (document.getElementById("disconnectMsg") !== null) {
-        document.getElementById("disconnectMsg").classList.remove("hidden");
-    }
-}
-
-export function hideDisconnectedMsg() {
-    if (document.getElementById("disconnectMsg") !== null) {
-        document.getElementById("disconnectMsg").classList.add("hidden");
-    }
 }

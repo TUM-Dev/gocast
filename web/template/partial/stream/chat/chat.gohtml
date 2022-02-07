@@ -1,10 +1,13 @@
 {{define "chat"}}
     {{- /*gotype: TUM-Live/web.WatchPageData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
-    <div x-cloak x-data="{show: false, replyTo: 0, message: '', anonymous: false, messages: []}"
-         x-init="show = watch.initChat(); fetch('/api/chat/{{$stream.ID}}/messages').then(res => res.json()).then(d => {messages=d});$nextTick(() => { watch.scrollToBottom() })"
-         x-on:chatmessage.window="e => {messages.push(e.detail);}"
+    <div x-cloak x-data="{orderByLikes: false, show: $persist(false).as('chatOpen'), replyTo: 0, message: '', admin: {{.IsAdminOfCourse}}, anonymous: false, messages: []}"
+         x-init="fetch('/api/chat/{{$stream.ID}}/messages').then(res => res.json()).then(d => {messages=d});$nextTick(() => { watch.scrollToBottom() })"
+         x-on:chatmessage.window="e => {messages.push(e.detail)}"
          x-on:chatreply.window="e => {messages.find(m=>m.ID===e.detail.replyTo.Int64).replies.push(e.detail);}"
+         x-on:chatlike.window="e => {messages.find(m=>m.ID===e.detail.likes).likes=e.detail.num; $dispatch('reorder')}"
+         x-on:chatdelete.window="e => {messages.find(m=>m.ID===e.detail.delete).deleted=true;}"
+         @reorder="watch.sortMessages(messages, orderByLikes)"
          id="chatWrapper"
          class="md:h-full relative flex-col w-full border-t mt-5 text-1 border-l bg-white dark:bg-secondary-lighter
                 dark:border-gray-900 md:flex md:mt-0 md:border-t-0"
@@ -13,12 +16,17 @@
         <div class='pt-1 pb-1 flex px-3 border-b md:border-b-0 dark:border-gray-900'
              :class="show ? 'md:border-b justify-between' : 'md:justify-center bg-white dark:bg-secondary-lighter'">
             <div class="my-auto">
-                <button @click="show = watch.toggleChat(show);"
+                <button @click="show = !show;"
                         class="bg-transparent border-0 font-semibold text-2xl pr-3 pl-3 pb-1 rounded
                                hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90 md:rotate-0"
                         title="Hide Chat" :title="show ? 'Hide Chat' : 'Show Chat'">
                     <span x-text="show ? '&#8614;' : '&#8612;'">&#8614;</span></button>
             </div>
+            <span @click="orderByLikes=!orderByLikes; watch.setOrder(orderByLikes); $dispatch('reorder'); orderByLikes? watch.scrollToTop(): watch.scrollToBottom()"
+                  x-show="show" class="font-semibold text-sm my-auto cursor-pointer">
+                <i class="fas fa-exchange-alt"></i>
+                <span x-text="orderByLikes? 'Popular First': 'Live Chat'"></span>
+            </span>
             <span x-show="show" class="font-semibold text-sm my-auto">Chat</span>
         </div>
         <div x-show="show">
@@ -31,19 +39,11 @@
              style="flex: 2;">
             {{template "messageTemplate"}}
         </div>
-        <div x-cloak x-show="show"
-             x-on:messageindicator.window="e => {showNewMsgIndicator = e.detail.show}"
-             class="relative -top-8 h-0 w-full text-center"
-             x-data="{showNewMsgIndicator:false}">
-                <span @click="watch.scrollToLatestMessage()"
-                      x-show="showNewMsgIndicator"
-                      class="bg-blue-600 rounded-full px-4 py-1 text-white shadow cursor-pointer hover:bg-blue-700 whitespace-nowrap">
-                    <i class="fas fa-arrow-down"></i> New messages
-                </span>
-        </div>
+        {{template "chatprompts"}}
         <form x-show="show" id="chatForm"
-              class="2xl:flex 2xl:justify-between inset-x-0 px-2 pb-4 pt-5 bg-white dark:bg-secondary-lighter"
-              @submit.prevent="watch.sendMessage(message, anonymous, replyTo);message=''">
+              class="2xl:flex 2xl:justify-between inset-x-0 px-2 pb-4 bg-white dark:bg-secondary-lighter"
+              x-on:sendmessage.window="watch.sendMessage(message, anonymous, replyTo);message=''"
+              @submit.prevent="">
             <div class="bg-gray-200 dark:bg-gray-600 focus-within:border-sky-600 dark:focus-within:border-sky-700
                         rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
                 {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
@@ -61,11 +61,19 @@
                        {{if not (.IndexData.TUMLiveContext.User)}}disabled
                        placeholder="Log in to chat" {{else}}
                        :placeholder="replyTo===0?'Send a message':'Reply [escape to cancel]'" {{end}}autocomplete="off"
-                       id="chatInput" type="text">
+                       id="chatInput" type="text"
+                       x-on:setmessage.window="e=>message=e.detail"
+                       x-on:keydown="e=>{
+                       if(e.keyCode===9){$dispatch('emojiselectiontriggered');e.preventDefault();}
+                       else if(e.keyCode===40){$dispatch('emojiarrowdown');e.preventDefault();}
+                       else if(e.keyCode===38){$dispatch('emojiarrowup');e.preventDefault();}
+                       else if(e.keyCode===13){$dispatch('chatenter');e.preventDefault();}
+                       else {$nextTick(() =>{watch.getEmojisForMessage(message, e.target.selectionStart).then(r => $dispatch('emojisuggestions', r));})}}">
             </div>
             {{if (.IndexData.TUMLiveContext.User)}}
                 <div class="flex justify-end 2xl:flex-none 2xl:my-auto mt-2">
-                    <button class="bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
+                    <button tabindex="-1"
+                            class="bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
                                    disabled:bg-sky-300 disabled:hover:bg-sky-300 dark:disabled:bg-sky-300 dark:disabled:hover:bg-sky-300
                                    rounded border-0 focus:outline-none px-4 text-white text-sm py-2
                                    w-full 2xl:w-auto" :disabled="message===''">

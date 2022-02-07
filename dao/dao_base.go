@@ -54,4 +54,6 @@ var (
 
 	// AppBuildInfo reference to build info
 	AppBuildInfo *BuildInfo
+
+	Migrator = newMigrator()
 )
