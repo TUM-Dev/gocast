@@ -19,19 +19,19 @@
         <!-- VoD -->
         <div class="w-full md:row-span-6 md:w-auto">
             <div x-data="{asc: false}"
-                 class="bg-white h-full border dark:bg-secondary-lighter dark:border-gray-900 rounded-lg
+                 class="bg-white h-full border dark:bg-secondary dark:border-gray-800 rounded-lg
                     shadow-sm">
 
-                <div class="flex justify-between h-16 px-3 border-b dark:border-gray-900">
+                <div class="flex justify-between h-16 px-3 border-b dark:border-gray-800 shadow">
                     <span class="bg-success rounded-full text-lg font-bold text-white my-auto px-5">VoD</span>
-                    <button class="hover:bg-gray-200 dark:hover:bg-gray-900 rounded px-2 my-auto"
-                            @click="asc = changeVoDOrder(asc);">
+                    <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2 my-auto"
+                            @click="asc = !asc">
                     <span class="text-sm font-semibold uppercase dark:text-white my-auto"
                           x-text="asc ? '&#x25B2; asc' : '&#x25BC; desc'">&#x25BC; desc</span>
                     </button>
                 </div>
 
-                <ul id = "vod-list" class="flex px-5 py-3 overflow-y-scroll"
+                <ul id="vod-list" class="flex px-5 py-3 overflow-y-scroll"
                     :class="asc ? 'flex-col-reverse' : 'flex-col'"
                     style="max-height: calc(100% - 4rem)"> <!-- 4rem = h-16 -->
                     {{template "vod_course_list" .IndexData.TUMLiveContext}}
@@ -39,7 +39,7 @@
             </div>
         </div>
         <!-- Next Lecture -->
-        <div class="flex w-full relative bg-white border dark:bg-secondary-lighter dark:border-gray-900 rounded-lg
+        <div class="flex w-full relative bg-white border dark:bg-secondary dark:border-gray-800 rounded-lg
                     shadow-sm py-3 px-5 my-3 order-first md:my-0 md:row-span-1 md:w-auto md:order-none">
             {{$lecture := $course.GetNextLecture}}
             {{if $course.IsLive}}
@@ -80,11 +80,11 @@
         <!-- Planned -->
         <div class="w-full md:row-span-5 md:w-auto">
             <div x-data="{showPlanned: true}"
-                 class="bg-white dark:bg-secondary-lighter border dark:border-gray-900 rounded-lg shadow-sm my-3 md:my-0"
+                 class="bg-white dark:bg-secondary border dark:border-gray-800 rounded-lg shadow-sm my-3 md:my-0"
                  :class="showPlanned ? 'h-full' : 'h-fit'">
 
-                <div class="flex justify-between h-16 px-3"
-                     :class="showPlanned && 'border-b dark:border-gray-900'">
+                <div class="flex justify-between h-16 px-3 shadow"
+                     :class="showPlanned && 'border-b dark:border-gray-800'">
                     <span class="bg-info rounded-full text-lg font-bold text-white px-5 my-auto">Upcoming</span>
                     <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2 my-auto"
                             @click="showPlanned = !showPlanned;">
