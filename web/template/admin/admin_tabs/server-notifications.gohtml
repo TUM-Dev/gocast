@@ -12,38 +12,40 @@
 
 {{- /*gotype: TUM-Live/model.ServerNotification*/ -}}
 {{define "server-notification-edit"}}
-    <div class="dark:bg-secondary-lighter mt-4 overflow-x-auto bg-gray-100 rounded-md shadow-md">
-        <form class="text-3 grid grid-cols-4 mb-2 p-5"
+    <div class="dark:bg-secondary-lighter mt-4 overflow-x-auto bg-gray-100 rounded-md w-2/3 shadow-md min-w-min">
+        <form class="grid grid-cols-6 text-3 mb-2 p-5 gap-4"
               action="/api/serverNotification/{{if .Model.ID}}{{.Model.ID}}{{else}}create{{end}}" method="post">
             <input type="hidden" name="id" value="{{if .}}{{.Model.ID}}{{end}}">
-            <label class="col-span-4 uppercase">
-                <span class="font-bold">Message</span>
+            <label class="col-start-1 col-span-6 uppercase">
+                <span class="text-4 uppercase text-sm font-semibold">Message</span>
                 <input type="text" name="text"{{if .}} value="{{.Text}}" {{end}}>
             </label>
-            <label class="col-span-1 uppercase my-8 mr-56">
-                <span class="font-bold">From</span>
-                <input class="from" type="text" name="from" id="from{{if .}}{{.Model.ID}}{{end}}" placeholder="2021-07-06 12:00"{{if .}} value="{{.FormatFrom}}" {{end}}>
-            </label>
-            <label class="col-span-1 uppercase my-8 mr-56">
-                <span class="font-bold">Expires</span>
-                <input class="expires" type="text" name="expires" id="expires{{if .}}{{.Model.ID}}{{end}}" placeholder="2021-07-06 14:00"{{if .}} value="{{.FormatExpires}}" {{end}}>
-            </label>
-            <div class="col-span-1 uppercase ml-3 w-1/5 my-8">
+            <div class="col-start-1 col-span-1 uppercase ml-3 my-8">
+                <span class="text-4 text-sm font-semibold">Type</span>
                 <div>
-                    <span class="font-bold">Type</span>
-                    <div>
-                        <input {{if .}}{{if not .Warn}}checked{{end}}{{else}}checked{{end}} class="w-auto" type="radio"
-                               id="info" name="type" value="info">
-                        <label class="capitalize" for="info">Info</label>
-                    </div>
-                    <div>
-                        <input {{if .}}{{if .Warn}}checked{{end}}{{end}} class="w-auto" type="radio" id="warning"
-                               name="type" value="warning">
-                        <label class="capitalize" for="warning">Warning</label>
-                    </div>
+                    <input {{if .}}{{if not .Warn}}checked{{end}}{{else}}checked{{end}} class="w-auto" type="radio"
+                           id="info" name="type" value="info">
+                    <label class="capitalize" for="info">Info</label>
+                </div>
+                <div>
+                    <input {{if .}}{{if .Warn}}checked{{end}}{{end}} class="w-auto" type="radio" id="warning"
+                           name="type" value="warning">
+                    <label class="capitalize" for="warning">Warning</label>
                 </div>
             </div>
-            <button class="h-10 px-5 ml-3 m-auto w-56 transition-colors duration-150 dark:bg-gray-800 bg-gray-300 rounded-lg focus:shadow-outline hover:bg-gray-400 shadow-md font-bold">Submit</button>
+            <label class="col-start-2 col-span-2 uppercase my-8 ">
+                <span class="text-4 uppercase text-sm font-semibold">From</span>
+                <input class="from" type="text" name="from" id="from{{if .}}{{.Model.ID}}{{end}}" placeholder="2021-07-06 12:00"{{if .}} value="{{.FormatFrom}}" {{end}}>
+            </label>
+            <label class="col-start-4 col-span-2 uppercase my-8">
+                <span class="text-4 uppercase text-sm font-semibold">Expires</span>
+                <input class="expires" type="text" name="expires" id="expires{{if .}}{{.Model.ID}}{{end}}" placeholder="2021-07-06 14:00"{{if .}} value="{{.FormatExpires}}" {{end}}>
+            </label>
+            <div class="col-start-6 col-span-1 my-8 flex m-auto">
+                <button class="h-20 px-5 w-full text-gray-700 hover:text-gray-400" title="Submit notification">
+                    <i class="<fas fa-check text-3xl"></i>
+                </button>
+            </div>
         </form>
     </div>
 {{end}}
