@@ -1,4 +1,4 @@
-// Package api_grpc handles communication with workers
+// worker_grpc.go handles communication with workers via grpc
 package api
 
 import (

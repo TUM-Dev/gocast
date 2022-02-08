@@ -38,6 +38,7 @@ func configGinCourseRouter(router *gin.Engine) {
 	adminOfCourseGroup := router.Group("/api/course/:courseID")
 	adminOfCourseGroup.Use(tools.InitCourse)
 	adminOfCourseGroup.Use(tools.AdminOfCourse)
+	adminOfCourseGroup.DELETE("/", deleteCourse)
 	adminOfCourseGroup.POST("/createLecture", createLecture)
 	adminOfCourseGroup.POST("/deleteLectures", deleteLectures)
 	adminOfCourseGroup.POST("/renameLecture/:streamID", renameLecture)
@@ -404,6 +405,22 @@ func createLecture(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+
+	// Forbid setting lectureHall for vod or premiere
+	if (req.Premiere || req.Vodup) && req.LectureHallId != "0" {
+		log.Error("Cannot set lectureHallId on 'Premiere' or 'Vodup' Lecture.")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	// try parse lectureHallId
+	lectureHallId, err := strconv.ParseInt(req.LectureHallId, 10, 32)
+	if err != nil {
+		log.WithError(err).Error("invalid LectureHallId format")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
 	// name for folder for premiere file if needed
 	premiereFolder := fmt.Sprintf("%s/%d/%s/%s",
 		tools.Cfg.Paths.Mass,
@@ -447,35 +464,38 @@ func createLecture(c *gin.Context) {
 		}
 		playlist = fmt.Sprintf("https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s/playlist.m3u8", strings.ReplaceAll(premiereFileName, "-", "_"))
 	}
+
 	lecture := model.Stream{
-		Name:        req.Title,
-		CourseID:    tumLiveContext.Course.ID,
-		Start:       req.Start,
-		End:         req.End,
-		StreamKey:   streamKey,
-		PlaylistUrl: playlist,
-		LiveNow:     false,
-		Recording:   req.Vodup,
-		Premiere:    req.Premiere,
+		Name:          req.Title,
+		CourseID:      tumLiveContext.Course.ID,
+		LectureHallID: uint(lectureHallId),
+		Start:         req.Start,
+		End:           req.End,
+		StreamKey:     streamKey,
+		PlaylistUrl:   playlist,
+		LiveNow:       false,
+		Recording:     req.Vodup,
+		Premiere:      req.Premiere,
 	}
 	// add file if premiere
 	if req.Premiere || req.Vodup {
 		lecture.Files = []model.File{{Path: fmt.Sprintf("%s/%s", premiereFolder, premiereFileName)}}
 	}
 	tumLiveContext.Course.Streams = append(tumLiveContext.Course.Streams, lecture)
-	err := dao.UpdateCourse(context.Background(), *tumLiveContext.Course)
+	err = dao.UpdateCourse(context.Background(), *tumLiveContext.Course)
 	if err != nil {
 		log.WithError(err).Warn("Can't update course")
 	}
 }
 
 type createLectureRequest struct {
-	Title    string                `form:"title"`
-	Start    time.Time             `form:"start"`
-	End      time.Time             `form:"end"`
-	Premiere bool                  `form:"premiere"`
-	File     *multipart.FileHeader `form:"file"`
-	Vodup    bool                  `form:"vodup"`
+	Title         string                `form:"title"`
+	LectureHallId string                `form:"lectureHallId"`
+	Start         time.Time             `form:"start"`
+	End           time.Time             `form:"end"`
+	Premiere      bool                  `form:"premiere"`
+	File          *multipart.FileHeader `form:"file"`
+	Vodup         bool                  `form:"vodup"`
 }
 
 func createCourse(c *gin.Context) {
@@ -555,6 +575,25 @@ func createCourse(c *gin.Context) {
 	go tum.GetEventsForCourses(courses)
 	go tum.FindStudentsForCourses(courses)
 	go tum.FetchCourses()
+}
+
+func deleteCourse(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+
+	log.WithFields(log.Fields{
+		"user": tumLiveContext.User.ID,
+		"course": tumLiveContext.Course.ID,
+	}).Info("Delete Course Called")
+
+	dao.DeleteCourse(*tumLiveContext.Course)
+	dao.Cache.Clear()
 }
 
 type createCourseRequest struct {

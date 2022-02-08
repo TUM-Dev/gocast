@@ -30,7 +30,8 @@
                                  @index-selected.window="if($event.detail.name===hall.lecture_hall_name){hall.selected_index=$event.detail.id}">
                                 <p class="text-lg">Camera Presets for</p>
                                 <p class="font-semibold" x-text="hall.lecture_hall_name"></p>
-                                <p class="font-semibold text-danger" x-show="hall.selected_index===0">No preset selected</p>
+                                <p class="font-semibold text-danger" x-show="hall.selected_index===0">No preset
+                                    selected</p>
                                 <p class="text-green-400"
                                    x-show="hall.selected_index !==0 && hall.presets.length >= hall.selected_index"
                                    x-text="`currently selected: ${hall.presets.length===0 || hall.selected_index === 0?'':hall.presets[hall.selected_index-1].Name}`"></p>
@@ -74,7 +75,7 @@
                     {{$ingestBase := .IngestBase}}
                     {{$lectureHalls := .LectureHalls}}
                     <div class="flex justify-between h-14 border-b dark:border-secondary mb-2">
-                        <h2 class = "my-auto font-bold">Lectures</h2>
+                        <h2 class="my-auto font-bold">Lectures</h2>
                         <button class="border bg-white border-gray-300 rounded w-20 my-auto shadow-sm text-gray-600
                                        hover:border-black hover:text-black
                                        dark:bg-gray-700 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
@@ -295,71 +296,109 @@
                             {{end}}
                         </div>
                         <li class="w-full p-6 dark:hover:bg-primary hover:bg-white border-b-2 border-primary">
-                            <form class="flex" method="post" action="/api/createLecture"
+                            <form method="post" action="/api/createLecture"
                                   x-data="admin.createLectureForm()"
                                   @submit.prevent="submitData"
                                   x-init="courseID = {{$course.Model.ID}}">
-                                <div class="w-1/4">
-                                    <div class="text-1 font-semibold">Create Lecture</div>
-                                    <label>
-                                        <input type="checkbox" x-model="formData.premiere" class="w-auto">
-                                        <span class="text-3">Video Premiere</span>
-                                    </label><br>
-                                    <label>
-                                        <input type="checkbox" x-model="formData.vodup" class="w-auto">
-                                        <span class="text-3">VoD Upload</span>
-                                    </label>
-                                </div>
-                                <div class="w-3/4">
-                                    <div class="dark:hover:bg-primary hover:bg-white">
-                                        <div class="flex flex-col md:flex-row">
-                                            <label for="name" class="md:w-1/2 w-full" x-show="!loading">
-                                                <span class="font-semibold p-2">Lecture Name</span>
-                                                <input name="name" id="name" type="text" x-model="formData.title"
-                                                       placeholder="L01: Binary Trees"/>
-                                            </label>
-                                            <label for="start" class="md:w-1/4 w-full" x-show="!loading">
-                                                <span class="font-semibold p-2">Start</span>
-                                                <input name="start" type="text" placeholder="2021-04-08 14:00"
-                                                       id="start" x-model="formData.start" x-ref="start"
-                                                       x-init="flatpickr($refs.start, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})"/>
-                                            </label>
-                                            <label x-show="!formData.premiere && !formData.vodup && !loading"
-                                                   for="end" class="md:w-1/4 w-full">
-                                                <span class="font-semibold p-2">End</span>
-                                                <input name="end" type="text" placeholder="2021-04-08 16:00"
-                                                       id="end"
-                                                       x-model="formData.end"
-                                                       x-ref="end"
-                                                       x-init="flatpickr($refs.end, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})"/>
-                                            </label>
-                                            <label class="relative"
-                                                   x-show="formData.premiere || formData.vodup && !loading"
-                                                   x-data="{ showTooltip:false }">
-                                                <span class="font-semibold p-2">Video File <i
-                                                            class="text-warn fas fa-exclamation-triangle"
-                                                            @mouseover="showTooltip=true"
-                                                            @mouseleave="showTooltip=false">
-                                                        <span class="absolute left-0 top-0 text-gray-700 transform -translate-y-6 bg-white rounded p-1 shadow font-light"
-                                                              x-show="showTooltip">If possible: mp4, H.264, 1080p @ 30fps</span>
-                                                    </i></span>
-                                                <input type="file" accept="video/mp4"
-                                                       x-on:change="formData.file = Object.values($event.target.files)">
-                                            </label>
-                                            <button type="submit" id="createLectureBtn">
-                                                <i class="fas fa-check text-4 hover:text-purple-500"
-                                                   x-show="!loading"></i>
-                                                <i class="fas fa-circle-notch text-4 animate-spin"
-                                                   x-show="loading"></i>
-                                            </button>
-                                            <span class="text-danger" x-show="error">Something went wrong.</span>
+                                <div class="flex">
+                                    <div class="w-1/4">
+                                        <div class="text-1 font-semibold">Create Lecture</div>
+                                        <label>
+                                            <input type="checkbox" x-model="formData.premiere" class="w-auto">
+                                            <span class="text-3">Video Premiere</span>
+                                        </label><br>
+                                        <label>
+                                            <input type="checkbox" x-model="formData.vodup" class="w-auto">
+                                            <span class="text-3">VoD Upload</span>
+                                        </label>
+                                    </div>
+                                    <div class="w-3/4">
+                                        <div class="dark:hover:bg-primary hover:bg-white">
+                                            <div class="flex flex-col md:flex-row">
+                                                <label for="name" class="md:w-1/2 w-full" x-show="!loading">
+                                                    <span class="font-semibold p-2">Lecture Name</span>
+                                                    <input name="name" id="name" type="text" x-model="formData.title"
+                                                           placeholder="L01: Binary Trees"/>
+                                                </label>
+                                                <label for="start" class="md:w-1/4 w-full" x-show="!loading">
+                                                    <span class="font-semibold p-2">Start</span>
+                                                    <input name="start" type="text" placeholder="2021-04-08 14:00"
+                                                           id="start" x-model="formData.start" x-ref="start"
+                                                           x-init="flatpickr($refs.start, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})"/>
+                                                </label>
+                                                <label x-show="!formData.premiere && !formData.vodup && !loading"
+                                                       for="end" class="md:w-1/4 w-full">
+                                                    <span class="font-semibold p-2">End</span>
+                                                    <input name="end" type="text" placeholder="2021-04-08 16:00"
+                                                           id="end"
+                                                           x-model="formData.end"
+                                                           x-ref="end"
+                                                           x-init="flatpickr($refs.end, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})"/>
+                                                </label>
+                                                <label class="relative"
+                                                       x-show="formData.premiere || formData.vodup && !loading"
+                                                       x-data="{ showTooltip:false }">
+                                                    <span class="font-semibold p-2">Video File <i
+                                                                class="text-warn fas fa-exclamation-triangle"
+                                                                @mouseover="showTooltip=true"
+                                                                @mouseleave="showTooltip=false">
+                                                            <span class="absolute left-0 top-0 text-gray-700 transform -translate-y-6 bg-white rounded p-1 shadow font-light"
+                                                                  x-show="showTooltip">If possible: mp4, H.264, 1080p @ 30fps</span>
+                                                        </i></span>
+                                                    <input type="file" accept="video/mp4"
+                                                           x-on:change="formData.file = Object.values($event.target.files)">
+                                                </label>
+
+                                            </div>
+                                        </div>
+                                        <div class="mt-4">
+                                            <div class="flex items-center">
+                                                <label class="mx-2"
+                                                       x-show="!formData.premiere && !formData.vodup && !loading">
+                                                    <span class="font-semibold p-2">Lecture Hall:</span>
+                                                    <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
+                                                            id="lectureHallBulkSelect"
+                                                            x-model="formData.lectureHallId">
+                                                        <option class="text-gray-300" value="0">Self streaming
+                                                        </option>
+                                                        {{range $lectureHall := $lectureHalls}}
+                                                            <option value="{{$lectureHall.Model.ID}}"
+                                                                    class="text-gray-300">
+                                                                {{$lectureHall.Name}}
+                                                            </option>
+                                                        {{end}}
+                                                    </select>
+                                                </label>
+                                            </div>
                                         </div>
                                     </div>
+                                </div>
+                                <div class="mt-8">
+                                    <button class="btn" type="submit" id="createLectureBtn">
+                                        <span x-show="!loading">
+                                            <i class="fas fa-check"></i>
+                                            Create Lecture
+                                        </span>
+                                        <i class="fas fa-circle-notch text-4 animate-spin" x-show="loading"></i>
+                                    </button>
+                                    <span class="text-danger" x-show="error">Something went wrong.</span>
                                 </div>
                             </form>
                         </li>
                     </ul>
                     {{template "externalParticipants" $course}}
+                </div>
+                <div class="mt-7 mb-5">
+                    <div class="flex h-14 border-b dark:border-secondary mb-2">
+                        <h2 class="text-red-400 dark:text-red-500 font-bold my-auto">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Dangerzone
+                        </h2>
+                    </div>
+                    <button class="btn bg-red-400 hover:bg-red-500 dark:bg-red-500 dark:hover:bg-red-600 border-0 rounded"
+                            @click="admin.deleteCourse('{{$course.Model.ID}}')">
+                        <span class="font-semibold text-white"><i class="far fa-trash-alt mr-2"></i>Delete course and all associated lectures</span>
+                    </button>
                 </div>
             </div>
         </div>
