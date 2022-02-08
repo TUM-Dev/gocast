@@ -248,7 +248,7 @@
                                                     If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
                                                     {{end}}
                                                     {{else if $lecture.Recording}}
-                                                    <p class="flex mt-4">
+                                                    <div class="text-left flex m-auto mt-4">
                                                         {{if $lecture.Files}}
                                                             {{template "downloadBtn" $lecture.Files}}
                                                         {{end}}
@@ -259,7 +259,7 @@
                                                                onclick="admin.showStats({{$lecture.Model.ID}})"></i>
                                                         </span>
                                                         {{end}}
-                                                    </p>
+                                                    </div>
                                                     {{if $lecture.Stats}}
                                                     <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
                                                         <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
