@@ -37,12 +37,14 @@ func GinServer() (err error) {
 	// capture performance with sentry
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
 	store := cookie.NewStore([]byte(tools.Cfg.CookieStoreSecret))
-	store.Options(sessions.Options{
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-		MaxAge:   86400 * 30,
-	})
+	if VersionTag != "development" {
+		store.Options(sessions.Options{
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+			MaxAge:   86400 * 30,
+		})
+	}
 	router.Use(sessions.Sessions("TUMLiveSessionV6", store))
 
 	router.Use(tools.InitContext)

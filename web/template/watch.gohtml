@@ -226,7 +226,7 @@
         </div>
     </div>
     {{if $course.ChatEnabled}}
-        <div x-data="{show: false}"
+        <div x-data="{show: $persist(false).as('chatOpen')}"
              class="mt-5 md:mt-0"
              :class="show ? 'w-full md:w-2/6 2xl:w-1/5 h-96 md:h-auto' : 'md:w-14 lg:w-14 h-fit md:h-full'">
             {{template "chat" .ChatData}}
