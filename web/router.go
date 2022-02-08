@@ -77,6 +77,7 @@ func configMainRoute(router *gin.Engine) {
 	streamGroup.Use(tools.InitStream)
 	streamGroup.GET("/w/:slug/:streamID", WatchPage)
 	streamGroup.GET("/w/:slug/:streamID/:version", WatchPage)
+	streamGroup.GET("/w/:slug/:streamID/chat/popup", PopUpChat)
 	router.GET("/", MainPage)
 	router.GET("/semester/:year/:term", MainPage)
 	router.GET("/healthcheck", HealthCheck)
@@ -118,4 +119,10 @@ type ErrorPageData struct {
 	IndexData IndexData
 	Status    int
 	Message   string
+}
+
+type ChatData struct {
+	IsAdminOfCourse bool // is current user admin or lecturer who created the course associated with the chat
+	IndexData       IndexData
+	IsPopUp			bool
 }

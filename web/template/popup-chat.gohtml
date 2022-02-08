@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full dark">
+{{- /*gotype: TUM-Live/web.ChatData*/ -}}
+<head>
+    <meta charset="UTF-8">
+    {{$stream := .IndexData.TUMLiveContext.Stream}}
+    {{$course := .IndexData.TUMLiveContext.Course}}
+    <title>{{$course.Name}}: {{$stream.Name}} | TUM Live</title>
+    {{template "headImports" .IndexData.VersionTag}}
+    <script src="/static/assets/ts-dist/watch.bundle.js?v={{.IndexData.VersionTag}}"></script>
+</head>
+<body class = "h-screen">
+    {{template "chat" .}}
+</body>

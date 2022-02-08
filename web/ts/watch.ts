@@ -2,15 +2,7 @@ let chatInput;
 
 export class Watch {
     constructor() {
-        if (document.getElementById("chatForm") != null) {
-            const appHeight = () => {
-                const doc = document.documentElement;
-                doc.style.setProperty("--chat-height", `calc(${window.innerHeight}px - 5rem)`);
-            };
-            window.addEventListener("resize", appHeight);
-            appHeight();
-            chatInput = document.getElementById("chatInput") as HTMLInputElement;
-        }
+        // Empty
     }
 }
 
@@ -214,4 +206,13 @@ export function hideDisconnectedMsg() {
     if (document.getElementById("disconnectMsg") !== null) {
         document.getElementById("disconnectMsg").classList.add("hidden");
     }
+}
+
+export function openChatPopUp() {
+    const height = window.innerHeight * 0.8;
+    window.open(
+        "chat/popup", // relative path to caller url
+        "_blank",
+        `popup=yes,width=420,innerWidth=420,height=${height},innerHeight=${height}`,
+    );
 }
