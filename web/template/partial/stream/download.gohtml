@@ -1,22 +1,19 @@
 {{define "downloadBtn"}}
-    <span class="flex m-auto ml-2 mr-2">
-        <div class="relative inline-block text-left" x-data="{expand:false}">
-            <button @click="expand=!expand" type="button"
-                    class="inline-flex justify-center w-full"
-                    id="menu-button" aria-expanded="true" aria-haspopup="true">
-                <i class="fas fa-cloud-download-alt text-4 dark:hover:text-white hover:text-black"></i>
-            </button>
-
-            <div x-show="expand" @click.outside="expand = false"
-                 class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
-                 role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
-                <div class="py-1" role="none">
-                    <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
-                    {{range $file := . }}
+    <span class="flex m-auto mr-2" x-data="{expand:false}">
+        <button @click="expand=!expand" type="button"
+                class="w-full"
+                id="menu-button" aria-expanded="true" aria-haspopup="true">
+            <i class="far fa-arrow-alt-circle-down text-4 text-lg dark:hover:text-white hover:text-black"></i>
+        </button>
+        <div x-show="expand" @click.outside="expand = false"
+             class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+             role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+            <div class="py-1" role="none">
+                <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
+                {{range $file := . }}
                     <a href="/api/download/{{$file.ID}}" download class="hover:bg-gray-100 hover:text-gray-700 text-gray-700 block px-4 py-2 text-sm"
                        role="menuitem" tabindex="-1" id="menu-item-0">{{$file.GetFriendlyFileName}}</a>
-                    {{end}}
-                </div>
+                {{end}}
             </div>
         </div>
     </span>
