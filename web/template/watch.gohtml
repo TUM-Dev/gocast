@@ -138,9 +138,16 @@
                     {{end}}
                 {{end}}
             </div>
-            {{if and .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
+            {{if or .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
                 <div class="border-t-2 border-secondary p-4 mt-2">
                     <h3 class="text-4 mb-2 font-bold">Stream actions</h3>
+                    <span>
+                        <button @click="fetch(`/api/stream/${streamID}/issue`)"
+                                title="Issues with the stream? Send a report to the RGB."
+                                class="bg-amber-500 inline-block text-center w-24 text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2 mr-3">
+                            <i class="fa-solid fa-bug mr-2"></i>Issue
+                        </button>
+                    </span>
                     <button @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)"
                             href="#"
                             :title="paused?'End Pause (Turns on video and audio)':'Pause lecture (Turns off video and audio)'"
