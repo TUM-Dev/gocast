@@ -464,22 +464,24 @@ func createLecture(c *gin.Context) {
 	}
 
 	// Add start date as first event
+	seriesIdentifier := uuid.NewV4().String()
 	req.DateSeries = append(req.DateSeries, req.Start)
 
 	for _, date := range req.DateSeries {
 		endTime := date.Add(time.Minute * time.Duration(req.Duration))
 
 		lecture := model.Stream{
-			Name:          req.Title,
-			CourseID:      tumLiveContext.Course.ID,
-			LectureHallID: uint(lectureHallId),
-			Start:         date,
-			End:           endTime,
-			StreamKey:     streamKey,
-			PlaylistUrl:   playlist,
-			LiveNow:       false,
-			Recording:     req.Vodup,
-			Premiere:      req.Premiere,
+			Name:             req.Title,
+			CourseID:         tumLiveContext.Course.ID,
+			LectureHallID:    uint(lectureHallId),
+			SeriesIdentifier: seriesIdentifier,
+			Start:            date,
+			End:              endTime,
+			StreamKey:        streamKey,
+			PlaylistUrl:      playlist,
+			LiveNow:          false,
+			Recording:        req.Vodup,
+			Premiere:         req.Premiere,
 		}
 
 		// add file if premiere
@@ -595,7 +597,7 @@ func deleteCourse(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 
 	log.WithFields(log.Fields{
-		"user": tumLiveContext.User.ID,
+		"user":   tumLiveContext.User.ID,
 		"course": tumLiveContext.Course.ID,
 	}).Info("Delete Course Called")
 
