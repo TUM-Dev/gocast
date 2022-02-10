@@ -402,19 +402,24 @@
                                                         </label>
                                                     </div>
                                                     <div class="w-1/2 pl-2">
-                                                        <span class="font-semibold mb-6">Generated Dates</span><br>
+                                                        <span class="font-semibold mb-6">Dates</span><br>
                                                         <span x-show="formData.start == ''" class="ml-2 opacity-75">- Please set "start" first -</span>
                                                         <ul class="ml-2" x-show="formData.start != ''">
                                                             <li
-                                                                x-bind:style="{'cursor': 'default' }"
-                                                                x-text="(new Date(formData.start)).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"
-                                                            ></li>
+                                                                x-bind:style="{ 'cursor': 'default' }"
+                                                            >
+                                                                <i class="far fa-check-square"></i>
+                                                                <span x-text="(new Date(formData.start)).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
+                                                            </li>
                                                             <template x-for="date in formData.recurringDates">
                                                                 <li
-                                                                    x-bind:style="{'cursor': 'pointer', 'text-decoration': date.enabled ? 'none' : 'line-through' }"
-                                                                    x-text="date.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"
+                                                                    x-bind:style="{ 'cursor': 'pointer', 'opacity': date.enabled ? '1' : '0.3' }"
                                                                     @click="() => (date.enabled = !date.enabled)"
-                                                                ></li>
+                                                                >
+                                                                    <i x-show="date.enabled" class="far fa-check-square"></i>
+                                                                    <i x-show="!date.enabled" class="far fa-square"></i>
+                                                                    <span x-text="date.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
+                                                                </li>
                                                             </template>
                                                         </ul>
                                                     </div>
