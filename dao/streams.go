@@ -170,7 +170,7 @@ func GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error)
 	if err := DB.Find(&streams, "live_now = ?", true).Error; err != nil {
 		return nil, err
 	}
-	Cache.SetWithTTL("AllCurrentlyLiveStreams", streams, 1, time.Minute)
+	Cache.SetWithTTL("AllCurrentlyLiveStreams", streams, 10, time.Second)
 	return streams, err
 }
 
