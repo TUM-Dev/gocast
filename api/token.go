@@ -48,7 +48,6 @@ func createToken(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	log.Println(req)
 	tokenStr := uuid.NewV4().String()
 	expires := sql.NullTime{Valid: req.Expires != nil}
 	if req.Expires != nil {
