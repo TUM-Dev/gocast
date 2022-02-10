@@ -8,7 +8,7 @@ import (
 // GetToken returns the first token for the given string that is not expired.
 func GetToken(token string) (model.Token, error) {
 	var t model.Token
-	err := DB.Model(&t).Where("token = ? AND expires > NOW()", token).First(&t).Error
+	err := DB.Model(&t).Where("token = ? AND (expires IS null OR expires > NOW())", token).First(&t).Error
 	return t, err
 }
 
