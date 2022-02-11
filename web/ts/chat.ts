@@ -1,4 +1,4 @@
-import {Emoji, TopEmojis} from "top-twitter-emojis-map";
+import { Emoji, TopEmojis } from "top-twitter-emojis-map";
 
 /*
     Scroll to the bottom of the 'chatBox'
@@ -11,7 +11,7 @@ export function scrollToBottom() {
     Scroll to top of the 'chatBox'
  */
 export function scrollToTop() {
-    document.getElementById("chatBox").scrollTo({top: 0, behavior: "smooth"});
+    document.getElementById("chatBox").scrollTo({ top: 0, behavior: "smooth" });
 }
 
 export function findEmojisForInput(input: string): Emoji[] {
@@ -85,7 +85,7 @@ export function shouldScroll(): boolean {
 }
 
 export function showNewMessageIndicator() {
-    window.dispatchEvent(new CustomEvent("messageindicator", {detail: {show: true}}));
+    window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: true } }));
 }
 
 export function scrollChat() {
@@ -98,8 +98,8 @@ export function scrollChat() {
 
 export function scrollToLatestMessage() {
     const c = document.getElementById("chatBox");
-    c.scrollTo({top: c.scrollHeight, behavior: "smooth"});
-    window.dispatchEvent(new CustomEvent("messageindicator", {detail: {show: false}}));
+    c.scrollTo({ top: c.scrollHeight, behavior: "smooth" });
+    window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
 }
 
 export function showDisconnectedMsg() {

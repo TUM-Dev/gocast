@@ -1,11 +1,4 @@
-import {
-    hideDisconnectedMsg,
-    scrollChat,
-    shouldScroll,
-    showDisconnectedMsg,
-    showNewMessageIndicator,
-    openChatPopUp,
-} from "./chat";
+import { hideDisconnectedMsg, scrollChat, shouldScroll, showDisconnectedMsg, showNewMessageIndicator } from "./chat";
 
 let chatInput: HTMLInputElement;
 
@@ -52,7 +45,7 @@ export function initChatScrollListener() {
     }
     chatBox.addEventListener("scroll", function (e) {
         if (chatBox.scrollHeight - chatBox.scrollTop === chatBox.offsetHeight) {
-            window.dispatchEvent(new CustomEvent("messageindicator", {detail: {show: false}}));
+            window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
         }
     });
 }
@@ -93,12 +86,12 @@ export function startWebsocket() {
             // reply
             if (data["replyTo"].Valid) {
                 // reply
-                const event = new CustomEvent("chatreply", {detail: data});
+                const event = new CustomEvent("chatreply", { detail: data });
                 window.dispatchEvent(event);
             } else {
                 // message
                 const scroll = shouldScroll();
-                const event = new CustomEvent("chatmessage", {detail: data});
+                const event = new CustomEvent("chatmessage", { detail: data });
                 window.dispatchEvent(event);
                 if (scroll) {
                     setTimeout(scrollChat, scrollDelay);
@@ -107,10 +100,10 @@ export function startWebsocket() {
                 }
             }
         } else if ("likes" in data) {
-            const event = new CustomEvent("chatlike", {detail: data});
+            const event = new CustomEvent("chatlike", { detail: data });
             window.dispatchEvent(event);
         } else if ("delete" in data) {
-            const event = new CustomEvent("chatdelete", {detail: data});
+            const event = new CustomEvent("chatdelete", { detail: data });
             window.dispatchEvent(event);
         }
     };

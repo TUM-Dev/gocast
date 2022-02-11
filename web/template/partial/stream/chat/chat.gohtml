@@ -10,7 +10,7 @@
          x-on:chatdelete.window="e => {messages.find(m=>m.ID===e.detail.delete).deleted=true;}"
          @reorder="watch.sortMessages(messages, orderByLikes)"
          id="chatWrapper"
-         class="z-40 relative flex-col w-full text-1 bg-white dark:bg-secondary h-full border-l dark:border-gray-800"
+         class="z-40 relative flex-col text-1 bg-white dark:bg-secondary h-full border-l dark:border-gray-800"
          @keyup.escape="replyTo=0">
         <!-- Chat header -->
         <div class="sticky top-0 w-full z-50 h-12 justify-center bg-white dark:bg-secondary border-b dark:border-gray-800">
@@ -37,26 +37,26 @@
                 </span>
             </div>
         </div>
-        <div x-show="show">
+        <div x-show="show" class="absolute w-full">
             <div id="disconnectMsg"
-                 class="text-white shadow-lg py-1 px-3 bg-red-500 border-2 border-red-600 rounded-b-lg hidden">
+                 class="z-50 text-white shadow-lg py-1 px-3 bg-red-500 border-2 border-red-600 rounded-b-lg hidden">
                 <span class="text-sm font-semibold">Connection to chat lost! Reconnecting...</span>
             </div>
         </div>
+
         <!-- Messages -->
         <div x-show="show"
              id="chatBox"
-             class="overflow-y-scroll overflow-x-hidden px-1 z-40"
+             class="overflow-y-scroll overflow-x-hidden px-2 z-40"
              style="height: calc(100% - 3rem - 6rem);"> <!-- this isn't optimal yet -->
             {{template "messageTemplate"}}
         </div>
         {{template "chatprompts"}}
         <form x-show="show" id="chatForm"
-              class="2xl:flex 2xl:justify-between inset-x-0 px-2 bg-white dark:bg-secondary-lighter"
+              class="sticky w-full bottom-0 2xl:flex 2xl:justify-between inset-x-0 p-2 bg-white dark:bg-secondary-lighter border-t dark:border-gray-800"
               x-on:sendmessage.window="watch.sendMessage(message, anonymous, replyTo);message=''"
               @submit.prevent="">
-            <div class="sticky bottom-0 w-full inset-x-0 px-2 py-2 bg-white dark:bg-secondary border-t dark:border-gray-800"
-                 @submit.prevent="watch.sendMessage(message, anonymous, replyTo);message=''">
+            <div class = "w-full" @submit.prevent="watch.sendMessage(message, anonymous, replyTo);message=''">
                 <div class="bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
                     {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
                         <input type="checkbox" name="anonymous" id="anonymous" class="hidden" x-model="anonymous">
@@ -87,7 +87,7 @@
                     <div class="flex mt-2">
                         {{if not .IsPopUp}}
                             <button class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200"
-                                    @click="watch.openChatPopUp()">
+                                    @click="watch.openChatPopUp()" title="Popout Chat">
                                 <i class="fas fa-external-link-alt text-3 m-auto"></i>
                             </button>
                         {{end}}
@@ -102,6 +102,7 @@
                         </button>
                     </div>
                 {{end}}
+            </div>
         </form>
     </div>
 {{end}}
