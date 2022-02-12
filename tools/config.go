@@ -63,6 +63,12 @@ type Config struct {
 		Base   string   `yaml:"base"`
 		Tokens []string `yaml:"tokens"`
 	} `yaml:"campus"`
+	Matrix struct {
+		Username   string `yaml:"username"`
+		Password   string `yaml:"password"`
+		RoomID     string `yaml:"roomID"`
+		Homeserver string `yaml:"homeserver"`
+	} `yaml:"matrix"`
 	Ldap struct {
 		URL      string `yaml:"url"`
 		User     string `yaml:"user"`
@@ -81,5 +87,6 @@ type Config struct {
 		CamAuth     string `yaml:"camAuth"`
 	} `yaml:"auths"`
 	IngestBase        string `yaml:"ingestBase"`
+	WebUrl            string `yaml:"webUrl"`
 	CookieStoreSecret string `yaml:"cookieStoreSecret"`
 }

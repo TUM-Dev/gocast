@@ -32,5 +32,12 @@ auths:
   smpPassword: "password"
   pwrCrtlAuth: "user:password"
   camAuth: "user:password"
+matrix:
+  user: "username"
+  password: "password"
+  roomId: "identifier"
+  server: "server"
+
 ingestBase: "rtmp://ingest.tum.live/"
+webUrl: "https://live.rbg.tum.de"
 cookieStoreSecret: "put 40 random characters here"
