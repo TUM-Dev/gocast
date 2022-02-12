@@ -104,7 +104,23 @@
                     </div>
                 {{end}}
             </div>
-            <div class="flex items-center m-auto mr-4 my-8 ml-8">
+            <div class="flex items-center m-auto mr-4 my-8 ml-8 justify-end">
+                <span x-show="saved" x-transition.delay.200ms class="mr-4 text-green-400 mb-6">
+                    Saved Successfully
+                </span>
+                <span x-show="savingFailed" x-transition.delay.200ms class="mr-4 text-red-400 mb-6">
+                    Error updating lecture hall
+                </span>
+                <button @click="fetch('/api/lectureHall/'+id, {method: 'PUT', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({presIp: presIp,camIp: camIp, combIp: combIp, cameraIp: cameraIp, pwrCtrlIp: pwrCtrlIp})})
+                                    .then(r => {
+                                        saved = r.status === 200
+                                        savingFailed = !saved
+                                    });timeout = setTimeout(() => { saved = false; savingFailed = false; }, 3000)"
+                        :disabled="!changed"
+                        class="bg-gray-500 disabled:bg-gray-400 dark:disabled:bg-gray-700 shadow w-56 text-white rounded-sm hover:bg-gray-600 dark:hover:bg-gray-600 rounded-sm dark:bg-gray-900 px-2 py-2 mr-6 mb-6 font-semibold">
+                    Save
+                </button>
                 {{if $lectureHall.CameraIP}}
                     <button x-data="{loading:false}" title="Refresh list"
                             class="text-white ml-2 bg-gray-500  hover:bg-gray-600 dark:hover:bg-gray-600 rounded-sm dark:bg-gray-900 bg-gray-800 cursor-pointer px-2 py-2 font-semibold rounded-sm w-56 mb-6 mr-6"
@@ -112,25 +128,9 @@
                         Reload Presets
                     </button>
                 {{end}}
-                <button class="bg-gray-500 dark:bg-gray-900 hover:bg-gray-600 shadow text-white rounded-sm w-56 px-2 py-2 mr-6 mb-6 font-semibold" title="Delete Lecture Hall" onclick="admin.deleteLectureHall({{$lectureHall.Model.ID}})">
+                <button class="bg-gray-500 shadow w-56 text-white rounded-sm hover:bg-gray-600 dark:hover:bg-gray-600 rounded-sm dark:bg-gray-900 px-2 py-2 mr-6 mb-6 font-semibold" title="Delete Lecture Hall" onclick="admin.deleteLectureHall({{$lectureHall.Model.ID}})">
                     Delete
                 </button>
-                <button @click="fetch('/api/lectureHall/'+id, {method: 'PUT', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({presIp: presIp,camIp: camIp, combIp: combIp, cameraIp: cameraIp, pwrCtrlIp: pwrCtrlIp})})
-                                    .then(r => {
-                                        saved = r.status === 200
-                                        savingFailed = !saved
-                                    });timeout = setTimeout(() => { saved = false; savingFailed = false; }, 3000)"
-                        x-show="changed"
-                        class="bg-gray-500 shadow w-56 text-white rounded-sm hover:bg-gray-600 dark:bg-gray-900 px-2 py-2 mr-6 mb-6 font-semibold">
-                    Save
-                </button>
-                <span x-show="saved" x-transition.delay.200ms class="mr-4 text-green-400 mb-6">
-                    Saved Successfully
-                </span>
-                <span x-show="savingFailed" x-transition.delay.200ms class="mr-4 text-red-400 mb-6">
-                    Error updating lecture hall
-                </span>
             </div>
         </div>
         {{end}}
