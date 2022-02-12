@@ -25,11 +25,11 @@
                     </td>
                     <td class="py-3 px-6 text-center">
                         {{if eq $user.Role 1}}
-                            <span class="bg-indigo-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-normal">Admin</span>
+                            <span class="bg-indigo-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Admin</span>
                         {{else if eq $user.Role 2}}
-                            <span class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-normal">Lecturer</span>
+                            <span class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Lecturer</span>
                         {{else}}
-                            <span class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-normal">Generic</span>
+                            <span class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Generic</span>
                         {{end}}
                     </td>
                     <td class="py-3 px-6 text-center">
@@ -43,7 +43,6 @@
                     </td>
                 </tr>
             {{end}}
-
             <tr class="dark:hover:bg-primary">
                 <td class="py-3 px-6 text-left whitespace-nowrap">
                     <div class="flex items-center">
