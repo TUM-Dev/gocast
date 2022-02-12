@@ -48,7 +48,7 @@
                         <span class="font-bold">Import events in this range</span>
                         <input class="text-1" type="text" x-ref="range" x-model="range" placeholder="click me!">
                     </label>
-                    <button class="h-10 px-5 ml-auto mr-6 m-2 float-right transition-colors text-white duration-150 bg-gray-500 dark:bg-gray-900 font-semibold rounded-sm shadow-lg  focus:shadow-outline hover:bg-gray-600 disabled:bg-gray-300"
+                    <button class="h-10 px-5 ml-auto mr-6 m-2 float-right transition-colors text-white duration-150 bg-gray-500 dark:bg-gray-900 dark:hover:bg-gray-600 font-semibold rounded-sm shadow-lg focus:shadow-outline hover:bg-gray-600 disabled:bg-gray-300"
                             @click="step++; $dispatch(`notify${step}`)" :disabled="loading"><span
                                 x-text="step==0?'Start Import':(step==1?'Import':'Return to homepage')"></span>
                     </button>
