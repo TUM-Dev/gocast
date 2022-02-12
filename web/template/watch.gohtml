@@ -108,28 +108,28 @@
                         </span>
                     {{end}}
                 {{end}}
-                    <span class="flex space-x-2">
-                    {{if (and $course.DownloadsEnabled .IndexData.TUMLiveContext.User)}}
-                        {{template "downloadBtn" $stream.Files}}
-                    {{end}}
-                    {{if $stream.PlaylistUrlPRES}}
-                        <a class="m-auto" title="Presentation only"
-                           href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/PRES">
-                            <i class="fas fa-edit text-4 text-lg hover:text-1"></i>
-                        </a>
-                    {{end}}
-                    {{if $stream.PlaylistUrlCAM}}
-                        <a class="m-auto" title="Camera only"
-                           href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/CAM">
-                            <i class="fas fa-camera text-4 text-lg hover:text-1"></i>
-                        </a>
-                    {{end}}
-                    {{if $stream.PlaylistUrl}}
-                        <a class="m-auto" title="Combined view"
-                           href="/w/{{$course.Slug}}/{{$stream.Model.ID}}">
-                            <i class="fas fa-object-group text-4 text-lg hover:text-1"></i>
-                        </a>
-                    {{end}}
+                    <span class="flex space-x-2 content-center">
+                        {{if (and $course.DownloadsEnabled .IndexData.TUMLiveContext.User)}}
+                            {{template "downloadBtn" $stream.Files}}
+                        {{end}}
+                        {{if $stream.PlaylistUrlPRES}}
+                            <a class="m-auto" title="Presentation only"
+                               href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/PRES">
+                                <i class="fas fa-edit text-4 text-lg hover:text-1"></i>
+                            </a>
+                        {{end}}
+                        {{if $stream.PlaylistUrlCAM}}
+                            <a class="m-auto" title="Camera only"
+                               href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/CAM">
+                                <i class="fas fa-camera text-4 text-lg hover:text-1"></i>
+                            </a>
+                        {{end}}
+                        {{if $stream.PlaylistUrl}}
+                            <a class="m-auto" title="Combined view"
+                               href="/w/{{$course.Slug}}/{{$stream.Model.ID}}">
+                                <i class="fas fa-object-group text-4 text-lg hover:text-1"></i>
+                            </a>
+                        {{end}}
                         <i title="Copy HLS URL"
                            class="m-auto fas fa-link text-4 text-lg dark:hover:text-white hover:text-black cursor-pointer"
                            onclick="global.copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))"></i>
