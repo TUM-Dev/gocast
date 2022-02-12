@@ -33,10 +33,10 @@ auths:
   pwrCrtlAuth: "user:password"
   camAuth: "user:password"
 matrix:
-  user: "username"
+  username: "rbgbot"
   password: "password"
-  roomId: "identifier"
-  server: "server"
+  homeserver: "matrix.org"
+  roomId: "roomid"
 
 ingestBase: "rtmp://ingest.tum.live/"
 webUrl: "https://live.rbg.tum.de"

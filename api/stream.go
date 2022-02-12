@@ -3,8 +3,6 @@ package api
 import (
 	"TUM-Live/dao"
 	"TUM-Live/tools"
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
@@ -80,50 +78,26 @@ func pauseStream(c *gin.Context) {
 	}
 }
 
-type Message struct {
-	MsgType string
-	Body    string
-}
-
 func issueReport(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
-
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	stream := tumLiveContext.Stream
-	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
-
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	stream := tumLiveContext.Stream
 
-	message := Message{
-		MsgType: "m.text",
-		Body:    lectureHall.Name + " " + stream.StreamName + " " + stream.RoomCode,
+	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
+	if err != nil {
+		panic(err)
 	}
-
-	client := &http.Client{}
-	// marshal User to json
-	m, err := json.Marshal(message) // TODO: Maybe change this
+	course, err := dao.GetCourseById(c, stream.CourseID)
 	if err != nil {
 		panic(err)
 	}
 
-	// set the HTTP method, url, and request body
-	req, err := http.NewRequest(http.MethodPut,
-		"",
-		bytes.NewBuffer(m))
-	if err != nil {
-		panic(err)
-	}
-
-	resp, err := client.Do(req)
-
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(resp.StatusCode)
+	tools.SendBotMessage(*stream, course, lectureHall)
 }
 
 func getStream(c *gin.Context) {

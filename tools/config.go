@@ -66,8 +66,8 @@ type Config struct {
 	Matrix struct {
 		Username   string `yaml:"username"`
 		Password   string `yaml:"password"`
-		RoomID     string `yaml:"roomID"`
 		Homeserver string `yaml:"homeserver"`
+		RoomID     string `yaml:"roomID"`
 	} `yaml:"matrix"`
 	Ldap struct {
 		URL      string `yaml:"url"`
