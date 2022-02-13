@@ -471,17 +471,21 @@ func createLecture(c *gin.Context) {
 		endTime := date.Add(time.Minute * time.Duration(req.Duration))
 
 		lecture := model.Stream{
-			Name:             req.Title,
-			CourseID:         tumLiveContext.Course.ID,
-			LectureHallID:    uint(lectureHallId),
-			SeriesIdentifier: seriesIdentifier,
-			Start:            date,
-			End:              endTime,
-			StreamKey:        streamKey,
-			PlaylistUrl:      playlist,
-			LiveNow:          false,
-			Recording:        req.Vodup,
-			Premiere:         req.Premiere,
+			Name:          req.Title,
+			CourseID:      tumLiveContext.Course.ID,
+			LectureHallID: uint(lectureHallId),
+			Start:         date,
+			End:           endTime,
+			StreamKey:     streamKey,
+			PlaylistUrl:   playlist,
+			LiveNow:       false,
+			Recording:     req.Vodup,
+			Premiere:      req.Premiere,
+		}
+
+		// add Series Identifier
+		if len(req.DateSeries) > 1 {
+			lecture.SeriesIdentifier = seriesIdentifier
 		}
 
 		// add file if premiere
