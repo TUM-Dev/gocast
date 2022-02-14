@@ -13,7 +13,9 @@
          class="z-40 relative flex-col text-1 bg-white dark:bg-secondary h-full border-l dark:border-gray-800"
          @keyup.escape="replyTo=0">
         <!-- Chat header -->
-        <div class="sticky top-0 w-full z-50 h-12 justify-center bg-white dark:bg-secondary border-b dark:border-gray-800">
+        <div class="sticky top-0 w-full z-50 h-12 justify-center bg-white dark:bg-secondary border-b dark:border-gray-800
+                    {{if .IsPopUp}} xl:w-1/2 md:w-3/4 md:mx-auto md:border md:rounded-b-lg{{end}}"
+             :class="show ? 'border-b' : 'border-0'">
             <div class="flex px-3 h-full">
                 {{if not .IsPopUp}}
                     <div class="my-auto">
@@ -37,9 +39,9 @@
                 </span>
             </div>
         </div>
-        <div x-show="show" class="absolute w-full">
+        <div x-show="show" class="z-50 absolute w-full">
             <div id="disconnectMsg"
-                 class="z-50 text-white shadow-lg py-1 px-3 bg-red-500 border-2 border-red-600 rounded-b-lg hidden">
+                 class="text-white shadow-lg py-1 px-3 bg-red-500 border-2 border-red-600 rounded-b-lg hidden">
                 <span class="text-sm font-semibold">Connection to chat lost! Reconnecting...</span>
             </div>
         </div>
@@ -47,16 +49,18 @@
         <!-- Messages -->
         <div x-show="show"
              id="chatBox"
-             class="overflow-y-scroll overflow-x-hidden px-2 z-40"
+             class="overflow-y-scroll overflow-x-hidden px-1 py-2 z-40"
              style="height: calc(100% - 3rem - 6rem);"> <!-- this isn't optimal yet -->
-            {{template "messageTemplate"}}
+            {{template "messageTemplate" .}}
         </div>
         {{template "chatprompts"}}
         <form x-show="show" id="chatForm"
-              class="sticky w-full bottom-0 2xl:flex 2xl:justify-between inset-x-0 p-2 bg-white dark:bg-secondary-lighter border-t dark:border-gray-800"
+              class="sticky w-full bottom-0 2xl:flex 2xl:justify-between inset-x-0 p-2 bg-white
+              dark:bg-secondary-lighter border-t dark:border-gray-800
+              {{if .IsPopUp}} xl:w-1/2 md:w-3/4 md:mx-auto md:border md:rounded-t-lg {{end}}"
               x-on:sendmessage.window="watch.sendMessage(message, anonymous, replyTo);message=''"
               @submit.prevent="">
-            <div class = "w-full" @submit.prevent="watch.sendMessage(message, anonymous, replyTo);message=''">
+            <div class="w-full" @submit.prevent="watch.sendMessage(message, anonymous, replyTo);message=''">
                 <div class="bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
                     {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
                         <input type="checkbox" name="anonymous" id="anonymous" class="hidden" x-model="anonymous">

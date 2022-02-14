@@ -122,3 +122,8 @@ export function openChatPopUp() {
         `popup=yes,width=420,innerWidth=420,height=${height},innerHeight=${height}`,
     );
 }
+
+export function messageDateToString(date: string) {
+    const d = new Date(date);
+    return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+}
