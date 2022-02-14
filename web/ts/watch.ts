@@ -1,4 +1,4 @@
-import { showNewMessageIndicator, scrollChat, shouldScroll, showDisconnectedMsg, hideDisconnectedMsg } from "./chat";
+import { hideDisconnectedMsg, scrollChat, shouldScroll, showDisconnectedMsg, showNewMessageIndicator } from "./chat";
 
 let chatInput: HTMLInputElement;
 
@@ -26,25 +26,23 @@ enum WSMessageType {
     Message = "message",
     Like = "like",
     Delete = "delete",
+    Resolve = "resolve",
 }
 
-export function likeMessage(id: number) {
+function sendIDMessage(id: number, type: WSMessageType) {
     ws.send(
         JSON.stringify({
-            type: WSMessageType.Like,
+            type: type,
             id: id,
         }),
     );
 }
 
-export function deleteMessage(id: number) {
-    ws.send(
-        JSON.stringify({
-            type: WSMessageType.Delete,
-            id: id,
-        }),
-    );
-}
+export const likeMessage = (id: number) => sendIDMessage(id, WSMessageType.Like);
+
+export const deleteMessage = (id: number) => sendIDMessage(id, WSMessageType.Delete);
+
+export const resolveMessage = (id: number) => sendIDMessage(id, WSMessageType.Resolve);
 
 export function initChatScrollListener() {
     const chatBox = document.getElementById("chatBox") as HTMLDivElement;
@@ -112,6 +110,9 @@ export function startWebsocket() {
             window.dispatchEvent(event);
         } else if ("delete" in data) {
             const event = new CustomEvent("chatdelete", { detail: data });
+            window.dispatchEvent(event);
+        } else if ("resolve" in data) {
+            const event = new CustomEvent("chatresolve", { detail: data });
             window.dispatchEvent(event);
         }
     };
