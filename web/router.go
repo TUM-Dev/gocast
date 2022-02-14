@@ -125,5 +125,5 @@ type ErrorPageData struct {
 type ChatData struct {
 	IsAdminOfCourse bool // is current user admin or lecturer who created the course associated with the chat
 	IndexData       IndexData
-	IsPopUp			bool
+	IsPopUp         bool
 }
