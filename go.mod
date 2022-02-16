@@ -17,7 +17,7 @@ require (
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-asn1-ber/asn1-ber v1.5.3 // indirect
 	github.com/go-gormigrate/gormigrate/v2 v2.0.0
-	github.com/go-ldap/ldap/v3 v3.4.1
+	github.com/go-ldap/ldap/v3 v3.4.2
 	github.com/go-playground/validator/v10 v10.10.0 // indirect
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang/glog v1.0.0 // indirect
@@ -25,7 +25,7 @@ require (
 	github.com/gorilla/sessions v1.2.1 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jinzhu/now v1.1.4
-	github.com/joschahenningsen/TUM-Live-Worker-v2 v1.0.0
+	github.com/joschahenningsen/TUM-Live-Worker-v2 v1.2.0
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.18
@@ -78,5 +78,3 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
 )
-
-replace github.com/joschahenningsen/TUM-Live-Worker-v2 => /home/joschahenningsen/GolandProjects/TUM-Live-Worker-v2
