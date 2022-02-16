@@ -73,6 +73,7 @@ func (s server) JoinWorkers(ctx context.Context, request *pb.JoinWorkersRequest)
 	worker = model.Worker{
 		Host:     request.Hostname,
 		WorkerID: uuid.NewV4().String(),
+		LastSeen: time.Now(),
 	}
 	if err := dao.CreateWorker(&worker); err != nil {
 		log.WithError(err).Error("Could not add worker to database")
