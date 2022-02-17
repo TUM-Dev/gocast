@@ -139,30 +139,23 @@
                 {{end}}
             </div>
             {{if or .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
-                <div class="border-t-2 border-secondary p-4 mt-2">
+                <div class="border-t-2 border-secondary p-4 mt-2 space-x-2">
                     <h3 class="text-4 mb-2 font-bold">Stream actions</h3>
-                    <span>
-                        <button @click="fetch(`/api/stream/${streamID}/issue`)"
-                                title="Issues with the stream? Send a report to the RGB."
-                                class="bg-amber-500 inline-block text-center w-24 text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2 mr-3">
-                            <i class="fa-solid fa-bug mr-2"></i>Issue
-                        </button>
-                    </span>
                     <button @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)"
                             href="#"
                             :title="paused?'End Pause (Turns on video and audio)':'Pause lecture (Turns off video and audio)'"
-                            class="bg-green-500 inline-block text-center w-24 text-white font-bold hover:bg-green-600 dark:hover:bg-green-600 rounded cursor-pointer p-2 mr-3">
+                            class="bg-green-500 inline-block text-center w-24 text-white font-bold hover:bg-green-600 dark:hover:bg-green-600 rounded cursor-pointer p-2">
                         <span x-show="!paused"><i class="fas fa-pause mr-1"></i>Pause</span>
                         <span x-show="paused"><i class="fas fa-play mr-1"></i>Resume</span>
                     </button>
                     <a href="?restart=1">
                         <button @click="window.location.reload()" href="?restart=1"
                                 title="Issues with the stream? Restart it."
-                                class="bg-indigo-500 inline-block text-center w-24 text-white font-bold hover:bg-indigo-600 dark:hover:bg-indigo-600 rounded cursor-pointer p-2 mr-3">
+                                class="bg-indigo-500 inline-block text-center w-24 text-white font-bold hover:bg-indigo-600 dark:hover:bg-indigo-600 rounded cursor-pointer p-2">
                             <i class="fas fa-redo mr-1"></i>Restart
                         </button>
                     </a>
-                    <span x-data="{ 'showModal': false }" @keydown.escape="showModal = false" x-cloak>
+                    <span class="inline-block" x-data="{ 'showModal': false }" @keydown.escape="showModal = false" x-cloak>
                         <button @click="showModal = true"
                                 title="Already finished? End the stream early."
                                 class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-600 font-bold dark:hover:bg-red-600 rounded cursor-pointer p-2">
@@ -190,8 +183,13 @@
                             </div>
                         </section>
                     </span>
+                    <button @click="fetch(`/api/stream/${streamID}/issue`)"
+                            title="Issues with the stream? Send a report to the RGB."
+                            class="bg-amber-500 inline-block float-right text-center w-auto text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>Report Technical Problem
+                    </button>
                 </div>
-                <div class="border-t-2 border-secondary p-4">
+                <div class="p-4">
                     <h3 class="text-4 mb-2 font-bold">Presets for {{.LectureHallName}}</h3>
                     <div class="w-full overflow-x-scroll scrollbarThin">
                         <div class="flex flex-row gap-x-2">
