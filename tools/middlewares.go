@@ -7,6 +7,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -171,6 +172,25 @@ func Admin(c *gin.Context) {
 	tumLiveContext := foundContext.(TUMLiveContext)
 	if tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType {
 		c.AbortWithStatus(http.StatusForbidden)
+	}
+}
+
+func AdminToken(c *gin.Context) {
+	queryParams := c.Request.URL.Query()
+	token := queryParams.Get("token")
+	t, err := dao.GetToken(token)
+	if err != nil {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+	if t.Scope != model.TokenScopeAdmin {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+	err = dao.TokenUsed(t)
+	if err != nil {
+		log.WithError(err).Warn("error marking token as used")
+		return
 	}
 }
 

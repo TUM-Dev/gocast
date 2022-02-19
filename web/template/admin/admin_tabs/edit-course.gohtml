@@ -8,7 +8,6 @@
                 <h1 class="mb-4">{{$course.Name}}</h1>
                 <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
                                                                     value="{{$course.Model.ID}}"></label>
-
                 <form class="p-4" method="post">
                     {{template "course_settings" $course}}
                     <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
@@ -250,16 +249,20 @@
                                                     If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
                                                     {{end}}
                                                     {{else if $lecture.Recording}}
-                                                    <p class="mt-2 flex">
+                                                    <span class="flex m-auto mt-4 space-x-3">
                                                         {{if $lecture.Files}}
-                                                            {{template "downloadBtn" $lecture.Files}}
+                                                            <span>
+                                                                {{template "downloadBtn" $lecture.Files}}
+                                                            </span>
                                                         {{end}}
                                                         {{if $lecture.Stats}}
-                                                            <i class="fas fa-chart-line hover:text-purple-500 px-2"
-                                                               title="Live Statistics"
-                                                               onclick="admin.showStats({{$lecture.Model.ID}})"></i>
+                                                            <a>
+                                                                <i class="fas fa-chart-line text-4 text-lg hover:text-1"
+                                                                   title="Live Statistics"
+                                                                   onclick="admin.showStats({{$lecture.Model.ID}})"></i>
+                                                            </a>
                                                         {{end}}
-                                                    </p>
+                                                    </span>
                                                     {{if $lecture.Stats}}
                                                     <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
                                                         <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
@@ -303,12 +306,16 @@
                                     <div class="w-1/4">
                                         <div class="text-1 font-semibold">Create Lecture</div>
                                         <label>
-                                            <input type="checkbox" x-model="formData.premiere" class="w-auto">
+                                            <input type="checkbox" x-model="formData.premiere" @change="(v) => v && (formData.recurring = false)" class="w-auto">
                                             <span class="text-3">Video Premiere</span>
                                         </label><br>
                                         <label>
-                                            <input type="checkbox" x-model="formData.vodup" class="w-auto">
+                                            <input type="checkbox" x-model="formData.vodup" @change="(v) => v && (formData.recurring = false)" class="w-auto">
                                             <span class="text-3">VoD Upload</span>
+                                        </label><br>
+                                        <label>
+                                            <input type="checkbox" :disabled="formData.premiere || formData.vodup" x-model="formData.recurring" class="w-auto">
+                                            <span class="text-3">Recurring Event</span>
                                         </label>
                                     </div>
                                     <div class="w-3/4">
@@ -323,16 +330,20 @@
                                                     <span class="font-semibold p-2">Start</span>
                                                     <input name="start" type="text" placeholder="2021-04-08 14:00"
                                                            id="start" x-model="formData.start" x-ref="start"
+                                                           @change="() => setTimeout(() => { regenerateRecurringDates(); recalculateDuration(); }, 100)"
                                                            x-init="flatpickr($refs.start, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})"/>
                                                 </label>
                                                 <label x-show="!formData.premiere && !formData.vodup && !loading"
                                                        for="end" class="md:w-1/4 w-full">
                                                     <span class="font-semibold p-2">End</span>
-                                                    <input name="end" type="text" placeholder="2021-04-08 16:00"
-                                                           id="end"
+                                                    <span x-show="formData.formatedDuration != ''" class="text-sm font-light opacity-75">
+                                                        ( <span x-text="formData.formatedDuration"></span> )
+                                                    </span>
+                                                    <input name="end" type="text" placeholder="16:00" id="end"
                                                            x-model="formData.end"
+                                                           @change="() => setTimeout(() => recalculateDuration(), 100)"
                                                            x-ref="end"
-                                                           x-init="flatpickr($refs.end, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})"/>
+                                                           x-init="flatpickr($refs.end, {enableTime: true, noCalendar: true, dateFormat: 'H:i', time_24hr: true })"/>
                                                 </label>
                                                 <label class="relative"
                                                        x-show="formData.premiere || formData.vodup && !loading"
@@ -370,13 +381,64 @@
                                                 </label>
                                             </div>
                                         </div>
+                                        <div class="mt-4">
+                                            <div class="flex" x-show="formData.recurring && !loading">
+                                                    <div class="w-1/4 pl-2">
+                                                        <span class="font-semibold mb-6">Interval</span><br>
+                                                        <label>
+                                                            <input type="radio" value="daily" x-model="formData.recurringInterval" class="w-auto" @change="regenerateRecurringDates">
+                                                            <span class="text-3">Repeat Daily</span>
+                                                        </label><br>
+                                                        <label>
+                                                            <input type="radio" value="weekly" x-model="formData.recurringInterval" class="w-auto" @change="regenerateRecurringDates">
+                                                            <span class="text-3">Repeat Weekly</span>
+                                                        </label><br>
+                                                        <label>
+                                                            <input type="radio" value="monthly" x-model="formData.recurringInterval" class="w-auto" @change="regenerateRecurringDates">
+                                                            <span class="text-3">Repeat Monthly</span>
+                                                        </label><br>
+                                                    </div>
+                                                    <div class="w-1/4 pl-2">
+                                                        <label for="events-count" class="w-full">
+                                                            <span class="font-semibold p-2">Count</span>
+                                                            <input name="events-count" type="number" placeholder="14" id="end" min="1" x-model="formData.eventsCount" @change="regenerateRecurringDates" @keyup="regenerateRecurringDates"/>
+                                                        </label>
+                                                    </div>
+                                                    <div class="w-1/2 pl-2">
+                                                        <span class="font-semibold mb-6">Dates</span><br>
+                                                        <span x-show="formData.start == ''" class="ml-2 opacity-75">- Please set "start" first -</span>
+                                                        <ul class="ml-2" x-show="formData.start != ''">
+                                                            <li
+                                                                x-bind:style="{ 'cursor': 'default' }"
+                                                            >
+                                                                <i class="far fa-check-square"></i>
+                                                                <span x-text="(new Date(formData.start)).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
+                                                            </li>
+                                                            <template x-for="date in formData.recurringDates">
+                                                                <li
+                                                                    x-bind:style="{ 'cursor': 'pointer', 'opacity': date.enabled ? '1' : '0.3' }"
+                                                                    @click="() => (date.enabled = !date.enabled)"
+                                                                >
+                                                                    <i x-show="date.enabled" class="far fa-check-square"></i>
+                                                                    <i x-show="!date.enabled" class="far fa-square"></i>
+                                                                    <span x-text="date.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
+                                                                </li>
+                                                            </template>
+                                                        </ul>
+                                                    </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="mt-8">
                                     <button class="btn" type="submit" id="createLectureBtn">
                                         <span x-show="!loading">
                                             <i class="fas fa-check"></i>
-                                            Create Lecture
+                                            <span
+                                                    x-text="formData.recurring && formData.recurringDates.filter(({enabled}) => enabled).length > 0
+                                                        ? `Create ${(formData.recurringDates.filter(({enabled}) => enabled).length + 1).toString()} Lectures`
+                                                        : 'Create Lecture'"
+                                            ></span>
                                         </span>
                                         <i class="fas fa-circle-notch text-4 animate-spin" x-show="loading"></i>
                                     </button>
