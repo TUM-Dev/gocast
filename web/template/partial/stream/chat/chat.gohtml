@@ -19,11 +19,9 @@
              :class="show ? 'md:border-b justify-between' : 'md:justify-center bg-white dark:bg-secondary-lighter'">
             <div class="relative my-auto">
                 <button @click="show = !show;"
-                        class="peer bg-transparent border-0 font-semibold text-2xl pr-3 pl-3 pb-1 rounded
-                               hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90 md:rotate-0"
-                        title="Hide Chat" :title="show ? 'Hide Chat' : 'Show Chat'">
+                        class="peer bg-transparent border-0 font-semibold text-2xl pr-3 pl-3 pb-1 rounded hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90 md:rotate-0">
                     <span x-text="show ? '&#8614;' : '&#8612;'">&#8614;</span></button>
-                {{template "tooltip-left" "Hide Chat"}} <!-- TODO: Changable text -->
+                {{template "tooltip-left" "Toggle Chat"}}
             </div>
             <span @click="orderByLikes=!orderByLikes; watch.setOrder(orderByLikes); $dispatch('reorder'); orderByLikes? watch.scrollToTop(): watch.scrollToBottom()"
                   x-show="show" class="font-semibold text-sm my-auto cursor-pointer">

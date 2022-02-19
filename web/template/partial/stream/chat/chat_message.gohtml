@@ -20,7 +20,7 @@
                 <a x-show="admin" @click="watch.deleteMessage(m.ID)" title="Delete Message" class="cursor-pointer">
                     <span class="fas fa-ban"></span>
                 </a>
-                <a x-show="admin" @click="watch.resolveMessage(m.ID)" title="Resolve Message" class="cursor-pointer">
+                <a x-show="admin && !m.resolved" @click="watch.resolveMessage(m.ID)" title="Resolve Message" class="cursor-pointer">
                     <span class="fas fa-check"></span>
                 </a>
             </p>

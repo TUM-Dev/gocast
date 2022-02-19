@@ -292,8 +292,3 @@ a.fc-event, a.fc-event:hover {
 .duration-300 {
     transition-duration: 300ms;
 }
-
-/* Extension of Tailwinds .-left-full for 200%*/
-.-left-2full{
-    left: -200%;
-}
