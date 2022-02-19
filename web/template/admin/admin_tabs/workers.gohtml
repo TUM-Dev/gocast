@@ -1,9 +1,9 @@
 {{define "workers"}}
-    <h2 class="text-2xl text-1 mt-2">Workers</h2>
-    <div class="dark:bg-secondary rounded my-6 overflow-x-auto">
-        <table class="w-full border-2 dark:border-secondary border-gray-200 rounded mb-6">
+    <h2 class="text-2xl text-1 my-auto mt-4 font-medium">Worker Overview</h2>
+    <div class="dark:border-secondary bg-gray-100 rounded-md mb-6overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter">
+        <table class="table-auto w-full rounded-sm">
             <thead>
-            <tr class="dark:bg-secondary bg-gray-100 font-thin text-lg text-3 p-2 px-6">
+            <tr class="dark:bg-secondary bg-gray-200 text-4 uppercase text-sm leading-normal dark:bg-secondary rounded-md">
                 <th class="py-3 px-6 text-left">Name</th>
                 <th class="py-3 px-6 text-left">Status</th>
                 <th class="py-3 px-6 text-left">Workload</th>
@@ -11,24 +11,30 @@
                 <th class="py-3 px-6 text-left">Actions</th>
             </tr>
             </thead>
-            <tbody class="text-4 text-sm font-light">
+            <tbody class="text-4 text-s m rounded-sm font-light">
             {{- /*gotype: TUM-Live/model.Worker[]*/ -}}
             {{range $worker := .}}
-                <tr class="border-gray-500 dark:hover:bg-primary hover:bg-gray-100">
+                <tr class="border-gray-500 dark:hover:bg-primary hover:bg-white">
                     <td class="pt-3 px-6">
                         <div class="font-semibold text-1">{{$worker.Host}}<span class="font-normal text-4">@{{$worker.Version}}</span></div>
                         <div class="pl-2"><span class="mr-4">CPU: {{$worker.CPU}}</span><span class="mr-4">Mem: {{$worker.Memory}}</span><span class="mr-4">Disk: {{$worker.Disk}}</span></div>
                     </td>
-                    <td class="pt-3 px-6">{{if $worker.IsAlive}}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Alive</span>{{else}}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Dead</span>{{end}}{{$worker.Status}}
+                    <td class="px-6">{{if $worker.IsAlive}}
+                            <span class="bg-green-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Alive</span>{{else}}
+                            <span class="bg-red-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Dead</span>{{end}}{{$worker.Status}}
                     </td>
-                    <td class="pt-3 px-6">{{$worker.Workload}}</td>
-                    <td class="pt-3 px-6">{{$worker.Uptime}}</td>
-                    <td class="pt-3 px-6"><i class="fas fa-trash text-5 cursor-pointer hover:text-1"></i></td>
+                    <td class="px-6 text-left whitespace-nowrap">
+                            {{$worker.Workload}}
+                    </td>
+                    <td class="px-6">{{$worker.Uptime}}</td>
+                    <td class="px-6">
+                        <div class="items-center justify-center">
+                            <i class="fas fa-trash text-5 cursor-pointer hover:text-1"></i>
+                        </div>
+                    </td>
                 </tr>
             {{end}}
-            <tr class="border-gray-500 dark:hover:bg-primary hover:bg-gray-100" x-data="{hostname:'', secret:''}">
+            <tr class="dark:hover:bg-primary hover:bg-gray-100" x-data="{hostname:'', secret:''}">
                 <td class="py-3 px-6">
                     <input x-show="secret==''" type="text" placeholder="vmrbg456.in.tum.de" x-model="hostname">
                     <span x-show="secret!==''" x-text="`secret for setup: ${secret}`"></span>
@@ -37,11 +43,10 @@
                 <td></td>
                 <td></td>
                 <td class="py-3 px-6">
-                    <button class="bg-blue-600 text-blue-100 disabled:bg-gray-400 px-2 py-1 rounded" :disabled="hostname==''"
+                    <i class="fas fa-plus dark:disabled:bg-gray-600 w-4 mr-2 transform hover:text-purple-500 hover:scale-110 text-gray-500 disabled:text-gray-300" :disabled="hostname==''"
                             @click="secret===''?fetch('/api/worker', {method:'POST', body:JSON.stringify({'hostname': hostname})}).then(r=>r.json()).then(d=>secret=d.workerID):window.location.reload()"
-                            x-text="secret===''?'Create new worker':'got it!'">
-                        Create new worker
-                    </button>
+                    >
+                    </i>
                 </td>
             </tr>
             </tbody>
