@@ -3,6 +3,7 @@ package api
 import (
 	"TUM-Live/dao"
 	"TUM-Live/tools"
+	"TUM-Live/tools/bot"
 	"errors"
 	"fmt"
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
@@ -11,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -21,7 +23,7 @@ func configGinStreamRestRouter(router *gin.Engine) {
 	g.GET("/api/stream/:streamID", getStream)
 	g.GET("/api/stream/:streamID/pause", pauseStream)
 	g.GET("/api/stream/:streamID/end", endStream)
-	g.GET("/api/stream/:streamID/issue", issueReport)
+	g.GET("/api/stream/:streamID/issue", reportStreamIssue)
 }
 
 func endStream(c *gin.Context) {
@@ -78,7 +80,8 @@ func pauseStream(c *gin.Context) {
 	}
 }
 
-func issueReport(c *gin.Context) {
+// reportStreamIssue sends a notification to a matrix room that can be used for debugging technical issues.
+func reportStreamIssue(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -90,14 +93,32 @@ func issueReport(c *gin.Context) {
 
 	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
-		panic(err)
+		sentry.CaptureException(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 	course, err := dao.GetCourseById(c, stream.CourseID)
 	if err != nil {
-		panic(err)
+		log.WithError(err).Error("Can't send bot message")
+		sentry.CaptureException(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
+	streamUrl := tools.Cfg.WebUrl + "/w/" + course.Slug + "/" + strconv.Itoa(int(stream.ID))
+	botInfo := bot.BotInfo{
+		CourseName:  course.Name,
+		LectureHall: lectureHall.Name,
+		StreamUrl:   streamUrl,
+		CombIP:      lectureHall.CombIP,
+		CameraIP:    lectureHall.CameraIP,
+	}
+	// Set messaging strategy as specified in strategy pattern
+	botInfo.SetMessagingMethod(&bot.Matrix{})
+	err = botInfo.BotUpdate(botInfo)
 
-	tools.SendBotMessage(*stream, course, lectureHall)
+	if err != nil {
+		log.WithError(err).Error("Can't send bot message")
+		sentry.CaptureException(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
 }
 
 func getStream(c *gin.Context) {
