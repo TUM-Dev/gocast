@@ -91,7 +91,8 @@
                     <div class="flex mt-2">
                         {{if not .IsPopUp}}
                             <button class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200"
-                                    @click="watch.openChatPopUp()" title="Popout Chat">
+                                    @click="watch.openChatPopUp('{{.IndexData.TUMLiveContext.Course.Slug}}', {{.IndexData.TUMLiveContext.Stream.Model.ID}})"
+                                    title="Popout Chat">
                                 <i class="fas fa-external-link-alt text-3 m-auto"></i>
                             </button>
                         {{end}}
