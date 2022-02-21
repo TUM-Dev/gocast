@@ -199,3 +199,7 @@ type TUMLiveContext struct {
 	Course *model.Course
 	Stream *model.Stream
 }
+
+func (c *TUMLiveContext) UserIsAdmin() bool {
+	return c.User != nil && (c.User.Role == model.AdminType || c.User.ID == c.Course.UserID)
+}
