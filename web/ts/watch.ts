@@ -1,4 +1,5 @@
 import { hideDisconnectedMsg, scrollChat, shouldScroll, showDisconnectedMsg, showNewMessageIndicator } from "./chat";
+import { List } from "postcss/lib/list";
 
 let chatInput: HTMLInputElement;
 
@@ -18,6 +19,7 @@ enum WSMessageType {
     Message = "message",
     Like = "like",
     Delete = "delete",
+    StartPoll = "start_poll",
 }
 
 export function likeMessage(id: number) {
@@ -150,6 +152,16 @@ export function sendMessage(message: string, anonymous: boolean, replyTo: number
             msg: message,
             anonymous: anonymous,
             replyTo: replyTo,
+        }),
+    );
+}
+
+export function startPoll(question: string, pollAnswers: string[]) {
+    ws.send(
+        JSON.stringify({
+            type: WSMessageType.StartPoll,
+            question,
+            pollAnswers,
         }),
     );
 }

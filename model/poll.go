@@ -10,6 +10,7 @@ type Poll struct {
 	StreamID uint   // used by gorm
 	Stream   Stream `gorm:"foreignKey:stream_id;not null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Question string `gorm:"not null" json:"question"`
+	Active   bool   `gorm:"not null;default:true" json:"active"`
 
 	PollOptions []PollOption `gorm:"many2many:chat_poll_options" json:"-"`
 }

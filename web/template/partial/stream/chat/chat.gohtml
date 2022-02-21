@@ -2,7 +2,7 @@
     {{- /*gotype: TUM-Live/web.ChatData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     <div x-cloak
-         x-data="{orderByLikes: false, replyTo: 0, message: '', anonymous: false, messages: [], admin: {{.IsAdminOfCourse}}}"
+         x-data="{orderByLikes: false, replyTo: 0, message: '', anonymous: false, messages: [], isPopUp: {{.IsPopUp}}, admin: {{.IsAdminOfCourse}}, showPollCreateUI: false, pollQuestion: '', pollOptions: [{ answer: 'Yes' }, { answer: 'No' }]}"
          x-init="fetch('/api/chat/{{$stream.ID}}/messages').then(res => res.json()).then(d => {messages=d});$nextTick(() => { watch.scrollToBottom() })"
          x-on:chatmessage.window="e => {messages.push(e.detail)}"
          x-on:chatreply.window="e => {messages.find(m=>m.ID===e.detail.replyTo.Int64).replies.push(e.detail);}"
@@ -61,7 +61,35 @@
               x-on:sendmessage.window="watch.sendMessage(message, anonymous, replyTo);message=''"
               @submit.prevent="">
             <div class="w-full" @submit.prevent="watch.sendMessage(message, anonymous, replyTo);message=''">
-                <div class="bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
+
+                <div x-show="showPollCreateUI">
+                    <div class="bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
+                        <label for="pollQuestion" class="hidden"></label>
+                        <textarea
+                            id="pollQuestion"
+                            class="h-40 resize-none border-none py-2 px-4 text-sm font-normal placeholder:text-sm"
+                           maxlength="500"
+                           x-model="pollQuestion"
+                           autocomplete="off"
+                            placeholder="Write a Poll-Question ..."
+                        ></textarea>
+                    </div>
+                    <div>
+                        <template x-for="(pollOption, index) in pollOptions" :key="index">
+                            <div class="flex-1 bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full lg:mr-2 my-2">
+                                <input placeholder="Write a Poll-Answer ..." maxlength="240" x-model="pollOption.answer" class="py-2 px-4 border-0 text-sm font-normal placeholder:text-sm">
+
+                                <button class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded text-4 hover:text-1 disabled:opacity-20"
+                                        :disabled="pollOptions.length == 1" @click="pollOptions = pollOptions.filter((o) => o != pollOption)" title="Remove Poll Option">
+                                    <i class="fas fa-trash text-3 m-auto"></i>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+
+                <div x-show="!showPollCreateUI" class="bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
                     {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
                         <input type="checkbox" name="anonymous" id="anonymous" class="hidden" x-model="anonymous">
                         <label for="anonymous" class="flex items-center cursor-pointer text-4 hover:text-1 ml-3"
@@ -87,23 +115,47 @@
                        else if(e.keyCode===13){$dispatch('chatenter');e.preventDefault();}
                        else {$nextTick(() =>{watch.getEmojisForMessage(message, e.target.selectionStart).then(r => $dispatch('emojisuggestions', r));})}}">
                 </div>
+
                 {{if (.IndexData.TUMLiveContext.User)}}
-                    <div class="flex mt-2">
-                        {{if not .IsPopUp}}
-                            <button class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200"
-                                    @click="watch.openChatPopUp()" title="Popout Chat">
-                                <i class="fas fa-external-link-alt text-3 m-auto"></i>
+                    <div class="flex mt-2" :class="isPopUp ? 'justify-end' : 'justify-between'">
+                        <button x-show="!isPopUp" class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200"
+                                @click="watch.openChatPopUp()" title="Popout Chat">
+                            <i class="fas fa-external-link-alt text-3 m-auto"></i>
+                        </button>
+                        <span>
+                            <button tabindex="-1"
+                                    class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800 rounded border-0 focus:outline-none px-4 text-white text-sm ml-auto"
+                                    @click="pollOptions.push({ answer: '' })"
+                                    title="Add Poll Answer"
+                                    x-show="showPollCreateUI">
+                                <i class="fas fa-plus m-auto"></i>
                             </button>
-                        {{end}}
-                        <button tabindex="-1"
-                                class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
+                            <button tabindex="-1"
+                                    class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800 rounded border-0 focus:outline-none px-4 text-white text-sm ml-auto"
+                                    @click="showPollCreateUI = !showPollCreateUI"
+                                    title="Create Poll"
+                                    x-show="admin">
+                                <span class="font-semibold" x-text="showPollCreateUI ? 'Cancel' : 'Create Poll'"></span>
+                            </button>
+                            <button tabindex="-1"
+                                    class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
                                    disabled:bg-gray-400 disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400
                                    rounded border-0 focus:outline-none px-4 text-white text-sm ml-auto"
-                                title="Popout Chat"
-                                :disabled="message===''">
-                            <span class="font-semibold">Send</span>
-                            <span class="fas fa-paper-plane ml-2"></span>
-                        </button>
+                                    title="Popout Chat"
+                                    @click="(showPollCreateUI
+                                        ? () => {
+                                            watch.startPoll(pollQuestion, pollOptions.map(({ answer }) => answer));
+                                            pollQuestion = '';
+                                            pollOptions = [{ answer: 'Yes' }, { answer: 'No' }];
+                                            showPollCreateUI = false;
+                                        }
+                                        : () => $dispatch('sendmessage')
+                                    )()"
+                                    :disabled="showPollCreateUI ? (pollQuestion.length === 0 || pollOptions.some(({ answer }) => answer.length === 0)) : (message==='')">
+                                <span class="font-semibold" x-text="showPollCreateUI ? 'Start' : 'Send'"></span>
+                                <span class="fas fa-paper-plane ml-2"></span>
+                            </button>
+                        </span>
                     </div>
                 {{end}}
             </div>
