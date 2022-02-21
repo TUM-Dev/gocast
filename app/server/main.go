@@ -142,6 +142,8 @@ func main() {
 		&model.File{},
 		&model.StreamProgress{},
 		&model.Token{},
+		&model.Poll{},
+		&model.PollOption{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
