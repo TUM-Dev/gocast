@@ -23,6 +23,7 @@ func ConfigGinRouter(router *gin.Engine) {
 		"template/*.gohtml",
 		"template/admin/*.gohtml",
 		"template/admin/admin_tabs/*.gohtml",
+		"template/partial/*.gohtml",
 		"template/partial/stream/*.gohtml",
 		"template/partial/stream/chat/*.gohtml",
 		"template/partial/course/manage/*.gohtml"))
