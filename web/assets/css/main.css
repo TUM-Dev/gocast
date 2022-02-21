@@ -110,10 +110,6 @@
     }
 }
 
-:root {
-    --chat-height: calc(100vh - 5rem);
-}
-
 input, textarea {
     @apply focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500 dark:text-white text-primary;
 }
@@ -163,12 +159,6 @@ input[type='checkbox']:checked + label {
     color: #3070b3;
 }
 
-@media (min-width: 768px) {
-    .chat {
-        max-height: var(--chat-height);
-    }
-}
-
 .chat, .watchContent {
     /* Hide scrollbar for IE, Edge and Firefox */
     -ms-overflow-style: none; /* IE and Edge */
@@ -188,6 +178,7 @@ input[type='checkbox']:checked + label {
 #chatBox::-webkit-scrollbar-thumb {
     background: #d1d5db; /* hex code for bg-gray-300 */
 }
+
 #chatBox {
     scrollbar-width: 6px;
     scrollbar-color: #d1d5db white;
@@ -205,6 +196,7 @@ input[type='checkbox']:checked + label {
 .dark #chatBox::-webkit-scrollbar-thumb {
     background: #5b5b5b;
 }
+
 .dark #chatBox {
     scrollbar-width: 6px;
     scrollbar-color: #5b5b5b #0d1117;
@@ -283,7 +275,7 @@ a.fc-event, a.fc-event:hover {
 }
 
 /* copy of Tailwind's .truncate, but apply to all children */
-.truncate-children > *{
+.truncate-children > * {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

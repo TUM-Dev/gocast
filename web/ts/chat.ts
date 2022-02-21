@@ -1,4 +1,4 @@
-import { TopEmojis, Emoji } from "top-twitter-emojis-map";
+import { Emoji, TopEmojis } from "top-twitter-emojis-map";
 
 /*
     Scroll to the bottom of the 'chatBox'
@@ -112,4 +112,18 @@ export function hideDisconnectedMsg() {
     if (document.getElementById("disconnectMsg") !== null) {
         document.getElementById("disconnectMsg").classList.add("hidden");
     }
+}
+
+export function openChatPopUp() {
+    const height = window.innerHeight * 0.8;
+    window.open(
+        "chat/popup", // relative path to caller url
+        "_blank",
+        `popup=yes,width=420,innerWidth=420,height=${height},innerHeight=${height}`,
+    );
+}
+
+export function messageDateToString(date: string) {
+    const d = new Date(date);
+    return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
 }
