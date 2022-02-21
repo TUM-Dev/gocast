@@ -33,7 +33,12 @@ func WatchPage(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	data.IndexData = NewIndexData()
 	data.IndexData.TUMLiveContext = tumLiveContext
-	data.IsAdminOfCourse = tumLiveContext.User != nil && (tumLiveContext.User.Role == model.AdminType || tumLiveContext.User.ID == tumLiveContext.Course.UserID)
+	data.IsAdminOfCourse = tumLiveContext.UserIsAdmin()
+
+	data.ChatData.IndexData.TUMLiveContext = foundContext.(tools.TUMLiveContext)
+	data.ChatData.IsAdminOfCourse = tumLiveContext.UserIsAdmin()
+	data.ChatData.IsPopUp = false
+
 	if data.IsAdminOfCourse && tumLiveContext.Stream.LectureHallID != 0 {
 		lectureHall, err := dao.GetLectureHallByID(tumLiveContext.Stream.LectureHallID)
 		if err != nil {
@@ -102,6 +107,7 @@ type WatchPageData struct {
 	Description     template.HTML
 	DVR             string // ?dvr if dvr is enabled, empty string otherwise
 	LectureHallName string
+	ChatData		ChatData
 }
 
 // Prepare populates the data for the watch page.

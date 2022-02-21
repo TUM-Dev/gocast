@@ -14,9 +14,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"io"
 	"io/ioutil"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"regexp"
@@ -437,20 +435,20 @@ func createLecture(c *gin.Context) {
 			log.WithError(err).Error("Can't create folder for premiere")
 			return
 		}
-		// Copy file to shared storage
-		file, err := os.Create(fmt.Sprintf("%s/%s", premiereFolder, premiereFileName))
-		if err != nil {
-			log.WithError(err).Error("Can't create file for premiere")
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-		reqFile, _ := req.File.Open()
-		_, err = io.Copy(file, reqFile)
-		if err != nil {
-			log.WithError(err).Error("Can't write file for premiere")
-			c.AbortWithStatus(http.StatusInternalServerError)
-		}
-		_ = file.Close()
+		//// Copy file to shared storage
+		//file, err := os.Create(fmt.Sprintf("%s/%s", premiereFolder, premiereFileName))
+		//if err != nil {
+		//	log.WithError(err).Error("Can't create file for premiere")
+		//	c.AbortWithStatus(http.StatusInternalServerError)
+		//	return
+		//}
+		//reqFile, _ := req.File.Open()
+		//_, err = io.Copy(file, reqFile)
+		//if err != nil {
+		//	log.WithError(err).Error("Can't write file for premiere")
+		//	c.AbortWithStatus(http.StatusInternalServerError)
+		//}
+		//_ = file.Close()
 	}
 	streamKey := uuid.NewV4().String()
 	streamKey = strings.ReplaceAll(streamKey, "-", "")
@@ -465,23 +463,38 @@ func createLecture(c *gin.Context) {
 		playlist = fmt.Sprintf("https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s/playlist.m3u8", strings.ReplaceAll(premiereFileName, "-", "_"))
 	}
 
-	lecture := model.Stream{
-		Name:          req.Title,
-		CourseID:      tumLiveContext.Course.ID,
-		LectureHallID: uint(lectureHallId),
-		Start:         req.Start,
-		End:           req.End,
-		StreamKey:     streamKey,
-		PlaylistUrl:   playlist,
-		LiveNow:       false,
-		Recording:     req.Vodup,
-		Premiere:      req.Premiere,
+	// Add start date as first event
+	seriesIdentifier := uuid.NewV4().String()
+	req.DateSeries = append(req.DateSeries, req.Start)
+
+	for _, date := range req.DateSeries {
+		endTime := date.Add(time.Minute * time.Duration(req.Duration))
+
+		lecture := model.Stream{
+			Name:          req.Title,
+			CourseID:      tumLiveContext.Course.ID,
+			LectureHallID: uint(lectureHallId),
+			Start:         date,
+			End:           endTime,
+			StreamKey:     streamKey,
+			PlaylistUrl:   playlist,
+			LiveNow:       false,
+			Recording:     req.Vodup,
+			Premiere:      req.Premiere,
+		}
+
+		// add Series Identifier
+		if len(req.DateSeries) > 1 {
+			lecture.SeriesIdentifier = seriesIdentifier
+		}
+
+		// add file if premiere
+		if req.Premiere || req.Vodup {
+			lecture.Files = []model.File{{Path: fmt.Sprintf("%s/%s", premiereFolder, premiereFileName)}}
+		}
+		tumLiveContext.Course.Streams = append(tumLiveContext.Course.Streams, lecture)
 	}
-	// add file if premiere
-	if req.Premiere || req.Vodup {
-		lecture.Files = []model.File{{Path: fmt.Sprintf("%s/%s", premiereFolder, premiereFileName)}}
-	}
-	tumLiveContext.Course.Streams = append(tumLiveContext.Course.Streams, lecture)
+
 	err = dao.UpdateCourse(context.Background(), *tumLiveContext.Course)
 	if err != nil {
 		log.WithError(err).Warn("Can't update course")
@@ -489,13 +502,13 @@ func createLecture(c *gin.Context) {
 }
 
 type createLectureRequest struct {
-	Title         string                `form:"title"`
-	LectureHallId string                `form:"lectureHallId"`
-	Start         time.Time             `form:"start"`
-	End           time.Time             `form:"end"`
-	Premiere      bool                  `form:"premiere"`
-	File          *multipart.FileHeader `form:"file"`
-	Vodup         bool                  `form:"vodup"`
+	Title         string      `json:"title"`
+	LectureHallId string      `json:"lectureHallId"`
+	Start         time.Time   `json:"start"`
+	Duration      int         `json:"duration"`
+	Premiere      bool        `json:"premiere"`
+	Vodup         bool        `json:"vodup"`
+	DateSeries    []time.Time `json:"dateSeries"`
 }
 
 func createCourse(c *gin.Context) {
@@ -588,7 +601,7 @@ func deleteCourse(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 
 	log.WithFields(log.Fields{
-		"user": tumLiveContext.User.ID,
+		"user":   tumLiveContext.User.ID,
 		"course": tumLiveContext.Course.ID,
 	}).Info("Delete Course Called")
 
