@@ -2,6 +2,8 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
@@ -20,6 +22,7 @@ type Stream struct {
 	RoomCode         string
 	EventTypeName    string
 	TUMOnlineEventID uint
+	SeriesIdentifier string `gorm:"default:null"`
 	StreamKey        string `gorm:"not null"`
 	PlaylistUrl      string
 	PlaylistUrlPRES  string
@@ -28,6 +31,7 @@ type Stream struct {
 	LiveNow          bool   `gorm:"not null"`
 	Recording        bool
 	Premiere         bool `gorm:"default:null"`
+	Ended            bool `gorm:"default:null"`
 	Chats            []Chat
 	Stats            []Stat
 	Units            []StreamUnit
@@ -39,7 +43,8 @@ type Stream struct {
 	Files            []File `gorm:"foreignKey:StreamID"`
 	Paused           bool   `gorm:"default:false"`
 	StreamName       string
-	Duration         uint32 `gorm:"default:null"`
+	Duration         uint32   `gorm:"default:null"`
+	StreamWorkers    []Worker `gorm:"many2many:stream_workers;"`
 }
 
 // IsSelfStream returns whether the stream is a scheduled stream in a lecture hall
@@ -49,7 +54,7 @@ func (s Stream) IsSelfStream() bool {
 
 // IsPast returns whether the stream end time was reached
 func (s Stream) IsPast() bool {
-	return s.End.Before(time.Now())
+	return s.End.Before(time.Now()) || s.Ended
 }
 
 // IsComingUp returns whether the stream begins in 30 minutes
@@ -72,6 +77,11 @@ func (s Stream) IsStartingInOneDay() bool {
 // IsStartingInMoreThanOneDay returns whether the stream starts in at least 2 days
 func (s Stream) IsStartingInMoreThanOneDay() bool {
 	return s.Start.After(time.Now().Add(48 * time.Hour))
+}
+
+// IsPlanned returns whether the stream is planned or not
+func (s Stream) IsPlanned() bool {
+	return !s.Recording && !s.LiveNow && !s.IsPast() && !s.IsComingUp()
 }
 
 type silence struct {
@@ -108,4 +118,17 @@ func (s Stream) FriendlyDate() string {
 
 func (s Stream) FriendlyTime() string {
 	return s.Start.Format("02.01.2006 15:04") + " - " + s.End.Format("15:04")
+}
+
+func (s Stream) FriendlyNextDate() string {
+	if now.With(s.Start).Before(time.Now()) {
+		return "No upcoming stream"
+	}
+	if now.With(s.Start).EndOfDay() == now.EndOfDay() {
+		return fmt.Sprintf("Today, %02d:%02d", s.Start.Hour(), s.Start.Minute())
+	}
+	if now.With(s.Start).EndOfDay() == now.With(time.Now().Add(time.Hour*24)).EndOfDay() {
+		return fmt.Sprintf("Tomorrow, %02d:%02d", s.Start.Hour(), s.Start.Minute())
+	}
+	return s.Start.Format("Mon, January 02. 15:04")
 }

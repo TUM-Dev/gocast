@@ -26,6 +26,12 @@ func GetAliveWorkers() []model.Worker {
 	return workers
 }
 
+func GetWorkerByHostname(ctx context.Context, hostname string) (model.Worker, error) {
+	var worker model.Worker
+	err := DB.Where("host = ?", hostname).First(&worker).Error
+	return worker, err
+}
+
 func GetWorkerByID(ctx context.Context, workerID string) (model.Worker, error) {
 	var worker model.Worker
 	dbErr := DB.First(&worker, "worker_id = ?", workerID).Error

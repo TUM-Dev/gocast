@@ -41,6 +41,11 @@ type argonParams struct {
 	keyLength   uint32
 }
 
+// IsAdminOfCourse checks if the user is an admin of the course
+func (u *User) IsAdminOfCourse(course Course) bool {
+	return u.Role == AdminType || course.UserID == u.ID
+}
+
 func (u *User) IsEligibleToWatchCourse(course Course) bool {
 	if course.Visibility == "loggedin" || course.Visibility == "public" {
 		return true

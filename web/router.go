@@ -23,9 +23,12 @@ func ConfigGinRouter(router *gin.Engine) {
 		"template/*.gohtml",
 		"template/admin/*.gohtml",
 		"template/admin/admin_tabs/*.gohtml",
+		"template/partial/*.gohtml",
 		"template/partial/stream/*.gohtml",
 		"template/partial/course/manage/*.gohtml",
-		"template/partial/admin/*.gohtml"))
+		"template/partial/admin/*.gohtml",
+		"template/partial/stream/chat/*.gohtml",
+		"template/partial/course/manage/*.gohtml"))
 	configGinStaticRouter(router)
 	configMainRoute(router)
 	configCourseRoute(router)
@@ -57,6 +60,7 @@ func configMainRoute(router *gin.Engine) {
 	adminGroup.GET("/admin/server-notifications", AdminPage)
 	adminGroup.GET("/admin/server-stats", AdminPage)
 	adminGroup.GET("/admin/course-import", AdminPage)
+	adminGroup.GET("/admin/token", AdminPage)
 
 	courseAdminGroup := router.Group("/")
 	courseAdminGroup.Use(tools.InitCourse)
@@ -78,6 +82,7 @@ func configMainRoute(router *gin.Engine) {
 	streamGroup.Use(tools.InitStream)
 	streamGroup.GET("/w/:slug/:streamID", WatchPage)
 	streamGroup.GET("/w/:slug/:streamID/:version", WatchPage)
+	streamGroup.GET("/w/:slug/:streamID/chat/popup", PopUpChat)
 	router.GET("/", MainPage)
 	router.GET("/semester/:year/:term", MainPage)
 	router.GET("/healthcheck", HealthCheck)
@@ -119,4 +124,10 @@ type ErrorPageData struct {
 	IndexData IndexData
 	Status    int
 	Message   string
+}
+
+type ChatData struct {
+	IsAdminOfCourse bool // is current user admin or lecturer who created the course associated with the chat
+	IndexData       IndexData
+	IsPopUp         bool
 }

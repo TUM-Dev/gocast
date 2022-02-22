@@ -1,17 +1,18 @@
 {{define "users"}}
-    <div class="dark:bg-secondary bg-white p-2 shadow rounded my-6">
-        <h2 class="text-2xl text-1">User Management</h2>
+    <h2 class="text-2xl text-1 my-auto mt-4 font-medium">User Management</h2>
+    <div class="dark:border-secondary bg-gray-100 rounded-md mb-6overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter">
         {{template "user-search"}}
-        <table class="table-auto w-full" x-data="{show:true}" x-show="show" @showuserstable.window="show=$event.detail">
+
+        <table class="table-auto w-full rounded-sm">
             <thead>
-            <tr class="text-4 uppercase text-sm leading-normal">
+            <tr class="dark:bg-secondary bg-gray-200 text-4 uppercase text-sm leading-normal dark:bg-secondary rounded-md">
                 <th class="py-3 px-6 text-left">Name</th>
                 <th class="py-3 px-6 text-left">Email</th>
                 <th class="py-3 px-6 text-center">Role</th>
                 <th class="py-3 px-6 text-center">Actions</th>
             </tr>
             </thead>
-            <tbody class="text-4 text-sm font-light">
+            <tbody class="text-4 text-s m rounded-sm font-light">
             {{range $user := .}}
                 <tr id="user{{$user.Model.ID}}" class="border-gray-500 dark:hover:bg-primary hover:bg-white">
                     <td class="py-3 px-6 text-left whitespace-nowrap">
@@ -26,25 +27,24 @@
                     </td>
                     <td class="py-3 px-6 text-center">
                         {{if eq $user.Role 1}}
-                            <span class="bg-info text-gray-100 py-1 px-3 rounded-full text-xs">Admin</span>
+                            <span class="bg-indigo-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Admin</span>
                         {{else if eq $user.Role 2}}
-                            <span class="bg-success text-gray-100 py-1 px-3 rounded-full text-xs">Lecturer</span>
+                            <span class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Lecturer</span>
                         {{else}}
-                            <span class="bg-warn text-gray-100 py-1 px-3 rounded-full text-xs">Generic</span>
+                            <span class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Generic</span>
                         {{end}}
                     </td>
                     <td class="py-3 px-6 text-center">
                         <div class="flex item-center justify-center">
                             {{if ne $user.Role 1}}
                                 <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
-                                    <i onclick="deleteUser({{$user.Model.ID}})" class="fas fa-trash"></i>
+                                    <i onclick="admin.deleteUser({{$user.Model.ID}})" class="fas fa-trash"></i>
                                 </div>
                             {{end}}
                         </div>
                     </td>
                 </tr>
             {{end}}
-
             <tr class="dark:hover:bg-primary">
                 <td class="py-3 px-6 text-left whitespace-nowrap">
                     <div class="flex items-center">
@@ -62,7 +62,7 @@
                 <td class="py-3 px-6 text-center">
                     <div class="flex item-center justify-center">
                         <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
-                            <i onclick="createUser()" id="createUser" class="fas fa-plus"></i>
+                            <i onclick="admin.createUser()" id="createUser" class="fas fa-plus"></i>
                         </div>
                     </div>
                 </td>

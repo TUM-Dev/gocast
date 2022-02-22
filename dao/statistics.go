@@ -86,7 +86,7 @@ func GetStudentActivityCourseStats(courseID uint, live bool) ([]Stat, error) {
 	err := DB.Raw(`SELECT year(stats.time) AS year, week(stats.time) AS week, `+countMethod+`(stats.viewers) AS count
 		FROM stats
         	JOIN streams s ON s.id = stats.stream_id
-		WHERE (s.course_id = ? OR ? = 0) AND stats.live = ?
+		WHERE (s.course_id = ? OR ? = 0) AND stats.live = ? AND week(stats.time) > 0
 		GROUP BY year, week
 		ORDER BY year, week;`, //or ? = 0 -> if courseID is 0, all stats are selected
 		courseID, courseID, live).Scan(&res).Error

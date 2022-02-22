@@ -7,6 +7,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -61,7 +62,13 @@ func InitCourse(c *gin.Context) {
 			course = foundCourse
 		}
 	} else if c.Param("year") != "" && c.Param("teachingTerm") != "" && c.Param("slug") != "" {
-		foundCourse, err := dao.GetCourseBySlugYearAndTerm(c, c.Param("slug"), c.Param("teachingTerm"), c.Param("year"))
+		y := c.Param("year")
+		yInt, err := strconv.Atoi(y)
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+		foundCourse, err := dao.GetCourseBySlugYearAndTerm(c, c.Param("slug"), c.Param("teachingTerm"), yInt)
 		if err != nil {
 			c.AbortWithStatus(http.StatusNotFound)
 		} else {
@@ -137,7 +144,7 @@ func OwnerOfCourse(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(TUMLiveContext)
-	if tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.Model.ID != tumLiveContext.Course.UserID {
+	if tumLiveContext.User == nil || (tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.Model.ID != tumLiveContext.Course.UserID) {
 		c.AbortWithStatus(http.StatusForbidden)
 	}
 }
@@ -189,18 +196,31 @@ func Admin(c *gin.Context) {
 	}
 }
 
-func Worker(c *gin.Context) {
-	if wid := c.Param("workerID"); wid != "" {
-		_, err := dao.GetWorkerByID(c, wid)
-		if err == nil {
-			return
-		}
+func AdminToken(c *gin.Context) {
+	queryParams := c.Request.URL.Query()
+	token := queryParams.Get("token")
+	t, err := dao.GetToken(token)
+	if err != nil {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
 	}
-	c.AbortWithStatus(http.StatusForbidden)
+	if t.Scope != model.TokenScopeAdmin {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+	err = dao.TokenUsed(t)
+	if err != nil {
+		log.WithError(err).Warn("error marking token as used")
+		return
+	}
 }
 
 type TUMLiveContext struct {
 	User   *model.User
 	Course *model.Course
 	Stream *model.Stream
+}
+
+func (c *TUMLiveContext) UserIsAdmin() bool {
+	return c.User != nil && (c.User.Role == model.AdminType || c.User.ID == c.Course.UserID)
 }

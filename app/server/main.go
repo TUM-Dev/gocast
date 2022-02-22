@@ -2,7 +2,6 @@ package main
 
 import (
 	"TUM-Live/api"
-	"TUM-Live/api_grpc"
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
@@ -39,7 +38,15 @@ func GinServer() (err error) {
 	// capture performance with sentry
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
 	store := cookie.NewStore([]byte(tools.Cfg.CookieStoreSecret))
-	router.Use(sessions.Sessions("TUMLiveSessionV5", store))
+	if VersionTag != "development" {
+		store.Options(sessions.Options{
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+			MaxAge:   86400 * 30,
+		})
+	}
+	router.Use(sessions.Sessions("TUMLiveSessionV6", store))
 
 	router.Use(tools.InitContext)
 
@@ -109,6 +116,13 @@ func main() {
 		sentry.Flush(time.Second * 5)
 		log.Fatalf("%v", err)
 	}
+	dao.DB = db
+
+	err = dao.Migrator.RunBefore(db)
+	if err != nil {
+		log.Error(err)
+		return
+	}
 
 	err = db.AutoMigrate(
 		&model.User{},
@@ -128,14 +142,18 @@ func main() {
 		&model.ServerNotification{},
 		&model.File{},
 		&model.StreamProgress{},
+		&model.Token{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
 		sentry.Flush(time.Second * 5)
 		log.WithError(err).Fatal("can't migrate database")
 	}
-
-	dao.DB = db
+	err = dao.Migrator.RunAfter(db)
+	if err != nil {
+		log.Error(err)
+		return
+	}
 
 	// tools.SwitchPreset()
 
@@ -172,7 +190,7 @@ func initCron() {
 	//Flush stale sentry exceptions and transactions every 5 minutes
 	_, _ = cronService.AddFunc("0-59/5 * * * *", func() { sentry.Flush(time.Minute * 2) })
 	//Look for due streams and notify workers about them
-	_, _ = cronService.AddFunc("0-59 * * * *", api_grpc.NotifyWorkers)
+	_, _ = cronService.AddFunc("0-59 * * * *", api.NotifyWorkers)
 	cronService.Start()
 }
 
