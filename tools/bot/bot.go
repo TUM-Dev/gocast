@@ -58,8 +58,5 @@ func (c *BotInfo) BotUpdate(info BotInfo) error {
 		return errors.New("sending bot messages is not supported for selfstreams")
 	}
 	err := c.BotMessaging.SendBotMessage(info)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
