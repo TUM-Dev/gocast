@@ -103,7 +103,7 @@ func reportStreamIssue(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 	streamUrl := tools.Cfg.WebUrl + "/w/" + course.Slug + "/" + strconv.Itoa(int(stream.ID))
-	botInfo := bot.BotInfo{
+	botInfo := bot.InfoMessage{
 		CourseName:  course.Name,
 		LectureHall: lectureHall.Name,
 		StreamUrl:   streamUrl,

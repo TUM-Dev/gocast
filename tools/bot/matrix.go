@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
@@ -53,12 +54,12 @@ type LoginResponse struct {
 var roomMessageSuffix string
 
 const clientUrl = "https://matrix.org/_matrix/client/r0/"
-const loginUrl = "https://matrix.org/_matrix/client/r0/login"
+const loginUrl = clientUrl + "login"
+const maxID = 10000
 
 // SendBotMessage sends a formatted message to a matrix room
-func (ma *Matrix) SendBotMessage(info BotInfo) error {
-	id := strconv.Itoa(rand.Intn(1000)) // transaction id
-	roomMessageSuffix = "/send/m.room.message/" + id + "?access_token="
+func (ma *Matrix) SendBotMessage(info InfoMessage) error {
+	id := strconv.Itoa(rand.Intn(maxID)) // transaction id
 	authToken, err := getAuthToken()
 	if err != nil {
 		return err
@@ -67,71 +68,62 @@ func (ma *Matrix) SendBotMessage(info BotInfo) error {
 		return errors.New("authentication failed, could not get token")
 	}
 
-	client := &http.Client{}
-
+	roomMessageSuffix = "/send/m.room.message/" + id + "?access_token="
+	url := clientUrl + "rooms/" + tools.Cfg.Alerts.Matrix.RoomID + roomMessageSuffix + authToken
 	matrixMessage := Message{
 		MsgType:       "m.text",
-		Body:          getMessageText(info),
+		Body:          generateInfoText(info),
 		Format:        "org.matrix.custom.html",
 		FormattedBody: getFormattedMessageText(info),
 	}
-
-	m, err := json.Marshal(matrixMessage)
+	matrixMessageJSON, err := json.Marshal(matrixMessage)
 	if err != nil {
 		return err
 	}
+	err = sendMessageRequest(url, bytes.NewBuffer(matrixMessageJSON))
+	return err
+}
 
-	url := clientUrl + "rooms/" + tools.Cfg.Matrix.RoomID + roomMessageSuffix + authToken
-
-	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(m))
-
+func sendMessageRequest(url string, body io.Reader) error {
+	client := &http.Client{}
+	request, err := http.NewRequest(http.MethodPut, url, body)
 	if err != nil {
 		return err
 	}
-
-	_, err = client.Do(req)
-	if err != nil {
-		return err
+	response, err := client.Do(request)
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf(fmt.Sprintf("received status code %d instead of %d.", response.StatusCode, http.StatusOK))
 	}
-
-	return nil
+	return err
 }
 
 // getAuthToken retrieves a single use token for the next message sent to the server.
 func getAuthToken() (string, error) {
-	client := &http.Client{}
-
 	login := Login{
 		Type:     "m.login.password",
-		User:     tools.Cfg.Matrix.Username,
-		Password: tools.Cfg.Matrix.Password,
+		User:     tools.Cfg.Alerts.Matrix.Username,
+		Password: tools.Cfg.Alerts.Matrix.Password,
 	}
-
 	loginRequest, err := json.Marshal(login)
 	if err != nil {
 		return "", err
 	}
-
-	request, err := http.NewRequest(http.MethodPost, loginUrl, bytes.NewBuffer(loginRequest))
+	response, err := http.Post(loginUrl, "application/json", bytes.NewBuffer(loginRequest))
 	if err != nil {
 		return "", err
 	}
-
-	response, err := client.Do(request)
-	if err != nil {
-		return "", err
+	if response.StatusCode != http.StatusOK {
+		return "", fmt.Errorf(fmt.Sprintf("received status code %d instead of %d.", response.StatusCode, http.StatusOK))
 	}
-
 	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", err
 	}
-
 	loginResponse := LoginResponse{}
 	err = json.Unmarshal(responseBody, &loginResponse)
 	if err != nil {
 		return "", err
 	}
 
-	return loginResponse.AccessToken, nil
+	return loginResponse.AccessToken, err
 }
