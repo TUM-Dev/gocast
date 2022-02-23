@@ -63,12 +63,6 @@ type Config struct {
 		Base   string   `yaml:"base"`
 		Tokens []string `yaml:"tokens"`
 	} `yaml:"campus"`
-	Matrix struct {
-		Username   string `yaml:"username"`
-		Password   string `yaml:"password"`
-		Homeserver string `yaml:"homeserver"`
-		RoomID     string `yaml:"roomID"`
-	} `yaml:"matrix"`
 	Ldap struct {
 		URL      string `yaml:"url"`
 		User     string `yaml:"user"`
@@ -86,6 +80,14 @@ type Config struct {
 		PwrCrtlAuth string `yaml:"pwrCrtlAuth"`
 		CamAuth     string `yaml:"camAuth"`
 	} `yaml:"auths"`
+	Alerts *struct {
+		Matrix *struct {
+			Username   string `yaml:"username"`
+			Password   string `yaml:"password"`
+			Homeserver string `yaml:"homeserver"`
+			RoomID     string `yaml:"roomId"`
+		} `yaml:"matrix"`
+	} `yaml:"alerts"`
 	IngestBase        string `yaml:"ingestBase"`
 	WebUrl            string `yaml:"webUrl"`
 	CookieStoreSecret string `yaml:"cookieStoreSecret"`
