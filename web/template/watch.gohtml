@@ -148,7 +148,7 @@
                     {{end}}
                 {{end}}
             </div>
-            {{if or .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
+            {{if and .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
                 <div class="border-t-2 border-secondary p-4 mt-2 space-x-2">
                     <h3 class="text-4 mb-2 font-bold">Stream actions</h3>
                     <button @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)"
