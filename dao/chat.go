@@ -10,7 +10,12 @@ func AddMessage(chat *model.Chat) error {
 	return DB.Save(chat).Error
 }
 
-//ToggleLike adds a like to a message from the user if it doesn't exist, or removes it if it does
+// DeleteChat removes a chat with the given id from the database.
+func DeleteChat(id uint) error {
+	return DB.Model(&model.Chat{}).Delete(&model.Chat{}, id).Error
+}
+
+// ToggleLike adds a like to a message from the user if it doesn't exist, or removes it if it does
 func ToggleLike(userID uint, chatID uint) error {
 	err := DB.Exec("INSERT INTO chat_user_likes (user_id, chat_id) VALUES (?, ?)", userID, chatID).Error
 	if err == nil {

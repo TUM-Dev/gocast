@@ -1,22 +1,15 @@
-let chatInput;
+import { hideDisconnectedMsg, scrollChat, shouldScroll, showDisconnectedMsg, showNewMessageIndicator } from "./chat";
+
+let chatInput: HTMLInputElement;
 
 export class Watch {
     constructor() {
-        if (document.getElementById("chatForm") != null) {
-            const appHeight = () => {
-                const doc = document.documentElement;
-                doc.style.setProperty("--chat-height", `calc(${window.innerHeight}px - 5rem)`);
-            };
-            window.addEventListener("resize", appHeight);
-            appHeight();
-            chatInput = document.getElementById("chatInput") as HTMLInputElement;
-        }
+        // Empty
     }
 }
 
 let ws: WebSocket;
 let retryInt = 5000; //retry connecting to websocket after this timeout
-let orderByLikes = false; // sorting by likes or by time
 
 const scrollDelay = 100; // delay before scrolling to bottom to make sure chat is rendered
 const pageloaded = new Date();
@@ -24,6 +17,7 @@ const pageloaded = new Date();
 enum WSMessageType {
     Message = "message",
     Like = "like",
+    Delete = "delete",
 }
 
 export function likeMessage(id: number) {
@@ -35,21 +29,13 @@ export function likeMessage(id: number) {
     );
 }
 
-export function sortMessages(messages): void {
-    messages.sort((m1, m2) => {
-        if (orderByLikes) {
-            if (m1.likes === m2.likes) {
-                return m2.id - m1.id; // same amount of likes -> newer messages up
-            }
-            return m2.likes - m1.likes; // more likes -> up
-        } else {
-            return m1.ID < m2.ID ? -1 : 1; // newest messages last
-        }
-    });
-}
-
-export function setOrder(obl: boolean) {
-    orderByLikes = obl;
+export function deleteMessage(id: number) {
+    ws.send(
+        JSON.stringify({
+            type: WSMessageType.Delete,
+            id: id,
+        }),
+    );
 }
 
 export function initChatScrollListener() {
@@ -62,32 +48,6 @@ export function initChatScrollListener() {
             window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
         }
     });
-}
-
-export function shouldScroll(): boolean {
-    if (orderByLikes) {
-        return false; // only scroll if sorting by time
-    }
-    const c = document.getElementById("chatBox");
-    return c.scrollHeight - c.scrollTop <= c.offsetHeight;
-}
-
-function showNewMessageIndicator() {
-    window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: true } }));
-}
-
-export function scrollChat() {
-    if (orderByLikes) {
-        return; // only scroll if sorting by time
-    }
-    const c = document.getElementById("chatBox");
-    c.scrollTop = c.scrollHeight;
-}
-
-export function scrollToLatestMessage() {
-    const c = document.getElementById("chatBox");
-    c.scrollTo({ top: c.scrollHeight, behavior: "smooth" });
-    window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
 }
 
 export function startWebsocket() {
@@ -142,6 +102,9 @@ export function startWebsocket() {
         } else if ("likes" in data) {
             const event = new CustomEvent("chatlike", { detail: data });
             window.dispatchEvent(event);
+        } else if ("delete" in data) {
+            const event = new CustomEvent("chatdelete", { detail: data });
+            window.dispatchEvent(event);
         }
     };
 
@@ -189,16 +152,4 @@ export function sendMessage(message: string, anonymous: boolean, replyTo: number
             replyTo: replyTo,
         }),
     );
-}
-
-export function showDisconnectedMsg() {
-    if (document.getElementById("disconnectMsg") !== null) {
-        document.getElementById("disconnectMsg").classList.remove("hidden");
-    }
-}
-
-export function hideDisconnectedMsg() {
-    if (document.getElementById("disconnectMsg") !== null) {
-        document.getElementById("disconnectMsg").classList.add("hidden");
-    }
 }

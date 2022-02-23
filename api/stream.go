@@ -14,9 +14,16 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func configGinStreamRestRouter(router *gin.Engine) {
+	// group for api users with token
+	tokenG := router.Group("/")
+	tokenG.Use(tools.AdminToken)
+	tokenG.GET("/api/stream/live", liveStreams)
+
+	// group for web api
 	g := router.Group("/")
 	g.Use(tools.InitStream)
 	g.Use(tools.AdminOfCourse)
@@ -24,6 +31,52 @@ func configGinStreamRestRouter(router *gin.Engine) {
 	g.GET("/api/stream/:streamID/pause", pauseStream)
 	g.GET("/api/stream/:streamID/end", endStream)
 	g.GET("/api/stream/:streamID/issue", reportStreamIssue)
+}
+
+type liveStreamDto struct {
+	ID          uint
+	CourseName  string
+	LectureHall string
+	COMB        string
+	PRES        string
+	CAM         string
+	End         time.Time
+}
+
+// livestreams returns all streams that are live
+func liveStreams(c *gin.Context) {
+	var res []liveStreamDto
+	streams, err := dao.GetCurrentLive(c)
+	if err != nil {
+		log.Error(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	for _, s := range streams {
+		course, err := dao.GetCourseById(c, s.CourseID)
+		if err != nil {
+			log.Error(err)
+		}
+		lectureHall := "Selfstream"
+		if s.LectureHallID != 0 {
+			l, err := dao.GetLectureHallByID(s.LectureHallID)
+			if err != nil {
+				log.Error(err)
+			} else {
+				lectureHall = l.Name
+			}
+		}
+		res = append(res, liveStreamDto{
+			ID:          s.ID,
+			CourseName:  course.Name,
+			LectureHall: lectureHall,
+			COMB:        s.PlaylistUrl,
+			PRES:        s.PlaylistUrlPRES,
+			CAM:         s.PlaylistUrlCAM,
+			End:         s.End,
+		})
+	}
+	c.JSON(http.StatusOK, res)
 }
 
 func endStream(c *gin.Context) {

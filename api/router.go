@@ -39,5 +39,5 @@ func ConfigGinRouter(router *gin.Engine) {
 	configGinLectureHallApiRouter(router)
 	configGinSexyApiRouter(router)
 	configServerNotificationsRoutes(router)
-	configWorkerRouter(router)
+	configTokenRouter(router)
 }

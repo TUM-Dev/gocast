@@ -16,6 +16,7 @@ import (
 	"regexp"
 )
 
+// AdminPage serves all administration pages. todo: refactor into multiple methods
 func AdminPage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
@@ -61,6 +62,15 @@ func AdminPage(c *gin.Context) {
 	if c.Request.URL.Path == "/admin/course-import" {
 		page = "courseImport"
 	}
+	var tokens []dao.AllTokensDto
+	if c.Request.URL.Path == "/admin/token" {
+		page = "token"
+		tokens, err = dao.GetAllTokens()
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			log.WithError(err).Error("couldn't query tokens")
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
+	}
 	if c.Request.URL.Path == "/admin/server-stats" {
 		page = "serverStats"
 		streams, err := dao.GetAllStreams()
@@ -91,14 +101,20 @@ func AdminPage(c *gin.Context) {
 			IndexData:           indexData,
 			LectureHalls:        lectureHalls,
 			Page:                page,
-			Workers:             workers,
+			Workers:             WorkersData{Workers: workers, Token: tools.Cfg.WorkerToken},
 			Semesters:           semesters,
 			CurY:                y,
 			CurT:                t,
+			Tokens:              tokens,
 			ServerNotifications: notifications})
 	if err != nil {
 		log.Printf("%v", err)
 	}
+}
+
+type WorkersData struct {
+	Workers []model.Worker
+	Token   string
 }
 
 func LectureCutPage(c *gin.Context) {
@@ -238,12 +254,13 @@ type AdminPageData struct {
 	Courses             []model.Course
 	LectureHalls        []model.LectureHall
 	Page                string
-	Workers             []model.Worker
+	Workers             WorkersData
 	Semesters           []dao.Semester
 	CurY                int
 	CurT                string
 	EditCourseData      EditCourseData
 	ServerNotifications []model.ServerNotification
+	Tokens              []dao.AllTokensDto
 }
 
 type EditCourseData struct {

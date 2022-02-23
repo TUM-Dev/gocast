@@ -1,6 +1,6 @@
-// worker_grpc.go handles communication with workers via grpc
 package api
 
+// worker_grpc.go handles communication with workers via grpc
 import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
@@ -11,12 +11,16 @@ import (
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
 	"github.com/getsentry/sentry-go"
 	"github.com/joschahenningsen/TUM-Live-Worker-v2/pb"
+	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"gorm.io/gorm"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -45,6 +49,40 @@ func endConnection(conn *grpc.ClientConn) {
 	if err := conn.Close(); err != nil {
 		log.WithError(err).Error("Could not close connection to worker")
 	}
+}
+
+// JoinWorkers is a request from a worker to join the pool. On success, the workerID is returned.
+func (s server) JoinWorkers(ctx context.Context, request *pb.JoinWorkersRequest) (*pb.JoinWorkersResponse, error) {
+	log.WithField("host", request.Hostname).Info("JoinWorkers called")
+	if request.Token != tools.Cfg.WorkerToken {
+		return nil, status.Error(codes.Unauthenticated, "Invalid token")
+	}
+
+	worker, err := dao.GetWorkerByHostname(ctx, request.Hostname)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, status.Errorf(codes.Internal, "get worker by hostname: %v", err)
+	}
+	if err == nil {
+		// worker already exists, return its ID
+		return &pb.JoinWorkersResponse{
+			WorkerId: worker.WorkerID,
+		}, nil
+	}
+
+	// worker does not exist, create it
+	worker = model.Worker{
+		Host:     request.Hostname,
+		WorkerID: uuid.NewV4().String(),
+		LastSeen: time.Now(),
+	}
+	if err := dao.CreateWorker(&worker); err != nil {
+		log.WithError(err).Error("Could not add worker to database")
+		return nil, status.Errorf(codes.Internal, "Could not add worker to database")
+	}
+	log.Info("Added worker to database")
+	return &pb.JoinWorkersResponse{
+		WorkerId: worker.WorkerID,
+	}, nil
 }
 
 //NotifySilenceResults handles the results of silence detection sent by a worker

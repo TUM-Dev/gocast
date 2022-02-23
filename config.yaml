@@ -1,44 +1,43 @@
-lrz:
-  name: "Erika Mustermann"
-  email: "erika.mustermann@example.com"
-  phone: "0123456789"
-  uploadUrl: "https://example.lrz.de/upload"
-  subDir: "RBG"
-mail:
-  sender: "noreply@example.org"
-  server: "mailrelay.example.org"
-  SMIMECert: "/path/to/cert.pem"
-  SMIMEKey: "/path/to/key.pem"
-db:
-  user: "root"
-  password: "example"
-  database: "tumlive"
-campus:
-  base: "https://example.tum.de/api/v1/"
-  tokens:
-    - "secret1"
-    - "secret2"
-ldap:
-  url: "ldap://abc.de"
-  user: "user"
-  password: "secret"
-  baseDn: "dc=example,dc=de"
-  userDn: "uid=%s,ou=people,dc=example,dc=de"
-paths:
-  static: "/var/www/static"
-  mass: "/srv/ceph/live"
 auths:
-  smpUser: "username"
-  smpPassword: "password"
-  pwrCrtlAuth: "user:password"
-  camAuth: "user:password"
+  camauth: user:password
+  pwrcrtlauth: user:password
+  smppassword: password
+  smpuser: username
+campus:
+  base: https://example.tum.de/api/v1/
+  tokens:
+  - secret1
+  - secret2
+cookiestoresecret: put 40 random characters here
+db:
+  database: tumlive
+  password: example
+  user: root
+ingestbase: rtmp://ingest.tum.live/
+ldap:
+  basedn: dc=example,dc=de
+  password: secret
+  url: ldap://abc.de
+  user: user
+  userdn: uid=%s,ou=people,dc=example,dc=de
+lrz:
+  email: erika.mustermann@example.com
+  name: Erika Mustermann
+  phone: "0123456789"
+  subdir: RBG
+  uploadurl: https://example.lrz.de/upload
+mail:
+  sender: noreply@example.org
+  server: mailrelay.example.org
+  smimecert: /path/to/cert.pem
+  smimekey: /path/to/key.pem
+paths:
+  mass: /srv/ceph/live
+  static: /var/www/static
 alerts:
   matrix:
     username: "rbgbot"
     password: "password"
     homeserver: "matrix.org"
     roomId: "roomid"
-
-ingestBase: "rtmp://ingest.tum.live/"
-webUrl: "https://live.rbg.tum.de"
-cookieStoreSecret: "put 40 random characters here"
+workerToken: 2657575f-40e4-4278-9ca1-f3a5ed667cff

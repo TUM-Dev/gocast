@@ -22,6 +22,7 @@ type Stream struct {
 	RoomCode         string
 	EventTypeName    string
 	TUMOnlineEventID uint
+	SeriesIdentifier string `gorm:"default:null"`
 	StreamKey        string `gorm:"not null"`
 	PlaylistUrl      string
 	PlaylistUrlPRES  string
