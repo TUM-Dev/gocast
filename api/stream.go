@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -143,7 +142,12 @@ func reportStreamIssue(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	stream := tumLiveContext.Stream
-
+	// Check if stream starts today
+	if stream.Start.Truncate(time.Hour*24) != time.Now().Truncate(time.Hour*24) {
+		sentry.CaptureException(errors.New("tried to send report for stream that is not active today"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
 	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -151,11 +155,10 @@ func reportStreamIssue(c *gin.Context) {
 	}
 	course, err := dao.GetCourseById(c, stream.CourseID)
 	if err != nil {
-		log.WithError(err).Error("Can't send bot message")
 		sentry.CaptureException(err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
-	streamUrl := tools.Cfg.WebUrl + "/w/" + course.Slug + "/" + strconv.Itoa(int(stream.ID))
+	streamUrl := tools.Cfg.WebUrl + "/w/" + course.Slug + "/" + fmt.Sprintf("%d", stream.ID)
 	botInfo := bot.InfoMessage{
 		CourseName:  course.Name,
 		LectureHall: lectureHall.Name,
@@ -168,7 +171,6 @@ func reportStreamIssue(c *gin.Context) {
 	err = botInfo.BotUpdate(botInfo)
 
 	if err != nil {
-		log.WithError(err).Error("Can't send bot message")
 		sentry.CaptureException(err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}

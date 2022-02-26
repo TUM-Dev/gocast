@@ -16,30 +16,25 @@ import (
 type Matrix struct {
 }
 
-// Message represents a Matrix message event that includes html formatting as specified
+// matrixMessage represents a Matrix message event that includes html formatting as specified
 // in https://spec.matrix.org/v1.2/client-server-api/#mroommessage-msgtypes
-type Message struct {
+type matrixMessage struct {
 	MsgType       string `json:"msgtype"`
 	Body          string `json:"body"`
 	Format        string `json:"format"`
 	FormattedBody string `json:"formatted_body"`
 }
 
-// Login represents a login request that is used for authentication as specified
+// login represents a login request that is used for authentication as specified
 // in https://spec.matrix.org/v1.2/client-server-api/#login
-type Login struct {
+type login struct {
 	Type     string `json:"type"`
 	User     string `json:"user"`
 	Password string `json:"password"`
 }
 
-// MessageResponse is the response for a message in our case
-type MessageResponse struct {
-	EventID string `json:"event_id"`
-}
-
-// LoginResponse is the response for a login request
-type LoginResponse struct {
+// loginResponse is the response for a login request
+type loginResponse struct {
 	UserId      string `json:"user_id"`
 	AccessToken string `json:"access_token"`
 	HomeServer  string `json:"home_server"`
@@ -75,9 +70,9 @@ const (
 )
 
 // SendBotMessage sends a formatted message to a matrix room
-func (ma *Matrix) SendBotMessage(info InfoMessage) error {
+func (m *Matrix) SendBotMessage(info InfoMessage) error {
 	id := strconv.Itoa(rand.Intn(maxID)) // transaction id
-	authToken, err := getAuthToken()
+	authToken, err := m.getAuthToken()
 	if err != nil {
 		return err
 	}
@@ -87,7 +82,7 @@ func (ma *Matrix) SendBotMessage(info InfoMessage) error {
 
 	var roomMessageSuffix = roomMsgPrefix + id + accessTokenSuffix
 	url := clientUrl + roomSuffix + tools.Cfg.Alerts.Matrix.RoomID + roomMessageSuffix + authToken
-	matrixMessage := Message{
+	matrixMessage := matrixMessage{
 		MsgType:       msgType,
 		Body:          generateInfoText(info),
 		Format:        msgFormat,
@@ -97,12 +92,12 @@ func (ma *Matrix) SendBotMessage(info InfoMessage) error {
 	if err != nil {
 		return err
 	}
-	err = sendMessageRequest(url, bytes.NewBuffer(matrixMessageJSON))
+	err = m.sendMessageRequest(url, bytes.NewBuffer(matrixMessageJSON))
 	return err
 }
 
 // sendMessageRequest sends a PUT request to url with a given body
-func sendMessageRequest(url string, body io.Reader) error {
+func (m *Matrix) sendMessageRequest(url string, body io.Reader) error {
 	client := &http.Client{}
 	request, err := http.NewRequest(http.MethodPut, url, body)
 	if err != nil {
@@ -116,8 +111,8 @@ func sendMessageRequest(url string, body io.Reader) error {
 }
 
 // getAuthToken retrieves a single use token for the next message sent to the server.
-func getAuthToken() (string, error) {
-	login := Login{
+func (m *Matrix) getAuthToken() (string, error) {
+	login := login{
 		Type:     loginMethod,
 		User:     tools.Cfg.Alerts.Matrix.Username,
 		Password: tools.Cfg.Alerts.Matrix.Password,
@@ -133,15 +128,10 @@ func getAuthToken() (string, error) {
 	if response.StatusCode != http.StatusOK {
 		return "", fmt.Errorf(fmt.Sprintf("received status code %d instead of %d.", response.StatusCode, http.StatusOK))
 	}
-	responseBody, err := io.ReadAll(response.Body)
+	loginResponse := loginResponse{}
+	err = json.NewDecoder(response.Body).Decode(&loginResponse)
 	if err != nil {
 		return "", err
 	}
-	loginResponse := LoginResponse{}
-	err = json.Unmarshal(responseBody, &loginResponse)
-	if err != nil {
-		return "", err
-	}
-
 	return loginResponse.AccessToken, err
 }
