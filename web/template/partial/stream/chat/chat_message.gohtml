@@ -1,7 +1,7 @@
 {{define "messageTemplate"}}
     {{- /*gotype: TUM-Live/web.ChatData*/ -}}
     <template x-for="m in messages" :key="m.ID">
-        <div class="relative py-2 px-2 {{if .IsPopUp}}xl:w-1/2 md:w-3/4 md:mx-auto{{end}}"
+        <div class="relative py-2 px-2"
              :class="replyTo === m.ID && 'ring ring-blue-500/50'"
              x-data="{ showReplies: false, m: m }" x-show="!m.deleted && m.replyTo && !m.replyTo.Valid">
 

@@ -21,9 +21,9 @@
                 {{if not .IsPopUp}}
                     <div class="relative my-auto">
                 <button @click="show = !show;"
-                        class="peer bg-transparent border-0 font-semibold text-xl h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90 md:rotate-0">
+                        class="peer bg-transparent border-0 font-semibold text-xl h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90 md:rotate-0"
+                        title="Toggle Chat">
                     <span x-text="show ? '&#8614;' : '&#8612;'">&#8614;</span></button>
-                {{template "tooltip-left" "Toggle Chat"}}
                     </div>
                 {{end}}
                 <div x-show="show" class="ml-auto my-auto">
@@ -49,14 +49,14 @@
         <!-- Messages -->
         <div x-show="show"
              id="chatBox"
-             class="overflow-y-scroll overflow-x-hidden px-1 py-2 z-40"
+             class="overflow-y-scroll overflow-x-hidden px-1 py-2 z-40 {{if .IsPopUp}}xl:w-1/2 md:w-3/4 md:mx-auto{{end}}"
              style="height: calc(100% - 3rem - 6rem);"> <!-- this isn't optimal yet -->
             {{template "messageTemplate" .}}
         </div>
         {{template "chatprompts"}}
         <form x-show="show" id="chatForm"
               class="sticky w-full bottom-0 2xl:flex 2xl:justify-between inset-x-0 p-2 bg-white
-              dark:bg-secondary-lighter border-t dark:border-gray-800
+              dark:bg-secondary border-t dark:border-gray-800
               {{if .IsPopUp}} xl:w-1/2 md:w-3/4 md:mx-auto md:border md:rounded-t-lg {{end}}"
               x-on:sendmessage.window="watch.sendMessage(message, anonymous, replyTo);message=''"
               @submit.prevent="">
