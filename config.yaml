@@ -1,3 +1,9 @@
+alerts:
+  matrix:
+    username: "rbgbot"
+    password: "password"
+    homeserver: "matrix.org"
+    roomId: "!id:matrix.org" # Obtained in Element by "Room Settings" -> "Advanced" -> "Internal Room ID"
 auths:
   camauth: user:password
   pwrcrtlauth: user:password
@@ -34,10 +40,5 @@ mail:
 paths:
   mass: /srv/ceph/live
   static: /var/www/static
-alerts:
-  matrix:
-    username: "rbgbot"
-    password: "password"
-    homeserver: "matrix.org"
-    roomId: "!id:matrix.org" # Obtained in Element by "Room Settings" -> "Advanced" -> "Internal Room ID"
+webUrl: https://live.rbg.tum.de
 workerToken: 2657575f-40e4-4278-9ca1-f3a5ed667cff
