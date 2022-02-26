@@ -11,7 +11,9 @@
                 <span class="text-2 font-semibold {{if .IsPopUp}}md:block{{end}}" x-text="m.name"
                       :style="'color:'+m.color"></span>
                 <span class="chatMsg {{if .IsPopUp}}md:text-lg{{end}}" x-html="m.message"></span>
-                <span class="ml-1" x-show="m.resolved"><i class="fas fa-check text-green-500"></i></span>
+                <span x-show="m.resolved" class="ml-1">
+                    <i class="fas fa-check text-green-500"></i>
+                </span>
 
                 <!-- reply hover button -->
                 <button x-cloak
@@ -25,7 +27,7 @@
                                 absolute h-8 w-8 text-3 bg-white border dark:bg-secondary cursor-pointer rounded-lg shadow-sm
                                 dark:border-gray-800 hover:dark:bg-gray-600 hover:bg-gray-200"
                         {{if.IsPopUp}} :class="replyTo === m.ID ? 'group-hover:flex' : 'hidden'"
-                        {{else}} :class="replyTo === m.ID ? 'md:group-hover:flex' : 'md:hidden'" {{end}}>
+                {{else}} :class="replyTo === m.ID ? 'md:group-hover:flex' : 'md:hidden'" {{end}}>
                     <i class="fa fas m-auto" :class="replyTo === m.ID ? 'fa-times': 'fa-reply'"></i>
                 </button>
             </p>
@@ -37,12 +39,22 @@
                     <span :class="m.liked && 'text-blue-500 hover:text-blue-300'"><i class="fas fa-thumbs-up"></i>
                         <span x-text="m.likes!==0?`(${m.likes})`:''"></span></span>
                 </a>
-                <a x-show="admin" @click="watch.deleteMessage(m.ID)" title="Delete Message" class="cursor-pointer">
-                    <span class="fas fa-ban"></span>
-                </a>
-                <a x-show="admin && !m.resolved" @click="watch.resolveMessage(m.ID)" title="Resolve Message" class="cursor-pointer">
-                    <span class="fas fa-check"></span>
-                </a>
+
+                <!-- admin stuff -->
+                <button x-show="admin"
+                        @click="watch.deleteMessage(m.ID)"
+                        title="Delete Message"
+                        class="rounded border dark:border-gray-800 dark:bg-gray-800 px-2 ml-auto">
+                    <span class="text-xs uppercase mr-1">dismiss</span>
+                    <span class="fas fa-ban text-xs"></span>
+                </button>
+                <button x-show="admin && !m.resolved"
+                        @click="watch.resolveMessage(m.ID)"
+                        title="Resolve Message"
+                        class="rounded border-gray-600 dark:border-gray-400 border px-2">
+                    <span class="text-xs uppercase mr-1">resolve</span>
+                    <span class="fas fa-check text-xs"></span>
+                </button>
             </p>
             <!-- replies -->
             <div x-cloak class="ml-2">
