@@ -44,14 +44,14 @@
                 <button x-show="admin"
                         @click="watch.deleteMessage(m.ID)"
                         title="Delete Message"
-                        class="rounded border dark:border-gray-800 dark:bg-gray-800 px-2 ml-auto">
+                        class="rounded border hover:bg-gray-200 dark:hover:bg-gray-600 dark:border-gray-800 dark:bg-gray-800 px-2 ml-auto">
                     <span class="text-xs uppercase mr-1">dismiss</span>
                     <span class="fas fa-ban text-xs"></span>
                 </button>
                 <button x-show="admin && !m.resolved"
                         @click="watch.resolveMessage(m.ID)"
                         title="Resolve Message"
-                        class="rounded border-gray-600 dark:border-gray-400 border px-2">
+                        class="rounded border-gray-600 border px-2 hover:text-green-500 hover:border-green-500 dark:border-gray-400 dark:hover:border-green-500">
                     <span class="text-xs uppercase mr-1">resolve</span>
                     <span class="fas fa-check text-xs"></span>
                 </button>
