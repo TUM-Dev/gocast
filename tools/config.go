@@ -2,6 +2,7 @@ package tools
 
 import (
 	"fmt"
+	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"time"
@@ -34,9 +35,20 @@ func initConfig() {
 			panic(fmt.Errorf("fatal error config file: %v", err))
 		}
 	}
+	log.Info("Using Config file ", viper.ConfigFileUsed())
 	err = viper.Unmarshal(&Cfg)
 	if err != nil {
 		panic(fmt.Errorf("fatal error config file: %v", err))
+	}
+
+	// set defaults
+	if Cfg.WorkerToken == "" {
+		Cfg.WorkerToken = uuid.NewV4().String()
+		viper.Set("workerToken", Cfg.WorkerToken)
+		err = viper.WriteConfig()
+		if err != nil {
+			log.Warn("Can't write out config ", err)
+		}
 	}
 }
 
@@ -82,4 +94,5 @@ type Config struct {
 	} `yaml:"auths"`
 	IngestBase        string `yaml:"ingestBase"`
 	CookieStoreSecret string `yaml:"cookieStoreSecret"`
+	WorkerToken       string `yaml:"workerToken"` // used for workers to join the worker pool
 }

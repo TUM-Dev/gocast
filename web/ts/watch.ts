@@ -4,15 +4,7 @@ let chatInput: HTMLInputElement;
 
 export class Watch {
     constructor() {
-        if (document.getElementById("chatForm") != null) {
-            const appHeight = () => {
-                const doc = document.documentElement;
-                doc.style.setProperty("--chat-height", `calc(${window.innerHeight}px - 5rem)`);
-            };
-            window.addEventListener("resize", appHeight);
-            appHeight();
-            chatInput = document.getElementById("chatInput") as HTMLInputElement;
-        }
+        // Empty
     }
 }
 

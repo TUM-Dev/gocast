@@ -101,7 +101,7 @@ func AdminPage(c *gin.Context) {
 			IndexData:           indexData,
 			LectureHalls:        lectureHalls,
 			Page:                page,
-			Workers:             workers,
+			Workers:             WorkersData{Workers: workers, Token: tools.Cfg.WorkerToken},
 			Semesters:           semesters,
 			CurY:                y,
 			CurT:                t,
@@ -110,6 +110,11 @@ func AdminPage(c *gin.Context) {
 	if err != nil {
 		log.Printf("%v", err)
 	}
+}
+
+type WorkersData struct {
+	Workers []model.Worker
+	Token   string
 }
 
 func LectureCutPage(c *gin.Context) {
@@ -249,7 +254,7 @@ type AdminPageData struct {
 	Courses             []model.Course
 	LectureHalls        []model.LectureHall
 	Page                string
-	Workers             []model.Worker
+	Workers             WorkersData
 	Semesters           []dao.Semester
 	CurY                int
 	CurT                string
