@@ -39,5 +39,5 @@ alerts:
     username: "rbgbot"
     password: "password"
     homeserver: "matrix.org"
-    roomId: "roomid"
+    roomId: "!id:matrix.org" # Obtained in Element by "Room Settings" -> "Advanced" -> "Internal Room ID"
 workerToken: 2657575f-40e4-4278-9ca1-f3a5ed667cff

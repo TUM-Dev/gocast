@@ -7,14 +7,15 @@ import (
 	"strings"
 )
 
-// InfoMessage contains all information that is needed for a debugging message
+// InfoMessage contains all information that is needed for a debugging message.
+// This should later be extended with a custom message field that can be filled on the stream page.
 type InfoMessage struct {
 	CourseName  string
 	LectureHall string
 	StreamUrl   string
 	CombIP      string
 	CameraIP    string
-	// TODO: This should later be extended with a custom message field that can be filled on the stream page
+
 	Method MessagingMethod
 }
 
@@ -26,17 +27,6 @@ type MessagingMethod interface {
 // SetMessagingMethod sets the provider method for sending messages e.g. Matrix
 func (c *InfoMessage) SetMessagingMethod(messaging MessagingMethod) {
 	c.Method = messaging
-}
-
-// BotUpdate sends a message containing data from a stream, course and lecture hall
-// to a messaging server. Right now only matrix is supported.
-func (c *InfoMessage) BotUpdate(info InfoMessage) error {
-	// Currently, this bot is only supported for lecture hall streams
-	if info.LectureHall == "" {
-		return errors.New("sending bot messages is not supported for selfstreams")
-	}
-	err := c.Method.SendBotMessage(info)
-	return err
 }
 
 // generateInfoText generates an unformatted issue text
@@ -59,4 +49,15 @@ func getFormattedMessageText(botInfo InfoMessage) string {
 		AddTargetBlankToFullyQualifiedLinks(true).
 		SanitizeBytes(unsafe)
 	return string(html)
+}
+
+// BotUpdate sends a message containing data from a stream, course and lecture hall
+// to a messaging server. Right now only matrix is supported.
+func (c *InfoMessage) BotUpdate(info InfoMessage) error {
+	// Currently, this bot is only supported for lecture hall streams
+	if info.LectureHall == "" {
+		return errors.New("sending bot messages is not supported for selfstreams")
+	}
+	err := c.Method.SendBotMessage(info)
+	return err
 }

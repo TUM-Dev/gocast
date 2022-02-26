@@ -51,11 +51,28 @@ type LoginResponse struct {
 	} `json:"well_known"`
 }
 
-var roomMessageSuffix string
+var (
+	// Base Links
+	clientUrl = "https://" + tools.Cfg.Alerts.Matrix.Homeserver + "/_matrix/client/r0/"
+	loginUrl  = clientUrl + "login"
+)
 
-const clientUrl = "https://matrix.org/_matrix/client/r0/"
-const loginUrl = clientUrl + "login"
-const maxID = 10000
+const (
+	// Maximum transaction ID
+	maxID = 10000
+
+	// Suffixes and Prefixes for sending a message to a room
+	accessTokenSuffix = "?access_token="
+	roomSuffix        = "rooms/"
+	roomMsgPrefix     = "/send/m.room.message/"
+
+	// Constants describing the messages itself
+	msgType     = "m.text"
+	msgFormat   = "org.matrix.custom.html"
+	loginMethod = "m.login.password"
+
+	contentType = "application/json"
+)
 
 // SendBotMessage sends a formatted message to a matrix room
 func (ma *Matrix) SendBotMessage(info InfoMessage) error {
@@ -68,12 +85,12 @@ func (ma *Matrix) SendBotMessage(info InfoMessage) error {
 		return errors.New("authentication failed, could not get token")
 	}
 
-	roomMessageSuffix = "/send/m.room.message/" + id + "?access_token="
-	url := clientUrl + "rooms/" + tools.Cfg.Alerts.Matrix.RoomID + roomMessageSuffix + authToken
+	var roomMessageSuffix = roomMsgPrefix + id + accessTokenSuffix
+	url := clientUrl + roomSuffix + tools.Cfg.Alerts.Matrix.RoomID + roomMessageSuffix + authToken
 	matrixMessage := Message{
-		MsgType:       "m.text",
+		MsgType:       msgType,
 		Body:          generateInfoText(info),
-		Format:        "org.matrix.custom.html",
+		Format:        msgFormat,
 		FormattedBody: getFormattedMessageText(info),
 	}
 	matrixMessageJSON, err := json.Marshal(matrixMessage)
@@ -84,6 +101,7 @@ func (ma *Matrix) SendBotMessage(info InfoMessage) error {
 	return err
 }
 
+// sendMessageRequest sends a PUT request to url with a given body
 func sendMessageRequest(url string, body io.Reader) error {
 	client := &http.Client{}
 	request, err := http.NewRequest(http.MethodPut, url, body)
@@ -100,7 +118,7 @@ func sendMessageRequest(url string, body io.Reader) error {
 // getAuthToken retrieves a single use token for the next message sent to the server.
 func getAuthToken() (string, error) {
 	login := Login{
-		Type:     "m.login.password",
+		Type:     loginMethod,
 		User:     tools.Cfg.Alerts.Matrix.Username,
 		Password: tools.Cfg.Alerts.Matrix.Password,
 	}
@@ -108,7 +126,7 @@ func getAuthToken() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	response, err := http.Post(loginUrl, "application/json", bytes.NewBuffer(loginRequest))
+	response, err := http.Post(loginUrl, contentType, bytes.NewBuffer(loginRequest))
 	if err != nil {
 		return "", err
 	}
