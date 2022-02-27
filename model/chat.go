@@ -52,6 +52,8 @@ type Chat struct {
 	Admin            bool   `gorm:"not null;default:false" json:"admin"`
 	Color            string `gorm:"not null;default:'#368bd6'" json:"color"`
 
+	Visible   sql.NullBool   `gorm:"not null;default:true" json:"visible"`
+
 	Likes     int    `gorm:"-" json:"likes"`
 	Liked     bool   `gorm:"-" json:"liked"`
 	UserLikes []User `gorm:"many2many:chat_user_likes" json:"-"`

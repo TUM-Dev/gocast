@@ -139,13 +139,20 @@ func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte
 		replyTo.Int64 = chat.ReplyTo
 		replyTo.Valid = true
 	}
+	isAdmin := ctx.User.ID == ctx.Course.UserID
+	nb := sql.NullBool{Valid: true, Bool: true}
+	if ctx.Course.ModeratedChatEnabled && !isAdmin {
+		nb.Bool = false
+	}
+
 	chatForDb := model.Chat{
 		UserID:   strconv.Itoa(int(ctx.User.ID)),
 		UserName: uname,
 		Message:  chat.Msg,
 		StreamID: ctx.Stream.ID,
-		Admin:    ctx.User.ID == ctx.Course.UserID,
+		Admin:    isAdmin,
 		ReplyTo:  replyTo,
+		Visible:  nb,
 	}
 	chatForDb.SanitiseMessage()
 	err := dao.AddMessage(&chatForDb)
@@ -155,8 +162,14 @@ func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte
 		}
 		return
 	}
-	if broadcast, err := json.Marshal(chatForDb); err == nil {
-		broadcastStream(ctx.Stream.ID, broadcast)
+
+	if msg, err := json.Marshal(chatForDb); err == nil {
+		if ctx.Course.ModeratedChatEnabled && !isAdmin {
+			_ = session.Write(msg) // send message back to sender
+			broadcastStreamToAdmins(ctx.Stream.ID, msg) // send message to course admins
+		} else {
+			broadcastStream(ctx.Stream.ID, msg)
+		}
 	}
 }
 
@@ -171,7 +184,13 @@ func getMessages(c *gin.Context) {
 	if tumLiveContext.User != nil {
 		uid = tumLiveContext.User.ID
 	}
-	chats, err := dao.GetChats(uid, tumLiveContext.Stream.ID)
+	var err error
+	var chats []model.Chat
+	if tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course) {
+		chats, err = dao.GetAllChats(uid, tumLiveContext.Stream.ID)
+	} else {
+		chats, err = dao.GetVisibleChats(uid, tumLiveContext.Stream.ID)
+	}
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
