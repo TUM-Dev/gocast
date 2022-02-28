@@ -2,12 +2,13 @@
     {{- /*gotype: TUM-Live/web.ChatData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     <div x-cloak
-         x-data="{orderByLikes: false, replyTo: 0, message: '', anonymous: false, messages: [], isPopUp: {{.IsPopUp}}, admin: {{.IsAdminOfCourse}}, showPollCreateUI: false, pollQuestion: '', pollOptions: [{ answer: 'Yes' }, { answer: 'No' }]}"
+         x-data="{orderByLikes: false, replyTo: 0, message: '', anonymous: false, messages: [], activePoll: null, isPopUp: {{.IsPopUp}}, admin: {{.IsAdminOfCourse}}, showPollCreateUI: false, pollQuestion: '', pollOptions: [{ answer: 'Yes' }, { answer: 'No' }]}"
          x-init="fetch('/api/chat/{{$stream.ID}}/messages').then(res => res.json()).then(d => {messages=d});$nextTick(() => { watch.scrollToBottom() })"
          x-on:chatmessage.window="e => {messages.push(e.detail)}"
          x-on:chatreply.window="e => {messages.find(m=>m.ID===e.detail.replyTo.Int64).replies.push(e.detail);}"
          x-on:chatlike.window="e => {messages.find(m=>m.ID===e.detail.likes).likes=e.detail.num; $dispatch('reorder')}"
          x-on:chatdelete.window="e => {messages.find(m=>m.ID===e.detail.delete).deleted=true;}"
+         x-on:chatnewpoll.window="e => {activePoll = e.detail;}"
          @reorder="watch.sortMessages(messages, orderByLikes)"
          id="chatWrapper"
          class="z-40 relative flex-col text-1 bg-white dark:bg-secondary h-full border-l dark:border-gray-800"
@@ -43,6 +44,12 @@
             <div id="disconnectMsg"
                  class="text-white shadow-lg py-1 px-3 bg-red-500 border-2 border-red-600 rounded-b-lg hidden">
                 <span class="text-sm font-semibold">Connection to chat lost! Reconnecting...</span>
+            </div>
+        </div>
+        <div x-show="!!activePoll" class="z-50 absolute w-full">
+            <div id="disconnectMsg"
+                 class="text-white shadow-lg py-1 px-3 bg-white dark:bg-secondary-lighter border-2 border-red-600 rounded-b-lg hidden">
+                <p x-text="activePoll.question" class="text-sm font-semibold"></p>
             </div>
         </div>
 

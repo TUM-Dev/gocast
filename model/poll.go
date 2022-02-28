@@ -12,7 +12,7 @@ type Poll struct {
 	Question string `gorm:"not null" json:"question"`
 	Active   bool   `gorm:"not null;default:true" json:"active"`
 
-	PollOptions []PollOption `gorm:"many2many:chat_poll_options" json:"-"`
+	PollOptions []PollOption `gorm:"many2many:chat_poll_options" json:"pollOptions"`
 }
 
 type PollOption struct {
@@ -20,4 +20,12 @@ type PollOption struct {
 
 	Answer string `gorm:"not null" json:"answer"`
 	Votes  []User `gorm:"many2many:poll_option_user_votes" json:"-"`
+}
+
+func (p Poll) GetPollAnswers() []string {
+	var pollAnswers []string
+	for _, option := range p.PollOptions {
+		pollAnswers = append(pollAnswers, option.Answer)
+	}
+	return pollAnswers
 }
