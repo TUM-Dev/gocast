@@ -46,18 +46,13 @@ type loginResponse struct {
 	} `json:"well_known"`
 }
 
-var (
-	// Base Links
-	clientUrl = "https://" + tools.Cfg.Alerts.Matrix.Homeserver + "/_matrix/client/r0/"
-	loginUrl  = clientUrl + "login"
-)
-
 const (
 	// Maximum transaction ID
 	maxID = 10000
 
 	// Suffixes and Prefixes for sending a message to a room
 	accessTokenSuffix = "?access_token="
+	loginSuffix       = "login"
 	roomSuffix        = "rooms/"
 	roomMsgPrefix     = "/send/m.room.message/"
 
@@ -68,6 +63,10 @@ const (
 
 	contentType = "application/json"
 )
+
+func (m *Matrix) getClientUrl() string {
+	return "https://" + tools.Cfg.Alerts.Matrix.Homeserver + "/_matrix/client/r0/"
+}
 
 // SendBotMessage sends a formatted message to a matrix room
 func (m *Matrix) SendBotMessage(info InfoMessage) error {
@@ -81,7 +80,7 @@ func (m *Matrix) SendBotMessage(info InfoMessage) error {
 	}
 
 	var roomMessageSuffix = roomMsgPrefix + id + accessTokenSuffix
-	url := clientUrl + roomSuffix + tools.Cfg.Alerts.Matrix.RoomID + roomMessageSuffix + authToken
+	url := m.getClientUrl() + roomSuffix + tools.Cfg.Alerts.Matrix.RoomID + roomMessageSuffix + authToken
 	matrixMessage := matrixMessage{
 		MsgType:       msgType,
 		Body:          generateInfoText(info),
@@ -121,7 +120,7 @@ func (m *Matrix) getAuthToken() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	response, err := http.Post(loginUrl, contentType, bytes.NewBuffer(loginRequest))
+	response, err := http.Post(m.getClientUrl()+loginSuffix, contentType, bytes.NewBuffer(loginRequest))
 	if err != nil {
 		return "", err
 	}

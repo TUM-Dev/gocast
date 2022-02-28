@@ -193,11 +193,13 @@
                             </div>
                         </section>
                     </span>
-                    <button @click="fetch(`/api/stream/${streamID}/issue`)"
-                            title="Issues with the stream? Send a report to the RGB."
-                            class="bg-amber-500 inline-block float-right text-center w-auto text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
-                    <i class="fas fa-exclamation-triangle mr-1"></i>Report Technical Problem
-                    </button>
+                    {{if .AlertsEnabled}}
+                        <button @click="fetch(`/api/stream/${streamID}/issue`)"
+                                title="Issues with the stream? Send a report to the RGB."
+                                class="bg-amber-500 inline-block float-right text-center w-auto text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>Report Technical Problem
+                        </button>
+                    {{end}}
                 </div>
                 <div class="p-4">
                     <h3 class="text-4 mb-2 font-bold">Presets for {{.LectureHallName}}</h3>
