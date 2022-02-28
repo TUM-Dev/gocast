@@ -98,7 +98,7 @@ func handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
 	// - Whole Message, should we sanatize before ?
 	pollMap := gin.H{
 		"question":    poll.Question,
-		"pollOptions": poll.GetPollAnswers(),
+		"pollOptions": poll.GetPollOptionsText(),
 	}
 	if pollJson, err := json.Marshal(pollMap); err == nil {
 		broadcastStream(ctx.Stream.ID, pollJson)

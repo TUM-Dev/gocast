@@ -22,10 +22,10 @@ type PollOption struct {
 	Votes  []User `gorm:"many2many:poll_option_user_votes" json:"-"`
 }
 
-func (p Poll) GetPollAnswers() []string {
-	var pollAnswers []string
+func (p Poll) GetPollOptionsText() []string {
+	var pollOptions []string
 	for _, option := range p.PollOptions {
-		pollAnswers = append(pollAnswers, option.Answer)
+		pollOptions = append(pollOptions, option.Answer)
 	}
-	return pollAnswers
+	return pollOptions
 }
