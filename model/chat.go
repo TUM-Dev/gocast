@@ -52,7 +52,8 @@ type Chat struct {
 	Admin            bool   `gorm:"not null;default:false" json:"admin"`
 	Color            string `gorm:"not null;default:'#368bd6'" json:"color"`
 
-	Visible   sql.NullBool   `gorm:"not null;default:true" json:"visible"`
+	Visible   sql.NullBool `gorm:"not null;default:true" json:"-"`
+	IsVisible bool			`gorm:"-" json:"visible"`
 
 	Likes     int    `gorm:"-" json:"likes"`
 	Liked     bool   `gorm:"-" json:"liked"`
@@ -124,6 +125,7 @@ func (c *Chat) BeforeCreate(tx *gorm.DB) (err error) {
 // AfterFind is a GORM hook that sanitizes the message after it's loaded from the database.
 func (c *Chat) AfterFind(_ *gorm.DB) (err error) {
 	c.SanitiseMessage()
+	c.IsVisible = c.Visible.Bool
 	return nil
 }
 

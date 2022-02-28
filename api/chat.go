@@ -169,19 +169,19 @@ func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte
 
 	isAdmin := ctx.User.ID == ctx.Course.UserID
 
-	nb := sql.NullBool{Valid: true, Bool: true}
+	isVisible := sql.NullBool{Valid: true, Bool: true}
 	if ctx.Course.ModeratedChatEnabled && !isAdmin {
-		nb.Bool = false
+		isVisible.Bool = false
 	}
-
 	chatForDb := model.Chat{
-		UserID:   strconv.Itoa(int(ctx.User.ID)),
-		UserName: uname,
-		Message:  chat.Msg,
-		StreamID: ctx.Stream.ID,
-		Admin:    isAdmin,
-		ReplyTo:  replyTo,
-		Visible:  nb,
+		UserID:    strconv.Itoa(int(ctx.User.ID)),
+		UserName:  uname,
+		Message:   chat.Msg,
+		StreamID:  ctx.Stream.ID,
+		Admin:     isAdmin,
+		ReplyTo:   replyTo,
+		Visible:   isVisible,
+		IsVisible: isVisible.Bool,
 	}
 	chatForDb.SanitiseMessage()
 	err := dao.AddMessage(&chatForDb)
@@ -194,7 +194,7 @@ func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte
 
 	if msg, err := json.Marshal(chatForDb); err == nil {
 		if ctx.Course.ModeratedChatEnabled && !isAdmin {
-			_ = session.Write(msg) // send message back to sender
+			_ = session.Write(msg)                      // send message back to sender
 			broadcastStreamToAdmins(ctx.Stream.ID, msg) // send message to course admins
 		} else {
 			broadcastStream(ctx.Stream.ID, msg)
