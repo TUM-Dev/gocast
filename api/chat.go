@@ -58,10 +58,47 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			handleLike(tumLiveContext, msg)
 		case "delete":
 			handleDelete(tumLiveContext, msg)
+		case "start_poll":
+			handleStartPoll(tumLiveContext, msg)
 		default:
 			log.WithField("type", req.Type).Warn("unknown websocket request type")
 		}
 	})
+}
+
+func handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
+	var req startPollReq
+	if err := json.Unmarshal(msg, &req); err != nil {
+		log.WithError(err).Warn("could not unmarshal start poll request")
+		return
+	}
+	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
+		return
+	}
+
+	var pollOptions []model.PollOption
+	for _, answer := range req.PollAnswers {
+		pollOptions = append(pollOptions, model.PollOption{
+			Answer: answer,
+		})
+	}
+
+	poll := model.Poll{
+		StreamID:    ctx.Stream.ID,
+		Question:    req.Question,
+		Active:      true,
+		PollOptions: pollOptions,
+	}
+
+	if err := dao.AddChatPoll(&poll); err != nil {
+		return
+	}
+
+	// Not quite sure what we should send
+	// - Whole Message, should we sanatize before ?
+	if pollJson, err := json.Marshal(poll); err == nil {
+		broadcastStream(ctx.Stream.ID, pollJson)
+	}
 }
 
 func handleDelete(ctx tools.TUMLiveContext, msg []byte) {
@@ -198,6 +235,12 @@ type likeReq struct {
 type deleteReq struct {
 	wsReq
 	Id uint `json:"id"`
+}
+
+type startPollReq struct {
+	wsReq
+	Question    string   `json:"question"`
+	PollAnswers []string `json:"pollAnswers"`
 }
 
 func CollectStats() {

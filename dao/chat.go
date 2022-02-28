@@ -6,6 +6,10 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
+func AddChatPoll(poll *model.Poll) error {
+	return DB.Save(poll).Error
+}
+
 func AddMessage(chat *model.Chat) error {
 	return DB.Save(chat).Error
 }
