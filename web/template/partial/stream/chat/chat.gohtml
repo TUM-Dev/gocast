@@ -2,13 +2,13 @@
     {{- /*gotype: TUM-Live/web.ChatData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     <div x-cloak
-         x-data="{orderByLikes: false, replyTo: 0, message: '', anonymous: false, messages: [], activePoll: { question:'This is a example Question which should be displayed here sticky. Do you agree?', pollOptions: ['Yes', 'No'] }, isPopUp: {{.IsPopUp}}, admin: {{.IsAdminOfCourse}}, showPollCreateUI: false, pollQuestion: '', pollOptions: [{ answer: 'Yes' }, { answer: 'No' }]}"
+         x-data="{orderByLikes: false, replyTo: 0, message: '', anonymous: false, messages: [], activePoll: null, isPopUp: {{.IsPopUp}}, admin: {{.IsAdminOfCourse}}, showPollCreateUI: false, pollQuestion: '', pollOptions: [{ answer: 'Yes' }, { answer: 'No' }]}"
          x-init="fetch('/api/chat/{{$stream.ID}}/messages').then(res => res.json()).then(d => {messages=d});$nextTick(() => { watch.scrollToBottom() })"
          x-on:chatmessage.window="e => {messages.push(e.detail)}"
          x-on:chatreply.window="e => {messages.find(m=>m.ID===e.detail.replyTo.Int64).replies.push(e.detail);}"
          x-on:chatlike.window="e => {messages.find(m=>m.ID===e.detail.likes).likes=e.detail.num; $dispatch('reorder')}"
          x-on:chatdelete.window="e => {messages.find(m=>m.ID===e.detail.delete).deleted=true;}"
-         x-on:chatnewpoll.window="e => {print('Wow'); activePoll = e.detail;}"
+         x-on:chatnewpoll.window="e => {print('Wow'); activePoll = { ...e.detail, selected: null };}"
          @reorder="watch.sortMessages(messages, orderByLikes)"
          id="chatWrapper"
          class="z-40 relative flex-col text-1 bg-white dark:bg-secondary h-full border-l dark:border-gray-800"
@@ -40,15 +40,27 @@
                 </span>
             </div>
         </div>
-        <div x-show="activePoll != null" class="z-50 absolute w-full">
+        <div x-show="activePoll" class="z-50 absolute w-full">
+            <div class="bg-sky-600 dark:bg-sky-700 text-center p-2">Active Poll</div>
             <div class="text-white shadow-lg p-4 bg-white dark:bg-secondary-lighter border-b dark:border-gray-800 rounded-b-lg">
-                <p x-text="activePoll.question" class="text-sm font-semibold"></p>
+                <p x-text="activePoll.question" class="text-sm font-semibold mb-3"></p>
                 <template x-for="(pollOption, index) in activePoll.pollOptions" :key="index">
-                    <div class="flex align-middle">
-                        <i class="fas fa-circle-o"></i>
-                        <span x-text="pollOption"></span>
-                    </div>
+                    <button class="flex items-center mb-1" @click="activePoll.selected = index">
+                        <i class="" :class="index == activePoll.selected ? 'fas fa-check-circle' : 'far fa-circle'"></i>
+                        <span x-text="pollOption" class="ml-2"></span>
+                    </button>
                 </template>
+                <div class="mt-4 text-center">
+                    <button
+                            class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800 disabled:bg-gray-400
+                                disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400 rounded border-0
+                                focus:outline-none px-4 text-white text-sm ml-auto"
+                            @click="showPollCreateUI = !showPollCreateUI"
+                            :disabled="activePoll.selected == null"
+                            title="Send Answer">
+                        <span class="font-semibold">Send Answer</span>
+                    </button>
+                </div>
             </div>
         </div>
         <div x-show="show" class="z-50 absolute w-full">
