@@ -58,6 +58,8 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			handleLike(tumLiveContext, msg)
 		case "delete":
 			handleDelete(tumLiveContext, msg)
+		case "approve":
+			handleApprove(tumLiveContext, msg)
 		default:
 			log.WithField("type", req.Type).Warn("unknown websocket request type")
 		}
@@ -80,6 +82,31 @@ func handleDelete(ctx tools.TUMLiveContext, msg []byte) {
 	}
 	broadcast := gin.H{
 		"delete": req.Id,
+	}
+	broadcastBytes, err := json.Marshal(broadcast)
+	if err != nil {
+		log.WithError(err).Error("could not marshal delete message")
+		return
+	}
+	broadcastStream(ctx.Stream.ID, broadcastBytes)
+}
+
+func handleApprove(ctx tools.TUMLiveContext, msg []byte) {
+	var req deleteReq
+	err := json.Unmarshal(msg, &req)
+	if err != nil {
+		log.WithError(err).Warn("could not unmarshal message delete request")
+		return
+	}
+	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
+		return
+	}
+	err = dao.ApproveChat(req.Id)
+	if err != nil {
+		log.WithError(err).Error("could not delete chat")
+	}
+	broadcast := gin.H{
+		"approve": req.Id,
 	}
 	broadcastBytes, err := json.Marshal(broadcast)
 	if err != nil {
@@ -139,7 +166,9 @@ func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte
 		replyTo.Int64 = chat.ReplyTo
 		replyTo.Valid = true
 	}
+
 	isAdmin := ctx.User.ID == ctx.Course.UserID
+
 	nb := sql.NullBool{Valid: true, Bool: true}
 	if ctx.Course.ModeratedChatEnabled && !isAdmin {
 		nb.Bool = false
@@ -180,13 +209,17 @@ func getMessages(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
+
+	isAdmin := false
 	var uid uint = 0 // 0 = not logged in. -> doesn't match a user
 	if tumLiveContext.User != nil {
 		uid = tumLiveContext.User.ID
+		isAdmin = tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course)
 	}
+
 	var err error
 	var chats []model.Chat
-	if tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course) {
+	if isAdmin {
 		chats, err = dao.GetAllChats(uid, tumLiveContext.Stream.ID)
 	} else {
 		chats, err = dao.GetVisibleChats(uid, tumLiveContext.Stream.ID)

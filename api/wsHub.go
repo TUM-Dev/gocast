@@ -38,9 +38,11 @@ var connHandler = func(s *melody.Session) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-
-	isAdminOfCourse := tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course)
-	sessionData := sessionWrapper{s, isAdminOfCourse}
+	isAdmin := false
+	if tumLiveContext.User != nil {
+		isAdmin = tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course)
+	}
+	sessionData := sessionWrapper{s, isAdmin}
 
 	wsMapLock.Lock()
 	sessionsMap[tumLiveContext.Stream.ID] = append(sessionsMap[tumLiveContext.Stream.ID], &sessionData)

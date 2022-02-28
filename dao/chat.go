@@ -10,14 +10,14 @@ func AddMessage(chat *model.Chat) error {
 	return DB.Save(chat).Error
 }
 
-// ShowChat sets the attribute 'visible' to true
-func ShowChat(id uint) error {
-	return DB.Model(&model.Chat{}).Where("id = ?", id).Update("visible", true).Error
+// ApproveChat sets the attribute 'visible' to true
+func ApproveChat(id uint) error {
+	return DB.Model(&model.Chat{}).Where("id = ?", id).Updates(map[string]interface{}{"visible": true}).Error
 }
 
-// DeleteChat sets the attribute 'visible' to false
+// DeleteChat removes a chat with the given id from the database.
 func DeleteChat(id uint) error {
-	return DB.Model(&model.Chat{}).Where("id = ?", id).Update("visible", false).Error
+	return DB.Model(&model.Chat{}).Delete(&model.Chat{}, id).Error
 }
 
 // ToggleLike adds a like to a message from the user if it doesn't exist, or removes it if it does
@@ -40,7 +40,7 @@ func GetNumLikes(chatID uint) (int64, error) {
 	return numLikes, err
 }
 
-// GetChats returns all visible chats for the stream with the given ID
+// GetVisibleChats returns all visible chats for the stream with the given ID
 // or sent by user with id 'userID'
 // Number of likes are inserted and the user's like status is determined
 func GetVisibleChats(userID uint, streamID uint) ([]model.Chat, error) {
@@ -63,7 +63,7 @@ func GetVisibleChats(userID uint, streamID uint) ([]model.Chat, error) {
 	return chats, nil
 }
 
-// GetChats returns all chats for the stream with the given ID
+// GetAllChats returns all chats for the stream with the given ID
 // Number of likes are inserted and the user's like status is determined
 func GetAllChats(userID uint, streamID uint) ([]model.Chat, error) {
 	var chats []model.Chat

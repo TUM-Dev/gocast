@@ -18,6 +18,7 @@ enum WSMessageType {
     Message = "message",
     Like = "like",
     Delete = "delete",
+    Approve = "approve",
 }
 
 export function likeMessage(id: number) {
@@ -33,6 +34,15 @@ export function deleteMessage(id: number) {
     ws.send(
         JSON.stringify({
             type: WSMessageType.Delete,
+            id: id,
+        }),
+    );
+}
+
+export function approveMessage(id: number) {
+    ws.send(
+        JSON.stringify({
+            type: WSMessageType.Approve,
             id: id,
         }),
     );
@@ -105,6 +115,9 @@ export function startWebsocket() {
         } else if ("delete" in data) {
             const event = new CustomEvent("chatdelete", { detail: data });
             window.dispatchEvent(event);
+        } else if ("approve" in data) {
+            const event = new CustomEvent("chatapprove", { detail: data });
+            window.dispatchEvent(event);
         }
     };
 
@@ -152,4 +165,12 @@ export function sendMessage(message: string, anonymous: boolean, replyTo: number
             replyTo: replyTo,
         }),
     );
+}
+
+export async function fetchMessages(id: number) {
+    return await fetch("/api/chat/" + id + "/messages")
+        .then((res) => res.json())
+        .then((d) => {
+            return d;
+        });
 }
