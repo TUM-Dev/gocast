@@ -48,10 +48,13 @@
                     <span class="fas fa-ban"></span>
                 </a>
                 {{if $moderatedChat}}
-                    <a x-show="admin && !m.visible" @click="watch.approveMessage(m.ID)" title="Approve Message" class="cursor-pointer">
-                        approve
-                        <span class="fa-solid fa-spell-check"></span>
-                    </a>
+                    <button x-show="admin && !m.visible"
+                            @click="watch.approveMessage(m.ID)"
+                            title="Approve Message"
+                            class="rounded border hover:bg-gray-200 dark:hover:bg-gray-600 dark:border-gray-800 dark:bg-gray-800 px-2 ml-auto">
+                        <span class="text-xs uppercase mr-1">approve</span>
+                        <span class="fa-solid fa-spell-check text-xs"></span>
+                    </button>
                 {{end}}
             </p>
             <!-- replies -->

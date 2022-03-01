@@ -59,8 +59,8 @@
               dark:bg-secondary-lighter border-t dark:border-gray-800
               {{if .IsPopUp}} xl:w-1/2 md:w-3/4 md:mx-auto md:border md:rounded-t-lg {{end}}"
               x-on:sendmessage.window="watch.sendMessage(message, anonymous, replyTo);message=''"
-              @submit.prevent="">
-            <div class="w-full" @submit.prevent="watch.sendMessage(message, anonymous, replyTo);message=''">
+              @submit.prevent="watch.sendMessage(message, anonymous, replyTo);message=''">
+            <div class="w-full">
                 <div class="bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
                     {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
                         <input type="checkbox" name="anonymous" id="anonymous" class="hidden" x-model="anonymous">
@@ -87,27 +87,27 @@
                        else if(e.keyCode===13){$dispatch('chatenter');e.preventDefault();}
                        else {$nextTick(() =>{watch.getEmojisForMessage(message, e.target.selectionStart).then(r => $dispatch('emojisuggestions', r));})}}">
                 </div>
-                {{if (.IndexData.TUMLiveContext.User)}}
-                    <div class="flex mt-2">
-                        {{if not .IsPopUp}}
-                            <button class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200"
-                                    @click="watch.openChatPopUp('{{.IndexData.TUMLiveContext.Course.Slug}}', {{.IndexData.TUMLiveContext.Stream.Model.ID}})"
-                                    title="Popout Chat">
-                                <i class="fas fa-external-link-alt text-3 m-auto"></i>
-                            </button>
-                        {{end}}
-                        <button tabindex="-1"
-                                class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
+                <div class="flex mt-2">
+                    {{if not .IsPopUp}}
+                        <button class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200"
+                                @click="watch.openChatPopUp('{{.IndexData.TUMLiveContext.Course.Slug}}', {{.IndexData.TUMLiveContext.Stream.Model.ID}})"
+                                title="Popout Chat"
+                                type="button">
+                            <i class="fas fa-external-link-alt text-3 m-auto"></i>
+                        </button>
+                    {{end}}
+                    <button tabindex="-1"
+                            class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
                                    disabled:bg-gray-400 disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400
                                    rounded border-0 focus:outline-none px-4 text-white text-sm ml-auto"
-                                title="Send message"
-                                type="submit"
-                                :disabled="message===''">
-                            <span class="font-semibold">Send</span>
-                            <span class="fas fa-paper-plane ml-2"></span>
-                        </button>
-                    </div>
-                {{end}}
+                            title="Send message"
+                            type="submit"
+                            {{if (.IndexData.TUMLiveContext.User)}} disabled {{end}}
+                            :disabled="message===''">
+                        <span class="font-semibold">Send</span>
+                        <span class="fas fa-paper-plane ml-2"></span>
+                    </button>
+                </div>
             </div>
         </form>
     </div>

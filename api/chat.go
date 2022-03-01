@@ -92,7 +92,7 @@ func handleDelete(ctx tools.TUMLiveContext, msg []byte) {
 }
 
 func handleApprove(ctx tools.TUMLiveContext, msg []byte) {
-	var req deleteReq
+	var req approveReq
 	err := json.Unmarshal(msg, &req)
 	if err != nil {
 		log.WithError(err).Warn("could not unmarshal message delete request")
@@ -248,6 +248,11 @@ type likeReq struct {
 }
 
 type deleteReq struct {
+	wsReq
+	Id uint `json:"id"`
+}
+
+type approveReq struct {
 	wsReq
 	Id uint `json:"id"`
 }
