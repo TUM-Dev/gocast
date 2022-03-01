@@ -30,10 +30,13 @@
                         {{$worker.Workload}}
                     </td>
                     <td class="px-6">{{$worker.Uptime}}</td>
-                    <td class="px-6">
-                        <div class="items-center justify-center">
-                            <i class="fas fa-trash text-5 cursor-pointer hover:text-1"></i>
-                        </div>
+                    <td x-data class="px-6">
+                        <button @click="admin.deleteWorker('{{$worker.WorkerID}}').then(() => window.location.reload())"
+                                class="text-5 hover:text-1 items-center justify-center"
+                                type="button"
+                                title="Delete Worker">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </td>
                 </tr>
             {{end}}
@@ -69,7 +72,8 @@
                 <span class="text-gray-500"># Run the TUM-Live-Worker docker container the token, make sure to include its hostname:</span><br>
                 <span class="flex">
                     {{template "terminalprompt"}}
-                    <span class="text-gray-300">docker run -p 50051:50051 -e "Host=vm1234" -e "Token=<span x-text="token"></span>" ghcr.io/joschahenningsen/tum-live-worker-v2/worker:latest</span>
+                    <span class="text-gray-300">docker run -p 50051:50051 -e "Host=vm1234" -e "Token=<span
+                                x-text="token"></span>" ghcr.io/joschahenningsen/tum-live-worker-v2/worker:latest</span>
                 </span>
             </p>
             <p class="dark:bg-secondary-lighter text-white shadow rounded bg-secondary p-3" x-show="show==='swarm'">
