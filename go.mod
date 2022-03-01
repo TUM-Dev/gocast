@@ -35,7 +35,7 @@ require (
 	google.golang.org/grpc v1.44.0
 	google.golang.org/protobuf v1.27.1
 	gorm.io/driver/mysql v1.3.2
-	gorm.io/gorm v1.23.1
+	gorm.io/gorm v1.23.2
 	mvdan.cc/xurls/v2 v2.3.0
 )
 
