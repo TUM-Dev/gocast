@@ -20,6 +20,11 @@ func DeleteChat(id uint) error {
 	return DB.Model(&model.Chat{}).Delete(&model.Chat{}, id).Error
 }
 
+// ResolveChat sets the attribute resolved of chat with the given id to true
+func ResolveChat(id uint) error {
+	return DB.Model(&model.Chat{}).Where("id = ?", id).Update("resolved", true).Error
+}
+
 // ToggleLike adds a like to a message from the user if it doesn't exist, or removes it if it does
 func ToggleLike(userID uint, chatID uint) error {
 	err := DB.Exec("INSERT INTO chat_user_likes (user_id, chat_id) VALUES (?, ?)", userID, chatID).Error

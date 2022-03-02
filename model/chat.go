@@ -61,6 +61,8 @@ type Chat struct {
 
 	Replies []Chat        `gorm:"foreignkey:ReplyTo" json:"replies"`
 	ReplyTo sql.NullInt64 `json:"replyTo"`
+
+	Resolved bool 	`gorm:"not null;default:false" json:"resolved"`
 }
 
 // getColors returns all colors chat names are mapped to
