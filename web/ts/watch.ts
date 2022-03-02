@@ -39,7 +39,6 @@ export const resolveMessage = (id: number) => sendIDMessage(id, WSMessageType.Re
 
 export const approveMessage = (id: number) => sendIDMessage(id, WSMessageType.Approve);
 
-
 export function initChatScrollListener() {
     const chatBox = document.getElementById("chatBox") as HTMLDivElement;
     if (!chatBox) {
