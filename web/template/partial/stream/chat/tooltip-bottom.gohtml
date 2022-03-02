@@ -1,0 +1,13 @@
+{{define "tooltip-bottom"}}
+    {{- /*gotype: string*/ -}}
+    <div class="hover:transition-opacity delay-500 peer-hover:opacity-100 md:block hidden opacity-0 absolute top-full">
+        <div>
+            <div class="tooltip relative w-fit">
+                <div class="w-0 h-0 border-x-8 border-x-transparent border-b-8 border-b-black mx-auto"></div>
+                <div class="bg-black rounded-md px-1">
+                    <span class="text-white text-sm font-bold whitespace-nowrap">{{.}}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+{{end}}
