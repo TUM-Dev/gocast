@@ -26,6 +26,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 	wsGroup := router.Group("/:streamID")
 	wsGroup.Use(tools.InitStream)
 	wsGroup.GET("/messages", getMessages)
+	wsGroup.GET("/active-poll", getActivePoll)
 	wsGroup.GET("/ws", ChatStream)
 	if m == nil {
 		log.Printf("creating melody")
@@ -94,8 +95,6 @@ func handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
 		return
 	}
 
-	// Not quite sure what we should send
-	// - Whole Message, should we sanatize before ?
 	pollMap := gin.H{
 		"question":    poll.Question,
 		"pollOptions": poll.GetPollOptionsText(),
@@ -218,6 +217,26 @@ func getMessages(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, chats)
+}
+
+func getActivePoll(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	poll, err := dao.GetActivePoll(tumLiveContext.Stream.ID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"question":    poll.Question,
+		"pollOptions": poll.GetPollOptionsText(),
+	})
 }
 
 type wsReq struct {

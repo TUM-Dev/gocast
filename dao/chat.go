@@ -57,3 +57,10 @@ func GetChats(userID uint, streamID uint) ([]model.Chat, error) {
 	}
 	return chats, nil
 }
+
+// GetActivePoll returns the active poll for the stream with the given ID.
+func GetActivePoll(streamID uint) (model.Poll, error) {
+	var activePoll model.Poll
+	err := DB.Preload("PollOptions").First(&activePoll, "stream_id = ? AND active = true", streamID).Error
+	return activePoll, err
+}
