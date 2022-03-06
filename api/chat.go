@@ -229,7 +229,7 @@ func getActivePoll(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	poll, err := dao.GetActivePoll(tumLiveContext.Stream.ID)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.JSON(http.StatusOK, nil)
 		return
 	}
 
