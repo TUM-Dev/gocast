@@ -61,10 +61,27 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			handleDelete(tumLiveContext, msg)
 		case "start_poll":
 			handleStartPoll(tumLiveContext, msg)
+		case "submit_poll_option_vote":
+			handleSubmitPollOptionVote(tumLiveContext, msg)
 		default:
 			log.WithField("type", req.Type).Warn("unknown websocket request type")
 		}
 	})
+}
+
+func handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []byte) {
+	var req submitPollOptionVote
+	if err := json.Unmarshal(msg, &req); err != nil {
+		log.WithError(err).Warn("could not unmarshal submit poll answer request")
+		return
+	}
+	if ctx.User == nil {
+		return
+	}
+
+	if err := dao.AddChatPollOptionVote(req.PollOptionId, ctx.User.ID); err != nil {
+		return
+	}
 }
 
 func handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
@@ -97,7 +114,8 @@ func handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
 
 	pollMap := gin.H{
 		"question":    poll.Question,
-		"pollOptions": poll.GetPollOptionsText(),
+		"pollOptions": poll.GetPollOptionsJSON(),
+		"submitted":   0,
 	}
 	if pollJson, err := json.Marshal(pollMap); err == nil {
 		broadcastStream(ctx.Stream.ID, pollJson)
@@ -233,9 +251,16 @@ func getActivePoll(c *gin.Context) {
 		return
 	}
 
+	submitted, err := dao.GetPollUserVote(poll.ID, tumLiveContext.User.ID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"question":    poll.Question,
-		"pollOptions": poll.GetPollOptionsText(),
+		"pollOptions": poll.GetPollOptionsJSON(),
+		"submitted":   submitted,
 	})
 }
 
@@ -264,6 +289,11 @@ type startPollReq struct {
 	wsReq
 	Question    string   `json:"question"`
 	PollAnswers []string `json:"pollAnswers"`
+}
+
+type submitPollOptionVote struct {
+	wsReq
+	PollOptionId uint `json:"pollOptionId"`
 }
 
 func CollectStats() {

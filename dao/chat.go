@@ -6,6 +6,10 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
+func AddChatPollOptionVote(pollOptionId uint, userId uint) error {
+	return DB.Exec("INSERT INTO poll_option_user_votes (poll_option_id, user_id) VALUES (?, ?)", pollOptionId, userId).Error
+}
+
 func AddChatPoll(poll *model.Poll) error {
 	return DB.Save(poll).Error
 }
@@ -63,4 +67,18 @@ func GetActivePoll(streamID uint) (model.Poll, error) {
 	var activePoll model.Poll
 	err := DB.Preload("PollOptions").First(&activePoll, "stream_id = ? AND active = true", streamID).Error
 	return activePoll, err
+}
+
+// GetActivePoll returns the id of the PollOption that the user has voted for. If not vote was found then 0.
+func GetPollUserVote(pollId uint, userId uint) (uint, error) {
+	var pollOptionIds []uint
+	err := DB.Table("poll_option_user_votes").Select("poll_option_user_votes.poll_option_id").Joins("JOIN chat_poll_options ON chat_poll_options.poll_option_id=poll_option_user_votes.poll_option_id").Where("poll_id = ? AND user_id = ?", pollId, userId).Find(&pollOptionIds).Error
+	if err != nil {
+		return 0, err
+	}
+
+	if len(pollOptionIds) > 0 {
+		return pollOptionIds[0], nil
+	}
+	return 0, nil
 }

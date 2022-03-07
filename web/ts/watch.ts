@@ -20,6 +20,7 @@ enum WSMessageType {
     Like = "like",
     Delete = "delete",
     StartPoll = "start_poll",
+    SubmitPollOptionVote = "submit_poll_option_vote",
 }
 
 export function likeMessage(id: number) {
@@ -165,6 +166,15 @@ export function startPoll(question: string, pollAnswers: string[]) {
             type: WSMessageType.StartPoll,
             question,
             pollAnswers,
+        }),
+    );
+}
+
+export function submitPollOptionVote(pollOptionId: number) {
+    ws.send(
+        JSON.stringify({
+            type: WSMessageType.SubmitPollOptionVote,
+            pollOptionId,
         }),
     );
 }
