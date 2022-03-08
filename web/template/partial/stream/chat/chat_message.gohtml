@@ -2,11 +2,11 @@
     {{- /*gotype: TUM-Live/web.ChatData*/ -}}
     <template x-for="m in messages" :key="m.ID">
         <div class="relative py-2 px-2"
-             :class="replyTo === m.ID && 'ring ring-blue-500/50'"
+             :class="current.replyTo === m.ID && 'ring ring-blue-500/50'"
              x-data="{ showReplies: false, m: m }" x-show="!m.deleted && m.replyTo && !m.replyTo.Valid">
-
             <!-- name and message -->
-            <p class="group text-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded">
+            <p class="group text-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded"
+                :class="m.addressedTo.find(user => user.ID = {{.IndexData.TUMLiveContext.User.ID}}) !== undefined ? 'bg-sky-600' : ''">
                 <span x-show="m.admin" class="text-white rounded-full bg-danger px-2 fas fa-video"></span>
                 <span class="text-2 font-semibold {{if .IsPopUp}}md:block{{end}}" x-text="m.name"
                       :style="'color:'+m.color"></span>
@@ -17,7 +17,7 @@
 
                 <!-- reply hover button -->
                 <button x-cloak
-                        @click="replyTo === m.ID ? replyTo=0: replyTo=m.ID; $refs.chatInput.focus()"
+                        @click="current.replyTo === m.ID ? current.replyTo=0: current.replyTo=m.ID; $refs.chatInput.focus()"
                         title="Reply"
                         class="{{if.IsPopUp}}
                                  shadow -top-1 right-0 group-hover:flex
@@ -26,14 +26,14 @@
                                {{end}}
                                 absolute h-8 w-8 text-3 bg-white border dark:bg-secondary cursor-pointer rounded-lg shadow-sm
                                 dark:border-gray-800 hover:dark:bg-gray-600 hover:bg-gray-200"
-                        {{if.IsPopUp}} :class="replyTo === m.ID ? 'group-hover:flex' : 'hidden'"
-                {{else}} :class="replyTo === m.ID ? 'md:group-hover:flex' : 'md:hidden'" {{end}}>
-                    <i class="fa fas m-auto" :class="replyTo === m.ID ? 'fa-times': 'fa-reply'"></i>
+                        {{if.IsPopUp}} :class="current.replyTo === m.ID ? 'group-hover:flex' : 'hidden'"
+                {{else}} :class="current.replyTo === m.ID ? 'md:group-hover:flex' : 'md:hidden'" {{end}}>
+                    <i class="fa fas m-auto" :class="current.replyTo === m.ID ? 'fa-times': 'fa-reply'"></i>
                 </button>
             </p>
             <!-- likes and ban button -->
             <p class="flex flex-row text-sm font-semibold gap-3 text-5 mt-1 px-2">
-                <span x-text="watch.messageDateToString(m.CreatedAt);"></span>
+                <span x-text="watch.messageDateToString(m.CreatedAt)"></span>
                 <a @click="watch.likeMessage(m.ID); m.liked=!m.liked;" class="cursor-pointer"
                    :title="m.liked?'Unlike':'Like'">
                     <span :class="m.liked && 'text-blue-500 hover:text-blue-300'"><i class="fas fa-thumbs-up"></i>

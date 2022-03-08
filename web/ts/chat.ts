@@ -1,4 +1,101 @@
 import { Emoji, TopEmojis } from "top-twitter-emojis-map";
+import { sendMessage } from "./watch";
+
+export class ChatUserList {
+    all: object[];
+    subset: object[];
+    streamId: string;
+
+    constructor(streamId: string) {
+        this.all = [];
+        this.subset = [];
+        this.streamId = streamId;
+    }
+
+    async LoadAll() {
+        await fetch(`/api/chat/${this.streamId}/users`)
+            .then((res) => res.json())
+            .then((users) => {
+                this.all = users;
+                this.subset = users;
+            });
+    }
+
+    filterUsers(message: string, cursorPos: number): string[] {
+        const pos = getCurrentWordPositions(message, cursorPos);
+        const currentWord = message.substring(pos[0], pos[1]);
+        if (message === "" || !currentWord.startsWith("@") || currentWord.length < 2) {
+            return [];
+        }
+        const input = currentWord.substring(1);
+        // @ts-ignore
+        this.subset = this.all.filter((user) => user.name.startsWith(input));
+    }
+}
+
+export class ChatMessage {
+    message: string;
+    replyTo: number;
+    anonymous: boolean;
+    addressedTo: ChatUser[];
+
+    constructor() {
+        this.message = "";
+        this.replyTo = 0;
+        this.anonymous = false;
+        this.addressedTo = [];
+    }
+
+    send(): void {
+        sendMessage(this);
+        this.clear();
+    }
+
+    clear(): void {
+        this.message = "";
+        this.replyTo = 0;
+        this.addressedTo = [];
+    }
+
+    parse(): void {
+        this.addressedTo = this.addressedTo.filter((user) => this.message.includes(`@${user.name}`));
+    }
+
+    addAddressee(user: ChatUser): void {
+        this.addressedTo.push(user);
+        this.message = this.message + user.name;
+    }
+}
+
+export class Chat {
+    orderByLikes: boolean;
+    current: ChatMessage;
+    messages: object[];
+    admin: boolean;
+    users: ChatUserList;
+
+    constructor(isAdminOfCourse: boolean, streamId: string) {
+        this.orderByLikes = false;
+        this.current = new ChatMessage();
+        this.messages = [];
+        this.admin = isAdminOfCourse;
+        this.users = new ChatUserList(streamId);
+    }
+}
+
+class ChatUser {
+    id: number;
+    name: string;
+
+    constructor(id: number, name: string) {
+        this.id = id;
+        this.name = name;
+    }
+}
+
+export function initChat(isAdminOfCourse: boolean, streamId: string) {
+    return new Chat(isAdminOfCourse, streamId);
+}
 
 /*
     Scroll to the bottom of the 'chatBox'

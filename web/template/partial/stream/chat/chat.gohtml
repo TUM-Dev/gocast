@@ -2,7 +2,7 @@
     {{- /*gotype: TUM-Live/web.ChatData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     <div x-cloak
-         x-data="{orderByLikes: false, replyTo: 0, message: '', anonymous: false, messages: [], admin: {{.IsAdminOfCourse}}}"
+         x-data="watch.initChat({{.IsAdminOfCourse}},'{{$stream.ID}}')"
          x-init="fetch('/api/chat/{{$stream.ID}}/messages').then(res => res.json()).then(d => {messages=d});$nextTick(() => { watch.scrollToBottom() })"
          x-on:chatmessage.window="e => {messages.push(e.detail)}"
          x-on:chatreply.window="e => {messages.find(m=>m.ID===e.detail.replyTo.Int64).replies.push(e.detail);}"
@@ -10,33 +10,31 @@
          x-on:chatdelete.window="e => {messages.find(m=>m.ID===e.detail.delete).deleted=true;}"
          x-on:chatresolve.window="e => {messages.find(m=>m.ID===e.detail.resolve).resolved=true;}"
          @reorder="watch.sortMessages(messages, orderByLikes)"
+         @loadchatusers="await users.LoadAll()"
          id="chatWrapper"
-         class="z-40 relative flex-col text-1 bg-white dark:bg-secondary h-full border-l dark:border-gray-800"
+         class="flex relative flex-col text-1 bg-white dark:bg-secondary h-full border-l z-40 dark:border-gray-800"
          @keyup.escape="replyTo=0">
         <!-- Chat header -->
-        <div class="sticky top-0 w-full z-50 h-12 justify-center bg-white dark:bg-secondary border-b dark:border-gray-800
+        <div class="flex sticky top-0 w-full px-3 h-14 justify-between bg-white z-50 border-b dark:bg-secondary dark:border-gray-800
                     {{if .IsPopUp}} xl:w-1/2 md:w-3/4 md:mx-auto md:border md:rounded-b-lg{{end}}"
              :class="show ? 'border-b' : 'border-0'">
-            <div class="flex px-3 h-full">
-                {{if not .IsPopUp}}
-                    <div class="relative my-auto">
-                <button @click="show = !show;"
-                        class="peer bg-transparent border-0 font-semibold text-xl h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90 md:rotate-0"
-                        title="Toggle Chat">
-                    <span x-text="show ? '&#8614;' : '&#8612;'">&#8614;</span></button>
-                    </div>
-                {{end}}
-                <div x-show="show" class="ml-auto my-auto">
+            {{if not .IsPopUp}}
+                <div class="relative my-auto">
+                    <button @click="show = !show;"
+                            class="peer bg-transparent border-0 font-semibold text-xl h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90 md:rotate-0"
+                            title="Toggle Chat">
+                        <span x-text="show ? '&#8614;' : '&#8612;'">&#8614;</span></button>
+                </div>
+            {{end}}
+            <div x-show="show" class="ml-auto my-auto">
                     <span class="font-semibold text-gray-500 text-xs"
                           x-text="orderByLikes? 'Popular First': 'Live Chat'"></span>
-                    <button @click="orderByLikes=!orderByLikes; watch.setOrder(orderByLikes); $dispatch('reorder'); orderByLikes? watch.scrollToTop(): watch.scrollToBottom()"
-                            class="bg-transparent border-0 font-semibold h-8 w-8 rounded
+                <button @click="orderByLikes=!orderByLikes; watch.setOrder(orderByLikes); $dispatch('reorder'); orderByLikes? watch.scrollToTop(): watch.scrollToBottom()"
+                        class="bg-transparent border-0 font-semibold h-8 w-8 rounded
                                hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90"
-                            title="Change Order">
-                        <i class="fas fa-exchange-alt"></i>
-                    </button>
-                </div>
-                </span>
+                        title="Change Order">
+                    <i class="fas fa-exchange-alt"></i>
+                </button>
             </div>
         </div>
         <div x-show="show" class="z-50 absolute w-full">
@@ -46,68 +44,89 @@
             </div>
         </div>
 
-        <!-- Messages -->
         <div x-show="show"
              id="chatBox"
-             class="overflow-y-scroll overflow-x-hidden px-1 py-2 z-40 {{if .IsPopUp}}xl:w-1/2 md:w-3/4 md:mx-auto{{end}}"
-             style="height: calc(100% - 3rem - 6rem);"> <!-- this isn't optimal yet -->
+             class="h-full w-full overflow-y-scroll overflow-x-hidden px-1 z-40 {{if .IsPopUp}}xl:w-1/2 md:w-3/4 md:mx-auto{{end}}">
             {{template "messageTemplate" .}}
         </div>
-        {{template "chatprompts"}}
-        <form x-show="show" id="chatForm"
-              class="sticky w-full bottom-0 2xl:flex 2xl:justify-between inset-x-0 p-2 bg-white
-              dark:bg-secondary border-t dark:border-gray-800
+
+        <!-- Messages -->
+        <div class="z-50 bg-white w-full">
+            {{template "chatprompts"}}
+            <form x-show="show" id="chatForm"
+                  class="z-50 sticky w-full bottom-0 2xl:flex 2xl:justify-between inset-x-0 bg-white p-2
               {{if .IsPopUp}} xl:w-1/2 md:w-3/4 md:mx-auto md:border md:rounded-t-lg {{end}}"
-              x-on:sendmessage.window="watch.sendMessage(message, anonymous, replyTo);message=''"
-              @submit.prevent="">
-            <div class="w-full" @submit.prevent="watch.sendMessage(message, anonymous, replyTo);message=''">
-                <div class="bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
-                    {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
-                        <input type="checkbox" name="anonymous" id="anonymous" class="hidden" x-model="anonymous">
-                        <label for="anonymous" class="flex items-center cursor-pointer text-4 hover:text-1 ml-3"
-                               title="Don't show my name.">
-                            <i class="fas fa-ghost"></i>
-                        </label>
-                    {{end}}
-                    <label for="chatInput" class="hidden">Chat input</label>
-                    <input maxlength="200"
-                           x-ref="chatInput"
-                           x-model="message"
-                           class="py-2 px-4 border-0 text-sm font-normal placeholder:text-sm"
-                           {{if not (.IndexData.TUMLiveContext.User)}}disabled
-                           placeholder="Log in to chat" {{else}}
-                           :placeholder="replyTo===0?'Send a message':'Reply [escape to cancel]'"
-                           {{end}}autocomplete="off"
-                           id="chatInput" type="text"
-                           x-on:setmessage.window="e=>message=e.detail"
-                           x-on:keydown="e=>{
-                       if(e.keyCode===9){$dispatch('emojiselectiontriggered');e.preventDefault();}
+                  x-on:sendmessage.window="current.send()"
+                  @submit.prevent="current.send()">
+                <div class="w-full">
+                    <div :class = "users.subset.length > 0 && 'shadow rounded-lg border p-1'">
+                        <!-- @-userlist -->
+                        <div x-show="users.subset.length > 0" class='w-full bg-white py-2'>
+                            <template x-for="user in users.subset">
+                                <div @click="current.addAddressee(user); users.subset=[]"
+                                     class="flex p-2 rounded hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                                    <span class="font-semibold text-3 text-xs my-auto" x-text="user.name"></span>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- input -->
+                        <div class="flex w-full my-auto bg-gray-200 rounded-lg border-2 border-transparent dark:bg-gray-600
+                                    focus-within:border-sky-600
+                                    focus-within:bg-white">
+                            {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
+                                <input type="checkbox" name="anonymous" id="anonymous" class="hidden"
+                                       x-model="current.anonymous">
+                                <label for="anonymous" class="flex items-center cursor-pointer text-4 hover:text-1 ml-3"
+                                       title="Don't show my name.">
+                                    <i class="fas fa-ghost"></i>
+                                </label>
+                            {{end}}
+                            <label for="chatInput" class="hidden">Chat input</label>
+                            <input maxlength="200"
+                                   x-ref="chatInput"
+                                   x-model="current.message"
+                                   @keyup="current.parse()"
+                                   class="py-2 px-4 border-0 text-sm font-normal placeholder:text-sm"
+                                   {{if not (.IndexData.TUMLiveContext.User)}}disabled
+                                   placeholder="Log in to chat" {{else}}
+                                   :placeholder="current.replyTo===0?'Send a message':'Reply [escape to cancel]'"
+                                   {{end}}autocomplete="off"
+                                   id="chatInput" type="text"
+                                   x-on:setmessage.window="e=>message=e.detail"
+                                   x-on:keydown="e=>{if(e.keyCode===9){$dispatch('emojiselectiontriggered');e.preventDefault();}
                        else if(e.keyCode===40){$dispatch('emojiarrowdown');e.preventDefault();}
                        else if(e.keyCode===38){$dispatch('emojiarrowup');e.preventDefault();}
                        else if(e.keyCode===13){$dispatch('chatenter');e.preventDefault();}
-                       else {$nextTick(() =>{watch.getEmojisForMessage(message, e.target.selectionStart).then(r => $dispatch('emojisuggestions', r));})}}">
-                </div>
-                {{if (.IndexData.TUMLiveContext.User)}}
-                    <div class="flex mt-2">
-                        {{if not .IsPopUp}}
-                            <button class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200"
-                                    @click="watch.openChatPopUp('{{.IndexData.TUMLiveContext.Course.Slug}}', {{.IndexData.TUMLiveContext.Stream.Model.ID}})"
-                                    title="Popout Chat">
-                                <i class="fas fa-external-link-alt text-3 m-auto"></i>
-                            </button>
-                        {{end}}
-                        <button tabindex="-1"
-                                class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
+                       else if(e.keyCode===76){$dispatch('loadchatusers')}
+                       else {$nextTick(() =>{
+                       watch.getEmojisForMessage(current.message, e.target.selectionStart).then(r => $dispatch('emojisuggestions', r));
+                       /*users.filterUsers(current.message, e.target.selectionStart)*/})}}">
+                        </div>
+                    </div>
+                    <!-- popout and send button -->
+                    {{if (.IndexData.TUMLiveContext.User)}}
+                        <div class="flex mt-2">
+                            {{if not .IsPopUp}}
+                                <button class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200"
+                                        @click="watch.openChatPopUp('{{.IndexData.TUMLiveContext.Course.Slug}}', {{.IndexData.TUMLiveContext.Stream.Model.ID}})"
+                                        title="Popout Chat">
+                                    <i class="fas fa-external-link-alt text-3 m-auto"></i>
+                                </button>
+                            {{end}}
+                            <button tabindex="-1"
+                                    class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
                                    disabled:bg-gray-400 disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400
                                    rounded border-0 focus:outline-none px-4 text-white text-sm ml-auto"
-                                title="Send message"
-                                :disabled="message===''">
-                            <span class="font-semibold">Send</span>
-                            <span class="fas fa-paper-plane ml-2"></span>
-                        </button>
-                    </div>
-                {{end}}
-            </div>
-        </form>
+                                    title="Send message"
+                                    :disabled="current.message===''">
+                                <span class="font-semibold">Send</span>
+                                <span class="fas fa-paper-plane ml-2"></span>
+                            </button>
+                        </div>
+                    {{end}}
+                </div>
+            </form>
+        </div>
     </div>
 {{end}}

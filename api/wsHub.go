@@ -36,6 +36,9 @@ var connHandler = func(s *melody.Session) {
 	wsMapLock.Lock()
 	sessionsMap[tumLiveContext.Stream.ID] = append(sessionsMap[tumLiveContext.Stream.ID], s)
 	wsMapLock.Unlock()
+
+	userStorage.Add(tumLiveContext.User)
+
 	msg, _ := json.Marshal(gin.H{"viewers": len(sessionsMap[tumLiveContext.Stream.ID])})
 	err := s.Write(msg)
 	if err != nil {
@@ -51,6 +54,17 @@ var connHandler = func(s *melody.Session) {
 	if !tumLiveContext.Course.AnonymousChatEnabled && tumLiveContext.Course.ChatEnabled {
 		sendServerMessageWithBackoff(s, uid, tumLiveContext.Stream.ID, "The broadcaster disabled anonymous messaging for this stream.", TypeServerWarn)
 	}
+}
+
+var disconnectHandler = func(s *melody.Session) {
+	ctx, _ := s.Get("ctx") // get gin context
+	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	userStorage.Remove(tumLiveContext.User)
 }
 
 // sendServerMessageWithBackoff sends a message to the client(if it didn't send a message to this user in the last 10 Minutes and the client is logged in)

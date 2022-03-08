@@ -1,4 +1,11 @@
-import { hideDisconnectedMsg, scrollChat, shouldScroll, showDisconnectedMsg, showNewMessageIndicator } from "./chat";
+import {
+    hideDisconnectedMsg,
+    scrollChat,
+    shouldScroll,
+    showDisconnectedMsg,
+    showNewMessageIndicator,
+    ChatMessage,
+} from "./chat";
 
 let chatInput: HTMLInputElement;
 
@@ -144,13 +151,14 @@ export function createServerMessage(msg) {
     return serverElem;
 }
 
-export function sendMessage(message: string, anonymous: boolean, replyTo: number) {
+export function sendMessage(current: ChatMessage) {
     ws.send(
         JSON.stringify({
             type: WSMessageType.Message,
-            msg: message,
-            anonymous: anonymous,
-            replyTo: replyTo,
+            msg: current.message,
+            anonymous: current.anonymous,
+            replyTo: current.replyTo,
+            addressedTo: current.addressedTo.map((u) => u.id),
         }),
     );
 }

@@ -4,6 +4,7 @@ import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
+	. "TUM-Live/tools/chatuserstorage"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -19,6 +20,7 @@ import (
 )
 
 var m *melody.Melody
+var userStorage UserStorage
 
 const maxParticipants = 10000
 
@@ -26,12 +28,16 @@ func configGinChatRouter(router *gin.RouterGroup) {
 	wsGroup := router.Group("/:streamID")
 	wsGroup.Use(tools.InitStream)
 	wsGroup.GET("/messages", getMessages)
+	wsGroup.GET("/users", getUsers)
 	wsGroup.GET("/ws", ChatStream)
 	if m == nil {
 		log.Printf("creating melody")
 		m = melody.New()
 	}
+	userStorage = InitChatUserStorage()
+
 	m.HandleConnect(connHandler)
+	m.HandleDisconnect(disconnectHandler)
 
 	m.HandleMessage(func(s *melody.Session, msg []byte) {
 		ctx, _ := s.Get("ctx") // get gin context
@@ -175,6 +181,7 @@ func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte
 		StreamID: ctx.Stream.ID,
 		Admin:    ctx.User.ID == ctx.Course.UserID,
 		ReplyTo:  replyTo,
+		AddressedTo: idToUserList(chat.AddressedTo),
 	}
 	chatForDb.SanitiseMessage()
 	err := dao.AddMessage(&chatForDb)
@@ -208,15 +215,26 @@ func getMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, chats)
 }
 
+func getUsers(c *gin.Context) {
+	_, exists := c.Get("TUMLiveContext")
+	if !exists {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	users := userStorage.GetAll()
+	c.JSON(http.StatusOK, users)
+}
+
 type wsReq struct {
 	Type string `json:"type"`
 }
 
 type chatReq struct {
 	wsReq
-	Msg       string `json:"msg"`
-	Anonymous bool   `json:"anonymous"`
-	ReplyTo   int64  `json:"replyTo"`
+	Msg         string `json:"msg"`
+	Anonymous   bool   `json:"anonymous"`
+	ReplyTo     int64  `json:"replyTo"`
+	AddressedTo []uint `json:"addressedTo"`
 }
 
 type likeReq struct {
@@ -292,4 +310,15 @@ func afterDisconnect(id string, jointime time.Time, recording bool) {
 			log.WithError(err).Error("Can't save vod view")
 		}
 	}
+}
+
+func idToUserList(ids []uint) []model.User{
+	var users []model.User
+	for id := range ids{
+		u, err := dao.GetUserByIDWithoutContext(uint(id))
+		if err == nil {
+			users = append(users, u)
+		}
+	}
+	return users
 }

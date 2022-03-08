@@ -56,6 +56,8 @@ type Chat struct {
 	Liked     bool   `gorm:"-" json:"liked"`
 	UserLikes []User `gorm:"many2many:chat_user_likes" json:"-"`
 
+	AddressedTo []User `gorm:"many2many:chat_user_addressedto" json:"addressedTo"`
+
 	Replies []Chat        `gorm:"foreignkey:ReplyTo" json:"replies"`
 	ReplyTo sql.NullInt64 `json:"replyTo"`
 
