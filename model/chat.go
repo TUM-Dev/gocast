@@ -53,7 +53,7 @@ type Chat struct {
 	Color            string `gorm:"not null;default:'#368bd6'" json:"color"`
 
 	Visible   sql.NullBool `gorm:"not null;default:true" json:"-"`
-	IsVisible bool			`gorm:"-" json:"visible"`
+	IsVisible bool			`gorm:"-" json:"visible"` // IsVisible is .Bool value of Visible for simplicity
 
 	Likes     int    `gorm:"-" json:"likes"`
 	Liked     bool   `gorm:"-" json:"liked"`

@@ -124,7 +124,7 @@ func handleApprove(ctx tools.TUMLiveContext, msg []byte) {
 	var req approveReq
 	err := json.Unmarshal(msg, &req)
 	if err != nil {
-		log.WithError(err).Warn("could not unmarshal message delete request")
+		log.WithError(err).Warn("could not unmarshal message approve request")
 		return
 	}
 	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
@@ -132,14 +132,14 @@ func handleApprove(ctx tools.TUMLiveContext, msg []byte) {
 	}
 	err = dao.ApproveChat(req.Id)
 	if err != nil {
-		log.WithError(err).Error("could not delete chat")
+		log.WithError(err).Error("could not approve chat")
 	}
 	broadcast := gin.H{
 		"approve": req.Id,
 	}
 	broadcastBytes, err := json.Marshal(broadcast)
 	if err != nil {
-		log.WithError(err).Error("could not marshal delete message")
+		log.WithError(err).Error("could not marshal approve message")
 		return
 	}
 	broadcastStream(ctx.Stream.ID, broadcastBytes)
