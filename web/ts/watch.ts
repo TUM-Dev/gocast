@@ -106,6 +106,9 @@ export function startWebsocket() {
         } else if ("pollOptions" in data) {
             const event = new CustomEvent("chatnewpoll", { detail: data });
             window.dispatchEvent(event);
+        } else if ("pollOptionId" in data) {
+            const event = new CustomEvent("polloptionvotesupdate", { detail: data });
+            window.dispatchEvent(event);
         } else if ("likes" in data) {
             const event = new CustomEvent("chatlike", { detail: data });
             window.dispatchEvent(event);

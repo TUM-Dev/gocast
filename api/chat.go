@@ -83,7 +83,16 @@ func handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []byte) {
 		return
 	}
 
-	//broadcastStream(ctx.Stream.ID, pollJson)
+	voteCount, _ := dao.GetPollOptionVoteCount(req.PollOptionId)
+
+	voteUpdateMap := gin.H{
+		"pollOptionId": req.PollOptionId,
+		"votes":        voteCount,
+	}
+
+	if voteUpdateJson, err := json.Marshal(voteUpdateMap); err == nil {
+		broadcastStream(ctx.Stream.ID, voteUpdateJson)
+	}
 }
 
 func handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
@@ -124,6 +133,7 @@ func handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
 	}
 
 	pollMap := gin.H{
+		"active":      true,
 		"question":    poll.Question,
 		"pollOptions": pollOptionsJson,
 		"submitted":   0,
@@ -290,6 +300,7 @@ func getActivePoll(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
+		"active":      true,
 		"question":    poll.Question,
 		"pollOptions": pollOptions,
 		"submitted":   submitted,
