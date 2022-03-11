@@ -1,7 +1,6 @@
 package model
 
 import (
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -21,15 +20,4 @@ type PollOption struct {
 
 	Answer string `gorm:"not null" json:"answer"`
 	Votes  []User `gorm:"many2many:poll_option_user_votes" json:"-"`
-}
-
-func (p Poll) GetPollOptionsJSON() []gin.H {
-	var pollOptions []gin.H
-	for _, option := range p.PollOptions {
-		pollOptions = append(pollOptions, gin.H{
-			"ID":     option.ID,
-			"answer": option.Answer,
-		})
-	}
-	return pollOptions
 }

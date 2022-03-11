@@ -82,6 +82,8 @@ func handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []byte) {
 	if err := dao.AddChatPollOptionVote(req.PollOptionId, ctx.User.ID); err != nil {
 		return
 	}
+
+	//broadcastStream(ctx.Stream.ID, pollJson)
 }
 
 func handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
@@ -245,6 +247,11 @@ func getActivePoll(c *gin.Context) {
 	}
 
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	if tumLiveContext.User == nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
 	poll, err := dao.GetActivePoll(tumLiveContext.Stream.ID)
 	if err != nil {
 		c.JSON(http.StatusOK, nil)
@@ -257,9 +264,25 @@ func getActivePoll(c *gin.Context) {
 		return
 	}
 
+	isAdminOfCourse := tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course)
+	var pollOptions []gin.H
+	for _, option := range poll.PollOptions {
+		voteCount := int64(0)
+
+		if isAdminOfCourse {
+			voteCount, _ = dao.GetPollOptionVoteCount(option.ID)
+		}
+
+		pollOptions = append(pollOptions, gin.H{
+			"ID":     option.ID,
+			"answer": option.Answer,
+			"votes":  voteCount,
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"question":    poll.Question,
-		"pollOptions": poll.GetPollOptionsJSON(),
+		"pollOptions": pollOptions,
 		"submitted":   submitted,
 	})
 }
