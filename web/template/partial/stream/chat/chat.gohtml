@@ -93,7 +93,7 @@
                             @click="activePoll.active = false; watch.closeActivePoll();"
                             :disabled="!activePoll.active"
                             title="Send Answer">
-                            <span class="font-semibold" x-text="activePoll.active ? 'Poll closed' : 'Close Poll'"></span>
+                            <span class="font-semibold" x-text="!activePoll.active ? 'Poll closed' : 'Close Poll'"></span>
                         </button>
                     </div>
                 </div>
