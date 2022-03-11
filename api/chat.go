@@ -114,9 +114,18 @@ func handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
 		return
 	}
 
+	var pollOptionsJson []gin.H
+	for _, option := range poll.PollOptions {
+		pollOptionsJson = append(pollOptionsJson, gin.H{
+			"ID":     option.ID,
+			"answer": option.Answer,
+			"votes":  0,
+		})
+	}
+
 	pollMap := gin.H{
 		"question":    poll.Question,
-		"pollOptions": poll.GetPollOptionsJSON(),
+		"pollOptions": pollOptionsJson,
 		"submitted":   0,
 	}
 	if pollJson, err := json.Marshal(pollMap); err == nil {
