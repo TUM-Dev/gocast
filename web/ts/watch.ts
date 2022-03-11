@@ -187,3 +187,15 @@ export function closeActivePoll() {
         }),
     );
 }
+
+export function getPollOptionWidth(pollOptions, pollOption) {
+    const minWidth = 1;
+    const maxWidth = 100;
+    const maxVotes = Math.max(...pollOptions.map(({ votes: v }) => v));
+
+    if (pollOption.votes == 0) return `${minWidth.toString()}%`;
+
+    const fractionOfMax = pollOption.votes / maxVotes;
+    const fractionWidth = minWidth + fractionOfMax * (maxWidth - minWidth);
+    return `${Math.ceil(fractionWidth).toString()}%`;
+}

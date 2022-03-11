@@ -86,7 +86,7 @@ func GetPollUserVote(pollId uint, userId uint) (uint, error) {
 // GetPollOptionVoteCount returns the vote count of a specific poll-option
 func GetPollOptionVoteCount(pollOptionId uint) (int64, error) {
 	var count int64
-	err := DB.Table("poll_option_user_votes").Select("id").Where("poll_option_id = ?", pollOptionId).Count(&count).Error
+	err := DB.Table("poll_option_user_votes").Where("poll_option_id = ?", pollOptionId).Count(&count).Error
 	if err != nil {
 		return 0, err
 	}
