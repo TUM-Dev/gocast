@@ -46,55 +46,59 @@
             </div>
         </div>
         <!-- Active Poll UI -->
-        <div x-show="activePoll && !admin" class="z-50 absolute w-full">
-            <div class="bg-sky-600 dark:bg-sky-700 text-center p-2">Active Poll</div>
-            <div class="text-white shadow-lg p-4 bg-white dark:bg-secondary-lighter border-b dark:border-gray-800 rounded-b-lg">
-                <p x-text="activePoll.question" class="text-sm font-semibold mb-3"></p>
-                <template x-for="pollOption in activePoll.pollOptions" :key="pollOption.ID">
-                    <button class="flex items-center mb-1" @click="activePoll.selected = pollOption.ID" :disabled="activePoll.submitted != 0">
-                        <i class="" :class="(pollOption.ID == activePoll.selected || activePoll.submitted == pollOption.ID) ? 'fas fa-check-circle' : 'far fa-circle'"></i>
-                        <span x-text="pollOption.answer" class="ml-2"></span>
-                    </button>
-                </template>
-                <div class="mt-4 text-center">
-                    <button
+        <template x-if="activePoll && !admin">
+            <div class="z-50 absolute w-full">
+                <div class="bg-sky-600 dark:bg-sky-700 text-center p-2">Active Poll</div>
+                <div class="text-white shadow-lg p-4 bg-white dark:bg-secondary-lighter border-b dark:border-gray-800 rounded-b-lg">
+                    <p x-text="activePoll.question" class="text-sm font-semibold mb-3"></p>
+                    <template x-for="pollOption in activePoll.pollOptions" :key="pollOption.ID">
+                        <button class="flex items-center mb-1" @click="activePoll.selected = pollOption.ID" :disabled="activePoll.submitted != 0">
+                            <i class="" :class="(pollOption.ID == activePoll.selected || activePoll.submitted == pollOption.ID) ? 'fas fa-check-circle' : 'far fa-circle'"></i>
+                            <span x-text="pollOption.answer" class="ml-2"></span>
+                        </button>
+                    </template>
+                    <div class="mt-4 text-center">
+                        <button
+                                class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800 disabled:bg-gray-400
+                                    disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400 rounded border-0
+                                    focus:outline-none px-4 text-white text-sm ml-auto"
+                                @click="activePoll.submitted = activePoll.selected; watch.submitPollOptionVote(activePoll.selected); activePoll.selected = null;"
+                                :disabled="activePoll.selected == null || activePoll.submitted != 0"
+                                title="Send Answer">
+                            <span class="font-semibold" x-text="activePoll.submitted != 0 ? 'Answer submitted' : 'Send Answer'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
+        <template x-if="activePoll && admin">
+            <div class="z-50 absolute w-full">
+                <div class="bg-sky-600 dark:bg-sky-700 text-center p-2">Active Poll</div>
+                <div class="text-white shadow-lg p-4 bg-white dark:bg-secondary-lighter border-b dark:border-gray-800 rounded-b-lg">
+                    <p x-text="activePoll.question" class="text-sm font-semibold mb-3"></p>
+                    <template x-for="pollOption in activePoll.pollOptions" :key="pollOption.ID">
+                        <div class="mb-3 pl-3 pr-3">
+                            <div class="flex justify-between pr-2">
+                                <span class="text-sm flex items-end" x-text="pollOption.answer"></span>
+                                <span class="text-xs flex items-end" x-text="pollOption.votes + ' Votes'"></span>
+                            </div>
+                            <div :style="`width: ${watch.getPollOptionWidth(activePoll.pollOptions, pollOption)};`" class="rounded-full h-4 bg-sky-400" @click="activePoll.selected = pollOption.ID"></div>
+                        </div>
+                    </template>
+                    <div class="mt-5 text-center">
+                        <button
                             class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800 disabled:bg-gray-400
                                 disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400 rounded border-0
                                 focus:outline-none px-4 text-white text-sm ml-auto"
-                            @click="activePoll.submitted = activePoll.selected; watch.submitPollOptionVote(activePoll.selected); activePoll.selected = null;"
-                            :disabled="activePoll.selected == null || activePoll.submitted != 0"
+                            @click="activePoll.active = false; watch.closeActivePoll();"
+                            :disabled="!activePoll.active"
                             title="Send Answer">
-                        <span class="font-semibold" x-text="activePoll.submitted != 0 ? 'Answer submitted' : 'Send Answer'"></span>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <div x-show="activePoll && admin" class="z-50 absolute w-full">
-            <div class="bg-sky-600 dark:bg-sky-700 text-center p-2">Active Poll</div>
-            <div class="text-white shadow-lg p-4 bg-white dark:bg-secondary-lighter border-b dark:border-gray-800 rounded-b-lg">
-                <p x-text="activePoll.question" class="text-sm font-semibold mb-3"></p>
-                <template x-for="pollOption in activePoll.pollOptions" :key="pollOption.ID">
-                    <div class="mb-3 pl-3 pr-3">
-                        <div class="flex justify-between pr-2">
-                            <span class="text-sm flex items-end" x-text="pollOption.answer"></span>
-                            <span class="text-xs flex items-end" x-text="pollOption.votes + ' Votes'"></span>
-                        </div>
-                        <div :style="`width: ${watch.getPollOptionWidth(activePoll.pollOptions, pollOption)};`" class="rounded-full h-4 bg-sky-400" @click="activePoll.selected = pollOption.ID"></div>
+                            <span class="font-semibold" x-text="activePoll.active ? 'Poll closed' : 'Close Poll'"></span>
+                        </button>
                     </div>
-                </template>
-                <div class="mt-5 text-center">
-                    <button
-                        class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800 disabled:bg-gray-400
-                            disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400 rounded border-0
-                            focus:outline-none px-4 text-white text-sm ml-auto"
-                        @click="activePoll.active = false; watch.closeActivePoll();"
-                        :disabled="!activePoll.active"
-                        title="Send Answer">
-                        <span class="font-semibold" x-text="activePoll.active ? 'Poll closed' : 'Close Poll'"></span>
-                    </button>
                 </div>
             </div>
-        </div>
+        </template>
         <!-- Connection Lost Banner -->
         <div x-show="show" class="z-50 absolute w-full">
             <div id="disconnectMsg"
