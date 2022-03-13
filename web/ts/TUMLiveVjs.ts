@@ -41,6 +41,8 @@ export const initPlayer = function () {
     });
 
     player.theaterMode({ elementToToggle: "my-video", className: "theater-mode" });
+    player.fluid(false); // Needed for scaling of theater mode
+
     // handle volume store:
     player.on("volumechange", function () {
         window.localStorage.setItem("volume", player.volume());
