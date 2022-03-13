@@ -1,11 +1,11 @@
 {{define "downloadBtn"}}
-    <span class="relative m-auto" x-data="{expand:false}">
+    <span class = "relative" x-data="{expand:false}">
         <button @click="expand=!expand" type="button"
                 id="menu-button" aria-expanded="true" aria-haspopup="true">
             <i class="fas fa-cloud-download-alt text-4 text-lg hover:text-1"></i>
         </button>
         <span x-cloak x-show="expand" @click.outside="expand = false"
-             class="origin-top-left absolute top-full left-0 m-auto w-56 rounded-md shadow-lg bg-white
+             class="origin-top-right absolute top-full right-0 w-56 rounded-md shadow-lg bg-white
              dark:bg-secondary ring-1 ring-black ring-opacity-5 focus:outline-none"
              role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
             <span class="py-1" role="none">
