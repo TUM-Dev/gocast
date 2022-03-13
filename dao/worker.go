@@ -13,6 +13,10 @@ func SaveWorker(worker model.Worker) error {
 	return DB.Save(&worker).Error
 }
 
+func DeleteWorker(workerID string) error {
+	return DB.Where("worker_id = ?", workerID).Delete(&model.Worker{}).Error
+}
+
 func GetAllWorkers() ([]model.Worker, error) {
 	var workers []model.Worker
 	err := DB.Find(&workers).Error
