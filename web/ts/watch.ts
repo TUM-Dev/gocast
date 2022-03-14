@@ -25,6 +25,7 @@ enum WSMessageType {
     Message = "message",
     Like = "like",
     Delete = "delete",
+    Approve = "approve",
     Resolve = "resolve",
 }
 
@@ -42,6 +43,8 @@ export const likeMessage = (id: number) => sendIDMessage(id, WSMessageType.Like)
 export const deleteMessage = (id: number) => sendIDMessage(id, WSMessageType.Delete);
 
 export const resolveMessage = (id: number) => sendIDMessage(id, WSMessageType.Resolve);
+
+export const approveMessage = (id: number) => sendIDMessage(id, WSMessageType.Approve);
 
 export function initChatScrollListener() {
     const chatBox = document.getElementById("chatBox") as HTMLDivElement;
@@ -113,6 +116,9 @@ export function startWebsocket() {
         } else if ("resolve" in data) {
             const event = new CustomEvent("chatresolve", { detail: data });
             window.dispatchEvent(event);
+        } else if ("approve" in data) {
+            const event = new CustomEvent("chatapprove", { detail: data });
+            window.dispatchEvent(event);
         }
     };
 
@@ -161,4 +167,12 @@ export function sendMessage(current: ChatMessage) {
             addressedTo: current.addressedTo.map((u) => u.id),
         }),
     );
+}
+
+export async function fetchMessages(id: number) {
+    return await fetch("/api/chat/" + id + "/messages")
+        .then((res) => res.json())
+        .then((d) => {
+            return d;
+        });
 }

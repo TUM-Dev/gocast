@@ -17,13 +17,18 @@ import (
 
 var wsMapLock sync.RWMutex
 
-var sessionsMap = map[uint][]*melody.Session{}
+var sessionsMap = map[uint][]*sessionWrapper{}
 
 const (
 	TypeServerInfo = "info"
 	TypeServerWarn = "warn"
 	TypeServerErr  = "error"
 )
+
+type sessionWrapper struct {
+	session *melody.Session
+	isAdminOfCourse bool
+}
 
 var connHandler = func(s *melody.Session) {
 	ctx, _ := s.Get("ctx") // get gin context
@@ -33,8 +38,14 @@ var connHandler = func(s *melody.Session) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	isAdmin := false
+	if tumLiveContext.User != nil {
+		isAdmin = tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course)
+	}
+	sessionData := sessionWrapper{s, isAdmin}
+
 	wsMapLock.Lock()
-	sessionsMap[tumLiveContext.Stream.ID] = append(sessionsMap[tumLiveContext.Stream.ID], s)
+	sessionsMap[tumLiveContext.Stream.ID] = append(sessionsMap[tumLiveContext.Stream.ID], &sessionData)
 	wsMapLock.Unlock()
 
 	msg, _ := json.Marshal(gin.H{"viewers": len(sessionsMap[tumLiveContext.Stream.ID])})
@@ -117,16 +128,38 @@ func broadcastStream(streamID uint, msg []byte) {
 	if !f {
 		return
 	}
-	var newSessions []*melody.Session
 	wsMapLock.Lock()
-	for _, session := range sessions {
-		if !session.IsClosed() {
-			newSessions = append(newSessions, session)
+	sessions = removeClosed(sessions)
+	wsMapLock.Unlock()
+
+	for _, wrapper := range sessions {
+		_ = wrapper.session.Write(msg) // ignore "session closed" error, nothing we can do about it at this point
+	}
+}
+
+func broadcastStreamToAdmins(streamID uint, msg []byte) {
+	sessions, f := sessionsMap[streamID]
+	if !f {
+		return
+	}
+	wsMapLock.Lock()
+	sessions = removeClosed(sessions)
+	wsMapLock.Unlock()
+
+	for _, wrapper := range sessions {
+		if wrapper.isAdminOfCourse {
+			_ = wrapper.session.Write(msg)
 		}
 	}
-	sessionsMap[streamID] = newSessions
-	wsMapLock.Unlock()
-	for _, session := range newSessions {
-		_ = session.Write(msg) // ignore "session closed" error, nothing we can do about it at this point
+}
+
+// removeClosed removes session where IsClosed() is true.
+func removeClosed(sessions []*sessionWrapper) []*sessionWrapper{
+	var newSessions []*sessionWrapper
+	for _, wrapper := range sessions {
+		if !wrapper.session.IsClosed() {
+			newSessions = append(newSessions, wrapper)
+		}
 	}
+	return newSessions
 }
