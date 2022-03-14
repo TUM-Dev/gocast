@@ -94,7 +94,7 @@ func configMainRoute(router *gin.Engine) {
 		c.Redirect(http.StatusFound, "/")
 	})
 	router.NoRoute(func(c *gin.Context) {
-		tools.RenderErrorPage(c, http.StatusNotFound, "This page does not exist.")
+		tools.RenderErrorPage(c, http.StatusNotFound, tools.PageNotFoundErrMsg)
 	})
 }
 

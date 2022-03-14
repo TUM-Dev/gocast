@@ -64,13 +64,14 @@ type ErrorPageData struct {
 }
 
 const (
+	PageNotFoundErrMsg     = "This page does not exist."
 	CourseNotFoundErrMsg   = "We couldn't find the course you were looking for."
 	StreamNotFoundErrMsg   = "We couldn't find the stream you were looking for."
-	ForbiddenGenericErrMsg = "You don't have the permission to access this resource. " +
+	ForbiddenGenericErrMsg = "You don't have permissions to access this resource. " +
 		"Please reach out if this seems wrong :)"
-	ForbiddenStreamAccess = "You don't have the permission to access this stream. " +
+	ForbiddenStreamAccess = "You don't have permissions to access this stream. " +
 		"Please make sure to use the correct login."
-	ForbiddenCourseAccess = "You don't have the permission to access this stream. " +
+	ForbiddenCourseAccess = "You don't have permissions to access this stream. " +
 		"Please make sure to use the correct login."
 )
 

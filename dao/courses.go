@@ -225,12 +225,12 @@ func GetAvailableSemesters(c context.Context) []Semester {
 }
 
 func GetCourseByShortLink(link string) (model.Course, error) {
-	var courseId uint
-	err := DB.Model(&model.ShortLink{}).Select("course_id").Where("link = ?", link).Scan(&courseId).Error
+	var sl model.ShortLink
+	err := DB.First(&sl, "link = ?", link).Error
 	if err != nil {
 		return model.Course{}, err
 	}
-	course, err := GetCourseById(context.Background(), courseId)
+	course, err := GetCourseById(context.Background(), sl.CourseId)
 	return course, err
 }
 
