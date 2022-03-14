@@ -6,7 +6,7 @@
              x-data="{ showReplies: false, m: m }" x-show="!m.deleted && m.replyTo && !m.replyTo.Valid">
             <!-- name and message -->
             <p class="group text-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded"
-                :class="m.addressedTo.find(user => user.ID = {{.IndexData.TUMLiveContext.User.ID}}) !== undefined ? 'bg-sky-600' : ''">
+                :class="m.addressedTo.find(userId => userId === {{.IndexData.TUMLiveContext.User.ID}}) !== undefined ? 'bg-sky-600' : ''">
                 <span x-show="m.admin" class="text-white rounded-full bg-danger px-2 fas fa-video"></span>
                 <span class="text-2 font-semibold {{if .IsPopUp}}md:block{{end}}" x-text="m.name"
                       :style="'color:'+m.color"></span>

@@ -15,7 +15,7 @@ export class ChatUserList {
     async LoadAll() {
         await fetch(`/api/chat/${this.streamId}/users`)
             .then((res) => res.json())
-            .then((users) => {
+            .then((users: object[]) => {
                 this.all = users;
                 this.subset = users;
             });
@@ -24,12 +24,20 @@ export class ChatUserList {
     filterUsers(message: string, cursorPos: number): string[] {
         const pos = getCurrentWordPositions(message, cursorPos);
         const currentWord = message.substring(pos[0], pos[1]);
-        if (message === "" || !currentWord.startsWith("@") || currentWord.length < 2) {
-            return [];
+        console.log(currentWord);
+        if (message === "" || !currentWord.startsWith("@")) {
+            this.subset = [];
+            return;
         }
-        const input = currentWord.substring(1);
-        // @ts-ignore
-        this.subset = this.all.filter((user) => user.name.startsWith(input));
+        if (currentWord === "@") {
+            this.LoadAll().then(() => {
+                /* */
+            }); // Load on '@'
+        } else {
+            const input = currentWord.substring(1);
+            // @ts-ignore
+            this.subset = this.all.filter((user) => user.name.startsWith(input));
+        }
     }
 }
 
@@ -62,8 +70,15 @@ export class ChatMessage {
     }
 
     addAddressee(user: ChatUser): void {
+        const chatInput: HTMLInputElement = document.getElementById("chatInput") as HTMLInputElement;
+        const pos = getCurrentWordPositions(this.message, chatInput.selectionStart);
+
+        // replace message with username e.g. 'Hello @Ad' to 'Hello @Admin':
+        this.message =
+            this.message.substring(0, pos[0]) +
+            this.message.substring(pos[0], pos[1]).replace(/@(\w)*/, "@" + user.name) +
+            this.message.substring(pos[1] + this.message.substring(pos[0], pos[1]).length);
         this.addressedTo.push(user);
-        this.message = this.message + user.name;
     }
 }
 

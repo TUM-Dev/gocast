@@ -181,7 +181,7 @@ func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte
 		StreamID: ctx.Stream.ID,
 		Admin:    ctx.User.ID == ctx.Course.UserID,
 		ReplyTo:  replyTo,
-		AddressedTo: idToUserList(chat.AddressedTo),
+		AddressedToIds: chat.AddressedTo,
 	}
 	chatForDb.SanitiseMessage()
 	err := dao.AddMessage(&chatForDb)
@@ -310,15 +310,4 @@ func afterDisconnect(id string, jointime time.Time, recording bool) {
 			log.WithError(err).Error("Can't save vod view")
 		}
 	}
-}
-
-func idToUserList(ids []uint) []model.User{
-	var users []model.User
-	for id := range ids{
-		u, err := dao.GetUserByIDWithoutContext(uint(id))
-		if err == nil {
-			users = append(users, u)
-		}
-	}
-	return users
 }

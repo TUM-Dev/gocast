@@ -10,7 +10,6 @@
          x-on:chatdelete.window="e => {messages.find(m=>m.ID===e.detail.delete).deleted=true;}"
          x-on:chatresolve.window="e => {messages.find(m=>m.ID===e.detail.resolve).resolved=true;}"
          @reorder="watch.sortMessages(messages, orderByLikes)"
-         @loadchatusers="await users.LoadAll()"
          id="chatWrapper"
          class="flex relative flex-col text-1 bg-white dark:bg-secondary h-full border-l z-40 dark:border-gray-800"
          @keyup.escape="replyTo=0">
@@ -54,14 +53,14 @@
         <div class="z-50 bg-white w-full">
             {{template "chatprompts"}}
             <form x-show="show" id="chatForm"
-                  class="z-50 sticky w-full bottom-0 2xl:flex 2xl:justify-between inset-x-0 bg-white p-2
+                  class="z-50 sticky w-full bottom-0 inset-x-0 p-2 bg-white dark:bg-secondary 2xl:flex 2xl:justify-between
               {{if .IsPopUp}} xl:w-1/2 md:w-3/4 md:mx-auto md:border md:rounded-t-lg {{end}}"
                   x-on:sendmessage.window="current.send()"
                   @submit.prevent="current.send()">
                 <div class="w-full">
-                    <div :class = "users.subset.length > 0 && 'shadow rounded-lg border p-1'">
+                    <div :class = "users.subset.length > 0 && 'shadow rounded-lg border dark:border-gray-800 p-1'">
                         <!-- @-userlist -->
-                        <div x-show="users.subset.length > 0" class='w-full bg-white py-2'>
+                        <div x-show="users.subset.length > 0" class='w-full bg-white dark:bg-secondary py-2'>
                             <template x-for="user in users.subset">
                                 <div @click="current.addAddressee(user); users.subset=[]"
                                      class="flex p-2 rounded hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
@@ -98,10 +97,9 @@
                        else if(e.keyCode===40){$dispatch('emojiarrowdown');e.preventDefault();}
                        else if(e.keyCode===38){$dispatch('emojiarrowup');e.preventDefault();}
                        else if(e.keyCode===13){$dispatch('chatenter');e.preventDefault();}
-                       else if(e.keyCode===76){$dispatch('loadchatusers')}
                        else {$nextTick(() =>{
                        watch.getEmojisForMessage(current.message, e.target.selectionStart).then(r => $dispatch('emojisuggestions', r));
-                       /*users.filterUsers(current.message, e.target.selectionStart)*/})}}">
+                       users.filterUsers(current.message, e.target.selectionStart)})}}">
                         </div>
                     </div>
                     <!-- popout and send button -->

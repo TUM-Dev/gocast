@@ -7,7 +7,17 @@ import (
 )
 
 func AddMessage(chat *model.Chat) error {
-	return DB.Save(chat).Error
+	err := DB.Save(chat).Error
+	if err != nil {
+		return err
+	}
+	for _, userId := range chat.AddressedToIds {
+		err := DB.Exec("INSERT INTO chat_user_addressedto (chat_id, user_id) VALUES (?, ?)", chat.ID, userId).Error
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // DeleteChat removes a chat with the given id from the database.
@@ -43,7 +53,7 @@ func GetNumLikes(chatID uint) (int64, error) {
 // GetChats returns all chats for the stream with the given ID. Number of likes are inserted and the user's like status is determined
 func GetChats(userID uint, streamID uint) ([]model.Chat, error) {
 	var chats []model.Chat
-	err := DB.Preload("Replies").Preload("UserLikes").Find(&chats, "stream_id = ?", streamID).Error
+	err := DB.Preload("Replies").Preload("UserLikes").Preload("AddressedToUsers").Find(&chats, "stream_id = ?", streamID).Error
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +64,10 @@ func GetChats(userID uint, streamID uint) ([]model.Chat, error) {
 				chats[i].Liked = true
 				break
 			}
+		}
+		chats[i].AddressedToIds = []uint{}
+		for _, user := range chats[i].AddressedToUsers {
+			chats[i].AddressedToIds = append(chats[i].AddressedToIds, user.ID)
 		}
 	}
 	return chats, nil

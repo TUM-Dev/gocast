@@ -37,8 +37,6 @@ var connHandler = func(s *melody.Session) {
 	sessionsMap[tumLiveContext.Stream.ID] = append(sessionsMap[tumLiveContext.Stream.ID], s)
 	wsMapLock.Unlock()
 
-	userStorage.Add(tumLiveContext.User)
-
 	msg, _ := json.Marshal(gin.H{"viewers": len(sessionsMap[tumLiveContext.Stream.ID])})
 	err := s.Write(msg)
 	if err != nil {
@@ -47,6 +45,7 @@ var connHandler = func(s *melody.Session) {
 	var uid uint = 0
 	if tumLiveContext.User != nil {
 		uid = tumLiveContext.User.ID
+		userStorage.Add(tumLiveContext.User)
 	}
 	if tumLiveContext.Course.ChatEnabled {
 		sendServerMessageWithBackoff(s, uid, tumLiveContext.Stream.ID, "Welcome to the chatroom! Please be nice to each other and stay on topic if you want this feature to stay active.", TypeServerInfo)

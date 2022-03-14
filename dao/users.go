@@ -64,18 +64,6 @@ func GetUserByID(ctx context.Context, id uint) (user model.User, err error) {
 	return foundUser, dbErr
 }
 
-func GetUserByIDWithoutContext(id uint) (user model.User, err error) {
-	if cached, found := Cache.Get(fmt.Sprintf("userById%d", id)); found {
-		return cached.(model.User), nil
-	}
-	var foundUser model.User
-	dbErr := DB.Preload("Courses.Streams").Preload("Courses.Streams").Find(&foundUser, "id = ?", id).Error
-	if dbErr == nil {
-		Cache.SetWithTTL(fmt.Sprintf("userById%d", id), foundUser, 1, time.Second*10)
-	}
-	return foundUser, dbErr
-}
-
 func CreateRegisterLink(ctx context.Context, user model.User) (registerLink model.RegisterLink, err error) {
 	var link = uuid.NewV4().String()
 	var registerLinkObj = model.RegisterLink{
