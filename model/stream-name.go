@@ -6,7 +6,7 @@ import "gorm.io/gorm"
 type StreamName struct {
 	gorm.Model
 
-	StreamName     string `gorm:"type:varchar(64); unique; default:null"`
+	StreamName     string `gorm:"type:varchar(64); unique; not null"`
 	IsTranscoding  bool   `gorm:"not null;default:false"`
 	IngestServerID uint   `gorm:"not null"`
 	StreamID       uint   // Is null when the slot is not used
