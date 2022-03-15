@@ -28,14 +28,14 @@
                 To view this video please enable JavaScript.
             </p></noscript>
         <div id="watchContent"
-             class="transition-all motion-reduce:transition-none duration-300 ease w-full pt-3 px-2 md:px-8 mx-auto mx:h-full">
+             class="transition-all motion-reduce:transition-none duration-300 ease w-full p-4 mx-auto mx:h-full">
             <div class="p-4 bg-indigo-700 bg-opacity-20 border-t-4 border-indigo-700 w-full font-semibold text-2 rounded-t display-none"
                  x-show="paused" x-cloak>
                 <i class="fas fa-info-circle"></i> This lecture is currently paused.
             </div>
             <video
                     id="my-video"
-                    class="video-js w-full theater-mode"
+                    class="video-js w-full vjs-theater-mode theater-mode"
                     controls
                     preload="auto"
                     {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
