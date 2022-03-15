@@ -71,7 +71,7 @@ const (
 		"Please reach out if this seems wrong :)"
 	ForbiddenStreamAccess = "You don't have permissions to access this stream. " +
 		"Please make sure to use the correct login."
-	ForbiddenCourseAccess = "You don't have permissions to access this stream. " +
+	ForbiddenCourseAccess = "You don't have permissions to access this course. " +
 		"Please make sure to use the correct login."
 )
 
