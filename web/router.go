@@ -27,6 +27,7 @@ func ConfigGinRouter(router *gin.Engine) {
 		"template/partial/stream/*.gohtml",
 		"template/partial/stream/chat/*.gohtml",
 		"template/partial/course/manage/*.gohtml"))
+	tools.SetTemplates(templ)
 	configGinStaticRouter(router)
 	configMainRoute(router)
 	configCourseRoute(router)
@@ -92,6 +93,9 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/cgi-bin/streams/*x", func(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/")
 	})
+	router.NoRoute(func(c *gin.Context) {
+		tools.RenderErrorPage(c, http.StatusNotFound, tools.PageNotFoundErrMsg)
+	})
 }
 
 func configCourseRoute(router *gin.Engine) {
@@ -116,12 +120,6 @@ type CacheMetrics struct {
 	Hits      uint64 `json:"hits"`
 	Misses    uint64 `json:"misses"`
 	KeysAdded uint64 `json:"keysAdded"`
-}
-
-type ErrorPageData struct {
-	IndexData IndexData
-	Status    int
-	Message   string
 }
 
 type ChatData struct {
