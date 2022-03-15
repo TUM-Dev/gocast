@@ -224,6 +224,7 @@ func GetAvailableSemesters(c context.Context) []Semester {
 	}
 }
 
+// GetCourseByShortLink returns the course associated with the given short link (e.g. EIDI2022)
 func GetCourseByShortLink(link string) (model.Course, error) {
 	var sl model.ShortLink
 	err := DB.First(&sl, "link = ?", link).Error

@@ -47,6 +47,8 @@ func InitContext(c *gin.Context) {
 	c.Set("TUMLiveContext", TUMLiveContext{})
 }
 
+// RenderErrorPage renders the error page with the given error code and message.
+// the gin context is always aborted after this function is called.
 func RenderErrorPage(c *gin.Context, status int, message string) {
 	err := templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{
 		Status:  status,
@@ -58,6 +60,7 @@ func RenderErrorPage(c *gin.Context, status int, message string) {
 	c.Abort()
 }
 
+//ErrorPageData is the required data for the error page
 type ErrorPageData struct {
 	Status  int
 	Message string
