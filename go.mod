@@ -1,6 +1,6 @@
 module TUM-Live
 
-go 1.17
+go 1.18
 
 require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20211013164422-76adcbfcf8c4
