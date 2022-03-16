@@ -74,6 +74,10 @@ func GetVisibleChats(userID uint, streamID uint) ([]model.Chat, error) {
 				break
 			}
 		}
+		chats[i].AddressedToIds = []uint{}
+		for _, user := range chats[i].AddressedToUsers {
+			chats[i].AddressedToIds = append(chats[i].AddressedToIds, user.ID)
+		}
 	}
 	return chats, nil
 }
@@ -82,7 +86,7 @@ func GetVisibleChats(userID uint, streamID uint) ([]model.Chat, error) {
 // Number of likes are inserted and the user's like status is determined
 func GetAllChats(userID uint, streamID uint) ([]model.Chat, error) {
 	var chats []model.Chat
-	query := DB.Preload("Replies").Preload("UserLikes").Find(&chats, "stream_id = ?", streamID)
+	query := DB.Preload("Replies").Preload("UserLikes").Preload("AddressedToUsers").Find(&chats, "stream_id = ?", streamID)
 	err := query.Error
 	if err != nil {
 		return nil, err

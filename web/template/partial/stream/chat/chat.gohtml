@@ -1,19 +1,21 @@
 {{define "chat"}}
     {{- /*gotype: TUM-Live/web.ChatData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
+    {{$userName := .IndexData.TUMLiveContext.User.Name}}
+    {{$userId := .IndexData.TUMLiveContext.User.ID}}
     <div x-cloak
-         x-data="watch.initChat({{.IsAdminOfCourse}},'{{$stream.ID}}')"
-         x-init="messages = await watch.fetchMessages({{$stream.ID}}); $nextTick(() => { watch.scrollToBottom() })"
-         x-on:chatmessage.window="e => {messages.push(e.detail)}"
-         x-on:chatreply.window="e => {messages.find(m=>m.ID===e.detail.replyTo.Int64).replies.push(e.detail);}"
-         x-on:chatlike.window="e => {messages.find(m=>m.ID===e.detail.likes).likes=e.detail.num; $dispatch('reorder')}"
-         x-on:chatdelete.window="e => {messages.find(m=>m.ID===e.detail.delete).deleted=true;}"
-         x-on:chatresolve.window="e => {messages.find(m=>m.ID===e.detail.resolve).resolved=true;}"
-         x-on:chatapprove.window="messages = await watch.fetchMessages({{$stream.ID}}); $nextTick(() => { watch.scrollToBottom() })"
-         @reorder="watch.sortMessages(messages, orderByLikes)"
+         x-data="watch.initChat({{.IsAdminOfCourse}},{{$stream.ID}}, {{$userId}},'{{$userName}}');"
+         x-init="await c.loadMessages(); $nextTick(() => { watch.scrollToBottom() })"
+         x-on:chatmessage.window="e => c.onMessage(e);"
+         x-on:chatreply.window="e => c.onReply(e);"
+         x-on:chatlike.window="e => {c.onLike(e); $dispatch('reorder')}"
+         x-on:chatdelete.window="e => c.onDelete(e);"
+         x-on:chatresolve.window="e => c.onResolve(e);"
+         x-on:chatapprove.window="await c.loadMessages(); $nextTick(() => { watch.scrollToBottom() })"
+         @reorder="c.sortMessages()"
+         @keyup.escape="c.current.replyTo=0"
          id="chatWrapper"
-         class="flex relative flex-col text-1 bg-white dark:bg-secondary h-full border-l z-40 dark:border-gray-800"
-         @keyup.escape="replyTo=0">
+         class="flex relative flex-col text-1 bg-white dark:bg-secondary h-full border-l z-40 dark:border-gray-800">
         <!-- Chat header -->
         <div class="flex sticky top-0 w-full px-3 h-14 justify-between bg-white z-50 border-b dark:bg-secondary dark:border-gray-800
                     {{if .IsPopUp}} xl:w-1/2 md:w-3/4 md:mx-auto md:border md:rounded-b-lg{{end}}"
@@ -28,8 +30,8 @@
             {{end}}
             <div x-show="show" class="ml-auto my-auto">
                     <span class="font-semibold text-gray-500 text-xs"
-                          x-text="orderByLikes? 'Popular First': 'Live Chat'"></span>
-                <button @click="orderByLikes=!orderByLikes; watch.setOrder(orderByLikes); $dispatch('reorder'); orderByLikes? watch.scrollToTop(): watch.scrollToBottom()"
+                          x-text="c.orderByLikes? 'Popular First': 'Live Chat'"></span>
+                <button @click="c.orderByLikes=!c.orderByLikes; watch.setOrder(c.orderByLikes); $dispatch('reorder'); c.orderByLikes? watch.scrollToTop(): watch.scrollToBottom()"
                         class="bg-transparent border-0 font-semibold h-8 w-8 rounded
                                hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90"
                         title="Change Order">
@@ -56,14 +58,14 @@
             <form x-show="show" id="chatForm"
                   class="z-50 sticky w-full bottom-0 inset-x-0 p-2 bg-white dark:bg-secondary 2xl:flex 2xl:justify-between
               {{if .IsPopUp}} xl:w-1/2 md:w-3/4 md:mx-auto md:border md:rounded-t-lg {{end}}"
-                  x-on:sendmessage.window="current.send()"
-                  @submit.prevent="current.send()">
+                  x-on:sendmessage.window="c.current.send()"
+                  @submit.prevent="c.current.send()">
                 <div class="w-full">
-                    <div :class="users.subset.length > 0 && 'shadow rounded-lg border dark:border-gray-800 p-1'">
+                    <div :class="c.users.isValid() && 'shadow rounded-lg border dark:border-gray-800 pt-1 px-1'">
                         <!-- @-userlist -->
-                        <div x-show="users.subset.length > 0" class='w-full bg-white dark:bg-secondary py-2'>
-                            <template x-for="user in users.subset">
-                                <div @click="current.addAddressee(user); users.subset=[]"
+                        <div x-show="c.users.isValid()" class='w-full bg-white dark:bg-secondary py-2'>
+                            <template x-for="user in c.users.subset">
+                                <div @click="c.current.addAddressee(user); c.users.subset=[]"
                                      class="flex p-2 rounded hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
                                     <span class="font-semibold text-3 text-xs my-auto" x-text="user.name"></span>
                                 </div>
@@ -71,36 +73,31 @@
                         </div>
 
                         <!-- input -->
-                        <div class="flex w-full my-auto bg-gray-200 rounded-lg border-2 border-transparent dark:bg-gray-600
+                        <div class="flex my-auto mb-1 bg-gray-200 rounded-lg border-2 border-transparent dark:bg-gray-600
                                     focus-within:border-sky-600
-                                    focus-within:bg-white">
+                                    focus-within:bg-white"
+                             :class="c.users.isValid() || 'mx-1'">
                             {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
                                 <input type="checkbox" name="anonymous" id="anonymous" class="hidden"
-                                       x-model="current.anonymous">
+                                       x-model="c.current.anonymous">
                                 <label for="anonymous" class="flex items-center cursor-pointer text-4 hover:text-1 ml-3"
                                        title="Don't show my name.">
                                     <i class="fas fa-ghost"></i>
                                 </label>
                             {{end}}
                             <label for="chatInput" class="hidden">Chat input</label>
-                            <input maxlength="200"
+                            <input id="chatInput" type="text"
+                                   maxlength="200"
                                    x-ref="chatInput"
-                                   x-model="current.message"
-                                   @keyup="current.parse()"
+                                   x-model="c.current.message"
+                                   x-on:setmessage.window="e=>c.current.message=e.detail"
+                                   x-on:keyup="e => c.onInputKeyup(e);"
+                                   @keyup="c.current.parse()"
                                    class="py-2 px-4 border-0 text-sm font-normal placeholder:text-sm"
                                    {{if not (.IndexData.TUMLiveContext.User)}}disabled
                                    placeholder="Log in to chat" {{else}}
-                                   :placeholder="current.replyTo===0?'Send a message':'Reply [escape to cancel]'"
-                                   {{end}}autocomplete="off"
-                                   id="chatInput" type="text"
-                                   x-on:setmessage.window="e=>message=e.detail"
-                                   x-on:keydown="e=>{if(e.keyCode===9){$dispatch('emojiselectiontriggered');e.preventDefault();}
-                       else if(e.keyCode===40){$dispatch('emojiarrowdown');e.preventDefault();}
-                       else if(e.keyCode===38){$dispatch('emojiarrowup');e.preventDefault();}
-                       else if(e.keyCode===13){$dispatch('chatenter');e.preventDefault();}
-                       else {$nextTick(() =>{
-                       watch.getEmojisForMessage(current.message, e.target.selectionStart).then(r => $dispatch('emojisuggestions', r));
-                       users.filterUsers(current.message, e.target.selectionStart)})}}">
+                                   :placeholder="c.current.replyTo===0?'Send a message':'Reply [escape to cancel]'"
+                                   {{end}}autocomplete="off">
                         </div>
                     </div>
                     <!-- popout and send button -->
@@ -120,7 +117,7 @@
                                 title="Send message"
                                 type="submit"
                                 {{if not (.IndexData.TUMLiveContext.User)}} disabled {{end}}
-                                :disabled="current.message===''">
+                                :disabled="c.current.isEmpty()">
                             <span class="font-semibold">Send</span>
                             <span class="fas fa-paper-plane ml-2"></span>
                         </button>

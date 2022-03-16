@@ -1,47 +1,126 @@
 import { Emoji, TopEmojis } from "top-twitter-emojis-map";
 import { sendMessage } from "./watch";
 
-export class ChatUserList {
-    all: object[];
-    subset: object[];
-    streamId: string;
+class Chat {
+    readonly userId: number;
+    readonly userName: string;
+    readonly admin: boolean;
+    readonly streamId: number;
 
-    constructor(streamId: string) {
-        this.all = [];
-        this.subset = [];
+    orderByLikes: boolean;
+    current: NewChatMessage;
+    messages: ChatMessage[];
+    users: ChatUserList;
+
+    messageParsers: ((m: ChatMessage) => ChatMessage)[] = [
+        (m: ChatMessage) => {
+            if (m.addressedTo.find((uId) => uId === this.userId) !== undefined) {
+                m.message = m.message.replaceAll(
+                    "@" + this.userName,
+                    "<span class = 'text-sky-600'>" + "@" + this.userName + "</span>",
+                );
+            }
+            return m;
+        },
+    ];
+
+    constructor(isAdminOfCourse: boolean, streamId: number, userId: number, userName: string) {
+        this.orderByLikes = false;
+        this.current = new NewChatMessage();
+        this.admin = isAdminOfCourse;
+        this.users = new ChatUserList(streamId);
+        this.messages = [];
         this.streamId = streamId;
+        this.userId = userId;
+        this.userName = userName;
     }
 
-    async LoadAll() {
-        await fetch(`/api/chat/${this.streamId}/users`)
-            .then((res) => res.json())
-            .then((users: object[]) => {
-                this.all = users;
-                this.subset = users;
-            });
+    async loadMessages() {
+        this.messages = [];
+        fetchMessages(this.streamId).then((messages) => {
+            messages.forEach((m) => this.addMessage(m));
+        });
     }
 
-    filterUsers(message: string, cursorPos: number): string[] {
-        const pos = getCurrentWordPositions(message, cursorPos);
-        const currentWord = message.substring(pos[0], pos[1]);
-        console.log(currentWord);
-        if (message === "" || !currentWord.startsWith("@")) {
-            this.subset = [];
-            return;
+    sortMessages() {
+        this.messages.sort((m1, m2) => {
+            if (this.orderByLikes) {
+                // @ts-ignore
+                if (m1.likes === m2.likes) {
+                    // @ts-ignore
+                    return m2.id - m1.id; // same amount of likes -> newer messages up
+                }
+                // @ts-ignore
+                return m2.likes - m1.likes; // more likes -> up
+            } else {
+                // @ts-ignore
+                return m1.ID < m2.ID ? -1 : 1; // newest messages last
+            }
+        });
+    }
+
+    onMessage(e) {
+        this.addMessage(e.detail);
+    }
+
+    onDelete(e) {
+        // @ts-ignore
+        this.messages.find((m) => m.ID === e.detail.delete).deleted = true;
+    }
+
+    onLike(e) {
+        // @ts-ignore
+        this.messages.find((m) => m.ID === e.detail.likes).likes = e.detail.num;
+    }
+
+    onResolve(e) {
+        // @ts-ignore
+        this.messages.find((m) => m.ID === e.detail.resolve).resolved = true;
+    }
+
+    onReply(e) {
+        // @ts-ignore
+        this.messages.find((m) => m.ID === e.detail.replyTo.Int64).replies.push(e.detail);
+    }
+
+    onInputKeyup(e) {
+        let event = "";
+        switch (e.keyCode) {
+            case 9: {
+                event = "emojiselectiontriggered";
+                break;
+            }
+            case 13: {
+                event = "chatenter";
+                break;
+            }
+            case 38: {
+                event = "emojiarrowup";
+                break;
+            }
+            case 40: {
+                event = "emojiarrowdown";
+                break;
+            }
+            default: {
+                console.log(e.target.value);
+                this.users.filterUsers(e.target.value, e.target.selectionStart);
+                return getEmojisForMessage(e.target.value, e.target.selectionStart).then((emojis) => {
+                    window.dispatchEvent(new CustomEvent("emojisuggestions", { detail: emojis }));
+                    return;
+                });
+            }
         }
-        if (currentWord === "@") {
-            this.LoadAll().then(() => {
-                /* */
-            }); // Load on '@'
-        } else {
-            const input = currentWord.substring(1);
-            // @ts-ignore
-            this.subset = this.all.filter((user) => user.name.startsWith(input));
-        }
+        window.dispatchEvent(new CustomEvent(event));
+    }
+
+    private addMessage(m: ChatMessage) {
+        this.messageParsers.forEach((f) => (m = f(m)));
+        this.messages.push(m);
     }
 }
 
-export class ChatMessage {
+export class NewChatMessage {
     message: string;
     replyTo: number;
     anonymous: boolean;
@@ -65,7 +144,12 @@ export class ChatMessage {
         this.addressedTo = [];
     }
 
+    isEmpty(): boolean {
+        return this.message === "";
+    }
+
     parse(): void {
+        // remove unused @username's from addressee list
         this.addressedTo = this.addressedTo.filter((user) => this.message.includes(`@${user.name}`));
     }
 
@@ -78,38 +162,95 @@ export class ChatMessage {
             this.message.substring(0, pos[0]) +
             this.message.substring(pos[0], pos[1]).replace(/@(\w)*/, "@" + user.name) +
             this.message.substring(pos[1] + this.message.substring(pos[0], pos[1]).length);
+
+        chatInput.focus();
+
         this.addressedTo.push(user);
     }
 }
 
-export class Chat {
-    orderByLikes: boolean;
-    current: ChatMessage;
-    messages: object[];
+class ChatUserList {
+    subset: object[];
+    streamId: number;
+    private all: object[];
+
+    constructor(streamId: number) {
+        this.all = this.subset = [];
+        this.streamId = streamId;
+    }
+
+    async LoadAll(): Promise<object[]> {
+        return fetch(`/api/chat/${this.streamId}/users`).then((res) => res.json());
+    }
+
+    isValid(): boolean {
+        return this.subset.length > 0;
+    }
+
+    filterUsers(message: string, cursorPos: number) {
+        const pos = getCurrentWordPositions(message, cursorPos);
+        if (pos[0] === 0 && pos[1] === 0) {
+            // substring(0,0) returns ''
+            pos[1] = 1;
+        }
+
+        const currentWord = message.substring(pos[0], pos[1]);
+        if (message === "" || !currentWord.startsWith("@")) {
+            this.subset = [];
+            return;
+        }
+
+        if (currentWord === "@") {
+            // load users on '@'
+            this.LoadAll().then((users) => {
+                this.all = this.subset = users;
+            });
+        } else {
+            const input = currentWord.substring(1);
+            // @ts-ignore
+            this.subset = this.all.filter((user) => user.name.startsWith(input));
+        }
+    }
+}
+
+export function initChat(isAdminOfCourse: boolean, streamId: number, userId: number, userName: string) {
+    return { c: new Chat(isAdminOfCourse, streamId, userId, userName) };
+}
+
+type ChatMessage = {
+    ID: number;
     admin: boolean;
-    users: ChatUserList;
 
-    constructor(isAdminOfCourse: boolean, streamId: string) {
-        this.orderByLikes = false;
-        this.current = new ChatMessage();
-        this.messages = [];
-        this.admin = isAdminOfCourse;
-        this.users = new ChatUserList(streamId);
-    }
-}
-
-class ChatUser {
-    id: number;
+    message: string;
     name: string;
+    color: string;
 
-    constructor(id: number, name: string) {
-        this.id = id;
-        this.name = name;
-    }
-}
+    liked: false;
+    likes: number;
 
-export function initChat(isAdminOfCourse: boolean, streamId: string) {
-    return new Chat(isAdminOfCourse, streamId);
+    replies: object[];
+    replyTo: object; // e.g.{Int64:0, Valid:false}
+
+    addressedTo: number[];
+    resolved: false;
+    visible: true;
+
+    CreatedAt: string;
+    DeletedAt: string;
+    UpdatedAt: string;
+};
+
+type ChatUser = {
+    ID: number;
+    name: string;
+};
+
+export async function fetchMessages(streamId: number): Promise<ChatMessage[]> {
+    return await fetch("/api/chat/" + streamId + "/messages")
+        .then((res) => res.json())
+        .then((messages) => {
+            return messages;
+        });
 }
 
 /*
@@ -170,19 +311,6 @@ export function insertEmoji(emoji: Emoji) {
 }
 
 let orderByLikes = false; // sorting by likes or by time
-
-export function sortMessages(messages): void {
-    messages.sort((m1, m2) => {
-        if (orderByLikes) {
-            if (m1.likes === m2.likes) {
-                return m2.id - m1.id; // same amount of likes -> newer messages up
-            }
-            return m2.likes - m1.likes; // more likes -> up
-        } else {
-            return m1.ID < m2.ID ? -1 : 1; // newest messages last
-        }
-    });
-}
 
 export function setOrder(obl: boolean) {
     orderByLikes = obl;

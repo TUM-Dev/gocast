@@ -1,14 +1,13 @@
 {{define "messageTemplate"}}
     {{- /*gotype: TUM-Live/web.ChatData*/ -}}
     {{$moderatedChat := .IndexData.TUMLiveContext.Course.ModeratedChatEnabled}}
-    <template x-for="m in messages" :key="m.ID">
+    <template x-for="m in c.messages" :key="m.ID">
         <div class="relative py-2 px-2"
-             :class="current.replyTo === m.ID && 'ring ring-blue-500/50'"
+             :class="c.current.replyTo === m.ID && 'ring ring-blue-500/50'"
              x-data="{ showReplies: false, m: m }" x-show="!m.deleted && m.replyTo && !m.replyTo.Valid">
             <!-- name and message -->
-            <p class="group text-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded"
-               :class="m.addressedTo.find(userId => userId === {{.IndexData.TUMLiveContext.User.ID}}) !== undefined ? 'bg-sky-600' : ''">
-                <span x-show="!m.visible && !admin" class="text-xs text-5 font-light block mb-1">
+            <p class="group text-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded">
+                <span x-show="!m.visible && !c.admin" class="text-xs text-5 font-light block mb-1">
                     This message is currently only visible to you.
                 </span>
                 <span class="{{if .IsPopUp}} md:block {{end}}">
@@ -22,7 +21,7 @@
 
                 <!-- reply hover button -->
                 <button x-cloak
-                        @click="current.replyTo === m.ID ? current.replyTo=0: current.replyTo=m.ID; $refs.chatInput.focus()"
+                        @click="c.current.replyTo === m.ID ? c.current.replyTo=0: c.current.replyTo=m.ID; $refs.chatInput.focus()"
                         title="Reply"
                         x-show="m.visible"
                         class="{{if.IsPopUp}}
@@ -32,9 +31,9 @@
                                {{end}}
                                 absolute h-8 w-8 text-3 bg-white border dark:bg-secondary cursor-pointer rounded-lg shadow-sm
                                 dark:border-gray-800 hover:dark:bg-gray-600 hover:bg-gray-200"
-                        {{if.IsPopUp}} :class="current.replyTo === m.ID ? 'group-hover:flex' : 'hidden'"
-                {{else}} :class="current.replyTo === m.ID ? 'md:group-hover:flex' : 'md:hidden'" {{end}}>
-                    <i class="fa fas m-auto" :class="current.replyTo === m.ID ? 'fa-times': 'fa-reply'"></i>
+                        {{if.IsPopUp}} :class="c.current.replyTo === m.ID ? 'group-hover:flex' : 'hidden'"
+                {{else}} :class="c.current.replyTo === m.ID ? 'md:group-hover:flex' : 'md:hidden'" {{end}}>
+                    <i class="fa fas m-auto" :class="c.current.replyTo === m.ID ? 'fa-times': 'fa-reply'"></i>
                 </button>
             </p>
             <!-- likes and ban button -->
@@ -47,7 +46,7 @@
                 </a>
 
                 <!-- admin stuff -->
-                <button x-show="admin"
+                <button x-show="c.admin"
                         @click="watch.deleteMessage(m.ID)"
                         title="Delete Message"
                         class="rounded border hover:bg-gray-200 dark:hover:bg-gray-600 dark:border-gray-800 dark:bg-gray-800 px-2 ml-auto">
@@ -55,7 +54,7 @@
                     <span class="fas fa-ban text-xs"></span>
                 </button>
                 {{if $moderatedChat}}
-                    <button x-show="admin && !m.visible"
+                    <button x-show="c.admin && !m.visible"
                             @click="watch.approveMessage(m.ID)"
                             title="Approve Message"
                             class="rounded border hover:bg-gray-200 dark:hover:bg-gray-600 dark:border-gray-800 dark:bg-gray-800 px-2">
@@ -63,7 +62,7 @@
                         <span class="fa-solid fa-spell-check text-xs"></span>
                     </button>
                 {{end}}
-                <button x-show="admin && !m.resolved"
+                <button x-show="c.admin && !m.resolved"
                         @click="watch.resolveMessage(m.ID)"
                         title="Resolve Message"
                         class="rounded border-gray-600 border px-2 hover:text-green-500 hover:border-green-500 dark:border-gray-400 dark:hover:border-green-500">

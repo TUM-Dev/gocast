@@ -5,30 +5,25 @@ import (
 	"sync"
 )
 
-type User struct {
-	Id uint `json:"id"`
-	Name string `json:"name"`
-}
-
 type UserStorage interface {
-	GetAll() []User
+	GetAll() []*model.User
 	Add(user *model.User)
 	Remove(user *model.User)
 }
 
 type ChatUserStorage struct {
 	mtx  sync.RWMutex
-	uMap map[uint]string
+	uMap map[uint]*model.User
 }
 
 func InitChatUserStorage() UserStorage {
-	return &ChatUserStorage{uMap: make(map[uint]string)}
+	return &ChatUserStorage{uMap: make(map[uint]*model.User)}
 }
 
-func (c *ChatUserStorage) GetAll() []User {
-	var users []User
-	for id, name := range c.uMap {
-		users = append(users, User{id, name})
+func (c *ChatUserStorage) GetAll() []*model.User {
+	var users []*model.User
+	for _, u := range c.uMap {
+		users = append(users, u)
 	}
 	return users
 }
@@ -36,7 +31,7 @@ func (c *ChatUserStorage) GetAll() []User {
 func (c *ChatUserStorage) Add(user *model.User) {
 	c.mtx.Lock()
 	if user != nil {
-		c.uMap[user.ID] = user.Name
+		c.uMap[user.ID] = user
 	}
 	c.mtx.Unlock()
 }

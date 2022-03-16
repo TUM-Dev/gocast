@@ -4,7 +4,7 @@ import {
     shouldScroll,
     showDisconnectedMsg,
     showNewMessageIndicator,
-    ChatMessage,
+    NewChatMessage,
 } from "./chat";
 
 let chatInput: HTMLInputElement;
@@ -157,22 +157,14 @@ export function createServerMessage(msg) {
     return serverElem;
 }
 
-export function sendMessage(current: ChatMessage) {
+export function sendMessage(current: NewChatMessage) {
     ws.send(
         JSON.stringify({
             type: WSMessageType.Message,
             msg: current.message,
             anonymous: current.anonymous,
             replyTo: current.replyTo,
-            addressedTo: current.addressedTo.map((u) => u.id),
+            addressedTo: current.addressedTo.map((u) => u.ID),
         }),
     );
-}
-
-export async function fetchMessages(id: number) {
-    return await fetch("/api/chat/" + id + "/messages")
-        .then((res) => res.json())
-        .then((d) => {
-            return d;
-        });
 }
