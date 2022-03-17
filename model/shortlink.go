@@ -6,6 +6,6 @@ import "gorm.io/gorm"
 type ShortLink struct {
 	gorm.Model
 
-	Link     string `gorm:"not null unique"`
+	Link     string `gorm:"type:varchar(256); unique; not null"`
 	CourseId uint   `gorm:"not null"`
 }

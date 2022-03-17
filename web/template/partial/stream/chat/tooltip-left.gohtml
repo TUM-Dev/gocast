@@ -1,0 +1,14 @@
+{{define "tooltip-left"}}
+    {{- /*gotype: string*/ -}}
+    <div class="hover:transition-opacity delay-500 peer-hover:opacity-100 md:flex opacity-0 absolute right-full
+    top-0 bottom-0 hidden">
+        <div class = "my-auto">
+            <div class="tooltip flex relative w-fit">
+                <div class="bg-black rounded-md px-1">
+                    <span class="text-white text-sm font-bold whitespace-nowrap">{{.}}</span>
+                </div>
+                <div class="w-0 h-0 border-y-4 border-y-transparent border-l-4 border-l-black my-auto"></div>
+            </div>
+        </div>
+    </div>
+{{end}}

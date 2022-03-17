@@ -101,7 +101,7 @@ func AdminPage(c *gin.Context) {
 			IndexData:           indexData,
 			LectureHalls:        lectureHalls,
 			Page:                page,
-			Workers:             workers,
+			Workers:             WorkersData{Workers: workers, Token: tools.Cfg.WorkerToken},
 			Semesters:           semesters,
 			CurY:                y,
 			CurT:                t,
@@ -110,6 +110,11 @@ func AdminPage(c *gin.Context) {
 	if err != nil {
 		log.Printf("%v", err)
 	}
+}
+
+type WorkersData struct {
+	Workers []model.Worker
+	Token   string
 }
 
 func LectureCutPage(c *gin.Context) {
@@ -234,11 +239,13 @@ func UpdateCourse(c *gin.Context) {
 	enDL := c.PostForm("enDL") == "on"
 	enChat := c.PostForm("enChat") == "on"
 	enChatAnon := c.PostForm("enChatAnon") == "on"
+	enChatMod := c.PostForm("enChatMod") == "on"
 	tumLiveContext.Course.Visibility = access
 	tumLiveContext.Course.VODEnabled = enVOD
 	tumLiveContext.Course.DownloadsEnabled = enDL
 	tumLiveContext.Course.ChatEnabled = enChat
 	tumLiveContext.Course.AnonymousChatEnabled = enChatAnon
+	tumLiveContext.Course.ModeratedChatEnabled = enChatMod
 	dao.UpdateCourseMetadata(context.Background(), *tumLiveContext.Course)
 	c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 }
@@ -249,7 +256,7 @@ type AdminPageData struct {
 	Courses             []model.Course
 	LectureHalls        []model.LectureHall
 	Page                string
-	Workers             []model.Worker
+	Workers             WorkersData
 	Semesters           []dao.Semester
 	CurY                int
 	CurT                string

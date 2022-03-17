@@ -34,6 +34,7 @@ func WatchPage(c *gin.Context) {
 	data.IndexData = NewIndexData()
 	data.IndexData.TUMLiveContext = tumLiveContext
 	data.IsAdminOfCourse = tumLiveContext.UserIsAdmin()
+	data.AlertsEnabled = tools.Cfg.Alerts != nil
 
 	data.ChatData.IndexData.TUMLiveContext = foundContext.(tools.TUMLiveContext)
 	data.ChatData.IsAdminOfCourse = tumLiveContext.UserIsAdmin()
@@ -99,6 +100,7 @@ func WatchPage(c *gin.Context) {
 type WatchPageData struct {
 	IsAdminOfCourse bool // is current user admin or lecturer who created this course
 	IsHighlightPage bool
+	AlertsEnabled   bool // whether the alert config is set
 	Version         string
 	Unit            *model.StreamUnit
 	Presets         []model.CameraPreset
@@ -107,7 +109,7 @@ type WatchPageData struct {
 	Description     template.HTML
 	DVR             string // ?dvr if dvr is enabled, empty string otherwise
 	LectureHallName string
-	ChatData		ChatData
+	ChatData        ChatData
 }
 
 // Prepare populates the data for the watch page.

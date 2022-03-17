@@ -2,6 +2,7 @@ package tools
 
 import (
 	"fmt"
+	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"time"
@@ -34,9 +35,20 @@ func initConfig() {
 			panic(fmt.Errorf("fatal error config file: %v", err))
 		}
 	}
+	log.Info("Using Config file ", viper.ConfigFileUsed())
 	err = viper.Unmarshal(&Cfg)
 	if err != nil {
 		panic(fmt.Errorf("fatal error config file: %v", err))
+	}
+
+	// set defaults
+	if Cfg.WorkerToken == "" {
+		Cfg.WorkerToken = uuid.NewV4().String()
+		viper.Set("workerToken", Cfg.WorkerToken)
+		err = viper.WriteConfig()
+		if err != nil {
+			log.Warn("Can't write out config ", err)
+		}
 	}
 }
 
@@ -80,6 +92,16 @@ type Config struct {
 		PwrCrtlAuth string `yaml:"pwrCrtlAuth"`
 		CamAuth     string `yaml:"camAuth"`
 	} `yaml:"auths"`
+	Alerts *struct {
+		Matrix *struct {
+			Username   string `yaml:"username"`
+			Password   string `yaml:"password"`
+			Homeserver string `yaml:"homeserver"`
+			RoomID     string `yaml:"roomId"`
+		} `yaml:"matrix"`
+	} `yaml:"alerts"`
 	IngestBase        string `yaml:"ingestBase"`
+	WebUrl            string `yaml:"webUrl"`
 	CookieStoreSecret string `yaml:"cookieStoreSecret"`
+	WorkerToken       string `yaml:"workerToken"` // used for workers to join the worker pool
 }

@@ -18,9 +18,19 @@ func AddMessage(chat *model.Chat) error {
 	return DB.Save(chat).Error
 }
 
+// ApproveChat sets the attribute 'visible' to true
+func ApproveChat(id uint) error {
+	return DB.Model(&model.Chat{}).Where("id = ?", id).Updates(map[string]interface{}{"visible": true}).Error
+}
+
 // DeleteChat removes a chat with the given id from the database.
 func DeleteChat(id uint) error {
 	return DB.Model(&model.Chat{}).Delete(&model.Chat{}, id).Error
+}
+
+// ResolveChat sets the attribute resolved of chat with the given id to true
+func ResolveChat(id uint) error {
+	return DB.Model(&model.Chat{}).Where("id = ?", id).Update("resolved", true).Error
 }
 
 // ToggleLike adds a like to a message from the user if it doesn't exist, or removes it if it does
@@ -43,10 +53,35 @@ func GetNumLikes(chatID uint) (int64, error) {
 	return numLikes, err
 }
 
-// GetChats returns all chats for the stream with the given ID. Number of likes are inserted and the user's like status is determined
-func GetChats(userID uint, streamID uint) ([]model.Chat, error) {
+// GetVisibleChats returns all visible chats for the stream with the given ID
+// or sent by user with id 'userID'
+// Number of likes are inserted and the user's like status is determined
+func GetVisibleChats(userID uint, streamID uint) ([]model.Chat, error) {
 	var chats []model.Chat
-	err := DB.Preload("Replies").Preload("UserLikes").Find(&chats, "stream_id = ?", streamID).Error
+	query := DB.Preload("Replies").Preload("UserLikes")
+	query.Where("(visible = 1) OR (user_id = ?)", userID).Find(&chats, "stream_id = ?", streamID)
+	err := query.Error
+	if err != nil {
+		return nil, err
+	}
+	for i := range chats {
+		chats[i].Likes = len(chats[i].UserLikes)
+		for j := range chats[i].UserLikes {
+			if chats[i].UserLikes[j].ID == userID {
+				chats[i].Liked = true
+				break
+			}
+		}
+	}
+	return chats, nil
+}
+
+// GetAllChats returns all chats for the stream with the given ID
+// Number of likes are inserted and the user's like status is determined
+func GetAllChats(userID uint, streamID uint) ([]model.Chat, error) {
+	var chats []model.Chat
+	query := DB.Preload("Replies").Preload("UserLikes").Find(&chats, "stream_id = ?", streamID)
+	err := query.Error
 	if err != nil {
 		return nil, err
 	}

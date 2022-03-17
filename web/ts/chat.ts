@@ -114,10 +114,10 @@ export function hideDisconnectedMsg() {
     }
 }
 
-export function openChatPopUp() {
+export function openChatPopUp(courseSlug: string, streamID: number) {
     const height = window.innerHeight * 0.8;
     window.open(
-        "chat/popup", // relative path to caller url
+        `/w/${courseSlug}/${streamID}/chat/popup`,
         "_blank",
         `popup=yes,width=420,innerWidth=420,height=${height},innerHeight=${height}`,
     );

@@ -3,6 +3,7 @@ package api
 import (
 	"TUM-Live/dao"
 	"TUM-Live/tools"
+	"TUM-Live/tools/bot"
 	"errors"
 	"fmt"
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
@@ -28,6 +29,7 @@ func configGinStreamRestRouter(router *gin.Engine) {
 	g.GET("/api/stream/:streamID", getStream)
 	g.GET("/api/stream/:streamID/pause", pauseStream)
 	g.GET("/api/stream/:streamID/end", endStream)
+	g.GET("/api/stream/:streamID/issue", reportStreamIssue)
 }
 
 type liveStreamDto struct {
@@ -127,6 +129,50 @@ func pauseStream(c *gin.Context) {
 		log.WithError(err).Error("Pause: Can't save stream")
 	} else {
 		notifyViewersPause(stream.ID, pause)
+	}
+}
+
+// reportStreamIssue sends a notification to a matrix room that can be used for debugging technical issues.
+func reportStreamIssue(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	stream := tumLiveContext.Stream
+	// Check if stream starts today
+	if stream.Start.Truncate(time.Hour*24) != time.Now().Truncate(time.Hour*24) {
+		sentry.CaptureException(errors.New("tried to send report for stream that is not active today"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
+	if err != nil {
+		sentry.CaptureException(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+	course, err := dao.GetCourseById(c, stream.CourseID)
+	if err != nil {
+		sentry.CaptureException(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+	streamUrl := tools.Cfg.WebUrl + "/w/" + course.Slug + "/" + fmt.Sprintf("%d", stream.ID)
+	botInfo := bot.InfoMessage{
+		CourseName:  course.Name,
+		LectureHall: lectureHall.Name,
+		StreamUrl:   streamUrl,
+		CombIP:      lectureHall.CombIP,
+		CameraIP:    lectureHall.CameraIP,
+	}
+	// Set messaging strategy as specified in strategy pattern
+	botInfo.SetMessagingMethod(&bot.Matrix{})
+	err = botInfo.BotUpdate(botInfo)
+
+	if err != nil {
+		sentry.CaptureException(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }
 

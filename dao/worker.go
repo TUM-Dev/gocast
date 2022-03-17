@@ -13,6 +13,10 @@ func SaveWorker(worker model.Worker) error {
 	return DB.Save(&worker).Error
 }
 
+func DeleteWorker(workerID string) error {
+	return DB.Where("worker_id = ?", workerID).Delete(&model.Worker{}).Error
+}
+
 func GetAllWorkers() ([]model.Worker, error) {
 	var workers []model.Worker
 	err := DB.Find(&workers).Error
@@ -24,6 +28,12 @@ func GetAliveWorkers() []model.Worker {
 	var workers []model.Worker
 	DB.Model(&model.Worker{}).Where("last_seen > DATE_SUB(NOW(), INTERVAL 5 MINUTE)").Scan(&workers)
 	return workers
+}
+
+func GetWorkerByHostname(ctx context.Context, hostname string) (model.Worker, error) {
+	var worker model.Worker
+	err := DB.Where("host = ?", hostname).First(&worker).Error
+	return worker, err
 }
 
 func GetWorkerByID(ctx context.Context, workerID string) (model.Worker, error) {
