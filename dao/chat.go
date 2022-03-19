@@ -104,7 +104,7 @@ func GetActivePoll(streamID uint) (model.Poll, error) {
 	return activePoll, err
 }
 
-// GetActivePoll closes poll for the stream with the given ID.
+// CloseActivePoll closes poll for the stream with the given ID.
 func CloseActivePoll(streamID uint) error {
 	return DB.Table("polls").Where("stream_id = ? AND active = true", streamID).Update("active", false).Error
 }
