@@ -64,6 +64,8 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			handleStartPoll(tumLiveContext, msg)
 		case "submit_poll_option_vote":
 			handleSubmitPollOptionVote(tumLiveContext, msg)
+		case "close_active_poll":
+			handleCloseActivePoll(tumLiveContext)
 		case "resolve":
 			handleResolve(tumLiveContext, msg)
 		case "approve":
@@ -130,11 +132,7 @@ func handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
 
 	var pollOptionsJson []gin.H
 	for _, option := range poll.PollOptions {
-		pollOptionsJson = append(pollOptionsJson, gin.H{
-			"ID":     option.ID,
-			"answer": option.Answer,
-			"votes":  0,
-		})
+		pollOptionsJson = append(pollOptionsJson, option.GetStatsMap(0))
 	}
 
 	pollMap := gin.H{
@@ -145,6 +143,36 @@ func handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
 	}
 	if pollJson, err := json.Marshal(pollMap); err == nil {
 		broadcastStream(ctx.Stream.ID, pollJson)
+	}
+}
+
+func handleCloseActivePoll(ctx tools.TUMLiveContext) {
+	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
+		return
+	}
+
+	poll, err := dao.GetActivePoll(ctx.Stream.ID)
+	if err != nil {
+		return
+	}
+
+	if err = dao.CloseActivePoll(ctx.Stream.ID); err != nil {
+		return
+	}
+
+	var pollOptions []gin.H
+	for _, option := range poll.PollOptions {
+		voteCount, _ := dao.GetPollOptionVoteCount(option.ID)
+		pollOptions = append(pollOptions, option.GetStatsMap(voteCount))
+	}
+
+	statsMap := gin.H{
+		"question":          poll.Question,
+		"pollOptionResults": pollOptions,
+	}
+
+	if statsJson, err := json.Marshal(statsMap); err == nil {
+		broadcastStream(ctx.Stream.ID, statsJson)
 	}
 }
 
@@ -374,11 +402,7 @@ func getActivePoll(c *gin.Context) {
 			voteCount, _ = dao.GetPollOptionVoteCount(option.ID)
 		}
 
-		pollOptions = append(pollOptions, gin.H{
-			"ID":     option.ID,
-			"answer": option.Answer,
-			"votes":  voteCount,
-		})
+		pollOptions = append(pollOptions, option.GetStatsMap(voteCount))
 	}
 
 	c.JSON(http.StatusOK, gin.H{
