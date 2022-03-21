@@ -57,10 +57,12 @@ export class CourseAdminManagement {
         fetch(`/api/course/${this.courseId}/admins/${id}`, { method: "DELETE" })
             .then((response) => response.json() as Promise<User>)
             .then((user) => {
-                this.users = this.users.filter((u) => u.id !== user.id);
+                if (id === this.userId) {
+                    // user is no longer admin of the course, redirect them to the start page
+                    window.location.href = "/";
+                } else {
+                    this.users = this.users.filter((u) => u.id !== user.id);
+                }
             });
-        if (id === this.userId) {
-            window.location.href = "/";
-        }
     }
 }

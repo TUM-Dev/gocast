@@ -211,13 +211,8 @@ func AdminOfCourse(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	if tumLiveContext.User.Role == model.AdminType || tumLiveContext.User.Model.ID == tumLiveContext.Course.UserID {
-		return // user is admin or owner of course
-	}
-	for _, course := range tumLiveContext.User.AdministeredCourses {
-		if course.ID == tumLiveContext.Course.ID {
-			return // user is admin of course
-		}
+	if tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course) {
+		return
 	}
 	c.AbortWithStatus(http.StatusForbidden) // user is not admin of course
 }
@@ -278,5 +273,5 @@ type TUMLiveContext struct {
 }
 
 func (c *TUMLiveContext) UserIsAdmin() bool {
-	return c.User != nil && (c.User.Role == model.AdminType || c.User.ID == c.Course.UserID)
+	return c.User.IsAdminOfCourse(*c.Course)
 }

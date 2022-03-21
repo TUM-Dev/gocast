@@ -38,7 +38,7 @@ func GetCourseForLecturerIdByYearAndTerm(c context.Context, year int, term strin
 	return res, err
 }
 
-func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Course, err error) {
+func GetAdministeredCoursesByUserId(ctx context.Context, userid uint) (courses []model.Course, err error) {
 	cachedCourses, found := Cache.Get(fmt.Sprintf("coursesByUserID%v", userid))
 	if found {
 		return cachedCourses.([]model.Course), nil
@@ -48,6 +48,7 @@ func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Cours
 		return nil, err
 	}
 	var foundCourses []model.Course
+	// all courses for admins
 	if isAdmin {
 		dbErr := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
 			return db.Order("start asc")
@@ -60,6 +61,18 @@ func GetCoursesByUserId(ctx context.Context, userid uint) (courses []model.Cours
 	dbErr := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start asc")
 	}).Find(&foundCourses, "user_id = ?", userid).Error
+
+	if err != nil && errors.Is(dbErr, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	var administeredCourses []model.Course
+	err = DB.Raw("SELECT * FROM courses JOIN course_admins ON courses.id = course_admins.course_id WHERE course_admins.user_id = ?", userid).Scan(&administeredCourses).Error
+	if err != nil {
+		return nil, err
+	}
+	foundCourses = append(foundCourses, administeredCourses...)
+
 	if dbErr == nil {
 		Cache.SetWithTTL(fmt.Sprintf("coursesByUserID%v", userid), foundCourses, 1, time.Minute)
 	}
@@ -251,10 +264,12 @@ func GetCourseAdmins(courseID uint) ([]model.User, error) {
 }
 
 func AddAdminToCourse(userID uint, courseID uint) error {
+	defer Cache.Clear()
 	return DB.Exec("insert into course_admins (user_id, course_id) values (?, ?)", userID, courseID).Error
 }
 
 func RemoveAdminFromCourse(userID uint, courseID uint) error {
+	defer Cache.Clear()
 	return DB.Exec("delete from course_admins where user_id = ? and course_id = ?", userID, courseID).Error
 }
 

@@ -196,7 +196,7 @@ func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte
 		replyTo.Valid = true
 	}
 
-	isAdmin := ctx.User.ID == ctx.Course.UserID
+	isAdmin := ctx.User.IsAdminOfCourse(*ctx.Course)
 
 	isVisible := sql.NullBool{Valid: true, Bool: true}
 	if ctx.Course.ModeratedChatEnabled && !isAdmin {

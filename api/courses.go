@@ -267,7 +267,7 @@ func lectureHallsByID(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	if tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.ID != course.UserID {
+	if !tumLiveContext.User.IsAdminOfCourse(course) {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}

@@ -43,6 +43,11 @@ type argonParams struct {
 
 // IsAdminOfCourse checks if the user is an admin of the course
 func (u *User) IsAdminOfCourse(course Course) bool {
+	for _, c := range u.AdministeredCourses {
+		if c.ID == course.ID {
+			return true
+		}
+	}
 	return u.Role == AdminType || course.UserID == u.ID
 }
 
@@ -55,12 +60,7 @@ func (u *User) IsEligibleToWatchCourse(course Course) bool {
 			return true
 		}
 	}
-	for _, admCourse := range u.AdministeredCourses {
-		if admCourse.ID == course.ID {
-			return true
-		}
-	}
-	return u.Role == AdminType || u.ID == course.UserID
+	return u.IsAdminOfCourse(course)
 }
 
 func (u *User) CoursesForSemester(year int, term string, context context.Context) []Course {
