@@ -65,6 +65,15 @@
                         {{if not .}}checked{{end}}>
                 <span class="ml-2">Allow Anonymous Messages</span>
             </label>
+            <label class="inline-flex items-center pl-2" for="enChatMod">
+                <input :disabled="!enChat"
+                       class="w-auto form-checkbox"
+                       id="enChatMod" name="enChatMod"
+                       type="checkbox"
+                        {{if and . .ModeratedChatEnabled}}checked{{end}}
+                        {{if not .}}checked{{end}}>
+                <span class="ml-2">Enable Moderate Chat</span>
+            </label>
         </div>
     </div>
 {{end}}
