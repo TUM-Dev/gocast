@@ -242,7 +242,7 @@ input[type='checkbox']:checked + label {
 
 .theater-mode {
     height: calc((9 / 16) * 100vw) !important;
-    max-height: calc(100vh - 169px) !important;
+    max-height: calc(100vh - 200px) !important;
 }
 
 /* don't ask */

@@ -42,7 +42,7 @@ func editCourseByTokenPage(c *gin.Context) {
 func HighlightPage(c *gin.Context) {
 	course, err := dao.GetCourseByShortLink(c.Param("shortLink"))
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		tools.RenderErrorPage(c, http.StatusNotFound, tools.PageNotFoundErrMsg)
 		return
 	}
 	indexData := NewIndexData()

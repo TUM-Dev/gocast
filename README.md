@@ -44,7 +44,7 @@ In `/etc/hosts` add this:
 
 ### Get go running locally
 
-- Install go1.17
+- Install go 1.18
 - Preferably use Jetbrains GoLand and open this project
 - Edit Configuration > Environment 
   - Add environment variables from `variables-backend.example.env`.
