@@ -1,11 +1,5 @@
-import {
-    hideDisconnectedMsg,
-    scrollChat,
-    shouldScroll,
-    showDisconnectedMsg,
-    showNewMessageIndicator,
-    NewChatMessage,
-} from "./chat";
+import { hideDisconnectedMsg, scrollChat, shouldScroll, showDisconnectedMsg, showNewMessageIndicator } from "./chat";
+import { NewChatMessage } from "./chat/NewChatMessage";
 
 let chatInput: HTMLInputElement;
 
