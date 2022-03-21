@@ -3,11 +3,13 @@ import { getCurrentWordPositions } from "./misc";
 export class ChatUserList {
     subset: object[];
     streamId: number;
+    currIndex: number;
     private all: object[];
 
     constructor(streamId: number) {
         this.all = this.subset = [];
         this.streamId = streamId;
+        this.currIndex = 0;
     }
 
     async LoadAll(): Promise<object[]> {
@@ -41,5 +43,24 @@ export class ChatUserList {
             // @ts-ignore
             this.subset = this.all.filter((user) => user.name.startsWith(input));
         }
+
+        this.currIndex = 0; // reset index on show
+        setTimeout(() => {
+            document.getElementById("chatInput").blur();
+            document.getElementById("userList").focus();
+        }, 100); // wait until alpine has shown the userList element
+    }
+
+    next() {
+        this.currIndex = (this.currIndex + 1) % this.subset.length;
+    }
+
+    prev() {
+        this.currIndex = (this.currIndex - 1) % this.subset.length;
+    }
+
+    getSelected() {
+        console.log("hello");
+        return this.subset[this.currIndex];
     }
 }

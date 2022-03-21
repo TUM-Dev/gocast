@@ -19,7 +19,10 @@ export class Chat {
             if (m.addressedTo.find((uId) => uId === this.userId) !== undefined) {
                 m.message = m.message.replaceAll(
                     "@" + this.userName,
-                    "<span class = 'text-sky-800 bg-sky-200 text-xs p-1 rounded'>" + "@" + this.userName + "</span>",
+                    "<span class = 'text-sky-800 bg-sky-200 text-xs dark:text-indigo-800 dark:bg-indigo-200 p-1 rounded'>" +
+                        "@" +
+                        this.userName +
+                        "</span>",
                 );
             }
             return m;

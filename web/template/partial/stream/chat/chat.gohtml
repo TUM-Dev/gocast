@@ -61,22 +61,30 @@
                   x-on:sendmessage.window="c.current.send()"
                   @submit.prevent="c.current.send()">
                 <div class="w-full">
-                    <div :class="c.users.isValid() && 'shadow rounded-lg border dark:border-gray-800 pt-1 px-1'">
+                    <div class='p-1' :class="c.users.isValid() && 'shadow rounded-lg border dark:border-gray-800'">
                         <!-- @-userlist -->
-                        <div x-show="c.users.isValid()" class='w-full bg-white dark:bg-secondary py-2'>
-                            <template x-for="user in c.users.subset">
+                        <div id="userList" x-show="c.users.isValid()"
+                             tabindex="0"
+                             class='w-full bg-white dark:bg-secondary p-1 space-y-1 focus-visible:outline-none'
+                             @keyup.down="c.users.next()"
+                             @keyup.up="c.users.prev()"
+                             @keyup.enter="c.current.addAddressee(c.users.getSelected()); c.users.subset=[]">
+                            <template x-for="(user, i) in c.users.subset">
                                 <div @click="c.current.addAddressee(user); c.users.subset=[]"
-                                     class="flex p-2 rounded hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                                     @mouseover="c.users.currIndex = i;"
+                                     class="flex justify-between p-2 rounded hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                                     :class="c.users.currIndex === i && 'bg-gray-100 dark:bg-gray-600'">
                                     <span class="font-semibold text-3 text-xs my-auto" x-text="user.name"></span>
+                                    <span x-show="c.users.currIndex === i"
+                                          class="px-1 text-xs rounded text-3 bg-gray-200 dark:bg-gray-500">&#9166;</span>
                                 </div>
                             </template>
                         </div>
 
                         <!-- input -->
-                        <div class="flex my-auto mb-1 bg-gray-200 rounded-lg border-2 border-transparent dark:bg-gray-600
+                        <div class="flex my-auto bg-gray-200 rounded-lg border-2 border-transparent dark:bg-gray-600
                                     focus-within:border-sky-600
-                                    focus-within:bg-white"
-                             :class="c.users.isValid() || 'mx-1'">
+                                    dark:focus-within:border-indigo-600">
                             {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
                                 <input type="checkbox" name="anonymous" id="anonymous" class="hidden"
                                        x-model="c.current.anonymous">
