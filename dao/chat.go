@@ -20,6 +20,14 @@ func AddMessage(chat *model.Chat) error {
 	return nil
 }
 
+func GetChatUsers(streamid uint) ([]model.User, error) {
+	var users []model.User
+	query := DB.Model(&model.User{}).Select("distinct users.*").Joins("join chats c on c.user_id = users.id")
+	query.Where("c.stream_id = ?", streamid)
+	err := query.Scan(&users).Error
+	return users, err
+}
+
 // ApproveChat sets the attribute 'visible' to true
 func ApproveChat(id uint) error {
 	return DB.Model(&model.Chat{}).Where("id = ?", id).Updates(map[string]interface{}{"visible": true}).Error

@@ -26,7 +26,7 @@ const (
 )
 
 type sessionWrapper struct {
-	session *melody.Session
+	session         *melody.Session
 	isAdminOfCourse bool
 }
 
@@ -56,7 +56,6 @@ var connHandler = func(s *melody.Session) {
 	var uid uint = 0
 	if tumLiveContext.User != nil {
 		uid = tumLiveContext.User.ID
-		userStorage.Add(tumLiveContext.User)
 	}
 	if tumLiveContext.Course.ChatEnabled {
 		sendServerMessageWithBackoff(s, uid, tumLiveContext.Stream.ID, "Welcome to the chatroom! Please be nice to each other and stay on topic if you want this feature to stay active.", TypeServerInfo)
@@ -64,17 +63,6 @@ var connHandler = func(s *melody.Session) {
 	if !tumLiveContext.Course.AnonymousChatEnabled && tumLiveContext.Course.ChatEnabled {
 		sendServerMessageWithBackoff(s, uid, tumLiveContext.Stream.ID, "The broadcaster disabled anonymous messaging for this stream.", TypeServerWarn)
 	}
-}
-
-var disconnectHandler = func(s *melody.Session) {
-	ctx, _ := s.Get("ctx") // get gin context
-	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	userStorage.Remove(tumLiveContext.User)
 }
 
 // sendServerMessageWithBackoff sends a message to the client(if it didn't send a message to this user in the last 10 Minutes and the client is logged in)
@@ -154,7 +142,7 @@ func broadcastStreamToAdmins(streamID uint, msg []byte) {
 }
 
 // removeClosed removes session where IsClosed() is true.
-func removeClosed(sessions []*sessionWrapper) []*sessionWrapper{
+func removeClosed(sessions []*sessionWrapper) []*sessionWrapper {
 	var newSessions []*sessionWrapper
 	for _, wrapper := range sessions {
 		if !wrapper.session.IsClosed() {

@@ -4,7 +4,6 @@ import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
-	. "TUM-Live/tools/chatuserstorage"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -20,7 +19,6 @@ import (
 )
 
 var m *melody.Melody
-var userStorage UserStorage
 
 const maxParticipants = 10000
 
@@ -34,10 +32,8 @@ func configGinChatRouter(router *gin.RouterGroup) {
 		log.Printf("creating melody")
 		m = melody.New()
 	}
-	userStorage = InitChatUserStorage()
 
 	m.HandleConnect(connHandler)
-	m.HandleDisconnect(disconnectHandler)
 
 	m.HandleMessage(func(s *melody.Session, msg []byte) {
 		ctx, _ := s.Get("ctx") // get gin context
@@ -209,14 +205,14 @@ func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte
 		isVisible.Bool = false
 	}
 	chatForDb := model.Chat{
-		UserID:    strconv.Itoa(int(ctx.User.ID)),
-		UserName:  uname,
-		Message:   chat.Msg,
-		StreamID:  ctx.Stream.ID,
-		Admin:     isAdmin,
-		ReplyTo:   replyTo,
-		Visible:   isVisible,
-		IsVisible: isVisible.Bool,
+		UserID:         strconv.Itoa(int(ctx.User.ID)),
+		UserName:       uname,
+		Message:        chat.Msg,
+		StreamID:       ctx.Stream.ID,
+		Admin:          isAdmin,
+		ReplyTo:        replyTo,
+		Visible:        isVisible,
+		IsVisible:      isVisible.Bool,
 		AddressedToIds: chat.AddressedTo,
 	}
 	chatForDb.SanitiseMessage()
@@ -268,12 +264,17 @@ func getMessages(c *gin.Context) {
 }
 
 func getUsers(c *gin.Context) {
-	_, exists := c.Get("TUMLiveContext")
+	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	users := userStorage.GetAll()
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	users, err := dao.GetChatUsers(tumLiveContext.Stream.ID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
 	c.JSON(http.StatusOK, users)
 }
 
