@@ -67,7 +67,6 @@ export class EmojiList {
         }).slice(0, 7);
     }
 
-
     private insertEmoji(emoji: Emoji) {
         const chatInput: HTMLInputElement = document.getElementById("chatInput") as HTMLInputElement;
         const pos = getCurrentWordPositions(chatInput.value, chatInput.selectionStart);
