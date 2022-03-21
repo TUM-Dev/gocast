@@ -195,3 +195,11 @@ func generateRandomBytes(n uint32) ([]byte, error) {
 
 	return b, nil
 }
+
+// GetLoginString returns the email if it is set, otherwise the lrzID
+func (u *User) GetLoginString() string {
+	if u.Email.String != "" {
+		return u.Email.String
+	}
+	return u.LrzID
+}

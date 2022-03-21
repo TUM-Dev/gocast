@@ -206,6 +206,11 @@ func AdminOfCourse(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(TUMLiveContext)
+	if tumLiveContext.User == nil {
+		c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
+		c.Abort()
+		return
+	}
 	if tumLiveContext.User.Role == model.AdminType || tumLiveContext.User.Model.ID == tumLiveContext.Course.UserID {
 		return // user is admin or owner of course
 	}

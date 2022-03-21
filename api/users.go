@@ -27,6 +27,10 @@ func configGinUsersRouter(router *gin.Engine) {
 	admins.GET("/searchUser", SearchUser)
 	admins.POST("/users/update", updateUser)
 
+	lecturers := router.Group("/api")
+	lecturers.Use(tools.AtLeastLecturer)
+	lecturers.GET("/searchUserForCourse", SearchUserForCourse)
+
 	courseAdmins := router.Group("/api/course/:courseID")
 	courseAdmins.Use(tools.InitCourse)
 	courseAdmins.Use(tools.AdminOfCourse)
@@ -56,18 +60,43 @@ func updateUser(c *gin.Context) {
 	}
 }
 
-func SearchUser(c *gin.Context) {
+func prepareUserSearch(c *gin.Context) (users []model.User, err error) {
 	q := c.Query("q")
 	reg, _ := regexp.Compile("[^a-zA-Z0-9 ]+")
 	q = reg.ReplaceAllString(q, "")
-	log.Println("Searching for user: ", q)
 	if len(q) < 3 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "query too short"})
-		return
+		return nil, errors.New("query too short")
 	}
-	users, err := dao.SearchUser(q)
+	users, err = dao.SearchUser(q)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		c.AbortWithStatus(http.StatusInternalServerError)
+		return nil, err
+	}
+	return users, nil
+}
+
+func SearchUserForCourse(c *gin.Context) {
+	users, err := prepareUserSearch(c)
+	if err != nil {
+		return
+	}
+	res := make([]userForLecturerDto, len(users))
+
+	for i, user := range users {
+		res[i] = userForLecturerDto{
+			ID:    user.ID,
+			Name:  user.Name,
+			Login: user.GetLoginString(),
+		}
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func SearchUser(c *gin.Context) {
+	users, err := prepareUserSearch(c)
+	if err != nil {
+		return
 	}
 	res := make([]userSearchDTO, len(users))
 	for i, user := range users {
@@ -85,6 +114,12 @@ func SearchUser(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, res)
+}
+
+type userForLecturerDto struct {
+	ID    uint   `json:"id,omitempty"`
+	Name  string `json:"name,omitempty"`
+	Login string `json:"login,omitempty"`
 }
 
 type userSearchDTO struct {
