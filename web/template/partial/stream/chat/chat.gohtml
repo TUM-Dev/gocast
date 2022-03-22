@@ -63,16 +63,21 @@
                 <div class="w-full">
                     <div class='p-1' :class="c.users.isValid() && 'shadow rounded-lg border dark:border-gray-800'">
                         <!-- @-userlist -->
+                        <template x-if="c.users.isValid() && c.users.subset.length === 0">
+                            <p class="text-center py-1 font-semibold text-xs text-3">No users found.</p>
+                        </template>
                         <div id="userList" x-show="c.users.isValid()"
                              tabindex="0"
-                             class='w-full bg-white dark:bg-secondary p-1 space-y-1 focus-visible:outline-none'
+                             class='w-full bg-white dark:bg-secondary py-1 space-y-1 focus-visible:outline-none'
                              @keyup.down="c.users.next()"
                              @keyup.up="c.users.prev()"
-                             @keyup.enter="c.current.addAddressee(c.users.getSelected()); c.users.subset=[]">
+                             @keyup.enter="c.current.addAddressee(c.users.getSelected()); c.users.clear()"
+                             @keyup="(e) => c.users.onKeyUp(e);">
+
                             <template x-for="(user, i) in c.users.subset">
-                                <div @click="c.current.addAddressee(user); c.users.subset=[]"
+                                <div @click="c.current.addAddressee(user); c.users.clear()"
                                      @mouseover="c.users.currIndex = i;"
-                                     class="flex justify-between p-2 rounded hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                                     class="flex justify-between p-2 rounded hover:cursor-pointer"
                                      :class="c.users.currIndex === i && 'bg-gray-100 dark:bg-gray-600'">
                                     <span class="font-semibold text-3 text-xs my-auto" x-text="user.name"></span>
                                     <span x-show="c.users.currIndex === i"

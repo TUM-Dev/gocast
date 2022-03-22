@@ -23,8 +23,11 @@ func AddMessage(chat *model.Chat) error {
 func GetChatUsers(streamid uint) ([]model.User, error) {
 	var users []model.User
 	query := DB.Model(&model.User{}).Select("distinct users.*").Joins("join chats c on c.user_id = users.id")
-	query.Where("c.stream_id = ?", streamid)
+	query.Where("c.stream_id = ? AND c.user_name <> ?", streamid, "Anonymous")
 	err := query.Scan(&users).Error
+	if users == nil { // If no messages have been sent
+		users = []model.User{}
+	}
 	return users, err
 }
 
