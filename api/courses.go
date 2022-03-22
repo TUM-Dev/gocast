@@ -59,7 +59,7 @@ func removeAdminFromCourse(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 
-	userID, err := strconv.ParseUint(c.Param("userID"), 10, 64)
+	userID, err := strconv.ParseUint(c.Param("userID"), 10, 32)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
@@ -108,7 +108,7 @@ func addAdminToCourse(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	id := c.Param("userID")
-	idUint, err := strconv.ParseUint(id, 10, 64)
+	idUint, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
