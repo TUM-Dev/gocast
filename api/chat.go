@@ -58,10 +58,41 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			handleLike(tumLiveContext, msg)
 		case "delete":
 			handleDelete(tumLiveContext, msg)
+		case "resolve":
+			handleResolve(tumLiveContext, msg)
+		case "approve":
+			handleApprove(tumLiveContext, msg)
 		default:
 			log.WithField("type", req.Type).Warn("unknown websocket request type")
 		}
 	})
+}
+
+func handleResolve(ctx tools.TUMLiveContext, msg []byte) {
+	var req resolveReq
+	err := json.Unmarshal(msg, &req)
+	if err != nil {
+		log.WithError(err).Warn("could not unmarshal message delete request")
+		return
+	}
+	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
+		return
+	}
+
+	err = dao.ResolveChat(req.Id)
+	if err != nil {
+		log.WithError(err).Error("could not delete chat")
+	}
+
+	broadcast := gin.H{
+		"resolve": req.Id,
+	}
+	broadcastBytes, err := json.Marshal(broadcast)
+	if err != nil {
+		log.WithError(err).Error("could not marshal delete message")
+		return
+	}
+	broadcastStream(ctx.Stream.ID, broadcastBytes)
 }
 
 func handleDelete(ctx tools.TUMLiveContext, msg []byte) {
@@ -84,6 +115,31 @@ func handleDelete(ctx tools.TUMLiveContext, msg []byte) {
 	broadcastBytes, err := json.Marshal(broadcast)
 	if err != nil {
 		log.WithError(err).Error("could not marshal delete message")
+		return
+	}
+	broadcastStream(ctx.Stream.ID, broadcastBytes)
+}
+
+func handleApprove(ctx tools.TUMLiveContext, msg []byte) {
+	var req approveReq
+	err := json.Unmarshal(msg, &req)
+	if err != nil {
+		log.WithError(err).Warn("could not unmarshal message approve request")
+		return
+	}
+	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
+		return
+	}
+	err = dao.ApproveChat(req.Id)
+	if err != nil {
+		log.WithError(err).Error("could not approve chat")
+	}
+	broadcast := gin.H{
+		"approve": req.Id,
+	}
+	broadcastBytes, err := json.Marshal(broadcast)
+	if err != nil {
+		log.WithError(err).Error("could not marshal approve message")
 		return
 	}
 	broadcastStream(ctx.Stream.ID, broadcastBytes)
@@ -139,13 +195,22 @@ func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte
 		replyTo.Int64 = chat.ReplyTo
 		replyTo.Valid = true
 	}
+
+	isAdmin := ctx.User.ID == ctx.Course.UserID
+
+	isVisible := sql.NullBool{Valid: true, Bool: true}
+	if ctx.Course.ModeratedChatEnabled && !isAdmin {
+		isVisible.Bool = false
+	}
 	chatForDb := model.Chat{
-		UserID:   strconv.Itoa(int(ctx.User.ID)),
-		UserName: uname,
-		Message:  chat.Msg,
-		StreamID: ctx.Stream.ID,
-		Admin:    ctx.User.ID == ctx.Course.UserID,
-		ReplyTo:  replyTo,
+		UserID:    strconv.Itoa(int(ctx.User.ID)),
+		UserName:  uname,
+		Message:   chat.Msg,
+		StreamID:  ctx.Stream.ID,
+		Admin:     isAdmin,
+		ReplyTo:   replyTo,
+		Visible:   isVisible,
+		IsVisible: isVisible.Bool,
 	}
 	chatForDb.SanitiseMessage()
 	err := dao.AddMessage(&chatForDb)
@@ -155,8 +220,14 @@ func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte
 		}
 		return
 	}
-	if broadcast, err := json.Marshal(chatForDb); err == nil {
-		broadcastStream(ctx.Stream.ID, broadcast)
+
+	if msg, err := json.Marshal(chatForDb); err == nil {
+		if ctx.Course.ModeratedChatEnabled && !isAdmin {
+			_ = session.Write(msg)                      // send message back to sender
+			broadcastStreamToAdmins(ctx.Stream.ID, msg) // send message to course admins
+		} else {
+			broadcastStream(ctx.Stream.ID, msg)
+		}
 	}
 }
 
@@ -167,11 +238,21 @@ func getMessages(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
+
+	isAdmin := false
 	var uid uint = 0 // 0 = not logged in. -> doesn't match a user
 	if tumLiveContext.User != nil {
 		uid = tumLiveContext.User.ID
+		isAdmin = tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course)
 	}
-	chats, err := dao.GetChats(uid, tumLiveContext.Stream.ID)
+
+	var err error
+	var chats []model.Chat
+	if isAdmin {
+		chats, err = dao.GetAllChats(uid, tumLiveContext.Stream.ID)
+	} else {
+		chats, err = dao.GetVisibleChats(uid, tumLiveContext.Stream.ID)
+	}
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -196,6 +277,16 @@ type likeReq struct {
 }
 
 type deleteReq struct {
+	wsReq
+	Id uint `json:"id"`
+}
+
+type resolveReq struct {
+	wsReq
+	Id uint `json:"id"`
+}
+
+type approveReq struct {
 	wsReq
 	Id uint `json:"id"`
 }

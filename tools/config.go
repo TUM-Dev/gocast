@@ -92,7 +92,16 @@ type Config struct {
 		PwrCrtlAuth string `yaml:"pwrCrtlAuth"`
 		CamAuth     string `yaml:"camAuth"`
 	} `yaml:"auths"`
+	Alerts *struct {
+		Matrix *struct {
+			Username   string `yaml:"username"`
+			Password   string `yaml:"password"`
+			Homeserver string `yaml:"homeserver"`
+			RoomID     string `yaml:"roomId"`
+		} `yaml:"matrix"`
+	} `yaml:"alerts"`
 	IngestBase        string `yaml:"ingestBase"`
+	WebUrl            string `yaml:"webUrl"`
 	CookieStoreSecret string `yaml:"cookieStoreSecret"`
 	WorkerToken       string `yaml:"workerToken"` // used for workers to join the worker pool
 }

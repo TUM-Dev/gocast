@@ -8,11 +8,19 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
+	"html/template"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 )
+
+var templ *template.Template
+
+// SetTemplates sets the templates for the middlewares to execute error pages
+func SetTemplates(t *template.Template) {
+	templ = t
+}
 
 func InitContext(c *gin.Context) {
 	// no context initialisation required for static assets.
@@ -39,6 +47,37 @@ func InitContext(c *gin.Context) {
 	c.Set("TUMLiveContext", TUMLiveContext{})
 }
 
+// RenderErrorPage renders the error page with the given error code and message.
+// the gin context is always aborted after this function is called.
+func RenderErrorPage(c *gin.Context, status int, message string) {
+	err := templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{
+		Status:  status,
+		Message: message,
+	})
+	if err != nil {
+		log.Error(err)
+	}
+	c.Abort()
+}
+
+//ErrorPageData is the required data for the error page
+type ErrorPageData struct {
+	Status  int
+	Message string
+}
+
+const (
+	PageNotFoundErrMsg     = "This page does not exist."
+	CourseNotFoundErrMsg   = "We couldn't find the course you were looking for."
+	StreamNotFoundErrMsg   = "We couldn't find the stream you were looking for."
+	ForbiddenGenericErrMsg = "You don't have permissions to access this resource. " +
+		"Please reach out if this seems wrong :)"
+	ForbiddenStreamAccess = "You don't have permissions to access this stream. " +
+		"Please make sure to use the correct login."
+	ForbiddenCourseAccess = "You don't have permissions to access this course. " +
+		"Please make sure to use the correct login."
+)
+
 func InitCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
@@ -57,7 +96,8 @@ func InitCourse(c *gin.Context) {
 		}
 		foundCourse, err := dao.GetCourseById(c, uint(cIDInt))
 		if err != nil {
-			c.AbortWithStatus(http.StatusNotFound)
+			c.Status(http.StatusNotFound)
+			RenderErrorPage(c, http.StatusNotFound, CourseNotFoundErrMsg)
 		} else {
 			course = foundCourse
 		}
@@ -70,12 +110,14 @@ func InitCourse(c *gin.Context) {
 		}
 		foundCourse, err := dao.GetCourseBySlugYearAndTerm(c, c.Param("slug"), c.Param("teachingTerm"), yInt)
 		if err != nil {
-			c.AbortWithStatus(http.StatusNotFound)
+			c.Status(http.StatusNotFound)
+			RenderErrorPage(c, http.StatusNotFound, CourseNotFoundErrMsg)
 		} else {
 			course = foundCourse
 		}
 	} else {
-		c.AbortWithStatus(http.StatusNotFound)
+		c.Status(http.StatusNotFound)
+		RenderErrorPage(c, http.StatusNotFound, CourseNotFoundErrMsg)
 	}
 	if c.IsAborted() {
 		return
@@ -89,7 +131,8 @@ func InitCourse(c *gin.Context) {
 		c.Abort()
 		return
 	} else {
-		c.AbortWithStatus(http.StatusForbidden)
+		c.Status(http.StatusForbidden)
+		RenderErrorPage(c, http.StatusForbidden, ForbiddenCourseAccess)
 	}
 }
 
@@ -106,12 +149,14 @@ func InitStream(c *gin.Context) {
 	if c.Param("streamID") != "" {
 		foundStream, err := dao.GetStreamByID(c, c.Param("streamID"))
 		if err != nil {
-			c.AbortWithStatus(http.StatusNotFound)
+			c.Status(http.StatusNotFound)
+			RenderErrorPage(c, http.StatusNotFound, StreamNotFoundErrMsg)
 		} else {
 			stream = foundStream
 		}
 	} else {
-		c.AbortWithStatus(http.StatusNotFound)
+		c.Status(http.StatusNotFound)
+		RenderErrorPage(c, http.StatusNotFound, StreamNotFoundErrMsg)
 	}
 	if c.IsAborted() {
 		return
@@ -127,7 +172,8 @@ func InitStream(c *gin.Context) {
 			c.Abort()
 			return
 		} else if tumLiveContext.User == nil || !tumLiveContext.User.IsEligibleToWatchCourse(course) {
-			c.AbortWithStatus(http.StatusForbidden)
+			c.Status(http.StatusForbidden)
+			RenderErrorPage(c, http.StatusForbidden, ForbiddenStreamAccess)
 			return
 		}
 	}
@@ -145,7 +191,8 @@ func AdminOfCourse(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(TUMLiveContext)
 	if tumLiveContext.User == nil || (tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.Model.ID != tumLiveContext.Course.UserID) {
-		c.AbortWithStatus(http.StatusForbidden)
+		c.Status(http.StatusForbidden)
+		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
 	}
 }
 
@@ -158,7 +205,8 @@ func AtLeastLecturer(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(TUMLiveContext)
 	if tumLiveContext.User == nil || (tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.Role != model.LecturerType) {
-		c.AbortWithStatus(http.StatusForbidden)
+		c.Status(http.StatusForbidden)
+		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
 	}
 }
 
@@ -171,7 +219,8 @@ func Admin(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(TUMLiveContext)
 	if tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType {
-		c.AbortWithStatus(http.StatusForbidden)
+		c.Status(http.StatusForbidden)
+		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
 	}
 }
 
@@ -180,11 +229,13 @@ func AdminToken(c *gin.Context) {
 	token := queryParams.Get("token")
 	t, err := dao.GetToken(token)
 	if err != nil {
-		c.AbortWithStatus(http.StatusForbidden)
+		c.Status(http.StatusForbidden)
+		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
 		return
 	}
 	if t.Scope != model.TokenScopeAdmin {
-		c.AbortWithStatus(http.StatusForbidden)
+		c.Status(http.StatusForbidden)
+		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
 		return
 	}
 	err = dao.TokenUsed(t)
