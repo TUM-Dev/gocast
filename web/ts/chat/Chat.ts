@@ -9,6 +9,7 @@ export class Chat {
     readonly streamId: number;
 
     orderByLikes: boolean;
+    disconnected: boolean;
     current: NewChatMessage;
     messages: ChatMessage[];
     users: ChatUserList;
@@ -31,6 +32,7 @@ export class Chat {
 
     constructor(isAdminOfCourse: boolean, streamId: number, userId: number, userName: string) {
         this.orderByLikes = false;
+        this.disconnected = false;
         this.current = new NewChatMessage();
         this.admin = isAdminOfCourse;
         this.users = new ChatUserList(streamId);
@@ -118,6 +120,17 @@ export class Chat {
             }
         }
         window.dispatchEvent(new CustomEvent(event));
+    }
+
+    getInputPlaceHolder(): string {
+        if (this.disconnected) {
+            return "Unable to connect to the chat. Reconnecting...";
+        }
+        if (this.current.replyTo === 0) {
+            return "Send a message";
+        } else {
+            return "Reply [escape to cancel]";
+        }
     }
 
     private addMessage(m: ChatMessage) {

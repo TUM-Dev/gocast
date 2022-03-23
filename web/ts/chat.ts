@@ -50,18 +50,6 @@ export function scrollToLatestMessage() {
     window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
 }
 
-export function showDisconnectedMsg() {
-    if (document.getElementById("disconnectMsg") !== null) {
-        document.getElementById("disconnectMsg").classList.remove("hidden");
-    }
-}
-
-export function hideDisconnectedMsg() {
-    if (document.getElementById("disconnectMsg") !== null) {
-        document.getElementById("disconnectMsg").classList.add("hidden");
-    }
-}
-
 export function openChatPopUp(courseSlug: string, streamID: number) {
     const height = window.innerHeight * 0.8;
     window.open(
