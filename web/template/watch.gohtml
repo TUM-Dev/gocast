@@ -28,8 +28,8 @@
                 To view this video please enable JavaScript.
             </p></noscript>
         <div id="watchContent"
-             class="transition-all motion-reduce:transition-none duration-300 ease w-full p-4 mx-auto mx:h-full">
-            <div class="p-4 bg-indigo-700 bg-opacity-20 border-t-4 border-indigo-700 w-full font-semibold text-2 rounded-t display-none"
+             class="w-full">
+            <div class="bg-indigo-700 bg-opacity-20 border-t-4 border-indigo-700 w-full font-semibold text-2 rounded-t display-none"
                  x-show="paused" x-cloak>
                 <i class="fas fa-info-circle"></i> This lecture is currently paused.
             </div>
@@ -58,6 +58,8 @@
                     To view this video please enable JavaScript.
                 </p>
             </video>
+        </div>
+        <div id="streamInfo" class="mx-5 m-auto">
             <div class="flex justify-between align-middle mt-4">
                 <h1 class="text-4 text-xl grow">
                     {{if $stream.Name}}
