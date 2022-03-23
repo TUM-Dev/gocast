@@ -64,7 +64,7 @@
                         </template>
                         <div id="userList" x-show="c.users.isValid()"
                              tabindex="0"
-                             class='w-full bg-white dark:bg-secondary py-1 space-y-1 focus-visible:outline-none'
+                             class='max-h-56 overflow-y-scroll w-full bg-white dark:bg-secondary py-1 space-y-1 focus-visible:outline-none'
                              @keyup.down="c.users.next()"
                              @keyup.up="c.users.prev()"
                              @keyup.enter="c.current.addAddressee(c.users.getSelected()); c.users.clear()"
