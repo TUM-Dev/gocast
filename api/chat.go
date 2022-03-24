@@ -99,7 +99,7 @@ func handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []byte) {
 	}
 
 	if voteUpdateJson, err := json.Marshal(voteUpdateMap); err == nil {
-		broadcastStream(ctx.Stream.ID, voteUpdateJson)
+		broadcastStreamToAdmins(ctx.Stream.ID, voteUpdateJson)
 	} else {
 		log.WithError(err).Warn("could not marshal vote update map")
 		return
