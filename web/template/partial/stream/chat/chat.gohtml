@@ -47,7 +47,7 @@
             </div>
         </div>
         <!-- Active Poll UI -->
-        <template x-if="activePoll && !admin">
+        <template x-if="show && activePoll && !admin">
             <div class="z-50 absolute w-full">
                 <div class="text-white bg-sky-600 dark:bg-sky-700 text-center p-2">Active Poll</div>
                 <div class="shadow-lg p-4 bg-white dark:text-white dark:bg-secondary-lighter border-b dark:border-gray-800 rounded-b-lg">
@@ -72,7 +72,7 @@
                 </div>
             </div>
         </template>
-        <template x-if="activePoll && admin">
+        <template x-if="show && activePoll && admin">
             <div class="z-50 absolute w-full">
                 <div class="text-white bg-sky-600 dark:bg-sky-700 text-center p-2">Active Poll</div>
                 <div class="shadow-lg p-4 bg-white dark:text-white dark:bg-secondary-lighter border-b dark:border-gray-800 rounded-b-lg">
@@ -100,7 +100,7 @@
                 </div>
             </div>
         </template>
-        <template x-if="pollResult">
+        <template x-if="show && pollResult">
             <div class="z-50 absolute w-full">
                 <div class="text-white bg-sky-600 dark:bg-sky-700 text-center p-2 relative">
                     Poll Result

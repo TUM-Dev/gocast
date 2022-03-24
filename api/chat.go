@@ -87,6 +87,7 @@ func handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []byte) {
 	}
 
 	if err := dao.AddChatPollOptionVote(req.PollOptionId, ctx.User.ID); err != nil {
+		log.WithError(err).Warn("could not add poll option vote")
 		return
 	}
 
@@ -99,10 +100,19 @@ func handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []byte) {
 
 	if voteUpdateJson, err := json.Marshal(voteUpdateMap); err == nil {
 		broadcastStream(ctx.Stream.ID, voteUpdateJson)
+	} else {
+		log.WithError(err).Warn("could not marshal vote update map")
+		return
 	}
 }
 
 func handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
+	type startPollReq struct {
+		wsReq
+		Question    string   `json:"question"`
+		PollAnswers []string `json:"pollAnswers"`
+	}
+
 	var req startPollReq
 	if err := json.Unmarshal(msg, &req); err != nil {
 		log.WithError(err).Warn("could not unmarshal start poll request")
@@ -112,8 +122,17 @@ func handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
 		return
 	}
 
+	if len(req.Question) == 0 {
+		log.Warn("could not create poll with empty question")
+		return
+	}
+
 	var pollOptions []model.PollOption
 	for _, answer := range req.PollAnswers {
+		if len(answer) == 0 {
+			log.Warn("could not create poll with empty answer")
+			return
+		}
 		pollOptions = append(pollOptions, model.PollOption{
 			Answer: answer,
 		})
@@ -399,7 +418,10 @@ func getActivePoll(c *gin.Context) {
 		voteCount := int64(0)
 
 		if isAdminOfCourse {
-			voteCount, _ = dao.GetPollOptionVoteCount(option.ID)
+			voteCount, err = dao.GetPollOptionVoteCount(option.ID)
+			if err != nil {
+				log.WithError(err).Warn("could not get poll option vote count")
+			}
 		}
 
 		pollOptions = append(pollOptions, option.GetStatsMap(voteCount))
@@ -432,12 +454,6 @@ type likeReq struct {
 type deleteReq struct {
 	wsReq
 	Id uint `json:"id"`
-}
-
-type startPollReq struct {
-	wsReq
-	Question    string   `json:"question"`
-	PollAnswers []string `json:"pollAnswers"`
 }
 
 type submitPollOptionVote struct {

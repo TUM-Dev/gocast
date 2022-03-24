@@ -106,10 +106,10 @@ func GetActivePoll(streamID uint) (model.Poll, error) {
 
 // CloseActivePoll closes poll for the stream with the given ID.
 func CloseActivePoll(streamID uint) error {
-	return DB.Table("polls").Where("stream_id = ? AND active = true", streamID).Update("active", false).Error
+	return DB.Table("polls").Where("stream_id = ? AND active", streamID).Update("active", false).Error
 }
 
-// GetPollUserVote returns the id of the PollOption that the user has voted for. If not vote was found then 0.
+// GetPollUserVote returns the id of the PollOption that the user has voted for. If no vote was found then 0.
 func GetPollUserVote(pollId uint, userId uint) (uint, error) {
 	var pollOptionIds []uint
 	err := DB.Table("poll_option_user_votes").Select("poll_option_user_votes.poll_option_id").Joins("JOIN chat_poll_options ON chat_poll_options.poll_option_id=poll_option_user_votes.poll_option_id").Where("poll_id = ? AND user_id = ?", pollId, userId).Find(&pollOptionIds).Error
