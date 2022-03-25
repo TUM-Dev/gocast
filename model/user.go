@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/getsentry/sentry-go"
 	"golang.org/x/crypto/argon2"
 	"gorm.io/gorm"
 	"strings"
@@ -30,7 +29,8 @@ type User struct {
 	LrzID               string
 	Role                uint     `gorm:"default:4"` // AdminType = 1, LecturerType = 2, GenericType = 3, StudentType  = 4
 	Password            string   `gorm:"default:null"`
-	Courses             []Course `gorm:"many2many:course_users"` // courses a lecturer invited this user to
+	Courses             []Course `gorm:"many2many:course_users"`  // courses a lecturer invited this user to
+	AdministeredCourses []Course `gorm:"many2many:course_admins"` // courses this user is an admin of
 }
 
 type argonParams struct {
@@ -43,6 +43,11 @@ type argonParams struct {
 
 // IsAdminOfCourse checks if the user is an admin of the course
 func (u *User) IsAdminOfCourse(course Course) bool {
+	for _, c := range u.AdministeredCourses {
+		if c.ID == course.ID {
+			return true
+		}
+	}
 	return u.Role == AdminType || course.UserID == u.ID
 }
 
@@ -55,17 +60,24 @@ func (u *User) IsEligibleToWatchCourse(course Course) bool {
 			return true
 		}
 	}
-	return u.Role == AdminType || u.ID == course.UserID
+	return u.IsAdminOfCourse(course)
 }
 
 func (u *User) CoursesForSemester(year int, term string, context context.Context) []Course {
-	span := sentry.StartSpan(context, "User.CoursesForSemester")
-	defer span.Finish()
-	var cRes []Course
+	var cMap = make(map[uint]Course)
 	for _, c := range u.Courses {
 		if c.Year == year && c.TeachingTerm == term {
-			cRes = append(cRes, c)
+			cMap[c.ID] = c
 		}
+	}
+	for _, c := range u.AdministeredCourses {
+		if c.Year == year && c.TeachingTerm == term {
+			cMap[c.ID] = c
+		}
+	}
+	var cRes []Course
+	for _, c := range cMap {
+		cRes = append(cRes, c)
 	}
 	return cRes
 }
@@ -182,4 +194,12 @@ func generateRandomBytes(n uint32) ([]byte, error) {
 	}
 
 	return b, nil
+}
+
+// GetLoginString returns the email if it is set, otherwise the lrzID
+func (u *User) GetLoginString() string {
+	if u.Email.String != "" {
+		return u.Email.String
+	}
+	return u.LrzID
 }

@@ -2,8 +2,11 @@ package tools
 
 import (
 	"TUM-Live/model"
+	"errors"
 	"log"
 	"os/exec"
+	"regexp"
+	"strings"
 )
 
 // CourseListContains checks whether courses contain a course with a given courseId
@@ -34,4 +37,24 @@ func UploadLRZ(file string) error {
 		return err
 	}
 	return nil
+}
+
+func MaskEmail(email string) (masked string, err error) {
+	mailParts := strings.Split(email, "@")
+	if len(mailParts) != 2 {
+		return "", errors.New("email doesn't contain @")
+	}
+	if len(mailParts[0]) == 0 {
+		return "", errors.New("email doesn't contain enough characters before @")
+	}
+	if len(mailParts[1]) < 3 {
+		return "", errors.New("email doesn't contain enough characters after @")
+	}
+	return mailParts[0][0:1] + strings.Repeat("*", len(mailParts[0])-1) + "@" + mailParts[1], nil
+}
+
+// MaskLogin masks lrzIds by replacing digits with *
+func MaskLogin(login string) (masked string) {
+	re := regexp.MustCompile("[0-9]")
+	return re.ReplaceAllString(login, "*")
 }

@@ -182,7 +182,7 @@ func InitStream(c *gin.Context) {
 	c.Set("TUMLiveContext", tumLiveContext)
 }
 
-func AdminOfCourse(c *gin.Context) {
+func OwnerOfCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -194,6 +194,27 @@ func AdminOfCourse(c *gin.Context) {
 		c.Status(http.StatusForbidden)
 		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
 	}
+}
+
+// AdminOfCourse checks if the user is an admin of the course or admin.
+// If not, aborts with status Forbidden.
+func AdminOfCourse(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(TUMLiveContext)
+	if tumLiveContext.User == nil {
+		c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
+		c.Abort()
+		return
+	}
+	if tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course) {
+		return
+	}
+	c.AbortWithStatus(http.StatusForbidden) // user is not admin of course
 }
 
 func AtLeastLecturer(c *gin.Context) {
@@ -252,5 +273,5 @@ type TUMLiveContext struct {
 }
 
 func (c *TUMLiveContext) UserIsAdmin() bool {
-	return c.User != nil && (c.User.Role == model.AdminType || c.User.ID == c.Course.UserID)
+	return c.User.IsAdminOfCourse(*c.Course)
 }

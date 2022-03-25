@@ -1,13 +1,5 @@
-import { loadStats } from "./stats";
 import { postData, showMessage } from "./global";
 import { StatusCodes } from "http-status-codes";
-
-/**
- * loadGeneralStats gets the audience of the course from the api (live and vod) and renders it into a graph.
- */
-export function loadGeneralStats() {
-    loadStats("activity", "courseGeneralStatsLive");
-}
 
 export function saveLectureHall(streamIds: number[], lectureHall: string) {
     return postData("/api/setLectureHall", { streamIds, lectureHall: parseInt(lectureHall) });

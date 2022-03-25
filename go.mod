@@ -21,7 +21,7 @@ require (
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/gorilla/sessions v1.2.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
-	github.com/jinzhu/now v1.1.4
+	github.com/jinzhu/now v1.1.5
 	github.com/joschahenningsen/TUM-Live-Worker-v2 v1.3.3
 	github.com/microcosm-cc/bluemonday v1.0.18
 	github.com/pkg/profile v1.6.0
@@ -30,12 +30,12 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.10.1
-	golang.org/x/crypto v0.0.0-20220314234724-5d542ad81a58
-	google.golang.org/genproto v0.0.0-20220314164441-57ef72a4c106 // indirect
+	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
+	google.golang.org/genproto v0.0.0-20220317150908-0efb43f6373e // indirect
 	google.golang.org/grpc v1.45.0
 	google.golang.org/protobuf v1.27.1
 	gorm.io/driver/mysql v1.3.2
-	gorm.io/gorm v1.23.2
+	gorm.io/gorm v1.23.3
 	mvdan.cc/xurls/v2 v2.4.0
 )
 
@@ -74,7 +74,7 @@ require (
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
-	golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5 // indirect
+	golang.org/x/sys v0.0.0-20220319134239-a9b59b0215f8 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
