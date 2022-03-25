@@ -273,5 +273,8 @@ type TUMLiveContext struct {
 }
 
 func (c *TUMLiveContext) UserIsAdmin() bool {
+	if c.User == nil {
+		return false
+	}
 	return c.User.IsAdminOfCourse(*c.Course)
 }
