@@ -9,13 +9,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/gabstv/melody"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 var m *melody.Melody
@@ -26,6 +27,7 @@ func configGinChatRouter(router *gin.RouterGroup) {
 	wsGroup := router.Group("/:streamID")
 	wsGroup.Use(tools.InitStream)
 	wsGroup.GET("/messages", getMessages)
+	wsGroup.GET("/active-poll", getActivePoll)
 	wsGroup.GET("/ws", ChatStream)
 	if m == nil {
 		log.Printf("creating melody")
@@ -58,6 +60,12 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			handleLike(tumLiveContext, msg)
 		case "delete":
 			handleDelete(tumLiveContext, msg)
+		case "start_poll":
+			handleStartPoll(tumLiveContext, msg)
+		case "submit_poll_option_vote":
+			handleSubmitPollOptionVote(tumLiveContext, msg)
+		case "close_active_poll":
+			handleCloseActivePoll(tumLiveContext)
 		case "resolve":
 			handleResolve(tumLiveContext, msg)
 		case "approve":
@@ -66,6 +74,125 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			log.WithField("type", req.Type).Warn("unknown websocket request type")
 		}
 	})
+}
+
+func handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []byte) {
+	var req submitPollOptionVote
+	if err := json.Unmarshal(msg, &req); err != nil {
+		log.WithError(err).Warn("could not unmarshal submit poll answer request")
+		return
+	}
+	if ctx.User == nil {
+		return
+	}
+
+	if err := dao.AddChatPollOptionVote(req.PollOptionId, ctx.User.ID); err != nil {
+		log.WithError(err).Warn("could not add poll option vote")
+		return
+	}
+
+	voteCount, _ := dao.GetPollOptionVoteCount(req.PollOptionId)
+
+	voteUpdateMap := gin.H{
+		"pollOptionId": req.PollOptionId,
+		"votes":        voteCount,
+	}
+
+	if voteUpdateJson, err := json.Marshal(voteUpdateMap); err == nil {
+		broadcastStreamToAdmins(ctx.Stream.ID, voteUpdateJson)
+	} else {
+		log.WithError(err).Warn("could not marshal vote update map")
+		return
+	}
+}
+
+func handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
+	type startPollReq struct {
+		wsReq
+		Question    string   `json:"question"`
+		PollAnswers []string `json:"pollAnswers"`
+	}
+
+	var req startPollReq
+	if err := json.Unmarshal(msg, &req); err != nil {
+		log.WithError(err).Warn("could not unmarshal start poll request")
+		return
+	}
+	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
+		return
+	}
+
+	if len(req.Question) == 0 {
+		log.Warn("could not create poll with empty question")
+		return
+	}
+
+	var pollOptions []model.PollOption
+	for _, answer := range req.PollAnswers {
+		if len(answer) == 0 {
+			log.Warn("could not create poll with empty answer")
+			return
+		}
+		pollOptions = append(pollOptions, model.PollOption{
+			Answer: answer,
+		})
+	}
+
+	poll := model.Poll{
+		StreamID:    ctx.Stream.ID,
+		Question:    req.Question,
+		Active:      true,
+		PollOptions: pollOptions,
+	}
+
+	if err := dao.AddChatPoll(&poll); err != nil {
+		return
+	}
+
+	var pollOptionsJson []gin.H
+	for _, option := range poll.PollOptions {
+		pollOptionsJson = append(pollOptionsJson, option.GetStatsMap(0))
+	}
+
+	pollMap := gin.H{
+		"active":      true,
+		"question":    poll.Question,
+		"pollOptions": pollOptionsJson,
+		"submitted":   0,
+	}
+	if pollJson, err := json.Marshal(pollMap); err == nil {
+		broadcastStream(ctx.Stream.ID, pollJson)
+	}
+}
+
+func handleCloseActivePoll(ctx tools.TUMLiveContext) {
+	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
+		return
+	}
+
+	poll, err := dao.GetActivePoll(ctx.Stream.ID)
+	if err != nil {
+		return
+	}
+
+	if err = dao.CloseActivePoll(ctx.Stream.ID); err != nil {
+		return
+	}
+
+	var pollOptions []gin.H
+	for _, option := range poll.PollOptions {
+		voteCount, _ := dao.GetPollOptionVoteCount(option.ID)
+		pollOptions = append(pollOptions, option.GetStatsMap(voteCount))
+	}
+
+	statsMap := gin.H{
+		"question":          poll.Question,
+		"pollOptionResults": pollOptions,
+	}
+
+	if statsJson, err := json.Marshal(statsMap); err == nil {
+		broadcastStream(ctx.Stream.ID, statsJson)
+	}
 }
 
 func handleResolve(ctx tools.TUMLiveContext, msg []byte) {
@@ -260,6 +387,54 @@ func getMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, chats)
 }
 
+func getActivePoll(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	if tumLiveContext.User == nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	poll, err := dao.GetActivePoll(tumLiveContext.Stream.ID)
+	if err != nil {
+		c.JSON(http.StatusOK, nil)
+		return
+	}
+
+	submitted, err := dao.GetPollUserVote(poll.ID, tumLiveContext.User.ID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	isAdminOfCourse := tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course)
+	var pollOptions []gin.H
+	for _, option := range poll.PollOptions {
+		voteCount := int64(0)
+
+		if isAdminOfCourse {
+			voteCount, err = dao.GetPollOptionVoteCount(option.ID)
+			if err != nil {
+				log.WithError(err).Warn("could not get poll option vote count")
+			}
+		}
+
+		pollOptions = append(pollOptions, option.GetStatsMap(voteCount))
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"active":      true,
+		"question":    poll.Question,
+		"pollOptions": pollOptions,
+		"submitted":   submitted,
+	})
+}
+
 type wsReq struct {
 	Type string `json:"type"`
 }
@@ -279,6 +454,11 @@ type likeReq struct {
 type deleteReq struct {
 	wsReq
 	Id uint `json:"id"`
+}
+
+type submitPollOptionVote struct {
+	wsReq
+	PollOptionId uint `json:"pollOptionId"`
 }
 
 type resolveReq struct {

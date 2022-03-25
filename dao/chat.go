@@ -6,6 +6,14 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
+func AddChatPollOptionVote(pollOptionId uint, userId uint) error {
+	return DB.Exec("INSERT INTO poll_option_user_votes (poll_option_id, user_id) VALUES (?, ?)", pollOptionId, userId).Error
+}
+
+func AddChatPoll(poll *model.Poll) error {
+	return DB.Save(poll).Error
+}
+
 func AddMessage(chat *model.Chat) error {
 	return DB.Save(chat).Error
 }
@@ -87,4 +95,40 @@ func GetAllChats(userID uint, streamID uint) ([]model.Chat, error) {
 		}
 	}
 	return chats, nil
+}
+
+// GetActivePoll returns the active poll for the stream with the given ID.
+func GetActivePoll(streamID uint) (model.Poll, error) {
+	var activePoll model.Poll
+	err := DB.Preload("PollOptions").First(&activePoll, "stream_id = ? AND active = true", streamID).Error
+	return activePoll, err
+}
+
+// CloseActivePoll closes poll for the stream with the given ID.
+func CloseActivePoll(streamID uint) error {
+	return DB.Table("polls").Where("stream_id = ? AND active", streamID).Update("active", false).Error
+}
+
+// GetPollUserVote returns the id of the PollOption that the user has voted for. If no vote was found then 0.
+func GetPollUserVote(pollId uint, userId uint) (uint, error) {
+	var pollOptionIds []uint
+	err := DB.Table("poll_option_user_votes").Select("poll_option_user_votes.poll_option_id").Joins("JOIN chat_poll_options ON chat_poll_options.poll_option_id=poll_option_user_votes.poll_option_id").Where("poll_id = ? AND user_id = ?", pollId, userId).Find(&pollOptionIds).Error
+	if err != nil {
+		return 0, err
+	}
+
+	if len(pollOptionIds) > 0 {
+		return pollOptionIds[0], nil
+	}
+	return 0, nil
+}
+
+// GetPollOptionVoteCount returns the vote count of a specific poll-option
+func GetPollOptionVoteCount(pollOptionId uint) (int64, error) {
+	var count int64
+	err := DB.Table("poll_option_user_votes").Where("poll_option_id = ?", pollOptionId).Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }
