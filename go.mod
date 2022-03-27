@@ -8,7 +8,6 @@ require (
 	github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769
 	github.com/antchfx/xmlquery v1.3.10
 	github.com/dgraph-io/ristretto v0.1.0
-	github.com/droundy/goopt v0.0.0-20220217183150-48d6390ad4d1
 	github.com/gabstv/melody v1.0.2
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/gin-contrib/gzip v0.0.5

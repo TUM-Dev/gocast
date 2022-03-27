@@ -79,7 +79,6 @@ func configGinChatRouter(router *gin.RouterGroup) {
 	go func() {
 		c := time.Tick(time.Second)
 		for range c {
-			log.Info("cleaning up chat")
 			cleanupSessions()
 		}
 	}()
