@@ -132,3 +132,15 @@ func (s Stream) FriendlyNextDate() string {
 	}
 	return s.Start.Format("Mon, January 02. 15:04")
 }
+
+func (s Stream) Color() string {
+	if s.Recording {
+		return "success"
+	} else if s.LiveNow {
+		return "danger"
+	} else if s.IsPast() {
+		return "warn"
+	} else {
+		return "info"
+	}
+}
