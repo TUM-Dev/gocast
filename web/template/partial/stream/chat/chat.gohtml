@@ -3,19 +3,18 @@
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     {{$userName := .IndexData.TUMLiveContext.User.Name}}
     {{$userId := .IndexData.TUMLiveContext.User.ID}}
-    {{- /* activePoll: null, pollResult: null, showPollCreateUI: false, pollQuestion: '', pollOptions: [{ answer: 'Yes' }, { answer: 'No' }]*/ -}}
     <div x-cloak
          x-data="watch.initChat({{.IsAdminOfCourse}},{{$stream.ID}}, {{$userId}},'{{$userName}}');"
-         x-init="await c.loadMessages(); fetch('/api/chat/{{$stream.ID}}/active-poll').then(res => res.json()).then(d => {activePoll=d}); $nextTick(() => { watch.scrollToBottom() })"
+         x-init="await c.loadMessages(); await c.poll.load(); $nextTick(() => { watch.scrollToBottom() })"
          x-on:chatmessage.window="e => c.onMessage(e);"
          x-on:chatreply.window="e => c.onReply(e);"
          x-on:chatlike.window="e => {c.onLike(e); $dispatch('reorder')}"
          x-on:chatdelete.window="e => c.onDelete(e);"
          x-on:chatresolve.window="e => c.onResolve(e);"
          x-on:chatapprove.window="await c.loadMessages(); $nextTick(() => { watch.scrollToBottom() })"
-         x-on:chatnewpoll.window="e => { if (!anonymous) { pollResult = null; activePoll = { ...e.detail, selected: null }; } }"
-         x-on:polloptionvotesupdate.window="e => { activePoll = { ...activePoll, pollOptions: activePoll.pollOptions.map(pollOption => pollOption.id === e.pollOptionId ? { ...pollOption, votes: e.votes } : pollOption) }; }"
-         x-on:polloptionresult.window="e => { activePoll = null; pollResult = e.detail; }"
+         x-on:chatnewpoll.window="e => c.onNewPoll(e);"
+         x-on:polloptionvotesupdate.window="e => c.onPollOptionVotesUpdate(e);"
+         x-on:polloptionresult.window="e => c.onPollOptionResult(e);"
          @disconnected.window="c.disconnected = true;"
          @connected.window="c.disconnected = false;"
          @reorder="c.sortMessages()"
@@ -23,9 +22,10 @@
          id="chatWrapper"
          class="flex relative flex-col text-1 bg-white dark:bg-secondary h-full border-l z-40 dark:border-gray-800">
         <!-- Chat header -->
-        <div class="flex sticky top-0 w-full px-3 h-14 justify-between bg-white z-50 border-b dark:bg-secondary dark:border-gray-800
+        <div class="flex sticky top-0 w-full px-3 max-h-12 h-12 justify-between bg-white z-50 border-b dark:bg-secondary dark:border-gray-800
                     {{if .IsPopUp}} xl:w-1/2 md:w-3/4 md:mx-auto md:border md:rounded-b-lg{{end}}"
-             :class="show ? 'border-b' : 'border-0'">
+             :class="show ? 'border-b' : 'border-0'"
+             style="min-height: 3rem;"> <!-- since there is no min-h-12 class -->
             {{if not .IsPopUp}}
                 <div class="relative my-auto">
                     <button @click="show = !show;"
@@ -46,16 +46,16 @@
             </div>
         </div>
         <!-- Active Poll UI -->
-        <template x-if="show && activePoll && !admin">
-            <div class="z-50 absolute w-full">
+        <template x-if="show && c.poll.activePoll && !c.admin">
+            <div class="z-50 absolute w-full top-12">
                 <div class="text-white bg-sky-600 dark:bg-sky-700 text-center p-2">Active Poll</div>
                 <div class="shadow-lg p-4 bg-white dark:text-white dark:bg-secondary-lighter border-b dark:border-gray-800 rounded-b-lg">
-                    <p x-text="activePoll.question" class="text-sm font-semibold mb-3"></p>
-                    <template x-for="pollOption in activePoll.pollOptions" :key="pollOption.ID">
-                        <button class="flex items-center mb-1" @click="activePoll.selected = pollOption.ID"
-                                :disabled="activePoll.submitted != 0">
+                    <p x-text="c.poll.activePoll.question" class="text-sm font-semibold mb-3"></p>
+                    <template x-for="pollOption in c.poll.activePoll.pollOptions" :key="pollOption.ID">
+                        <button class="flex items-center mb-1" @click="c.poll.activePoll.selected = pollOption.ID"
+                                :disabled="c.poll.activePoll.submitted !== 0">
                             <i class=""
-                               :class="(pollOption.ID === activePoll.selected || activePoll.submitted === pollOption.ID) ? 'fas fa-check-circle' : 'far fa-circle'"></i>
+                               :class="(pollOption.ID === c.poll.activePoll.selected || c.poll.activePoll.submitted === pollOption.ID) ? 'fas fa-check-circle' : 'far fa-circle'"></i>
                             <span x-text="pollOption.answer" class="ml-2"></span>
                         </button>
                     </template>
@@ -64,28 +64,28 @@
                                 class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800 disabled:bg-gray-400
                                     disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400 rounded border-0
                                     focus:outline-none px-4 text-white text-sm ml-auto"
-                                @click="activePoll.submitted = activePoll.selected; watch.submitPollOptionVote(activePoll.selected); activePoll.selected = null;"
-                                :disabled="activePoll.selected === null || activePoll.submitted !== 0"
+                                @click="c.poll.activePoll.submitted = c.poll.activePoll.selected; watch.submitPollOptionVote(c.poll.activePoll.selected); c.poll.activePoll.selected = null;"
+                                :disabled="c.poll.activePoll.selected === null || c.poll.activePoll.submitted !== 0"
                                 title="Send Answer">
                         <span class="font-semibold"
-                              x-text="activePoll.submitted != 0 ? 'Answer submitted' : 'Send Answer'"></span>
+                              x-text="c.poll.activePoll.submitted !== 0 ? 'Answer submitted' : 'Send Answer'"></span>
                         </button>
                     </div>
                 </div>
             </div>
         </template>
-        <template x-if="show && activePoll && admin">
-            <div class="z-50 absolute w-full">
+        <template x-if="show && c.poll.activePoll && c.admin">
+            <div class="z-50 absolute top-12 w-full">
                 <div class="text-white bg-sky-600 dark:bg-sky-700 text-center p-2">Active Poll</div>
                 <div class="shadow-lg p-4 bg-white dark:text-white dark:bg-secondary-lighter border-b dark:border-gray-800 rounded-b-lg">
-                    <p x-text="activePoll.question" class="text-sm font-semibold mb-3"></p>
-                    <template x-for="pollOption in activePoll.pollOptions" :key="pollOption.ID">
+                    <p x-text="c.poll.activePoll.question" class="text-sm font-semibold mb-3"></p>
+                    <template x-for="pollOption in c.poll.activePoll.pollOptions">
                         <div class="mb-3 pl-3 pr-3">
                             <div class="flex justify-between pr-2">
                                 <span class="text-sm flex items-end" x-text="pollOption.answer"></span>
                                 <span class="text-xs flex items-end" x-text="pollOption.votes + ' Votes'"></span>
                             </div>
-                            <div :style="`width: ${watch.getPollOptionWidth(activePoll.pollOptions, pollOption)};`"
+                            <div :style="`width: ${watch.getPollOptionWidth(c.poll.activePoll.pollOptions, pollOption)};`"
                                  class="rounded-full h-4 bg-sky-400"></div>
                         </div>
                     </template>
@@ -94,49 +94,42 @@
                                 class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800 disabled:bg-gray-400
                                 disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400 rounded border-0
                                 focus:outline-none px-4 text-white text-sm ml-auto"
-                                @click="activePoll = null; watch.closeActivePoll();"
-                                :disabled="!activePoll.active"
+                                @click="c.poll.activePoll = null; watch.closeActivePoll();"
+                                :disabled="!c.poll.activePoll.active"
                                 title="Send Answer">
                         <span class="font-semibold"
-                              x-text="!activePoll.active ? 'Poll closed' : 'Publish & Close'"></span>
+                              x-text="!c.poll.activePoll.active ? 'Poll closed' : 'Publish & Close'"></span>
                         </button>
                     </div>
                 </div>
             </div>
         </template>
-        <template x-if="show && pollResult">
-            <div class="z-50 absolute w-full">
+        <template x-if="show && c.poll.result">
+            <div class="z-50 absolute top-12 w-full">
                 <div class="text-white bg-sky-600 dark:bg-sky-700 text-center p-2 relative">
                     Poll Result
                     <button
                             class="dark:hover:bg-white/10 hover:bg-black/10 absolute top-0 right-0 bottom-0 w-12"
-                            @click="pollResult = null;"
+                            @click="c.poll.result = null;"
                             title="Close">
                         <i class="fas fa-close place-self-center"></i>
                     </button>
                 </div>
                 <div class="shadow-lg p-4 bg-white dark:text-white dark:bg-secondary-lighter border-b dark:border-gray-800 rounded-b-lg">
-                    <p x-text="pollResult.question" class="text-sm font-semibold mb-3"></p>
-                    <template x-for="pollOptionResult in pollResult.pollOptionResults" :key="pollOptionResult.ID">
+                    <p x-text="c.poll.result.question" class="text-sm font-semibold mb-3"></p>
+                    <template x-for="pollOptionResult in c.poll.result.pollOptionResults" :key="pollOptionResult.ID">
                         <div class="mb-3 pl-3 pr-3">
                             <div class="flex justify-between pr-2">
                                 <span class="text-sm flex items-end" x-text="pollOptionResult.answer"></span>
                                 <span class="text-xs flex items-end" x-text="pollOptionResult.votes + ' Votes'"></span>
                             </div>
-                            <div :style="`width: ${watch.getPollOptionWidth(pollResult.pollOptionResults, pollOptionResult)};`"
+                            <div :style="`width: ${watch.getPollOptionWidth(c.poll.result.pollOptionResults, pollOptionResult)};`"
                                  class="rounded-full h-4 bg-sky-400"></div>
                         </div>
                     </template>
                 </div>
             </div>
         </template>
-        <!-- Connection Lost Banner -->
-        <div x-show="show" class="z-50 absolute w-full">
-            <div id="disconnectMsg"
-                 class="text-white shadow-lg py-1 px-3 bg-red-500 border-2 border-red-600 rounded-b-lg hidden">
-                <span class="text-sm font-semibold">Connection to chat lost! Reconnecting...</span>
-            </div>
-        </div>
 
         <!-- Messages -->
         <div x-show="show"
@@ -154,37 +147,70 @@
                   x-on:sendmessage.window="c.current.send()"
                   @submit.prevent="c.current.send()">
                 <div class="w-full">
-                    <div x-show="showPollCreateUI">
-                        <div class="bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
-                            <label for="pollQuestion" class="hidden"></label>
-                            <textarea
-                                    id="pollQuestion"
-                                    class="h-40 resize-none border-none py-2 px-4 text-sm font-normal placeholder:text-sm"
-                                    maxlength="500"
-                                    x-model="pollQuestion"
-                                    autocomplete="off"
-                                    placeholder="Write a Poll-Question ..."
-                            ></textarea>
-                        </div>
-                        <div>
-                            <template x-for="(pollOption, index) in pollOptions" :key="index">
-                                <div class="flex-1 bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full lg:mr-2 my-2">
-                                    <input placeholder="Write a Poll-Answer ..." maxlength="240"
-                                           x-model="pollOption.answer"
-                                           class="py-2 px-4 border-0 text-sm font-normal placeholder:text-sm">
 
-                                    <button class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded text-4 hover:text-1 disabled:opacity-20"
-                                            :disabled="pollOptions.length === 1"
-                                            @click="pollOptions = pollOptions.filter((o) => o != pollOption)"
-                                            title="Remove Poll Option">
-                                        <i class="fas fa-trash text-3 m-auto"></i>
-                                    </button>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
+                    <div class='p-1' :class="(c.users.isValid() || c.poll.showCreateUI) && 'shadow rounded-lg border dark:border-gray-800'">
+                        <!-- create poll dialog -->
+                        <div x-show="c.poll.showCreateUI">
+                            <div class = "flex justify-end p-1">
+                                <button class="flex bg-transparent border-0 font-semibold py-1 px-2 rounded hover:dark:bg-gray-600 hover:bg-gray-200 my-auto"
+                                        @click="c.poll.showCreateUI = !c.poll.showCreateUI; c.poll.reset();"
+                                        title="Cancel Poll"
+                                        :disabled="c.poll.activePoll"
+                                        tabindex="-1"
+                                        type="button">
+                                    <i class="fa-solid fa-xmark text-3 m-auto"></i>
+                                </button>
+                            </div>
+                            <div class="bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
+                                <label for="pollQuestion" class="hidden"></label>
+                                <textarea
+                                        id="pollQuestion"
+                                        class="h-40 resize-none border-none py-2 px-4 text-sm font-normal placeholder:text-sm"
+                                        maxlength="500"
+                                        x-model="c.poll.question"
+                                        autocomplete="off"
+                                        placeholder="Write a Poll-Question ..."
+                                ></textarea>
+                            </div>
+                            <div>
+                                <template x-for="(pollOption, index) in c.poll.options" :key="index">
+                                    <div class="flex-1 bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full lg:mr-2 my-2">
+                                        <input placeholder="Write a Poll-Answer ..." maxlength="240"
+                                               x-model="pollOption.answer"
+                                               class="py-2 px-4 border-0 text-sm font-normal placeholder:text-sm">
 
-                    <div class='p-1' :class="c.users.isValid() && 'shadow rounded-lg border dark:border-gray-800'">
+                                        <button class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded text-4 hover:text-1 disabled:opacity-20"
+                                                :disabled="c.poll.options.length === 1"
+                                                @click="c.poll.removeOption(pollOption);"
+                                                tabindex="-1"
+                                                title="Remove Poll Option">
+                                            <i class="fas fa-trash text-3 m-auto text-xs"></i>
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class = "flex">
+                                <button tabindex="-1"
+                                        class="w-4/5 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
+                                   disabled:bg-gray-400 disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400
+                                   rounded border-0 focus:outline-none py-1 text-white text-sm"
+                                        title="Start Poll"
+                                        @click="c.poll.start();"
+                                        :disabled="c.poll.question.length === 0 || c.poll.options.some(({ answer }) => answer.length === 0)">
+                                    <span class="font-semibold text-xs">Start Poll</span>
+                                </button>
+                                <button tabindex="-1"
+                                        class="w-1/5 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
+                                        rounded border-0 focus:outline-none px-4 text-white text-sm ml-2 py-1"
+                                        @click="c.poll.addEmptyOption()"
+                                        title="Add Poll Answer"
+                                        type="button"
+                                        x-show="c.poll.showCreateUI">
+                                    <i class="fas fa-plus m-auto"></i>
+                                </button>
+                            </div>
+                        </div>
+
                         <!-- @-userlist -->
                         <template x-if="c.users.isValid() && c.users.subset.length === 0">
                             <p class="text-center py-1 font-semibold text-xs text-3">No users found.</p>
@@ -210,12 +236,12 @@
                         </div>
 
                         <!-- input -->
-                        <div x-show="!showPollCreateUI" class="relative flex my-auto bg-gray-200 rounded-lg border-2 border-transparent dark:bg-gray-600
+                        <div x-show="!c.poll.showCreateUI" class="relative flex my-auto bg-gray-200 rounded-lg border-2 border-transparent dark:bg-gray-600
                                     focus-within:border-sky-600
                                     dark:focus-within:border-indigo-600">
                             {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
                                 <input type="checkbox" name="anonymous" id="anonymous" class="hidden"
-                                       x-model="c.current.anonymous">
+                                       x-model="c.current.anonymous" :disabled="c.disconnected">
                                 <label for="anonymous" class="flex items-center cursor-pointer text-4 hover:text-1 ml-3"
                                        title="Don't show my name.">
                                     <i class="fas fa-ghost"></i>
@@ -250,9 +276,9 @@
                         </div>
                     </div>
                     <!-- popout and send button -->
-                    <div class="flex mt-2" :class="isPopUp ? 'justify-end' : 'justify-between'">
+                    <div class="flex mt-2" :class="{{.IsPopUp}} ? 'justify-end' : 'justify-between'">
                         {{if not .IsPopUp}}
-                            <button x-show="!isPopUp"
+                            <button x-show="!{{.IsPopUp}}"
                                     class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200"
                                     @click="watch.openChatPopUp('{{.IndexData.TUMLiveContext.Course.Slug}}', {{.IndexData.TUMLiveContext.Stream.Model.ID}})"
                                     title="Popout Chat"
@@ -260,51 +286,27 @@
                                 <i class="fas fa-external-link-alt text-3 m-auto"></i>
                             </button>
                         {{end}}
-                        <button tabindex="-1"
-                                class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
-                                   disabled:bg-gray-400 disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400
-                                   rounded border-0 focus:outline-none px-4 text-white text-sm ml-auto"
-                                title="Send message"
-                                type="submit"
-                                {{if not (.IndexData.TUMLiveContext.User)}} disabled {{end}}
-                                :disabled="c.current.isEmpty() || c.disconnected">
-                            <span class="font-semibold">Send</span>
-                            <span class="fas fa-paper-plane ml-2"></span>
-                        </button>
                         <span>
-                            <button tabindex="-1"
-                                    class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800 rounded border-0 focus:outline-none px-4 text-white text-sm ml-auto"
-                                    @click="pollOptions.push({ answer: '' })"
-                                    title="Add Poll Answer"
-                                    x-show="showPollCreateUI">
-                                <i class="fas fa-plus m-auto"></i>
-                            </button>
-                            <button tabindex="-1"
+                            <button x-show="c.admin && !c.poll.showCreateUI"
                                     class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800 disabled:bg-gray-400 disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400 rounded border-0 focus:outline-none px-4 text-white text-sm ml-auto"
-                                    @click="showPollCreateUI = !showPollCreateUI"
+                                    @click="c.poll.showCreateUI = !c.poll.showCreateUI; c.users.clear()"
                                     title="Create Poll"
-                                    :disabled="!!activePoll"
-                                    x-show="admin">
-                                <span class="font-semibold" x-text="showPollCreateUI ? 'Cancel' : 'Create Poll'"></span>
+                                    tabindex="-1"
+                                    :disabled="c.poll.activePoll || c.disconnected"
+                                    type="button">
+                                <span class="font-semibold">Create Poll</span>
                             </button>
                             <button tabindex="-1"
                                     class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
                                    disabled:bg-gray-400 disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400
                                    rounded border-0 focus:outline-none px-4 text-white text-sm ml-auto"
-                                    title="Popout Chat"
-                                    @click="(showPollCreateUI
-                                        ? () => {
-                                            watch.startPoll(pollQuestion, pollOptions.map(({ answer }) => answer));
-                                            pollQuestion = '';
-                                            pollOptions = [{ answer: 'Yes' }, { answer: 'No' }];
-                                            showPollCreateUI = false;
-                                        }
-                                        : () => $dispatch('sendmessage')
-                                    )()"
-                                    :disabled="showPollCreateUI ? (pollQuestion.length === 0 || pollOptions.some(({ answer }) => answer.length === 0)) : (message==='')">
-                                <span class="font-semibold" x-text="showPollCreateUI ? 'Start' : 'Send'"></span>
-                                <span class="fas fa-paper-plane ml-2"></span>
-                            </button>
+                                    title="Send message"
+                                    type="submit"
+                                {{if not (.IndexData.TUMLiveContext.User)}} disabled {{end}}
+                                :disabled="c.current.isEmpty() || c.disconnected">
+                            <span class="font-semibold">Send</span>
+                            <span class="fas fa-paper-plane ml-2"></span>
+                        </button>
                         </span>
                     </div>
                 </div>

@@ -1,6 +1,7 @@
 import { NewChatMessage } from "./NewChatMessage";
 import { ChatUserList } from "./ChatUserList";
 import { EmojiList } from "./EmojiList";
+import { Poll } from "./Poll";
 
 export class Chat {
     readonly userId: number;
@@ -14,6 +15,7 @@ export class Chat {
     messages: ChatMessage[];
     users: ChatUserList;
     emojis: EmojiList;
+    poll: Poll;
 
     preprocessors: ((m: ChatMessage) => ChatMessage)[] = [
         (m: ChatMessage) => {
@@ -41,6 +43,7 @@ export class Chat {
         this.streamId = streamId;
         this.userId = userId;
         this.userName = userName;
+        this.poll = new Poll(streamId);
     }
 
     async loadMessages() {
@@ -91,6 +94,22 @@ export class Chat {
         this.messages.find((m) => m.ID === e.detail.replyTo.Int64).replies.push(e.detail);
     }
 
+    onNewPoll(e) {
+        if (!this.current.anonymous) {
+            this.poll.result = null;
+            this.poll.activePoll = { ...e.detail, selected: null };
+        }
+    }
+
+    onPollOptionVotesUpdate(e) {
+        this.poll.updateVotes(e.detail);
+    }
+
+    onPollOptionResult(e) {
+        this.poll.activePoll = null;
+        this.poll.result = e.detail;
+    }
+
     onInputKeyup(e) {
         let event = "";
         switch (e.keyCode) {
@@ -124,7 +143,7 @@ export class Chat {
 
     getInputPlaceHolder(): string {
         if (this.disconnected) {
-            return "Unable to connect to the chat. Reconnecting...";
+            return "Reconnecting to chat...";
         }
         if (this.current.replyTo === 0) {
             return "Send a message";
