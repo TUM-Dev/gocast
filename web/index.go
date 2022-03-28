@@ -237,12 +237,12 @@ func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bo
 				return true
 			}
 		}
-		return user.Role == model.AdminType || user.ID == course.UserID
+		return user.IsEligibleToWatchCourse(course)
 	}
 	return false
 }
 
-func sortCourses(courses []model.Course){
+func sortCourses(courses []model.Course) {
 	sort.Slice(courses, func(i, j int) bool {
 		return courses[i].CompareTo(courses[j])
 	})

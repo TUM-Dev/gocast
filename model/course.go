@@ -10,7 +10,7 @@ import (
 type Course struct {
 	gorm.Model
 
-	UserID                  uint   `gorm:"not null"`
+	UserID                  uint   `gorm:"not null"` // Owner of the course
 	Name                    string `gorm:"not null"`
 	Slug                    string `gorm:"not null"` // eg. eidi
 	Year                    int    `gorm:"not null"` // eg. 2021
@@ -26,6 +26,7 @@ type Course struct {
 	Visibility              string `gorm:"default:loggedin"` // public, loggedin or enrolled
 	Streams                 []Stream
 	Users                   []User `gorm:"many2many:course_users;"`
+	Admins                  []User `gorm:"many2many:course_admins;"`
 	Token                   string
 	UserCreatedByToken      bool   `gorm:"default:false"`
 	CameraPresetPreferences string // json encoded. e.g. [{lectureHallID:1, presetID:4}, ...]

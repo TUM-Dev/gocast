@@ -45,6 +45,123 @@ func configGinCourseRouter(router *gin.Engine) {
 	adminOfCourseGroup.POST("/submitCut", submitCut)
 	adminOfCourseGroup.POST("/deleteUnit/:unitID", deleteUnit)
 	adminOfCourseGroup.GET("/stats", getStats)
+	adminOfCourseGroup.GET("/admins", getAdmins)
+	adminOfCourseGroup.PUT("/admins/:userID", addAdminToCourse)
+	adminOfCourseGroup.DELETE("/admins/:userID", removeAdminFromCourse)
+}
+
+func removeAdminFromCourse(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+
+	userID, err := strconv.ParseUint(c.Param("userID"), 10, 32)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	admins, err := dao.GetCourseAdmins(tumLiveContext.Course.ID)
+	if err != nil {
+		log.WithError(err).Error("could not get course admins")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	if len(admins) == 1 {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	var user *model.User
+	for _, u := range admins {
+		if u.ID == uint(userID) {
+			user = &u
+			break
+		}
+	}
+	if user == nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	err = dao.RemoveAdminFromCourse(user.ID, tumLiveContext.Course.ID)
+	if err != nil {
+		log.WithError(err).Error("could not remove admin from course")
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+	c.JSON(http.StatusOK, userForLecturerDto{
+		ID:    user.ID,
+		Name:  user.Name,
+		Login: user.GetLoginString(),
+	})
+}
+
+func addAdminToCourse(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	id := c.Param("userID")
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	user, err := dao.GetUserByID(c, uint(idUint))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	err = dao.AddAdminToCourse(user.ID, tumLiveContext.Course.ID)
+	if err != nil {
+		log.WithError(err).Error("could not add admin to course")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	if user.Role == model.GenericType || user.Role == model.StudentType {
+		user.Role = model.LecturerType
+		err := dao.UpdateUser(user)
+		if err != nil {
+			log.WithError(err).Error("could not update user")
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
+	}
+	c.JSON(http.StatusOK, userForLecturerDto{
+		ID:    user.ID,
+		Name:  user.Name,
+		Login: user.GetLoginString(),
+	})
+}
+
+func getAdmins(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	admins, err := dao.GetCourseAdmins(tumLiveContext.Course.ID)
+	if err != nil {
+		log.WithError(err).Error("error getting course admins")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	res := make([]userForLecturerDto, len(admins))
+	for i, admin := range admins {
+		res[i] = userForLecturerDto{
+			ID:    admin.ID,
+			Name:  admin.Name,
+			Login: admin.GetLoginString(),
+		}
+	}
+	c.JSON(http.StatusOK, res)
 }
 
 type courseByTokenReq struct {
@@ -150,7 +267,7 @@ func lectureHallsByID(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	if tumLiveContext.User.Role != model.AdminType && tumLiveContext.User.ID != course.UserID {
+	if !tumLiveContext.User.IsAdminOfCourse(course) {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}

@@ -45,15 +45,9 @@ func download(c *gin.Context) {
 		return
 	}
 	log.Info(fmt.Sprintf("Download request, user: %d, file: %d[%s]", tumLiveContext.User.ID, file.ID, file.Path))
-	if tumLiveContext.User.Role == model.AdminType {
+	if tumLiveContext.User.IsAdminOfCourse(course) {
 		sendFile(c, file)
 		return
-	}
-	if tumLiveContext.User.Role == model.LecturerType {
-		if tumLiveContext.User.ID == course.UserID {
-			sendFile(c, file)
-			return
-		}
 	}
 	if course.DownloadsEnabled {
 		if course.Visibility == "hidden" || course.Visibility == "public" {

@@ -9,7 +9,6 @@ import (
 	"TUM-Live/web"
 	"fmt"
 	"github.com/dgraph-io/ristretto"
-	"github.com/droundy/goopt"
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/gzip"
@@ -34,6 +33,7 @@ var VersionTag = "development"
 // GinServer launch gin server
 func GinServer() (err error) {
 	router := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
 	// capture performance with sentry
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
 	store := cookie.NewStore([]byte(tools.Cfg.CookieStoreSecret))
@@ -65,7 +65,7 @@ func GinServer() (err error) {
 }
 
 var (
-	OsSignal chan os.Signal
+	osSignal chan os.Signal
 )
 
 func main() {
@@ -78,9 +78,8 @@ func main() {
 	log.SetFormatter(&log.TextFormatter{TimestampFormat: "02.01.2006 15:04:05", FullTimestamp: true})
 
 	web.VersionTag = VersionTag
-	OsSignal = make(chan os.Signal, 1)
+	osSignal = make(chan os.Signal, 1)
 
-	goopt.Parse(nil)
 	env := "production"
 	if VersionTag == "development" {
 		env = "development"
@@ -142,6 +141,8 @@ func main() {
 		&model.File{},
 		&model.StreamProgress{},
 		&model.Token{},
+		&model.Poll{},
+		&model.PollOption{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -170,14 +171,14 @@ func main() {
 	dao.Cache = *cache
 	initCron()
 	go func() {
-		err := GinServer()
+		err = GinServer()
 		if err != nil {
 			sentry.CaptureException(err)
 			sentry.Flush(time.Second * 5)
 			log.WithError(err).Fatal("can't launch gin server")
 		}
 	}()
-	LoopForever()
+	keepAlive()
 }
 
 func initCron() {
@@ -193,11 +194,8 @@ func initCron() {
 	cronService.Start()
 }
 
-// LoopForever on signal processing
-func LoopForever() {
-	log.Info("Entering infinite loop\n")
-
-	signal.Notify(OsSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
-	<-OsSignal
-	log.Info("Exiting infinite loop received OsSignal\n")
+func keepAlive() {
+	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
+	s := <-osSignal
+	log.Infof("Exiting on signal %s", s.String())
 }

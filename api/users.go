@@ -12,7 +12,9 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -22,11 +24,113 @@ func configGinUsersRouter(router *gin.Engine) {
 	admins.Use(tools.Admin)
 	admins.POST("/createUser", CreateUser)
 	admins.POST("/deleteUser", DeleteUser)
+	admins.GET("/searchUser", SearchUser)
+	admins.POST("/users/update", updateUser)
+
+	lecturers := router.Group("/api")
+	lecturers.Use(tools.AtLeastLecturer)
+	lecturers.GET("/searchUserForCourse", SearchUserForCourse)
 
 	courseAdmins := router.Group("/api/course/:courseID")
 	courseAdmins.Use(tools.InitCourse)
 	courseAdmins.Use(tools.AdminOfCourse)
 	courseAdmins.POST("/createUserForCourse", CreateUserForCourse)
+}
+
+func updateUser(c *gin.Context) {
+	var req = struct {
+		ID   uint `json:"id"`
+		Role uint `json:"role"`
+	}{}
+	if err := c.BindJSON(&req); err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	user, err := dao.GetUserByID(c, req.ID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	user.Role = req.Role
+	err = dao.UpdateUser(user)
+	if err != nil {
+		log.WithError(err).Error("Error while updating user")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+}
+
+func prepareUserSearch(c *gin.Context) (users []model.User, err error) {
+	q := c.Query("q")
+	reg, _ := regexp.Compile("[^a-zA-Z0-9 ]+")
+	q = reg.ReplaceAllString(q, "")
+	if len(q) < 3 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "query too short"})
+		return nil, errors.New("query too short")
+	}
+	users, err = dao.SearchUser(q)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return nil, err
+	}
+	return users, nil
+}
+
+func SearchUserForCourse(c *gin.Context) {
+	users, err := prepareUserSearch(c)
+	if err != nil {
+		return
+	}
+	res := make([]userForLecturerDto, len(users))
+
+	for i, user := range users {
+		res[i] = userForLecturerDto{
+			ID:    user.ID,
+			Name:  user.Name,
+			Login: user.GetLoginString(),
+		}
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func SearchUser(c *gin.Context) {
+	users, err := prepareUserSearch(c)
+	if err != nil {
+		return
+	}
+	res := make([]userSearchDTO, len(users))
+	for i, user := range users {
+		email, err := tools.MaskEmail(user.Email.String)
+		if err != nil {
+			email = ""
+		}
+		lrzID := tools.MaskLogin(user.LrzID)
+		res[i] = userSearchDTO{
+			ID:    user.ID,
+			LrzID: lrzID,
+			Email: email,
+			Name:  user.Name,
+			Role:  user.Role,
+		}
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+type userForLecturerDto struct {
+	ID    uint   `json:"id,omitempty"`
+	Name  string `json:"name,omitempty"`
+	Login string `json:"login,omitempty"`
+}
+
+type userSearchDTO struct {
+	ID    uint   `json:"id"`
+	LrzID string `json:"lrz_id"`
+	Email string `json:"email"`
+	Name  string `json:"name"`
+	Role  uint   `json:"role"`
+
+	// used by alpine
+	Changing bool `json:"changing"`
 }
 
 func DeleteUser(c *gin.Context) {

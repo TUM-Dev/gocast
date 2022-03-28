@@ -1,5 +1,6 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
+import { List } from "postcss/lib/list";
 
 let chatInput: HTMLInputElement;
 
@@ -19,6 +20,9 @@ enum WSMessageType {
     Message = "message",
     Like = "like",
     Delete = "delete",
+    StartPoll = "start_poll",
+    SubmitPollOptionVote = "submit_poll_option_vote",
+    CloseActivePoll = "close_active_poll",
     Approve = "approve",
     Resolve = "resolve",
 }
@@ -101,6 +105,15 @@ export function startWebsocket() {
                     showNewMessageIndicator();
                 }
             }
+        } else if ("pollOptions" in data) {
+            const event = new CustomEvent("chatnewpoll", { detail: data });
+            window.dispatchEvent(event);
+        } else if ("pollOptionId" in data) {
+            const event = new CustomEvent("polloptionvotesupdate", { detail: data });
+            window.dispatchEvent(event);
+        } else if ("pollOptionResults" in data) {
+            const event = new CustomEvent("polloptionresult", { detail: data });
+            window.dispatchEvent(event);
         } else if ("likes" in data) {
             const event = new CustomEvent("chatlike", { detail: data });
             window.dispatchEvent(event);
@@ -161,4 +174,51 @@ export function sendMessage(current: NewChatMessage) {
             addressedTo: current.addressedTo.map((u) => u.ID),
         }),
     );
+}
+
+export async function fetchMessages(id: number) {
+    return await fetch("/api/chat/" + id + "/messages")
+        .then((res) => res.json())
+        .then((d) => {
+            return d;
+        });
+}
+
+export function startPoll(question: string, pollAnswers: string[]) {
+    ws.send(
+        JSON.stringify({
+            type: WSMessageType.StartPoll,
+            question,
+            pollAnswers,
+        }),
+    );
+}
+
+export function submitPollOptionVote(pollOptionId: number) {
+    ws.send(
+        JSON.stringify({
+            type: WSMessageType.SubmitPollOptionVote,
+            pollOptionId,
+        }),
+    );
+}
+
+export function closeActivePoll() {
+    ws.send(
+        JSON.stringify({
+            type: WSMessageType.CloseActivePoll,
+        }),
+    );
+}
+
+export function getPollOptionWidth(pollOptions, pollOption) {
+    const minWidth = 1;
+    const maxWidth = 100;
+    const maxVotes = Math.max(...pollOptions.map(({ votes: v }) => v));
+
+    if (pollOption.votes == 0) return `${minWidth.toString()}%`;
+
+    const fractionOfMax = pollOption.votes / maxVotes;
+    const fractionWidth = minWidth + fractionOfMax * (maxWidth - minWidth);
+    return `${Math.ceil(fractionWidth).toString()}%`;
 }

@@ -1,8 +1,9 @@
 {{define "edit-course"}}
     <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
     <script src="/static/node_modules/chart.js/dist/chart.min.js"></script>
+    {{- /*gotype: TUM-Live/web.AdminPageData*/ -}}
     {{$course := .IndexData.TUMLiveContext.Course}}
-    <div class="text-1 mt-4" x-init="admin.loadGeneralStats()">
+    <div class="text-1 mt-4" x-data="{userId: {{.IndexData.TUMLiveContext.User.Model.ID}} }">
         <div class="min-w-screen flex items-center justify-center">
             <div class="w-full lg:w-5/6">
                 <h1 class="mb-4">{{$course.Name}}</h1>
@@ -18,55 +19,12 @@
                             <input name="submit" class="btn border-0" type="submit"
                                    value="Reload Lectures From TUMOnline">
                         {{end}}
+                        <a class="btn border-0 font-semibold" href="{{$course.ID}}/stats">Statistics</a>
                     </div>
                 </form>
 
-                <h2>Camera Presets:</h2>
-                <div class="mt-2" x-data="{halls:[]}"
-                     x-init="fetch(`/api/lecture-halls-by-id?id=${document.getElementById('courseID').value}`).then(r=>r.json()).then(d=>halls=d)">
-                    <template x-if="halls !== null && halls.length > 0">
-                        <template x-for="hall in halls">
-                            <div class="ml-2" x-show="hall.presets.length>0"
-                                 @index-selected.window="if($event.detail.name===hall.lecture_hall_name){hall.selected_index=$event.detail.id}">
-                                <p class="text-lg">Camera Presets for</p>
-                                <p class="font-semibold" x-text="hall.lecture_hall_name"></p>
-                                <p class="font-semibold text-danger" x-show="hall.selected_index===0">No preset
-                                    selected</p>
-                                <p class="text-green-400"
-                                   x-show="hall.selected_index !==0 && hall.presets.length >= hall.selected_index"
-                                   x-text="`currently selected: ${hall.presets.length===0 || hall.selected_index === 0?'':hall.presets[hall.selected_index-1].Name}`"></p>
-                                <div class="overflow-x-scroll flex flex-row gap-x-2">
-                                    <template x-for="preset in hall.presets">
-                                        <div class="text-center relative group" x-show="preset.Name!=='gelöscht'">
-                                            <img :src="`/public/${preset.Image}`" alt="Preview"
-                                                 style="min-width: 250px;"
-                                                 width="250px">
-                                            <label class="truncate block my-2">
-                                                <input @change="$dispatch('index-selected', {id: preset.PresetID, name: hall.lecture_hall_name})"
-                                                       type="radio"
-                                                       class="w-auto"
-                                                       :name="`preset${hall.lecture_hall_name.replace(/\s+/g, '')}`">
-                                                <span x-text="preset.Name"></span>
-                                            </label>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-                        </template>
-                    </template>
-                    <template x-if="halls === null">
-                        <div class="mb-2">No camera presets to show since all streams were self-streams.</div>
-                    </template>
-                </div>
-                <h2>Viewers per week</h2>
-                <a href="{{$course.ID}}/stats" class="text-3 dark:hover:text-white hover:text-black underline">More
-                    stats</a>
-                <div class="flex w-full">
-                    <div class="w-full m-auto" style="min-height: 200px">
-                        <canvas id="courseGeneralStatsLive" width="400" height="100" aria-label="Viewer stats"
-                                role="img"></canvas>
-                    </div>
-                </div>
+                {{template "course-admin-management" $course}}
+                {{template "camera-presets"}}
 
                 <div x-data="{ filterPast: false, selectedLectures: [], selectedLectureHallId: 0,
                                sortAsc: $persist(false).as('courseStreamsSortOrder') }"
@@ -249,7 +207,7 @@
                                                     If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
                                                     {{end}}
                                                     {{else if $lecture.Recording}}
-                                                    <span class="flex m-auto mt-4 space-x-3">
+                                                    <span class="flex space-x-2 mt-4 content-center">
                                                         {{if $lecture.Files}}
                                                             <span>
                                                                 {{template "downloadBtn" $lecture.Files}}
