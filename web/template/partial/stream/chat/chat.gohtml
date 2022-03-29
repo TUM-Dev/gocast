@@ -5,7 +5,7 @@
     {{$userId := .IndexData.TUMLiveContext.User.ID}}
     <div x-cloak
          x-data="watch.initChat({{.IsAdminOfCourse}},{{$stream.ID}}, {{$userId}},'{{$userName}}');"
-         x-init="await c.loadMessages(); await c.poll.load(); $nextTick(() => { watch.scrollToBottom() })"
+         x-init="await Promise.all([c.loadMessages(), c.poll.load()]); $nextTick(() => { watch.scrollToBottom() })"
          x-on:chatmessage.window="e => c.onMessage(e);"
          x-on:chatreply.window="e => c.onReply(e);"
          x-on:chatlike.window="e => {c.onLike(e); $dispatch('reorder')}"

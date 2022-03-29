@@ -6,7 +6,7 @@
          x-on:emojiselectiontriggered.window="e => c.emojis.onSelectionTriggered(e);"
          x-on:emojiarrowdown.window="e => c.emojis.onArrowDown(e);"
          x-on:emojiarrowup.window="e => c.emojis.onArrowUp(e);"
-         x-on:emojisinserted.window="c.emojis.onInserted(e);"
+         x-on:emojisinserted.window="e => c.emojis.onInserted(e);"
          x-on:chatenter.window="c.emojis.onChatEnter();" {{/* Emoji selection triggered on enter if emojis exist*/}}
          class="relative -top-10 h-0 w-full text-center">
         <span @click="watch.scrollToLatestMessage()"
