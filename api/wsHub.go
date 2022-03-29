@@ -111,6 +111,20 @@ func BroadcastStats() {
 	}
 }
 
+func cleanupSessions() {
+	for id, sessions := range sessionsMap {
+		var newSessions []*sessionWrapper
+		for i, session := range sessions {
+			if !session.session.IsClosed() {
+				newSessions = append(newSessions, sessions[i])
+			}
+		}
+		wsMapLock.Lock()
+		sessionsMap[id] = newSessions
+		wsMapLock.Unlock()
+	}
+}
+
 func broadcastStream(streamID uint, msg []byte) {
 	sessions, f := sessionsMap[streamID]
 	if !f {
