@@ -1,13 +1,13 @@
-# Chat
+# Live Chat
 
-## Active Chat
+## Enable Live Chat
 
 On the Admin page's sidebar navigate to: 
 
 `Courses > 'Term' > 'Your Course' - Settings` 
 
-There you will find a few checkboxes to (de-)activate the chat 
-and enable certain features.
+There you will find a few checkboxes to enable/disable the chat 
+and a variety of different chat related features.
 
 ![Activate Chat](chat-img/activate.png)
 
@@ -15,7 +15,7 @@ and enable certain features.
 
 ### Approve Messages
 
-If `Moderate Chat` is enabled, chat messages have to be approved by an admin of the course before being visible for all.
+If `Enable Moderate Chat` is set, new chat messages need to be approved by an admin of the course before being visible for all.
 
 ![Approve Message](chat-img/approve.png)
 
@@ -27,7 +27,8 @@ If necessary, a message can also be removed.
 
 ### Resolve messages
 
-If a message contains a question and this question has been answered, the message can be marked as 'resolved'.
+Messages can be marked as 'resolved'. 
+This can be extremely useful when messages contain questions which have been answered.
 
 ![Resolve Messages](chat-img/resolve.png)
 
@@ -37,8 +38,8 @@ After that a message is visibly depicted as such:
 
 ### Anonymous Chat
 
-If `Anonymous Messages` is enabled, users may hide their identity. 
-This means all of their messages will be sent by the user _'Anonymous'_.
+If `Allow Anonymous Messages` is set, users may hide their identity by 
+sending their messages as the user _'Anonymous'_.
 
 ![Anonymous Message](chat-img/anonymous.png)
 
@@ -46,12 +47,10 @@ This means all of their messages will be sent by the user _'Anonymous'_.
 
 ### Chat Polls 
 
-With a click on the `Create Poll`-Button a poll can be created! The form 
-is very intuitive. 
+A click on `Create Poll` at the bottom of the chat opens a dialog. The form 
+is very intuitive. If additional answers are needed, press ``+`` to add another option.
 
 ![Poll form](chat-img/polls.png)
-
-To add another answer-option, press ``+``. 
 
 If closed, the result will be nicely depicted with a graph at the top of the chat: 
 
@@ -59,11 +58,10 @@ If closed, the result will be nicely depicted with a graph at the top of the cha
 
 At the time of writing this document (March 2022) polls are **single choice**. 
 
-### @ users 
+### Address users 
 
-By inserting a `@` in the chat input a list of 
-non-Anonymous users will be displayed. A user can be addressed
-by clicking the username or selecting the user in the list. 
-The list can be navigated with the UP and DOWN arrows.
+The insertion of an `@`-Symbol in the chat-input triggers the display of 
+a list of non-Anonymous users. A click or ENTER appends the chosen user to the addresses. Alternatively, navigation via
+UP and DOWN arrows is also possible. 
 
 ![@ other users](chat-img/at-ing.png)
