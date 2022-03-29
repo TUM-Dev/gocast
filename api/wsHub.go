@@ -47,6 +47,7 @@ var connHandler = func(s *melody.Session) {
 	wsMapLock.Lock()
 	sessionsMap[tumLiveContext.Stream.ID] = append(sessionsMap[tumLiveContext.Stream.ID], &sessionData)
 	wsMapLock.Unlock()
+
 	msg, _ := json.Marshal(gin.H{"viewers": len(sessionsMap[tumLiveContext.Stream.ID])})
 	err := s.Write(msg)
 	if err != nil {

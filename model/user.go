@@ -23,13 +23,13 @@ const (
 type User struct {
 	gorm.Model
 
-	Name                string         `gorm:"not null"`
-	Email               sql.NullString `gorm:"type:varchar(256); uniqueIndex; default:null"`
-	MatriculationNumber string         `gorm:"type:varchar(256); uniqueIndex; default:null"`
-	LrzID               string
-	Role                uint     `gorm:"default:4"` // AdminType = 1, LecturerType = 2, GenericType = 3, StudentType  = 4
-	Password            string   `gorm:"default:null"`
-	Courses             []Course `gorm:"many2many:course_users"`  // courses a lecturer invited this user to
+	Name                string         `gorm:"not null" json:"name"`
+	Email               sql.NullString `gorm:"type:varchar(256); uniqueIndex; default:null" json:"-"`
+	MatriculationNumber string         `gorm:"type:varchar(256); uniqueIndex; default:null" json:"-"`
+	LrzID               string         `json:"-"`
+	Role                uint           `gorm:"default:4" json:"-"` // AdminType = 1, LecturerType = 2, GenericType = 3, StudentType  = 4
+	Password            string         `gorm:"default:null" json:"-"`
+	Courses             []Course       `gorm:"many2many:course_users" json:"-"` // courses a lecturer invited this user to
 	AdministeredCourses []Course `gorm:"many2many:course_admins"` // courses this user is an admin of
 }
 

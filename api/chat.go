@@ -28,11 +28,13 @@ func configGinChatRouter(router *gin.RouterGroup) {
 	wsGroup.Use(tools.InitStream)
 	wsGroup.GET("/messages", getMessages)
 	wsGroup.GET("/active-poll", getActivePoll)
+	wsGroup.GET("/users", getUsers)
 	wsGroup.GET("/ws", ChatStream)
 	if m == nil {
 		log.Printf("creating melody")
 		m = melody.New()
 	}
+
 	m.HandleConnect(connHandler)
 
 	m.HandleMessage(func(s *melody.Session, msg []byte) {
@@ -338,14 +340,15 @@ func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte
 		isVisible.Bool = false
 	}
 	chatForDb := model.Chat{
-		UserID:    strconv.Itoa(int(ctx.User.ID)),
-		UserName:  uname,
-		Message:   chat.Msg,
-		StreamID:  ctx.Stream.ID,
-		Admin:     isAdmin,
-		ReplyTo:   replyTo,
-		Visible:   isVisible,
-		IsVisible: isVisible.Bool,
+		UserID:         strconv.Itoa(int(ctx.User.ID)),
+		UserName:       uname,
+		Message:        chat.Msg,
+		StreamID:       ctx.Stream.ID,
+		Admin:          isAdmin,
+		ReplyTo:        replyTo,
+		Visible:        isVisible,
+		IsVisible:      isVisible.Bool,
+		AddressedToIds: chat.AddressedTo,
 	}
 	chatForDb.SanitiseMessage()
 	err := dao.AddMessage(&chatForDb)
@@ -393,6 +396,21 @@ func getMessages(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, chats)
+}
+
+func getUsers(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	users, err := dao.GetChatUsers(tumLiveContext.Stream.ID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	c.JSON(http.StatusOK, users)
 }
 
 func getActivePoll(c *gin.Context) {
@@ -449,9 +467,10 @@ type wsReq struct {
 
 type chatReq struct {
 	wsReq
-	Msg       string `json:"msg"`
-	Anonymous bool   `json:"anonymous"`
-	ReplyTo   int64  `json:"replyTo"`
+	Msg         string `json:"msg"`
+	Anonymous   bool   `json:"anonymous"`
+	ReplyTo     int64  `json:"replyTo"`
+	AddressedTo []uint `json:"addressedTo"`
 }
 
 type likeReq struct {

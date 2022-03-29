@@ -15,7 +15,28 @@ func AddChatPoll(poll *model.Poll) error {
 }
 
 func AddMessage(chat *model.Chat) error {
-	return DB.Save(chat).Error
+	err := DB.Save(chat).Error
+	if err != nil {
+		return err
+	}
+	for _, userId := range chat.AddressedToIds {
+		err := DB.Exec("INSERT INTO chat_user_addressedto (chat_id, user_id) VALUES (?, ?)", chat.ID, userId).Error
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func GetChatUsers(streamid uint) ([]model.User, error) {
+	var users []model.User
+	query := DB.Model(&model.User{}).Select("distinct users.*").Joins("join chats c on c.user_id = users.id")
+	query.Where("c.stream_id = ? AND c.user_name <> ?", streamid, "Anonymous")
+	err := query.Scan(&users).Error
+	if users == nil { // If no messages have been sent
+		users = []model.User{}
+	}
+	return users, err
 }
 
 // ApproveChat sets the attribute 'visible' to true
@@ -58,7 +79,7 @@ func GetNumLikes(chatID uint) (int64, error) {
 // Number of likes are inserted and the user's like status is determined
 func GetVisibleChats(userID uint, streamID uint) ([]model.Chat, error) {
 	var chats []model.Chat
-	query := DB.Preload("Replies").Preload("UserLikes")
+	query := DB.Preload("Replies").Preload("UserLikes").Preload("AddressedToUsers")
 	query.Where("(visible = 1) OR (user_id = ?)", userID).Find(&chats, "stream_id = ?", streamID)
 	err := query.Error
 	if err != nil {
@@ -72,6 +93,10 @@ func GetVisibleChats(userID uint, streamID uint) ([]model.Chat, error) {
 				break
 			}
 		}
+		chats[i].AddressedToIds = []uint{}
+		for _, user := range chats[i].AddressedToUsers {
+			chats[i].AddressedToIds = append(chats[i].AddressedToIds, user.ID)
+		}
 	}
 	return chats, nil
 }
@@ -80,7 +105,7 @@ func GetVisibleChats(userID uint, streamID uint) ([]model.Chat, error) {
 // Number of likes are inserted and the user's like status is determined
 func GetAllChats(userID uint, streamID uint) ([]model.Chat, error) {
 	var chats []model.Chat
-	query := DB.Preload("Replies").Preload("UserLikes").Find(&chats, "stream_id = ?", streamID)
+	query := DB.Preload("Replies").Preload("UserLikes").Preload("AddressedToUsers").Find(&chats, "stream_id = ?", streamID)
 	err := query.Error
 	if err != nil {
 		return nil, err
@@ -92,6 +117,10 @@ func GetAllChats(userID uint, streamID uint) ([]model.Chat, error) {
 				chats[i].Liked = true
 				break
 			}
+		}
+		chats[i].AddressedToIds = []uint{}
+		for _, user := range chats[i].AddressedToUsers {
+			chats[i].AddressedToIds = append(chats[i].AddressedToIds, user.ID)
 		}
 	}
 	return chats, nil
