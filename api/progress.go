@@ -58,10 +58,12 @@ func (b *progressBuffer) run() {
 	}
 }
 
+// configProgressBuffer configures the progress buffer
 func configProgressRouter(router *gin.Engine) {
 	progressBuff = newProgressBuffer()
 	go progressBuff.run()
 	router.POST("/api/progressReport", saveProgress)
+	router.POST("/api/markWatched", markWatched)
 }
 
 // ProgressRequest corresponds the request that is sent by the video player when it reports its progress for VODs
@@ -71,9 +73,9 @@ type ProgressRequest struct {
 	// Note: To be able to save the progress, we also need the userID, but it`s already contained in the Gin context
 }
 
+// saveProgress saves progress to a buffer that is flushed at a fixed interval.
 func saveProgress(c *gin.Context) {
 	var request ProgressRequest
-
 	err := c.BindJSON(&request)
 
 	if err != nil {
@@ -81,23 +83,57 @@ func saveProgress(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-
 	foundContext, exists := c.Get("TUMLiveContext")
-
 	if !exists {
 		return
 	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	if tumLiveContext.User == nil {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+	progressBuff.add(model.StreamProgress{
+		Progress: request.Progress,
+		StreamID: request.StreamID,
+		UserID:   tumLiveContext.User.ID,
+	})
+}
 
+// WatchedRequest corresponds the request that is sent when a user marked the video as watched on the watch page.
+type WatchedRequest struct {
+	StreamID uint `json:"streamID"`
+	Watched  bool `json:"watched"`
+}
+
+// markWatched marks a VoD as watched in the database.
+func markWatched(c *gin.Context) {
+	var request WatchedRequest
+	err := c.BindJSON(&request)
+	if err != nil {
+		log.WithError(err).Warn("Could not bind JSON from progressReport.")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		return
+	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 
 	if tumLiveContext.User == nil {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
+	progress := model.StreamProgress{
+		UserID:      tumLiveContext.User.ID,
+		StreamID:    request.StreamID,
+		WatchStatus: request.Watched,
+	}
 
-	progressBuff.add(model.StreamProgress{
-		Progress: request.Progress,
-		StreamID: request.StreamID,
-		UserID:   tumLiveContext.User.ID,
-	})
+	err = dao.SaveProgresses([]model.StreamProgress{progress})
+	if err != nil {
+		log.WithError(err).Warn("Could not mark VoD as watched.")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
 }
