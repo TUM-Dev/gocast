@@ -26,7 +26,7 @@ const (
 )
 
 type sessionWrapper struct {
-	session *melody.Session
+	session         *melody.Session
 	isAdminOfCourse bool
 }
 
@@ -110,6 +110,20 @@ func BroadcastStats() {
 	}
 }
 
+func cleanupSessions() {
+	for id, sessions := range sessionsMap {
+		var newSessions []*sessionWrapper
+		for i, session := range sessions {
+			if !session.session.IsClosed() {
+				newSessions = append(newSessions, sessions[i])
+			}
+		}
+		wsMapLock.Lock()
+		sessionsMap[id] = newSessions
+		wsMapLock.Unlock()
+	}
+}
+
 func broadcastStream(streamID uint, msg []byte) {
 	sessions, f := sessionsMap[streamID]
 	if !f {
@@ -141,7 +155,7 @@ func broadcastStreamToAdmins(streamID uint, msg []byte) {
 }
 
 // removeClosed removes session where IsClosed() is true.
-func removeClosed(sessions []*sessionWrapper) []*sessionWrapper{
+func removeClosed(sessions []*sessionWrapper) []*sessionWrapper {
 	var newSessions []*sessionWrapper
 	for _, wrapper := range sessions {
 		if !wrapper.session.IsClosed() {

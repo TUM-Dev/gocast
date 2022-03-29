@@ -74,6 +74,14 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			log.WithField("type", req.Type).Warn("unknown websocket request type")
 		}
 	})
+
+	//delete closed sessions every second
+	go func() {
+		c := time.Tick(time.Second)
+		for range c {
+			cleanupSessions()
+		}
+	}()
 }
 
 func handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []byte) {
@@ -475,16 +483,16 @@ func CollectStats() {
 	BroadcastStats()
 	for sID, sessions := range sessionsMap {
 		stat := model.Stat{
-			Time:    time.Now(),
-			Viewers: uint(len(sessions)),
-			Live:    true,
+			Time:     time.Now(),
+			StreamID: sID,
+			Viewers:  uint(len(sessions)),
+			Live:     true,
 		}
 		if s, err := dao.GetStreamByID(context.Background(), fmt.Sprintf("%d", sID)); err == nil {
 			if s.LiveNow { // store stats for livestreams only
 				s.Stats = append(s.Stats, stat)
-				if err = dao.SaveStream(&s); err != nil {
-					sentry.CaptureException(err)
-					log.Printf("Error saving stats: %v\n", err)
+				if err := dao.AddStat(stat); err != nil {
+					log.WithError(err).Error("Saving stat failed")
 				}
 			}
 		}
