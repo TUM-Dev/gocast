@@ -76,3 +76,49 @@ func LoginWithTumCredentials(username string, password string) (userId string, l
 	}
 	return "", "", "", fmt.Errorf("LDAP: reached unexpected codepoint. User: %v", username)
 }
+
+func FindUserWithTumId(tumId string) error {
+	username := ldap.EscapeFilter(tumId)
+	defer sentry.Flush(time.Second * 2)
+	l, err := ldap.DialURL(tools.Cfg.Ldap.URL)
+	if err != nil {
+		return err
+	}
+	defer l.Close()
+
+	// First bind with a read only user
+	err = l.Bind(tools.Cfg.Ldap.User, tools.Cfg.Ldap.Password)
+	if err != nil {
+		return err
+	}
+
+	// Search for the given username
+	searchRequest := &ldap.SearchRequest{
+		BaseDN: "ou=users,ou=data,ou=prod,ou=iauth,dc=tum,dc=de",
+		Scope:  ldap.ScopeWholeSubtree,
+		Filter: fmt.Sprintf("(imEmailAdressen=%s)", username),
+	}
+
+	sr, err := l.Search(searchRequest)
+	if err != nil {
+		return errors.New("couldn't query user")
+	}
+
+	if len(sr.Entries) != 1 {
+		return ErrLdapBadAuth
+	}
+	printResult(sr.Entries)
+	return fmt.Errorf("LDAP: reached unexpected codepoint. User: %v", username)
+}
+
+func printResult(entries []*ldap.Entry) {
+	for _, entry := range entries {
+		fmt.Println("DN:", entry.DN)
+		for _, attr := range entry.Attributes {
+			for i := 0; i < len(attr.Values); i++ {
+				fmt.Printf("%s: %s\n", attr.Name, attr.Values[i])
+			}
+		}
+		fmt.Println()
+	}
+}
