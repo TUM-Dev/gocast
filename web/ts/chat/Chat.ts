@@ -110,7 +110,7 @@ export class Chat {
         this.poll.result = e.detail;
     }
 
-    onInputKeyup(e) {
+    onInputKeyUp(e) {
         let event = "";
         switch (e.keyCode) {
             case 9: {

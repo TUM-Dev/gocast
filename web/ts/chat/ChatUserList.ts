@@ -30,8 +30,6 @@ export class ChatUserList {
         }
 
         const currentWord = message.substring(pos[0], pos[1]);
-        console.log(message);
-        console.log(currentWord);
         if (message === "" || !currentWord.startsWith("@")) {
             this.subset = [];
             this.valid = false;
@@ -65,23 +63,39 @@ export class ChatUserList {
         this.valid = false;
     }
 
-    next(e) {
-        e.preventDefault();
+    next() {
         this.currIndex = (this.currIndex + 1) % this.subset.length;
     }
 
-    prev(e) {
-        e.preventDefault();
+    prev() {
         this.currIndex = (this.currIndex - 1) % this.subset.length;
     }
 
     onKeyUp(e: KeyboardEvent) {
-        if (e.keyCode === 8) {
-            const chatInput: HTMLInputElement = document.getElementById("chatInput") as HTMLInputElement;
-            chatInput.focus();
-            chatInput.value = chatInput.value.substring(0, chatInput.value.length - 1);
-            this.filterUsers(chatInput.value, chatInput.selectionStart);
+        switch (e.keyCode) {
+            case 8: /* Backspace */ {
+                const chatInput: HTMLInputElement = document.getElementById("chatInput") as HTMLInputElement;
+                chatInput.focus();
+                chatInput.value = chatInput.value.substring(0, chatInput.value.length - 1);
+                this.filterUsers(chatInput.value, chatInput.selectionStart);
+                break;
+            }
+            case 38: /* Arrow UP */ {
+                this.prev();
+                break;
+            }
+            case 40: /* Arrow Down */ {
+                this.next();
+                break;
+            }
         }
+    }
+
+    onKeyPress(e: KeyboardEvent) {
+        const chatInput: HTMLInputElement = document.getElementById("chatInput") as HTMLInputElement;
+        chatInput.focus();
+        chatInput.value = chatInput.value += String.fromCharCode(e.keyCode);
+        this.filterUsers(chatInput.value, chatInput.selectionStart);
     }
 
     getSelected() {

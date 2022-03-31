@@ -148,10 +148,11 @@
                   @submit.prevent="c.current.send()">
                 <div class="w-full">
 
-                    <div class='p-1' :class="(c.users.isValid() || c.poll.showCreateUI) && 'shadow rounded-lg border dark:border-gray-800'">
+                    <div class='p-1'
+                         :class="(c.users.isValid() || c.poll.showCreateUI) && 'shadow rounded-lg border dark:border-gray-800'">
                         <!-- create poll dialog -->
                         <div x-show="c.poll.showCreateUI">
-                            <div class = "flex justify-end p-1">
+                            <div class="flex justify-end p-1">
                                 <button class="flex bg-transparent border-0 font-semibold py-1 px-2 rounded hover:dark:bg-gray-600 hover:bg-gray-200 my-auto"
                                         @click="c.poll.showCreateUI = !c.poll.showCreateUI; c.poll.reset();"
                                         title="Cancel Poll"
@@ -189,7 +190,7 @@
                                     </div>
                                 </template>
                             </div>
-                            <div class = "flex">
+                            <div class="flex">
                                 <button tabindex="-1"
                                         class="w-4/5 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
                                    disabled:bg-gray-400 disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400
@@ -217,11 +218,10 @@
                         </template>
                         <div id="userList" x-show="c.users.isValid()"
                              tabindex="0"
-                             class='max-h-56 overflow-y-scroll w-full bg-white dark:bg-secondary py-1 space-y-1 outline-none'
-                             @keyup.down="e => c.users.next(e)"
-                             @keyup.up="e => c.users.prev(e)"
+                             class='max-h-56 overflow-y-hidden w-full bg-white dark:bg-secondary py-1 space-y-1 outline-none'
                              @keyup.enter="c.current.addAddressee(c.users.getSelected()); c.users.clear()"
-                             @keyup="(e) => c.users.onKeyUp(e);">
+                             @keyup="e => c.users.onKeyUp(e);"
+                             @keypress.prevent="e => c.users.onKeyPress(e)">
 
                             <template x-for="(user, i) in c.users.subset">
                                 <div @click="c.current.addAddressee(user); c.users.clear()"
@@ -236,9 +236,11 @@
                         </div>
 
                         <!-- input -->
-                        <div x-show="!c.poll.showCreateUI" class="relative flex my-auto bg-gray-200 rounded-lg border-2 border-transparent dark:bg-gray-600
+                        <div x-show="!c.poll.showCreateUI"
+                             class="relative flex my-auto bg-gray-200 rounded-lg border-2 border-transparent dark:bg-gray-600
                                     focus-within:border-sky-600
-                                    dark:focus-within:border-indigo-600">
+                                    dark:focus-within:border-indigo-600"
+                            :class="c.users.isValid() && 'border-sky-600 dark:border-indigo-600'">
                             {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
                                 <input type="checkbox" name="anonymous" id="anonymous" class="hidden"
                                        x-model="c.current.anonymous" :disabled="c.disconnected">
@@ -253,7 +255,7 @@
                                    x-ref="chatInput"
                                    x-model="c.current.message"
                                    x-on:setmessage.window="e=>c.current.message=e.detail"
-                                   @keyup="e => { c.current.parse(); c.onInputKeyup(e); }"
+                                   @keyup="e => { c.current.parse(); c.onInputKeyUp(e); }"
                                    class="py-2 px-4 border-0 text-sm font-normal placeholder:text-sm"
                                    {{if not (.IndexData.TUMLiveContext.User)}}disabled
                                    placeholder="Log in to chat" {{else}}
