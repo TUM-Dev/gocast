@@ -136,12 +136,6 @@ func CoursePage(c *gin.Context) {
 	}
 }
 
-func isFinished(stream model.Stream, progress model.StreamProgress) bool {
-	beginOfLastSilence := stream.Silences[len(stream.Silences)-1].Start
-	currentTime := progress.Progress * float64(beginOfLastSilence)
-	return uint(currentTime) >= beginOfLastSilence
-}
-
 type StreamWithProgress struct {
 	Progress model.StreamProgress
 	Stream   model.Stream

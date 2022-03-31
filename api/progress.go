@@ -156,10 +156,3 @@ func markWatched(c *gin.Context) {
 		return
 	}
 }
-
-type progressResponse struct {
-	ID       uint    `json:"streamID"`
-	Month    string  `json:"month"`
-	Watched  bool    `json:"watched"`
-	Progress float64 `json:"progress"`
-}
