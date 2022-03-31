@@ -65,7 +65,7 @@ func startSession(c *gin.Context, data *sessionData) {
 		log.WithError(err).Error("Could not create token")
 		return
 	}
-	c.SetCookie("jwt", token, 3600, "/", "", tools.CookieSecure, true)
+	c.SetCookie("jwt", token, 60*60*24*7, "/", "", tools.CookieSecure, true)
 }
 
 func createToken(user uint) (string, error) {
