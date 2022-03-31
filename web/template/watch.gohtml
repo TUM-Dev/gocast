@@ -200,10 +200,9 @@
             <div class="flex justify-between align-middle mt-2 md:hidden">
                 {{template "actions" . }}
             </div>
-            <div x-data="{descriptionlen: `{{len .Description}}`, less:true}"
-                 class="text-3 p-4 border-t-2 my-3 border-secondary video-description">
-                <span class="font-semibold"
-                      x-show="description.length>0">{{if .Description}}Video Description:{{end}}</span>
+            <div x-data="{descriptionlen: {{len .Description}}, less:true}"
+                 class="text-3 p-4 border-t-2 my-3 border-secondary video-description" x-show="descriptionlen > 0">
+                <span class="font-semibold">Video Description:</span>
                 <div :class="less && 'truncate-children'"
                      @descriptionupdate.window="$el.innerHTML=$event.detail.description; descriptionlen=$event.detail.description.length">
                     {{if .Description}}{{.Description}}{{end}}
