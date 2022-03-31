@@ -5,8 +5,8 @@ import (
 	"TUM-Live/model"
 	"errors"
 	"github.com/getsentry/sentry-go"
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
@@ -22,6 +22,12 @@ func SetTemplates(t *template.Template) {
 	templ = t
 }
 
+// JWTClaims are the claims contained in a session
+type JWTClaims struct {
+	*jwt.StandardClaims
+	UserID uint
+}
+
 func InitContext(c *gin.Context) {
 	// no context initialisation required for static assets.
 	if strings.HasPrefix(c.Request.RequestURI, "/static") ||
@@ -30,13 +36,22 @@ func InitContext(c *gin.Context) {
 		return
 	}
 
-	session := sessions.Default(c)
-	userID := session.Get("UserID")
-	if userID != nil {
-		user, err := dao.GetUserByID(c, userID.(uint))
+	// get the session
+	if cookie, err := c.Cookie("jwt"); err == nil {
+		token, err := jwt.ParseWithClaims(cookie, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+			key := Cfg.GetJWTKey().Public()
+			return key, nil
+		})
 		if err != nil {
-			session.Clear()
-			_ = session.Save()
+			log.Error(err)
+		}
+		log.Info("logged in as: ", token.Claims.(*JWTClaims).UserID)
+		log.Info("valid: ", token.Valid)
+	}
+
+	if false {
+		user, err := dao.GetUserByID(c, 0)
+		if err != nil {
 			c.Set("TUMLiveContext", TUMLiveContext{})
 			return
 		} else {

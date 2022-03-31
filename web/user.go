@@ -3,13 +3,16 @@ package web
 import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
+	"TUM-Live/tools"
 	"TUM-Live/tools/tum"
 	"context"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 func LoginHandler(c *gin.Context) {
@@ -59,10 +62,24 @@ type sessionData struct {
 }
 
 func startSession(c *gin.Context, data *sessionData) {
-	s := sessions.Default(c)
-	s.Set("UserID", data.userid)
-	s.Set("Name", data.name)
-	_ = s.Save()
+	token, err := createToken(data.userid)
+	if err != nil {
+		log.WithError(err).Error("Could not create token")
+		return
+	}
+	c.SetCookie("jwt", token, 3600, "/", "", tools.CookieSecure, true)
+}
+
+func createToken(user uint) (string, error) {
+	t := jwt.New(jwt.GetSigningMethod("RS256"))
+
+	t.Claims = &tools.JWTClaims{
+		StandardClaims: &jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Hour * 24 * 7).Unix(), // Token expires in one week
+		},
+		UserID: user,
+	}
+	return t.SignedString(tools.Cfg.GetJWTKey())
 }
 
 // loginWithUserCredentials Try to login with non-tum credentials

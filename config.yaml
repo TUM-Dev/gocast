@@ -1,9 +1,9 @@
 alerts:
   matrix:
-    username: "rbgbot"
-    password: "password"
-    homeserver: "matrix.org"
-    roomId: "!id:matrix.org" # Obtained in Element by "Room Settings" -> "Advanced" -> "Internal Room ID"
+    homeserver: matrix.org
+    password: password
+    roomid: '!id:matrix.org'
+    username: rbgbot
 auths:
   camauth: user:password
   pwrcrtlauth: user:password
@@ -14,12 +14,40 @@ campus:
   tokens:
   - secret1
   - secret2
-cookiestoresecret: put 40 random characters here
 db:
   database: tumlive
   password: example
   user: root
 ingestbase: rtmp://ingest.tum.live/
+jwtkey: # This is an example key, delete and restart to generate a proper one
+  |
+  -----BEGIN RSA PRIVATE KEY-----
+  MIIEpAIBAAKCAQEA1vjGiZf0zQPI0r7lZkz0CZ4sLf6mhhHuqbY5MSsvnqZv4N99
+  LUH1DX7Y/jMaRxgY40tRgKItfjg7B3oMiincg8/C2BMO4YkODA6wS9T8ErtlB7/3
+  4/92BjyilJCQonOJF1G+qBEMXsJBEwACZUEMj8My0rVd3DpUyjrFBcXo7vN04Dvz
+  md8Tum8hWk7XPMAOajhOZFuDWkE//xQnsP1A3MIiYXbq+B/ANu0S+qOOlODrP8aa
+  Nn1taPsiS34d3vXvqeM+O4U1aj1QGGmz9/y4FG+bXpP2TbobYP6Qz+Akr0CUzWot
+  s+QG7ntLRqQyEA7obxJOI7ArcVbWnMrcMYBoLwIDAQABAoIBAHzUaTVs79I86Fi4
+  US1ecjdDihQLU1d3Ake6cOuEUFqn+z9xh5bIPixgBFFYC2JNM+aIzgMMKa6pqF1n
+  GfEA7fP8qQAf0PxWQbnuraDbRKT7/GbLqn7S0Q4+F4p9h/9NZ8YKydN+UtiTpIYL
+  81gotcqlZtXES4Seuq3UAqSfj+twkqjMupPN9735QWasG0PavrdUmvpRIUqTt47E
+  meHPohIrMYZkaLWRfdAtJdnKiGPwfo3HpEwKCbkZdEiyaG7wmqT4OKK65G/w/2Qa
+  S74wShF7WmfJNJwQhmhhaleSURh7I3kQEXMmtfrh5374uFgz0xVI7oSHm/ha8FuN
+  FxY+5oECgYEA/SXl9h2Rnv8o1MOBYUE1Izwh2Pzww3m+XpdbS75hfk2O6d0tZor0
+  Gtwc2i9Uckhk57eWAvXTfqoxVPQpCoNHH/TUQOgBCeUwNrPoEq2HGHrKnADUx4s1
+  LBlKON6yyPHcDZ8TINXx7Bl4vQffAPdG15b58/GMYiU/zVClcAa8z5kCgYEA2WTG
+  At0PHSW2/i4zwD+GYYGWQTXTSeN9wPAP+2L3AT4C0NuJL959sRNF0mP7Fwj+chSb
+  PTHSarcEeoE1o8oosVFfg3ffLXAiXFvG5Dvm9P5L9e1o4w9VSplKM4CeJqiy9t+j
+  V/i+pk+aMQfuT7Yp4VFQdMw52OdonZ94OgrdcwcCgYEAmWAL2zkBEJ8yAu7NBbq3
+  UjjNnSVrTlQFxlPX6aVYdmjRTNpH9pf73AY+qOcCOBeqo0X06qg8UsMVDo68CvWM
+  80yoCQdIEdG9i3cnBaIDdw52kVxjjt7GAYj1Ek3DbsIy/EHEGiHl6JFqOMV7FJ+9
+  WUPM/0L7Nj+xT1ksUxqR7QkCgYAqm7rHouYsc1Drfsi73HeNMuXtQAx6hfEG2MZ5
+  IguBndLVdsHrtPLzuvBLbTcwa53bZDiNBO/V5KsnC54kzSGup2FOFjeS41CIw6A2
+  6Zq52AGxYOfW4RF5fpPxhjr5HsV855ZPTrynQiDZjVFjJDQPKm3XhpOr9KcnhbL9
+  xVVkDwKBgQCe6nqw9XC/hNEptkSWvQPdW9L/JBiagRn7qWvCiekAHn3E22E1+s/9
+  iWDdq6trmkWW8r6nVyankzcuAC0uoaZfzP0kf73rVvm+8y9UH38kaLuFaEQlutQT
+  0D2sRiCzTBQY06fMx9m+zb9PRixyPIDGaM4He58EkZqWBf7qnHI2Og==
+  -----END RSA PRIVATE KEY-----
 ldap:
   basedn: dc=example,dc=de
   password: secret
@@ -40,5 +68,5 @@ mail:
 paths:
   mass: /srv/ceph/live
   static: /var/www/static
-webUrl: https://live.rbg.tum.de
-workerToken: 2657575f-40e4-4278-9ca1-f3a5ed667cff
+weburl: https://live.rbg.tum.de
+workertoken: 2657575f-40e4-4278-9ca1-f3a5ed667cff
