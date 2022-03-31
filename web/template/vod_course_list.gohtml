@@ -6,12 +6,10 @@
         {{$lecture := $streamWithProgress.Stream}}
         {{if $lecture.Recording}}
             {{if ne $lecture.Start.Month $lastMonth}}
-                {{if ne $lastMonth -1}} </div> </div> {{end}}
+                {{if ne $lastMonth -1}} </div> {{end}}
                 {{$lastMonth = $lecture.Start.Month}}
                 <div x-data="{ monthHidden: watchedTracker.userWatchedMonth(`{{$streamWithProgress.Stream.Start.Month.String}}`) }" class="my-2"> <!-- div with monthname <p> and all <li> elements -->
                     <p x-show="!filterWatched || (filterWatched && !monthHidden)" class="text-gray-500 text-sm uppercase">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
-                    <!-- div with all <li> elements of one month; asc from course.gohtml-->
-                    <div class="flex" :class="asc ? 'flex-col-reverse' : 'flex-col'">
             {{end}}
             <li x-show="!filterWatched || (filterWatched && !watchStatus)" class="p-2 w-full" x-data="{ watchStatus: {{$streamWithProgress.Progress.WatchStatus}} }">
                 <div class="flex justify-between">
@@ -28,7 +26,7 @@
                         </span>
                         </div>
                     </div>
-                    <div class="flex space-x-2 my-auto">
+                    <div class="flex space-x-3 my-auto">
                         <button class="flex text-3 rounded-full"
                                        @click="
                                         watchStatus = !watchStatus;
@@ -92,8 +90,6 @@
         {{end}}
     {{end}}
     {{if eq $lastMonth -1}}
-        <div class="h-screen flex">
-            <div class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">No VoDs yet</div>
-        </div>
+        <p class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">No VoDs yet</p>
     {{end}}
 {{end}}

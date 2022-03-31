@@ -1,6 +1,15 @@
 import { StatusCodes } from "http-status-codes";
 import { postData } from "./global";
 
+export function reorderVodList() {
+    const vodList = document.getElementById("vod-list");
+    const months = vodList.children;
+
+    for (let i = months.length - 1; i >= 0; i--) {
+        vodList.appendChild(months[i]);
+    }
+}
+
 class UserStream {
     streamID: number;
     month: string;
@@ -33,7 +42,7 @@ export class WatchedTracker {
         stream.watched = watchStatus;
         postData(`/api/markWatched`, { streamID: streamId, watched: watchStatus }).then((response: Response) => {
             if (response.status !== StatusCodes.OK) {
-                console.log("Error marking stream watched");
+                console.log("Error marking stream as watched.");
             }
         });
     }
@@ -44,11 +53,6 @@ export class WatchedTracker {
     }
 
     userWatchedAll(): boolean {
-        for (let i = 0; i < this.streams.length; i++) {
-            if (!this.streams[i].watched) {
-                return false;
-            }
-        }
-        return true;
+        return this.streams.findIndex((s) => !s.watched) === -1;
     }
 }

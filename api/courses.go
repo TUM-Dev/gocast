@@ -420,13 +420,14 @@ type addUnitRequest struct {
 }
 
 func updateDescription(c *gin.Context) {
-	var req renameLectureRequest
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	sIDInt, err := strconv.Atoi(c.Param("streamID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	if err := json.Unmarshal(jsonData, &req); err != nil {
+	sID := uint(sIDInt)
+	var req renameLectureRequest
+	if err := c.Bind(&req); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
@@ -440,16 +441,25 @@ func updateDescription(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't update lecture Description")
 		return
 	}
+	wsMsg := gin.H{
+		"description": stream.GetDescriptionHTML(),
+	}
+	if msg, err := json.Marshal(wsMsg); err == nil {
+		broadcastStream(sID, msg)
+	} else {
+		log.WithError(err).Error("couldn't marshal stream rename ws msg")
+	}
 }
 
 func renameLecture(c *gin.Context) {
-	var req renameLectureRequest
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	sIDInt, err := strconv.Atoi(c.Param("streamID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	if err := json.Unmarshal(jsonData, &req); err != nil {
+	sID := uint(sIDInt)
+	var req renameLectureRequest
+	if err = c.Bind(&req); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
@@ -462,6 +472,14 @@ func renameLecture(c *gin.Context) {
 	if err := dao.UpdateStream(stream); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't update lecture name")
 		return
+	}
+	wsMsg := gin.H{
+		"title": req.Name,
+	}
+	if msg, err := json.Marshal(wsMsg); err == nil {
+		broadcastStream(sID, msg)
+	} else {
+		log.WithError(err).Error("couldn't marshal stream rename ws msg")
 	}
 }
 
