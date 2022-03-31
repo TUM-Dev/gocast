@@ -61,7 +61,7 @@
         </div>
         <div id="streamInfo" class="mx-5 m-auto">
             <div class="flex justify-between align-middle mt-4">
-                <h1 class="text-4 text-xl grow">
+                <h1 class="text-4 text-xl grow" @titleupdate.window="$el.innerText=$event.detail.title">
                     {{if $stream.Name}}
                         {{$stream.Name}}
                     {{else}}
@@ -200,18 +200,17 @@
             <div class="flex justify-between align-middle mt-2 md:hidden">
                 {{template "actions" . }}
             </div>
-            {{if $stream.Description}}
-                {{$isMinLen := gt (len $stream.Description) 128}}
-                <div x-data="{less: {{$isMinLen}}}" class="text-3 p-4 border-t-2 my-3 border-secondary video-description">
-                    <span class="font-semibold">Video Description:</span>
-                    <div :class="less && 'truncate-children'">{{.Description}}</div>
-                    <template x-if="{{$isMinLen}}">
-                        <button class='text-xs text-gray-500 dark:text-gray-400 uppercase mt-2'
+                <div x-data="{description: `{{.Description}}`, less:true}"
+                     @descriptionupdate.window="description=$event.detail.description"
+                     class="text-3 p-4 border-t-2 my-3 border-secondary video-description">
+                    <span class="font-semibold" x-show="description.length>0">{{if .Description}}Video Description:{{end}}</span>
+                    <div :class="less && 'truncate-children'" x-html="description">
+                        {{if .Description}}{{.Description}}{{end}}
+                    </div>
+                        <button x-show="description.length>128" class='text-xs text-gray-500 dark:text-gray-400 uppercase mt-2'
                                 @click="less = !less" x-text="less ? 'show more' : 'show less'">show less
                         </button>
-                    </template>
                 </div>
-            {{end}}
             {{if .IsHighlightPage}}
                 <ul class="w-full m-auto mb-4">
                     {{template "course_list" .IndexData.TUMLiveContext}}
