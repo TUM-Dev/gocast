@@ -108,6 +108,7 @@ func UpsertUser(user *model.User) error {
 		user.Model = foundUser.Model
 		foundUser.LrzID = user.LrzID
 		foundUser.Name = user.Name
+		foundUser.LastName = user.LastName
 		err := DB.Save(&foundUser).Error
 		if err != nil {
 			return err

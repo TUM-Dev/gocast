@@ -98,12 +98,13 @@ func loginWithUserCredentials(username, password string) *sessionData {
 // loginWithTumCredentials Try to login with tum credentials
 // Returns pointer to sessionData if successful and nil if not
 func loginWithTumCredentials(username, password string) (*sessionData, error) {
-	sId, lrzID, name, err := tum.LoginWithTumCredentials(username, password)
+	loginResp, err := tum.LoginWithTumCredentials(username, password)
 	if err == nil {
 		user := model.User{
-			Name:                name,
-			MatriculationNumber: sId,
-			LrzID:               lrzID,
+			Name:                loginResp.FirstName,
+			LastName:            loginResp.LastName,
+			MatriculationNumber: loginResp.UserId,
+			LrzID:               loginResp.LrzIdent,
 			Role:                model.GenericType,
 		}
 		err = dao.UpsertUser(&user)

@@ -85,9 +85,10 @@ func SearchUserForCourse(c *gin.Context) {
 
 	for i, user := range users {
 		res[i] = userForLecturerDto{
-			ID:    user.ID,
-			Name:  user.Name,
-			Login: user.GetLoginString(),
+			ID:       user.ID,
+			Name:     user.Name,
+			LastName: user.LastName,
+			Login:    user.GetLoginString(),
 		}
 	}
 	c.JSON(http.StatusOK, res)
@@ -117,9 +118,10 @@ func SearchUser(c *gin.Context) {
 }
 
 type userForLecturerDto struct {
-	ID    uint   `json:"id,omitempty"`
-	Name  string `json:"name,omitempty"`
-	Login string `json:"login,omitempty"`
+	ID       uint    `json:"id,omitempty"`
+	Name     string  `json:"name,omitempty"`
+	LastName *string `json:"lastName,omitempty"`
+	Login    string  `json:"login,omitempty"`
 }
 
 type userSearchDTO struct {
