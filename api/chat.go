@@ -411,12 +411,12 @@ func getUsers(c *gin.Context) {
 		return
 	}
 	type chatUserSearchDto struct {
-		Id   uint   `json:"id"`
+		ID   uint   `json:"id"`
 		Name string `json:"name"`
 	}
 	resp := make([]chatUserSearchDto, len(users))
 	for i, user := range users {
-		resp[i].Id = user.ID
+		resp[i].ID = user.ID
 		resp[i].Name = user.Name
 	}
 	c.JSON(http.StatusOK, resp)
