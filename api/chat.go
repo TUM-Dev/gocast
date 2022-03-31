@@ -410,7 +410,16 @@ func getUsers(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	c.JSON(http.StatusOK, users)
+	type chatUserSearchDto struct {
+		Id   uint   `json:"id"`
+		Name string `json:"name"`
+	}
+	resp := make([]chatUserSearchDto, len(users))
+	for i, user := range users {
+		resp[i].Id = user.ID
+		resp[i].Name = user.Name
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 func getActivePoll(c *gin.Context) {
