@@ -85,7 +85,7 @@ func LoginWithTumCredentials(username string, password string) (*LdapResp, error
 		uid = mwnID
 	}
 	return &LdapResp{
-		UserId:    mNr,
+		UserId:    uid,
 		LrzIdent:  lrzID,
 		FirstName: name,
 		LastName:  lastName,
