@@ -217,9 +217,9 @@
                         </template>
                         <div id="userList" x-show="c.users.isValid()"
                              tabindex="0"
-                             class='max-h-56 overflow-y-scroll w-full bg-white dark:bg-secondary py-1 space-y-1 focus-visible:outline-none'
-                             @keyup.down="c.users.next()"
-                             @keyup.up="c.users.prev()"
+                             class='max-h-56 overflow-y-scroll w-full bg-white dark:bg-secondary py-1 space-y-1 outline-none'
+                             @keyup.down="e => c.users.next(e)"
+                             @keyup.up="e => c.users.prev(e)"
                              @keyup.enter="c.current.addAddressee(c.users.getSelected()); c.users.clear()"
                              @keyup="(e) => c.users.onKeyUp(e);">
 
@@ -253,8 +253,7 @@
                                    x-ref="chatInput"
                                    x-model="c.current.message"
                                    x-on:setmessage.window="e=>c.current.message=e.detail"
-                                   x-on:keyup="e => c.onInputKeyup(e);"
-                                   @keyup="c.current.parse()"
+                                   @keyup="e => { c.current.parse(); c.onInputKeyup(e); }"
                                    class="py-2 px-4 border-0 text-sm font-normal placeholder:text-sm"
                                    {{if not (.IndexData.TUMLiveContext.User)}}disabled
                                    placeholder="Log in to chat" {{else}}

@@ -30,6 +30,8 @@ export class ChatUserList {
         }
 
         const currentWord = message.substring(pos[0], pos[1]);
+        console.log(message);
+        console.log(currentWord);
         if (message === "" || !currentWord.startsWith("@")) {
             this.subset = [];
             this.valid = false;
@@ -63,11 +65,13 @@ export class ChatUserList {
         this.valid = false;
     }
 
-    next() {
+    next(e) {
+        e.preventDefault();
         this.currIndex = (this.currIndex + 1) % this.subset.length;
     }
 
-    prev() {
+    prev(e) {
+        e.preventDefault();
         this.currIndex = (this.currIndex - 1) % this.subset.length;
     }
 

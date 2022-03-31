@@ -113,9 +113,6 @@ export class Chat {
     onInputKeyup(e) {
         let event = "";
         switch (e.keyCode) {
-            case 8: /* Backspace */ {
-                return;
-            }
             case 9: {
                 event = "emojiselectiontriggered";
                 break;
