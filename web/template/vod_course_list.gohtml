@@ -8,8 +8,8 @@
             {{if ne $lecture.Start.Month $lastMonth}}
                 {{if ne $lastMonth -1}} </div> {{end}}
                 {{$lastMonth = $lecture.Start.Month}}
-                <div x-data="{ monthHidden: watchedTracker.userWatchedMonth(`{{$streamWithProgress.Stream.Start.Month.String}}`) }" class="my-2"> <!-- div with monthname <p> and all <li> elements -->
-                    <p x-show="!filterWatched || (filterWatched && !monthHidden)" class="text-gray-500 text-sm uppercase">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
+                <div x-show="!filterWatched || (filterWatched && !monthHidden)" x-data="{ monthHidden: watchedTracker.userWatchedMonth(`{{$streamWithProgress.Stream.Start.Month.String}}`) }" class="my-2"> <!-- div with monthname <p> and all <li> elements -->
+                    <p class="text-gray-500 text-sm uppercase">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
             {{end}}
             <li x-show="!filterWatched || (filterWatched && !watchStatus)" class="p-2 w-full" x-data="{ watchStatus: {{$streamWithProgress.Progress.WatchStatus}} }">
                 <div class="flex justify-between">
@@ -79,7 +79,7 @@
                                         </a>
                                         <span class="text-sm text-gray-400">
                                                 {{$unit.GetRoundedUnitLen}}
-                                            </span>
+                                        </span>
                                     </p>
                                 </li>
                             {{end}}
@@ -89,7 +89,9 @@
             </li>
         {{end}}
     {{end}}
+    </div>
+    <p x-show="watchedAll && filterWatched" class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">All recordings watched</p>
     {{if eq $lastMonth -1}}
-        <p class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">No VoDs yet</p>
+        <p class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">No recordings yet</p>
     {{end}}
 {{end}}

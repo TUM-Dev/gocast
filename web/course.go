@@ -107,6 +107,9 @@ func CoursePage(c *gin.Context) {
 	var progressResponses []ProgressResponse
 
 	for _, stream := range (*tumLiveContext.Course).Streams {
+		if !stream.Recording {
+			continue
+		}
 		var newProg model.StreamProgress
 		var newResp ProgressResponse
 
@@ -130,7 +133,7 @@ func CoursePage(c *gin.Context) {
 		log.Printf("%v", err)
 	}
 	// in any other case assume either validated before or public course
-	err = templ.ExecuteTemplate(c.Writer, "course.gohtml", CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course, StreamsWithProgress: streamsWithProgress, ProgressResponses: string(encoded)})
+	err = templ.ExecuteTemplate(c.Writer, "course-overview.gohtml", CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course, StreamsWithProgress: streamsWithProgress, ProgressResponses: string(encoded)})
 	if err != nil {
 		sentrygin.GetHubFromContext(c).CaptureException(err)
 	}
