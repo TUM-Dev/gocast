@@ -1,19 +1,20 @@
 {{define "vod_course_list"}}
-    {{- /*gotype: TUM-Live/tools.TUMLiveContext*/ -}}
+    {{- /*gotype: TUM-Live/web.CoursePageData*/ -}}
     {{$course := .Course}}
     {{$lastMonth := -1}}
-    {{range $lecture := $course.Streams }}
+    {{range $streamWithProgress := .StreamsWithProgress}}
+        {{$lecture := $streamWithProgress.Stream}}
         {{if $lecture.Recording}}
             {{if ne $lecture.Start.Month $lastMonth}}
                 {{if ne $lastMonth -1}} </div> </div> {{end}}
                 {{$lastMonth = $lecture.Start.Month}}
-                <div class="my-2"> <!-- div with monthname <p> and all <li> elements -->
-                <p class="text-gray-500 text-sm uppercase">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
-                <!-- div with all <li> elements of one month; asc from course.gohtml-->
-                <div class="flex" :class="asc ? 'flex-col-reverse' : 'flex-col'">
+                <div x-data="{ monthHidden: watchedTracker.userWatchedMonth(`{{$streamWithProgress.Stream.Start.Month.String}}`) }" class="my-2"> <!-- div with monthname <p> and all <li> elements -->
+                    <p x-show="!filterWatched || (filterWatched && !monthHidden)" class="text-gray-500 text-sm uppercase">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
+                    <!-- div with all <li> elements of one month; asc from course.gohtml-->
+                    <div class="flex" :class="asc ? 'flex-col-reverse' : 'flex-col'">
             {{end}}
-            <li class="p-2 w-full">
-                <div class="flex justify-between">
+            <li class="p-2 w-full" x-data="{ watchStatus: {{$streamWithProgress.Progress.WatchStatus}} }">
+                <div x-show="!filterWatched || (filterWatched && !watchStatus)" class="flex justify-between">
                     <div>
                         <div>
                             <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}"
@@ -22,12 +23,21 @@
                             </a>
                         </div>
                         <div>
-                                <span class='dark:text-gray-200 font-light text-sm'>
-                                    {{$lecture.FriendlyDate}} {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
-                                </span>
+                        <span class='dark:text-gray-200 font-light text-sm'>
+                            {{$lecture.FriendlyDate}} {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
+                        </span>
                         </div>
                     </div>
                     <div class="flex space-x-2 my-auto">
+                        <button class="flex text-3 rounded-full"
+                                       @click="
+                                        watchStatus = !watchStatus;
+                                        watchedTracker.setWatched({{$streamWithProgress.Stream.Model.ID}}, watchStatus);
+                                        monthHidden = watchedTracker.userWatchedMonth(`{{$streamWithProgress.Stream.Start.Month.String}}`);
+                                        watchedAll = watchedTracker.userWatchedAll();">
+                            <i x-show="!watchStatus" title="Mark as watched" class="fas fa-check"></i>
+                            <i x-show="watchStatus" title="Unmark as watched" class="fa-solid fa-clock-rotate-left"></i>
+                        </button>
                         {{if (and $course.DownloadsEnabled $lecture.FilePath) }}
                             <a class="flex text-3 rounded-full"
                                title="Download Lecture"

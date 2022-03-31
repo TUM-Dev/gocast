@@ -2,6 +2,7 @@ package dao
 
 import (
 	"TUM-Live/model"
+
 	"gorm.io/gorm/clause"
 )
 
@@ -9,7 +10,7 @@ import (
 func SaveProgresses(progresses []model.StreamProgress) error {
 	return DB.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "stream_id"}, {Name: "user_id"}, {Name: "course_id"}}, // key column
-		DoUpdates: clause.AssignmentColumns([]string{"progress"}),                               // column needed to be updated
+		DoUpdates: clause.AssignmentColumns([]string{"progress", "watch_status"}),               // column needed to be updated
 	}).Create(progresses).Error
 }
 

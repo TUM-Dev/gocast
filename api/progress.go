@@ -4,11 +4,12 @@ import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
-	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
 var progressBuff *progressBuffer
@@ -92,10 +93,19 @@ func saveProgress(c *gin.Context) {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
+	streams, err := dao.GetStreamsByIds([]uint{request.StreamID})
+
+	if err != nil {
+		log.WithError(err).Warn("Could not get stream.")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
 	progressBuff.add(model.StreamProgress{
 		Progress: request.Progress,
 		StreamID: request.StreamID,
 		UserID:   tumLiveContext.User.ID,
+		CourseID: streams[0].CourseID,
 	})
 }
 
@@ -110,7 +120,7 @@ func markWatched(c *gin.Context) {
 	var request WatchedRequest
 	err := c.BindJSON(&request)
 	if err != nil {
-		log.WithError(err).Warn("Could not bind JSON from progressReport.")
+		log.WithError(err).Warn("Could not bind JSON.")
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
@@ -124,9 +134,18 @@ func markWatched(c *gin.Context) {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
+	streams, err := dao.GetStreamsByIds([]uint{request.StreamID})
+
+	if err != nil {
+		log.WithError(err).Warn("Could not get stream.")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
 	progress := model.StreamProgress{
 		UserID:      tumLiveContext.User.ID,
 		StreamID:    request.StreamID,
+		CourseID:    streams[0].CourseID,
 		WatchStatus: request.Watched,
 	}
 
@@ -136,4 +155,11 @@ func markWatched(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
+}
+
+type progressResponse struct {
+	ID       uint    `json:"streamID"`
+	Month    string  `json:"month"`
+	Watched  bool    `json:"watched"`
+	Progress float64 `json:"progress"`
 }
