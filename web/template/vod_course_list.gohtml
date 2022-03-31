@@ -13,8 +13,8 @@
                     <!-- div with all <li> elements of one month; asc from course.gohtml-->
                     <div class="flex" :class="asc ? 'flex-col-reverse' : 'flex-col'">
             {{end}}
-            <li class="p-2 w-full" x-data="{ watchStatus: {{$streamWithProgress.Progress.WatchStatus}} }">
-                <div x-show="!filterWatched || (filterWatched && !watchStatus)" class="flex justify-between">
+            <li x-show="!filterWatched || (filterWatched && !watchStatus)" class="p-2 w-full" x-data="{ watchStatus: {{$streamWithProgress.Progress.WatchStatus}} }">
+                <div class="flex justify-between">
                     <div>
                         <div>
                             <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}"
