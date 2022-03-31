@@ -17,7 +17,6 @@ require (
 	github.com/go-ldap/ldap/v3 v3.4.2
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang/glog v1.0.0 // indirect
-	github.com/gorilla/sessions v1.2.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/jinzhu/now v1.1.5
 	github.com/joschahenningsen/TUM-Live-Worker-v2 v1.3.3
@@ -37,10 +36,7 @@ require (
 	mvdan.cc/xurls/v2 v2.4.0
 )
 
-require (
-	github.com/gin-contrib/sessions v0.0.4
-	github.com/golang-jwt/jwt v3.2.2+incompatible
-)
+require github.com/golang-jwt/jwt v3.2.2+incompatible
 
 require (
 	github.com/Azure/go-ntlmssp v0.0.0-20211209120228-48547f28849e // indirect
@@ -56,9 +52,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.7 // indirect
-	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
-	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

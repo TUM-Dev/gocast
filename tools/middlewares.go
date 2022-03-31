@@ -37,29 +37,38 @@ func InitContext(c *gin.Context) {
 	}
 
 	// get the session
-	if cookie, err := c.Cookie("jwt"); err == nil {
-		token, err := jwt.ParseWithClaims(cookie, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-			key := Cfg.GetJWTKey().Public()
-			return key, nil
-		})
-		if err != nil {
-			log.Error(err)
-		}
-		log.Info("logged in as: ", token.Claims.(*JWTClaims).UserID)
-		log.Info("valid: ", token.Valid)
+	cookie, err := c.Cookie("jwt")
+	if err != nil {
+		c.Set("TUMLiveContext", TUMLiveContext{})
+		return
 	}
 
-	if false {
-		user, err := dao.GetUserByID(c, 0)
-		if err != nil {
-			c.Set("TUMLiveContext", TUMLiveContext{})
-			return
-		} else {
-			c.Set("TUMLiveContext", TUMLiveContext{User: &user})
-			return
-		}
+	token, err := jwt.ParseWithClaims(cookie, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+		key := Cfg.GetJWTKey().Public()
+		return key, nil
+	})
+	if err != nil {
+		log.Info("JWT parsing error: ", err)
+		c.Set("TUMLiveContext", TUMLiveContext{})
+		c.SetCookie("jwt", "", -1, "/", "", false, true)
+		return
 	}
-	c.Set("TUMLiveContext", TUMLiveContext{})
+	if !token.Valid {
+		log.Info("JWT token is not valid")
+		c.Set("TUMLiveContext", TUMLiveContext{})
+		c.SetCookie("jwt", "", -1, "/", "", false, true)
+		return
+	}
+
+	user, err := dao.GetUserByID(c, token.Claims.(*JWTClaims).UserID)
+	if err != nil {
+		c.Set("TUMLiveContext", TUMLiveContext{})
+		return
+	} else {
+		c.Set("TUMLiveContext", TUMLiveContext{User: &user})
+		return
+	}
+
 }
 
 // RenderErrorPage renders the error page with the given error code and message.

@@ -6,7 +6,6 @@ import (
 	"TUM-Live/tools"
 	"TUM-Live/tools/tum"
 	"context"
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
@@ -58,7 +57,6 @@ func getRedirectUrl(c *gin.Context) string {
 
 type sessionData struct {
 	userid uint
-	name   string
 }
 
 func startSession(c *gin.Context, data *sessionData) {
@@ -88,7 +86,7 @@ func loginWithUserCredentials(username, password string) *sessionData {
 	if u, err := dao.GetUserByEmail(context.Background(), username); err == nil {
 		// user with this email found.
 		if match, err := u.ComparePasswordAndHash(password); err == nil && match {
-			return &sessionData{u.ID, u.Name}
+			return &sessionData{u.ID}
 		}
 
 		return nil
@@ -114,7 +112,7 @@ func loginWithTumCredentials(username, password string) (*sessionData, error) {
 			return nil, err
 		}
 
-		return &sessionData{user.ID, user.Name}, nil
+		return &sessionData{user.ID}, nil
 	}
 
 	return nil, err
@@ -125,9 +123,7 @@ func LoginPage(c *gin.Context) {
 }
 
 func LogoutPage(c *gin.Context) {
-	s := sessions.Default(c)
-	s.Clear()
-	_ = s.Save()
+	c.SetCookie("jwt", "", -1, "/", "", tools.CookieSecure, true)
 	c.Redirect(http.StatusFound, "/")
 }
 
