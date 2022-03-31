@@ -1,7 +1,7 @@
 class User {
     id: number;
     name: string;
-    lastName: string|undefined;
+    lastName: string | undefined;
     login: string;
 }
 
