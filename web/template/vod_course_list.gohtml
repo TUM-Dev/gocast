@@ -19,6 +19,15 @@
                                class="text-l text-3 font-semibold p-0">
                                 {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
                             </a>
+                            <button class="inline ml-1 text-3 rounded-full"
+                                    @click="
+                                        watchStatus = !watchStatus;
+                                        watchedTracker.setWatched({{$streamWithProgress.Stream.Model.ID}}, watchStatus);
+                                        monthHidden = watchedTracker.userWatchedMonth(`{{$streamWithProgress.Stream.Start.Month.String}}`);
+                                        watchedAll = watchedTracker.userWatchedAll();">
+                                <i x-show="!watchStatus" title="Mark as watched" class="fa-solid fa-check"></i>
+                                <i x-show="watchStatus" title="Unmark as watched" class="fa-solid fa-clock-rotate-left"></i>
+                            </button>
                         </div>
                         <div>
                         <span class='dark:text-gray-200 font-light text-sm'>
@@ -27,15 +36,6 @@
                         </div>
                     </div>
                     <div class="flex space-x-3 my-auto">
-                        <button class="flex text-3 rounded-full"
-                                       @click="
-                                        watchStatus = !watchStatus;
-                                        watchedTracker.setWatched({{$streamWithProgress.Stream.Model.ID}}, watchStatus);
-                                        monthHidden = watchedTracker.userWatchedMonth(`{{$streamWithProgress.Stream.Start.Month.String}}`);
-                                        watchedAll = watchedTracker.userWatchedAll();">
-                            <i x-show="!watchStatus" title="Mark as watched" class="fas fa-check"></i>
-                            <i x-show="watchStatus" title="Unmark as watched" class="fa-solid fa-clock-rotate-left"></i>
-                        </button>
                         {{if (and $course.DownloadsEnabled $lecture.FilePath) }}
                             <a class="flex text-3 rounded-full"
                                title="Download Lecture"
