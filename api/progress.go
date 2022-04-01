@@ -64,7 +64,7 @@ func configProgressRouter(router *gin.Engine) {
 	progressBuff = newProgressBuffer()
 	go progressBuff.run()
 	router.POST("/api/progressReport", saveProgress)
-	router.POST("/api/markWatched", markWatched)
+	router.POST("/api/watched", markWatched)
 }
 
 // ProgressRequest corresponds the request that is sent by the video player when it reports its progress for VODs
@@ -80,7 +80,7 @@ func saveProgress(c *gin.Context) {
 	err := c.BindJSON(&request)
 
 	if err != nil {
-		log.WithError(err).Warn("Could not bind JSON from progressReport.")
+		log.WithError(err).Warn("Could not bind JSON.")
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
@@ -129,26 +129,27 @@ func markWatched(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-
 	if tumLiveContext.User == nil {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
 	streams, err := dao.GetStreamsByIds([]uint{request.StreamID})
-
 	if err != nil {
-		log.WithError(err).Warn("Could not get stream.")
+		log.WithError(err).Warn("Could not get streams.")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-
-	progress := model.StreamProgress{
-		UserID:      tumLiveContext.User.ID,
-		StreamID:    request.StreamID,
-		CourseID:    streams[0].CourseID,
-		WatchStatus: request.Watched,
+	if len(streams) == 0 {
+		log.WithError(err).Warn("No streams found.")
+		c.AbortWithStatus(http.StatusNotFound)
+		return
 	}
-
+	progress := model.StreamProgress{
+		UserID:   tumLiveContext.User.ID,
+		StreamID: request.StreamID,
+		CourseID: streams[0].CourseID,
+		Watched:  request.Watched,
+	}
 	err = dao.SaveProgresses([]model.StreamProgress{progress})
 	if err != nil {
 		log.WithError(err).Warn("Could not mark VoD as watched.")

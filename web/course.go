@@ -103,29 +103,7 @@ func CoursePage(c *gin.Context) {
 		log.Printf("%v", err)
 	}
 
-	var streamsWithProgress []StreamWithProgress
-	var progressResponses []ProgressResponse
-
-	for _, stream := range (*tumLiveContext.Course).Streams {
-		if !stream.Recording {
-			continue
-		}
-		var newProg model.StreamProgress
-		var newResp ProgressResponse
-
-		for _, prog := range progs {
-			if prog.StreamID == stream.ID {
-				newProg = prog
-				newResp.Progress = prog.Progress
-				newResp.Watched = prog.WatchStatus
-				break
-			}
-		}
-		newResp.Month = stream.Start.Month().String()
-		newResp.ID = stream.ID
-		progressResponses = append(progressResponses, newResp)
-		streamsWithProgress = append(streamsWithProgress, StreamWithProgress{Stream: stream, Progress: newProg})
-	}
+	progressResponses, progressStreams := prepareCourseProgressData(tumLiveContext, progs)
 
 	encoded, err := json.Marshal(progressResponses)
 	if err != nil {
@@ -133,15 +111,58 @@ func CoursePage(c *gin.Context) {
 		log.Printf("%v", err)
 	}
 	// in any other case assume either validated before or public course
-	err = templ.ExecuteTemplate(c.Writer, "course-overview.gohtml", CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course, StreamsWithProgress: streamsWithProgress, ProgressResponses: string(encoded)})
+	err = templ.ExecuteTemplate(c.Writer, "course-overview.gohtml",
+		CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course, StreamsWithProgress: progressStreams, ProgressResponses: string(encoded)})
 	if err != nil {
 		sentrygin.GetHubFromContext(c).CaptureException(err)
 	}
 }
 
-type StreamWithProgress struct {
+func prepareCourseProgressData(tumLiveContext tools.TUMLiveContext, streamProgresses []model.StreamProgress) ([]ProgressInfo, []ProgressStream) {
+	var progressStreams []ProgressStream
+	var progressResponses []ProgressInfo
+
+	courseStreams := (*tumLiveContext.Course).Streams
+	// Combine streams with existing progresses.
+	for _, stream := range courseStreams {
+		// We only want to track the progress for recordings.
+		if !stream.Recording {
+			continue
+		}
+		var prog model.StreamProgress
+		var info ProgressInfo // Populated with minimum information to track stream progress.
+
+		for _, p := range streamProgresses {
+			if p.StreamID == stream.ID {
+				prog = p
+				info.Progress = p.Progress
+				info.Watched = p.Watched
+				break
+			}
+		}
+		// Add match stream and progress.
+		progressStreams = append(progressStreams, ProgressStream{Stream: stream, Progress: prog})
+
+		info.Month = stream.Start.Month().String()
+		info.ID = stream.ID
+		progressResponses = append(progressResponses, info)
+	}
+
+	return progressResponses, progressStreams
+}
+
+// ProgressStream is a stream with its progress information. Used to generate a list of VoDs.
+type ProgressStream struct {
 	Progress model.StreamProgress
 	Stream   model.Stream
+}
+
+// ProgressInfo is used by the client to track the which VoDs are watched.
+type ProgressInfo struct {
+	ID       uint    `json:"streamID"`
+	Month    string  `json:"month"`
+	Watched  bool    `json:"watched"`
+	Progress float64 `json:"progress"`
 }
 
 // CoursePageData is the data for the course page.
@@ -150,13 +171,6 @@ type CoursePageData struct {
 	User                model.User
 	Course              model.Course
 	HighlightPage       bool
-	StreamsWithProgress []StreamWithProgress
+	StreamsWithProgress []ProgressStream
 	ProgressResponses   string // JSON encoded
-}
-
-type ProgressResponse struct {
-	ID       uint    `json:"streamID"`
-	Month    string  `json:"month"`
-	Watched  bool    `json:"watched"`
-	Progress float64 `json:"progress"`
 }

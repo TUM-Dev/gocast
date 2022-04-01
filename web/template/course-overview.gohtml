@@ -30,12 +30,9 @@
                           x-text="asc ? '&#x25B2; asc' : '&#x25BC; desc'">desc &#x25BC;</span>
                         </button>
                         <button class="hover:gray-200 text-sm font-semibold uppercase dark:text-white" @click="filterWatched=!filterWatched">
-                            <span x-show="filterWatched">
-                                <i title="Show watched streams" class="fa-solid fa-eye-slash w-5 mr-1"></i>Filter
-                            </span>
-                            <span x-show="!filterWatched">
-                            <i title="Show watched streams" x-show="!filterWatched" class="fa-solid fa-eye w-5 mr-1"></i>Filter
-                            </span>
+                            <i :title="filterWatched ? 'Show watched streams' : 'Hide watched streams'"
+                               class="fa-solid w-5 mr-1"
+                               :class="filterWatched ? 'fa-eye-slash' : 'fa-eye'"></i>Filter
                         </button>
                     </div>
                 </div>

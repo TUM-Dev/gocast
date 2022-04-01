@@ -11,7 +11,7 @@
                 <div x-show="!filterWatched || (filterWatched && !monthHidden)" x-data="{ monthHidden: watchedTracker.userWatchedMonth(`{{$streamWithProgress.Stream.Start.Month.String}}`) }" class="my-2"> <!-- div with monthname <p> and all <li> elements -->
                     <p class="text-gray-500 text-sm uppercase">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
             {{end}}
-            <li x-show="!filterWatched || (filterWatched && !watchStatus)" class="p-2 w-full" x-data="{ watchStatus: {{$streamWithProgress.Progress.WatchStatus}} }">
+            <li x-show="!filterWatched || (filterWatched && !watched)" class="p-2 w-full" x-data="{ watched: {{$streamWithProgress.Progress.Watched}} }">
                 <div class="flex justify-between">
                     <div>
                         <div>
@@ -19,14 +19,14 @@
                                class="text-l text-3 font-semibold p-0">
                                 {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
                             </a>
-                            <button class="inline ml-1 text-3 rounded-full"
+                            <button class="inline ml-1 text-3 rounded-full hover:text-gray-600"
+                                    {{/* Update watched states*/}}
                                     @click="
-                                        watchStatus = !watchStatus;
-                                        watchedTracker.setWatched({{$streamWithProgress.Stream.Model.ID}}, watchStatus);
-                                        monthHidden = watchedTracker.userWatchedMonth(`{{$streamWithProgress.Stream.Start.Month.String}}`);
+                                        watched = !watched;
+                                        watchedTracker.setWatched({{$streamWithProgress.Stream.Model.ID}}, watched);
+                                        monthHidden = watchedTracker.userWatchedMonth(`{{$streamWithProgress.Stream.Start.Month.String}}`); {{/* Updates state in the client and in the database */}}
                                         watchedAll = watchedTracker.userWatchedAll();">
-                                <i x-show="!watchStatus" title="Mark as watched" class="fa-solid fa-check"></i>
-                                <i x-show="watchStatus" title="Unmark as watched" class="fa-solid fa-clock-rotate-left"></i>
+                                <i :title="watched ? 'Mark as unwatched' : 'Mark as watched'" :class="watched ? 'fa-solid fa-clock-rotate-left' : 'fa-solid fa-check'"></i>
                             </button>
                         </div>
                         <div>
@@ -37,7 +37,7 @@
                     </div>
                     <div class="flex space-x-3 my-auto">
                         {{if (and $course.DownloadsEnabled $lecture.FilePath) }}
-                            <a class="flex text-3 rounded-full"
+                            <a class="flex text-3 rounded-full hover:text-gray-600"
                                title="Download Lecture"
                                href="/api/download/{{$lecture.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $lecture.Start.Month $lecture.Start.Day $lecture.Start.Year}}"
                                download>
@@ -45,21 +45,21 @@
                             </a>
                         {{end}}
                         {{if $lecture.PlaylistUrlCAM}}
-                            <a class="flex text-3"
+                            <a class="flex text-3 hover:text-gray-600"
                                title="Camera Only"
                                href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/CAM">
                                 <i class="fas fa-camera"></i>
                             </a>
                         {{end}}
                         {{if $lecture.PlaylistUrlPRES}}
-                            <a class="flex text-3"
+                            <a class="flex text-3 hover:text-gray-600"
                                title="Presentation Only"
                                href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/PRES">
                                 <i class="fas fa-edit"></i>
                             </a>
                         {{end}}
                         {{if and $course.ChatEnabled (or $lecture.LiveNow $lecture.Recording)}}
-                            <a class="flex text-3"
+                            <a class="flex text-3 hover:text-gray-600"
                                title="Chat Only"
                                href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/chat">
                                 <i class="fas fa-comments"></i>
