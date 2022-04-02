@@ -4,7 +4,7 @@ import "TUM-Live/model"
 
 // AddNotification adds a new notification to the database
 func AddNotification(notification *model.Notification) error {
-	return DB.Debug().Create(notification).Error
+	return DB.Create(notification).Error
 }
 
 // DeleteNotification deletes a notification from the database
