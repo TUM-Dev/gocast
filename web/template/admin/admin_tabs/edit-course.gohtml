@@ -106,29 +106,29 @@
                                         </div>
 
                                         <div class="flex items-center h-8">
-                                        <i class="fas fa-trash hover:text-1 px-2"
-                                           title="Delete Lecture"
-                                           onclick="admin.deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}})"></i>
                                             {{if $lecture.Recording}}
                                                 {{if $lecture.VodViews}}<p
                                                         class="text-4 text-sm">{{$lecture.VodViews}}
                                                     VoD views</p>{{end}}
-                                                <div class="font-semibold bg-success border-success w-auto inline-block px-4 text-1 flex items-center rounded-bl-lg h-8">
+                                                <div class="font-semibold bg-success border-success w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8">
                                                     VoD
                                                 </div>
                                             {{else if $lecture.LiveNow}}
-                                                <div class="font-semibold bg-danger border-danger w-auto inline-block px-4 text-1 flex items-center rounded-bl-lg h-8">
+                                                <div class="font-semibold bg-danger border-danger w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8">
                                                     Live
                                                 </div>
                                             {{else if $lecture.IsPast}}
-                                                <div class="font-semibold bg-warn border-warn w-auto inline-block px-4 text-1 flex items-center rounded-bl-lg h-8">
+                                                <div class="font-semibold bg-warn border-warn w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8">
                                                     Past
                                                 </div>
                                             {{else}}
-                                                <div class="font-semibold bg-info border-info w-auto inline-block px-4 text-1 flex items-center rounded-bl-lg h-8">
+                                                <div class="font-semibold bg-info border-info w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8">
                                                     Scheduled
                                                 </div>
                                             {{end}}
+                                            <i class="fas fa-trash hover:text-1 px-4"
+                                               title="Delete Lecture"
+                                               onclick="admin.deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}})"></i>
                                         </div>
                                     </div>
 
