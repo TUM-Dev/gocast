@@ -1,4 +1,4 @@
-export * from './notifications'
+export * from "./notifications";
 
 export async function postData(url = "", data = {}) {
     return await fetch(url, {
