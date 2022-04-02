@@ -7,6 +7,7 @@
     "noImplicitAny": false,
     "moduleResolution": "node",
     "sourceRoot": "./ts/",
-    "rootDir": "./ts/"
+    "rootDir": "./ts/",
+    "lib": ["es2021"]
   }
 }

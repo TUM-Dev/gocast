@@ -1,10 +1,10 @@
 {{define "emojipromt"}}
-    <div x-show="emojiSuggestions.length>0" class="text-left overflow-hidden whitespace-nowrap px-2 flex flex-row">
-        <template x-for="(emoji, i) in emojiSuggestions">
+    <div x-show="c.emojis.valid()" class="text-left overflow-hidden whitespace-nowrap px-2 flex flex-row">
+        <template x-for="(emoji, i) in c.emojis.suggestions">
                 <button :title="`:${emoji.short_names[0]}:`" {{/* e.g. ':eyes:' */}}
                         x-text="emoji.emoji"
-                        x-on:mouseenter="emojiIndex=i" {{/* Select emoji on hover */}}
-                        :class="emojiIndex===i && 'border-sky-600 border-2'"
+                        x-on:mouseenter="c.emojis.emojiIndex=i" {{/* Select emoji on hover */}}
+                        :class="c.emojis.emojiIndex===i && 'border-sky-600 border-2'"
                         @click="$dispatch('emojiselectiontriggered')" {{/* notify chatpromts to insert emoji */}}
                         class="cursor-pointer dark:bg-gray-700 bg-gray-200 mr-1 p-1 shadow rounded"></button>
         </template>

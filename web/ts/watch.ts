@@ -1,5 +1,5 @@
-import { hideDisconnectedMsg, scrollChat, shouldScroll, showDisconnectedMsg, showNewMessageIndicator } from "./chat";
-import { List } from "postcss/lib/list";
+import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
+import { NewChatMessage } from "./chat/NewChatMessage";
 
 let chatInput: HTMLInputElement;
 
@@ -61,7 +61,7 @@ export function startWebsocket() {
     ws = new WebSocket(`${wsProto}${window.location.host}/api/chat/${streamid}/ws`);
     initChatScrollListener();
     ws.onopen = function (e) {
-        hideDisconnectedMsg();
+        window.dispatchEvent(new CustomEvent("connected"));
     };
 
     ws.onmessage = function (m) {
@@ -125,6 +125,12 @@ export function startWebsocket() {
         } else if ("approve" in data) {
             const event = new CustomEvent("chatapprove", { detail: data });
             window.dispatchEvent(event);
+        } else if ("title" in data) {
+            const event = new CustomEvent("titleupdate", { detail: data });
+            window.dispatchEvent(event);
+        } else if ("description" in data) {
+            const event = new CustomEvent("descriptionupdate", { detail: data });
+            window.dispatchEvent(event);
         }
     };
 
@@ -134,14 +140,14 @@ export function startWebsocket() {
         if (new Date().valueOf() - pageloaded.valueOf() > 1000 * 60 * 60 * 12) {
             return;
         }
-        showDisconnectedMsg();
+        window.dispatchEvent(new CustomEvent("disconnected"));
         ws = null;
         retryInt *= 2; // exponential backoff
         setTimeout(startWebsocket, retryInt);
     };
 
     ws.onerror = function (err) {
-        showDisconnectedMsg();
+        window.dispatchEvent(new CustomEvent("disconnected"));
     };
 }
 
@@ -163,13 +169,14 @@ export function createServerMessage(msg) {
     return serverElem;
 }
 
-export function sendMessage(message: string, anonymous: boolean, replyTo: number) {
+export function sendMessage(current: NewChatMessage) {
     ws.send(
         JSON.stringify({
             type: WSMessageType.Message,
-            msg: message,
-            anonymous: anonymous,
-            replyTo: replyTo,
+            msg: current.message,
+            anonymous: current.anonymous,
+            replyTo: current.replyTo,
+            addressedTo: current.addressedTo.map((u) => u.ID),
         }),
     );
 }
