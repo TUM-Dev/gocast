@@ -46,6 +46,9 @@ func createNotification(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+	if *notification.Title == "" {
+		notification.Title = nil
+	}
 	notification.Body = notification.SanitizedBody // reverse json binding
 	if err := dao.AddNotification(&notification); err != nil {
 		log.Error(err)

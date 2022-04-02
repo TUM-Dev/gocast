@@ -9,7 +9,7 @@ func AddNotification(notification *model.Notification) error {
 
 // DeleteNotification deletes a notification from the database
 func DeleteNotification(id uint) error {
-	return DB.Delete(&model.Notification{}, id).Error
+	return DB.Unscoped().Delete(&model.Notification{}, id).Error
 }
 
 // GetNotifications returns all notifications for the specified targets
