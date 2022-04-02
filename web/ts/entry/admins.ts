@@ -11,3 +11,4 @@ export * from "../admin";
 export * from "../token-management";
 export * from "../worker";
 export * from "../courseAdminManagement";
+export * from  "../notification-management"

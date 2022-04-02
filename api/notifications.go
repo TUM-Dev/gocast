@@ -5,14 +5,15 @@ import (
 	"TUM-Live/model"
 	"TUM-Live/tools"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"net/http"
+	"strconv"
 )
 
 func configNotificationsRouter(r *gin.Engine) {
 	notifications := r.Group("/api/notifications")
 	notifications.GET("/", getNotifications)
 	notifications.POST("/", createNotification)
-	notifications.PUT("/:id", updateNotification)
 	notifications.DELETE("/:id", deleteNotification)
 }
 
@@ -40,13 +41,30 @@ func getNotifications(c *gin.Context) {
 }
 
 func createNotification(c *gin.Context) {
-
-}
-
-func updateNotification(c *gin.Context) {
-
+	var notification model.Notification
+	if err := c.BindJSON(&notification); err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	notification.Body = notification.SanitizedBody // reverse json binding
+	if err := dao.AddNotification(&notification); err != nil {
+		log.Error(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	c.JSON(http.StatusOK, notification)
 }
 
 func deleteNotification(c *gin.Context) {
-
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "id must be an integer"})
+	}
+	err = dao.DeleteNotification(uint(id))
+	if err != nil {
+		log.WithError(err).Error("Error deleting notification")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true})
 }

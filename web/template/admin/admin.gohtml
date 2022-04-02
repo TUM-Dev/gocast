@@ -49,6 +49,11 @@
                                         class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                         class="relative">Server Notifications</span></a></li>
                         <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "notifications"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/notifications"><span
+                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                        class="relative">User Notifications</span></a></li>
+                        <li>
                             <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "serverStats"}}text-1{{else}}text-5{{end}} relative block"
                                href="/admin/server-stats"><span
                                         class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
@@ -137,6 +142,12 @@
                                                 class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                                 class="relative">Server Notifications</span></a></li>
                                 <li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "notifications"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/notifications"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">User Notifications</span></a></li>
+                                <li>
                                     <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "serverStats"}}text-1{{else}}text-5{{end}} relative block"
                                        href="/admin/server-stats"><span
                                                 class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
@@ -220,6 +231,8 @@
                     {{template "course-import" .}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "token")}}
                     {{template "token" .Tokens}}
+                {{else if and (eq $curUser.Role 1) (eq .Page "notifications")}}
+                    {{template "notification_management" .Notifications}}
                 {{end}}
             </div>
         </div>
