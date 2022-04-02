@@ -133,13 +133,67 @@
                                             </div>
 
                                             {{if $lecture.SeriesIdentifier}}
-                                            <div class="flex justify-center">
-                                                <div class="rounded-full border dark:border-gray-100 border-secondary pl-2 pr-3 py-1 text-sm mt-2 mr-1">
-                                                    <i class="fas fa-link mr-1"></i>
-                                                    <span>Series</span>
-                                                    <i class="fas fa-chevron-down ml-4"></i>
+                                                <div class="flex justify-center">
+                                                    <div
+                                                            x-data="{
+                                                                seriesDropdownOpen: false,
+                                                                toggleSeriesDropdown() {
+                                                                    if (this.seriesDropdownOpen) {
+                                                                        return this.closeSeriesDropdown()
+                                                                    }
+
+                                                                    this.$refs.button.focus()
+
+                                                                    this.seriesDropdownOpen = true
+                                                                },
+                                                                closeSeriesDropdown(focusAfter) {
+                                                                    if (! this.seriesDropdownOpen) return
+
+                                                                    this.seriesDropdownOpen = false
+
+                                                                    focusAfter && focusAfter.focus()
+                                                                }
+                                                            }"
+                                                            x-on:keydown.escape.prevent.stop="closeSeriesDropdown($refs.button)"
+                                                            x-on:focusin.window="! $refs.panel.contains($event.target) && closeSeriesDropdown()"
+                                                            x-id="['dropdown-button']"
+                                                            class="relative"
+                                                    >
+                                                        <!-- Button -->
+                                                        <button
+                                                                x-ref="button"
+                                                                x-on:click="toggleSeriesDropdown()"
+                                                                :aria-expanded="seriesDropdownOpen"
+                                                                :aria-controls="$id('series-dropdown-button')"
+                                                                type="button"
+                                                                class="rounded-full border dark:border-gray-100 border-secondary pl-2 pr-3 py-1 text-sm mt-2 mr-1"
+                                                        >
+                                                            <i class="fas fa-link mr-1"></i>
+                                                            <span>Series</span>
+                                                            <i class="fas fa-chevron-down ml-4"></i>
+                                                        </button>
+
+                                                        <!-- Panel -->
+                                                        <div
+                                                                x-ref="panel"
+                                                                x-show="seriesDropdownOpen"
+                                                                x-transition.origin.top.left
+                                                                x-on:click.outside="closeSeriesDropdown($refs.button)"
+                                                                :id="$id('series-dropdown-button')"
+                                                                style="display: none;"
+                                                                class="absolute left-0 mt-2 w-36 bg-white border border-black rounded shadow-md overflow-hidden"
+                                                        >
+                                                            <div>
+                                                                <a href="#" class="block w-full px-4 py-2 text-left text-sm text-gray-400 dark:hover:text-gray-500 hover:text-gray-300" >
+                                                                    Edit Series
+                                                                </a>
+                                                                <a href="#" class="block w-full px-4 py-2 text-left text-sm text-red-400 dark:hover:text-red-500 hover:text-red-300" >
+                                                                    Delete Series
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
                                             {{end}}
                                         </div>
                                     </div>
