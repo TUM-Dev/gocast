@@ -93,19 +93,10 @@ func saveProgress(c *gin.Context) {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
-	streams, err := dao.GetStreamsByIds([]uint{request.StreamID})
-
-	if err != nil {
-		log.WithError(err).Warn("Could not get stream.")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
 	progressBuff.add(model.StreamProgress{
 		Progress: request.Progress,
 		StreamID: request.StreamID,
 		UserID:   tumLiveContext.User.ID,
-		CourseID: streams[0].CourseID,
 	})
 }
 
@@ -133,21 +124,10 @@ func markWatched(c *gin.Context) {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
-	streams, err := dao.GetStreamsByIds([]uint{request.StreamID})
-	if err != nil {
-		log.WithError(err).Warn("Could not get streams.")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	if len(streams) == 0 {
-		log.WithError(err).Warn("No streams found.")
-		c.AbortWithStatus(http.StatusNotFound)
-		return
-	}
+
 	progress := model.StreamProgress{
 		UserID:   tumLiveContext.User.ID,
 		StreamID: request.StreamID,
-		CourseID: streams[0].CourseID,
 		Watched:  request.Watched,
 	}
 	err = dao.SaveProgresses([]model.StreamProgress{progress})

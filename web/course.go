@@ -7,8 +7,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
@@ -97,18 +98,46 @@ func CoursePage(c *gin.Context) {
 		return
 	}
 
-	progs, err := dao.LoadProgressesForCourseAndUser((*tumLiveContext.Course).ID, (*tumLiveContext.User).ID)
-	if err != nil {
-		sentry.CaptureException(err)
-		log.Printf("%v", err)
+	if tumLiveContext.User == nil {
+		var streamWithProgesses []dao.ProgressStream
+		for _, s := range tumLiveContext.Course.Streams {
+			streamWithProgesses = append(streamWithProgesses, dao.ProgressStream{Stream: s})
+		}
+		// in any other case assume either validated before or public course
+		err := templ.ExecuteTemplate(c.Writer, "course-overview.gohtml",
+			CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course, StreamsWithProgress: streamWithProgesses})
+		if err != nil {
+			sentrygin.GetHubFromContext(c).CaptureException(err)
+		}
+		return
 	}
 
-	progressResponses, progressStreams := prepareCourseProgressData(tumLiveContext, progs)
-
-	encoded, err := json.Marshal(progressResponses)
+	progressStreams, err := dao.GetStreamsWithProgress((*tumLiveContext.Course).ID, (*tumLiveContext.User).ID)
 	if err != nil {
 		sentry.CaptureException(err)
-		log.Printf("%v", err)
+		log.WithError(err).Error("loading progresses for course and user failed")
+	}
+
+	// StreamInfo is used by the client to track the which VoDs are watched.
+	type streamInfo struct {
+		ID      uint   `json:"streamID"`
+		Month   string `json:"month"`
+		Watched bool   `json:"watched"`
+	}
+
+	var streamInfos []streamInfo
+	for _, s := range progressStreams {
+		streamInfos = append(streamInfos, streamInfo{
+			ID:      s.Stream.ID,
+			Month:   s.Stream.Start.Month().String(),
+			Watched: s.Progress.Watched,
+		})
+	}
+
+	encoded, err := json.Marshal(streamInfos)
+	if err != nil {
+		sentry.CaptureException(err)
+		log.WithError(err).Error("Marshalling progress data failed")
 	}
 	// in any other case assume either validated before or public course
 	err = templ.ExecuteTemplate(c.Writer, "course-overview.gohtml",
@@ -118,59 +147,12 @@ func CoursePage(c *gin.Context) {
 	}
 }
 
-func prepareCourseProgressData(tumLiveContext tools.TUMLiveContext, streamProgresses []model.StreamProgress) ([]ProgressInfo, []ProgressStream) {
-	var progressStreams []ProgressStream
-	var progressResponses []ProgressInfo
-
-	courseStreams := (*tumLiveContext.Course).Streams
-	// Combine streams with existing progresses.
-	for _, stream := range courseStreams {
-		// We only want to track the progress for recordings.
-		if !stream.Recording {
-			continue
-		}
-		var prog model.StreamProgress
-		var info ProgressInfo // Populated with minimum information to track stream progress.
-
-		for _, p := range streamProgresses {
-			if p.StreamID == stream.ID {
-				prog = p
-				info.Progress = p.Progress
-				info.Watched = p.Watched
-				break
-			}
-		}
-		// Add match stream and progress.
-		progressStreams = append(progressStreams, ProgressStream{Stream: stream, Progress: prog})
-
-		info.Month = stream.Start.Month().String()
-		info.ID = stream.ID
-		progressResponses = append(progressResponses, info)
-	}
-
-	return progressResponses, progressStreams
-}
-
-// ProgressStream is a stream with its progress information. Used to generate a list of VoDs.
-type ProgressStream struct {
-	Progress model.StreamProgress
-	Stream   model.Stream
-}
-
-// ProgressInfo is used by the client to track the which VoDs are watched.
-type ProgressInfo struct {
-	ID       uint    `json:"streamID"`
-	Month    string  `json:"month"`
-	Watched  bool    `json:"watched"`
-	Progress float64 `json:"progress"`
-}
-
 // CoursePageData is the data for the course page.
 type CoursePageData struct {
 	IndexData           IndexData
 	User                model.User
 	Course              model.Course
 	HighlightPage       bool
-	StreamsWithProgress []ProgressStream
+	StreamsWithProgress []dao.ProgressStream
 	ProgressResponses   string // JSON encoded
 }

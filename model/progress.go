@@ -7,5 +7,4 @@ type StreamProgress struct {
 	Watched  bool    `gorm:"not null;default:false"` // Whether the user has marked the stream as watched.
 	StreamID uint    `gorm:"primaryKey"`
 	UserID   uint    `gorm:"primaryKey"`
-	CourseID uint    `gorm:"primaryKey"`
 }

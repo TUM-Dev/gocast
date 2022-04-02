@@ -17,8 +17,8 @@
     </div>
     <div class="m-auto flex flex-wrap pb-3 md:h-5/6 md:grid md:grid-rows-6 md:grid-cols-5 md:gap-4 md:pb-0">
         <!-- VoD -->
-        <div x-init="watchedTracker.init({{.ProgressResponses}})" x-data="watchedTracker = new global.WatchedTracker" class="w-full md:row-span-6 md:col-span-3">
-        <div x-data="{asc: false, filterWatched: true, watchedAll: watchedTracker.userWatchedAll()}"
+        <div {{if .IndexData.TUMLiveContext}}x-init="watchedTracker.init({{.ProgressResponses}})" x-data="watchedTracker = new global.WatchedTracker"{{end}} class="w-full md:row-span-6 md:col-span-3">
+        <div x-data="{asc: false{{if .IndexData.TUMLiveContext.User}}, filterWatched: true, watchedAll: watchedTracker.userWatchedAll(){{end}}}"
                  class="bg-white h-full border dark:bg-secondary dark:border-gray-800 rounded-lg
                     shadow-sm flex flex-col">
                 <div class="flex justify-between h-16 px-3 border-b dark:border-gray-800">
@@ -29,11 +29,14 @@
                             <span class="text-sm font-semibold uppercase dark:text-white"
                           x-text="asc ? '&#x25B2; asc' : '&#x25BC; desc'">desc &#x25BC;</span>
                         </button>
-                        <button class="hover:gray-200 text-sm font-semibold uppercase dark:text-white" @click="filterWatched=!filterWatched">
-                            <i :title="filterWatched ? 'Show watched streams' : 'Hide watched streams'"
-                               class="fa-solid w-5 mr-1"
-                               :class="filterWatched ? 'fa-eye-slash' : 'fa-eye'"></i>Filter
+                        {{if .IndexData.TUMLiveContext.User}}
+                        <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2" @click="filterWatched=!filterWatched" :title="filterWatched ? 'Show watched streams' : 'Hide watched streams'">
+                            <span class="text-sm font-semibold uppercase dark:text-white">
+                                <i class="fa-solid w-5 mr-1"
+                                   :class="filterWatched ? 'fa-eye' : 'fa-eye-slash'"></i>Filter
+                            </span>
                         </button>
+                        {{end}}
                     </div>
                 </div>
                 <ul id="vod-list" class="flex flex-col flex-1 px-5 py-3 overflow-y-scroll">
