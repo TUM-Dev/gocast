@@ -2,7 +2,7 @@ alerts:
   matrix:
     homeserver: matrix.org
     password: password
-    roomid: '!id:matrix.org'
+    roomid: '!id:matrix.org' # Obtained in Element by "Room Settings" -> "Advanced" -> "Internal Room ID"
     username: rbgbot
 auths:
   camauth: user:password

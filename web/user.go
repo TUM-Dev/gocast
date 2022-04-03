@@ -7,7 +7,7 @@ import (
 	"TUM-Live/tools/tum"
 	"context"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
@@ -72,8 +72,8 @@ func createToken(user uint) (string, error) {
 	t := jwt.New(jwt.GetSigningMethod("RS256"))
 
 	t.Claims = &tools.JWTClaims{
-		StandardClaims: &jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * 24 * 7).Unix(), // Token expires in one week
+		RegisteredClaims: &jwt.RegisteredClaims{
+			ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Hour * 24 * 7)}, // Token expires in one week
 		},
 		UserID: user,
 	}
@@ -88,7 +88,6 @@ func loginWithUserCredentials(username, password string) *sessionData {
 		if match, err := u.ComparePasswordAndHash(password); err == nil && match {
 			return &sessionData{u.ID}
 		}
-
 		return nil
 	}
 

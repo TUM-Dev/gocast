@@ -6,7 +6,7 @@ import (
 	"errors"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	log "github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
@@ -24,7 +24,7 @@ func SetTemplates(t *template.Template) {
 
 // JWTClaims are the claims contained in a session
 type JWTClaims struct {
-	*jwt.StandardClaims
+	*jwt.RegisteredClaims
 	UserID uint
 }
 
