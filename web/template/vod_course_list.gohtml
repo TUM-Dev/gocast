@@ -3,16 +3,16 @@
     {{$course := .Course}}
     {{$lastMonth := -1}}
     {{$user := .IndexData.TUMLiveContext.User}}
-    {{range $streamWithProgress := .StreamsWithProgress}}
-        {{$lecture := $streamWithProgress.Stream}}
+    {{range $progressStream := .ProgressStreams}}
+        {{$lecture := $progressStream.Stream}}
         {{if $lecture.Recording}}
             {{if ne $lecture.Start.Month $lastMonth}}
                 {{if ne $lastMonth -1}} </div> {{end}}
                 {{$lastMonth = $lecture.Start.Month}}
-                <div {{if $user}}x-show="!filterWatched || (filterWatched && !monthHidden)" x-data="{ monthHidden: watchedTracker.userWatchedMonth(`{{$streamWithProgress.Stream.Start.Month.String}}`) }"{{end}} class="my-2"> <!-- div with monthname <p> and all <li> elements -->
+                <div {{if $user}}x-show="!filterWatched || (filterWatched && !monthHidden)" x-data="{ monthHidden: watchedTracker.userWatchedMonth(`{{$progressStream.Stream.Start.Month.String}}`) }"{{end}} class="my-2"> <!-- div with monthname <p> and all <li> elements -->
                     <p class="text-gray-500 text-sm uppercase">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
             {{end}}
-            <li {{if $user}}x-show="!filterWatched || (filterWatched && !watched)" x-data="{ watched: {{$streamWithProgress.Progress.Watched}} }"{{end}} class="p-2 w-full">
+            <li {{if $user}}x-show="!filterWatched || (filterWatched && !watched)" x-data="{ watched: {{$progressStream.Progress.Watched}} }"{{end}}class="p-2 w-full">
                 <div class="flex justify-between">
                     <div>
                         <div>
@@ -94,9 +94,9 @@
     {{end}}
     </div>
     {{if $user}}
-        <p x-show="watchedAll && filterWatched" class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">All recordings watched</p>
+        <p x-show="watchedAll && filterWatched" class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">All VoDs watched</p>
     {{end}}
     {{if eq $lastMonth -1}}
-        <p class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">No recordings yet</p>
+        <p class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">No VoDs yet</p>
     {{end}}
 {{end}}

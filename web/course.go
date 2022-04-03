@@ -98,14 +98,16 @@ func CoursePage(c *gin.Context) {
 		return
 	}
 
+	// When a user is not logged-in, we don't need the progress data for watch page since
+	// it is only saved for logged-in users.
 	if tumLiveContext.User == nil {
 		var streamWithProgesses []dao.ProgressStream
 		for _, s := range tumLiveContext.Course.Streams {
+			// Progress is omitted in this case.
 			streamWithProgesses = append(streamWithProgesses, dao.ProgressStream{Stream: s})
 		}
-		// in any other case assume either validated before or public course
 		err := templ.ExecuteTemplate(c.Writer, "course-overview.gohtml",
-			CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course, StreamsWithProgress: streamWithProgesses})
+			CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course, ProgressStreams: streamWithProgesses})
 		if err != nil {
 			sentrygin.GetHubFromContext(c).CaptureException(err)
 		}
@@ -115,33 +117,32 @@ func CoursePage(c *gin.Context) {
 	progressStreams, err := dao.GetStreamsWithProgress((*tumLiveContext.Course).ID, (*tumLiveContext.User).ID)
 	if err != nil {
 		sentry.CaptureException(err)
-		log.WithError(err).Error("loading progresses for course and user failed")
+		log.WithError(err).Error("loading streams and progresses for a given course and user failed")
 	}
 
 	// StreamInfo is used by the client to track the which VoDs are watched.
-	type streamInfo struct {
+	type watchedData struct {
 		ID      uint   `json:"streamID"`
 		Month   string `json:"month"`
 		Watched bool   `json:"watched"`
 	}
 
-	var streamInfos []streamInfo
+	var watchedInfos []watchedData
 	for _, s := range progressStreams {
-		streamInfos = append(streamInfos, streamInfo{
+		watchedInfos = append(watchedInfos, watchedData{
 			ID:      s.Stream.ID,
 			Month:   s.Stream.Start.Month().String(),
 			Watched: s.Progress.Watched,
 		})
 	}
-
-	encoded, err := json.Marshal(streamInfos)
+	// Create JSON encoded info about which streams are watched. Used by the client to track the watched status.
+	encoded, err := json.Marshal(watchedInfos)
 	if err != nil {
 		sentry.CaptureException(err)
-		log.WithError(err).Error("Marshalling progress data failed")
+		log.WithError(err).Error("Marshalling watchedInfos failed")
 	}
-	// in any other case assume either validated before or public course
 	err = templ.ExecuteTemplate(c.Writer, "course-overview.gohtml",
-		CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course, StreamsWithProgress: progressStreams, ProgressResponses: string(encoded)})
+		CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course, ProgressStreams: progressStreams, WatchedData: string(encoded)})
 	if err != nil {
 		sentrygin.GetHubFromContext(c).CaptureException(err)
 	}
@@ -149,10 +150,10 @@ func CoursePage(c *gin.Context) {
 
 // CoursePageData is the data for the course page.
 type CoursePageData struct {
-	IndexData           IndexData
-	User                model.User
-	Course              model.Course
-	HighlightPage       bool
-	StreamsWithProgress []dao.ProgressStream
-	ProgressResponses   string // JSON encoded
+	IndexData       IndexData
+	User            model.User
+	Course          model.Course
+	HighlightPage   bool
+	ProgressStreams []dao.ProgressStream
+	WatchedData     string
 }

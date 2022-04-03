@@ -59,7 +59,8 @@ func (b *progressBuffer) run() {
 	}
 }
 
-// configProgressBuffer configures the progress buffer
+// configProgressRouter sets up the router and initializes a progress buffer
+// that is used to minimize writes to the database.
 func configProgressRouter(router *gin.Engine) {
 	progressBuff = newProgressBuffer()
 	go progressBuff.run()
@@ -67,8 +68,8 @@ func configProgressRouter(router *gin.Engine) {
 	router.POST("/api/watched", markWatched)
 }
 
-// ProgressRequest corresponds the request that is sent by the video player when it reports its progress for VODs
-type ProgressRequest struct {
+// progressRequest corresponds the request that is sent by the video player when it reports its progress for VODs
+type progressRequest struct {
 	StreamID uint    `json:"streamID"`
 	Progress float64 `json:"progress"` // A fraction that represents currentTime / totalTime for a given video
 	// Note: To be able to save the progress, we also need the userID, but it`s already contained in the Gin context
@@ -76,7 +77,7 @@ type ProgressRequest struct {
 
 // saveProgress saves progress to a buffer that is flushed at a fixed interval.
 func saveProgress(c *gin.Context) {
-	var request ProgressRequest
+	var request progressRequest
 	err := c.BindJSON(&request)
 
 	if err != nil {
@@ -100,18 +101,18 @@ func saveProgress(c *gin.Context) {
 	})
 }
 
-// WatchedRequest corresponds the request that is sent when a user marked the video as watched on the watch page.
-type WatchedRequest struct {
+// watchedRequest corresponds the request that is sent when a user marked the video as watched on the watch page.
+type watchedRequest struct {
 	StreamID uint `json:"streamID"`
 	Watched  bool `json:"watched"`
 }
 
 // markWatched marks a VoD as watched in the database.
 func markWatched(c *gin.Context) {
-	var request WatchedRequest
+	var request watchedRequest
 	err := c.BindJSON(&request)
 	if err != nil {
-		log.WithError(err).Warn("Could not bind JSON.")
+		log.WithError(err).Error("Could not bind JSON.")
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
@@ -124,7 +125,6 @@ func markWatched(c *gin.Context) {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
-
 	progress := model.StreamProgress{
 		UserID:   tumLiveContext.User.ID,
 		StreamID: request.StreamID,
@@ -132,7 +132,7 @@ func markWatched(c *gin.Context) {
 	}
 	err = dao.SaveProgresses([]model.StreamProgress{progress})
 	if err != nil {
-		log.WithError(err).Warn("Could not mark VoD as watched.")
+		log.WithError(err).Error("Could not mark VoD as watched.")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
