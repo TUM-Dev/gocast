@@ -182,6 +182,7 @@ func postSchedule(c *gin.Context) {
 		} else {
 			name := ""
 			mail := ""
+			// todo: import
 			for _, contact := range courseReq.Contacts {
 				if contact.MainContact {
 					name = contact.FirstName + " " + contact.LastName

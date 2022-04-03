@@ -209,6 +209,8 @@ func UpdateCourse(ctx context.Context, course model.Course) error {
 	return DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&course).Error
 }
 
+// CreateCourse creates a new course, if keep is false, deleted_at is set to NOW(),
+// letting the user manually create the course again (opt-in)
 func CreateCourse(ctx context.Context, course model.Course, keep bool) error {
 	defer Cache.Clear()
 	err := DB.Create(&course).Error
