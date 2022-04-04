@@ -12,7 +12,7 @@ jobs:
     name: "Run staticcheck"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 1
       # create node_module for "go:embed node_modules" in web/router.go

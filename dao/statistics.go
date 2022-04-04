@@ -1,9 +1,15 @@
 package dao
 
 import (
+	"TUM-Live/model"
 	"TUM-Live/tools/timing"
 	"fmt"
 )
+
+// AddStat adds a new statistic entry to the database
+func AddStat(stat model.Stat) error {
+	return DB.Create(&stat).Error
+}
 
 //GetCourseNumStudents returns the number of students enrolled in the course
 func GetCourseNumStudents(courseID uint) (int64, error) {

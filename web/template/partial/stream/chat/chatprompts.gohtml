@@ -1,13 +1,13 @@
 {{define "chatprompts"}}
     <div x-cloak x-show="show"
-         x-data="{showNewMsgIndicator:false, emojiSuggestions:[], emojiIndex:0}"
+         x-data="{showNewMsgIndicator:false}"
          x-on:messageindicator.window="e => {showNewMsgIndicator = e.detail.show}" {{/* show "new message" indicator */}}
-         x-on:emojisuggestions.window="e => {emojiSuggestions = e.detail; emojiIndex = 0}" {{/* set emoji suggestions for current word */}}
-         x-on:emojiselectiontriggered.window="e => {if (emojiSuggestions.length>0) watch.insertEmoji(emojiSuggestions[emojiIndex])}"
-         x-on:emojiarrowdown.window="e => {if (emojiSuggestions.length>0) emojiIndex = (emojiIndex + 1)%emojiSuggestions.length}"
-         x-on:emojiarrowup.window="e => {if (emojiSuggestions.length>0) emojiIndex = (emojiIndex - 1)%emojiSuggestions.length}"
-         x-on:emojisinserted.window="emojiSuggestions=[], emojiIndex=0"
-         x-on:chatenter.window="if (emojiSuggestions.length>0) {$dispatch('emojiselectiontriggered')}else{$dispatch('sendmessage')}" {{/* Emoji selection triggered on enter if emojis exist*/}}
+         x-on:emojisuggestions.window="e => c.emojis.onSuggestions(e);" {{/* set emoji suggestions for current word */}}
+         x-on:emojiselectiontriggered.window="e => c.emojis.onSelectionTriggered(e);"
+         x-on:emojiarrowdown.window="e => c.emojis.onArrowDown(e);"
+         x-on:emojiarrowup.window="e => c.emojis.onArrowUp(e);"
+         x-on:emojisinserted.window="e => c.emojis.onInserted(e);"
+         x-on:chatenter.window="c.emojis.onChatEnter();" {{/* Emoji selection triggered on enter if emojis exist*/}}
          class="relative -top-10 h-0 w-full text-center">
         <span @click="watch.scrollToLatestMessage()"
               x-show="showNewMsgIndicator"
