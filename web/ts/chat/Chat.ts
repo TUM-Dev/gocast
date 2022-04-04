@@ -110,32 +110,57 @@ export class Chat {
         this.poll.result = e.detail;
     }
 
-    onInputKeyUp(e) {
-        let event = "";
-        switch (e.keyCode) {
-            case 9: {
-                event = "emojiselectiontriggered";
-                break;
-            }
-            case 13: {
-                event = "chatenter";
-                break;
-            }
-            case 38: {
-                event = "emojiarrowup";
-                break;
-            }
-            case 40: {
-                event = "emojiarrowdown";
-                break;
-            }
-            default: {
-                this.users.filterUsers(e.target.value, e.target.selectionStart);
-                this.emojis.getEmojisForMessage(e.target.value, e.target.selectionStart);
-                return;
-            }
+    onSubmit() {
+        if (this.emojis.isValid()) {
+            window.dispatchEvent(new CustomEvent("chatenter"));
+        } else if (this.users.isValid()) {
+            // @ts-ignore
+            this.current.addAddressee(this.users.getSelected());
+            this.users.clear();
+        } else {
+            this.current.send();
         }
-        window.dispatchEvent(new CustomEvent(event));
+    }
+
+    onInputKeyUp(e) {
+        if (this.emojis.isValid()) {
+            let event = "";
+            switch (e.keyCode) {
+                case 9: {
+                    event = "emojiselectiontriggered";
+                    break;
+                }
+                case 38: {
+                    event = "emojiarrowup";
+                    break;
+                }
+                case 40: {
+                    event = "emojiarrowdown";
+                    break;
+                }
+                default: {
+                    return;
+                }
+            }
+            window.dispatchEvent(new CustomEvent(event));
+        } else if (this.users.isValid()) {
+            switch (e.keyCode) {
+                case 38: /* UP */ {
+                    this.users.prev();
+                    break;
+                }
+                case 40: /* DOWN */ {
+                    this.users.next();
+                    break;
+                }
+                default: {
+                    return;
+                }
+            }
+        } else {
+            this.users.filterUsers(e.target.value, e.target.selectionStart);
+            this.emojis.getEmojisForMessage(e.target.value, e.target.selectionStart);
+        }
     }
 
     getInputPlaceHolder(): string {
