@@ -63,7 +63,7 @@ func GetUserByID(ctx context.Context, id uint) (user model.User, err error) {
 		return cached.(model.User), nil
 	}
 	var foundUser model.User
-	dbErr := DB.Preload("AdministeredCourses").Preload("Courses.Streams").Preload("Courses.Streams").Find(&foundUser, "id = ?", id).Error
+	dbErr := DB.Preload("AdministeredCourses").Preload("Courses.Streams").Find(&foundUser, "id = ?", id).Error
 	if dbErr == nil {
 		Cache.SetWithTTL(fmt.Sprintf("userById%d", id), foundUser, 1, time.Second*10)
 	}
@@ -108,7 +108,8 @@ func UpsertUser(user *model.User) error {
 		user.Model = foundUser.Model
 		foundUser.LrzID = user.LrzID
 		foundUser.Name = user.Name
-		err := DB.Save(&foundUser).Error
+		foundUser.Role = user.Role
+		err := DB.Save(foundUser).Error
 		if err != nil {
 			return err
 		}

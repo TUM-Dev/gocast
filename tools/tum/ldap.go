@@ -1,7 +1,9 @@
 package tum
 
 import (
+	"TUM-Live/model"
 	"TUM-Live/tools"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
@@ -77,19 +79,19 @@ func LoginWithTumCredentials(username string, password string) (userId string, l
 	return "", "", "", fmt.Errorf("LDAP: reached unexpected codepoint. User: %v", username)
 }
 
-func FindUserWithTumId(tumId string) error {
-	username := ldap.EscapeFilter(tumId)
+func FindUserWithEmail(email string) (*model.User, error) {
+	username := ldap.EscapeFilter(email)
 	defer sentry.Flush(time.Second * 2)
 	l, err := ldap.DialURL(tools.Cfg.Ldap.URL)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer l.Close()
 
 	// First bind with a read only user
 	err = l.Bind(tools.Cfg.Ldap.User, tools.Cfg.Ldap.Password)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Search for the given username
@@ -101,24 +103,25 @@ func FindUserWithTumId(tumId string) error {
 
 	sr, err := l.Search(searchRequest)
 	if err != nil {
-		return errors.New("couldn't query user")
+		return nil, errors.New("couldn't query user")
 	}
 
 	if len(sr.Entries) != 1 {
-		return ErrLdapBadAuth
+		return nil, ErrLdapBadAuth
 	}
-	printResult(sr.Entries)
-	return fmt.Errorf("LDAP: reached unexpected codepoint. User: %v", username)
-}
 
-func printResult(entries []*ldap.Entry) {
-	for _, entry := range entries {
-		fmt.Println("DN:", entry.DN)
-		for _, attr := range entry.Attributes {
-			for i := 0; i < len(attr.Values); i++ {
-				fmt.Printf("%s: %s\n", attr.Name, attr.Values[i])
-			}
-		}
-		fmt.Println()
+	mNr := sr.Entries[0].GetAttributeValue("imMatrikelNr")
+	mwnID := sr.Entries[0].GetAttributeValue("imMWNID")
+	lrzID := sr.Entries[0].GetAttributeValue("imLRZKennung")
+	name := sr.Entries[0].GetAttributeValue("imVorname")
+	if mNr == "" {
+		mNr = mwnID
 	}
+	return &model.User{
+		Name:                name,
+		MatriculationNumber: mNr,
+		LrzID:               lrzID,
+		Email:               sql.NullString{String: email, Valid: true},
+		Role:                model.LecturerType,
+	}, nil
 }
