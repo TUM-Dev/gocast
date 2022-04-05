@@ -45,6 +45,7 @@ type Stream struct {
 	StreamName       string
 	Duration         uint32   `gorm:"default:null"`
 	StreamWorkers    []Worker `gorm:"many2many:stream_workers;"`
+	VideoSections    []VideoSection
 }
 
 // IsSelfStream returns whether the stream is a scheduled stream in a lecture hall

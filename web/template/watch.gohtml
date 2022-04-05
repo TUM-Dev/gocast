@@ -13,7 +13,6 @@
     <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
     <link rel="stylesheet" href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
 </head>
-
 <body x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}}"
       x-on:pausestart.window="paused=true"
       x-on:pauseend.window="paused=false"

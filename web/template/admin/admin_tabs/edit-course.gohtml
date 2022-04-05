@@ -127,7 +127,7 @@
                                                 </div>
                                             {{end}}
                                         </div>
-                                        <div class="w-3/4">
+                                        <div class="d-grid gap-3 w-3/4">
                                             <form onsubmit="admin.saveLectureName(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
                                                   class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
                                                 <label for="lectureNameInput{{$lecture.Model.ID}}" class="hidden">Lecture
@@ -141,7 +141,7 @@
                                                 <button id="nameSubmitBtn{{$lecture.Model.ID}}"
                                                         class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
                                             </form>
-                                            <div class="w-full mt-3">
+                                            <div class="w-full">
                                                 <div class="w-full flex justify-center">
                                                     <i onclick="admin.toggleExtraInfos(this, {{$lecture.Model.ID}})"
                                                        class="fas fa-angle-double-down hover:text-purple-500"></i>
@@ -207,20 +207,80 @@
                                                     If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
                                                     {{end}}
                                                     {{else if $lecture.Recording}}
-                                                    <span class="flex space-x-2 mt-4 content-center">
-                                                        {{if $lecture.Files}}
-                                                            <span>
-                                                                {{template "downloadBtn" $lecture.Files}}
-                                                            </span>
-                                                        {{end}}
-                                                        {{if $lecture.Stats}}
-                                                            <a>
-                                                                <i class="fas fa-chart-line text-4 text-lg hover:text-1"
-                                                                   title="Live Statistics"
-                                                                   onclick="admin.showStats({{$lecture.Model.ID}})"></i>
-                                                            </a>
-                                                        {{end}}
-                                                    </span>
+                                                    <div class="mt-4 content-center">
+                                                        <!-- download and stats button -->
+                                                        <div class="flex space-x-2">
+                                                            {{if $lecture.Files}}
+                                                                <span>
+                                                                    {{template "downloadBtn" $lecture.Files}}
+                                                                </span>
+                                                            {{end}}
+                                                            {{if $lecture.Stats}}
+                                                                <a>
+                                                                    <i class="fas fa-chart-line text-4 text-lg hover:text-1"
+                                                                       title="Live Statistics"
+                                                                       onclick="admin.showStats({{$lecture.Model.ID}})"></i>
+                                                                </a>
+                                                            {{end}}
+                                                        </div>
+
+                                                        <!-- create video sections -->
+                                                        <div x-data="{videoSection: new admin.VideoSection('{{$lecture.ID}}')}"
+                                                             class="space-x-1 p-3 border dark:border-gray-600 rounded">
+                                                            <h6 class="font-semibold text-3">Video Sections</h6>
+                                                            <template x-if="videoSection.newSections.length > 0">
+                                                                <div class="space-y-2">
+                                                                    <template
+                                                                            x-for="section in videoSection.newSections">
+                                                                        <div class="flex justify-between w-full border dark:border-gray-600 p-2 rounded">
+                                                                            <div class = "my-auto">
+                                                                                <span class="text-sky-800 bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded"
+                                                                                      x-text="`${section.hours}:${section.minutes}:${section.seconds}`"></span>
+                                                                                <span class="text-xs font-semibold text-3"
+                                                                                      x-text="section.description"></span>
+                                                                            </div>
+                                                                            <div class = "my-auto ml-auto">
+                                                                                <button class = "text-lg" @click="videoSection.remove(section)">
+                                                                                    <i class = "fa fa-x"></i>
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </template>
+                                                                </div>
+                                                            </template>
+                                                            <div class="flex justify-between bg-white border rounded mt-2">
+                                                                <div class="flex">
+                                                                    <input x-model="videoSection.current.hours"
+                                                                           type="number"
+                                                                           value="" placeholder="0"
+                                                                           class="border-none bg-transparent outline-none text-center w-16">
+                                                                    <span class="my-auto font-bold text-xl">:</span>
+                                                                    <input x-model="videoSection.current.minutes"
+                                                                           type="number"
+                                                                           value="" placeholder="0"
+                                                                           class="border-none bg-transparent outline-none text-center w-16">
+                                                                    <span class="my-auto font-bold text-xl">:</span>
+                                                                    <input x-model="videoSection.current.seconds"
+                                                                           type="number"
+                                                                           value="" placeholder="0"
+                                                                           class="border-none bg-transparent outline-none text-center w-16">
+                                                                </div>
+                                                                <input x-model="videoSection.current.description"
+                                                                       type="text" value="" placeholder="Introduction"
+                                                                       class="border-none dark:border-gray-600 bg-transparent outline-none">
+                                                                <button type="button"
+                                                                        class="rounded-r w-12 bg-gray-200 dark:bg-gray-600 w-20"
+                                                                        @click="videoSection.pushSection()"
+                                                                        :disabled="videoSection.current.description === ''">
+                                                                    <i class="fa fa-plus text-3 text-lg"></i>
+                                                                </button>
+                                                            </div>
+                                                            <button type="button" @click="videoSection.add()"
+                                                                    class="w-full bg-gray-200 rounded mt-2">
+                                                                Publish Video Sections
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                     {{if $lecture.Stats}}
                                                     <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
                                                         <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
@@ -264,15 +324,18 @@
                                     <div class="w-1/4">
                                         <div class="text-1 font-semibold">Create Lecture</div>
                                         <label>
-                                            <input type="checkbox" x-model="formData.premiere" @change="(v) => v && (formData.recurring = false)" class="w-auto">
+                                            <input type="checkbox" x-model="formData.premiere"
+                                                   @change="(v) => v && (formData.recurring = false)" class="w-auto">
                                             <span class="text-3">Video Premiere</span>
                                         </label><br>
                                         <label>
-                                            <input type="checkbox" x-model="formData.vodup" @change="(v) => v && (formData.recurring = false)" class="w-auto">
+                                            <input type="checkbox" x-model="formData.vodup"
+                                                   @change="(v) => v && (formData.recurring = false)" class="w-auto">
                                             <span class="text-3">VoD Upload</span>
                                         </label><br>
                                         <label>
-                                            <input type="checkbox" :disabled="formData.premiere || formData.vodup" x-model="formData.recurring" class="w-auto">
+                                            <input type="checkbox" :disabled="formData.premiere || formData.vodup"
+                                                   x-model="formData.recurring" class="w-auto">
                                             <span class="text-3">Recurring Event</span>
                                         </label>
                                     </div>
@@ -294,7 +357,8 @@
                                                 <label x-show="!formData.premiere && !formData.vodup && !loading"
                                                        for="end" class="md:w-1/4 w-full">
                                                     <span class="font-semibold p-2">End</span>
-                                                    <span x-show="formData.formatedDuration != ''" class="text-sm font-light opacity-75">
+                                                    <span x-show="formData.formatedDuration != ''"
+                                                          class="text-sm font-light opacity-75">
                                                         ( <span x-text="formData.formatedDuration"></span> )
                                                     </span>
                                                     <input name="end" type="text" placeholder="16:00" id="end"
@@ -341,49 +405,59 @@
                                         </div>
                                         <div class="mt-4">
                                             <div class="flex" x-show="formData.recurring && !loading">
-                                                    <div class="w-1/4 pl-2">
-                                                        <span class="font-semibold mb-6">Interval</span><br>
-                                                        <label>
-                                                            <input type="radio" value="daily" x-model="formData.recurringInterval" class="w-auto" @change="regenerateRecurringDates">
-                                                            <span class="text-3">Repeat Daily</span>
-                                                        </label><br>
-                                                        <label>
-                                                            <input type="radio" value="weekly" x-model="formData.recurringInterval" class="w-auto" @change="regenerateRecurringDates">
-                                                            <span class="text-3">Repeat Weekly</span>
-                                                        </label><br>
-                                                        <label>
-                                                            <input type="radio" value="monthly" x-model="formData.recurringInterval" class="w-auto" @change="regenerateRecurringDates">
-                                                            <span class="text-3">Repeat Monthly</span>
-                                                        </label><br>
-                                                    </div>
-                                                    <div class="w-1/4 pl-2">
-                                                        <label for="events-count" class="w-full">
-                                                            <span class="font-semibold p-2">Count</span>
-                                                            <input name="events-count" type="number" placeholder="14" id="end" min="1" x-model="formData.eventsCount" @change="regenerateRecurringDates" @keyup="regenerateRecurringDates"/>
-                                                        </label>
-                                                    </div>
-                                                    <div class="w-1/2 pl-2">
-                                                        <span class="font-semibold mb-6">Dates</span><br>
-                                                        <span x-show="formData.start == ''" class="ml-2 opacity-75">- Please set "start" first -</span>
-                                                        <ul class="ml-2" x-show="formData.start != ''">
-                                                            <li
+                                                <div class="w-1/4 pl-2">
+                                                    <span class="font-semibold mb-6">Interval</span><br>
+                                                    <label>
+                                                        <input type="radio" value="daily"
+                                                               x-model="formData.recurringInterval" class="w-auto"
+                                                               @change="regenerateRecurringDates">
+                                                        <span class="text-3">Repeat Daily</span>
+                                                    </label><br>
+                                                    <label>
+                                                        <input type="radio" value="weekly"
+                                                               x-model="formData.recurringInterval" class="w-auto"
+                                                               @change="regenerateRecurringDates">
+                                                        <span class="text-3">Repeat Weekly</span>
+                                                    </label><br>
+                                                    <label>
+                                                        <input type="radio" value="monthly"
+                                                               x-model="formData.recurringInterval" class="w-auto"
+                                                               @change="regenerateRecurringDates">
+                                                        <span class="text-3">Repeat Monthly</span>
+                                                    </label><br>
+                                                </div>
+                                                <div class="w-1/4 pl-2">
+                                                    <label for="events-count" class="w-full">
+                                                        <span class="font-semibold p-2">Count</span>
+                                                        <input name="events-count" type="number" placeholder="14"
+                                                               id="end" min="1" x-model="formData.eventsCount"
+                                                               @change="regenerateRecurringDates"
+                                                               @keyup="regenerateRecurringDates"/>
+                                                    </label>
+                                                </div>
+                                                <div class="w-1/2 pl-2">
+                                                    <span class="font-semibold mb-6">Dates</span><br>
+                                                    <span x-show="formData.start == ''" class="ml-2 opacity-75">- Please set "start" first -</span>
+                                                    <ul class="ml-2" x-show="formData.start != ''">
+                                                        <li
                                                                 x-bind:style="{ 'cursor': 'default' }"
-                                                            >
-                                                                <i class="far fa-check-square"></i>
-                                                                <span x-text="(new Date(formData.start)).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
-                                                            </li>
-                                                            <template x-for="date in formData.recurringDates">
-                                                                <li
+                                                        >
+                                                            <i class="far fa-check-square"></i>
+                                                            <span x-text="(new Date(formData.start)).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
+                                                        </li>
+                                                        <template x-for="date in formData.recurringDates">
+                                                            <li
                                                                     x-bind:style="{ 'cursor': 'pointer', 'opacity': date.enabled ? '1' : '0.3' }"
                                                                     @click="() => (date.enabled = !date.enabled)"
-                                                                >
-                                                                    <i x-show="date.enabled" class="far fa-check-square"></i>
-                                                                    <i x-show="!date.enabled" class="far fa-square"></i>
-                                                                    <span x-text="date.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
-                                                                </li>
-                                                            </template>
-                                                        </ul>
-                                                    </div>
+                                                            >
+                                                                <i x-show="date.enabled"
+                                                                   class="far fa-check-square"></i>
+                                                                <i x-show="!date.enabled" class="far fa-square"></i>
+                                                                <span x-text="date.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
+                                                            </li>
+                                                        </template>
+                                                    </ul>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

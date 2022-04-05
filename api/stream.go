@@ -2,6 +2,7 @@ package api
 
 import (
 	"TUM-Live/dao"
+	"TUM-Live/model"
 	"TUM-Live/tools"
 	"TUM-Live/tools/bot"
 	"errors"
@@ -30,6 +31,7 @@ func configGinStreamRestRouter(router *gin.Engine) {
 	g.GET("/api/stream/:streamID/pause", pauseStream)
 	g.GET("/api/stream/:streamID/end", endStream)
 	g.GET("/api/stream/:streamID/issue", reportStreamIssue)
+	g.POST("/api/stream/:streamID/sections", createVideoSectionBatch)
 }
 
 type liveStreamDto struct {
@@ -197,4 +199,19 @@ func getStream(c *gin.Context) {
 			"ingest":      fmt.Sprintf("%sstream?secret=%s", tools.Cfg.IngestBase, stream.StreamKey),
 			"live":        stream.LiveNow,
 			"vod":         stream.Recording})
+}
+
+func createVideoSectionBatch(c *gin.Context) {
+	var sections []model.VideoSection
+	if err := c.BindJSON(&sections); err != nil {
+		log.WithError(err).Error("failed to bind video section JSON")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	err := dao.CreateVideoSectionBatch(sections)
+	if err != nil {
+		log.WithError(err).Error("failed to create video sections")
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
 }
