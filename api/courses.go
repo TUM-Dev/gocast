@@ -708,6 +708,9 @@ func createCourse(c *gin.Context) {
 		Visibility:          req.Access,
 		Streams:             []model.Stream{},
 	}
+	if tumLiveContext.User.Role != model.AdminType {
+		course.Admins = []model.User{*tumLiveContext.User}
+	}
 	err = dao.CreateCourse(context.Background(), course, true)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "Couldn't save course. Please reach out to us.")
