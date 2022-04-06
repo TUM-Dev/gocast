@@ -8,6 +8,9 @@
     "moduleResolution": "node",
     "sourceRoot": "./ts/",
     "rootDir": "./ts/",
-    "lib": ["es2021"]
+    "lib": [
+      "es2021",
+      "dom"
+    ]
   }
 }

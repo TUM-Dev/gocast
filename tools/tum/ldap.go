@@ -1,7 +1,9 @@
 package tum
 
 import (
+	"TUM-Live/model"
 	"TUM-Live/tools"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
@@ -75,4 +77,51 @@ func LoginWithTumCredentials(username string, password string) (userId string, l
 		}
 	}
 	return "", "", "", fmt.Errorf("LDAP: reached unexpected codepoint. User: %v", username)
+}
+
+func FindUserWithEmail(email string) (*model.User, error) {
+	username := ldap.EscapeFilter(email)
+	defer sentry.Flush(time.Second * 2)
+	l, err := ldap.DialURL(tools.Cfg.Ldap.URL)
+	if err != nil {
+		return nil, err
+	}
+	defer l.Close()
+
+	// First bind with a read only user
+	err = l.Bind(tools.Cfg.Ldap.User, tools.Cfg.Ldap.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	// Search for the given username
+	searchRequest := &ldap.SearchRequest{
+		BaseDN: "ou=users,ou=data,ou=prod,ou=iauth,dc=tum,dc=de",
+		Scope:  ldap.ScopeWholeSubtree,
+		Filter: fmt.Sprintf("(imEmailAdressen=%s)", username),
+	}
+
+	sr, err := l.Search(searchRequest)
+	if err != nil {
+		return nil, errors.New("couldn't query user")
+	}
+
+	if len(sr.Entries) != 1 {
+		return nil, ErrLdapBadAuth
+	}
+
+	mNr := sr.Entries[0].GetAttributeValue("imMatrikelNr")
+	mwnID := sr.Entries[0].GetAttributeValue("imMWNID")
+	lrzID := sr.Entries[0].GetAttributeValue("imLRZKennung")
+	name := sr.Entries[0].GetAttributeValue("imVorname")
+	if mNr == "" {
+		mNr = mwnID
+	}
+	return &model.User{
+		Name:                name,
+		MatriculationNumber: mNr,
+		LrzID:               lrzID,
+		Email:               sql.NullString{String: email, Valid: true},
+		Role:                model.LecturerType,
+	}, nil
 }
