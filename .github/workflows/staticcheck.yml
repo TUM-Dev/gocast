@@ -24,3 +24,5 @@ jobs:
         with:
           version: "2021.1.1"
           install-go: false
+          cache-key: "go1.18.x"
+          working-directory: "."
