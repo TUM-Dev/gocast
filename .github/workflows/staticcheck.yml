@@ -16,6 +16,9 @@ jobs:
         with:
           fetch-depth: 1
       # create node_module for "go:embed node_modules" in web/router.go
+      - uses: WillAbides/setup-go-faster@v1.7.0
+        with:
+          go-version: "1.18.x"
       - run: make npm_dependencies
       - uses: dominikh/staticcheck-action@v1.1.0
         with:
