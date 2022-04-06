@@ -68,7 +68,7 @@ func GetAdministeredCoursesByUserId(ctx context.Context, userid uint) (courses [
 	}
 
 	var administeredCourses []model.Course
-	err = DB.Raw("SELECT * FROM courses JOIN course_admins ON courses.id = course_admins.course_id WHERE course_admins.user_id = ?", userid).Scan(&administeredCourses).Error
+	err = DB.Raw("SELECT * FROM courses JOIN course_admins ON courses.id = course_admins.course_id WHERE course_admins.user_id = ? AND courses.deleted_at IS NULL", userid).Scan(&administeredCourses).Error
 	if err != nil {
 		return nil, err
 	}
@@ -189,20 +189,8 @@ func UpdateCourseMetadata(ctx context.Context, course model.Course) {
 	DB.Save(&course)
 }
 
-func UpdateCourseSettings(ctx context.Context, course model.Course) error {
-	return DB.Model(&course).Updates(map[string]interface{}{
-		"deleted_at":                course.DeletedAt,
-		"visibility":                course.Visibility,
-		"vod_enabled":               course.VODEnabled,
-		"live_enabled":              course.LiveEnabled,
-		"downloads_enabled":         course.DownloadsEnabled,
-		"chat_enabled":              course.ChatEnabled,
-		"vod_chat_enabled":          course.VodChatEnabled,
-		"name":                      course.Name,
-		"user_id":                   course.UserID,
-		"user_created_by_token":     course.UserCreatedByToken,
-		"camera_preset_preferences": course.CameraPresetPreferences,
-	}).Error
+func UnDeleteCourse(ctx context.Context, course model.Course) error {
+	return DB.Exec("UPDATE courses SET deleted_at = NULL WHERE id = ?", course.ID).Error
 }
 
 func UpdateCourse(ctx context.Context, course model.Course) error {
@@ -210,7 +198,9 @@ func UpdateCourse(ctx context.Context, course model.Course) error {
 	return DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&course).Error
 }
 
-func CreateCourse(ctx context.Context, course model.Course, keep bool) error {
+// CreateCourse creates a new course, if keep is false, deleted_at is set to NOW(),
+// letting the user manually create the course again (opt-in)
+func CreateCourse(ctx context.Context, course *model.Course, keep bool) error {
 	defer Cache.Clear()
 	err := DB.Create(&course).Error
 	if err != nil {

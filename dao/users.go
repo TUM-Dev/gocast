@@ -63,7 +63,7 @@ func GetUserByID(ctx context.Context, id uint) (user model.User, err error) {
 		return cached.(model.User), nil
 	}
 	var foundUser model.User
-	dbErr := DB.Preload("AdministeredCourses").Preload("Courses.Streams").Preload("Courses.Streams").Find(&foundUser, "id = ?", id).Error
+	dbErr := DB.Preload("AdministeredCourses").Preload("Courses.Streams").Find(&foundUser, "id = ?", id).Error
 	if dbErr == nil {
 		Cache.SetWithTTL(fmt.Sprintf("userById%d", id), foundUser, 1, time.Second*10)
 	}
@@ -108,7 +108,10 @@ func UpsertUser(user *model.User) error {
 		user.Model = foundUser.Model
 		foundUser.LrzID = user.LrzID
 		foundUser.Name = user.Name
-		err := DB.Save(&foundUser).Error
+		if user.Role != 0 {
+			foundUser.Role = user.Role
+		}
+		err := DB.Save(foundUser).Error
 		if err != nil {
 			return err
 		}
@@ -124,17 +127,17 @@ func UpsertUser(user *model.User) error {
 	return err
 }
 
-func AddUsersToCourseByTUMIDs(TumIDs []string, courseID uint) error {
+func AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error {
 	// create empty users for ids that are not yet registered:
-	stubUsers := make([]model.User, len(TumIDs))
-	for i, id := range TumIDs {
+	stubUsers := make([]model.User, len(matrNr))
+	for i, id := range matrNr {
 		stubUsers[i] = model.User{MatriculationNumber: id, Role: model.StudentType}
 	}
 	DB.Model(&model.User{}).Clauses(clause.OnConflict{DoNothing: true}).Create(&stubUsers)
 
 	// find users for current course:
 	var foundUsersIDs []courseUsers
-	err := DB.Model(&model.User{}).Where("matriculation_number in ?", TumIDs).Select("? as course_id, id as user_id", courseID).Scan(&foundUsersIDs).Error
+	err := DB.Model(&model.User{}).Where("matriculation_number in ?", matrNr).Select("? as course_id, id as user_id", courseID).Scan(&foundUsersIDs).Error
 	if err != nil {
 		return err
 	}

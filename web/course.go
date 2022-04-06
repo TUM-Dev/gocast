@@ -28,8 +28,14 @@ func editCourseByTokenPage(c *gin.Context) {
 	}
 
 	indexData := NewIndexDataWithContext(c)
+	course, err := dao.GetCourseByToken(c.Request.Form.Get("token"))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Course not found"})
+		return
+	}
 	d := editCourseByTokenPageData{
 		Token:     c.Request.Form.Get("token"),
+		Course:    course,
 		IndexData: indexData,
 	}
 
