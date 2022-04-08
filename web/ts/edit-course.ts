@@ -1,10 +1,123 @@
 import { postData, showMessage } from "./global";
 import { StatusCodes } from "http-status-codes";
 
+export enum UIEditMode {
+    none,
+    single,
+    series,
+}
+
+export class Lecture {
+    readonly courseId: number;
+    readonly lectureId: number;
+
+    name: string;
+    description: string;
+    lectureHall: string;
+    uiEditMode: UIEditMode = UIEditMode.none;
+    newName: string;
+    newDescription: string;
+    newLectureHall: string;
+    isDirty: boolean;
+
+    constructor(courseId: number, lectureId: number, name: string, description: string, lectureHall: string) {
+        this.courseId = courseId;
+        this.lectureId = lectureId;
+        this.lectureHall = lectureHall;
+        this.name = name;
+        this.description = description;
+    }
+
+    updateIsDirty() {
+        this.isDirty =
+            this.newName !== this.name ||
+            this.newDescription !== this.description ||
+            this.newLectureHall !== this.lectureHall;
+    }
+
+    resetNewFields() {
+        this.newName = this.name;
+        this.newDescription = this.description;
+        this.newLectureHall = this.lectureHall;
+        this.isDirty = false;
+    }
+
+    startSeriesEdit() {
+        if (this.uiEditMode !== UIEditMode.none) return;
+        this.resetNewFields();
+        this.uiEditMode = UIEditMode.series;
+    }
+
+    startSingleEdit() {
+        if (this.uiEditMode !== UIEditMode.none) return;
+        this.resetNewFields();
+        this.uiEditMode = UIEditMode.single;
+    }
+
+    async saveEdit() {
+        if (this.uiEditMode === UIEditMode.single) {
+            const promises = [];
+            if (this.newName !== this.name) promises.push(this.saveNewLectureName());
+            if (this.newDescription !== this.description) promises.push(this.saveNewLectureDescription());
+            if (this.newLectureHall !== this.lectureHall) promises.push(this.saveNewLectureHall());
+
+            const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
+
+            if (errors.length > 0) {
+                const errorMessages = (await Promise.all(errors.map((e) => e.text()))).join("\n -");
+                showMessage(errorMessages);
+                return false;
+            }
+
+            this.uiEditMode = UIEditMode.none;
+            return true;
+        }
+    }
+
+    discardEdit() {
+        this.uiEditMode = UIEditMode.none;
+    }
+
+    async saveNewLectureName() {
+        const res = await postData("/api/course/" + this.courseId + "/renameLecture/" + this.lectureId, {
+            name: this.newName,
+        });
+
+        if (res.status == StatusCodes.OK) {
+            this.name = this.newName;
+        }
+
+        return res;
+    }
+
+    async saveNewLectureDescription() {
+        const res = await postData("/api/course/" + this.courseId + "/updateDescription/" + this.lectureId, {
+            name: this.newDescription,
+        });
+
+        if (res.status == StatusCodes.OK) {
+            this.description = this.newDescription;
+        }
+
+        return res;
+    }
+
+    async saveNewLectureHall() {
+        const res = await saveLectureHall([this.lectureId], this.newLectureHall);
+
+        if (res.status == StatusCodes.OK) {
+            this.lectureHall = this.newLectureHall;
+        }
+
+        return res;
+    }
+}
+
 export function saveLectureHall(streamIds: number[], lectureHall: string) {
     return postData("/api/setLectureHall", { streamIds, lectureHall: parseInt(lectureHall) });
 }
 
+// Used by schedule.ts
 export function saveLectureDescription(e: Event, cID: number, lID: number) {
     e.preventDefault();
     const input = (document.getElementById("lectureDescriptionInput" + lID) as HTMLInputElement).value;
@@ -17,6 +130,7 @@ export function saveLectureDescription(e: Event, cID: number, lID: number) {
     });
 }
 
+// Used by schedule.ts
 export function saveLectureName(e: Event, cID: number, lID: number) {
     e.preventDefault();
     const input = (document.getElementById("lectureNameInput" + lID) as HTMLInputElement).value;

@@ -144,3 +144,17 @@ func (s Stream) Color() string {
 		return "info"
 	}
 }
+
+func (s Stream) GetNameJson() string {
+	if m, err := json.Marshal(s.Name); err == nil {
+		return string(m)
+	}
+	return "\"\""
+}
+
+func (s Stream) GetDescriptionJson() string {
+	if m, err := json.Marshal(s.Description); err == nil {
+		return string(m)
+	}
+	return "\"\""
+}

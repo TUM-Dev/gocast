@@ -92,6 +92,9 @@
                             {{range $lecture := $course.Streams }}
                                 <li x-show="!filterPast || !{{$lecture.IsPast}}"
                                     id="lecture-li-{{$lecture.Model.ID}}"
+                                    {{with $lecture}}
+                                    x-data='{ lecture: new admin.Lecture({{$course.Model.ID}}, {{.Model.ID}}, {{.GetNameJson}}, {{.GetDescriptionJson}}, "{{.LectureHallID}}") }'
+                                    {{end}}
                                     class="w-full mb-4 pb-4 relative dark:bg-secondary bg-gray-100">
                                     <div class="border-t-4 border-{{$lecture.Color}} flex justify-between mb-2">
                                         <div class="p-2">
@@ -105,221 +108,211 @@
                                             </div>
                                         </div>
 
-                                        <div class="">
-                                            <div class="flex items-center justify-end h-8">
-                                                {{if $lecture.Recording}}
-                                                    {{if $lecture.VodViews}}<p
-                                                            class="text-4 text-sm">{{$lecture.VodViews}}
-                                                        VoD views</p>{{end}}
-                                                    <div class="font-semibold bg-success border-success w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8">
-                                                        VoD
-                                                    </div>
-                                                {{else if $lecture.LiveNow}}
-                                                    <div class="font-semibold bg-danger border-danger w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8">
-                                                        Live
-                                                    </div>
-                                                {{else if $lecture.IsPast}}
-                                                    <div class="font-semibold bg-warn border-warn w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8">
-                                                        Past
-                                                    </div>
-                                                {{else}}
-                                                    <div class="font-semibold bg-info border-info w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8">
-                                                        Scheduled
-                                                    </div>
-                                                {{end}}
-                                                <i class="fas fa-trash hover:text-1 px-4"
-                                                   title="Delete Lecture"
-                                                   onclick="admin.deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}})"></i>
-                                            </div>
-
-                                            {{if $lecture.SeriesIdentifier}}
-                                                <div class="flex justify-center">
-                                                    <div
-                                                            x-data="{
-                                                                seriesDropdownOpen: false,
-                                                                toggleSeriesDropdown() {
-                                                                    if (this.seriesDropdownOpen) {
-                                                                        return this.closeSeriesDropdown()
-                                                                    }
-
-                                                                    this.$refs.button.focus()
-
-                                                                    this.seriesDropdownOpen = true
-                                                                },
-                                                                closeSeriesDropdown(focusAfter) {
-                                                                    if (! this.seriesDropdownOpen) return
-
-                                                                    this.seriesDropdownOpen = false
-
-                                                                    focusAfter && focusAfter.focus()
-                                                                }
-                                                            }"
-                                                            x-on:keydown.escape.prevent.stop="closeSeriesDropdown($refs.button)"
-                                                            x-on:focusin.window="! $refs.panel.contains($event.target) && closeSeriesDropdown()"
-                                                            x-id="['dropdown-button']"
-                                                            class="relative"
-                                                    >
-                                                        <!-- Button -->
-                                                        <button
-                                                                x-ref="button"
-                                                                x-on:click="toggleSeriesDropdown()"
-                                                                :aria-expanded="seriesDropdownOpen"
-                                                                :aria-controls="$id('series-dropdown-button')"
-                                                                type="button"
-                                                                class="rounded-full border dark:border-gray-100 border-secondary pl-2 pr-3 py-1 text-sm mt-2 mr-1"
-                                                        >
-                                                            <i class="fas fa-link mr-1"></i>
-                                                            <span>Series</span>
-                                                            <i class="fas fa-chevron-down ml-4"></i>
-                                                        </button>
-
-                                                        <!-- Panel -->
-                                                        <div
-                                                                x-ref="panel"
-                                                                x-show="seriesDropdownOpen"
-                                                                x-transition.origin.top.left
-                                                                x-on:click.outside="closeSeriesDropdown($refs.button)"
-                                                                :id="$id('series-dropdown-button')"
-                                                                style="display: none;"
-                                                                class="absolute left-0 mt-2 w-36 bg-white border border-black rounded shadow-md overflow-hidden"
-                                                        >
-                                                            <div>
-                                                                <a href="#" class="block w-full px-4 py-2 text-left text-sm text-gray-400 dark:hover:text-gray-500 hover:text-gray-300" >
-                                                                    Edit Series
-                                                                </a>
-                                                                <a href="#" class="block w-full px-4 py-2 text-left text-sm text-red-400 dark:hover:text-red-500 hover:text-red-300" >
-                                                                    Delete Series
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                        <div class="flex items-center justify-end h-8">
+                                            {{if $lecture.Recording}}
+                                                {{if $lecture.VodViews}}<p
+                                                        class="text-4 text-sm">{{$lecture.VodViews}}
+                                                    VoD views</p>{{end}}
+                                                <div class="font-semibold bg-success border-success w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8">
+                                                    VoD
+                                                </div>
+                                            {{else if $lecture.LiveNow}}
+                                                <div class="font-semibold bg-danger border-danger w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8">
+                                                    Live
+                                                </div>
+                                            {{else if $lecture.IsPast}}
+                                                <div class="font-semibold bg-warn border-warn w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8">
+                                                    Past
+                                                </div>
+                                            {{else}}
+                                                <div class="font-semibold bg-info border-info w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8">
+                                                    Scheduled
                                                 </div>
                                             {{end}}
+
+                                            <div
+                                                x-data="{
+                                                    moreDropdownOpen: false,
+                                                    toggleMoreDropdown() {
+                                                        if (this.moreDropdownOpen) {
+                                                            return this.closeMoreDropdown();
+                                                        }
+                                                        this.$refs.button.focus();
+                                                        this.moreDropdownOpen = true;
+                                                    },
+                                                    closeMoreDropdown(focusAfter) {
+                                                        if (! this.moreDropdownOpen) return;
+                                                        this.moreDropdownOpen = false;
+                                                        focusAfter && focusAfter.focus();
+                                                    }
+                                                }"
+                                                x-on:keydown.escape.prevent.stop="closeMoreDropdown($refs.button)"
+                                                x-on:focusin.window="! $refs.panel.contains($event.target) && closeMoreDropdown()"
+                                                x-id="['dropdown-button']"
+                                                class="relative"
+                                            >
+
+                                                <!-- Button -->
+                                                <button
+                                                        x-ref="button"
+                                                        x-on:click="toggleMoreDropdown()"
+                                                        :aria-expanded="moreDropdownOpen"
+                                                        :aria-controls="$id('more-dropdown-button')"
+                                                        type="button"
+                                                        class="px-5 py-1 text-sm"
+                                                >
+                                                    <i class="fas fa-chevron-down"></i>
+                                                </button>
+
+                                                <!-- Series Options -->
+                                                <div
+                                                        x-ref="panel"
+                                                        x-show="moreDropdownOpen"
+                                                        x-transition.origin.top.right
+                                                        x-on:click.outside="closeMoreDropdown($refs.button)"
+                                                        :id="$id('more-dropdown-button')"
+                                                        style="display: none;"
+                                                        class="absolute left-0 mt-2 w-36 bg-white border border-black rounded shadow-md overflow-hidden"
+                                                >
+                                                    <div>
+                                                        <button @click="lecture.startSingleEdit(); closeMoreDropdown();" class="block w-full px-4 py-2 text-left text-sm text-gray-400 dark:hover:text-gray-500 hover:text-gray-300" >
+                                                            Edit Lecture
+                                                        </button>
+                                                        <button @click="admin.deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}}); closeMoreDropdown();" class="block w-full px-4 py-2 text-left text-sm text-red-400 dark:hover:text-red-500 hover:text-red-300" >
+                                                            Delete Lecture
+                                                        </button>
+                                                    </div>
+                                                    {{if $lecture.SeriesIdentifier}}
+                                                        <div class="border-t border-black">
+                                                            <button @click="lecture.startSeriesEdit(); closeMoreDropdown();" class="block w-full px-4 py-2 text-left text-sm text-gray-400 dark:hover:text-gray-500 hover:text-gray-300" >
+                                                                Edit Series
+                                                            </button>
+                                                            <button class="block w-full px-4 py-2 text-left text-sm text-red-400 dark:hover:text-red-500 hover:text-red-300" >
+                                                                Delete Series
+                                                            </button>
+                                                        </div>
+                                                    {{end}}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div class="ml-4 mr-4">
-                                        <form onsubmit="admin.saveLectureName(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
-                                              class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
-                                            <label for="lectureNameInput{{$lecture.Model.ID}}" class="hidden">Lecture
-                                                title</label>
+                                    <div x-show="lecture.uiEditMode > 0" class="px-4">
+                                        <div class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                                            <label for="lectureNameInput{{$lecture.Model.ID}}" class="hidden">Lecture title</label>
                                             <input id="lectureNameInput{{$lecture.Model.ID}}"
                                                    onfocus="admin.focusNameInput(this, {{$lecture.Model.ID}})"
                                                    class="grow border-none" type="text"
-                                                   value="{{$lecture.Name}}"
+                                                   x-model="lecture.newName"
+                                                   x-on:keyup="lecture.updateIsDirty()"
                                                    placeholder="Lecture 2: Dark-Patterns I"
                                                    autocomplete="off">
-                                            <button id="nameSubmitBtn{{$lecture.Model.ID}}"
-                                                    class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
-                                        </form>
+                                        </div>
                                         <div class="w-full mt-3">
-                                            <div class="w-full flex justify-center">
-                                                <i onclick="admin.toggleExtraInfos(this, {{$lecture.Model.ID}})"
-                                                   class="fas fa-angle-double-down hover:text-purple-500"></i>
+                                            <div class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                                                <label for="lectureDescriptionInput{{$lecture.Model.ID}}" class="hidden">Lecture description</label>
+                                                <textarea id="lectureDescriptionInput{{$lecture.Model.ID}}"
+                                                          onfocus="admin.focusDescriptionInput(this, {{$lecture.Model.ID}})"
+                                                          class="grow border-none"
+                                                          placeholder="Add a nice description, links, and more. You can use Markdown."
+                                                          autocomplete="off"
+                                                          x-model="lecture.newDescription"
+                                                          x-on:keyup="lecture.updateIsDirty()"
+                                                ></textarea>
                                             </div>
-                                            <div id="extraInfos{{$lecture.Model.ID}}" class="hidden">
-                                                <form onsubmit="admin.saveLectureDescription(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
-                                                      class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
-                                                    <label for="lectureDescriptionInput{{$lecture.Model.ID}}"
-                                                           class="hidden">Lecture description</label>
-                                                    <textarea id="lectureDescriptionInput{{$lecture.Model.ID}}"
-                                                              onfocus="admin.focusDescriptionInput(this, {{$lecture.Model.ID}})"
-                                                              class="grow border-none"
-                                                              placeholder="Add a nice description, links, and more. You can use Markdown."
-                                                              autocomplete="off">{{$lecture.Description}}</textarea>
-                                                    <button id="descriptionSubmitBtn{{$lecture.Model.ID}}"
-                                                            class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
-                                                </form>
-                                                {{if and (not $lecture.IsPast) (not $lecture.Recording)}}
-                                                {{if eq $user.Role 1}}
-                                                <div class="flex"
-                                                     x-data="{ streamSelectedLectureHallId: {{$lecture.LectureHallID}}, showSubmit: false }">
-                                                    <label class="mx-2">
-                                                        <span>Select Lecture Hall</span>
-                                                        <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
-                                                                id="lectureHallSelector{{$lecture.Model.ID}}"
-                                                                @change="showSubmit = true"
-                                                                x-model="streamSelectedLectureHallId">
-                                                            <option class="text-gray-300" value="0">Self
-                                                                streaming
+                                            {{if and (not $lecture.IsPast) (not $lecture.Recording)}}
+                                            {{if eq $user.Role 1}}
+                                            <div>
+                                                <label class="mx-2">
+                                                    <span>Select Lecture Hall</span>
+                                                    <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
+                                                            id="lectureHallSelector{{$lecture.Model.ID}}"
+                                                            x-on:change="lecture.updateIsDirty()"
+                                                            x-model="lecture.newLectureHall">
+                                                        <option class="text-gray-300" value="0">
+                                                            Self streaming
+                                                        </option>
+                                                        {{range $lectureHall := $lectureHalls}}
+                                                            <option class="text-gray-300" value="{{$lectureHall.Model.ID}}"{{if eq $lecture.LectureHallID $lectureHall.Model.ID}} selected{{end}}>
+                                                                {{$lectureHall.Name}}
                                                             </option>
-                                                            {{range $lectureHall := $lectureHalls}}
-                                                                <option class="text-gray-300"
-                                                                        value="{{$lectureHall.Model.ID}}"{{if eq $lecture.LectureHallID $lectureHall.Model.ID}} selected{{end}}>
-                                                                    {{$lectureHall.Name}}
-                                                                </option>
-                                                            {{end}}
-                                                        </select>
-                                                    </label>
-                                                    <a id="applyLectureHall{{$lecture.Model.ID}}"
-                                                       class="flex items-center"
-                                                       x-show="showSubmit"
-                                                       @click="admin.saveLectureHall([{{$lecture.Model.ID}}], streamSelectedLectureHallId).then(() => { showSubmit = false; })">
-                                                        <i class="align-middle fas fa-check text-gray-300 hover:text-purple-500"></i>
-                                                    </a>
-                                                </div>
-                                                {{end}}
-                                                {{if not $lecture.LectureHallID}}
-                                                <p class="mt-2">
-                                                    <span class="font-semibold">Stream Server:</span>
-                                                    <span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
-                                                    <i class="fas fa-clipboard hover:text-purple-500"
-                                                       onclick="admin.copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
-                                                    <br>
-                                                    <span class="font-semibold">Stream Key:</span>
-                                                    <span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
-                                                    {{if ne $user.Role 1}}
-                                                        <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
-                                                    {{end}}
-                                                </p>
-                                                {{else if eq $user.Role 2}}
-                                                This lecture will be streamed from <span
-                                                        class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}{{if eq $lectureHall.Model.ID $lecture.LectureHallID}}{{$lectureHall.Name}}{{end}}{{end}}</span>.
-                                                If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
-                                                {{end}}
-                                                {{else if $lecture.Recording}}
-                                                <span class="flex space-x-2 mt-4 content-center">
-                                                    {{if $lecture.Files}}
-                                                        <span>
-                                                            {{template "downloadBtn" $lecture.Files}}
-                                                        </span>
-                                                    {{end}}
-                                                    {{if $lecture.Stats}}
-                                                        <a>
-                                                            <i class="fas fa-chart-line text-4 text-lg hover:text-1"
-                                                               title="Live Statistics"
-                                                               onclick="admin.showStats({{$lecture.Model.ID}})"></i>
-                                                        </a>
-                                                    {{end}}
-                                                </span>
-                                                {{if $lecture.Stats}}
-                                                <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
-                                                    <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
-                                                            width="undefined" height="undefined"></canvas>
-                                                </div>
-                                                <script>
-                                                    new Chart(
-                                                        document.getElementById("stats{{$lecture.Model.ID}}"), {
-                                                            "type": "line",
-                                                            "data": {
-                                                                "labels": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}",{{end}} {{end}}],
-                                                                "datasets": [{
-                                                                    "label": "Viewers",
-                                                                    "data": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}{{$stat.Viewers}}, {{end}}{{end}}],
-                                                                    "fill": false,
-                                                                    "borderColor": "rgb(75, 192, 192)",
-                                                                    "lineTension": 0.1
-                                                                }]
-                                                            },
-                                                            "options": {
-                                                                scales: {y: {beginAtZero: true}}
-                                                            }
-                                                        }
-                                                    );
-                                                </script>
-                                                {{end}}
-                                                {{end}}
+                                                        {{end}}
+                                                    </select>
+                                                </label>
                                             </div>
+                                            {{end}}
+                                            {{if not $lecture.LectureHallID}}
+                                            <p class="mt-2">
+                                                <span class="font-semibold">Stream Server:</span>
+                                                <span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
+                                                <i class="fas fa-clipboard hover:text-purple-500"
+                                                   onclick="admin.copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
+                                                <br>
+                                                <span class="font-semibold">Stream Key:</span>
+                                                <span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
+                                                {{if ne $user.Role 1}}
+                                                    <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
+                                                {{end}}
+                                            </p>
+                                            {{else if eq $user.Role 2}}
+                                            This lecture will be streamed from <span
+                                                    class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}{{if eq $lectureHall.Model.ID $lecture.LectureHallID}}{{$lectureHall.Name}}{{end}}{{end}}</span>.
+                                            If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
+                                            {{end}}
+                                            {{else if $lecture.Recording}}
+                                            <span class="flex space-x-2 mt-4 content-center">
+                                                {{if $lecture.Files}}
+                                                    <span>
+                                                        {{template "downloadBtn" $lecture.Files}}
+                                                    </span>
+                                                {{end}}
+                                                {{if $lecture.Stats}}
+                                                    <a>
+                                                        <i class="fas fa-chart-line text-4 text-lg hover:text-1"
+                                                           title="Live Statistics"
+                                                           onclick="admin.showStats({{$lecture.Model.ID}})"></i>
+                                                    </a>
+                                                {{end}}
+                                            </span>
+                                            {{if $lecture.Stats}}
+                                            <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
+                                                <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
+                                                        width="undefined" height="undefined"></canvas>
+                                            </div>
+                                            <script>
+                                                new Chart(
+                                                    document.getElementById("stats{{$lecture.Model.ID}}"), {
+                                                        "type": "line",
+                                                        "data": {
+                                                            "labels": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}",{{end}} {{end}}],
+                                                            "datasets": [{
+                                                                "label": "Viewers",
+                                                                "data": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}{{$stat.Viewers}}, {{end}}{{end}}],
+                                                                "fill": false,
+                                                                "borderColor": "rgb(75, 192, 192)",
+                                                                "lineTension": 0.1
+                                                            }]
+                                                        },
+                                                        "options": {
+                                                            scales: {y: {beginAtZero: true}}
+                                                        }
+                                                    }
+                                                );
+                                            </script>
+                                            {{end}}
+                                            {{end}}
+                                        </div>
+
+                                        <div class="mt-6 flex justify-end">
+                                            <button @click="lecture.discardEdit();" class="px-8 py-3 text-2 rounded bg-indigo-500/10 hover:bg-indigo-500/20 mr-4" >
+                                                Discard Changes
+                                            </button>
+                                            <button
+                                                    @click="lecture.discardEdit();"
+                                                    :disabled="!lecture.isDirty"
+                                                    class="px-8 py-3 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500"
+                                                    x-text="lecture.uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series'"
+                                            ></button>
                                         </div>
                                     </div>
                                 </li>
