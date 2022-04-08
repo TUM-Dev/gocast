@@ -11,13 +11,13 @@ func ConfigChatRouter(router *gin.RouterGroup) {
 
 //ConfigGinRouter for non ws endpoints
 func ConfigGinRouter(router *gin.Engine) {
-	configProgressRouter(router)
 	configGinStreamRestRouter(router)
 	configGinUsersRouter(router)
 	configGinCourseRouter(router)
 	configGinDownloadRouter(router)
 	configGinLectureHallApiRouter(router)
 	configGinSexyApiRouter(router)
+	configProgressRouter(router)
 	configServerNotificationsRoutes(router)
 	configTokenRouter(router)
 	configWorkerRouter(router)
