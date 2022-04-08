@@ -10,7 +10,7 @@ export class EmojiList {
         this.emojiIndex = 0;
     }
 
-    valid(): boolean {
+    isValid(): boolean {
         return this.suggestions.length > 0;
     }
     onSuggestions(e) {
@@ -18,19 +18,19 @@ export class EmojiList {
     }
 
     onSelectionTriggered(e) {
-        if (this.valid()) {
+        if (this.isValid()) {
             this.insertEmoji(this.suggestions[this.emojiIndex]);
         }
     }
 
     onArrowDown(e) {
-        if (this.valid()) {
+        if (this.isValid()) {
             this.emojiIndex = (this.emojiIndex + 1) % this.suggestions.length;
         }
     }
 
     onArrowUp(e) {
-        if (this.valid()) {
+        if (this.isValid()) {
             this.emojiIndex = (this.emojiIndex - 1) % this.suggestions.length;
         }
     }
@@ -40,9 +40,9 @@ export class EmojiList {
         this.emojiIndex = 0;
     }
 
-    onChatEnter() {
+    onChatEnter(e) {
         let event = "sendmessage";
-        if (this.valid()) {
+        if (this.isValid()) {
             event = "emojiselectiontriggered";
         }
 

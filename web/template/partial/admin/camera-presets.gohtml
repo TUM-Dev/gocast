@@ -1,5 +1,5 @@
 {{define "camera-presets"}}
-    <div x-cloak class="mt-2" x-data="{halls:[]}" x-show="halls !== null && halls.length > 0"
+    <div x-cloak class="mt-2" x-data="{halls: [], changed: false}" x-show="halls !== null && halls.length > 0"
          x-init="fetch(`/api/lecture-halls-by-id?id=${document.getElementById('courseID').value}`).then(r=>r.json()).then(d=>halls=d)">
         <h2>Camera Presets:</h2>
         <template x-if="halls !== null && halls.length > 0">
@@ -19,7 +19,7 @@
                                      style="min-width: 250px;"
                                      width="250px">
                                 <label class="truncate block my-2">
-                                    <input @change="$dispatch('index-selected', {id: preset.PresetID, name: hall.lecture_hall_name})"
+                                    <input @change="$dispatch('index-selected', {id: preset.PresetID, name: hall.lecture_hall_name}); changed=true;"
                                            type="radio"
                                            class="w-auto"
                                            :name="`preset${hall.lecture_hall_name.replace(/\s+/g, '')}`">
@@ -31,5 +31,8 @@
                 </div>
             </template>
         </template>
+        <button x-cloak x-show="changed" class="bg-secondary rounded px-4 py-2 font-semibold text-white"
+            @click="fetch(`/api/course/${document.getElementById('courseID').value}/presets`, {method:'POST',  body:JSON.stringify(halls)}).then();changed:false">
+            Save Presets</button>
     </div>
 {{end}}

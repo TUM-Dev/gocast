@@ -176,7 +176,7 @@ export function sendMessage(current: NewChatMessage) {
             msg: current.message,
             anonymous: current.anonymous,
             replyTo: current.replyTo,
-            addressedTo: current.addressedTo.map((u) => u.ID),
+            addressedTo: current.addressedTo.map((u) => u.id),
         }),
     );
 }
