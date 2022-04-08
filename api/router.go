@@ -21,4 +21,5 @@ func ConfigGinRouter(router *gin.Engine) {
 	configServerNotificationsRoutes(router)
 	configTokenRouter(router)
 	configWorkerRouter(router)
+	configNotificationsRouter(router)
 }

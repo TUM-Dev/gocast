@@ -13,11 +13,11 @@ import (
 func configServerNotificationsRoutes(engine *gin.Engine) {
 	adminGroup := engine.Group("/api/serverNotification")
 	adminGroup.Use(tools.Admin)
-	adminGroup.POST("/:notificationId", updateNotification)
-	adminGroup.POST("/create", createNotification)
+	adminGroup.POST("/:notificationId", updateServerNotification)
+	adminGroup.POST("/create", createServerNotification)
 }
 
-func updateNotification(c *gin.Context) {
+func updateServerNotification(c *gin.Context) {
 	var req notificationReq
 	if err := c.ShouldBind(&req); err != nil {
 		log.Printf("%v", err)
@@ -36,7 +36,7 @@ func updateNotification(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/admin/server-notifications")
 }
 
-func createNotification(c *gin.Context) {
+func createServerNotification(c *gin.Context) {
 	var req notificationReq
 	if err := c.ShouldBind(&req); err != nil {
 		log.Printf("%v", err)
