@@ -143,6 +143,7 @@ func main() {
 		&model.Token{},
 		&model.Poll{},
 		&model.PollOption{},
+		&model.VideoSection{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)

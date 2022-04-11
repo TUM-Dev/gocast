@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -32,6 +33,8 @@ func configGinStreamRestRouter(router *gin.Engine) {
 	g.GET("/api/stream/:streamID/end", endStream)
 	g.GET("/api/stream/:streamID/issue", reportStreamIssue)
 	g.POST("/api/stream/:streamID/sections", createVideoSectionBatch)
+	g.GET("/api/stream/:streamID/sections", getVideoSections)
+	g.DELETE("/api/stream/:streamID/sections/:id", deleteVideoSection)
 }
 
 type liveStreamDto struct {
@@ -201,6 +204,21 @@ func getStream(c *gin.Context) {
 			"vod":         stream.Recording})
 }
 
+func getVideoSections(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	sections, err := dao.GetVideoSectionByStreamID(tumLiveContext.Stream.ID)
+	if err != nil {
+		log.WithError(err).Error("Can't get video sections")
+	}
+	c.JSON(http.StatusOK, sections)
+}
+
 func createVideoSectionBatch(c *gin.Context) {
 	var sections []model.VideoSection
 	if err := c.BindJSON(&sections); err != nil {
@@ -213,5 +231,23 @@ func createVideoSectionBatch(c *gin.Context) {
 	if err != nil {
 		log.WithError(err).Error("failed to create video sections")
 		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+}
+
+func deleteVideoSection(c *gin.Context) {
+	_, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	idAsString := c.Param("id")
+	id, err := strconv.Atoi(idAsString)
+	if err != nil {
+		log.WithError(err).Error("Can't parse video-section id in url")
+	}
+	err = dao.DeleteVideoSection(uint(id))
+	if err != nil {
+		log.WithError(err).Error("Can't delete video-section")
 	}
 }

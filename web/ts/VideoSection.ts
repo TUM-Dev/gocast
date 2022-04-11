@@ -1,57 +1,65 @@
-import { postData } from "./global";
+import {Delete, postData} from "./global";
 
 export class VideoSection {
-    readonly streamID: number;
+    private readonly streamID: number;
 
-    newSections: Section[];
-    current: Section;
+    existingSections: section[];
+    newSections: section[];
+    current: section;
 
     constructor(streamID) {
         this.newSections = [];
+        this.existingSections = [];
         this.streamID = streamID;
-        this.current = new Section(streamID);
+        this.resetCurrent();
     }
-    pushSection() {
-        this.newSections.push(this.current);
-        this.current = new Section(this.streamID);
+    async load() {
+        await fetch(`/api/stream/${this.streamID}/sections`)
+            .then((res) => res.json())
+            .then((sections) => {
+                if (sections === undefined || sections === null) {
+                    this.existingSections = [];
+                } else {
+                    this.existingSections = sections;
+                }
+            });
     }
-    remove(section: Section) {
+    pushNewSection() {
+        this.newSections.push({ ...this.current });
+        this.resetCurrent();
+    }
+    removeNewSection(section: section) {
         this.newSections = this.newSections.filter((s) => s !== section);
     }
-    add() {
-        const sections = [];
-        this.newSections.forEach((s) => sections.push(s.actual));
-        postData(`/api/stream/${this.streamID}/sections`, this.newSections).then(() => {
-            console.log("added");
+    publishNewSections() {
+        postData(`/api/stream/${this.streamID}/sections`, this.newSections).then(async () => {
+            await this.load(); // load sections again to avaid js-sorting
+            this.newSections = [];
         });
     }
-}
-
-class Section {
-    actual: section;
-    hours: number;
-    minutes: number;
-    seconds: number;
-
-    constructor(streamID: number) {
-        this.actual = {
-            description: "",
-            startInSeconds: 0,
-            streamID: streamID,
-        };
-        this.hours = 0;
-        this.minutes = 0;
-        this.seconds = 0;
+    removeExistingSection(id: number) {
+        Delete(`/api/stream/${this.streamID}/sections/${id}`).then(async () => {
+            await this.load();
+        });
     }
-    get(): section {
-        this.actual.startInSeconds = this.hours * 60 * 60 + this.minutes * 60 + this.seconds;
-        return this.actual;
+    private resetCurrent() {
+        this.current = {
+            description: "",
+            startHours: 0,
+            startMinutes: 0,
+            startSeconds: 0,
+            streamID: this.streamID,
+        };
     }
 }
 
 // TypeScript Mapping of model.VideoSection
 type section = {
     description: string;
-    startInSeconds: number;
+
+    startHours: number;
+    startMinutes: number;
+    startSeconds: number;
+
     streamID: number;
 };
