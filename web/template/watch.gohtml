@@ -216,20 +216,20 @@
                 </button>
             </div>
             <!-- Video Sections -->
-            <div x-data="{sections: [], currIndex: 0}"
-                 x-init="sections = await watch.fetchVideoSections({{$stream.ID}})"
-                 x-show="sections.length > 0"
+            <div x-data="{sections: new watch.VideoSectionList({{$stream.ID}})}"
+                 x-init="await sections.fetch()"
+                 x-show="sections.shouldShow()"
                  class="w-full overflow-x-scroll py-2">
                 <h6 class="font-bold text-3 pb-3">Sections</h6>
                 <div class="space-y-1 lg:space-y-0 lg:flex space-x-0 lg:space-x-2">
-                    <template x-if="currIndex > 0">
+                    <template x-if="sections.notOnFirstPage()">
                         <button class="w-full lg:w-8 h-8 text-3 bg-white border dark:bg-secondary cursor-pointer rounded-lg shadow-sm
                                 dark:border-gray-800 hover:dark:bg-gray-600 hover:bg-gray-200 my-auto"
-                                @click="currIndex -= 1">
+                                @click="sections.prev()">
                             <i class = "fa fa-chevron-left rotate-90 lg:rotate-0"></i>
                         </button>
                     </template>
-                    <template x-for="section in sections.slice(currIndex * 5, currIndex * 5 + 5)">
+                    <template x-for="section in sections.currentGroupSections()">
                         <button class="w-full lg:w-auto flex bg-transparent outline-none border-0"
                                 @click="watch.jumpTo(section.startHours, section.startMinutes, section.startSeconds)">
                             <div class="flex px-2 py-1 bg-white dark:bg-secondary justify-between w-full border dark:border-gray-800 hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg">
@@ -239,10 +239,10 @@
                             </div>
                         </button>
                     </template>
-                    <template x-if="(currIndex + 1) <= (Math.ceil(sections.length / 5) - 1)">
+                    <template x-if="sections.hasNextPage()">
                         <button class="w-full lg:w-8 h-8 text-3 bg-white border dark:bg-secondary cursor-pointer rounded-lg shadow-sm
                                 dark:border-gray-800 hover:dark:bg-gray-600 hover:bg-gray-200 my-auto"
-                                @click="currIndex += 1">
+                                @click="sections.next()">
                             <i class = "fa fa-chevron-right rotate-90 lg:rotate-0"></i>
                         </button>
                     </template>

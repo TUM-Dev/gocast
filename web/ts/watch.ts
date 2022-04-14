@@ -228,10 +228,50 @@ export function getPollOptionWidth(pollOptions, pollOption) {
     return `${Math.ceil(fractionWidth).toString()}%`;
 }
 
-export async function fetchVideoSections(streamID: number) {
-    return await fetch(`/api/stream/${streamID}/sections`)
-        .then((res) => res.json())
-        .then((sections) => {
-            return sections;
-        });
+export class VideoSectionList {
+    readonly sectionsPerGroup: number = 5;
+    readonly streamID: number;
+    currIndex: number;
+    sections: object[];
+
+    constructor(streamID: number) {
+        this.sections = [];
+        this.currIndex = 0;
+        this.streamID = streamID;
+    }
+
+    async fetch() {
+        return await fetch(`/api/stream/${this.streamID}/sections`)
+            .then((res) => res.json())
+            .then((sections) => {
+                this.sections = sections;
+            });
+    }
+
+    shouldShow() {
+        return this.sections.length > 0;
+    }
+
+    currentGroupSections(): object[] {
+        return this.sections.slice(
+            this.currIndex * this.sectionsPerGroup,
+            this.currIndex * this.sectionsPerGroup + this.sectionsPerGroup,
+        );
+    }
+
+    notOnFirstPage(): boolean {
+        return this.currIndex > 0;
+    }
+
+    hasNextPage(): boolean {
+        return this.currIndex + 1 <= Math.ceil(this.sections.length / this.sectionsPerGroup) - 1;
+    }
+
+    next() {
+        this.currIndex += 1;
+    }
+
+    prev() {
+        this.currIndex -= 1;
+    }
 }
