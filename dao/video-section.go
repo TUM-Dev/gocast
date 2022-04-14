@@ -29,8 +29,7 @@ func DeleteVideoSection(videoSectionID uint) error {
 
 func GetVideoSectionByStreamID(streamID uint) ([]model.VideoSection, error) {
 	var sections []model.VideoSection
-	var err error
-	err = DB.Order("start_hours, start_minutes, start_seconds ASC").Find(&sections, "stream_id = ?", streamID).Error
+	err := DB.Order("start_hours, start_minutes, start_seconds ASC").Find(&sections, "stream_id = ?", streamID).Error
 	return sections, err
 }
 
