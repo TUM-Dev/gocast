@@ -227,3 +227,11 @@ export function getPollOptionWidth(pollOptions, pollOption) {
     const fractionWidth = minWidth + fractionOfMax * (maxWidth - minWidth);
     return `${Math.ceil(fractionWidth).toString()}%`;
 }
+
+export async function fetchVideoSections(streamID: number) {
+    return await fetch(`/api/stream/${streamID}/sections`)
+        .then((res) => res.json())
+        .then((sections) => {
+            return sections;
+        });
+}

@@ -205,6 +205,12 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
     });
 };
 
+export function jumpTo(hours: number, minutes: number, seconds: number) {
+    videojs("my-video").ready(() => {
+        player.currentTime(hours * 60 * 60 + minutes * 60 + seconds);
+    });
+}
+
 // Register the plugin with video.js.
 videojs.registerPlugin("skipSilence", skipSilence);
 videojs.registerPlugin("watchProgress", watchProgress);

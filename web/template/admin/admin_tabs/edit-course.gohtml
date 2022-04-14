@@ -161,50 +161,50 @@
                                                     </form>
                                                     {{if and (not $lecture.IsPast) (not $lecture.Recording)}}
                                                     {{if eq $user.Role 1}}
-                                                    <div class="flex"
-                                                         x-data="{ streamSelectedLectureHallId: {{$lecture.LectureHallID}}, showSubmit: false }">
-                                                        <label class="mx-2">
-                                                            <span>Select Lecture Hall</span>
-                                                            <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
-                                                                    id="lectureHallSelector{{$lecture.Model.ID}}"
-                                                                    @change="showSubmit = true"
-                                                                    x-model="streamSelectedLectureHallId">
-                                                                <option class="text-gray-300" value="0">Self
-                                                                    streaming
-                                                                </option>
-                                                                {{range $lectureHall := $lectureHalls}}
-                                                                    <option class="text-gray-300"
-                                                                            value="{{$lectureHall.Model.ID}}"{{if eq $lecture.LectureHallID $lectureHall.Model.ID}} selected{{end}}>
-                                                                        {{$lectureHall.Name}}
+                                                        <div class="flex"
+                                                             x-data="{ streamSelectedLectureHallId: {{$lecture.LectureHallID}}, showSubmit: false }">
+                                                            <label class="mx-2">
+                                                                <span>Select Lecture Hall</span>
+                                                                <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
+                                                                        id="lectureHallSelector{{$lecture.Model.ID}}"
+                                                                        @change="showSubmit = true"
+                                                                        x-model="streamSelectedLectureHallId">
+                                                                    <option class="text-gray-300" value="0">Self
+                                                                        streaming
                                                                     </option>
-                                                                {{end}}
-                                                            </select>
-                                                        </label>
-                                                        <a id="applyLectureHall{{$lecture.Model.ID}}"
-                                                           class="flex items-center"
-                                                           x-show="showSubmit"
-                                                           @click="admin.saveLectureHall([{{$lecture.Model.ID}}], streamSelectedLectureHallId).then(() => { showSubmit = false; })">
-                                                            <i class="align-middle fas fa-check text-gray-300 hover:text-purple-500"></i>
-                                                        </a>
-                                                    </div>
+                                                                    {{range $lectureHall := $lectureHalls}}
+                                                                        <option class="text-gray-300"
+                                                                                value="{{$lectureHall.Model.ID}}"{{if eq $lecture.LectureHallID $lectureHall.Model.ID}} selected{{end}}>
+                                                                            {{$lectureHall.Name}}
+                                                                        </option>
+                                                                    {{end}}
+                                                                </select>
+                                                            </label>
+                                                            <a id="applyLectureHall{{$lecture.Model.ID}}"
+                                                               class="flex items-center"
+                                                               x-show="showSubmit"
+                                                               @click="admin.saveLectureHall([{{$lecture.Model.ID}}], streamSelectedLectureHallId).then(() => { showSubmit = false; })">
+                                                                <i class="align-middle fas fa-check text-gray-300 hover:text-purple-500"></i>
+                                                            </a>
+                                                        </div>
                                                     {{end}}
                                                     {{if not $lecture.LectureHallID}}
-                                                    <p class="mt-2">
-                                                        <span class="font-semibold">Stream Server:</span>
-                                                        <span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
-                                                        <i class="fas fa-clipboard hover:text-purple-500"
-                                                           onclick="admin.copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
-                                                        <br>
-                                                        <span class="font-semibold">Stream Key:</span>
-                                                        <span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
-                                                        {{if ne $user.Role 1}}
-                                                            <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
-                                                        {{end}}
-                                                    </p>
+                                                        <p class="mt-2">
+                                                            <span class="font-semibold">Stream Server:</span>
+                                                            <span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
+                                                            <i class="fas fa-clipboard hover:text-purple-500"
+                                                               onclick="admin.copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
+                                                            <br>
+                                                            <span class="font-semibold">Stream Key:</span>
+                                                            <span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
+                                                            {{if ne $user.Role 1}}
+                                                                <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
+                                                            {{end}}
+                                                        </p>
                                                     {{else if eq $user.Role 2}}
-                                                    This lecture will be streamed from <span
-                                                            class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}{{if eq $lectureHall.Model.ID $lecture.LectureHallID}}{{$lectureHall.Name}}{{end}}{{end}}</span>.
-                                                    If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
+                                                        This lecture will be streamed from <span
+                                                                class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}{{if eq $lectureHall.Model.ID $lecture.LectureHallID}}{{$lectureHall.Name}}{{end}}{{end}}</span>.
+                                                        If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
                                                     {{end}}
                                                     {{else if $lecture.Recording}}
                                                     <div class="mt-4 content-center">
@@ -228,7 +228,28 @@
                                                         <div x-data="{videoSection: new admin.VideoSection({{$lecture.ID}})}"
                                                              x-init="await videoSection.load()"
                                                              class="border dark:border-gray-600 rounded mt-3">
-                                                            <h6 class="font-semibold text-3 px-3 pt-3">Video Sections</h6>
+                                                            <div class="flex px-3 pt-3">
+                                                                <h6 class="font-semibold text-3 my-auto">Video
+                                                                    Sections</h6>
+                                                                <div x-data="{showInfo: false}" class="relative my-auto">
+                                                                    <button @click="showInfo = !showInfo;">
+                                                                        <i class="fa fa-circle-info text-3 ml-2"></i>
+                                                                    </button>
+                                                                    <div x-show="showInfo" class="absolute top-full z-50" @mouseleave="showInfo = false">
+                                                                        <div>
+                                                                            <div class="tooltip relative w-56">
+                                                                                <div class="w-0 h-0 border-x-8 border-x-transparent border-b-8 border-b-black dark:border-b-white ml-2 mr-auto"></div>
+                                                                                <div class="bg-black dark:bg-white rounded-md px-2 py-1">
+                                                                                    <span class="text-white dark:text-black text-xs font-bold">
+                                                                                        Structuring lectures into sections makes lectures more rewatchable.
+                                                                                        For detailed information visit: <a class = "underline hover:text-white dark:hover:text-black" href = "https://docs.live.mm.rbg.tum.de">https://docs.live.mm.rbg.tum.de</a>
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                             <div class="space-y-2 p-3 border-b dark:border-gray-600">
                                                                 <template
                                                                         x-if="videoSection.existingSections.length > 0">
@@ -250,6 +271,9 @@
                                                                         </div>
                                                                     </template>
                                                                 </template>
+                                                                <p x-show="videoSection.newSections.length > 0"
+                                                                   class="font-light text-3 text-xs uppercase">New
+                                                                    Sections (Not saved)</p>
                                                                 <template x-if="videoSection.newSections.length > 0">
                                                                     <template
                                                                             x-for="section in videoSection.newSections">
@@ -270,24 +294,27 @@
                                                                     </template>
                                                                 </template>
                                                             </div>
-                                                            <h6 class="font-semibold text-3 px-3 pt-3">New Video Section</h6>
+                                                            <h6 class="font-semibold text-3 px-3 pt-3">New Video
+                                                                Section</h6>
                                                             <div class="p-3 border-b dark:border-gray-600">
                                                                 <div class="flex justify-between bg-transparent border rounded mt-2 dark:border-gray-600 h-10">
-                                                                    <div class="flex">
-                                                                        <input @change="(e) => videoSection.current.startHours = parseInt(e.target.value);"
-                                                                               type="number" min="0" max="23"
-                                                                               value="" placeholder="0"
-                                                                               class="border-none bg-transparent outline-none text-right w-16"
-                                                                               autofocus>
-                                                                        <span class="my-auto font-bold text-xl">:</span>
-                                                                        <input @change="(e) => videoSection.current.startMinutes = parseInt(e.target.value);"
-                                                                               type="number" min="0" max="59"
-                                                                               value="" placeholder="0"
+                                                                    <div class="relative flex">
+                                                                        <input id="startHours"
+                                                                               x-model.number="videoSection.current.startHours"
+                                                                               type="number" min="0" max="23" step="1"
+                                                                               placeholder="0"
                                                                                class="border-none bg-transparent outline-none text-right w-16">
                                                                         <span class="my-auto font-bold text-xl">:</span>
-                                                                        <input @change="(e) => videoSection.current.startSeconds = parseInt(e.target.value);"
-                                                                               type="number" min="0" max="59"
-                                                                               value="" placeholder="0"
+                                                                        <input id="startMinutes"
+                                                                               x-model.number="videoSection.current.startMinutes"
+                                                                               type="number" min="0" max="59" step="1"
+                                                                               placeholder="0"
+                                                                               class="border-none bg-transparent outline-none text-right w-16">
+                                                                        <span class="my-auto font-bold text-xl">:</span>
+                                                                        <input id="startSeconds"
+                                                                               x-model.number="videoSection.current.startSeconds"
+                                                                               type="number" min="0" max="59" step="1"
+                                                                               placeholder="0"
                                                                                class="border-none bg-transparent outline-none text-right w-16">
                                                                     </div>
                                                                     <input x-model="videoSection.current.description"
@@ -309,38 +336,37 @@
                                                                 <span class="text-sm font-semibold m-auto">Save Video Sections</span>
                                                             </button>
                                                         </div>
+                                                        {{if $lecture.Stats}}
+                                                            <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
+                                                                <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
+                                                                        width="undefined" height="undefined"></canvas>
+                                                            </div>
+                                                            <script>
+                                                                new Chart(
+                                                                    document.getElementById("stats{{$lecture.Model.ID}}"), {
+                                                                        "type": "line",
+                                                                        "data": {
+                                                                            "labels": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}",{{end}} {{end}}],
+                                                                            "datasets": [{
+                                                                                "label": "Viewers",
+                                                                                "data": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}{{$stat.Viewers}}, {{end}}{{end}}],
+                                                                                "fill": false,
+                                                                                "borderColor": "rgb(75, 192, 192)",
+                                                                                "lineTension": 0.1
+                                                                            }]
+                                                                        },
+                                                                        "options": {
+                                                                            scales: {y: {beginAtZero: true}}
+                                                                        }
+                                                                    }
+                                                                );
+                                                            </script>
+                                                        {{end}}
+                                                        {{end}}
                                                     </div>
-                                                    {{if $lecture.Stats}}
-                                                    <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
-                                                        <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
-                                                                width="undefined" height="undefined"></canvas>
-                                                    </div>
-                                                    <script>
-                                                        new Chart(
-                                                            document.getElementById("stats{{$lecture.Model.ID}}"), {
-                                                                "type": "line",
-                                                                "data": {
-                                                                    "labels": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}",{{end}} {{end}}],
-                                                                    "datasets": [{
-                                                                        "label": "Viewers",
-                                                                        "data": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}{{$stat.Viewers}}, {{end}}{{end}}],
-                                                                        "fill": false,
-                                                                        "borderColor": "rgb(75, 192, 192)",
-                                                                        "lineTension": 0.1
-                                                                    }]
-                                                                },
-                                                                "options": {
-                                                                    scales: {y: {beginAtZero: true}}
-                                                                }
-                                                            }
-                                                        );
-                                                    </script>
-                                                    {{end}}
-                                                    {{end}}
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
                                 </li>
                             {{end}}
                         </div>

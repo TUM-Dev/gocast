@@ -33,8 +33,12 @@ func configGinStreamRestRouter(router *gin.Engine) {
 	g.GET("/api/stream/:streamID/end", endStream)
 	g.GET("/api/stream/:streamID/issue", reportStreamIssue)
 	g.POST("/api/stream/:streamID/sections", createVideoSectionBatch)
-	g.GET("/api/stream/:streamID/sections", getVideoSections)
 	g.DELETE("/api/stream/:streamID/sections/:id", deleteVideoSection)
+
+	// group for non-admin web api
+	gNotAdmin := router.Group("/")
+	gNotAdmin.Use(tools.InitStream)
+	gNotAdmin.GET("/api/stream/:streamID/sections", getVideoSections)
 }
 
 type liveStreamDto struct {
