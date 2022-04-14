@@ -216,38 +216,40 @@
                 </button>
             </div>
             <!-- Video Sections -->
-            <div x-data="{sections: new watch.VideoSectionList({{$stream.ID}})}"
-                 x-init="await sections.fetch()"
-                 x-show="sections.shouldShow()"
-                 class="w-full overflow-x-scroll py-2">
-                <h6 class="font-bold text-3 pb-3">Sections</h6>
-                <div class="space-y-1 lg:space-y-0 lg:flex space-x-0 lg:space-x-2">
-                    <template x-if="sections.notOnFirstPage()">
-                        <button class="w-full lg:w-8 h-8 text-3 bg-white border dark:bg-secondary cursor-pointer rounded-lg shadow-sm
+            {{ if $stream.IsPast }}
+                <div x-data="{sections: new watch.VideoSectionList({{$stream.ID}})}"
+                     x-init="await sections.fetch()"
+                     x-show="sections.shouldShow()"
+                     class="w-full overflow-x-scroll py-2">
+                    <h6 class="font-bold text-3 pb-3">Sections</h6>
+                    <div class="space-y-1 lg:space-y-0 lg:flex space-x-0 lg:space-x-2">
+                        <template x-if="sections.notOnFirstPage()">
+                            <button class="w-full lg:w-8 h-8 text-3 bg-white border dark:bg-secondary cursor-pointer rounded-lg shadow-sm
                                 dark:border-gray-800 hover:dark:bg-gray-600 hover:bg-gray-200 my-auto"
-                                @click="sections.prev()">
-                            <i class = "fa fa-chevron-left rotate-90 lg:rotate-0"></i>
-                        </button>
-                    </template>
-                    <template x-for="section in sections.currentGroupSections()">
-                        <button class="w-full lg:w-auto flex bg-transparent outline-none border-0"
-                                @click="watch.jumpTo(section.startHours, section.startMinutes, section.startSeconds)">
-                            <div class="flex px-2 py-1 bg-white dark:bg-secondary justify-between w-full border dark:border-gray-800 hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg">
-                                <span class="text-sm text-3 my-auto mr-3" x-text="section.description"></span>
-                                <span class="text-sky-800 my-auto bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded"
-                                      x-text="`${section.startHours}:${section.startMinutes}:${section.startSeconds}`"></span>
-                            </div>
-                        </button>
-                    </template>
-                    <template x-if="sections.hasNextPage()">
-                        <button class="w-full lg:w-8 h-8 text-3 bg-white border dark:bg-secondary cursor-pointer rounded-lg shadow-sm
+                                    @click="sections.prev()">
+                                <i class="fa fa-chevron-left rotate-90 lg:rotate-0"></i>
+                            </button>
+                        </template>
+                        <template x-for="section in sections.currentGroupSections()">
+                            <button class="w-full lg:w-auto flex bg-transparent outline-none border-0"
+                                    @click="watch.jumpTo(section.startHours, section.startMinutes, section.startSeconds)">
+                                <div class="flex px-2 py-1 bg-white dark:bg-secondary justify-between w-full border dark:border-gray-800 hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg">
+                                    <span class="text-sm text-3 my-auto mr-3" x-text="section.description"></span>
+                                    <span class="text-sky-800 my-auto bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded"
+                                          x-text="`${section.startHours}:${section.startMinutes}:${section.startSeconds}`"></span>
+                                </div>
+                            </button>
+                        </template>
+                        <template x-if="sections.hasNextPage()">
+                            <button class="w-full lg:w-8 h-8 text-3 bg-white border dark:bg-secondary cursor-pointer rounded-lg shadow-sm
                                 dark:border-gray-800 hover:dark:bg-gray-600 hover:bg-gray-200 my-auto"
-                                @click="sections.next()">
-                            <i class = "fa fa-chevron-right rotate-90 lg:rotate-0"></i>
-                        </button>
-                    </template>
+                                    @click="sections.next()">
+                                <i class="fa fa-chevron-right rotate-90 lg:rotate-0"></i>
+                            </button>
+                        </template>
+                    </div>
                 </div>
-            </div>
+            {{end}}
             {{if .IsHighlightPage}}
                 <ul class="w-full m-auto mb-4">
                     {{template "course_list" .IndexData.TUMLiveContext}}
