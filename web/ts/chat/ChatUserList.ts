@@ -48,14 +48,6 @@ export class ChatUserList {
         }
         this.valid = true;
         this.currIndex = 0; // reset index on show
-
-        // only focus if there are users to choose from
-        if (this.subset.length !== 0) {
-            setTimeout(() => {
-                document.getElementById("chatInput").blur();
-                document.getElementById("userList").focus();
-            }, 50); // wait until alpine has shown the userList element
-        }
     }
 
     clear() {
@@ -69,15 +61,6 @@ export class ChatUserList {
 
     prev() {
         this.currIndex = (this.currIndex - 1) % this.subset.length;
-    }
-
-    onKeyUp(e: KeyboardEvent) {
-        if (e.keyCode === 8) {
-            const chatInput: HTMLInputElement = document.getElementById("chatInput") as HTMLInputElement;
-            chatInput.focus();
-            chatInput.value = chatInput.value.substring(0, chatInput.value.length - 1);
-            this.filterUsers(chatInput.value, chatInput.selectionStart);
-        }
     }
 
     getSelected() {

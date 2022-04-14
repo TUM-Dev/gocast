@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// ServerNotification todo: rename to ServerAlert to avoid confusion with Notification
 type ServerNotification struct {
 	gorm.Model
 

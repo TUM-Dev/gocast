@@ -144,6 +144,7 @@ func main() {
 		&model.Poll{},
 		&model.PollOption{},
 		&model.VideoSection{},
+		&model.Notification{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)

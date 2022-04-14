@@ -1,16 +1,18 @@
 {{define "vod_course_list"}}
-    {{- /*gotype: TUM-Live/tools.TUMLiveContext*/ -}}
+    {{- /*gotype: TUM-Live/web.CoursePageData*/ -}}
     {{$course := .Course}}
     {{$lastMonth := -1}}
-    {{range $lecture := $course.Streams }}
+    {{$user := .IndexData.TUMLiveContext.User}}
+    {{range $progressStream := .ProgressStreams}}
+        {{$lecture := $progressStream.Stream}}
         {{if $lecture.Recording}}
             {{if ne $lecture.Start.Month $lastMonth}}
                 {{if ne $lastMonth -1}} </div> {{end}}
                 {{$lastMonth = $lecture.Start.Month}}
-                <div class="my-2"> <!-- div with monthname <p> and all <li> elements -->
-                <p class="text-gray-500 text-sm uppercase">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
+                <div {{if $user}}x-show="!filterWatched || (filterWatched && !monthHidden)" x-data="{ monthHidden: watchedTracker.userWatchedMonth(`{{$progressStream.Stream.Start.Month.String}}`) }"{{end}} class="my-2"> <!-- div with monthname <p> and all <li> elements -->
+                    <p class="text-gray-500 text-sm uppercase">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
             {{end}}
-            <li class="p-2 w-full">
+            <li {{if $user}}x-show="!filterWatched || (filterWatched && !watched)" x-data="{ watched: {{$progressStream.Progress.Watched}} }"{{end}}class="p-2 w-full">
                 <div class="flex justify-between">
                     <div>
                         <div>
@@ -18,16 +20,27 @@
                                class="text-l text-3 font-semibold p-0">
                                 {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
                             </a>
+                            {{if $user}}
+                            <button class="inline ml-1"
+                                    {{/* Update watched states*/}}
+                                    @click="
+                                        watched = !watched;
+                                        watchedTracker.setWatched({{.Stream.Model.ID}}, watched);
+                                        monthHidden = watchedTracker.userWatchedMonth(`{{.Stream.Start.Month.String}}`); {{/* Updates state in the client and in the database */}}
+                                        watchedAll = watchedTracker.userWatchedAll();">
+                                <i :title="watched ? 'Mark as unwatched' : 'Mark as watched'" class="fa-solid text-l text-3 font-semibold" :class="watched ? 'fa-clock-rotate-left' : 'fa-check'"></i>
+                            </button>
+                            {{end}}
                         </div>
                         <div>
-                                <span class='dark:text-gray-200 font-light text-sm'>
-                                    {{$lecture.FriendlyDate}} {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
-                                </span>
+                        <span class='dark:text-gray-200 font-light text-sm'>
+                            {{$lecture.FriendlyDate}} {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
+                        </span>
                         </div>
                     </div>
                     <div class="flex space-x-3 my-auto">
                         {{if (and $course.DownloadsEnabled $lecture.FilePath) }}
-                            <a class="flex text-3 rounded-full"
+                            <a class="flex text-3 rounded-full hover:text-gray-600"
                                title="Download Lecture"
                                href="/api/download/{{$lecture.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $lecture.Start.Month $lecture.Start.Day $lecture.Start.Year}}"
                                download>
@@ -35,21 +48,21 @@
                             </a>
                         {{end}}
                         {{if $lecture.PlaylistUrlCAM}}
-                            <a class="flex text-3"
+                            <a class="flex text-3 hover:text-gray-600"
                                title="Camera Only"
                                href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/CAM">
                                 <i class="fas fa-camera"></i>
                             </a>
                         {{end}}
                         {{if $lecture.PlaylistUrlPRES}}
-                            <a class="flex text-3"
+                            <a class="flex text-3 hover:text-gray-600"
                                title="Presentation Only"
                                href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/PRES">
                                 <i class="fas fa-edit"></i>
                             </a>
                         {{end}}
                         {{if and $course.ChatEnabled (or $lecture.LiveNow $lecture.Recording)}}
-                            <a class="flex text-3"
+                            <a class="flex text-3 hover:text-gray-600"
                                title="Chat Only"
                                href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/chat">
                                 <i class="fas fa-comments"></i>
@@ -69,7 +82,7 @@
                                         </a>
                                         <span class="text-sm text-gray-400">
                                                 {{$unit.GetRoundedUnitLen}}
-                                            </span>
+                                        </span>
                                     </p>
                                 </li>
                             {{end}}
@@ -78,6 +91,10 @@
                 {{end}}
             </li>
         {{end}}
+    {{end}}
+    </div>
+    {{if $user}}
+        <p x-show="watchedAll && filterWatched" class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">All VoDs watched</p>
     {{end}}
     {{if eq $lastMonth -1}}
         <p class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">No VoDs yet</p>

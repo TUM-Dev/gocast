@@ -145,13 +145,14 @@
                   class="z-50 sticky w-full bottom-0 inset-x-0 p-2 bg-white dark:bg-secondary 2xl:flex 2xl:justify-between
               {{if .IsPopUp}} xl:w-1/2 md:w-3/4 md:mx-auto md:border md:rounded-t-lg {{end}}"
                   x-on:sendmessage.window="c.current.send()"
-                  @submit.prevent="c.current.send()">
+                  @submit.prevent="c.onSubmit()">
                 <div class="w-full">
 
-                    <div class='p-1' :class="(c.users.isValid() || c.poll.showCreateUI) && 'shadow rounded-lg border dark:border-gray-800'">
+                    <div class='p-1'
+                         :class="(c.users.isValid() || c.poll.showCreateUI || c.emojis.isValid()) && 'shadow rounded-lg border dark:border-gray-800'">
                         <!-- create poll dialog -->
                         <div x-show="c.poll.showCreateUI">
-                            <div class = "flex justify-end p-1">
+                            <div class="flex justify-end p-1">
                                 <button class="flex bg-transparent border-0 font-semibold py-1 px-2 rounded hover:dark:bg-gray-600 hover:bg-gray-200 my-auto"
                                         @click="c.poll.showCreateUI = !c.poll.showCreateUI; c.poll.reset();"
                                         title="Cancel Poll"
@@ -183,18 +184,20 @@
                                                 :disabled="c.poll.options.length === 1"
                                                 @click="c.poll.removeOption(pollOption);"
                                                 tabindex="-1"
+                                                type="button"
                                                 title="Remove Poll Option">
                                             <i class="fas fa-trash text-3 m-auto text-xs"></i>
                                         </button>
                                     </div>
                                 </template>
                             </div>
-                            <div class = "flex">
+                            <div class="flex">
                                 <button tabindex="-1"
                                         class="w-4/5 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
                                    disabled:bg-gray-400 disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400
                                    rounded border-0 focus:outline-none py-1 text-white text-sm"
                                         title="Start Poll"
+                                        type="button"
                                         @click="c.poll.start();"
                                         :disabled="c.poll.question.length === 0 || c.poll.options.some(({ answer }) => answer.length === 0)">
                                     <span class="font-semibold text-xs">Start Poll</span>
@@ -211,18 +214,16 @@
                             </div>
                         </div>
 
+                        <!-- emoji prompt -->
+                        {{template "emojipromt"}}
+
                         <!-- @-userlist -->
                         <template x-if="c.users.isValid() && c.users.subset.length === 0">
                             <p class="text-center py-1 font-semibold text-xs text-3">No users found.</p>
                         </template>
                         <div id="userList" x-show="c.users.isValid()"
                              tabindex="0"
-                             class='max-h-56 overflow-y-scroll w-full bg-white dark:bg-secondary py-1 space-y-1 focus-visible:outline-none'
-                             @keyup.down="c.users.next()"
-                             @keyup.up="c.users.prev()"
-                             @keyup.enter="c.current.addAddressee(c.users.getSelected()); c.users.clear()"
-                             @keyup="(e) => c.users.onKeyUp(e);">
-
+                             class="max-h-56 overflow-y-hidden w-full bg-white dark:bg-secondary py-1 space-y-1 outline-none">
                             <template x-for="(user, i) in c.users.subset">
                                 <div @click="c.current.addAddressee(user); c.users.clear()"
                                      @mouseover="c.users.currIndex = i;"
@@ -236,9 +237,11 @@
                         </div>
 
                         <!-- input -->
-                        <div x-show="!c.poll.showCreateUI" class="relative flex my-auto bg-gray-200 rounded-lg border-2 border-transparent dark:bg-gray-600
+                        <div x-show="!c.poll.showCreateUI"
+                             class="relative flex my-auto bg-gray-200 rounded-lg border-2 border-transparent dark:bg-gray-600
                                     focus-within:border-sky-600
-                                    dark:focus-within:border-indigo-600">
+                                    dark:focus-within:border-indigo-600"
+                             :class="c.users.isValid() && 'border-sky-600 dark:border-indigo-600'">
                             {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
                                 <input type="checkbox" name="anonymous" id="anonymous" class="hidden"
                                        x-model="c.current.anonymous" :disabled="c.disconnected">
@@ -253,8 +256,7 @@
                                    x-ref="chatInput"
                                    x-model="c.current.message"
                                    x-on:setmessage.window="e=>c.current.message=e.detail"
-                                   x-on:keyup="e => c.onInputKeyup(e);"
-                                   @keyup="c.current.parse()"
+                                   @keyup="e => { c.current.parse(); c.onInputKeyUp(e); }"
                                    class="py-2 px-4 border-0 text-sm font-normal placeholder:text-sm"
                                    {{if not (.IndexData.TUMLiveContext.User)}}disabled
                                    placeholder="Log in to chat" {{else}}

@@ -42,6 +42,7 @@ export class NewChatMessage {
         this.message =
             this.message.substring(0, pos[0]) +
             this.message.substring(pos[0], pos[1]).replace(/@(\w)*/, "@" + user.name) +
+            " " +
             this.message.substring(pos[1] + this.message.substring(pos[0], pos[1]).length);
 
         chatInput.focus();
@@ -51,6 +52,6 @@ export class NewChatMessage {
 }
 
 type ChatUser = {
-    ID: number;
+    id: number;
     name: string;
 };

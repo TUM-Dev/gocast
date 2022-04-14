@@ -1,7 +1,8 @@
 {{define "course-import"}}
     <h2 class="text-2xl text-1 my-auto mt-4 font-medium">Course Import</h2>
     <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
-    <div class="text-2 m-auto my-3 w-full dark:bg-secondary-lighter bg-gray-100 rounded my-3 shadow-md overflow-x-auto p-6" x-data="admin.pageData()" x-on:loading-start.window="loading=true"
+    <div class="text-2 m-auto my-3 w-full dark:bg-secondary-lighter bg-gray-100 rounded my-3 shadow-md overflow-x-auto p-6"
+         x-data="admin.pageData()" x-on:loading-start.window="loading=true"
          x-on:loading-end.window="loading=false;courses=$event.detail.courses"
          x-init="admin.addNotifyEventListeners()">
         <div x-show="loading" class="text-center">
@@ -44,14 +45,31 @@
                     </div>
                 </div>
                 <div class="flex mt-6">
+                    <label class="w-1/2 text-gray-700 py-2 mx-4">
+                        <span class="font-bold">Department:</span>
+                        <select x-model="department"
+                                class="w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 border rounded-sm appearance-none focus:shadow-outline">
+                            <option>In</option>
+                            <option>Ma</option>
+                            <option>Ph</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="flex mt-6">
+                    <label class="w-1/2 text-gray-700 py-2 mx-4">
+                        <span class="font-bold"></span>
+                        <select x-model="optInOut"
+                                class="w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 border rounded-sm appearance-none focus:shadow-outline">
+                            <option>Opt In</option>
+                            <option>Opt Out</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="flex mt-6">
                     <label class="w-1/2" x-init="flatpickr($refs.range, {'mode': 'range'})">
                         <span class="font-bold">Import events in this range</span>
                         <input class="text-1" type="text" x-ref="range" x-model="range" placeholder="click me!">
                     </label>
-                    <button class="h-10 px-5 ml-auto mr-6 m-2 float-right transition-colors text-white duration-150 bg-gray-500 dark:bg-gray-900 dark:hover:bg-gray-600 font-semibold rounded-sm shadow-lg focus:shadow-outline hover:bg-gray-600 disabled:bg-gray-300"
-                            @click="step++; $dispatch(`notify${step}`)" :disabled="loading"><span
-                                x-text="step==0?'Start Import':(step==1?'Import':'Return to homepage')"></span>
-                    </button>
                 </div>
             </form>
         </div>
@@ -120,5 +138,10 @@
             <span x-show="status==200" class="text-green-400 text-center">Courses imported successfully.</span>
             <span x-show="status!=200" class="text-danger text-center">There was an error importing the courses, code: <span x-text="status"></span></span>
         </div>
+
+        <button class="h-10 px-5 ml-auto mr-6 m-2 float-right transition-colors text-white duration-150 bg-gray-500 dark:bg-gray-900 dark:hover:bg-gray-600 font-semibold rounded-sm shadow-lg focus:shadow-outline hover:bg-gray-600 disabled:bg-gray-300"
+                @click="step++; $dispatch(`notify${step}`)" :disabled="loading"><span
+                    x-text="step==0?'Start Import':(step==1?'Import':'Return to homepage')"></span>
+        </button>
     </div>
 {{end}}
