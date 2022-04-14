@@ -264,50 +264,6 @@ func RemoveAdminFromCourse(userID uint, courseID uint) error {
 	return DB.Exec("delete from course_admins where user_id = ? and course_id = ?", userID, courseID).Error
 }
 
-// ProgressStream is a stream with its progress information. Used to generate a list of VoDs.
-type ProgressStream struct {
-	Stream   model.Stream
-	Progress model.StreamProgress
-}
-
-// GetStreamsWithProgress returns a list of streams with their progress information.
-func GetStreamsWithProgress(courseID uint, userID uint) ([]ProgressStream, error) {
-	var progresses []model.StreamProgress
-	var streams []model.Stream
-	var progressStreams []ProgressStream
-
-	// TODO: Chained Scans don't work right now. This would avoid the code duplication.
-	err := DB.Raw(
-		"select sp.* "+
-			"from streams s "+
-			"left join (select * from stream_progresses where user_id = ?) sp "+
-			"on s.id = sp.stream_id "+
-			"where s.course_id = ? and s.recording = true", userID, courseID).Scan(&progresses).Error
-	if err != nil {
-		return progressStreams, err
-	}
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
-	err = DB.Raw(
-		"select s.* "+
-			"from streams s "+
-			"left join (select * from stream_progresses where user_id = ?) sp "+
-			"on s.id = sp.stream_id "+
-			"where s.course_id = ? and s.recording = true", userID, courseID).Scan(&streams).Error
-
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
-	if len(progresses) != len(streams) {
-		return nil, errors.New("streams and progresses length doesn't match")
-	}
-	for i := range progresses {
-		progressStreams = append(progressStreams, ProgressStream{Stream: streams[i], Progress: progresses[i]})
-	}
-	return progressStreams, err
-}
-
 type Semester struct {
 	TeachingTerm string
 	Year         int

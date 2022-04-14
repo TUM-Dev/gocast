@@ -43,8 +43,10 @@ type Stream struct {
 	Files            []File `gorm:"foreignKey:StreamID"`
 	Paused           bool   `gorm:"default:false"`
 	StreamName       string
-	Duration         uint32   `gorm:"default:null"`
-	StreamWorkers    []Worker `gorm:"many2many:stream_workers;"`
+	Duration         uint32           `gorm:"default:null"`
+	StreamWorkers    []Worker         `gorm:"many2many:stream_workers;"`
+	StreamProgresses []StreamProgress `gorm:"foreignKey:StreamID"`
+	Watched          bool             `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }
 
 // IsSelfStream returns whether the stream is a scheduled stream in a lecture hall

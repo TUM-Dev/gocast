@@ -24,16 +24,18 @@
                 <div class="flex justify-between h-16 px-3 border-b dark:border-gray-800">
                     <span class="bg-green-500 rounded-full text-lg font-bold text-white px-5 my-auto">VoDs</span>
                     <div class="my-auto">
+                        {{if .Course.HasRecordings}}
                         <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
                                 @click="asc = !asc; global.reorderVodList()">
                             <span class="text-sm font-semibold uppercase dark:text-white"
                           x-text="asc ? '&#x25B2; asc' : '&#x25BC; desc'">desc &#x25BC;</span>
                         </button>
-                        {{if .IndexData.TUMLiveContext.User}}
+                        {{end}}
+                        {{if and .IndexData.TUMLiveContext.User .Course.HasRecordings }}
                         <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2" @click="filterWatched=!filterWatched" :title="filterWatched ? 'Show watched streams' : 'Hide watched streams'">
                             <span class="text-sm font-semibold uppercase dark:text-white">
                                 <i class="fa-solid w-5 mr-1"
-                                   :class="filterWatched ? 'fa-eye' : 'fa-eye-slash'"></i>Filter
+                                   :class="filterWatched ? 'fa-eye' : 'fa-eye-slash'"></i>watched
                             </span>
                         </button>
                         {{end}}
