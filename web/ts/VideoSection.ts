@@ -6,11 +6,13 @@ export class VideoSection {
     existingSections: section[];
     newSections: section[];
     current: section;
+    unsavedChanges: boolean;
 
     constructor(streamID) {
         this.newSections = [];
         this.existingSections = [];
         this.streamID = streamID;
+        this.unsavedChanges = false;
         this.resetCurrent();
     }
     async load() {
@@ -27,15 +29,18 @@ export class VideoSection {
     pushNewSection() {
         this.newSections.push({ ...this.current });
         this.resetCurrent();
+        this.unsavedChanges = true;
     }
     removeNewSection(section: section) {
         this.newSections = this.newSections.filter((s) => s !== section);
+        this.unsavedChanges = true;
     }
     publishNewSections() {
         postData(`/api/stream/${this.streamID}/sections`, this.newSections).then(async () => {
             await this.load(); // load sections again to avaid js-sorting
             this.newSections = [];
         });
+        this.unsavedChanges = false;
     }
     removeExistingSection(id: number) {
         Delete(`/api/stream/${this.streamID}/sections/${id}`).then(async () => {

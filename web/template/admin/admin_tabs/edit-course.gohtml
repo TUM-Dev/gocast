@@ -228,26 +228,38 @@
                                                         <div x-data="{videoSection: new admin.VideoSection({{$lecture.ID}})}"
                                                              x-init="await videoSection.load()"
                                                              class="border dark:border-gray-600 rounded mt-3">
-                                                            <div class="flex px-3 pt-3">
-                                                                <h6 class="font-semibold text-3 my-auto">Video
-                                                                    Sections</h6>
-                                                                <div x-data="{showInfo: false}" class="relative my-auto">
-                                                                    <button @click="showInfo = !showInfo;">
-                                                                        <i class="fa fa-circle-info text-3 ml-2"></i>
-                                                                    </button>
-                                                                    <div x-show="showInfo" class="absolute top-full z-50" @mouseleave="showInfo = false">
-                                                                        <div>
-                                                                            <div class="tooltip relative w-56">
-                                                                                <div class="w-0 h-0 border-x-8 border-x-transparent border-b-8 border-b-black dark:border-b-white ml-2 mr-auto"></div>
-                                                                                <div class="bg-black dark:bg-white rounded-md px-2 py-1">
-                                                                                    <span class="text-white dark:text-black text-xs font-bold">
-                                                                                        Structuring lectures into sections makes lectures more rewatchable.
-                                                                                        For detailed information visit: <a class = "underline hover:text-white dark:hover:text-black" href = "https://docs.live.mm.rbg.tum.de">https://docs.live.mm.rbg.tum.de</a>
-                                                                                    </span>
+                                                            <div class="flex justify-between px-3 pt-3">
+                                                                <div class="flex">
+                                                                    <h6 class="font-semibold text-3 my-auto">Video
+                                                                        Sections</h6>
+                                                                    <div x-data="{showInfo: false}"
+                                                                         class="relative my-auto">
+                                                                        <button @click="showInfo = !showInfo;">
+                                                                            <i class="fa fa-circle-info text-3 ml-2"></i>
+                                                                        </button>
+                                                                        <div x-show="showInfo"
+                                                                             class="absolute top-full z-50"
+                                                                             @mouseleave="showInfo = false">
+                                                                            <div>
+                                                                                <div class="tooltip relative w-56">
+                                                                                    <div class="w-0 h-0 border-x-8 border-x-transparent border-b-8 border-b-black dark:border-b-white ml-2 mr-auto"></div>
+                                                                                    <div class="bg-black dark:bg-white rounded-md px-2 py-1">
+                                                                                        <span class="text-white dark:text-black text-xs font-bold">
+                                                                                            Structuring lectures into sections makes lectures more rewatchable.
+                                                                                            For detailed information visit: <a
+                                                                                                    class="underline hover:text-white dark:hover:text-black"
+                                                                                                    href="https://docs.live.mm.rbg.tum.de">https://docs.live.mm.rbg.tum.de</a>
+                                                                                        </span>
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
+                                                                </div>
+                                                                <div x-show="videoSection.unsavedChanges"
+                                                                     class="flex my-auto px-2 py-1 border border-amber-200 bg-amber-200/50 rounded">
+                                                                    <i class="fa fa-triangle-exclamation mr-1"></i>
+                                                                    <span class="text-xs font-light text-3">Unsaved Changes</span>
                                                                 </div>
                                                             </div>
                                                             <div class="space-y-2 p-3 border-b dark:border-gray-600">
@@ -273,7 +285,7 @@
                                                                 </template>
                                                                 <p x-show="videoSection.newSections.length > 0"
                                                                    class="font-light text-3 text-xs uppercase">New
-                                                                    Sections (Not saved)</p>
+                                                                    Sections</p>
                                                                 <template x-if="videoSection.newSections.length > 0">
                                                                     <template
                                                                             x-for="section in videoSection.newSections">
