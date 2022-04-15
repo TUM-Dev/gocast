@@ -8,8 +8,8 @@ import (
 // SaveProgresses saves a slice of stream progresses. If a progress already exists, it will be updated.
 func SaveProgresses(progresses []model.StreamProgress) error {
 	return DB.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "stream_id"}, {Name: "user_id"}}, // key column
-		DoUpdates: clause.AssignmentColumns([]string{"progress"}),          // column needed to be updated
+		Columns:   []clause.Column{{Name: "stream_id"}, {Name: "user_id"}},   // key column
+		DoUpdates: clause.AssignmentColumns([]string{"progress", "watched"}), // column needed to be updated
 	}).Create(progresses).Error
 }
 

@@ -1,0 +1,60 @@
+{{define "notification_management"}}
+
+    <h2 class="text-2xl text-1 my-auto mt-4 font-medium">User Notifications</h2>
+    <div x-data class="dark:border-gray-700 border rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter">
+        {{ range . }}
+            {{- /*gotype: TUM-Live/model.Notification*/ -}}
+            <div class="p-5 text-3 border-gray-700 border-b last:border-0">
+                <p class="font-semibold flex justify-between">
+                    <span>{{if .Title}}{{.Title}}{{else}}<i>No title</i>{{end}}</span>
+                    <span>
+                        <span class="mr-4">{{.Model.CreatedAt.Format "02.01.2006 15:04"}}</span>
+                        <button class="bg-danger text-white font-semibold px-2 rounded"
+                                type="button" @click="admin.deleteNotification({{.Model.ID}})">Delete</button>
+                    </span>
+                </p>
+                <div>{{.GetBodyForGoTemplate}}</div>
+            </div>
+        {{end}}
+    </div>
+
+    <h3 class="text-xl text-1 my-auto mt-4 font-medium">Create Notification</h3>
+    <div class="dark:border-gray-700 border rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter">
+        <form class="p-5 text-3" @submit.prevent="admin.createNotification(body, target, title)" x-data="{ target:1, title:'', body: '' }">
+            <span class="font-semibold text-1">Notification Target:</span>
+            <div class="grid grid-cols-3 gap-2 mb-3">
+                <label>
+                    <input class="w-auto" value="1" type="radio" x-model="target" name="type">
+                    All Users
+                </label>
+                <label>
+                    <input class="w-auto" value="2" type="radio" x-model="target" name="type">
+                    Loggedin Users
+                </label>
+                <label>
+                    <input class="w-auto" value="3" type="radio" x-model="target" name="type">
+                    Students
+                </label>
+                <label>
+                    <input class="w-auto" value="4" type="radio" x-model="target" name="type">
+                    Lecturers
+                </label>
+                <label>
+                    <input class="w-auto" value="5" type="radio" x-model="target" name="type">
+                    Admins
+                </label>
+            </div>
+            <label class="mb-3">
+                <span class="font-semibold text-1">Title (Optional)</span>
+                <input type="text" x-model="title">
+            </label>
+            <label class="mb-3">
+                <span class="font-semibold text-1">Body (You can use Markdown)</span>
+                <textarea x-model="body" required></textarea>
+            </label>
+            <div class="flex justify-end">
+                <button class="bg-info text-white font-semibold mt-2 px-4 py-2 rounded" type="submit">Create</button>
+            </div>
+        </form>
+    </div>
+{{end}}

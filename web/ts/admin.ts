@@ -65,7 +65,7 @@ async function updateUser(userID: number, role: number) {
         }),
     })
         .then((res) => {
-            if (res.status !== 200) {
+            if (res.status !== StatusCodes.OK) {
                 success = false;
                 showMessage("There was an error updating the user: " + res.body);
             }
