@@ -68,8 +68,15 @@ func (m *Matrix) getClientUrl() string {
 	return "https://" + tools.Cfg.Alerts.Matrix.Homeserver + "/_matrix/client/r0/"
 }
 
-// SendBotMessage sends a formatted message to a matrix room
-func (m *Matrix) SendBotMessage(info InfoMessage) error {
+// SendBotMessage sends a formatted message to a matrix room with id roomID.
+func (m *Matrix) SendBotMessage(message Message) error {
+	var roomID string
+	if message.Type == Feedback {
+		roomID = tools.Cfg.Alerts.Matrix.FeedbackRoomID
+	} else {
+		roomID = tools.Cfg.Alerts.Matrix.AlertRoomID
+	}
+
 	id := strconv.Itoa(rand.Intn(maxID)) // transaction id
 	authToken, err := m.getAuthToken()
 	if err != nil {
@@ -80,12 +87,12 @@ func (m *Matrix) SendBotMessage(info InfoMessage) error {
 	}
 
 	var roomMessageSuffix = roomMsgPrefix + id + accessTokenSuffix
-	url := m.getClientUrl() + roomSuffix + tools.Cfg.Alerts.Matrix.RoomID + roomMessageSuffix + authToken
+	url := m.getClientUrl() + roomSuffix + roomID + roomMessageSuffix + authToken
 	matrixMessage := matrixMessage{
 		MsgType:       msgType,
-		Body:          generateInfoText(info),
+		Body:          message.Text,
 		Format:        msgFormat,
-		FormattedBody: getFormattedMessageText(info),
+		FormattedBody: getFormattedMessageText(message.Text),
 	}
 	matrixMessageJSON, err := json.Marshal(matrixMessage)
 	if err != nil {
@@ -95,7 +102,7 @@ func (m *Matrix) SendBotMessage(info InfoMessage) error {
 	return err
 }
 
-// sendMessageRequest sends a PUT request to url with a given body
+// sendMessageRequest sends a PUT request to url with a given body.
 func (m *Matrix) sendMessageRequest(url string, body io.Reader) error {
 	client := &http.Client{}
 	request, err := http.NewRequest(http.MethodPut, url, body)

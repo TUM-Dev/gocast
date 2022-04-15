@@ -159,6 +159,7 @@ func reportStreamIssue(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 	streamUrl := tools.Cfg.WebUrl + "/w/" + course.Slug + "/" + fmt.Sprintf("%d", stream.ID)
+
 	botInfo := bot.InfoMessage{
 		CourseName:  course.Name,
 		LectureHall: lectureHall.Name,
@@ -166,9 +167,8 @@ func reportStreamIssue(c *gin.Context) {
 		CombIP:      lectureHall.CombIP,
 		CameraIP:    lectureHall.CameraIP,
 	}
-	// Set messaging strategy as specified in strategy pattern
-	botInfo.SetMessagingMethod(&bot.Matrix{})
-	err = botInfo.BotUpdate(botInfo)
+	var bot bot.Bot
+	err = bot.SendInfoMessage(botInfo) // Set messaging strategy as specified in strategy pattern
 
 	if err != nil {
 		sentry.CaptureException(err)

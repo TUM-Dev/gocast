@@ -94,10 +94,11 @@ type Config struct {
 	} `yaml:"auths"`
 	Alerts *struct {
 		Matrix *struct {
-			Username   string `yaml:"username"`
-			Password   string `yaml:"password"`
-			Homeserver string `yaml:"homeserver"`
-			RoomID     string `yaml:"roomId"`
+			Username       string `yaml:"username"`
+			Password       string `yaml:"password"`
+			Homeserver     string `yaml:"homeserver"`
+			FeedbackRoomID string `yaml:"feedBackRoomId"`
+			AlertRoomID    string `yaml:"alertRoomId"`
 		} `yaml:"matrix"`
 	} `yaml:"alerts"`
 	IngestBase        string `yaml:"ingestBase"`

@@ -3,7 +3,10 @@ alerts:
     username: "rbgbot"
     password: "password"
     homeserver: "matrix.org"
-    roomId: "!id:matrix.org" # Obtained in Element by "Room Settings" -> "Advanced" -> "Internal Room ID"
+    # Obtained in Element by "Room Settings" -> "Advanced" -> "Internal Room ID"
+    feedbackRoomID: "!id:matrix.org"
+    alertRoomID: "!id:matrix.org"
+
 auths:
   camauth: user:password
   pwrcrtlauth: user:password
