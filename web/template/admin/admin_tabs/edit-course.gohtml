@@ -97,7 +97,7 @@
                                     {{end}}
                                     class="w-full mb-4 pb-4 relative dark:bg-secondary bg-gray-100">
                                     <div class="border-t-4 border-{{$lecture.Color}} flex justify-between mb-2">
-                                        <div class="p-2">
+                                        <div class="pt-2 px-2">
                                             <div class="text-3 font-semibold">
                                                 <input @change="$event.target.checked ? selectedLectures.push({ id: {{$lecture.Model.ID}}, isPast: {{$lecture.IsPast}} }) : (selectedLectures = selectedLectures.filter(({id}) => id != {{$lecture.Model.ID}}))"
                                                        class="w-auto mr-2" type="checkbox"/>
@@ -105,6 +105,10 @@
                                             </div>
                                             <div class="text-3 font-sans ml-6">
                                                 {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
+                                            </div>
+
+                                            <div class="text-2 font-sans ml-6 mt-2 pl-3 border-l-4 border-white">
+                                                Lecture: {{$lecture.Name}}
                                             </div>
                                         </div>
 
