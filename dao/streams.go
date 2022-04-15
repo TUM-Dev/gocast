@@ -275,8 +275,8 @@ func GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Stream, error) {
 	return streams, err
 }
 
-// GetStreamsWithProgress returns a list of streams with their progress information.
-func GetStreamsWithProgress(courseID uint, userID uint) (streams []model.Stream, err error) {
+// GetStreamsWithWatchState returns a list of streams with their progress information.
+func GetStreamsWithWatchState(courseID uint, userID uint) (streams []model.Stream, err error) {
 	type watchedState struct {
 		Watched bool
 	}

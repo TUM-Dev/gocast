@@ -115,7 +115,7 @@ func CoursePage(c *gin.Context) {
 		return
 	}
 
-	streamsWithWatchState, err := dao.GetStreamsWithProgress((*tumLiveContext.Course).ID, (*tumLiveContext.User).ID)
+	streamsWithWatchState, err := dao.GetStreamsWithWatchState((*tumLiveContext.Course).ID, (*tumLiveContext.User).ID)
 	if err != nil {
 		sentry.CaptureException(err)
 		log.WithError(err).Error("loading streamsWithWatchState and progresses for a given course and user failed")
