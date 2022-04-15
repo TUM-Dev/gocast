@@ -17,22 +17,30 @@
     </div>
     <div class="m-auto flex flex-wrap pb-3 md:h-5/6 md:grid md:grid-rows-6 md:grid-cols-5 md:gap-4 md:pb-0">
         <!-- VoD -->
-        <div class="w-full md:row-span-6 md:col-span-3">
-            <div x-data="{asc: false}"
+        <div {{if .IndexData.TUMLiveContext}}x-init="watchedTracker.init({{.WatchedData}})" x-data="watchedTracker = new global.WatchedTracker" {{end}}class="w-full md:row-span-6 md:col-span-3">
+        <div x-data="{asc: false{{if .IndexData.TUMLiveContext.User}}, filterWatched: true, watchedAll: watchedTracker.userWatchedAll(){{end}}}"
                  class="bg-white h-full border dark:bg-secondary dark:border-gray-800 rounded-lg
                     shadow-sm flex flex-col">
-
                 <div class="flex justify-between h-16 px-3 border-b dark:border-gray-800">
-                    <span class="bg-success rounded-full text-lg font-bold text-white my-auto px-5">VoD</span>
-                    <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2 my-auto"
-                            @click="asc = !asc; global.reorderVodList()">
-                    <span class="text-sm font-semibold uppercase dark:text-white my-auto"
-                          x-text="asc ? '&#x25B2; asc' : '&#x25BC; desc'">&#x25BC; desc</span>
-                    </button>
+                    <span class="bg-green-500 rounded-full text-lg font-bold text-white px-5 my-auto">VoDs</span>
+                    <div class="my-auto">
+                        <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
+                                @click="asc = !asc; global.reorderVodList()">
+                            <span class="text-sm font-semibold uppercase dark:text-white"
+                          x-text="asc ? '&#x25B2; asc' : '&#x25BC; desc'">desc &#x25BC;</span>
+                        </button>
+                        {{if .IndexData.TUMLiveContext.User}}
+                        <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2" @click="filterWatched=!filterWatched" :title="filterWatched ? 'Show watched streams' : 'Hide watched streams'">
+                            <span class="text-sm font-semibold uppercase dark:text-white">
+                                <i class="fa-solid w-5 mr-1"
+                                   :class="filterWatched ? 'fa-eye' : 'fa-eye-slash'"></i>Filter
+                            </span>
+                        </button>
+                        {{end}}
+                    </div>
                 </div>
-
                 <ul id="vod-list" class="flex flex-col flex-1 px-5 py-3 overflow-y-scroll">
-                    {{template "vod_course_list" .IndexData.TUMLiveContext}}
+                    {{template "vod_course_list" . }}
                 </ul>
             </div>
         </div>
@@ -80,7 +88,6 @@
             <div x-data="{showPlanned: true}"
                  class="flex flex-col bg-white dark:bg-secondary border dark:border-gray-800 rounded-lg shadow-sm my-3 md:my-0"
                  :class="showPlanned ? 'h-full' : 'h-fit'">
-
                 <div class="flex justify-between h-16 px-3"
                      :class="showPlanned && 'border-b dark:border-gray-800'">
                     <span class="bg-info rounded-full text-lg font-bold text-white px-5 my-auto">Upcoming</span>

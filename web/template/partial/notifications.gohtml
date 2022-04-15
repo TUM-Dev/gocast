@@ -1,0 +1,26 @@
+{{define "notifications"}}
+    {{- /*gotype: TUM-Live/model.User*/ -}}
+    <div class="relative" x-data="{ n: new global.Notifications(), show: false}" x-init="n.fetchNotifications()"
+         @keyup.escape="show=false; n.writeToStorage(true)">
+        <button class="transition-colors duration-200 hover:text-gray-600 dark:hover:text-white text-gray-400 mr-6 relative h-4 w-4"
+                type="button" @click="show=!show; show===false && n.writeToStorage(true)">
+            <span x-cloak x-show="n.notifications.some(notification => !notification.read)"
+                  class="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full absolute -top-1 -right-1 h-3 w-3 border-2 border-white dark:border-secondary"> </span>
+            <i class="fa-solid fa-bell"></i>
+        </button>
+        <div x-cloak x-show="show" @click.outside="show=false; n.writeToStorage(true)" class="origin-top-right absolute right-0 mt-4 lg:shadow-sm lg:rounded-lg h-fit bg-white border rounded-t-lg w-96
+                        dark:bg-secondary dark:border-gray-800">
+            <div class="my-auto w-full min-h-30 max-h-60 overflow-y-scroll">
+                <div class="py-4 relative text-3 text-center" x-cloak x-show="n.notifications.length === 0">
+                    <span class="font-semibold">No notifications yet :)</span>
+                </div>
+                <template x-for="(notification, i) in n.notifications">
+                    <div class="p-2 pb-4 last:pb-2 border-b dark:border-gray-800 relative last:border-0" :class="notification.read?'text-5':'text-3'">
+                        <p class="font-semibold" x-show="notification.title !== undefined" x-text="notification.title"></p>
+                        <div class="pl-1 notificationBody" x-html="notification.body"></div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+{{end}}
