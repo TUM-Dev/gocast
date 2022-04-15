@@ -38,6 +38,8 @@ require (
 	mvdan.cc/xurls/v2 v2.4.0
 )
 
+require github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
+
 require (
 	github.com/Azure/go-ntlmssp v0.0.0-20211209120228-48547f28849e // indirect
 	github.com/antchfx/xpath v1.2.0 // indirect

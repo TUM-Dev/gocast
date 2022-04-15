@@ -6,7 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
+  
+	"github.com/RBG-TUM/commons"
 	"github.com/getsentry/sentry-go"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -73,7 +74,7 @@ func GetAdministeredCoursesByUserId(ctx context.Context, userid uint) (courses [
 		return nil, err
 	}
 	foundCourses = append(foundCourses, administeredCourses...)
-
+	foundCourses = commons.Unique(foundCourses, func(c model.Course) uint { return c.ID })
 	if dbErr == nil {
 		Cache.SetWithTTL(fmt.Sprintf("coursesByUserID%v", userid), foundCourses, 1, time.Minute)
 	}

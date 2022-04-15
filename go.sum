@@ -44,6 +44,8 @@ github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym
 github.com/PuerkitoBio/goquery v1.5.1/go.mod h1:GsLWisAFVj4WgDibEWF4pvYnkVQBpKBKeU+7zCJoLcc=
 github.com/RBG-TUM/CAMPUSOnline v0.0.0-20220404002235-e6c4212c5f63 h1:PBAZ/nbxsyLHKnLltkcXg4AjV4EsOQaP0VV0yLGbLgc=
 github.com/RBG-TUM/CAMPUSOnline v0.0.0-20220404002235-e6c4212c5f63/go.mod h1:pcWaw3hQOKmvRfldxtPlYBGAFbWQXUU44+KcDYwqduc=
+github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b h1:87IltMZV7hN5jGCHbqDIEf0p8+X0f4Ep40PRmz1Mexg=
+github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b/go.mod h1:Nw30dUekEb8ZrJwoGck0lILeVDCIX9dqJsEAPSOxBs0=
 github.com/RBG-TUM/go-anel-pwrctrl v1.0.0 h1:8V7MV6oyg+sQzSRWhEfgg9FcOaQMGBreOh3TIu9HS+w=
 github.com/RBG-TUM/go-anel-pwrctrl v1.0.0/go.mod h1:6c2j1rcryE6BWphhJtGb+yXFIGRzmIXi+31TjE9Cft4=
 github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769 h1:CXcHbGcaclWMbveemm6tDADXDTcBo2OWiB89lutvY/U=
