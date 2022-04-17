@@ -39,7 +39,9 @@ func configGinCourseRouter(router *gin.Engine) {
 	adminOfCourseGroup.POST("/presets", updatePresets)
 	adminOfCourseGroup.POST("/deleteLectures", deleteLectures)
 	adminOfCourseGroup.POST("/renameLecture/:streamID", renameLecture)
+	adminOfCourseGroup.POST("/updateLectureSeries/:streamID", updateLectureSeries)
 	adminOfCourseGroup.POST("/updateDescription/:streamID", updateDescription)
+	adminOfCourseGroup.POST("/deleteLectureSeries/:streamID", deleteLectureSeries)
 	adminOfCourseGroup.POST("/addUnit", addUnit)
 	adminOfCourseGroup.POST("/submitCut", submitCut)
 	adminOfCourseGroup.POST("/deleteUnit/:unitID", deleteUnit)
@@ -430,8 +432,42 @@ func renameLecture(c *gin.Context) {
 	}
 }
 
+func updateLectureSeries(c *gin.Context) {
+	stream, err := dao.GetStreamByID(context.Background(), c.Param("streamID"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	if err := dao.UpdateLectureSeries(stream); err != nil {
+		log.WithError(err).Error("couldn't update lecture series")
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't update lecture series")
+		return
+	}
+	// TODO: broadcastStream updates of whole series
+}
+
 type renameLectureRequest struct {
 	Name string
+}
+
+func deleteLectureSeries(c *gin.Context) {
+	stream, err := dao.GetStreamByID(context.Background(), c.Param("streamID"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	if stream.SeriesIdentifier == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "the stream is not in a lecture series")
+		return
+	}
+
+	if err := dao.DeleteLectureSeries(stream.SeriesIdentifier); err != nil {
+		log.WithError(err).Error("couldn't delete lecture series")
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't delete lecture series")
+		return
+	}
 }
 
 func deleteLectures(c *gin.Context) {

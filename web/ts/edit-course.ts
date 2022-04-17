@@ -8,8 +8,12 @@ export enum UIEditMode {
 }
 
 export class Lecture {
+    static lectures: Lecture[] = [];
     readonly courseId: number;
+    readonly courseSlug: string;
     readonly lectureId: number;
+    readonly streamKey: string;
+    readonly seriesIdentifier: string;
 
     name: string;
     description: string;
@@ -18,14 +22,30 @@ export class Lecture {
     newName: string;
     newDescription: string;
     newLectureHall: string;
-    isDirty: boolean;
+    isDirty = false;
+    isSaving = false;
+    isDeleted = false;
+    lastErrors: string[] = [];
 
-    constructor(courseId: number, lectureId: number, name: string, description: string, lectureHall: string) {
+    constructor(
+        courseId: number,
+        lectureId: number,
+        seriesIdentifier: string,
+        name: string,
+        description: string,
+        lectureHall: string,
+        streamKey: string,
+        courseSlug: string,
+    ) {
         this.courseId = courseId;
         this.lectureId = lectureId;
+        this.seriesIdentifier = seriesIdentifier;
         this.lectureHall = lectureHall;
         this.name = name;
         this.description = description;
+        this.streamKey = streamKey;
+        this.courseSlug = courseSlug;
+        Lecture.lectures.push(this);
     }
 
     updateIsDirty() {
@@ -40,6 +60,7 @@ export class Lecture {
         this.newDescription = this.description;
         this.newLectureHall = this.lectureHall;
         this.isDirty = false;
+        this.lastErrors = [];
     }
 
     startSeriesEdit() {
@@ -55,23 +76,45 @@ export class Lecture {
     }
 
     async saveEdit() {
-        if (this.uiEditMode === UIEditMode.single) {
-            const promises = [];
-            if (this.newName !== this.name) promises.push(this.saveNewLectureName());
-            if (this.newDescription !== this.description) promises.push(this.saveNewLectureDescription());
-            if (this.newLectureHall !== this.lectureHall) promises.push(this.saveNewLectureHall());
+        this.lastErrors = [];
+        if (this.uiEditMode === UIEditMode.none) return;
 
-            const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
+        this.isSaving = true;
+        const promises = [];
+        if (this.newName !== this.name) promises.push(this.saveNewLectureName());
+        if (this.newDescription !== this.description) promises.push(this.saveNewLectureDescription());
+        if (this.newLectureHall !== this.lectureHall) promises.push(this.saveNewLectureHall());
 
-            if (errors.length > 0) {
-                const errorMessages = (await Promise.all(errors.map((e) => e.text()))).join("\n -");
-                showMessage(errorMessages);
-                return false;
+        const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
+
+        if (this.uiEditMode === UIEditMode.series && errors.length === 0) {
+            const seriesUpdateResult = await this.saveSeries();
+            if (seriesUpdateResult.status !== StatusCodes.OK) {
+                errors.push(seriesUpdateResult);
             }
-
-            this.uiEditMode = UIEditMode.none;
-            return true;
         }
+
+        if (errors.length > 0) {
+            this.lastErrors = await Promise.all(
+                errors.map((e) => {
+                    const text = e.text();
+                    try {
+                        const msg = JSON.parse(text).msg;
+                        if (msg != null && msg.length > 0) {
+                            return msg;
+                        }
+                        // eslint-disable-next-line no-empty
+                    } catch (_) {}
+                    return text;
+                }),
+            );
+            this.isSaving = false;
+            return false;
+        }
+
+        this.uiEditMode = UIEditMode.none;
+        this.isSaving = false;
+        return true;
     }
 
     discardEdit() {
@@ -110,6 +153,75 @@ export class Lecture {
         }
 
         return res;
+    }
+
+    async saveSeries() {
+        const res = await postData("/api/course/" + this.courseId + "/updateLectureSeries/" + this.lectureId);
+
+        if (res.status == StatusCodes.OK) {
+            for (const lecture of Lecture.lectures) {
+                if (lecture.seriesIdentifier === this.seriesIdentifier && !lecture.isDeleted) {
+                    lecture.name = this.name;
+                    lecture.description = this.description;
+                    lecture.lectureHall = this.lectureHall;
+                    lecture.uiEditMode = UIEditMode.none;
+                }
+            }
+        }
+
+        return res;
+    }
+
+    async deleteLecture() {
+        if (confirm("Confirm deleting video?")) {
+            const res = await postData("/api/course/" + this.courseId + "/deleteLectures", {
+                streamIDs: [this.lectureId.toString()],
+            });
+
+            if (res.status !== StatusCodes.OK) {
+                alert("An unknown error occurred during the deletion process!");
+                return;
+            }
+
+            this.isDeleted = true;
+        }
+    }
+
+    async deleteLectureSeries() {
+        const lectureCount = Lecture.lectures.filter((l) => l.seriesIdentifier === this.seriesIdentifier).length;
+        if (confirm("Confirm deleting " + lectureCount + " videos in the lecture series?")) {
+            const res = await postData("/api/course/" + this.courseId + "/deleteLectureSeries/" + this.lectureId);
+
+            if (res.status === StatusCodes.OK) {
+                this.isDeleted = true;
+                for (const lecture of Lecture.lectures) {
+                    if (lecture.seriesIdentifier === this.seriesIdentifier) {
+                        lecture.isDeleted = true;
+                    }
+                }
+            }
+
+            return res;
+        }
+    }
+}
+
+export async function deleteLectures(cid: number, lids: number[]) {
+    if (confirm("Confirm deleting " + lids.length + " video" + (lids.length == 1 ? "" : "s") + "?")) {
+        const res = await postData("/api/course/" + cid + "/deleteLectures", {
+            streamIDs: lids.map((n) => n.toString()),
+        });
+
+        if (res.status !== StatusCodes.OK) {
+            alert("An unknown error occurred during the deletion process!");
+            return;
+        }
+
+        for (const lecture of Lecture.lectures) {
+            if (lids.includes(lecture.lectureId)) {
+                lecture.isDeleted = true;
+            }
+        }
     }
 }
 
@@ -171,21 +283,6 @@ export function toggleExtraInfos(btn: HTMLElement, id: number) {
     } else {
         btn.classList.add("rotate-180");
         document.getElementById("extraInfos" + id).classList.remove("hidden");
-    }
-}
-
-export function deleteLecture(cid: number, lid: number) {
-    if (confirm("Confirm deleting video?")) {
-        postData("/api/course/" + cid + "/deleteLectures", { streamIDs: [lid.toString()] }).then(() => {
-            document.location.reload();
-        });
-    }
-}
-
-export async function deleteLectures(cid: number, lids: number[]) {
-    if (confirm("Confirm deleting " + lids.length + " video" + (lids.length == 1 ? "" : "s") + "?")) {
-        await postData("/api/course/" + cid + "/deleteLectures", { streamIDs: lids.map((n) => n.toString()) });
-        document.location.reload();
     }
 }
 

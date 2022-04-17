@@ -90,11 +90,12 @@
                         {{end}}
                         <div class="flex" :class="sortAsc ? 'flex-col' : 'flex-col-reverse'">
                             {{range $lecture := $course.Streams }}
-                                <li x-show="!filterPast || !{{$lecture.IsPast}}"
-                                    id="lecture-li-{{$lecture.Model.ID}}"
+                                <li id="lecture-li-{{$lecture.Model.ID}}"
                                     {{with $lecture}}
-                                    x-data='{ lecture: new admin.Lecture({{$course.Model.ID}}, {{.Model.ID}}, {{.GetNameJson}}, {{.GetDescriptionJson}}, "{{.LectureHallID}}") }'
+                                    x-data='{ lecture: new admin.Lecture({{$course.Model.ID}}, {{.Model.ID}}, "{{.SeriesIdentifier}}", {{.GetNameJson}}, {{.GetDescriptionJson}}, "{{.LectureHallID}}", "{{.StreamKey}}", "{{$course.Slug}}") }'
                                     {{end}}
+                                    x-show="!lecture.isDeleted && (!filterPast || !{{$lecture.IsPast}})"
+                                    :key="lecture.lectureId"
                                     class="w-full mb-4 pb-4 relative dark:bg-secondary bg-gray-100">
                                     <div class="border-t-4 border-{{$lecture.Color}} flex justify-between mb-2">
                                         <div class="pt-2 px-2">
@@ -107,8 +108,8 @@
                                                 {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
                                             </div>
 
-                                            <div class="text-2 font-sans ml-6 mt-2 pl-3 border-l-4 border-white">
-                                                Lecture: {{$lecture.Name}}
+                                            <div x-show="lecture.uiEditMode == 0" class="text-2 font-sans ml-6 mt-2 pl-3 border-l-4 border-white">
+                                                Lecture: <span x-text="lecture.name"></span>
                                             </div>
                                         </div>
 
@@ -182,7 +183,7 @@
                                                         <button @click="lecture.startSingleEdit(); closeMoreDropdown();" class="block w-full px-4 py-2 text-left text-sm text-gray-400 dark:hover:text-gray-500 hover:text-gray-300" >
                                                             Edit Lecture
                                                         </button>
-                                                        <button @click="admin.deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}}); closeMoreDropdown();" class="block w-full px-4 py-2 text-left text-sm text-red-400 dark:hover:text-red-500 hover:text-red-300" >
+                                                        <button @click="lecture.deleteLecture(); closeMoreDropdown();" class="block w-full px-4 py-2 text-left text-sm text-red-400 dark:hover:text-red-500 hover:text-red-300" >
                                                             Delete Lecture
                                                         </button>
                                                     </div>
@@ -191,7 +192,7 @@
                                                             <button @click="lecture.startSeriesEdit(); closeMoreDropdown();" class="block w-full px-4 py-2 text-left text-sm text-gray-400 dark:hover:text-gray-500 hover:text-gray-300" >
                                                                 Edit Series
                                                             </button>
-                                                            <button class="block w-full px-4 py-2 text-left text-sm text-red-400 dark:hover:text-red-500 hover:text-red-300" >
+                                                            <button @click="lecture.deleteLectureSeries(); closeMoreDropdown();" class="block w-full px-4 py-2 text-left text-sm text-red-400 dark:hover:text-red-500 hover:text-red-300" >
                                                                 Delete Series
                                                             </button>
                                                         </div>
@@ -201,7 +202,7 @@
                                         </div>
                                     </div>
 
-                                    <div x-show="lecture.uiEditMode > 0" class="px-4">
+                                    <div x-show="lecture.uiEditMode > 0" class="px-4 pt-4 mt-4 border-t-2 border-gray-100/20">
                                         <div class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
                                             <label for="lectureNameInput{{$lecture.Model.ID}}" class="hidden">Lecture title</label>
                                             <input id="lectureNameInput{{$lecture.Model.ID}}"
@@ -224,98 +225,112 @@
                                                           x-on:keyup="lecture.updateIsDirty()"
                                                 ></textarea>
                                             </div>
+
+                                            <div class="p-3 rounded border-gray-100 border-2 mt-3">
                                             {{if and (not $lecture.IsPast) (not $lecture.Recording)}}
-                                            {{if eq $user.Role 1}}
-                                            <div>
-                                                <label class="mx-2">
-                                                    <span>Select Lecture Hall</span>
-                                                    <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
-                                                            id="lectureHallSelector{{$lecture.Model.ID}}"
-                                                            x-on:change="lecture.updateIsDirty()"
-                                                            x-model="lecture.newLectureHall">
-                                                        <option class="text-gray-300" value="0">
-                                                            Self streaming
-                                                        </option>
-                                                        {{range $lectureHall := $lectureHalls}}
-                                                            <option class="text-gray-300" value="{{$lectureHall.Model.ID}}"{{if eq $lecture.LectureHallID $lectureHall.Model.ID}} selected{{end}}>
-                                                                {{$lectureHall.Name}}
-                                                            </option>
-                                                        {{end}}
-                                                    </select>
-                                                </label>
-                                            </div>
-                                            {{end}}
-                                            {{if not $lecture.LectureHallID}}
-                                            <p class="mt-2">
-                                                <span class="font-semibold">Stream Server:</span>
-                                                <span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
-                                                <i class="fas fa-clipboard hover:text-purple-500"
-                                                   onclick="admin.copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
-                                                <br>
-                                                <span class="font-semibold">Stream Key:</span>
-                                                <span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
-                                                {{if ne $user.Role 1}}
-                                                    <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
+                                                {{if eq $user.Role 1}}
+                                                    <div>
+                                                        <label class="mx-2">
+                                                            <span>Select Lecture Hall</span>
+                                                            <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
+                                                                    id="lectureHallSelector{{$lecture.Model.ID}}"
+                                                                    x-on:change="lecture.updateIsDirty()"
+                                                                    x-model="lecture.newLectureHall">
+                                                                <option class="text-gray-300" value="0">
+                                                                    Self streaming
+                                                                </option>
+                                                                {{range $lectureHall := $lectureHalls}}
+                                                                    <option class="text-gray-300" value="{{$lectureHall.Model.ID}}"{{if eq $lecture.LectureHallID $lectureHall.Model.ID}} selected{{end}}>
+                                                                        {{$lectureHall.Name}}
+                                                                    </option>
+                                                                {{end}}
+                                                            </select>
+                                                        </label>
+                                                    </div>
                                                 {{end}}
-                                            </p>
-                                            {{else if eq $user.Role 2}}
-                                            This lecture will be streamed from <span
-                                                    class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}{{if eq $lectureHall.Model.ID $lecture.LectureHallID}}{{$lectureHall.Name}}{{end}}{{end}}</span>.
-                                            If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
-                                            {{end}}
+
+                                                <p x-show="lecture.newLectureHall != '0'" class="mt-1 ml-2">
+                                                    <span class="font-semibold">Stream Server:</span>
+                                                    <span x-text="'{{$ingestBase}}stream?secret=' + lecture.streamKey"></span>
+                                                    <i class="fas fa-clipboard hover:text-purple-500"
+                                                       @click="() => admin.copyToClipboard('{{$ingestBase}}stream?secret=' + lecture.streamKey)"></i>
+                                                    <br>
+                                                    <span class="font-semibold">Stream Key:</span>
+                                                    <span x-text="lecture.courseSlug + '-' + lecture.lectureId"></span><br>
+                                                    {{if ne $user.Role 1}}
+                                                        <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
+                                                    {{end}}
+                                                </p>
+                                                {{if eq $user.Role 2}}
+                                                    <div x-show="lecture.newLectureHall == '0'">
+                                                        This lecture will be streamed from <span
+                                                                class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}{{if eq $lectureHall.Model.ID $lecture.LectureHallID}}{{$lectureHall.Name}}{{end}}{{end}}</span>.
+                                                        If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
+                                                    </div>
+                                                {{end}}
+
                                             {{else if $lecture.Recording}}
-                                            <span class="flex space-x-2 mt-4 content-center">
-                                                {{if $lecture.Files}}
-                                                    <span>
-                                                        {{template "downloadBtn" $lecture.Files}}
-                                                    </span>
-                                                {{end}}
+                                                <span class="flex space-x-2 mt-4 content-center">
+                                                    {{if $lecture.Files}}
+                                                        <span>
+                                                            {{template "downloadBtn" $lecture.Files}}
+                                                        </span>
+                                                    {{end}}
+                                                    {{if $lecture.Stats}}
+                                                        <a>
+                                                            <i class="fas fa-chart-line text-4 text-lg hover:text-1"
+                                                               title="Live Statistics"
+                                                               onclick="admin.showStats({{$lecture.Model.ID}})"></i>
+                                                        </a>
+                                                    {{end}}
+                                                </span>
                                                 {{if $lecture.Stats}}
-                                                    <a>
-                                                        <i class="fas fa-chart-line text-4 text-lg hover:text-1"
-                                                           title="Live Statistics"
-                                                           onclick="admin.showStats({{$lecture.Model.ID}})"></i>
-                                                    </a>
+                                                    <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
+                                                        <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
+                                                                width="undefined" height="undefined"></canvas>
+                                                    </div>
+                                                    <script>
+                                                        new Chart(
+                                                            document.getElementById("stats{{$lecture.Model.ID}}"), {
+                                                                "type": "line",
+                                                                "data": {
+                                                                    "labels": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}",{{end}} {{end}}],
+                                                                    "datasets": [{
+                                                                        "label": "Viewers",
+                                                                        "data": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}{{$stat.Viewers}}, {{end}}{{end}}],
+                                                                        "fill": false,
+                                                                        "borderColor": "rgb(75, 192, 192)",
+                                                                        "lineTension": 0.1
+                                                                    }]
+                                                                },
+                                                                "options": {
+                                                                    scales: {y: {beginAtZero: true}}
+                                                                }
+                                                            }
+                                                        );
+                                                    </script>
                                                 {{end}}
-                                            </span>
-                                            {{if $lecture.Stats}}
-                                            <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
-                                                <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
-                                                        width="undefined" height="undefined"></canvas>
+                                            {{end}}
                                             </div>
-                                            <script>
-                                                new Chart(
-                                                    document.getElementById("stats{{$lecture.Model.ID}}"), {
-                                                        "type": "line",
-                                                        "data": {
-                                                            "labels": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}",{{end}} {{end}}],
-                                                            "datasets": [{
-                                                                "label": "Viewers",
-                                                                "data": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}{{$stat.Viewers}}, {{end}}{{end}}],
-                                                                "fill": false,
-                                                                "borderColor": "rgb(75, 192, 192)",
-                                                                "lineTension": 0.1
-                                                            }]
-                                                        },
-                                                        "options": {
-                                                            scales: {y: {beginAtZero: true}}
-                                                        }
-                                                    }
-                                                );
-                                            </script>
-                                            {{end}}
-                                            {{end}}
+                                        </div>
+
+                                        <div x-show="lecture.lastErrors.length > 0" class="px-6 py-3 bg-red-400 my-3 rounded">
+                                            <ul>
+                                                <template x-for="error in lecture.lastErrors">
+                                                    <li x-text="error"></li>
+                                                </template>
+                                            </ul>
                                         </div>
 
                                         <div class="mt-6 flex justify-end">
-                                            <button @click="lecture.discardEdit();" class="px-8 py-3 text-2 rounded bg-indigo-500/10 hover:bg-indigo-500/20 mr-4" >
+                                            <button :disabled="lecture.isSaving" @click="lecture.discardEdit();" class="px-8 py-3 text-2 rounded bg-indigo-500/10 disabled:opacity-20 hover:bg-indigo-500/20 mr-4" >
                                                 Discard Changes
                                             </button>
                                             <button
-                                                    @click="lecture.discardEdit();"
-                                                    :disabled="!lecture.isDirty"
+                                                    @click="lecture.saveEdit();"
+                                                    :disabled="!lecture.isDirty || lecture.isSaving"
                                                     class="px-8 py-3 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500"
-                                                    x-text="lecture.uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series'"
+                                                    x-text="lecture.isSaving ? 'loading ...' : (lecture.uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
                                             ></button>
                                         </div>
                                     </div>
