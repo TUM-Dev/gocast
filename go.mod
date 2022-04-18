@@ -1,4 +1,4 @@
-module TUM-Live
+module github.com/joschahenningsen/TUM-Live
 
 go 1.18
 

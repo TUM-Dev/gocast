@@ -10,7 +10,7 @@ import (
 	"fmt"
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
 	"github.com/getsentry/sentry-go"
-	"github.com/joschahenningsen/TUM-Live-Worker-v2/pb"
+	"github.com/joschahenningsen/TUM-Live/worker/pb"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
