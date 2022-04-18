@@ -1,13 +1,15 @@
 name: Build & Deploy
 
 on:
-  push:
-    tags:
-      - '*'
+  pull_request:
+    types: [ labeled ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: ["worker", "nginx", "edge"]
 
     steps:
       - uses: actions/checkout@v2
@@ -17,25 +19,7 @@ jobs:
         id: metaworker
         uses: docker/metadata-action@v3
         with:
-          images: ghcr.io/joschahenningsen/tum-live/worker
-          tags: |
-            type=sha
-          flavor: |
-            latest=true
-      - name: Docker meta (nginx)
-        id: metanginx
-        uses: docker/metadata-action@v3
-        with:
-          images: ghcr.io/joschahenningsen/tum-live/worker-nginx
-          tags: |
-            type=sha
-          flavor: |
-            latest=true
-      - name: Docker meta (edge)
-        id: metaedge
-        uses: docker/metadata-action@v3
-        with:
-          images: ghcr.io/joschahenningsen/tum-live/worker-edge
+          images: ghcr.io/joschahenningsen/tum-live/worker-${{ matrix.module }}
           tags: |
             type=sha
           flavor: |
@@ -51,30 +35,12 @@ jobs:
       - name: Set outputs
         id: vars
         run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-      - name: Build and push Docker images (worker)
+      - name: Build and push Docker images (${{ matrix.module }})
         uses: docker/build-push-action@v2
         with:
-          context: ./worker
+          context: ./worker/${{ matrix.module }}
           pull: true
           push: true
           build-args: version=${{ steps.vars.outputs.sha_short }}
-          tags: ${{ steps.metaworker.outputs.tags }}
-          labels: ${{ steps.metaworker.outputs.labels }}
-      - name: Build and push Docker images (nginx)
-        uses: docker/build-push-action@v2
-        with:
-          context: ./worker/nginx
-          pull: true
-          push: true
-          build-args: version=${{ steps.vars.outputs.sha_short }}
-          tags: ${{ steps.metanginx.outputs.tags }}
-          labels: ${{ steps.metanginx.outputs.labels }}
-      - name: Build and push Docker images (edge)
-        uses: docker/build-push-action@v2
-        with:
-          context: ./worker/edge
-          pull: true
-          push: true
-          build-args: version=${{ steps.vars.outputs.sha_short }}
-          tags: ${{ steps.metaedge.outputs.tags }}
-          labels: ${{ steps.metaedge.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
