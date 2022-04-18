@@ -9,9 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: ["worker", "nginx", "edge"]
+        module: ["worker", "worker/nginx", "worker/edge"]
 
     steps:
+      - name: get container name
+        run: |
+          echo "containername=${{ matrix.module }}" | sed 's/\//-/g' > $GITHUB_ENV
+      - name: verify container name
+        run: |
+          echo env.containername
       - uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
@@ -19,7 +25,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: ghcr.io/joschahenningsen/tum-live/worker-${{ matrix.module }}
+          images: ghcr.io/joschahenningsen/tum-live/${{ matrix.module }}
           tags: |
             type=sha
           flavor: |
@@ -38,7 +44,7 @@ jobs:
       - name: Build and push Docker images (${{ matrix.module }})
         uses: docker/build-push-action@v2
         with:
-          context: ./worker/${{ matrix.module }}
+          context: ./${{ matrix.module }}
           pull: true
           push: true
           build-args: version=${{ steps.vars.outputs.sha_short }}
