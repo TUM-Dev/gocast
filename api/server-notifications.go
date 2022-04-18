@@ -33,7 +33,7 @@ func updateServerNotification(c *gin.Context) {
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
-	c.Redirect(http.StatusFound, "/admin/server-notifications")
+	c.Redirect(http.StatusFound, "/admin/tumlive-notifications")
 }
 
 func createServerNotification(c *gin.Context) {
@@ -52,7 +52,7 @@ func createServerNotification(c *gin.Context) {
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
-	c.Redirect(http.StatusFound, "/admin/server-notifications")
+	c.Redirect(http.StatusFound, "/admin/tumlive-notifications")
 }
 
 type notificationReq struct {

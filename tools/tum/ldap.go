@@ -71,7 +71,7 @@ func LoginWithTumCredentials(username string, password string) (*LdapResp, error
 	}
 
 	if len(res.Entries) != 1 {
-		return nil, errors.New("bad response from ldap server")
+		return nil, errors.New("bad response from ldap tumlive")
 	}
 	mNr := res.Entries[0].GetAttributeValue("imMatrikelNr")
 	mwnID := res.Entries[0].GetAttributeValue("imMWNID")

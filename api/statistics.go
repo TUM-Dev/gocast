@@ -20,7 +20,7 @@ func getStats(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 	}
 	var cid uint
-	// check if request is for server -> validate
+	// check if request is for tumlive -> validate
 	cidFromContext := c.Param("courseId")
 	if cidFromContext == "0" {
 		if ctx.(tools.TUMLiveContext).User.Role != model.AdminType {

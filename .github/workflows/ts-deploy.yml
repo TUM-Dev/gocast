@@ -17,7 +17,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: ghcr.io/joschahenningsen/tum-live/test-server
+          images: ghcr.io/joschahenningsen/tum-live/test-tumlive
           tags: |
             type=sha
           flavor: |

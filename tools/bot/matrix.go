@@ -109,7 +109,7 @@ func (m *Matrix) sendMessageRequest(url string, body io.Reader) error {
 	return err
 }
 
-// getAuthToken retrieves a single use token for the next message sent to the server.
+// getAuthToken retrieves a single use token for the next message sent to the tumlive.
 func (m *Matrix) getAuthToken() (string, error) {
 	login := login{
 		Type:     loginMethod,

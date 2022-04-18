@@ -52,7 +52,7 @@ func getFormattedMessageText(botInfo InfoMessage) string {
 }
 
 // BotUpdate sends a message containing data from a stream, course and lecture hall
-// to a messaging server. Right now only matrix is supported.
+// to a messaging tumlive. Right now only matrix is supported.
 func (c *InfoMessage) BotUpdate(info InfoMessage) error {
 	// Currently, this bot is only supported for lecture hall streams
 	if info.LectureHall == "" {

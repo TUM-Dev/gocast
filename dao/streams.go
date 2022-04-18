@@ -155,7 +155,7 @@ func ClearWorkersForStream(stream model.Stream) error {
 	return DB.Model(&stream).Association("StreamWorkers").Clear()
 }
 
-//GetAllStreams returns all streams of the server
+//GetAllStreams returns all streams of the tumlive
 func GetAllStreams() ([]model.Stream, error) {
 	var res []model.Stream
 	err := DB.Find(&res).Error

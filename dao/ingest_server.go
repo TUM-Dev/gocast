@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// GetBestIngestServer returns the ingest-server with the least streams assigned to it
+// GetBestIngestServer returns the ingest-tumlive with the least streams assigned to it
 func GetBestIngestServer() (server model.IngestServer, err error) {
 	if err = DB.Raw("SELECT i.* FROM stream_names" +
 		" JOIN ingest_servers i ON i.id = stream_names.ingest_server_id" +

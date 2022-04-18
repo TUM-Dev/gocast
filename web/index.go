@@ -109,7 +109,7 @@ func (d *IndexData) LoadCurrentNotifications() {
 	if notifications, err := dao.GetCurrentServerNotifications(); err == nil {
 		d.ServerNotifications = notifications
 	} else if err != gorm.ErrRecordNotFound {
-		log.WithError(err).Warn("could not get server notifications")
+		log.WithError(err).Warn("could not get tumlive notifications")
 	}
 }
 

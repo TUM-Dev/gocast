@@ -81,7 +81,7 @@ func AdminPage(c *gin.Context) {
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 	}
-	if c.Request.URL.Path == "/admin/server-stats" {
+	if c.Request.URL.Path == "/admin/tumlive-stats" {
 		page = "serverStats"
 		streams, err := dao.GetAllStreams()
 		if err != nil {
@@ -95,12 +95,12 @@ func AdminPage(c *gin.Context) {
 		}
 	}
 	var serverNotifications []model.ServerNotification
-	if c.Request.URL.Path == "/admin/server-notifications" {
+	if c.Request.URL.Path == "/admin/tumlive-notifications" {
 		page = "serverNotifications"
 		if res, err := dao.GetAllServerNotifications(); err == nil {
 			serverNotifications = res
 		} else {
-			log.WithError(err).Warn("could not get all server notifications")
+			log.WithError(err).Warn("could not get all tumlive notifications")
 		}
 	}
 	semesters := dao.GetAvailableSemesters(c)
