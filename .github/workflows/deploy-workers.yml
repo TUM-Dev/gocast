@@ -15,8 +15,8 @@ jobs:
       - uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: Docker meta (worker)
-        id: metaworker
+      - name: Docker meta (${{ matrix.module }})
+        id: meta
         uses: docker/metadata-action@v3
         with:
           images: ghcr.io/joschahenningsen/tum-live/worker-${{ matrix.module }}
