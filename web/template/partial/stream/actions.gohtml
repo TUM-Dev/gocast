@@ -5,7 +5,12 @@
     {{$user := .IndexData.TUMLiveContext.User}}
 
     {{/* Icons for different actions student can do for a stream */}}
-    <span class="flex space-x-2 content-center">
+    <span class="flex content-center space-x-2">
+        {{/* Feedback button */}}
+        <button class="m-auto" title="Technical problems? Send us feedback!" @click="console.log('hi');$dispatch('feedback')">
+                <i class="fa-solid fa-comment-dots text-4 hover:text-1"></i>
+        </button>
+
         {{/* Download button */}}
         {{if and (and $course.DownloadsEnabled $user) $stream.Recording}}
             {{template "downloadBtn" $stream.Files}}
@@ -14,27 +19,59 @@
         {{if $stream.PlaylistUrlPRES}}
             <a class="m-auto" title="Presentation only"
                href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/PRES">
-                <i class="fas fa-edit text-4 text-lg hover:text-1"></i>
+                <i class="text-lg fas fa-edit text-4 hover:text-1"></i>
             </a>
         {{end}}
         {{/* Switch video to camera */}}
         {{if $stream.PlaylistUrlCAM}}
             <a class="m-auto" title="Camera only"
                href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/CAM">
-                <i class="fas fa-camera text-4 text-lg hover:text-1"></i>
+                <i class="text-lg fas fa-camera text-4 hover:text-1"></i>
             </a>
         {{end}}
         {{/* Switch video to camera and presentation */}}
         {{if $stream.PlaylistUrl}}
             <a class="m-auto" title="Combined view"
                href="/w/{{$course.Slug}}/{{$stream.Model.ID}}">
-                <i class="fas fa-object-group text-4 text-lg hover:text-1"></i>
+                <i class="text-lg fas fa-object-group text-4 hover:text-1"></i>
             </a>
         {{end}}
         {{/* Copy HLS Link for video */}}
         <i title="Copy HLS URL"
-           class="m-auto fas fa-link text-4 text-lg dark:hover:text-white hover:text-black cursor-pointer"
+           class="m-auto text-lg cursor-pointer fas fa-link text-4 dark:hover:text-white hover:text-black"
            onclick="global.copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))"></i>
         </i>
-    </span>
+    </span>        
+	{{/* Modal to enter feedback */}}
+	<div x-cloak class="overflow-auto"  x-data="{ show : false }"
+								@feedback.window="show = !show;"
+								x-show="show"
+								class="absolute inset-0 z-10 flex items-center justify-center">
+		<div class="dark:bg-secondary bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 w-auto md:max-w-md mx-auto rounded shadow-lg py-4 text-left px-6 gap-3"
+			 >
+			 <form>
+				 <div>
+					 <label for="fname">Name</label>
+					 <input name="fname" type="text" placeholder="Maria Musterfrau">
+				 </div>
+				 <div class="mt-3">
+					 <label for="mail">Mail</label>
+					 <input name="mail" type="text" placeholder="maria.musterfrau@provider.de">
+				 </div>
+				 <!--Title-->
+				 <div class="flex justify-between pb-3 mt-3">
+					 <div>
+						 <label for="feedback">Description of the issue</label>
+						 <textarea name="feedback" rows="0" cols="0" placeholder="Add a detailed description of the problem here.">
+						 </textarea>
+					 </div>
+				 </div>
+				 <!--Footer-->
+				 <div class="flex justify-end pt-2">
+					 <button type="submit" class="bg-green-500 inline-block text-center text-white hover:bg-green-600 dark:hover:bg-green-600 font-bold rounded cursor-pointer p-2 mr-3"
+										   @click="">Send feedback</button>
+				 </div>
+			 </form>
+		</div>
+	</div>
 {{end}}
