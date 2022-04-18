@@ -2,14 +2,14 @@ package api
 
 // worker_grpc.go handles communication with workers via grpc
 import (
-	"TUM-Live/dao"
-	"TUM-Live/model"
-	"TUM-Live/tools"
 	"context"
 	"errors"
 	"fmt"
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
 	"github.com/getsentry/sentry-go"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/worker/pb"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"

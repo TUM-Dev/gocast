@@ -1,11 +1,11 @@
 package tools
 
 import (
-	"TUM-Live/dao"
-	"TUM-Live/model"
-	"TUM-Live/tools/camera"
 	"context"
 	"github.com/getsentry/sentry-go"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools/camera"
 	log "github.com/sirupsen/logrus"
 	"time"
 )

@@ -1,13 +1,13 @@
 package tum
 
 import (
-	"TUM-Live/model"
-	"TUM-Live/tools"
 	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-ldap/ldap/v3"
+	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"time"
 )
 

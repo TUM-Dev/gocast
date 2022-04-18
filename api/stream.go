@@ -1,15 +1,15 @@
 package api
 
 import (
-	"TUM-Live/dao"
-	"TUM-Live/tools"
-	"TUM-Live/tools/bot"
 	"errors"
 	"fmt"
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
 	goextron "github.com/RBG-TUM/go-extron"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/bot"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"

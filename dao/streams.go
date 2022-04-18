@@ -1,9 +1,9 @@
 package dao
 
 import (
-	"TUM-Live/model"
 	"context"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strconv"

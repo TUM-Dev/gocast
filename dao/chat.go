@@ -1,9 +1,9 @@
 package dao
 
 import (
-	"TUM-Live/model"
 	"errors"
 	"github.com/go-sql-driver/mysql"
+	"github.com/joschahenningsen/TUM-Live/model"
 )
 
 func AddChatPollOptionVote(pollOptionId uint, userId uint) error {

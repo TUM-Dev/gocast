@@ -1,8 +1,8 @@
 package tools
 
 import (
-	"TUM-Live/model"
 	"errors"
+	"github.com/joschahenningsen/TUM-Live/model"
 	"log"
 	"os/exec"
 	"regexp"

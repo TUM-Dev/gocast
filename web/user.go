@@ -1,13 +1,13 @@
 package web
 
 import (
-	"TUM-Live/dao"
-	"TUM-Live/model"
-	"TUM-Live/tools"
-	"TUM-Live/tools/tum"
 	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/tum"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"

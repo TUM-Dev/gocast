@@ -1,8 +1,8 @@
 package migrations
 
 import (
-	"TUM-Live/model"
 	"github.com/go-gormigrate/gormigrate/v2"
+	"github.com/joschahenningsen/TUM-Live/model"
 	"gorm.io/gorm"
 )
 

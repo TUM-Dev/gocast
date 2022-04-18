@@ -1,10 +1,10 @@
 package dao
 
 import (
-	"TUM-Live/model"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live/model"
 	"time"
 
 	"github.com/RBG-TUM/commons"

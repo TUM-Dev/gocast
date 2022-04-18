@@ -1,15 +1,15 @@
 package web
 
 import (
-	"TUM-Live/dao"
-	"TUM-Live/model"
-	"TUM-Live/tools"
-	"TUM-Live/tools/tum"
 	"context"
 	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/tum"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net/http"
