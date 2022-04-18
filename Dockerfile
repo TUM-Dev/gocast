@@ -21,8 +21,8 @@ RUN go mod download
 
 WORKDIR /go/src/app
 COPY . .
-COPY --from=node /cmd/web/assets ./web/assets
-COPY --from=node /cmd/web/node_modules ./web/node_modules
+COPY --from=node /app/web/assets ./web/assets
+COPY --from=node /app/web/node_modules ./web/node_modules
 
 # bundle version into binary if specified in build-args, dev otherwise.
 ARG version=dev
