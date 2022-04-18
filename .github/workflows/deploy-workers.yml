@@ -1,0 +1,80 @@
+name: Build & Deploy
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Docker meta (worker)
+        id: metaworker
+        uses: docker/metadata-action@v3
+        with:
+          images: ghcr.io/joschahenningsen/tum-live/worker
+          tags: |
+            type=sha
+          flavor: |
+            latest=true
+      - name: Docker meta (nginx)
+        id: metanginx
+        uses: docker/metadata-action@v3
+        with:
+          images: ghcr.io/joschahenningsen/tum-live/worker-nginx
+          tags: |
+            type=sha
+          flavor: |
+            latest=true
+      - name: Docker meta (edge)
+        id: metaedge
+        uses: docker/metadata-action@v3
+        with:
+          images: ghcr.io/joschahenningsen/tum-live/worker-edge
+          tags: |
+            type=sha
+          flavor: |
+            latest=true
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set outputs
+        id: vars
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+      - name: Build and push Docker images (worker)
+        uses: docker/build-push-action@v2
+        with:
+          context: ./worker
+          pull: true
+          push: true
+          build-args: version=${{ steps.vars.outputs.sha_short }}
+          tags: ${{ steps.metaworker.outputs.tags }}
+          labels: ${{ steps.metaworker.outputs.labels }}
+      - name: Build and push Docker images (nginx)
+        uses: docker/build-push-action@v2
+        with:
+          context: ./worker/nginx
+          pull: true
+          push: true
+          build-args: version=${{ steps.vars.outputs.sha_short }}
+          tags: ${{ steps.metanginx.outputs.tags }}
+          labels: ${{ steps.metanginx.outputs.labels }}
+      - name: Build and push Docker images (edge)
+        uses: docker/build-push-action@v2
+        with:
+          context: ./worker/edge
+          pull: true
+          push: true
+          build-args: version=${{ steps.vars.outputs.sha_short }}
+          tags: ${{ steps.metaedge.outputs.tags }}
+          labels: ${{ steps.metaedge.outputs.labels }}
