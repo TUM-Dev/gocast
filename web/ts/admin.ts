@@ -3,6 +3,42 @@ import { StatusCodes } from "http-status-codes";
 
 class Admin {}
 
+export class AdminUserList {
+    readonly rowsPerPage: number;
+
+    currentIndex: number;
+
+    constructor() {
+        this.rowsPerPage = 10;
+        this.currentIndex = 0;
+        this.updateVisibleRows();
+    }
+
+    next() {
+        this.currentIndex += 1;
+        this.updateVisibleRows();
+    }
+
+    prev() {
+        this.currentIndex -= 1;
+        this.updateVisibleRows();
+    }
+
+    updateVisibleRows() {
+        const table = document.getElementById("admin-user-list");
+        const minIndex = this.currentIndex * this.rowsPerPage; //TODO: This is wrong, add list length and fix min.
+        const maxIndex = this.currentIndex * this.rowsPerPage + this.rowsPerPage - 1;
+        Array.from(table.children).forEach((row: HTMLElement) => {
+            const idx = parseInt(row.dataset.userlistIndex);
+            if (idx < minIndex || idx > maxIndex) {
+                row.classList.add("hidden");
+            } else {
+                row.classList.remove("hidden");
+            }
+        });
+    }
+}
+
 export async function createLectureHall(
     name: string,
     combIP: string,
