@@ -3,11 +3,12 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Stream struct {
@@ -123,9 +124,6 @@ func (s Stream) FriendlyTime() string {
 }
 
 func (s Stream) FriendlyNextDate() string {
-	if now.With(s.Start).Before(time.Now()) {
-		return "No upcoming stream"
-	}
 	if now.With(s.Start).EndOfDay() == now.EndOfDay() {
 		return fmt.Sprintf("Today, %02d:%02d", s.Start.Hour(), s.Start.Minute())
 	}
