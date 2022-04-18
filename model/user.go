@@ -30,7 +30,7 @@ type User struct {
 	Role                uint           `gorm:"default:4" json:"-"` // AdminType = 1, LecturerType = 2, GenericType = 3, StudentType  = 4
 	Password            string         `gorm:"default:null" json:"-"`
 	Courses             []Course       `gorm:"many2many:course_users" json:"-"` // courses a lecturer invited this user to
-	AdministeredCourses []Course `gorm:"many2many:course_admins"` // courses this user is an admin of
+	AdministeredCourses []Course       `gorm:"many2many:course_admins"`         // courses this user is an admin of
 }
 
 type argonParams struct {

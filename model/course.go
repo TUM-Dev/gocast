@@ -95,6 +95,16 @@ func (c Course) NumStreams() int {
 	return res
 }
 
+// HasRecordings returns whether the course has any recordings.
+func (c Course) HasRecordings() bool {
+	for i := range c.Streams {
+		if c.Streams[i].Recording {
+			return true
+		}
+	}
+	return false
+}
+
 // NumUsers returns the number of users enrolled in the course
 func (c Course) NumUsers() int {
 	return len(c.Users)
