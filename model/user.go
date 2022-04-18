@@ -24,6 +24,7 @@ type User struct {
 	gorm.Model
 
 	Name                string         `gorm:"not null" json:"name"`
+	LastName            *string        `json:"-"`
 	Email               sql.NullString `gorm:"type:varchar(256); uniqueIndex; default:null" json:"-"`
 	MatriculationNumber string         `gorm:"type:varchar(256); uniqueIndex; default:null" json:"-"`
 	LrzID               string         `json:"-"`

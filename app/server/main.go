@@ -12,8 +12,6 @@ import (
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/gzip"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/profile"
 	"github.com/robfig/cron/v3"
@@ -36,16 +34,9 @@ func GinServer() (err error) {
 	gin.SetMode(gin.ReleaseMode)
 	// capture performance with sentry
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
-	store := cookie.NewStore([]byte(tools.Cfg.CookieStoreSecret))
 	if VersionTag != "development" {
-		store.Options(sessions.Options{
-			HttpOnly: true,
-			Secure:   true,
-			SameSite: http.SameSiteStrictMode,
-			MaxAge:   86400 * 30,
-		})
+		tools.CookieSecure = true
 	}
-	router.Use(sessions.Sessions("TUMLiveSessionV6", store))
 
 	router.Use(tools.InitContext)
 

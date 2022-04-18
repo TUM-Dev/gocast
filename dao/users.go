@@ -118,6 +118,7 @@ func UpsertUser(user *model.User) error {
 		return nil
 	}
 	// user not found, create:
+	user.Role = model.StudentType
 	err = DB.
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "matriculation_number"}},

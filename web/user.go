@@ -3,13 +3,15 @@ package web
 import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
+	"TUM-Live/tools"
 	"TUM-Live/tools/tum"
 	"context"
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 func LoginHandler(c *gin.Context) {
@@ -55,14 +57,27 @@ func getRedirectUrl(c *gin.Context) string {
 
 type sessionData struct {
 	userid uint
-	name   string
 }
 
 func startSession(c *gin.Context, data *sessionData) {
-	s := sessions.Default(c)
-	s.Set("UserID", data.userid)
-	s.Set("Name", data.name)
-	_ = s.Save()
+	token, err := createToken(data.userid)
+	if err != nil {
+		log.WithError(err).Error("Could not create token")
+		return
+	}
+	c.SetCookie("jwt", token, 60*60*24*7, "/", "", tools.CookieSecure, true)
+}
+
+func createToken(user uint) (string, error) {
+	t := jwt.New(jwt.GetSigningMethod("RS256"))
+
+	t.Claims = &tools.JWTClaims{
+		RegisteredClaims: &jwt.RegisteredClaims{
+			ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Hour * 24 * 7)}, // Token expires in one week
+		},
+		UserID: user,
+	}
+	return t.SignedString(tools.Cfg.GetJWTKey())
 }
 
 // loginWithUserCredentials Try to login with non-tum credentials
@@ -71,9 +86,8 @@ func loginWithUserCredentials(username, password string) *sessionData {
 	if u, err := dao.GetUserByEmail(context.Background(), username); err == nil {
 		// user with this email found.
 		if match, err := u.ComparePasswordAndHash(password); err == nil && match {
-			return &sessionData{u.ID, u.Name}
+			return &sessionData{u.ID}
 		}
-
 		return nil
 	}
 
@@ -83,12 +97,13 @@ func loginWithUserCredentials(username, password string) *sessionData {
 // loginWithTumCredentials Try to login with tum credentials
 // Returns pointer to sessionData if successful and nil if not
 func loginWithTumCredentials(username, password string) (*sessionData, error) {
-	sId, lrzID, name, err := tum.LoginWithTumCredentials(username, password)
+	loginResp, err := tum.LoginWithTumCredentials(username, password)
 	if err == nil {
 		user := model.User{
-			Name:                name,
-			MatriculationNumber: sId,
-			LrzID:               lrzID,
+			Name:                loginResp.FirstName,
+			LastName:            loginResp.LastName,
+			MatriculationNumber: loginResp.UserId,
+			LrzID:               loginResp.LrzIdent,
 		}
 		err = dao.UpsertUser(&user)
 		if err != nil {
@@ -96,7 +111,7 @@ func loginWithTumCredentials(username, password string) (*sessionData, error) {
 			return nil, err
 		}
 
-		return &sessionData{user.ID, user.Name}, nil
+		return &sessionData{user.ID}, nil
 	}
 
 	return nil, err
@@ -107,9 +122,7 @@ func LoginPage(c *gin.Context) {
 }
 
 func LogoutPage(c *gin.Context) {
-	s := sessions.Default(c)
-	s.Clear()
-	_ = s.Save()
+	c.SetCookie("jwt", "", -1, "/", "", tools.CookieSecure, true)
 	c.Redirect(http.StatusFound, "/")
 }
 
