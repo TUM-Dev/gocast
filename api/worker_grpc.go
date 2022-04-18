@@ -501,7 +501,7 @@ func NotifyWorkers() {
 			}
 			server, err := dao.GetBestIngestServer()
 			if err != nil {
-				log.WithError(err).Error("Can't find ingest tumlive")
+				log.WithError(err).Error("Can't find ingest server")
 				continue
 			}
 			var slot model.StreamName
@@ -541,7 +541,7 @@ func NotifyWorkers() {
 			}
 			conn, err := dialIn(workers[workerIndex])
 			if err != nil {
-				log.WithError(err).Error("Unable to dial tumlive")
+				log.WithError(err).Error("Unable to dial server")
 				workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
 				continue
 			}
@@ -581,7 +581,7 @@ func notifyWorkersPremieres() {
 		workers[workerIndex].Workload += 3
 		ingestServer, err := dao.GetBestIngestServer()
 		if err != nil {
-			log.WithError(err).Error("Can't find ingest tumlive")
+			log.WithError(err).Error("Can't find ingest server")
 			continue
 		}
 		req := pb.PremiereRequest{
@@ -592,7 +592,7 @@ func notifyWorkersPremieres() {
 		}
 		conn, err := dialIn(workers[workerIndex])
 		if err != nil {
-			log.WithError(err).Error("Unable to dial tumlive")
+			log.WithError(err).Error("Unable to dial server")
 			endConnection(conn)
 			workers[workerIndex].Workload -= 1
 			continue
@@ -630,7 +630,7 @@ func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool) {
 		}
 		conn, err := dialIn(currentWorker)
 		if err != nil {
-			log.WithError(err).Error("Unable to dial tumlive")
+			log.WithError(err).Error("Unable to dial server")
 			continue
 		}
 		client := pb.NewToWorkerClient(conn)
@@ -666,7 +666,7 @@ func init() {
 	log.Info("Serving heartbeat")
 	lis, err := net.Listen("tcp", ":50052")
 	if err != nil {
-		log.WithError(err).Error("Failed to init grpc tumlive")
+		log.WithError(err).Error("Failed to init grpc server")
 		return
 	}
 	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{

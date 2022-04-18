@@ -76,10 +76,10 @@ func sendServerMessageWithBackoff(session *melody.Session, userId uint, streamId
 	if shouldSkip {
 		return
 	}
-	msgBytes, _ := json.Marshal(gin.H{"tumlive": msg, "type": t})
+	msgBytes, _ := json.Marshal(gin.H{"server": msg, "type": t})
 	err := session.Write(msgBytes)
 	if err != nil {
-		log.WithError(err).Error("can't write tumlive message to session")
+		log.WithError(err).Error("can't write server message to session")
 	}
 	// set cache item with ttl, so the user won't get a message for 10 Minutes
 	tools.SetCacheItem(cacheKey, true, time.Minute*10)
@@ -87,11 +87,11 @@ func sendServerMessageWithBackoff(session *melody.Session, userId uint, streamId
 
 //sendServerMessage sends a server message to the client(s)
 func sendServerMessage(msg string, t string, sessions ...*melody.Session) {
-	msgBytes, _ := json.Marshal(gin.H{"tumlive": msg, "type": t})
+	msgBytes, _ := json.Marshal(gin.H{"server": msg, "type": t})
 	for _, session := range sessions {
 		err := session.Write(msgBytes)
 		if err != nil {
-			log.WithError(err).Error("can't write tumlive message to session")
+			log.WithError(err).Error("can't write server message to session")
 		}
 	}
 

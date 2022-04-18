@@ -95,7 +95,7 @@ type Config struct {
 	} `yaml:"lrz"`
 	Mail struct {
 		Sender    string `yaml:"sender"`
-		Server    string `yaml:"tumlive"`
+		Server    string `yaml:"server"`
 		SMIMECert string `yaml:"SMIMECert"`
 		SMIMEKey  string `yaml:"SMIMEKey"`
 	} `yaml:"mail"`
