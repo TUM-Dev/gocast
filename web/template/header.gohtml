@@ -42,6 +42,7 @@
                         @click="dark = !dark">
                     <i class="text-gray-400 text-xl fas" :class="dark ? 'fa-toggle-on' :  'fa-toggle-off'"></i>
                 </button>
+                {{template "notifications"}}
                 <a class="mr-3" rel="noopener" href="https://github.com/joschahenningsen/TUM-Live"
                    aria-label="GitHub"><i
                             class="transition-colors duration-200 hover:text-gray-600

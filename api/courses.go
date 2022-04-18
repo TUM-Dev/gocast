@@ -24,10 +24,8 @@ import (
 )
 
 func configGinCourseRouter(router *gin.Engine) {
-	router.GET("/api/course-by-token", courseByToken)
-	router.GET("/api/lecture-halls-by-token", lectureHallsByToken)
+	router.POST("/api/course/activate/:token", activateCourseByToken)
 	router.GET("/api/lecture-halls-by-id", lectureHallsByID)
-	router.POST("/api/course-by-token", courseByTokenPost)
 	atLeastLecturerGroup := router.Group("/")
 	atLeastLecturerGroup.Use(tools.AtLeastLecturer)
 	atLeastLecturerGroup.POST("/api/courseInfo", courseInfo)
@@ -38,6 +36,7 @@ func configGinCourseRouter(router *gin.Engine) {
 	adminOfCourseGroup.Use(tools.AdminOfCourse)
 	adminOfCourseGroup.DELETE("/", deleteCourse)
 	adminOfCourseGroup.POST("/createLecture", createLecture)
+	adminOfCourseGroup.POST("/presets", updatePresets)
 	adminOfCourseGroup.POST("/deleteLectures", deleteLectures)
 	adminOfCourseGroup.POST("/renameLecture/:streamID", renameLecture)
 	adminOfCourseGroup.POST("/updateDescription/:streamID", updateDescription)
@@ -48,6 +47,66 @@ func configGinCourseRouter(router *gin.Engine) {
 	adminOfCourseGroup.GET("/admins", getAdmins)
 	adminOfCourseGroup.PUT("/admins/:userID", addAdminToCourse)
 	adminOfCourseGroup.DELETE("/admins/:userID", removeAdminFromCourse)
+}
+
+// updatePresets updates the CameraPresets of a course
+func updatePresets(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	course := tumLiveContext.Course
+	if course == nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	var req []lhResp
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	var presetSettings []model.CameraPresetPreference
+	for _, hall := range req {
+		if len(hall.Presets) != 0 && hall.SelectedIndex != 0 {
+			presetSettings = append(presetSettings, model.CameraPresetPreference{
+				LectureHallID: hall.Presets[hall.SelectedIndex-1].LectureHallId, // index count starts at 1
+				PresetID:      hall.SelectedIndex,
+			})
+		}
+	}
+	course.SetCameraPresetPreference(presetSettings)
+	if err := dao.UpdateCourse(c, *course); err != nil {
+		log.WithError(err).Error("failed to update course")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+}
+
+func activateCourseByToken(c *gin.Context) {
+	t := c.Param("token")
+	if t == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "token is missing"})
+		return
+	}
+	course, err := dao.GetCourseByToken(t)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Course not found. Is the token correct?"})
+		return
+	}
+	course.DeletedAt = gorm.DeletedAt{Valid: false}
+	course.VODEnabled = true
+	course.Visibility = "loggedin"
+	err = dao.UnDeleteCourse(c, course)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "Could not update course settings")
+		return
+	}
 }
 
 func removeAdminFromCourse(c *gin.Context) {
@@ -164,79 +223,6 @@ func getAdmins(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-type courseByTokenReq struct {
-	AdminEmail string       `json:"adminEmail"`
-	AdminName  string       `json:"adminName"`
-	Course     model.Course `json:"course"`
-	Halls      []lhResp     `json:"halls"`
-	Token      string       `json:"token"`
-}
-
-func courseByTokenPost(c *gin.Context) {
-	var req courseByTokenReq
-	err := c.BindJSON(&req)
-	if err != nil {
-		return
-	}
-	course, err := dao.GetCourseByToken(req.Token)
-	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
-		return
-	}
-	if !(req.Course.VODEnabled || req.Course.LiveEnabled) {
-		dao.DeleteCourse(course)
-		return
-	} else {
-		course.DeletedAt = gorm.DeletedAt{
-			Time:  time.Now(),
-			Valid: false,
-		}
-	}
-
-	if req.AdminEmail != "" && !course.UserCreatedByToken {
-		var user model.User
-		user, err = dao.GetUserByEmail(c, req.AdminEmail)
-		if err != nil {
-			user, err = createUserHelper(createUserRequest{
-				Name:     req.AdminName,
-				Email:    req.AdminEmail,
-				Password: "",
-			}, model.LecturerType)
-			if err != nil {
-				c.AbortWithStatus(http.StatusInternalServerError)
-				return
-			}
-		}
-		course.UserCreatedByToken = true
-		course.UserID = user.ID
-	}
-	var presetSettings []model.CameraPresetPreference
-	for _, hall := range req.Halls {
-		if len(hall.Presets) != 0 && hall.SelectedIndex != 0 {
-			presetSettings = append(presetSettings, model.CameraPresetPreference{
-				LectureHallID: hall.Presets[hall.SelectedIndex-1].LectureHallId, // index count starts at 1
-				PresetID:      hall.SelectedIndex,
-			})
-		}
-	}
-	course.Visibility = req.Course.Visibility
-	course.VODEnabled = req.Course.VODEnabled
-	course.LiveEnabled = req.Course.LiveEnabled
-	course.ChatEnabled = req.Course.ChatEnabled
-	course.VodChatEnabled = req.Course.VodChatEnabled
-	course.DownloadsEnabled = req.Course.DownloadsEnabled
-	course.Name = req.Course.Name
-
-	course.SetCameraPresetPreference(presetSettings)
-
-	err = dao.UpdateCourseSettings(c, course)
-	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	log.Info(c)
-}
-
 type lhResp struct {
 	LectureHallName string               `json:"lecture_hall_name"`
 	Presets         []model.CameraPreset `json:"presets"`
@@ -275,25 +261,6 @@ func lectureHallsByID(c *gin.Context) {
 	lectureHalls(c, course)
 }
 
-func lectureHallsByToken(c *gin.Context) {
-	err := c.Request.ParseForm()
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-	token := c.Request.Form.Get("token")
-	if len([]rune(token)) != 15 {
-		c.AbortWithStatus(http.StatusNotFound)
-		return
-	}
-	course, err := dao.GetCourseByToken(token)
-	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
-		return
-	}
-	lectureHalls(c, course)
-}
-
 func lectureHalls(c *gin.Context, course model.Course) {
 	var res []lhResp
 	lectureHallIDs := map[uint]bool{}
@@ -323,26 +290,6 @@ func lectureHalls(c *gin.Context, course model.Course) {
 	}
 
 	c.JSON(http.StatusOK, res)
-}
-
-func courseByToken(c *gin.Context) {
-	err := c.Request.ParseForm()
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-	token := c.Request.Form.Get("token")
-	if len([]rune(token)) != 15 {
-		c.AbortWithStatus(http.StatusNotFound)
-		return
-	}
-
-	course, err := dao.GetCourseByToken(token)
-	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
-		return
-	}
-	c.JSON(http.StatusOK, course)
 }
 
 func submitCut(c *gin.Context) {
@@ -420,13 +367,14 @@ type addUnitRequest struct {
 }
 
 func updateDescription(c *gin.Context) {
-	var req renameLectureRequest
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	sIDInt, err := strconv.Atoi(c.Param("streamID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	if err := json.Unmarshal(jsonData, &req); err != nil {
+	sID := uint(sIDInt)
+	var req renameLectureRequest
+	if err := c.Bind(&req); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
@@ -440,16 +388,25 @@ func updateDescription(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't update lecture Description")
 		return
 	}
+	wsMsg := gin.H{
+		"description": stream.GetDescriptionHTML(),
+	}
+	if msg, err := json.Marshal(wsMsg); err == nil {
+		broadcastStream(sID, msg)
+	} else {
+		log.WithError(err).Error("couldn't marshal stream rename ws msg")
+	}
 }
 
 func renameLecture(c *gin.Context) {
-	var req renameLectureRequest
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	sIDInt, err := strconv.Atoi(c.Param("streamID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	if err := json.Unmarshal(jsonData, &req); err != nil {
+	sID := uint(sIDInt)
+	var req renameLectureRequest
+	if err = c.Bind(&req); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
@@ -462,6 +419,14 @@ func renameLecture(c *gin.Context) {
 	if err := dao.UpdateStream(stream); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't update lecture name")
 		return
+	}
+	wsMsg := gin.H{
+		"title": req.Name,
+	}
+	if msg, err := json.Marshal(wsMsg); err == nil {
+		broadcastStream(sID, msg)
+	} else {
+		log.WithError(err).Error("couldn't marshal stream rename ws msg")
 	}
 }
 
@@ -690,7 +655,10 @@ func createCourse(c *gin.Context) {
 		Visibility:          req.Access,
 		Streams:             []model.Stream{},
 	}
-	err = dao.CreateCourse(context.Background(), course, true)
+	if tumLiveContext.User.Role != model.AdminType {
+		course.Admins = []model.User{*tumLiveContext.User}
+	}
+	err = dao.CreateCourse(context.Background(), &course, true)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "Couldn't save course. Please reach out to us.")
 		return

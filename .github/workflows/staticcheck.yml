@@ -10,13 +10,24 @@ on:
 jobs:
   ci:
     name: "Run staticcheck"
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:  ["ubuntu-latest"]
+        go:  ["1.18.x"]
+        dir: ["."]
+    runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 1
-      # create node_module for "go:embed node_modules" in web/router.go
-      - run: make npm_dependencies
-      - uses: dominikh/staticcheck-action@v1.1.0
+      - uses: WillAbides/setup-go-faster@v1.7.0
         with:
-          version: "2021.1.1"
+          go-version: ${{ matrix.go }}
+      - run: make npm_dependencies
+      - uses: dominikh/staticcheck-action@v1.2.0
+        with:
+          version: "2022.1"
+          install-go: false
+          cache-key: ${{ matrix.go }}
+          working-directory: ${{ matrix.dir }}

@@ -1,6 +1,5 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
-import { List } from "postcss/lib/list";
 
 let chatInput: HTMLInputElement;
 
@@ -126,6 +125,12 @@ export function startWebsocket() {
         } else if ("approve" in data) {
             const event = new CustomEvent("chatapprove", { detail: data });
             window.dispatchEvent(event);
+        } else if ("title" in data) {
+            const event = new CustomEvent("titleupdate", { detail: data });
+            window.dispatchEvent(event);
+        } else if ("description" in data) {
+            const event = new CustomEvent("descriptionupdate", { detail: data });
+            window.dispatchEvent(event);
         }
     };
 
@@ -171,7 +176,7 @@ export function sendMessage(current: NewChatMessage) {
             msg: current.message,
             anonymous: current.anonymous,
             replyTo: current.replyTo,
-            addressedTo: current.addressedTo.map((u) => u.ID),
+            addressedTo: current.addressedTo.map((u) => u.id),
         }),
     );
 }

@@ -62,6 +62,16 @@ func AdminPage(c *gin.Context) {
 	if c.Request.URL.Path == "/admin/course-import" {
 		page = "courseImport"
 	}
+	var notifications []model.Notification
+	if c.Request.URL.Path == "/admin/notifications" {
+		page = "notifications"
+		found, err := dao.GetAllNotifications()
+		if err != nil {
+			log.WithError(err).Error("couldn't query notifications")
+		} else {
+			notifications = found
+		}
+	}
 	var tokens []dao.AllTokensDto
 	if c.Request.URL.Path == "/admin/token" {
 		page = "token"
@@ -84,11 +94,11 @@ func AdminPage(c *gin.Context) {
 			Streams: streams,
 		}
 	}
-	var notifications []model.ServerNotification
+	var serverNotifications []model.ServerNotification
 	if c.Request.URL.Path == "/admin/server-notifications" {
 		page = "serverNotifications"
 		if res, err := dao.GetAllServerNotifications(); err == nil {
-			notifications = res
+			serverNotifications = res
 		} else {
 			log.WithError(err).Warn("could not get all server notifications")
 		}
@@ -106,7 +116,9 @@ func AdminPage(c *gin.Context) {
 			CurY:                y,
 			CurT:                t,
 			Tokens:              tokens,
-			ServerNotifications: notifications})
+			ServerNotifications: serverNotifications,
+			Notifications:       notifications,
+		})
 	if err != nil {
 		log.Printf("%v", err)
 	}
@@ -263,6 +275,7 @@ type AdminPageData struct {
 	EditCourseData      EditCourseData
 	ServerNotifications []model.ServerNotification
 	Tokens              []dao.AllTokensDto
+	Notifications       []model.Notification
 }
 
 type EditCourseData struct {

@@ -134,6 +134,7 @@ func main() {
 		&model.Token{},
 		&model.Poll{},
 		&model.PollOption{},
+		&model.Notification{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)

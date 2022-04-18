@@ -104,7 +104,6 @@ func loginWithTumCredentials(username, password string) (*sessionData, error) {
 			LastName:            loginResp.LastName,
 			MatriculationNumber: loginResp.UserId,
 			LrzID:               loginResp.LrzIdent,
-			Role:                model.GenericType,
 		}
 		err = dao.UpsertUser(&user)
 		if err != nil {

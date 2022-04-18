@@ -4,14 +4,17 @@ import (
 	"TUM-Live/dao"
 	"TUM-Live/model"
 	"TUM-Live/tools"
+	"encoding/json"
 	"fmt"
+	"html/template"
+	"net/http"
+
+	log "github.com/sirupsen/logrus"
+
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"html/template"
-	"log"
-	"net/http"
 )
 
 type editCourseByTokenPageData struct {
@@ -28,8 +31,14 @@ func editCourseByTokenPage(c *gin.Context) {
 	}
 
 	indexData := NewIndexDataWithContext(c)
+	course, err := dao.GetCourseByToken(c.Request.Form.Get("token"))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Course not found"})
+		return
+	}
 	d := editCourseByTokenPageData{
 		Token:     c.Request.Form.Get("token"),
+		Course:    course,
 		IndexData: indexData,
 	}
 
@@ -94,15 +103,62 @@ func CoursePage(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	// in any other case assume either validated before or public course
-	err := templ.ExecuteTemplate(c.Writer, "course.gohtml", CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course})
+
+	// When a user is not logged-in, we don't need the progress data for watch page since
+	// it is only saved for logged-in users.
+	if tumLiveContext.User == nil {
+		err := templ.ExecuteTemplate(c.Writer, "course-overview.gohtml",
+			CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course})
+		if err != nil {
+			sentrygin.GetHubFromContext(c).CaptureException(err)
+		}
+		return
+	}
+
+	streamsWithWatchState, err := dao.GetStreamsWithWatchState((*tumLiveContext.Course).ID, (*tumLiveContext.User).ID)
+	if err != nil {
+		sentry.CaptureException(err)
+		log.WithError(err).Error("loading streamsWithWatchState and progresses for a given course and user failed")
+	}
+
+	tumLiveContext.Course.Streams = streamsWithWatchState // Update the course streams to contain the watch state.
+
+	// watchedStateData is used by the client to track the which VoDs are watched.
+	type watchedStateData struct {
+		ID      uint   `json:"streamID"`
+		Month   string `json:"month"`
+		Watched bool   `json:"watched"`
+	}
+
+	var clientWatchState = make([]watchedStateData, 0)
+	for _, s := range streamsWithWatchState {
+		if !s.Recording {
+			continue
+		}
+		clientWatchState = append(clientWatchState, watchedStateData{
+			ID:      s.Model.ID,
+			Month:   s.Start.Month().String(),
+			Watched: s.Watched,
+		})
+	}
+	// Create JSON encoded info about which streamsWithWatchState are watched. Used by the client to track the watched status.
+	encoded, err := json.Marshal(clientWatchState)
+	if err != nil {
+		sentry.CaptureException(err)
+		log.WithError(err).Error("marshalling watched infos for client failed")
+	}
+	err = templ.ExecuteTemplate(c.Writer, "course-overview.gohtml",
+		CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course, WatchedData: string(encoded)})
 	if err != nil {
 		sentrygin.GetHubFromContext(c).CaptureException(err)
 	}
 }
 
+// CoursePageData is the data for the course page.
 type CoursePageData struct {
 	IndexData     IndexData
+	User          model.User
 	Course        model.Course
 	HighlightPage bool
+	WatchedData   string
 }
