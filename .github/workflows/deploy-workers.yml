@@ -1,8 +1,9 @@
 name: Build & Deploy
 
 on:
-  pull_request:
-    types: [ labeled ]
+  push:
+    tags:
+      - *
 
 jobs:
   build:
@@ -15,9 +16,6 @@ jobs:
       - name: get container name
         run: |
           echo "containername=${{ matrix.module }}" | sed 's/\//-/g' > $GITHUB_ENV
-      - name: verify container name
-        run: |
-          echo ${{ env.containername }}
       - uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
