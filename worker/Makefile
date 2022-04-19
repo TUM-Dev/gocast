@@ -7,7 +7,7 @@ protoGen:
 	protoc ./api.proto --go-grpc_out=../.. --go_out=../..
 
 build: deps
-	go build -ldflags="-X 'main.VersionTag=$(VERSION)'" app/main/main.go;
+	go build -o main -ldflags="-X 'main.VersionTag=$(VERSION)'" cmd/worker/worker.go;
 
 deps:
 	go get ./...;
