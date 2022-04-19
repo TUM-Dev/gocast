@@ -36,7 +36,10 @@ require (
 	mvdan.cc/xurls/v2 v2.4.0
 )
 
-require github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
+require (
+	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
+	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20220419123621-281d546e8452
+)
 
 require (
 	github.com/Azure/go-ntlmssp v0.0.0-20211209120228-48547f28849e // indirect
@@ -70,7 +73,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
-	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
+	golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2 // indirect
 	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
