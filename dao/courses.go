@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
-  
+
 	"github.com/RBG-TUM/commons"
 	"github.com/getsentry/sentry-go"
 	log "github.com/sirupsen/logrus"
