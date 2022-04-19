@@ -38,7 +38,7 @@ func Setup() {
 		log.Debugf("deleting %d old files", len(persisted.Deletable))
 		var notDeleted []Deletable
 		for i, deletable := range persisted.Deletable {
-			if time.Since(deletable.Time) >= time.Minute*5 {
+			if time.Since(deletable.Time) >= time.Hour*24 {
 				err := os.Remove(deletable.File)
 				if err != nil {
 					log.WithError(err).Error("Failed to delete old recording")
