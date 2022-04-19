@@ -3,11 +3,12 @@ package dao
 import (
 	"context"
 	"fmt"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	"strconv"
 	"time"
+
+  "github.com/joschahenningsen/TUM-Live/model"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // GetDueStreamsForWorkers retrieves all streams that due to be streamed in a lecture hall.
@@ -284,7 +285,7 @@ func GetStreamsWithWatchState(courseID uint, userID uint) (streams []model.Strea
 	queriedStreams := DB.Table("streams").Where("course_id = ? and deleted_at is NULL", courseID)
 	result := queriedStreams.
 		Joins("left join (select watched, stream_id from stream_progresses where user_id = ?) as sp on sp.stream_id = streams.id", userID).
-		Order("start").          // Order by start time, this is also the order that is used in the course page.
+		Order("start asc").      // Order by start time, this is also the order that is used in the course page.
 		Session(&gorm.Session{}) // Session is required to scan multiple times
 
 	if err = result.Scan(&streams).Error; err != nil {
