@@ -5,6 +5,7 @@ class Admin {}
 
 export class AdminUserList {
     readonly rowsPerPage: number;
+    readonly numberOfPages: number;
 
     currentIndex: number;
 
@@ -12,21 +13,35 @@ export class AdminUserList {
         this.rowsPerPage = 10;
         this.currentIndex = 0;
         this.updateVisibleRows();
+
+        this.numberOfPages = Math.floor(document.getElementById("admin-user-list").children.length / this.rowsPerPage);
+    }
+
+    currentIndexString(): string {
+        return `${this.currentIndex + 1}/${this.numberOfPages}`;
+    }
+
+    shouldShowPrev(): boolean {
+        return this.currentIndex > 0;
+    }
+
+    shouldShowNext(): boolean {
+        return this.currentIndex < this.numberOfPages - 1;
     }
 
     next() {
-        this.currentIndex += 1;
+        this.currentIndex = (this.currentIndex + 1) % this.numberOfPages;
         this.updateVisibleRows();
     }
 
     prev() {
-        this.currentIndex -= 1;
+        this.currentIndex = (this.currentIndex - 1) % this.numberOfPages;
         this.updateVisibleRows();
     }
 
     updateVisibleRows() {
         const table = document.getElementById("admin-user-list");
-        const minIndex = this.currentIndex * this.rowsPerPage; //TODO: This is wrong, add list length and fix min.
+        const minIndex = this.currentIndex * this.rowsPerPage;
         const maxIndex = this.currentIndex * this.rowsPerPage + this.rowsPerPage - 1;
         Array.from(table.children).forEach((row: HTMLElement) => {
             const idx = parseInt(row.dataset.userlistIndex);
