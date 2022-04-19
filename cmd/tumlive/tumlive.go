@@ -28,7 +28,7 @@ import (
 
 var VersionTag = "development"
 
-// GinServer launch gin tumlive
+// GinServer launches the gin server
 func GinServer() (err error) {
 	router := gin.Default()
 	gin.SetMode(gin.ReleaseMode)
@@ -167,7 +167,7 @@ func main() {
 		if err != nil {
 			sentry.CaptureException(err)
 			sentry.Flush(time.Second * 5)
-			log.WithError(err).Fatal("can't launch gin tumlive")
+			log.WithError(err).Fatal("can't launch gin server")
 		}
 	}()
 	keepAlive()

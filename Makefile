@@ -10,7 +10,7 @@ go_dependencies:
 	go get ./...
 
 bundle:
-	go build -ldflags="-X 'main.VersionTag=$(VERSION)'" app/server/main.go
+	go build -o main -ldflags="-X 'main.VersionTag=$(VERSION)'" cmd/worker/worker.go
 
 clean:
 	rm -fr web/node_modules
