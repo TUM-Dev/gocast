@@ -1,3 +1,3 @@
-module github.com/joschahenningsen/tum-live-worker-v2/edge
+module github.com/joschahenningsen/tum-live/worker/edge
 
 go 1.18
