@@ -1,10 +1,10 @@
 package web
 
 import (
-	"TUM-Live/dao"
-	"TUM-Live/tools"
 	"embed"
 	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"html/template"
 	"net/http"
 )

@@ -1,0 +1,50 @@
+name: Build & Deploy
+
+on:
+  push:
+    tags:
+      - *
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: ["worker", "worker/nginx", "worker/edge"]
+
+    steps:
+      - name: get container name
+        run: |
+          echo "containername=${{ matrix.module }}" | sed 's/\//-/g' > $GITHUB_ENV
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Docker meta (${{ matrix.module }})
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ghcr.io/joschahenningsen/tum-live/${{ env.containername }}
+          tags: |
+            type=sha
+          flavor: |
+            latest=true
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set outputs
+        id: vars
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+      - name: Build and push Docker images (${{ matrix.module }})
+        uses: docker/build-push-action@v2
+        with:
+          context: ./${{ matrix.module }}
+          pull: true
+          push: true
+          build-args: version=${{ steps.vars.outputs.sha_short }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

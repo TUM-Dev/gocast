@@ -1,10 +1,10 @@
 package dao
 
 import (
-	"TUM-Live/model"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live/model"
 	"time"
 
 	"github.com/RBG-TUM/commons"
@@ -241,7 +241,7 @@ func GetCourseByShortLink(link string) (model.Course, error) {
 	return course, err
 }
 
-// GetCourseAdmins returns the admins of the given course excluding the creator (usually system) and the server admins
+// GetCourseAdmins returns the admins of the given course excluding the creator (usually system) and the tumlive admins
 func GetCourseAdmins(courseID uint) ([]model.User, error) {
 	var admins []model.User
 	err := DB.Raw("select u.* from courses "+

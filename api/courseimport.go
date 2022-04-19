@@ -1,16 +1,16 @@
 package api
 
 import (
-	"TUM-Live/dao"
-	"TUM-Live/model"
-	"TUM-Live/tools"
-	"TUM-Live/tools/tum"
 	"bytes"
 	"errors"
 	"fmt"
 	campusonline "github.com/RBG-TUM/CAMPUSOnline"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/tum"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"html/template"

@@ -1,10 +1,10 @@
 package camera
 
 import (
-	"TUM-Live/model"
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live/model"
 	uuid "github.com/satori/go.uuid"
 	"os"
 	"os/exec"

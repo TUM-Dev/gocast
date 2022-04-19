@@ -1,9 +1,9 @@
 package dao
 
 import (
-	"TUM-Live/model"
 	"context"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live/model"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

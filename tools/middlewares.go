@@ -1,12 +1,12 @@
 package tools
 
 import (
-	"TUM-Live/dao"
-	"TUM-Live/model"
 	"errors"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
 	log "github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
