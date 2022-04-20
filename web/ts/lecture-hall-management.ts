@@ -1,4 +1,4 @@
-import {postData} from "./global";
+import { postData } from "./global";
 
 export function takeSnapshot(lectureHallID: number, presetID: number) {
     if (confirm("Do you want to take a snapshot? Make sure no lecture is live in this lecture hall.")) {
