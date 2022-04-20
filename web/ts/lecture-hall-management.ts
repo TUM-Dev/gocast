@@ -1,4 +1,4 @@
-import { postData } from "./global";
+import {postData} from "./global";
 
 export function takeSnapshot(lectureHallID: number, presetID: number) {
     if (confirm("Do you want to take a snapshot? Make sure no lecture is live in this lecture hall.")) {
@@ -17,4 +17,18 @@ export function takeSnapshot(lectureHallID: number, presetID: number) {
             }
         });
     }
+}
+
+export function setDefaultPreset(lectureHallID: number, presetID: number): Promise<boolean> {
+    return fetch(`/api/lectureHall/${lectureHallID}/defaultPreset`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            presetID: presetID,
+        }),
+    }).then(function (res) {
+        return res.ok;
+    });
 }
