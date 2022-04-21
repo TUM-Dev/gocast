@@ -2,11 +2,13 @@ package web
 
 import (
 	"embed"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"html/template"
 	"net/http"
+	"strings"
 )
 
 var templ *template.Template
@@ -41,6 +43,33 @@ func configGinStaticRouter(router gin.IRoutes) {
 	router.GET("/favicon.ico", func(c *gin.Context) {
 		c.FileFromFS("assets/favicon.ico", http.FS(staticFS))
 	})
+	router.Any("/shib", func(c *gin.Context) {
+		fmt.Println("###")
+		fmt.Println(formatRequest(c.Request))
+		fmt.Println("###")
+		c.String(http.StatusOK, "")
+	})
+}
+func formatRequest(r *http.Request) string {
+	// Create return string
+	var request []string // Add the request string
+	url := fmt.Sprintf("%v %v %v", r.Method, r.URL, r.Proto)
+	request = append(request, url)                             // Add the host
+	request = append(request, fmt.Sprintf("Host: %v", r.Host)) // Loop through headers
+	for name, headers := range r.Header {
+		name = strings.ToLower(name)
+		for _, h := range headers {
+			request = append(request, fmt.Sprintf("%v: %v", name, h))
+		}
+	}
+
+	// If this is a POST, add post data
+	if r.Method == "POST" {
+		r.ParseForm()
+		request = append(request, "\n")
+		request = append(request, r.Form.Encode())
+	} // Return the request as a string
+	return strings.Join(request, "\n")
 }
 
 //todo: un-export functions
