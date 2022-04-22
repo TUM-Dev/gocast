@@ -11,12 +11,10 @@
     <div class="py-8 px-8 rounded border dark:border-gray-500 border-gray-300">
         <h1 class="sr-only">Login</h1>
         {{if .UseSAML}}
-            <div class="text-center">
-                <div class="cursor-pointer w-full p-2 rounded hover:bg-blue-700 text-gray-300 hover:text-white font-semibold" style="background-color: #3070B3">
-                    <a href="/saml/out" class="">
-                        {{.IDPName}}
-                    </a>
-                </div>
+            <div class="text-center flex flex-col">
+                <a href="/saml/out" class="w-full p-2 rounded hover:bg-blue-700 text-gray-300 hover:text-white font-semibold" style="background-color: #3070B3">
+                    {{.IDPName}}
+                </a>
                 <div class="mt-6 pt-4 border-t dark:border-gray-500 border-gray-300 text-2 font-semibold">Or use an internal account:</div>
             </div>
         {{end}}
