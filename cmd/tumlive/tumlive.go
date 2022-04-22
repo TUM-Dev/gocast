@@ -47,6 +47,7 @@ func GinServer() (err error) {
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	api.ConfigGinRouter(router)
 	web.ConfigGinRouter(router)
+	//err = router.RunTLS(":443", "fullchain.pem", "privkey.pem")
 	err = router.Run(":8081")
 	if err != nil {
 		sentry.CaptureException(err)

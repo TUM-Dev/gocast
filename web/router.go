@@ -6,14 +6,19 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"embed"
+	"encoding/json"
+	"fmt"
+	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 var templ *template.Template
@@ -66,7 +71,7 @@ func configSaml(r *gin.Engine) {
 		log.WithError(err).Error("Could not load Identity Provider metadata")
 	}
 
-	rootURL, err := url.Parse(tools.Cfg.Saml.RootURL)
+	rootURL, err := url.Parse("https://localhost/shib")
 	if err != nil {
 		log.WithError(err).Fatal("Could not parse Root URL")
 	}
@@ -87,7 +92,42 @@ func configSaml(r *gin.Engine) {
 	r.GET("/saml/metadata", func(c *gin.Context) {
 		samlSP.ServeMetadata(c.Writer, c.Request)
 	})
-	r.Any("/shib", func(c *gin.Context) {
+	r.GET("/saml/out", func(c *gin.Context) {
+		samlSP.HandleStartAuthFlow(c.Writer, c.Request)
+	})
+	r.POST("/saml/slo", func(c *gin.Context) {
+		err := c.Request.ParseForm()
+		if err != nil {
+			c.JSON(http.StatusForbidden, gin.H{"code": "403- Forbidden", "error": err.Error()})
+			return
+		}
+		response, err := samlSP.ServiceProvider.ParseResponse(c.Request, []string{""})
+		if err != nil {
+			c.JSON(http.StatusForbidden, gin.H{"code": "403 - Forbidden", "error": err.Error()})
+			return
+		}
+		m, err := json.Marshal(response)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": "500 - Internal", "error": err.Error()})
+			return
+		}
+		c.Header("Content-Type", "application/json")
+		c.Writer.Write(m)
+		c.Writer.Flush()
+	})
+
+	r.GET("/saml/logout", func(c *gin.Context) {
+		foundContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+		if foundContext.SamlSubjectID != nil {
+			request, err := samlSP.ServiceProvider.MakeRedirectLogoutRequest(*foundContext.SamlSubjectID, "")
+			if err != nil {
+				return
+			}
+			log.Info("Logout request: ", request)
+			c.Redirect(http.StatusFound, request.String())
+		}
+	})
+	r.POST("/shib", func(c *gin.Context) {
 		err := c.Request.ParseForm()
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"code": "400 - Bad Request", "error": err.Error()})
@@ -97,17 +137,62 @@ func configSaml(r *gin.Engine) {
 			c.JSON(http.StatusForbidden, gin.H{"code": "403- Forbidden", "error": err.Error()})
 			return
 		}
-		for _, statement := range response.AttributeStatements {
-			for _, attribute := range statement.Attributes {
-				if attribute.FriendlyName == "displayName" {
-					if len(attribute.Values) > 0 {
-						c.String(http.StatusOK, "Hi, "+attribute.Values[0].Value+"!")
-						return
-					}
-				}
+
+		lrzID := extractSamlField(response, "uid")
+		matrNr := extractSamlField(response, "imMatrikelNr")
+		firstName := extractSamlField(response, "givenName")
+		lastName := extractSamlField(response, "sn")
+		subjectID := extractSamlField(response, "samlSubjectID")
+		var lastNameUser *string
+		if lastName != "" {
+			lastNameUser = &lastName
+		}
+		user := model.User{
+			Name:                firstName,
+			LastName:            lastNameUser,
+			MatriculationNumber: matrNr,
+			LrzID:               lrzID,
+		}
+		err = dao.UpsertUser(&user)
+		if err != nil {
+			log.WithError(err).Error("Could not upsert user")
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
+		startSession(c, &sessionData{userid: user.ID, samlSubjectID: &subjectID})
+		c.Redirect(http.StatusFound, "/")
+	})
+}
+func formatRequest(r *http.Request) string {
+	// Create return string
+	var request []string // Add the request string
+	url := fmt.Sprintf("%v %v %v", r.Method, r.URL, r.Proto)
+	request = append(request, url)                             // Add the host
+	request = append(request, fmt.Sprintf("Host: %v", r.Host)) // Loop through headers
+	for name, headers := range r.Header {
+		name = strings.ToLower(name)
+		for _, h := range headers {
+			request = append(request, fmt.Sprintf("%v: %v", name, h))
+		}
+	}
+
+	// If this is a POST, add post data
+	if r.Method == "POST" {
+		r.ParseForm()
+		request = append(request, "\n")
+		request = append(request, r.Form.Encode())
+	} // Return the request as a string
+	return strings.Join(request, "\n")
+}
+
+func extractSamlField(assertion *saml.Assertion, friendlyFieldName string) string {
+	for _, statement := range assertion.AttributeStatements {
+		for _, attribute := range statement.Attributes {
+			if attribute.FriendlyName == friendlyFieldName && len(attribute.Values) > 0 {
+				return attribute.Values[0].Value
 			}
 		}
-	})
+	}
+	return ""
 }
 
 func configGinStaticRouter(router gin.IRoutes) {

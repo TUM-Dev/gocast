@@ -56,11 +56,12 @@ func getRedirectUrl(c *gin.Context) string {
 }
 
 type sessionData struct {
-	userid uint
+	userid        uint
+	samlSubjectID *string
 }
 
 func startSession(c *gin.Context, data *sessionData) {
-	token, err := createToken(data.userid)
+	token, err := createToken(data.userid, data.samlSubjectID)
 	if err != nil {
 		log.WithError(err).Error("Could not create token")
 		return
@@ -68,14 +69,15 @@ func startSession(c *gin.Context, data *sessionData) {
 	c.SetCookie("jwt", token, 60*60*24*7, "/", "", tools.CookieSecure, true)
 }
 
-func createToken(user uint) (string, error) {
+func createToken(user uint, samlSubjectID *string) (string, error) {
 	t := jwt.New(jwt.GetSigningMethod("RS256"))
 
 	t.Claims = &tools.JWTClaims{
 		RegisteredClaims: &jwt.RegisteredClaims{
 			ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Hour * 24 * 7)}, // Token expires in one week
 		},
-		UserID: user,
+		UserID:        user,
+		SamlSubjectID: samlSubjectID,
 	}
 	return t.SignedString(tools.Cfg.GetJWTKey())
 }
@@ -86,7 +88,7 @@ func loginWithUserCredentials(username, password string) *sessionData {
 	if u, err := dao.GetUserByEmail(context.Background(), username); err == nil {
 		// user with this email found.
 		if match, err := u.ComparePasswordAndHash(password); err == nil && match {
-			return &sessionData{u.ID}
+			return &sessionData{u.ID, nil}
 		}
 		return nil
 	}
@@ -111,7 +113,7 @@ func loginWithTumCredentials(username, password string) (*sessionData, error) {
 			return nil, err
 		}
 
-		return &sessionData{user.ID}, nil
+		return &sessionData{user.ID, nil}, nil
 	}
 
 	return nil, err
