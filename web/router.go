@@ -1,13 +1,19 @@
 package web
 
 import (
+	"context"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
 	"embed"
 	"fmt"
+	"github.com/crewjam/saml/samlsp"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"html/template"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -33,8 +39,78 @@ func ConfigGinRouter(router *gin.Engine) {
 		"template/partial/course/manage/*.gohtml"))
 	tools.SetTemplates(templ)
 	configGinStaticRouter(router)
+	configSaml(router)
 	configMainRoute(router)
 	configCourseRoute(router)
+}
+
+func configSaml(r *gin.Engine) {
+	if tools.Cfg.Saml == nil {
+		return
+	}
+	keyPair, err := tls.LoadX509KeyPair(tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
+	if err != nil {
+		panic(err) // TODO handle error
+	}
+	keyPair.Leaf, err = x509.ParseCertificate(keyPair.Certificate[0])
+	if err != nil {
+		panic(err) // TODO handle error
+	}
+
+	idpMetadataURL, err := url.Parse(tools.Cfg.Saml.IdpMetadataURL)
+	if err != nil {
+		panic(err) // TODO handle error
+	}
+	idpMetadata, err := samlsp.FetchMetadata(context.Background(), http.DefaultClient,
+		*idpMetadataURL)
+	if err != nil {
+		panic(err) // TODO handle error
+	}
+
+	rootURL, err := url.Parse(tools.Cfg.Saml.RootURL)
+	if err != nil {
+		panic(err) // TODO handle error
+	}
+
+	samlSP, err := samlsp.New(samlsp.Options{
+		URL:               *rootURL,
+		Key:               keyPair.PrivateKey.(*rsa.PrivateKey),
+		Certificate:       keyPair.Leaf,
+		IDPMetadata:       idpMetadata,
+		EntityID:          tools.Cfg.Saml.EntityID,
+		AllowIDPInitiated: true,
+	})
+	samlSP.ServiceProvider.AcsURL = *rootURL
+	if err != nil {
+		panic(err)
+	}
+	r.GET("/saml/metadata", func(c *gin.Context) {
+		samlSP.ServeMetadata(c.Writer, c.Request)
+	})
+	r.Any("/saml/acs", func(c *gin.Context) {
+		samlSP.ServeACS(c.Writer, c.Request)
+	})
+	r.Any("/shib", func(c *gin.Context) {
+		err := c.Request.ParseForm()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"code": "400 - Bad Request", "error": err.Error()})
+		}
+		response, err := samlSP.ServiceProvider.ParseResponse(c.Request, []string{""})
+		if err != nil {
+			c.JSON(http.StatusForbidden, gin.H{"code": "403- Forbidden", "error": err.Error()})
+			return
+		}
+		for _, statement := range response.AttributeStatements {
+			for _, attribute := range statement.Attributes {
+				if attribute.FriendlyName == "displayName" {
+					if len(attribute.Values) > 0 {
+						c.String(http.StatusOK, "Hi, "+attribute.Values[0].Value+"!")
+						return
+					}
+				}
+			}
+		}
+	})
 }
 
 func configGinStaticRouter(router gin.IRoutes) {
@@ -43,13 +119,8 @@ func configGinStaticRouter(router gin.IRoutes) {
 	router.GET("/favicon.ico", func(c *gin.Context) {
 		c.FileFromFS("assets/favicon.ico", http.FS(staticFS))
 	})
-	router.Any("/shib", func(c *gin.Context) {
-		fmt.Println("###")
-		fmt.Println(formatRequest(c.Request))
-		fmt.Println("###")
-		c.String(http.StatusOK, "")
-	})
 }
+
 func formatRequest(r *http.Request) string {
 	// Create return string
 	var request []string // Add the request string

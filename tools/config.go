@@ -115,6 +115,13 @@ type Config struct {
 		BaseDn   string `yaml:"baseDn"`
 		UserDn   string `yaml:"userDn"`
 	} `yaml:"ldap"`
+	Saml *struct {
+		IdpMetadataURL string `yaml:"idpMetadataURL"`
+		Cert           string `yaml:"cert"`
+		Privkey        string `yaml:"privkey"`
+		EntityID       string `yaml:"entityID"`
+		RootURL        string `yaml:"rootURL"`
+	} `yaml:"saml"`
 	Paths struct {
 		Static string `yaml:"static"`
 		Mass   string `yaml:"mass"`
