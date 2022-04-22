@@ -71,7 +71,7 @@ func configSaml(r *gin.Engine) {
 		log.WithError(err).Error("Could not load Identity Provider metadata")
 	}
 
-	rootURL, err := url.Parse("https://localhost/shib")
+	rootURL, err := url.Parse(tools.Cfg.Saml.RootURL)
 	if err != nil {
 		log.WithError(err).Fatal("Could not parse Root URL")
 	}
