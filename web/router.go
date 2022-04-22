@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"embed"
-	"encoding/json"
 	"fmt"
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
@@ -98,22 +97,16 @@ func configSaml(r *gin.Engine) {
 	r.POST("/saml/slo", func(c *gin.Context) {
 		err := c.Request.ParseForm()
 		if err != nil {
-			c.JSON(http.StatusForbidden, gin.H{"code": "403- Forbidden", "error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		response, err := samlSP.ServiceProvider.ParseResponse(c.Request, []string{""})
+		err = samlSP.ServiceProvider.ValidateLogoutResponseForm(c.Request.PostFormValue("SAMLResponse"))
 		if err != nil {
-			c.JSON(http.StatusForbidden, gin.H{"code": "403 - Forbidden", "error": err.Error()})
+			c.JSON(http.StatusForbidden, gin.H{"code": "403- Forbidden", "error": "Invalid logout data: " + err.Error()})
 			return
 		}
-		m, err := json.Marshal(response)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"code": "500 - Internal", "error": err.Error()})
-			return
-		}
-		c.Header("Content-Type", "application/json")
-		c.Writer.Write(m)
-		c.Writer.Flush()
+		c.SetCookie("jwt", "", -1, "/", "", tools.CookieSecure, true)
+		c.Redirect(http.StatusFound, "/")
 	})
 
 	r.GET("/saml/logout", func(c *gin.Context) {
