@@ -6,15 +6,14 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"embed"
-	"fmt"
 	"github.com/crewjam/saml/samlsp"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	log "github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
 	"net/url"
-	"strings"
 )
 
 var templ *template.Template
@@ -50,26 +49,26 @@ func configSaml(r *gin.Engine) {
 	}
 	keyPair, err := tls.LoadX509KeyPair(tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
 	if err != nil {
-		panic(err) // TODO handle error
+		log.WithError(err).Fatal("Could not load SAML keypair")
 	}
 	keyPair.Leaf, err = x509.ParseCertificate(keyPair.Certificate[0])
 	if err != nil {
-		panic(err) // TODO handle error
+		log.WithError(err).Fatal("Could not parse SAML keypair")
 	}
 
 	idpMetadataURL, err := url.Parse(tools.Cfg.Saml.IdpMetadataURL)
 	if err != nil {
-		panic(err) // TODO handle error
+		log.WithError(err).Fatal("Could not parse Identity Provider metadata URL")
 	}
 	idpMetadata, err := samlsp.FetchMetadata(context.Background(), http.DefaultClient,
 		*idpMetadataURL)
 	if err != nil {
-		panic(err) // TODO handle error
+		log.WithError(err).Error("Could not load Identity Provider metadata")
 	}
 
 	rootURL, err := url.Parse(tools.Cfg.Saml.RootURL)
 	if err != nil {
-		panic(err) // TODO handle error
+		log.WithError(err).Fatal("Could not parse Root URL")
 	}
 
 	samlSP, err := samlsp.New(samlsp.Options{
@@ -80,15 +79,13 @@ func configSaml(r *gin.Engine) {
 		EntityID:          tools.Cfg.Saml.EntityID,
 		AllowIDPInitiated: true,
 	})
-	samlSP.ServiceProvider.AcsURL = *rootURL
 	if err != nil {
-		panic(err)
+		log.WithError(err).Fatal("Could not create SAML Service Provider")
 	}
+	samlSP.ServiceProvider.AcsURL = *rootURL
+
 	r.GET("/saml/metadata", func(c *gin.Context) {
 		samlSP.ServeMetadata(c.Writer, c.Request)
-	})
-	r.Any("/saml/acs", func(c *gin.Context) {
-		samlSP.ServeACS(c.Writer, c.Request)
 	})
 	r.Any("/shib", func(c *gin.Context) {
 		err := c.Request.ParseForm()
@@ -119,28 +116,6 @@ func configGinStaticRouter(router gin.IRoutes) {
 	router.GET("/favicon.ico", func(c *gin.Context) {
 		c.FileFromFS("assets/favicon.ico", http.FS(staticFS))
 	})
-}
-
-func formatRequest(r *http.Request) string {
-	// Create return string
-	var request []string // Add the request string
-	url := fmt.Sprintf("%v %v %v", r.Method, r.URL, r.Proto)
-	request = append(request, url)                             // Add the host
-	request = append(request, fmt.Sprintf("Host: %v", r.Host)) // Loop through headers
-	for name, headers := range r.Header {
-		name = strings.ToLower(name)
-		for _, h := range headers {
-			request = append(request, fmt.Sprintf("%v: %v", name, h))
-		}
-	}
-
-	// If this is a POST, add post data
-	if r.Method == "POST" {
-		r.ParseForm()
-		request = append(request, "\n")
-		request = append(request, r.Form.Encode())
-	} // Return the request as a string
-	return strings.Join(request, "\n")
 }
 
 //todo: un-export functions
