@@ -1,4 +1,4 @@
-module TUM-Live
+module github.com/joschahenningsen/TUM-Live
 
 go 1.18
 
@@ -11,17 +11,15 @@ require (
 	github.com/gabstv/melody v1.0.2
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/gin-contrib/gzip v0.0.5
-	github.com/gin-contrib/sessions v0.0.4
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
 	github.com/go-gormigrate/gormigrate/v2 v2.0.0
 	github.com/go-ldap/ldap/v3 v3.4.3
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/golang-jwt/jwt/v4 v4.4.1
 	github.com/golang/glog v1.0.0 // indirect
-	github.com/gorilla/sessions v1.2.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/jinzhu/now v1.1.5
-	github.com/joschahenningsen/TUM-Live-Worker-v2 v1.3.3
 	github.com/microcosm-cc/bluemonday v1.0.18
 	github.com/pkg/profile v1.6.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -38,7 +36,10 @@ require (
 	mvdan.cc/xurls/v2 v2.4.0
 )
 
-require github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
+require (
+	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
+	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20220419123621-281d546e8452
+)
 
 require (
 	github.com/Azure/go-ntlmssp v0.0.0-20211209120228-48547f28849e // indirect
@@ -53,9 +54,7 @@ require (
 	github.com/go-playground/validator/v10 v10.10.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
-	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -74,7 +73,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
-	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
+	golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2 // indirect
 	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect

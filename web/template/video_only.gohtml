@@ -14,15 +14,15 @@
     <link rel="stylesheet" href="/static/assets/css/icons.css">
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
     <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
-    <link rel="stylesheet" href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
+    <link rel="stylesheet"
+          href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
 </head>
 <body class="overflow-hidden">
 <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
-</video>
-        class="watch-js w-full"
-        controls
-        preload="auto"
-        data-setup='{"fluid": true}'>
+<video id="my-video"
+       class="video-js"
+       controls
+       preload="auto">
     <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
             type="application/x-mpegURL"/>
     <p class="vjs-no-js">

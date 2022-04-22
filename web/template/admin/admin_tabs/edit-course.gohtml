@@ -190,13 +190,11 @@
                                                     {{end}}
                                                     {{if not $lecture.LectureHallID}}
                                                     <p class="mt-2">
-                                                        <span class="font-semibold">Stream Server:</span>
-                                                        <span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
+                                                        <span class="font-semibold">Stream Server: </span><span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
                                                         <i class="fas fa-clipboard hover:text-purple-500"
                                                            onclick="admin.copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
                                                         <br>
-                                                        <span class="font-semibold">Stream Key:</span>
-                                                        <span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
+                                                        <span class="font-semibold">Stream Key: </span><span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
                                                         {{if ne $user.Role 1}}
                                                             <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
                                                         {{end}}

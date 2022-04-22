@@ -1,8 +1,8 @@
 package dao
 
 import (
-	"TUM-Live/model"
 	"context"
+	"github.com/joschahenningsen/TUM-Live/model"
 )
 
 func CreateWorker(worker *model.Worker) error {

@@ -1,12 +1,12 @@
 package tools
 
 import (
-	"TUM-Live/dao"
-	"TUM-Live/model"
 	"errors"
 	"github.com/getsentry/sentry-go"
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
 	log "github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
@@ -22,6 +22,12 @@ func SetTemplates(t *template.Template) {
 	templ = t
 }
 
+// JWTClaims are the claims contained in a session
+type JWTClaims struct {
+	*jwt.RegisteredClaims
+	UserID uint
+}
+
 func InitContext(c *gin.Context) {
 	// no context initialisation required for static assets.
 	if strings.HasPrefix(c.Request.RequestURI, "/static") ||
@@ -30,21 +36,39 @@ func InitContext(c *gin.Context) {
 		return
 	}
 
-	session := sessions.Default(c)
-	userID := session.Get("UserID")
-	if userID != nil {
-		user, err := dao.GetUserByID(c, userID.(uint))
-		if err != nil {
-			session.Clear()
-			_ = session.Save()
-			c.Set("TUMLiveContext", TUMLiveContext{})
-			return
-		} else {
-			c.Set("TUMLiveContext", TUMLiveContext{User: &user})
-			return
-		}
+	// get the session
+	cookie, err := c.Cookie("jwt")
+	if err != nil {
+		c.Set("TUMLiveContext", TUMLiveContext{})
+		return
 	}
-	c.Set("TUMLiveContext", TUMLiveContext{})
+
+	token, err := jwt.ParseWithClaims(cookie, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+		key := Cfg.GetJWTKey().Public()
+		return key, nil
+	})
+	if err != nil {
+		log.Info("JWT parsing error: ", err)
+		c.Set("TUMLiveContext", TUMLiveContext{})
+		c.SetCookie("jwt", "", -1, "/", "", false, true)
+		return
+	}
+	if !token.Valid {
+		log.Info("JWT token is not valid")
+		c.Set("TUMLiveContext", TUMLiveContext{})
+		c.SetCookie("jwt", "", -1, "/", "", false, true)
+		return
+	}
+
+	user, err := dao.GetUserByID(c, token.Claims.(*JWTClaims).UserID)
+	if err != nil {
+		c.Set("TUMLiveContext", TUMLiveContext{})
+		return
+	} else {
+		c.Set("TUMLiveContext", TUMLiveContext{User: &user})
+		return
+	}
+
 }
 
 // RenderErrorPage renders the error page with the given error code and message.

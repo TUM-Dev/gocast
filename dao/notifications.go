@@ -1,6 +1,6 @@
 package dao
 
-import "TUM-Live/model"
+import "github.com/joschahenningsen/TUM-Live/model"
 
 // AddNotification adds a new notification to the database
 func AddNotification(notification *model.Notification) error {

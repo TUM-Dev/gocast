@@ -1,10 +1,10 @@
 package web
 
 import (
-	"TUM-Live/tools"
 	"errors"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"log"
 	"net/http"
 )
