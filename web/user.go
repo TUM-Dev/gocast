@@ -120,7 +120,12 @@ func loginWithTumCredentials(username, password string) (*sessionData, error) {
 }
 
 func LoginPage(c *gin.Context) {
-	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(false))
+	d := NewLoginPageData(false)
+	d.UseSAML = tools.Cfg.Saml != nil
+	if d.UseSAML {
+		d.IDPName = tools.Cfg.Saml.IdpName
+	}
+	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", d)
 }
 
 func LogoutPage(c *gin.Context) {
@@ -177,4 +182,7 @@ func NewLoginPageData(err bool) LoginPageData {
 type LoginPageData struct {
 	VersionTag string
 	Error      bool
+
+	UseSAML bool
+	IDPName string
 }

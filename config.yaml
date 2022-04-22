@@ -56,6 +56,7 @@ ldap:
   userdn: uid=%s,ou=people,dc=example,dc=de
 saml:
   idpMetadataURL: https://login.tum.de/idp/shibboleth
+  idpName: TUM Login
   cert: fullchain.pem
   privkey: privkey.pem
   entityID: https://live.rbg.tum.de/shib

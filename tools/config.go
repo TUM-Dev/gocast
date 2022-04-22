@@ -121,6 +121,7 @@ type Config struct {
 		Privkey        string `yaml:"privkey"`
 		EntityID       string `yaml:"entityID"`
 		RootURL        string `yaml:"rootURL"`
+		IdpName        string `yaml:"idpName"`
 	} `yaml:"saml"`
 	Paths struct {
 		Static string `yaml:"static"`
