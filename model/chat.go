@@ -53,19 +53,19 @@ type Chat struct {
 	Color            string `gorm:"not null;default:'#368bd6'" json:"color"`
 
 	Visible   sql.NullBool `gorm:"not null;default:true" json:"-"`
-	IsVisible bool			`gorm:"-" json:"visible"` // IsVisible is .Bool value of Visible for simplicity
+	IsVisible bool         `gorm:"-" json:"visible"` // IsVisible is .Bool value of Visible for simplicity
 
 	Likes     int    `gorm:"-" json:"likes"`
 	Liked     bool   `gorm:"-" json:"liked"`
 	UserLikes []User `gorm:"many2many:chat_user_likes" json:"-"`
 
 	AddressedToUsers []User `gorm:"many2many:chat_user_addressedto" json:"-"`
-	AddressedToIds []uint `gorm:"-" json:"addressedTo"`
+	AddressedToIds   []uint `gorm:"-" json:"addressedTo"`
 
 	Replies []Chat        `gorm:"foreignkey:ReplyTo" json:"replies"`
 	ReplyTo sql.NullInt64 `json:"replyTo"`
 
-	Resolved bool 	`gorm:"not null;default:false" json:"resolved"`
+	Resolved bool `gorm:"not null;default:false" json:"resolved"`
 }
 
 // getColors returns all colors chat names are mapped to

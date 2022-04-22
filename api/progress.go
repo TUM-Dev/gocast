@@ -1,9 +1,9 @@
 package api
 
 import (
-	"TUM-Live/dao"
-	"TUM-Live/model"
-	"TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"net/http"
 	"sync"
 	"time"

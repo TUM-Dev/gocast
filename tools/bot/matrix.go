@@ -1,11 +1,11 @@
 package bot
 
 import (
-	"TUM-Live/tools"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"io"
 	"math/rand"
 	"net/http"
