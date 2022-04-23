@@ -7,58 +7,121 @@ export enum UIEditMode {
     series,
 }
 
+class LectureFile {
+    readonly id: number;
+    readonly friendlyName: string;
+
+    constructor({ id, friendlyName }) {
+        this.id = id;
+        this.friendlyName = friendlyName;
+    }
+}
+
 export class Lecture {
+    static dateFormatOptions: Intl.DateTimeFormatOptions = {
+        weekday: "long",
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+    };
+    static timeFormatOptions: Intl.DateTimeFormatOptions = {
+        hour: "2-digit",
+        minute: "2-digit",
+    };
     static lectures: Lecture[] = [];
     readonly courseId: number;
     readonly courseSlug: string;
     readonly lectureId: number;
     readonly streamKey: string;
     readonly seriesIdentifier: string;
+    readonly color: string;
+    readonly vodViews: number;
+    readonly start: Date;
+    readonly end: Date;
+    readonly isLiveNow: boolean;
+    readonly isRecording: boolean;
+    readonly isPast: boolean;
+    readonly hasStats: boolean;
+    readonly files: LectureFile[];
 
     name: string;
     description: string;
-    lectureHall: string;
+    lectureHallId: string;
     uiEditMode: UIEditMode = UIEditMode.none;
     newName: string;
     newDescription: string;
-    newLectureHall: string;
+    newLectureHallId: string;
     isDirty = false;
     isSaving = false;
     isDeleted = false;
     lastErrors: string[] = [];
 
     constructor(
-        courseId: number,
-        lectureId: number,
-        seriesIdentifier: string,
-        name: string,
-        description: string,
-        lectureHall: string,
-        streamKey: string,
+        {
+            courseId,
+            lectureId,
+            seriesIdentifier,
+            name,
+            description,
+            lectureHallId,
+            streamKey,
+            isPast,
+            isLiveNow,
+            isRecording,
+            files,
+            hasStats,
+            color,
+            start,
+            end,
+        },
         courseSlug: string,
     ) {
         this.courseId = courseId;
         this.lectureId = lectureId;
         this.seriesIdentifier = seriesIdentifier;
-        this.lectureHall = lectureHall;
+        this.lectureHallId = lectureHallId;
         this.name = name;
         this.description = description;
         this.streamKey = streamKey;
         this.courseSlug = courseSlug;
+        this.isPast = isPast;
+        this.isLiveNow = isLiveNow;
+        this.isRecording = isRecording;
+        this.hasStats = hasStats;
+        this.color = color;
+        this.start = new Date(start);
+        this.end = new Date(end);
+        this.files = files === null ? [] : files.map((file) => new LectureFile(file));
         Lecture.lectures.push(this);
+    }
+
+    startDateFormatted() {
+        return this.start.toLocaleDateString("en-US", Lecture.dateFormatOptions);
+    }
+
+    startTimeFormatted() {
+        return this.start.toLocaleTimeString("en-US", Lecture.timeFormatOptions);
+    }
+
+    endFormatted() {
+        return this.end.toLocaleDateString("en-US", Lecture.dateFormatOptions);
+    }
+
+    endTimeFormatted() {
+        return this.end.toLocaleTimeString("en-US", Lecture.timeFormatOptions);
     }
 
     updateIsDirty() {
         this.isDirty =
             this.newName !== this.name ||
             this.newDescription !== this.description ||
-            this.newLectureHall !== this.lectureHall;
+            this.newLectureHallId !== this.lectureHallId;
     }
 
     resetNewFields() {
         this.newName = this.name;
         this.newDescription = this.description;
-        this.newLectureHall = this.lectureHall;
+        this.newLectureHallId = this.lectureHallId;
         this.isDirty = false;
         this.lastErrors = [];
     }
@@ -83,7 +146,7 @@ export class Lecture {
         const promises = [];
         if (this.newName !== this.name) promises.push(this.saveNewLectureName());
         if (this.newDescription !== this.description) promises.push(this.saveNewLectureDescription());
-        if (this.newLectureHall !== this.lectureHall) promises.push(this.saveNewLectureHall());
+        if (this.newLectureHallId !== this.lectureHallId) promises.push(this.saveNewLectureHall());
 
         const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
 
@@ -146,10 +209,10 @@ export class Lecture {
     }
 
     async saveNewLectureHall() {
-        const res = await saveLectureHall([this.lectureId], this.newLectureHall);
+        const res = await saveLectureHall([this.lectureId], this.newLectureHallId);
 
         if (res.status == StatusCodes.OK) {
-            this.lectureHall = this.newLectureHall;
+            this.lectureHallId = this.newLectureHallId;
         }
 
         return res;
@@ -163,7 +226,7 @@ export class Lecture {
                 if (lecture.seriesIdentifier === this.seriesIdentifier && !lecture.isDeleted) {
                     lecture.name = this.name;
                     lecture.description = this.description;
-                    lecture.lectureHall = this.lectureHall;
+                    lecture.lectureHallId = this.lectureHallId;
                     lecture.uiEditMode = UIEditMode.none;
                 }
             }
@@ -204,6 +267,12 @@ export class Lecture {
             return res;
         }
     }
+}
+
+export function decodeHtml(html) {
+    const txt = document.createElement("textarea");
+    txt.innerHTML = html;
+    return txt.value;
 }
 
 export async function deleteLectures(cid: number, lids: number[]) {

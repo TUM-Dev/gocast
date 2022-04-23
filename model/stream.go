@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/russross/blackfriday/v2"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -151,15 +152,27 @@ func (s Stream) Color() string {
 }
 
 func (s Stream) GetJson() string {
+	var files []gin.H
+	for _, file := range s.Files {
+		files = append(files, gin.H{
+			"id":           file.ID,
+			"friendlyName": file.GetFriendlyFileName(),
+		})
+	}
+
 	if m, err := json.Marshal(gin.H{
-		"id":               s.Model.ID,
+		"lectureId":        s.Model.ID,
 		"courseId":         s.CourseID,
 		"seriesIdentifier": s.SeriesIdentifier,
 		"name":             s.Name,
 		"description":      s.Description,
 		"lectureHallId":    s.LectureHallID,
 		"streamKey":        s.StreamKey,
+		"isLiveNow":        s.LiveNow,
+		"isRecording":      s.Recording,
 		"isPast":           s.IsPast(),
+		"hasStats":         s.Stats != nil,
+		"files":            files,
 		"color":            s.Color(),
 		"start":            s.Start,
 		"end":              s.End,

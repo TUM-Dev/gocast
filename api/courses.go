@@ -444,7 +444,7 @@ func updateLectureSeries(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't update lecture series")
 		return
 	}
-	// TODO: broadcastStream updates of whole series
+	// Series changes could be theoretically broadcasted here through the websocket to live listeners.
 }
 
 type renameLectureRequest struct {
