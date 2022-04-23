@@ -88,13 +88,22 @@
                         {{if not $course.Streams}}
                             <p class="text-3 p-4">It might take a minute to load your lectures from TUMOnline</p>
                         {{end}}
-                        <div class="flex" :class="sortAsc ? 'flex-col' : 'flex-col-reverse'">
-                            {{range $lecture := $course.Streams }}
-                                <li id="lecture-li-{{$lecture.Model.ID}}"
-                                    {{with $lecture}}
-                                    x-data='{ lecture: new admin.Lecture({{$course.Model.ID}}, {{.Model.ID}}, "{{.SeriesIdentifier}}", {{.GetNameJson}}, {{.GetDescriptionJson}}, "{{.LectureHallID}}", "{{.StreamKey}}", "{{$course.Slug}}") }'
-                                    {{end}}
-                                    x-show="!lecture.isDeleted && (!filterPast || !{{$lecture.IsPast}})"
+                        <div
+                                class="flex"
+                                :class="sortAsc ? 'flex-col' : 'flex-col-reverse'"
+                                x-data="{
+                                    lectures: [
+                                        {{range $lecture := $course.Streams }}
+                                            {{with $lecture}}
+                                                new admin.Lecture(JSON.parse({{.GetJson}}),"{{$course.Slug}}"),
+                                            {{end}}
+                                        {{end}}
+                                    ]
+                                }"
+                        >
+                        <template x-for="lecture in lectures">
+                                <li :id="'lecture-li-' + lecture.lectureId"
+                                    x-show="!lecture.isDeleted && (!filterPast || !lecture.isPast)"
                                     :key="lecture.lectureId"
                                     class="w-full mb-4 pb-4 relative dark:bg-secondary bg-gray-100">
                                     <div class="border-t-4 border-{{$lecture.Color}} flex justify-between mb-2">

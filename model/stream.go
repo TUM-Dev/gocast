@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
-	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
 )
 
@@ -150,16 +150,21 @@ func (s Stream) Color() string {
 	}
 }
 
-func (s Stream) GetNameJson() string {
-	if m, err := json.Marshal(s.Name); err == nil {
+func (s Stream) GetJson() string {
+	if m, err := json.Marshal(gin.H{
+		"id":               s.Model.ID,
+		"courseId":         s.CourseID,
+		"seriesIdentifier": s.SeriesIdentifier,
+		"name":             s.Name,
+		"description":      s.Description,
+		"lectureHallId":    s.LectureHallID,
+		"streamKey":        s.StreamKey,
+		"isPast":           s.IsPast(),
+		"color":            s.Color(),
+		"start":            s.Start,
+		"end":              s.End,
+	}); err == nil {
 		return string(m)
 	}
-	return "\"\""
-}
-
-func (s Stream) GetDescriptionJson() string {
-	if m, err := json.Marshal(s.Description); err == nil {
-		return string(m)
-	}
-	return "\"\""
+	return "null"
 }
