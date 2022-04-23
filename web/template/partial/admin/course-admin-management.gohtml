@@ -22,7 +22,7 @@
             <template x-for="user in m.users" :key="user.id">
                 <tr>
                     <td class="p-2 whitespace-nowrap">
-                        <div class="font-medium" x-text="user.name"></div>
+                        <div class="font-medium" x-text="user.name + (user.lastName?' '+user.lastName:'')"></div>
                     </td>
                     <td class="p-2 whitespace-nowrap">
                         <div class="text-left" x-text="user.login"></div>
@@ -52,7 +52,7 @@
             <template x-for="user in m.searchResult" :key="user.id">
                 <tr>
                     <td class="p-2 whitespace-nowrap">
-                        <div class="font-medium" x-text="user.name"></div>
+                        <div class="font-medium" x-text="user.name + (user.lastName?' '+user.lastName:'')"></div>
                     </td>
                     <td class="p-2 whitespace-nowrap">
                         <div class="text-left" x-text="user.login"></div>

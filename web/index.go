@@ -1,13 +1,14 @@
 package web
 
 import (
-	"TUM-Live/dao"
-	"TUM-Live/model"
-	"TUM-Live/tools"
-	"TUM-Live/tools/tum"
 	"context"
+	"github.com/RBG-TUM/commons"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/tum"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net/http"
@@ -194,7 +195,7 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span) {
 
 	sortCourses(courses)
 
-	d.Courses = courses
+	d.Courses = commons.Unique(courses, func(c model.Course) uint { return c.ID })
 }
 
 // LoadPublicCourses Load public courses of user. Filter courses which are already in IndexData.Courses
@@ -211,17 +212,8 @@ func (d *IndexData) LoadPublicCourses() {
 	if err != nil {
 		d.PublicCourses = []model.Course{}
 	} else {
-		var publicFiltered []model.Course
-
-		for _, c := range public {
-			if !tools.CourseListContains(d.Courses, c.ID) {
-				publicFiltered = append(publicFiltered, c)
-			}
-		}
-
-		sortCourses(publicFiltered)
-
-		d.PublicCourses = publicFiltered
+		sortCourses(public)
+		d.PublicCourses = commons.Unique(public, func(c model.Course) uint { return c.ID })
 	}
 }
 

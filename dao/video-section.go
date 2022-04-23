@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/model"
 )
 
 func CreateVideoSection(section *model.VideoSection) error {
@@ -24,7 +24,7 @@ func UpdateVideoSection(section *model.VideoSection) error {
 }
 
 func DeleteVideoSection(videoSectionID uint) error {
-	return DB.Delete(&model.VideoSection{},"id = ?", videoSectionID).Error
+	return DB.Delete(&model.VideoSection{}, "id = ?", videoSectionID).Error
 }
 
 func GetVideoSectionByStreamID(streamID uint) ([]model.VideoSection, error) {
@@ -32,5 +32,3 @@ func GetVideoSectionByStreamID(streamID uint) ([]model.VideoSection, error) {
 	err := DB.Order("start_hours, start_minutes, start_seconds ASC").Find(&sections, "stream_id = ?", streamID).Error
 	return sections, err
 }
-
-

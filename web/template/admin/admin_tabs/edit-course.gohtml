@@ -189,18 +189,16 @@
                                                         </div>
                                                     {{end}}
                                                     {{if not $lecture.LectureHallID}}
-                                                        <p class="mt-2">
-                                                            <span class="font-semibold">Stream Server:</span>
-                                                            <span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
-                                                            <i class="fas fa-clipboard hover:text-purple-500"
-                                                               onclick="admin.copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
-                                                            <br>
-                                                            <span class="font-semibold">Stream Key:</span>
-                                                            <span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
-                                                            {{if ne $user.Role 1}}
-                                                                <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
-                                                            {{end}}
-                                                        </p>
+                                                    <p class="mt-2">
+                                                        <span class="font-semibold">Stream Server: </span><span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
+                                                        <i class="fas fa-clipboard hover:text-purple-500"
+                                                           onclick="admin.copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
+                                                        <br>
+                                                        <span class="font-semibold">Stream Key: </span><span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
+                                                        {{if ne $user.Role 1}}
+                                                            <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
+                                                        {{end}}
+                                                    </p>
                                                     {{else if eq $user.Role 2}}
                                                         This lecture will be streamed from <span
                                                                 class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}{{if eq $lectureHall.Model.ID $lecture.LectureHallID}}{{$lectureHall.Name}}{{end}}{{end}}</span>.
@@ -424,7 +422,7 @@
                                                 <label x-show="!formData.premiere && !formData.vodup && !loading"
                                                        for="end" class="md:w-1/4 w-full">
                                                     <span class="font-semibold p-2">End</span>
-                                                    <span x-show="formData.formatedDuration != ''"
+                                                    <span x-show="formData.formatedDuration !== ''"
                                                           class="text-sm font-light opacity-75">
                                                         ( <span x-text="formData.formatedDuration"></span> )
                                                     </span>

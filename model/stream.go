@@ -3,11 +3,12 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Stream struct {
@@ -43,9 +44,16 @@ type Stream struct {
 	Files            []File `gorm:"foreignKey:StreamID"`
 	Paused           bool   `gorm:"default:false"`
 	StreamName       string
-	Duration         uint32   `gorm:"default:null"`
-	StreamWorkers    []Worker `gorm:"many2many:stream_workers;"`
+	Duration         uint32           `gorm:"default:null"`
+	StreamWorkers    []Worker         `gorm:"many2many:stream_workers;"`
+	StreamProgresses []StreamProgress `gorm:"foreignKey:StreamID"`
+	Watched          bool             `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 	VideoSections    []VideoSection
+}
+
+// IsDownloadable returns true if the stream is a recording and has at least one file associated with it.
+func (s Stream) IsDownloadable() bool {
+	return s.Recording && len(s.Files) > 0
 }
 
 // IsSelfStream returns whether the stream is a scheduled stream in a lecture hall
@@ -122,9 +130,6 @@ func (s Stream) FriendlyTime() string {
 }
 
 func (s Stream) FriendlyNextDate() string {
-	if now.With(s.Start).Before(time.Now()) {
-		return "No upcoming stream"
-	}
 	if now.With(s.Start).EndOfDay() == now.EndOfDay() {
 		return fmt.Sprintf("Today, %02d:%02d", s.Start.Hour(), s.Start.Minute())
 	}

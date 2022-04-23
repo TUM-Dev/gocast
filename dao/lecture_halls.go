@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"time"
@@ -11,6 +11,11 @@ func FindPreset(lectureHallID string, presetID string) (model.CameraPreset, erro
 	var preset model.CameraPreset
 	err := DB.First(&preset, "preset_id = ? AND lecture_hall_id = ?", presetID, lectureHallID).Error
 	return preset, err
+}
+
+// UnsetDefaults makes all camera presets not default
+func UnsetDefaults(lectureHallID string) error {
+	return DB.Model(&model.CameraPreset{}).Where("lecture_hall_id = ?", lectureHallID).Update("default", nil).Error
 }
 
 func SavePreset(preset model.CameraPreset) error {

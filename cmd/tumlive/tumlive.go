@@ -1,20 +1,18 @@
 package main
 
 import (
-	"TUM-Live/api"
-	"TUM-Live/dao"
-	"TUM-Live/model"
-	"TUM-Live/tools"
-	"TUM-Live/tools/tum"
-	"TUM-Live/web"
 	"fmt"
 	"github.com/dgraph-io/ristretto"
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/gzip"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/api"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/tum"
+	"github.com/joschahenningsen/TUM-Live/web"
 	"github.com/pkg/profile"
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
@@ -30,22 +28,15 @@ import (
 
 var VersionTag = "development"
 
-// GinServer launch gin server
+// GinServer launches the gin server
 func GinServer() (err error) {
 	router := gin.Default()
 	gin.SetMode(gin.ReleaseMode)
 	// capture performance with sentry
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
-	store := cookie.NewStore([]byte(tools.Cfg.CookieStoreSecret))
 	if VersionTag != "development" {
-		store.Options(sessions.Options{
-			HttpOnly: true,
-			Secure:   true,
-			SameSite: http.SameSiteStrictMode,
-			MaxAge:   86400 * 30,
-		})
+		tools.CookieSecure = true
 	}
-	router.Use(sessions.Sessions("TUMLiveSessionV6", store))
 
 	router.Use(tools.InitContext)
 
@@ -59,7 +50,7 @@ func GinServer() (err error) {
 	err = router.Run(":8081")
 	if err != nil {
 		sentry.CaptureException(err)
-		log.WithError(err).Fatal("Error starting server")
+		log.WithError(err).Fatal("Error starting tumlive")
 	}
 	return
 }
