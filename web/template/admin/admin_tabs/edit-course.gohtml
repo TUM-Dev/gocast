@@ -304,14 +304,9 @@
                                                            x-init="flatpickr($refs.end, {enableTime: true, noCalendar: true, dateFormat: 'H:i', time_24hr: true })"/>
                                                 </label>
                                                 <label class="relative"
-                                                       x-show="formData.premiere || formData.vodup && !loading"
-                                                       x-data="{ showTooltip:false }">
-                                                    <span class="font-semibold p-2">Video File <i
-                                                                class="text-warn fas fa-exclamation-triangle"
-                                                                @mouseover="showTooltip=true"
-                                                                @mouseleave="showTooltip=false">
-                                                        </i></span>
-                                                    <input type="file" accept="video/mp4"
+                                                       x-show="formData.premiere || formData.vodup && !loading">
+                                                    <span class="font-semibold p-2">Video File <span class="text-5">(mp4, if possible h264)</span></span>
+                                                    <input type="file" accept="video/mp4" class="border-0"
                                                            x-on:change="formData.file = Object.values($event.target.files)">
                                                 </label>
 
