@@ -404,6 +404,7 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 		return nil, nil
 	}
 	stream.Recording = true
+	stream.StreamStatus = model.StatusUnknown
 	switch req.SourceType {
 	case "CAM":
 		stream.PlaylistUrlCAM = req.HLSUrl
