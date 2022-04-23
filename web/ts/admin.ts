@@ -14,19 +14,19 @@ export class AdminUserList {
         this.currentIndex = 0;
         this.updateVisibleRows();
 
-        this.numberOfPages = Math.floor(document.getElementById("admin-user-list").children.length / this.rowsPerPage);
+        this.numberOfPages = Math.ceil(document.getElementById("admin-user-list").children.length / this.rowsPerPage);
     }
 
     currentIndexString(): string {
         return `${this.currentIndex + 1}/${this.numberOfPages}`;
     }
 
-    shouldShowPrev(): boolean {
-        return this.currentIndex > 0;
+    prevDisabled(): boolean {
+        return this.currentIndex === 0;
     }
 
-    shouldShowNext(): boolean {
-        return this.currentIndex < this.numberOfPages - 1;
+    nextDisabled(): boolean {
+        return this.currentIndex === this.numberOfPages - 1;
     }
 
     next() {

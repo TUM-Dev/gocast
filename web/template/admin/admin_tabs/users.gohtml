@@ -2,11 +2,11 @@
     <h2 class="text-2xl text-1 my-auto mt-4 font-medium">User Management</h2>
     <div class="dark:border-secondary bg-gray-100 rounded-md mb-6overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter">
         {{template "user-search"}}
-        <div class="w-full p-3" x-data="{userlist: new admin.AdminUserList()}">
+        <div class="grid gap-5 w-full p-3" x-data="{userlist: new admin.AdminUserList()}">
             <div class="border rounded-lg dark:border-gray-800 shadow">
                 <table class="table-auto w-full">
                     <thead>
-                    <tr class="dark:bg-gray-600 bg-gray-200 text-4 uppercase text-sm leading-normal dark:bg-secondary rounded-md">
+                    <tr class="dark:bg-gray-600 bg-gray-200 text-4 uppercase text-sm leading-normal rounded-t-lg">
                         <th class="py-3 px-6 text-left">Name</th>
                         <th class="py-3 px-6 text-left">Email</th>
                         <th class="py-3 px-6 text-center">Role</th>
@@ -15,7 +15,8 @@
                     </thead>
                     <tbody id="admin-user-list" class="text-4 text-s m rounded-sm font-light">
                     {{range $index, $user := .}}
-                        <tr id="user{{$user.Model.ID}}" class="border-gray-500 bg-white dark:bg-secondary dark:hover:bg-transparent hover:bg-transparent"
+                        <tr id="user{{$user.Model.ID}}"
+                            class="border-gray-500 bg-white dark:bg-secondary dark:hover:bg-transparent hover:bg-transparent"
                             data-userlist-index="{{$index}}">
                             <td class="py-3 px-6 text-left whitespace-nowrap">
                                 <div class="flex items-center">
@@ -51,41 +52,48 @@
                 </table>
                 <div class="flex justify-center py-2 border-t dark:border-gray-800 bg-white dark:bg-secondary rounded-b-lg">
                     <div class="flex rounded bg-transparent text-4">
-                        <button class="flex h-8 w-8"
-                                x-show="userlist.shouldShowPrev()"
+                        <button class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
+                                :disabled="userlist.prevDisabled()"
                                 @click="userlist.prev()">
                             <i class="text-sm m-auto fa fa-chevron-left"></i>
                         </button>
                         <div class="flex h-8 w-8 px-2">
                             <span class="text-sm font-semibold m-auto" x-text="userlist.currentIndexString()"></span>
                         </div>
-                        <button class="flex h-8 w-8"
-                                x-show="userlist.shouldShowNext()"
+                        <button class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
+                                :disabled="userlist.nextDisabled()"
                                 @click="userlist.next()">
                             <i class="text-sm m-auto fa fa-chevron-right"></i>
                         </button>
                     </div>
                 </div>
             </div>
-            <div class="dark:hover:bg-primary">
-                <div class="py-3 px-6 text-left whitespace-nowrap">
-                    <div class="flex items-center">
-                        <input id="name" name="name" placeholder="Name" type="text" autocomplete="off"
-                               class="focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500"/>
-                    </div>
-                </div>
-                <div class="py-3 px-6 text-left">
-                    <div class="flex items-center">
-                        <input id="email" name="email" type="email" placeholder="Email" autocomplete="off"
-                               class="focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500"/>
-                    </div>
-                </div>
-                <div class="py-3 px-6 text-center"></div>
-                <div class="py-3 px-6 text-center">
-                    <div class="flex item-center justify-center">
-                        <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
-                            <i onclick="admin.createUser()" id="createUser" class="fas fa-plus"></i>
+            <div class="">
+                <h2 class="font-bold pl-1 mb-2">New User</h2>
+                <div class="w-full bg-white rounded-lg shadow border dark:bg-secondary dark:border-gray-600">
+                    <div class="flex flex-wrap w-full py-3 px-6 ">
+                        <div class="w-full md:w-1/2 p-1 text-left whitespace-nowrap">
+                            <div class="flex items-center">
+                                <input id="name" name="name" placeholder="Name" type="text" autocomplete="off"
+                                       class="focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500"/>
+                            </div>
                         </div>
+                        <div class="w-full md:w-1/2 p-1 text-left">
+                            <div class="flex items-center">
+                                <input id="email" name="email" type="email" placeholder="Email" autocomplete="off"
+                                       class="focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-full mt-2">
+                        <button id="createUser"
+                                class="w-full py-1 rounded-b-lg bg-gray-100 dark:bg-gray-600 hover:bg-transparent dark:hover:bg-transparent cursor-pointer"
+                                type="button"
+                                @click="admin.createUser()">
+                            <span class="text-sm font-semibold m-auto text-3">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                        </button>
                     </div>
                 </div>
             </div>
