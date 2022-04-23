@@ -55,9 +55,6 @@ export class VideoSection {
             startSeconds: 0,
             streamID: this.streamID,
         };
-        (document.getElementById("startHours") as HTMLInputElement).value = null;
-        (document.getElementById("startMinutes") as HTMLInputElement).value = null;
-        (document.getElementById("startSeconds") as HTMLInputElement).value = null;
     }
 }
 
