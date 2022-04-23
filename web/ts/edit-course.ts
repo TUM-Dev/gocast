@@ -172,7 +172,7 @@ export function createLectureForm() {
                     // todo: file: undefined,
                 };
                 if (this.formData.recurring) {
-                    for (const date of this.formData.recurringDates.filter(({enabled}) => enabled)) {
+                    for (const date of this.formData.recurringDates.filter(({ enabled }) => enabled)) {
                         payload.dateSeries.push(date.date.toISOString());
                     }
                 }
@@ -193,7 +193,7 @@ export function createLectureForm() {
         },
         uploadVod() {
             const xhr = new XMLHttpRequest();
-            let vodUploadFormData = new FormData();
+            const vodUploadFormData = new FormData();
             vodUploadFormData.append("file", this.formData.file[0]);
             xhr.open("POST", `/api/course/${this.courseID}/uploadVOD?start=${this.formData.start}`);
             xhr.send(vodUploadFormData);
