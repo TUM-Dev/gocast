@@ -275,12 +275,26 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 	}
 
 	if needsConversion {
+		S.startTranscoding(c.getStreamName())
 		err := transcode(&c)
 		if err != nil {
 			log.WithError(err).Error("Error transcoding")
 		}
+		notifyTranscodingDone(&c)
+		S.endTranscoding(c.getStreamName())
+
 	}
+	S.startSilenceDetection(&c)
+	defer S.endSilenceDetection(&c)
+	sd := NewSilenceDetector(c.getTranscodingFileName())
+	err = sd.ParseSilence()
+	if err != nil {
+		log.WithField("File", c.getTranscodingFileName()).WithError(err).Error("Detecting silence failed.")
+		return
+	}
+	notifySilenceResults(sd.Silences, c.streamId)
 	upload(&c)
+	notifyUploadDone(&c)
 }
 
 // StreamContext contains all important information on a stream

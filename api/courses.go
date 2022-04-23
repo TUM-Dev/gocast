@@ -56,7 +56,6 @@ const WorkerHTTPPort = "8060"
 
 type uploadVodReq struct {
 	Start time.Time `form:"start" binding:"required"`
-	End   time.Time `form:"end" binding:"required"`
 	Title string    `form:"title"`
 }
 
@@ -72,7 +71,7 @@ func uploadVOD(c *gin.Context) {
 	stream := model.Stream{
 		Name:         req.Title,
 		Start:        req.Start,
-		End:          req.End,
+		End:          req.Start.Add(time.Hour),
 		CourseID:     tlctx.Course.ID,
 		StreamStatus: model.StatusConverting,
 	}

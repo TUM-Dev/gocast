@@ -8,7 +8,7 @@ import (
 type UploadKeyDao interface {
 	GetUploadKey(key string) (model.UploadKey, error)
 	CreateUploadKey(key string, stream uint) error
-	DeleteUploadKey(key string) error
+	DeleteUploadKey(key model.UploadKey) error
 }
 
 type uploadKeyDao struct {
@@ -23,8 +23,8 @@ func (u uploadKeyDao) CreateUploadKey(key string, stream uint) error {
 	return u.db.Create(&model.UploadKey{UploadKey: key, StreamID: stream}).Error
 }
 
-func (u uploadKeyDao) DeleteUploadKey(key string) error {
-	return u.db.Delete(&model.UploadKey{}, "upload_key = ?", key).Error
+func (u uploadKeyDao) DeleteUploadKey(key model.UploadKey) error {
+	return u.db.Unscoped().Delete(&key).Error
 }
 
 func NewUploadKeyDao() UploadKeyDao {

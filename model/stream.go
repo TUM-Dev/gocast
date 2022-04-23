@@ -61,6 +61,10 @@ type Stream struct {
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }
 
+func (s Stream) IsConverting() bool {
+	return s.StreamStatus == StatusConverting
+}
+
 // IsDownloadable returns true if the stream is a recording and has at least one file associated with it.
 func (s Stream) IsDownloadable() bool {
 	return s.Recording && len(s.Files) > 0

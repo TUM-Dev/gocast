@@ -158,34 +158,52 @@ export function createLectureForm() {
         },
         submitData() {
             this.loading = true;
-            const payload = {
-                title: this.formData.title,
-                lectureHallId: this.formData.lectureHallId.toString(),
-                premiere: this.formData.premiere,
-                vodup: this.formData.vodup,
-                start: this.formData.start,
-                duration: this.formData.duration,
-                dateSeries: [],
-                // todo: file: undefined,
-            };
-            if (this.formData.recurring) {
-                for (const date of this.formData.recurringDates.filter(({ enabled }) => enabled)) {
-                    payload.dateSeries.push(date.date.toISOString());
+            if (this.formData.vodup) {
+                this.uploadVod();
+            } else {
+                const payload = {
+                    title: this.formData.title,
+                    lectureHallId: this.formData.lectureHallId.toString(),
+                    premiere: this.formData.premiere,
+                    vodup: this.formData.vodup,
+                    start: this.formData.start,
+                    duration: this.formData.duration,
+                    dateSeries: [],
+                    // todo: file: undefined,
+                };
+                if (this.formData.recurring) {
+                    for (const date of this.formData.recurringDates.filter(({enabled}) => enabled)) {
+                        payload.dateSeries.push(date.date.toISOString());
+                    }
                 }
+                if (this.formData.premiere || this.formData.vodup) {
+                    // todo: payload.file = this.formData.file[0];
+                    payload.duration = 0; // premieres have no explicit end set -> use "0" here
+                }
+                postData("/api/course/" + this.courseID + "/createLecture", payload)
+                    .then(() => {
+                        this.loading = false;
+                        window.location.reload();
+                    })
+                    .catch(() => {
+                        this.loading = false;
+                        this.error = true;
+                    });
             }
-            if (this.formData.premiere || this.formData.vodup) {
-                // todo: payload.file = this.formData.file[0];
-                payload.duration = 0; // premieres have no explicit end set -> use "0" here
-            }
-            postData("/api/course/" + this.courseID + "/createLecture", payload)
-                .then(() => {
-                    this.loading = false;
+        },
+        uploadVod() {
+            const xhr = new XMLHttpRequest();
+            let vodUploadFormData = new FormData();
+            vodUploadFormData.append("file", this.formData.file[0]);
+            xhr.open("POST", `/api/course/${this.courseID}/uploadVOD?start=${this.formData.start}`);
+            xhr.send(vodUploadFormData);
+            xhr.onloadend = () => {
+                if (xhr.status === 200) {
                     window.location.reload();
-                })
-                .catch(() => {
-                    this.loading = false;
+                } else {
                     this.error = true;
-                });
+                }
+            };
         },
     };
 }
