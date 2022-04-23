@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/joschahenningsen/TUM-Live/worker/api"
-	"github.com/joschahenningsen/TUM-Live/worker/selfstream"
+	"github.com/joschahenningsen/TUM-Live/worker/rest"
 	"github.com/joschahenningsen/TUM-Live/worker/worker"
 	"github.com/makasim/sentryhook"
 	"github.com/pkg/profile"
@@ -36,14 +36,6 @@ func main() {
 	prepare()
 
 	worker.VersionTag = VersionTag
-	//list files in directory
-	dir, err := os.ReadDir("/recordings")
-	if err != nil {
-		log.WithError(err).Error("cant read dir")
-	}
-	for _, d := range dir {
-		fmt.Println(d.Name())
-	}
 	defer profile.Start(profile.MemProfile).Stop()
 	go func() {
 		_ = http.ListenAndServe(":8082", nil) // debug endpoint
@@ -72,7 +64,7 @@ func main() {
 	}
 	// setup apis
 	go api.InitApi(":50051")
-	go selfstream.InitApi(":8060")
+	go rest.InitApi(":8060")
 	worker.Setup()
 	awaitSignal()
 }

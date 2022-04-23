@@ -1,9 +1,11 @@
 package worker
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -212,6 +214,75 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	}
 }
 
+func HandleUploadRestReq(uploadKey string, localFile string) {
+	client, conn, err := GetClient()
+	if err != nil {
+		log.WithError(err).Error("Error getting client")
+		return
+	}
+	defer closeConnection(conn)
+	resp, err := client.GetStreamInfoForUpload(context.Background(), &pb.GetStreamInfoForUploadRequest{
+		UploadKey: uploadKey,
+		WorkerID:  cfg.WorkerID,
+	})
+	if err != nil {
+		log.WithError(err).Error("Error getting stream info for upload")
+		return
+	}
+	c := StreamContext{
+		streamId:      resp.StreamID,
+		courseSlug:    resp.CourseSlug,
+		teachingTerm:  resp.CourseTerm,
+		teachingYear:  resp.CourseYear,
+		startTime:     resp.StreamStart.AsTime(),
+		endTime:       resp.StreamEnd.AsTime(),
+		streamVersion: "COMB",
+		publishVoD:    true,
+		recordingPath: &localFile,
+	}
+
+	needsConversion := false
+
+	if container, err := getContainer(localFile); err != nil {
+		log.WithError(err).Error("Error getting container")
+		needsConversion = true
+	} else if !strings.Contains(container, "mp4") {
+		needsConversion = true
+		log.Debugf("Wrong container: %d, converting", container)
+	}
+
+	if codec, err := getCodec(localFile); err != nil {
+		log.WithError(err).Warn("Error getting codec")
+		needsConversion = true
+	} else if codec != "h264" {
+		needsConversion = true
+		log.Debugf("wrong codec: %s, converting", codec)
+	}
+
+	level, err := getLevel(localFile)
+	if err != nil {
+		log.WithError(err).Warn("Error getting level")
+		needsConversion = true
+	}
+	if levelInt, err := strconv.Atoi(level); err != nil {
+		log.WithError(err).Warnf("Error converting level(%s) to int", level)
+		needsConversion = true
+	} else {
+		if levelInt > 42 {
+			needsConversion = true
+			log.Debugf("Level too high: %d, converting", levelInt)
+		}
+	}
+
+	if needsConversion {
+		err := transcode(&c)
+		if err != nil {
+			log.WithError(err).Error("Error transcoding")
+		}
+	}
+	upload(&c)
+}
+
 // StreamContext contains all important information on a stream
 type StreamContext struct {
 	streamId      uint32         //id of the stream
@@ -237,11 +308,16 @@ type StreamContext struct {
 	duration uint32 //duration of the stream in seconds
 
 	TranscodingSuccessful bool // TranscodingSuccessful is true if the transcoding was successful
+
+	recordingPath *string // recordingPath: path to the recording (overrides default path if set)
 }
 
 // getRecordingFileName returns the filename a stream should be saved to before transcoding.
 // example: /recordings/eidi_2021-09-23_10-00_COMB.ts
 func (s StreamContext) getRecordingFileName() string {
+	if s.recordingPath != nil {
+		return *s.recordingPath
+	}
 	if !s.isSelfStream {
 		return fmt.Sprintf("%s/%s.ts",
 			cfg.TempDir,

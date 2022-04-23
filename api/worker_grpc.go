@@ -417,6 +417,29 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 	return &pb.Status{Ok: true}, nil
 }
 
+func (s server) GetStreamInfoForUpload(ctx context.Context, request *pb.GetStreamInfoForUploadRequest) (*pb.GetStreamInfoForUploadResponse, error) {
+	_, err := dao.GetWorkerByID(ctx, request.WorkerID)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, "invalid worker id")
+	}
+	key, err := dao.NewUploadKeyDao().GetUploadKey(request.UploadKey)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "key not found")
+	}
+	course, err := dao.GetCourseById(ctx, key.Stream.CourseID)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "course not found")
+	}
+	return &pb.GetStreamInfoForUploadResponse{
+		CourseSlug:  course.Slug,
+		CourseTerm:  course.TeachingTerm,
+		CourseYear:  uint32(course.Year),
+		StreamStart: timestamppb.New(key.Stream.Start),
+		StreamEnd:   timestamppb.New(key.Stream.End),
+		StreamID:    uint32(key.StreamID),
+	}, nil
+}
+
 //NotifyStreamStarted receives stream started events from workers
 func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
 	mutex.Lock()
