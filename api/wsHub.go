@@ -1,8 +1,6 @@
 package api
 
 import (
-	"TUM-Live/dao"
-	"TUM-Live/tools"
 	"context"
 	"encoding/json"
 	"errors"
@@ -10,6 +8,8 @@ import (
 	"github.com/gabstv/melody"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"

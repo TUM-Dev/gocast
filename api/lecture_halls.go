@@ -1,15 +1,15 @@
 package api
 
 import (
-	"TUM-Live/dao"
-	"TUM-Live/model"
-	"TUM-Live/tools"
 	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
@@ -22,6 +22,7 @@ func configGinLectureHallApiRouter(router *gin.Engine) {
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
 	admins.PUT("/lectureHall/:id", updateLectureHall)
+	admins.POST("/lectureHall/:id/defaultPreset", updateLectureHallsDefaultPreset)
 	admins.DELETE("/lectureHall/:id", deleteLectureHall)
 	admins.POST("/createLectureHall", createLectureHall)
 	admins.POST("/takeSnapshot/:lectureHallID/:presetID", takeSnapshot)
@@ -74,6 +75,35 @@ func updateLectureHall(c *gin.Context) {
 	if err != nil {
 		log.WithError(err).Error("Error while updating lecture hall")
 		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+}
+
+func updateLectureHallsDefaultPreset(c *gin.Context) {
+	var req struct {
+		PresetID uint `json:"presetID"`
+	}
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	preset, err := dao.FindPreset(c.Param("id"), fmt.Sprintf("%d", req.PresetID))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	preset.Default = true
+	err = dao.UnsetDefaults(c.Param("id"))
+	if err != nil {
+		log.WithError(err).Error("Error unsetting default presets")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	err = dao.SavePreset(preset)
+	if err != nil {
+		log.WithError(err).Error("Error saving preset as default")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 }
 

@@ -17,25 +17,31 @@
     </div>
     <div class="m-auto flex flex-wrap pb-3 md:h-5/6 md:grid md:grid-rows-6 md:grid-cols-5 md:gap-4 md:pb-0">
         <!-- VoD -->
-        <div {{if .IndexData.TUMLiveContext}}x-init="watchedTracker.init({{.WatchedData}})" x-data="watchedTracker = new global.WatchedTracker" {{end}}class="w-full md:row-span-6 md:col-span-3">
-        <div x-data="{asc: false{{if .IndexData.TUMLiveContext.User}}, filterWatched: true, watchedAll: watchedTracker.userWatchedAll(){{end}}}"
+        <div {{if .IndexData.TUMLiveContext}}x-init="watchedTracker.init({{.WatchedData}})"
+             x-data="watchedTracker = new global.WatchedTracker" {{end}}class="w-full md:row-span-6 md:col-span-3">
+            <div x-data="{asc: false{{if .IndexData.TUMLiveContext.User}}, filterWatched: true, watchedAll: watchedTracker.userWatchedAll(){{end}}}"
                  class="bg-white h-full border dark:bg-secondary dark:border-gray-800 rounded-lg
                     shadow-sm flex flex-col">
                 <div class="flex justify-between h-16 px-3 border-b dark:border-gray-800">
-                    <span class="bg-green-500 rounded-full text-lg font-bold text-white px-5 my-auto">VoDs</span>
+                    <span class="dark:bg-green-500 bg-green-400 rounded-full text-lg font-bold text-white px-5 my-auto">VoDs</span>
                     <div class="my-auto">
-                        <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
-                                @click="asc = !asc; global.reorderVodList()">
+                        {{if .Course.HasRecordings}}
+                            <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
+                                    x-init="global.reorderVodList()"
+                                    @click="asc = !asc; global.reorderVodList()">
                             <span class="text-sm font-semibold uppercase dark:text-white"
-                          x-text="asc ? '&#x25B2; asc' : '&#x25BC; desc'">desc &#x25BC;</span>
-                        </button>
-                        {{if .IndexData.TUMLiveContext.User}}
-                        <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2" @click="filterWatched=!filterWatched" :title="filterWatched ? 'Show watched streams' : 'Hide watched streams'">
+                                  x-text="asc ? '&#x25B2; asc' : '&#x25BC; desc'">desc &#x25BC;</span>
+                            </button>
+                        {{end}}
+                        {{if and .IndexData.TUMLiveContext.User .Course.HasRecordings }}
+                            <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
+                                    @click="filterWatched=!filterWatched"
+                                    :title="filterWatched ? 'Show watched streams' : 'Hide watched streams'">
                             <span class="text-sm font-semibold uppercase dark:text-white">
                                 <i class="fa-solid w-5 mr-1"
-                                   :class="filterWatched ? 'fa-eye' : 'fa-eye-slash'"></i>Filter
+                                   :class="filterWatched ? 'fa-eye' : 'fa-eye-slash'"></i>watched
                             </span>
-                        </button>
+                            </button>
                         {{end}}
                     </div>
                 </div>
@@ -45,6 +51,7 @@
             </div>
         </div>
         <!-- Next Lecture -->
+        {{if or $course.HasNextLecture $course.IsLive}}
         <div class="flex w-full relative bg-white border dark:bg-secondary dark:border-gray-800 rounded-lg
                     shadow-sm py-3 px-5 my-3 order-first md:my-0 md:row-span-1 md:col-span-2 md:order-none ">
             {{$lecture := $course.GetNextLecture}}
@@ -83,8 +90,9 @@
                 </div>
             {{end}}
         </div>
+        {{end}}
         <!-- Planned -->
-        <div class="w-full md:row-span-5 md:col-span-2">
+        <div class="w-full {{if $course.HasNextLecture}}md:row-span-5{{else}}md:row-span-6{{end}} md:col-span-2">
             <div x-data="{showPlanned: true}"
                  class="flex flex-col bg-white dark:bg-secondary border dark:border-gray-800 rounded-lg shadow-sm my-3 md:my-0"
                  :class="showPlanned ? 'h-full' : 'h-fit'">

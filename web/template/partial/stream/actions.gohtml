@@ -7,7 +7,7 @@
     {{/* Icons for different actions student can do for a stream */}}
     <span class="flex space-x-2 content-center">
         {{/* Download button */}}
-        {{if and (and $course.DownloadsEnabled $user) $stream.Recording}}
+        {{if and (and $course.DownloadsEnabled $user) $stream.IsDownloadable}}
             {{template "downloadBtn" $stream.Files}}
         {{end}}
         {{/* Switch video to presentation */}}

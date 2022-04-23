@@ -18,3 +18,17 @@ export function takeSnapshot(lectureHallID: number, presetID: number) {
         });
     }
 }
+
+export function setDefaultPreset(lectureHallID: number, presetID: number): Promise<boolean> {
+    return fetch(`/api/lectureHall/${lectureHallID}/defaultPreset`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            presetID: presetID,
+        }),
+    }).then(function (res) {
+        return res.ok;
+    });
+}

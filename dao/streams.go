@@ -1,13 +1,14 @@
 package dao
 
 import (
-	"TUM-Live/model"
 	"context"
 	"fmt"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	"strconv"
 	"time"
+
+	"github.com/joschahenningsen/TUM-Live/model"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // GetDueStreamsForWorkers retrieves all streams that due to be streamed in a lecture hall.
@@ -173,7 +174,7 @@ func ClearWorkersForStream(stream model.Stream) error {
 	return DB.Model(&stream).Association("StreamWorkers").Clear()
 }
 
-//GetAllStreams returns all streams of the server
+//GetAllStreams returns all streams of the tumlive
 func GetAllStreams() ([]model.Stream, error) {
 	var res []model.Stream
 	err := DB.Find(&res).Error
@@ -291,4 +292,27 @@ func GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Stream, error) {
 	var streams []model.Stream
 	err := DB.Where("lecture_hall_id = ? AND live_now", lectureHallId).Find(&streams).Error
 	return streams, err
+}
+
+// GetStreamsWithWatchState returns a list of streams with their progress information.
+func GetStreamsWithWatchState(courseID uint, userID uint) (streams []model.Stream, err error) {
+	type watchedState struct {
+		Watched bool
+	}
+	var watchedStates []watchedState
+	queriedStreams := DB.Table("streams").Where("course_id = ? and deleted_at is NULL", courseID)
+	result := queriedStreams.
+		Joins("left join (select watched, stream_id from stream_progresses where user_id = ?) as sp on sp.stream_id = streams.id", userID).
+		Order("start asc").      // Order by start time, this is also the order that is used in the course page.
+		Session(&gorm.Session{}) // Session is required to scan multiple times
+
+	if err = result.Scan(&streams).Error; err != nil {
+		return
+	}
+	err = result.Scan(&watchedStates).Error
+	// Updates the watch state for each stream to compensate for split query.
+	for i := range streams {
+		streams[i].Watched = watchedStates[i].Watched
+	}
+	return
 }

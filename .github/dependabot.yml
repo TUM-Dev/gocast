@@ -9,12 +9,32 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "monthly"
-  - package-ecosystem: "docker" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "gomod"
+    directory: "/worker"
     schedule:
       interval: "monthly"
-  - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/web/" # Location of package manifests
+  - package-ecosystem: "gomod"
+    directory: "/worker/edge"
+    schedule:
+      interval: "monthly"
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+  - package-ecosystem: "docker"
+    directory: "/worker"
+    schedule:
+      interval: "monthly"
+  - package-ecosystem: "docker"
+    directory: "/worker/nginx"
+    schedule:
+      interval: "monthly"
+  - package-ecosystem: "docker"
+    directory: "/worker/edge"
+    schedule:
+      interval: "monthly"
+  - package-ecosystem: "npm"
+    directory: "/web/"
     schedule:
       interval: "monthly"
   - package-ecosystem: "github-actions"
