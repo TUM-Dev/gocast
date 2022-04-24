@@ -92,16 +92,18 @@
                                 class="flex"
                                 :class="sortAsc ? 'flex-col' : 'flex-col-reverse'"
                                 x-data="{
-                                    lectures: [
-                                        {{range $course.Streams }}
-                                            new admin.Lecture(JSON.parse(admin.decodeHtml('{{.GetJson}}')),'{{$course.Slug}}'),
-                                        {{end}}
-                                    ]
+                                    lectures: []
                                 }"
+                                x-on:newlectures.window="e => (lectures = e.detail)"
+                                x-init="$nextTick(() => admin.LectureList.init([
+                                    {{range $course.Streams }}
+                                        new admin.Lecture(JSON.parse(admin.decodeHtml('{{.GetJson}}')),'{{$course.Slug}}'),
+                                    {{end}}
+                                ]))"
                         >
-                            <template x-for="lecture in lectures">
-                                    <li :id="'lecture-li-' + lecture.lectureId"
-                                        x-show="!lecture.isDeleted && (!filterPast || !lecture.isPast)"
+                            <template x-for="lecture in lectures" :key="lecture.lectureId">
+                                    <li :id="$id('lecture-li')"
+                                        x-show="!filterPast || !lecture.isPast"
                                         :key="lecture.lectureId"
                                         class="w-full mb-4 pb-4 relative dark:bg-secondary bg-gray-100">
                                         <div class="border-t-4 flex justify-between mb-2" :class="'border-' + lecture.color">
@@ -215,9 +217,9 @@
                                         </div>
 
                                         <div x-show="lecture.uiEditMode > 0" class="px-4 pt-4 mt-4 border-t-2 border-gray-100/20">
-                                            <div class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
-                                                <label :for="'lectureNameInput' + lecture.lectureId" class="hidden">Lecture title</label>
-                                                <input :id="'lectureNameInput' + lecture.lectureId"
+                                            <div x-data="{ id: $id('text-input') }" class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                                                <label :for="id" class="hidden">Lecture title</label>
+                                                <input :id="id"
                                                        x-on:focus="admin.focusNameInput(this, lecture.lectureId)"
                                                        class="grow border-none" type="text"
                                                        x-model="lecture.newName"
@@ -226,9 +228,9 @@
                                                        autocomplete="off">
                                             </div>
                                             <div class="w-full mt-3">
-                                                <div class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
-                                                    <label :for="'lectureDescriptionInput' + lecture.lectureId" class="hidden">Lecture description</label>
-                                                    <textarea :id="'lectureDescriptionInput' + lecture.lectureId"
+                                                <div x-data="{ id: $id('text-input') }" class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                                                    <label :for="id" class="hidden">Lecture description</label>
+                                                    <textarea :id="id"
                                                               x-on:focus="admin.focusDescriptionInput(this, lecture.lectureId)"
                                                               class="grow border-none"
                                                               placeholder="Add a nice description, links, and more. You can use Markdown."
@@ -241,13 +243,13 @@
                                                 <div class="p-3 rounded border-gray-100 border-2 mt-3">
                                                     <template x-if="!lecture.isPast && !lecture.isRecording">
                                                         {{if eq $user.Role 1}}
-                                                            <div>
+                                                            <div x-data="{ id: $id('select') }">
                                                                 <label class="mx-2">
                                                                     <span>Select Lecture Hall</span>
                                                                     <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
-                                                                            :id="'lectureHallSelector' + lecture.lectureId"
+                                                                            :id="id"
                                                                             x-on:change="lecture.updateIsDirty()"
-                                                                            x-model="lecture.newLectureHall">
+                                                                            x-model="lecture.newLectureHallId">
                                                                         <option class="text-gray-300" value="0">
                                                                             Self streaming
                                                                         </option>
@@ -261,7 +263,7 @@
                                                             </div>
                                                         {{end}}
 
-                                                        <p x-show="lecture.newLectureHall != '0'" class="mt-1 ml-2">
+                                                        <p x-show="lecture.newLectureHallId != '0'" class="mt-1 ml-2">
                                                             <span class="font-semibold">Stream Server:</span>
                                                             <span x-text="'{{$ingestBase}}stream?secret=' + lecture.streamKey"></span>
                                                             <i class="fas fa-clipboard hover:text-purple-500"
@@ -274,7 +276,7 @@
                                                             {{end}}
                                                         </p>
                                                         {{if eq $user.Role 2}}
-                                                            <div x-show="lecture.newLectureHall == '0'">
+                                                            <div x-show="lecture.newLectureHallId == '0'">
                                                                 This lecture will be streamed from <span
                                                                         class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}<span x-show="lecture.lectureHallId === '{{$lectureHall.Model.ID}}'">{{$lectureHall.Name}}</span>{{end}}</span>.
                                                                 If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
@@ -296,7 +298,7 @@
                                                                           role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
                                                                         <span class="py-1" role="none">
                                                                             <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
-                                                                            <template x-for="file in lecture.files">
+                                                                            <template x-for="file in lecture.files" :key="file.id">
                                                                                 <a :href="'/api/download/' + file.id" download
                                                                                    class="hover:bg-gray-100 text-3 dark:hover:bg-gray-600
                                                                                    block px-4 py-2 text-sm first:rounded-t-md last:rounded-b-md"

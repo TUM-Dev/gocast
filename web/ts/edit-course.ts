@@ -7,6 +7,20 @@ export enum UIEditMode {
     series,
 }
 
+export class LectureList {
+    static lectures: Lecture[] = [];
+
+    static init(initialState, triggerUpdateFunc) {
+        LectureList.lectures = initialState;
+        LectureList.triggerUpdate();
+    }
+
+    static triggerUpdate() {
+        const event = new CustomEvent("newlectures", { detail: LectureList.lectures });
+        window.dispatchEvent(event);
+    }
+}
+
 class LectureFile {
     readonly id: number;
     readonly friendlyName: string;
@@ -28,7 +42,6 @@ export class Lecture {
         hour: "2-digit",
         minute: "2-digit",
     };
-    static lectures: Lecture[] = [];
     readonly courseId: number;
     readonly courseSlug: string;
     readonly lectureId: number;
@@ -92,7 +105,6 @@ export class Lecture {
         this.start = new Date(start);
         this.end = new Date(end);
         this.files = files === null ? [] : files.map((file) => new LectureFile(file));
-        Lecture.lectures.push(this);
     }
 
     startDateFormatted() {
@@ -222,14 +234,16 @@ export class Lecture {
         const res = await postData("/api/course/" + this.courseId + "/updateLectureSeries/" + this.lectureId);
 
         if (res.status == StatusCodes.OK) {
-            for (const lecture of Lecture.lectures) {
-                if (lecture.seriesIdentifier === this.seriesIdentifier && !lecture.isDeleted) {
+            LectureList.lectures = LectureList.lectures.map((lecture) => {
+                if (lecture.seriesIdentifier === this.seriesIdentifier) {
                     lecture.name = this.name;
                     lecture.description = this.description;
                     lecture.lectureHallId = this.lectureHallId;
                     lecture.uiEditMode = UIEditMode.none;
                 }
-            }
+                return lecture;
+            });
+            LectureList.triggerUpdate();
         }
 
         return res;
@@ -246,22 +260,19 @@ export class Lecture {
                 return;
             }
 
-            this.isDeleted = true;
+            LectureList.lectures = LectureList.lectures.filter((l) => l.lectureId !== this.lectureId);
+            LectureList.triggerUpdate();
         }
     }
 
     async deleteLectureSeries() {
-        const lectureCount = Lecture.lectures.filter((l) => l.seriesIdentifier === this.seriesIdentifier).length;
+        const lectureCount = LectureList.lectures.filter((l) => l.seriesIdentifier === this.seriesIdentifier).length;
         if (confirm("Confirm deleting " + lectureCount + " videos in the lecture series?")) {
             const res = await postData("/api/course/" + this.courseId + "/deleteLectureSeries/" + this.lectureId);
 
             if (res.status === StatusCodes.OK) {
-                this.isDeleted = true;
-                for (const lecture of Lecture.lectures) {
-                    if (lecture.seriesIdentifier === this.seriesIdentifier) {
-                        lecture.isDeleted = true;
-                    }
-                }
+                LectureList.lectures = LectureList.lectures.filter((l) => l.seriesIdentifier !== this.seriesIdentifier);
+                LectureList.triggerUpdate();
             }
 
             return res;
@@ -286,11 +297,8 @@ export async function deleteLectures(cid: number, lids: number[]) {
             return;
         }
 
-        for (const lecture of Lecture.lectures) {
-            if (lids.includes(lecture.lectureId)) {
-                lecture.isDeleted = true;
-            }
-        }
+        LectureList.lectures = LectureList.lectures.filter((l) => !lids.includes(l.lectureId));
+        LectureList.triggerUpdate();
     }
 }
 

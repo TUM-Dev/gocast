@@ -205,8 +205,6 @@ func takeSnapshot(c *gin.Context) {
 }
 
 func setLectureHall(c *gin.Context) {
-	c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
-	return
 	var req setLectureHallRequest
 	err := c.BindJSON(&req)
 	if err != nil {
