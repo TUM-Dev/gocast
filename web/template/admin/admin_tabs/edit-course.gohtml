@@ -240,46 +240,48 @@
 
                                                 <div class="p-3 rounded border-gray-100 border-2 mt-3">
                                                     <template x-if="!lecture.isPast && !lecture.isRecording">
-                                                        {{if eq $user.Role 1}}
-                                                            <div x-data="{ id: $id('select') }">
-                                                                <label class="mx-2">
-                                                                    <span>Select Lecture Hall</span>
-                                                                    <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
-                                                                            :id="id"
-                                                                            x-on:change="lecture.updateIsDirty()"
-                                                                            x-model="lecture.newLectureHallId">
-                                                                        <option class="text-gray-300" value="0">
-                                                                            Self streaming
-                                                                        </option>
-                                                                        {{range $lectureHall := $lectureHalls}}
-                                                                            <option class="text-gray-300" value="{{$lectureHall.Model.ID}}" :selected="lecture.lectureHallId === '{{$lectureHall.Model.ID}}'">
-                                                                                {{$lectureHall.Name}}
+                                                        <div>
+                                                            {{if eq $user.Role 1}}
+                                                                <div x-data="{ id: $id('select') }">
+                                                                    <label class="mx-2">
+                                                                        <span>Select Lecture Hall</span>
+                                                                        <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
+                                                                                :id="id"
+                                                                                x-on:change="lecture.updateIsDirty()"
+                                                                                x-model="lecture.newLectureHallId">
+                                                                            <option class="text-gray-300" value="0">
+                                                                                Self streaming
                                                                             </option>
-                                                                        {{end}}
-                                                                    </select>
-                                                                </label>
-                                                            </div>
-                                                        {{end}}
-
-                                                        <p x-show="lecture.newLectureHallId != '0'" class="mt-1 ml-2">
-                                                            <span class="font-semibold">Stream Server:</span>
-                                                            <span x-text="'{{$ingestBase}}stream?secret=' + lecture.streamKey"></span>
-                                                            <i class="fas fa-clipboard hover:text-purple-500"
-                                                               @click="() => admin.copyToClipboard('{{$ingestBase}}stream?secret=' + lecture.streamKey)"></i>
-                                                            <br>
-                                                            <span class="font-semibold">Stream Key:</span>
-                                                            <span x-text="lecture.courseSlug + '-' + lecture.lectureId"></span><br>
-                                                            {{if ne $user.Role 1}}
-                                                                <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
+                                                                            {{range $lectureHall := $lectureHalls}}
+                                                                                <option class="text-gray-300" value="{{$lectureHall.Model.ID}}" :selected="lecture.lectureHallId === '{{$lectureHall.Model.ID}}'">
+                                                                                    {{$lectureHall.Name}}
+                                                                                </option>
+                                                                            {{end}}
+                                                                        </select>
+                                                                    </label>
+                                                                </div>
                                                             {{end}}
-                                                        </p>
-                                                        {{if eq $user.Role 2}}
-                                                            <div x-show="lecture.newLectureHallId == '0'">
-                                                                This lecture will be streamed from <span
-                                                                        class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}<span x-show="lecture.lectureHallId === '{{$lectureHall.Model.ID}}'">{{$lectureHall.Name}}</span>{{end}}</span>.
-                                                                If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
-                                                            </div>
-                                                        {{end}}
+
+                                                            <p x-show="lecture.newLectureHallId != '0'" class="mt-1 ml-2">
+                                                                <span class="font-semibold">Stream Server:</span>
+                                                                <span x-text="'{{$ingestBase}}stream?secret=' + lecture.streamKey"></span>
+                                                                <i class="fas fa-clipboard hover:text-purple-500"
+                                                                   @click="() => admin.copyToClipboard('{{$ingestBase}}stream?secret=' + lecture.streamKey)"></i>
+                                                                <br>
+                                                                <span class="font-semibold">Stream Key:</span>
+                                                                <span x-text="lecture.courseSlug + '-' + lecture.lectureId"></span><br>
+                                                                {{if ne $user.Role 1}}
+                                                                    <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
+                                                                {{end}}
+                                                            </p>
+                                                            {{if eq $user.Role 2}}
+                                                                <div x-show="lecture.newLectureHallId == '0'">
+                                                                    This lecture will be streamed from <span
+                                                                            class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}<span x-show="lecture.lectureHallId === '{{$lectureHall.Model.ID}}'">{{$lectureHall.Name}}</span>{{end}}</span>.
+                                                                    If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
+                                                                </div>
+                                                            {{end}}
+                                                        </div>
                                                     </template>
 
                                                     <template x-if="lecture.isRecording">
