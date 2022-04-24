@@ -107,6 +107,10 @@ export class Lecture {
         this.files = files === null ? [] : files.map((file) => new LectureFile(file));
     }
 
+    clone() {
+        return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
+    }
+
     startDateFormatted() {
         return this.start.toLocaleDateString("en-US", Lecture.dateFormatOptions);
     }
@@ -235,7 +239,9 @@ export class Lecture {
 
         if (res.status == StatusCodes.OK) {
             LectureList.lectures = LectureList.lectures.map((lecture) => {
-                if (lecture.seriesIdentifier === this.seriesIdentifier) {
+                if (this.lectureId !== lecture.lectureId && lecture.seriesIdentifier === this.seriesIdentifier) {
+                    /* cloning, as otherwise alpine doesn't detect the changed object in the array ... */
+                    lecture = lecture.clone();
                     lecture.name = this.name;
                     lecture.description = this.description;
                     lecture.lectureHallId = this.lectureHallId;
