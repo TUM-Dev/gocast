@@ -241,6 +241,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		publishVoD:    true,
 		recordingPath: &localFile,
 	}
+	log.WithFields(log.Fields{"stream": c.streamId, "course": c.courseSlug, "file": localFile}).Debug("Handling upload request")
 
 	needsConversion := false
 
@@ -249,7 +250,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		needsConversion = true
 	} else if !strings.Contains(container, "mp4") {
 		needsConversion = true
-		log.Debugf("Wrong container: %d, converting", container)
+		log.Debugf("Wrong container: %s, converting", container)
 	}
 
 	if codec, err := getCodec(localFile); err != nil {
@@ -276,6 +277,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 	}
 
 	if needsConversion {
+		log.WithField("stream", c.streamId).Debug("Converting video from upload request")
 		S.startTranscoding(c.getStreamName())
 		err := transcode(&c)
 		if err != nil {
@@ -285,12 +287,17 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		S.endTranscoding(c.getStreamName())
 
 	} else {
+		log.WithField("stream", c.streamId).Debug("Not converting video from upload request")
 		// create required directories
+		log.WithField("transcodingFileName", c.getTranscodingFileName()).Debug("Creating output directory")
 		if err = prepare(c.getTranscodingFileName()); err != nil {
 			log.Error(err)
 		}
+		log.WithFields(log.Fields{"in": c.getRecordingTrashName(), "out": c.getTranscodingFileName()}).Debug("Copying file")
 		if err = os.Rename(c.getRecordingFileName(), c.getTranscodingFileName()); err != nil {
 			log.WithError(err).Error("Can't move upload to transcoding dir")
+		} else {
+			log.WithField("stream", c.streamId).Debug("Successfully moved upload to target dir")
 		}
 	}
 
