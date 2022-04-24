@@ -54,15 +54,15 @@
                             <div x-data="{dropdownMenu: true}" class="relative">
                                 <div x-show="dropdownMenu" class="absolute left-0 py-2 mt-2 bg-white bg-gray-50 rounded-md shadow w-44">
                                     <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
-                                       @click="updateUser(user.id, 1).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
+                                       @click="admin.updateUser(user.id, 1).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
                                         Admin
                                     </a>
                                     <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
-                                       @click="updateUser(user.id, 2).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
+                                       @click="admin.updateUser(user.id, 2).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
                                         Lecturer
                                     </a>
                                     <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
-                                       @click="updateUser(user.id, 4).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
+                                       @click="admin.updateUser(user.id, 4).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
                                         Student
                                     </a>
                                 </div>
@@ -72,7 +72,7 @@
                     <td class="py-3 px-6 text-center">
                         <div class="flex item-center justify-center">
                             <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
-                                <i onclick="deleteUser()" class="fas fa-trash"></i>
+                                <i onclick="admin.deleteUser()" class="fas fa-trash"></i>
                             </div>
                         </div>
                     </td>
