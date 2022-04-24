@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -294,7 +295,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 			log.Error(err)
 		}
 		log.WithFields(log.Fields{"in": c.getRecordingTrashName(), "out": c.getTranscodingFileName()}).Debug("Copying file")
-		if err = os.Rename(c.getRecordingFileName(), c.getTranscodingFileName()); err != nil {
+		if err = moveFile(c.getRecordingFileName(), c.getTranscodingFileName()); err != nil {
 			log.WithError(err).Error("Can't move upload to transcoding dir")
 		} else {
 			log.WithField("stream", c.streamId).Debug("Successfully moved upload to target dir")
@@ -313,6 +314,32 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 	upload(&c)
 	notifyUploadDone(&c)
 	_ = os.Remove(c.getRecordingFileName())
+}
+
+// moveFile moves a file from sourcePath to destPath.
+// in contrast to os.Rename, this function can copy files from one drive to another.
+func moveFile(sourcePath, destPath string) error {
+	inputFile, err := os.Open(sourcePath)
+	if err != nil {
+		return fmt.Errorf("open source file: %s", err)
+	}
+	outputFile, err := os.Create(destPath)
+	if err != nil {
+		inputFile.Close()
+		return fmt.Errorf("open dest file: %s", err)
+	}
+	defer outputFile.Close()
+	_, err = io.Copy(outputFile, inputFile)
+	inputFile.Close()
+	if err != nil {
+		return fmt.Errorf("writing to output file: %s", err)
+	}
+	// The copy was successful, so now delete the original file
+	err = os.Remove(sourcePath)
+	if err != nil {
+		return fmt.Errorf("removing original file: %s", err)
+	}
+	return nil
 }
 
 // StreamContext contains all important information on a stream
