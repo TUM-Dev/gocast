@@ -103,7 +103,7 @@ export function deleteUser(deletedUserID: number) {
     }
 }
 
-async function updateUser(userID: number, role: number) {
+export async function updateUser(userID: number, role: number) {
     let success = true;
     await fetch("/api/users/update", {
         method: "POST",
