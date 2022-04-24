@@ -220,7 +220,6 @@
                                             <div x-data="{ id: $id('text-input') }" class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
                                                 <label :for="id" class="hidden">Lecture title</label>
                                                 <input :id="id"
-                                                       x-on:focus="admin.focusNameInput(this, lecture.lectureId)"
                                                        class="grow border-none" type="text"
                                                        x-model="lecture.newName"
                                                        x-on:keyup="lecture.updateIsDirty()"
@@ -231,7 +230,6 @@
                                                 <div x-data="{ id: $id('text-input') }" class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
                                                     <label :for="id" class="hidden">Lecture description</label>
                                                     <textarea :id="id"
-                                                              x-on:focus="admin.focusDescriptionInput(this, lecture.lectureId)"
                                                               class="grow border-none"
                                                               placeholder="Add a nice description, links, and more. You can use Markdown."
                                                               autocomplete="off"

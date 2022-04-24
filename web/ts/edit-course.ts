@@ -340,18 +340,6 @@ export function showStats(id: number): void {
     }
 }
 
-export function focusNameInput(input: HTMLInputElement, id: number) {
-    input.oninput = function () {
-        document.getElementById("nameSubmitBtn" + id).classList.remove("invisible");
-    };
-}
-
-export function focusDescriptionInput(input: HTMLInputElement, id: number) {
-    input.oninput = function () {
-        document.getElementById("descriptionSubmitBtn" + id).classList.remove("invisible");
-    };
-}
-
 export function toggleExtraInfos(btn: HTMLElement, id: number) {
     btn.classList.add("transform", "transition", "duration-500", "ease-in-out");
     if (btn.classList.contains("rotate-180")) {
