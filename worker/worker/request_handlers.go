@@ -299,9 +299,9 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 	sd := NewSilenceDetector(c.getTranscodingFileName())
 	if err = sd.ParseSilence(); err != nil {
 		log.WithField("File", c.getTranscodingFileName()).WithError(err).Error("Detecting silence failed.")
-		return
+	} else {
+		notifySilenceResults(sd.Silences, c.streamId)
 	}
-	notifySilenceResults(sd.Silences, c.streamId)
 
 	upload(&c)
 	notifyUploadDone(&c)

@@ -206,7 +206,9 @@ export function createLectureForm() {
                 if (!e.lengthComputable) {
                     return;
                 }
-                window.dispatchEvent(new CustomEvent("voduploadprogress", { detail: Math.floor(100 * (e.loaded / e.total)) }));
+                window.dispatchEvent(
+                    new CustomEvent("voduploadprogress", { detail: Math.floor(100 * (e.loaded / e.total)) }),
+                );
             };
             xhr.open("POST", `/api/course/${this.courseID}/uploadVOD?start=${this.formData.start}`);
             xhr.send(vodUploadFormData);
