@@ -238,88 +238,87 @@
                                                     ></textarea>
                                                 </div>
 
-                                                <div class="p-3 rounded border-gray-100 border-2 mt-3">
-                                                    <template x-if="!lecture.isPast && !lecture.isRecording">
-                                                        <div>
-                                                            {{if eq $user.Role 1}}
-                                                                <div x-data="{ id: $id('select') }">
-                                                                    <label class="mx-2">
-                                                                        <span>Select Lecture Hall</span>
-                                                                        <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
-                                                                                :id="id"
-                                                                                x-on:change="lecture.updateIsDirty()"
-                                                                                x-model="lecture.newLectureHallId">
-                                                                            <option class="text-gray-300" value="0">
-                                                                                Self streaming
+
+                                                <template x-if="!lecture.isPast && !lecture.isRecording">
+                                                    <div class="p-3 rounded border-gray-100 border-2 mt-3">
+                                                        {{if eq $user.Role 1}}
+                                                            <div x-data="{ id: $id('select') }">
+                                                                <label class="mx-2">
+                                                                    <span>Select Lecture Hall</span>
+                                                                    <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
+                                                                            :id="id"
+                                                                            x-on:change="lecture.updateIsDirty()"
+                                                                            x-model="lecture.newLectureHallId">
+                                                                        <option class="text-gray-300" value="0">
+                                                                            Self streaming
+                                                                        </option>
+                                                                        {{range $lectureHall := $lectureHalls}}
+                                                                            <option class="text-gray-300" value="{{$lectureHall.Model.ID}}" :selected="lecture.lectureHallId === '{{$lectureHall.Model.ID}}'">
+                                                                                {{$lectureHall.Name}}
                                                                             </option>
-                                                                            {{range $lectureHall := $lectureHalls}}
-                                                                                <option class="text-gray-300" value="{{$lectureHall.Model.ID}}" :selected="lecture.lectureHallId === '{{$lectureHall.Model.ID}}'">
-                                                                                    {{$lectureHall.Name}}
-                                                                                </option>
-                                                                            {{end}}
-                                                                        </select>
-                                                                    </label>
-                                                                </div>
-                                                            {{end}}
+                                                                        {{end}}
+                                                                    </select>
+                                                                </label>
+                                                            </div>
+                                                        {{end}}
 
-                                                            <p x-show="lecture.newLectureHallId != '0'" class="mt-1 ml-2">
-                                                                <span class="font-semibold">Stream Server:</span>
-                                                                <span x-text="'{{$ingestBase}}stream?secret=' + lecture.streamKey"></span>
-                                                                <i class="fas fa-clipboard hover:text-purple-500"
-                                                                   @click="() => admin.copyToClipboard('{{$ingestBase}}stream?secret=' + lecture.streamKey)"></i>
-                                                                <br>
-                                                                <span class="font-semibold">Stream Key:</span>
-                                                                <span x-text="lecture.courseSlug + '-' + lecture.lectureId"></span><br>
-                                                                {{if ne $user.Role 1}}
-                                                                    <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
-                                                                {{end}}
-                                                            </p>
-                                                            {{if eq $user.Role 2}}
-                                                                <div x-show="lecture.newLectureHallId == '0'">
-                                                                    This lecture will be streamed from <span
-                                                                            class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}<span x-show="lecture.lectureHallId === '{{$lectureHall.Model.ID}}'">{{$lectureHall.Name}}</span>{{end}}</span>.
-                                                                    If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
-                                                                </div>
+                                                        <p x-show="lecture.newLectureHallId != '0'" class="mt-1 ml-2">
+                                                            <span class="font-semibold">Stream Server:</span>
+                                                            <span x-text="'{{$ingestBase}}stream?secret=' + lecture.streamKey"></span>
+                                                            <i class="fas fa-clipboard hover:text-purple-500"
+                                                               @click="() => admin.copyToClipboard('{{$ingestBase}}stream?secret=' + lecture.streamKey)"></i>
+                                                            <br>
+                                                            <span class="font-semibold">Stream Key:</span>
+                                                            <span x-text="lecture.courseSlug + '-' + lecture.lectureId"></span><br>
+                                                            {{if ne $user.Role 1}}
+                                                                <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
                                                             {{end}}
-                                                        </div>
-                                                    </template>
+                                                        </p>
+                                                        {{if eq $user.Role 2}}
+                                                            <div x-show="lecture.newLectureHallId == '0'">
+                                                                This lecture will be streamed from <span
+                                                                        class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}<span x-show="lecture.lectureHallId === '{{$lectureHall.Model.ID}}'">{{$lectureHall.Name}}</span>{{end}}</span>.
+                                                                If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
+                                                            </div>
+                                                        {{end}}
+                                                    </div>
+                                                </template>
 
-                                                    <template x-if="lecture.isRecording">
-                                                        <span class="flex space-x-2 mt-4 content-center">
-                                                            <template x-if="lecture.files.length > 0">
-                                                                <span class="relative m-auto" x-data="{expand:false}">
-                                                                    <button @click="expand=!expand" type="button"
-                                                                            id="menu-button" aria-expanded="true" aria-haspopup="true">
-                                                                        <i class="fas fa-cloud-download-alt text-4 text-lg hover:text-1"></i>
-                                                                    </button>
-                                                                    <span x-cloak x-show="expand" @click.outside="expand = false"
-                                                                          class="origin-top-left absolute top-full left-0 m-auto w-32
-                                                                         dark:bg-secondary ring-1 ring-black ring-opacity-5 focus:outline-none"
-                                                                          role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
-                                                                        <span class="py-1" role="none">
-                                                                            <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
-                                                                            <template x-for="file in lecture.files" :key="file.id">
-                                                                                <a :href="'/api/download/' + file.id" download
-                                                                                   class="hover:bg-gray-100 text-3 dark:hover:bg-gray-600
-                                                                                   block px-4 py-2 text-sm first:rounded-t-md last:rounded-b-md"
-                                                                                   x-text="file.friendlyName" role="menuitem" tabindex="-1" id="menu-item-0"></a>
-                                                                            </template>
-                                                                        </span>
-                                                                    </span>
+                                            </div>
+
+                                            <template x-if="lecture.isRecording">
+                                                <span class="absolute left-0 bottom-0 p-4">
+                                                    <template x-if="lecture.files.length > 0">
+                                                        <span class="relative mr-2" x-data="{expand:false}">
+                                                            <button @click="expand=!expand" type="button"
+                                                                    id="menu-button" aria-expanded="true" aria-haspopup="true">
+                                                                <i class="fas fa-cloud-download-alt text-4 text-lg hover:text-1"></i>
+                                                            </button>
+                                                            <span x-cloak x-show="expand" @click.outside="expand = false"
+                                                                  class="origin-top-left absolute top-full left-0 m-auto w-32
+                                                                 dark:bg-secondary ring-1 ring-black ring-opacity-5 focus:outline-none"
+                                                                  role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+                                                                <span class="py-1" role="none">
+                                                                    <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
+                                                                    <template x-for="file in lecture.files" :key="file.id">
+                                                                        <a :href="'/api/download/' + file.id" download
+                                                                           class="hover:bg-gray-100 text-3 dark:hover:bg-gray-600
+                                                                           block px-4 py-2 text-sm first:rounded-t-md last:rounded-b-md"
+                                                                           x-text="file.friendlyName" role="menuitem" tabindex="-1" id="menu-item-0"></a>
+                                                                    </template>
                                                                 </span>
-                                                            </template>
-                                                            <template x-if="lecture.hasStats">
-                                                                <a>
-                                                                    <i class="fas fa-chart-line text-4 text-lg hover:text-1"
-                                                                       title="Live Statistics"
-                                                                       x-on:click="admin.showStats(lecture.lectureId)"></i>
-                                                                </a>
-                                                            </template>
+                                                            </span>
                                                         </span>
                                                     </template>
-
-                                                </div>
-                                            </div>
+                                                    <template x-if="lecture.hasStats">
+                                                        <a>
+                                                            <i class="fas fa-chart-line text-4 text-lg hover:text-1"
+                                                               title="Live Statistics"
+                                                               x-on:click="admin.showStats(lecture.lectureId)"></i>
+                                                        </a>
+                                                    </template>
+                                                </span>
+                                            </template>
 
                                             <div x-show="lecture.lastErrors.length > 0" class="px-6 py-3 bg-red-400 my-3 rounded">
                                                 <ul>
