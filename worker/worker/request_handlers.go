@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -283,18 +284,28 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		notifyTranscodingDone(&c)
 		S.endTranscoding(c.getStreamName())
 
+	} else {
+		// create required directories
+		if err = prepare(c.getTranscodingFileName()); err != nil {
+			log.Error(err)
+		}
+		if err = os.Rename(c.getRecordingFileName(), c.getTranscodingFileName()); err != nil {
+			log.WithError(err).Error("Can't move upload to transcoding dir")
+		}
 	}
+
 	S.startSilenceDetection(&c)
 	defer S.endSilenceDetection(&c)
 	sd := NewSilenceDetector(c.getTranscodingFileName())
-	err = sd.ParseSilence()
-	if err != nil {
+	if err = sd.ParseSilence(); err != nil {
 		log.WithField("File", c.getTranscodingFileName()).WithError(err).Error("Detecting silence failed.")
 		return
 	}
 	notifySilenceResults(sd.Silences, c.streamId)
+
 	upload(&c)
 	notifyUploadDone(&c)
+	_ = os.Remove(c.getRecordingFileName())
 }
 
 // StreamContext contains all important information on a stream

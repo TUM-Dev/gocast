@@ -391,7 +391,9 @@
                                                         : 'Create Lecture'"
                                             ></span>
                                         </span>
-                                        <i class="fas fa-circle-notch text-4 animate-spin" x-show="loading"></i>
+                                        <span x-show="loading">
+                                            <i class="fas fa-circle-notch text-4 animate-spin"></i> <span @voduploadprogress.window="(e) => progress=e.detail" x-data="{ progress: undefined }" x-text="progress?progress+'%':'0%'"></span>
+                                        </span>
                                     </button>
                                     <span class="text-danger" x-show="error">Something went wrong.</span>
                                 </div>

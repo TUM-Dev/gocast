@@ -195,8 +195,6 @@ export function createLectureForm() {
             const xhr = new XMLHttpRequest();
             const vodUploadFormData = new FormData();
             vodUploadFormData.append("file", this.formData.file[0]);
-            xhr.open("POST", `/api/course/${this.courseID}/uploadVOD?start=${this.formData.start}`);
-            xhr.send(vodUploadFormData);
             xhr.onloadend = () => {
                 if (xhr.status === 200) {
                     window.location.reload();
@@ -204,6 +202,14 @@ export function createLectureForm() {
                     this.error = true;
                 }
             };
+            xhr.upload.onprogress = (e: ProgressEvent) => {
+                if (!e.lengthComputable) {
+                    return;
+                }
+                window.dispatchEvent(new CustomEvent("voduploadprogress", { detail: Math.floor(100 * (e.loaded / e.total)) }));
+            };
+            xhr.open("POST", `/api/course/${this.courseID}/uploadVOD?start=${this.formData.start}`);
+            xhr.send(vodUploadFormData);
         },
     };
 }
