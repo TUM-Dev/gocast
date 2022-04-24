@@ -117,8 +117,9 @@
                                                     <span x-text="lecture.startTimeFormatted()"></span>
                                                 </div>
 
-                                                <div x-show="lecture.uiEditMode == 0" class="text-2 font-sans ml-6 mt-2 pl-3 border-l-4 border-white">
-                                                    Lecture: <span x-text="lecture.name"></span>
+                                                <div x-show="lecture.uiEditMode == 0" class="text-2 font-sans ml-6 mt-2 pl-3 border-l-4 border-gray-500 dark:border-white">
+                                                    <span class="italic text-gray-400 dark:text-gray-600" x-show="lecture.name.length === 0">Unknown Name</span>
+                                                    <span class="text-gray-700 dark:text-white" x-show="lecture.name.length > 0" x-text="lecture.name"></span>
                                                 </div>
                                             </div>
 
@@ -128,23 +129,23 @@
                                                         <template x-if="lecture.vodViews > 0">
                                                             <p x-text="lecture.vodViews + ' VoD views'" class="text-4 text-sm"></p>
                                                         </template>
-                                                        <div class="font-semibold bg-success border-success w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8">
+                                                        <div class="font-semibold bg-success border-success w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
                                                             VoD
                                                         </div>
                                                     </div>
                                                 </template>
                                                 <template x-if="lecture.isLiveNow">
-                                                    <div class="font-semibold bg-danger border-danger w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8">
+                                                    <div class="font-semibold bg-danger border-danger w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
                                                         Live
                                                     </div>
                                                 </template>
                                                 <template x-if="!lecture.isRecording && lecture.isPast">
-                                                    <div class="font-semibold bg-warn border-warn w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8">
+                                                    <div class="font-semibold bg-warn border-warn w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
                                                         Past
                                                     </div>
                                                 </template>
                                                 <template x-if="!lecture.isPast && !lecture.isLiveNow && !lecture.isRecording">
-                                                    <div class="font-semibold bg-info border-info w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8">
+                                                    <div class="font-semibold bg-info border-info w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
                                                         Scheduled
                                                     </div>
                                                 </template>
@@ -245,15 +246,15 @@
                                                             <div x-data="{ id: $id('select') }">
                                                                 <label class="mx-2">
                                                                     <span>Select Lecture Hall</span>
-                                                                    <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
+                                                                    <select class="text-gray-700 dark:text-gray-300 dark:bg-secondary bg-gray-100 p-2"
                                                                             :id="id"
                                                                             x-on:change="lecture.updateIsDirty()"
                                                                             x-model="lecture.newLectureHallId">
-                                                                        <option class="text-gray-300" value="0">
+                                                                        <option class="text-gray-700 dark:text-gray-300" value="0">
                                                                             Self streaming
                                                                         </option>
                                                                         {{range $lectureHall := $lectureHalls}}
-                                                                            <option class="text-gray-300" value="{{$lectureHall.Model.ID}}" :selected="lecture.lectureHallId === '{{$lectureHall.Model.ID}}'">
+                                                                            <option class="text-gray-700 dark:text-gray-300" value="{{$lectureHall.Model.ID}}" :selected="lecture.lectureHallId === '{{$lectureHall.Model.ID}}'">
                                                                                 {{$lectureHall.Name}}
                                                                             </option>
                                                                         {{end}}
@@ -314,7 +315,7 @@
                                                         <a>
                                                             <i class="fas fa-chart-line text-4 text-lg hover:text-1"
                                                                title="Live Statistics"
-                                                               x-on:click="admin.showStats(lecture.lectureId)"></i>
+                                                               @click="admin.showStats(lecture.lectureId)"></i>
                                                         </a>
                                                     </template>
                                                 </span>
@@ -329,7 +330,7 @@
                                             </div>
 
                                             <div class="mt-6 flex justify-end">
-                                                <button :disabled="lecture.isSaving" @click="lecture.discardEdit();" class="px-8 py-3 text-2 rounded bg-indigo-500/10 disabled:opacity-20 hover:bg-indigo-500/20 mr-4" >
+                                                <button :disabled="lecture.isSaving" @click="lecture.discardEdit();" class="px-8 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4" >
                                                     Discard Changes
                                                 </button>
                                                 <button
