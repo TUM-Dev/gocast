@@ -16,6 +16,8 @@ import (
 	"gorm.io/gorm"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -35,6 +37,7 @@ func configGinCourseRouter(router *gin.Engine) {
 	adminOfCourseGroup.Use(tools.InitCourse)
 	adminOfCourseGroup.Use(tools.AdminOfCourse)
 	adminOfCourseGroup.DELETE("/", deleteCourse)
+	adminOfCourseGroup.POST("/uploadVOD", uploadVOD)
 	adminOfCourseGroup.POST("/createLecture", createLecture)
 	adminOfCourseGroup.POST("/presets", updatePresets)
 	adminOfCourseGroup.POST("/deleteLectures", deleteLectures)
@@ -47,6 +50,62 @@ func configGinCourseRouter(router *gin.Engine) {
 	adminOfCourseGroup.GET("/admins", getAdmins)
 	adminOfCourseGroup.PUT("/admins/:userID", addAdminToCourse)
 	adminOfCourseGroup.DELETE("/admins/:userID", removeAdminFromCourse)
+}
+
+const WorkerHTTPPort = "8060"
+
+type uploadVodReq struct {
+	Start time.Time `form:"start" binding:"required"`
+	Title string    `form:"title"`
+}
+
+func uploadVOD(c *gin.Context) {
+	log.Info("uploadVOD")
+	var req uploadVodReq
+	err := c.BindQuery(&req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request: " + err.Error()})
+		return
+	}
+	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	stream := model.Stream{
+		Name:         req.Title,
+		Start:        req.Start,
+		End:          req.Start.Add(time.Hour),
+		CourseID:     tlctx.Course.ID,
+		StreamStatus: model.StatusConverting,
+	}
+	err = dao.CreateStream(&stream)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "could not save stream: " + err.Error()})
+		return
+	}
+	key := uuid.NewV4().String()
+	err = dao.NewUploadKeyDao().CreateUploadKey(key, stream.ID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "can't create upload key: " + err.Error()})
+		return
+	}
+	workers := dao.GetAliveWorkers()
+	if len(workers) == 0 {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "No workers available"})
+		return
+	}
+	w := workers[getWorkerWithLeastWorkload(workers)]
+	u, err := url.Parse("http://" + w.Host + ":" + WorkerHTTPPort + "/upload?" + c.Request.URL.Query().Encode() + "&key=" + key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Errorf("parse proxy url: %v", err)})
+		return
+	}
+	p := httputil.NewSingleHostReverseProxy(u)
+	p.Director = func(req *http.Request) {
+		req.URL.Scheme = u.Scheme
+		req.URL.Host = u.Host
+		req.Host = u.Host
+		req.URL.Path = u.Path
+		req.URL.RawQuery = u.RawQuery
+	}
+	p.ServeHTTP(c.Writer, c.Request)
 }
 
 // updatePresets updates the CameraPresets of a course
