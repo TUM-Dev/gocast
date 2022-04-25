@@ -7,7 +7,6 @@ import (
 	"github.com/icholy/digest"
 	"github.com/joschahenningsen/TUM-Live/model"
 	uuid "github.com/satori/go.uuid"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"os"
@@ -110,19 +109,17 @@ func (c Camera) makeAuthenticatedRequest(method string, body string, url string)
 		return nil, fmt.Errorf("unsupported protocol: %v", method)
 	}
 	if err != nil {
-		log.WithError(err).Error("could not create http request")
+		return nil, fmt.Errorf("create http request: %v", err)
 	}
 
 	res, err := client.Do(req)
 	if err != nil {
-		log.WithError(err).Error("1")
 		return nil, err
 	}
 	defer res.Body.Close()
 
 	bts, err := io.ReadAll(res.Body)
 	if err != nil {
-		log.WithError(err).Error("2")
 		return nil, err
 	}
 	return bytes.NewBuffer(bts), nil
