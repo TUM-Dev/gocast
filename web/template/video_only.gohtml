@@ -14,15 +14,15 @@
     <link rel="stylesheet" href="/static/assets/css/icons.css">
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
     <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
-    <link rel="stylesheet"
-          href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
 </head>
 <body class="overflow-hidden">
 <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
-<video id="my-video"
-       class="video-js"
-       controls
-       preload="auto">
+<video
+        id="my-video"
+        class="video-js w-full"
+        controls
+        preload="auto"
+        data-setup='{"fluid": true}'>
     <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
             type="application/x-mpegURL"/>
     <p class="vjs-no-js">
@@ -31,9 +31,23 @@
 </video>
 </body>
 <script>
-    watch.initPlayer();
-    {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
-    watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
+    let player = videojs('my-video', {
+        playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+        html5: {
+            vhs: {
+                overrideNative: true
+            },
+            nativeVideoTracks: false,
+            nativeAudioTracks: false,
+            nativeTextTracks: false
+        }
+    });
+    {{if not $stream.LiveNow}}
+    player.seekButtons({
+        backIndex: 0,
+        forward: 15,
+        back: 15
+    });
     {{end}}
     {{if $stream.Silences}}
     watch.skipSilence({{$stream.GetSilencesJson}});
