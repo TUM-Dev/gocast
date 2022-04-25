@@ -5,5 +5,5 @@ type CameraPreset struct {
 	PresetID      int    `gorm:"primaryKey;autoIncrement:false"`
 	Image         string
 	LectureHallId uint `gorm:"primaryKey;autoIncrement:false"`
-	Default       bool // this will be selected if there's no preference
+	IsDefault     bool // this will be selected if there's no preference
 }
