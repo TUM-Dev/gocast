@@ -216,7 +216,8 @@ func getVideoSections(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	sections, err := dao.GetVideoSectionByStreamID(tumLiveContext.Stream.ID)
+	videoSectionDao := dao.NewVideoSectionDao()
+	sections, err := videoSectionDao.GetByStreamId(tumLiveContext.Stream.ID)
 	if err != nil {
 		log.WithError(err).Error("Can't get video sections")
 	}
@@ -230,8 +231,8 @@ func createVideoSectionBatch(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-
-	err := dao.CreateVideoSectionBatch(sections)
+	videoSectionDao := dao.NewVideoSectionDao()
+	err := videoSectionDao.Create(sections)
 	if err != nil {
 		log.WithError(err).Error("failed to create video sections")
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -250,7 +251,8 @@ func deleteVideoSection(c *gin.Context) {
 	if err != nil {
 		log.WithError(err).Error("Can't parse video-section id in url")
 	}
-	err = dao.DeleteVideoSection(uint(id))
+	videoSectionDao := dao.NewVideoSectionDao()
+	err = videoSectionDao.Delete(uint(id))
 	if err != nil {
 		log.WithError(err).Error("Can't delete video-section")
 	}
