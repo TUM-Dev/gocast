@@ -17,5 +17,8 @@ type VideoSection struct {
 }
 
 func (v VideoSection) TimestampAsString() string {
+	if v.StartHours == 0 {
+		return fmt.Sprintf("%02d:%02d", v.StartMinutes, v.StartSeconds)
+	}
 	return fmt.Sprintf("%02d:%02d:%02d", v.StartHours, v.StartMinutes, v.StartSeconds)
 }

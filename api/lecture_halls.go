@@ -92,7 +92,7 @@ func updateLectureHallsDefaultPreset(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	preset.Default = true
+	preset.IsDefault = true
 	err = dao.UnsetDefaults(c.Param("id"))
 	if err != nil {
 		log.WithError(err).Error("Error unsetting default presets")
