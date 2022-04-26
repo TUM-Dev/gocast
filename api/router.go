@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/dao"
 )
 
 // ConfigChatRouter configure gin router for chat (without gzip)
@@ -20,6 +21,6 @@ func ConfigGinRouter(router *gin.Engine) {
 	configProgressRouter(router)
 	configServerNotificationsRoutes(router)
 	configTokenRouter(router)
-	configWorkerRouter(router)
+	configWorkerRouter(router, dao.NewWorkerDao())
 	configNotificationsRouter(router)
 }

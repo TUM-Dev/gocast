@@ -8,15 +8,22 @@ import (
 	"net/http"
 )
 
-func configWorkerRouter(r *gin.Engine) {
+func configWorkerRouter(r *gin.Engine, workerDao dao.WorkerDao) {
 	g := r.Group("/api/workers")
 	g.Use(tools.Admin)
-	g.DELETE("/:id", deleteWorker)
+
+	routes := workerRoutes{dao: workerDao}
+
+	g.DELETE("/:id", routes.deleteWorker)
 }
 
-func deleteWorker(c *gin.Context) {
+type workerRoutes struct {
+	dao dao.WorkerDao
+}
+
+func (r workerRoutes) deleteWorker(c *gin.Context) {
 	id := c.Param("id")
-	err := dao.Worker.DeleteWorker(id)
+	err := r.dao.DeleteWorker(id)
 	if err != nil {
 		log.WithError(err).Error("Worker deletion failed")
 		c.AbortWithStatus(http.StatusInternalServerError)

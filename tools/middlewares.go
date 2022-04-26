@@ -2,6 +2,7 @@ package tools
 
 import (
 	"errors"
+	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -260,6 +261,7 @@ func AtLeastLecturer(c *gin.Context) {
 func Admin(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
+		fmt.Println(foundContext, exists)
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
