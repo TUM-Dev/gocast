@@ -11,6 +11,10 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+func CreateStream(stream *model.Stream) error {
+	return DB.Create(stream).Error
+}
+
 // GetDueStreamsForWorkers retrieves all streams that due to be streamed in a lecture hall.
 func GetDueStreamsForWorkers() []model.Stream {
 	var res []model.Stream
@@ -265,6 +269,7 @@ func SaveStream(vod *model.Stream) error {
 		Files:           vod.Files,
 		Paused:          vod.Paused,
 		Duration:        vod.Duration,
+		StreamStatus:    vod.StreamStatus,
 	}).Error
 	return err
 }

@@ -11,6 +11,15 @@ import (
 	"gorm.io/gorm"
 )
 
+// StreamStatus is the status of a stream (e.g. converting)
+type StreamStatus int
+
+const (
+	StatusUnknown    StreamStatus = iota + 1 // StatusUnknown is the default status of a stream
+	StatusConverting                         // StatusConverting indicates that a worker is currently converting the stream.
+	StatusConverted                          // StatusConverted indicates that the stream has been converted.
+)
+
 type Stream struct {
 	gorm.Model
 
@@ -47,7 +56,13 @@ type Stream struct {
 	Duration         uint32           `gorm:"default:null"`
 	StreamWorkers    []Worker         `gorm:"many2many:stream_workers;"`
 	StreamProgresses []StreamProgress `gorm:"foreignKey:StreamID"`
-	Watched          bool             `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
+	StreamStatus     StreamStatus     `gorm:"not null;default:1"`
+
+	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
+}
+
+func (s Stream) IsConverting() bool {
+	return s.StreamStatus == StatusConverting
 }
 
 // IsDownloadable returns true if the stream is a recording and has at least one file associated with it.
