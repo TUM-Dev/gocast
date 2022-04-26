@@ -29,17 +29,17 @@ func download(c *gin.Context) {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
-	file, err := dao.GetFileById(c.Param("id"))
+	file, err := dao.File.GetFileById(c.Param("id"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	stream, err := dao.GetStreamByID(c, fmt.Sprintf("%d", file.StreamID))
+	stream, err := dao.Streams.GetStreamByID(c, fmt.Sprintf("%d", file.StreamID))
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	course, err := dao.GetCourseById(c, stream.CourseID)
+	course, err := dao.Courses.GetCourseById(c, stream.CourseID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return

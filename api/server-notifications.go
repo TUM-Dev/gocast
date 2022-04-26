@@ -29,7 +29,7 @@ func updateServerNotification(c *gin.Context) {
 		Start:   req.From,
 		Expires: req.Expires,
 	}
-	err := dao.UpdateServerNotification(notification, req.Id)
+	err := dao.ServerNotification.UpdateServerNotification(notification, req.Id)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
@@ -48,7 +48,7 @@ func createServerNotification(c *gin.Context) {
 		Start:   req.From,
 		Expires: req.Expires,
 	}
-	err := dao.CreateServerNotification(notification)
+	err := dao.ServerNotification.CreateServerNotification(notification)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}

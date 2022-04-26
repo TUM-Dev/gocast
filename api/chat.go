@@ -25,6 +25,7 @@ const maxParticipants = 10000
 
 func configGinChatRouter(router *gin.RouterGroup) {
 	wsGroup := router.Group("/:streamID")
+
 	wsGroup.Use(tools.InitStream)
 	wsGroup.GET("/messages", getMessages)
 	wsGroup.GET("/active-poll", getActivePoll)
@@ -96,13 +97,12 @@ func handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []byte) {
 		return
 	}
 
-	chatDao := dao.NewChatDao()
-	if err := chatDao.AddChatPollOptionVote(req.PollOptionId, ctx.User.ID); err != nil {
+	if err := dao.Chat.AddChatPollOptionVote(req.PollOptionId, ctx.User.ID); err != nil {
 		log.WithError(err).Warn("could not add poll option vote")
 		return
 	}
 
-	voteCount, _ := chatDao.GetPollOptionVoteCount(req.PollOptionId)
+	voteCount, _ := dao.Chat.GetPollOptionVoteCount(req.PollOptionId)
 
 	voteUpdateMap := gin.H{
 		"pollOptionId": req.PollOptionId,
@@ -156,7 +156,7 @@ func handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
 		PollOptions: pollOptions,
 	}
 
-	if err := dao.NewChatDao().AddChatPoll(&poll); err != nil {
+	if err := dao.Chat.AddChatPoll(&poll); err != nil {
 		return
 	}
 
@@ -181,19 +181,18 @@ func handleCloseActivePoll(ctx tools.TUMLiveContext) {
 		return
 	}
 
-	chatDao := dao.NewChatDao()
-	poll, err := chatDao.GetActivePoll(ctx.Stream.ID)
+	poll, err := dao.Chat.GetActivePoll(ctx.Stream.ID)
 	if err != nil {
 		return
 	}
 
-	if err = chatDao.CloseActivePoll(ctx.Stream.ID); err != nil {
+	if err = dao.Chat.CloseActivePoll(ctx.Stream.ID); err != nil {
 		return
 	}
 
 	var pollOptions []gin.H
 	for _, option := range poll.PollOptions {
-		voteCount, _ := chatDao.GetPollOptionVoteCount(option.ID)
+		voteCount, _ := dao.Chat.GetPollOptionVoteCount(option.ID)
 		pollOptions = append(pollOptions, option.GetStatsMap(voteCount))
 	}
 
@@ -218,7 +217,7 @@ func handleResolve(ctx tools.TUMLiveContext, msg []byte) {
 		return
 	}
 
-	err = dao.NewChatDao().ResolveChat(req.Id)
+	err = dao.Chat.ResolveChat(req.Id)
 	if err != nil {
 		log.WithError(err).Error("could not delete chat")
 	}
@@ -244,7 +243,7 @@ func handleDelete(ctx tools.TUMLiveContext, msg []byte) {
 	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
 		return
 	}
-	err = dao.NewChatDao().DeleteChat(req.Id)
+	err = dao.Chat.DeleteChat(req.Id)
 	if err != nil {
 		log.WithError(err).Error("could not delete chat")
 	}
@@ -269,7 +268,7 @@ func handleApprove(ctx tools.TUMLiveContext, msg []byte) {
 	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
 		return
 	}
-	err = dao.NewChatDao().ApproveChat(req.Id)
+	err = dao.Chat.ApproveChat(req.Id)
 	if err != nil {
 		log.WithError(err).Error("could not approve chat")
 	}
@@ -291,13 +290,13 @@ func handleLike(ctx tools.TUMLiveContext, msg []byte) {
 		log.WithError(err).Warn("could not unmarshal like request")
 		return
 	}
-	chatDao := dao.NewChatDao()
-	err = chatDao.ToggleLike(ctx.User.ID, req.Id)
+
+	err = dao.Chat.ToggleLike(ctx.User.ID, req.Id)
 	if err != nil {
 		log.WithError(err).Error("error liking/unliking message")
 		return
 	}
-	numLikes, err := chatDao.GetNumLikes(req.Id)
+	numLikes, err := dao.Chat.GetNumLikes(req.Id)
 	if err != nil {
 		log.WithError(err).Error("error getting num of chat likes")
 		return
@@ -354,7 +353,7 @@ func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte
 		AddressedToIds: chat.AddressedTo,
 	}
 	chatForDb.SanitiseMessage()
-	err := dao.NewChatDao().AddMessage(&chatForDb)
+	err := dao.Chat.AddMessage(&chatForDb)
 	if err != nil {
 		if errors.Is(err, model.ErrCooledDown) {
 			sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, session)
@@ -389,11 +388,10 @@ func getMessages(c *gin.Context) {
 
 	var err error
 	var chats []model.Chat
-	chatDao := dao.NewChatDao()
 	if isAdmin {
-		chats, err = chatDao.GetAllChats(uid, tumLiveContext.Stream.ID)
+		chats, err = dao.Chat.GetAllChats(uid, tumLiveContext.Stream.ID)
 	} else {
-		chats, err = chatDao.GetVisibleChats(uid, tumLiveContext.Stream.ID)
+		chats, err = dao.Chat.GetVisibleChats(uid, tumLiveContext.Stream.ID)
 	}
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -409,7 +407,7 @@ func getUsers(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	users, err := dao.NewChatDao().GetChatUsers(tumLiveContext.Stream.ID)
+	users, err := dao.Chat.GetChatUsers(tumLiveContext.Stream.ID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -438,14 +436,13 @@ func getActivePoll(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	chatDao := dao.NewChatDao()
-	poll, err := chatDao.GetActivePoll(tumLiveContext.Stream.ID)
+	poll, err := dao.Chat.GetActivePoll(tumLiveContext.Stream.ID)
 	if err != nil {
 		c.JSON(http.StatusOK, nil)
 		return
 	}
 
-	submitted, err := chatDao.GetPollUserVote(poll.ID, tumLiveContext.User.ID)
+	submitted, err := dao.Chat.GetPollUserVote(poll.ID, tumLiveContext.User.ID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -457,7 +454,7 @@ func getActivePoll(c *gin.Context) {
 		voteCount := int64(0)
 
 		if isAdminOfCourse {
-			voteCount, err = chatDao.GetPollOptionVoteCount(option.ID)
+			voteCount, err = dao.Chat.GetPollOptionVoteCount(option.ID)
 			if err != nil {
 				log.WithError(err).Warn("could not get poll option vote count")
 			}
@@ -520,10 +517,10 @@ func CollectStats() {
 			Viewers:  uint(len(sessions)),
 			Live:     true,
 		}
-		if s, err := dao.GetStreamByID(context.Background(), fmt.Sprintf("%d", sID)); err == nil {
+		if s, err := dao.Streams.GetStreamByID(context.Background(), fmt.Sprintf("%d", sID)); err == nil {
 			if s.LiveNow { // store stats for livestreams only
 				s.Stats = append(s.Stats, stat)
-				if err := dao.AddStat(stat); err != nil {
+				if err := dao.Statistics.AddStat(stat); err != nil {
 					log.WithError(err).Error("Saving stat failed")
 				}
 			}
@@ -564,7 +561,7 @@ func ChatStream(c *gin.Context) {
 func afterDisconnect(id string, jointime time.Time, recording bool) {
 	// watched at least 5 minutes of the lecture and stream is VoD? Count as view.
 	if recording && jointime.Before(time.Now().Add(time.Minute*-5)) {
-		err := dao.AddVodView(id)
+		err := dao.Streams.AddVodView(id)
 		if err != nil {
 			log.WithError(err).Error("Can't save vod view")
 		}

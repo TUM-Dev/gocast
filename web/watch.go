@@ -41,7 +41,7 @@ func WatchPage(c *gin.Context) {
 	data.ChatData.IsPopUp = false
 
 	if data.IsAdminOfCourse && tumLiveContext.Stream.LectureHallID != 0 {
-		lectureHall, err := dao.GetLectureHallByID(tumLiveContext.Stream.LectureHallID)
+		lectureHall, err := dao.LectureHalls.GetLectureHallByID(tumLiveContext.Stream.LectureHallID)
 		if err != nil {
 			sentry.CaptureException(err)
 		} else {
@@ -58,7 +58,7 @@ func WatchPage(c *gin.Context) {
 	}
 	// Check for fetching progress
 	if tumLiveContext.User != nil && tumLiveContext.Stream.Recording {
-		progress, err := dao.LoadProgress(tumLiveContext.User.ID, tumLiveContext.Stream.ID)
+		progress, err := dao.Progress.LoadProgress(tumLiveContext.User.ID, tumLiveContext.Stream.ID)
 		if err != nil {
 			data.Progress = model.StreamProgress{Progress: 0}
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -129,7 +129,7 @@ func (d *WatchPageData) Prepare(c *gin.Context) error {
 
 func (d *WatchPageData) prepareLectureHall(c tools.TUMLiveContext) error {
 	if c.Stream.LectureHallID != 0 {
-		lectureHall, err := dao.GetLectureHallByID(c.Stream.LectureHallID)
+		lectureHall, err := dao.LectureHalls.GetLectureHallByID(c.Stream.LectureHallID)
 		if err != nil {
 			return err
 		}

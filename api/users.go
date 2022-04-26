@@ -46,13 +46,13 @@ func updateUser(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	user, err := dao.GetUserByID(c, req.ID)
+	user, err := dao.Users.GetUserByID(c, req.ID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	user.Role = req.Role
-	err = dao.UpdateUser(user)
+	err = dao.Users.UpdateUser(user)
 	if err != nil {
 		log.WithError(err).Error("Error while updating user")
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -68,7 +68,7 @@ func prepareUserSearch(c *gin.Context) (users []model.User, err error) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "query too short"})
 		return nil, errors.New("query too short")
 	}
-	users, err = dao.SearchUser(q)
+	users, err = dao.Users.SearchUser(q)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return nil, err
@@ -143,7 +143,7 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 	// currently admins can not be deleted.
-	res, err := dao.IsUserAdmin(context.Background(), deleteRequest.Id)
+	res, err := dao.Users.IsUserAdmin(context.Background(), deleteRequest.Id)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -153,7 +153,7 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	err = dao.DeleteUser(context.Background(), deleteRequest.Id)
+	err = dao.Users.DeleteUser(context.Background(), deleteRequest.Id)
 	if err != nil {
 		sentry.CaptureException(err)
 		defer sentry.Flush(time.Second * 2)
@@ -203,7 +203,7 @@ func addUserBatchToCourse(users string, course model.Course) {
 }
 
 func addSingleUserToCourse(name string, email string, course model.Course) {
-	if foundUser, err := dao.GetUserByEmail(context.Background(), email); err != nil {
+	if foundUser, err := dao.Users.GetUserByEmail(context.Background(), email); err != nil {
 		// user not in database yet. Create them & send registration link
 		createdUser := model.User{
 			Name:     name,
@@ -212,7 +212,7 @@ func addSingleUserToCourse(name string, email string, course model.Course) {
 			Password: "",
 			Courses:  []model.Course{course},
 		}
-		if err = dao.CreateUser(context.Background(), &createdUser); err != nil {
+		if err = dao.Users.CreateUser(context.Background(), &createdUser); err != nil {
 			log.Printf("%v", err)
 		} else {
 			go forgotPassword(email)
@@ -220,7 +220,7 @@ func addSingleUserToCourse(name string, email string, course model.Course) {
 	} else {
 		// user Found, append the new course and notify via mail.
 		foundUser.Courses = append(foundUser.Courses, course)
-		err := dao.UpdateUser(foundUser)
+		err := dao.Users.UpdateUser(foundUser)
 		if err != nil {
 			log.WithError(err).Error("Can't update user")
 			return
@@ -236,7 +236,7 @@ func addSingleUserToCourse(name string, email string, course model.Course) {
 }
 
 func CreateUser(c *gin.Context) {
-	usersEmpty, err := dao.AreUsersEmpty(context.Background())
+	usersEmpty, err := dao.Users.AreUsersEmpty(context.Background())
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -272,7 +272,7 @@ func createUserHelper(request createUserRequest, userType uint) (user model.User
 			return u, errors.New("user could not be created")
 		}
 	}
-	dbErr := dao.CreateUser(context.Background(), &u)
+	dbErr := dao.Users.CreateUser(context.Background(), &u)
 	if dbErr != nil {
 		return u, errors.New("user could not be created")
 	}
@@ -283,12 +283,12 @@ func createUserHelper(request createUserRequest, userType uint) (user model.User
 }
 
 func forgotPassword(email string) {
-	u, err := dao.GetUserByEmail(context.Background(), email)
+	u, err := dao.Users.GetUserByEmail(context.Background(), email)
 	if err != nil {
 		log.Println("couldn't get user by email")
 		return
 	}
-	registerLink, err := dao.CreateRegisterLink(context.Background(), u)
+	registerLink, err := dao.Users.CreateRegisterLink(context.Background(), u)
 	if err != nil {
 		log.Println("couldn't create register link")
 		return

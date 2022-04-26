@@ -32,7 +32,7 @@ func getNotifications(c *gin.Context) {
 			targets = append(targets, model.TargetStudent)
 		}
 	}
-	notifications, err := dao.GetNotifications(targets...)
+	notifications, err := dao.Notications.GetNotifications(targets...)
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
@@ -50,7 +50,7 @@ func createNotification(c *gin.Context) {
 		notification.Title = nil
 	}
 	notification.Body = notification.SanitizedBody // reverse json binding
-	if err := dao.AddNotification(&notification); err != nil {
+	if err := dao.Notications.AddNotification(&notification); err != nil {
 		log.Error(err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -63,7 +63,7 @@ func deleteNotification(c *gin.Context) {
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "id must be an integer"})
 	}
-	err = dao.DeleteNotification(uint(id))
+	err = dao.Notications.DeleteNotification(uint(id))
 	if err != nil {
 		log.WithError(err).Error("Error deleting notification")
 		c.AbortWithStatus(http.StatusInternalServerError)

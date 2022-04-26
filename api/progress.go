@@ -43,7 +43,7 @@ func (b *progressBuffer) flush() error {
 	if len(b.progresses) == 0 {
 		return nil
 	}
-	err := dao.SaveProgresses(b.progresses)
+	err := dao.Progress.SaveProgresses(b.progresses)
 	b.progresses = []model.StreamProgress{}
 	return err
 }
@@ -130,7 +130,7 @@ func markWatched(c *gin.Context) {
 		StreamID: request.StreamID,
 		Watched:  request.Watched,
 	}
-	err = dao.SaveProgresses([]model.StreamProgress{progress})
+	err = dao.Progress.SaveProgresses([]model.StreamProgress{progress})
 	if err != nil {
 		log.WithError(err).Error("Could not mark VoD as watched.")
 		c.AbortWithStatus(http.StatusInternalServerError)

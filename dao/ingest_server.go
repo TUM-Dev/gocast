@@ -5,8 +5,39 @@ import (
 	"gorm.io/gorm"
 )
 
+//go:generate mockgen -source=ingest_server.go -destination ../mock_dao/ingest_server.go
+
+var IngestServer = NewIngestServerDao()
+
+type IngestServerDao interface {
+	SaveSlot(slot model.StreamName)
+	SaveIngestServer(server model.IngestServer)
+
+	GetBestIngestServer() (server model.IngestServer, err error)
+	GetTranscodedStreamSlot(ingestServerID uint) (sn model.StreamName, err error)
+	GetStreamSlot(ingestServerID uint) (sn model.StreamName, err error)
+
+	RemoveStreamFromSlot(streamID uint) error
+}
+
+type ingestServerDao struct {
+	db *gorm.DB
+}
+
+func NewIngestServerDao() IngestServerDao {
+	return ingestServerDao{db: DB}
+}
+
+func (d ingestServerDao) SaveSlot(slot model.StreamName) {
+	DB.Save(&slot)
+}
+
+func (d ingestServerDao) SaveIngestServer(server model.IngestServer) {
+	DB.Save(&server)
+}
+
 // GetBestIngestServer returns the ingest-tumlive with the least streams assigned to it
-func GetBestIngestServer() (server model.IngestServer, err error) {
+func (d ingestServerDao) GetBestIngestServer() (server model.IngestServer, err error) {
 	if err = DB.Raw("SELECT i.* FROM stream_names" +
 		" JOIN ingest_servers i ON i.id = stream_names.ingest_server_id" +
 		" WHERE stream_id IS NULL" +
@@ -20,24 +51,16 @@ func GetBestIngestServer() (server model.IngestServer, err error) {
 	return
 }
 
-func GetTranscodedStreamSlot(ingestServerID uint) (sn model.StreamName, err error) {
+func (d ingestServerDao) GetTranscodedStreamSlot(ingestServerID uint) (sn model.StreamName, err error) {
 	err = DB.First(&sn, "is_transcoding AND ingest_server_id = ? AND stream_id IS null", ingestServerID).Error
 	return
 }
 
-func GetStreamSlot(ingestServerID uint) (sn model.StreamName, err error) {
+func (d ingestServerDao) GetStreamSlot(ingestServerID uint) (sn model.StreamName, err error) {
 	err = DB.First(&sn, "is_transcoding = 0 AND ingest_server_id = ? AND stream_id IS null", ingestServerID).Error
 	return
 }
 
-func SaveSlot(slot model.StreamName) {
-	DB.Save(&slot)
-}
-
-func SaveIngestServer(server model.IngestServer) {
-	DB.Save(&server)
-}
-
-func RemoveStreamFromSlot(streamID uint) error {
+func (d ingestServerDao) RemoveStreamFromSlot(streamID uint) error {
 	return DB.Model(&model.StreamName{}).Where("stream_id = ?", streamID).Update("stream_id", gorm.Expr("NULL")).Error
 }

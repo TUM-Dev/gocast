@@ -7,22 +7,29 @@ import (
 	"gorm.io/gorm"
 )
 
+//go:generate mockgen -source=chat.go -destination ../mock_dao/chat.go
+
+var Chat = NewChatDao()
+
 type ChatDao interface {
 	AddChatPollOptionVote(pollOptionId uint, userId uint) error
 	AddChatPoll(poll *model.Poll) error
 	AddMessage(chat *model.Chat) error
+
 	GetChatUsers(streamid uint) ([]model.User, error)
-	ApproveChat(id uint) error
-	DeleteChat(id uint) error
-	ResolveChat(id uint) error
-	ToggleLike(userID uint, chatID uint) error
 	GetNumLikes(chatID uint) (int64, error)
 	GetVisibleChats(userID uint, streamID uint) ([]model.Chat, error)
 	GetAllChats(userID uint, streamID uint) ([]model.Chat, error)
 	GetActivePoll(streamID uint) (model.Poll, error)
-	CloseActivePoll(streamID uint) error
 	GetPollUserVote(pollId uint, userId uint) (uint, error)
 	GetPollOptionVoteCount(pollOptionId uint) (int64, error)
+
+	ApproveChat(id uint) error
+	DeleteChat(id uint) error
+	ResolveChat(id uint) error
+	ToggleLike(userID uint, chatID uint) error
+
+	CloseActivePoll(streamID uint) error
 }
 
 type chatDao struct {
@@ -64,34 +71,6 @@ func (d chatDao) GetChatUsers(streamid uint) ([]model.User, error) {
 		users = []model.User{}
 	}
 	return users, err
-}
-
-// ApproveChat sets the attribute 'visible' to true
-func (d chatDao) ApproveChat(id uint) error {
-	return DB.Model(&model.Chat{}).Where("id = ?", id).Updates(map[string]interface{}{"visible": true}).Error
-}
-
-// DeleteChat removes a chat with the given id from the database.
-func (d chatDao) DeleteChat(id uint) error {
-	return DB.Model(&model.Chat{}).Delete(&model.Chat{}, id).Error
-}
-
-// ResolveChat sets the attribute resolved of chat with the given id to true
-func (d chatDao) ResolveChat(id uint) error {
-	return DB.Model(&model.Chat{}).Where("id = ?", id).Update("resolved", true).Error
-}
-
-// ToggleLike adds a like to a message from the user if it doesn't exist, or removes it if it does
-func (d chatDao) ToggleLike(userID uint, chatID uint) error {
-	err := DB.Exec("INSERT INTO chat_user_likes (user_id, chat_id) VALUES (?, ?)", userID, chatID).Error
-	if err == nil {
-		return nil // like was added successfully
-	}
-	var mysqlErr *mysql.MySQLError
-	if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 { // 1062: duplicate entry -> message already liked -> remove
-		return DB.Exec("DELETE FROM chat_user_likes WHERE user_id = ? AND chat_id = ?", userID, chatID).Error
-	}
-	return err // some other error
 }
 
 // GetNumLikes returns the number of likes for a message
@@ -160,11 +139,6 @@ func (d chatDao) GetActivePoll(streamID uint) (model.Poll, error) {
 	return activePoll, err
 }
 
-// CloseActivePoll closes poll for the stream with the given ID.
-func (d chatDao) CloseActivePoll(streamID uint) error {
-	return DB.Table("polls").Where("stream_id = ? AND active", streamID).Update("active", false).Error
-}
-
 // GetPollUserVote returns the id of the PollOption that the user has voted for. If no vote was found then 0.
 func (d chatDao) GetPollUserVote(pollId uint, userId uint) (uint, error) {
 	var pollOptionIds []uint
@@ -187,4 +161,37 @@ func (d chatDao) GetPollOptionVoteCount(pollOptionId uint) (int64, error) {
 		return 0, err
 	}
 	return count, nil
+}
+
+// ApproveChat sets the attribute 'visible' to true
+func (d chatDao) ApproveChat(id uint) error {
+	return DB.Model(&model.Chat{}).Where("id = ?", id).Updates(map[string]interface{}{"visible": true}).Error
+}
+
+// DeleteChat removes a chat with the given id from the database.
+func (d chatDao) DeleteChat(id uint) error {
+	return DB.Model(&model.Chat{}).Delete(&model.Chat{}, id).Error
+}
+
+// ResolveChat sets the attribute resolved of chat with the given id to true
+func (d chatDao) ResolveChat(id uint) error {
+	return DB.Model(&model.Chat{}).Where("id = ?", id).Update("resolved", true).Error
+}
+
+// ToggleLike adds a like to a message from the user if it doesn't exist, or removes it if it does
+func (d chatDao) ToggleLike(userID uint, chatID uint) error {
+	err := DB.Exec("INSERT INTO chat_user_likes (user_id, chat_id) VALUES (?, ?)", userID, chatID).Error
+	if err == nil {
+		return nil // like was added successfully
+	}
+	var mysqlErr *mysql.MySQLError
+	if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 { // 1062: duplicate entry -> message already liked -> remove
+		return DB.Exec("DELETE FROM chat_user_likes WHERE user_id = ? AND chat_id = ?", userID, chatID).Error
+	}
+	return err // some other error
+}
+
+// CloseActivePoll closes poll for the stream with the given ID.
+func (d chatDao) CloseActivePoll(streamID uint) error {
+	return DB.Table("polls").Where("stream_id = ? AND active", streamID).Update("active", false).Error
 }

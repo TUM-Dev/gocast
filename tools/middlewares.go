@@ -17,6 +17,8 @@ import (
 
 var templ *template.Template
 
+var coursesDao = dao.NewCoursesDao()
+
 // SetTemplates sets the templates for the middlewares to execute error pages
 func SetTemplates(t *template.Template) {
 	templ = t
@@ -60,7 +62,7 @@ func InitContext(c *gin.Context) {
 		return
 	}
 
-	user, err := dao.GetUserByID(c, token.Claims.(*JWTClaims).UserID)
+	user, err := dao.Users.GetUserByID(c, token.Claims.(*JWTClaims).UserID)
 	if err != nil {
 		c.Set("TUMLiveContext", TUMLiveContext{})
 		return
@@ -118,7 +120,7 @@ func InitCourse(c *gin.Context) {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		foundCourse, err := dao.GetCourseById(c, uint(cIDInt))
+		foundCourse, err := coursesDao.GetCourseById(c, uint(cIDInt))
 		if err != nil {
 			c.Status(http.StatusNotFound)
 			RenderErrorPage(c, http.StatusNotFound, CourseNotFoundErrMsg)
@@ -132,7 +134,7 @@ func InitCourse(c *gin.Context) {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		foundCourse, err := dao.GetCourseBySlugYearAndTerm(c, c.Param("slug"), c.Param("teachingTerm"), yInt)
+		foundCourse, err := coursesDao.GetCourseBySlugYearAndTerm(c, c.Param("slug"), c.Param("teachingTerm"), yInt)
 		if err != nil {
 			c.Status(http.StatusNotFound)
 			RenderErrorPage(c, http.StatusNotFound, CourseNotFoundErrMsg)
@@ -171,7 +173,7 @@ func InitStream(c *gin.Context) {
 	// Get stream based on context:
 	var stream model.Stream
 	if c.Param("streamID") != "" {
-		foundStream, err := dao.GetStreamByID(c, c.Param("streamID"))
+		foundStream, err := dao.Streams.GetStreamByID(c, c.Param("streamID"))
 		if err != nil {
 			c.Status(http.StatusNotFound)
 			RenderErrorPage(c, http.StatusNotFound, StreamNotFoundErrMsg)
@@ -185,7 +187,7 @@ func InitStream(c *gin.Context) {
 	if c.IsAborted() {
 		return
 	}
-	course, err := dao.GetCourseById(c, stream.CourseID)
+	course, err := coursesDao.GetCourseById(c, stream.CourseID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
@@ -272,7 +274,7 @@ func Admin(c *gin.Context) {
 func AdminToken(c *gin.Context) {
 	queryParams := c.Request.URL.Query()
 	token := queryParams.Get("token")
-	t, err := dao.GetToken(token)
+	t, err := dao.Token.GetToken(token)
 	if err != nil {
 		c.Status(http.StatusForbidden)
 		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
@@ -283,7 +285,7 @@ func AdminToken(c *gin.Context) {
 		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
 		return
 	}
-	err = dao.TokenUsed(t)
+	err = dao.Token.TokenUsed(t)
 	if err != nil {
 		log.WithError(err).Warn("error marking token as used")
 		return

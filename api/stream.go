@@ -45,20 +45,20 @@ type liveStreamDto struct {
 // livestreams returns all streams that are live
 func liveStreams(c *gin.Context) {
 	var res []liveStreamDto
-	streams, err := dao.GetCurrentLive(c)
+	streams, err := dao.Streams.GetCurrentLive(c)
 	if err != nil {
 		log.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	for _, s := range streams {
-		course, err := dao.GetCourseById(c, s.CourseID)
+		course, err := dao.Courses.GetCourseById(c, s.CourseID)
 		if err != nil {
 			log.Error(err)
 		}
 		lectureHall := "Selfstream"
 		if s.LectureHallID != 0 {
-			l, err := dao.GetLectureHallByID(s.LectureHallID)
+			l, err := dao.LectureHalls.GetLectureHallByID(s.LectureHallID)
 			if err != nil {
 				log.Error(err)
 			} else {
@@ -101,7 +101,7 @@ func pauseStream(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	stream := tumLiveContext.Stream
-	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
+	lectureHall, err := dao.LectureHalls.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
 		log.WithError(err).Error("request to pause stream without lecture hall")
 		return
@@ -124,7 +124,7 @@ func pauseStream(c *gin.Context) {
 		log.WithError(err).Error("Can't mute/unmute")
 		return
 	}
-	err = dao.SavePauseState(stream.ID, pause)
+	err = dao.Streams.SavePauseState(stream.ID, pause)
 	if err != nil {
 		log.WithError(err).Error("Pause: Can't save stream")
 	} else {
@@ -148,12 +148,12 @@ func reportStreamIssue(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
+	lectureHall, err := dao.LectureHalls.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
 		sentry.CaptureException(err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
-	course, err := dao.GetCourseById(c, stream.CourseID)
+	course, err := dao.Courses.GetCourseById(c, stream.CourseID)
 	if err != nil {
 		sentry.CaptureException(err)
 		c.AbortWithStatus(http.StatusInternalServerError)

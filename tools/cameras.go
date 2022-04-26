@@ -14,7 +14,7 @@ import (
 func FetchCameraPresets(ctx context.Context) {
 	span := sentry.StartSpan(ctx, "FetchCameraPresets")
 	defer span.Finish()
-	lectureHalls := dao.GetAllLectureHalls()
+	lectureHalls := dao.LectureHalls.GetAllLectureHalls()
 	for _, lectureHall := range lectureHalls {
 		FetchLHPresets(lectureHall)
 	}
@@ -33,12 +33,12 @@ func FetchLHPresets(lectureHall model.LectureHall) {
 			presets[i].LectureHallId = lectureHall.ID
 		}*/
 		lectureHall.CameraPresets = presets
-		dao.SaveLectureHallFullAssoc(lectureHall)
+		dao.LectureHalls.SaveLectureHallFullAssoc(lectureHall)
 	}
 }
 
 func UsePreset(preset model.CameraPreset) {
-	lectureHall, err := dao.GetLectureHallByID(preset.LectureHallId)
+	lectureHall, err := dao.LectureHalls.GetLectureHallByID(preset.LectureHallId)
 	if err != nil {
 		sentry.CaptureException(err)
 		return
@@ -55,7 +55,7 @@ func UsePreset(preset model.CameraPreset) {
 func TakeSnapshot(preset model.CameraPreset) {
 	UsePreset(preset)
 	time.Sleep(time.Second * 10)
-	lectureHall, err := dao.GetLectureHallByID(preset.LectureHallId)
+	lectureHall, err := dao.LectureHalls.GetLectureHallByID(preset.LectureHallId)
 	if err != nil {
 		sentry.CaptureException(err)
 		return
@@ -67,7 +67,7 @@ func TakeSnapshot(preset model.CameraPreset) {
 		return
 	}
 	preset.Image = fileName
-	err = dao.SavePreset(preset)
+	err = dao.LectureHalls.SavePreset(preset)
 	if err != nil {
 		log.WithField("Camera", c.Ip).WithError(err).Error("TakeSnapshot: failed to save snapshot file")
 		return

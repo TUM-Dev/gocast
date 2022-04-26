@@ -94,7 +94,7 @@ func NewIndexDataWithContext(c *gin.Context) IndexData {
 
 // IsFreshInstallation Checks whether there are users in the database and executes the appropriate template for it
 func IsFreshInstallation(c *gin.Context) {
-	res, err := dao.AreUsersEmpty(context.Background()) // fresh installation?
+	res, err := dao.Users.AreUsersEmpty(context.Background()) // fresh installation?
 	if err != nil {
 		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", nil)
 		return
@@ -106,7 +106,7 @@ func IsFreshInstallation(c *gin.Context) {
 
 // LoadCurrentNotifications Loads notifications from the database into the IndexData object
 func (d *IndexData) LoadCurrentNotifications() {
-	if notifications, err := dao.GetCurrentServerNotifications(); err == nil {
+	if notifications, err := dao.ServerNotification.GetCurrentServerNotifications(); err == nil {
 		d.ServerNotifications = notifications
 	} else if err != gorm.ErrRecordNotFound {
 		log.WithError(err).Warn("could not get server notifications")
@@ -135,14 +135,14 @@ func (d *IndexData) SetYearAndTerm(c *gin.Context) {
 
 // LoadSemesters Load available Semesters from the database into the IndexData object
 func (d *IndexData) LoadSemesters(spanMain *sentry.Span) {
-	d.Semesters = dao.GetAvailableSemesters(spanMain.Context())
+	d.Semesters = dao.Courses.GetAvailableSemesters(spanMain.Context())
 }
 
 // LoadLivestreams Load non-hidden, currently live streams into the IndexData object.
 // LoggedIn streams can only be seen by logged-in users.
 // Enrolled streams can only be seen by users which are allowed to.
 func (d *IndexData) LoadLivestreams(c *gin.Context) {
-	streams, err := dao.GetCurrentLiveNonHidden(context.Background())
+	streams, err := dao.Streams.GetCurrentLiveNonHidden(context.Background())
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
 	}
@@ -152,7 +152,7 @@ func (d *IndexData) LoadLivestreams(c *gin.Context) {
 	var livestreams []CourseStream
 
 	for _, stream := range streams {
-		courseForLiveStream, _ := dao.GetCourseById(context.Background(), stream.CourseID)
+		courseForLiveStream, _ := dao.Courses.GetCourseById(context.Background(), stream.CourseID)
 
 		if courseForLiveStream.Visibility == "loggedin" && tumLiveContext.User == nil {
 			continue
@@ -178,12 +178,12 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span) {
 	if d.TUMLiveContext.User != nil {
 		switch d.TUMLiveContext.User.Role {
 		case model.AdminType:
-			courses = dao.GetAllCoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
+			courses = dao.Courses.GetAllCoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
 		case model.LecturerType:
 			{
 				courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm, spanMain.Context())
 				coursesForLecturer, err :=
-					dao.GetCourseForLecturerIdByYearAndTerm(c, d.CurrentYear, d.CurrentTerm, d.TUMLiveContext.User.ID)
+					dao.Courses.GetCourseForLecturerIdByYearAndTerm(c, d.CurrentYear, d.CurrentTerm, d.TUMLiveContext.User.ID)
 				if err == nil {
 					courses = append(courses, coursesForLecturer...)
 				}
@@ -204,9 +204,9 @@ func (d *IndexData) LoadPublicCourses() {
 	var err error
 
 	if d.TUMLiveContext.User != nil {
-		public, err = dao.GetPublicAndLoggedInCourses(d.CurrentYear, d.CurrentTerm)
+		public, err = dao.Courses.GetPublicAndLoggedInCourses(d.CurrentYear, d.CurrentTerm)
 	} else {
-		public, err = dao.GetPublicCourses(d.CurrentYear, d.CurrentTerm)
+		public, err = dao.Courses.GetPublicCourses(d.CurrentYear, d.CurrentTerm)
 	}
 
 	if err != nil {

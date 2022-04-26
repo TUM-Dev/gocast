@@ -83,7 +83,7 @@ func createToken(user uint) (string, error) {
 // loginWithUserCredentials Try to login with non-tum credentials
 // Returns pointer to sessionData object if successful or nil if not.
 func loginWithUserCredentials(username, password string) *sessionData {
-	if u, err := dao.GetUserByEmail(context.Background(), username); err == nil {
+	if u, err := dao.Users.GetUserByEmail(context.Background(), username); err == nil {
 		// user with this email found.
 		if match, err := u.ComparePasswordAndHash(password); err == nil && match {
 			return &sessionData{u.ID}
@@ -105,7 +105,7 @@ func loginWithTumCredentials(username, password string) (*sessionData, error) {
 			MatriculationNumber: loginResp.UserId,
 			LrzID:               loginResp.LrzIdent,
 		}
-		err = dao.UpsertUser(&user)
+		err = dao.Users.UpsertUser(&user)
 		if err != nil {
 			log.Printf("%v", err)
 			return nil, err
@@ -130,7 +130,7 @@ func CreatePasswordPage(c *gin.Context) {
 	if c.Request.Method == "POST" {
 		p1 := c.Request.FormValue("password")
 		p2 := c.Request.FormValue("passwordConfirm")
-		u, err := dao.GetUserByResetKey(c.Param("key"))
+		u, err := dao.Users.GetUserByResetKey(c.Param("key"))
 		if err != nil {
 			c.Redirect(http.StatusFound, "/")
 			return
@@ -145,16 +145,16 @@ func CreatePasswordPage(c *gin.Context) {
 			_ = templ.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
 			return
 		} else {
-			err := dao.UpdateUser(u)
+			err := dao.Users.UpdateUser(u)
 			if err != nil {
 				log.WithError(err).Error("CreatePasswordPage: Can't update user")
 			}
-			dao.DeleteResetKey(c.Param("key"))
+			dao.Users.DeleteResetKey(c.Param("key"))
 			c.Redirect(http.StatusFound, "/")
 		}
 		return
 	} else {
-		_, err := dao.GetUserByResetKey(c.Param("key"))
+		_, err := dao.Users.GetUserByResetKey(c.Param("key"))
 		if err != nil {
 			c.Redirect(http.StatusFound, "/")
 			return

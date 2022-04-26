@@ -21,7 +21,7 @@ func configTokenRouter(r *gin.Engine) {
 
 func deleteToken(c *gin.Context) {
 	id := c.Param("id")
-	err := dao.DeleteToken(id)
+	err := dao.Token.DeleteToken(id)
 	if err != nil {
 		log.WithError(err).Error("delete token failed")
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -59,7 +59,7 @@ func createToken(c *gin.Context) {
 		Expires: expires,
 		Scope:   req.Scope,
 	}
-	err = dao.AddToken(token)
+	err = dao.Token.AddToken(token)
 	if err != nil {
 		log.WithError(err).Error("Failed to create token")
 		c.AbortWithStatus(http.StatusInternalServerError)

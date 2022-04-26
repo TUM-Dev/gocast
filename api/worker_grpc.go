@@ -60,7 +60,7 @@ func (s server) JoinWorkers(ctx context.Context, request *pb.JoinWorkersRequest)
 		return nil, status.Error(codes.Unauthenticated, "Invalid token")
 	}
 
-	worker, err := dao.GetWorkerByHostname(ctx, request.Hostname)
+	worker, err := dao.Worker.GetWorkerByHostname(ctx, request.Hostname)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, status.Errorf(codes.Internal, "get worker by hostname: %v", err)
 	}
@@ -77,7 +77,7 @@ func (s server) JoinWorkers(ctx context.Context, request *pb.JoinWorkersRequest)
 		WorkerID: uuid.NewV4().String(),
 		LastSeen: time.Now(),
 	}
-	if err := dao.CreateWorker(&worker); err != nil {
+	if err := dao.Worker.CreateWorker(&worker); err != nil {
 		log.WithError(err).Error("Could not add worker to database")
 		return nil, status.Errorf(codes.Internal, "Could not add worker to database")
 	}
@@ -89,10 +89,10 @@ func (s server) JoinWorkers(ctx context.Context, request *pb.JoinWorkersRequest)
 
 //NotifySilenceResults handles the results of silence detection sent by a worker
 func (s server) NotifySilenceResults(ctx context.Context, request *pb.SilenceResults) (*pb.Status, error) {
-	if _, err := dao.GetWorkerByID(ctx, request.WorkerID); err != nil {
+	if _, err := dao.Worker.GetWorkerByID(ctx, request.WorkerID); err != nil {
 		return nil, err
 	}
-	if _, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.GetStreamID())); err != nil {
+	if _, err := dao.Streams.GetStreamByID(ctx, fmt.Sprintf("%d", request.GetStreamID())); err != nil {
 		return nil, err
 	}
 	var silences []model.Silence
@@ -106,7 +106,7 @@ func (s server) NotifySilenceResults(ctx context.Context, request *pb.SilenceRes
 	if len(silences) == 0 {
 		return &pb.Status{Ok: true}, nil
 	}
-	if err := dao.UpdateSilences(silences, fmt.Sprintf("%d", request.StreamID)); err != nil {
+	if err := dao.Streams.UpdateSilences(silences, fmt.Sprintf("%d", request.StreamID)); err != nil {
 		return nil, err
 	}
 	return &pb.Status{Ok: true}, nil
@@ -116,17 +116,17 @@ func (s server) NotifySilenceResults(ctx context.Context, request *pb.SilenceRes
 // SendSelfStreamRequest handles the request from a worker when a stream starts publishing via obs, etc.
 // returns an error if anything goes wrong OR the stream may not be published.
 func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStreamRequest) (*pb.SelfStreamResponse, error) {
-	if _, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
+	if _, err := dao.Worker.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, err
 	}
 	if request.StreamKey == "" {
 		return nil, errors.New("stream key empty")
 	}
-	stream, err := dao.GetStreamByKey(ctx, request.StreamKey)
+	stream, err := dao.Streams.GetStreamByKey(ctx, request.StreamKey)
 	if err != nil {
 		return nil, err
 	}
-	course, err := dao.GetCourseById(ctx, stream.CourseID)
+	course, err := dao.Courses.GetCourseById(ctx, stream.CourseID)
 	if err != nil {
 		return nil, err
 	}
@@ -138,16 +138,16 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 		log.WithFields(log.Fields{"streamId": stream.ID}).Warn("Stream rejected, time out of bounds")
 		return nil, errors.New("stream rejected")
 	}
-	ingestServer, err := dao.GetBestIngestServer()
+	ingestServer, err := dao.IngestServer.GetBestIngestServer()
 	if err != nil {
 		return nil, err
 	}
-	slot, err := dao.GetStreamSlot(ingestServer.ID)
+	slot, err := dao.IngestServer.GetStreamSlot(ingestServer.ID)
 	if err != nil {
 		return nil, err
 	}
 	slot.StreamID = stream.ID
-	dao.SaveSlot(slot)
+	dao.IngestServer.SaveSlot(slot)
 
 	return &pb.SelfStreamResponse{
 		StreamID:     uint32(stream.ID),
@@ -169,12 +169,12 @@ var lightLock = sync.Mutex{}
 func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	_, err := dao.GetWorkerByID(ctx, request.GetWorkerID())
+	_, err := dao.Worker.GetWorkerByID(ctx, request.GetWorkerID())
 	if err != nil {
 		log.WithField("request", request).Warn("Got stream start with invalid WorkerID")
 		return nil, err
 	}
-	stream, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
+	stream, err := dao.Streams.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
 	if err != nil {
 		log.WithError(err).Warn("Can't get stream by ID to set live")
 		return nil, err
@@ -188,7 +188,7 @@ func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted
 	default:
 		stream.PlaylistUrl = request.HlsUrl
 	}
-	err = dao.SaveStream(&stream)
+	err = dao.Streams.SaveStream(&stream)
 	if err != nil {
 		log.WithError(err).Error("Can't save stream when setting live")
 		return nil, err
@@ -198,10 +198,10 @@ func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted
 
 //NotifyStreamFinished handles workers notification about streams being finished
 func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFinished) (*pb.Status, error) {
-	if _, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
+	if _, err := dao.Worker.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, errors.New("authentication failed: invalid worker id")
 	} else {
-		stream, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
+		stream, err := dao.Streams.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
 		if err != nil {
 			log.WithError(err).Error("Can't find stream to set not live")
 		} else {
@@ -210,7 +210,7 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 				if err != nil {
 					log.WithError(err).Error("Can't handle light off switch")
 				}
-				err = dao.SaveEndedState(stream.ID, true)
+				err = dao.Streams.SaveEndedState(stream.ID, true)
 				if err != nil {
 					log.WithError(err).Error("Can't set stream done")
 				}
@@ -219,7 +219,7 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 		// wait 2 hours to clear the dvr cache
 		go func() {
 			time.Sleep(time.Hour * 2)
-			err := dao.RemoveStreamFromSlot(stream.ID)
+			err := dao.IngestServer.RemoveStreamFromSlot(stream.ID)
 			if err != nil {
 				log.WithError(err).Error("Can't remove stream from streamName")
 			}
@@ -228,13 +228,13 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 		// wait 2 hours to clear the dvr cache
 		go func() {
 			time.Sleep(time.Hour * 2)
-			err := dao.RemoveStreamFromSlot(stream.ID)
+			err := dao.IngestServer.RemoveStreamFromSlot(stream.ID)
 			if err != nil {
 				log.WithError(err).Error("Can't remove stream from streamName")
 			}
 		}()
 
-		err = dao.SetStreamNotLiveById(uint(request.StreamID))
+		err = dao.Streams.SetStreamNotLiveById(uint(request.StreamID))
 		if err != nil {
 			log.WithError(err).Error("Can't set stream not live")
 		}
@@ -247,11 +247,11 @@ func handleCameraPositionSwitch(stream model.Stream) error {
 	if stream.LectureHallID == 0 {
 		return nil
 	}
-	course, err := dao.GetCourseById(context.Background(), stream.CourseID)
+	course, err := dao.Courses.GetCourseById(context.Background(), stream.CourseID)
 	if err != nil {
 		return err
 	}
-	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
+	lectureHall, err := dao.LectureHalls.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
 		return err
 	}
@@ -270,7 +270,7 @@ func handleCameraPositionSwitch(stream model.Stream) error {
 		}
 	}
 	// no preset found for this lecture hall, use default
-	defaultPreset, err := dao.NewCameraPresetDao().GetDefaultCameraPreset(lectureHall.ID)
+	defaultPreset, err := dao.CameraPreset.GetDefaultCameraPreset(lectureHall.ID)
 	if err != nil {
 		return err
 	}
@@ -281,7 +281,7 @@ func handleLightOnSwitch(stream model.Stream) error {
 	if stream.LectureHallID == 0 {
 		return nil // no light to switch
 	}
-	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
+	lectureHall, err := dao.LectureHalls.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
 		return err
 	}
@@ -309,7 +309,7 @@ func handleLightOffSwitch(stream model.Stream) error {
 	}
 	lightLock.Lock()
 	defer lightLock.Unlock()
-	liveStreamsInLectureHall, err := dao.GetLiveStreamsInLectureHall(stream.LectureHallID)
+	liveStreamsInLectureHall, err := dao.Streams.GetLiveStreamsInLectureHall(stream.LectureHallID)
 	if err != nil {
 		return err
 	}
@@ -319,7 +319,7 @@ func handleLightOffSwitch(stream model.Stream) error {
 	if len(liveStreamsInLectureHall) == 1 && liveStreamsInLectureHall[0].ID != stream.ID {
 		return nil // the one different live stream is not this one, don't turn off the light
 	}
-	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
+	lectureHall, err := dao.LectureHalls.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
 		return err
 	}
@@ -336,7 +336,7 @@ func handleLightOffSwitch(stream model.Stream) error {
 
 //SendHeartBeat receives heartbeat messages sent by workers
 func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.Status, error) {
-	if worker, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
+	if worker, err := dao.Worker.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, errors.New("authentication failed: invalid worker id")
 	} else {
 		worker.Workload = uint(request.Workload)
@@ -347,7 +347,7 @@ func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.S
 		worker.Disk = request.Disk
 		worker.Uptime = request.Uptime
 		worker.Version = request.Version
-		err := dao.SaveWorker(worker)
+		err := dao.Worker.SaveWorker(worker)
 		if err != nil {
 			return nil, err
 		}
@@ -357,10 +357,10 @@ func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.S
 
 //NotifyTranscodingFinished receives and handles messages from workers about finished transcoding
 func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.TranscodingFinished) (*pb.Status, error) {
-	if _, err := dao.GetWorkerByID(ctx, request.WorkerID); err != nil {
+	if _, err := dao.Worker.GetWorkerByID(ctx, request.WorkerID); err != nil {
 		return nil, err
 	}
-	stream, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
+	stream, err := dao.Streams.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
 	if err != nil {
 		return nil, err
 	}
@@ -380,7 +380,7 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 		stream.Duration = request.Duration
 	}
 	stream.StreamStatus = model.StatusConverted
-	err = dao.SaveStream(&stream)
+	err = dao.Streams.SaveStream(&stream)
 	if err != nil {
 		log.WithError(err).Error("Can't save stream")
 		return nil, err
@@ -392,10 +392,10 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished) (*pb.Status, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	if _, err := dao.GetWorkerByID(ctx, req.WorkerID); err != nil {
+	if _, err := dao.Worker.GetWorkerByID(ctx, req.WorkerID); err != nil {
 		return nil, err
 	}
-	stream, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", req.StreamID))
+	stream, err := dao.Streams.GetStreamByID(ctx, fmt.Sprintf("%d", req.StreamID))
 	if err != nil {
 		return nil, err
 	}
@@ -413,7 +413,7 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 	default:
 		stream.PlaylistUrl = req.HLSUrl
 	}
-	if err = dao.SaveStream(&stream); err != nil {
+	if err = dao.Streams.SaveStream(&stream); err != nil {
 		return nil, err
 	}
 	return &pb.Status{Ok: true}, nil
@@ -422,7 +422,7 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 // GetStreamInfoForUpload returns the stream info for a stream identified by its upload token.
 // after calling, the token is deleted.
 func (s server) GetStreamInfoForUpload(ctx context.Context, request *pb.GetStreamInfoForUploadRequest) (*pb.GetStreamInfoForUploadResponse, error) {
-	_, err := dao.GetWorkerByID(ctx, request.WorkerID)
+	_, err := dao.Worker.GetWorkerByID(ctx, request.WorkerID)
 	if err != nil {
 		return nil, status.Errorf(codes.Unauthenticated, "invalid worker id")
 	}
@@ -430,7 +430,7 @@ func (s server) GetStreamInfoForUpload(ctx context.Context, request *pb.GetStrea
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "key not found")
 	}
-	course, err := dao.GetCourseById(ctx, key.Stream.CourseID)
+	course, err := dao.Courses.GetCourseById(ctx, key.Stream.CourseID)
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "course not found")
 	}
@@ -452,11 +452,11 @@ func (s server) GetStreamInfoForUpload(ctx context.Context, request *pb.GetStrea
 func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	worker, err := dao.GetWorkerByID(ctx, request.WorkerID)
+	worker, err := dao.Worker.GetWorkerByID(ctx, request.WorkerID)
 	if err != nil {
 		return nil, err
 	}
-	stream, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.GetStreamID()))
+	stream, err := dao.Streams.GetStreamByID(ctx, fmt.Sprintf("%d", request.GetStreamID()))
 	if err != nil {
 		log.WithError(err).Println("Can't find stream")
 		return nil, err
@@ -490,11 +490,11 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 
 		switch request.GetSourceType() {
 		case "CAM":
-			dao.SaveCAMURL(&stream, request.HlsUrl)
+			dao.Streams.SaveCAMURL(&stream, request.HlsUrl)
 		case "PRES":
-			dao.SavePRESURL(&stream, request.HlsUrl)
+			dao.Streams.SavePRESURL(&stream, request.HlsUrl)
 		default:
-			dao.SaveCOMBURL(&stream, request.HlsUrl)
+			dao.Streams.SaveCOMBURL(&stream, request.HlsUrl)
 		}
 		NotifyViewersLiveState(stream.Model.ID, true)
 	}()
@@ -532,26 +532,26 @@ func isHlsUrlOk(url string) bool {
 // and invokes the corresponding calls at the workers with the least workload via gRPC
 func NotifyWorkers() {
 	notifyWorkersPremieres()
-	streams := dao.GetDueStreamsForWorkers()
-	workers := dao.GetAliveWorkers()
+	streams := dao.Streams.GetDueStreamsForWorkers()
+	workers := dao.Worker.GetAliveWorkers()
 	if len(workers) == 0 && len(streams) != 0 {
 		log.Error("not enough workers to handle streams")
 		return
 	}
 	for i := range streams {
-		err := dao.SaveEndedState(streams[i].ID, false)
+		err := dao.Streams.SaveEndedState(streams[i].ID, false)
 		if err != nil {
 			log.WithError(err).Warn("Can't set stream undone")
 			sentry.CaptureException(err)
 			continue
 		}
-		courseForStream, err := dao.GetCourseById(context.Background(), streams[i].CourseID)
+		courseForStream, err := dao.Courses.GetCourseById(context.Background(), streams[i].CourseID)
 		if err != nil {
 			log.WithError(err).Warn("Can't get course for stream, skipping")
 			sentry.CaptureException(err)
 			continue
 		}
-		lectureHallForStream, err := dao.GetLectureHallByID(streams[i].LectureHallID)
+		lectureHallForStream, err := dao.LectureHalls.GetLectureHallByID(streams[i].LectureHallID)
 		if err != nil {
 			log.WithError(err).Error("Can't get lecture hall for stream, skipping")
 			sentry.CaptureException(err)
@@ -570,24 +570,24 @@ func NotifyWorkers() {
 			} else {
 				sourceType = "COMB"
 			}
-			server, err := dao.GetBestIngestServer()
+			server, err := dao.IngestServer.GetBestIngestServer()
 			if err != nil {
 				log.WithError(err).Error("Can't find ingest server")
 				continue
 			}
 			var slot model.StreamName
 			if sourceType == "COMB" { //try to find a transcoding slot for comb view:
-				slot, err = dao.GetTranscodedStreamSlot(server.ID)
+				slot, err = dao.IngestServer.GetTranscodedStreamSlot(server.ID)
 			}
 			if sourceType != "COMB" || err != nil {
-				slot, err = dao.GetStreamSlot(server.ID)
+				slot, err = dao.IngestServer.GetStreamSlot(server.ID)
 				if err != nil {
 					log.WithError(err).Error("No free stream slot")
 					continue
 				}
 			}
 			slot.StreamID = streams[i].ID
-			dao.SaveSlot(slot)
+			dao.IngestServer.SaveSlot(slot)
 			req := pb.StreamRequest{
 				SourceType:    sourceType,
 				SourceUrl:     source,
@@ -605,7 +605,7 @@ func NotifyWorkers() {
 			}
 			workerIndex := getWorkerWithLeastWorkload(workers)
 			workers[workerIndex].Workload += 3
-			err = dao.SaveWorkerForStream(streams[i], workers[workerIndex])
+			err = dao.Streams.SaveWorkerForStream(streams[i], workers[workerIndex])
 			if err != nil {
 				log.WithError(err).Error("Could not save worker for stream")
 				return
@@ -630,15 +630,15 @@ func NotifyWorkers() {
 
 //notifyWorkersPremieres looks for premieres that should be streamed and assigns them to workers.
 func notifyWorkersPremieres() {
-	streams := dao.GetDuePremieresForWorkers()
-	workers := dao.GetAliveWorkers()
+	streams := dao.Streams.GetDuePremieresForWorkers()
+	workers := dao.Worker.GetAliveWorkers()
 
 	if len(workers) == 0 && len(streams) != 0 {
 		log.Error("Not enough alive workers for premiere")
 		return
 	}
 	for i := range streams {
-		err := dao.SaveEndedState(streams[i].ID, false)
+		err := dao.Streams.SaveEndedState(streams[i].ID, false)
 		if err != nil {
 			log.WithError(err).Warn("Can't set stream undone")
 			sentry.CaptureException(err)
@@ -650,7 +650,7 @@ func notifyWorkersPremieres() {
 		}
 		workerIndex := getWorkerWithLeastWorkload(workers)
 		workers[workerIndex].Workload += 3
-		ingestServer, err := dao.GetBestIngestServer()
+		ingestServer, err := dao.IngestServer.GetBestIngestServer()
 		if err != nil {
 			log.WithError(err).Error("Can't find ingest server")
 			continue
@@ -681,7 +681,7 @@ func notifyWorkersPremieres() {
 
 // NotifyWorkersToStopStream notifies all workers for a given stream to quit encoding
 func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool) {
-	workers, err := dao.GetWorkersForStream(stream)
+	workers, err := dao.Streams.GetWorkersForStream(stream)
 	if err != nil {
 		log.WithError(err).Error("Could not get workers for stream")
 		return
@@ -713,7 +713,7 @@ func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool) {
 	}
 
 	// All workers for stream are assumed to be done
-	err = dao.ClearWorkersForStream(stream)
+	err = dao.Streams.ClearWorkersForStream(stream)
 	if err != nil {
 		log.WithError(err).Error("Could not delete workers for stream")
 		return

@@ -31,7 +31,7 @@ func editCourseByTokenPage(c *gin.Context) {
 	}
 
 	indexData := NewIndexDataWithContext(c)
-	course, err := dao.GetCourseByToken(c.Request.Form.Get("token"))
+	course, err := dao.Courses.GetCourseByToken(c.Request.Form.Get("token"))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Course not found"})
 		return
@@ -49,7 +49,7 @@ func editCourseByTokenPage(c *gin.Context) {
 }
 
 func HighlightPage(c *gin.Context) {
-	course, err := dao.GetCourseByShortLink(c.Param("shortLink"))
+	course, err := dao.Courses.GetCourseByShortLink(c.Param("shortLink"))
 	if err != nil {
 		tools.RenderErrorPage(c, http.StatusNotFound, tools.PageNotFoundErrMsg)
 		return
@@ -65,7 +65,7 @@ func HighlightPage(c *gin.Context) {
 		return
 	}
 	indexData.TUMLiveContext.Course = &course
-	s, err := dao.GetCurrentOrNextLectureForCourse(c, course.ID)
+	s, err := dao.Courses.GetCurrentOrNextLectureForCourse(c, course.ID)
 	if err == nil {
 		indexData.TUMLiveContext.Stream = &s
 	} else if err == gorm.ErrRecordNotFound {
@@ -115,7 +115,7 @@ func CoursePage(c *gin.Context) {
 		return
 	}
 
-	streamsWithWatchState, err := dao.GetStreamsWithWatchState((*tumLiveContext.Course).ID, (*tumLiveContext.User).ID)
+	streamsWithWatchState, err := dao.Streams.GetStreamsWithWatchState((*tumLiveContext.Course).ID, (*tumLiveContext.User).ID)
 	if err != nil {
 		sentry.CaptureException(err)
 		log.WithError(err).Error("loading streamsWithWatchState and progresses for a given course and user failed")

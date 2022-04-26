@@ -30,7 +30,7 @@ func GetCourseInformation(courseID string, token string) (CourseInfo, error) {
 
 func FetchCourses() {
 	y, t := GetCurrentSemester()
-	courses, err := dao.GetAllCoursesWithTUMIDForSemester(context.Background(), y, t)
+	courses, err := dao.Courses.GetAllCoursesWithTUMIDForSemester(context.Background(), y, t)
 	if err != nil {
 		log.WithError(err).Error("Could not get courses with TUM online identifier:", err)
 		return

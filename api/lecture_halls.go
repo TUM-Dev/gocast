@@ -61,7 +61,7 @@ func updateLectureHall(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	lectureHall, err := dao.GetLectureHallByID(uint(idUint))
+	lectureHall, err := dao.LectureHalls.GetLectureHallByID(uint(idUint))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
@@ -71,7 +71,7 @@ func updateLectureHall(c *gin.Context) {
 	lectureHall.PresIP = req.PresIP
 	lectureHall.CameraIP = req.CameraIp
 	lectureHall.PwrCtrlIp = req.PwrCtrlIp
-	err = dao.SaveLectureHall(lectureHall)
+	err = dao.LectureHalls.SaveLectureHall(lectureHall)
 	if err != nil {
 		log.WithError(err).Error("Error while updating lecture hall")
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -87,19 +87,19 @@ func updateLectureHallsDefaultPreset(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	preset, err := dao.FindPreset(c.Param("id"), fmt.Sprintf("%d", req.PresetID))
+	preset, err := dao.LectureHalls.FindPreset(c.Param("id"), fmt.Sprintf("%d", req.PresetID))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
 	preset.IsDefault = true
-	err = dao.UnsetDefaults(c.Param("id"))
+	err = dao.LectureHalls.UnsetDefaults(c.Param("id"))
 	if err != nil {
 		log.WithError(err).Error("Error unsetting default presets")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	err = dao.SavePreset(preset)
+	err = dao.LectureHalls.SavePreset(preset)
 	if err != nil {
 		log.WithError(err).Error("Error saving preset as default")
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -115,7 +115,7 @@ func deleteLectureHall(c *gin.Context) {
 		return
 	}
 
-	err = dao.DeleteLectureHall(uint(lhID))
+	err = dao.LectureHalls.DeleteLectureHall(uint(lhID))
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -129,7 +129,7 @@ func refreshLectureHallPresets(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	lh, err := dao.GetLectureHallByID(uint(lhID))
+	lh, err := dao.LectureHalls.GetLectureHallByID(uint(lhID))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
@@ -157,7 +157,7 @@ func lectureHallIcal(c *gin.Context) {
 	if tumLiveContext.User != nil && tumLiveContext.User.Role != model.AdminType {
 		queryUid = tumLiveContext.User.ID
 	}
-	icalData, err := dao.GetStreamsForLectureHallIcal(queryUid)
+	icalData, err := dao.LectureHalls.GetStreamsForLectureHallIcal(queryUid)
 	if err != nil {
 		return
 	}
@@ -180,7 +180,7 @@ func switchPreset(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	preset, err := dao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
+	preset, err := dao.LectureHalls.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
@@ -190,13 +190,13 @@ func switchPreset(c *gin.Context) {
 }
 
 func takeSnapshot(c *gin.Context) {
-	preset, err := dao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
+	preset, err := dao.LectureHalls.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		sentry.CaptureException(err)
 	}
 	tools.TakeSnapshot(preset)
-	preset, err = dao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
+	preset, err = dao.LectureHalls.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		sentry.CaptureException(err)
@@ -212,7 +212,7 @@ func setLectureHall(c *gin.Context) {
 		return
 	}
 
-	streams, err := dao.GetStreamsByIds(req.StreamIDs)
+	streams, err := dao.Streams.GetStreamsByIds(req.StreamIDs)
 	if err != nil || len(streams) != len(req.StreamIDs) {
 		log.WithError(err).Error("Can't get all streams to update lecture hall")
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -220,7 +220,7 @@ func setLectureHall(c *gin.Context) {
 	}
 
 	if req.LectureHallID == 0 {
-		err = dao.UnsetLectureHall(req.StreamIDs)
+		err = dao.Streams.UnsetLectureHall(req.StreamIDs)
 		if err != nil {
 			log.WithError(err).Error("Can't update lecture hall for streams")
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -228,12 +228,12 @@ func setLectureHall(c *gin.Context) {
 		return
 	}
 
-	_, err = dao.GetLectureHallByID(req.LectureHallID)
+	_, err = dao.LectureHalls.GetLectureHallByID(req.LectureHallID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	err = dao.SetLectureHall(req.StreamIDs, req.LectureHallID)
+	err = dao.Streams.SetLectureHall(req.StreamIDs, req.LectureHallID)
 	if err != nil {
 		log.WithError(err).Error("can't update lecture hall")
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -251,7 +251,7 @@ func createLectureHall(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
 		return
 	}
-	dao.CreateLectureHall(model.LectureHall{
+	dao.LectureHalls.CreateLectureHall(model.LectureHall{
 		Name:      req.Name,
 		CombIP:    req.CombIP,
 		PresIP:    req.PresIP,

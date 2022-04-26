@@ -5,6 +5,10 @@ import (
 	"gorm.io/gorm"
 )
 
+//go:generate mockgen -source=camera-preset.go -destination ../mock_dao/camera-preset.go
+
+var CameraPreset = NewCameraPresetDao()
+
 type CameraPresetDao interface {
 	GetDefaultCameraPreset(lectureHallID uint) (res model.CameraPreset, err error)
 }

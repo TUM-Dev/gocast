@@ -102,7 +102,7 @@ func BroadcastStats() {
 		if len(sessions) == 0 {
 			continue
 		}
-		stream, err := dao.GetStreamByID(context.Background(), fmt.Sprintf("%d", sID))
+		stream, err := dao.Streams.GetStreamByID(context.Background(), fmt.Sprintf("%d", sID))
 		if err != nil || stream.Recording {
 			continue
 		}

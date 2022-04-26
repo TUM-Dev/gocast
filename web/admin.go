@@ -30,17 +30,17 @@ func AdminPage(c *gin.Context) {
 		return
 	}
 	var users []model.User
-	_ = dao.GetAllAdminsAndLecturers(&users)
-	courses, err := dao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID)
+	_ = dao.Users.GetAllAdminsAndLecturers(&users)
+	courses, err := dao.Courses.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID)
 	if err != nil {
 		log.WithError(err).Error("couldn't query courses for user.")
 		courses = []model.Course{}
 	}
-	workers, err := dao.GetAllWorkers()
+	workers, err := dao.Worker.GetAllWorkers()
 	if err != nil {
 		sentry.CaptureException(err)
 	}
-	lectureHalls := dao.GetAllLectureHalls()
+	lectureHalls := dao.LectureHalls.GetAllLectureHalls()
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
 	page := "schedule"
@@ -65,7 +65,7 @@ func AdminPage(c *gin.Context) {
 	var notifications []model.Notification
 	if c.Request.URL.Path == "/admin/notifications" {
 		page = "notifications"
-		found, err := dao.GetAllNotifications()
+		found, err := dao.Notications.GetAllNotifications()
 		if err != nil {
 			log.WithError(err).Error("couldn't query notifications")
 		} else {
@@ -75,7 +75,7 @@ func AdminPage(c *gin.Context) {
 	var tokens []dao.AllTokensDto
 	if c.Request.URL.Path == "/admin/token" {
 		page = "token"
-		tokens, err = dao.GetAllTokens()
+		tokens, err = dao.Token.GetAllTokens()
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			log.WithError(err).Error("couldn't query tokens")
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -83,7 +83,7 @@ func AdminPage(c *gin.Context) {
 	}
 	if c.Request.URL.Path == "/admin/server-stats" {
 		page = "serverStats"
-		streams, err := dao.GetAllStreams()
+		streams, err := dao.Streams.GetAllStreams()
 		if err != nil {
 			log.WithError(err).Error("Can't get all streams")
 			sentry.CaptureException(err)
@@ -97,13 +97,13 @@ func AdminPage(c *gin.Context) {
 	var serverNotifications []model.ServerNotification
 	if c.Request.URL.Path == "/admin/server-notifications" {
 		page = "serverNotifications"
-		if res, err := dao.GetAllServerNotifications(); err == nil {
+		if res, err := dao.ServerNotification.GetAllServerNotifications(); err == nil {
 			serverNotifications = res
 		} else {
 			log.WithError(err).Warn("could not get all server notifications")
 		}
 	}
-	semesters := dao.GetAvailableSemesters(c)
+	semesters := dao.Courses.GetAvailableSemesters(c)
 	y, t := tum.GetCurrentSemester()
 	err = templ.ExecuteTemplate(c.Writer, "admin.gohtml",
 		AdminPageData{Users: users,
@@ -171,12 +171,12 @@ func CourseStatsPage(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
-	courses, err := dao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID)
+	courses, err := dao.Courses.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID)
 	if err != nil {
 		log.Printf("couldn't query courses for user. %v\n", err)
 		courses = []model.Course{}
 	}
-	semesters := dao.GetAvailableSemesters(c)
+	semesters := dao.Courses.GetAvailableSemesters(c)
 	err = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
 		IndexData: indexData,
 		Courses:   courses,
@@ -198,19 +198,19 @@ func EditCoursePage(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	lectureHalls := dao.GetAllLectureHalls()
-	err := dao.GetInvitedUsersForCourse(tumLiveContext.Course)
+	lectureHalls := dao.LectureHalls.GetAllLectureHalls()
+	err := dao.Courses.GetInvitedUsersForCourse(tumLiveContext.Course)
 	if err != nil {
 		log.Printf("%v", err)
 	}
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
-	courses, err := dao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID)
+	courses, err := dao.Courses.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID)
 	if err != nil {
 		log.Printf("couldn't query courses for user. %v\n", err)
 		courses = []model.Course{}
 	}
-	semesters := dao.GetAvailableSemesters(c)
+	semesters := dao.Courses.GetAvailableSemesters(c)
 	err = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
 		IndexData:      indexData,
 		Courses:        courses,
@@ -258,7 +258,7 @@ func UpdateCourse(c *gin.Context) {
 	tumLiveContext.Course.ChatEnabled = enChat
 	tumLiveContext.Course.AnonymousChatEnabled = enChatAnon
 	tumLiveContext.Course.ModeratedChatEnabled = enChatMod
-	dao.UpdateCourseMetadata(context.Background(), *tumLiveContext.Course)
+	dao.Courses.UpdateCourseMetadata(context.Background(), *tumLiveContext.Course)
 	c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 }
 

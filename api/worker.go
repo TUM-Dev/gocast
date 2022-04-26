@@ -16,7 +16,7 @@ func configWorkerRouter(r *gin.Engine) {
 
 func deleteWorker(c *gin.Context) {
 	id := c.Param("id")
-	err := dao.DeleteWorker(id)
+	err := dao.Worker.DeleteWorker(id)
 	if err != nil {
 		log.WithError(err).Error("Worker deletion failed")
 		c.AbortWithStatus(http.StatusInternalServerError)
