@@ -96,12 +96,13 @@ func handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []byte) {
 		return
 	}
 
-	if err := dao.AddChatPollOptionVote(req.PollOptionId, ctx.User.ID); err != nil {
+	chatDao := dao.NewChatDao()
+	if err := chatDao.AddChatPollOptionVote(req.PollOptionId, ctx.User.ID); err != nil {
 		log.WithError(err).Warn("could not add poll option vote")
 		return
 	}
 
-	voteCount, _ := dao.GetPollOptionVoteCount(req.PollOptionId)
+	voteCount, _ := chatDao.GetPollOptionVoteCount(req.PollOptionId)
 
 	voteUpdateMap := gin.H{
 		"pollOptionId": req.PollOptionId,
@@ -155,7 +156,7 @@ func handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
 		PollOptions: pollOptions,
 	}
 
-	if err := dao.AddChatPoll(&poll); err != nil {
+	if err := dao.NewChatDao().AddChatPoll(&poll); err != nil {
 		return
 	}
 
@@ -180,18 +181,19 @@ func handleCloseActivePoll(ctx tools.TUMLiveContext) {
 		return
 	}
 
-	poll, err := dao.GetActivePoll(ctx.Stream.ID)
+	chatDao := dao.NewChatDao()
+	poll, err := chatDao.GetActivePoll(ctx.Stream.ID)
 	if err != nil {
 		return
 	}
 
-	if err = dao.CloseActivePoll(ctx.Stream.ID); err != nil {
+	if err = chatDao.CloseActivePoll(ctx.Stream.ID); err != nil {
 		return
 	}
 
 	var pollOptions []gin.H
 	for _, option := range poll.PollOptions {
-		voteCount, _ := dao.GetPollOptionVoteCount(option.ID)
+		voteCount, _ := chatDao.GetPollOptionVoteCount(option.ID)
 		pollOptions = append(pollOptions, option.GetStatsMap(voteCount))
 	}
 
@@ -216,7 +218,7 @@ func handleResolve(ctx tools.TUMLiveContext, msg []byte) {
 		return
 	}
 
-	err = dao.ResolveChat(req.Id)
+	err = dao.NewChatDao().ResolveChat(req.Id)
 	if err != nil {
 		log.WithError(err).Error("could not delete chat")
 	}
@@ -242,7 +244,7 @@ func handleDelete(ctx tools.TUMLiveContext, msg []byte) {
 	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
 		return
 	}
-	err = dao.DeleteChat(req.Id)
+	err = dao.NewChatDao().DeleteChat(req.Id)
 	if err != nil {
 		log.WithError(err).Error("could not delete chat")
 	}
@@ -267,7 +269,7 @@ func handleApprove(ctx tools.TUMLiveContext, msg []byte) {
 	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
 		return
 	}
-	err = dao.ApproveChat(req.Id)
+	err = dao.NewChatDao().ApproveChat(req.Id)
 	if err != nil {
 		log.WithError(err).Error("could not approve chat")
 	}
@@ -289,12 +291,13 @@ func handleLike(ctx tools.TUMLiveContext, msg []byte) {
 		log.WithError(err).Warn("could not unmarshal like request")
 		return
 	}
-	err = dao.ToggleLike(ctx.User.ID, req.Id)
+	chatDao := dao.NewChatDao()
+	err = chatDao.ToggleLike(ctx.User.ID, req.Id)
 	if err != nil {
 		log.WithError(err).Error("error liking/unliking message")
 		return
 	}
-	numLikes, err := dao.GetNumLikes(req.Id)
+	numLikes, err := chatDao.GetNumLikes(req.Id)
 	if err != nil {
 		log.WithError(err).Error("error getting num of chat likes")
 		return
@@ -351,7 +354,7 @@ func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte
 		AddressedToIds: chat.AddressedTo,
 	}
 	chatForDb.SanitiseMessage()
-	err := dao.AddMessage(&chatForDb)
+	err := dao.NewChatDao().AddMessage(&chatForDb)
 	if err != nil {
 		if errors.Is(err, model.ErrCooledDown) {
 			sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, session)
@@ -386,10 +389,11 @@ func getMessages(c *gin.Context) {
 
 	var err error
 	var chats []model.Chat
+	chatDao := dao.NewChatDao()
 	if isAdmin {
-		chats, err = dao.GetAllChats(uid, tumLiveContext.Stream.ID)
+		chats, err = chatDao.GetAllChats(uid, tumLiveContext.Stream.ID)
 	} else {
-		chats, err = dao.GetVisibleChats(uid, tumLiveContext.Stream.ID)
+		chats, err = chatDao.GetVisibleChats(uid, tumLiveContext.Stream.ID)
 	}
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -405,7 +409,7 @@ func getUsers(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	users, err := dao.GetChatUsers(tumLiveContext.Stream.ID)
+	users, err := dao.NewChatDao().GetChatUsers(tumLiveContext.Stream.ID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -434,14 +438,14 @@ func getActivePoll(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-
-	poll, err := dao.GetActivePoll(tumLiveContext.Stream.ID)
+	chatDao := dao.NewChatDao()
+	poll, err := chatDao.GetActivePoll(tumLiveContext.Stream.ID)
 	if err != nil {
 		c.JSON(http.StatusOK, nil)
 		return
 	}
 
-	submitted, err := dao.GetPollUserVote(poll.ID, tumLiveContext.User.ID)
+	submitted, err := chatDao.GetPollUserVote(poll.ID, tumLiveContext.User.ID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -453,7 +457,7 @@ func getActivePoll(c *gin.Context) {
 		voteCount := int64(0)
 
 		if isAdminOfCourse {
-			voteCount, err = dao.GetPollOptionVoteCount(option.ID)
+			voteCount, err = chatDao.GetPollOptionVoteCount(option.ID)
 			if err != nil {
 				log.WithError(err).Warn("could not get poll option vote count")
 			}
