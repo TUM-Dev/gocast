@@ -270,7 +270,7 @@ func handleCameraPositionSwitch(stream model.Stream) error {
 		}
 	}
 	// no preset found for this lecture hall, use default
-	defaultPreset, err := dao.GetDefaultCameraPreset(lectureHall.ID)
+	defaultPreset, err := dao.NewCameraPresetDao().GetDefaultCameraPreset(lectureHall.ID)
 	if err != nil {
 		return err
 	}
