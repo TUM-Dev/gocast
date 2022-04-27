@@ -92,7 +92,7 @@ export class Lecture {
         this.courseId = courseId;
         this.lectureId = lectureId;
         this.seriesIdentifier = seriesIdentifier;
-        this.lectureHallId = lectureHallId;
+        this.lectureHallId = "" + lectureHallId;
         this.name = name;
         this.description = description;
         this.streamKey = streamKey;

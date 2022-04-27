@@ -265,7 +265,7 @@
                                                             </div>
                                                         {{end}}
 
-                                                        <p x-show="lecture.newLectureHallId != '0'" class="mt-1 ml-2">
+                                                        <p x-show="lecture.newLectureHallId === '0'" class="mt-1 ml-2">
                                                             <span class="font-semibold">Stream Server:</span>
                                                             <span x-text="'{{$ingestBase}}stream?secret=' + lecture.streamKey"></span>
                                                             <i class="fas fa-clipboard hover:text-purple-500"
@@ -278,7 +278,7 @@
                                                             {{end}}
                                                         </p>
                                                         {{if eq $user.Role 2}}
-                                                            <div x-show="lecture.newLectureHallId == '0'">
+                                                            <div x-show="lecture.newLectureHallId !== '0'">
                                                                 This lecture will be streamed from <span
                                                                         class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}<span x-show="lecture.lectureHallId === '{{$lectureHall.Model.ID}}'">{{$lectureHall.Name}}</span>{{end}}</span>.
                                                                 If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
