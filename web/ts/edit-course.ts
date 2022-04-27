@@ -1,4 +1,4 @@
-import { postData, showMessage } from "./global";
+import { Delete, postData, putData, showMessage } from "./global";
 import { StatusCodes } from "http-status-codes";
 
 export enum UIEditMode {
@@ -213,7 +213,7 @@ export class Lecture {
     }
 
     async saveNewLectureDescription() {
-        const res = await postData("/api/course/" + this.courseId + "/updateDescription/" + this.lectureId, {
+        const res = await putData("/api/course/" + this.courseId + "/updateDescription/" + this.lectureId, {
             name: this.newDescription,
         });
 
@@ -274,7 +274,7 @@ export class Lecture {
     async deleteLectureSeries() {
         const lectureCount = LectureList.lectures.filter((l) => l.seriesIdentifier === this.seriesIdentifier).length;
         if (confirm("Confirm deleting " + lectureCount + " videos in the lecture series?")) {
-            const res = await postData("/api/course/" + this.courseId + "/deleteLectureSeries/" + this.lectureId);
+            const res = await Delete("/api/course/" + this.courseId + "/deleteLectureSeries/" + this.lectureId);
 
             if (res.status === StatusCodes.OK) {
                 LectureList.lectures = LectureList.lectures.filter((l) => l.seriesIdentifier !== this.seriesIdentifier);

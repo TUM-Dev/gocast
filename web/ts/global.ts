@@ -1,5 +1,15 @@
 export * from "./notifications";
 
+export async function putData(url = "", data = {}) {
+    return await fetch(url, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+    });
+}
+
 export async function postData(url = "", data = {}) {
     return await fetch(url, {
         method: "POST",
