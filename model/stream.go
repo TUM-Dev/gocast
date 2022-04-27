@@ -61,6 +61,13 @@ type Stream struct {
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }
 
+func (s Stream) GetName() string {
+	if s.Name != "" {
+		return s.Name
+	}
+	return fmt.Sprintf("Lecture: %s", s.Start.Format("Jan 2, 2006"))
+}
+
 func (s Stream) IsConverting() bool {
 	return s.StreamStatus == StatusConverting
 }

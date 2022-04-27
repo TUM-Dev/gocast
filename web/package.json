@@ -48,6 +48,7 @@
     "videojs-seek-buttons": "^2.2.0"
   },
   "devDependencies": {
+    "@types/video.js": "^7.3.33",
     "@typescript-eslint/eslint-plugin": "^5.20.0",
     "@typescript-eslint/parser": "^5.20.0",
     "autoprefixer": "^10.4.4",
