@@ -32,6 +32,8 @@ func configGinStreamRestRouter(router *gin.Engine) {
 	g.GET("/api/stream/:streamID/issue", reportStreamIssue)
 }
 
+// TODO
+
 type liveStreamDto struct {
 	ID          uint
 	CourseName  string
