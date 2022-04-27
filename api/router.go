@@ -15,7 +15,7 @@ func ConfigGinRouter(router *gin.Engine) {
 	configGinStreamRestRouter(router)
 	configGinUsersRouter(router)
 	configGinCourseRouter(router)
-	configGinDownloadRouter(router)
+	configGinDownloadRouter(router, dao.NewFileDao(), dao.NewStreamsDao(), dao.NewCoursesDao())
 	configGinLectureHallApiRouter(router)
 	configGinSexyApiRouter(router)
 	configProgressRouter(router)
