@@ -1,5 +1,5 @@
-import {postData} from "./global";
-import {StatusCodes} from "http-status-codes";
+import { postData } from "./global";
+import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import dom = videojs.dom;
 
@@ -13,7 +13,15 @@ let player;
 /**
  * Initialize the player and bind it to a DOM object my-video
  */
-export const initPlayer = function (autoplay: boolean, fluid: boolean, showTitleBar: boolean, courseName?: string, streamName?: string, streamUrl?: string, courseUrl?: string) {
+export const initPlayer = function (
+    autoplay: boolean,
+    fluid: boolean,
+    showTitleBar: boolean,
+    courseName?: string,
+    streamName?: string,
+    streamUrl?: string,
+    courseUrl?: string,
+) {
     player = videojs("my-video", {
         liveui: true,
         fluid: fluid,
@@ -216,11 +224,9 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
     });
 };
 
-
-const Component = videojs.getComponent('Component');
+const Component = videojs.getComponent("Component");
 
 export class StartInOverlay extends Component {
-
     // The constructor of a component receives two arguments: the
     // player it will be associated with and an object of options.
     constructor(player, options) {
@@ -233,11 +239,10 @@ export class StartInOverlay extends Component {
 
     // The `createEl` function of a component creates its DOM element.
     createEl() {
-        return super.createEl('div', {
-
+        return super.createEl("div", {
             // Prefixing classes of elements within a player with "vjs-"
             // is a convention used in Video.js.
-            className: 'vjs-title-bar'
+            className: "vjs-title-bar",
         });
     }
 
@@ -253,14 +258,20 @@ export class StartInOverlay extends Component {
             <div class="flex">
             <div class="flex-grow">
                 <h1>
-                    <a target="_blank" class="text-gray-200 hover:text-white hover:underline" href="${window.location.origin + options.streamUrl}">${options.stream}</a>
+                    <a target="_blank" class="text-gray-200 hover:text-white hover:underline" href="${
+                        window.location.origin + options.streamUrl
+                    }">${options.stream}</a>
                 </h1>
                 <h2 class="font-semibold">
-                    <a target="_blank" class="text-gray-300 hover:text-white hover:underline" href="${window.location.origin + options.courseUrl}">${options.course}</a>
+                    <a target="_blank" class="text-gray-300 hover:text-white hover:underline" href="${
+                        window.location.origin + options.courseUrl
+                    }">${options.course}</a>
                 </h2>
             </div>
             <div>
-                <a target="_blank" href="${window.location.origin + options.streamUrl}" class="inline-block text-gray-200 hover:text-white hover:underline">
+                <a target="_blank" href="${
+                    window.location.origin + options.streamUrl
+                }" class="inline-block text-gray-200 hover:text-white hover:underline">
                 TUM-Live <i class="fas fa-external-link-alt"></i>
                 </a>
             </div>
