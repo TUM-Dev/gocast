@@ -47,8 +47,8 @@ func GinServer() (err error) {
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	api.ConfigGinRouter(router)
 	web.ConfigGinRouter(router)
-	//err = router.RunTLS(":443", "fullchain.pem", "privkey.pem")
 	err = router.Run(":8081")
+	//err = router.RunTLS(":443", tools.Cfg.Saml.Cert, tools.Cfg.Saml.Privkey)
 	if err != nil {
 		sentry.CaptureException(err)
 		log.WithError(err).Fatal("Error starting tumlive")
@@ -136,6 +136,7 @@ func main() {
 		&model.Poll{},
 		&model.PollOption{},
 		&model.Notification{},
+		&model.UploadKey{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)

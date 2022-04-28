@@ -38,6 +38,9 @@ require (
 
 require (
 	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
+	github.com/crewjam/saml v0.4.6
+	github.com/golang/mock v1.4.4
+	github.com/icholy/digest v0.1.15
 	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20220419123621-281d546e8452
 )
 
@@ -48,7 +51,6 @@ require (
 	github.com/beevik/etree v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/crewjam/httperr v0.2.0 // indirect
-	github.com/crewjam/saml v0.4.6 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect

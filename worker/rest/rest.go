@@ -1,5 +1,5 @@
-//Package selfstream handles notifications for self streaming from nginx
-package selfstream
+//Package rest handles notifications for self streaming from nginx
+package rest
 
 import (
 	"errors"
@@ -25,6 +25,8 @@ func InitApi(addr string) {
 	http.HandleFunc("/", defaultHandler)
 	http.HandleFunc("/on_publish", streams.onPublish)
 	http.HandleFunc("/on_publish_done", streams.onPublishDone)
+	// this endpoint should **not** be exposed!
+	http.HandleFunc("/upload", handleUpload)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
 

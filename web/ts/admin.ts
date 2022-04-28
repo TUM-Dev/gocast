@@ -3,6 +3,57 @@ import { StatusCodes } from "http-status-codes";
 
 class Admin {}
 
+export class AdminUserList {
+    readonly rowsPerPage: number;
+    readonly numberOfPages: number;
+
+    currentIndex: number;
+
+    constructor() {
+        this.rowsPerPage = 10;
+        this.currentIndex = 0;
+        this.updateVisibleRows();
+
+        this.numberOfPages = Math.ceil(document.getElementById("admin-user-list").children.length / this.rowsPerPage);
+    }
+
+    currentIndexString(): string {
+        return `${this.currentIndex + 1}/${this.numberOfPages}`;
+    }
+
+    prevDisabled(): boolean {
+        return this.currentIndex === 0;
+    }
+
+    nextDisabled(): boolean {
+        return this.currentIndex === this.numberOfPages - 1;
+    }
+
+    next() {
+        this.currentIndex = (this.currentIndex + 1) % this.numberOfPages;
+        this.updateVisibleRows();
+    }
+
+    prev() {
+        this.currentIndex = (this.currentIndex - 1) % this.numberOfPages;
+        this.updateVisibleRows();
+    }
+
+    updateVisibleRows() {
+        const table = document.getElementById("admin-user-list");
+        const minIndex = this.currentIndex * this.rowsPerPage;
+        const maxIndex = this.currentIndex * this.rowsPerPage + this.rowsPerPage - 1;
+        Array.from(table.children).forEach((row: HTMLElement) => {
+            const idx = parseInt(row.dataset.userlistIndex);
+            if (idx < minIndex || idx > maxIndex) {
+                row.classList.add("hidden");
+            } else {
+                row.classList.remove("hidden");
+            }
+        });
+    }
+}
+
 export async function createLectureHall(
     name: string,
     combIP: string,
@@ -52,7 +103,7 @@ export function deleteUser(deletedUserID: number) {
     }
 }
 
-async function updateUser(userID: number, role: number) {
+export async function updateUser(userID: number, role: number) {
     let success = true;
     await fetch("/api/users/update", {
         method: "POST",

@@ -1,4 +1,4 @@
-package selfstream
+package rest
 
 import (
 	"google.golang.org/grpc"

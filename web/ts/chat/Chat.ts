@@ -139,6 +139,7 @@ export class Chat {
                     break;
                 }
                 default: {
+                    this.emojis.getEmojisForMessage(e.target.value, e.target.selectionStart);
                     return;
                 }
             }
@@ -154,6 +155,7 @@ export class Chat {
                     break;
                 }
                 default: {
+                    this.users.filterUsers(e.target.value, e.target.selectionStart);
                     return;
                 }
             }

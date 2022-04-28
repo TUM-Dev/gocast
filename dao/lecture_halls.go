@@ -13,6 +13,11 @@ func FindPreset(lectureHallID string, presetID string) (model.CameraPreset, erro
 	return preset, err
 }
 
+// UnsetDefaults makes all camera presets not default
+func UnsetDefaults(lectureHallID string) error {
+	return DB.Model(&model.CameraPreset{}).Where("lecture_hall_id = ?", lectureHallID).Update("default", nil).Error
+}
+
 func SavePreset(preset model.CameraPreset) error {
 	return DB.Clauses(clause.OnConflict{UpdateAll: true}).Save(&preset).Error
 }

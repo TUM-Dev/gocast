@@ -1,9 +1,13 @@
 package worker
 
 import (
+	"context"
 	"fmt"
+	"io"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -212,6 +216,132 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	}
 }
 
+func HandleUploadRestReq(uploadKey string, localFile string) {
+	client, conn, err := GetClient()
+	if err != nil {
+		log.WithError(err).Error("Error getting client")
+		return
+	}
+	defer closeConnection(conn)
+	resp, err := client.GetStreamInfoForUpload(context.Background(), &pb.GetStreamInfoForUploadRequest{
+		UploadKey: uploadKey,
+		WorkerID:  cfg.WorkerID,
+	})
+	if err != nil {
+		log.WithError(err).Error("Error getting stream info for upload")
+		return
+	}
+	c := StreamContext{
+		streamId:      resp.StreamID,
+		courseSlug:    resp.CourseSlug,
+		teachingTerm:  resp.CourseTerm,
+		teachingYear:  resp.CourseYear,
+		startTime:     resp.StreamStart.AsTime(),
+		endTime:       resp.StreamEnd.AsTime(),
+		streamVersion: "COMB",
+		publishVoD:    true,
+		recordingPath: &localFile,
+	}
+	log.WithFields(log.Fields{"stream": c.streamId, "course": c.courseSlug, "file": localFile}).Debug("Handling upload request")
+
+	needsConversion := false
+
+	if container, err := getContainer(localFile); err != nil {
+		log.WithError(err).Error("Error getting container")
+		needsConversion = true
+	} else if !strings.Contains(container, "mp4") {
+		needsConversion = true
+		log.Debugf("Wrong container: %s, converting", container)
+	}
+
+	if codec, err := getCodec(localFile); err != nil {
+		log.WithError(err).Warn("Error getting codec")
+		needsConversion = true
+	} else if codec != "h264" {
+		needsConversion = true
+		log.Debugf("wrong codec: %s, converting", codec)
+	}
+
+	level, err := getLevel(localFile)
+	if err != nil {
+		log.WithError(err).Warn("Error getting level")
+		needsConversion = true
+	}
+	if levelInt, err := strconv.Atoi(level); err != nil {
+		log.WithError(err).Warnf("Error converting level(%s) to int", level)
+		needsConversion = true
+	} else {
+		if levelInt > 42 {
+			needsConversion = true
+			log.Debugf("Level too high: %d, converting", levelInt)
+		}
+	}
+
+	if needsConversion {
+		log.WithField("stream", c.streamId).Debug("Converting video from upload request")
+		S.startTranscoding(c.getStreamName())
+		err := transcode(&c)
+		if err != nil {
+			log.WithError(err).Error("Error transcoding")
+		}
+		notifyTranscodingDone(&c)
+		S.endTranscoding(c.getStreamName())
+
+	} else {
+		log.WithField("stream", c.streamId).Debug("Not converting video from upload request")
+		// create required directories
+		log.WithField("transcodingFileName", c.getTranscodingFileName()).Debug("Creating output directory")
+		if err = prepare(c.getTranscodingFileName()); err != nil {
+			log.Error(err)
+		}
+		log.WithFields(log.Fields{"in": c.getRecordingTrashName(), "out": c.getTranscodingFileName()}).Debug("Copying file")
+		if err = moveFile(c.getRecordingFileName(), c.getTranscodingFileName()); err != nil {
+			log.WithError(err).Error("Can't move upload to transcoding dir")
+		} else {
+			log.WithField("stream", c.streamId).Debug("Successfully moved upload to target dir")
+		}
+	}
+
+	S.startSilenceDetection(&c)
+	defer S.endSilenceDetection(&c)
+	sd := NewSilenceDetector(c.getTranscodingFileName())
+	if err = sd.ParseSilence(); err != nil {
+		log.WithField("File", c.getTranscodingFileName()).WithError(err).Error("Detecting silence failed.")
+	} else {
+		notifySilenceResults(sd.Silences, c.streamId)
+	}
+
+	upload(&c)
+	notifyUploadDone(&c)
+	_ = os.Remove(c.getRecordingFileName())
+}
+
+// moveFile moves a file from sourcePath to destPath.
+// in contrast to os.Rename, this function can copy files from one drive to another.
+func moveFile(sourcePath, destPath string) error {
+	inputFile, err := os.Open(sourcePath)
+	if err != nil {
+		return fmt.Errorf("open source file: %s", err)
+	}
+	outputFile, err := os.Create(destPath)
+	if err != nil {
+		inputFile.Close()
+		return fmt.Errorf("open dest file: %s", err)
+	}
+	defer outputFile.Close()
+	_, err = io.Copy(outputFile, inputFile)
+	inputFile.Close()
+	if err != nil {
+		return fmt.Errorf("writing to output file: %s", err)
+	}
+	// The copy was successful, so now delete the original file
+	err = os.Remove(sourcePath)
+	if err != nil {
+		return fmt.Errorf("removing original file: %s", err)
+	}
+	return nil
+}
+
 // StreamContext contains all important information on a stream
 type StreamContext struct {
 	streamId      uint32         //id of the stream
@@ -237,11 +367,16 @@ type StreamContext struct {
 	duration uint32 //duration of the stream in seconds
 
 	TranscodingSuccessful bool // TranscodingSuccessful is true if the transcoding was successful
+
+	recordingPath *string // recordingPath: path to the recording (overrides default path if set)
 }
 
 // getRecordingFileName returns the filename a stream should be saved to before transcoding.
 // example: /recordings/eidi_2021-09-23_10-00_COMB.ts
 func (s StreamContext) getRecordingFileName() string {
+	if s.recordingPath != nil {
+		return *s.recordingPath
+	}
 	if !s.isSelfStream {
 		return fmt.Sprintf("%s/%s.ts",
 			cfg.TempDir,
