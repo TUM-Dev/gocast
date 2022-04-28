@@ -27,21 +27,22 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	if data, err = loginWithTumCredentials(username, password); err == nil {
-		startSession(c, data)
-		c.Redirect(http.StatusFound, getRedirectUrl(c))
-		return
-	} else if err != tum.ErrLdapBadAuth {
-		log.WithError(err).Error("Login error")
+	if tools.Cfg.Ldap.UseForLogin {
+		if data, err = loginWithTumCredentials(username, password); err == nil {
+			startSession(c, data)
+			c.Redirect(http.StatusFound, getRedirectUrl(c))
+			return
+		} else if err != tum.ErrLdapBadAuth {
+			log.WithError(err).Error("Login error")
+		}
 	}
-
 	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(true))
 }
 
 func getRedirectUrl(c *gin.Context) string {
-	retur := c.Request.FormValue("return")
+	ret := c.Request.FormValue("return")
 	ref := c.Request.FormValue("ref")
-	if retur != "" {
+	if ret != "" {
 		red, err := url.QueryUnescape(c.Request.FormValue("return"))
 		if err == nil {
 			return red
@@ -124,6 +125,7 @@ func LoginPage(c *gin.Context) {
 	d.UseSAML = tools.Cfg.Saml != nil
 	if d.UseSAML {
 		d.IDPName = tools.Cfg.Saml.IdpName
+		d.IDPColor = tools.Cfg.Saml.IdpColor
 	}
 	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", d)
 }
@@ -183,6 +185,7 @@ type LoginPageData struct {
 	VersionTag string
 	Error      bool
 
-	UseSAML bool
-	IDPName string
+	UseSAML  bool
+	IDPName  string
+	IDPColor string
 }

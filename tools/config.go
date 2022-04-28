@@ -109,11 +109,12 @@ type Config struct {
 		Tokens []string `yaml:"tokens"`
 	} `yaml:"campus"`
 	Ldap struct {
-		URL      string `yaml:"url"`
-		User     string `yaml:"user"`
-		Password string `yaml:"password"`
-		BaseDn   string `yaml:"baseDn"`
-		UserDn   string `yaml:"userDn"`
+		URL         string `yaml:"url"`
+		User        string `yaml:"user"`
+		Password    string `yaml:"password"`
+		BaseDn      string `yaml:"baseDn"`
+		UserDn      string `yaml:"userDn"`
+		UseForLogin bool   `yaml:"useForLogin"`
 	} `yaml:"ldap"`
 	Saml *struct {
 		IdpMetadataURL string `yaml:"idpMetadataURL"`
@@ -122,6 +123,7 @@ type Config struct {
 		EntityID       string `yaml:"entityID"`
 		RootURL        string `yaml:"rootURL"`
 		IdpName        string `yaml:"idpName"`
+		IdpColor       string `yaml:"idpColor"`
 	} `yaml:"saml"`
 	Paths struct {
 		Static string `yaml:"static"`
