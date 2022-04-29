@@ -179,19 +179,6 @@ func GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error)
 	return streams, err
 }
 
-func GetCurrentLiveNonHidden(ctx context.Context) (currentLive []model.Stream, err error) {
-	if streams, found := Cache.Get("NonHiddenCurrentlyLiveStreams"); found {
-		return streams.([]model.Stream), nil
-	}
-	var streams []model.Stream
-	if err := DB.Joins("JOIN courses ON courses.id = streams.course_id").Find(&streams,
-		"live_now = ? AND visibility != ?", true, "hidden").Error; err != nil {
-		return nil, err
-	}
-	Cache.SetWithTTL("NonHiddenCurrentlyLiveStreams", streams, 1, time.Minute)
-	return streams, err
-}
-
 func DeleteStream(streamID string) {
 	DB.Where("id = ?", streamID).Delete(&model.Stream{})
 	Cache.Clear()
