@@ -1,5 +1,5 @@
 {{define "messageTemplate"}}
-    {{- /*gotype: TUM-Live/web.ChatData*/ -}}
+    {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.ChatData*/ -}}
     {{$moderatedChat := .IndexData.TUMLiveContext.Course.ModeratedChatEnabled}}
     <template x-for="m in c.messages" :key="m.ID">
         <div class="relative py-2 px-2"
