@@ -18,35 +18,30 @@ var templateFS embed.FS
 //go:embed node_modules
 var staticFS embed.FS
 
+var templatePaths = []string{
+	"template/*.gohtml",
+	"template/admin/*.gohtml",
+	"template/admin/admin_tabs/*.gohtml",
+	"template/partial/*.gohtml",
+	"template/partial/stream/*.gohtml",
+	"template/partial/course/manage/*.gohtml",
+	"template/partial/admin/*.gohtml",
+	"template/partial/stream/chat/*.gohtml",
+	"template/partial/course/manage/*.gohtml",
+}
+
 func ConfigGinRouter(router *gin.Engine) {
 	if VersionTag != "development" {
 		templateExecutor = tools.ReleaseTemplateExecutor{
-			Template: template.Must(template.ParseFS(templateFS,
-				"template/*.gohtml",
-				"template/admin/*.gohtml",
-				"template/admin/admin_tabs/*.gohtml",
-				"template/partial/*.gohtml",
-				"template/partial/stream/*.gohtml",
-				"template/partial/course/manage/*.gohtml",
-				"template/partial/admin/*.gohtml",
-				"template/partial/stream/chat/*.gohtml",
-				"template/partial/course/manage/*.gohtml",
-			)),
+			Template: template.Must(template.ParseFS(templateFS, templatePaths...)),
 		}
 	} else {
+		prefixedTemplatePaths := make([]string, len(templatePaths))
+		for i, v := range templatePaths {
+			prefixedTemplatePaths[i] = "web/" + v
+		}
 		templateExecutor = tools.DebugTemplateExecutor{
-			Fs: templateFS,
-			Patterns: []string{
-				"template/*.gohtml",
-				"template/admin/*.gohtml",
-				"template/admin/admin_tabs/*.gohtml",
-				"template/partial/*.gohtml",
-				"template/partial/stream/*.gohtml",
-				"template/partial/course/manage/*.gohtml",
-				"template/partial/admin/*.gohtml",
-				"template/partial/stream/chat/*.gohtml",
-				"template/partial/course/manage/*.gohtml",
-			},
+			Patterns: prefixedTemplatePaths,
 		}
 	}
 	tools.SetTemplateExecutor(templateExecutor)

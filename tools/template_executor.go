@@ -1,9 +1,9 @@
 package tools
 
 import (
+	log "github.com/sirupsen/logrus"
 	"html/template"
 	"io"
-	"io/fs"
 )
 
 type TemplateExecutor interface {
@@ -11,12 +11,27 @@ type TemplateExecutor interface {
 }
 
 type DebugTemplateExecutor struct {
-	Fs       fs.FS
 	Patterns []string
 }
 
 func (e DebugTemplateExecutor) ExecuteTemplate(w io.Writer, name string, data interface{}) error {
-	t := template.Must(template.ParseFS(e.Fs, e.Patterns...))
+	if len(e.Patterns) == 0 {
+		panic("Provide at least one pattern for the debug template executor.")
+	}
+
+	var t, err = template.ParseGlob(e.Patterns[0])
+	if err != nil {
+		log.Print("Failed to load pattern: '" + e.Patterns[0] + "'. Error: " + err.Error())
+	}
+
+	for i := 1; i < len(e.Patterns); i++ {
+		pattern := e.Patterns[i]
+		_, err := t.ParseGlob(pattern)
+		if err != nil {
+			log.Print("Failed to load pattern: '" + pattern + "'. Error: " + err.Error())
+		}
+	}
+
 	return t.ExecuteTemplate(w, name, data)
 }
 
