@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"errors"
 	"github.com/RBG-TUM/commons"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"time"
 )
 
 var VersionTag string
@@ -66,6 +68,13 @@ type IndexData struct {
 	CurrentTerm         string
 	UserName            string
 	ServerNotifications []model.ServerNotification
+}
+
+func (_ IndexData) GetGreeting() string {
+	if time.Now().Month() == time.April {
+		return "Ahoi Matrose "
+	}
+	return "Moin "
 }
 
 func NewIndexData() IndexData {
@@ -142,8 +151,9 @@ func (d *IndexData) LoadSemesters(spanMain *sentry.Span) {
 // LoggedIn streams can only be seen by logged-in users.
 // Enrolled streams can only be seen by users which are allowed to.
 func (d *IndexData) LoadLivestreams(c *gin.Context) {
-	streams, err := dao.GetCurrentLiveNonHidden(context.Background())
-	if err != nil {
+	streams, err := dao.GetCurrentLive(context.Background())
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.WithError(err).Error("could not get current live streams")
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
 	}
 
@@ -154,13 +164,19 @@ func (d *IndexData) LoadLivestreams(c *gin.Context) {
 	for _, stream := range streams {
 		courseForLiveStream, _ := dao.GetCourseById(context.Background(), stream.CourseID)
 
+		// only show streams for logged in users if they are logged in
 		if courseForLiveStream.Visibility == "loggedin" && tumLiveContext.User == nil {
 			continue
 		}
+		// only show "enrolled" streams to users which are enrolled or admins
 		if courseForLiveStream.Visibility == "enrolled" {
 			if !isUserAllowedToWatchPrivateCourse(courseForLiveStream, tumLiveContext.User) {
 				continue
 			}
+		}
+		// Only show hidden streams to admins
+		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType) {
+			continue
 		}
 		livestreams = append(livestreams, CourseStream{
 			Course: courseForLiveStream,
