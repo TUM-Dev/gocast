@@ -8,18 +8,17 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	log "github.com/sirupsen/logrus"
-	"html/template"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 )
 
-var templ *template.Template
+var templateExecutor TemplateExecutor
 
-// SetTemplates sets the templates for the middlewares to execute error pages
-func SetTemplates(t *template.Template) {
-	templ = t
+// SetTemplateExecutor sets the templates and template executor for the middlewares to execute error pages
+func SetTemplateExecutor(e TemplateExecutor) {
+	templateExecutor = e
 }
 
 // JWTClaims are the claims contained in a session
@@ -74,7 +73,7 @@ func InitContext(c *gin.Context) {
 // RenderErrorPage renders the error page with the given error code and message.
 // the gin context is always aborted after this function is called.
 func RenderErrorPage(c *gin.Context, status int, message string) {
-	err := templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{
+	err := templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{
 		Status:  status,
 		Message: message,
 	})

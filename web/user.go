@@ -35,7 +35,7 @@ func LoginHandler(c *gin.Context) {
 		log.WithError(err).Error("Login error")
 	}
 
-	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(true))
+	_ = templateExecutor.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(true))
 }
 
 func getRedirectUrl(c *gin.Context) string {
@@ -118,7 +118,7 @@ func loginWithTumCredentials(username, password string) (*sessionData, error) {
 }
 
 func LoginPage(c *gin.Context) {
-	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(false))
+	_ = templateExecutor.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(false))
 }
 
 func LogoutPage(c *gin.Context) {
@@ -136,13 +136,13 @@ func CreatePasswordPage(c *gin.Context) {
 			return
 		}
 		if p1 != p2 {
-			_ = templ.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
+			_ = templateExecutor.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
 			return
 		}
 		err = u.SetPassword(p1)
 		if err != nil {
 			log.WithError(err).Error("error setting password.")
-			_ = templ.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
+			_ = templateExecutor.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
 			return
 		} else {
 			err := dao.UpdateUser(u)
@@ -159,7 +159,7 @@ func CreatePasswordPage(c *gin.Context) {
 			c.Redirect(http.StatusFound, "/")
 			return
 		}
-		_ = templ.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(false))
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(false))
 	}
 }
 

@@ -42,7 +42,7 @@ func editCourseByTokenPage(c *gin.Context) {
 		IndexData: indexData,
 	}
 
-	err = templ.ExecuteTemplate(c.Writer, "edit-course-by-token.gohtml", d)
+	err = templateExecutor.ExecuteTemplate(c.Writer, "edit-course-by-token.gohtml", d)
 	if err != nil {
 		log.Println(err)
 	}
@@ -86,7 +86,7 @@ func HighlightPage(c *gin.Context) {
 		Version:         "",
 		IsHighlightPage: true,
 	}
-	if err = templ.ExecuteTemplate(c.Writer, "watch.gohtml", d2); err != nil {
+	if err = templateExecutor.ExecuteTemplate(c.Writer, "watch.gohtml", d2); err != nil {
 		log.Printf("%v", err)
 		return
 	}
@@ -107,7 +107,7 @@ func CoursePage(c *gin.Context) {
 	// When a user is not logged-in, we don't need the progress data for watch page since
 	// it is only saved for logged-in users.
 	if tumLiveContext.User == nil {
-		err := templ.ExecuteTemplate(c.Writer, "course-overview.gohtml",
+		err := templateExecutor.ExecuteTemplate(c.Writer, "course-overview.gohtml",
 			CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course})
 		if err != nil {
 			sentrygin.GetHubFromContext(c).CaptureException(err)
@@ -147,7 +147,7 @@ func CoursePage(c *gin.Context) {
 		sentry.CaptureException(err)
 		log.WithError(err).Error("marshalling watched infos for client failed")
 	}
-	err = templ.ExecuteTemplate(c.Writer, "course-overview.gohtml",
+	err = templateExecutor.ExecuteTemplate(c.Writer, "course-overview.gohtml",
 		CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course, WatchedData: string(encoded)})
 	if err != nil {
 		sentrygin.GetHubFromContext(c).CaptureException(err)

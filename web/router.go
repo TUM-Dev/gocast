@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-var templ *template.Template
+var templateExecutor tools.TemplateExecutor
 
 //go:embed template
 var templateFS embed.FS
@@ -19,17 +19,38 @@ var templateFS embed.FS
 var staticFS embed.FS
 
 func ConfigGinRouter(router *gin.Engine) {
-	templ = template.Must(template.ParseFS(templateFS,
-		"template/*.gohtml",
-		"template/admin/*.gohtml",
-		"template/admin/admin_tabs/*.gohtml",
-		"template/partial/*.gohtml",
-		"template/partial/stream/*.gohtml",
-		"template/partial/course/manage/*.gohtml",
-		"template/partial/admin/*.gohtml",
-		"template/partial/stream/chat/*.gohtml",
-		"template/partial/course/manage/*.gohtml"))
-	tools.SetTemplates(templ)
+	if VersionTag != "development" {
+		templateExecutor = tools.ReleaseTemplateExecutor{
+			Template: template.Must(template.ParseFS(templateFS,
+				"template/*.gohtml",
+				"template/admin/*.gohtml",
+				"template/admin/admin_tabs/*.gohtml",
+				"template/partial/*.gohtml",
+				"template/partial/stream/*.gohtml",
+				"template/partial/course/manage/*.gohtml",
+				"template/partial/admin/*.gohtml",
+				"template/partial/stream/chat/*.gohtml",
+				"template/partial/course/manage/*.gohtml",
+			)),
+		}
+	} else {
+		templateExecutor = tools.DebugTemplateExecutor{
+			Fs: templateFS,
+			Patterns: []string{
+				"template/*.gohtml",
+				"template/admin/*.gohtml",
+				"template/admin/admin_tabs/*.gohtml",
+				"template/partial/*.gohtml",
+				"template/partial/stream/*.gohtml",
+				"template/partial/course/manage/*.gohtml",
+				"template/partial/admin/*.gohtml",
+				"template/partial/stream/chat/*.gohtml",
+				"template/partial/course/manage/*.gohtml",
+			},
+		}
+	}
+	tools.SetTemplateExecutor(templateExecutor)
+
 	configGinStaticRouter(router)
 	configMainRoute(router)
 	configCourseRoute(router)
