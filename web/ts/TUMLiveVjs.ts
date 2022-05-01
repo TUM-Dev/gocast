@@ -268,12 +268,12 @@ export class Titlebar extends Component {
             <div class="flex">
             <div class="flex-grow">
                 <h1>
-                    <a target="_blank" class="text-gray-200 hover:text-white hover:underline" href="${
+                    <a target="_blank" class="text-gray-100 hover:text-white hover:underline" href="${
             window.location.origin + options.streamUrl
         }">${options.stream}</a>
                 </h1>
                 <h2 class="font-semibold">
-                    <a target="_blank" class="text-gray-300 hover:text-white hover:underline" href="${
+                    <a target="_blank" class="text-gray-100 hover:text-white hover:underline" href="${
             window.location.origin + options.courseUrl
         }">${options.course}</a>
                 </h2>
