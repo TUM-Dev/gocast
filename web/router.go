@@ -31,6 +31,7 @@ func ConfigGinRouter(router *gin.Engine) {
 		"template/partial/course/manage/*.gohtml"))
 	tools.SetTemplates(templ)
 	configGinStaticRouter(router)
+	configSaml(router)
 	configMainRoute(router)
 	configCourseRoute(router)
 }

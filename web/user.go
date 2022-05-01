@@ -27,21 +27,22 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	if data, err = loginWithTumCredentials(username, password); err == nil {
-		startSession(c, data)
-		c.Redirect(http.StatusFound, getRedirectUrl(c))
-		return
-	} else if err != tum.ErrLdapBadAuth {
-		log.WithError(err).Error("Login error")
+	if tools.Cfg.Ldap.UseForLogin {
+		if data, err = loginWithTumCredentials(username, password); err == nil {
+			startSession(c, data)
+			c.Redirect(http.StatusFound, getRedirectUrl(c))
+			return
+		} else if err != tum.ErrLdapBadAuth {
+			log.WithError(err).Error("Login error")
+		}
 	}
-
 	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(true))
 }
 
 func getRedirectUrl(c *gin.Context) string {
-	retur := c.Request.FormValue("return")
+	ret := c.Request.FormValue("return")
 	ref := c.Request.FormValue("ref")
-	if retur != "" {
+	if ret != "" {
 		red, err := url.QueryUnescape(c.Request.FormValue("return"))
 		if err == nil {
 			return red
@@ -56,11 +57,12 @@ func getRedirectUrl(c *gin.Context) string {
 }
 
 type sessionData struct {
-	userid uint
+	userid        uint
+	samlSubjectID *string
 }
 
 func startSession(c *gin.Context, data *sessionData) {
-	token, err := createToken(data.userid)
+	token, err := createToken(data.userid, data.samlSubjectID)
 	if err != nil {
 		log.WithError(err).Error("Could not create token")
 		return
@@ -68,14 +70,15 @@ func startSession(c *gin.Context, data *sessionData) {
 	c.SetCookie("jwt", token, 60*60*24*7, "/", "", tools.CookieSecure, true)
 }
 
-func createToken(user uint) (string, error) {
+func createToken(user uint, samlSubjectID *string) (string, error) {
 	t := jwt.New(jwt.GetSigningMethod("RS256"))
 
 	t.Claims = &tools.JWTClaims{
 		RegisteredClaims: &jwt.RegisteredClaims{
 			ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Hour * 24 * 7)}, // Token expires in one week
 		},
-		UserID: user,
+		UserID:        user,
+		SamlSubjectID: samlSubjectID,
 	}
 	return t.SignedString(tools.Cfg.GetJWTKey())
 }
@@ -86,7 +89,7 @@ func loginWithUserCredentials(username, password string) *sessionData {
 	if u, err := dao.GetUserByEmail(context.Background(), username); err == nil {
 		// user with this email found.
 		if match, err := u.ComparePasswordAndHash(password); err == nil && match {
-			return &sessionData{u.ID}
+			return &sessionData{u.ID, nil}
 		}
 		return nil
 	}
@@ -111,14 +114,20 @@ func loginWithTumCredentials(username, password string) (*sessionData, error) {
 			return nil, err
 		}
 
-		return &sessionData{user.ID}, nil
+		return &sessionData{user.ID, nil}, nil
 	}
 
 	return nil, err
 }
 
 func LoginPage(c *gin.Context) {
-	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(false))
+	d := NewLoginPageData(false)
+	d.UseSAML = tools.Cfg.Saml != nil
+	if d.UseSAML {
+		d.IDPName = tools.Cfg.Saml.IdpName
+		d.IDPColor = tools.Cfg.Saml.IdpColor
+	}
+	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", d)
 }
 
 func LogoutPage(c *gin.Context) {
@@ -175,4 +184,8 @@ func NewLoginPageData(err bool) LoginPageData {
 type LoginPageData struct {
 	VersionTag string
 	Error      bool
+
+	UseSAML  bool
+	IDPName  string
+	IDPColor string
 }
