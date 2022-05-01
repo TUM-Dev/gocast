@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/getsentry/sentry-go v0.13.0
-	github.com/golang/protobuf v1.5.2
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/icza/gox v0.0.0-20220321141217-e2d488ab2fbc
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/makasim/sentryhook v0.4.0
@@ -12,7 +12,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil/v3 v3.22.3
 	github.com/sirupsen/logrus v1.8.1
-	github.com/tidwall/gjson v1.14.0
+	github.com/tidwall/gjson v1.14.1
 	github.com/u2takey/ffmpeg-go v0.4.1
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
