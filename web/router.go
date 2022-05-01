@@ -53,10 +53,17 @@ func ConfigGinRouter(router *gin.Engine) {
 
 func configGinStaticRouter(router gin.IRoutes) {
 	router.Static("/public", tools.Cfg.Paths.Static)
-	router.StaticFS("/static", http.FS(staticFS))
-	router.GET("/favicon.ico", func(c *gin.Context) {
-		c.FileFromFS("assets/favicon.ico", http.FS(staticFS))
-	})
+	if VersionTag != "development" {
+		router.StaticFS("/static", http.FS(staticFS))
+		router.GET("/favicon.ico", func(c *gin.Context) {
+			c.FileFromFS("assets/favicon.ico", http.FS(staticFS))
+		})
+	} else {
+		router.Static("/static", "web/")
+		router.GET("/favicon.ico", func(c *gin.Context) {
+			c.File("web/assets/favicon.ico")
+		})
+	}
 }
 
 //todo: un-export functions
