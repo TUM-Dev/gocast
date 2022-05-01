@@ -84,7 +84,7 @@
                             </label>
                         </div>
                     </div>
-                    <ul class="rounded">
+                    <ul class="dark:bg-secondary bg-gray-100 rounded">
                         {{if not $course.Streams}}
                             <p class="text-3 p-4">It might take a minute to load your lectures from TUMOnline</p>
                         {{end}}
@@ -218,283 +218,272 @@
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <div x-show="lecture.uiEditMode > 0" class="px-4 pt-4 mt-4 border-t-2 border-gray-100/20">
-                                            <div x-data="{ id: $id('text-input') }" class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
-                                                <label :for="id" class="hidden">Lecture title</label>
-                                                <input :id="id"
+                                        <div class="w-3/4">
+                                            <form onsubmit="admin.saveLectureName(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
+                                                  class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                                                <label for="lectureNameInput{{$lecture.Model.ID}}" class="hidden">Lecture
+                                                    title</label>
+                                                <input id="lectureNameInput{{$lecture.Model.ID}}"
+                                                       onfocus="admin.focusNameInput(this, {{$lecture.Model.ID}})"
                                                        class="grow border-none" type="text"
-                                                       x-model="lecture.newName"
-                                                       x-on:keyup="lecture.updateIsDirty()"
+                                                       value="{{$lecture.Name}}"
                                                        placeholder="Lecture 2: Dark-Patterns I"
                                                        autocomplete="off">
-                                            </div>
+                                                <button id="nameSubmitBtn{{$lecture.Model.ID}}"
+                                                        class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
+                                            </form>
                                             <div class="w-full mt-3">
-                                                <div x-data="{ id: $id('text-input') }" class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
-                                                    <label :for="id" class="hidden">Lecture description</label>
-                                                    <textarea :id="id"
-                                                              class="grow border-none"
-                                                              placeholder="Add a nice description, links, and more. You can use Markdown."
-                                                              autocomplete="off"
-                                                              x-model="lecture.newDescription"
-                                                              x-on:keyup="lecture.updateIsDirty()"
-                                                    ></textarea>
+                                                <div class="w-full flex justify-center">
+                                                    <i onclick="admin.toggleExtraInfos(this, {{$lecture.Model.ID}})"
+                                                       class="fas fa-angle-double-down hover:text-purple-500"></i>
                                                 </div>
-
-
-                                                <template x-if="!lecture.isPast && !lecture.isRecording">
-                                                    <div class="p-3 rounded border-gray-100 border-2 mt-3">
-                                                        {{if eq $user.Role 1}}
-                                                            <div x-data="{ id: $id('select') }">
-                                                                <label class="mx-2">
-                                                                    <span>Select Lecture Hall</span>
-                                                                    <select class="text-gray-700 dark:text-gray-300 dark:bg-secondary bg-gray-100 p-2"
-                                                                            :id="id"
-                                                                            x-on:change="lecture.updateIsDirty()"
-                                                                            x-model="lecture.newLectureHallId">
-                                                                        <option class="text-gray-700 dark:text-gray-300" value="0">
-                                                                            Self streaming
-                                                                        </option>
-                                                                        {{range $lectureHall := $lectureHalls}}
-                                                                            <option class="text-gray-700 dark:text-gray-300" value="{{$lectureHall.Model.ID}}" :selected="lecture.lectureHallId === '{{$lectureHall.Model.ID}}'">
-                                                                                {{$lectureHall.Name}}
-                                                                            </option>
-                                                                        {{end}}
-                                                                    </select>
-                                                                </label>
-                                                            </div>
-                                                        {{end}}
-
-                                                        <p x-show="lecture.newLectureHallId === '0'" class="mt-1 ml-2">
-                                                            <span class="font-semibold">Stream Server:</span>
-                                                            <span x-text="'{{$ingestBase}}stream?secret=' + lecture.streamKey"></span>
-                                                            <i class="fas fa-clipboard hover:text-purple-500"
-                                                               @click="() => admin.copyToClipboard('{{$ingestBase}}stream?secret=' + lecture.streamKey)"></i>
-                                                            <br>
-                                                            <span class="font-semibold">Stream Key:</span>
-                                                            <span x-text="lecture.courseSlug + '-' + lecture.lectureId"></span><br>
-                                                            {{if ne $user.Role 1}}
-                                                                <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
-                                                            {{end}}
-                                                        </p>
-                                                        {{if eq $user.Role 2}}
-                                                            <div x-show="lecture.newLectureHallId !== '0'">
-                                                                This lecture will be streamed from <span
-                                                                        class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}<span x-show="lecture.lectureHallId === '{{$lectureHall.Model.ID}}'">{{$lectureHall.Name}}</span>{{end}}</span>.
-                                                                If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
-                                                            </div>
-                                                        {{end}}
-                                                    </div>
-                                                </template>
-
-                                            </div>
-
-                                            <template x-if="lecture.isRecording">
-                                                <span class="absolute left-0 bottom-0 p-4">
-                                                    <template x-if="lecture.files.length > 0">
-                                                        <span class="relative mr-2" x-data="{expand:false}">
-                                                            <button @click="expand=!expand" type="button"
-                                                                    id="menu-button" aria-expanded="true" aria-haspopup="true">
-                                                                <i class="fas fa-cloud-download-alt text-4 text-lg hover:text-1"></i>
-                                                            </button>
-                                                            <span x-cloak x-show="expand" @click.outside="expand = false"
-                                                                  class="origin-top-left absolute top-full left-0 m-auto w-32
-                                                                 dark:bg-secondary ring-1 ring-black ring-opacity-5 focus:outline-none"
-                                                                  role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
-                                                                <span class="py-1" role="none">
-                                                                    <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
-                                                                    <template x-for="file in lecture.files" :key="file.id">
-                                                                        <a :href="'/api/download/' + file.id" download
-                                                                           class="hover:bg-gray-100 text-3 dark:hover:bg-gray-600
-                                                                           block px-4 py-2 text-sm first:rounded-t-md last:rounded-b-md"
-                                                                           x-text="file.friendlyName" role="menuitem" tabindex="-1" id="menu-item-0"></a>
-                                                                    </template>
-                                                                </span>
-                                                            </span>
-                                                        </span>
-                                                    </template>
-                                                    <template x-if="lecture.hasStats">
-                                                        <a>
-                                                            <i class="fas fa-chart-line text-4 text-lg hover:text-1"
-                                                               title="Live Statistics"
-                                                               @click="admin.showStats(lecture.lectureId)"></i>
-                                                        </a>
-                                                    </template>
-                                                </span>
-                                            </template>
-
-                                            <div x-show="lecture.lastErrors.length > 0" class="px-6 py-3 bg-red-400 my-3 rounded">
-                                                <ul>
-                                                    <template x-for="error in lecture.lastErrors">
-                                                        <li x-text="error"></li>
-                                                    </template>
-                                                </ul>
-                                            </div>
-
-                                            <div class="mt-6 flex justify-end">
-                                                <button :disabled="lecture.isSaving" @click="lecture.discardEdit();" class="px-8 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4" >
-                                                    Discard Changes
-                                                </button>
-                                                <button
-                                                        @click="lecture.saveEdit();"
-                                                        :disabled="!lecture.isDirty || lecture.isSaving"
-                                                        class="px-8 py-3 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500"
-                                                        x-text="lecture.isSaving ? 'loading ...' : (lecture.uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
-                                                ></button>
-                                            </div>
-                                        </div>
-                                    </li>
-                            </template>
-                            <li class="w-full p-6 dark:hover:bg-primary hover:bg-white border-b-2 border-primary">
-                                <form method="post" action="/api/createLecture"
-                                      x-data="admin.createLectureForm()"
-                                      @submit.prevent="submitData"
-                                      x-init="courseID = {{$course.Model.ID}}">
-                                    <div class="flex">
-                                        <div class="w-1/4">
-                                            <div class="text-1 font-semibold">Create Lecture</div>
-                                            <label>
-                                                <input type="checkbox" x-model="formData.premiere" @change="(v) => v && (formData.recurring = false)" class="w-auto">
-                                                <span class="text-3">Video Premiere</span>
-                                            </label><br>
-                                            <label>
-                                                <input type="checkbox" x-model="formData.vodup" @change="(v) => v && (formData.recurring = false)" class="w-auto">
-                                                <span class="text-3">VoD Upload</span>
-                                            </label><br>
-                                            <label>
-                                                <input type="checkbox" :disabled="formData.premiere || formData.vodup" x-model="formData.recurring" class="w-auto">
-                                                <span class="text-3">Recurring Event</span>
-                                            </label>
-                                        </div>
-                                        <div class="w-3/4">
-                                            <div class="dark:hover:bg-primary hover:bg-white">
-                                                <div class="flex flex-col md:flex-row">
-                                                    <label for="name" class="md:w-1/2 w-full" x-show="!loading">
-                                                        <span class="font-semibold p-2">Lecture Name</span>
-                                                        <input name="name" id="name" type="text" x-model="formData.title"
-                                                               placeholder="L01: Binary Trees"/>
-                                                    </label>
-                                                    <label for="start" class="md:w-1/4 w-full" x-show="!loading">
-                                                        <span class="font-semibold p-2">Start</span>
-                                                        <input name="start" type="text" placeholder="2021-04-08 14:00"
-                                                               id="start" x-model="formData.start" x-ref="start"
-                                                               @change="() => setTimeout(() => { regenerateRecurringDates(); recalculateDuration(); }, 100)"
-                                                               x-init="flatpickr($refs.start, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})"/>
-                                                    </label>
-                                                    <label x-show="!formData.premiere && !formData.vodup && !loading"
-                                                           for="end" class="md:w-1/4 w-full">
-                                                        <span class="font-semibold p-2">End</span>
-                                                        <span x-show="formData.formatedDuration != ''" class="text-sm font-light opacity-75">
-                                                            ( <span x-text="formData.formatedDuration"></span> )
-                                                        </span>
-                                                        <input name="end" type="text" placeholder="16:00" id="end"
-                                                               x-model="formData.end"
-                                                               @change="() => setTimeout(() => recalculateDuration(), 100)"
-                                                               x-ref="end"
-                                                               x-init="flatpickr($refs.end, {enableTime: true, noCalendar: true, dateFormat: 'H:i', time_24hr: true })"/>
-                                                    </label>
-                                                    <label class="relative"
-                                                           x-show="formData.premiere || formData.vodup && !loading"
-                                                           x-data="{ showTooltip:false }">
-                                                        <span class="font-semibold p-2">Video File <i
-                                                                    class="text-warn fas fa-exclamation-triangle"
-                                                                    @mouseover="showTooltip=true"
-                                                                    @mouseleave="showTooltip=false">
-                                                                <span class="absolute left-0 top-0 text-gray-700 transform -translate-y-6 bg-white rounded p-1 shadow font-light"
-                                                                      x-show="showTooltip">If possible: mp4, H.264, 1080p @ 30fps</span>
-                                                            </i></span>
-                                                        <input type="file" accept="video/mp4"
-                                                               x-on:change="formData.file = Object.values($event.target.files)">
-                                                    </label>
-
-                                                </div>
-                                            </div>
-                                            <div class="mt-4">
-                                                <div class="flex items-center">
-                                                    <label class="mx-2"
-                                                           x-show="!formData.premiere && !formData.vodup && !loading">
-                                                        <span class="font-semibold p-2">Lecture Hall:</span>
-                                                        <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
-                                                                id="lectureHallBulkSelect"
-                                                                x-model="formData.lectureHallId">
-                                                            <option class="text-gray-300" value="0">Self streaming
-                                                            </option>
-                                                            {{range $lectureHall := $lectureHalls}}
-                                                                <option value="{{$lectureHall.Model.ID}}"
-                                                                        class="text-gray-300">
-                                                                    {{$lectureHall.Name}}
+                                                <div id="extraInfos{{$lecture.Model.ID}}" class="hidden">
+                                                    <form onsubmit="admin.saveLectureDescription(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
+                                                          class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                                                        <label for="lectureDescriptionInput{{$lecture.Model.ID}}"
+                                                               class="hidden">Lecture description</label>
+                                                        <textarea id="lectureDescriptionInput{{$lecture.Model.ID}}"
+                                                                  onfocus="admin.focusDescriptionInput(this, {{$lecture.Model.ID}})"
+                                                                  class="grow border-none"
+                                                                  placeholder="Add a nice description, links, and more. You can use Markdown."
+                                                                  autocomplete="off">{{$lecture.Description}}</textarea>
+                                                        <button id="descriptionSubmitBtn{{$lecture.Model.ID}}"
+                                                                class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
+                                                    </form>
+                                                    {{if and (not $lecture.IsPast) (not $lecture.Recording)}}
+                                                    {{if eq $user.Role 1}}
+                                                    <div class="flex"
+                                                         x-data="{ streamSelectedLectureHallId: {{$lecture.LectureHallID}}, showSubmit: false }">
+                                                        <label class="mx-2">
+                                                            <span>Select Lecture Hall</span>
+                                                            <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
+                                                                    id="lectureHallSelector{{$lecture.Model.ID}}"
+                                                                    @change="showSubmit = true"
+                                                                    x-model="streamSelectedLectureHallId">
+                                                                <option class="text-gray-300" value="0">Self
+                                                                    streaming
                                                                 </option>
-                                                            {{end}}
-                                                        </select>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                            <div class="mt-4">
-                                                <div class="flex" x-show="formData.recurring && !loading">
-                                                        <div class="w-1/4 pl-2">
-                                                            <span class="font-semibold mb-6">Interval</span><br>
-                                                            <label>
-                                                                <input type="radio" value="daily" x-model="formData.recurringInterval" class="w-auto" @change="regenerateRecurringDates">
-                                                                <span class="text-3">Repeat Daily</span>
-                                                            </label><br>
-                                                            <label>
-                                                                <input type="radio" value="weekly" x-model="formData.recurringInterval" class="w-auto" @change="regenerateRecurringDates">
-                                                                <span class="text-3">Repeat Weekly</span>
-                                                            </label><br>
-                                                            <label>
-                                                                <input type="radio" value="monthly" x-model="formData.recurringInterval" class="w-auto" @change="regenerateRecurringDates">
-                                                                <span class="text-3">Repeat Monthly</span>
-                                                            </label><br>
-                                                        </div>
-                                                        <div class="w-1/4 pl-2">
-                                                            <label for="events-count" class="w-full">
-                                                                <span class="font-semibold p-2">Count</span>
-                                                                <input name="events-count" type="number" placeholder="14" id="end" min="1" x-model="formData.eventsCount" @change="regenerateRecurringDates" @keyup="regenerateRecurringDates"/>
-                                                            </label>
-                                                        </div>
-                                                        <div class="w-1/2 pl-2">
-                                                            <span class="font-semibold mb-6">Dates</span><br>
-                                                            <span x-show="formData.start == ''" class="ml-2 opacity-75">- Please set "start" first -</span>
-                                                            <ul class="ml-2" x-show="formData.start != ''">
-                                                                <li
-                                                                    x-bind:style="{ 'cursor': 'default' }"
-                                                                >
-                                                                    <i class="far fa-check-square"></i>
-                                                                    <span x-text="(new Date(formData.start)).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
-                                                                </li>
-                                                                <template x-for="date in formData.recurringDates">
-                                                                    <li
-                                                                        x-bind:style="{ 'cursor': 'pointer', 'opacity': date.enabled ? '1' : '0.3' }"
-                                                                        @click="() => (date.enabled = !date.enabled)"
-                                                                    >
-                                                                        <i x-show="date.enabled" class="far fa-check-square"></i>
-                                                                        <i x-show="!date.enabled" class="far fa-square"></i>
-                                                                        <span x-text="date.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
-                                                                    </li>
-                                                                </template>
-                                                            </ul>
-                                                        </div>
+                                                                {{range $lectureHall := $lectureHalls}}
+                                                                    <option class="text-gray-300"
+                                                                            value="{{$lectureHall.Model.ID}}"{{if eq $lecture.LectureHallID $lectureHall.Model.ID}} selected{{end}}>
+                                                                        {{$lectureHall.Name}}
+                                                                    </option>
+                                                                {{end}}
+                                                            </select>
+                                                        </label>
+                                                        <a id="applyLectureHall{{$lecture.Model.ID}}"
+                                                           class="flex items-center"
+                                                           x-show="showSubmit"
+                                                           @click="admin.saveLectureHall([{{$lecture.Model.ID}}], streamSelectedLectureHallId).then(() => { showSubmit = false; })">
+                                                            <i class="align-middle fas fa-check text-gray-300 hover:text-purple-500"></i>
+                                                        </a>
+                                                    </div>
+                                                    {{end}}
+                                                    {{if not $lecture.LectureHallID}}
+                                                    <p class="mt-2">
+                                                        <span class="font-semibold">Stream Server: </span><span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
+                                                        <i class="fas fa-clipboard hover:text-purple-500"
+                                                           onclick="admin.copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
+                                                        <br>
+                                                        <span class="font-semibold">Stream Key: </span><span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
+                                                        {{if ne $user.Role 1}}
+                                                            <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
+                                                        {{end}}
+                                                    </p>
+                                                    {{else if eq $user.Role 2}}
+                                                    This lecture will be streamed from <span
+                                                            class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}{{if eq $lectureHall.Model.ID $lecture.LectureHallID}}{{$lectureHall.Name}}{{end}}{{end}}</span>.
+                                                    If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
+                                                    {{end}}
+                                                    {{else if $lecture.Recording}}
+                                                    <span class="flex space-x-2 mt-4 content-center">
+                                                        {{if $lecture.Files}}
+                                                            <span>
+                                                                {{template "downloadBtn" $lecture.Files}}
+                                                            </span>
+                                                        {{end}}
+                                                        {{if $lecture.Stats}}
+                                                            <a>
+                                                                <i class="fas fa-chart-line text-4 text-lg hover:text-1"
+                                                                   title="Live Statistics"
+                                                                   onclick="admin.showStats({{$lecture.Model.ID}})"></i>
+                                                            </a>
+                                                        {{end}}
+                                                    </span>
+                                                    {{if $lecture.Stats}}
+                                                    <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
+                                                        <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
+                                                                width="undefined" height="undefined"></canvas>
+                                                    </div>
+                                                    <script>
+                                                        new Chart(
+                                                            document.getElementById("stats{{$lecture.Model.ID}}"), {
+                                                                "type": "line",
+                                                                "data": {
+                                                                    "labels": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}",{{end}} {{end}}],
+                                                                    "datasets": [{
+                                                                        "label": "Viewers",
+                                                                        "data": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}{{$stat.Viewers}}, {{end}}{{end}}],
+                                                                        "fill": false,
+                                                                        "borderColor": "rgb(75, 192, 192)",
+                                                                        "lineTension": 0.1
+                                                                    }]
+                                                                },
+                                                                "options": {
+                                                                    scales: {y: {beginAtZero: true}}
+                                                                }
+                                                            }
+                                                        );
+                                                    </script>
+                                                    {{end}}
+                                                    {{end}}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="mt-8">
-                                        <button class="btn" type="submit" id="createLectureBtn">
-                                            <span x-show="!loading">
-                                                <i class="fas fa-check"></i>
-                                                <span
-                                                        x-text="formData.recurring && formData.recurringDates.filter(({enabled}) => enabled).length > 0
-                                                            ? `Create ${(formData.recurringDates.filter(({enabled}) => enabled).length + 1).toString()} Lectures`
-                                                            : 'Create Lecture'"
-                                                ></span>
-                                            </span>
-                                            <i class="fas fa-circle-notch text-4 animate-spin" x-show="loading"></i>
-                                        </button>
-                                        <span class="text-danger" x-show="error">Something went wrong.</span>
-                                    </div>
-                                </form>
-                            </li>
+                                </li>
+                            {{end}}
                         </div>
+                        <li class="w-full p-6 dark:hover:bg-primary hover:bg-white border-b-2 border-primary">
+                            <form method="post" action="/api/createLecture"
+                                  x-data="admin.createLectureForm()"
+                                  @submit.prevent="submitData"
+                                  x-init="courseID = {{$course.Model.ID}}">
+                                <div class="flex">
+                                    <div class="w-1/4">
+                                        <div class="text-1 font-semibold">Create Lecture</div>
+                                        <label>
+                                            <input type="checkbox" x-model="formData.vodup" @change="(v) => v && (formData.recurring = false)" class="w-auto">
+                                            <span class="text-3">VoD Upload</span>
+                                        </label><br>
+                                        <label>
+                                            <input type="checkbox" :disabled="formData.premiere || formData.vodup" x-model="formData.recurring" class="w-auto">
+                                            <span class="text-3">Recurring Event</span>
+                                        </label>
+                                    </div>
+                                    <div class="w-3/4">
+                                        <div class="dark:hover:bg-primary hover:bg-white">
+                                            <div class="flex flex-col md:flex-row">
+                                                <label for="name" class="md:w-1/2 w-full" x-show="!loading">
+                                                    <span class="font-semibold p-2">Lecture Name</span>
+                                                    <input name="name" id="name" type="text" x-model="formData.title"
+                                                           placeholder="L01: Binary Trees"/>
+                                                </label>
+                                                <label for="start" class="md:w-1/4 w-full" x-show="!loading">
+                                                    <span class="font-semibold p-2">Start</span>
+                                                    <input name="start" type="text" placeholder="2021-04-08 14:00"
+                                                           id="start" x-model="formData.start" x-ref="start"
+                                                           @change="() => setTimeout(() => { regenerateRecurringDates(); recalculateDuration(); }, 100)"
+                                                           x-init="flatpickr($refs.start, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})"/>
+                                                </label>
+                                                <label x-show="!formData.premiere && !formData.vodup && !loading"
+                                                       for="end" class="md:w-1/4 w-full">
+                                                    <span class="font-semibold p-2">End</span>
+                                                    <span x-show="formData.formatedDuration != ''" class="text-sm font-light opacity-75">
+                                                        ( <span x-text="formData.formatedDuration"></span> )
+                                                    </span>
+                                                    <input name="end" type="text" placeholder="16:00" id="end"
+                                                           x-model="formData.end"
+                                                           @change="() => setTimeout(() => recalculateDuration(), 100)"
+                                                           x-ref="end"
+                                                           x-init="flatpickr($refs.end, {enableTime: true, noCalendar: true, dateFormat: 'H:i', time_24hr: true })"/>
+                                                </label>
+                                                <label class="relative"
+                                                       x-show="formData.premiere || formData.vodup && !loading">
+                                                    <span class="font-semibold p-2">Video File <span class="text-5">(mp4, if possible h264)</span></span>
+                                                    <input type="file" accept="video/mp4" class="border-0"
+                                                           x-on:change="formData.file = Object.values($event.target.files)">
+                                                </label>
+
+                                            </div>
+                                        </div>
+                                        <div class="mt-4">
+                                            <div class="flex items-center">
+                                                <label class="mx-2"
+                                                       x-show="!formData.premiere && !formData.vodup && !loading">
+                                                    <span class="font-semibold p-2">Lecture Hall:</span>
+                                                    <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
+                                                            id="lectureHallBulkSelect"
+                                                            x-model="formData.lectureHallId">
+                                                        <option class="text-gray-300" value="0">Self streaming
+                                                        </option>
+                                                        {{range $lectureHall := $lectureHalls}}
+                                                            <option value="{{$lectureHall.Model.ID}}"
+                                                                    class="text-gray-300">
+                                                                {{$lectureHall.Name}}
+                                                            </option>
+                                                        {{end}}
+                                                    </select>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mt-4">
+                                            <div class="flex" x-show="formData.recurring && !loading">
+                                                    <div class="w-1/4 pl-2">
+                                                        <span class="font-semibold mb-6">Interval</span><br>
+                                                        <label>
+                                                            <input type="radio" value="daily" x-model="formData.recurringInterval" class="w-auto" @change="regenerateRecurringDates">
+                                                            <span class="text-3">Repeat Daily</span>
+                                                        </label><br>
+                                                        <label>
+                                                            <input type="radio" value="weekly" x-model="formData.recurringInterval" class="w-auto" @change="regenerateRecurringDates">
+                                                            <span class="text-3">Repeat Weekly</span>
+                                                        </label><br>
+                                                        <label>
+                                                            <input type="radio" value="monthly" x-model="formData.recurringInterval" class="w-auto" @change="regenerateRecurringDates">
+                                                            <span class="text-3">Repeat Monthly</span>
+                                                        </label><br>
+                                                    </div>
+                                                    <div class="w-1/4 pl-2">
+                                                        <label for="events-count" class="w-full">
+                                                            <span class="font-semibold p-2">Count</span>
+                                                            <input name="events-count" type="number" placeholder="14" id="end" min="1" x-model="formData.eventsCount" @change="regenerateRecurringDates" @keyup="regenerateRecurringDates"/>
+                                                        </label>
+                                                    </div>
+                                                    <div class="w-1/2 pl-2">
+                                                        <span class="font-semibold mb-6">Dates</span><br>
+                                                        <span x-show="formData.start == ''" class="ml-2 opacity-75">- Please set "start" first -</span>
+                                                        <ul class="ml-2" x-show="formData.start != ''">
+                                                            <li
+                                                                x-bind:style="{ 'cursor': 'default' }"
+                                                            >
+                                                                <i class="far fa-check-square"></i>
+                                                                <span x-text="(new Date(formData.start)).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
+                                                            </li>
+                                                            <template x-for="date in formData.recurringDates">
+                                                                <li
+                                                                    x-bind:style="{ 'cursor': 'pointer', 'opacity': date.enabled ? '1' : '0.3' }"
+                                                                    @click="() => (date.enabled = !date.enabled)"
+                                                                >
+                                                                    <i x-show="date.enabled" class="far fa-check-square"></i>
+                                                                    <i x-show="!date.enabled" class="far fa-square"></i>
+                                                                    <span x-text="date.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
+                                                                </li>
+                                                            </template>
+                                                        </ul>
+                                                    </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-8">
+                                    <button class="btn" type="submit" id="createLectureBtn">
+                                        <span x-show="!loading">
+                                            <i class="fas fa-check"></i>
+                                            <span
+                                                    x-text="formData.recurring && formData.recurringDates.filter(({enabled}) => enabled).length > 0
+                                                        ? `Create ${(formData.recurringDates.filter(({enabled}) => enabled).length + 1).toString()} Lectures`
+                                                        : 'Create Lecture'"
+                                            ></span>
+                                        </span>
+                                        <span x-show="loading">
+                                            <i class="fas fa-circle-notch text-4 animate-spin"></i> <span @voduploadprogress.window="(e) => progress=e.detail" x-data="{ progress: undefined }" x-text="progress?progress+'%':'0%'"></span>
+                                        </span>
+                                    </button>
+                                    <span class="text-danger" x-show="error">Something went wrong.</span>
+                                </div>
+                            </form>
+                        </li>
                     </ul>
                     {{template "externalParticipants" $course}}
                 </div>

@@ -15,7 +15,7 @@
             </thead>
             <tbody class="text-4 text-sm font-light">
             {{range .}}
-                {{- /*gotype: TUM-Live/dao.AllTokensDto*/ -}}
+                {{- /*gotype: github.com/joschahenningsen/TUM-Live/dao.AllTokensDto*/ -}}
                 <tr x-data="{id: {{.Token.Model.ID}}, show:true}" x-show="show">
                     <td class="py-3">{{if .UserMail}}{{.UserMail}}{{else}}{{.UserName}} {{.UserLrzID}}{{end}}</td>
                     <td class="py-3">{{.Scope}}</td>

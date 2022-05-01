@@ -379,6 +379,7 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 	if request.Duration != 0 {
 		stream.Duration = request.Duration
 	}
+	stream.StreamStatus = model.StatusConverted
 	err = dao.SaveStream(&stream)
 	if err != nil {
 		log.WithError(err).Error("Can't save stream")
@@ -403,6 +404,7 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 		return nil, nil
 	}
 	stream.Recording = true
+	stream.StreamStatus = model.StatusUnknown
 	switch req.SourceType {
 	case "CAM":
 		stream.PlaylistUrlCAM = req.HLSUrl
@@ -415,6 +417,35 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 		return nil, err
 	}
 	return &pb.Status{Ok: true}, nil
+}
+
+// GetStreamInfoForUpload returns the stream info for a stream identified by its upload token.
+// after calling, the token is deleted.
+func (s server) GetStreamInfoForUpload(ctx context.Context, request *pb.GetStreamInfoForUploadRequest) (*pb.GetStreamInfoForUploadResponse, error) {
+	_, err := dao.GetWorkerByID(ctx, request.WorkerID)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, "invalid worker id")
+	}
+	key, err := dao.NewUploadKeyDao().GetUploadKey(request.UploadKey)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "key not found")
+	}
+	course, err := dao.GetCourseById(ctx, key.Stream.CourseID)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "course not found")
+	}
+	err = dao.NewUploadKeyDao().DeleteUploadKey(key)
+	if err != nil {
+		log.WithError(err).Error("Can't delete upload key")
+	}
+	return &pb.GetStreamInfoForUploadResponse{
+		CourseSlug:  course.Slug,
+		CourseTerm:  course.TeachingTerm,
+		CourseYear:  uint32(course.Year),
+		StreamStart: timestamppb.New(key.Stream.Start),
+		StreamEnd:   timestamppb.New(key.Stream.End),
+		StreamID:    uint32(key.StreamID),
+	}, nil
 }
 
 //NotifyStreamStarted receives stream started events from workers

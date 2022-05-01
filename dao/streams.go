@@ -11,6 +11,10 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+func CreateStream(stream *model.Stream) error {
+	return DB.Create(stream).Error
+}
+
 // GetDueStreamsForWorkers retrieves all streams that due to be streamed in a lecture hall.
 func GetDueStreamsForWorkers() []model.Stream {
 	var res []model.Stream
@@ -193,19 +197,6 @@ func GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error)
 	return streams, err
 }
 
-func GetCurrentLiveNonHidden(ctx context.Context) (currentLive []model.Stream, err error) {
-	if streams, found := Cache.Get("NonHiddenCurrentlyLiveStreams"); found {
-		return streams.([]model.Stream), nil
-	}
-	var streams []model.Stream
-	if err := DB.Joins("JOIN courses ON courses.id = streams.course_id").Find(&streams,
-		"live_now = ? AND visibility != ?", true, "hidden").Error; err != nil {
-		return nil, err
-	}
-	Cache.SetWithTTL("NonHiddenCurrentlyLiveStreams", streams, 1, time.Minute)
-	return streams, err
-}
-
 func DeleteStream(streamID string) {
 	DB.Where("id = ?", streamID).Delete(&model.Stream{})
 	Cache.Clear()
@@ -283,6 +274,7 @@ func SaveStream(vod *model.Stream) error {
 		Files:           vod.Files,
 		Paused:          vod.Paused,
 		Duration:        vod.Duration,
+		StreamStatus:    vod.StreamStatus,
 	}).Error
 	return err
 }
