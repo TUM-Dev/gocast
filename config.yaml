@@ -55,14 +55,14 @@ ldap:
   user: user
   userdn: uid=%s,ou=people,dc=example,dc=de
   useForLogin: true
-saml:
-  idpMetadataURL: https://login.tum.de/idp/shibboleth
-  idpName: TUM Login
-  idpColor: "#3070B3"
-  cert: fullchain.pem
-  privkey: privkey.pem
-  entityID: https://live.rbg.tum.de/shib
-  rootURL: https://live.rbg.tum.de/shib
+#saml:
+#  idpMetadataURL: https://login.tum.de/idp/shibboleth
+#  idpName: TUM Login
+#  idpColor: "#3070B3"
+#  cert: fullchain.pem
+#  privkey: privkey.pem
+#  entityID: https://live.rbg.tum.de/shib
+#  rootURL: https://live.rbg.tum.de/shib
 lrz:
   email: erika.mustermann@example.com
   name: Erika Mustermann
