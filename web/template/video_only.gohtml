@@ -14,8 +14,18 @@
     <link rel="stylesheet" href="/static/assets/css/icons.css">
     <link href="/static/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
-    <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
+    <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css" class="p-14">
     <style>
+        .video-js .vjs-start-in-overlay {
+            color: white;
+
+            display: block;
+            font-size: 2em;
+            padding: 0;
+            position: absolute;
+            bottom: 15px;
+            left: 10px;
+        }
         .video-js .vjs-title-bar {
             color: white;
 
@@ -40,6 +50,9 @@
         .video-js.vjs-user-active.vjs-has-started .vjs-title-bar{
             display: block;
         }
+        .vjs-has-started .vjs-start-in-overlay {
+            display: none;
+        }
     </style>
 </head>
 <body class="overflow-hidden">
@@ -49,17 +62,18 @@
         class="video-js w-full"
         controls
         preload="auto"
-        {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
-        {{else}}poster="/public/no_active_stream.jpg">{{end}}
-<source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
+        poster="/public/default_banner.jpg">
+    {{if or $stream.LiveNow $stream.Recording}}
+        <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
             type="application/x-mpegURL"/>
+    {{end}}
     <p class="vjs-no-js">
         To view this video please enable JavaScript.
     </p>
 </video>
 </body>
 <script>
-    watch.initPlayer(false, true, true, {{$course.Name}}, {{$stream.GetName}}, {{$course.GetStreamUrl $stream}}, {{$course.GetUrl}});
+    watch.initPlayer(false, true, true, {{$course.Name}}, {{$stream.GetName}}, {{$course.GetStreamUrl $stream}}, {{$course.GetUrl}}, {{$stream.GetStartInSeconds}});
     watch.startWebsocket()
     {{if $stream.Silences}}
     watch.skipSilence({{$stream.GetSilencesJson}});

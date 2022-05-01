@@ -1,5 +1,5 @@
-import { postData } from "./global";
-import { StatusCodes } from "http-status-codes";
+import {postData} from "./global";
+import {StatusCodes} from "http-status-codes";
 import videojs from "video.js";
 import dom = videojs.dom;
 
@@ -16,11 +16,12 @@ let player;
 export const initPlayer = function (
     autoplay: boolean,
     fluid: boolean,
-    showTitleBar: boolean,
+    isEmbedded: boolean,
     courseName?: string,
     streamName?: string,
     streamUrl?: string,
     courseUrl?: string,
+    streamStartIn?: number, // in seconds
 ) {
     player = videojs("my-video", {
         liveui: true,
@@ -63,12 +64,21 @@ export const initPlayer = function (
         if (persistedMute !== null) {
             player.muted("true" === persistedMute);
         }
-        if (showTitleBar) {
+        if (isEmbedded) {
+            player.addChild("Titlebar", {
+                course: courseName,
+                stream: streamName,
+                courseUrl: courseUrl,
+                streamUrl: streamUrl,
+            });
+        }
+        if (streamStartIn > 0) {
             player.addChild("StartInOverlay", {
                 course: courseName,
                 stream: streamName,
                 courseUrl: courseUrl,
                 streamUrl: streamUrl,
+                startIn: streamStartIn,
             });
         }
     });
@@ -226,7 +236,7 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
 
 const Component = videojs.getComponent("Component");
 
-export class StartInOverlay extends Component {
+export class Titlebar extends Component {
     // The constructor of a component receives two arguments: the
     // player it will be associated with and an object of options.
     constructor(player, options) {
@@ -259,19 +269,19 @@ export class StartInOverlay extends Component {
             <div class="flex-grow">
                 <h1>
                     <a target="_blank" class="text-gray-200 hover:text-white hover:underline" href="${
-                        window.location.origin + options.streamUrl
-                    }">${options.stream}</a>
+            window.location.origin + options.streamUrl
+        }">${options.stream}</a>
                 </h1>
                 <h2 class="font-semibold">
                     <a target="_blank" class="text-gray-300 hover:text-white hover:underline" href="${
-                        window.location.origin + options.courseUrl
-                    }">${options.course}</a>
+            window.location.origin + options.courseUrl
+        }">${options.course}</a>
                 </h2>
             </div>
             <div>
                 <a target="_blank" href="${
-                    window.location.origin + options.streamUrl
-                }" class="inline-block text-gray-200 hover:text-white hover:underline">
+            window.location.origin + options.streamUrl
+        }" class="inline-block text-gray-200 hover:text-white hover:underline">
                 TUM-Live <i class="fas fa-external-link-alt"></i>
                 </a>
             </div>
@@ -281,7 +291,44 @@ export class StartInOverlay extends Component {
     }
 }
 
+
+export class StartInOverlay extends Component {
+    // The constructor of a component receives two arguments: the
+    // player it will be associated with and an object of options.
+    constructor(player, options) {
+        super(player, options);
+
+        this.updateTextContent(options);
+    }
+
+    createEl() {
+        return super.createEl("div", {
+            className: "vjs-start-in-overlay",
+        });
+    }
+
+    updateTextContent(options) {
+        dom.emptyEl(this.el());
+        if (options.startIn <= 0) {
+            return;
+        }
+
+        this.el().innerHTML = `
+        <div class="p-4 rounded bg-gray-900/75">
+            <p><a target="_blank" href="${options.streamUrl}" class="text-gray-300 hover:text-white font-semibold text-m hover:underline">${options.stream}</a></p>
+            <p><a target="_blank" href="${options.courseUrl}" class="text-gray-300 hover:text-white text-sm hover:underline">${options.course}</a></p>
+            <p class="text-sm">Start in about <span class="font-semibold">${Math.floor(options.startIn / 60)}</span> Minutes</p>
+        </div>
+        `;
+        setTimeout(() => {
+            options.startIn -= 10;
+            this.updateTextContent(options);
+        }, 10000);
+    }
+}
+
 // Register the plugin with video.js.
 videojs.registerPlugin("skipSilence", skipSilence);
 videojs.registerPlugin("watchProgress", watchProgress);
+videojs.registerComponent("Titlebar", Titlebar);
 videojs.registerComponent("StartInOverlay", StartInOverlay);

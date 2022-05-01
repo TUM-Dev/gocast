@@ -61,6 +61,10 @@ type Stream struct {
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }
 
+func (s Stream) GetStartInSeconds() int {
+	return int(time.Until(s.Start).Seconds())
+}
+
 func (s Stream) GetName() string {
 	if s.Name != "" {
 		return s.Name
