@@ -1,5 +1,5 @@
-import {postData} from "./global";
-import {StatusCodes} from "http-status-codes";
+import { postData } from "./global";
+import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import dom = videojs.dom;
 
@@ -269,19 +269,19 @@ export class Titlebar extends Component {
             <div class="flex-grow">
                 <h1>
                     <a target="_blank" class="text-gray-100 hover:text-white hover:underline" href="${
-            window.location.origin + options.streamUrl
-        }">${options.stream}</a>
+                        window.location.origin + options.streamUrl
+                    }">${options.stream}</a>
                 </h1>
                 <h2 class="font-semibold">
                     <a target="_blank" class="text-gray-100 hover:text-white hover:underline" href="${
-            window.location.origin + options.courseUrl
-        }">${options.course}</a>
+                        window.location.origin + options.courseUrl
+                    }">${options.course}</a>
                 </h2>
             </div>
             <div>
                 <a target="_blank" href="${
-            window.location.origin + options.streamUrl
-        }" class="inline-block text-gray-200 hover:text-white hover:underline">
+                    window.location.origin + options.streamUrl
+                }" class="inline-block text-gray-200 hover:text-white hover:underline">
                 TUM-Live <i class="fas fa-external-link-alt"></i>
                 </a>
             </div>
@@ -290,7 +290,6 @@ export class Titlebar extends Component {
         `;
     }
 }
-
 
 export class StartInOverlay extends Component {
     // The constructor of a component receives two arguments: the
@@ -315,9 +314,15 @@ export class StartInOverlay extends Component {
 
         this.el().innerHTML = `
         <div class="p-4 rounded bg-gray-900/75">
-            <p><a target="_blank" href="${options.streamUrl}" class="text-gray-300 hover:text-white font-semibold text-m hover:underline">${options.stream}</a></p>
-            <p><a target="_blank" href="${options.courseUrl}" class="text-gray-300 hover:text-white text-sm hover:underline">${options.course}</a></p>
-            <p class="text-sm">Start in about <span class="font-semibold">${Math.floor(options.startIn / 60)}</span> Minutes</p>
+            <p><a target="_blank" href="${
+                options.streamUrl
+            }" class="text-gray-300 hover:text-white font-semibold text-m hover:underline">${options.stream}</a></p>
+            <p><a target="_blank" href="${
+                options.courseUrl
+            }" class="text-gray-300 hover:text-white text-sm hover:underline">${options.course}</a></p>
+            <p class="text-sm">Start in about <span class="font-semibold">${Math.floor(
+                options.startIn / 60,
+            )}</span> Minutes</p>
         </div>
         `;
         setTimeout(() => {
