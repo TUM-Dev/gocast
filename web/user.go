@@ -2,6 +2,10 @@ package web
 
 import (
 	"context"
+	"net/http"
+	"net/url"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/joschahenningsen/TUM-Live/dao"
@@ -9,9 +13,6 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/tum"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"net/url"
-	"time"
 )
 
 func LoginHandler(c *gin.Context) {
@@ -36,7 +37,8 @@ func LoginHandler(c *gin.Context) {
 			log.WithError(err).Error("Login error")
 		}
 	}
-	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(true))
+
+	_ = templateExecutor.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(true))
 }
 
 func getRedirectUrl(c *gin.Context) string {
@@ -127,7 +129,7 @@ func LoginPage(c *gin.Context) {
 		d.IDPName = tools.Cfg.Saml.IdpName
 		d.IDPColor = tools.Cfg.Saml.IdpColor
 	}
-	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", d)
+	_ = templateExecutor.ExecuteTemplate(c.Writer, "login.gohtml", d)
 }
 
 func LogoutPage(c *gin.Context) {
@@ -145,13 +147,13 @@ func CreatePasswordPage(c *gin.Context) {
 			return
 		}
 		if p1 != p2 {
-			_ = templ.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
+			_ = templateExecutor.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
 			return
 		}
 		err = u.SetPassword(p1)
 		if err != nil {
 			log.WithError(err).Error("error setting password.")
-			_ = templ.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
+			_ = templateExecutor.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
 			return
 		} else {
 			err := dao.UpdateUser(u)
@@ -168,7 +170,7 @@ func CreatePasswordPage(c *gin.Context) {
 			c.Redirect(http.StatusFound, "/")
 			return
 		}
-		_ = templ.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(false))
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(false))
 	}
 }
 

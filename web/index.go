@@ -34,7 +34,7 @@ func MainPage(c *gin.Context) {
 	indexData.LoadLivestreams(c)
 	indexData.LoadPublicCourses()
 
-	_ = templ.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
+	_ = templateExecutor.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
 }
 
 func AboutPage(c *gin.Context) {
@@ -50,7 +50,7 @@ func AboutPage(c *gin.Context) {
 	}
 	indexData.VersionTag = VersionTag
 
-	_ = templ.ExecuteTemplate(c.Writer, "about.gohtml", indexData)
+	_ = templateExecutor.ExecuteTemplate(c.Writer, "about.gohtml", indexData)
 }
 
 type IndexData struct {
@@ -97,10 +97,10 @@ func NewIndexDataWithContext(c *gin.Context) IndexData {
 func IsFreshInstallation(c *gin.Context) {
 	res, err := dao.AreUsersEmpty(context.Background()) // fresh installation?
 	if err != nil {
-		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", nil)
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", nil)
 		return
 	} else if res {
-		_ = templ.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData())
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData())
 		return
 	}
 }

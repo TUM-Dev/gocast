@@ -105,7 +105,7 @@ func AdminPage(c *gin.Context) {
 	}
 	semesters := dao.GetAvailableSemesters(c)
 	y, t := tum.GetCurrentSemester()
-	err = templ.ExecuteTemplate(c.Writer, "admin.gohtml",
+	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml",
 		AdminPageData{Users: users,
 			Courses:             courses,
 			IndexData:           indexData,
@@ -137,7 +137,7 @@ func LectureCutPage(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	if err := templ.ExecuteTemplate(c.Writer, "lecture-cut.gohtml", tumLiveContext); err != nil {
+	if err := templateExecutor.ExecuteTemplate(c.Writer, "lecture-cut.gohtml", tumLiveContext); err != nil {
 		log.Fatalln(err)
 	}
 }
@@ -152,7 +152,7 @@ func LectureUnitsPage(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
-	if err := templ.ExecuteTemplate(c.Writer, "lecture-units.gohtml", LectureUnitsPageData{
+	if err := templateExecutor.ExecuteTemplate(c.Writer, "lecture-units.gohtml", LectureUnitsPageData{
 		IndexData: indexData,
 		Lecture:   *tumLiveContext.Stream,
 		Units:     tumLiveContext.Stream.Units,
@@ -177,7 +177,7 @@ func CourseStatsPage(c *gin.Context) {
 		courses = []model.Course{}
 	}
 	semesters := dao.GetAvailableSemesters(c)
-	err = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
+	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
 		IndexData: indexData,
 		Courses:   courses,
 		Page:      "stats",
@@ -211,7 +211,7 @@ func EditCoursePage(c *gin.Context) {
 		courses = []model.Course{}
 	}
 	semesters := dao.GetAvailableSemesters(c)
-	err = templ.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
+	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
 		IndexData:      indexData,
 		Courses:        courses,
 		Page:           "course",

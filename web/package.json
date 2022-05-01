@@ -12,7 +12,7 @@
     "lint": "eslint . --ext .ts,.tsx",
     "lint-fix": "eslint . --ext .ts,.tsx --quiet --fix",
     "build": "webpack --config webpack.prod.js",
-    "build-dev": "webpack --config webpack.dev.js"
+    "build-dev": "webpack --config webpack.dev.js & npx tailwindcss build -i assets/css/main.css -o ./assets/css-dist/main.css --watch"
   },
   "author": "Joscha Henningsen",
   "license": "MIT",
