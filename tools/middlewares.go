@@ -24,7 +24,8 @@ func SetTemplateExecutor(e TemplateExecutor) {
 // JWTClaims are the claims contained in a session
 type JWTClaims struct {
 	*jwt.RegisteredClaims
-	UserID uint
+	UserID        uint
+	SamlSubjectID *string // identifier of the SAML session (if any)
 }
 
 func InitContext(c *gin.Context) {
@@ -64,7 +65,7 @@ func InitContext(c *gin.Context) {
 		c.Set("TUMLiveContext", TUMLiveContext{})
 		return
 	} else {
-		c.Set("TUMLiveContext", TUMLiveContext{User: &user})
+		c.Set("TUMLiveContext", TUMLiveContext{User: &user, SamlSubjectID: token.Claims.(*JWTClaims).SamlSubjectID})
 		return
 	}
 
@@ -290,9 +291,10 @@ func AdminToken(c *gin.Context) {
 }
 
 type TUMLiveContext struct {
-	User   *model.User
-	Course *model.Course
-	Stream *model.Stream
+	User          *model.User
+	Course        *model.Course
+	Stream        *model.Stream
+	SamlSubjectID *string
 }
 
 func (c *TUMLiveContext) UserIsAdmin() bool {

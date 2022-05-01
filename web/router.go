@@ -47,6 +47,7 @@ func ConfigGinRouter(router *gin.Engine) {
 	tools.SetTemplateExecutor(templateExecutor)
 
 	configGinStaticRouter(router)
+	configSaml(router)
 	configMainRoute(router)
 	configCourseRoute(router)
 }

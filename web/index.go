@@ -15,7 +15,6 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
-	"time"
 )
 
 var VersionTag string
@@ -68,13 +67,6 @@ type IndexData struct {
 	CurrentTerm         string
 	UserName            string
 	ServerNotifications []model.ServerNotification
-}
-
-func (_ IndexData) GetGreeting() string {
-	if time.Now().Month() == time.April {
-		return "Ahoi Matrose "
-	}
-	return "Moin "
 }
 
 func NewIndexData() IndexData {

@@ -21,7 +21,7 @@
     {{if not .TUMLiveContext.User}}
         <p class="text-2"><a href="/login" class="underline">Log in</a> to see your courses</p>
     {{else if .TUMLiveContext.User.Name}}
-        <p class="text-2">{{.GetGreeting}} {{.TUMLiveContext.User.Name}}, nice to see you!</p>
+        <p class="text-2">Moin {{.TUMLiveContext.User.Name}}, nice to see you!</p>
     {{end}}
     {{if .LiveStreams}}
         <h2 class="text-2xl text-1">Active Livestreams</h2>
