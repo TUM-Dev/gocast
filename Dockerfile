@@ -1,4 +1,4 @@
-FROM node:17 as node
+FROM node:18 as node
 
 WORKDIR /app
 COPY web web
