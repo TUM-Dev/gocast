@@ -78,6 +78,7 @@ func GetStreamsForLectureHallIcal(userId uint) ([]CalendarResult, error) {
 			"streams.start, streams.end, courses.name as course_name").
 		Where("(streams.start BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) and DATE_ADD(NOW(), INTERVAL 3 MONTH)) "+
 			"AND (courses.user_id = ? OR 0 = ? OR course_admins.user_id = ?)", userId, userId, userId).
+		Group("streams.id").
 		Scan(&res).Error
 	return res, err
 }
