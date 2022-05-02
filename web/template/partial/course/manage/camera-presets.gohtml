@@ -1,7 +1,6 @@
 {{define "camera-presets"}}
-    <div x-cloak class="mt-2" x-data="{halls: [], changed: false}" x-show="halls !== null && halls.length > 0"
+    <div x-cloak class="mt-2" x-data="{halls: [], changed: false}"
          x-init="fetch(`/api/lecture-halls-by-id?id=${document.getElementById('courseID').value}`).then(r=>r.json()).then(d=>halls=d)">
-        <h2>Camera Presets:</h2>
         <template x-if="halls !== null && halls.length > 0">
             <template x-for="hall in halls">
                 <div class="ml-2" x-show="hall.presets.length>0"
@@ -31,8 +30,11 @@
                 </div>
             </template>
         </template>
-        <button x-cloak x-show="changed" class="bg-secondary rounded px-4 py-2 font-semibold text-white"
+        <button x-cloak x-show="changed" class="bg-secondary-lighter rounded px-4 py-2 font-semibold text-white"
             @click="fetch(`/api/course/${document.getElementById('courseID').value}/presets`, {method:'POST',  body:JSON.stringify(halls)}).then();changed:false">
             Save Presets</button>
+        <template x-if="halls === null || halls.length === 0">
+            <i class="text-5">No lecture halls found for this course.</i>
+        </template>
     </div>
 {{end}}
