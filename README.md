@@ -42,7 +42,7 @@ docker run --detach --name mariadb-tumlive --env MARIADB_USER=root --env MARIADB
 ```
 - Alternatively, install mariadb on its own.
 - Create the database `tumlive` using [this]([tum-live-starter.zip](https://github.com/joschahenningsen/TUM-Live/files/8505487/tum-live-starter.zip)) script.
-- Optional: Use [JetBrains DataGrip](https://www.jetbrains.com/datagrip/) to open this project and then run the script there to automatically set up a demo database.
+- Or: Use [JetBrains DataGrip](https://www.jetbrains.com/datagrip/) to open the database and then run the script there to automatically set up a demo database.
 
 ### Installing go
 
