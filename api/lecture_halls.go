@@ -33,7 +33,7 @@ func configGinLectureHallApiRouter(router *gin.Engine) {
 
 	adminsOfCourse := router.Group("/api/course/:courseID/")
 	adminsOfCourse.Use(tools.InitCourse)
-	adminsOfCourse.Use(tools.InitStream)
+	adminsOfCourse.Use(tools.InitStream(dao.DaoWrapper{}))
 	adminsOfCourse.Use(tools.AdminOfCourse)
 	adminsOfCourse.POST("/switchPreset/:lectureHallID/:presetID/:streamID", switchPreset)
 

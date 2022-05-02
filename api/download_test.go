@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
+	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
@@ -24,7 +25,7 @@ func TestDownload_noContext(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, r := gin.CreateTestContext(w)
 
-	mockDaoWrapper := DaoWrapper{}
+	mockDaoWrapper := dao.DaoWrapper{}
 
 	configGinDownloadRouter(r, mockDaoWrapper)
 
@@ -47,7 +48,7 @@ func TestDownload_notLoggedIn(t *testing.T) {
 		c.Set("TUMLiveContext", tools.TUMLiveContext{User: nil})
 	})
 
-	mockDaoWrapper := DaoWrapper{}
+	mockDaoWrapper := dao.DaoWrapper{}
 
 	configGinDownloadRouter(r, mockDaoWrapper)
 
@@ -78,7 +79,7 @@ func TestDownload_fileDoesntExist(t *testing.T) {
 
 	fileDao.EXPECT().GetFileById(gomock.Eq(fileId)).Return(model.File{}, errors.New("")).AnyTimes()
 
-	mockDaoWrapper := DaoWrapper{FileDao: fileDao}
+	mockDaoWrapper := dao.DaoWrapper{FileDao: fileDao}
 
 	configGinDownloadRouter(r, mockDaoWrapper)
 
@@ -127,7 +128,7 @@ func TestDownload_downloadsDisabled(t *testing.T) {
 		DownloadsEnabled: false,
 	}, nil).AnyTimes()
 
-	configGinDownloadRouter(r, DaoWrapper{
+	configGinDownloadRouter(r, dao.DaoWrapper{
 		FileDao:    fileMock,
 		StreamsDao: streamsMock,
 		CoursesDao: courseMock,
@@ -177,7 +178,7 @@ func TestDownload_fileNotFound(t *testing.T) {
 		DownloadsEnabled: false,
 	}, nil).AnyTimes()
 
-	configGinDownloadRouter(r, DaoWrapper{
+	configGinDownloadRouter(r, dao.DaoWrapper{
 		FileDao:    fileMock,
 		StreamsDao: streamsMock,
 		CoursesDao: courseMock,
@@ -235,7 +236,7 @@ func TestDownload_success(t *testing.T) {
 		DownloadsEnabled: false,
 	}, nil).AnyTimes()
 
-	configGinDownloadRouter(r, DaoWrapper{
+	configGinDownloadRouter(r, dao.DaoWrapper{
 		FileDao:    fileMock,
 		StreamsDao: streamsMock,
 		CoursesDao: courseMock,

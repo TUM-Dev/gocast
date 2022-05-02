@@ -13,7 +13,7 @@ import (
 	"os"
 )
 
-func configGinDownloadRouter(router *gin.Engine, daoWrapper DaoWrapper) {
+func configGinDownloadRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := downloadRoutes{fileDao: daoWrapper.FileDao, streamsDao: daoWrapper.StreamsDao, coursesDao: daoWrapper.CoursesDao}
 	router.GET("/api/download/:id", routes.download)
 }

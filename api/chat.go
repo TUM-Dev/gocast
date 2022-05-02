@@ -23,13 +23,15 @@ var m *melody.Melody
 
 const maxParticipants = 10000
 
-func configGinChatRouter(router *gin.RouterGroup) {
+func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 	wsGroup := router.Group("/:streamID")
 
-	wsGroup.Use(tools.InitStream)
-	wsGroup.GET("/messages", getMessages)
-	wsGroup.GET("/active-poll", getActivePoll)
-	wsGroup.GET("/users", getUsers)
+	routes := chatRoutes{chatDao: daoWrapper.ChatDao}
+
+	wsGroup.Use(tools.InitStream(daoWrapper))
+	wsGroup.GET("/messages", routes.getMessages)
+	wsGroup.GET("/active-poll", routes.getActivePoll)
+	wsGroup.GET("/users", routes.getUsers)
 	wsGroup.GET("/ws", ChatStream)
 	if m == nil {
 		log.Printf("creating melody")
@@ -85,6 +87,10 @@ func configGinChatRouter(router *gin.RouterGroup) {
 			cleanupSessions()
 		}
 	}()
+}
+
+type chatRoutes struct {
+	chatDao dao.ChatDao
 }
 
 func handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []byte) {
@@ -371,7 +377,7 @@ func handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte
 	}
 }
 
-func getMessages(c *gin.Context) {
+func (r chatRoutes) getMessages(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		c.AbortWithStatus(http.StatusNotFound)
@@ -389,9 +395,9 @@ func getMessages(c *gin.Context) {
 	var err error
 	var chats []model.Chat
 	if isAdmin {
-		chats, err = dao.Chat.GetAllChats(uid, tumLiveContext.Stream.ID)
+		chats, err = r.chatDao.GetAllChats(uid, tumLiveContext.Stream.ID)
 	} else {
-		chats, err = dao.Chat.GetVisibleChats(uid, tumLiveContext.Stream.ID)
+		chats, err = r.chatDao.GetVisibleChats(uid, tumLiveContext.Stream.ID)
 	}
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -400,14 +406,14 @@ func getMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, chats)
 }
 
-func getUsers(c *gin.Context) {
+func (r chatRoutes) getUsers(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	users, err := dao.Chat.GetChatUsers(tumLiveContext.Stream.ID)
+	users, err := r.chatDao.GetChatUsers(tumLiveContext.Stream.ID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -424,7 +430,7 @@ func getUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func getActivePoll(c *gin.Context) {
+func (r chatRoutes) getActivePoll(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		c.AbortWithStatus(http.StatusNotFound)
@@ -436,13 +442,13 @@ func getActivePoll(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	poll, err := dao.Chat.GetActivePoll(tumLiveContext.Stream.ID)
+	poll, err := r.chatDao.GetActivePoll(tumLiveContext.Stream.ID)
 	if err != nil {
 		c.JSON(http.StatusOK, nil)
 		return
 	}
 
-	submitted, err := dao.Chat.GetPollUserVote(poll.ID, tumLiveContext.User.ID)
+	submitted, err := r.chatDao.GetPollUserVote(poll.ID, tumLiveContext.User.ID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -454,7 +460,7 @@ func getActivePoll(c *gin.Context) {
 		voteCount := int64(0)
 
 		if isAdminOfCourse {
-			voteCount, err = dao.Chat.GetPollOptionVoteCount(option.ID)
+			voteCount, err = r.chatDao.GetPollOptionVoteCount(option.ID)
 			if err != nil {
 				log.WithError(err).Warn("could not get poll option vote count")
 			}

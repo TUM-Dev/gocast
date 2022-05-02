@@ -163,50 +163,52 @@ func InitCourse(c *gin.Context) {
 	}
 }
 
-func InitStream(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(TUMLiveContext)
-	// Get stream based on context:
-	var stream model.Stream
-	if c.Param("streamID") != "" {
-		foundStream, err := dao.Streams.GetStreamByID(c, c.Param("streamID"))
-		if err != nil {
+func InitStream(wrapper dao.DaoWrapper) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		foundContext, exists := c.Get("TUMLiveContext")
+		if !exists {
+			sentry.CaptureException(errors.New("context should exist but doesn't"))
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+		tumLiveContext := foundContext.(TUMLiveContext)
+		// Get stream based on context:
+		var stream model.Stream
+		if c.Param("streamID") != "" {
+			foundStream, err := wrapper.StreamsDao.GetStreamByID(c, c.Param("streamID"))
+			if err != nil {
+				c.Status(http.StatusNotFound)
+				RenderErrorPage(c, http.StatusNotFound, StreamNotFoundErrMsg)
+			} else {
+				stream = foundStream
+			}
+		} else {
 			c.Status(http.StatusNotFound)
 			RenderErrorPage(c, http.StatusNotFound, StreamNotFoundErrMsg)
-		} else {
-			stream = foundStream
 		}
-	} else {
-		c.Status(http.StatusNotFound)
-		RenderErrorPage(c, http.StatusNotFound, StreamNotFoundErrMsg)
-	}
-	if c.IsAborted() {
-		return
-	}
-	course, err := coursesDao.GetCourseById(c, stream.CourseID)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-	if course.Visibility != "public" && course.Visibility != "hidden" {
-		if tumLiveContext.User == nil {
-			c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
-			c.Abort()
-			return
-		} else if tumLiveContext.User == nil || !tumLiveContext.User.IsEligibleToWatchCourse(course) {
-			c.Status(http.StatusForbidden)
-			RenderErrorPage(c, http.StatusForbidden, ForbiddenStreamAccess)
+		if c.IsAborted() {
 			return
 		}
+		course, err := wrapper.CoursesDao.GetCourseById(c, stream.CourseID)
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+		if course.Visibility != "public" && course.Visibility != "hidden" {
+			if tumLiveContext.User == nil {
+				c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
+				c.Abort()
+				return
+			} else if tumLiveContext.User == nil || !tumLiveContext.User.IsEligibleToWatchCourse(course) {
+				c.Status(http.StatusForbidden)
+				RenderErrorPage(c, http.StatusForbidden, ForbiddenStreamAccess)
+				return
+			}
+		}
+		tumLiveContext.Course = &course
+		tumLiveContext.Stream = &stream
+		c.Set("TUMLiveContext", tumLiveContext)
 	}
-	tumLiveContext.Course = &course
-	tumLiveContext.Stream = &stream
-	c.Set("TUMLiveContext", tumLiveContext)
 }
 
 func OwnerOfCourse(c *gin.Context) {

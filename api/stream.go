@@ -24,7 +24,7 @@ func configGinStreamRestRouter(router *gin.Engine) {
 
 	// group for web api
 	g := router.Group("/")
-	g.Use(tools.InitStream)
+	g.Use(tools.InitStream(dao.DaoWrapper{}))
 	g.Use(tools.AdminOfCourse)
 	g.GET("/api/stream/:streamID", getStream)
 	g.GET("/api/stream/:streamID/pause", pauseStream)

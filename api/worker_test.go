@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
+	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
@@ -32,7 +33,7 @@ func TestDeleteWorker_success(t *testing.T) {
 	workerDaoMock := mock_dao.NewMockWorkerDao(ctrl)
 	workerDaoMock.EXPECT().DeleteWorker(workerId).Return(nil).AnyTimes()
 
-	configWorkerRouter(r, DaoWrapper{WorkerDao: workerDaoMock})
+	configWorkerRouter(r, dao.DaoWrapper{WorkerDao: workerDaoMock})
 
 	c.Request, _ = http.NewRequest(http.MethodDelete, "/api/workers/"+workerId, nil)
 	r.ServeHTTP(w, c.Request)

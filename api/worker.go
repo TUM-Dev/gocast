@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func configWorkerRouter(r *gin.Engine, daoWrapper DaoWrapper) {
+func configWorkerRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	g := r.Group("/api/workers")
 	g.Use(tools.Admin)
 
