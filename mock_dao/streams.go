@@ -398,6 +398,20 @@ func (mr *MockStreamsDaoMockRecorder) SaveWorkerForStream(stream, worker interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveWorkerForStream", reflect.TypeOf((*MockStreamsDao)(nil).SaveWorkerForStream), stream, worker)
 }
 
+// SetLectureHall mocks base method.
+func (m *MockStreamsDao) SetLectureHall(streamIDs []uint, lectureHallID uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetLectureHall", streamIDs, lectureHallID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetLectureHall indicates an expected call of SetLectureHall.
+func (mr *MockStreamsDaoMockRecorder) SetLectureHall(streamIDs, lectureHallID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLectureHall", reflect.TypeOf((*MockStreamsDao)(nil).SetLectureHall), streamIDs, lectureHallID)
+}
+
 // SetStreamNotLiveById mocks base method.
 func (m *MockStreamsDao) SetStreamNotLiveById(streamID uint) error {
 	m.ctrl.T.Helper()

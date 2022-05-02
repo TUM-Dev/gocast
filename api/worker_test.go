@@ -14,37 +14,28 @@ import (
 
 func TestDeleteWorker_success(t *testing.T) {
 	gin.SetMode(gin.TestMode)
+
 	workerId := "1234"
-	workerDaoMock := createWorkerMock(t, workerId)
 
 	w := httptest.NewRecorder()
 	c, r := gin.CreateTestContext(w)
 
 	// Middleware to set Mock-TUMLiveContext
 	r.Use(func(c *gin.Context) {
-		c.Set("TUMLiveContext", createMockTUMLiveContext())
+		c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+			Name: "Admin",
+			Role: model.AdminType,
+		}})
 	})
 
-	configWorkerRouter(r, workerDaoMock)
+	ctrl := gomock.NewController(t)
+	workerDaoMock := mock_dao.NewMockWorkerDao(ctrl)
+	workerDaoMock.EXPECT().DeleteWorker(workerId).Return(nil).AnyTimes()
+
+	configWorkerRouter(r, DaoWrapper{WorkerDao: workerDaoMock})
 
 	c.Request, _ = http.NewRequest(http.MethodDelete, "/api/workers/"+workerId, nil)
 	r.ServeHTTP(w, c.Request)
 
 	assert.Equal(t, w.Code, 200)
-	assert.Equal(t, w.Body.String(), "")
-}
-
-func createWorkerMock(t *testing.T, workerId string) *mock_dao.MockWorkerDao {
-	ctrl := gomock.NewController(t)
-	workerDaoMock := mock_dao.NewMockWorkerDao(ctrl)
-	workerDaoMock.EXPECT().DeleteWorker(workerId).Return(nil).AnyTimes()
-
-	return workerDaoMock
-}
-
-func createMockTUMLiveContext() tools.TUMLiveContext {
-	return tools.TUMLiveContext{User: &model.User{
-		Name: "Admin",
-		Role: model.AdminType,
-	}}
 }

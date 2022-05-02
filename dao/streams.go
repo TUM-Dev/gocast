@@ -33,6 +33,7 @@ type StreamsDao interface {
 	GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Stream, error)
 	GetStreamsWithWatchState(courseID uint, userID uint) (streams []model.Stream, err error)
 
+	SetLectureHall(streamIDs []uint, lectureHallID uint) error
 	UnsetLectureHall(streamIDs []uint) error
 	UpdateStream(stream model.Stream) error
 	SaveWorkerForStream(stream model.Stream, worker model.Worker) error
@@ -56,7 +57,7 @@ type streamsDao struct {
 	db *gorm.DB
 }
 
-func NewStreamsDao() streamsDao {
+func NewStreamsDao() StreamsDao {
 	return streamsDao{db: DB}
 }
 

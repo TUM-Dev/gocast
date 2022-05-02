@@ -13,8 +13,8 @@ import (
 	"os"
 )
 
-func configGinDownloadRouter(router *gin.Engine, fileDao dao.FileDao, streamsDao dao.StreamsDao, coursesDao dao.CoursesDao) {
-	routes := downloadRoutes{fileDao: fileDao, streamsDao: streamsDao, coursesDao: coursesDao}
+func configGinDownloadRouter(router *gin.Engine, daoWrapper DaoWrapper) {
+	routes := downloadRoutes{fileDao: daoWrapper.FileDao, streamsDao: daoWrapper.StreamsDao, coursesDao: daoWrapper.CoursesDao}
 	router.GET("/api/download/:id", routes.download)
 }
 
@@ -41,6 +41,7 @@ func (r downloadRoutes) download(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+
 	stream, err := r.streamsDao.GetStreamByID(c, fmt.Sprintf("%d", file.StreamID))
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)

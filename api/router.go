@@ -12,15 +12,36 @@ func ConfigChatRouter(router *gin.RouterGroup) {
 
 //ConfigGinRouter for non ws endpoints
 func ConfigGinRouter(router *gin.Engine) {
+	daoWrapper := newDaoWrapper()
 	configGinStreamRestRouter(router)
 	configGinUsersRouter(router)
 	configGinCourseRouter(router)
-	configGinDownloadRouter(router, dao.NewFileDao(), dao.NewStreamsDao(), dao.NewCoursesDao())
+	configGinDownloadRouter(router, daoWrapper)
 	configGinLectureHallApiRouter(router)
 	configGinSexyApiRouter(router)
 	configProgressRouter(router)
 	configServerNotificationsRoutes(router)
 	configTokenRouter(router)
-	configWorkerRouter(router, dao.NewWorkerDao())
+	configWorkerRouter(router, daoWrapper)
 	configNotificationsRouter(router)
+}
+
+type DaoWrapper struct {
+	dao.CameraPresetDao
+	dao.ChatDao
+	dao.FileDao
+	dao.StreamsDao
+	dao.CoursesDao
+	dao.WorkerDao
+}
+
+func newDaoWrapper() DaoWrapper {
+	return DaoWrapper{
+		CameraPresetDao: dao.NewCameraPresetDao(),
+		ChatDao:         dao.NewChatDao(),
+		FileDao:         dao.NewFileDao(),
+		StreamsDao:      dao.NewStreamsDao(),
+		CoursesDao:      dao.NewCoursesDao(),
+		WorkerDao:       dao.NewWorkerDao(),
+	}
 }

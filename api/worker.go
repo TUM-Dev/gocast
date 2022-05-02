@@ -8,11 +8,11 @@ import (
 	"net/http"
 )
 
-func configWorkerRouter(r *gin.Engine, workerDao dao.WorkerDao) {
+func configWorkerRouter(r *gin.Engine, daoWrapper DaoWrapper) {
 	g := r.Group("/api/workers")
 	g.Use(tools.Admin)
 
-	routes := workerRoutes{dao: workerDao}
+	routes := workerRoutes{dao: daoWrapper.WorkerDao}
 
 	g.DELETE("/:id", routes.deleteWorker)
 }
