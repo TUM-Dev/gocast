@@ -15,7 +15,7 @@
 {{$page := .Page}}
 {{$indexData := .IndexData}}
 {{template "header" .IndexData.TUMLiveContext}}
-{{- /*gotype: TUM-Live/web.AdminPageData*/ -}}
+{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
 <div x-data="{hidden:true}" class="lg:hidden mx-4 mt-4">
     <button class="bg-gray-200 text-gray-700 rounded shadow px-4 py-1" @click="hidden=!hidden"
             x-text="hidden?'Open Menu':'Close Menu'">Open Menu
@@ -118,7 +118,7 @@
                     {{if eq $curUser.Role 1}}
                         <li class="mt-8"><h5
                                     class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2">
-                                Administration</h5>
+                                Administration  XXX</h5>
                             <ul>
                                 <li>
                                     <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "users"}}text-1{{else}}text-5{{end}} relative block"

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full dark">
-{{- /*gotype: TUM-Live/web.WatchPageData*/ -}}
+{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.WatchPageData*/ -}}
 <head>
     <meta charset="UTF-8">
     {{$stream := .IndexData.TUMLiveContext.Stream}}
@@ -227,7 +227,7 @@
     {{end}}
 </div>
 <script>
-    watch.initPlayer();
+    watch.initPlayer(true, false, false);
     {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
     watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
     {{end}}

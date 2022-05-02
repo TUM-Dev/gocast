@@ -24,7 +24,7 @@ func PopUpChat(c *gin.Context) {
 	data.IsAdminOfCourse = tumLiveContext.UserIsAdmin()
 	data.IsPopUp = true
 
-	err := templ.ExecuteTemplate(c.Writer, "popup-chat.gohtml", data)
+	err := templateExecutor.ExecuteTemplate(c.Writer, "popup-chat.gohtml", data)
 	if err != nil {
 		log.Printf("couldn't render template: %v\n", err)
 	}
