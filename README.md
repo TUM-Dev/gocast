@@ -51,7 +51,7 @@ docker run --detach --name mariadb-tumlive --env MARIADB_USER=root --env MARIADB
 - Go to File -> Settings -> Go -> Go Modules and enable go modules integration.
 - Run `npm i` in the `./web` directory to install the required node modules
 - Run `go get ./...` to install the required go modules
-- If you want to customize the environment variables (for example mariadb username and password), copy the `config.yaml` file over to your home directory
+- If you want to customize the configuration (for example mariadb username and password), copy the `config.yaml` file over to `$HOME/.TUM-Live/config.yaml` and make your changes there to prevent accidentally committing them.
 - Start the app by building and running `./cmd/tumlive/tumlive.go`
 - Head over to `http://localhost:8081` in your browser of choice and confirm that the page has loaded without any problems.
 - To keep automatically rebuilding the frontend code during development, run the command `npm run build-dev` in `./web` (and keep it running).
@@ -62,7 +62,7 @@ docker run --detach --name mariadb-tumlive --env MARIADB_USER=root --env MARIADB
 - Make sure you have [staticcheck](https://staticcheck.io/docs/getting-started/)
 and [pre-commit](https://pre-commit.com/#install) installed. If you have `pip` installed on your machine, you can install them with the following command
 ```bash
-go install honnef.co/go/tools/cmd/staticcheck@latest & pip install pre-commit
+go install honnef.co/go/tools/cmd/staticcheck@latest && pip install pre-commit
 ```
 - Run`pre-commit install`. It will install the pre-commit hook scripts for this repository.
 
