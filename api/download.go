@@ -29,7 +29,7 @@ func download(c *gin.Context) {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
-	file, err := dao.GetFileById(c.Param("id"))
+	file, err := dao.File.GetFileById(c.Param("id"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return

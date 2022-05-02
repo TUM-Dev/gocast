@@ -8,10 +8,12 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/bot"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -30,9 +32,15 @@ func configGinStreamRestRouter(router *gin.Engine) {
 	g.GET("/api/stream/:streamID/pause", pauseStream)
 	g.GET("/api/stream/:streamID/end", endStream)
 	g.GET("/api/stream/:streamID/issue", reportStreamIssue)
-}
 
-// TODO
+	// downloadable files
+	gNonAdmin := router.Group("/")
+	gNonAdmin.Use(tools.InitStream)
+	gNonAdmin.GET("/api/stream/:streamID/files", getFilesOfStream)
+
+	gNonAdmin.POST("/api/stream/:streamID/files", newFileOfStream)
+	gNonAdmin.DELETE("/api/stream/:streamID/files/:fid", deleteFileOfStream)
+}
 
 type liveStreamDto struct {
 	ID          uint
@@ -199,4 +207,47 @@ func getStream(c *gin.Context) {
 			"ingest":      fmt.Sprintf("%sstream?secret=%s", tools.Cfg.IngestBase, stream.StreamKey),
 			"live":        stream.LiveNow,
 			"vod":         stream.Recording})
+}
+
+func getFilesOfStream(c *gin.Context) {
+	foundContext, _ := c.Get("TUMLiveContext")
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	stream := *tumLiveContext.Stream
+
+	c.JSON(http.StatusOK, stream.DownloadableFiles)
+}
+
+func newFileOfStream(c *gin.Context) {
+	foundContext, _ := c.Get("TUMLiveContext")
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	stream := *tumLiveContext.Stream
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+	}
+
+	path := fmt.Sprintf("%s/%s", tools.Cfg.Paths.Mass, file.Filename)
+
+	if err := c.SaveUploadedFile(file, path); err != nil {
+		log.WithError(err).Error("Could not save file with path: " + path)
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+
+	err = dao.File.NewFile(&model.File{StreamID: stream.ID, Path: path})
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+}
+
+func deleteFileOfStream(c *gin.Context) {
+	toDelete, err := dao.File.GetFileById(c.Param("fid"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+	}
+	err = os.Remove(toDelete.Path)
+	if err != nil {
+		log.WithError(err).Error("Could not delete file with path: " + toDelete.Path)
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
 }
