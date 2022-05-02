@@ -46,7 +46,7 @@ docker run --detach --name mariadb-tumlive --env MARIADB_USER=root --env MARIADB
 
 ### Installing go
 
-- Install **go 1.18** by following the steps [here](https://go.dev/doc/install)
+- Install **go >=1.18** by following the steps [here](https://go.dev/doc/install)
 - Preferably use [JetBrains GoLand](https://www.jetbrains.com/go/) and open this project as it simplifies this entire process
 - Run `npm i` in the `./web` directory to install the required node modules
 - Run `go get ./...` to install the required go modules
