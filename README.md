@@ -38,7 +38,7 @@ In `/etc/hosts` add this:
 - Follow the steps [here](https://mariadb.com/kb/en/installing-and-using-mariadb-via-docker/) to install mariadb via docker.
 - Then run the docker container using the following command.
 ```bash
-docker run --detach --name mariadb-tumlive --env MARIADB_USER=root --env MARIADB_PASSWORD=root --env MARIADB_ROOT_PASSWORD=example --restart always -p 3306:3306 mariadb:latest`
+docker run --detach --name mariadb-tumlive --env MARIADB_USER=root --env MARIADB_ROOT_PASSWORD=example --restart always -p 3306:3306 mariadb:latest`
 ```
 - Alternatively, install mariadb on its own.
 - Create the database `tumlive` using [this]([tum-live-starter.zip](https://github.com/joschahenningsen/TUM-Live/files/8505487/tum-live-starter.zip)) script.
