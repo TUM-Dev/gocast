@@ -50,7 +50,7 @@ docker run --detach --name mariadb-tumlive --env MARIADB_USER=root --env MARIADB
 - Preferably use [JetBrains GoLand](https://www.jetbrains.com/go/) and open this project as it simplifies this entire process
 - Run `npm i` in the `./web` directory to install the required node modules
 - Run `go get ./...` to install the required go modules
-- If you want to customize the environment variables (for example mariadb username and password), copy the `config.yaml` file over to your home directory
+- If you want to customize the configuration (for example mariadb username and password), copy the `config.yaml` file over to `$HOME/.TUM-Live/config.yaml` and make your changes there to prevent accidentally committing them.
 - Start the app by building and running `./cmd/tumlive/tumlive.go`
 - Head over to `http://localhost:8081` in your browser of choice and confirm that the page has loaded without any problems.
 - Voilà! Happy coding! :sparkles:
