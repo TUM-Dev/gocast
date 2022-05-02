@@ -60,7 +60,7 @@ docker run --detach --name mariadb-tumlive --env MARIADB_USER=root --env MARIADB
 - Make sure you have [staticcheck](https://staticcheck.io/docs/getting-started/)
 and [pre-commit](https://pre-commit.com/#install) installed. If you have `pip` installed on your machine, you can install them with the following command
 ```bash
-go install honnef.co/go/tools/cmd/staticcheck@latest & pip install pre-commit
+go install honnef.co/go/tools/cmd/staticcheck@latest && pip install pre-commit
 ```
 - Run`pre-commit install`. It will install the pre-commit hook scripts for this repository.
 
