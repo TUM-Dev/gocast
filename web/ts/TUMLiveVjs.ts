@@ -2,6 +2,7 @@ import { postData } from "./global";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import dom = videojs.dom;
+import airplay from "@silvermine/videojs-airplay";
 
 require("videojs-seek-buttons");
 require("videojs-hls-quality-selector");
@@ -23,24 +24,36 @@ export const initPlayer = function (
     courseUrl?: string,
     streamStartIn?: number, // in seconds
 ) {
-    player = videojs("my-video", {
-        liveui: true,
-        fluid: fluid,
-        playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
-        html5: {
-            reloadSourceOnError: true,
-            vhs: {
-                overrideNative: !videojs.browser.IS_SAFARI,
+    player = videojs(
+        "my-video",
+        {
+            liveui: true,
+            fluid: fluid,
+            playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+            html5: {
+                reloadSourceOnError: true,
+                vhs: {
+                    overrideNative: !videojs.browser.IS_SAFARI,
+                },
+                nativeVideoTracks: false,
+                nativeAudioTracks: false,
+                nativeTextTracks: false,
             },
-            nativeVideoTracks: false,
-            nativeAudioTracks: false,
-            nativeTextTracks: false,
+            userActions: {
+                hotkeys: {},
+            },
+            plugins: {
+                airPlay: {
+                    addButtonToControlBar: true, // defaults to `true`
+                    buttonPositionIndex: -2,
+                },
+            },
+            //nativeControlsForTouch: true,a
         },
-        userActions: {
-            hotkeys: {},
+        function () {
+            player.airPlay();
         },
-        //nativeControlsForTouch: true,a
-    });
+    );
     player.hlsQualitySelector();
     if (autoplay) {
         player.play();
@@ -343,3 +356,4 @@ videojs.registerPlugin("skipSilence", skipSilence);
 videojs.registerPlugin("watchProgress", watchProgress);
 videojs.registerComponent("Titlebar", Titlebar);
 videojs.registerComponent("StartInOverlay", StartInOverlay);
+airplay(videojs); //calls registerComponent internally
