@@ -168,7 +168,7 @@ func InitStream(wrapper dao.DaoWrapper) gin.HandlerFunc {
 		foundContext, exists := c.Get("TUMLiveContext")
 		if !exists {
 			sentry.CaptureException(errors.New("context should exist but doesn't"))
-			c.AbortWithStatus(http.StatusNotFound)
+			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 		tumLiveContext := foundContext.(TUMLiveContext)
