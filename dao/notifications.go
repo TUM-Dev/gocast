@@ -7,8 +7,6 @@ import (
 
 //go:generate mockgen -source=notifications.go -destination ../mock_dao/notifications.go
 
-var Notications = NewNotificiationsDao()
-
 type NotificationsDao interface {
 	AddNotification(notification *model.Notification) error
 

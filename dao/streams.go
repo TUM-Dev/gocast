@@ -13,8 +13,6 @@ import (
 
 //go:generate mockgen -source=streams.go -destination ../mock_dao/streams.go
 
-var Streams = NewStreamsDao()
-
 type StreamsDao interface {
 	CreateStream(stream *model.Stream) error
 	AddVodView(id string) error

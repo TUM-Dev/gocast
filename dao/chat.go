@@ -9,8 +9,6 @@ import (
 
 //go:generate mockgen -source=chat.go -destination ../mock_dao/chat.go
 
-var Chat = NewChatDao()
-
 type ChatDao interface {
 	AddChatPollOptionVote(pollOptionId uint, userId uint) error
 	AddChatPoll(poll *model.Poll) error

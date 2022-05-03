@@ -19,25 +19,30 @@ import (
 	"time"
 )
 
-func configGinUsersRouter(router *gin.Engine) {
+func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
+	routes := usersRoutes{daoWrapper}
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
-	admins.POST("/createUser", CreateUser)
-	admins.POST("/deleteUser", DeleteUser)
-	admins.GET("/searchUser", SearchUser)
-	admins.POST("/users/update", updateUser)
+	admins.POST("/createUser", routes.CreateUser)
+	admins.POST("/deleteUser", routes.DeleteUser)
+	admins.GET("/searchUser", routes.SearchUser)
+	admins.POST("/users/update", routes.updateUser)
 
 	lecturers := router.Group("/api")
 	lecturers.Use(tools.AtLeastLecturer)
-	lecturers.GET("/searchUserForCourse", SearchUserForCourse)
+	lecturers.GET("/searchUserForCourse", routes.SearchUserForCourse)
 
 	courseAdmins := router.Group("/api/course/:courseID")
-	courseAdmins.Use(tools.InitCourse)
+	courseAdmins.Use(tools.InitCourse(daoWrapper))
 	courseAdmins.Use(tools.AdminOfCourse)
-	courseAdmins.POST("/createUserForCourse", CreateUserForCourse)
+	courseAdmins.POST("/createUserForCourse", routes.CreateUserForCourse)
 }
 
-func updateUser(c *gin.Context) {
+type usersRoutes struct {
+	dao.DaoWrapper
+}
+
+func (r usersRoutes) updateUser(c *gin.Context) {
 	var req = struct {
 		ID   uint `json:"id"`
 		Role uint `json:"role"`
@@ -46,13 +51,13 @@ func updateUser(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	user, err := dao.Users.GetUserByID(c, req.ID)
+	user, err := r.UsersDao.GetUserByID(c, req.ID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	user.Role = req.Role
-	err = dao.Users.UpdateUser(user)
+	err = r.UsersDao.UpdateUser(user)
 	if err != nil {
 		log.WithError(err).Error("Error while updating user")
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -60,7 +65,7 @@ func updateUser(c *gin.Context) {
 	}
 }
 
-func prepareUserSearch(c *gin.Context) (users []model.User, err error) {
+func (r usersRoutes) prepareUserSearch(c *gin.Context) (users []model.User, err error) {
 	q := c.Query("q")
 	reg, _ := regexp.Compile("[^a-zA-Z0-9 ]+")
 	q = reg.ReplaceAllString(q, "")
@@ -68,7 +73,7 @@ func prepareUserSearch(c *gin.Context) (users []model.User, err error) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "query too short"})
 		return nil, errors.New("query too short")
 	}
-	users, err = dao.Users.SearchUser(q)
+	users, err = r.UsersDao.SearchUser(q)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return nil, err
@@ -76,8 +81,8 @@ func prepareUserSearch(c *gin.Context) (users []model.User, err error) {
 	return users, nil
 }
 
-func SearchUserForCourse(c *gin.Context) {
-	users, err := prepareUserSearch(c)
+func (r usersRoutes) SearchUserForCourse(c *gin.Context) {
+	users, err := r.prepareUserSearch(c)
 	if err != nil {
 		return
 	}
@@ -94,8 +99,8 @@ func SearchUserForCourse(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-func SearchUser(c *gin.Context) {
-	users, err := prepareUserSearch(c)
+func (r usersRoutes) SearchUser(c *gin.Context) {
+	users, err := r.prepareUserSearch(c)
 	if err != nil {
 		return
 	}
@@ -135,7 +140,7 @@ type userSearchDTO struct {
 	Changing bool `json:"changing"`
 }
 
-func DeleteUser(c *gin.Context) {
+func (r usersRoutes) DeleteUser(c *gin.Context) {
 	var deleteRequest deleteUserRequest
 	err := json.NewDecoder(c.Request.Body).Decode(&deleteRequest)
 	if err != nil {
@@ -143,7 +148,7 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 	// currently admins can not be deleted.
-	res, err := dao.Users.IsUserAdmin(context.Background(), deleteRequest.Id)
+	res, err := r.UsersDao.IsUserAdmin(context.Background(), deleteRequest.Id)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -153,7 +158,7 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	err = dao.Users.DeleteUser(context.Background(), deleteRequest.Id)
+	err = r.UsersDao.DeleteUser(context.Background(), deleteRequest.Id)
 	if err != nil {
 		sentry.CaptureException(err)
 		defer sentry.Flush(time.Second * 2)
@@ -163,7 +168,7 @@ func DeleteUser(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func CreateUserForCourse(c *gin.Context) {
+func (r usersRoutes) CreateUserForCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -176,11 +181,11 @@ func CreateUserForCourse(c *gin.Context) {
 	userEmail := c.PostForm("newUserEmail")
 
 	if batchUsers != "" {
-		go addUserBatchToCourse(batchUsers, *tumLiveContext.Course)
+		go r.addUserBatchToCourse(batchUsers, *tumLiveContext.Course)
 		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 		return
 	} else if userName != "" && userEmail != "" {
-		addSingleUserToCourse(userName, userEmail, *tumLiveContext.Course)
+		r.addSingleUserToCourse(userName, userEmail, *tumLiveContext.Course)
 		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 		return
 	} else {
@@ -190,20 +195,20 @@ func CreateUserForCourse(c *gin.Context) {
 
 }
 
-func addUserBatchToCourse(users string, course model.Course) {
+func (r usersRoutes) addUserBatchToCourse(users string, course model.Course) {
 	lines := strings.Split(users, "\n")
 	for _, userLine := range lines {
 		userArr := strings.Split(userLine, ",")
 		if len(userArr) != 2 {
 			continue
 		}
-		addSingleUserToCourse(userArr[0], strings.TrimSpace(userArr[1]), course)
+		r.addSingleUserToCourse(userArr[0], strings.TrimSpace(userArr[1]), course)
 		time.Sleep(time.Second * 2) // send at most one email per two seconds to prevent spam blocking.
 	}
 }
 
-func addSingleUserToCourse(name string, email string, course model.Course) {
-	if foundUser, err := dao.Users.GetUserByEmail(context.Background(), email); err != nil {
+func (r usersRoutes) addSingleUserToCourse(name string, email string, course model.Course) {
+	if foundUser, err := r.UsersDao.GetUserByEmail(context.Background(), email); err != nil {
 		// user not in database yet. Create them & send registration link
 		createdUser := model.User{
 			Name:     name,
@@ -212,15 +217,15 @@ func addSingleUserToCourse(name string, email string, course model.Course) {
 			Password: "",
 			Courses:  []model.Course{course},
 		}
-		if err = dao.Users.CreateUser(context.Background(), &createdUser); err != nil {
+		if err = r.UsersDao.CreateUser(context.Background(), &createdUser); err != nil {
 			log.Printf("%v", err)
 		} else {
-			go forgotPassword(email)
+			go r.forgotPassword(email)
 		}
 	} else {
 		// user Found, append the new course and notify via mail.
 		foundUser.Courses = append(foundUser.Courses, course)
-		err := dao.Users.UpdateUser(foundUser)
+		err := r.UsersDao.UpdateUser(foundUser)
 		if err != nil {
 			log.WithError(err).Error("Can't update user")
 			return
@@ -235,8 +240,8 @@ func addSingleUserToCourse(name string, email string, course model.Course) {
 	}
 }
 
-func CreateUser(c *gin.Context) {
-	usersEmpty, err := dao.Users.AreUsersEmpty(context.Background())
+func (r usersRoutes) CreateUser(c *gin.Context) {
+	usersEmpty, err := r.UsersDao.AreUsersEmpty(context.Background())
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -249,9 +254,9 @@ func CreateUser(c *gin.Context) {
 	}
 	var createdUser model.User
 	if usersEmpty {
-		createdUser, err = createUserHelper(request, model.AdminType)
+		createdUser, err = r.createUserHelper(request, model.AdminType)
 	} else {
-		createdUser, err = createUserHelper(request, model.LecturerType)
+		createdUser, err = r.createUserHelper(request, model.LecturerType)
 	}
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -260,7 +265,7 @@ func CreateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, createUserResponse{Name: createdUser.Name, Email: createdUser.Email.String, Role: createdUser.Role})
 }
 
-func createUserHelper(request createUserRequest, userType uint) (user model.User, err error) {
+func (r usersRoutes) createUserHelper(request createUserRequest, userType uint) (user model.User, err error) {
 	var u = model.User{
 		Name:  request.Name,
 		Email: sql.NullString{String: request.Email, Valid: true},
@@ -272,23 +277,23 @@ func createUserHelper(request createUserRequest, userType uint) (user model.User
 			return u, errors.New("user could not be created")
 		}
 	}
-	dbErr := dao.Users.CreateUser(context.Background(), &u)
+	dbErr := r.UsersDao.CreateUser(context.Background(), &u)
 	if dbErr != nil {
 		return u, errors.New("user could not be created")
 	}
 	if userType != model.AdminType { //generate password set link and send out email
-		go forgotPassword(request.Email)
+		go r.forgotPassword(request.Email)
 	}
 	return u, nil
 }
 
-func forgotPassword(email string) {
-	u, err := dao.Users.GetUserByEmail(context.Background(), email)
+func (r usersRoutes) forgotPassword(email string) {
+	u, err := r.UsersDao.GetUserByEmail(context.Background(), email)
 	if err != nil {
 		log.Println("couldn't get user by email")
 		return
 	}
-	registerLink, err := dao.Users.CreateRegisterLink(context.Background(), u)
+	registerLink, err := r.UsersDao.CreateRegisterLink(context.Background(), u)
 	if err != nil {
 		log.Println("couldn't create register link")
 		return

@@ -9,8 +9,6 @@ import (
 
 //go:generate mockgen -source=lecture_halls.go -destination ../mock_dao/lecture_halls.go
 
-var LectureHalls = NewLectureHallsDao()
-
 type LectureHallsDao interface {
 	CreateLectureHall(lectureHall model.LectureHall)
 	SavePreset(preset model.CameraPreset) error

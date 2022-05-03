@@ -15,8 +15,6 @@ import (
 
 //go:generate mockgen -source=courses.go -destination ../mock_dao/courses.go
 
-var Courses = NewCoursesDao()
-
 type CoursesDao interface {
 	CreateCourse(ctx context.Context, course *model.Course, keep bool) error
 	AddAdminToCourse(userID uint, courseID uint) error
@@ -46,11 +44,12 @@ type CoursesDao interface {
 }
 
 type coursesDao struct {
-	db *gorm.DB
+	db       *gorm.DB
+	usersDao UsersDao
 }
 
 func NewCoursesDao() coursesDao {
-	return coursesDao{db: DB}
+	return coursesDao{db: DB, usersDao: NewUsersDao()}
 }
 
 // CreateCourse creates a new course, if keep is false, deleted_at is set to NOW(),
@@ -108,7 +107,7 @@ func (d coursesDao) GetAdministeredCoursesByUserId(ctx context.Context, userid u
 	if found {
 		return cachedCourses.([]model.Course), nil
 	}
-	isAdmin, err := Users.IsUserAdmin(ctx, userid)
+	isAdmin, err := d.usersDao.IsUserAdmin(ctx, userid)
 	if err != nil {
 		return nil, err
 	}

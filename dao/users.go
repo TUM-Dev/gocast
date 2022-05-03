@@ -12,8 +12,6 @@ import (
 
 //go:generate mockgen -source=users.go -destination ../mock_dao/users.go
 
-var Users = NewUsersDao()
-
 type UsersDao interface {
 	AreUsersEmpty(ctx context.Context) (isEmpty bool, err error)
 	CreateUser(ctx context.Context, user *model.User) (err error)

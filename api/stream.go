@@ -16,20 +16,25 @@ import (
 	"time"
 )
 
-func configGinStreamRestRouter(router *gin.Engine) {
+func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
+	routes := streamRoutes{daoWrapper}
 	// group for api users with token
 	tokenG := router.Group("/")
-	tokenG.Use(tools.AdminToken)
-	tokenG.GET("/api/stream/live", liveStreams)
+	tokenG.Use(tools.AdminToken(daoWrapper))
+	tokenG.GET("/api/stream/live", routes.liveStreams)
 
 	// group for web api
 	g := router.Group("/")
 	g.Use(tools.InitStream(dao.DaoWrapper{}))
 	g.Use(tools.AdminOfCourse)
-	g.GET("/api/stream/:streamID", getStream)
-	g.GET("/api/stream/:streamID/pause", pauseStream)
-	g.GET("/api/stream/:streamID/end", endStream)
-	g.GET("/api/stream/:streamID/issue", reportStreamIssue)
+	g.GET("/api/stream/:streamID", routes.getStream)
+	g.GET("/api/stream/:streamID/pause", routes.pauseStream)
+	g.GET("/api/stream/:streamID/end", routes.endStream)
+	g.GET("/api/stream/:streamID/issue", routes.reportStreamIssue)
+}
+
+type streamRoutes struct {
+	dao.DaoWrapper
 }
 
 type liveStreamDto struct {
@@ -43,22 +48,22 @@ type liveStreamDto struct {
 }
 
 // livestreams returns all streams that are live
-func liveStreams(c *gin.Context) {
+func (r streamRoutes) liveStreams(c *gin.Context) {
 	var res []liveStreamDto
-	streams, err := dao.Streams.GetCurrentLive(c)
+	streams, err := r.StreamsDao.GetCurrentLive(c)
 	if err != nil {
 		log.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	for _, s := range streams {
-		course, err := dao.Courses.GetCourseById(c, s.CourseID)
+		course, err := r.CoursesDao.GetCourseById(c, s.CourseID)
 		if err != nil {
 			log.Error(err)
 		}
 		lectureHall := "Selfstream"
 		if s.LectureHallID != 0 {
-			l, err := dao.LectureHalls.GetLectureHallByID(s.LectureHallID)
+			l, err := r.LectureHallsDao.GetLectureHallByID(s.LectureHallID)
 			if err != nil {
 				log.Error(err)
 			} else {
@@ -78,7 +83,7 @@ func liveStreams(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-func endStream(c *gin.Context) {
+func (r streamRoutes) endStream(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -88,10 +93,10 @@ func endStream(c *gin.Context) {
 	discardVoD := c.Request.URL.Query().Get("discard") == "true"
 	log.Info(discardVoD)
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	NotifyWorkersToStopStream(*tumLiveContext.Stream, discardVoD)
+	NotifyWorkersToStopStream(*tumLiveContext.Stream, discardVoD, r.DaoWrapper)
 }
 
-func pauseStream(c *gin.Context) {
+func (r streamRoutes) pauseStream(c *gin.Context) {
 	pause := c.Request.URL.Query().Get("pause") == "true"
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
@@ -101,7 +106,7 @@ func pauseStream(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	stream := tumLiveContext.Stream
-	lectureHall, err := dao.LectureHalls.GetLectureHallByID(stream.LectureHallID)
+	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
 		log.WithError(err).Error("request to pause stream without lecture hall")
 		return
@@ -124,7 +129,7 @@ func pauseStream(c *gin.Context) {
 		log.WithError(err).Error("Can't mute/unmute")
 		return
 	}
-	err = dao.Streams.SavePauseState(stream.ID, pause)
+	err = r.StreamsDao.SavePauseState(stream.ID, pause)
 	if err != nil {
 		log.WithError(err).Error("Pause: Can't save stream")
 	} else {
@@ -133,7 +138,7 @@ func pauseStream(c *gin.Context) {
 }
 
 // reportStreamIssue sends a notification to a matrix room that can be used for debugging technical issues.
-func reportStreamIssue(c *gin.Context) {
+func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -148,12 +153,12 @@ func reportStreamIssue(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	lectureHall, err := dao.LectureHalls.GetLectureHallByID(stream.LectureHallID)
+	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
 		sentry.CaptureException(err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
-	course, err := dao.Courses.GetCourseById(c, stream.CourseID)
+	course, err := r.CoursesDao.GetCourseById(c, stream.CourseID)
 	if err != nil {
 		sentry.CaptureException(err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -176,7 +181,7 @@ func reportStreamIssue(c *gin.Context) {
 	}
 }
 
-func getStream(c *gin.Context) {
+func (r streamRoutes) getStream(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))

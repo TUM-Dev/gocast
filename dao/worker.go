@@ -8,8 +8,6 @@ import (
 
 //go:generate mockgen -source=worker.go -destination ../mock_dao/worker.go
 
-var Worker = NewWorkerDao()
-
 type WorkerDao interface {
 	CreateWorker(worker *model.Worker) error
 	SaveWorker(worker model.Worker) error

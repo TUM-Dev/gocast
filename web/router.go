@@ -45,52 +45,54 @@ func configGinStaticRouter(router gin.IRoutes) {
 
 //todo: un-export functions
 func configMainRoute(router *gin.Engine) {
+	daoWrapper := dao.NewDaoWrapper()
+	routes := mainRoutes{daoWrapper}
 	streamGroup := router.Group("/")
 
 	atLeastLecturerGroup := router.Group("/")
 	atLeastLecturerGroup.Use(tools.AtLeastLecturer)
-	atLeastLecturerGroup.GET("/admin", AdminPage)
-	atLeastLecturerGroup.GET("/admin/create-course", AdminPage)
-	router.GET("/about", AboutPage)
+	atLeastLecturerGroup.GET("/admin", routes.AdminPage)
+	atLeastLecturerGroup.GET("/admin/create-course", routes.AdminPage)
+	router.GET("/about", routes.AboutPage)
 
 	adminGroup := router.Group("/")
-	adminGroup.GET("/admin/users", AdminPage)
-	adminGroup.GET("/admin/lectureHalls", AdminPage)
-	adminGroup.GET("/admin/lectureHalls/new", AdminPage)
-	adminGroup.GET("/admin/workers", AdminPage)
-	adminGroup.GET("/admin/server-notifications", AdminPage)
-	adminGroup.GET("/admin/server-stats", AdminPage)
-	adminGroup.GET("/admin/course-import", AdminPage)
-	adminGroup.GET("/admin/token", AdminPage)
-	adminGroup.GET("/admin/notifications", AdminPage)
+	adminGroup.GET("/admin/users", routes.AdminPage)
+	adminGroup.GET("/admin/lectureHalls", routes.AdminPage)
+	adminGroup.GET("/admin/lectureHalls/new", routes.AdminPage)
+	adminGroup.GET("/admin/workers", routes.AdminPage)
+	adminGroup.GET("/admin/server-notifications", routes.AdminPage)
+	adminGroup.GET("/admin/server-stats", routes.AdminPage)
+	adminGroup.GET("/admin/course-import", routes.AdminPage)
+	adminGroup.GET("/admin/token", routes.AdminPage)
+	adminGroup.GET("/admin/notifications", routes.AdminPage)
 
 	courseAdminGroup := router.Group("/")
-	courseAdminGroup.Use(tools.InitCourse)
+	courseAdminGroup.Use(tools.InitCourse(daoWrapper))
 	courseAdminGroup.Use(tools.AdminOfCourse)
-	courseAdminGroup.GET("/admin/course/:courseID", EditCoursePage)
-	courseAdminGroup.GET("/admin/course/:courseID/stats", CourseStatsPage)
-	courseAdminGroup.POST("/admin/course/:courseID", UpdateCourse)
+	courseAdminGroup.GET("/admin/course/:courseID", routes.EditCoursePage)
+	courseAdminGroup.GET("/admin/course/:courseID/stats", routes.CourseStatsPage)
+	courseAdminGroup.POST("/admin/course/:courseID", routes.UpdateCourse)
 
 	withStream := courseAdminGroup.Group("/")
-	withStream.Use(tools.InitStream)
-	withStream.GET("/admin/units/:courseID/:streamID", LectureUnitsPage)
-	withStream.GET("/admin/cut/:courseID/:streamID", LectureCutPage)
+	withStream.Use(tools.InitStream(daoWrapper))
+	withStream.GET("/admin/units/:courseID/:streamID", routes.LectureUnitsPage)
+	withStream.GET("/admin/cut/:courseID/:streamID", routes.LectureCutPage)
 
-	router.POST("/login", LoginHandler)
-	router.GET("/login", LoginPage)
-	router.GET("/logout", LogoutPage)
-	router.GET("/setPassword/:key", CreatePasswordPage)
-	router.POST("/setPassword/:key", CreatePasswordPage)
-	streamGroup.Use(tools.InitStream)
-	streamGroup.GET("/w/:slug/:streamID", WatchPage)
-	streamGroup.GET("/w/:slug/:streamID/:version", WatchPage)
-	streamGroup.GET("/w/:slug/:streamID/chat/popup", PopUpChat)
-	router.GET("/", MainPage)
-	router.GET("/semester/:year/:term", MainPage)
-	router.GET("/healthcheck", HealthCheck)
+	router.POST("/login", routes.LoginHandler)
+	router.GET("/login", routes.LoginPage)
+	router.GET("/logout", routes.LogoutPage)
+	router.GET("/setPassword/:key", routes.CreatePasswordPage)
+	router.POST("/setPassword/:key", routes.CreatePasswordPage)
+	streamGroup.Use(tools.InitStream(daoWrapper))
+	streamGroup.GET("/w/:slug/:streamID", routes.WatchPage)
+	streamGroup.GET("/w/:slug/:streamID/:version", routes.WatchPage)
+	streamGroup.GET("/w/:slug/:streamID/chat/popup", routes.PopUpChat)
+	router.GET("/", routes.MainPage)
+	router.GET("/semester/:year/:term", routes.MainPage)
+	router.GET("/healthcheck", routes.HealthCheck)
 
-	router.GET("/:shortLink", HighlightPage)
-	router.GET("/edit-course", editCourseByTokenPage)
+	router.GET("/:shortLink", routes.HighlightPage)
+	router.GET("/edit-course", routes.editCourseByTokenPage)
 
 	// redirect from old site:
 	router.GET("/cgi-bin/streams/*x", func(c *gin.Context) {
@@ -101,13 +103,19 @@ func configMainRoute(router *gin.Engine) {
 	})
 }
 
-func configCourseRoute(router *gin.Engine) {
-	g := router.Group("/course")
-	g.Use(tools.InitCourse)
-	g.GET("/:year/:teachingTerm/:slug", CoursePage)
+type mainRoutes struct {
+	dao.DaoWrapper
 }
 
-func HealthCheck(context *gin.Context) {
+func configCourseRoute(router *gin.Engine) {
+	daoWrapper := dao.NewDaoWrapper()
+	routes := mainRoutes{daoWrapper}
+	g := router.Group("/course")
+	g.Use(tools.InitCourse(daoWrapper))
+	g.GET("/:year/:teachingTerm/:slug", routes.CoursePage)
+}
+
+func (r mainRoutes) HealthCheck(context *gin.Context) {
 	resp := HealthCheckData{
 		Version:      VersionTag,
 		CacheMetrics: CacheMetrics{Hits: dao.Cache.Metrics.Hits(), Misses: dao.Cache.Metrics.Misses(), KeysAdded: dao.Cache.Metrics.KeysAdded()},

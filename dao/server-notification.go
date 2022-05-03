@@ -8,8 +8,6 @@ import (
 
 //go:generate mockgen -source=server-notification.go -destination ../mock_dao/server-notification.go
 
-var ServerNotification = NewServerNotificationDao()
-
 type ServerNotificationDao interface {
 	CreateServerNotification(notification model.ServerNotification) error
 

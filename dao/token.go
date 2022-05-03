@@ -8,8 +8,6 @@ import (
 
 //go:generate mockgen -source=token.go -destination ../mock_dao/token.go
 
-var Token = NewTokenDao()
-
 type TokenDao interface {
 	AddToken(token model.Token) error
 

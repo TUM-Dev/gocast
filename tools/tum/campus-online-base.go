@@ -28,15 +28,17 @@ func GetCourseInformation(courseID string, token string) (CourseInfo, error) {
 	return courseInfo, nil
 }
 
-func FetchCourses() {
-	y, t := GetCurrentSemester()
-	courses, err := dao.Courses.GetAllCoursesWithTUMIDForSemester(context.Background(), y, t)
-	if err != nil {
-		log.WithError(err).Error("Could not get courses with TUM online identifier:", err)
-		return
+func FetchCourses(daoWrapper dao.DaoWrapper) func() {
+	return func() {
+		y, t := GetCurrentSemester()
+		courses, err := daoWrapper.CoursesDao.GetAllCoursesWithTUMIDForSemester(context.Background(), y, t)
+		if err != nil {
+			log.WithError(err).Error("Could not get courses with TUM online identifier:", err)
+			return
+		}
+		FindStudentsForCourses(courses, daoWrapper.UsersDao)
+		//GetEventsForCourses(courses)
 	}
-	FindStudentsForCourses(courses)
-	//GetEventsForCourses(courses)
 }
 
 type CourseInfo struct {

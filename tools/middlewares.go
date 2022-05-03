@@ -2,7 +2,6 @@ package tools
 
 import (
 	"errors"
-	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -18,8 +17,6 @@ import (
 
 var templ *template.Template
 
-var coursesDao = dao.NewCoursesDao()
-
 // SetTemplates sets the templates for the middlewares to execute error pages
 func SetTemplates(t *template.Template) {
 	templ = t
@@ -31,47 +28,48 @@ type JWTClaims struct {
 	UserID uint
 }
 
-func InitContext(c *gin.Context) {
-	// no context initialisation required for static assets.
-	if strings.HasPrefix(c.Request.RequestURI, "/static") ||
-		strings.HasPrefix(c.Request.RequestURI, "/public") ||
-		strings.HasPrefix(c.Request.RequestURI, "/favicon") {
-		return
-	}
+func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// no context initialisation required for static assets.
+		if strings.HasPrefix(c.Request.RequestURI, "/static") ||
+			strings.HasPrefix(c.Request.RequestURI, "/public") ||
+			strings.HasPrefix(c.Request.RequestURI, "/favicon") {
+			return
+		}
 
-	// get the session
-	cookie, err := c.Cookie("jwt")
-	if err != nil {
-		c.Set("TUMLiveContext", TUMLiveContext{})
-		return
-	}
+		// get the session
+		cookie, err := c.Cookie("jwt")
+		if err != nil {
+			c.Set("TUMLiveContext", TUMLiveContext{})
+			return
+		}
 
-	token, err := jwt.ParseWithClaims(cookie, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-		key := Cfg.GetJWTKey().Public()
-		return key, nil
-	})
-	if err != nil {
-		log.Info("JWT parsing error: ", err)
-		c.Set("TUMLiveContext", TUMLiveContext{})
-		c.SetCookie("jwt", "", -1, "/", "", false, true)
-		return
-	}
-	if !token.Valid {
-		log.Info("JWT token is not valid")
-		c.Set("TUMLiveContext", TUMLiveContext{})
-		c.SetCookie("jwt", "", -1, "/", "", false, true)
-		return
-	}
+		token, err := jwt.ParseWithClaims(cookie, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+			key := Cfg.GetJWTKey().Public()
+			return key, nil
+		})
+		if err != nil {
+			log.Info("JWT parsing error: ", err)
+			c.Set("TUMLiveContext", TUMLiveContext{})
+			c.SetCookie("jwt", "", -1, "/", "", false, true)
+			return
+		}
+		if !token.Valid {
+			log.Info("JWT token is not valid")
+			c.Set("TUMLiveContext", TUMLiveContext{})
+			c.SetCookie("jwt", "", -1, "/", "", false, true)
+			return
+		}
 
-	user, err := dao.Users.GetUserByID(c, token.Claims.(*JWTClaims).UserID)
-	if err != nil {
-		c.Set("TUMLiveContext", TUMLiveContext{})
-		return
-	} else {
-		c.Set("TUMLiveContext", TUMLiveContext{User: &user})
-		return
+		user, err := daoWrapper.UsersDao.GetUserByID(c, token.Claims.(*JWTClaims).UserID)
+		if err != nil {
+			c.Set("TUMLiveContext", TUMLiveContext{})
+			return
+		} else {
+			c.Set("TUMLiveContext", TUMLiveContext{User: &user})
+			return
+		}
 	}
-
 }
 
 // RenderErrorPage renders the error page with the given error code and message.
@@ -105,61 +103,63 @@ const (
 		"Please make sure to use the correct login."
 )
 
-func InitCourse(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(TUMLiveContext)
-	// Get course based on context:
-	var course model.Course
-	if c.Param("courseID") != "" {
-		cIDInt, err := strconv.ParseInt(c.Param("courseID"), 10, 32)
-		if err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
+func InitCourse(wrapper dao.DaoWrapper) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		foundContext, exists := c.Get("TUMLiveContext")
+		if !exists {
+			sentry.CaptureException(errors.New("context should exist but doesn't"))
+			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
-		foundCourse, err := coursesDao.GetCourseById(c, uint(cIDInt))
-		if err != nil {
+		tumLiveContext := foundContext.(TUMLiveContext)
+		// Get course based on context:
+		var course model.Course
+		if c.Param("courseID") != "" {
+			cIDInt, err := strconv.ParseInt(c.Param("courseID"), 10, 32)
+			if err != nil {
+				c.AbortWithStatus(http.StatusBadRequest)
+				return
+			}
+			foundCourse, err := wrapper.CoursesDao.GetCourseById(c, uint(cIDInt))
+			if err != nil {
+				c.Status(http.StatusNotFound)
+				RenderErrorPage(c, http.StatusNotFound, CourseNotFoundErrMsg)
+			} else {
+				course = foundCourse
+			}
+		} else if c.Param("year") != "" && c.Param("teachingTerm") != "" && c.Param("slug") != "" {
+			y := c.Param("year")
+			yInt, err := strconv.Atoi(y)
+			if err != nil {
+				c.AbortWithStatus(http.StatusBadRequest)
+				return
+			}
+			foundCourse, err := wrapper.CoursesDao.GetCourseBySlugYearAndTerm(c, c.Param("slug"), c.Param("teachingTerm"), yInt)
+			if err != nil {
+				c.Status(http.StatusNotFound)
+				RenderErrorPage(c, http.StatusNotFound, CourseNotFoundErrMsg)
+			} else {
+				course = foundCourse
+			}
+		} else {
 			c.Status(http.StatusNotFound)
 			RenderErrorPage(c, http.StatusNotFound, CourseNotFoundErrMsg)
-		} else {
-			course = foundCourse
 		}
-	} else if c.Param("year") != "" && c.Param("teachingTerm") != "" && c.Param("slug") != "" {
-		y := c.Param("year")
-		yInt, err := strconv.Atoi(y)
-		if err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
+		if c.IsAborted() {
 			return
 		}
-		foundCourse, err := coursesDao.GetCourseBySlugYearAndTerm(c, c.Param("slug"), c.Param("teachingTerm"), yInt)
-		if err != nil {
-			c.Status(http.StatusNotFound)
-			RenderErrorPage(c, http.StatusNotFound, CourseNotFoundErrMsg)
+		// check if course is accessible by user:
+		if course.Visibility == "public" || course.Visibility == "hidden" || (tumLiveContext.User != nil && tumLiveContext.User.IsEligibleToWatchCourse(course)) {
+			tumLiveContext.Course = &course
+			c.Set("TUMLiveContext", tumLiveContext)
+		} else if tumLiveContext.User == nil {
+			c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
+			c.Abort()
+			return
 		} else {
-			course = foundCourse
+			c.Status(http.StatusForbidden)
+			RenderErrorPage(c, http.StatusForbidden, ForbiddenCourseAccess)
 		}
-	} else {
-		c.Status(http.StatusNotFound)
-		RenderErrorPage(c, http.StatusNotFound, CourseNotFoundErrMsg)
-	}
-	if c.IsAborted() {
-		return
-	}
-	// check if course is accessible by user:
-	if course.Visibility == "public" || course.Visibility == "hidden" || (tumLiveContext.User != nil && tumLiveContext.User.IsEligibleToWatchCourse(course)) {
-		tumLiveContext.Course = &course
-		c.Set("TUMLiveContext", tumLiveContext)
-	} else if tumLiveContext.User == nil {
-		c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
-		c.Abort()
-		return
-	} else {
-		c.Status(http.StatusForbidden)
-		RenderErrorPage(c, http.StatusForbidden, ForbiddenCourseAccess)
 	}
 }
 
@@ -263,7 +263,6 @@ func AtLeastLecturer(c *gin.Context) {
 func Admin(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		fmt.Println(foundContext, exists)
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -275,24 +274,26 @@ func Admin(c *gin.Context) {
 	}
 }
 
-func AdminToken(c *gin.Context) {
-	queryParams := c.Request.URL.Query()
-	token := queryParams.Get("token")
-	t, err := dao.Token.GetToken(token)
-	if err != nil {
-		c.Status(http.StatusForbidden)
-		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
-		return
-	}
-	if t.Scope != model.TokenScopeAdmin {
-		c.Status(http.StatusForbidden)
-		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
-		return
-	}
-	err = dao.Token.TokenUsed(t)
-	if err != nil {
-		log.WithError(err).Warn("error marking token as used")
-		return
+func AdminToken(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		queryParams := c.Request.URL.Query()
+		token := queryParams.Get("token")
+		t, err := daoWrapper.TokenDao.GetToken(token)
+		if err != nil {
+			c.Status(http.StatusForbidden)
+			RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
+			return
+		}
+		if t.Scope != model.TokenScopeAdmin {
+			c.Status(http.StatusForbidden)
+			RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
+			return
+		}
+		err = daoWrapper.TokenDao.TokenUsed(t)
+		if err != nil {
+			log.WithError(err).Warn("error marking token as used")
+			return
+		}
 	}
 }
 

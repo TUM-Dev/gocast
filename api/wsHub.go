@@ -97,12 +97,12 @@ func sendServerMessage(msg string, t string, sessions ...*melody.Session) {
 
 }
 
-func BroadcastStats() {
+func BroadcastStats(streamsDao dao.StreamsDao) {
 	for sID, sessions := range sessionsMap {
 		if len(sessions) == 0 {
 			continue
 		}
-		stream, err := dao.Streams.GetStreamByID(context.Background(), fmt.Sprintf("%d", sID))
+		stream, err := streamsDao.GetStreamByID(context.Background(), fmt.Sprintf("%d", sID))
 		if err != nil || stream.Recording {
 			continue
 		}

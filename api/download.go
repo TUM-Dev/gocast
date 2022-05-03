@@ -14,14 +14,12 @@ import (
 )
 
 func configGinDownloadRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
-	routes := downloadRoutes{fileDao: daoWrapper.FileDao, streamsDao: daoWrapper.StreamsDao, coursesDao: daoWrapper.CoursesDao}
+	routes := downloadRoutes{daoWrapper}
 	router.GET("/api/download/:id", routes.download)
 }
 
 type downloadRoutes struct {
-	fileDao    dao.FileDao
-	streamsDao dao.StreamsDao
-	coursesDao dao.CoursesDao
+	dao.DaoWrapper
 }
 
 func (r downloadRoutes) download(c *gin.Context) {
@@ -36,18 +34,18 @@ func (r downloadRoutes) download(c *gin.Context) {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
-	file, err := r.fileDao.GetFileById(c.Param("id"))
+	file, err := r.FileDao.GetFileById(c.Param("id"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	stream, err := r.streamsDao.GetStreamByID(c, fmt.Sprintf("%d", file.StreamID))
+	stream, err := r.StreamsDao.GetStreamByID(c, fmt.Sprintf("%d", file.StreamID))
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	course, err := r.coursesDao.GetCourseById(c, stream.CourseID)
+	course, err := r.CoursesDao.GetCourseById(c, stream.CourseID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return

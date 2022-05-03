@@ -9,8 +9,6 @@ import (
 
 //go:generate mockgen -source=statistics.go -destination ../mock_dao/statistics.go
 
-var Statistics = NewStatisticsDao()
-
 type StatisticsDao interface {
 	AddStat(stat model.Stat) error
 

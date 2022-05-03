@@ -7,12 +7,17 @@ import (
 	"time"
 )
 
-func configGinSexyApiRouter(router gin.IRoutes) {
-	router.GET("/api/sexy", getStreamInfo)
+func configGinSexyApiRouter(router gin.IRoutes, daoWrapper dao.DaoWrapper) {
+	routes := sexyRoutes{daoWrapper}
+	router.GET("/api/sexy", routes.getStreamInfo)
 }
 
-func getStreamInfo(context *gin.Context) {
-	courses, err := dao.Courses.GetAllCourses()
+type sexyRoutes struct {
+	dao.DaoWrapper
+}
+
+func (r sexyRoutes) getStreamInfo(context *gin.Context) {
+	courses, err := r.CoursesDao.GetAllCourses()
 	if err != nil {
 		context.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"status": "something went wrong"})
 		return

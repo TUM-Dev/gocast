@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func FindStudentsForCourses(courses []model.Course) {
+func FindStudentsForCourses(courses []model.Course, usersDao dao.UsersDao) {
 	for i := range courses {
 		var studentIDs []string
 		var err error
@@ -24,7 +24,7 @@ func FindStudentsForCourses(courses []model.Course) {
 			log.WithError(err).WithField("TUMOnlineIdentifier", courses[i].TUMOnlineIdentifier).Error("FindStudentsForCourses: Can't get Students for course with id")
 			continue
 		}
-		err = dao.Users.AddUsersToCourseByTUMIDs(studentIDs, courses[i].ID)
+		err = usersDao.AddUsersToCourseByTUMIDs(studentIDs, courses[i].ID)
 		if err != nil {
 			log.WithError(err).Error("FindStudentsForCourses: Can't add users to course")
 		}

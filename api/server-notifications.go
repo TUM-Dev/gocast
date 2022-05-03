@@ -10,14 +10,19 @@ import (
 	"time"
 )
 
-func configServerNotificationsRoutes(engine *gin.Engine) {
+func configServerNotificationsRoutes(engine *gin.Engine, daoWrapper dao.DaoWrapper) {
+	routes := serverNotificationRoutes{daoWrapper}
 	adminGroup := engine.Group("/api/serverNotification")
 	adminGroup.Use(tools.Admin)
-	adminGroup.POST("/:notificationId", updateServerNotification)
-	adminGroup.POST("/create", createServerNotification)
+	adminGroup.POST("/:notificationId", routes.updateServerNotification)
+	adminGroup.POST("/create", routes.createServerNotification)
 }
 
-func updateServerNotification(c *gin.Context) {
+type serverNotificationRoutes struct {
+	dao.DaoWrapper
+}
+
+func (r serverNotificationRoutes) updateServerNotification(c *gin.Context) {
 	var req notificationReq
 	if err := c.ShouldBind(&req); err != nil {
 		log.Printf("%v", err)
@@ -29,14 +34,14 @@ func updateServerNotification(c *gin.Context) {
 		Start:   req.From,
 		Expires: req.Expires,
 	}
-	err := dao.ServerNotification.UpdateServerNotification(notification, req.Id)
+	err := r.ServerNotificationDao.UpdateServerNotification(notification, req.Id)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 	c.Redirect(http.StatusFound, "/admin/server-notifications")
 }
 
-func createServerNotification(c *gin.Context) {
+func (r serverNotificationRoutes) createServerNotification(c *gin.Context) {
 	var req notificationReq
 	if err := c.ShouldBind(&req); err != nil {
 		log.Printf("%v", err)
@@ -48,7 +53,7 @@ func createServerNotification(c *gin.Context) {
 		Start:   req.From,
 		Expires: req.Expires,
 	}
-	err := dao.ServerNotification.CreateServerNotification(notification)
+	err := r.ServerNotificationDao.CreateServerNotification(notification)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}

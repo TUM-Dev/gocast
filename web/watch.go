@@ -15,11 +15,11 @@ import (
 	"strings"
 )
 
-func WatchPage(c *gin.Context) {
+func (r mainRoutes) WatchPage(c *gin.Context) {
 	span := sentry.StartSpan(c, "GET /w", sentry.TransactionName("GET /w"))
 	defer span.Finish()
 	var data WatchPageData
-	err := data.Prepare(c)
+	err := data.Prepare(c, r.LectureHallsDao)
 	if err != nil {
 		log.WithError(err).Error("Can't prepare data for watch page")
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -41,7 +41,7 @@ func WatchPage(c *gin.Context) {
 	data.ChatData.IsPopUp = false
 
 	if data.IsAdminOfCourse && tumLiveContext.Stream.LectureHallID != 0 {
-		lectureHall, err := dao.LectureHalls.GetLectureHallByID(tumLiveContext.Stream.LectureHallID)
+		lectureHall, err := r.LectureHallsDao.GetLectureHallByID(tumLiveContext.Stream.LectureHallID)
 		if err != nil {
 			sentry.CaptureException(err)
 		} else {
@@ -113,23 +113,23 @@ type WatchPageData struct {
 }
 
 // Prepare populates the data for the watch page.
-func (d *WatchPageData) Prepare(c *gin.Context) error {
+func (d *WatchPageData) Prepare(c *gin.Context, lectureHallsDao dao.LectureHallsDao) error {
 	// todo prepare rest of data here as well
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		return errors.New("context should exist but doesn't")
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	err := d.prepareLectureHall(tumLiveContext)
+	err := d.prepareLectureHall(tumLiveContext, lectureHallsDao)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (d *WatchPageData) prepareLectureHall(c tools.TUMLiveContext) error {
+func (d *WatchPageData) prepareLectureHall(c tools.TUMLiveContext, lectureHallsDao dao.LectureHallsDao) error {
 	if c.Stream.LectureHallID != 0 {
-		lectureHall, err := dao.LectureHalls.GetLectureHallByID(c.Stream.LectureHallID)
+		lectureHall, err := lectureHallsDao.GetLectureHallByID(c.Stream.LectureHallID)
 		if err != nil {
 			return err
 		}

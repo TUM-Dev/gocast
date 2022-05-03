@@ -61,11 +61,17 @@ func (b *progressBuffer) run() {
 
 // configProgressRouter sets up the router and initializes a progress buffer
 // that is used to minimize writes to the database.
-func configProgressRouter(router *gin.Engine) {
+func configProgressRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
+	routes := progressRoutes{daoWrapper}
 	progressBuff = newProgressBuffer()
 	go progressBuff.run()
-	router.POST("/api/progressReport", saveProgress)
-	router.POST("/api/watched", markWatched)
+	router.POST("/api/progressReport", routes.saveProgress)
+	router.POST("/api/watched", routes.markWatched)
+}
+
+// progressRoutes contains a DaoWrapper object and all route functions dangle from it.
+type progressRoutes struct {
+	dao.DaoWrapper
 }
 
 // progressRequest corresponds the request that is sent by the video player when it reports its progress for VODs
@@ -76,7 +82,7 @@ type progressRequest struct {
 }
 
 // saveProgress saves progress to a buffer that is flushed at a fixed interval.
-func saveProgress(c *gin.Context) {
+func (r progressRoutes) saveProgress(c *gin.Context) {
 	var request progressRequest
 	err := c.BindJSON(&request)
 
@@ -108,7 +114,7 @@ type watchedRequest struct {
 }
 
 // markWatched marks a VoD as watched in the database.
-func markWatched(c *gin.Context) {
+func (r progressRoutes) markWatched(c *gin.Context) {
 	var request watchedRequest
 	err := c.BindJSON(&request)
 	if err != nil {
@@ -130,7 +136,7 @@ func markWatched(c *gin.Context) {
 		StreamID: request.StreamID,
 		Watched:  request.Watched,
 	}
-	err = dao.Progress.SaveProgresses([]model.StreamProgress{progress})
+	err = r.ProgressDao.SaveProgresses([]model.StreamProgress{progress})
 	if err != nil {
 		log.WithError(err).Error("Could not mark VoD as watched.")
 		c.AbortWithStatus(http.StatusInternalServerError)

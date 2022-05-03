@@ -7,8 +7,6 @@ import (
 
 //go:generate mockgen -source=ingest_server.go -destination ../mock_dao/ingest_server.go
 
-var IngestServer = NewIngestServerDao()
-
 type IngestServerDao interface {
 	SaveSlot(slot model.StreamName)
 	SaveIngestServer(server model.IngestServer)
