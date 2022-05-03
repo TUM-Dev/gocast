@@ -29,6 +29,9 @@ export function shouldScroll(): boolean {
         return false; // only scroll if sorting by time
     }
     const c = document.getElementById("chatBox");
+    if (!c) {
+        return false;
+    }
     return c.scrollHeight - c.scrollTop <= c.offsetHeight;
 }
 

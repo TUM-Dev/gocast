@@ -23,10 +23,8 @@ Features include:
 
 ![Architecture](https://raw.githubusercontent.com/joschahenningsen/TUM-Live/dev/target_architecture.png "Architecture")
 
-## Development
+## Getting Started
 
-Developing on this locally is a pain (because there are a few secrets involved). 
-There is a dockerfile/docker-compose.yml. I don't guarantee that it works because we can't currently use it in production.
 To get this running locally follow these steps:
 
 ### Setup IPs
@@ -37,30 +35,43 @@ In `/etc/hosts` add this:
 ```
 
 ### Setup Database
+- Follow the steps [here](https://mariadb.com/kb/en/installing-and-using-mariadb-via-docker/) to install mariadb via docker.
+- Then run the docker container using the following command.
+```bash
+docker run --detach --name mariadb-tumlive --env MARIADB_USER=root --env MARIADB_ROOT_PASSWORD=example --restart always -p 3306:3306 mariadb:latest`
+```
+- Alternatively, install mariadb on its own.
+- Create the database `tumlive` using [this]([tum-live-starter.zip](https://github.com/joschahenningsen/TUM-Live/files/8505487/tum-live-starter.zip)) script.
+- Or: Use [JetBrains DataGrip](https://www.jetbrains.com/datagrip/) to open the database and then run the script there to automatically set up a demo database.
 
-- get mariadb from your favourite package manager or docker (I recommend this option)
-- `docker run --name mariadb -e MYSQL_ROOT_PASSWORD=example -p 3306:3306 -d mariadb:latest`
-- create the database `tumlive`
+### Installing go
 
-### Get go running locally
-
-- Install go 1.18
-- Preferably use Jetbrains GoLand and open this project
-- Edit Configuration > Environment 
-  - Add environment variables from `variables-backend.example.env`.
-- Start the app
-- Head over to localhost:8081
-- Happy coding! :sparkles:
+- Install **go >=1.18** by following the steps [here](https://go.dev/doc/install)
+- Preferably use [JetBrains GoLand](https://www.jetbrains.com/go/) and open this project as it simplifies this entire process
+- Go to File -> Settings -> Go -> Go Modules and enable go modules integration.
+- Run `npm i` in the `./web` directory to install the required node modules
+- Run `go get ./...` to install the required go modules
+- If you want to customize the configuration (for example mariadb username and password), copy the `config.yaml` file over to `$HOME/.TUM-Live/config.yaml` and make your changes there to prevent accidentally committing them.
+- Start the app by building and running `./cmd/tumlive/tumlive.go`
+- Head over to `http://localhost:8081` in your browser of choice and confirm that the page has loaded without any problems.
+- To keep automatically rebuilding the frontend code during development, run the command `npm run build-dev` in `./web` (and keep it running).
+- Voilà! Happy coding! :sparkles:
 
 ### Enable pre-commit hooks
 
-- **Prerequisites**: Make sure you have [staticcheck](https://staticcheck.io/docs/getting-started/)
-and [pre-commit](https://pre-commit.com/#install) installed.
+- Make sure you have [staticcheck](https://staticcheck.io/docs/getting-started/)
+and [pre-commit](https://pre-commit.com/#install) installed. If you have `pip` installed on your machine, you can install them with the following command
+```bash
+go install honnef.co/go/tools/cmd/staticcheck@latest && pip install pre-commit
+```
 - Run`pre-commit install`. It will install the pre-commit hook scripts for this repository.
 
 Now the hook scripts will be triggered for every new commit, which should improve overall code quality.
-You can also run the pre-commit hooks manually for all files by executing `pre-commit run --all-files`.
-
+You can also run the pre-commit hooks manually for all files by executing `pre-commit run --all-files`. If you get the error message `The unauthenticated git protocol on port 9418 is no longer supported.`, try running the following command
+```bash
+git config --global url."https://github.com/".insteadOf git://github.com/
+```
+See [this](https://github.blog/2021-09-01-improving-git-protocol-security-github/) blogpost for more information on this error message.
 ### Linting and formatting typescript files
 
 The following scripts are provided:

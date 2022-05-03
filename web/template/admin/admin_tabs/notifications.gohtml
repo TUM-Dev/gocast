@@ -3,7 +3,7 @@
     <h2 class="text-2xl text-1 my-auto mt-4 font-medium">User Notifications</h2>
     <div x-data class="dark:border-gray-700 border rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter">
         {{ range . }}
-            {{- /*gotype: TUM-Live/model.Notification*/ -}}
+            {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Notification*/ -}}
             <div class="p-5 text-3 border-gray-700 border-b last:border-0">
                 <p class="font-semibold flex justify-between">
                     <span>{{if .Title}}{{.Title}}{{else}}<i>No title</i>{{end}}</span>
