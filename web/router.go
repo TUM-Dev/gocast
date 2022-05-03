@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-var templ *template.Template
+var templateExecutor tools.TemplateExecutor
 
 //go:embed template
 var templateFS embed.FS
@@ -18,29 +18,53 @@ var templateFS embed.FS
 //go:embed node_modules
 var staticFS embed.FS
 
+var templatePaths = []string{
+	"template/*.gohtml",
+	"template/admin/*.gohtml",
+	"template/admin/admin_tabs/*.gohtml",
+	"template/partial/*.gohtml",
+	"template/partial/stream/*.gohtml",
+	"template/partial/course/manage/*.gohtml",
+	"template/partial/admin/*.gohtml",
+	"template/partial/stream/chat/*.gohtml",
+	"template/partial/course/manage/*.gohtml",
+}
+
 func ConfigGinRouter(router *gin.Engine) {
-	templ = template.Must(template.ParseFS(templateFS,
-		"template/*.gohtml",
-		"template/admin/*.gohtml",
-		"template/admin/admin_tabs/*.gohtml",
-		"template/partial/*.gohtml",
-		"template/partial/stream/*.gohtml",
-		"template/partial/course/manage/*.gohtml",
-		"template/partial/admin/*.gohtml",
-		"template/partial/stream/chat/*.gohtml",
-		"template/partial/course/manage/*.gohtml"))
-	tools.SetTemplates(templ)
+	if VersionTag != "development" {
+		templateExecutor = tools.ReleaseTemplateExecutor{
+			Template: template.Must(template.ParseFS(templateFS, templatePaths...)),
+		}
+	} else {
+		prefixedTemplatePaths := make([]string, len(templatePaths))
+		for i, v := range templatePaths {
+			prefixedTemplatePaths[i] = "web/" + v
+		}
+		templateExecutor = tools.DebugTemplateExecutor{
+			Patterns: prefixedTemplatePaths,
+		}
+	}
+	tools.SetTemplateExecutor(templateExecutor)
+
 	configGinStaticRouter(router)
+	configSaml(router, dao.NewDaoWrapper())
 	configMainRoute(router)
 	configCourseRoute(router)
 }
 
 func configGinStaticRouter(router gin.IRoutes) {
 	router.Static("/public", tools.Cfg.Paths.Static)
-	router.StaticFS("/static", http.FS(staticFS))
-	router.GET("/favicon.ico", func(c *gin.Context) {
-		c.FileFromFS("assets/favicon.ico", http.FS(staticFS))
-	})
+	if VersionTag != "development" {
+		router.StaticFS("/static", http.FS(staticFS))
+		router.GET("/favicon.ico", func(c *gin.Context) {
+			c.FileFromFS("assets/favicon.ico", http.FS(staticFS))
+		})
+	} else {
+		router.Static("/static", "web/")
+		router.GET("/favicon.ico", func(c *gin.Context) {
+			c.File("web/assets/favicon.ico")
+		})
+	}
 }
 
 //todo: un-export functions

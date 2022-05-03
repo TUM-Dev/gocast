@@ -8,24 +8,24 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	log "github.com/sirupsen/logrus"
-	"html/template"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 )
 
-var templ *template.Template
+var templateExecutor TemplateExecutor
 
-// SetTemplates sets the templates for the middlewares to execute error pages
-func SetTemplates(t *template.Template) {
-	templ = t
+// SetTemplateExecutor sets the templates and template executor for the middlewares to execute error pages
+func SetTemplateExecutor(e TemplateExecutor) {
+	templateExecutor = e
 }
 
 // JWTClaims are the claims contained in a session
 type JWTClaims struct {
 	*jwt.RegisteredClaims
-	UserID uint
+	UserID        uint
+	SamlSubjectID *string // identifier of the SAML session (if any)
 }
 
 func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
@@ -66,7 +66,7 @@ func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 			c.Set("TUMLiveContext", TUMLiveContext{})
 			return
 		} else {
-			c.Set("TUMLiveContext", TUMLiveContext{User: &user})
+			c.Set("TUMLiveContext", TUMLiveContext{User: &user, SamlSubjectID: token.Claims.(*JWTClaims).SamlSubjectID})
 			return
 		}
 	}
@@ -75,7 +75,7 @@ func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 // RenderErrorPage renders the error page with the given error code and message.
 // the gin context is always aborted after this function is called.
 func RenderErrorPage(c *gin.Context, status int, message string) {
-	err := templ.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{
+	err := templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{
 		Status:  status,
 		Message: message,
 	})
@@ -298,9 +298,10 @@ func AdminToken(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 }
 
 type TUMLiveContext struct {
-	User   *model.User
-	Course *model.Course
-	Stream *model.Stream
+	User          *model.User
+	Course        *model.Course
+	Stream        *model.Stream
+	SamlSubjectID *string
 }
 
 func (c *TUMLiveContext) UserIsAdmin() bool {

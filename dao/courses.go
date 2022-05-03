@@ -131,7 +131,10 @@ func (d coursesDao) GetAdministeredCoursesByUserId(ctx context.Context, userid u
 	}
 
 	var administeredCourses []model.Course
-	err = DB.Raw("SELECT * FROM courses JOIN course_admins ON courses.id = course_admins.course_id WHERE course_admins.user_id = ? AND courses.deleted_at IS NULL", userid).Scan(&administeredCourses).Error
+	err = DB.Model(&model.Course{}).
+		Joins("JOIN course_admins ON courses.id = course_admins.course_id").
+		Where("course_admins.user_id = ? AND courses.deleted_at IS NULL", userid).
+		Find(&administeredCourses).Error
 	if err != nil {
 		return nil, err
 	}

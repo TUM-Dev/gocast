@@ -84,12 +84,12 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 		data.Description = template.HTML(data.IndexData.TUMLiveContext.Stream.GetDescriptionHTML())
 	}
 	if c.Query("video_only") == "1" {
-		err := templ.ExecuteTemplate(c.Writer, "video_only.gohtml", data)
+		err := templateExecutor.ExecuteTemplate(c.Writer, "video_only.gohtml", data)
 		if err != nil {
 			log.Printf("couldn't render template: %v\n", err)
 		}
 	} else {
-		err := templ.ExecuteTemplate(c.Writer, "watch.gohtml", data)
+		err := templateExecutor.ExecuteTemplate(c.Writer, "watch.gohtml", data)
 		if err != nil {
 			log.Printf("couldn't render template: %v\n", err)
 		}

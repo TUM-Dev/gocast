@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"errors"
 	"github.com/RBG-TUM/commons"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
@@ -33,7 +34,7 @@ func (r mainRoutes) MainPage(c *gin.Context) {
 	indexData.LoadLivestreams(c, r.DaoWrapper)
 	indexData.LoadPublicCourses(r.CoursesDao)
 
-	_ = templ.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
+	_ = templateExecutor.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
 }
 
 func (r mainRoutes) AboutPage(c *gin.Context) {
@@ -49,7 +50,7 @@ func (r mainRoutes) AboutPage(c *gin.Context) {
 	}
 	indexData.VersionTag = VersionTag
 
-	_ = templ.ExecuteTemplate(c.Writer, "about.gohtml", indexData)
+	_ = templateExecutor.ExecuteTemplate(c.Writer, "about.gohtml", indexData)
 }
 
 type IndexData struct {
@@ -96,10 +97,10 @@ func NewIndexDataWithContext(c *gin.Context) IndexData {
 func IsFreshInstallation(c *gin.Context, usersDao dao.UsersDao) {
 	res, err := usersDao.AreUsersEmpty(context.Background()) // fresh installation?
 	if err != nil {
-		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", nil)
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", nil)
 		return
 	} else if res {
-		_ = templ.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData())
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData())
 		return
 	}
 }
@@ -142,8 +143,9 @@ func (d *IndexData) LoadSemesters(spanMain *sentry.Span, coursesDao dao.CoursesD
 // LoggedIn streams can only be seen by logged-in users.
 // Enrolled streams can only be seen by users which are allowed to.
 func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
-	streams, err := daoWrapper.GetCurrentLiveNonHidden(context.Background())
-	if err != nil {
+	streams, err := daoWrapper.GetCurrentLive(context.Background())
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.WithError(err).Error("could not get current live streams")
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
 	}
 
@@ -154,13 +156,19 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 	for _, stream := range streams {
 		courseForLiveStream, _ := daoWrapper.GetCourseById(context.Background(), stream.CourseID)
 
+		// only show streams for logged in users if they are logged in
 		if courseForLiveStream.Visibility == "loggedin" && tumLiveContext.User == nil {
 			continue
 		}
+		// only show "enrolled" streams to users which are enrolled or admins
 		if courseForLiveStream.Visibility == "enrolled" {
 			if !isUserAllowedToWatchPrivateCourse(courseForLiveStream, tumLiveContext.User) {
 				continue
 			}
+		}
+		// Only show hidden streams to admins
+		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType) {
+			continue
 		}
 		livestreams = append(livestreams, CourseStream{
 			Course: courseForLiveStream,

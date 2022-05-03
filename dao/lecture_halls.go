@@ -83,11 +83,13 @@ func (d lectureHallsDao) GetStreamsForLectureHallIcal(userId uint) ([]CalendarRe
 	err := DB.Model(&model.Stream{}).
 		Joins("LEFT JOIN lecture_halls ON lecture_halls.id = streams.lecture_hall_id").
 		Joins("JOIN courses ON courses.id = streams.course_id").
+		Joins("JOIN course_admins ON courses.id = course_admins.course_id").
 		Select("streams.id as stream_id, streams.created_at as created, "+
 			"lecture_halls.name as lecture_hall_name, "+
 			"streams.start, streams.end, courses.name as course_name").
 		Where("(streams.start BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) and DATE_ADD(NOW(), INTERVAL 3 MONTH)) "+
-			"AND (courses.user_id = ? OR 0 = ?)", userId, userId).
+			"AND (courses.user_id = ? OR 0 = ? OR course_admins.user_id = ?)", userId, userId, userId).
+		Group("streams.id").
 		Scan(&res).Error
 	return res, err
 }

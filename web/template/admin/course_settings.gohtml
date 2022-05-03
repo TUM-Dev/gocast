@@ -8,7 +8,7 @@
         </label>
         <label class="inline-flex items-center w-full" for="enrolled">
             <input class="mr-3 w-auto form-radio" type="radio" id="enrolled" name="access"
-                   value="enrolled" {{- /*gotype: TUM-Live/model.Course*/ -}}
+                   value="enrolled" {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Course*/ -}}
                     {{if not (and . .TUMOnlineIdentifier)}}disabled{{end}}
                     {{if .}} {{if eq .Visibility "enrolled"}}checked{{end}}{{end}}>
             <span>Enrolled: Only students enrolled in TUMOnline can see this course</span>
