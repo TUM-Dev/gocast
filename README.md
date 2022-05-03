@@ -38,11 +38,19 @@ In `/etc/hosts` add this:
 - Follow the steps [here](https://mariadb.com/kb/en/installing-and-using-mariadb-via-docker/) to install mariadb via docker.
 - Then run the docker container using the following command.
 ```bash
-docker run --detach --name mariadb-tumlive --env MARIADB_USER=root --env MARIADB_ROOT_PASSWORD=example --restart always -p 3306:3306 mariadb:latest`
+docker run --detach \
+  --name mariadb-tumlive \
+  --env MARIADB_USER=root \
+  --env MARIADB_ROOT_PASSWORD=example \
+  --restart always \
+  -p 3306:3306 \
+  --volume [/path/to/TUM-Live/]docs/static/tum-live-starter.sql:/init.sql \
+  mariadb:latest --init-file /init.sql
 ```
 - Alternatively, install mariadb on its own.
-- Create the database `tumlive` using [this]([tum-live-starter.zip](https://github.com/joschahenningsen/TUM-Live/files/8505487/tum-live-starter.zip)) script.
-- Or: Use [JetBrains DataGrip](https://www.jetbrains.com/datagrip/) to open the database and then run the script there to automatically set up a demo database.
+  - Create the database `tumlive` using [this](https://github.com/joschahenningsen/TUM-Live/files/8505487/tum-live-starter.zip) script.
+  - Or: Use [JetBrains DataGrip](https://www.jetbrains.com/datagrip/) to open the database and then run the script there to automatically set up a demo database.
+- The database contains the users `admin`, `prof1`, `prof2`, `studi1`, `studi2` and `studi3` with the password `password`.
 
 ### Installing go
 
