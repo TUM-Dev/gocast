@@ -5,7 +5,10 @@
     {{$user := .IndexData.TUMLiveContext.User}}
 
     {{/* Icons for different actions student can do for a stream */}}
-    <span class="flex space-x-2 content-center">
+    <div class="flex space-x-2 content-center">
+        {{/* File Attachment button (slides, etc.)*/}}
+        {{template "attachments" $stream}}
+
         {{/* Download button */}}
         {{if and (and $course.DownloadsEnabled $user) $stream.IsDownloadable}}
             {{template "downloadBtn" $stream.Files}}
@@ -35,6 +38,5 @@
         <i title="Copy HLS URL"
            class="m-auto fas fa-link text-4 text-lg dark:hover:text-white hover:text-black cursor-pointer"
            onclick="global.copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))"></i>
-        </i>
-    </span>
+    </div>
 {{end}}

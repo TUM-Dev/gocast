@@ -23,41 +23,41 @@ const (
 type Stream struct {
 	gorm.Model
 
-	Name              string
-	Description       string
-	CourseID          uint
-	Start             time.Time `gorm:"not null"`
-	End               time.Time `gorm:"not null"`
-	RoomName          string
-	RoomCode          string
-	EventTypeName     string
-	TUMOnlineEventID  uint
-	SeriesIdentifier  string `gorm:"default:null"`
-	StreamKey         string `gorm:"not null"`
-	PlaylistUrl       string
-	PlaylistUrlPRES   string
-	PlaylistUrlCAM    string
-	FilePath          string //deprecated
-	LiveNow           bool   `gorm:"not null"`
-	Recording         bool
-	Premiere          bool `gorm:"default:null"`
-	Ended             bool `gorm:"default:null"`
-	Chats             []Chat
-	Stats             []Stat
-	Units             []StreamUnit
-	VodViews          uint `gorm:"default:0"` // todo: remove me before next semester
-	StartOffset       uint `gorm:"default:null"`
-	EndOffset         uint `gorm:"default:null"`
-	LectureHallID     uint `gorm:"default:null"`
-	Silences          []Silence
-	Files             []File `gorm:"foreignKey:StreamID"`
-	Paused            bool   `gorm:"default:false"`
-	StreamName        string
-	Duration          uint32           `gorm:"default:null"`
-	StreamWorkers     []Worker         `gorm:"many2many:stream_workers;"`
-	StreamProgresses  []StreamProgress `gorm:"foreignKey:StreamID"`
-	StreamStatus      StreamStatus     `gorm:"not null;default:1"`
-	DownloadableFiles []File           `gorm:"foreignKey:StreamID"`
+	Name             string
+	Description      string
+	CourseID         uint
+	Start            time.Time `gorm:"not null"`
+	End              time.Time `gorm:"not null"`
+	RoomName         string
+	RoomCode         string
+	EventTypeName    string
+	TUMOnlineEventID uint
+	SeriesIdentifier string `gorm:"default:null"`
+	StreamKey        string `gorm:"not null"`
+	PlaylistUrl      string
+	PlaylistUrlPRES  string
+	PlaylistUrlCAM   string
+	FilePath         string //deprecated
+	LiveNow          bool   `gorm:"not null"`
+	Recording        bool
+	Premiere         bool `gorm:"default:null"`
+	Ended            bool `gorm:"default:null"`
+	Chats            []Chat
+	Stats            []Stat
+	Units            []StreamUnit
+	VodViews         uint `gorm:"default:0"` // todo: remove me before next semester
+	StartOffset      uint `gorm:"default:null"`
+	EndOffset        uint `gorm:"default:null"`
+	LectureHallID    uint `gorm:"default:null"`
+	Silences         []Silence
+	Files            []File `gorm:"foreignKey:StreamID"`
+	Paused           bool   `gorm:"default:false"`
+	StreamName       string
+	Duration         uint32           `gorm:"default:null"`
+	StreamWorkers    []Worker         `gorm:"many2many:stream_workers;"`
+	StreamProgresses []StreamProgress `gorm:"foreignKey:StreamID"`
+	StreamStatus     StreamStatus     `gorm:"not null;default:1"`
+	Attachments      []File           `gorm:"foreignKey:StreamID"`
 
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }

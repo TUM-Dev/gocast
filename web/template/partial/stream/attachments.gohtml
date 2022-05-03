@@ -1,0 +1,31 @@
+{{define "attachments"}}
+    {{ $length := len .Attachments }}{{if gt $length 0}}
+        {{if eq $length 1}}
+            {{$file := index .Attachments 0}}
+            <a class="m-auto" href="/api/download/{{$file.ID}}" download>
+                <i class="fa-solid fa-file-arrow-down text-4 text-lg hover:text-1"></i>
+            </a>
+        {{else}}
+            <div class="relative m-auto" x-data="{attachmentDropdownOpen: false}">
+                <button @click="attachmentDropdownOpen = !attachmentDropdownOpen"
+                        @click.outside="attachmentDropdownOpen = false">
+                    <i class="fa-solid fa-file-arrow-down text-4 text-lg hover:text-1"></i>
+                </button>
+                <div x-show="attachmentDropdownOpen"
+                     class="absolute z-50 bottom-full -right-1/2 mb-2 rounded-lg bg-white dark:bg-secondary border dark:border-gray-600 shadow">
+                    <div class="border-b dark:border-gray-600 px-2 text-center">
+                        <span class="font-bold text-xs uppercase text-4">Attachments</span>
+                    </div>
+                    <div class="grid gap-1 p-2">
+                        {{range $i, $file := .Attachments}}
+                            <a class="rounded px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600"
+                               href="/api/download/{{$file.ID}}" download>
+                                <p class="font-semibold text-3 text-xs m-0">{{$file.Filename}}</p>
+                            </a>
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+        {{end}}
+    {{end}}
+{{end}}

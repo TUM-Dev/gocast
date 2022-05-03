@@ -40,8 +40,8 @@ func configGinStreamRestRouter(router *gin.Engine) {
 	g.Use(tools.InitStream)
 	g.GET("/api/stream/:streamID/files", getFilesOfStream)
 
-	adminG.POST("/api/stream/:streamID/files", newFileOfStream)
-	adminG.DELETE("/api/stream/:streamID/files/:fid", deleteFileOfStream)
+	g.POST("/api/stream/:streamID/files", newFileOfStream) //TODO: Change back to adminG
+	g.DELETE("/api/stream/:streamID/files/:fid", deleteFileOfStream)
 }
 
 type liveStreamDto struct {
@@ -216,7 +216,7 @@ func getFilesOfStream(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	stream := *tumLiveContext.Stream
 
-	c.JSON(http.StatusOK, stream.DownloadableFiles)
+	c.JSON(http.StatusOK, stream.Attachments)
 }
 
 func newFileOfStream(c *gin.Context) {
@@ -225,6 +225,7 @@ func newFileOfStream(c *gin.Context) {
 	stream := *tumLiveContext.Stream
 
 	var path string
+	var filename string
 
 	switch c.Query("type") {
 	case "file":
@@ -234,16 +235,18 @@ func newFileOfStream(c *gin.Context) {
 				c.AbortWithStatusJSON(http.StatusBadRequest, "missing form parameter 'file'")
 			}
 
+			filename = file.Filename
 			path = fmt.Sprintf("%s/%s%s", tools.Cfg.Paths.Mass, uuid.NewUUID(), filepath.Ext(file.Filename))
 
 			if err = c.SaveUploadedFile(file, path); err != nil {
-				log.WithError(err).Error("Could not save file with path: " + path)
+				log.WithError(err).Error("could not save file with path: " + path)
 				c.AbortWithStatusJSON(http.StatusInternalServerError, "could not save file with path: "+path)
 			}
 		}
 		break
 	case "url":
 		path = c.PostForm("file_url")
+		_, filename = filepath.Split(path)
 		if path == "" {
 			c.AbortWithStatusJSON(http.StatusBadRequest, "missing form parameter 'file_url'")
 			return
@@ -254,7 +257,7 @@ func newFileOfStream(c *gin.Context) {
 		return
 	}
 
-	if dao.File.NewFile(&model.File{StreamID: stream.ID, Path: path}) != nil {
+	if dao.File.NewFile(&model.File{StreamID: stream.ID, Path: path, Filename: filename}) != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "could not save file in database")
 	}
 }
@@ -266,7 +269,12 @@ func deleteFileOfStream(c *gin.Context) {
 	}
 	err = os.Remove(toDelete.Path)
 	if err != nil {
-		log.WithError(err).Error("Could not delete file with path: " + toDelete.Path)
+		log.WithError(err).Error("could not delete file with path: " + toDelete.Path)
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+	err = dao.File.DeleteFile(toDelete.ID)
+	if err != nil {
+		log.WithError(err).Error("could not delete file from database")
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }

@@ -10,6 +10,7 @@ type File struct {
 
 	StreamID uint   `gorm:"not null"`
 	Path     string `gorm:"not null"`
+	Filename string `gorm:"null;"`
 }
 
 func (f File) GetDownloadFileName() string {
