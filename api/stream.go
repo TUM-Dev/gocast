@@ -12,8 +12,10 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/bot"
 	log "github.com/sirupsen/logrus"
+	"github.com/u2takey/go-utils/uuid"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -25,21 +27,21 @@ func configGinStreamRestRouter(router *gin.Engine) {
 	tokenG.GET("/api/stream/live", liveStreams)
 
 	// group for web api
-	g := router.Group("/")
-	g.Use(tools.InitStream)
-	g.Use(tools.AdminOfCourse)
-	g.GET("/api/stream/:streamID", getStream)
-	g.GET("/api/stream/:streamID/pause", pauseStream)
-	g.GET("/api/stream/:streamID/end", endStream)
-	g.GET("/api/stream/:streamID/issue", reportStreamIssue)
+	adminG := router.Group("/")
+	adminG.Use(tools.InitStream)
+	adminG.Use(tools.AdminOfCourse)
+	adminG.GET("/api/stream/:streamID", getStream)
+	adminG.GET("/api/stream/:streamID/pause", pauseStream)
+	adminG.GET("/api/stream/:streamID/end", endStream)
+	adminG.GET("/api/stream/:streamID/issue", reportStreamIssue)
 
 	// downloadable files
-	gNonAdmin := router.Group("/")
-	gNonAdmin.Use(tools.InitStream)
-	gNonAdmin.GET("/api/stream/:streamID/files", getFilesOfStream)
+	g := router.Group("/")
+	g.Use(tools.InitStream)
+	g.GET("/api/stream/:streamID/files", getFilesOfStream)
 
-	gNonAdmin.POST("/api/stream/:streamID/files", newFileOfStream)
-	gNonAdmin.DELETE("/api/stream/:streamID/files/:fid", deleteFileOfStream)
+	adminG.POST("/api/stream/:streamID/files", newFileOfStream)
+	adminG.DELETE("/api/stream/:streamID/files/:fid", deleteFileOfStream)
 }
 
 type liveStreamDto struct {
@@ -222,21 +224,38 @@ func newFileOfStream(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	stream := *tumLiveContext.Stream
 
-	file, err := c.FormFile("file")
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+	var path string
+
+	switch c.Query("type") {
+	case "file":
+		{
+			file, err := c.FormFile("file")
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusBadRequest, "missing form parameter 'file'")
+			}
+
+			path = fmt.Sprintf("%s/%s%s", tools.Cfg.Paths.Mass, uuid.NewUUID(), filepath.Ext(file.Filename))
+
+			if err = c.SaveUploadedFile(file, path); err != nil {
+				log.WithError(err).Error("Could not save file with path: " + path)
+				c.AbortWithStatusJSON(http.StatusInternalServerError, "could not save file with path: "+path)
+			}
+		}
+		break
+	case "url":
+		path = c.PostForm("file_url")
+		if path == "" {
+			c.AbortWithStatusJSON(http.StatusBadRequest, "missing form parameter 'file_url'")
+			return
+		}
+		break
+	default:
+		c.AbortWithStatusJSON(http.StatusBadRequest, "missing query parameter 'type'")
+		return
 	}
 
-	path := fmt.Sprintf("%s/%s", tools.Cfg.Paths.Mass, file.Filename)
-
-	if err := c.SaveUploadedFile(file, path); err != nil {
-		log.WithError(err).Error("Could not save file with path: " + path)
-		c.AbortWithStatus(http.StatusInternalServerError)
-	}
-
-	err = dao.File.NewFile(&model.File{StreamID: stream.ID, Path: path})
-	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+	if dao.File.NewFile(&model.File{StreamID: stream.ID, Path: path}) != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "could not save file in database")
 	}
 }
 
