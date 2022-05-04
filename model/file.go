@@ -31,3 +31,7 @@ func (f File) GetFriendlyFileName() string {
 	}
 	return "Default view"
 }
+
+func (f File) IsAbsolutePath() bool {
+	return strings.HasPrefix(f.Path, "https://") || strings.HasPrefix(f.Path, "http://")
+}
