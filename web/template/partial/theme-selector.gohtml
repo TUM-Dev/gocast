@@ -1,0 +1,30 @@
+{{define "theme-selector"}}
+    {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.User*/ -}}
+    <div class="relative" x-data="{ show: false }">
+        <button class="transition-colors duration-200 hover:text-gray-600 dark:hover:text-white text-gray-400 mr-6 relative h-4 w-4"
+                type="button" @click="show=!show">
+        <i class="fa-solid" :class="'fa-' + $store.theme.modes[$store.theme.activeMode].faIconId"></i>
+        </button>
+        <div x-cloak x-show="show"
+             @click.outside="show=false"
+             class="origin-top-right absolute right-0 mt-4 lg:shadow-sm lg:rounded-lg h-fit bg-white border rounded-t-lg w-36
+                    dark:bg-secondary dark:border-gray-800 overflow-hidden">
+            <div class="my-auto w-full min-h-30 max-h-60 overflow-y-auto">
+                <template x-for="([modeId, mode], i) of Object.entries($store.theme.modes)" :key="modeId">
+                    <div role="button" tabindex="0"
+                            x-data="{ active: () => modeId == $store.theme.activeMode }"
+                            class="p-2 w-full border-b dark:border-gray-800 relative last:border-0
+                               transition-colors duration-200 text-5 hover:text-1"
+                            :class="active() ? 'bg-gray-100 dark:bg-secondary-lighter' : ''"
+                            type="button"
+                            @click="$store.theme.setMode(modeId); show=false;">
+                        <div class="flex items-center">
+                            <i class="fa-solid mr-2" :class="'fa-' + mode.faIconId"></i>
+                            <p x-text="mode.name"></p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+{{end}}
