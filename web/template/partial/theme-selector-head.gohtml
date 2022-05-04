@@ -13,7 +13,7 @@
         const getThemeMode = () => localStorage.themeMode;
 
         // transition from old dark theme system
-        if ("darkTheme" in localStorage) { // TODO: send notification? }
+        if ("darkTheme" in localStorage) { /* TODO: send notification? */ }
         localStorage.removeItem("darkTheme");
         // first visit or transition
         if (!("themeMode" in localStorage)) { setThemeMode("system"); }
