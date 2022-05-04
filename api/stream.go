@@ -20,6 +20,10 @@ import (
 	"time"
 )
 
+const (
+	MAX_FILE_SIZE = 1000 * 1000 * 50 // 50 MB
+)
+
 func configGinStreamRestRouter(router *gin.Engine) {
 	// group for api users with token
 	tokenG := router.Group("/")
@@ -229,21 +233,22 @@ func newFileOfStream(c *gin.Context) {
 
 	switch c.Query("type") {
 	case "file":
-		{
-			file, err := c.FormFile("file")
-			if err != nil {
-				c.AbortWithStatusJSON(http.StatusBadRequest, "missing form parameter 'file'")
-			}
-
-			filename = file.Filename
-			path = fmt.Sprintf("%s/%s%s", tools.Cfg.Paths.Mass, uuid.NewUUID(), filepath.Ext(file.Filename))
-
-			if err = c.SaveUploadedFile(file, path); err != nil {
-				log.WithError(err).Error("could not save file with path: " + path)
-				c.AbortWithStatusJSON(http.StatusInternalServerError, "could not save file with path: "+path)
-			}
+		file, err := c.FormFile("file")
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, "missing form parameter 'file'")
 		}
-		break
+
+		if file.Size > MAX_FILE_SIZE {
+			c.AbortWithStatusJSON(http.StatusBadRequest, "file too large (limit is 50mb)")
+		}
+
+		filename = file.Filename
+		path = fmt.Sprintf("%s/%s%s", tools.Cfg.Paths.Mass, uuid.NewUUID(), filepath.Ext(file.Filename))
+
+		if err = c.SaveUploadedFile(file, path); err != nil {
+			log.WithError(err).Error("could not save file with path: " + path)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, "could not save file with path: "+path)
+		}
 	case "url":
 		path = c.PostForm("file_url")
 		_, filename = filepath.Split(path)
@@ -251,7 +256,6 @@ func newFileOfStream(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusBadRequest, "missing form parameter 'file_url'")
 			return
 		}
-		break
 	default:
 		c.AbortWithStatusJSON(http.StatusBadRequest, "missing query parameter 'type'")
 		return
