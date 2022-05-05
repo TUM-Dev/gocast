@@ -21,6 +21,8 @@
                     <span x-text="lecture.startTimeFormatted()"></span>
                     -
                     <span x-text="lecture.endTimeFormatted()"></span>
+                    <i class="ml-2 fas fa-location-pin text-5"></i>
+                    <span x-text="lecture.lectureHallName" class="text-5"></span>
                 </div>
 
                 <div x-show="lecture.uiEditMode != 0"
@@ -68,7 +70,6 @@
                      x-id="['dropdown-button']"
                      class="relative">
 
-                    <!-- Button -->
                     <button
                             x-ref="button"
                             x-on:click="toggleMoreDropdown()"

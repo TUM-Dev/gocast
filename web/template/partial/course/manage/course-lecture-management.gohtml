@@ -65,7 +65,7 @@
              x-on:newlectures.window="e => (lectures = e.detail)"
              x-init="$nextTick(() => admin.LectureList.init([
                      {{range $course.Streams }}
-                         new admin.Lecture(JSON.parse(admin.decodeHtml('{{.GetJson}}')),'{{$course.Slug}}'),
+                         new admin.Lecture(JSON.parse(admin.decodeHtml('{{.GetJson $lectureHalls}}')),'{{$course.Slug}}'),
                      {{end}}]))">
             <ul>
                 <template x-for="lecture in lectures" :key="lecture.lectureId">

@@ -181,13 +181,20 @@ func (s Stream) Color() string {
 	}
 }
 
-func (s Stream) GetJson() string {
+func (s Stream) GetJson(lhs []LectureHall) string {
 	var files []gin.H
 	for _, file := range s.Files {
 		files = append(files, gin.H{
 			"id":           file.ID,
 			"friendlyName": file.GetFriendlyFileName(),
 		})
+	}
+	lhName := "Selfstreaming"
+	for _, lh := range lhs {
+		if lh.ID == s.LectureHallID {
+			lhName = lh.Name
+			break
+		}
 	}
 
 	if m, err := json.Marshal(gin.H{
@@ -197,6 +204,7 @@ func (s Stream) GetJson() string {
 		"name":             s.Name,
 		"description":      s.Description,
 		"lectureHallId":    s.LectureHallID,
+		"lectureHallName":  lhName,
 		"streamKey":        s.StreamKey,
 		"isLiveNow":        s.LiveNow,
 		"isRecording":      s.Recording,

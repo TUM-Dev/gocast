@@ -60,6 +60,7 @@ export class Lecture {
     name: string;
     description: string;
     lectureHallId: string;
+    lectureHallName: string;
     uiEditMode: UIEditMode = UIEditMode.none;
     newName: string;
     newDescription: string;
@@ -77,6 +78,7 @@ export class Lecture {
             name,
             description,
             lectureHallId,
+            lectureHallName,
             streamKey,
             isPast,
             isLiveNow,
@@ -93,6 +95,7 @@ export class Lecture {
         this.lectureId = lectureId;
         this.seriesIdentifier = seriesIdentifier;
         this.lectureHallId = "" + lectureHallId;
+        this.lectureHallName = lectureHallName;
         this.name = name;
         this.description = description;
         this.streamKey = streamKey;
