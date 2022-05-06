@@ -31,5 +31,5 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-w -extldflags '-st
 FROM alpine:3.15
 RUN apk add --no-cache tzdata
 WORKDIR /app
-COPY --from=build-env /go/bin/server .
-CMD ["sh", "-c", "sleep 3 && ./server"]
+COPY --from=build-env /go/bin/tumlive .
+CMD ["sh", "-c", "sleep 3 && ./tumlive"]
