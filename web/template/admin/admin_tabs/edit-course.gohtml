@@ -1,7 +1,7 @@
 {{define "edit-course"}}
     <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
     <script src="/static/node_modules/chart.js/dist/chart.min.js"></script>
-    {{- /*gotype: TUM-Live/web.AdminPageData*/ -}}
+    {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
     {{$course := .IndexData.TUMLiveContext.Course}}
     <div class="text-1 mt-4" x-data="{userId: {{.IndexData.TUMLiveContext.User.Model.ID}} }">
         <div class="min-w-screen flex items-center justify-center">
@@ -106,25 +106,31 @@
                                             <div class="text-3 font-sans">
                                                 {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
                                             </div>
-                                            {{if $lecture.Recording}}
-                                                {{if $lecture.VodViews}}<p
-                                                        class="text-4 text-sm">{{$lecture.VodViews}}
-                                                    VoD views</p>{{end}}
-                                                <div class="font-semibold bg-success w-auto inline-block px-2 text-1 rounded-full">
-                                                    VoD
-                                                </div>
-                                            {{else if $lecture.LiveNow}}
-                                                <div class="font-semibold bg-danger w-auto inline-block px-2 text-1 rounded-full">
-                                                    Live
-                                                </div>
-                                            {{else if $lecture.IsPast}}
-                                                <div class="font-semibold bg-warn w-auto inline-block px-2 text-1 rounded-full">
-                                                    Past
+                                            {{if $lecture.IsConverting}}
+                                                <div title="This video is still converting" class="font-semibold bg-indigo-500 w-auto inline-block px-2 text-1 rounded-full">
+                                                    <span class="animate animate-pulse">Converting</span>
                                                 </div>
                                             {{else}}
-                                                <div class="font-semibold bg-info w-auto inline-block px-2 text-1 rounded-full">
-                                                    Scheduled
-                                                </div>
+                                                {{if $lecture.Recording}}
+                                                    {{if $lecture.VodViews}}<p
+                                                            class="text-4 text-sm">{{$lecture.VodViews}}
+                                                        VoD views</p>{{end}}
+                                                    <div class="font-semibold bg-success w-auto inline-block px-2 text-1 rounded-full">
+                                                        VoD
+                                                    </div>
+                                                {{else if $lecture.LiveNow}}
+                                                    <div class="font-semibold bg-danger w-auto inline-block px-2 text-1 rounded-full">
+                                                        Live
+                                                    </div>
+                                                {{else if $lecture.IsPast}}
+                                                    <div class="font-semibold bg-warn w-auto inline-block px-2 text-1 rounded-full">
+                                                        Past
+                                                    </div>
+                                                {{else}}
+                                                    <div class="font-semibold bg-info w-auto inline-block px-2 text-1 rounded-full">
+                                                        Scheduled
+                                                    </div>
+                                                {{end}}
                                             {{end}}
                                         </div>
                                         <div class="w-3/4">
@@ -190,13 +196,11 @@
                                                     {{end}}
                                                     {{if not $lecture.LectureHallID}}
                                                     <p class="mt-2">
-                                                        <span class="font-semibold">Stream Server:</span>
-                                                        <span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
+                                                        <span class="font-semibold">Stream Server: </span><span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
                                                         <i class="fas fa-clipboard hover:text-purple-500"
                                                            onclick="admin.copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
                                                         <br>
-                                                        <span class="font-semibold">Stream Key:</span>
-                                                        <span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
+                                                        <span class="font-semibold">Stream Key: </span><span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
                                                         {{if ne $user.Role 1}}
                                                             <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
                                                         {{end}}
@@ -264,10 +268,6 @@
                                     <div class="w-1/4">
                                         <div class="text-1 font-semibold">Create Lecture</div>
                                         <label>
-                                            <input type="checkbox" x-model="formData.premiere" @change="(v) => v && (formData.recurring = false)" class="w-auto">
-                                            <span class="text-3">Video Premiere</span>
-                                        </label><br>
-                                        <label>
                                             <input type="checkbox" x-model="formData.vodup" @change="(v) => v && (formData.recurring = false)" class="w-auto">
                                             <span class="text-3">VoD Upload</span>
                                         </label><br>
@@ -304,16 +304,9 @@
                                                            x-init="flatpickr($refs.end, {enableTime: true, noCalendar: true, dateFormat: 'H:i', time_24hr: true })"/>
                                                 </label>
                                                 <label class="relative"
-                                                       x-show="formData.premiere || formData.vodup && !loading"
-                                                       x-data="{ showTooltip:false }">
-                                                    <span class="font-semibold p-2">Video File <i
-                                                                class="text-warn fas fa-exclamation-triangle"
-                                                                @mouseover="showTooltip=true"
-                                                                @mouseleave="showTooltip=false">
-                                                            <span class="absolute left-0 top-0 text-gray-700 transform -translate-y-6 bg-white rounded p-1 shadow font-light"
-                                                                  x-show="showTooltip">If possible: mp4, H.264, 1080p @ 30fps</span>
-                                                        </i></span>
-                                                    <input type="file" accept="video/mp4"
+                                                       x-show="formData.premiere || formData.vodup && !loading">
+                                                    <span class="font-semibold p-2">Video File <span class="text-5">(mp4, if possible h264)</span></span>
+                                                    <input type="file" accept="video/mp4" class="border-0"
                                                            x-on:change="formData.file = Object.values($event.target.files)">
                                                 </label>
 
@@ -398,7 +391,9 @@
                                                         : 'Create Lecture'"
                                             ></span>
                                         </span>
-                                        <i class="fas fa-circle-notch text-4 animate-spin" x-show="loading"></i>
+                                        <span x-show="loading">
+                                            <i class="fas fa-circle-notch text-4 animate-spin"></i> <span @voduploadprogress.window="(e) => progress=e.detail" x-data="{ progress: undefined }" x-text="progress?progress+'%':'0%'"></span>
+                                        </span>
                                     </button>
                                     <span class="text-danger" x-show="error">Something went wrong.</span>
                                 </div>

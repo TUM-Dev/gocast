@@ -1,0 +1,175 @@
+syntax = "proto3";
+package api;
+option go_package = "worker/pb";
+
+import "google/protobuf/timestamp.proto";
+
+service ToWorker {
+  // Requests a stream from a lecture hall
+  rpc RequestStream (StreamRequest) returns (Status) {}
+  rpc RequestPremiere (PremiereRequest) returns (Status) {}
+  rpc RequestStreamEnd (EndStreamRequest) returns (Status) {}
+  rpc RequestWaveform (WaveformRequest) returns (WaveFormResponse) {}
+  rpc RequestCut (CutRequest) returns (CutResponse) {}
+}
+
+message CutRequest {
+  string WorkerId = 1;
+  repeated string Files = 2;
+  message Segment {
+    int64 Start_time = 1; // milliseconds
+    int64 End_time = 2;
+    bool Discard = 3;
+  }
+  repeated Segment segments = 3;
+  bool UploadResult = 4;
+}
+
+message CutResponse {
+  bool success = 1;
+  string error = 2; // if success == false: error message
+}
+
+message WaveformRequest {
+  string WorkerId = 1;
+  string File = 2;
+}
+
+message WaveFormResponse {
+  bytes Waveform = 1;
+}
+
+message StreamRequest {
+  string WorkerId = 1;
+  string SourceType = 2;
+  string SourceUrl = 3;
+  string CourseSlug = 4;
+  google.protobuf.Timestamp Start = 6;
+  google.protobuf.Timestamp End = 7;
+  bool PublishStream = 8;
+  bool PublishVoD = 9;
+  uint32 StreamID = 10;
+  string CourseTerm = 11;
+  uint32 CourseYear = 12;
+  string StreamName = 13;
+  string IngestServer = 14;
+  string OutUrl = 15;
+}
+
+message PremiereRequest {
+  uint32 StreamID = 1;
+  string FilePath = 2;
+  string WorkerID = 3;
+  string StreamName = 4;
+  string IngestServer = 5;
+  string OutUrl = 6;
+}
+
+message EndStreamRequest {
+  uint32 StreamID = 1;
+  string WorkerID = 2;
+  bool DiscardVoD = 3;
+}
+
+message Status {
+  bool ok = 1;
+}
+
+// Heartbeat service defines communication from workers to TUM-Live
+service FromWorker {
+  // JoinWorkers is a request to the server to join the worker pool.
+  rpc JoinWorkers (JoinWorkersRequest) returns (JoinWorkersResponse) {}
+  rpc SendHeartBeat(HeartBeat) returns (Status) {}
+  rpc NotifyTranscodingFinished(TranscodingFinished) returns (Status) {}
+  rpc NotifySilenceResults(SilenceResults) returns (Status) {}
+  rpc NotifyStreamStarted(StreamStarted) returns (Status) {}
+  rpc NotifyStreamFinished(StreamFinished) returns (Status) {}
+  rpc NotifyUploadFinished(UploadFinished) returns (Status) {}
+  rpc SendSelfStreamRequest(SelfStreamRequest) returns (SelfStreamResponse) {}
+  rpc GetStreamInfoForUpload(GetStreamInfoForUploadRequest) returns (GetStreamInfoForUploadResponse) {}
+}
+
+message JoinWorkersRequest {
+  string token = 1; // token to authenticate the worker
+  string hostname = 2; // hostname of the worker
+}
+
+message JoinWorkersResponse {
+  string worker_id = 1; // worker id, secret set for further communication in case of success
+}
+
+message SelfStreamRequest {
+  string WorkerID = 1;
+  string StreamKey = 2;
+  string CourseSlug = 3;
+}
+
+message SelfStreamResponse {
+  uint32 StreamID = 1;
+  string CourseSlug = 2;
+  uint32 CourseYear = 3;
+  google.protobuf.Timestamp StreamStart = 4;
+  string CourseTerm = 5;
+  bool uploadVoD = 6;
+  string IngestServer = 7;
+  string StreamName = 8;
+  string OutUrl = 9;
+}
+
+message HeartBeat {
+  string WorkerID = 1;
+  uint32 Workload = 2;
+  repeated string Jobs = 3;
+  string Version = 4;
+  string CPU = 5;
+  string Memory = 6;
+  string Disk = 7;
+  string Uptime = 8;
+}
+
+message StreamFinished {
+  string WorkerID = 1;
+  uint32 StreamID = 2;
+}
+
+message TranscodingFinished {
+  string WorkerID = 1;
+  uint32 StreamID = 2;
+  string FilePath = 3;
+  uint32 Duration = 4;
+}
+
+message UploadFinished {
+  string WorkerID = 1;
+  uint32 StreamID = 2;
+  string HLSUrl = 4;
+  string SourceType = 5;
+}
+
+message StreamStarted {
+  string WorkerID = 1;
+  uint32 StreamID = 2;
+  string HlsUrl = 3;
+  string SourceType = 5;
+}
+
+message SilenceResults {
+  string WorkerID = 1;
+  uint32 StreamID = 2;
+  repeated uint32 starts = 3 [packed = true];
+  repeated uint32 ends = 4 [packed = true];
+}
+
+message GetStreamInfoForUploadRequest {
+  string WorkerID = 1;
+  string UploadKey = 2;
+}
+
+message GetStreamInfoForUploadResponse {
+  string CourseSlug = 1;
+  string CourseTerm = 2;
+  uint32 CourseYear = 3;
+  google.protobuf.Timestamp StreamStart = 4;
+  google.protobuf.Timestamp StreamEnd = 5;
+  uint32 StreamID = 6;
+}

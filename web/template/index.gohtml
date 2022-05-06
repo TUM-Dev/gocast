@@ -10,7 +10,7 @@
 <body>
 {{template "header" .TUMLiveContext}}
 
-{{- /*gotype: TUM-Live/web.IndexData*/ -}}
+{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
 <div class="container flex flex-col pb-16">
     {{if .ServerNotifications}}
         {{range $notification := .ServerNotifications}}
@@ -32,6 +32,9 @@
                 <h3 class="text-lg text-2 inline">{{$liveStream.Course.Name}}{{if $liveStream.Stream.Name}}: {{$liveStream.Stream.Name}}{{end}}</h3>
             </a>
             <p class="font-sans font-light text-sm">
+                {{if $liveStream.Course.IsHidden}} {{- /* only admins have hidden courses here */ -}}
+                <span class="bg-blue-800 text-blue-100 px-2 mr-1 capitalize rounded-full font-semibold">Hidden</span>
+                {{end}}
                 <span class="bg-red-800 text-red-100 px-2 mr-1 capitalize rounded-full font-semibold">Live</span>
                 <span class="font-light text-3">{{printf "until %2d:%02d" $liveStream.Stream.End.Hour $liveStream.Stream.End.Minute}}</span>
             </p>

@@ -1,8 +1,13 @@
 {{define "chat"}}
-    {{- /*gotype: TUM-Live/web.ChatData*/ -}}
+    {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.ChatData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
-    {{$userName := .IndexData.TUMLiveContext.User.Name}}
-    {{$userId := .IndexData.TUMLiveContext.User.ID}}
+
+    {{$userName := ""}}
+    {{$userId := 0}}
+    {{if .IndexData.TUMLiveContext.User}}
+        {{$userName := .IndexData.TUMLiveContext.User.Name}}
+        {{$userId := .IndexData.TUMLiveContext.User.ID}}
+    {{end}}
     <div x-cloak
          x-data="watch.initChat({{.IsAdminOfCourse}},{{$stream.ID}}, {{$userId}},'{{$userName}}');"
          x-init="await Promise.all([c.loadMessages(), c.poll.load()]); $nextTick(() => { watch.scrollToBottom() })"

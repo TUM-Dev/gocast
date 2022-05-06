@@ -1,15 +1,18 @@
 package web
 
 import (
-	"TUM-Live/dao"
-	"TUM-Live/model"
-	"TUM-Live/tools/tum"
 	"context"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/tum"
+	log "github.com/sirupsen/logrus"
 )
 
 func LoginHandler(c *gin.Context) {
@@ -25,21 +28,23 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	if data, err = loginWithTumCredentials(username, password); err == nil {
-		startSession(c, data)
-		c.Redirect(http.StatusFound, getRedirectUrl(c))
-		return
-	} else if err != tum.ErrLdapBadAuth {
-		log.WithError(err).Error("Login error")
+	if tools.Cfg.Ldap.UseForLogin {
+		if data, err = loginWithTumCredentials(username, password); err == nil {
+			startSession(c, data)
+			c.Redirect(http.StatusFound, getRedirectUrl(c))
+			return
+		} else if err != tum.ErrLdapBadAuth {
+			log.WithError(err).Error("Login error")
+		}
 	}
 
-	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(true))
+	_ = templateExecutor.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(true))
 }
 
 func getRedirectUrl(c *gin.Context) string {
-	retur := c.Request.FormValue("return")
+	ret := c.Request.FormValue("return")
 	ref := c.Request.FormValue("ref")
-	if retur != "" {
+	if ret != "" {
 		red, err := url.QueryUnescape(c.Request.FormValue("return"))
 		if err == nil {
 			return red
@@ -54,15 +59,30 @@ func getRedirectUrl(c *gin.Context) string {
 }
 
 type sessionData struct {
-	userid uint
-	name   string
+	userid        uint
+	samlSubjectID *string
 }
 
 func startSession(c *gin.Context, data *sessionData) {
-	s := sessions.Default(c)
-	s.Set("UserID", data.userid)
-	s.Set("Name", data.name)
-	_ = s.Save()
+	token, err := createToken(data.userid, data.samlSubjectID)
+	if err != nil {
+		log.WithError(err).Error("Could not create token")
+		return
+	}
+	c.SetCookie("jwt", token, 60*60*24*7, "/", "", tools.CookieSecure, true)
+}
+
+func createToken(user uint, samlSubjectID *string) (string, error) {
+	t := jwt.New(jwt.GetSigningMethod("RS256"))
+
+	t.Claims = &tools.JWTClaims{
+		RegisteredClaims: &jwt.RegisteredClaims{
+			ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Hour * 24 * 7)}, // Token expires in one week
+		},
+		UserID:        user,
+		SamlSubjectID: samlSubjectID,
+	}
+	return t.SignedString(tools.Cfg.GetJWTKey())
 }
 
 // loginWithUserCredentials Try to login with non-tum credentials
@@ -71,9 +91,8 @@ func loginWithUserCredentials(username, password string) *sessionData {
 	if u, err := dao.GetUserByEmail(context.Background(), username); err == nil {
 		// user with this email found.
 		if match, err := u.ComparePasswordAndHash(password); err == nil && match {
-			return &sessionData{u.ID, u.Name}
+			return &sessionData{u.ID, nil}
 		}
-
 		return nil
 	}
 
@@ -83,12 +102,13 @@ func loginWithUserCredentials(username, password string) *sessionData {
 // loginWithTumCredentials Try to login with tum credentials
 // Returns pointer to sessionData if successful and nil if not
 func loginWithTumCredentials(username, password string) (*sessionData, error) {
-	sId, lrzID, name, err := tum.LoginWithTumCredentials(username, password)
+	loginResp, err := tum.LoginWithTumCredentials(username, password)
 	if err == nil {
 		user := model.User{
-			Name:                name,
-			MatriculationNumber: sId,
-			LrzID:               lrzID,
+			Name:                loginResp.FirstName,
+			LastName:            loginResp.LastName,
+			MatriculationNumber: loginResp.UserId,
+			LrzID:               loginResp.LrzIdent,
 		}
 		err = dao.UpsertUser(&user)
 		if err != nil {
@@ -96,20 +116,24 @@ func loginWithTumCredentials(username, password string) (*sessionData, error) {
 			return nil, err
 		}
 
-		return &sessionData{user.ID, user.Name}, nil
+		return &sessionData{user.ID, nil}, nil
 	}
 
 	return nil, err
 }
 
 func LoginPage(c *gin.Context) {
-	_ = templ.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(false))
+	d := NewLoginPageData(false)
+	d.UseSAML = tools.Cfg.Saml != nil
+	if d.UseSAML {
+		d.IDPName = tools.Cfg.Saml.IdpName
+		d.IDPColor = tools.Cfg.Saml.IdpColor
+	}
+	_ = templateExecutor.ExecuteTemplate(c.Writer, "login.gohtml", d)
 }
 
 func LogoutPage(c *gin.Context) {
-	s := sessions.Default(c)
-	s.Clear()
-	_ = s.Save()
+	c.SetCookie("jwt", "", -1, "/", "", tools.CookieSecure, true)
 	c.Redirect(http.StatusFound, "/")
 }
 
@@ -123,13 +147,13 @@ func CreatePasswordPage(c *gin.Context) {
 			return
 		}
 		if p1 != p2 {
-			_ = templ.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
+			_ = templateExecutor.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
 			return
 		}
 		err = u.SetPassword(p1)
 		if err != nil {
 			log.WithError(err).Error("error setting password.")
-			_ = templ.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
+			_ = templateExecutor.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
 			return
 		} else {
 			err := dao.UpdateUser(u)
@@ -146,7 +170,7 @@ func CreatePasswordPage(c *gin.Context) {
 			c.Redirect(http.StatusFound, "/")
 			return
 		}
-		_ = templ.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(false))
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(false))
 	}
 }
 
@@ -162,4 +186,8 @@ func NewLoginPageData(err bool) LoginPageData {
 type LoginPageData struct {
 	VersionTag string
 	Error      bool
+
+	UseSAML  bool
+	IDPName  string
+	IDPColor string
 }

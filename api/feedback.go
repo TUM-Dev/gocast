@@ -1,20 +1,20 @@
 package api
 
 import (
-	"TUM-Live/tools"
-	"TUM-Live/tools/bot"
 	"encoding/json"
 	"errors"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/bot"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 )
 
-func configFeedbackRouter(router *gin.Engine) {
+/*func configFeedbackRouter(router *gin.Engine) {
 	router.GET("/api/feedback", submitFeedback)
-}
+}*/
 
 func submitFeedback(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")

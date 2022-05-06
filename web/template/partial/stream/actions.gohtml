@@ -1,5 +1,5 @@
 {{define "actions"}}
-    {{- /*gotype: TUM-Live/web.WatchPageData*/ -}}
+    {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.WatchPageData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     {{$course := .IndexData.TUMLiveContext.Course}}
     {{$user := .IndexData.TUMLiveContext.User}}
@@ -12,7 +12,7 @@
         </button>
 
         {{/* Download button */}}
-        {{if and (and $course.DownloadsEnabled $user) $stream.Recording}}
+        {{if and (and $course.DownloadsEnabled $user) $stream.IsDownloadable}}
             {{template "downloadBtn" $stream.Files}}
         {{end}}
         {{/* Switch video to presentation */}}

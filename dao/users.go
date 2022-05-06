@@ -1,9 +1,9 @@
 package dao
 
 import (
-	"TUM-Live/model"
 	"context"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live/model"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -118,6 +118,7 @@ func UpsertUser(user *model.User) error {
 		return nil
 	}
 	// user not found, create:
+	user.Role = model.StudentType
 	err = DB.
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "matriculation_number"}},

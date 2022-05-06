@@ -1,18 +1,18 @@
 package dao
 
 import (
-	"TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/model"
 	"time"
 )
 
-//GetCurrentServerNotifications returns all server notifications that are active
+//GetCurrentServerNotifications returns all tumlive notifications that are active
 func GetCurrentServerNotifications() ([]model.ServerNotification, error) {
 	var res []model.ServerNotification
 	err := DB.Model(&model.ServerNotification{}).Where("start < ? AND expires > ?", time.Now(), time.Now()).Scan(&res).Error
 	return res, err
 }
 
-//GetAllServerNotifications returns all server notifications
+//GetAllServerNotifications returns all tumlive notifications
 func GetAllServerNotifications() ([]model.ServerNotification, error) {
 	var res []model.ServerNotification
 	err := DB.Find(&res).Error

@@ -1,5 +1,5 @@
 {{define "course-admin-management"}}
-    {{- /*gotype: TUM-Live/model.Course*/ -}}
+    {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Course*/ -}}
     <h2 class="mb-1">Course Admins</h2>
     <p class="text-5">Add or remove users who can help moderate the chat, plan lectures and manage the course.</p>
     <div x-data="admin.courseAdminManagement()" x-init="$nextTick (()=>{m.init({{.Model.ID}}, userId)});"
@@ -22,7 +22,7 @@
             <template x-for="user in m.users" :key="user.id">
                 <tr>
                     <td class="p-2 whitespace-nowrap">
-                        <div class="font-medium" x-text="user.name"></div>
+                        <div class="font-medium" x-text="user.name + (user.lastName?' '+user.lastName:'')"></div>
                     </td>
                     <td class="p-2 whitespace-nowrap">
                         <div class="text-left" x-text="user.login"></div>
@@ -52,7 +52,7 @@
             <template x-for="user in m.searchResult" :key="user.id">
                 <tr>
                     <td class="p-2 whitespace-nowrap">
-                        <div class="font-medium" x-text="user.name"></div>
+                        <div class="font-medium" x-text="user.name + (user.lastName?' '+user.lastName:'')"></div>
                     </td>
                     <td class="p-2 whitespace-nowrap">
                         <div class="text-left" x-text="user.login"></div>

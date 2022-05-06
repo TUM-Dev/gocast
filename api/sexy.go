@@ -1,8 +1,8 @@
 package api
 
 import (
-	"TUM-Live/dao"
 	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/dao"
 	"net/http"
 	"time"
 )

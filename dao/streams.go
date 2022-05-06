@@ -1,14 +1,19 @@
 package dao
 
 import (
-	"TUM-Live/model"
 	"context"
 	"fmt"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	"strconv"
 	"time"
+
+	"github.com/joschahenningsen/TUM-Live/model"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
+
+func CreateStream(stream *model.Stream) error {
+	return DB.Create(stream).Error
+}
 
 // GetDueStreamsForWorkers retrieves all streams that due to be streamed in a lecture hall.
 func GetDueStreamsForWorkers() []model.Stream {
@@ -155,7 +160,7 @@ func ClearWorkersForStream(stream model.Stream) error {
 	return DB.Model(&stream).Association("StreamWorkers").Clear()
 }
 
-//GetAllStreams returns all streams of the server
+//GetAllStreams returns all streams of the tumlive
 func GetAllStreams() ([]model.Stream, error) {
 	var res []model.Stream
 	err := DB.Find(&res).Error
@@ -171,19 +176,6 @@ func GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error)
 		return nil, err
 	}
 	Cache.SetWithTTL("AllCurrentlyLiveStreams", streams, 10, time.Second)
-	return streams, err
-}
-
-func GetCurrentLiveNonHidden(ctx context.Context) (currentLive []model.Stream, err error) {
-	if streams, found := Cache.Get("NonHiddenCurrentlyLiveStreams"); found {
-		return streams.([]model.Stream), nil
-	}
-	var streams []model.Stream
-	if err := DB.Joins("JOIN courses ON courses.id = streams.course_id").Find(&streams,
-		"live_now = ? AND visibility != ?", true, "hidden").Error; err != nil {
-		return nil, err
-	}
-	Cache.SetWithTTL("NonHiddenCurrentlyLiveStreams", streams, 1, time.Minute)
 	return streams, err
 }
 
@@ -264,6 +256,7 @@ func SaveStream(vod *model.Stream) error {
 		Files:           vod.Files,
 		Paused:          vod.Paused,
 		Duration:        vod.Duration,
+		StreamStatus:    vod.StreamStatus,
 	}).Error
 	return err
 }
@@ -273,4 +266,27 @@ func GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Stream, error) {
 	var streams []model.Stream
 	err := DB.Where("lecture_hall_id = ? AND live_now", lectureHallId).Find(&streams).Error
 	return streams, err
+}
+
+// GetStreamsWithWatchState returns a list of streams with their progress information.
+func GetStreamsWithWatchState(courseID uint, userID uint) (streams []model.Stream, err error) {
+	type watchedState struct {
+		Watched bool
+	}
+	var watchedStates []watchedState
+	queriedStreams := DB.Table("streams").Where("course_id = ? and deleted_at is NULL", courseID)
+	result := queriedStreams.
+		Joins("left join (select watched, stream_id from stream_progresses where user_id = ?) as sp on sp.stream_id = streams.id", userID).
+		Order("start asc").      // Order by start time, this is also the order that is used in the course page.
+		Session(&gorm.Session{}) // Session is required to scan multiple times
+
+	if err = result.Scan(&streams).Error; err != nil {
+		return
+	}
+	err = result.Scan(&watchedStates).Error
+	// Updates the watch state for each stream to compensate for split query.
+	for i := range streams {
+		streams[i].Watched = watchedStates[i].Watched
+	}
+	return
 }

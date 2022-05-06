@@ -1,13 +1,15 @@
 package camera
 
 import (
-	"TUM-Live/model"
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/icholy/digest"
+	"github.com/joschahenningsen/TUM-Live/model"
 	uuid "github.com/satori/go.uuid"
+	"io"
+	"net/http"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 )
@@ -87,30 +89,38 @@ func (c Camera) GetPresets() ([]model.CameraPreset, error) {
 //Example usage: c.makeAuthenticatedRequest("GET", "/base","/some.cgi?preset=1")
 //Returns the response body as a buffer.
 func (c Camera) makeAuthenticatedRequest(method string, body string, url string) (*bytes.Buffer, error) {
-	var camCurl *exec.Cmd
+	// var camCurl *exec.Cmd
+	userPassword := strings.Split(c.Auth, ":")
+	client := &http.Client{
+		Transport: &digest.Transport{
+			Username: userPassword[0],
+			Password: userPassword[1],
+		},
+	}
+
+	var req *http.Request
+	var err error
 	switch method {
 	case "GET":
-		camCurl = exec.Command("curl",
-			"--digest", "--user", c.Auth,
-			fmt.Sprintf("http://%s%s", c.Ip, url))
+		req, err = http.NewRequest("GET", fmt.Sprintf("http://%s%s", c.Ip, url), nil)
 	case "POST":
-		camCurl = exec.Command("curl",
-			"--digest", "--user", c.Auth,
-			"-d", body,
-			fmt.Sprintf("http://%s%s", c.Ip, url))
+		req, err = http.NewRequest("POST", fmt.Sprintf("http://%s%s", c.Ip, url), bytes.NewReader([]byte(body)))
 	default:
 		return nil, fmt.Errorf("unsupported protocol: %v", method)
 	}
-	var bts []byte
-	buf := bytes.NewBuffer(bts)
-	camCurl.Stdout = buf
-	err := camCurl.Start()
+	if err != nil {
+		return nil, fmt.Errorf("create http request: %v", err)
+	}
+
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	err = camCurl.Wait()
+	defer res.Body.Close()
+
+	bts, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
-	return buf, nil
+	return bytes.NewBuffer(bts), nil
 }

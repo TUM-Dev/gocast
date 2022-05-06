@@ -1,9 +1,9 @@
 package dao
 
 import (
-	"TUM-Live/model"
-	"TUM-Live/tools/timing"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools/timing"
 )
 
 // AddStat adds a new statistic entry to the database

@@ -3,11 +3,21 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
-	"time"
+)
+
+// StreamStatus is the status of a stream (e.g. converting)
+type StreamStatus int
+
+const (
+	StatusUnknown    StreamStatus = iota + 1 // StatusUnknown is the default status of a stream
+	StatusConverting                         // StatusConverting indicates that a worker is currently converting the stream.
+	StatusConverted                          // StatusConverted indicates that the stream has been converted.
 )
 
 type Stream struct {
@@ -43,8 +53,36 @@ type Stream struct {
 	Files            []File `gorm:"foreignKey:StreamID"`
 	Paused           bool   `gorm:"default:false"`
 	StreamName       string
-	Duration         uint32   `gorm:"default:null"`
-	StreamWorkers    []Worker `gorm:"many2many:stream_workers;"`
+	Duration         uint32           `gorm:"default:null"`
+	StreamWorkers    []Worker         `gorm:"many2many:stream_workers;"`
+	StreamProgresses []StreamProgress `gorm:"foreignKey:StreamID"`
+	StreamStatus     StreamStatus     `gorm:"not null;default:1"`
+
+	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
+}
+
+// GetStartInSeconds returns the number of seconds until the stream starts (or 0 if it has already started or is a vod)
+func (s Stream) GetStartInSeconds() int {
+	if s.LiveNow || s.Recording {
+		return 0
+	}
+	return int(time.Until(s.Start).Seconds())
+}
+
+func (s Stream) GetName() string {
+	if s.Name != "" {
+		return s.Name
+	}
+	return fmt.Sprintf("Lecture: %s", s.Start.Format("Jan 2, 2006"))
+}
+
+func (s Stream) IsConverting() bool {
+	return s.StreamStatus == StatusConverting
+}
+
+// IsDownloadable returns true if the stream is a recording and has at least one file associated with it.
+func (s Stream) IsDownloadable() bool {
+	return s.Recording && len(s.Files) > 0
 }
 
 // IsSelfStream returns whether the stream is a scheduled stream in a lecture hall
@@ -121,9 +159,6 @@ func (s Stream) FriendlyTime() string {
 }
 
 func (s Stream) FriendlyNextDate() string {
-	if now.With(s.Start).Before(time.Now()) {
-		return "No upcoming stream"
-	}
 	if now.With(s.Start).EndOfDay() == now.EndOfDay() {
 		return fmt.Sprintf("Today, %02d:%02d", s.Start.Hour(), s.Start.Minute())
 	}

@@ -1,13 +1,15 @@
 package web
 
 import (
-	"TUM-Live/dao"
-	"TUM-Live/model"
-	"TUM-Live/tools"
-	"TUM-Live/tools/tum"
 	"context"
+	"errors"
+	"github.com/RBG-TUM/commons"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/tum"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"net/http"
@@ -32,7 +34,7 @@ func MainPage(c *gin.Context) {
 	indexData.LoadLivestreams(c)
 	indexData.LoadPublicCourses()
 
-	_ = templ.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
+	_ = templateExecutor.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
 }
 
 func AboutPage(c *gin.Context) {
@@ -48,7 +50,7 @@ func AboutPage(c *gin.Context) {
 	}
 	indexData.VersionTag = VersionTag
 
-	_ = templ.ExecuteTemplate(c.Writer, "about.gohtml", indexData)
+	_ = templateExecutor.ExecuteTemplate(c.Writer, "about.gohtml", indexData)
 }
 
 type IndexData struct {
@@ -95,10 +97,10 @@ func NewIndexDataWithContext(c *gin.Context) IndexData {
 func IsFreshInstallation(c *gin.Context) {
 	res, err := dao.AreUsersEmpty(context.Background()) // fresh installation?
 	if err != nil {
-		_ = templ.ExecuteTemplate(c.Writer, "error.gohtml", nil)
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", nil)
 		return
 	} else if res {
-		_ = templ.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData())
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData())
 		return
 	}
 }
@@ -141,8 +143,9 @@ func (d *IndexData) LoadSemesters(spanMain *sentry.Span) {
 // LoggedIn streams can only be seen by logged-in users.
 // Enrolled streams can only be seen by users which are allowed to.
 func (d *IndexData) LoadLivestreams(c *gin.Context) {
-	streams, err := dao.GetCurrentLiveNonHidden(context.Background())
-	if err != nil {
+	streams, err := dao.GetCurrentLive(context.Background())
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.WithError(err).Error("could not get current live streams")
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
 	}
 
@@ -153,13 +156,19 @@ func (d *IndexData) LoadLivestreams(c *gin.Context) {
 	for _, stream := range streams {
 		courseForLiveStream, _ := dao.GetCourseById(context.Background(), stream.CourseID)
 
+		// only show streams for logged in users if they are logged in
 		if courseForLiveStream.Visibility == "loggedin" && tumLiveContext.User == nil {
 			continue
 		}
+		// only show "enrolled" streams to users which are enrolled or admins
 		if courseForLiveStream.Visibility == "enrolled" {
 			if !isUserAllowedToWatchPrivateCourse(courseForLiveStream, tumLiveContext.User) {
 				continue
 			}
+		}
+		// Only show hidden streams to admins
+		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType) {
+			continue
 		}
 		livestreams = append(livestreams, CourseStream{
 			Course: courseForLiveStream,
@@ -194,7 +203,7 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span) {
 
 	sortCourses(courses)
 
-	d.Courses = courses
+	d.Courses = commons.Unique(courses, func(c model.Course) uint { return c.ID })
 }
 
 // LoadPublicCourses Load public courses of user. Filter courses which are already in IndexData.Courses
@@ -211,17 +220,8 @@ func (d *IndexData) LoadPublicCourses() {
 	if err != nil {
 		d.PublicCourses = []model.Course{}
 	} else {
-		var publicFiltered []model.Course
-
-		for _, c := range public {
-			if !tools.CourseListContains(d.Courses, c.ID) {
-				publicFiltered = append(publicFiltered, c)
-			}
-		}
-
-		sortCourses(publicFiltered)
-
-		d.PublicCourses = publicFiltered
+		sortCourses(public)
+		d.PublicCourses = commons.Unique(public, func(c model.Course) uint { return c.ID })
 	}
 }
 

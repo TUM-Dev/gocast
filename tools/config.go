@@ -1,6 +1,10 @@
 package tools
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
@@ -20,6 +24,8 @@ func init() {
 	}
 	initConfig()
 }
+
+const rsaKeySize = 2048
 
 func initConfig() {
 	viper.SetConfigName("config")
@@ -50,6 +56,33 @@ func initConfig() {
 			log.Warn("Can't write out config ", err)
 		}
 	}
+	if Cfg.JWTKey == nil {
+		log.Info("Generating new JWT key")
+		JWTKey, err := rsa.GenerateKey(rand.Reader, rsaKeySize)
+		if err != nil {
+			log.WithError(err).Fatal("Can't generate JWT key")
+		}
+		armoured := string(pem.EncodeToMemory(
+			&pem.Block{
+				Type:  "RSA PRIVATE KEY",
+				Bytes: x509.MarshalPKCS1PrivateKey(JWTKey),
+			},
+		))
+		viper.Set("jwtKey", armoured)
+		err = viper.WriteConfig()
+		if err != nil {
+			log.Warn("Can't write out config ", err)
+		}
+		jwtKey = JWTKey
+	} else {
+		k, _ := pem.Decode([]byte(*Cfg.JWTKey))
+		key, err := x509.ParsePKCS1PrivateKey(k.Bytes)
+		if err != nil {
+			log.WithError(err).Fatal("Can't parse JWT key")
+			return
+		}
+		jwtKey = key
+	}
 }
 
 type Config struct {
@@ -76,12 +109,22 @@ type Config struct {
 		Tokens []string `yaml:"tokens"`
 	} `yaml:"campus"`
 	Ldap struct {
-		URL      string `yaml:"url"`
-		User     string `yaml:"user"`
-		Password string `yaml:"password"`
-		BaseDn   string `yaml:"baseDn"`
-		UserDn   string `yaml:"userDn"`
+		URL         string `yaml:"url"`
+		User        string `yaml:"user"`
+		Password    string `yaml:"password"`
+		BaseDn      string `yaml:"baseDn"`
+		UserDn      string `yaml:"userDn"`
+		UseForLogin bool   `yaml:"useForLogin"`
 	} `yaml:"ldap"`
+	Saml *struct {
+		IdpMetadataURL string `yaml:"idpMetadataURL"`
+		Cert           string `yaml:"cert"`
+		Privkey        string `yaml:"privkey"`
+		EntityID       string `yaml:"entityID"`
+		RootURL        string `yaml:"rootURL"`
+		IdpName        string `yaml:"idpName"`
+		IdpColor       string `yaml:"idpColor"`
+	} `yaml:"saml"`
 	Paths struct {
 		Static string `yaml:"static"`
 		Mass   string `yaml:"mass"`
@@ -101,8 +144,17 @@ type Config struct {
 			AlertRoomID    string `yaml:"alertRoomId"`
 		} `yaml:"matrix"`
 	} `yaml:"alerts"`
-	IngestBase        string `yaml:"ingestBase"`
-	WebUrl            string `yaml:"webUrl"`
-	CookieStoreSecret string `yaml:"cookieStoreSecret"`
-	WorkerToken       string `yaml:"workerToken"` // used for workers to join the worker pool
+	IngestBase  string  `yaml:"ingestBase"`
+	WebUrl      string  `yaml:"webUrl"`
+	WorkerToken string  `yaml:"workerToken"` // used for workers to join the worker pool
+	JWTKey      *string `yaml:"jwtKey"`
 }
+
+func (Config) GetJWTKey() *rsa.PrivateKey {
+	return jwtKey
+}
+
+var jwtKey *rsa.PrivateKey
+
+// CookieSecure sets whether to use secure cookies or not, defaults to false in dev mode, true in production
+var CookieSecure = false

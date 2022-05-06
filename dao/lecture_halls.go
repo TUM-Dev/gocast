@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"time"
@@ -11,6 +11,11 @@ func FindPreset(lectureHallID string, presetID string) (model.CameraPreset, erro
 	var preset model.CameraPreset
 	err := DB.First(&preset, "preset_id = ? AND lecture_hall_id = ?", presetID, lectureHallID).Error
 	return preset, err
+}
+
+// UnsetDefaults makes all camera presets not default
+func UnsetDefaults(lectureHallID string) error {
+	return DB.Model(&model.CameraPreset{}).Where("lecture_hall_id = ?", lectureHallID).Update("default", nil).Error
 }
 
 func SavePreset(preset model.CameraPreset) error {
@@ -67,11 +72,13 @@ func GetStreamsForLectureHallIcal(userId uint) ([]CalendarResult, error) {
 	err := DB.Model(&model.Stream{}).
 		Joins("LEFT JOIN lecture_halls ON lecture_halls.id = streams.lecture_hall_id").
 		Joins("JOIN courses ON courses.id = streams.course_id").
+		Joins("JOIN course_admins ON courses.id = course_admins.course_id").
 		Select("streams.id as stream_id, streams.created_at as created, "+
 			"lecture_halls.name as lecture_hall_name, "+
 			"streams.start, streams.end, courses.name as course_name").
 		Where("(streams.start BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) and DATE_ADD(NOW(), INTERVAL 3 MONTH)) "+
-			"AND (courses.user_id = ? OR 0 = ?)", userId, userId).
+			"AND (courses.user_id = ? OR 0 = ? OR course_admins.user_id = ?)", userId, userId, userId).
+		Group("streams.id").
 		Scan(&res).Error
 	return res, err
 }
