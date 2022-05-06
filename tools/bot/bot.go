@@ -1,16 +1,10 @@
 package bot
 
 import (
+	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"strings"
-)
-
-type MessageType int
-
-const (
-	Feedback MessageType = iota + 1
-	Info
 )
 
 type Bot struct {
@@ -19,18 +13,28 @@ type Bot struct {
 
 type Message struct {
 	Text   string
-	Type   MessageType
+	Prio   bool
 	Method MessagingMethod
 }
 
-// InfoMessage contains all information that is needed for a debugging message.
+// AlertMessage contains all information that is needed for a debugging message.
 // This should later be extended with a custom message field that can be filled on the stream page.
-type InfoMessage struct {
+type AlertMessage struct {
+	// User defined infos (need sanitization)
+	PhoneNumber string
+	Email       string
+	Categories  string
+	Comment     string
+	Name        string
+
+	// Generated infos
 	CourseName  string
 	LectureHall string
 	StreamUrl   string
 	CombIP      string
 	CameraIP    string
+	IsLecturer  bool
+	Stream      model.Stream
 }
 
 // FeedbackMessage represents a message that users can send via the website if they want to give feedback.
@@ -50,27 +54,42 @@ func (b *Bot) SetMessagingMethod(method MessagingMethod) {
 	b.Method = method
 }
 
+// SendMessage sends a message to the bot.
 func (b *Bot) SendMessage(message Message) error {
 	return b.Method.SendBotMessage(message)
 }
 
 // GenerateInfoText generates a formatted issue text.
-func GenerateInfoText(botInfo InfoMessage) string {
+func GenerateInfoText(botInfo AlertMessage) string {
 	combIP := strings.Split(botInfo.CombIP, "/")[0] // URL has /extron[...]
-	return "🚨 **Technical problem**\n\n" +
-		"* **Course name**: " + botInfo.CourseName + "\n" +
-		"* **Lecture hall**: " + botInfo.LectureHall + "\n" +
-		"* **Stream URL**: " + botInfo.StreamUrl + "\n" +
-		"* **Combined IP**: " + "[" + combIP + "](http://" + combIP + ")\n" +
-		"* **Camera IP**: " + "[" + botInfo.CameraIP + "](http://" + botInfo.CameraIP + ")\n"
-}
 
-// GenerateFeedbackText generates formatted feedback text.
-func GenerateFeedbackText(feedback FeedbackMessage) string {
-	return "💬 **Feedback**\n\n" +
-		"* **User ID**: " + feedback.UserID + "\n" +
-		"* **Name:**: " + feedback.AuthorName + "\n" +
-		"* **Feedback**: " + feedback.Feedback
+	var infoText string
+	infoText += "🚨 **Technical problem**\n\n" +
+		"* **Categories:** " + botInfo.Categories + "\n" +
+		"* **Course name**: " + botInfo.CourseName + "\n" +
+		"* **Stream URL**: " + botInfo.StreamUrl + "\n" +
+		"* **Comment**: " + botInfo.Comment + "\n\n"
+
+	if !botInfo.Stream.IsSelfStream() {
+		infoText += "* **Lecture hall**: " + botInfo.LectureHall + "\n"
+		if combIP != "" {
+			infoText += "* **Combined IP**: " + "[" + combIP + "](http://" + combIP + ")\n"
+		}
+
+		if botInfo.CameraIP != "" {
+			infoText += "* **Camera IP**: " + "[" + botInfo.CameraIP + "](http://" + botInfo.CameraIP + ")\n"
+		}
+	}
+
+	infoText +=
+		"💬 **Description**\n\n" +
+			botInfo.Comment + "\n\n" +
+			"📢 **Contact data**\n\n" +
+			"* **Name**: " + botInfo.Name + "\n" +
+			"* **Phone number**: " + botInfo.PhoneNumber + "\n" +
+			"* **Email**: " + botInfo.Email + "\n"
+
+	return infoText
 }
 
 // getFormattedMessageText generates a HTML styled message bot info
@@ -84,19 +103,9 @@ func getFormattedMessageText(message string) string {
 	return string(html)
 }
 
-func (b *Bot) SendUserFeedback(feedback FeedbackMessage) error {
+func (b *Bot) SendAlert(alert AlertMessage) error {
 	message := Message{
-		Text:   getFormattedMessageText(feedback.Feedback),
-		Type:   Feedback,
-		Method: &Matrix{},
-	}
-	return b.SendMessage(message)
-}
-
-func (b *Bot) SendInfoMessage(info InfoMessage) error {
-	message := Message{
-		Text: getFormattedMessageText(GenerateInfoText(info)),
-		Type: Info,
+		Text: getFormattedMessageText(GenerateInfoText(alert)),
 	}
 	return b.SendMessage(message)
 }

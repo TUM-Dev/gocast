@@ -71,10 +71,10 @@ func (m *Matrix) getClientUrl() string {
 // SendBotMessage sends a formatted message to a matrix room with id roomID.
 func (m *Matrix) SendBotMessage(message Message) error {
 	var roomID string
-	if message.Type == Feedback {
-		roomID = tools.Cfg.Alerts.Matrix.FeedbackRoomID
-	} else {
+	if message.Prio {
 		roomID = tools.Cfg.Alerts.Matrix.AlertRoomID
+	} else {
+		roomID = tools.Cfg.Alerts.Matrix.LogRoomID
 	}
 
 	id := strconv.Itoa(rand.Intn(maxID)) // transaction id

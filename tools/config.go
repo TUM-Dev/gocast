@@ -137,11 +137,11 @@ type Config struct {
 	} `yaml:"auths"`
 	Alerts *struct {
 		Matrix *struct {
-			Username       string `yaml:"username"`
-			Password       string `yaml:"password"`
-			Homeserver     string `yaml:"homeserver"`
-			FeedbackRoomID string `yaml:"feedBackRoomId"`
-			AlertRoomID    string `yaml:"alertRoomId"`
+			Username    string `yaml:"username"`
+			Password    string `yaml:"password"`
+			Homeserver  string `yaml:"homeserver"`
+			LogRoomID   string `yaml:"logRoomID"`
+			AlertRoomID string `yaml:"alertRoomId"`
 		} `yaml:"matrix"`
 	} `yaml:"alerts"`
 	IngestBase  string  `yaml:"ingestBase"`

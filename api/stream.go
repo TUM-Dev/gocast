@@ -29,7 +29,7 @@ func configGinStreamRestRouter(router *gin.Engine) {
 	g.GET("/api/stream/:streamID", getStream)
 	g.GET("/api/stream/:streamID/pause", pauseStream)
 	g.GET("/api/stream/:streamID/end", endStream)
-	g.GET("/api/stream/:streamID/issue", reportStreamIssue)
+	g.POST("/api/stream/:streamID/issue", reportStreamIssue)
 }
 
 type liveStreamDto struct {
@@ -142,35 +142,63 @@ func reportStreamIssue(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	stream := tumLiveContext.Stream
-	// Check if stream starts today
-	if stream.Start.Truncate(time.Hour*24) != time.Now().Truncate(time.Hour*24) {
-		sentry.CaptureException(errors.New("tried to send report for stream that is not active today"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
+
+	type userFeedback struct {
+		Comment     string  `json:"description"`
+		PhoneNumber string  `json:"phone"`
+		Email       string  `json:"email"`
+		Categories  []uint8 `json:"categories"`
+		Name        string  `json:"name"`
 	}
+
+	var feedback userFeedback
+	if err := c.ShouldBindJSON(&feedback); err != nil {
+		sentry.CaptureException(err)
+		c.AbortWithStatus(http.StatusBadRequest)
+	}
+
+	// Get lecture hall of the stream that has issues.
 	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
 		sentry.CaptureException(err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
+
+	// Get course of the stream that has issues.
 	course, err := dao.GetCourseById(c, stream.CourseID)
 	if err != nil {
 		sentry.CaptureException(err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
-	streamUrl := tools.Cfg.WebUrl + "/w/" + course.Slug + "/" + fmt.Sprintf("%d", stream.ID)
 
-	botInfo := bot.InfoMessage{
+	// Build stream URL, e.g. https://live.rbg.tum.de/w/gbs/1234
+	streamUrl := tools.Cfg.WebUrl + "/w/" + course.Slug + "/" + fmt.Sprintf("%d", stream.ID)
+	categories := map[uint8]string{1: "🎥 Camera", 2: "🎤 Microphone", 3: "🔊 Audio", 4: "🎬 Video", 5: "Other"}
+	var categoryList []string
+	for _, category := range feedback.Categories {
+		categoryList = append(categoryList, categories[category])
+	}
+	botInfo := bot.AlertMessage{
+		PhoneNumber: feedback.PhoneNumber,
+		Name:        feedback.Name,
+		Email:       feedback.Email,
+		Comment:     feedback.Comment,
+		Categories:  strings.Join(categoryList, " · "),
 		CourseName:  course.Name,
 		LectureHall: lectureHall.Name,
 		StreamUrl:   streamUrl,
 		CombIP:      lectureHall.CombIP,
 		CameraIP:    lectureHall.CameraIP,
+		IsLecturer:  tumLiveContext.User.IsAdminOfCourse(course),
+		Stream:      *stream,
 	}
-	var bot bot.Bot
-	err = bot.SendInfoMessage(botInfo) // Set messaging strategy as specified in strategy pattern
 
-	if err != nil {
+	// Send notification to the matrix room.
+	var matrixBot bot.Bot
+	matrixBot.SetMessagingMethod(&bot.Matrix{})
+
+	// Set messaging strategy as specified in strategy pattern
+	if err = matrixBot.SendAlert(botInfo); err != nil {
 		sentry.CaptureException(err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
@@ -184,8 +212,10 @@ func getStream(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
+
 	stream := *tumLiveContext.Stream
 	course := *tumLiveContext.Course
+
 	c.JSON(http.StatusOK,
 		gin.H{"course": course.Name,
 			"courseID":    course.ID,
