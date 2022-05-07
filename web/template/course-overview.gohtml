@@ -101,11 +101,20 @@
                 <div class="flex justify-between h-16 px-3"
                      :class="showPlanned && 'border-b dark:border-gray-800'">
                     <span class="bg-info rounded-full text-lg font-bold text-white px-5 my-auto">Upcoming</span>
-                    <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2 my-auto"
-                            @click="showPlanned = !showPlanned;">
-                        <span class="text-sm font-semibold uppercase dark:text-white"
-                              x-text="showPlanned ? '&#x25B2; hide' : '&#x25BC; show'">&#x25B2; hide</span>
-                    </button>
+                    <div class="my-auto">
+                        <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2 my-auto"
+                                @click="showPlanned = !showPlanned;">
+                            <span class="text-sm font-semibold uppercase dark:text-white"
+                                  x-text="showPlanned ? '&#x25B2; hide' : '&#x25BC; show'">&#x25B2; hide</span>
+                        </button>
+                        <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
+                                @click="console.log('test')"
+                                :title="'Export lecture dates'">
+                                <span class="text-sm font-semibold uppercase dark:text-white">
+                                    <i class="fa-solid w-5 mr-1 fa-calendar"></i>ics
+                                </span>
+                        </button>
+                    </div>
                 </div>
 
                 <ul x-show="showPlanned" class="flex flex-col flex-1 px-5 py-3 overflow-y-scroll">
