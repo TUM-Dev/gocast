@@ -5,12 +5,18 @@ import (
 	"strings"
 )
 
+const (
+	FILETYPE_DOWNLOAD   = 0
+	FILETYPE_ATTACHMENT = 1
+)
+
 type File struct {
 	gorm.Model
 
 	StreamID uint   `gorm:"not null"`
 	Path     string `gorm:"not null"`
 	Filename string `gorm:"null;"`
+	Type     uint   `gorm:"default: 0"`
 }
 
 func (f File) GetDownloadFileName() string {

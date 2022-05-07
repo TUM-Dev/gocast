@@ -7,12 +7,12 @@ import (
 	goextron "github.com/RBG-TUM/go-extron"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/bot"
 	log "github.com/sirupsen/logrus"
-	"github.com/u2takey/go-utils/uuid"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -40,12 +40,8 @@ func configGinStreamRestRouter(router *gin.Engine) {
 	adminG.GET("/api/stream/:streamID/issue", reportStreamIssue)
 
 	// downloadable files
-	g := router.Group("/")
-	g.Use(tools.InitStream)
-	g.GET("/api/stream/:streamID/files", getFilesOfStream)
-
-	g.POST("/api/stream/:streamID/files", newFileOfStream) //TODO: Change back to adminG
-	g.DELETE("/api/stream/:streamID/files/:fid", deleteFileOfStream)
+	adminG.POST("/api/stream/:streamID/files", newAttachment)
+	adminG.DELETE("/api/stream/:streamID/files/:fid", deleteFileOfStream)
 }
 
 type liveStreamDto struct {
@@ -215,18 +211,11 @@ func getStream(c *gin.Context) {
 			"vod":         stream.Recording})
 }
 
-func getFilesOfStream(c *gin.Context) {
+func newAttachment(c *gin.Context) {
 	foundContext, _ := c.Get("TUMLiveContext")
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	stream := *tumLiveContext.Stream
-
-	c.JSON(http.StatusOK, stream.Attachments)
-}
-
-func newFileOfStream(c *gin.Context) {
-	foundContext, _ := c.Get("TUMLiveContext")
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	stream := *tumLiveContext.Stream
+	course := *tumLiveContext.Course
 
 	var path string
 	var filename string
@@ -243,7 +232,21 @@ func newFileOfStream(c *gin.Context) {
 		}
 
 		filename = file.Filename
-		path = fmt.Sprintf("%s/%s%s", tools.Cfg.Paths.Mass, uuid.NewUUID(), filepath.Ext(file.Filename))
+		fileUuid, err := uuid.NewUUID()
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, "error creating new uuid")
+		}
+
+		filesFolder := fmt.Sprintf("%s/%s.%d/%s.%s/files",
+			tools.Cfg.Paths.Mass,
+			course.Name, course.Year,
+			course.Name, course.TeachingTerm)
+		path = fmt.Sprintf("%s/%s%s", filesFolder, fileUuid, filepath.Ext(file.Filename))
+
+		err = os.MkdirAll(filesFolder, os.ModePerm)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't create folder: "+filesFolder)
+		}
 
 		if err = c.SaveUploadedFile(file, path); err != nil {
 			log.WithError(err).Error("could not save file with path: " + path)
@@ -261,7 +264,7 @@ func newFileOfStream(c *gin.Context) {
 		return
 	}
 
-	if dao.File.NewFile(&model.File{StreamID: stream.ID, Path: path, Filename: filename}) != nil {
+	if dao.File.NewFile(&model.File{StreamID: stream.ID, Path: path, Filename: filename, Type: model.FILETYPE_ATTACHMENT}) != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "could not save file in database")
 	}
 }

@@ -62,6 +62,7 @@ export class AdminFileUpload {
     }
 
     onDrop(e) {
+        console.log("test")
         e.preventDefault();
         if (e.dataTransfer.items) {
             for (let i = 0; i < e.dataTransfer.items.length; i++) {
@@ -82,7 +83,9 @@ export class AdminFileUpload {
         fetch(`/api/stream/${this.streamId}/files?type=file`, {
             method: "POST",
             body: formData,
-        }).then(() => {});
+        }).then(() => {
+            console.log("uploaded")
+        });
     }
 }
 

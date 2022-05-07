@@ -57,7 +57,6 @@ type Stream struct {
 	StreamWorkers    []Worker         `gorm:"many2many:stream_workers;"`
 	StreamProgresses []StreamProgress `gorm:"foreignKey:StreamID"`
 	StreamStatus     StreamStatus     `gorm:"not null;default:1"`
-	Attachments      []File           `gorm:"foreignKey:StreamID"`
 
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }
