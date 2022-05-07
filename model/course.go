@@ -139,14 +139,15 @@ func (c Course) GetNextLecture() Stream {
 	return earliestLecture
 }
 
-// GetLiveStream returns the current live stream of the course (if any)
-func (c Course) GetLiveStream() *Stream {
+// GetLiveStreams returns the current live streams of the course or an empty slice if none are live
+func (c Course) GetLiveStreams() []Stream {
+	var res []Stream
 	for _, s := range c.Streams {
 		if s.LiveNow {
-			return &s
+			res = append(res, s)
 		}
 	}
-	return nil
+	return res
 }
 
 // GetNextLectureDate returns the next lecture date of the course
