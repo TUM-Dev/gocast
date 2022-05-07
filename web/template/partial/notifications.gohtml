@@ -8,7 +8,7 @@
                   class="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full absolute -top-1 -right-1 h-3 w-3 border-2 border-white dark:border-secondary"> </span>
             <i class="fa-solid fa-bell"></i>
         </button>
-        <div x-cloak x-show="show" @click.outside="show=false; n.writeToStorage(true)" class="origin-top-right absolute right-0 mt-4 lg:shadow-sm lg:rounded-lg h-fit bg-white border rounded-t-lg w-96
+        <div x-cloak x-show="show" @click.outside="show=false; n.writeToStorage(true)" class="origin-top-right absolute right-0 mt-4 shadow-sm rounded-lg h-fit bg-white border w-96
                         dark:bg-secondary dark:border-gray-800">
             <div class="my-auto w-full min-h-30 max-h-60 overflow-y-scroll">
                 <div class="py-4 relative text-3 text-center" x-cloak x-show="n.notifications.length === 0">
