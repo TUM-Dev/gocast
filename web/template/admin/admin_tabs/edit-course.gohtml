@@ -167,95 +167,101 @@
                                                     </form>
                                                     {{if and (not $lecture.IsPast) (not $lecture.Recording)}}
                                                     {{if eq $user.Role 1}}
-                                                    <div class="flex"
-                                                         x-data="{ streamSelectedLectureHallId: {{$lecture.LectureHallID}}, showSubmit: false }">
-                                                        <label class="mx-2">
-                                                            <span>Select Lecture Hall</span>
-                                                            <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
-                                                                    id="lectureHallSelector{{$lecture.Model.ID}}"
-                                                                    @change="showSubmit = true"
-                                                                    x-model="streamSelectedLectureHallId">
-                                                                <option class="text-gray-300" value="0">Self
-                                                                    streaming
-                                                                </option>
-                                                                {{range $lectureHall := $lectureHalls}}
-                                                                    <option class="text-gray-300"
-                                                                            value="{{$lectureHall.Model.ID}}"{{if eq $lecture.LectureHallID $lectureHall.Model.ID}} selected{{end}}>
-                                                                        {{$lectureHall.Name}}
+                                                        <div class="flex"
+                                                             x-data="{ streamSelectedLectureHallId: {{$lecture.LectureHallID}}, showSubmit: false }">
+                                                            <label class="mx-2">
+                                                                <span>Select Lecture Hall</span>
+                                                                <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
+                                                                        id="lectureHallSelector{{$lecture.Model.ID}}"
+                                                                        @change="showSubmit = true"
+                                                                        x-model="streamSelectedLectureHallId">
+                                                                    <option class="text-gray-300" value="0">Self
+                                                                        streaming
                                                                     </option>
-                                                                {{end}}
-                                                            </select>
-                                                        </label>
-                                                        <a id="applyLectureHall{{$lecture.Model.ID}}"
-                                                           class="flex items-center"
-                                                           x-show="showSubmit"
-                                                           @click="admin.saveLectureHall([{{$lecture.Model.ID}}], streamSelectedLectureHallId).then(() => { showSubmit = false; })">
-                                                            <i class="align-middle fas fa-check text-gray-300 hover:text-purple-500"></i>
-                                                        </a>
-                                                    </div>
+                                                                    {{range $lectureHall := $lectureHalls}}
+                                                                        <option class="text-gray-300"
+                                                                                value="{{$lectureHall.Model.ID}}"{{if eq $lecture.LectureHallID $lectureHall.Model.ID}} selected{{end}}>
+                                                                            {{$lectureHall.Name}}
+                                                                        </option>
+                                                                    {{end}}
+                                                                </select>
+                                                            </label>
+                                                            <a id="applyLectureHall{{$lecture.Model.ID}}"
+                                                               class="flex items-center"
+                                                               x-show="showSubmit"
+                                                               @click="admin.saveLectureHall([{{$lecture.Model.ID}}], streamSelectedLectureHallId).then(() => { showSubmit = false; })">
+                                                                <i class="align-middle fas fa-check text-gray-300 hover:text-purple-500"></i>
+                                                            </a>
+                                                        </div>
                                                     {{end}}
                                                     {{if not $lecture.LectureHallID}}
-                                                    <p class="mt-2">
-                                                        <span class="font-semibold">Stream Server: </span><span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
-                                                        <i class="fas fa-clipboard hover:text-purple-500"
-                                                           onclick="admin.copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
-                                                        <br>
-                                                        <span class="font-semibold">Stream Key: </span><span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
-                                                        {{if ne $user.Role 1}}
-                                                            <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
-                                                        {{end}}
-                                                    </p>
+                                                        <p class="mt-2">
+                                                            <span class="font-semibold">Stream Server: </span><span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
+                                                            <i class="fas fa-clipboard hover:text-purple-500"
+                                                               onclick="admin.copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
+                                                            <br>
+                                                            <span class="font-semibold">Stream Key: </span><span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
+                                                            {{if ne $user.Role 1}}
+                                                                <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
+                                                            {{end}}
+                                                        </p>
                                                     {{else if eq $user.Role 2}}
-                                                    This lecture will be streamed from <span
-                                                            class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}{{if eq $lectureHall.Model.ID $lecture.LectureHallID}}{{$lectureHall.Name}}{{end}}{{end}}</span>.
-                                                    If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
+                                                        This lecture will be streamed from <span
+                                                                class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}{{if eq $lectureHall.Model.ID $lecture.LectureHallID}}{{$lectureHall.Name}}{{end}}{{end}}</span>.
+                                                        If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
                                                     {{end}}
                                                     {{else if $lecture.Recording}}
-                                                    <span class="flex space-x-2 mt-4 content-center">
-                                                        {{if $lecture.Files}}
-                                                            <span>
-                                                                {{template "downloadBtn" $lecture.Files}}
-                                                            </span>
-                                                        {{end}}
+                                                    <div class="mt-4 content-center">
+                                                        <!-- download and stats button -->
+                                                        <div class="flex space-x-2">
+                                                            {{if $lecture.Files}}
+                                                                <span>
+                                                                    {{template "downloadBtn" $lecture.Files}}
+                                                                </span>
+                                                            {{end}}
+                                                            {{if $lecture.Stats}}
+                                                                <a>
+                                                                    <i class="fas fa-chart-line text-4 text-lg hover:text-1"
+                                                                       title="Live Statistics"
+                                                                       onclick="admin.showStats({{$lecture.Model.ID}})"></i>
+                                                                </a>
+                                                            {{end}}
+                                                        </div>
+
+                                                        <!-- create video sections -->
+                                                        {{template "editvideosections" $lecture}}
+
                                                         {{if $lecture.Stats}}
-                                                            <a>
-                                                                <i class="fas fa-chart-line text-4 text-lg hover:text-1"
-                                                                   title="Live Statistics"
-                                                                   onclick="admin.showStats({{$lecture.Model.ID}})"></i>
-                                                            </a>
+                                                            <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
+                                                                <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
+                                                                        width="undefined" height="undefined"></canvas>
+                                                            </div>
+                                                            <script>
+                                                                new Chart(
+                                                                    document.getElementById("stats{{$lecture.Model.ID}}"), {
+                                                                        "type": "line",
+                                                                        "data": {
+                                                                            "labels": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}",{{end}} {{end}}],
+                                                                            "datasets": [{
+                                                                                "label": "Viewers",
+                                                                                "data": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}{{$stat.Viewers}}, {{end}}{{end}}],
+                                                                                "fill": false,
+                                                                                "borderColor": "rgb(75, 192, 192)",
+                                                                                "lineTension": 0.1
+                                                                            }]
+                                                                        },
+                                                                        "options": {
+                                                                            scales: {y: {beginAtZero: true}}
+                                                                        }
+                                                                    }
+                                                                );
+                                                            </script>
                                                         {{end}}
-                                                    </span>
-                                                    {{if $lecture.Stats}}
-                                                    <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
-                                                        <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
-                                                                width="undefined" height="undefined"></canvas>
+                                                        {{end}}
                                                     </div>
-                                                    <script>
-                                                        new Chart(
-                                                            document.getElementById("stats{{$lecture.Model.ID}}"), {
-                                                                "type": "line",
-                                                                "data": {
-                                                                    "labels": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}",{{end}} {{end}}],
-                                                                    "datasets": [{
-                                                                        "label": "Viewers",
-                                                                        "data": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}{{$stat.Viewers}}, {{end}}{{end}}],
-                                                                        "fill": false,
-                                                                        "borderColor": "rgb(75, 192, 192)",
-                                                                        "lineTension": 0.1
-                                                                    }]
-                                                                },
-                                                                "options": {
-                                                                    scales: {y: {beginAtZero: true}}
-                                                                }
-                                                            }
-                                                        );
-                                                    </script>
-                                                    {{end}}
-                                                    {{end}}
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
                                 </li>
                             {{end}}
                         </div>

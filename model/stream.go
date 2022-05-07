@@ -56,6 +56,7 @@ type Stream struct {
 	Duration         uint32           `gorm:"default:null"`
 	StreamWorkers    []Worker         `gorm:"many2many:stream_workers;"`
 	StreamProgresses []StreamProgress `gorm:"foreignKey:StreamID"`
+	VideoSections    []VideoSection
 	StreamStatus     StreamStatus     `gorm:"not null;default:1"`
 
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
