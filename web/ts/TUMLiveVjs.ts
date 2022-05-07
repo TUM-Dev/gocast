@@ -3,6 +3,7 @@ import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import dom = videojs.dom;
 import airplay from "@silvermine/videojs-airplay";
+import chromecast from "@silvermine/videojs-chromecast";
 
 require("videojs-seek-buttons");
 require("videojs-hls-quality-selector");
@@ -27,6 +28,8 @@ export const initPlayer = function (
     player = videojs(
         "my-video",
         {
+            controls: true,
+            techOrder: ["chromecast", "html5"],
             liveui: true,
             fluid: fluid,
             playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
@@ -61,6 +64,11 @@ export const initPlayer = function (
     });
     player.ready(function () {
         player.airPlay({
+            addButtonToControlBar: true,
+            buttonPositionIndex: -2,
+        });
+
+        player.chromecast({
             addButtonToControlBar: true,
             buttonPositionIndex: -2,
         });
@@ -353,3 +361,4 @@ videojs.registerPlugin("watchProgress", watchProgress);
 videojs.registerComponent("Titlebar", Titlebar);
 videojs.registerComponent("StartInOverlay", StartInOverlay);
 airplay(videojs); //calls registerComponent internally
+chromecast(videojs); //calls registerComponent internally

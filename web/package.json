@@ -29,6 +29,7 @@
     "@fullcalendar/list": "^5.11.0",
     "@fullcalendar/timegrid": "^5.11.0",
     "@silvermine/videojs-airplay": "^1.1.0",
+    "@silvermine/videojs-chromecast": "^1.3.3",
     "@silvermine/videojs-quality-selector": "^1.2.5",
     "alpinejs": "^3.10.2",
     "chart.js": "^3.7.1",
