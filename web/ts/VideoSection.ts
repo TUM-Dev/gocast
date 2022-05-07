@@ -14,7 +14,7 @@ export class VideoSection {
         this.streamID = streamID;
         this.unsavedChanges = false;
         this.resetCurrent();
-        this.load().then(() => {}).catch(() => {});
+        this.load();
     }
 
     load() {
