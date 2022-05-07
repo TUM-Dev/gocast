@@ -42,17 +42,8 @@ export const initPlayer = function (
             userActions: {
                 hotkeys: {},
             },
-            plugins: {
-                airPlay: {
-                    addButtonToControlBar: true, // defaults to `true`
-                    buttonPositionIndex: -2,
-                },
-            },
-            //nativeControlsForTouch: true,a
         },
-        function () {
-            player.airPlay();
-        },
+        //nativeControlsForTouch: true,a
     );
     player.hlsQualitySelector();
     if (autoplay) {
@@ -69,6 +60,11 @@ export const initPlayer = function (
         window.localStorage.setItem("muted", player.muted());
     });
     player.ready(function () {
+        player.airPlay({
+            addButtonToControlBar: true,
+            buttonPositionIndex: -2,
+        });
+
         const persistedVolume = window.localStorage.getItem("volume");
         if (persistedVolume !== null) {
             player.volume(persistedVolume);
