@@ -205,10 +205,9 @@
                 {{template "actions" . }}
             </div>
 
-            <div class="grid lg:grid-cols-3">
-                <div x-data="{descriptionlen: {{len .Description}}, less: true}"
-                     class="text-3 py-4 video-description lg:col-span-2" x-show="descriptionlen > 0">
-                    <h6 class="font-bold text-3 pb-3">Video Description</h6>
+            <div x-data="{descriptionlen: {{len .Description}}, less: true}"
+                 class="text-3 py-4 video-description lg:col-span-2" x-show="descriptionlen > 0">
+                <h6 class="font-bold text-3 pb-3">Video Description</h6>
                     <div :class="less && 'truncate-children'"
                          @descriptionupdate.window="$el.innerHTML=$event.detail.description; descriptionlen=$event.detail.description.length">
                         {{if .Description}}{{.Description}}{{end}}
@@ -218,10 +217,9 @@
                     </button>
                 </div>
                 <!-- Video Sections -->
-                <div class = "py-4 lg:col-span-1">
+                {{if $stream.VideoSections}}
                     {{template "videosections" $stream}}
-                </div>
-            </div>
+                {{end}}
 
             {{if .IsHighlightPage}}
                 <ul class="w-full m-auto mb-4">
