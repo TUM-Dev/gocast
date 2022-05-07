@@ -56,17 +56,19 @@
                     shadow-sm py-3 px-5 my-3 order-first md:my-0 md:row-span-1 md:col-span-2 md:order-none ">
             {{$lecture := $course.GetNextLecture}}
             {{if $course.IsLive}}
-                {{$lecture = $course.GetLiveStream}}
+                {{$liveLectures := $course.GetLiveStreams}}
                 <span class="absolute -top-1 -right-1 flex h-5 w-5">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-700 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-5 w-5 bg-danger"></span>
                 </span>
                 <div class="my-auto">
                     <h1 class="text-2xl font-bold text-3">Live Now!</h1>
-                    <a class="font-light text-sm dark:text-white" href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}">
-                        <i class="fas fa-angle-right"></i>
-                        <span>Open stream</span>
-                    </a>
+                    {{range $liveLectures}}
+                        <a class="font-light block text-sm dark:text-white" href="/w/{{$course.Slug}}/{{.Model.ID}}">
+                            <i class="fas fa-angle-right"></i>
+                            <span class="hover:underline">Open stream{{if gt (len $liveLectures) 1}} <span class="font-semibold">{{.GetName}}</span>{{end}}</span>
+                        </a>
+                    {{end}}
                 </div>
             {{else if $lecture.IsComingUp}}
                 <span class="absolute -top-1 -right-1 flex h-5 w-5">

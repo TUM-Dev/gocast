@@ -71,23 +71,6 @@ export function unhideCourse(id: string) {
     document.location.reload();
 }
 
-export function isDark() {
-    return localStorage.getItem("darkTheme") ? JSON.parse(localStorage.getItem("darkTheme")) : true;
-}
-
-export function toggleColorScheme() {
-    //initial theme preference:
-    const darkTheme: boolean = isDark();
-    //store opposite
-    localStorage.setItem("darkTheme", JSON.stringify(!darkTheme));
-    //set opposite class
-    if (!darkTheme) {
-        document.documentElement.classList.add("dark");
-    } else {
-        document.documentElement.classList.remove("dark");
-    }
-}
-
 export function initHiddenCourses() {
     const el = document.getElementById("hiddenCoursesText");
     if (!el) {

@@ -11,11 +11,6 @@
         <script defer src="/static/node_modules/alpinejs/dist/cdn.min.js"></script>
     {{end}}
     <script src="/static/assets/ts-dist/global.bundle.js?v={{if .}}{{.}}{{else}}development{{end}}"></script>
-    <script> // init in dom to prevent screen flickering
-        let darkTheme = localStorage.getItem("darkTheme") ? JSON.parse(localStorage.getItem("darkTheme")) : true;
-        if (!darkTheme) {
-            document.documentElement.classList.remove("dark");
-        }
-    </script>
+    {{template "theme-selector-head"}}
     <style>[x-cloak] { display: none !important; }</style>
 {{end}}
