@@ -23,7 +23,14 @@
 
         document.addEventListener("alpine:init", () => {
             Alpine.store("theme", {
-                init() { this.activeMode = getThemeMode(); },
+                init() {
+                    this.activeMode = getThemeMode();
+                    // show the currently active theme (light/dark) on the switcher when system theme mode is active
+                    const updateSystemModeSwitcherIconId = () =>
+                        this.modes.system.faSwitcherIconId = mediaQueryPrefersDarkScheme.matches ? "moon" : "sun";
+                    mediaQueryPrefersDarkScheme.addEventListener("change", () => updateSystemModeSwitcherIconId())
+                    updateSystemModeSwitcherIconId();
+                },
                 setMode(mode) {
                     this.activeMode = mode;
                     setThemeMode(mode);
@@ -32,9 +39,9 @@
                 modes: {
                     light: { name: "Light", faIconId: "sun" },
                     dark: { name: "Dark", faIconId: "moon" },
-                    system: { name: "System", faIconId: "desktop" }
+                    system: { name: "System", faIconId: "desktop", faSwitcherIconId: "" }
                 },
-                activeMode: "system"
+                activeMode: ""
             });
         });
     </script>

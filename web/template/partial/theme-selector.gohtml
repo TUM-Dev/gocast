@@ -17,11 +17,16 @@
     </div>
 {{end}}
 
+{{define "theme-switcher-icon"}}
+<i class="fa-solid" :class="'fa-' + (mode => mode.faSwitcherIconId ?? mode.faIconId)($store.theme.modes[$store.theme.activeMode])"></i>
+{{end}}
+
 {{define "theme-selector"}}
     <div class="relative" x-data="{ show: false, mobile: false }">
-        <button class="transition-colors duration-200 text-5 hover:text-1 mr-6 relative h-4 w-4"
+        <button class="transition-colors duration-200 hover:text-gray-600
+                       dark:hover:text-white text-gray-400 mr-6 relative h-4 w-4"
                 type="button" @click="show=!show">
-            <i class="fa-solid" :class="'fa-' + $store.theme.modes[$store.theme.activeMode].faIconId"></i>
+            {{template "theme-switcher-icon"}}
         </button>
         <div x-cloak x-show="show"
              @click.outside="show=false"
@@ -35,12 +40,12 @@
 {{define "theme-selector-mobile"}}
     <div class="border-b dark:border-gray-600 text-sm" x-data="{ show: false, mobile: true }">
         <div role="button" tabindex="0"
-             class="px-5 py-2 flex justify-end transition-colors duration-200 hover:text-gray-600 dark:hover:text-white text-gray-400"
+             class="px-5 py-2 flex justify-end transition-colors duration-200 text-5 hover:text-1"
              @click="show=!show">
             <span class="uppercase mr-2 my-auto">Theme</span>
             <div class="w-12 flex justify-end">
                 <div class="my-auto" aria-label="Theme">
-                    <i class="fa-solid" :class="'fa-' + $store.theme.modes[$store.theme.activeMode].faIconId"></i>
+                    {{template "theme-switcher-icon"}}
                 </div>
             </div>
         </div>
