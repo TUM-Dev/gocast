@@ -4,13 +4,15 @@ import (
 	"errors"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"net/http"
-	_ "time"
+	"strconv"
 )
 
-func configGinDownloadICSRouter(router gin.IRoutes) {
-	router.GET("/api/download_ics", downloadICS)
+func configGinDownloadICSRouter(router *gin.Engine) {
+	router.GET("/api/download_ics/:slug/:term/:year", downloadICS)
 }
 
 func downloadICS(c *gin.Context) {
@@ -25,7 +27,25 @@ func downloadICS(c *gin.Context) {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
-	var streams = tumLiveContext.Course.Streams
 
-	c.JSON(http.StatusOK, streams)
+	slug, term := c.Param("slug"), c.Param("term")
+	year, err := strconv.Atoi(c.Param("year"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	course, err := dao.GetCourseBySlugYearAndTerm(c, slug, term, year)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	c.Header("content-type", "text/calendar")
+
+	c.JSON(http.StatusOK, streamsToICS(course.Streams))
+}
+
+func streamsToICS(streams []model.Stream) []model.Stream {
+	return streams
 }

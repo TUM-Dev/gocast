@@ -108,7 +108,7 @@
                                   x-text="showPlanned ? '&#x25B2; hide' : '&#x25BC; show'">&#x25B2; hide</span>
                         </button>
                         <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
-                                @click="window.open('/api/download_ics')"
+                                @click="window.open('/api/download_ics/{{$course.Slug}}/{{$course.TeachingTerm}}/{{$course.Year}}')"
                                 :title="'Export lecture dates'">
                                 <span class="text-sm font-semibold uppercase dark:text-white">
                                     <i class="fa-solid w-5 mr-1 fa-calendar"></i>ics
