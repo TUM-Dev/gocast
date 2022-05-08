@@ -5,17 +5,25 @@
     {{template "headImports" .VersionTag}}
 </head>
 <body>
-{{- /*gotype: TUM-Live/web.LoginPageData*/ -}}
+{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.LoginPageData*/ -}}
 {{template "header"}}
 <div class="dark:bg-secondary bg-gray-50 lg:w-4/12 md:6/12 w-10/12 m-auto my-10 mt-24 shadow-md">
-    <div class="py-8 px-8 rounded border border-gray-500">
-        <h1 class="font-medium text-2xl mt-3 text-center text-2">Login</h1>
-        <form x-data="{ref: document.referrer}" id="loginForm" method="post" class="mt-6">
+    <div class="py-8 px-8 rounded border dark:border-gray-500 border-gray-300" x-data="{ showInternalLogin: {{not .UseSAML}} }">
+        <h1 class="sr-only">Login</h1>
+        {{if .UseSAML}}
+            <div class="text-center flex flex-col">
+                <a href="/saml/out" class="w-full p-2 rounded hover:bg-blue-700 text-gray-300 hover:text-white font-semibold" style="background-color: {{if .IDPColor}}{{.IDPColor}}{{else}}#3070B3{{end}}">
+                    {{.IDPName}}
+                </a>
+                <div x-show="!showInternalLogin" class="mt-7 pt-4 border-t dark:border-gray-500 border-gray-300 text-2">Or <button @click="showInternalLogin = true" class="font-semibold underline">use an internal account</button></div>
+            </div>
+        {{end}}
+        <form x-data="{ref: document.referrer}" id="loginForm" method="post" class="mt-6" x-show="showInternalLogin">
             <input x-model="ref" type="hidden" name="ref">
             <div class="my-5 text-sm">
                 <label for="username" class="hidden">Username</label>
                 <input type="text" name="username" id="username"
-                       placeholder="LRZ ID (eg. ga10abc) or Email" autocomplete="off" autofocus required/>
+                       placeholder="Username" autocomplete="off" {{if not .UseSAML}}autofocus {{end}}required/>
             </div>
             <div class="my-5 text-sm">
                 <label for="password" class="hidden">Password</label>

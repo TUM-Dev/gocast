@@ -56,9 +56,25 @@ type Stream struct {
 	Duration         uint32           `gorm:"default:null"`
 	StreamWorkers    []Worker         `gorm:"many2many:stream_workers;"`
 	StreamProgresses []StreamProgress `gorm:"foreignKey:StreamID"`
+	VideoSections    []VideoSection
 	StreamStatus     StreamStatus     `gorm:"not null;default:1"`
 
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
+}
+
+// GetStartInSeconds returns the number of seconds until the stream starts (or 0 if it has already started or is a vod)
+func (s Stream) GetStartInSeconds() int {
+	if s.LiveNow || s.Recording {
+		return 0
+	}
+	return int(time.Until(s.Start).Seconds())
+}
+
+func (s Stream) GetName() string {
+	if s.Name != "" {
+		return s.Name
+	}
+	return fmt.Sprintf("Lecture: %s", s.Start.Format("Jan 2, 2006"))
 }
 
 func (s Stream) IsConverting() bool {

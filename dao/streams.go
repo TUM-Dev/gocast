@@ -80,7 +80,7 @@ func GetStreamByID(ctx context.Context, id string) (stream model.Stream, err err
 		return cached.(model.Stream), nil
 	}
 	var res model.Stream
-	err = DB.Preload("Files").Preload("Silences").Preload("Units", func(db *gorm.DB) *gorm.DB {
+	err = DB.Preload("VideoSections").Preload("Files").Preload("Silences").Preload("Units", func(db *gorm.DB) *gorm.DB {
 		return db.Order("unit_start asc")
 	}).First(&res, "id = ?", id).Error
 	if err != nil {
@@ -176,19 +176,6 @@ func GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error)
 		return nil, err
 	}
 	Cache.SetWithTTL("AllCurrentlyLiveStreams", streams, 10, time.Second)
-	return streams, err
-}
-
-func GetCurrentLiveNonHidden(ctx context.Context) (currentLive []model.Stream, err error) {
-	if streams, found := Cache.Get("NonHiddenCurrentlyLiveStreams"); found {
-		return streams.([]model.Stream), nil
-	}
-	var streams []model.Stream
-	if err := DB.Joins("JOIN courses ON courses.id = streams.course_id").Find(&streams,
-		"live_now = ? AND visibility != ?", true, "hidden").Error; err != nil {
-		return nil, err
-	}
-	Cache.SetWithTTL("NonHiddenCurrentlyLiveStreams", streams, 1, time.Minute)
 	return streams, err
 }
 

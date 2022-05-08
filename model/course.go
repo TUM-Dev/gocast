@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 	"gorm.io/gorm"
 	"log"
 	"time"
@@ -30,6 +31,16 @@ type Course struct {
 	Token                   string
 	UserCreatedByToken      bool   `gorm:"default:false"`
 	CameraPresetPreferences string // json encoded. e.g. [{lectureHallID:1, presetID:4}, ...]
+}
+
+// GetUrl returns the URL of the course, e.g. /course/2022/S/MyCourse
+func (c Course) GetUrl() string {
+	return fmt.Sprintf("/course/%d/%s/%s", c.Year, c.TeachingTerm, c.Slug)
+}
+
+// GetStreamUrl returns the URL of the stream, e.g. /w/MyStream/42
+func (c Course) GetStreamUrl(stream Stream) string {
+	return fmt.Sprintf("/w/%s/%d", c.Slug, stream.ID)
 }
 
 type CameraPresetPreference struct {
@@ -128,14 +139,15 @@ func (c Course) GetNextLecture() Stream {
 	return earliestLecture
 }
 
-// GetLiveStream returns the current live stream of the course (if any)
-func (c Course) GetLiveStream() *Stream {
+// GetLiveStreams returns the current live streams of the course or an empty slice if none are live
+func (c Course) GetLiveStreams() []Stream {
+	var res []Stream
 	for _, s := range c.Streams {
 		if s.LiveNow {
-			return &s
+			res = append(res, s)
 		}
 	}
-	return nil
+	return res
 }
 
 // GetNextLectureDate returns the next lecture date of the course

@@ -18,7 +18,7 @@ jobs:
         working-directory: ./web
         run: npm ci
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
       - name: go test
