@@ -23,7 +23,7 @@ const (
 type Stream struct {
 	gorm.Model
 
-	Name             string
+	Name             string `gorm:"index:,class:FULLTEXT"`
 	Description      string
 	CourseID         uint
 	Start            time.Time `gorm:"not null"`
@@ -57,7 +57,7 @@ type Stream struct {
 	StreamWorkers    []Worker         `gorm:"many2many:stream_workers;"`
 	StreamProgresses []StreamProgress `gorm:"foreignKey:StreamID"`
 	VideoSections    []VideoSection
-	StreamStatus     StreamStatus     `gorm:"not null;default:1"`
+	StreamStatus     StreamStatus `gorm:"not null;default:1"`
 
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }

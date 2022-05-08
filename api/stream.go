@@ -41,8 +41,6 @@ func configGinStreamRestRouter(router *gin.Engine) {
 	gNotAdmin.GET("/api/stream/:streamID/sections", getVideoSections)
 }
 
-// TODO
-
 type liveStreamDto struct {
 	ID          uint
 	CourseName  string

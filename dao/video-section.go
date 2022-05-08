@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"fmt"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"gorm.io/gorm"
 )
@@ -10,6 +11,8 @@ type VideoSectionDao interface {
 	Update(section *model.VideoSection) error
 	Delete(videoSectionID uint) error
 	GetByStreamId(streamID uint) ([]model.VideoSection, error)
+
+	Search(q string) ([]model.VideoSection, error)
 }
 
 type videoSectionDao struct {
@@ -35,5 +38,12 @@ func (d videoSectionDao) Delete(videoSectionID uint) error {
 func (d videoSectionDao) GetByStreamId(streamID uint) ([]model.VideoSection, error) {
 	var sections []model.VideoSection
 	err := DB.Order("start_hours, start_minutes, start_seconds ASC").Find(&sections, "stream_id = ?", streamID).Error
+	return sections, err
+}
+
+func (d videoSectionDao) Search(q string) ([]model.VideoSection, error) {
+	var sections []model.VideoSection
+	partialQ := fmt.Sprintf("%s*", q)
+	err := DB.Find(&sections).Where("WHERE MATCH(description) AGAINST(? IN BOOLEAN MODE)", partialQ).Error
 	return sections, err
 }
