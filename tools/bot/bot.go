@@ -5,6 +5,7 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"strings"
+	"time"
 )
 
 type Bot struct {
@@ -16,6 +17,8 @@ type Message struct {
 	Prio   bool
 	Method MessagingMethod
 }
+
+var issuesPerStream = make(map[uint][]time.Time)
 
 // AlertMessage contains all information that is needed for a debugging message.
 // This should later be extended with a custom message field that can be filled on the stream page.
@@ -103,9 +106,25 @@ func getFormattedMessageText(message string) string {
 	return string(html)
 }
 
+// hasConsecutiveReports checks if the stream has two reported alerts within the last 10 minutes.
+func hasConsecutiveReports(streamID uint) bool {
+	if len(issuesPerStream[streamID]) < 2 {
+		return false
+	}
+
+	for i := range issuesPerStream[streamID] {
+		if issuesPerStream[streamID][i].Sub(issuesPerStream[streamID][i+1]) < 10*time.Minute {
+			return true
+		}
+	}
+	return false
+}
+
 func (b *Bot) SendAlert(alert AlertMessage) error {
+	issuesPerStream[alert.Stream.ID] = append(issuesPerStream[alert.Stream.ID], time.Now())
 	message := Message{
 		Text: getFormattedMessageText(GenerateInfoText(alert)),
+		Prio: hasConsecutiveReports(alert.Stream.ID),
 	}
 	return b.SendMessage(message)
 }

@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"math/rand"
 	"net/http"
@@ -70,12 +72,23 @@ func (m *Matrix) getClientUrl() string {
 
 // SendBotMessage sends a formatted message to a matrix room with id roomID.
 func (m *Matrix) SendBotMessage(message Message) error {
-	var roomID string
-	if message.Prio {
-		roomID = tools.Cfg.Alerts.Matrix.AlertRoomID
-	} else {
-		roomID = tools.Cfg.Alerts.Matrix.LogRoomID
+	err := m.sendMessageToRoom(tools.Cfg.Alerts.Matrix.LogRoomID, message)
+	if err != nil {
+		log.WithError(err).Error("Failed to send message to matrix log room")
+		sentry.CaptureException(err)
+		return err
 	}
+	if message.Prio {
+		err = m.sendMessageToRoom(tools.Cfg.Alerts.Matrix.AlertRoomID, message)
+		if err != nil {
+			log.WithError(err).Error("Failed to send message to matrix alert room")
+			sentry.CaptureException(err)
+		}
+	}
+	return err
+}
+
+func (m *Matrix) sendMessageToRoom(roomID string, message Message) error {
 
 	id := strconv.Itoa(rand.Intn(maxID)) // transaction id
 	authToken, err := m.getAuthToken()
