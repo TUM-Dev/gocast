@@ -52,45 +52,46 @@
                 <div class="font-bold text-xl mb-2">Report Technical Problem</div>
                 <div class="font-bold text-sm mb-2">Please select all relevant issue categories</div>
                 <div class="flex justify-between mt-3" >
-            <span>
-                <input class="w-auto form-checkbox" type="checkbox" x-model.number="categories" value="1">
-                <label class="form-checkbox-label">Video</label>
-            </span>
                     <span>
-                <input class="w-auto form-checkbox" type="checkbox" x-model.number="categories" value="2">
-                <label class="form-checkbox-label">Audio</label>
-            </span>
+                        <input class="w-auto form-checkbox" type="checkbox" x-model.number="categories" value="1">
+                        <label class="form-checkbox-label">Video</label>
+                    </span>
                     <span>
-                <input class="w-auto form-checkbox" type="checkbox" x-model.number="categories" value="3">
-                <label class="form-checkbox-label">Camera</label>
-            </span>
+                        <input class="w-auto form-checkbox" type="checkbox" x-model.number="categories" value="2">
+                        <label class="form-checkbox-label">Audio</label>
+                    </span>
                     <span>
-                <input class="w-auto form-checkbox" type="checkbox" x-model.number="categories" value="4">
-                <label class="form-checkbox-label">Microphone</label>
-            </span>
+                        <input class="w-auto form-checkbox" type="checkbox" x-model.number="categories" value="3">
+                        <label class="form-checkbox-label">Camera</label>
+                    </span>
                     <span>
-                <input class="w-auto form-checkbox" type="checkbox" x-model="categories" value="5">
-                <label class="form-checkbox-label text-4 text-sm">Other</label>
-            </span>
-                </div>
-                <div class="mt-3">
-                    <label for="fname">Name</label>
-                    <input name="fname" type="text" placeholder="Maria Musterfrau" required x-model="name" value="{{ $user.Name -}} {{- $user.LastName }}">
-                </div>
-                <div class="mt-3">
-                    <label for="mail">Mail (optional)</label>
-                    <input name="mail" type="email" placeholder="maria.musterfrau@provider.de" x-model="mail">
-                </div>
-                <div class="mt-3">
-                    <label for="phone">Phone (optional)</label>
-                    <input name="phone" type="text" placeholder="12345678" x-model="phone">
+                        <input class="w-auto form-checkbox" type="checkbox" x-model.number="categories" value="4">
+                        <label class="form-checkbox-label">Microphone</label>
+                    </span>
+                    <span>
+                        <input class="w-auto form-checkbox" type="checkbox" x-model="categories" value="5">
+                        <label class="form-checkbox-label text-4 text-sm">Other</label>
+                    </span>
                 </div>
                 <div class="flex justify-between pb-3 mt-3">
                     <div>
                         <label for="description">Description of the issue</label>
                         <textarea required name="description" rows="0" cols="0"
-                                  placeholder="Add a detailed description of the problem here." x-model="description"></textarea>
+                                  placeholder="Add a short description of the problem here." x-model="description"></textarea>
                     </div>
+                </div>
+                <div class="font-bold text-sm mb-2">Your contact data (optional)</div>
+                <div class="mt-3">
+                    <label for="fname">Name</label>
+                    <input name="fname" type="text" placeholder="Maria Musterfrau" x-model="name" value="{{ $user.Name -}} {{- $user.LastName }}">
+                </div>
+                <div class="mt-3">
+                    <label for="mail">Mail</label>
+                    <input name="mail" type="email" placeholder="maria.musterfrau@provider.de" x-model="mail">
+                </div>
+                <div class="mt-3">
+                    <label for="phone">Phone</label>
+                    <input name="phone" type="text" placeholder="12345678" x-model="phone">
                 </div>
                 <!--Footer-->
                 <div class="flex justify-end pt-2 space-x-2">
@@ -99,7 +100,7 @@
                             @click="show=false">Cancel
                     </button>
                     <button type="submit"
-                            class="bg-amber-500 inline-block text-center text-white hover:bg-amber-600 dark:hover:bg-amber-600 font-bold rounded cursor-pointer p-2">Send issue
+                            class="bg-amber-500 inline-block text-center text-white hover:bg-amber-600 dark:hover:bg-amber-600 font-bold rounded cursor-pointer p-2"><i class="fa-solid fa-paper-plane mr-2"></i>Send
                     </button>
                 </div>
             </form>
