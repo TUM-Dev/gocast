@@ -95,7 +95,7 @@
         {{end}}
         <!-- Planned -->
         <div class="w-full {{if $course.HasNextLecture}}md:row-span-5{{else}}md:row-span-6{{end}} md:col-span-2">
-            <div x-data="{showPlanned: true}"
+            <div x-data="{showPlanned: true, lectures: {{$course.HasStreams}}}"
                  class="flex flex-col bg-white dark:bg-secondary border dark:border-gray-800 rounded-lg shadow-sm my-3 md:my-0"
                  :class="showPlanned ? 'h-full' : 'h-fit'">
                 <div class="flex justify-between h-16 px-3"
@@ -107,13 +107,14 @@
                             <span class="text-sm font-semibold uppercase dark:text-white"
                                   x-text="showPlanned ? '&#x25B2; hide' : '&#x25BC; show'">&#x25B2; hide</span>
                         </button>
-                        <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
-                                @click="window.open('/api/download_ics/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}')"
-                                :title="'Export lecture dates'">
+                        <a class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
+                                href="/api/download_ics/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}/events.ics"
+                                :title="'Export lecture dates'"
+                                x-show="lectures">
                                 <span class="text-sm font-semibold uppercase dark:text-white">
                                     <i class="fa-solid w-5 mr-1 fa-calendar"></i>ics
                                 </span>
-                        </button>
+                        </a>
                     </div>
                 </div>
 

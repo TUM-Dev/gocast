@@ -10,10 +10,11 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 func configGinDownloadICSRouter(router *gin.Engine) {
-	router.GET("/api/download_ics/:year/:term/:slug", downloadICS)
+	router.GET("/api/download_ics/:year/:term/:slug/events.ics", downloadICS)
 }
 
 func downloadICS(c *gin.Context) {
@@ -46,15 +47,6 @@ func downloadICS(c *gin.Context) {
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
-	}
-
-	if len(course.Streams) == 0 {
-		_, err := c.Writer.WriteString("No lectures found!")
-		if err != nil {
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-		c.Writer.Flush()
 	}
 
 	var acc []CalendarEntry
@@ -95,8 +87,8 @@ func streamToCalendarEntry(s model.Stream, c model.Course) CalendarEntry {
 		CreatedAt:   s.CreatedAt.Format(layout),
 		Start:       s.Start.Format(layout),
 		End:         s.End.Format(layout),
-		ID:          s.StreamKey,
-		Url:         "https://live.rbg.tum.de/course/" + strconv.Itoa(c.Year) + "/" + c.TeachingTerm + "/" + c.Slug,
+		ID:          strconv.Itoa(int(s.ID)),
+		Url:         strings.Join([]string{tools.Cfg.WebUrl, strconv.Itoa(c.Year), c.TeachingTerm, c.Slug}, "/"),
 		Location:    location,
 		Summary:     c.Name,
 		Description: s.Name,
