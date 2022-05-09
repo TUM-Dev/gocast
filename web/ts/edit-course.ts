@@ -232,6 +232,7 @@ export class Lecture {
 
         if (res.status == StatusCodes.OK) {
             this.lectureHallId = this.newLectureHallId;
+            this.lectureHallName = '';
         }
 
         return res;

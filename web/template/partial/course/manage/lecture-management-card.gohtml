@@ -17,12 +17,30 @@
                            class="w-auto mr-2" type="checkbox"/>
                     <span x-text="lecture.startDateFormatted()"></span>
                 </div>
-                <div class="text-3 font-sans ml-6">
+                <div class="text-3 font-sans ml-6" x-data="{ showKeys: false }">
                     <span x-text="lecture.startTimeFormatted()"></span>
                     -
                     <span x-text="lecture.endTimeFormatted()"></span>
                     <i class="ml-2 fas fa-location-pin text-5"></i>
                     <span x-text="lecture.lectureHallName" class="text-5"></span>
+                    <button @click="showKeys=!showKeys" x-show="lecture.lectureHallId==='0' && !lecture.isPast"
+                            class="bg-indigo-500 rounded px-2 py-0 font-semibold">
+                        <i class="fas fa-key mr-2"></i><span x-text="showKeys?'Hide Keys':'Show Keys'"></span></button>
+                    <p x-show="showKeys" class="mt-1 ml-2 p-2 border dark:border-gray-600 rounded w-full">
+                        <span class="font-semibold">Stream Server:</span>
+                        <span x-text="'{{$ingestBase}}stream?secret=' + lecture.streamKey"></span>
+                        <i class="fas fa-clipboard hover:text-purple-500"
+                           @click="() => global.copyToClipboard('{{$ingestBase}}stream?secret=' + lecture.streamKey)"></i>
+                        <br>
+                        <span class="font-semibold">Stream Key:</span>
+                        <span x-text="lecture.courseSlug + '-' + lecture.lectureId"></span>
+                        <i class="fas fa-clipboard hover:text-purple-500"
+                           @click="() => global.copyToClipboard(lecture.courseSlug + '-' + lecture.lectureId)"></i>
+                        <br>
+                        {{if ne $user.Role 1}}
+                            <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
+                        {{end}}
+                    </p>
                 </div>
 
                 <div x-show="lecture.uiEditMode == 0"
@@ -142,7 +160,8 @@
                     ></textarea>
                 </div>
 
-                <div x-show="!lecture.isPast && !lecture.isRecording" class="p-3 rounded border-gray-100 border-2 mt-3">
+                <div x-show="!lecture.isPast && !lecture.isRecording"
+                     class="p-3 border dark:border-gray-600 rounded mt-3">
                     {{if eq $user.Role 1}}
                         <div x-data="{ id: $id('select') }">
                             <label class="mx-2">
@@ -165,19 +184,6 @@
                             </label>
                         </div>
                     {{end}}
-
-                    <p x-show="lecture.newLectureHallId === '0'" class="mt-1 ml-2">
-                        <span class="font-semibold">Stream Server:</span>
-                        <span x-text="'{{$ingestBase}}stream?secret=' + lecture.streamKey"></span>
-                        <i class="fas fa-clipboard hover:text-purple-500"
-                           @click="() => admin.copyToClipboard('{{$ingestBase}}stream?secret=' + lecture.streamKey)"></i>
-                        <br>
-                        <span class="font-semibold">Stream Key:</span>
-                        <span x-text="lecture.courseSlug + '-' + lecture.lectureId"></span><br>
-                        {{if ne $user.Role 1}}
-                            <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
-                        {{end}}
-                    </p>
                     {{if eq $user.Role 2}}
                         <div x-show="lecture.newLectureHallId !== '0'">
                             This lecture will be streamed from <span
@@ -188,7 +194,9 @@
                         </div>
                     {{end}}
                 </div>
-                {{template "editvideosections"}}
+                <template x-if="lecture.uiEditMode > 0"> <!-- only render if in edit mode to avoid network calls -->
+                    {{template "editvideosections"}}
+                </template>
             </div>
 
             <span x-show="lecture.isRecording" class="absolute left-0 bottom-0 p-4">
