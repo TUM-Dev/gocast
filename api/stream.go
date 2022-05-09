@@ -221,8 +221,7 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	videoSectionDao := dao.NewVideoSectionDao()
-	sections, err := videoSectionDao.GetByStreamId(tumLiveContext.Stream.ID)
+	sections, err := r.VideoSectionDao.GetByStreamId(tumLiveContext.Stream.ID)
 	if err != nil {
 		log.WithError(err).Error("Can't get video sections")
 	}
@@ -236,8 +235,7 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	videoSectionDao := dao.NewVideoSectionDao()
-	err := videoSectionDao.Create(sections)
+	err := r.VideoSectionDao.Create(sections)
 	if err != nil {
 		log.WithError(err).Error("failed to create video sections")
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -256,8 +254,7 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 	if err != nil {
 		log.WithError(err).Error("Can't parse video-section id in url")
 	}
-	videoSectionDao := dao.NewVideoSectionDao()
-	err = videoSectionDao.Delete(uint(id))
+	err = r.VideoSectionDao.Delete(uint(id))
 	if err != nil {
 		log.WithError(err).Error("Can't delete video-section")
 	}
