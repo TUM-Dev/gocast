@@ -52,9 +52,42 @@
             </div>
 
             <div class="flex items-center justify-end h-8">
+                <template x-if="lecture.files.length > 0">
+                    <span class="relative mr-2" x-data="{expand:false}">
+                        <button @click="expand=!expand" type="button"
+                                id="menu-button" aria-expanded="true"
+                                aria-haspopup="true">
+                            <i class="fas fa-cloud-download-alt text-4 text-lg hover:text-1"></i>
+                        </button>
+                        <span x-cloak x-show="expand"
+                              @click.outside="expand = false"
+                              class="origin-top-left absolute top-full left-0 m-auto w-32
+                        dark:bg-secondary ring-1 ring-black ring-opacity-5 focus:outline-none"
+                              role="menu" aria-orientation="vertical"
+                              aria-labelledby="menu-button" tabindex="-1">
+                            <span class="py-1" role="none">
+                            <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
+                                <template x-for="file in lecture.files"
+                                          :key="file.id">
+                                    <a :href="'/api/download/' + file.id" download
+                                       class="hover:bg-gray-100 text-3 dark:hover:bg-gray-600
+                                    block px-4 py-2 text-sm first:rounded-t-md last:rounded-b-md"
+                                       x-text="file.friendlyName" role="menuitem"
+                                       tabindex="-1" id="menu-item-0"></a>
+                                </template>
+                            </span>
+                        </span>
+                    </span>
+                </template>
                 <div x-show="lecture.isRecording">
                     <div class="font-semibold bg-success border-success w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
-                        VoD
+                        <template x-if="lecture.isConverting">
+                            <div>
+                                <i class="fas fa-circle-notch animate-spin"></i>
+                                <span>Converting</span>
+                            </div>
+                        </template>
+                        <span x-show="!lecture.isConverting">VoD</span>
                     </div>
                 </div>
                 <div x-show="lecture.isLiveNow"
@@ -200,41 +233,8 @@
             </div>
 
             <span x-show="lecture.isRecording" class="absolute left-0 bottom-0 p-4">
-                <template x-if="lecture.files.length > 0">
-                    <span class="relative mr-2" x-data="{expand:false}">
-                        <button @click="expand=!expand" type="button"
-                                id="menu-button" aria-expanded="true"
-                                aria-haspopup="true">
-                            <i class="fas fa-cloud-download-alt text-4 text-lg hover:text-1"></i>
-                        </button>
-                        <span x-cloak x-show="expand"
-                              @click.outside="expand = false"
-                              class="origin-top-left absolute top-full left-0 m-auto w-32
-                        dark:bg-secondary ring-1 ring-black ring-opacity-5 focus:outline-none"
-                              role="menu" aria-orientation="vertical"
-                              aria-labelledby="menu-button" tabindex="-1">
-                            <span class="py-1" role="none">
-                            <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
-                                <template x-for="file in lecture.files"
-                                          :key="file.id">
-                                    <a :href="'/api/download/' + file.id" download
-                                       class="hover:bg-gray-100 text-3 dark:hover:bg-gray-600
-                                    block px-4 py-2 text-sm first:rounded-t-md last:rounded-b-md"
-                                       x-text="file.friendlyName" role="menuitem"
-                                       tabindex="-1" id="menu-item-0"></a>
-                                </template>
-                            </span>
-                        </span>
-                    </span>
-                </template>
-                <template x-if="lecture.hasStats">
-                <a>
-                <i class="fas fa-chart-line text-4 text-lg hover:text-1"
-                   title="Live Statistics"
-                   @click="admin.showStats(lecture.lectureId)"></i>
-                </a>
-                </template>
-                </span>
+                <!-- buttons go here -->
+            </span>
 
             <div x-show="lecture.lastErrors.length > 0" class="px-6 py-3 bg-red-400 my-3 rounded">
                 <ul>

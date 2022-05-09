@@ -59,15 +59,13 @@
         </div>
 
         {{- /* streams: */ -}}
-        <div class="flex"
-             :class="sortAsc ? 'flex-col' : 'flex-col-reverse'"
-             x-data="{ lectures: [] }"
+        <div x-data="{ lectures: [] }"
              x-on:newlectures.window="e => (lectures = e.detail)"
              x-init="$nextTick(() => admin.LectureList.init([
                      {{range $course.Streams }}
                          new admin.Lecture(JSON.parse(admin.decodeHtml('{{.GetJson $lectureHalls}}')),'{{$course.Slug}}'),
                      {{end}}]))">
-            <ul>
+            <ul class="flex" :class="sortAsc ? 'flex-col' : 'flex-col-reverse'">
                 <template x-for="lecture in lectures" :key="lecture.lectureId">
                     {{template "lecture-management-card" .}}
                 </template>

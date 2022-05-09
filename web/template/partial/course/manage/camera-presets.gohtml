@@ -33,8 +33,8 @@
         <button x-cloak x-show="changed" class="bg-secondary-lighter rounded px-4 py-2 font-semibold text-white"
             @click="fetch(`/api/course/${document.getElementById('courseID').value}/presets`, {method:'POST',  body:JSON.stringify(halls)}).then();changed:false">
             Save Presets</button>
-        <template x-if="halls === null || halls.length === 0">
-            <i class="text-5">No lecture halls found for this course.</i>
+        <template x-if="halls === null || halls.length === 0 || halls.map((h) => h.presets).flat().length === 0 ">
+            <i class="text-5">No lecture halls with camera presets found for this course.</i>
         </template>
     </div>
 {{end}}

@@ -52,6 +52,7 @@ export class Lecture {
     readonly start: Date;
     readonly end: Date;
     readonly isLiveNow: boolean;
+    readonly isConverting: boolean;
     readonly isRecording: boolean;
     readonly isPast: boolean;
     readonly hasStats: boolean;
@@ -82,6 +83,7 @@ export class Lecture {
             streamKey,
             isPast,
             isLiveNow,
+            isConverting,
             isRecording,
             files,
             hasStats,
@@ -102,6 +104,7 @@ export class Lecture {
         this.courseSlug = courseSlug;
         this.isPast = isPast;
         this.isLiveNow = isLiveNow;
+        this.isConverting = isConverting;
         this.isRecording = isRecording;
         this.hasStats = hasStats;
         this.color = color;

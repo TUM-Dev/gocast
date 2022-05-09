@@ -209,6 +209,7 @@ func (s Stream) GetJson(lhs []LectureHall) string {
 		"streamKey":        s.StreamKey,
 		"isLiveNow":        s.LiveNow,
 		"isRecording":      s.Recording,
+		"isConverting":     s.StreamStatus == StatusConverting,
 		"isPast":           s.IsPast(),
 		"hasStats":         s.Stats != nil,
 		"files":            files,
