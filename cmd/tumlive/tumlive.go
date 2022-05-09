@@ -135,6 +135,7 @@ func main() {
 		&model.Token{},
 		&model.Poll{},
 		&model.PollOption{},
+		&model.VideoSection{},
 		&model.Notification{},
 		&model.UploadKey{},
 	)

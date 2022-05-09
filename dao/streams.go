@@ -143,7 +143,7 @@ func (d streamsDao) GetStreamByID(ctx context.Context, id string) (stream model.
 		return cached.(model.Stream), nil
 	}
 	var res model.Stream
-	err = DB.Preload("Files").Preload("Silences").Preload("Units", func(db *gorm.DB) *gorm.DB {
+	err = DB.Preload("VideoSections").Preload("Files").Preload("Silences").Preload("Units", func(db *gorm.DB) *gorm.DB {
 		return db.Order("unit_start asc")
 	}).First(&res, "id = ?", id).Error
 	if err != nil {

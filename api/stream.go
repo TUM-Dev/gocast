@@ -8,10 +8,12 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/bot"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -24,13 +26,20 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	tokenG.GET("/api/stream/live", routes.liveStreams)
 
 	// group for web api
+	adminG := router.Group("/")
+	adminG.Use(tools.InitStream(daoWrapper))
+	adminG.Use(tools.AdminOfCourse)
+	adminG.GET("/api/stream/:streamID", routes.getStream)
+	adminG.GET("/api/stream/:streamID/pause", routes.pauseStream)
+	adminG.GET("/api/stream/:streamID/end", routes.endStream)
+	adminG.GET("/api/stream/:streamID/issue", routes.reportStreamIssue)
+	adminG.POST("/api/stream/:streamID/sections", routes.createVideoSectionBatch)
+	adminG.DELETE("/api/stream/:streamID/sections/:id", routes.deleteVideoSection)
+
+	// group for non-admin web api
 	g := router.Group("/")
-	g.Use(tools.InitStream(dao.DaoWrapper{}))
-	g.Use(tools.AdminOfCourse)
-	g.GET("/api/stream/:streamID", routes.getStream)
-	g.GET("/api/stream/:streamID/pause", routes.pauseStream)
-	g.GET("/api/stream/:streamID/end", routes.endStream)
-	g.GET("/api/stream/:streamID/issue", routes.reportStreamIssue)
+	g.Use(tools.InitStream(daoWrapper))
+	g.GET("/api/stream/:streamID/sections", routes.getVideoSections)
 }
 
 type streamRoutes struct {
@@ -202,4 +211,54 @@ func (r streamRoutes) getStream(c *gin.Context) {
 			"ingest":      fmt.Sprintf("%sstream?secret=%s", tools.Cfg.IngestBase, stream.StreamKey),
 			"live":        stream.LiveNow,
 			"vod":         stream.Recording})
+}
+
+func (r streamRoutes) getVideoSections(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	videoSectionDao := dao.NewVideoSectionDao()
+	sections, err := videoSectionDao.GetByStreamId(tumLiveContext.Stream.ID)
+	if err != nil {
+		log.WithError(err).Error("Can't get video sections")
+	}
+	c.JSON(http.StatusOK, sections)
+}
+
+func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
+	var sections []model.VideoSection
+	if err := c.BindJSON(&sections); err != nil {
+		log.WithError(err).Error("failed to bind video section JSON")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	videoSectionDao := dao.NewVideoSectionDao()
+	err := videoSectionDao.Create(sections)
+	if err != nil {
+		log.WithError(err).Error("failed to create video sections")
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+}
+
+func (r streamRoutes) deleteVideoSection(c *gin.Context) {
+	_, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	idAsString := c.Param("id")
+	id, err := strconv.Atoi(idAsString)
+	if err != nil {
+		log.WithError(err).Error("Can't parse video-section id in url")
+	}
+	videoSectionDao := dao.NewVideoSectionDao()
+	err = videoSectionDao.Delete(uint(id))
+	if err != nil {
+		log.WithError(err).Error("Can't delete video-section")
+	}
 }
