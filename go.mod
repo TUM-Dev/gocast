@@ -40,6 +40,7 @@ require (
 	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
 	github.com/crewjam/saml v0.4.6
 	github.com/golang/mock v1.6.0
+	github.com/google/uuid v1.1.2
 	github.com/icholy/digest v0.1.15
 	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20220501122901-59afcfe2763c
 )

@@ -54,41 +54,6 @@ export class AdminUserList {
     }
 }
 
-export class AdminFileUpload {
-    private readonly streamId: number;
-
-    constructor(streamId: number) {
-        this.streamId = streamId;
-    }
-
-    onDrop(e) {
-        console.log("test")
-        e.preventDefault();
-        if (e.dataTransfer.items) {
-            for (let i = 0; i < e.dataTransfer.items.length; i++) {
-                if (e.dataTransfer.items[i].kind === "file") {
-                    this.postFile(e.dataTransfer.items[i].getAsFile());
-                }
-            }
-        } else {
-            for (let i = 0; i < e.dataTransfer.files.length; i++) {
-                this.postFile(e.dataTransfer.files[i]);
-            }
-        }
-    }
-
-    private async postFile(file) {
-        const formData = new FormData();
-        formData.append("file", file);
-        fetch(`/api/stream/${this.streamId}/files?type=file`, {
-            method: "POST",
-            body: formData,
-        }).then(() => {
-            console.log("uploaded")
-        });
-    }
-}
-
 export async function createLectureHall(
     name: string,
     combIP: string,

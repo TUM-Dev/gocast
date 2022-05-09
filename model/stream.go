@@ -187,6 +187,7 @@ func (s Stream) GetJson(lhs []LectureHall) string {
 	for _, file := range s.Files {
 		files = append(files, gin.H{
 			"id":           file.ID,
+			"fileType":     file.Type,
 			"friendlyName": file.GetFriendlyFileName(),
 		})
 	}

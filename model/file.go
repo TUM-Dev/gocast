@@ -35,6 +35,10 @@ func (f File) GetFriendlyFileName() string {
 	if strings.Contains(strings.ToLower(fn), "pres") {
 		return "Presentation"
 	}
+
+	if f.Filename != "" {
+		return f.Filename
+	}
 	return "Default view"
 }
 

@@ -185,12 +185,55 @@
                      class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
                     <label :for="id" class="hidden">Lecture description</label>
                     <textarea :id="id"
+                              @drop="(e) => lecture.onFileDrop(e)"
                               class="grow border-none"
-                              placeholder="Add a nice description, links, and more. You can use Markdown."
+                              placeholder="Add a nice description, links, and more. You can use Markdown. Drop files here."
                               autocomplete="off"
                               x-model="lecture.newDescription"
-                              x-on:keyup="lecture.updateIsDirty()"
-                    ></textarea>
+                              x-on:keyup="lecture.updateIsDirty()"></textarea>
+                </div>
+                <div class="border rounded-b-lg dark:border-gray-600 py-1 px-2">
+                    <div class="flex mb-3">
+                        <h6 class="font-semibold text-3 my-auto">Attachments</h6>
+                        <div x-data="{showInfo: false}"
+                             class="relative my-auto">
+                            <button @click="showInfo = !showInfo;">
+                                <i class="fa fa-circle-info text-3 ml-2"></i>
+                            </button>
+                            <div x-show="showInfo"
+                                 class="absolute top-full z-50"
+                                 @mouseleave="showInfo = false">
+                                <div>
+                                    <div class="tooltip relative w-56">
+                                        <div class="w-0 h-0 border-x-8 border-x-transparent border-b-8 border-b-black dark:border-b-white ml-2 mr-auto"></div>
+                                        <div class="bg-black dark:bg-white rounded-md px-2 py-1">
+                                    <span class="text-white dark:text-black text-xs font-bold">
+                                        Structuring lectures into sections makes lectures more rewatchable.
+                                        For detailed information visit: <a
+                                                class="underline hover:text-white dark:hover:text-black"
+                                                href="https://docs.live.mm.rbg.tum.de">https://docs.live.mm.rbg.tum.de</a>
+                                    </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid gap-1">
+                        <template x-for="file in lecture.files">
+                            <template x-if="file.fileType === 1">
+                                <div class="flex border rounded dark:border-gray-600">
+                                    <span class = "text-xs font-semibold text-3 my-auto ml-2" x-text="file.friendlyName"></span>
+                                    <div class="my-auto ml-auto border-l dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600">
+                                        <button class="py-1 px-3"
+                                                @click="lecture.deleteFile(file.id)">
+                                            <i class="fa fa-xmark"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </template>
+                    </div>
                 </div>
 
                 <div x-show="!lecture.isPast && !lecture.isRecording"

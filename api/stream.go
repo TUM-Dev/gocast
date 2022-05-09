@@ -14,9 +14,9 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools/bot"
 	log "github.com/sirupsen/logrus"
 	"net/http"
-	"strconv"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -48,7 +48,7 @@ func configGinStreamRestRouter(router *gin.Engine) {
 
 	// downloadable files
 	adminG.POST("/api/stream/:streamID/files", newAttachment)
-	adminG.DELETE("/api/stream/:streamID/files/:fid", deleteFileOfStream)
+	adminG.DELETE("/api/stream/:streamID/files/:fid", deleteAttachment)
 }
 
 type liveStreamDto struct {
@@ -321,12 +321,15 @@ func newAttachment(c *gin.Context) {
 		return
 	}
 
-	if dao.File.NewFile(&model.File{StreamID: stream.ID, Path: path, Filename: filename, Type: model.FILETYPE_ATTACHMENT}) != nil {
+	file := model.File{StreamID: stream.ID, Path: path, Filename: filename, Type: model.FILETYPE_ATTACHMENT}
+	if dao.File.NewFile(&file) != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "could not save file in database")
 	}
+
+	c.JSON(http.StatusOK, file.ID)
 }
 
-func deleteFileOfStream(c *gin.Context) {
+func deleteAttachment(c *gin.Context) {
 	toDelete, err := dao.File.GetFileById(c.Param("fid"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
