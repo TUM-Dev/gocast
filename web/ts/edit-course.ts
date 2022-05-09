@@ -1,10 +1,325 @@
-import { postData, showMessage } from "./global";
+import { Delete, postData, putData, showMessage } from "./global";
 import { StatusCodes } from "http-status-codes";
+
+export enum UIEditMode {
+    none,
+    single,
+    series,
+}
+
+export class LectureList {
+    static lectures: Lecture[] = [];
+
+    static init(initialState, triggerUpdateFunc) {
+        LectureList.lectures = initialState;
+        LectureList.triggerUpdate();
+    }
+
+    static triggerUpdate() {
+        const event = new CustomEvent("newlectures", { detail: LectureList.lectures });
+        window.dispatchEvent(event);
+    }
+}
+
+class LectureFile {
+    readonly id: number;
+    readonly friendlyName: string;
+
+    constructor({ id, friendlyName }) {
+        this.id = id;
+        this.friendlyName = friendlyName;
+    }
+}
+
+export class Lecture {
+    static dateFormatOptions: Intl.DateTimeFormatOptions = {
+        weekday: "long",
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+    };
+    static timeFormatOptions: Intl.DateTimeFormatOptions = {
+        hour: "2-digit",
+        minute: "2-digit",
+    };
+    readonly courseId: number;
+    readonly courseSlug: string;
+    readonly lectureId: number;
+    readonly streamKey: string;
+    readonly seriesIdentifier: string;
+    readonly color: string;
+    readonly vodViews: number;
+    readonly start: Date;
+    readonly end: Date;
+    readonly isLiveNow: boolean;
+    readonly isConverting: boolean;
+    readonly isRecording: boolean;
+    readonly isPast: boolean;
+    readonly hasStats: boolean;
+    readonly files: LectureFile[];
+
+    name: string;
+    description: string;
+    lectureHallId: string;
+    lectureHallName: string;
+    uiEditMode: UIEditMode = UIEditMode.none;
+    newName: string;
+    newDescription: string;
+    newLectureHallId: string;
+    isDirty = false;
+    isSaving = false;
+    isDeleted = false;
+    lastErrors: string[] = [];
+
+    constructor(
+        {
+            courseId,
+            lectureId,
+            seriesIdentifier,
+            name,
+            description,
+            lectureHallId,
+            lectureHallName,
+            streamKey,
+            isPast,
+            isLiveNow,
+            isConverting,
+            isRecording,
+            files,
+            hasStats,
+            color,
+            start,
+            end,
+        },
+        courseSlug: string,
+    ) {
+        this.courseId = courseId;
+        this.lectureId = lectureId;
+        this.seriesIdentifier = seriesIdentifier;
+        this.lectureHallId = "" + lectureHallId;
+        this.lectureHallName = lectureHallName;
+        this.name = name;
+        this.description = description;
+        this.streamKey = streamKey;
+        this.courseSlug = courseSlug;
+        this.isPast = isPast;
+        this.isLiveNow = isLiveNow;
+        this.isConverting = isConverting;
+        this.isRecording = isRecording;
+        this.hasStats = hasStats;
+        this.color = color;
+        this.start = new Date(start);
+        this.end = new Date(end);
+        this.files = files === null ? [] : files.map((file) => new LectureFile(file));
+    }
+
+    clone() {
+        return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
+    }
+
+    startDateFormatted() {
+        return this.start.toLocaleDateString("en-US", Lecture.dateFormatOptions);
+    }
+
+    startTimeFormatted() {
+        return this.start.toLocaleTimeString("en-US", Lecture.timeFormatOptions);
+    }
+
+    endFormatted() {
+        return this.end.toLocaleDateString("en-US", Lecture.dateFormatOptions);
+    }
+
+    endTimeFormatted() {
+        return this.end.toLocaleTimeString("en-US", Lecture.timeFormatOptions);
+    }
+
+    updateIsDirty() {
+        this.isDirty =
+            this.newName !== this.name ||
+            this.newDescription !== this.description ||
+            this.newLectureHallId !== this.lectureHallId;
+    }
+
+    resetNewFields() {
+        this.newName = this.name;
+        this.newDescription = this.description;
+        this.newLectureHallId = this.lectureHallId;
+        this.isDirty = false;
+        this.lastErrors = [];
+    }
+
+    startSeriesEdit() {
+        if (this.uiEditMode !== UIEditMode.none) return;
+        this.resetNewFields();
+        this.uiEditMode = UIEditMode.series;
+    }
+
+    startSingleEdit() {
+        if (this.uiEditMode !== UIEditMode.none) return;
+        this.resetNewFields();
+        this.uiEditMode = UIEditMode.single;
+    }
+
+    async saveEdit() {
+        this.lastErrors = [];
+        if (this.uiEditMode === UIEditMode.none) return;
+
+        this.isSaving = true;
+        const promises = [];
+        if (this.newName !== this.name) promises.push(this.saveNewLectureName());
+        if (this.newDescription !== this.description) promises.push(this.saveNewLectureDescription());
+        if (this.newLectureHallId !== this.lectureHallId) promises.push(this.saveNewLectureHall());
+
+        const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
+
+        if (this.uiEditMode === UIEditMode.series && errors.length === 0) {
+            const seriesUpdateResult = await this.saveSeries();
+            if (seriesUpdateResult.status !== StatusCodes.OK) {
+                errors.push(seriesUpdateResult);
+            }
+        }
+
+        if (errors.length > 0) {
+            this.lastErrors = await Promise.all(
+                errors.map((e) => {
+                    const text = e.text();
+                    try {
+                        const msg = JSON.parse(text).msg;
+                        if (msg != null && msg.length > 0) {
+                            return msg;
+                        }
+                        // eslint-disable-next-line no-empty
+                    } catch (_) {}
+                    return text;
+                }),
+            );
+            this.isSaving = false;
+            return false;
+        }
+
+        this.uiEditMode = UIEditMode.none;
+        this.isSaving = false;
+        return true;
+    }
+
+    discardEdit() {
+        this.uiEditMode = UIEditMode.none;
+    }
+
+    async saveNewLectureName() {
+        const res = await postData("/api/course/" + this.courseId + "/renameLecture/" + this.lectureId, {
+            name: this.newName,
+        });
+
+        if (res.status == StatusCodes.OK) {
+            this.name = this.newName;
+        }
+
+        return res;
+    }
+
+    async saveNewLectureDescription() {
+        const res = await putData("/api/course/" + this.courseId + "/updateDescription/" + this.lectureId, {
+            name: this.newDescription,
+        });
+
+        if (res.status == StatusCodes.OK) {
+            this.description = this.newDescription;
+        }
+
+        return res;
+    }
+
+    async saveNewLectureHall() {
+        const res = await saveLectureHall([this.lectureId], this.newLectureHallId);
+
+        if (res.status == StatusCodes.OK) {
+            this.lectureHallId = this.newLectureHallId;
+            this.lectureHallName = "";
+        }
+
+        return res;
+    }
+
+    async saveSeries() {
+        const res = await postData("/api/course/" + this.courseId + "/updateLectureSeries/" + this.lectureId);
+
+        if (res.status == StatusCodes.OK) {
+            LectureList.lectures = LectureList.lectures.map((lecture) => {
+                if (this.lectureId !== lecture.lectureId && lecture.seriesIdentifier === this.seriesIdentifier) {
+                    /* cloning, as otherwise alpine doesn't detect the changed object in the array ... */
+                    lecture = lecture.clone();
+                    lecture.name = this.name;
+                    lecture.description = this.description;
+                    lecture.lectureHallId = this.lectureHallId;
+                    lecture.uiEditMode = UIEditMode.none;
+                }
+                return lecture;
+            });
+            LectureList.triggerUpdate();
+        }
+
+        return res;
+    }
+
+    async deleteLecture() {
+        if (confirm("Confirm deleting video?")) {
+            const res = await postData("/api/course/" + this.courseId + "/deleteLectures", {
+                streamIDs: [this.lectureId.toString()],
+            });
+
+            if (res.status !== StatusCodes.OK) {
+                alert("An unknown error occurred during the deletion process!");
+                return;
+            }
+
+            LectureList.lectures = LectureList.lectures.filter((l) => l.lectureId !== this.lectureId);
+            LectureList.triggerUpdate();
+        }
+    }
+
+    async deleteLectureSeries() {
+        const lectureCount = LectureList.lectures.filter((l) => l.seriesIdentifier === this.seriesIdentifier).length;
+        if (confirm("Confirm deleting " + lectureCount + " videos in the lecture series?")) {
+            const res = await Delete("/api/course/" + this.courseId + "/deleteLectureSeries/" + this.lectureId);
+
+            if (res.status === StatusCodes.OK) {
+                LectureList.lectures = LectureList.lectures.filter((l) => l.seriesIdentifier !== this.seriesIdentifier);
+                LectureList.triggerUpdate();
+            }
+
+            return res;
+        }
+    }
+}
+
+export function decodeHtml(html) {
+    const txt = document.createElement("textarea");
+    txt.innerHTML = html;
+    return txt.value;
+}
+
+export async function deleteLectures(cid: number, lids: number[]) {
+    if (confirm("Confirm deleting " + lids.length + " video" + (lids.length == 1 ? "" : "s") + "?")) {
+        const res = await postData("/api/course/" + cid + "/deleteLectures", {
+            streamIDs: lids.map((n) => n.toString()),
+        });
+
+        if (res.status !== StatusCodes.OK) {
+            alert("An unknown error occurred during the deletion process!");
+            return;
+        }
+
+        LectureList.lectures = LectureList.lectures.filter((l) => !lids.includes(l.lectureId));
+        LectureList.triggerUpdate();
+    }
+}
 
 export function saveLectureHall(streamIds: number[], lectureHall: string) {
     return postData("/api/setLectureHall", { streamIds, lectureHall: parseInt(lectureHall) });
 }
 
+// Used by schedule.ts
 export function saveLectureDescription(e: Event, cID: number, lID: number) {
     e.preventDefault();
     const input = (document.getElementById("lectureDescriptionInput" + lID) as HTMLInputElement).value;
@@ -17,6 +332,7 @@ export function saveLectureDescription(e: Event, cID: number, lID: number) {
     });
 }
 
+// Used by schedule.ts
 export function saveLectureName(e: Event, cID: number, lID: number) {
     e.preventDefault();
     const input = (document.getElementById("lectureNameInput" + lID) as HTMLInputElement).value;
@@ -37,18 +353,6 @@ export function showStats(id: number): void {
     }
 }
 
-export function focusNameInput(input: HTMLInputElement, id: number) {
-    input.oninput = function () {
-        document.getElementById("nameSubmitBtn" + id).classList.remove("invisible");
-    };
-}
-
-export function focusDescriptionInput(input: HTMLInputElement, id: number) {
-    input.oninput = function () {
-        document.getElementById("descriptionSubmitBtn" + id).classList.remove("invisible");
-    };
-}
-
 export function toggleExtraInfos(btn: HTMLElement, id: number) {
     btn.classList.add("transform", "transition", "duration-500", "ease-in-out");
     if (btn.classList.contains("rotate-180")) {
@@ -57,21 +361,6 @@ export function toggleExtraInfos(btn: HTMLElement, id: number) {
     } else {
         btn.classList.add("rotate-180");
         document.getElementById("extraInfos" + id).classList.remove("hidden");
-    }
-}
-
-export function deleteLecture(cid: number, lid: number) {
-    if (confirm("Confirm deleting video?")) {
-        postData("/api/course/" + cid + "/deleteLectures", { streamIDs: [lid.toString()] }).then(() => {
-            document.location.reload();
-        });
-    }
-}
-
-export async function deleteLectures(cid: number, lids: number[]) {
-    if (confirm("Confirm deleting " + lids.length + " video" + (lids.length == 1 ? "" : "s") + "?")) {
-        await postData("/api/course/" + cid + "/deleteLectures", { streamIDs: lids.map((n) => n.toString()) });
-        document.location.reload();
     }
 }
 

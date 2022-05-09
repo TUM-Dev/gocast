@@ -141,6 +141,24 @@ func UpdateStream(stream model.Stream) error {
 	return err
 }
 
+func UpdateLectureSeries(stream model.Stream) error {
+	defer Cache.Clear()
+	err := DB.Table("streams").Where(
+		"`series_identifier` = ? AND `deleted_at` IS NULL",
+		stream.SeriesIdentifier,
+	).Updates(map[string]interface{}{
+		"name":        stream.Name,
+		"description": stream.Description,
+	}).Error
+	return err
+}
+
+func DeleteLectureSeries(seriesIdentifier string) error {
+	defer Cache.Clear()
+	err := DB.Delete(&model.Stream{}, "`series_identifier` = ?", seriesIdentifier).Error
+	return err
+}
+
 // GetWorkersForStream retrieves all workers for a given stream with streamID
 func GetWorkersForStream(stream model.Stream) ([]model.Worker, error) {
 	var res []model.Worker
