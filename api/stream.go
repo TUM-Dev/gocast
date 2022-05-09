@@ -200,6 +200,7 @@ func reportStreamIssue(c *gin.Context) {
 		CameraIP:    lectureHall.CameraIP,
 		IsLecturer:  tumLiveContext.User.IsAdminOfCourse(course),
 		Stream:      *stream,
+		User:        *tumLiveContext.User,
 	}
 
 	// Send notification to the matrix room.

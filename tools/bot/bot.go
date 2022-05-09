@@ -38,6 +38,7 @@ type AlertMessage struct {
 	CameraIP    string
 	IsLecturer  bool
 	Stream      model.Stream
+	User        model.User
 }
 
 // FeedbackMessage represents a message that users can send via the website if they want to give feedback.
@@ -67,30 +68,48 @@ func GenerateInfoText(botInfo AlertMessage) string {
 	combIP := strings.Split(botInfo.CombIP, "/")[0] // URL has /extron[...]
 
 	var infoText string
+
 	infoText += "🚨 **Technical problem**\n\n" +
-		"* **Categories:** " + botInfo.Categories + "\n" +
-		"* **Course name**: " + botInfo.CourseName + "\n" +
-		"* **Stream URL**: " + botInfo.StreamUrl + "\n" +
-		"* **Comment**: " + botInfo.Comment + "\n\n"
+		"<table><tr><th>Categories</th><td>" + botInfo.Categories + "</td></tr>" +
+		"<tr><th>Course name</th><td>" + botInfo.CourseName + "</td></tr>" +
+		"<tr><th>Stream URL</th><td>" + botInfo.StreamUrl + "</td></tr>" +
+		"<tr><th>Description</th><td>" + botInfo.Comment + "</td></tr>"
 
 	if !botInfo.Stream.IsSelfStream() {
-		infoText += "* **Lecture hall**: " + botInfo.LectureHall + "\n"
-		if combIP != "" {
-			infoText += "* **Combined IP**: " + "[" + combIP + "](http://" + combIP + ")\n"
+		if botInfo.LectureHall != "" {
+			infoText += "<tr><th>Lecture hall</th><td>" + botInfo.LectureHall + "</td></tr>"
 		}
-
+		if combIP != "" {
+			infoText += "<tr><th>Combined IP</th><td>" + combIP + "</td></tr>"
+		}
 		if botInfo.CameraIP != "" {
-			infoText += "* **Camera IP**: " + "[" + botInfo.CameraIP + "](http://" + botInfo.CameraIP + ")\n"
+			infoText += "<tr><th>Camera IP</th><td>" + botInfo.CameraIP + "</td></tr>"
 		}
 	}
+	infoText += "</table>"
 
-	infoText +=
-		"💬 **Description**\n\n" +
-			botInfo.Comment + "\n\n" +
-			"📢 **Contact data**\n\n" +
-			"* **Name**: " + botInfo.Name + "\n" +
-			"* **Phone number**: " + botInfo.PhoneNumber + "\n" +
-			"* **Email**: " + botInfo.Email + "\n"
+	infoText += "📢 **Contact information**\n\n"
+	infoText += "<table>"
+
+	// Has the person that reported the issue entered custom contact data?
+	if botInfo.Name != "" {
+		infoText += "<tr><th>Name</th><td>" + botInfo.User.Name + "</td></tr>"
+	} else if botInfo.User.Name != "" {
+		if botInfo.User.LastName != nil {
+			infoText += "<tr><th>Name</th><td>" + botInfo.User.Name + " " + *botInfo.User.LastName + "</td></tr>"
+		} else {
+			infoText += "<tr><th>Name</th><td>" + botInfo.User.Name + "</td></tr>"
+		}
+	}
+	if botInfo.Email != "" {
+		infoText += "<tr><th>Email</th><td>" + botInfo.Email + "</td></tr>"
+	} else if botInfo.User.Email.Valid {
+		infoText += "<th>Email</th><td>" + botInfo.User.Email.String + "</td></tr>"
+	}
+	if botInfo.PhoneNumber != "" {
+		infoText += "<tr><th>Phone</th><td>" + botInfo.PhoneNumber + "</td></tr>"
+	}
+	infoText += "</table>"
 
 	return infoText
 }
