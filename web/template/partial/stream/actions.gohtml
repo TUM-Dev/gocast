@@ -7,10 +7,12 @@
     {{/* Icons for different actions student can do for a stream */}}
     <span class="flex content-center space-x-2">
         {{/* Feedback button */}}
-        {{ if not ($user.IsAdminOfCourse $course) }}
-            <button class="m-auto" title="Technical problems? Send us feedback!" @click="$dispatch('issue')">
-                <i class="fas fa-exclamation-triangle text-4 hover:text-1"></i>
-            </button>
+        {{if $user}}
+            {{if ($user.IsAdminOfCourse $course)}}
+                <button class="m-auto" title="Technical problems? Send us feedback!" @click="$dispatch('issue')">
+                    <i class="fas fa-exclamation-triangle text-4 hover:text-1"></i>
+                </button>
+            {{end}}
         {{end}}
         {{/* Download button */}}
         {{if and (and $course.DownloadsEnabled $user) $stream.IsDownloadable}}
@@ -38,72 +40,11 @@
             </a>
         {{end}}
         {{/* Copy HLS Link for video */}}
+        {{if or $stream.PlaylistUrlPRES (or $stream.PlaylistUrlCAM $stream.PlaylistUrl)}}
         <i title="Copy HLS URL"
            class="m-auto text-lg cursor-pointer fas fa-link text-4 dark:hover:text-white hover:text-black"
            onclick="global.copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))">
         </i>
+        {{end}}
     </span>
-    {{/* Modal to enter feedback */}}
-    <div x-cloak @keydown.escape="show = false" x-data="{ show : false, description : '', phone: '', mail: '', categories: [] }"
-         @issue.window="show = !show;"
-         x-show="show" class="flex flex-wrap h-full overflow-auto inline-block" :class="{ 'absolute inset-0 z-10 flex items-center justify-center': show }">
-        <div class="dark:bg-secondary bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 w-auto md:max-w-md mx-auto rounded shadow-lg py-4 text-left px-6">
-            <form @submit.prevent="show = !watch.sendIssue(streamID, categories, name, phone, mail, description)">
-                <div class="font-bold text-xl mb-2">Report Technical Problem</div>
-                <div class="font-bold text-sm mb-2">Please select all relevant issue categories</div>
-                <div class="flex justify-between mt-3" >
-                    <span>
-                        <input class="w-auto form-checkbox" type="checkbox" x-model.number="categories" value="1">
-                        <label class="form-checkbox-label">Video</label>
-                    </span>
-                    <span>
-                        <input class="w-auto form-checkbox" type="checkbox" x-model.number="categories" value="2">
-                        <label class="form-checkbox-label">Audio</label>
-                    </span>
-                    <span>
-                        <input class="w-auto form-checkbox" type="checkbox" x-model.number="categories" value="3">
-                        <label class="form-checkbox-label">Camera</label>
-                    </span>
-                    <span>
-                        <input class="w-auto form-checkbox" type="checkbox" x-model.number="categories" value="4">
-                        <label class="form-checkbox-label">Microphone</label>
-                    </span>
-                    <span>
-                        <input class="w-auto form-checkbox" type="checkbox" x-model.number="categories" value="5">
-                        <label class="form-checkbox-label text-4 text-sm">Other</label>
-                    </span>
-                </div>
-                <div class="flex justify-between pb-3 mt-3">
-                    <div>
-                        <label for="description">Description of the issue</label>
-                        <textarea required name="description" rows="0" cols="0"
-                                  placeholder="Add a short description of the problem here." x-model="description"></textarea>
-                    </div>
-                </div>
-                <div class="font-bold text-sm mb-2">Your contact data (optional)</div>
-                <div class="mt-3">
-                    <label for="fname">Name</label>
-                    <input name="fname" type="text" placeholder="Maria Musterfrau" x-model="name" value="{{ $user.Name -}} {{- $user.LastName }}">
-                </div>
-                <div class="mt-3">
-                    <label for="mail">Mail</label>
-                    <input name="mail" type="email" placeholder="maria.musterfrau@provider.de" x-model="mail">
-                </div>
-                <div class="mt-3">
-                    <label for="phone">Phone</label>
-                    <input name="phone" type="text" placeholder="12345678" x-model="phone">
-                </div>
-                <!--Footer-->
-                <div class="flex justify-end pt-2 space-x-2">
-                    <button type="submit"
-                            class="bg-gray-500 inline-block text-center text-white hover:bg-gray-600 dark:hover:bg-gray-600 font-bold rounded cursor-pointer p-2"
-                            @click="show=false">Cancel
-                    </button>
-                    <button type="submit"
-                            class="bg-amber-500 inline-block text-center text-white hover:bg-amber-600 dark:hover:bg-amber-600 font-bold rounded cursor-pointer p-2"><i class="fa-solid fa-paper-plane mr-2"></i>Send
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
 {{end}}
