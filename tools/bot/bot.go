@@ -8,17 +8,17 @@ import (
 	"time"
 )
 
+// Bot is the bot that will be used to send messages to the chat.
 type Bot struct {
-	Method MessagingMethod
+	Method MessageProvider
 }
 
+// Message is a generic message that will be forwarded via the implementation specified via ProviderMethod.
 type Message struct {
-	Text   string
-	Prio   bool
-	Method MessagingMethod
+	Text           string
+	Prio           bool
+	ProviderMethod MessageProvider
 }
-
-var issuesPerStream = make(map[uint][]time.Time)
 
 // AlertMessage contains all information that is needed for a debugging message.
 // This should later be extended with a custom message field that can be filled on the stream page.
@@ -41,29 +41,34 @@ type AlertMessage struct {
 	User        model.User
 }
 
-// FeedbackMessage represents a message that users can send via the website if they want to give feedback.
-type FeedbackMessage struct {
-	Feedback   string
-	UserID     string
-	AuthorName string
-}
+var issuesPerStream = make(map[uint][]time.Time)
 
-// MessagingMethod provides a generic interface for different message providers e.g. Matrix
-type MessagingMethod interface {
+// MessageProvider provides a generic interface for different message providers e.g. Matrix
+type MessageProvider interface {
 	SendBotMessage(message Message) error
 }
 
 // SetMessagingMethod sets the provider method for sending messages e.g. Matrix
-func (b *Bot) SetMessagingMethod(method MessagingMethod) {
+func (b *Bot) SetMessagingMethod(method MessageProvider) {
 	b.Method = method
 }
 
-// SendMessage sends a message to the bot.
+// SendMessage sends a message via the bot that abstracts the provider.
 func (b *Bot) SendMessage(message Message) error {
 	return b.Method.SendBotMessage(message)
 }
 
-// GenerateInfoText generates a formatted issue text.
+// SendAlert sends an alert message to the bot e.g. via Matrix.
+func (b *Bot) SendAlert(alert AlertMessage) error {
+	issuesPerStream[alert.Stream.ID] = append(issuesPerStream[alert.Stream.ID], time.Now())
+	message := Message{
+		Text: getFormattedMessageText(GenerateInfoText(alert)),
+		Prio: hasConsecutiveReports(alert.Stream.ID) || alert.IsLecturer,
+	}
+	return b.SendMessage(message)
+}
+
+// GenerateInfoText generates a formatted issue text, should be visible on any client that supports markdown and HTML.
 func GenerateInfoText(botInfo AlertMessage) string {
 	combIP := strings.Split(botInfo.CombIP, "/")[0] // URL has /extron[...]
 
@@ -86,11 +91,7 @@ func GenerateInfoText(botInfo AlertMessage) string {
 			infoText += "<tr><th>Camera IP</th><td>" + botInfo.CameraIP + "</td></tr>"
 		}
 	}
-	infoText += "</table>"
-
-	infoText += "📢 **Contact information**\n\n"
-	infoText += "<table>"
-
+	infoText += "</table>📢 **Contact information**\n\n<table>"
 	// Has the person that reported the issue entered custom contact data?
 	if botInfo.Name != "" {
 		infoText += "<tr><th>Name</th><td>" + botInfo.User.Name + "</td></tr>"
@@ -137,13 +138,4 @@ func hasConsecutiveReports(streamID uint) bool {
 		}
 	}
 	return false
-}
-
-func (b *Bot) SendAlert(alert AlertMessage) error {
-	issuesPerStream[alert.Stream.ID] = append(issuesPerStream[alert.Stream.ID], time.Now())
-	message := Message{
-		Text: getFormattedMessageText(GenerateInfoText(alert)),
-		Prio: hasConsecutiveReports(alert.Stream.ID),
-	}
-	return b.SendMessage(message)
 }

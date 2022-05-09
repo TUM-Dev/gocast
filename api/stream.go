@@ -152,7 +152,7 @@ func reportStreamIssue(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	stream := tumLiveContext.Stream
 
-	type userFeedback struct {
+	type alertMessage struct {
 		Comment     string  `json:"description"`
 		PhoneNumber string  `json:"phone"`
 		Email       string  `json:"email"`
@@ -160,8 +160,8 @@ func reportStreamIssue(c *gin.Context) {
 		Name        string  `json:"name"`
 	}
 
-	var feedback userFeedback
-	if err := c.ShouldBindJSON(&feedback); err != nil {
+	var alert alertMessage
+	if err := c.ShouldBindJSON(&alert); err != nil {
 		sentry.CaptureException(err)
 		c.AbortWithStatus(http.StatusBadRequest)
 	}
@@ -184,14 +184,14 @@ func reportStreamIssue(c *gin.Context) {
 	streamUrl := tools.Cfg.WebUrl + "/w/" + course.Slug + "/" + fmt.Sprintf("%d", stream.ID)
 	categories := map[uint8]string{1: "🎥 Camera", 2: "🎤 Microphone", 3: "🔊 Audio", 4: "🎬 Video", 5: "Other"}
 	var categoryList []string
-	for _, category := range feedback.Categories {
+	for _, category := range alert.Categories {
 		categoryList = append(categoryList, categories[category])
 	}
 	botInfo := bot.AlertMessage{
-		PhoneNumber: feedback.PhoneNumber,
-		Name:        feedback.Name,
-		Email:       feedback.Email,
-		Comment:     feedback.Comment,
+		PhoneNumber: alert.PhoneNumber,
+		Name:        alert.Name,
+		Email:       alert.Email,
+		Comment:     alert.Comment,
 		Categories:  strings.Join(categoryList, " · "),
 		CourseName:  course.Name,
 		LectureHall: lectureHall.Name,
@@ -204,11 +204,11 @@ func reportStreamIssue(c *gin.Context) {
 	}
 
 	// Send notification to the matrix room.
-	var matrixBot bot.Bot
-	matrixBot.SetMessagingMethod(&bot.Matrix{})
+	var alertBot bot.Bot
+	alertBot.SetMessagingMethod(&bot.Matrix{})
 
 	// Set messaging strategy as specified in strategy pattern
-	if err = matrixBot.SendAlert(botInfo); err != nil {
+	if err = alertBot.SendAlert(botInfo); err != nil {
 		sentry.CaptureException(err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}

@@ -89,7 +89,6 @@ func (m *Matrix) SendBotMessage(message Message) error {
 }
 
 func (m *Matrix) sendMessageToRoom(roomID string, message Message) error {
-
 	id := strconv.Itoa(rand.Intn(maxID)) // transaction id
 	authToken, err := m.getAuthToken()
 	if err != nil {
