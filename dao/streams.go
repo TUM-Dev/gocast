@@ -81,6 +81,7 @@ func GetStreamByID(ctx context.Context, id string) (stream model.Stream, err err
 	}
 	var res model.Stream
 	err = DB.
+		Preload("VideoSections").
 		Preload("Files").
 		Preload("Silences").
 		Preload("Units",
@@ -143,6 +144,24 @@ func UpdateStream(stream model.Stream) error {
 		"description": stream.Description,
 		"start":       stream.Start,
 		"end":         stream.End}).Error
+	return err
+}
+
+func UpdateLectureSeries(stream model.Stream) error {
+	defer Cache.Clear()
+	err := DB.Table("streams").Where(
+		"`series_identifier` = ? AND `deleted_at` IS NULL",
+		stream.SeriesIdentifier,
+	).Updates(map[string]interface{}{
+		"name":        stream.Name,
+		"description": stream.Description,
+	}).Error
+	return err
+}
+
+func DeleteLectureSeries(seriesIdentifier string) error {
+	defer Cache.Clear()
+	err := DB.Delete(&model.Stream{}, "`series_identifier` = ?", seriesIdentifier).Error
 	return err
 }
 

@@ -1,5 +1,15 @@
 export * from "./notifications";
 
+export async function putData(url = "", data = {}) {
+    return await fetch(url, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+    });
+}
+
 export async function postData(url = "", data = {}) {
     return await fetch(url, {
         method: "POST",
@@ -59,23 +69,6 @@ export function unhideCourse(id: string) {
     });
     localStorage.setItem("hiddenCourses", JSON.stringify(newHidden));
     document.location.reload();
-}
-
-export function isDark() {
-    return localStorage.getItem("darkTheme") ? JSON.parse(localStorage.getItem("darkTheme")) : true;
-}
-
-export function toggleColorScheme() {
-    //initial theme preference:
-    const darkTheme: boolean = isDark();
-    //store opposite
-    localStorage.setItem("darkTheme", JSON.stringify(!darkTheme));
-    //set opposite class
-    if (!darkTheme) {
-        document.documentElement.classList.add("dark");
-    } else {
-        document.documentElement.classList.remove("dark");
-    }
 }
 
 export function initHiddenCourses() {

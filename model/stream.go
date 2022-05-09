@@ -3,11 +3,12 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/russross/blackfriday/v2"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
-	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
 )
 
@@ -56,7 +57,8 @@ type Stream struct {
 	Duration         uint32           `gorm:"default:null"`
 	StreamWorkers    []Worker         `gorm:"many2many:stream_workers;"`
 	StreamProgresses []StreamProgress `gorm:"foreignKey:StreamID"`
-	StreamStatus     StreamStatus     `gorm:"not null;default:1"`
+	VideoSections    []VideoSection
+	StreamStatus     StreamStatus `gorm:"not null;default:1"`
 
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }
@@ -166,4 +168,56 @@ func (s Stream) FriendlyNextDate() string {
 		return fmt.Sprintf("Tomorrow, %02d:%02d", s.Start.Hour(), s.Start.Minute())
 	}
 	return s.Start.Format("Mon, January 02. 15:04")
+}
+
+func (s Stream) Color() string {
+	if s.Recording {
+		return "success"
+	} else if s.LiveNow {
+		return "danger"
+	} else if s.IsPast() {
+		return "warn"
+	} else {
+		return "info"
+	}
+}
+
+func (s Stream) GetJson(lhs []LectureHall) string {
+	var files []gin.H
+	for _, file := range s.Files {
+		files = append(files, gin.H{
+			"id":           file.ID,
+			"friendlyName": file.GetFriendlyFileName(),
+		})
+	}
+	lhName := "Selfstreaming"
+	for _, lh := range lhs {
+		if lh.ID == s.LectureHallID {
+			lhName = lh.Name
+			break
+		}
+	}
+
+	if m, err := json.Marshal(gin.H{
+		"lectureId":        s.Model.ID,
+		"courseId":         s.CourseID,
+		"seriesIdentifier": s.SeriesIdentifier,
+		"name":             s.Name,
+		"description":      s.Description,
+		"lectureHallId":    s.LectureHallID,
+		"lectureHallName":  lhName,
+		"streamKey":        s.StreamKey,
+		"isLiveNow":        s.LiveNow,
+		"isRecording":      s.Recording,
+		"isConverting":     s.StreamStatus == StatusConverting,
+		"isPast":           s.IsPast(),
+		"hasStats":         s.Stats != nil,
+		"files":            files,
+		"color":            s.Color(),
+		"start":            s.Start,
+		"end":              s.End,
+	}); err == nil {
+		return string(m)
+	}
+	return "null"
 }

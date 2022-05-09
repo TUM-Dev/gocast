@@ -1,4 +1,3 @@
-import { saveLectureName, saveLectureDescription } from "./edit-course";
 import { Get } from "./global";
 import { Calendar } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -43,31 +42,28 @@ export function addScheduleListener() {
             </p>
                 <div class="text-2">
                     <div class="flex"><p>${new Date(streamInfo["start"]).toLocaleString()}</p></div>
-                    <div class="flex"><span class="mr-2 font-semibold">Server: </span><p>${
-                        streamInfo["ingest"]
-                    }</p><i class="fas fa-copy ml-2 text-4 transition transition-colors hover:text-1" title="copy" onclick="copyToClipboard('${
-                    streamInfo["ingest"]
-                }')"></i></div>
                 </div>
-                <form onsubmit="saveLectureName(event, ${streamInfo["courseID"]}, ${streamInfo["streamID"]})"
+                <form onsubmit="admin.saveLectureName(event, ${streamInfo["courseID"]}, ${streamInfo["streamID"]})"
                     class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
                     <label for="lectureNameInput${streamInfo["streamID"]}" class="hidden">Lecture title</label>
                     <input id="lectureNameInput${streamInfo["streamID"]}"
-                        onfocus="focusNameInput(this, ${streamInfo["streamID"]})"
+                        onfocus="admin.focusNameInput(this, ${streamInfo["streamID"]})"
                         class="grow border-none" type="text" value="${streamInfo["name"]}"
                         placeholder="Lecture 2: Dark-Patterns I"
                         autocomplete="off">
                     <button id="nameSubmitBtn${streamInfo["streamID"]}"
                         class="fas fa-check ml-2 invisible text-gray-400 hover:text-purple-500"></button>
                 </form>
-                <form onsubmit="saveLectureDescription(event, ${streamInfo["courseID"]}, ${streamInfo["streamID"]})"
+                <form onsubmit="admin.saveLectureDescription(event, ${streamInfo["courseID"]}, ${
+                    streamInfo["streamID"]
+                })"
                     class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
                     <label for="lectureDescriptionInput${
                         streamInfo["streamID"]
                     }" class="hidden">Lecture description</label>
                     <textarea id="lectureDescriptionInput${streamInfo["streamID"]}"
                         rows="3"
-                        onfocus="focusDescriptionInput(this, ${streamInfo["streamID"]})"
+                        onfocus="admin.focusDescriptionInput(this, ${streamInfo["streamID"]})"
                         class="grow border-none"
                         placeholder="Add a nice description, links, and more. You can use Markdown."
                         autocomplete="off">${streamInfo["description"]}</textarea>
