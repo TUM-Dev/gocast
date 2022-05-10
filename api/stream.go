@@ -334,10 +334,12 @@ func deleteAttachment(c *gin.Context) {
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 	}
-	err = os.Remove(toDelete.Path)
-	if err != nil {
-		log.WithError(err).Error("could not delete file with path: " + toDelete.Path)
-		c.AbortWithStatus(http.StatusInternalServerError)
+	if !toDelete.IsAbsolutePath() {
+		err = os.Remove(toDelete.Path)
+		if err != nil {
+			log.WithError(err).Error("could not delete file with path: " + toDelete.Path)
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
 	}
 	err = dao.File.DeleteFile(toDelete.ID)
 	if err != nil {

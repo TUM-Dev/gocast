@@ -1,5 +1,5 @@
-import {Delete, postData, putData, showMessage} from "./global";
-import {StatusCodes} from "http-status-codes";
+import { Delete, postData, putData, showMessage } from "./global";
+import { StatusCodes } from "http-status-codes";
 
 export enum UIEditMode {
     none,
@@ -16,7 +16,7 @@ export class LectureList {
     }
 
     static triggerUpdate() {
-        const event = new CustomEvent("newlectures", {detail: LectureList.lectures});
+        const event = new CustomEvent("newlectures", { detail: LectureList.lectures });
         window.dispatchEvent(event);
     }
 }
@@ -26,7 +26,7 @@ class LectureFile {
     readonly fileType: number;
     readonly friendlyName: string;
 
-    constructor({id, fileType, friendlyName}) {
+    constructor({ id, fileType, friendlyName }) {
         this.id = id;
         this.fileType = fileType;
         this.friendlyName = friendlyName;
@@ -192,8 +192,7 @@ export class Lecture {
                             return msg;
                         }
                         // eslint-disable-next-line no-empty
-                    } catch (_) {
-                    }
+                    } catch (_) {}
                     return text;
                 }),
             );
@@ -299,24 +298,32 @@ export class Lecture {
     async deleteFile(fileId: number) {
         await fetch(`/api/stream/${this.lectureId}/files/${fileId}`, {
             method: "DELETE",
-        }).catch((err) => console.log(err)).then(() => {
-            this.files = this.files.filter((f) => f.id !== fileId)
-        });
+        })
+            .catch((err) => console.log(err))
+            .then(() => {
+                this.files = this.files.filter((f) => f.id !== fileId);
+            });
     }
 
     onFileDrop(e) {
         e.preventDefault();
         if (e.dataTransfer.items) {
-            for (let i = 0; i < e.dataTransfer.items.length; i++) {
-                if (e.dataTransfer.items[i].kind === "file") {
-                    this.postFile(e.dataTransfer.items[i].getAsFile());
+            const kind = e.dataTransfer.items[0].kind;
+            switch (kind) {
+                case "file": {
+                    this.postFile(e.dataTransfer.items[0].getAsFile());
+                    break;
+                }
+                case "string": {
+                    this.postFileAsURL(e.dataTransfer.getData("URL"));
                 }
             }
-        } else {
-            for (let i = 0; i < e.dataTransfer.files.length; i++) {
-                this.postFile(e.dataTransfer.files[i]);
-            }
         }
+    }
+
+    hasAttachments(): boolean {
+        const attachments = this.files.filter((f) => f.fileType !== 0);
+        return attachments.length > 0;
     }
 
     private async postFile(file) {
@@ -325,12 +332,28 @@ export class Lecture {
         await fetch(`/api/stream/${this.lectureId}/files?type=file`, {
             method: "POST",
             body: formData,
-        }).then((res) => res.json()
-            .then((id) => {
-                const friendlyName = file.name
-                const fileType = 1
-                this.files.push(new LectureFile({id, fileType, friendlyName}))
-            }))
+        }).then((res) =>
+            res.json().then((id) => {
+                const friendlyName = file.name;
+                const fileType = 1;
+                this.files.push(new LectureFile({ id, fileType, friendlyName }));
+            }),
+        );
+    }
+
+    private async postFileAsURL(fileURL) {
+        const formData = new FormData();
+        formData.append("file_url", fileURL);
+        await fetch(`/api/stream/${this.lectureId}/files?type=url`, {
+            method: "POST",
+            body: formData,
+        }).then((res) =>
+            res.json().then((id) => {
+                const friendlyName = fileURL.substring(fileURL.lastIndexOf("/") + 1);
+                const fileType = 1;
+                this.files.push(new LectureFile({ id, fileType, friendlyName }));
+            }),
+        );
     }
 }
 
@@ -357,14 +380,14 @@ export async function deleteLectures(cid: number, lids: number[]) {
 }
 
 export function saveLectureHall(streamIds: number[], lectureHall: string) {
-    return postData("/api/setLectureHall", {streamIds, lectureHall: parseInt(lectureHall)});
+    return postData("/api/setLectureHall", { streamIds, lectureHall: parseInt(lectureHall) });
 }
 
 // Used by schedule.ts
 export function saveLectureDescription(e: Event, cID: number, lID: number) {
     e.preventDefault();
     const input = (document.getElementById("lectureDescriptionInput" + lID) as HTMLInputElement).value;
-    postData("/api/course/" + cID + "/updateDescription/" + lID, {name: input}).then((res) => {
+    postData("/api/course/" + cID + "/updateDescription/" + lID, { name: input }).then((res) => {
         if (res.status == StatusCodes.OK) {
             document.getElementById("descriptionSubmitBtn" + lID).classList.add("invisible");
         } else {
@@ -377,7 +400,7 @@ export function saveLectureDescription(e: Event, cID: number, lID: number) {
 export function saveLectureName(e: Event, cID: number, lID: number) {
     e.preventDefault();
     const input = (document.getElementById("lectureNameInput" + lID) as HTMLInputElement).value;
-    postData("/api/course/" + cID + "/renameLecture/" + lID, {name: input}).then((res) => {
+    postData("/api/course/" + cID + "/renameLecture/" + lID, { name: input }).then((res) => {
         if (res.status == StatusCodes.OK) {
             document.getElementById("nameSubmitBtn" + lID).classList.add("invisible");
         } else {
@@ -502,7 +525,7 @@ export function createLectureForm() {
                     // todo: file: undefined,
                 };
                 if (this.formData.recurring) {
-                    for (const date of this.formData.recurringDates.filter(({enabled}) => enabled)) {
+                    for (const date of this.formData.recurringDates.filter(({ enabled }) => enabled)) {
                         payload.dateSeries.push(date.date.toISOString());
                     }
                 }
@@ -537,7 +560,7 @@ export function createLectureForm() {
                     return;
                 }
                 window.dispatchEvent(
-                    new CustomEvent("voduploadprogress", {detail: Math.floor(100 * (e.loaded / e.total))}),
+                    new CustomEvent("voduploadprogress", { detail: Math.floor(100 * (e.loaded / e.total)) }),
                 );
             };
             xhr.open("POST", `/api/course/${this.courseID}/uploadVOD?start=${this.formData.start}`);
@@ -549,7 +572,7 @@ export function createLectureForm() {
 export function deleteCourse(courseID: string) {
     if (confirm("Do you really want to delete this course? This includes all associated lectures.")) {
         const url = `/api/course/${courseID}/`;
-        fetch(url, {method: "DELETE"}).then((res) => {
+        fetch(url, { method: "DELETE" }).then((res) => {
             if (!res.ok) {
                 alert("Couldn't delete course.");
             } else {
