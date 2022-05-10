@@ -37,6 +37,7 @@ require (
 )
 
 require (
+	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
 	github.com/crewjam/saml v0.4.6
 	github.com/golang/mock v1.6.0
@@ -48,7 +49,6 @@ require (
 	github.com/Azure/go-ntlmssp v0.0.0-20211209120228-48547f28849e // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
-	github.com/Masterminds/sprig/v3 v3.2.2 // indirect
 	github.com/antchfx/xpath v1.2.0 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/beevik/etree v1.1.0 // indirect
