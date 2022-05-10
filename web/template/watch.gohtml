@@ -208,18 +208,18 @@
             <div x-data="{descriptionlen: {{len .Description}}, less: true}"
                  class="text-3 py-4 video-description lg:col-span-2" x-show="descriptionlen > 0">
                 <h6 class="font-bold text-3 pb-3">Video Description</h6>
-                    <div :class="less && 'truncate-children'"
-                         @descriptionupdate.window="$el.innerHTML=$event.detail.description; descriptionlen=$event.detail.description.length">
-                        {{if .Description}}{{.Description}}{{end}}
-                    </div>
-                    <button x-show="descriptionlen>128" class='text-xs text-gray-500 dark:text-gray-400 uppercase mt-2'
-                            @click="less = !less" x-text="less ? 'show more' : 'show less'">show less
-                    </button>
+                <div :class="less && 'truncate-children'"
+                     @descriptionupdate.window="$el.innerHTML=$event.detail.description; descriptionlen=$event.detail.description.length">
+                    {{if .Description}}{{.Description}}{{end}}
                 </div>
-                <!-- Video Sections -->
-                {{if $stream.VideoSections}}
-                    {{template "videosections" $stream}}
-                {{end}}
+                <button x-show="descriptionlen>128" class='text-xs text-gray-500 dark:text-gray-400 uppercase mt-2'
+                        @click="less = !less" x-text="less ? 'show more' : 'show less'">show less
+                </button>
+            </div>
+            <!-- Video Sections -->
+            {{if $stream.VideoSections}}
+                {{template "videosections" $stream}}
+            {{end}}
 
             {{if .IsHighlightPage}}
                 <ul class="w-full m-auto mb-4">
