@@ -14,9 +14,11 @@ export class VideoSection {
         this.streamID = streamID;
         this.unsavedChanges = false;
         this.resetCurrent();
+        this.load();
     }
-    async load() {
-        await fetch(`/api/stream/${this.streamID}/sections`)
+
+    load() {
+        return fetch(`/api/stream/${this.streamID}/sections`)
             .then((res) => res.json())
             .then((sections) => {
                 if (sections === undefined || sections === null) {

@@ -44,7 +44,9 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	adminOfCourseGroup.POST("/presets", routes.updatePresets)
 	adminOfCourseGroup.POST("/deleteLectures", routes.deleteLectures)
 	adminOfCourseGroup.POST("/renameLecture/:streamID", routes.renameLecture)
+	adminOfCourseGroup.POST("/updateLectureSeries/:streamID", routes.updateLectureSeries)
 	adminOfCourseGroup.POST("/updateDescription/:streamID", routes.updateDescription)
+	adminOfCourseGroup.DELETE("/deleteLectureSeries/:streamID", routes.deleteLectureSeries)
 	adminOfCourseGroup.POST("/addUnit", routes.addUnit)
 	adminOfCourseGroup.POST("/submitCut", routes.submitCut)
 	adminOfCourseGroup.POST("/deleteUnit/:unitID", routes.deleteUnit)
@@ -495,8 +497,42 @@ func (r coursesRoutes) renameLecture(c *gin.Context) {
 	}
 }
 
+func (r coursesRoutes) updateLectureSeries(c *gin.Context) {
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	if err := dao.UpdateLectureSeries(stream); err != nil {
+		log.WithError(err).Error("couldn't update lecture series")
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't update lecture series")
+		return
+	}
+	// Series changes could be theoretically broadcasted here through the websocket to live listeners.
+}
+
 type renameLectureRequest struct {
 	Name string
+}
+
+func (r coursesRoutes) deleteLectureSeries(c *gin.Context) {
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	if stream.SeriesIdentifier == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "the stream is not in a lecture series")
+		return
+	}
+
+	if err := dao.DeleteLectureSeries(stream.SeriesIdentifier); err != nil {
+		log.WithError(err).Error("couldn't delete lecture series")
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't delete lecture series")
+		return
+	}
 }
 
 func (r coursesRoutes) deleteLectures(c *gin.Context) {

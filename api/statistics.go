@@ -58,14 +58,10 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		resp.Data.Datasets[0].Label = "Sum(viewers)"
 		resp.Data.Datasets[0].Data = res
 		c.JSON(http.StatusOK, resp)
-	case "activity":
+	case "activity-live":
 		resLive, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, true)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsLive failed")
-		}
-		resVod, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, false)
-		if err != nil {
-			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsVod failed")
 		}
 		resp := chartJs{
 			ChartType: "line",
@@ -76,11 +72,22 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		resp.Data.Datasets[0].Data = resLive
 		resp.Data.Datasets[0].BorderColor = "#d12a5c"
 		resp.Data.Datasets[0].BackgroundColor = ""
-		resp.Data.Datasets = append(resp.Data.Datasets, newChartJsDataset())
-		resp.Data.Datasets[1].Label = "VoD"
-		resp.Data.Datasets[1].Data = resVod
-		resp.Data.Datasets[1].BorderColor = "#2a7dd1"
-		resp.Data.Datasets[1].BackgroundColor = ""
+
+		c.JSON(http.StatusOK, resp)
+	case "activity-vod":
+		resVod, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, false)
+		if err != nil {
+			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsVod failed")
+		}
+		resp := chartJs{
+			ChartType: "line",
+			Data:      chartJsData{Datasets: []chartJsDataset{newChartJsDataset()}},
+			Options:   newChartJsOptions(),
+		}
+		resp.Data.Datasets[0].Label = "VoD"
+		resp.Data.Datasets[0].Data = resVod
+		resp.Data.Datasets[0].BorderColor = "#2a7dd1"
+		resp.Data.Datasets[0].BackgroundColor = ""
 		c.JSON(http.StatusOK, resp)
 	case "numStudents":
 		res, err := r.StatisticsDao.GetCourseNumStudents(cid)

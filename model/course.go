@@ -183,6 +183,11 @@ func (c Course) HasNextLecture() bool {
 	return false
 }
 
+// HasStreams checks whether the lecture has any streams (recorded, live or upcoming) associated to it
+func (c Course) HasStreams() bool {
+	return len(c.Streams) > 0
+}
+
 // GetRecordings returns all recording of this course as streams
 func (c Course) GetRecordings() []Stream {
 	var recordings []Stream

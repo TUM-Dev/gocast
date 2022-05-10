@@ -3,424 +3,64 @@
     <script src="/static/node_modules/chart.js/dist/chart.min.js"></script>
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
     {{$course := .IndexData.TUMLiveContext.Course}}
+    {{$lecture := .IndexData.TUMLiveContext.Stream}}
     <div class="text-1 mt-4" x-data="{userId: {{.IndexData.TUMLiveContext.User.Model.ID}} }">
-        <div class="min-w-screen flex items-center justify-center">
-            <div class="w-full lg:w-5/6">
+        <div class="min-w-screen items-center justify-center">
+            <div class="w-full m-auto lg:w-5/6">
                 <h1 class="mb-4">{{$course.Name}}</h1>
                 <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
                                                                     value="{{$course.Model.ID}}"></label>
-                <form class="p-4" method="post">
-                    {{template "course_settings" $course}}
-                    <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
-                        <input name="submit" class="btn border-0" type="submit" value="Save Settings">
-                        {{if $course.TUMOnlineIdentifier}}
-                            <input name="submit" class="btn border-0" type="submit"
-                                   value="Reload Enrollments">
-                            <input name="submit" class="btn border-0" type="submit"
-                                   value="Reload Lectures From TUMOnline">
-                        {{end}}
-                        <a class="btn border-0 font-semibold" href="{{$course.ID}}/stats">Statistics</a>
+                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
+                    <h2 class="text-2 text-2xl font-semibold">Settings</h2>
+                    <div class="">
+                        {{template "course_settings" $course}}
                     </div>
-                </form>
-
-                {{template "course-admin-management" $course}}
-                {{template "camera-presets"}}
-
-                <div x-data="{ filterPast: false, selectedLectures: [], selectedLectureHallId: 0,
-                               sortAsc: $persist(false).as('courseStreamsSortOrder') }"
-                     class="mt-8">
-                    {{$user := .IndexData.TUMLiveContext.User}}
-                    {{$ingestBase := .IngestBase}}
-                    {{$lectureHalls := .LectureHalls}}
-                    <div class="flex justify-between h-14 border-b dark:border-secondary mb-2">
-                        <h2 class="my-auto font-bold">Lectures</h2>
-                        <button class="border bg-white border-gray-300 rounded w-20 my-auto shadow-sm text-gray-600
-                                       hover:border-black hover:text-black
-                                       dark:bg-gray-700 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
-                                       dark:hover:text-white"
-                                @click="sortAsc = !sortAsc;">
-                            <span class="text-sm font-semibold uppercase m-auto"
-                                  x-text="sortAsc ? '&#x25B2; asc' : '&#x25BC; desc'">&#x25BC; desc</span>
-                        </button>
-                    </div>
-                    <div class="flex justify-between mt-2 mb-2">
-                        <div class="flex">
-                            <button @click="admin.deleteLectures({{$course.Model.ID}}, selectedLectures.map(({id}) => id))"
-                                    :disabled="selectedLectures.length == 0" class="btn">
-                                Delete
-                                <b x-text="selectedLectures.length.toString()"></b>
-                                <span x-text="selectedLectures.length == 1 ? 'Lecture' : 'Lectures'"></span>
-                            </button>
-
-                            {{if eq $user.Role 1}}
-                                <div class="flex items-center">
-                                    <label class="mx-2">
-                                        <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
-                                                id="lectureHallBulkSelect"
-                                                x-model="selectedLectureHallId"
-                                                :disabled="selectedLectures.length == 0 || selectedLectures.some(({isPast}) => isPast)">
-                                            <option class="text-gray-300" value="0">Self streaming
-                                            </option>
-                                            {{range $lectureHall := $lectureHalls}}
-                                                <option value="{{$lectureHall.Model.ID}}" class="text-gray-300">
-                                                    {{$lectureHall.Name}}
-                                                </option>
-                                            {{end}}
-                                        </select>
-                                    </label>
-                                    <button
-                                            x-show="selectedLectures.length > 0 && !selectedLectures.some(({isPast}) => isPast)"
-                                            @click="admin.saveLectureHall(selectedLectures.map(({id}) => id), selectedLectureHallId).then(() => { window.location.reload(); })"
-                                    >
-                                        <i class="align-middle fas fa-check text-gray-300"></i>
-                                    </button>
-                                </div>
-                            {{end}}
-                        </div>
-                        <div>
-                            <label class="inline-flex items-center">
-                                <input class="w-auto form-checkbox" type="checkbox" x-model="filterPast">
-                                <span class="ml-2">Filter past lectures</span>
-                            </label>
-                        </div>
-                    </div>
-                    <ul class="dark:bg-secondary bg-gray-100 rounded">
-                        {{if not $course.Streams}}
-                            <p class="text-3 p-4">It might take a minute to load your lectures from TUMOnline</p>
-                        {{end}}
-                        <div class="flex" :class="sortAsc ? 'flex-col' : 'flex-col-reverse'">
-                            {{range $lecture := $course.Streams }}
-                                <li x-show="!filterPast || !{{$lecture.IsPast}}"
-                                    id="lecture-li-{{$lecture.Model.ID}}"
-                                    class="w-full p-6 dark:hover:bg-primary hover:bg-white border-b-2 dark:border-primary border-white relative">
-                                    <div class="flex">
-                                        <div class="w-1/4">
-                                            <div class="text-3 font-semibold">
-                                                <input @change="$event.target.checked ? selectedLectures.push({ id: {{$lecture.Model.ID}}, isPast: {{$lecture.IsPast}} }) : (selectedLectures = selectedLectures.filter(({id}) => id != {{$lecture.Model.ID}}))"
-                                                       class="w-auto mr-2" type="checkbox"/>
-                                                {{$lecture.Start.Weekday}} {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}
-                                                <i class="fas fa-trash hover:text-1 px-2"
-                                                   title="Delete Lecture"
-                                                   onclick="admin.deleteLecture({{$course.Model.ID}}, {{$lecture.Model.ID}})"></i>
-                                            </div>
-                                            <div class="text-3 font-sans">
-                                                {{printf "%02d:%02d - %02d:%02d" $lecture.Start.Hour $lecture.Start.Minute $lecture.End.Hour $lecture.End.Minute}}
-                                            </div>
-                                            {{if $lecture.IsConverting}}
-                                                <div title="This video is still converting" class="font-semibold bg-indigo-500 w-auto inline-block px-2 text-1 rounded-full">
-                                                    <span class="animate animate-pulse">Converting</span>
-                                                </div>
-                                            {{else}}
-                                                {{if $lecture.Recording}}
-                                                    {{if $lecture.VodViews}}<p
-                                                            class="text-4 text-sm">{{$lecture.VodViews}}
-                                                        VoD views</p>{{end}}
-                                                    <div class="font-semibold bg-success w-auto inline-block px-2 text-1 rounded-full">
-                                                        VoD
-                                                    </div>
-                                                {{else if $lecture.LiveNow}}
-                                                    <div class="font-semibold bg-danger w-auto inline-block px-2 text-1 rounded-full">
-                                                        Live
-                                                    </div>
-                                                {{else if $lecture.IsPast}}
-                                                    <div class="font-semibold bg-warn w-auto inline-block px-2 text-1 rounded-full">
-                                                        Past
-                                                    </div>
-                                                {{else}}
-                                                    <div class="font-semibold bg-info w-auto inline-block px-2 text-1 rounded-full">
-                                                        Scheduled
-                                                    </div>
-                                                {{end}}
-                                            {{end}}
-                                        </div>
-                                        <div class="w-3/4">
-                                            <form onsubmit="admin.saveLectureName(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
-                                                  class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
-                                                <label for="lectureNameInput{{$lecture.Model.ID}}" class="hidden">Lecture
-                                                    title</label>
-                                                <input id="lectureNameInput{{$lecture.Model.ID}}"
-                                                       onfocus="admin.focusNameInput(this, {{$lecture.Model.ID}})"
-                                                       class="grow border-none" type="text"
-                                                       value="{{$lecture.Name}}"
-                                                       placeholder="Lecture 2: Dark-Patterns I"
-                                                       autocomplete="off">
-                                                <button id="nameSubmitBtn{{$lecture.Model.ID}}"
-                                                        class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
-                                            </form>
-                                            <div class="w-full mt-3">
-                                                <div class="w-full flex justify-center">
-                                                    <i onclick="admin.toggleExtraInfos(this, {{$lecture.Model.ID}})"
-                                                       class="fas fa-angle-double-down hover:text-purple-500"></i>
-                                                </div>
-                                                <div id="extraInfos{{$lecture.Model.ID}}" class="hidden">
-                                                    <form onsubmit="admin.saveLectureDescription(event, {{$course.Model.ID}}, {{$lecture.Model.ID}})"
-                                                          class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
-                                                        <label for="lectureDescriptionInput{{$lecture.Model.ID}}"
-                                                               class="hidden">Lecture description</label>
-                                                        <textarea id="lectureDescriptionInput{{$lecture.Model.ID}}"
-                                                                  onfocus="admin.focusDescriptionInput(this, {{$lecture.Model.ID}})"
-                                                                  class="grow border-none"
-                                                                  placeholder="Add a nice description, links, and more. You can use Markdown."
-                                                                  autocomplete="off">{{$lecture.Description}}</textarea>
-                                                        <button id="descriptionSubmitBtn{{$lecture.Model.ID}}"
-                                                                class="fas fa-check ml-2 invisible hover:text-purple-500"></button>
-                                                    </form>
-                                                    {{if and (not $lecture.IsPast) (not $lecture.Recording)}}
-                                                    {{if eq $user.Role 1}}
-                                                        <div class="flex"
-                                                             x-data="{ streamSelectedLectureHallId: {{$lecture.LectureHallID}}, showSubmit: false }">
-                                                            <label class="mx-2">
-                                                                <span>Select Lecture Hall</span>
-                                                                <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
-                                                                        id="lectureHallSelector{{$lecture.Model.ID}}"
-                                                                        @change="showSubmit = true"
-                                                                        x-model="streamSelectedLectureHallId">
-                                                                    <option class="text-gray-300" value="0">Self
-                                                                        streaming
-                                                                    </option>
-                                                                    {{range $lectureHall := $lectureHalls}}
-                                                                        <option class="text-gray-300"
-                                                                                value="{{$lectureHall.Model.ID}}"{{if eq $lecture.LectureHallID $lectureHall.Model.ID}} selected{{end}}>
-                                                                            {{$lectureHall.Name}}
-                                                                        </option>
-                                                                    {{end}}
-                                                                </select>
-                                                            </label>
-                                                            <a id="applyLectureHall{{$lecture.Model.ID}}"
-                                                               class="flex items-center"
-                                                               x-show="showSubmit"
-                                                               @click="admin.saveLectureHall([{{$lecture.Model.ID}}], streamSelectedLectureHallId).then(() => { showSubmit = false; })">
-                                                                <i class="align-middle fas fa-check text-gray-300 hover:text-purple-500"></i>
-                                                            </a>
-                                                        </div>
-                                                    {{end}}
-                                                    {{if not $lecture.LectureHallID}}
-                                                        <p class="mt-2">
-                                                            <span class="font-semibold">Stream Server: </span><span>{{$ingestBase}}stream?secret={{$lecture.StreamKey}}</span>
-                                                            <i class="fas fa-clipboard hover:text-purple-500"
-                                                               onclick="admin.copyToClipboard('{{$ingestBase}}stream?secret={{$lecture.StreamKey}}')"></i>
-                                                            <br>
-                                                            <span class="font-semibold">Stream Key: </span><span>{{$course.Slug}}-{{$lecture.ID}}</span><br>
-                                                            {{if ne $user.Role 1}}
-                                                                <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
-                                                            {{end}}
-                                                        </p>
-                                                    {{else if eq $user.Role 2}}
-                                                        This lecture will be streamed from <span
-                                                                class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}{{if eq $lectureHall.Model.ID $lecture.LectureHallID}}{{$lectureHall.Name}}{{end}}{{end}}</span>.
-                                                        If you need this changed or want to stream from home (with obs, zoom etc.), please reach out to the RBG.
-                                                    {{end}}
-                                                    {{else if $lecture.Recording}}
-                                                    <div class="mt-4 content-center">
-                                                        <!-- download and stats button -->
-                                                        <div class="flex space-x-2">
-                                                            {{if $lecture.Files}}
-                                                                <span>
-                                                                    {{template "downloadBtn" $lecture.Files}}
-                                                                </span>
-                                                            {{end}}
-                                                            {{if $lecture.Stats}}
-                                                                <a>
-                                                                    <i class="fas fa-chart-line text-4 text-lg hover:text-1"
-                                                                       title="Live Statistics"
-                                                                       onclick="admin.showStats({{$lecture.Model.ID}})"></i>
-                                                                </a>
-                                                            {{end}}
-                                                        </div>
-
-                                                        <!-- create video sections -->
-                                                        {{template "editvideosections" $lecture}}
-
-                                                        {{if $lecture.Stats}}
-                                                            <div id="statsBox{{$lecture.Model.ID}}" class="hidden">
-                                                                <canvas id="stats{{$lecture.Model.ID}}" class="chartjs"
-                                                                        width="undefined" height="undefined"></canvas>
-                                                            </div>
-                                                            <script>
-                                                                new Chart(
-                                                                    document.getElementById("stats{{$lecture.Model.ID}}"), {
-                                                                        "type": "line",
-                                                                        "data": {
-                                                                            "labels": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}"{{printf "%2d:%02d" $stat.Time.Hour $stat.Time.Minute}}",{{end}} {{end}}],
-                                                                            "datasets": [{
-                                                                                "label": "Viewers",
-                                                                                "data": [{{range $stat := $lecture.Stats}}{{if $stat.Live}}{{$stat.Viewers}}, {{end}}{{end}}],
-                                                                                "fill": false,
-                                                                                "borderColor": "rgb(75, 192, 192)",
-                                                                                "lineTension": 0.1
-                                                                            }]
-                                                                        },
-                                                                        "options": {
-                                                                            scales: {y: {beginAtZero: true}}
-                                                                        }
-                                                                    }
-                                                                );
-                                                            </script>
-                                                        {{end}}
-                                                        {{end}}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                </li>
-                            {{end}}
-                        </div>
-                        <li class="w-full p-6 dark:hover:bg-primary hover:bg-white border-b-2 border-primary">
-                            <form method="post" action="/api/createLecture"
-                                  x-data="admin.createLectureForm()"
-                                  @submit.prevent="submitData"
-                                  x-init="courseID = {{$course.Model.ID}}">
-                                <div class="flex">
-                                    <div class="w-1/4">
-                                        <div class="text-1 font-semibold">Create Lecture</div>
-                                        <label>
-                                            <input type="checkbox" x-model="formData.vodup" @change="(v) => v && (formData.recurring = false)" class="w-auto">
-                                            <span class="text-3">VoD Upload</span>
-                                        </label><br>
-                                        <label>
-                                            <input type="checkbox" :disabled="formData.premiere || formData.vodup" x-model="formData.recurring" class="w-auto">
-                                            <span class="text-3">Recurring Event</span>
-                                        </label>
-                                    </div>
-                                    <div class="w-3/4">
-                                        <div class="dark:hover:bg-primary hover:bg-white">
-                                            <div class="flex flex-col md:flex-row">
-                                                <label for="name" class="md:w-1/2 w-full" x-show="!loading">
-                                                    <span class="font-semibold p-2">Lecture Name</span>
-                                                    <input name="name" id="name" type="text" x-model="formData.title"
-                                                           placeholder="L01: Binary Trees"/>
-                                                </label>
-                                                <label for="start" class="md:w-1/4 w-full" x-show="!loading">
-                                                    <span class="font-semibold p-2">Start</span>
-                                                    <input name="start" type="text" placeholder="2021-04-08 14:00"
-                                                           id="start" x-model="formData.start" x-ref="start"
-                                                           @change="() => setTimeout(() => { regenerateRecurringDates(); recalculateDuration(); }, 100)"
-                                                           x-init="flatpickr($refs.start, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})"/>
-                                                </label>
-                                                <label x-show="!formData.premiere && !formData.vodup && !loading"
-                                                       for="end" class="md:w-1/4 w-full">
-                                                    <span class="font-semibold p-2">End</span>
-                                                    <span x-show="formData.formatedDuration != ''" class="text-sm font-light opacity-75">
-                                                        ( <span x-text="formData.formatedDuration"></span> )
-                                                    </span>
-                                                    <input name="end" type="text" placeholder="16:00" id="end"
-                                                           x-model="formData.end"
-                                                           @change="() => setTimeout(() => recalculateDuration(), 100)"
-                                                           x-ref="end"
-                                                           x-init="flatpickr($refs.end, {enableTime: true, noCalendar: true, dateFormat: 'H:i', time_24hr: true })"/>
-                                                </label>
-                                                <label class="relative"
-                                                       x-show="formData.premiere || formData.vodup && !loading">
-                                                    <span class="font-semibold p-2">Video File <span class="text-5">(mp4, if possible h264)</span></span>
-                                                    <input type="file" accept="video/mp4" class="border-0"
-                                                           x-on:change="formData.file = Object.values($event.target.files)">
-                                                </label>
-
-                                            </div>
-                                        </div>
-                                        <div class="mt-4">
-                                            <div class="flex items-center">
-                                                <label class="mx-2"
-                                                       x-show="!formData.premiere && !formData.vodup && !loading">
-                                                    <span class="font-semibold p-2">Lecture Hall:</span>
-                                                    <select class="text-gray-300 dark:bg-secondary bg-gray-100 p-2"
-                                                            id="lectureHallBulkSelect"
-                                                            x-model="formData.lectureHallId">
-                                                        <option class="text-gray-300" value="0">Self streaming
-                                                        </option>
-                                                        {{range $lectureHall := $lectureHalls}}
-                                                            <option value="{{$lectureHall.Model.ID}}"
-                                                                    class="text-gray-300">
-                                                                {{$lectureHall.Name}}
-                                                            </option>
-                                                        {{end}}
-                                                    </select>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="mt-4">
-                                            <div class="flex" x-show="formData.recurring && !loading">
-                                                    <div class="w-1/4 pl-2">
-                                                        <span class="font-semibold mb-6">Interval</span><br>
-                                                        <label>
-                                                            <input type="radio" value="daily" x-model="formData.recurringInterval" class="w-auto" @change="regenerateRecurringDates">
-                                                            <span class="text-3">Repeat Daily</span>
-                                                        </label><br>
-                                                        <label>
-                                                            <input type="radio" value="weekly" x-model="formData.recurringInterval" class="w-auto" @change="regenerateRecurringDates">
-                                                            <span class="text-3">Repeat Weekly</span>
-                                                        </label><br>
-                                                        <label>
-                                                            <input type="radio" value="monthly" x-model="formData.recurringInterval" class="w-auto" @change="regenerateRecurringDates">
-                                                            <span class="text-3">Repeat Monthly</span>
-                                                        </label><br>
-                                                    </div>
-                                                    <div class="w-1/4 pl-2">
-                                                        <label for="events-count" class="w-full">
-                                                            <span class="font-semibold p-2">Count</span>
-                                                            <input name="events-count" type="number" placeholder="14" id="end" min="1" x-model="formData.eventsCount" @change="regenerateRecurringDates" @keyup="regenerateRecurringDates"/>
-                                                        </label>
-                                                    </div>
-                                                    <div class="w-1/2 pl-2">
-                                                        <span class="font-semibold mb-6">Dates</span><br>
-                                                        <span x-show="formData.start == ''" class="ml-2 opacity-75">- Please set "start" first -</span>
-                                                        <ul class="ml-2" x-show="formData.start != ''">
-                                                            <li
-                                                                x-bind:style="{ 'cursor': 'default' }"
-                                                            >
-                                                                <i class="far fa-check-square"></i>
-                                                                <span x-text="(new Date(formData.start)).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
-                                                            </li>
-                                                            <template x-for="date in formData.recurringDates">
-                                                                <li
-                                                                    x-bind:style="{ 'cursor': 'pointer', 'opacity': date.enabled ? '1' : '0.3' }"
-                                                                    @click="() => (date.enabled = !date.enabled)"
-                                                                >
-                                                                    <i x-show="date.enabled" class="far fa-check-square"></i>
-                                                                    <i x-show="!date.enabled" class="far fa-square"></i>
-                                                                    <span x-text="date.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
-                                                                </li>
-                                                            </template>
-                                                        </ul>
-                                                    </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mt-8">
-                                    <button class="btn" type="submit" id="createLectureBtn">
-                                        <span x-show="!loading">
-                                            <i class="fas fa-check"></i>
-                                            <span
-                                                    x-text="formData.recurring && formData.recurringDates.filter(({enabled}) => enabled).length > 0
-                                                        ? `Create ${(formData.recurringDates.filter(({enabled}) => enabled).length + 1).toString()} Lectures`
-                                                        : 'Create Lecture'"
-                                            ></span>
-                                        </span>
-                                        <span x-show="loading">
-                                            <i class="fas fa-circle-notch text-4 animate-spin"></i> <span @voduploadprogress.window="(e) => progress=e.detail" x-data="{ progress: undefined }" x-text="progress?progress+'%':'0%'"></span>
-                                        </span>
-                                    </button>
-                                    <span class="text-danger" x-show="error">Something went wrong.</span>
-                                </div>
-                            </form>
-                        </li>
-                    </ul>
-                    {{template "externalParticipants" $course}}
                 </div>
-                <div class="mt-7 mb-5">
-                    <div class="flex h-14 border-b dark:border-secondary mb-2">
-                        <h2 class="text-red-400 dark:text-red-500 font-bold my-auto">
-                            <i class="fas fa-exclamation-triangle mr-2"></i>
-                            Dangerzone
-                        </h2>
+
+                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
+                    <h2 class="text-2 text-2xl font-semibold">Course Admins</h2>
+                    <div class="">
+                        {{template "course-admin-management" $course}}
                     </div>
-                    <button class="btn bg-red-400 hover:bg-red-500 dark:bg-red-500 dark:hover:bg-red-600 border-0 rounded"
-                            @click="admin.deleteCourse('{{$course.Model.ID}}')">
-                        <span class="font-semibold text-white"><i class="far fa-trash-alt mr-2"></i>Delete course and all associated lectures</span>
-                    </button>
                 </div>
+
+                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
+                    <h2 class="text-2 text-2xl font-semibold">Camera Presets</h2>
+                    <div class="">
+                        {{template "camera-presets"}}
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
+                    <h2 class="text-2 text-2xl font-semibold">New Lecture</h2>
+                    <div class="">
+                        {{template "create-lecture-form" .}}
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
+                    <h2 class="text-2 text-2xl font-semibold">Lectures</h2>
+                    <div class="">
+                        {{template "course-lecture-management" .}}
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
+                    <h2 class="text-2 text-2xl font-semibold">External Participants</h2>
+                    <div class="">
+                        {{template "externalParticipants" $course}}
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
+                    <h2 class="text-2 text-2xl font-semibold">Dangerzone</h2>
+                    <div class="">
+                        {{template "dangerzone" $course}}
+                    </div>
+                </div>
+
             </div>
+
         </div>
     </div>
 {{end}}

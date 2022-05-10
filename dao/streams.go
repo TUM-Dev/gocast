@@ -154,6 +154,64 @@ func (d streamsDao) GetStreamByID(ctx context.Context, id string) (stream model.
 	return res, nil
 }
 
+//AddVodView Adds a stat entry to the database or increases the one existing for this hour
+func AddVodView(id string) error {
+	intId, err := strconv.Atoi(id)
+	if err != nil {
+		return err
+	}
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		t := time.Now()
+		tFrom := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, time.Local)
+		tUntil := tFrom.Add(time.Hour)
+		var stat *model.Stat
+		err := DB.First(&stat, "live = 0 AND time BETWEEN ? and ?", tFrom, tUntil).Error
+		if err != nil { // first view this hour, create
+			stat := model.Stat{
+				Time:     tFrom,
+				StreamID: uint(intId),
+				Viewers:  1,
+				Live:     false,
+			}
+			err = tx.Create(&stat).Error
+			return err
+		} else {
+			stat.Viewers += 1
+			err = tx.Save(&stat).Error
+			return err
+		}
+	})
+	return err
+}
+
+func UpdateStream(stream model.Stream) error {
+	defer Cache.Clear()
+	err := DB.Model(&stream).Updates(map[string]interface{}{
+		"name":        stream.Name,
+		"description": stream.Description,
+		"start":       stream.Start,
+		"end":         stream.End}).Error
+	return err
+}
+
+func UpdateLectureSeries(stream model.Stream) error {
+	defer Cache.Clear()
+	err := DB.Table("streams").Where(
+		"`series_identifier` = ? AND `deleted_at` IS NULL",
+		stream.SeriesIdentifier,
+	).Updates(map[string]interface{}{
+		"name":        stream.Name,
+		"description": stream.Description,
+	}).Error
+	return err
+}
+
+func DeleteLectureSeries(seriesIdentifier string) error {
+	defer Cache.Clear()
+	err := DB.Delete(&model.Stream{}, "`series_identifier` = ?", seriesIdentifier).Error
+	return err
+}
+
 // GetWorkersForStream retrieves all workers for a given stream with streamID
 func (d streamsDao) GetWorkersForStream(stream model.Stream) ([]model.Worker, error) {
 	var res []model.Worker
