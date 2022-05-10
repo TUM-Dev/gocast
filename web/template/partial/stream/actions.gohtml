@@ -8,7 +8,7 @@
     <span class="flex content-center space-x-2">
         {{/* Feedback button */}}
         {{if $user}}
-            {{if ($user.IsAdminOfCourse $course)}}
+            {{if not ($user.IsAdminOfCourse $course)}}
                 <button class="m-auto" title="Technical problems? Send us feedback!" @click="$dispatch('issue')">
                     <i class="fas fa-exclamation-triangle text-4 hover:text-1"></i>
                 </button>

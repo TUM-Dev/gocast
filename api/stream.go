@@ -182,7 +182,7 @@ func reportStreamIssue(c *gin.Context) {
 
 	// Build stream URL, e.g. https://live.rbg.tum.de/w/gbs/1234
 	streamUrl := tools.Cfg.WebUrl + "/w/" + course.Slug + "/" + fmt.Sprintf("%d", stream.ID)
-	categories := map[uint8]string{1: "🎥 Camera", 2: "🎤 Microphone", 3: "🔊 Audio", 4: "🎬 Video", 5: "Other"}
+	categories := map[uint8]string{1: "🎥 Camera", 2: "🎤 Microphone", 3: "🔊 Audio", 4: "🎬 Video", 5: "💡Light", 6: "Other"}
 	var categoryList []string
 	for _, category := range alert.Categories {
 		categoryList = append(categoryList, categories[category])
