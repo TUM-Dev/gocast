@@ -10,8 +10,15 @@ export enum UIEditMode {
 export class LectureList {
     static lectures: Lecture[] = [];
 
-    static init(initialState, triggerUpdateFunc) {
-        LectureList.lectures = initialState;
+    static init(initialState: Lecture[]) {
+        // load initial state into lecture objects
+        initialState.forEach((lecture) => {
+            let l = new Lecture();
+            l = Object.assign(l, lecture);
+            l.start = new Date(lecture.start);
+            l.end = new Date(lecture.end);
+            LectureList.lectures.push(l);
+        });
         LectureList.triggerUpdate();
     }
 
@@ -49,8 +56,8 @@ export class Lecture {
     readonly seriesIdentifier: string;
     readonly color: string;
     readonly vodViews: number;
-    readonly start: Date;
-    readonly end: Date;
+    start: Date;
+    end: Date;
     readonly isLiveNow: boolean;
     readonly isConverting: boolean;
     readonly isRecording: boolean;
@@ -70,48 +77,6 @@ export class Lecture {
     isSaving = false;
     isDeleted = false;
     lastErrors: string[] = [];
-
-    constructor(
-        {
-            courseId,
-            lectureId,
-            seriesIdentifier,
-            name,
-            description,
-            lectureHallId,
-            lectureHallName,
-            streamKey,
-            isPast,
-            isLiveNow,
-            isConverting,
-            isRecording,
-            files,
-            hasStats,
-            color,
-            start,
-            end,
-        },
-        courseSlug: string,
-    ) {
-        this.courseId = courseId;
-        this.lectureId = lectureId;
-        this.seriesIdentifier = seriesIdentifier;
-        this.lectureHallId = "" + lectureHallId;
-        this.lectureHallName = lectureHallName;
-        this.name = name;
-        this.description = description;
-        this.streamKey = streamKey;
-        this.courseSlug = courseSlug;
-        this.isPast = isPast;
-        this.isLiveNow = isLiveNow;
-        this.isConverting = isConverting;
-        this.isRecording = isRecording;
-        this.hasStats = hasStats;
-        this.color = color;
-        this.start = new Date(start);
-        this.end = new Date(end);
-        this.files = files === null ? [] : files.map((file) => new LectureFile(file));
-    }
 
     clone() {
         return Object.assign(Object.create(Object.getPrototypeOf(this)), this);

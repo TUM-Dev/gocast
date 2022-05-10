@@ -23,7 +23,7 @@
                     <span x-text="lecture.endTimeFormatted()"></span>
                     <i class="ml-2 fas fa-location-pin text-5"></i>
                     <span x-text="lecture.lectureHallName" class="text-5"></span>
-                    <button @click="showKeys=!showKeys" x-show="lecture.lectureHallId==='0' && !lecture.isPast"
+                    <button @click="showKeys=!showKeys" x-show="lecture.lectureHallId===0 && !lecture.isPast"
                             class="bg-indigo-500 rounded px-2 py-0 font-semibold">
                         <i class="fas fa-key mr-2"></i><span x-text="showKeys?'Hide Keys':'Show Keys'"></span></button>
                     <p x-show="showKeys" class="mt-1 ml-2 p-2 border dark:border-gray-600 rounded w-full">
@@ -52,7 +52,7 @@
             </div>
 
             <div class="flex items-center justify-end h-8">
-                <template x-if="lecture.files.length > 0">
+                <template x-if="lecture.files && lecture.files.length > 0">
                     <span class="relative mr-2" x-data="{expand:false}">
                         <button @click="expand=!expand" type="button"
                                 id="menu-button" aria-expanded="true"

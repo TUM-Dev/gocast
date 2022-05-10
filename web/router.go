@@ -2,6 +2,7 @@ package web
 
 import (
 	"embed"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/tools"
@@ -33,7 +34,7 @@ var templatePaths = []string{
 func ConfigGinRouter(router *gin.Engine) {
 	if VersionTag != "development" {
 		templateExecutor = tools.ReleaseTemplateExecutor{
-			Template: template.Must(template.ParseFS(templateFS, templatePaths...)),
+			Template: template.Must(template.New("base").Funcs(sprig.FuncMap()).ParseFS(templateFS, templatePaths...)),
 		}
 	} else {
 		prefixedTemplatePaths := make([]string, len(templatePaths))
