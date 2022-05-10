@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"log"
 	"time"
@@ -183,6 +184,11 @@ func (c Course) HasNextLecture() bool {
 	return false
 }
 
+// HasStreams checks whether the lecture has any streams (recorded, live or upcoming) associated to it
+func (c Course) HasStreams() bool {
+	return len(c.Streams) > 0
+}
+
 // GetRecordings returns all recording of this course as streams
 func (c Course) GetRecordings() []Stream {
 	var recordings []Stream
@@ -197,4 +203,13 @@ func (c Course) GetRecordings() []Stream {
 // IsHidden returns true if visibility is set to 'hidden' and false if not
 func (c Course) IsHidden() bool {
 	return c.Visibility == "hidden"
+}
+
+// AdminJson is the JSON representation of a courses streams for the admin panel
+func (c Course) AdminJson(lhs []LectureHall) []gin.H {
+	var res []gin.H
+	for _, s := range c.Streams {
+		res = append(res, s.getJson(lhs, c))
+	}
+	return res
 }
