@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"github.com/Masterminds/sprig/v3"
 	log "github.com/sirupsen/logrus"
 	"html/template"
 	"io"
@@ -19,7 +20,7 @@ func (e DebugTemplateExecutor) ExecuteTemplate(w io.Writer, name string, data in
 		panic("Provide at least one pattern for the debug template executor.")
 	}
 
-	var t, err = template.ParseGlob(e.Patterns[0])
+	var t, err = template.New("base").Funcs(sprig.FuncMap()).ParseGlob(e.Patterns[0])
 	if err != nil {
 		log.Print("Failed to load pattern: '" + e.Patterns[0] + "'. Error: " + err.Error())
 	}
