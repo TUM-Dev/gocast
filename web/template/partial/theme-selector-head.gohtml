@@ -1,22 +1,29 @@
-{{define "theme-selector-head"}}
+{{ define "theme-selector-head" }}
     <script>
         /* put this in document head to avoid FOUC */
         const mediaQueryPrefersDarkScheme = window.matchMedia("(prefers-color-scheme: dark)");
         function updateTheme() {
-            const shouldBeDark = localStorage.themeMode === "dark"
-                || localStorage.themeMode === "system" && mediaQueryPrefersDarkScheme.matches;
+            const shouldBeDark =
+                localStorage.themeMode === "dark" ||
+                (localStorage.themeMode === "system" && mediaQueryPrefersDarkScheme.matches);
             if (document.documentElement.classList.contains("dark") !== shouldBeDark) {
                 document.documentElement.classList.toggle("dark");
             }
         }
-        const setThemeMode = mode => { localStorage.themeMode = mode; };
+        const setThemeMode = (mode) => {
+            localStorage.themeMode = mode;
+        };
         const getThemeMode = () => localStorage.themeMode;
 
         // transition from old dark theme system
-        if ("darkTheme" in localStorage) { /* TODO: send notification? */ }
+        if ("darkTheme" in localStorage) {
+            /* TODO: send notification? */
+        }
         localStorage.removeItem("darkTheme");
         // first visit or transition
-        if (!("themeMode" in localStorage)) { setThemeMode("system"); }
+        if (!("themeMode" in localStorage)) {
+            setThemeMode("system");
+        }
 
         updateTheme();
         mediaQueryPrefersDarkScheme.addEventListener("change", () => updateTheme());
@@ -27,8 +34,8 @@
                     this.activeMode = getThemeMode();
                     // show the currently active theme (light/dark) on the switcher when system theme mode is active
                     const updateSystemModeSwitcherIconId = () =>
-                        this.modes.system.faSwitcherIconId = mediaQueryPrefersDarkScheme.matches ? "moon" : "sun";
-                    mediaQueryPrefersDarkScheme.addEventListener("change", () => updateSystemModeSwitcherIconId())
+                        (this.modes.system.faSwitcherIconId = mediaQueryPrefersDarkScheme.matches ? "moon" : "sun");
+                    mediaQueryPrefersDarkScheme.addEventListener("change", () => updateSystemModeSwitcherIconId());
                     updateSystemModeSwitcherIconId();
                 },
                 setMode(mode) {
@@ -39,10 +46,10 @@
                 modes: {
                     light: { name: "Light", faIconId: "sun" },
                     dark: { name: "Dark", faIconId: "moon" },
-                    system: { name: "System", faIconId: "desktop", faSwitcherIconId: "" }
+                    system: { name: "System", faIconId: "desktop", faSwitcherIconId: "" },
                 },
-                activeMode: ""
+                activeMode: "",
             });
         });
     </script>
-{{end}}
+{{ end }}

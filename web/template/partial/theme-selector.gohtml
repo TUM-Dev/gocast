@@ -1,13 +1,16 @@
-{{define "theme-selector-content"}}
-    <div class="my-auto w-full min-h-30 max-h-60 overflow-y-auto">
+{{ define "theme-selector-content" }}
+    <div class="min-h-30 my-auto max-h-60 w-full overflow-y-auto">
         <template x-for="[modeId, mode] of Object.entries($store.theme.modes)" :key="modeId">
-            <div role="button" tabindex="0"
-                 x-data="{ active: () => modeId == $store.theme.activeMode }"
-                 class="p-2 w-full border-b dark:border-gray-800 relative last:border-0
-                               transition-colors duration-200 text-5 hover:text-1"
-                 :class="(active() ? ['bg-gray-100', 'dark:bg-secondary-lighter'] : []).concat(mobile ? ['px-5'] : [])"
-                 type="button"
-                 @click="$store.theme.setMode(modeId); show=false;">
+            <div
+                role="button"
+                tabindex="0"
+                x-data="{ active: () => modeId == $store.theme.activeMode }"
+                class="text-5 hover:text-1 relative w-full border-b p-2
+                               transition-colors duration-200 last:border-0 dark:border-gray-800"
+                :class="(active() ? ['bg-gray-100', 'dark:bg-secondary-lighter'] : []).concat(mobile ? ['px-5'] : [])"
+                type="button"
+                @click="$store.theme.setMode(modeId); show=false;"
+            >
                 <div class="flex items-center" :class="mobile ? 'flex-row-reverse' : ''">
                     <i class="fa-solid" :class="['fa-' + mode.faIconId, mobile ? 'ml-8' : 'mr-2']"></i>
                     <p x-text="mode.name" :class="mobile ? 'mr-2' : ''"></p>
@@ -15,44 +18,59 @@
             </div>
         </template>
     </div>
-{{end}}
+{{ end }}
 
-{{define "theme-switcher-icon"}}
-<i class="fa-solid" :class="'fa-' + (mode => mode.faSwitcherIconId ?? mode.faIconId)($store.theme.modes[$store.theme.activeMode])"></i>
-{{end}}
+{{ define "theme-switcher-icon" }}
+    <i
+        class="fa-solid"
+        :class="'fa-' + (mode => mode.faSwitcherIconId ?? mode.faIconId)($store.theme.modes[$store.theme.activeMode])"
+    ></i>
+{{ end }}
 
-{{define "theme-selector"}}
+{{ define "theme-selector" }}
     <div class="relative" x-data="{ show: false, mobile: false }">
-        <button class="transition-colors duration-200 hover:text-gray-600
-                       dark:hover:text-white text-gray-400 mr-6 relative h-4 w-4"
-                type="button" @click="show=!show">
-            {{template "theme-switcher-icon"}}
+        <button
+            class="relative mr-6 h-4
+                       w-4 text-gray-400 transition-colors duration-200 hover:text-gray-600 dark:hover:text-white"
+            type="button"
+            @click="show=!show"
+        >
+            {{ template "theme-switcher-icon" }}
         </button>
-        <div x-cloak x-show="show"
-             @click.outside="show=false"
-             class="origin-top-right absolute right-0 mt-4 shadow-sm rounded-lg h-fit bg-white border w-36
-                    dark:bg-secondary dark:border-gray-800 overflow-hidden">
-            {{template "theme-selector-content"}}
+        <div
+            x-cloak
+            x-show="show"
+            @click.outside="show=false"
+            class="absolute right-0 mt-4 h-fit w-36 origin-top-right overflow-hidden rounded-lg border bg-white
+                    shadow-sm dark:border-gray-800 dark:bg-secondary"
+        >
+            {{ template "theme-selector-content" }}
         </div>
     </div>
-{{end}}
+{{ end }}
 
-{{define "theme-selector-mobile"}}
-    <div class="border-b dark:border-gray-600 text-sm" x-data="{ show: false, mobile: true }">
-        <div role="button" tabindex="0"
-             class="px-5 py-2 flex justify-end transition-colors duration-200 text-5 hover:text-1"
-             @click="show=!show">
-            <span class="uppercase mr-2 my-auto">Theme</span>
-            <div class="w-12 flex justify-end">
+{{ define "theme-selector-mobile" }}
+    <div class="border-b text-sm dark:border-gray-600" x-data="{ show: false, mobile: true }">
+        <div
+            role="button"
+            tabindex="0"
+            class="text-5 hover:text-1 flex justify-end px-5 py-2 transition-colors duration-200"
+            @click="show=!show"
+        >
+            <span class="my-auto mr-2 uppercase">Theme</span>
+            <div class="flex w-12 justify-end">
                 <div class="my-auto" aria-label="Theme">
-                    {{template "theme-switcher-icon"}}
+                    {{ template "theme-switcher-icon" }}
                 </div>
             </div>
         </div>
-        <div x-cloak x-show="show"
-             @click.outside="show=false"
-            class="bg-white border-t dark:bg-secondary dark:border-gray-800 overflow-hidden">
-            {{template "theme-selector-content"}}
+        <div
+            x-cloak
+            x-show="show"
+            @click.outside="show=false"
+            class="overflow-hidden border-t bg-white dark:border-gray-800 dark:bg-secondary"
+        >
+            {{ template "theme-selector-content" }}
         </div>
     </div>
-{{end}}
+{{ end }}

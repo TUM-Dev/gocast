@@ -1,26 +1,49 @@
-{{define "notifications"}}
+{{ define "notifications" }}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.User*/ -}}
-    <div class="relative" x-data="{ n: new global.Notifications(), show: false}" x-init="n.fetchNotifications();"
-         @keyup.escape="show=false; n.writeToStorage(true)">
-        <button class="transition-colors duration-200 hover:text-gray-600 dark:hover:text-white text-gray-400 mr-6 relative h-4 w-4"
-                type="button" @click="show=!show; show===false && n.writeToStorage(true)">
-            <span x-cloak x-show="n.notifications.some(notification => !notification.read)"
-                  class="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full absolute -top-1 -right-1 h-3 w-3 border-2 border-white dark:border-secondary"> </span>
+    <div
+        class="relative"
+        x-data="{ n: new global.Notifications(), show: false}"
+        x-init="n.fetchNotifications();"
+        @keyup.escape="show=false; n.writeToStorage(true)"
+    >
+        <button
+            class="relative mr-6 h-4 w-4 text-gray-400 transition-colors duration-200 hover:text-gray-600 dark:hover:text-white"
+            type="button"
+            @click="show=!show; show===false && n.writeToStorage(true)"
+        >
+            <span
+                x-cloak
+                x-show="n.notifications.some(notification => !notification.read)"
+                class="absolute -top-1 -right-1 h-3 w-3 rounded-full border-2 border-white bg-gradient-to-r from-cyan-500 to-blue-500 dark:border-secondary"
+            >
+            </span>
             <i class="fa-solid fa-bell"></i>
         </button>
-        <div x-cloak x-show="show" @click.outside="show=false; n.writeToStorage(true)" class="origin-top-right absolute right-0 mt-4 shadow-sm rounded-lg h-fit bg-white border w-96
-                        dark:bg-secondary dark:border-gray-800">
-            <div class="my-auto w-full min-h-30 max-h-60 overflow-y-scroll">
-                <div class="py-4 relative text-3 text-center" x-cloak x-show="n.notifications.length === 0">
+        <div
+            x-cloak
+            x-show="show"
+            @click.outside="show=false; n.writeToStorage(true)"
+            class="absolute right-0 mt-4 h-fit w-96 origin-top-right rounded-lg border bg-white shadow-sm
+                        dark:border-gray-800 dark:bg-secondary"
+        >
+            <div class="min-h-30 my-auto max-h-60 w-full overflow-y-scroll">
+                <div class="text-3 relative py-4 text-center" x-cloak x-show="n.notifications.length === 0">
                     <span class="font-semibold">No notifications yet :)</span>
                 </div>
                 <template x-for="(notification, i) in n.notifications">
-                    <div class="p-2 pb-4 last:pb-2 border-b dark:border-gray-800 relative last:border-0" :class="notification.read?'text-5':'text-3'">
-                        <p class="font-semibold" x-show="notification.title !== undefined" x-text="notification.title"></p>
-                        <div class="pl-1 notificationBody" x-html="notification.body"></div>
+                    <div
+                        class="relative border-b p-2 pb-4 last:border-0 last:pb-2 dark:border-gray-800"
+                        :class="notification.read?'text-5':'text-3'"
+                    >
+                        <p
+                            class="font-semibold"
+                            x-show="notification.title !== undefined"
+                            x-text="notification.title"
+                        ></p>
+                        <div class="notificationBody pl-1" x-html="notification.body"></div>
                     </div>
                 </template>
             </div>
         </div>
     </div>
-{{end}}
+{{ end }}

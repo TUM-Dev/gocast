@@ -1,243 +1,440 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <title>TUM Live | Administration</title>
-    {{template "headImports" .IndexData.VersionTag}}
-    <script src="/static/assets/ts-dist/admin.bundle.js?v={{.IndexData.VersionTag}}"></script>
-</head>
-<body>
-
-{{$curUser := .IndexData.TUMLiveContext.User}}
-{{$courses := .Courses}}
-{{$y := .CurY}}
-{{$t := .CurT}}
-{{$page := .Page}}
-{{$indexData := .IndexData}}
-{{template "header" .IndexData.TUMLiveContext}}
-{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
-<div x-data="{hidden:true}" class="lg:hidden mx-4 mt-4">
-    <button class="bg-gray-200 text-gray-700 rounded shadow px-4 py-1" @click="hidden=!hidden"
-            x-text="hidden?'Open Menu':'Close Menu'">Open Menu
-    </button>
-    <div class="w-full text-1" x-show="!hidden">
-        <ul>
-            {{if eq $curUser.Role 1}}
-                <li class="mt-8"><h5
-                            class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2">
-                        Administration</h5>
-                    <ul>
-                        <li>
-                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "users"}}text-1{{else}}text-5{{end}} relative block"
-                               href="/admin/users"><span
-                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                        class="relative">Users</span></a></li>
-                        <li>
-                        <li>
-                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "lectureHalls"}}text-1{{else}}text-5{{end}} relative block"
-                               href="/admin/lectureHalls"><span
-                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                        class="relative">Lecture Halls</span></a></li>
-                        <li>
-                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "workers"}}text-1{{else}}text-5{{end}} relative block"
-                               href="/admin/workers"><span
-                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                        class="relative">Workers</span></a></li>
-                        <li>
-                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "serverNotifications"}}text-1{{else}}text-5{{end}} relative block"
-                               href="/admin/server-notifications"><span
-                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                        class="relative">Server Notifications</span></a></li>
-                        <li>
-                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "notifications"}}text-1{{else}}text-5{{end}} relative block"
-                               href="/admin/notifications"><span
-                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                        class="relative">User Notifications</span></a></li>
-                        <li>
-                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "serverStats"}}text-1{{else}}text-5{{end}} relative block"
-                               href="/admin/server-stats"><span
-                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                        class="relative">Server Statistics</span></a></li>
-                        <li>
-                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "courseImport"}}text-1{{else}}text-5{{end}} relative block"
-                               href="/admin/course-import"><span
-                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                        class="relative">Course Import</span></a></li>
-                        <li>
-                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "token"}}text-1{{else}}text-5{{end}} relative block"
-                               href="/admin/token"><span
-                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                        class="relative">Token Management</span></a></li>
-                    </ul>
-                </li>
-            {{end}}
-            <li class="mt-8"><span
-                        class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2 flex">
-                            <span class="grow">Courses</span><a href="/admin/create-course"><i
-                                class="fas fa-plus"></i></a></span>
+    <head>
+        <meta charset="UTF-8" />
+        <title>TUM Live | Administration</title>
+        {{ template "headImports" .IndexData.VersionTag }}    <script src="/static/assets/ts-dist/admin.bundle.js?v={{.IndexData.VersionTag}}"></script>
+    </head>
+    <body>
+        {{ $curUser := .IndexData.TUMLiveContext.User }}
+        {{ $courses := .Courses }}
+        {{ $y := .CurY }}
+        {{ $t := .CurT }}
+        {{ $page := .Page }}
+        {{ $indexData := .IndexData }}
+        {{ template "header" .IndexData.TUMLiveContext }}
+        {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
+        <div x-data="{hidden:true}" class="mx-4 mt-4 lg:hidden">
+            <button
+                class="rounded bg-gray-200 px-4 py-1 text-gray-700 shadow"
+                @click="hidden=!hidden"
+                x-text="hidden?'Open Menu':'Close Menu'"
+            >
+                Open Menu
+            </button>
+            <div class="text-1 w-full" x-show="!hidden">
                 <ul>
-                    <li>
-                        <a class="mx-3 my-2 transition-colors duration-200 {{if eq $page "schedule"}} text-1{{else}} text-5{{end}} relative block"
-                           href="/admin"><span
-                                    class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
-                                    class="relative">Schedule</span></a>
-                    </li>
-                    {{range $semester := .Semesters}}
-                        <li x-data="{expanded: {{if not (and (eq $semester.Year $y) (eq $semester.TeachingTerm $t))}}false{{else}}true{{end}}}">
-                            <a class="px-3 mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs transition-colors duration-200 text-5"
-                               href="#" @click="expanded=!expanded">
-                                <i class="fas fa-chevron-right mr-1 transform" :class="expanded?'rotate-90':''"></i>
-                                <span
-                                        class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
-                                        class="relative">{{$semester.Year}} - {{$semester.TeachingTerm}}</span></a>
-                            <ul id="{{printf "semesterCourses%d%s" $semester.Year $semester.TeachingTerm}}"
-                                class="semesterCourses pl-4"
-                                x-show="expanded">
-                                {{range $course := $courses}}{{if and (eq $course.Year $semester.Year) (eq $course.TeachingTerm $semester.TeachingTerm)}}
-                                    <li>
-                                        <a class="mx-3 my-2 transition-colors duration-200 {{if eq $page "course"}} {{if eq $indexData.TUMLiveContext.Course.Model.ID $course.Model.ID}}text-1{{else}} text-5 {{end}} {{else}}text-5{{end}} relative block"
-                                           href="/admin/course/{{$course.Model.ID}}"><span
-                                                    class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
-                                                    class="relative">{{$course.Name}}</span></a></li>
-                                {{end}}
-                                {{end}}
-                            </ul>
-                        </li>
-                    {{end}}
-                </ul>
-            </li>
-        </ul>
-    </div>
-</div>
-<div class="flex">
-    <div style="min-height: calc(100vh - 5rem);"
-         class="fixed z-40 inset-0 flex-none w-full lg:static lg:h-auto lg:overflow-y-visible lg:pt-0 lg:w-60 xl:w-72 lg:block hidden bg-gray-100 dark:bg-secondary-lighter dark:border-r dark:border-secondary">
-        <div class="overflow-y-auto scrolling-touch lg:h-auto lg:block lg:relative lg:sticky overflow-hidden lg:top-18 mr-24 lg:mr-0">
-            <nav class="px-1 overflow-y-auto font-medium text-base sm:px-3 xl:px-5 lg:text-sm pb-10 lg:pb-14 sticky?lg:h-(screen-18)">
-                <ul>
-                    {{if eq $curUser.Role 1}}
-                        <li class="mt-8"><h5
-                                    class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2">
-                                Administration</h5>
+                    {{ if eq $curUser.Role 1 }}
+                        <li class="mt-8">
+                            <h5 class="text-2 mb-3 text-sm font-semibold uppercase tracking-wide lg:mb-3 lg:text-xs">
+                                Administration
+                            </h5>
                             <ul>
                                 <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "users"}}text-1{{else}}text-5{{end}} relative block"
-                                       href="/admin/users"><span
-                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                                class="relative">Users</span></a></li>
+                                    <a
+                                        class="{{ if eq $page "users" }}
+                                            text-1
+                                        {{ else }}
+                                            text-5
+                                        {{ end }} relative block px-3 py-2 transition-colors duration-200"
+                                        href="/admin/users"
+                                        ><span class="absolute inset-0 rounded-md bg-cyan-50 opacity-0"></span
+                                        ><span class="relative">Users</span></a
+                                    >
+                                </li>
+                                <li></li>
                                 <li>
+                                    <a
+                                        class="{{ if eq $page "lectureHalls" }}
+                                            text-1
+                                        {{ else }}
+                                            text-5
+                                        {{ end }} relative block px-3 py-2 transition-colors duration-200"
+                                        href="/admin/lectureHalls"
+                                        ><span class="absolute inset-0 rounded-md bg-cyan-50 opacity-0"></span
+                                        ><span class="relative">Lecture Halls</span></a
+                                    >
+                                </li>
                                 <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "lectureHalls"}}text-1{{else}}text-5{{end}} relative block"
-                                       href="/admin/lectureHalls"><span
-                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                                class="relative">Lecture Halls</span></a></li>
+                                    <a
+                                        class="{{ if eq $page "workers" }}
+                                            text-1
+                                        {{ else }}
+                                            text-5
+                                        {{ end }} relative block px-3 py-2 transition-colors duration-200"
+                                        href="/admin/workers"
+                                        ><span class="absolute inset-0 rounded-md bg-cyan-50 opacity-0"></span
+                                        ><span class="relative">Workers</span></a
+                                    >
+                                </li>
                                 <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "workers"}}text-1{{else}}text-5{{end}} relative block"
-                                       href="/admin/workers"><span
-                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                                class="relative">Workers</span></a></li>
+                                    <a
+                                        class="{{ if eq $page "serverNotifications" }}
+                                            text-1
+                                        {{ else }}
+                                            text-5
+                                        {{ end }} relative block px-3 py-2 transition-colors duration-200"
+                                        href="/admin/server-notifications"
+                                        ><span class="absolute inset-0 rounded-md bg-cyan-50 opacity-0"></span
+                                        ><span class="relative">Server Notifications</span></a
+                                    >
+                                </li>
                                 <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "serverNotifications"}}text-1{{else}}text-5{{end}} relative block"
-                                       href="/admin/server-notifications"><span
-                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                                class="relative">Server Notifications</span></a></li>
+                                    <a
+                                        class="{{ if eq $page "notifications" }}
+                                            text-1
+                                        {{ else }}
+                                            text-5
+                                        {{ end }} relative block px-3 py-2 transition-colors duration-200"
+                                        href="/admin/notifications"
+                                        ><span class="absolute inset-0 rounded-md bg-cyan-50 opacity-0"></span
+                                        ><span class="relative">User Notifications</span></a
+                                    >
+                                </li>
                                 <li>
+                                    <a
+                                        class="{{ if eq $page "serverStats" }}
+                                            text-1
+                                        {{ else }}
+                                            text-5
+                                        {{ end }} relative block px-3 py-2 transition-colors duration-200"
+                                        href="/admin/server-stats"
+                                        ><span class="absolute inset-0 rounded-md bg-cyan-50 opacity-0"></span
+                                        ><span class="relative">Server Statistics</span></a
+                                    >
+                                </li>
                                 <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "notifications"}}text-1{{else}}text-5{{end}} relative block"
-                                       href="/admin/notifications"><span
-                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                                class="relative">User Notifications</span></a></li>
+                                    <a
+                                        class="{{ if eq $page "courseImport" }}
+                                            text-1
+                                        {{ else }}
+                                            text-5
+                                        {{ end }} relative block px-3 py-2 transition-colors duration-200"
+                                        href="/admin/course-import"
+                                        ><span class="absolute inset-0 rounded-md bg-cyan-50 opacity-0"></span
+                                        ><span class="relative">Course Import</span></a
+                                    >
+                                </li>
                                 <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "serverStats"}}text-1{{else}}text-5{{end}} relative block"
-                                       href="/admin/server-stats"><span
-                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                                class="relative">Server Statistics</span></a></li>
-                                <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "courseImport"}}text-1{{else}}text-5{{end}} relative block"
-                                       href="/admin/course-import"><span
-                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                                class="relative">Course Import</span></a></li>
-                                <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "serverStats"}}text-1{{else}}text-5{{end}} relative block"
-                                       href="/admin/token"><span
-                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                                class="relative">Token Management</span></a></li>
+                                    <a
+                                        class="{{ if eq $page "token" }}
+                                            text-1
+                                        {{ else }}
+                                            text-5
+                                        {{ end }} relative block px-3 py-2 transition-colors duration-200"
+                                        href="/admin/token"
+                                        ><span class="absolute inset-0 rounded-md bg-cyan-50 opacity-0"></span
+                                        ><span class="relative">Token Management</span></a
+                                    >
+                                </li>
                             </ul>
                         </li>
-                    {{end}}
-                    <li class="mt-8"><span
-                                class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2 flex">
-                            <span class="grow">Courses</span><a href="/admin/create-course"><i
-                                        class="fas fa-plus"></i></a></span>
+                    {{ end }}
+                    <li class="mt-8">
+                        <span class="text-2 mb-3 flex text-sm font-semibold uppercase tracking-wide lg:mb-3 lg:text-xs">
+                            <span class="grow">Courses</span
+                            ><a href="/admin/create-course"><i class="fas fa-plus"></i></a
+                        ></span>
                         <ul>
                             <li>
-                                <a class="mx-3 my-2 transition-colors duration-200 {{if eq $page "schedule"}} text-1{{else}} text-5{{end}} relative block"
-                                   href="/admin"><span
-                                            class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
-                                            class="relative">Schedule</span></a>
+                                <a
+                                    class="{{ if eq $page "schedule" }}
+                                        text-1
+                                    {{ else }}
+                                        text-5
+                                    {{ end }} relative mx-3 my-2 block transition-colors duration-200"
+                                    href="/admin"
+                                    ><span class="absolute rounded-md bg-cyan-50 opacity-0"></span
+                                    ><span class="relative">Schedule</span></a
+                                >
                             </li>
-                            {{range $semester := .Semesters}}
-                                <li x-data="{expanded: {{if not (and (eq $semester.Year $y) (eq $semester.TeachingTerm $t))}}false{{else}}true{{end}}}">
-                                    <a class="px-3 mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs transition-colors duration-200 text-5"
-                                       href="#" @click="expanded=!expanded">
-                                        <i class="fas fa-chevron-right mr-1 transform" :class="expanded?'rotate-90':''"></i>
-                                        <span
-                                                class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
-                                                class="relative">{{$semester.Year}} - {{$semester.TeachingTerm}}</span></a>
-                                    <ul id="{{printf "semesterCourses%d%s" $semester.Year $semester.TeachingTerm}}"
+                            {{ range $semester := .Semesters }}
+                                <li
+                                    x-data="{expanded: {{ if not (and (eq $semester.Year $y) (eq $semester.TeachingTerm $t)) }}
+                                        false
+                                    {{ else }}
+                                        true
+                                    {{ end }}}"
+                                >
+                                    <a
+                                        class="text-5 mb-3 px-3 text-sm font-semibold uppercase tracking-wide transition-colors duration-200 lg:mb-3 lg:text-xs"
+                                        href="#"
+                                        @click="expanded=!expanded"
+                                    >
+                                        <i
+                                            class="fas fa-chevron-right mr-1 transform"
+                                            :class="expanded?'rotate-90':''"
+                                        ></i>
+                                        <span class="absolute rounded-md bg-cyan-50 opacity-0"></span
+                                        ><span class="relative"
+                                            >{{ $semester.Year }} - {{ $semester.TeachingTerm }}</span
+                                        ></a
+                                    >
+                                    <ul
+                                        id="{{ printf "semesterCourses%d%s" $semester.Year $semester.TeachingTerm }}"
                                         class="semesterCourses pl-4"
-                                        x-show="expanded">
-                                        {{range $course := $courses}}{{if and (eq $course.Year $semester.Year) (eq $course.TeachingTerm $semester.TeachingTerm)}}
-                                            <li>
-                                                <a class="mx-3 my-2 transition-colors duration-200 {{if eq $page "course"}} {{if eq $indexData.TUMLiveContext.Course.Model.ID $course.Model.ID}}text-1{{else}} text-5 {{end}} {{else}}text-5{{end}} relative block"
-                                                   href="/admin/course/{{$course.Model.ID}}"><span
-                                                            class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
-                                                            class="relative">{{$course.Name}}</span></a></li>
-                                        {{end}}
-                                        {{end}}
+                                        x-show="expanded"
+                                    >
+                                        {{ range $course := $courses }}
+                                            {{ if and (eq $course.Year $semester.Year) (eq $course.TeachingTerm $semester.TeachingTerm) }}
+                                                <li>
+                                                    <a
+                                                        class="{{ if eq $page "course" }}
+                                                            {{ if eq $indexData.TUMLiveContext.Course.Model.ID $course.Model.ID }}
+                                                                text-1
+                                                            {{ else }}
+                                                                text-5
+                                                            {{ end }}
+                                                        {{ else }}
+                                                            text-5
+                                                        {{ end }} relative mx-3 my-2 block transition-colors duration-200"
+                                                        href="/admin/course/{{ $course.Model.ID }}"
+                                                        ><span class="absolute rounded-md bg-cyan-50 opacity-0"></span
+                                                        ><span class="relative">{{ $course.Name }}</span></a
+                                                    >
+                                                </li>
+                                            {{ end }}
+                                        {{ end }}
                                     </ul>
                                 </li>
-                            {{end}}
+                            {{ end }}
                         </ul>
                     </li>
                 </ul>
-            </nav>
-        </div>
-    </div>
-    <div class="min-w-0 w-full flex-auto lg:static max-h-full lg:overflow-visible">
-        <div class="px-4 sm:px-6 xl:px-8">
-            <div class="w-full">
-                {{if and (eq $curUser.Role 1) (eq .Page "users")}}
-                    {{template "users" .Users}}
-                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "course")}}
-                    {{template "edit-course" .EditCourseData}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "lectureHalls")}}
-                    {{template "lectureHalls" .LectureHalls}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "createLectureHalls")}}
-                    {{template "createLectureHalls" .LectureHalls}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "workers")}}
-                    {{template "workers" .Workers}}
-                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "stats")}}
-                    {{template "stats" .IndexData}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "serverStats")}}
-                    {{template "stats" .IndexData}}
-                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "schedule")}}
-                    {{template "schedule" .IndexData}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "serverNotifications")}}
-                    {{template "server-notifications-admin-list" .ServerNotifications}}
-                {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "createCourse")}}
-                    {{template "create-course" .IndexData.VersionTag}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "courseImport")}}
-                    {{template "course-import" .}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "token")}}
-                    {{template "token" .Tokens}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "notifications")}}
-                    {{template "notification_management" .Notifications}}
-                {{end}}
             </div>
         </div>
-    </div>
-</div>
-
-</body>
+        <div class="flex">
+            <div
+                style="min-height: calc(100vh - 5rem);"
+                class="fixed inset-0 z-40 hidden w-full flex-none bg-gray-100 dark:border-r dark:border-secondary dark:bg-secondary-lighter lg:static lg:block lg:h-auto lg:w-60 lg:overflow-y-visible lg:pt-0 xl:w-72"
+            >
+                <div
+                    class="scrolling-touch lg:top-18 mr-24 overflow-hidden overflow-y-auto lg:relative lg:sticky lg:mr-0 lg:block lg:h-auto"
+                >
+                    <nav
+                        class="sticky?lg:h-(screen-18) overflow-y-auto px-1 pb-10 text-base font-medium sm:px-3 lg:pb-14 lg:text-sm xl:px-5"
+                    >
+                        <ul>
+                            {{ if eq $curUser.Role 1 }}
+                                <li class="mt-8">
+                                    <h5
+                                        class="text-2 mb-3 text-sm font-semibold uppercase tracking-wide lg:mb-3 lg:text-xs"
+                                    >
+                                        Administration
+                                    </h5>
+                                    <ul>
+                                        <li>
+                                            <a
+                                                class="{{ if eq $page "users" }}
+                                                    text-1
+                                                {{ else }}
+                                                    text-5
+                                                {{ end }} relative block px-3 py-2 transition-colors duration-200"
+                                                href="/admin/users"
+                                                ><span class="absolute inset-0 rounded-md bg-cyan-50 opacity-0"></span
+                                                ><span class="relative">Users</span></a
+                                            >
+                                        </li>
+                                        <li></li>
+                                        <li>
+                                            <a
+                                                class="{{ if eq $page "lectureHalls" }}
+                                                    text-1
+                                                {{ else }}
+                                                    text-5
+                                                {{ end }} relative block px-3 py-2 transition-colors duration-200"
+                                                href="/admin/lectureHalls"
+                                                ><span class="absolute inset-0 rounded-md bg-cyan-50 opacity-0"></span
+                                                ><span class="relative">Lecture Halls</span></a
+                                            >
+                                        </li>
+                                        <li>
+                                            <a
+                                                class="{{ if eq $page "workers" }}
+                                                    text-1
+                                                {{ else }}
+                                                    text-5
+                                                {{ end }} relative block px-3 py-2 transition-colors duration-200"
+                                                href="/admin/workers"
+                                                ><span class="absolute inset-0 rounded-md bg-cyan-50 opacity-0"></span
+                                                ><span class="relative">Workers</span></a
+                                            >
+                                        </li>
+                                        <li>
+                                            <a
+                                                class="{{ if eq $page "serverNotifications" }}
+                                                    text-1
+                                                {{ else }}
+                                                    text-5
+                                                {{ end }} relative block px-3 py-2 transition-colors duration-200"
+                                                href="/admin/server-notifications"
+                                                ><span class="absolute inset-0 rounded-md bg-cyan-50 opacity-0"></span
+                                                ><span class="relative">Server Notifications</span></a
+                                            >
+                                        </li>
+                                        <li></li>
+                                        <li>
+                                            <a
+                                                class="{{ if eq $page "notifications" }}
+                                                    text-1
+                                                {{ else }}
+                                                    text-5
+                                                {{ end }} relative block px-3 py-2 transition-colors duration-200"
+                                                href="/admin/notifications"
+                                                ><span class="absolute inset-0 rounded-md bg-cyan-50 opacity-0"></span
+                                                ><span class="relative">User Notifications</span></a
+                                            >
+                                        </li>
+                                        <li>
+                                            <a
+                                                class="{{ if eq $page "serverStats" }}
+                                                    text-1
+                                                {{ else }}
+                                                    text-5
+                                                {{ end }} relative block px-3 py-2 transition-colors duration-200"
+                                                href="/admin/server-stats"
+                                                ><span class="absolute inset-0 rounded-md bg-cyan-50 opacity-0"></span
+                                                ><span class="relative">Server Statistics</span></a
+                                            >
+                                        </li>
+                                        <li>
+                                            <a
+                                                class="{{ if eq $page "courseImport" }}
+                                                    text-1
+                                                {{ else }}
+                                                    text-5
+                                                {{ end }} relative block px-3 py-2 transition-colors duration-200"
+                                                href="/admin/course-import"
+                                                ><span class="absolute inset-0 rounded-md bg-cyan-50 opacity-0"></span
+                                                ><span class="relative">Course Import</span></a
+                                            >
+                                        </li>
+                                        <li>
+                                            <a
+                                                class="{{ if eq $page "serverStats" }}
+                                                    text-1
+                                                {{ else }}
+                                                    text-5
+                                                {{ end }} relative block px-3 py-2 transition-colors duration-200"
+                                                href="/admin/token"
+                                                ><span class="absolute inset-0 rounded-md bg-cyan-50 opacity-0"></span
+                                                ><span class="relative">Token Management</span></a
+                                            >
+                                        </li>
+                                    </ul>
+                                </li>
+                            {{ end }}
+                            <li class="mt-8">
+                                <span
+                                    class="text-2 mb-3 flex text-sm font-semibold uppercase tracking-wide lg:mb-3 lg:text-xs"
+                                >
+                                    <span class="grow">Courses</span
+                                    ><a href="/admin/create-course"><i class="fas fa-plus"></i></a
+                                ></span>
+                                <ul>
+                                    <li>
+                                        <a
+                                            class="{{ if eq $page "schedule" }}
+                                                text-1
+                                            {{ else }}
+                                                text-5
+                                            {{ end }} relative mx-3 my-2 block transition-colors duration-200"
+                                            href="/admin"
+                                            ><span class="absolute rounded-md bg-cyan-50 opacity-0"></span
+                                            ><span class="relative">Schedule</span></a
+                                        >
+                                    </li>
+                                    {{ range $semester := .Semesters }}
+                                        <li
+                                            x-data="{expanded: {{ if not (and (eq $semester.Year $y) (eq $semester.TeachingTerm $t)) }}
+                                                false
+                                            {{ else }}
+                                                true
+                                            {{ end }}}"
+                                        >
+                                            <a
+                                                class="text-5 mb-3 px-3 text-sm font-semibold uppercase tracking-wide transition-colors duration-200 lg:mb-3 lg:text-xs"
+                                                href="#"
+                                                @click="expanded=!expanded"
+                                            >
+                                                <i
+                                                    class="fas fa-chevron-right mr-1 transform"
+                                                    :class="expanded?'rotate-90':''"
+                                                ></i>
+                                                <span class="absolute rounded-md bg-cyan-50 opacity-0"></span
+                                                ><span class="relative"
+                                                    >{{ $semester.Year }} - {{ $semester.TeachingTerm }}</span
+                                                ></a
+                                            >
+                                            <ul
+                                                id="{{ printf "semesterCourses%d%s" $semester.Year $semester.TeachingTerm }}"
+                                                class="semesterCourses pl-4"
+                                                x-show="expanded"
+                                            >
+                                                {{ range $course := $courses }}
+                                                    {{ if and (eq $course.Year $semester.Year) (eq $course.TeachingTerm $semester.TeachingTerm) }}
+                                                        <li>
+                                                            <a
+                                                                class="{{ if eq $page "course" }}
+                                                                    {{ if eq $indexData.TUMLiveContext.Course.Model.ID $course.Model.ID }}
+                                                                        text-1
+                                                                    {{ else }}
+                                                                        text-5
+                                                                    {{ end }}
+                                                                {{ else }}
+                                                                    text-5
+                                                                {{ end }} relative mx-3 my-2 block transition-colors duration-200"
+                                                                href="/admin/course/{{ $course.Model.ID }}"
+                                                                ><span
+                                                                    class="absolute rounded-md bg-cyan-50 opacity-0"
+                                                                ></span
+                                                                ><span class="relative">{{ $course.Name }}</span></a
+                                                            >
+                                                        </li>
+                                                    {{ end }}
+                                                {{ end }}
+                                            </ul>
+                                        </li>
+                                    {{ end }}
+                                </ul>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            <div class="max-h-full w-full min-w-0 flex-auto lg:static lg:overflow-visible">
+                <div class="px-4 sm:px-6 xl:px-8">
+                    <div class="w-full">
+                        {{ if and (eq $curUser.Role 1) (eq .Page "users") }}
+                            {{ template "users" .Users }}
+                        {{ else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "course") }}
+                            {{ template "edit-course" .EditCourseData }}
+                        {{ else if and (eq $curUser.Role 1) (eq .Page "lectureHalls") }}
+                            {{ template "lectureHalls" .LectureHalls }}
+                        {{ else if and (eq $curUser.Role 1) (eq .Page "createLectureHalls") }}
+                            {{ template "createLectureHalls" .LectureHalls }}
+                        {{ else if and (eq $curUser.Role 1) (eq .Page "workers") }}
+                            {{ template "workers" .Workers }}
+                        {{ else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "stats") }}
+                            {{ template "stats" .IndexData }}
+                        {{ else if and (eq $curUser.Role 1) (eq .Page "serverStats") }}
+                            {{ template "stats" .IndexData }}
+                        {{ else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "schedule") }}
+                            {{ template "schedule" .IndexData }}
+                        {{ else if and (eq $curUser.Role 1) (eq .Page "serverNotifications") }}
+                            {{ template "server-notifications-admin-list" .ServerNotifications }}
+                        {{ else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "createCourse") }}
+                            {{ template "create-course" .IndexData.VersionTag }}
+                        {{ else if and (eq $curUser.Role 1) (eq .Page "courseImport") }}
+                            {{ template "course-import" . }}
+                        {{ else if and (eq $curUser.Role 1) (eq .Page "token") }}
+                            {{ template "token" .Tokens }}
+                        {{ else if and (eq $curUser.Role 1) (eq .Page "notifications") }}
+                            {{ template "notification_management" .Notifications }}
+                        {{ end }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
 </html>

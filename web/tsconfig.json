@@ -1,16 +1,13 @@
 {
-  "compilerOptions": {
-    "module": "es6",
-    "target": "es5",
-    "sourceMap": true,
-    "outDir": "assets/ts-dist",
-    "noImplicitAny": false,
-    "moduleResolution": "node",
-    "sourceRoot": "./ts/",
-    "rootDir": "./ts/",
-    "lib": [
-      "es2021",
-      "dom"
-    ]
-  }
+    "compilerOptions": {
+        "module": "es6",
+        "target": "es5",
+        "sourceMap": true,
+        "outDir": "assets/ts-dist",
+        "noImplicitAny": false,
+        "moduleResolution": "node",
+        "sourceRoot": "./ts/",
+        "rootDir": "./ts/",
+        "lib": ["es2021", "dom"]
+    }
 }

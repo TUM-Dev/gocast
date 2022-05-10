@@ -1,9 +1,11 @@
-{{define "schedule"}}
-    <link href="static/node_modules/fullcalendar/main.min.css" rel="stylesheet"/>
-    <div x-init="admin.addScheduleListener()" class="flex flex-col lg:flex-row w-full pt-4 relative">
+{{ define "schedule" }}
+    <link href="static/node_modules/fullcalendar/main.min.css" rel="stylesheet" />
+    <div x-init="admin.addScheduleListener()" class="relative flex w-full flex-col pt-4 lg:flex-row">
         <div id="calendar" class="w-full"></div>
-        <div id="popoverContent"
-             class="cursor-auto absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 p-4 bg-white dark:bg-secondary-lighter rounded z-10 border dark:border-gray-500 border-gray-300 hidden"></div>
+        <div
+            id="popoverContent"
+            class="absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 transform cursor-auto rounded border border-gray-300 bg-white p-4 dark:border-gray-500 dark:bg-secondary-lighter"
+        ></div>
     </div>
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
-{{end}}
+{{ end }}

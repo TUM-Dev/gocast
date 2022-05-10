@@ -1,69 +1,83 @@
-{{define "course-admin-management"}}
+{{ define "course-admin-management" }}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Course*/ -}}
     <p class="text-5">Add or remove users who can help moderate the chat, plan lectures and manage the course.</p>
-    <div x-data="admin.courseAdminManagement()" x-init="$nextTick (()=>{m.init({{.Model.ID}}, userId)});"
-         class="dark:bg-primary bg-white shadow mb-2">
-        <table class="table-auto w-full border border-gray-100 dark:border-gray-600 rounded">
-            <thead class="text-xs font-semibold uppercase text-gray-400 dark:bg-secondary bg-gray-50">
-            <tr>
-                <th class="p-2 whitespace-nowrap">
-                    <div class="font-semibold text-left">Name</div>
-                </th>
-                <th class="p-2 whitespace-nowrap">
-                    <div class="font-semibold text-left">Login</div>
-                </th>
-                <th class="p-2 whitespace-nowrap">
-                    <div class="font-semibold text-center">Actions</div>
-                </th>
-            </tr>
+    <div
+        x-data="admin.courseAdminManagement()"
+        x-init="$nextTick (()=>{m.init({{ .Model.ID }}, userId)});"
+        class="mb-2 bg-white shadow dark:bg-primary"
+    >
+        <table class="w-full table-auto rounded border border-gray-100 dark:border-gray-600">
+            <thead class="bg-gray-50 text-xs font-semibold uppercase text-gray-400 dark:bg-secondary">
+                <tr>
+                    <th class="whitespace-nowrap p-2">
+                        <div class="text-left font-semibold">Name</div>
+                    </th>
+                    <th class="whitespace-nowrap p-2">
+                        <div class="text-left font-semibold">Login</div>
+                    </th>
+                    <th class="whitespace-nowrap p-2">
+                        <div class="text-center font-semibold">Actions</div>
+                    </th>
+                </tr>
             </thead>
-            <tbody class="text-sm divide-y divide-gray-100 dark:divide-gray-600">
-            <template x-for="user in m.users" :key="user.id">
-                <tr>
-                    <td class="p-2 whitespace-nowrap">
-                        <div class="font-medium" x-text="user.name + (user.lastName?' '+user.lastName:'')"></div>
-                    </td>
-                    <td class="p-2 whitespace-nowrap">
-                        <div class="text-left" x-text="user.login"></div>
-                    </td>
-                    <td class="p-2 whitespace-nowrap text-center">
-                        <button class="bg-red-500 hover:bg-red-700 disabled:bg-gray-400 disabled:hover:bg-gray-400 text-white px-2 rounded"
-                                @click="m.removeAdmin(user.id)" :disabled="m.users.length === 1">
-                            Remove
-                        </button>
-                    </td>
-                </tr>
-            </template>
-            <tr x-show="m.users.length === 0">
-                <td colspan="3" class="p-2 whitespace-nowrap text-center">
-                    <i>No admins yet</i>
-                </td>
-            </tr>
-            <tr class="bg-white dark:bg-secondary">
-                <td colspan="3" class="p-2 whitespace-nowrap">
-                    <label>
-                        <span class="text-5">Add a new admin user:</span>
-                        <input type="text" class="w-auto py-0" placeholder="ga21tum" x-model="m.search"
-                               @keyup="m.searchUsers()">
-                    </label>
-                </td>
-            </tr>
-            <template x-for="user in m.searchResult" :key="user.id">
-                <tr>
-                    <td class="p-2 whitespace-nowrap">
-                        <div class="font-medium" x-text="user.name + (user.lastName?' '+user.lastName:'')"></div>
-                    </td>
-                    <td class="p-2 whitespace-nowrap">
-                        <div class="text-left" x-text="user.login"></div>
-                    </td>
-                    <td class="p-2 whitespace-nowrap text-center">
-                        <button class="bg-info hover:bg-blue-700 text-white px-2 rounded" @click="m.addAdmin(user.id)">
-                            Add admin
-                        </button>
+            <tbody class="divide-y divide-gray-100 text-sm dark:divide-gray-600">
+                <template x-for="user in m.users" :key="user.id">
+                    <tr>
+                        <td class="whitespace-nowrap p-2">
+                            <div class="font-medium" x-text="user.name + (user.lastName?' '+user.lastName:'')"></div>
+                        </td>
+                        <td class="whitespace-nowrap p-2">
+                            <div class="text-left" x-text="user.login"></div>
+                        </td>
+                        <td class="whitespace-nowrap p-2 text-center">
+                            <button
+                                class="rounded bg-red-500 px-2 text-white hover:bg-red-700 disabled:bg-gray-400 disabled:hover:bg-gray-400"
+                                @click="m.removeAdmin(user.id)"
+                                :disabled="m.users.length === 1"
+                            >
+                                Remove
+                            </button>
+                        </td>
+                    </tr>
+                </template>
+                <tr x-show="m.users.length === 0">
+                    <td colspan="3" class="whitespace-nowrap p-2 text-center">
+                        <i>No admins yet</i>
                     </td>
                 </tr>
-            </template>
+                <tr class="bg-white dark:bg-secondary">
+                    <td colspan="3" class="whitespace-nowrap p-2">
+                        <label>
+                            <span class="text-5">Add a new admin user:</span>
+                            <input
+                                type="text"
+                                class="w-auto py-0"
+                                placeholder="ga21tum"
+                                x-model="m.search"
+                                @keyup="m.searchUsers()"
+                            />
+                        </label>
+                    </td>
+                </tr>
+                <template x-for="user in m.searchResult" :key="user.id">
+                    <tr>
+                        <td class="whitespace-nowrap p-2">
+                            <div class="font-medium" x-text="user.name + (user.lastName?' '+user.lastName:'')"></div>
+                        </td>
+                        <td class="whitespace-nowrap p-2">
+                            <div class="text-left" x-text="user.login"></div>
+                        </td>
+                        <td class="whitespace-nowrap p-2 text-center">
+                            <button
+                                class="rounded bg-info px-2 text-white hover:bg-blue-700"
+                                @click="m.addAdmin(user.id)"
+                            >
+                                Add admin
+                            </button>
+                        </td>
+                    </tr>
+                </template>
             </tbody>
         </table>
     </div>
-{{end}}
+{{ end }}

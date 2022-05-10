@@ -1,20 +1,25 @@
-{{define "course-import"}}
-    <h2 class="text-2xl text-1 my-auto mt-4 font-medium">Course Import</h2>
-    <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
-    <div class="text-2 m-auto my-3 w-full dark:bg-secondary-lighter bg-gray-100 rounded my-3 shadow-md overflow-x-auto p-6"
-         x-data="admin.pageData()" x-on:loading-start.window="loading=true"
-         x-on:loading-end.window="loading=false;courses=$event.detail.courses"
-         x-init="admin.addNotifyEventListeners()">
+{{ define "course-import" }}
+    <h2 class="text-1 my-auto mt-4 text-2xl font-medium">Course Import</h2>
+    <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css" />
+    <div
+        class="text-2 m-auto my-3 my-3 w-full overflow-x-auto rounded bg-gray-100 p-6 shadow-md dark:bg-secondary-lighter"
+        x-data="admin.pageData()"
+        x-on:loading-start.window="loading=true"
+        x-on:loading-end.window="loading=false;courses=$event.detail.courses"
+        x-init="admin.addNotifyEventListeners()"
+    >
         <div x-show="loading" class="text-center">
-            <i class="fas fa-circle-notch animate-spin animate"></i> Loading...
+            <i class="fas fa-circle-notch animate animate-spin"></i> Loading...
         </div>
         <div x-show="step===0">
             <form>
                 <h3 class="font-bold">Semester</h3>
                 <div class="flex ">
-                    <div class="relative inline-block w-full text-gray-700 my-2 mx-4">
-                        <select x-model="year"
-                                class="w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 border rounded-sm appearance-none focus:shadow-outline">
+                    <div class="relative my-2 mx-4 inline-block w-full text-gray-700">
+                        <select
+                            x-model="year"
+                            class="focus:shadow-outline h-10 w-full appearance-none rounded-sm border pl-3 pr-6 text-base placeholder-gray-600"
+                        >
                             <option>2020</option>
                             <option>2021</option>
                             <option>2022</option>
@@ -23,52 +28,64 @@
                             <option>2025</option>
                             <option>2026</option>
                         </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                      clip-rule="evenodd" fill-rule="evenodd"></path>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2">
+                            <svg class="h-4 w-4 fill-current" viewBox="0 0 20 20">
+                                <path
+                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                    clip-rule="evenodd"
+                                    fill-rule="evenodd"
+                                ></path>
                             </svg>
                         </div>
                     </div>
-                    <div class="relative inline-block w-full text-gray-700 my-2  mx-4">
-                        <select x-model="semester"
-                                class="w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 border rounded-sm appearance-none focus:shadow-outline">
+                    <div class="relative my-2 mx-4 inline-block w-full  text-gray-700">
+                        <select
+                            x-model="semester"
+                            class="focus:shadow-outline h-10 w-full appearance-none rounded-sm border pl-3 pr-6 text-base placeholder-gray-600"
+                        >
                             <option>W</option>
                             <option>S</option>
                         </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                      clip-rule="evenodd" fill-rule="evenodd"></path>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2">
+                            <svg class="h-4 w-4 fill-current" viewBox="0 0 20 20">
+                                <path
+                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                    clip-rule="evenodd"
+                                    fill-rule="evenodd"
+                                ></path>
                             </svg>
                         </div>
                     </div>
                 </div>
-                <div class="flex mt-6">
-                    <label class="w-1/2 text-gray-700 py-2 mx-4">
+                <div class="mt-6 flex">
+                    <label class="mx-4 w-1/2 py-2 text-gray-700">
                         <span class="font-bold">Department:</span>
-                        <select x-model="department"
-                                class="w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 border rounded-sm appearance-none focus:shadow-outline">
+                        <select
+                            x-model="department"
+                            class="focus:shadow-outline h-10 w-full appearance-none rounded-sm border pl-3 pr-6 text-base placeholder-gray-600"
+                        >
                             <option>In</option>
                             <option>Ma</option>
                             <option>Ph</option>
                         </select>
                     </label>
                 </div>
-                <div class="flex mt-6">
-                    <label class="w-1/2 text-gray-700 py-2 mx-4">
+                <div class="mt-6 flex">
+                    <label class="mx-4 w-1/2 py-2 text-gray-700">
                         <span class="font-bold"></span>
-                        <select x-model="optInOut"
-                                class="w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 border rounded-sm appearance-none focus:shadow-outline">
+                        <select
+                            x-model="optInOut"
+                            class="focus:shadow-outline h-10 w-full appearance-none rounded-sm border pl-3 pr-6 text-base placeholder-gray-600"
+                        >
                             <option>Opt In</option>
                             <option>Opt Out</option>
                         </select>
                     </label>
                 </div>
-                <div class="flex mt-6">
+                <div class="mt-6 flex">
                     <label class="w-1/2" x-init="flatpickr($refs.range, {'mode': 'range'})">
                         <span class="font-bold">Import events in this range</span>
-                        <input class="text-1" type="text" x-ref="range" x-model="range" placeholder="click me!">
+                        <input class="text-1" type="text" x-ref="range" x-model="range" placeholder="click me!" />
                     </label>
                 </div>
             </form>
@@ -77,55 +94,60 @@
         <div x-show="!loading && step===1">
             <div>
                 <template x-for="course in courses">
-                    <div class="mb-3 border-2 border-gray-500 rounded">
+                    <div class="mb-3 rounded border-2 border-gray-500">
                         <h3 x-text="course.title" class="mx-2 mt-2"></h3>
                         <label class="mx-2">
-                            <input type="checkbox" checked x-model="course.import" class="w-auto">
+                            <input type="checkbox" checked x-model="course.import" class="w-auto" />
                             <span class="text-3">Import this course</span>
                         </label>
                         <div x-show="course.import">
                             <label class="mx-2">
                                 <span class="text-3">Slug:</span>
-                                <input type="text" checked x-model="course.slug" class="w-auto">
+                                <input type="text" checked x-model="course.slug" class="w-auto" />
                                 <span class="text-warn" x-show="course.slug.length<3">short!</span>
                             </label>
                             <table>
                                 <tbody>
-                                <template x-for="contact in course.contacts">
-                                    <tr class="pl-3" :class="contact.main_contact?'text-green-400':'text-3'">
-                                        <td class="px-2">
-                                            <label>
-                                                <i class="fa fa-envelope" x-show="contact.main_contact"></i>
-                                                <input class="w-auto" type="checkbox" x-model="contact.main_contact">
-                                            </label>
-                                        </td>
-                                        <td class="px-2" x-text="contact.role + ':'"></td>
-                                        <td x-text="contact.first_name + ' ' + contact.last_name"
-                                            class="px-2"></td>
-                                        <td class="px-2">
-                                            <a :href="'mailto:'+contact.email" x-text="contact.email"></a>
-                                        </td>
-                                    </tr>
-                                </template>
+                                    <template x-for="contact in course.contacts">
+                                        <tr class="pl-3" :class="contact.main_contact?'text-green-400':'text-3'">
+                                            <td class="px-2">
+                                                <label>
+                                                    <i class="fa fa-envelope" x-show="contact.main_contact"></i>
+                                                    <input
+                                                        class="w-auto"
+                                                        type="checkbox"
+                                                        x-model="contact.main_contact"
+                                                    />
+                                                </label>
+                                            </td>
+                                            <td class="px-2" x-text="contact.role + ':'"></td>
+                                            <td x-text="contact.first_name + ' ' + contact.last_name" class="px-2"></td>
+                                            <td class="px-2">
+                                                <a :href="'mailto:'+contact.email" x-text="contact.email"></a>
+                                            </td>
+                                        </tr>
+                                    </template>
                                 </tbody>
                             </table>
                             <template x-for="event in course.events">
-                                <div class="flex py-1 px-2 border-t border-gray-500 hover:bg-secondary">
+                                <div class="flex border-t border-gray-500 py-1 px-2 hover:bg-secondary">
                                     <label class="w-2/6">
-                                        <input class="w-auto" type="checkbox" checked x-model="event.import">
-                                        <span x-text="new Date(event.start).toISOString().slice(0, 16).replace('T',' ') + ' - ' + new Date(event.end).toISOString().slice(11, 16)"
-                                              class="text-2"></span>
+                                        <input class="w-auto" type="checkbox" checked x-model="event.import" />
+                                        <span
+                                            x-text="new Date(event.start).toISOString().slice(0, 16).replace('T',' ') + ' - ' + new Date(event.end).toISOString().slice(11, 16)"
+                                            class="text-2"
+                                        ></span>
                                     </label>
-                                    <div class="w-2/6 whitespace-nowrap	overflow-x-hidden overflow-ellipsis"><i
-                                                class="fas fa-location-arrow text-3 mr-2"></i><span class="text-5"
-                                                                                                    x-text="event.room_name"
-                                                                                                    :title="event.room_name"></span>
+                                    <div class="w-2/6 overflow-x-hidden	overflow-ellipsis whitespace-nowrap">
+                                        <i class="fas fa-location-arrow text-3 mr-2"></i
+                                        ><span class="text-5" x-text="event.room_name" :title="event.room_name"></span>
                                     </div>
-                                    <div class="w-2/6 whitespace-nowrap overflow-x-hidden overflow-ellipsis ml-2"
-                                         x-show="event.comment!==''">
-                                        <i class="fas fa-info-circle text-warn mr-2"></i><span class="text-5"
-                                                                                               x-text="event.comment"
-                                                                                               :title="event.comment"></span>
+                                    <div
+                                        class="ml-2 w-2/6 overflow-x-hidden overflow-ellipsis whitespace-nowrap"
+                                        x-show="event.comment!==''"
+                                    >
+                                        <i class="fas fa-info-circle mr-2 text-warn"></i
+                                        ><span class="text-5" x-text="event.comment" :title="event.comment"></span>
                                     </div>
                                 </div>
                             </template>
@@ -135,13 +157,18 @@
             </div>
         </div>
         <div x-show="status!=0" x-data="{status: 0}" x-on:imported.window="status = $event.detail">
-            <span x-show="status==200" class="text-green-400 text-center">Courses imported successfully.</span>
-            <span x-show="status!=200" class="text-danger text-center">There was an error importing the courses, code: <span x-text="status"></span></span>
+            <span x-show="status==200" class="text-center text-green-400">Courses imported successfully.</span>
+            <span x-show="status!=200" class="text-center text-danger"
+                >There was an error importing the courses, code: <span x-text="status"></span
+            ></span>
         </div>
 
-        <button class="h-10 px-5 ml-auto mr-6 m-2 float-right transition-colors text-white duration-150 bg-gray-500 dark:bg-gray-900 dark:hover:bg-gray-600 font-semibold rounded-sm shadow-lg focus:shadow-outline hover:bg-gray-600 disabled:bg-gray-300"
-                @click="step++; $dispatch(`notify${step}`)" :disabled="loading"><span
-                    x-text="step==0?'Start Import':(step==1?'Import':'Return to homepage')"></span>
+        <button
+            class="focus:shadow-outline float-right m-2 ml-auto mr-6 h-10 rounded-sm bg-gray-500 px-5 font-semibold text-white shadow-lg transition-colors duration-150 hover:bg-gray-600 disabled:bg-gray-300 dark:bg-gray-900 dark:hover:bg-gray-600"
+            @click="step++; $dispatch(`notify${step}`)"
+            :disabled="loading"
+        >
+            <span x-text="step==0?'Start Import':(step==1?'Import':'Return to homepage')"></span>
         </button>
     </div>
-{{end}}
+{{ end }}

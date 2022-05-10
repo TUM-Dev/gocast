@@ -1,69 +1,94 @@
-{{define "createLectureHalls"}}
-    <div x-data="{showSuccess: false}" class = "p-5 dark:border-gray-500 rounded border border-gray-300 mt-4 sm:mt-6 xl:mt-8">
-        <div class = "alerts fixed w-fit left-0 right-0 mx-auto top-3 z-50">
-            <div x-show="showSuccess" class = "flex success bg-green-400 border border-green-600 pl-3 pr-3 pt-2 pb-2 rounded-lg shadow-md">
-                <span class = "text-sm font-semibold text-slate-100 my-auto">
+{{ define "createLectureHalls" }}
+    <div
+        x-data="{showSuccess: false}"
+        class="mt-4 rounded border border-gray-300 p-5 dark:border-gray-500 sm:mt-6 xl:mt-8"
+    >
+        <div class="alerts fixed left-0 right-0 top-3 z-50 mx-auto w-fit">
+            <div
+                x-show="showSuccess"
+                class="success flex rounded-lg border border-green-600 bg-green-400 pl-3 pr-3 pt-2 pb-2 shadow-md"
+            >
+                <span class="my-auto text-sm font-semibold text-slate-100">
                     &#10003; Added lecture hall successfully.
                 </span>
             </div>
         </div>
-        <h2 class="text-2xl text-1 mb-6">New Lecture Hall</h2>
-        <form   x-data="{name:'',combIP:'', presIP:'', camIP:'',cameraIp:'', pwrCtrlIp:''}"
-                @submit.prevent="
+        <h2 class="text-1 mb-6 text-2xl">New Lecture Hall</h2>
+        <form
+            x-data="{name:'',combIP:'', presIP:'', camIP:'',cameraIp:'', pwrCtrlIp:''}"
+            @submit.prevent="
                     showSuccess = await admin.createLectureHall(name, combIP, presIP, camIP, cameraIp, pwrCtrlIp);
                     setTimeout(() => {window.location = '/admin/lectureHalls';}, 2000);"
-                class = "grid gap-3 w-4/5 mx-auto">
+            class="mx-auto grid w-4/5 gap-3"
+        >
             <label>
-                <span class="dark:text-gray-400 text-gray-800 text-sm font-medium mb-1">Name</span>
-                <input type="text"
-                       x-model="name"
-                       class = "dark:bg-gray-800 dark:focus:border-gray-500 bg-gray-100 rounded border-2 border-transparent
-                        focus:border-gray-300 placeholder:text-sm placeholder:font-light"
-                       placeholder="FMI_HS1"
-                       autofocus required>
+                <span class="mb-1 text-sm font-medium text-gray-800 dark:text-gray-400">Name</span>
+                <input
+                    type="text"
+                    x-model="name"
+                    class="rounded border-2 border-transparent bg-gray-100 placeholder:text-sm placeholder:font-light
+                        focus:border-gray-300 dark:bg-gray-800 dark:focus:border-gray-500"
+                    placeholder="FMI_HS1"
+                    autofocus
+                    required
+                />
             </label>
-            <label class = "block">
-                <span class="dark:text-gray-400 text-gray-800 text-sm font-medium mb-1">Presentation</span>
-                <input type="text"
-                       x-model="presIP"
-                       class = "dark:bg-gray-800 dark:focus:border-gray-500 bg-gray-100 rounded border-2 border-transparent
-                        focus:border-gray-300 placeholder:text-sm placeholder:font-light"
-                       placeholder="0.0.0.0">
+            <label class="block">
+                <span class="mb-1 text-sm font-medium text-gray-800 dark:text-gray-400">Presentation</span>
+                <input
+                    type="text"
+                    x-model="presIP"
+                    class="rounded border-2 border-transparent bg-gray-100 placeholder:text-sm placeholder:font-light
+                        focus:border-gray-300 dark:bg-gray-800 dark:focus:border-gray-500"
+                    placeholder="0.0.0.0"
+                />
             </label>
-            <label class = "block">
-                <span class="dark:text-gray-400 text-gray-800 text-sm font-medium mb-1">Camera</span>
-                <input type="text"
-                       x-model="camIP"
-                       class = "dark:bg-gray-800 dark:focus:border-gray-500 bg-gray-100 rounded border-2 border-transparent
-                        focus:border-gray-300 placeholder:text-sm placeholder:font-light"
-                       placeholder="0.0.0.0">
+            <label class="block">
+                <span class="mb-1 text-sm font-medium text-gray-800 dark:text-gray-400">Camera</span>
+                <input
+                    type="text"
+                    x-model="camIP"
+                    class="rounded border-2 border-transparent bg-gray-100 placeholder:text-sm placeholder:font-light
+                        focus:border-gray-300 dark:bg-gray-800 dark:focus:border-gray-500"
+                    placeholder="0.0.0.0"
+                />
             </label>
-            <label class = "block">
-                <span class="dark:text-gray-400 text-gray-800 text-sm font-medium mb-1">Combined</span>
-                <input type="text"
-                       x-model="combIP"
-                       class = "dark:bg-gray-800 dark:focus:border-gray-500 bg-gray-100 rounded border-2 border-transparent
-                       focus:border-gray-300 placeholder:text-sm placeholder:font-light"
-                       placeholder="0.0.0.0">
+            <label class="block">
+                <span class="mb-1 text-sm font-medium text-gray-800 dark:text-gray-400">Combined</span>
+                <input
+                    type="text"
+                    x-model="combIP"
+                    class="rounded border-2 border-transparent bg-gray-100 placeholder:text-sm placeholder:font-light
+                       focus:border-gray-300 dark:bg-gray-800 dark:focus:border-gray-500"
+                    placeholder="0.0.0.0"
+                />
             </label>
-            <label class = "block">
-                <span class="dark:text-gray-400 text-gray-800 text-sm font-medium mb-1">Axis Cam</span>
-                <input type="text"
-                       x-model="cameraIp"
-                       class = "dark:bg-gray-800 dark:focus:border-gray-500 bg-gray-100 rounded border-2 border-transparent
-                       focus:border-gray-300 placeholder:text-sm placeholder:font-light"
-                       placeholder="0.0.0.0">
+            <label class="block">
+                <span class="mb-1 text-sm font-medium text-gray-800 dark:text-gray-400">Axis Cam</span>
+                <input
+                    type="text"
+                    x-model="cameraIp"
+                    class="rounded border-2 border-transparent bg-gray-100 placeholder:text-sm placeholder:font-light
+                       focus:border-gray-300 dark:bg-gray-800 dark:focus:border-gray-500"
+                    placeholder="0.0.0.0"
+                />
             </label>
-            <label class = "block">
-                <span class="dark:text-gray-400 text-gray-800 text-sm font-medium mb-1">Anel PWR-Ctrl</span>
-                <input type="text"
-                       x-model="pwrCtrlIp"
-                       class = "dark:bg-gray-800 dark:focus:border-gray-500 bg-gray-100 rounded border-2 border-transparent
-                       focus:border-gray-300 placeholder:text-sm placeholder:font-light"
-                       placeholder="0.0.0.0">
+            <label class="block">
+                <span class="mb-1 text-sm font-medium text-gray-800 dark:text-gray-400">Anel PWR-Ctrl</span>
+                <input
+                    type="text"
+                    x-model="pwrCtrlIp"
+                    class="rounded border-2 border-transparent bg-gray-100 placeholder:text-sm placeholder:font-light
+                       focus:border-gray-300 dark:bg-gray-800 dark:focus:border-gray-500"
+                    placeholder="0.0.0.0"
+                />
             </label>
-            <button type="submit"
-                    class = "w-full dark:bg-gray-600 dark:border-slate-800 bg-black text-white border border-gray-600 p-2 rounded text-sm font-semibold mt-4">Create</button>
+            <button
+                type="submit"
+                class="mt-4 w-full rounded border border-gray-600 bg-black p-2 text-sm font-semibold text-white dark:border-slate-800 dark:bg-gray-600"
+            >
+                Create
+            </button>
         </form>
     </div>
-{{end}}
+{{ end }}

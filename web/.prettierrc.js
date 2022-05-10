@@ -5,4 +5,5 @@ module.exports = {
     tabWidth: 4,
     bracketSpacing: true,
     endOfLine: "auto",
+    plugins: [require("prettier-plugin-tailwindcss"), require("prettier-plugin-go-template")],
 };

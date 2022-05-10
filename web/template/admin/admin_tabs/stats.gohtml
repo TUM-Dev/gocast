@@ -1,75 +1,87 @@
-{{define "stats"}}
+{{ define "stats" }}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
-    <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
-                                                        value="{{.TUMLiveContext.Course.Model.ID}}"></label>
-    <h2 class="text-2xl text-1 my-auto mt-4 font-medium">Server Statistics</h2>
-    <div class="grid grid-cols-4 gap-4 w-full pt-4 bg-gray-100 relative rounded-md my-3 shadow-md overflow-x-auto p-4 dark:bg-secondary-lighter">
+    <label class="hidden" for="courseID"
+        >CourseID<input id="courseID" type="text" class="hidden" value="{{ .TUMLiveContext.Course.Model.ID }}"
+    /></label>
+    <h2 class="text-1 my-auto mt-4 text-2xl font-medium">Server Statistics</h2>
+    <div
+        class="relative my-3 grid w-full grid-cols-4 gap-4 overflow-x-auto rounded-md bg-gray-100 p-4 pt-4 shadow-md dark:bg-secondary-lighter"
+    >
         <div class="col-span-4">
             <h2 class="text-2 font-medium">Quick stats</h2>
             <table class="m-2 text-sm">
                 <tbody>
-                <tr>
-                    <td class="text-3 px-1 font-medium">Enrolled Students</td>
-                    <td class="text-2 px-1 font-semibold" id="numStudents">
-                        <i class="fas fa-spinner animate-spin text-3"></i>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="text-3 p-1 font-medium">Lectures</td>
-                    <td class="text-2 px-1 font-semibold">{{.TUMLiveContext.Course.NumStreams}}</td>
-                </tr>
-                <tr>
-                    <td class="text-3 px-1 font-medium">Vod Views</td>
-                    <td class="text-2 font-semibold px-1" id="vodViews">
-                        <i class="fas fa-spinner animate-spin text-3"></i>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="text-3 px-1 font-medium">Live Views</td>
-                    <td class="text-2 font-semibold px-1" id="liveViews">
-                        <i class="fas fa-spinner animate-spin text-3"></i>
-                    </td>
-                </tr>
+                    <tr>
+                        <td class="text-3 px-1 font-medium">Enrolled Students</td>
+                        <td class="text-2 px-1 font-semibold" id="numStudents">
+                            <i class="fas fa-spinner text-3 animate-spin"></i>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-3 p-1 font-medium">Lectures</td>
+                        <td class="text-2 px-1 font-semibold">{{ .TUMLiveContext.Course.NumStreams }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-3 px-1 font-medium">Vod Views</td>
+                        <td class="text-2 px-1 font-semibold" id="vodViews">
+                            <i class="fas fa-spinner text-3 animate-spin"></i>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-3 px-1 font-medium">Live Views</td>
+                        <td class="text-2 px-1 font-semibold" id="liveViews">
+                            <i class="fas fa-spinner text-3 animate-spin"></i>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
         <div class="col-span-4 sm:col-span-2">
             <h2 class="text-2 font-medium">Student Live activity per week</h2>
-            <div class="w-full m-auto" style="min-height: 200px">
-                <canvas id="courseGeneralStatsLive" width="400" height="100" aria-label="Viewer Live stats"
-                        role="img"></canvas>
+            <div class="m-auto w-full" style="min-height: 200px">
+                <canvas
+                    id="courseGeneralStatsLive"
+                    width="400"
+                    height="100"
+                    aria-label="Viewer Live stats"
+                    role="img"
+                ></canvas>
             </div>
         </div>
         <div class="col-span-4 sm:col-span-2">
             <h2 class="text-2 font-medium">Student VoD activity per week</h2>
-            <div class="w-full m-auto" style="min-height: 200px">
-                <canvas id="courseGeneralStatsVod" width="400" height="100" aria-label="Viewer VoD stats"
-                        role="img"></canvas>
+            <div class="m-auto w-full" style="min-height: 200px">
+                <canvas
+                    id="courseGeneralStatsVod"
+                    width="400"
+                    height="100"
+                    aria-label="Viewer VoD stats"
+                    role="img"
+                ></canvas>
             </div>
         </div>
         <div class="col-span-4 md:col-span-2">
             <h2 class="text-2 font-medium">VoD activity throughout the day</h2>
-            <div class="w-full m-auto" style="min-height: 200px">
-                <canvas id="hours" width="400" height="100" aria-label="Viewer stats"
-                        role="img"></canvas>
+            <div class="m-auto w-full" style="min-height: 200px">
+                <canvas id="hours" width="400" height="100" aria-label="Viewer stats" role="img"></canvas>
             </div>
         </div>
         <div class="col-span-4 md:col-span-2">
             <h2 class="text-2 font-medium">VoD activity per day of week</h2>
-            <div class="w-full m-auto" style="min-height: 200px">
-                <canvas id="weekdays" width="400" height="100" aria-label="Viewer stats"
-                        role="img"></canvas>
+            <div class="m-auto w-full" style="min-height: 200px">
+                <canvas id="weekdays" width="400" height="100" aria-label="Viewer stats" role="img"></canvas>
             </div>
         </div>
         <div class="col-span-4">
             <h2 class="text-2 font-medium">VoD activity per day</h2>
-            <div class="w-full m-auto" style="min-height: 200px">
-                <canvas id="allDays" width="400" height="100" aria-label="Viewer stats"
-                        role="img"></canvas>
+            <div class="m-auto w-full" style="min-height: 200px">
+                <canvas id="allDays" width="400" height="100" aria-label="Viewer stats" role="img"></canvas>
             </div>
         </div>
     </div>
-    <p class="text-5"><i class="fas fa-info-circle text-warn"></i> Some of this data is only captured from June 28th 2021 onwards.</p>
+    <p class="text-5">
+        <i class="fas fa-info-circle text-warn"></i> Some of this data is only captured from June 28th 2021 onwards.
+    </p>
     <script>
         admin.loadStats("activity-live", "courseGeneralStatsLive");
         admin.loadStats("activity-vod", "courseGeneralStatsVod");
@@ -78,4 +90,4 @@
         admin.loadStats("allDays", "allDays");
         admin.initStatsPage();
     </script>
-{{end}}
+{{ end }}
