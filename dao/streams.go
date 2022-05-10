@@ -81,14 +81,14 @@ func GetStreamByID(ctx context.Context, id string) (stream model.Stream, err err
 	}
 	var res model.Stream
 	err = DB.
-		Preload("VideoSections").
+		Preload("VideoSections", func(db *gorm.DB) *gorm.DB {
+			return db.Order("start_hours, start_minutes, start_seconds asc")
+		}).
 		Preload("Files").
 		Preload("Silences").
-		Preload("Units",
-			func(db *gorm.DB) *gorm.DB {
-				return db.Order("unit_start asc")
-			}).
-		First(&res, "id = ?", id).Error
+		Preload("Units", func(db *gorm.DB) *gorm.DB {
+			return db.Order("unit_start asc")
+		}).First(&res, "id = ?", id).Error
 	if err != nil {
 		fmt.Printf("error getting stream by id: %v\n", err)
 		return res, err

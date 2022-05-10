@@ -14,7 +14,6 @@ export class VideoSection {
         this.streamID = streamID;
         this.unsavedChanges = false;
         this.resetCurrent();
-        this.load();
     }
 
     load() {
@@ -48,6 +47,26 @@ export class VideoSection {
         Delete(`/api/stream/${this.streamID}/sections/${id}`).then(async () => {
             await this.load();
         });
+    }
+    timeStringAsString(section): string {
+        let s = "";
+
+        if (section.startHours > 0) {
+            s += section.startHours;
+            s += ":";
+        }
+        if (section.startMinutes < 10) {
+            s += `0${section.startMinutes}`;
+        } else {
+            s += section.startMinutes;
+        }
+        s += ":";
+        if (section.startSeconds < 10) {
+            s += `0${section.startSeconds}`;
+        } else {
+            s += section.startSeconds;
+        }
+        return s;
     }
     private resetCurrent() {
         this.current = {
