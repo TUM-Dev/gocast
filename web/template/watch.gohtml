@@ -12,10 +12,8 @@
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
     <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
     <link rel="stylesheet" href="/static/node_modules/@silvermine/videojs-airplay/dist/silvermine-videojs-airplay.css">
-    <link rel="stylesheet" href="/static/node_modules/@silvermine/videojs-chromecast/dist/silvermine-videojs-chromecast.css">
     <link rel="stylesheet"
           href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
-    <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 </head>
 <body x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}}"
       x-on:pausestart.window="paused=true"
