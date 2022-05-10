@@ -52,7 +52,7 @@
             </div>
 
             <div class="flex items-center justify-end h-8">
-                <template x-if="lecture.files.length > 0">
+                <template x-if="lecture.files && lecture.files.length > 0">
                     <span class="relative mr-2" x-data="{expand:false}">
                         <button @click="expand=!expand" type="button"
                                 id="menu-button" aria-expanded="true"
