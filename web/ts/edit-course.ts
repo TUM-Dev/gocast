@@ -15,10 +15,8 @@ export class LectureList {
         initialState.forEach((lecture) => {
             let l = new Lecture();
             l = Object.assign(l, lecture);
-            const s = new Date();
-            l.start = Object.assign(s, lecture.start);
-            const e = new Date();
-            l.end = Object.assign(e, lecture.end);
+            l.start = new Date(lecture.start);
+            l.end = new Date(lecture.end);
             LectureList.lectures.push(l);
         });
         LectureList.triggerUpdate();
