@@ -314,3 +314,17 @@ func GetStreamsWithWatchState(courseID uint, userID uint) (streams []model.Strea
 	}
 	return
 }
+
+func Search(q string) ([]uint, error) {
+	var streamIds []uint
+	partialQ := fmt.Sprintf("%s*", q)
+	err := DB.
+		Model(&model.Stream{}).
+		Select("id").
+		Distinct("id").
+		Where("match(name) against(? in boolean mode)", partialQ).
+		Or("match(description) against(? in boolean mode)", partialQ).
+		Find(&streamIds).
+		Error
+	return streamIds, err
+}
