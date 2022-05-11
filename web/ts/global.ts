@@ -71,6 +71,27 @@ export function unhideCourse(id: string) {
     document.location.reload();
 }
 
+/**
+ * Mirrors a tree (reverses the order of its "leaves") in the DOM.
+ */
+export function mirror(parent: Element, levelSelectors: string[], levelIndex=0) {
+    console.log(parent, levelSelectors, levelIndex);
+    const children = parent.querySelectorAll(levelSelectors[levelIndex]); // querySelectorAll returns static node list
+
+    // if this is not a leaf, recurse
+    if (levelIndex + 1 < levelSelectors.length)
+        children.forEach(child => mirror(child, levelSelectors, levelIndex + 1));
+
+    // mirror the direct children
+    const placeholder = document.createElement("div");
+    for (let childI = 0; childI * 2 + 1 < children.length; childI++) {
+        const a = children[childI], b = children[children.length - childI - 1];
+        a.replaceWith(placeholder);
+        b.replaceWith(a);
+        placeholder.replaceWith(b);
+    }
+}
+
 export function initHiddenCourses() {
     const el = document.getElementById("hiddenCoursesText");
     if (!el) {
