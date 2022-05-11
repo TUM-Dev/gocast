@@ -75,7 +75,6 @@ export function unhideCourse(id: string) {
  * Mirrors a tree (reverses the order of its "leaves") in the DOM.
  */
 export function mirror(parent: Element, levelSelectors: string[], levelIndex = 0) {
-    console.log(parent, levelSelectors, levelIndex);
     const children = parent.querySelectorAll(levelSelectors[levelIndex]); // querySelectorAll returns static node list
 
     // if this is not a leaf, recurse

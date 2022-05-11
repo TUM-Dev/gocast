@@ -19,7 +19,7 @@
         <!-- VoD -->
         <div {{if .IndexData.TUMLiveContext}}x-init="watchedTracker.init({{.WatchedData}})"
              x-data="watchedTracker = new global.WatchedTracker" {{end}}class="w-full md:row-span-6 md:col-span-3">
-            <div x-data="{asc: false, mirror: global.mirror($el.querySelector('.vod-list'), ['.vod-list-month', '.vod-list-video'])
+            <div x-data="{asc: false, mirror: () => { global.mirror($el.querySelector('.vod-list'), ['.vod-list-month', '.vod-list-video']); }
                     {{if .IndexData.TUMLiveContext.User}}, filterWatched: true, watchedAll: watchedTracker.userWatchedAll(){{end}}}"
                  class="bg-white h-full border dark:bg-secondary dark:border-gray-800 rounded-lg
                     shadow-sm flex flex-col">
