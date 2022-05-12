@@ -77,6 +77,20 @@ func (mr *MockStreamsDaoMockRecorder) CreateStream(stream interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateStream", reflect.TypeOf((*MockStreamsDao)(nil).CreateStream), stream)
 }
 
+// DeleteSilences mocks base method.
+func (m *MockStreamsDao) DeleteSilences(streamID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSilences", streamID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSilences indicates an expected call of DeleteSilences.
+func (mr *MockStreamsDaoMockRecorder) DeleteSilences(streamID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSilences", reflect.TypeOf((*MockStreamsDao)(nil).DeleteSilences), streamID)
+}
+
 // DeleteStream mocks base method.
 func (m *MockStreamsDao) DeleteStream(streamID string) {
 	m.ctrl.T.Helper()
