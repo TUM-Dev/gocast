@@ -67,11 +67,11 @@ func (b *Bot) SendMessage(message Message) error {
 }
 
 // SendAlert sends an alert message to the bot e.g. via Matrix.
-func (b *Bot) SendAlert(alert AlertMessage) error {
+func (b *Bot) SendAlert(alert AlertMessage, statsDao dao.StatisticsDao) error {
 	issuesPerStream[alert.Stream.ID] = append(issuesPerStream[alert.Stream.ID], issueInfo{Time: time.Now(), UserID: alert.User.ID})
 	message := Message{
 		Text: getFormattedMessageText(GenerateInfoText(alert)),
-		Prio: hasPrio(alert.Stream.ID) || alert.IsLecturer,
+		Prio: hasPrio(alert.Stream.ID, statsDao) || alert.IsLecturer,
 	}
 	return b.SendMessage(message)
 }
@@ -136,8 +136,8 @@ func getFormattedMessageText(message string) string {
 
 // hasPrio returns true if 1% of the current viewers of a stream with streamID reported an issue.
 // When there threshold for sending an alert is greater than 1, it is also checked whether these reports are consecutive.
-func hasPrio(streamID uint) bool {
-	liveViewers, err := dao.GetCurrentLiveViewers(streamID)
+func hasPrio(streamID uint, statsDao dao.StatisticsDao) bool {
+	liveViewers, err := statsDao.GetCurrentLiveViewers(streamID)
 	if err != nil {
 		sentry.CaptureException(err)
 		log.WithError(err).Error("Failed to get current live viewers")
