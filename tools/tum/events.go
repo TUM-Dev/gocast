@@ -71,7 +71,7 @@ func getEventsForCourse(courseID string, token string) (events map[time.Time]Eve
 	return eventsMap, deletedEvents, nil
 }
 
-func GetEventsForCourses(courses []model.Course) {
+func GetEventsForCourses(courses []model.Course, daoWrapper dao.DaoWrapper) {
 	for i := range courses {
 		course := courses[i]
 		var events map[time.Time]Event
@@ -87,9 +87,9 @@ func GetEventsForCourses(courses []model.Course) {
 		for i := range deleted {
 			ids[i] = deleted[i].SingleEventID
 		}
-		dao.DeleteStreamsWithTumID(ids)
+		daoWrapper.StreamsDao.DeleteStreamsWithTumID(ids)
 		for _, event := range events {
-			stream, err := dao.GetStreamByTumOnlineID(context.Background(), event.SingleEventID)
+			stream, err := daoWrapper.StreamsDao.GetStreamByTumOnlineID(context.Background(), event.SingleEventID)
 			if err != nil { // Lecture does not exist yet
 				log.Info("Adding course")
 				course.Streams = append(course.Streams, model.Stream{
@@ -112,7 +112,7 @@ func GetEventsForCourses(courses []model.Course) {
 				stream.EventTypeName = event.SingleEventTypeName
 			}
 		}
-		err = dao.UpdateCourse(context.Background(), course)
+		err = daoWrapper.CoursesDao.UpdateCourse(context.Background(), course)
 		if err != nil {
 			log.WithError(err).WithField("CourseID", course.ID).Warn("Can't update course")
 		}

@@ -10,14 +10,19 @@ import (
 	"strconv"
 )
 
-func configNotificationsRouter(r *gin.Engine) {
+func configNotificationsRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
+	routes := notificationRoutes{daoWrapper}
 	notifications := r.Group("/api/notifications")
-	notifications.GET("/", getNotifications)
-	notifications.POST("/", createNotification)
-	notifications.DELETE("/:id", deleteNotification)
+	notifications.GET("/", routes.getNotifications)
+	notifications.POST("/", routes.createNotification)
+	notifications.DELETE("/:id", routes.deleteNotification)
 }
 
-func getNotifications(c *gin.Context) {
+type notificationRoutes struct {
+	dao.DaoWrapper
+}
+
+func (r notificationRoutes) getNotifications(c *gin.Context) {
 	f, _ := c.Get("TUMLiveContext")
 	ctx := f.(tools.TUMLiveContext)
 	targets := []model.NotificationTarget{model.TargetAll}
@@ -32,7 +37,7 @@ func getNotifications(c *gin.Context) {
 			targets = append(targets, model.TargetStudent)
 		}
 	}
-	notifications, err := dao.GetNotifications(targets...)
+	notifications, err := r.NotificationsDao.GetNotifications(targets...)
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
@@ -40,7 +45,7 @@ func getNotifications(c *gin.Context) {
 	c.JSON(http.StatusOK, notifications)
 }
 
-func createNotification(c *gin.Context) {
+func (r notificationRoutes) createNotification(c *gin.Context) {
 	var notification model.Notification
 	if err := c.BindJSON(&notification); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -50,7 +55,7 @@ func createNotification(c *gin.Context) {
 		notification.Title = nil
 	}
 	notification.Body = notification.SanitizedBody // reverse json binding
-	if err := dao.AddNotification(&notification); err != nil {
+	if err := r.NotificationsDao.AddNotification(&notification); err != nil {
 		log.Error(err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -58,12 +63,12 @@ func createNotification(c *gin.Context) {
 	c.JSON(http.StatusOK, notification)
 }
 
-func deleteNotification(c *gin.Context) {
+func (r notificationRoutes) deleteNotification(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "id must be an integer"})
 	}
-	err = dao.DeleteNotification(uint(id))
+	err = r.NotificationsDao.DeleteNotification(uint(id))
 	if err != nil {
 		log.WithError(err).Error("Error deleting notification")
 		c.AbortWithStatus(http.StatusInternalServerError)

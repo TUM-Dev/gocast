@@ -1,9 +1,12 @@
 package bot
 
 import (
+	"github.com/getsentry/sentry-go"
+	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
+	log "github.com/sirupsen/logrus"
 	"strings"
 	"time"
 )
@@ -41,7 +44,12 @@ type AlertMessage struct {
 	User        model.User
 }
 
-var issuesPerStream = make(map[uint][]time.Time)
+type issueInfo struct {
+	Time   time.Time
+	UserID uint
+}
+
+var issuesPerStream = make(map[uint][]issueInfo)
 
 // MessageProvider provides a generic interface for different message providers e.g. Matrix
 type MessageProvider interface {
@@ -60,10 +68,10 @@ func (b *Bot) SendMessage(message Message) error {
 
 // SendAlert sends an alert message to the bot e.g. via Matrix.
 func (b *Bot) SendAlert(alert AlertMessage) error {
-	issuesPerStream[alert.Stream.ID] = append(issuesPerStream[alert.Stream.ID], time.Now())
+	issuesPerStream[alert.Stream.ID] = append(issuesPerStream[alert.Stream.ID], issueInfo{Time: time.Now(), UserID: alert.User.ID})
 	message := Message{
 		Text: getFormattedMessageText(GenerateInfoText(alert)),
-		Prio: hasConsecutiveReports(alert.Stream.ID) || alert.IsLecturer,
+		Prio: hasPrio(alert.Stream.ID) || alert.IsLecturer,
 	}
 	return b.SendMessage(message)
 }
@@ -126,16 +134,39 @@ func getFormattedMessageText(message string) string {
 	return string(html)
 }
 
-// hasConsecutiveReports checks if the stream has two reported alerts within the last 10 minutes.
-func hasConsecutiveReports(streamID uint) bool {
-	if len(issuesPerStream[streamID]) < 2 {
+// hasPrio returns true if 1% of the current viewers of a stream with streamID reported an issue.
+// When there threshold for sending an alert is greater than 1, it is also checked whether these reports are consecutive.
+func hasPrio(streamID uint) bool {
+	liveViewers, err := dao.GetCurrentLiveViewers(streamID)
+	if err != nil {
+		sentry.CaptureException(err)
+		log.WithError(err).Error("Failed to get current live viewers")
 		return false
 	}
+	distinctReports := liveViewers
 
-	for i := range issuesPerStream[streamID] {
-		if issuesPerStream[streamID][i].Sub(issuesPerStream[streamID][i+1]) < 10*time.Minute {
-			return true
+	for _, r1 := range issuesPerStream[streamID] {
+		for _, r2 := range issuesPerStream[streamID] {
+			if r1.UserID == r2.UserID {
+				distinctReports--
+			}
 		}
 	}
-	return false
+
+	percentOfViewersWithIssue := 100 * (float64(distinctReports) / float64(liveViewers))
+	// If there is more than one report, check if they are consecutive.
+	if distinctReports >= 2 && len(issuesPerStream[streamID]) > 1 && percentOfViewersWithIssue >= 1 {
+		consecutive := false
+		// Check whether there is a duplicate User ID in issuesPerStream
+		for i := range issuesPerStream[streamID] {
+			// Do we have reports within in 10 minutes?
+			if issuesPerStream[streamID][i].Time.Sub(issuesPerStream[streamID][i+1].Time) < 10*time.Minute {
+				consecutive = true
+				break
+			}
+		}
+		return consecutive
+	}
+	// Returns whether at least one percent of the viewers have reported an issue within the last 10 minutes
+	return percentOfViewersWithIssue >= 1
 }

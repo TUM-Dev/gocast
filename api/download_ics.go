@@ -11,11 +11,16 @@ import (
 	"strings"
 )
 
-func configGinDownloadICSRouter(router *gin.Engine) {
-	router.GET("/api/download_ics/:year/:term/:slug/events.ics", downloadICS)
+func configGinDownloadICSRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
+	routes := downloadICSRoutes{daoWrapper}
+	router.GET("/api/download_ics/:year/:term/:slug/events.ics", routes.downloadICS)
 }
 
-func downloadICS(c *gin.Context) {
+type downloadICSRoutes struct {
+	dao.DaoWrapper
+}
+
+func (r downloadICSRoutes) downloadICS(c *gin.Context) {
 	templates, err := template.ParseFS(staticFS, "template/*.gotemplate")
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -29,7 +34,7 @@ func downloadICS(c *gin.Context) {
 		return
 	}
 
-	course, err := dao.GetCourseBySlugYearAndTerm(c, slug, term, year)
+	course, err := r.CoursesDao.GetCourseBySlugYearAndTerm(c, slug, term, year)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
