@@ -7,67 +7,78 @@ import (
 	"time"
 )
 
-func FindPreset(lectureHallID string, presetID string) (model.CameraPreset, error) {
+//go:generate mockgen -source=lecture_halls.go -destination ../mock_dao/lecture_halls.go
+
+type LectureHallsDao interface {
+	CreateLectureHall(lectureHall model.LectureHall)
+	SavePreset(preset model.CameraPreset) error
+	SaveLectureHallFullAssoc(lectureHall model.LectureHall)
+	SaveLectureHall(lectureHall model.LectureHall) error
+
+	FindPreset(lectureHallID string, presetID string) (model.CameraPreset, error)
+	GetAllLectureHalls() []model.LectureHall
+	GetLectureHallByPartialName(name string) (model.LectureHall, error)
+	GetLectureHallByID(id uint) (model.LectureHall, error)
+	GetStreamsForLectureHallIcal(userId uint) ([]CalendarResult, error)
+
+	UnsetDefaults(lectureHallID string) error
+
+	DeleteLectureHall(id uint) error
+}
+
+type lectureHallsDao struct {
+	db *gorm.DB
+}
+
+func NewLectureHallsDao() LectureHallsDao {
+	return lectureHallsDao{db: DB}
+}
+
+func (d lectureHallsDao) CreateLectureHall(lectureHall model.LectureHall) {
+	DB.Create(&lectureHall)
+}
+
+func (d lectureHallsDao) SavePreset(preset model.CameraPreset) error {
+	return DB.Clauses(clause.OnConflict{UpdateAll: true}).Save(&preset).Error
+}
+
+func (d lectureHallsDao) SaveLectureHallFullAssoc(lectureHall model.LectureHall) {
+	DB.Delete(model.CameraPreset{}, "lecture_hall_id = ?", lectureHall.ID)
+	DB.Clauses(clause.OnConflict{UpdateAll: true}).Session(&gorm.Session{FullSaveAssociations: true}).Updates(&lectureHall)
+}
+
+func (d lectureHallsDao) SaveLectureHall(lectureHall model.LectureHall) error {
+	return DB.Save(&lectureHall).Error
+}
+
+func (d lectureHallsDao) FindPreset(lectureHallID string, presetID string) (model.CameraPreset, error) {
 	var preset model.CameraPreset
 	err := DB.First(&preset, "preset_id = ? AND lecture_hall_id = ?", presetID, lectureHallID).Error
 	return preset, err
 }
 
-// UnsetDefaults makes all camera presets not default
-func UnsetDefaults(lectureHallID string) error {
-	return DB.Model(&model.CameraPreset{}).Where("lecture_hall_id = ?", lectureHallID).Update("default", nil).Error
-}
-
-func SavePreset(preset model.CameraPreset) error {
-	return DB.Clauses(clause.OnConflict{UpdateAll: true}).Save(&preset).Error
-}
-
-func GetAllLectureHalls() []model.LectureHall {
+func (d lectureHallsDao) GetAllLectureHalls() []model.LectureHall {
 	var lectureHalls []model.LectureHall
 	_ = DB.Preload("CameraPresets").Find(&lectureHalls)
 	return lectureHalls
 }
 
-func CreateLectureHall(lectureHall model.LectureHall) {
-	DB.Create(&lectureHall)
-}
-
-func GetLectureHallByPartialName(name string) (model.LectureHall, error) {
+func (d lectureHallsDao) GetLectureHallByPartialName(name string) (model.LectureHall, error) {
 	var res model.LectureHall
 	err := DB.Where("full_name LIKE ?", "%"+name+"%").First(&res).Error
 	return res, err
 }
 
-func GetLectureHallByID(id uint) (model.LectureHall, error) {
+func (d lectureHallsDao) GetLectureHallByID(id uint) (model.LectureHall, error) {
 	var lectureHall model.LectureHall
 	err := DB.Preload("CameraPresets").First(&lectureHall, id).Error
 	return lectureHall, err
 }
 
-func DeleteLectureHall(id uint) error {
-	err := DB.Delete(&model.LectureHall{}, id).Error
-	if err != nil {
-		return err
-	}
-
-	DB.Delete(model.CameraPreset{}, "lecture_hall_id = ?", id)
-	DB.Exec("UPDATE streams SET lecture_hall_id = NULL WHERE lecture_hall_id = ?", id)
-	return nil
-}
-
-func SaveLectureHallFullAssoc(lectureHall model.LectureHall) {
-	DB.Delete(model.CameraPreset{}, "lecture_hall_id = ?", lectureHall.ID)
-	DB.Clauses(clause.OnConflict{UpdateAll: true}).Session(&gorm.Session{FullSaveAssociations: true}).Updates(&lectureHall)
-}
-
-func SaveLectureHall(lectureHall model.LectureHall) error {
-	return DB.Save(&lectureHall).Error
-}
-
 // GetStreamsForLectureHallIcal returns an instance of []calendarResult for the ical export.
 // if a user id is given, only streams of the user are returned. All streams are returned otherwise.
 // streams that happened more than on month ago and streams that are more than 3 months in the future are omitted.
-func GetStreamsForLectureHallIcal(userId uint) ([]CalendarResult, error) {
+func (d lectureHallsDao) GetStreamsForLectureHallIcal(userId uint) ([]CalendarResult, error) {
 	var res []CalendarResult
 	err := DB.Model(&model.Stream{}).
 		Joins("LEFT JOIN lecture_halls ON lecture_halls.id = streams.lecture_hall_id").
@@ -81,6 +92,22 @@ func GetStreamsForLectureHallIcal(userId uint) ([]CalendarResult, error) {
 		Group("streams.id").
 		Scan(&res).Error
 	return res, err
+}
+
+// UnsetDefaults makes all camera presets not default
+func (d lectureHallsDao) UnsetDefaults(lectureHallID string) error {
+	return DB.Model(&model.CameraPreset{}).Where("lecture_hall_id = ?", lectureHallID).Update("default", nil).Error
+}
+
+func (d lectureHallsDao) DeleteLectureHall(id uint) error {
+	err := DB.Delete(&model.LectureHall{}, id).Error
+	if err != nil {
+		return err
+	}
+
+	DB.Delete(model.CameraPreset{}, "lecture_hall_id = ?", id)
+	DB.Exec("UPDATE streams SET lecture_hall_id = NULL WHERE lecture_hall_id = ?", id)
+	return nil
 }
 
 type CalendarResult struct {

@@ -3,7 +3,6 @@ package web
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"html/template"
@@ -23,7 +22,7 @@ type editCourseByTokenPageData struct {
 	IndexData IndexData
 }
 
-func editCourseByTokenPage(c *gin.Context) {
+func (r mainRoutes) editCourseByTokenPage(c *gin.Context) {
 	err := c.Request.ParseForm()
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -31,7 +30,7 @@ func editCourseByTokenPage(c *gin.Context) {
 	}
 
 	indexData := NewIndexDataWithContext(c)
-	course, err := dao.GetCourseByToken(c.Request.Form.Get("token"))
+	course, err := r.CoursesDao.GetCourseByToken(c.Request.Form.Get("token"))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Course not found"})
 		return
@@ -48,8 +47,8 @@ func editCourseByTokenPage(c *gin.Context) {
 	}
 }
 
-func HighlightPage(c *gin.Context) {
-	course, err := dao.GetCourseByShortLink(c.Param("shortLink"))
+func (r mainRoutes) HighlightPage(c *gin.Context) {
+	course, err := r.CoursesDao.GetCourseByShortLink(c.Param("shortLink"))
 	if err != nil {
 		tools.RenderErrorPage(c, http.StatusNotFound, tools.PageNotFoundErrMsg)
 		return
@@ -65,7 +64,7 @@ func HighlightPage(c *gin.Context) {
 		return
 	}
 	indexData.TUMLiveContext.Course = &course
-	s, err := dao.GetCurrentOrNextLectureForCourse(c, course.ID)
+	s, err := r.CoursesDao.GetCurrentOrNextLectureForCourse(c, course.ID)
 	if err == nil {
 		indexData.TUMLiveContext.Stream = &s
 	} else if err == gorm.ErrRecordNotFound {
@@ -92,7 +91,7 @@ func HighlightPage(c *gin.Context) {
 	}
 }
 
-func CoursePage(c *gin.Context) {
+func (r mainRoutes) CoursePage(c *gin.Context) {
 	indexData := NewIndexData()
 	var tumLiveContext tools.TUMLiveContext
 	tumLiveContextQueried, found := c.Get("TUMLiveContext")
@@ -115,7 +114,7 @@ func CoursePage(c *gin.Context) {
 		return
 	}
 
-	streamsWithWatchState, err := dao.GetStreamsWithWatchState((*tumLiveContext.Course).ID, (*tumLiveContext.User).ID)
+	streamsWithWatchState, err := r.StreamsDao.GetStreamsWithWatchState((*tumLiveContext.Course).ID, (*tumLiveContext.User).ID)
 	if err != nil {
 		sentry.CaptureException(err)
 		log.WithError(err).Error("loading streamsWithWatchState and progresses for a given course and user failed")
