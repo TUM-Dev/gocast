@@ -33,7 +33,7 @@
                  x-show="paused" x-cloak>
                 <i class="fas fa-info-circle"></i> This lecture is currently paused.
             </div>
-            <div x-data="{ showliveended: true }" class="bg-red-700 bg-opacity-20 p-2 w-full font-semibold text-2"
+            <div x-data="{ showliveended: false }" class="bg-red-700 bg-opacity-20 p-2 w-full font-semibold text-2"
                  x-show="showliveended" @streamended.window="showliveended=true" x-cloak>
                 <i class="fas fa-info-circle"></i> This livestream has ended.
             </div>
