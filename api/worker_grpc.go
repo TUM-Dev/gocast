@@ -471,6 +471,10 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		if err != nil {
 			log.WithError(err).Error("Can't handle camera position switch")
 		}
+		err = s.DaoWrapper.DeleteSilences(fmt.Sprintf("%d", stream.ID))
+		if err != nil {
+			log.WithError(err).Error("Can't delete silences")
+		}
 	}()
 	go func() {
 		// interims solution; sometimes dvr doesn't work as expected.

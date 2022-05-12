@@ -37,6 +37,7 @@ type StreamsDao interface {
 	SaveWorkerForStream(stream model.Stream, worker model.Worker) error
 	ClearWorkersForStream(stream model.Stream) error
 	UpdateSilences(silences []model.Silence, streamID string) error
+	DeleteSilences(streamID string) error
 	UpdateStreamFullAssoc(vod *model.Stream) error
 	SetStreamNotLiveById(streamID uint) error
 	SavePauseState(streamID uint, paused bool) error
@@ -319,8 +320,15 @@ func (d streamsDao) ClearWorkersForStream(stream model.Stream) error {
 	return DB.Model(&stream).Association("StreamWorkers").Clear()
 }
 
+func (d streamsDao) DeleteSilences(streamID string) error {
+	return DB.Delete(&model.Silence{}, "stream_id = ?", streamID).Error
+}
+
 func (d streamsDao) UpdateSilences(silences []model.Silence, streamID string) error {
-	DB.Delete(&model.Silence{}, "stream_id = ?", streamID)
+	err := d.DeleteSilences(streamID)
+	if err != nil {
+		return err
+	}
 	return DB.Save(&silences).Error
 }
 
