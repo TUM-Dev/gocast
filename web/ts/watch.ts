@@ -69,7 +69,13 @@ export function startWebsocket() {
         if ("viewers" in data && document.getElementById("viewerCount") != null) {
             document.getElementById("viewerCount").innerText = data["viewers"];
         } else if ("live" in data) {
-            window.location.reload();
+            if (data["live"]) {
+                // stream start, refresh page
+                window.location.reload();
+            } else {
+                // stream end, show message
+                window.dispatchEvent(new CustomEvent("streamended"));
+            }
         } else if ("paused" in data) {
             const paused: boolean = data["paused"];
             if (paused) {
