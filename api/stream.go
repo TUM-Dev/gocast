@@ -213,7 +213,7 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 	alertBot.SetMessagingMethod(&bot.Matrix{})
 
 	// Set messaging strategy as specified in strategy pattern
-	if err = alertBot.SendAlert(botInfo); err != nil {
+	if err = alertBot.SendAlert(botInfo, r.StatisticsDao); err != nil {
 		sentry.CaptureException(err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
