@@ -5,6 +5,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"strconv"
 )
 
 func configGinSearchRouter(router *gin.Engine, dao dao.VideoSectionDao) {
@@ -25,10 +26,20 @@ type searchResponse struct {
 func (r searchRoutes) sections(c *gin.Context) {
 	q := c.Query("q")
 	if q == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "empty query (?q= missing)")
+		c.AbortWithStatusJSON(http.StatusBadRequest, "query parameter 'q' missing")
 	}
 
-	streamIDs, err := r.VideoSectionDao.Search(q)
+	courseIdS := c.Query("courseId")
+	if courseIdS == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "query parameter 'courseId' missing")
+	}
+
+	courseId, err := strconv.Atoi(courseIdS)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "can not parse courseId")
+	}
+
+	streamIDs, err := r.VideoSectionDao.Search(q, uint(courseId))
 	if err != nil {
 		log.WithError(err).Error("could not perform video section search")
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -43,7 +54,17 @@ func (r searchRoutes) streams(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "empty query (?q= missing)")
 	}
 
-	streamIDs, err := dao.Search(q)
+	courseIdS := c.Query("courseId")
+	if courseIdS == "" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "query parameter 'courseId' missing")
+	}
+
+	courseId, err := strconv.Atoi(courseIdS)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "can not parse courseId")
+	}
+
+	streamIDs, err := dao.Search(q, uint(courseId))
 	if err != nil {
 		log.WithError(err).Error("could not perform stream search")
 		c.AbortWithStatus(http.StatusInternalServerError)

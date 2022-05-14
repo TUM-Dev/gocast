@@ -10,14 +10,17 @@
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.CoursePageData*/ -}}
 {{template "header" .IndexData.TUMLiveContext}}
 {{$course := .IndexData.TUMLiveContext.Course}}
-<div x-show="showLectureSearchModal" id = "lecture-search-modal" class = "flex absolute w-full h-screen backdrop-blur-sm p-2">
-    <div class = "w-full mt-5 md:mt-24 mx-auto md:w-2/4 bg-white border shadow rounded-lg h-fit dark:border-gray-600 dark:bg-secondary">
+<div x-show="showLectureSearchModal" id = "lecture-search-modal" class = "flex absolute w-full h-screen backdrop-blur-sm p-2 z-50">
+    <div x-data="{lectureSearch: new global.LectureSearch({{$course.ID}})}" class = "w-full mt-5 md:mt-24 mx-auto md:w-2/4 bg-white border shadow rounded-lg h-fit dark:border-gray-600 dark:bg-secondary">
         <div class = "flex px-3 py-1 border-b"
              @click.outside="showLectureSearchModal = false">
             <div class = "p-1 my-auto">
                 <i class = "fa-solid fa-search text-lg text-gray-500 dark:text-gray-600"></i>
             </div>
-            <input name = "lecture-search-input" placeholder="Search in lectures" class = "bg-transparent border-0 outline-none w-full h-full font-light">
+            <input @keyup="(e) => lectureSearch.performSearch(e.target.value)"
+                    name = "lecture-search-input"
+                    placeholder="Search for lectures"
+                    class = "bg-transparent border-0 outline-none w-full h-full font-light">
             <button @click="showLectureSearchModal = false" class = "py-1 px-3 border dark:border-gray-600 rounded shadow-sm my-auto">
                 <i class = "fa-solid fa-rotate-left text-xs"></i>
             </button>

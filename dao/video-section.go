@@ -12,7 +12,7 @@ type VideoSectionDao interface {
 	Delete(videoSectionID uint) error
 	GetByStreamId(streamID uint) ([]model.VideoSection, error)
 
-	Search(q string) ([]uint, error)
+	Search(q string, courseId uint) ([]uint, error)
 }
 
 type videoSectionDao struct {
@@ -41,14 +41,15 @@ func (d videoSectionDao) GetByStreamId(streamID uint) ([]model.VideoSection, err
 	return sections, err
 }
 
-func (d videoSectionDao) Search(q string) ([]uint, error) {
+func (d videoSectionDao) Search(q string, courseId uint) ([]uint, error) {
 	var streamIds []uint
 	partialQ := fmt.Sprintf("%s*", q)
 	err := DB.
 		Model(&model.VideoSection{}).
 		Select("stream_id").
 		Distinct("stream_id").
-		Where("match(description) against(? in boolean mode)", partialQ).
+		Joins("join streams s on s.id = video_sections.stream_id", DB.Where(&model.Stream{CourseID: courseId})).
+		Where("match(video_sections.description) against(? in boolean mode) AND s.course_id = ?", partialQ, courseId).
 		Find(&streamIds).
 		Error
 	return streamIds, err
