@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	FILETYPE_DOWNLOAD   = 0
-	FILETYPE_ATTACHMENT = 1
+	FILETYPE_DOWNLOAD = iota + 1
+	FILETYPE_ATTACHMENT
 )
 
 type File struct {
@@ -15,8 +15,8 @@ type File struct {
 
 	StreamID uint   `gorm:"not null"`
 	Path     string `gorm:"not null"`
-	Filename string `gorm:"null;"`
-	Type     uint   `gorm:"default: 0"`
+	Filename string
+	Type     uint `gorm:"not null; default: 1"`
 }
 
 func (f File) GetDownloadFileName() string {
@@ -42,6 +42,6 @@ func (f File) GetFriendlyFileName() string {
 	return "Default view"
 }
 
-func (f File) IsAbsolutePath() bool {
+func (f File) IsURL() bool {
 	return strings.HasPrefix(f.Path, "https://") || strings.HasPrefix(f.Path, "http://")
 }
