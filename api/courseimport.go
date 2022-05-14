@@ -7,7 +7,6 @@ import (
 	campusonline "github.com/RBG-TUM/CAMPUSOnline"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/tum"
@@ -21,7 +20,7 @@ import (
 	"unicode"
 )
 
-func postSchedule(c *gin.Context) {
+func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 	resp := ""
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
@@ -75,7 +74,7 @@ func postSchedule(c *gin.Context) {
 
 		var streams []model.Stream
 		for _, event := range courseReq.Events {
-			lectureHall, err := dao.GetLectureHallByPartialName(event.RoomName)
+			lectureHall, err := r.LectureHallsDao.GetLectureHallByPartialName(event.RoomName)
 			if err != nil {
 				log.WithError(err).Error("No room found for request")
 				continue
@@ -89,7 +88,7 @@ func postSchedule(c *gin.Context) {
 			})
 		}
 		course.Streams = streams
-		err := dao.CreateCourse(c, &course, !req.OptIn)
+		err := r.CoursesDao.CreateCourse(c, &course, !req.OptIn)
 		if err != nil {
 			resp += err.Error()
 			continue
@@ -109,7 +108,7 @@ func postSchedule(c *gin.Context) {
 			time.Sleep(time.Millisecond * 200) // wait a bit, otherwise ldap locks us out
 			user.Name = name
 			user.Role = model.LecturerType
-			err = dao.UpsertUser(user)
+			err = r.UsersDao.UpsertUser(user)
 			if err != nil {
 				log.Error(err)
 			} else {
@@ -117,7 +116,7 @@ func postSchedule(c *gin.Context) {
 			}
 		}
 		for _, user := range users {
-			if err := dao.AddAdminToCourse(user.ID, course.ID); err != nil {
+			if err := r.CoursesDao.AddAdminToCourse(user.ID, course.ID); err != nil {
 				log.WithError(err).Error("can't add admin to course")
 			}
 			err := notifyCourseCreated(MailTmpl{
@@ -158,7 +157,7 @@ func notifyCourseCreated(d MailTmpl, mailAddr string, subject string) error {
 	return tools.SendMail(tools.Cfg.Mail.Server, tools.Cfg.Mail.Sender, subject, body.String(), []string{mailAddr})
 }
 
-func getSchedule(c *gin.Context) {
+func (r lectureHallRoutes) getSchedule(c *gin.Context) {
 	err := c.Request.ParseForm()
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)

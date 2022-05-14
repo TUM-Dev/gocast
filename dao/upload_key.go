@@ -5,6 +5,8 @@ import (
 	"gorm.io/gorm"
 )
 
+//go:generate mockgen -source=upload_key.go -destination ../mock_dao/upload_key.go
+
 type UploadKeyDao interface {
 	GetUploadKey(key string) (model.UploadKey, error)
 	CreateUploadKey(key string, stream uint) error

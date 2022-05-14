@@ -9,10 +9,10 @@
             {{if ne $lecture.Start.Month $lastMonth}}
                 {{if ne $lastMonth -1}} </div> {{end}}
                 {{$lastMonth = $lecture.Start.Month}}
-                <div class="my-2" {{if $user}}x-show="!filterWatched || (filterWatched && !monthHidden)" x-data="{ monthHidden: watchedTracker.userWatchedMonth(`{{$lecture.Start.Month.String}}`) }"{{end}}> <!-- div with monthname <p> and all <li> elements -->
+                <div class="vod-list-month my-2" {{if $user}}x-show="!filterWatched || (filterWatched && !monthHidden)" x-data="{ monthHidden: watchedTracker.userWatchedMonth(`{{$lecture.Start.Month.String}}`) }"{{end}}> <!-- div with monthname <p> and all <li> elements -->
                 <p class="text-gray-500 text-sm uppercase">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
             {{end}}
-            <li class="p-2 w-full" {{if $user}}x-show="!filterWatched || (filterWatched && !watched)" x-data="{ watched: {{$lecture.Watched}} }"{{end}}>
+            <li class="vod-list-video p-2 w-full" {{if $user}}x-show="!filterWatched || (filterWatched && !watched)" x-data="{ watched: {{$lecture.Watched}} }"{{end}}>
                 <div class="flex justify-between">
                     <div>
                         <div>

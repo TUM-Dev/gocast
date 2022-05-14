@@ -13,11 +13,16 @@ import (
 	"os"
 )
 
-func configGinDownloadRouter(router *gin.Engine) {
-	router.GET("/api/download/:id", download)
+func configGinDownloadRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
+	routes := downloadRoutes{daoWrapper}
+	router.GET("/api/download/:id", routes.download)
 }
 
-func download(c *gin.Context) {
+type downloadRoutes struct {
+	dao.DaoWrapper
+}
+
+func (r downloadRoutes) download(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -29,17 +34,18 @@ func download(c *gin.Context) {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
-	file, err := dao.File.GetFileById(c.Param("id"))
+	file, err := r.FileDao.GetFileById(c.Param("id"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	stream, err := dao.GetStreamByID(c, fmt.Sprintf("%d", file.StreamID))
+
+	stream, err := r.StreamsDao.GetStreamByID(c, fmt.Sprintf("%d", file.StreamID))
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	course, err := dao.GetCourseById(c, stream.CourseID)
+	course, err := r.CoursesDao.GetCourseById(c, stream.CourseID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return

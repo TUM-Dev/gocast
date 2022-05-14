@@ -7,8 +7,6 @@ import (
 
 //go:generate mockgen -source=file.go -destination ../mock_dao/file.go
 
-var File = NewFileDao()
-
 type FileDao interface {
 	NewFile(f *model.File) error
 	GetFileById(id string) (f model.File, err error)
