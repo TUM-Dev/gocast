@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
@@ -13,7 +12,7 @@ type statReq struct {
 	Interval string `form:"interval" json:"interval" xml:"interval"  binding:"required"`
 }
 
-func getStats(c *gin.Context) {
+func (r coursesRoutes) getStats(c *gin.Context) {
 	ctx, _ := c.Get("TUMLiveContext")
 	var req statReq
 	if c.ShouldBindQuery(&req) != nil {
@@ -34,7 +33,7 @@ func getStats(c *gin.Context) {
 	switch req.Interval {
 	case "week":
 	case "day":
-		res, err := dao.GetCourseStatsWeekdays(cid)
+		res, err := r.StatisticsDao.GetCourseStatsWeekdays(cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsWeekdays failed")
 		}
@@ -47,7 +46,7 @@ func getStats(c *gin.Context) {
 		resp.Data.Datasets[0].Data = res
 		c.JSON(http.StatusOK, resp)
 	case "hour":
-		res, err := dao.GetCourseStatsHourly(cid)
+		res, err := r.StatisticsDao.GetCourseStatsHourly(cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsHourly failed")
 		}
@@ -60,7 +59,7 @@ func getStats(c *gin.Context) {
 		resp.Data.Datasets[0].Data = res
 		c.JSON(http.StatusOK, resp)
 	case "activity-live":
-		resLive, err := dao.GetStudentActivityCourseStats(cid, true)
+		resLive, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, true)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsLive failed")
 		}
@@ -76,7 +75,7 @@ func getStats(c *gin.Context) {
 
 		c.JSON(http.StatusOK, resp)
 	case "activity-vod":
-		resVod, err := dao.GetStudentActivityCourseStats(cid, false)
+		resVod, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, false)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsVod failed")
 		}
@@ -91,7 +90,7 @@ func getStats(c *gin.Context) {
 		resp.Data.Datasets[0].BackgroundColor = ""
 		c.JSON(http.StatusOK, resp)
 	case "numStudents":
-		res, err := dao.GetCourseNumStudents(cid)
+		res, err := r.StatisticsDao.GetCourseNumStudents(cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumStudents failed")
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -99,7 +98,7 @@ func getStats(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"res": res})
 		}
 	case "vodViews":
-		res, err := dao.GetCourseNumVodViews(cid)
+		res, err := r.StatisticsDao.GetCourseNumVodViews(cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumVodViews failed")
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -107,7 +106,7 @@ func getStats(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"res": res})
 		}
 	case "liveViews":
-		res, err := dao.GetCourseNumLiveViews(cid)
+		res, err := r.StatisticsDao.GetCourseNumLiveViews(cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -116,7 +115,7 @@ func getStats(c *gin.Context) {
 		}
 	case "allDays":
 		{
-			res, err := dao.GetCourseNumVodViewsPerDay(cid)
+			res, err := r.StatisticsDao.GetCourseNumVodViewsPerDay(cid)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
 				c.AbortWithStatus(http.StatusInternalServerError)

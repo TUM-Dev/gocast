@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func PopUpChat(c *gin.Context) {
+func (r mainRoutes) PopUpChat(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))

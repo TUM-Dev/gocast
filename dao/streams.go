@@ -3,20 +3,98 @@ package dao
 import (
 	"context"
 	"fmt"
+	"gorm.io/gorm/clause"
 	"strconv"
 	"time"
 
 	"github.com/joschahenningsen/TUM-Live/model"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
-func CreateStream(stream *model.Stream) error {
+//go:generate mockgen -source=streams.go -destination ../mock_dao/streams.go
+
+type StreamsDao interface {
+	CreateStream(stream *model.Stream) error
+	AddVodView(id string) error
+
+	GetDueStreamsForWorkers() []model.Stream
+	GetDuePremieresForWorkers() []model.Stream
+	GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error)
+	GetUnitByID(id string) (model.StreamUnit, error)
+	GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error)
+	GetStreamsByIds(ids []uint) ([]model.Stream, error)
+	GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error)
+	GetWorkersForStream(stream model.Stream) ([]model.Worker, error)
+	GetAllStreams() ([]model.Stream, error)
+	GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error)
+	GetCurrentLiveNonHidden(ctx context.Context) (currentLive []model.Stream, err error)
+	GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Stream, error)
+	GetStreamsWithWatchState(courseID uint, userID uint) (streams []model.Stream, err error)
+
+	SetLectureHall(streamIDs []uint, lectureHallID uint) error
+	UnsetLectureHall(streamIDs []uint) error
+	UpdateStream(stream model.Stream) error
+	SaveWorkerForStream(stream model.Stream, worker model.Worker) error
+	ClearWorkersForStream(stream model.Stream) error
+	UpdateSilences(silences []model.Silence, streamID string) error
+	UpdateStreamFullAssoc(vod *model.Stream) error
+	SetStreamNotLiveById(streamID uint) error
+	SavePauseState(streamID uint, paused bool) error
+	SaveEndedState(streamID uint, hasEnded bool) error
+	SaveCOMBURL(stream *model.Stream, url string)
+	SaveCAMURL(stream *model.Stream, url string)
+	SavePRESURL(stream *model.Stream, url string)
+	SaveStream(vod *model.Stream) error
+
+	DeleteStream(streamID string)
+	DeleteUnit(id uint)
+	DeleteStreamsWithTumID(ids []uint)
+}
+
+type streamsDao struct {
+	db *gorm.DB
+}
+
+func NewStreamsDao() StreamsDao {
+	return streamsDao{db: DB}
+}
+
+func (d streamsDao) CreateStream(stream *model.Stream) error {
 	return DB.Create(stream).Error
 }
 
+//AddVodView Adds a stat entry to the database or increases the one existing for this hour
+func (d streamsDao) AddVodView(id string) error {
+	intId, err := strconv.Atoi(id)
+	if err != nil {
+		return err
+	}
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		t := time.Now()
+		tFrom := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, time.Local)
+		tUntil := tFrom.Add(time.Hour)
+		var stat *model.Stat
+		err := DB.First(&stat, "live = 0 AND time BETWEEN ? and ?", tFrom, tUntil).Error
+		if err != nil { // first view this hour, create
+			stat := model.Stat{
+				Time:     tFrom,
+				StreamID: uint(intId),
+				Viewers:  1,
+				Live:     false,
+			}
+			err = tx.Create(&stat).Error
+			return err
+		} else {
+			stat.Viewers += 1
+			err = tx.Save(&stat).Error
+			return err
+		}
+	})
+	return err
+}
+
 // GetDueStreamsForWorkers retrieves all streams that due to be streamed in a lecture hall.
-func GetDueStreamsForWorkers() []model.Stream {
+func (d streamsDao) GetDueStreamsForWorkers() []model.Stream {
 	var res []model.Stream
 	DB.Model(&model.Stream{}).
 		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE)" +
@@ -25,31 +103,26 @@ func GetDueStreamsForWorkers() []model.Stream {
 	return res
 }
 
-func GetDuePremieresForWorkers() []model.Stream {
+func (d streamsDao) GetDuePremieresForWorkers() []model.Stream {
 	var res []model.Stream
 	DB.Preload("Files").
 		Find(&res, "premiere AND start BETWEEN DATE_SUB(NOW(), INTERVAL 10 MINUTE) AND DATE_ADD(NOW(), INTERVAL 5 SECOND) AND live_now = false AND recording = false")
 	return res
 }
 
-func GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error) {
+func (d streamsDao) GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error) {
 	var res model.Stream
 	err = DB.First(&res, "stream_key = ?", key).Error
 	return res, err
 }
 
-func DeleteUnit(id uint) {
-	defer Cache.Clear()
-	DB.Delete(&model.StreamUnit{}, id)
-}
-
-func GetUnitByID(id string) (model.StreamUnit, error) {
+func (d streamsDao) GetUnitByID(id string) (model.StreamUnit, error) {
 	var unit model.StreamUnit
 	err := DB.First(&unit, "id = ?", id).Error
 	return unit, err
 }
 
-func GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error) {
+func (d streamsDao) GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error) {
 	var res model.Stream
 	err = DB.Preload("Chats").First(&res, "tum_online_event_id = ?", id).Error
 	if err != nil {
@@ -59,23 +132,13 @@ func GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, 
 }
 
 // GetStreamsByIds get multiple streams by their ids
-func GetStreamsByIds(ids []uint) ([]model.Stream, error) {
+func (d streamsDao) GetStreamsByIds(ids []uint) ([]model.Stream, error) {
 	var streams []model.Stream
 	err := DB.Find(&streams, ids).Error
 	return streams, err
 }
 
-// SetLectureHall set lecture-halls of streamIds to lectureHallID
-func SetLectureHall(streamIDs []uint, lectureHallID uint) error {
-	return DB.Model(&model.Stream{}).Where("id IN ?", streamIDs).Update("lecture_hall_id", lectureHallID).Error
-}
-
-// UnsetLectureHall set lecture-halls of streamIds to NULL
-func UnsetLectureHall(streamIDs []uint) error {
-	return DB.Model(&model.Stream{}).Where("id IN ?", streamIDs).Update("lecture_hall_id", nil).Error
-}
-
-func GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error) {
+func (d streamsDao) GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error) {
 	if cached, found := Cache.Get(fmt.Sprintf("streambyid%v", id)); found {
 		return cached.(model.Stream), nil
 	}
@@ -95,16 +158,6 @@ func GetStreamByID(ctx context.Context, id string) (stream model.Stream, err err
 	}
 	Cache.SetWithTTL(fmt.Sprintf("streambyid%v", id), res, 1, time.Second*10)
 	return res, nil
-}
-
-func DeleteStreamsWithTumID(ids []uint) {
-	// transaction for performance
-	_ = DB.Transaction(func(tx *gorm.DB) error {
-		for i := range ids {
-			tx.Where("tum_online_event_id = ?", ids[i]).Delete(&model.Stream{})
-		}
-		return nil
-	})
 }
 
 //AddVodView Adds a stat entry to the database or increases the one existing for this hour
@@ -166,32 +219,20 @@ func DeleteLectureSeries(seriesIdentifier string) error {
 }
 
 // GetWorkersForStream retrieves all workers for a given stream with streamID
-func GetWorkersForStream(stream model.Stream) ([]model.Worker, error) {
+func (d streamsDao) GetWorkersForStream(stream model.Stream) ([]model.Worker, error) {
 	var res []model.Worker
 	err := DB.Preload(clause.Associations).Model(&stream).Association("StreamWorkers").Find(&res)
 	return res, err
 }
 
-// SaveWorkerForStream associates a worker with a stream with streamID
-func SaveWorkerForStream(stream model.Stream, worker model.Worker) error {
-	defer Cache.Clear()
-	return DB.Model(&stream).Association("StreamWorkers").Append(&worker)
-}
-
-// ClearWorkersForStream deletes all workers for a stream with streamID
-func ClearWorkersForStream(stream model.Stream) error {
-	defer Cache.Clear()
-	return DB.Model(&stream).Association("StreamWorkers").Clear()
-}
-
 //GetAllStreams returns all streams of the tumlive
-func GetAllStreams() ([]model.Stream, error) {
+func (d streamsDao) GetAllStreams() ([]model.Stream, error) {
 	var res []model.Stream
 	err := DB.Find(&res).Error
 	return res, err
 }
 
-func GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error) {
+func (d streamsDao) GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error) {
 	if streams, found := Cache.Get("AllCurrentlyLiveStreams"); found {
 		return streams.([]model.Stream), nil
 	}
@@ -203,57 +244,127 @@ func GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error)
 	return streams, err
 }
 
-func DeleteStream(streamID string) {
-	DB.Where("id = ?", streamID).Delete(&model.Stream{})
-	Cache.Clear()
+func (d streamsDao) GetCurrentLiveNonHidden(ctx context.Context) (currentLive []model.Stream, err error) {
+	if streams, found := Cache.Get("NonHiddenCurrentlyLiveStreams"); found {
+		return streams.([]model.Stream), nil
+	}
+	var streams []model.Stream
+	if err := DB.Joins("JOIN courses ON courses.id = streams.course_id").Find(&streams,
+		"live_now = ? AND visibility != ?", true, "hidden").Error; err != nil {
+		return nil, err
+	}
+	Cache.SetWithTTL("NonHiddenCurrentlyLiveStreams", streams, 1, time.Minute)
+	return streams, err
 }
 
-func UpdateSilences(silences []model.Silence, streamID string) error {
+// GetLiveStreamsInLectureHall returns all streams that are live and in the lecture hall
+func (d streamsDao) GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Stream, error) {
+	var streams []model.Stream
+	err := DB.Where("lecture_hall_id = ? AND live_now", lectureHallId).Find(&streams).Error
+	return streams, err
+}
+
+// GetStreamsWithWatchState returns a list of streams with their progress information.
+func (d streamsDao) GetStreamsWithWatchState(courseID uint, userID uint) (streams []model.Stream, err error) {
+	type watchedState struct {
+		Watched bool
+	}
+	var watchedStates []watchedState
+	queriedStreams := DB.Table("streams").Where("course_id = ? and deleted_at is NULL", courseID)
+	result := queriedStreams.
+		Joins("left join (select watched, stream_id from stream_progresses where user_id = ?) as sp on sp.stream_id = streams.id", userID).
+		Order("start asc").      // Order by start time, this is also the order that is used in the course page.
+		Session(&gorm.Session{}) // Session is required to scan multiple times
+
+	if err = result.Scan(&streams).Error; err != nil {
+		return
+	}
+	err = result.Scan(&watchedStates).Error
+	// Updates the watch state for each stream to compensate for split query.
+	for i := range streams {
+		streams[i].Watched = watchedStates[i].Watched
+	}
+	return
+}
+
+// SetLectureHall set lecture-halls of streamIds to lectureHallID
+func (d streamsDao) SetLectureHall(streamIDs []uint, lectureHallID uint) error {
+	return DB.Model(&model.Stream{}).Where("id IN ?", streamIDs).Update("lecture_hall_id", lectureHallID).Error
+}
+
+// UnsetLectureHall set lecture-halls of streamIds to NULL
+func (d streamsDao) UnsetLectureHall(streamIDs []uint) error {
+	return DB.Model(&model.Stream{}).Where("id IN ?", streamIDs).Update("lecture_hall_id", nil).Error
+}
+
+func (d streamsDao) UpdateStream(stream model.Stream) error {
+	defer Cache.Clear()
+	err := DB.Model(&stream).Updates(map[string]interface{}{
+		"name":        stream.Name,
+		"description": stream.Description,
+		"start":       stream.Start,
+		"end":         stream.End}).Error
+	return err
+}
+
+// SaveWorkerForStream associates a worker with a stream with streamID
+func (d streamsDao) SaveWorkerForStream(stream model.Stream, worker model.Worker) error {
+	defer Cache.Clear()
+	return DB.Model(&stream).Association("StreamWorkers").Append(&worker)
+}
+
+// ClearWorkersForStream deletes all workers for a stream with streamID
+func (d streamsDao) ClearWorkersForStream(stream model.Stream) error {
+	defer Cache.Clear()
+	return DB.Model(&stream).Association("StreamWorkers").Clear()
+}
+
+func (d streamsDao) UpdateSilences(silences []model.Silence, streamID string) error {
 	DB.Delete(&model.Silence{}, "stream_id = ?", streamID)
 	return DB.Save(&silences).Error
 }
 
-func UpdateStreamFullAssoc(vod *model.Stream) error {
+func (d streamsDao) UpdateStreamFullAssoc(vod *model.Stream) error {
 	defer Cache.Clear()
 	err := DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&vod).Error
 	return err
 }
 
-func SetStreamNotLiveById(streamID uint) error {
+func (d streamsDao) SetStreamNotLiveById(streamID uint) error {
 	defer Cache.Clear()
 	return DB.Debug().Exec("UPDATE `streams` SET `live_now`='0' WHERE id = ?", streamID).Error
 }
 
-func SavePauseState(streamID uint, paused bool) error {
+func (d streamsDao) SavePauseState(streamID uint, paused bool) error {
 	defer Cache.Clear()
 	return DB.Model(model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"Paused": paused}).Error
 }
 
 // SaveEndedState updates the boolean Ended field of a stream model to the value of hasEnded when a stream finishes.
-func SaveEndedState(streamID uint, hasEnded bool) error {
+func (d streamsDao) SaveEndedState(streamID uint, hasEnded bool) error {
 	defer Cache.Clear()
 	return DB.Model(&model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"Ended": hasEnded}).Error
 }
 
-func SaveCOMBURL(stream *model.Stream, url string) {
+func (d streamsDao) SaveCOMBURL(stream *model.Stream, url string) {
 	Cache.Clear()
 	DB.Model(stream).Updates(map[string]interface{}{"playlist_url": url, "live_now": 1, "recording": 0})
 	Cache.Clear()
 }
 
-func SaveCAMURL(stream *model.Stream, url string) {
+func (d streamsDao) SaveCAMURL(stream *model.Stream, url string) {
 	Cache.Clear()
 	DB.Model(stream).Updates(map[string]interface{}{"playlist_url_cam": url, "live_now": 1, "recording": 0})
 	Cache.Clear()
 }
 
-func SavePRESURL(stream *model.Stream, url string) {
+func (d streamsDao) SavePRESURL(stream *model.Stream, url string) {
 	Cache.Clear()
 	DB.Model(stream).Updates(map[string]interface{}{"playlist_url_pres": url, "live_now": 1, "recording": 0})
 	Cache.Clear()
 }
 
-func SaveStream(vod *model.Stream) error {
+func (d streamsDao) SaveStream(vod *model.Stream) error {
 	defer Cache.Clear()
 	// todo: what is this?
 	err := DB.Model(&vod).Updates(model.Stream{
@@ -285,34 +396,24 @@ func SaveStream(vod *model.Stream) error {
 	return err
 }
 
-// GetLiveStreamsInLectureHall returns all streams that are live and in the lecture hall
-func GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Stream, error) {
-	var streams []model.Stream
-	err := DB.Where("lecture_hall_id = ? AND live_now", lectureHallId).Find(&streams).Error
-	return streams, err
+func (d streamsDao) DeleteStream(streamID string) {
+	DB.Where("id = ?", streamID).Delete(&model.Stream{})
+	Cache.Clear()
 }
 
-// GetStreamsWithWatchState returns a list of streams with their progress information.
-func GetStreamsWithWatchState(courseID uint, userID uint) (streams []model.Stream, err error) {
-	type watchedState struct {
-		Watched bool
-	}
-	var watchedStates []watchedState
-	queriedStreams := DB.Table("streams").Where("course_id = ? and deleted_at is NULL", courseID)
-	result := queriedStreams.
-		Joins("left join (select watched, stream_id from stream_progresses where user_id = ?) as sp on sp.stream_id = streams.id", userID).
-		Order("start asc").      // Order by start time, this is also the order that is used in the course page.
-		Session(&gorm.Session{}) // Session is required to scan multiple times
+func (d streamsDao) DeleteUnit(id uint) {
+	defer Cache.Clear()
+	DB.Delete(&model.StreamUnit{}, id)
+}
 
-	if err = result.Scan(&streams).Error; err != nil {
-		return
-	}
-	err = result.Scan(&watchedStates).Error
-	// Updates the watch state for each stream to compensate for split query.
-	for i := range streams {
-		streams[i].Watched = watchedStates[i].Watched
-	}
-	return
+func (d streamsDao) DeleteStreamsWithTumID(ids []uint) {
+	// transaction for performance
+	_ = DB.Transaction(func(tx *gorm.DB) error {
+		for i := range ids {
+			tx.Where("tum_online_event_id = ?", ids[i]).Delete(&model.Stream{})
+		}
+		return nil
+	})
 }
 
 func Search(q string, courseId uint) ([]uint, error) {

@@ -10,7 +10,34 @@ import (
 	"time"
 )
 
-func AreUsersEmpty(ctx context.Context) (isEmpty bool, err error) {
+//go:generate mockgen -source=users.go -destination ../mock_dao/users.go
+
+type UsersDao interface {
+	AreUsersEmpty(ctx context.Context) (isEmpty bool, err error)
+	CreateUser(ctx context.Context, user *model.User) (err error)
+	DeleteUser(ctx context.Context, uid uint) (err error)
+	SearchUser(query string) (users []model.User, err error)
+	IsUserAdmin(ctx context.Context, uid uint) (res bool, err error)
+	GetUserByEmail(ctx context.Context, email string) (user model.User, err error)
+	GetAllAdminsAndLecturers(users *[]model.User) (err error)
+	GetUserByID(ctx context.Context, id uint) (user model.User, err error)
+	CreateRegisterLink(ctx context.Context, user model.User) (registerLink model.RegisterLink, err error)
+	GetUserByResetKey(key string) (model.User, error)
+	DeleteResetKey(key string)
+	UpdateUser(user model.User) error
+	UpsertUser(user *model.User) error
+	AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error
+}
+
+type usersDao struct {
+	db *gorm.DB
+}
+
+func NewUsersDao() UsersDao {
+	return usersDao{db: DB}
+}
+
+func (d usersDao) AreUsersEmpty(ctx context.Context) (isEmpty bool, err error) {
 	_, found := Cache.Get("areUsersEmpty")
 	if found {
 		return false, nil
@@ -22,23 +49,23 @@ func AreUsersEmpty(ctx context.Context) (isEmpty bool, err error) {
 	return res.RowsAffected == 0, res.Error
 }
 
-func CreateUser(ctx context.Context, user *model.User) (err error) {
+func (d usersDao) CreateUser(ctx context.Context, user *model.User) (err error) {
 	res := DB.Create(&user)
 	return res.Error
 }
 
-func DeleteUser(ctx context.Context, uid uint) (err error) {
+func (d usersDao) DeleteUser(ctx context.Context, uid uint) (err error) {
 	res := DB.Delete(&model.User{}, "id = ?", uid)
 	return res.Error
 }
 
-func SearchUser(query string) (users []model.User, err error) {
+func (d usersDao) SearchUser(query string) (users []model.User, err error) {
 	q := "%" + query + "%"
 	res := DB.Where("UPPER(lrz_id) LIKE UPPER(?) OR UPPER(email) LIKE UPPER(?) OR UPPER(name) LIKE UPPER(?)", q, q, q).Limit(10).Find(&users)
 	return users, res.Error
 }
 
-func IsUserAdmin(ctx context.Context, uid uint) (res bool, err error) {
+func (d usersDao) IsUserAdmin(ctx context.Context, uid uint) (res bool, err error) {
 	var user model.User
 	err = DB.Find(&user, "id = ?", uid).Error
 	if err != nil {
@@ -47,18 +74,18 @@ func IsUserAdmin(ctx context.Context, uid uint) (res bool, err error) {
 	return user.Role == 1, nil
 }
 
-func GetUserByEmail(ctx context.Context, email string) (user model.User, err error) {
+func (d usersDao) GetUserByEmail(ctx context.Context, email string) (user model.User, err error) {
 	var res model.User
 	err = DB.First(&res, "email = ?", email).Error
 	return res, err
 }
 
-func GetAllAdminsAndLecturers(users *[]model.User) (err error) {
+func (d usersDao) GetAllAdminsAndLecturers(users *[]model.User) (err error) {
 	err = DB.Find(users, "role < 3").Error
 	return err
 }
 
-func GetUserByID(ctx context.Context, id uint) (user model.User, err error) {
+func (d usersDao) GetUserByID(ctx context.Context, id uint) (user model.User, err error) {
 	if cached, found := Cache.Get(fmt.Sprintf("userById%d", id)); found {
 		return cached.(model.User), nil
 	}
@@ -70,7 +97,7 @@ func GetUserByID(ctx context.Context, id uint) (user model.User, err error) {
 	return foundUser, dbErr
 }
 
-func CreateRegisterLink(ctx context.Context, user model.User) (registerLink model.RegisterLink, err error) {
+func (d usersDao) CreateRegisterLink(ctx context.Context, user model.User) (registerLink model.RegisterLink, err error) {
 	var link = uuid.NewV4().String()
 	var registerLinkObj = model.RegisterLink{
 		UserID:         user.ID,
@@ -80,7 +107,7 @@ func CreateRegisterLink(ctx context.Context, user model.User) (registerLink mode
 	return registerLinkObj, err
 }
 
-func GetUserByResetKey(key string) (model.User, error) {
+func (d usersDao) GetUserByResetKey(key string) (model.User, error) {
 	var resetKey model.RegisterLink
 	if err := DB.First(&resetKey, "register_secret = ?", key).Error; err != nil {
 		return model.User{}, err
@@ -92,15 +119,15 @@ func GetUserByResetKey(key string) (model.User, error) {
 	return user, nil
 }
 
-func DeleteResetKey(key string) {
+func (d usersDao) DeleteResetKey(key string) {
 	DB.Where("register_secret = ?", key).Delete(&model.RegisterLink{})
 }
 
-func UpdateUser(user model.User) error {
+func (d usersDao) UpdateUser(user model.User) error {
 	return DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&user).Error
 }
 
-func UpsertUser(user *model.User) error {
+func (d usersDao) UpsertUser(user *model.User) error {
 	var foundUser *model.User
 	err := DB.Model(&model.User{}).Where("matriculation_number = ?", user.MatriculationNumber).First(&foundUser).Error
 	if err == nil && foundUser != nil {
@@ -128,7 +155,7 @@ func UpsertUser(user *model.User) error {
 	return err
 }
 
-func AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error {
+func (d usersDao) AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error {
 	// create empty users for ids that are not yet registered:
 	stubUsers := make([]model.User, len(matrNr))
 	for i, id := range matrNr {

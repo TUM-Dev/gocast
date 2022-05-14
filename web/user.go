@@ -15,21 +15,21 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func LoginHandler(c *gin.Context) {
+func (r mainRoutes) LoginHandler(c *gin.Context) {
 	username := c.Request.FormValue("username")
 	password := c.Request.FormValue("password")
 
 	var data *sessionData
 	var err error
 
-	if data = loginWithUserCredentials(username, password); data != nil {
+	if data = loginWithUserCredentials(username, password, r.UsersDao); data != nil {
 		startSession(c, data)
 		c.Redirect(http.StatusFound, getRedirectUrl(c))
 		return
 	}
 
 	if tools.Cfg.Ldap.UseForLogin {
-		if data, err = loginWithTumCredentials(username, password); err == nil {
+		if data, err = loginWithTumCredentials(username, password, r.UsersDao); err == nil {
 			startSession(c, data)
 			c.Redirect(http.StatusFound, getRedirectUrl(c))
 			return
@@ -87,8 +87,8 @@ func createToken(user uint, samlSubjectID *string) (string, error) {
 
 // loginWithUserCredentials Try to login with non-tum credentials
 // Returns pointer to sessionData object if successful or nil if not.
-func loginWithUserCredentials(username, password string) *sessionData {
-	if u, err := dao.GetUserByEmail(context.Background(), username); err == nil {
+func loginWithUserCredentials(username, password string, usersDao dao.UsersDao) *sessionData {
+	if u, err := usersDao.GetUserByEmail(context.Background(), username); err == nil {
 		// user with this email found.
 		if match, err := u.ComparePasswordAndHash(password); err == nil && match {
 			return &sessionData{u.ID, nil}
@@ -101,7 +101,7 @@ func loginWithUserCredentials(username, password string) *sessionData {
 
 // loginWithTumCredentials Try to login with tum credentials
 // Returns pointer to sessionData if successful and nil if not
-func loginWithTumCredentials(username, password string) (*sessionData, error) {
+func loginWithTumCredentials(username, password string, usersDao dao.UsersDao) (*sessionData, error) {
 	loginResp, err := tum.LoginWithTumCredentials(username, password)
 	if err == nil {
 		user := model.User{
@@ -110,7 +110,7 @@ func loginWithTumCredentials(username, password string) (*sessionData, error) {
 			MatriculationNumber: loginResp.UserId,
 			LrzID:               loginResp.LrzIdent,
 		}
-		err = dao.UpsertUser(&user)
+		err = usersDao.UpsertUser(&user)
 		if err != nil {
 			log.Printf("%v", err)
 			return nil, err
@@ -122,7 +122,7 @@ func loginWithTumCredentials(username, password string) (*sessionData, error) {
 	return nil, err
 }
 
-func LoginPage(c *gin.Context) {
+func (r mainRoutes) LoginPage(c *gin.Context) {
 	d := NewLoginPageData(false)
 	d.UseSAML = tools.Cfg.Saml != nil
 	if d.UseSAML {
@@ -132,16 +132,16 @@ func LoginPage(c *gin.Context) {
 	_ = templateExecutor.ExecuteTemplate(c.Writer, "login.gohtml", d)
 }
 
-func LogoutPage(c *gin.Context) {
+func (r mainRoutes) LogoutPage(c *gin.Context) {
 	c.SetCookie("jwt", "", -1, "/", "", tools.CookieSecure, true)
 	c.Redirect(http.StatusFound, "/")
 }
 
-func CreatePasswordPage(c *gin.Context) {
+func (r mainRoutes) CreatePasswordPage(c *gin.Context) {
 	if c.Request.Method == "POST" {
 		p1 := c.Request.FormValue("password")
 		p2 := c.Request.FormValue("passwordConfirm")
-		u, err := dao.GetUserByResetKey(c.Param("key"))
+		u, err := r.UsersDao.GetUserByResetKey(c.Param("key"))
 		if err != nil {
 			c.Redirect(http.StatusFound, "/")
 			return
@@ -156,16 +156,16 @@ func CreatePasswordPage(c *gin.Context) {
 			_ = templateExecutor.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
 			return
 		} else {
-			err := dao.UpdateUser(u)
+			err := r.UsersDao.UpdateUser(u)
 			if err != nil {
 				log.WithError(err).Error("CreatePasswordPage: Can't update user")
 			}
-			dao.DeleteResetKey(c.Param("key"))
+			r.UsersDao.DeleteResetKey(c.Param("key"))
 			c.Redirect(http.StatusFound, "/")
 		}
 		return
 	} else {
-		_, err := dao.GetUserByResetKey(c.Param("key"))
+		_, err := r.UsersDao.GetUserByResetKey(c.Param("key"))
 		if err != nil {
 			c.Redirect(http.StatusFound, "/")
 			return
