@@ -259,6 +259,13 @@ export class Lecture {
         }
     }
 
+    getDownloads() {
+        if (this.files === undefined || this.files === null) {
+            return [];
+        }
+        return this.files.filter((f: LectureFile) => f.fileType === 1);
+    }
+
     async deleteFile(fileId: number) {
         await fetch(`/api/stream/${this.lectureId}/files/${fileId}`, {
             method: "DELETE",
@@ -286,7 +293,10 @@ export class Lecture {
     }
 
     hasAttachments(): boolean {
-        const attachments = this.files.filter((f) => f.fileType !== 0);
+        if (this.files === undefined || this.files === null) {
+            return false;
+        }
+        const attachments = this.files.filter((f) => f.fileType !== 1);
         return attachments.length > 0;
     }
 
@@ -299,7 +309,7 @@ export class Lecture {
         }).then((res) =>
             res.json().then((id) => {
                 const friendlyName = file.name;
-                const fileType = 1;
+                const fileType = 2;
                 this.files.push(new LectureFile({ id, fileType, friendlyName }));
             }),
         );
@@ -314,7 +324,7 @@ export class Lecture {
         }).then((res) =>
             res.json().then((id) => {
                 const friendlyName = fileURL.substring(fileURL.lastIndexOf("/") + 1);
-                const fileType = 1;
+                const fileType = 2;
                 this.files.push(new LectureFile({ id, fileType, friendlyName }));
             }),
         );

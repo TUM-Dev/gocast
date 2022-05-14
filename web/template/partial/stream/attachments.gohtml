@@ -1,5 +1,5 @@
 {{define "attachments"}}
-    {{ $length := len .Files }}{{if gt $length 0}}
+    {{ $length := len .Attachments }}{{if gt $length 0}}
         <div class="relative m-auto" x-data="{attachmentDropdownOpen: false}">
             <button @click="attachmentDropdownOpen = !attachmentDropdownOpen"
                     @click.outside="attachmentDropdownOpen = false">
@@ -7,9 +7,8 @@
             </button>
             <div x-show="attachmentDropdownOpen"
                  class="grid gap-1 p-2 absolute z-50 bottom-full -right-1/2 mb-2 rounded-lg bg-white dark:bg-secondary border dark:border-gray-800 shadow">
-                {{range $i, $file := .Files}}
-                    {{if eq $file.Type 1}} {{/*Check if File is of type attachment*/}}
-                    {{if $file.IsAbsolutePath}}
+                {{range $i, $file := .Attachments}}
+                    {{if $file.IsURL}}
                         <a class="flex rounded px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600"
                            href="{{$file.Path}}" target="_blank" download>
                             <i class="fa-solid fa-file text-xs mr-2 text-gray-500 dark:text-gray-200 my-auto"></i>
@@ -21,7 +20,6 @@
                             <i class="fa-solid fa-file text-xs mr-2 text-gray-500 dark:text-gray-200 my-auto"></i>
                             <span class="font-semibold text-3 text-xs my-auto ml-auto">{{$file.Filename}}</span>
                         </a>
-                    {{end}}
                     {{end}}
                 {{end}}
             </div>
