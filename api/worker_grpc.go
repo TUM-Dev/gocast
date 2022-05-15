@@ -750,7 +750,7 @@ func init() {
 		Time:                  time.Minute * 10,
 		Timeout:               time.Second * 20,
 	}))
-	pb.RegisterFromWorkerServer(grpcServer, &server{})
+	pb.RegisterFromWorkerServer(grpcServer, &server{DaoWrapper: dao.NewDaoWrapper()})
 	reflection.Register(grpcServer)
 	go func() {
 		if err = grpcServer.Serve(lis); err != nil {
