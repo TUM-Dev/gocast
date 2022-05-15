@@ -8,36 +8,45 @@
 </head>
 <body class="md:overflow-hidden" x-data="{showLectureSearchModal: false}">
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.CoursePageData*/ -}}
-{{template "header" .IndexData.TUMLiveContext}}
 {{$course := .IndexData.TUMLiveContext.Course}}
-<div x-show="showLectureSearchModal" id = "lecture-search-modal" class = "flex absolute w-full h-screen backdrop-blur-sm p-2 z-50">
-    <div x-data="{lectureSearch: new global.LectureSearch({{$course.ID}})}" class = "w-full mt-5 md:mt-24 mx-auto md:w-2/4 bg-white border shadow rounded-lg h-fit dark:border-gray-600 dark:bg-secondary">
-        <div class = "flex px-3 py-1 border-b"
-             @click.outside="showLectureSearchModal = false">
-            <div class = "p-1 my-auto">
-                <i class = "fa-solid fa-search text-lg text-gray-500 dark:text-gray-600"></i>
+{{template "header" .IndexData.TUMLiveContext}}
+<div x-cloak x-show="showLectureSearchModal" x-data="{streamSearch: new global.StreamSearch({{$course.ID}})}"
+     id="lecture-search-modal"
+     class="flex absolute w-full h-screen backdrop-blur-sm p-2 z-50">
+    <div class="w-full mt-5 md:mt-24 mx-auto md:w-2/4 bg-white border shadow rounded-lg h-fit dark:border-gray-600 dark:bg-secondary">
+        <div class="flex px-3 py-1 border-b"
+             @click.outside="showLectureSearchModal = false; streamSearch.reset()">
+            <div class="p-1 my-auto">
+                <i x-cloak x-show="!streamSearch.loading"
+                   class="fa-solid fa-search text-lg text-gray-500 dark:text-gray-600"></i>
+                <i x-cloak x-show="streamSearch.loading"
+                   class="fas fa-spinner animate-spin text-lg text-gray-500 dark:text-gray-600"></i>
             </div>
-            <input @keyup="(e) => lectureSearch.performSearch(e.target.value)"
-                    name = "lecture-search-input"
-                    placeholder="Search for lectures"
-                    class = "bg-transparent border-0 outline-none w-full h-full font-light">
-            <button @click="showLectureSearchModal = false" class = "py-1 px-3 border dark:border-gray-600 rounded shadow-sm my-auto">
-                <i class = "fa-solid fa-rotate-left text-xs"></i>
+            <input @keyup="(e) => streamSearch.performSearch(e.target.value)"
+                   name="lecture-search-input"
+                   placeholder="Search for lectures"
+                   class="bg-transparent border-0 outline-none w-full h-full font-light">
+            <button @click="showLectureSearchModal = false; streamSearch.reset()"
+                    class="py-1 px-3 border dark:border-gray-600 rounded shadow-sm my-auto">
+                <i class="fa-solid fa-rotate-left text-xs"></i>
             </button>
         </div>
-        <div class = "grid gap-2 p-4">
-            <div class = "flex font-semibold text-3 px-3 py-2 rounded-lg hover:cursor-pointer hover:bg-gray-50">
-                <span class = "my-auto">Lecture 1</span>
-                <span class = "ml-auto my-auto fa-solid text-xs fa-chevron-right"></span>
-            </div>
-            <div class = "flex font-semibold text-3 px-3 py-2 rounded-lg hover:cursor-pointer hover:bg-gray-50">
-                <span class = "my-auto">Lecture 2</span>
-                <span class = "ml-auto my-auto fa-solid text-xs fa-chevron-right"></span>
-            </div>
-            <div class = "flex font-semibold text-3 px-3 py-2 rounded-lg hover:cursor-pointer hover:bg-gray-50">
-                <span class = "my-auto">Lecture 3</span>
-                <span class = "ml-auto my-auto fa-solid text-xs fa-chevron-right"></span>
-            </div>
+        <div x-show="streamSearch.results.length > 0"
+             class="grid gap-2 p-4">
+            <template x-for="streamId in streamSearch.results" :key="streamId">
+                <a x-data="{stream: null}" x-init="stream = await streamSearch.getStreamFromResult(streamId)"
+                   :href="'/w/{{$course.Slug}}/' + streamId" target="_blank">
+                    <template x-if="stream != null">
+                        <div class="flex px-3 py-2 rounded-lg hover:cursor-pointer hover:bg-gray-50">
+                            <div class="grid my-auto">
+                                <span class="font-semibold text-3" x-text="stream.name"></span>
+                                <span class="font-light text-sm text-1" x-text="stream.friendlyTime"></span>
+                            </div>
+                            <span class="ml-auto my-auto fa-solid text-xs fa-chevron-right"></span>
+                        </div>
+                    </template>
+                </a>
+            </template>
         </div>
     </div>
 </div>
@@ -76,10 +85,9 @@
                             </button>
                         {{end}}
                         <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
-                            @click="showLectureSearchModal = true">
-                            <span class="text-sm font-semibold uppercase dark:text-white">
-                                <i class="fa-solid fa-search mr-1"></i>
-                                search
+                                @click="showLectureSearchModal = true">
+                            <span class="text-sm dark:text-white">
+                                <i class="fa-solid fa-search"></i>
                             </span>
                         </button>
                     </div>

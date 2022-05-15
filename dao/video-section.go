@@ -48,8 +48,9 @@ func (d videoSectionDao) Search(q string, courseId uint) ([]uint, error) {
 		Model(&model.VideoSection{}).
 		Select("stream_id").
 		Distinct("stream_id").
-		Joins("join streams s on s.id = video_sections.stream_id", DB.Where(&model.Stream{CourseID: courseId})).
-		Where("match(video_sections.description) against(? in boolean mode) AND s.course_id = ?", partialQ, courseId).
+		Joins("join streams s on s.id = video_sections.stream_id").
+		Where("match(video_sections.description) against(? in boolean mode) "+
+			"AND s.course_id = ? AND s.recording = 1", partialQ, courseId).
 		Find(&streamIds).
 		Error
 	return streamIds, err

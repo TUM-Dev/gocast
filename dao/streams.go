@@ -49,6 +49,7 @@ type StreamsDao interface {
 	DeleteStream(streamID string)
 	DeleteUnit(id uint)
 	DeleteStreamsWithTumID(ids []uint)
+	Search(q string, courseId uint) ([]uint, error)
 }
 
 type streamsDao struct {
@@ -416,14 +417,15 @@ func (d streamsDao) DeleteStreamsWithTumID(ids []uint) {
 	})
 }
 
-func Search(q string, courseId uint) ([]uint, error) {
+func (d streamsDao) Search(q string, courseId uint) ([]uint, error) {
 	var streamIds []uint
 	partialQ := fmt.Sprintf("%s*", q)
 	err := DB.
 		Model(&model.Stream{}).
 		Select("id").
 		Distinct("id").
-		Where("(match(name) against(? in boolean mode) OR match(description) against(? in boolean mode)) AND course_id = ?", partialQ, partialQ, courseId).
+		Where("(match(name) against(? in boolean mode) OR match(description) against(? in boolean mode)) "+
+			"AND course_id = ? AND streams.recording = 1", partialQ, partialQ, courseId).
 		Find(&streamIds).
 		Error
 	return streamIds, err

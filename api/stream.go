@@ -29,7 +29,6 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	adminG := router.Group("/")
 	adminG.Use(tools.InitStream(daoWrapper))
 	adminG.Use(tools.AdminOfCourse)
-	adminG.GET("/api/stream/:streamID", routes.getStream)
 	adminG.GET("/api/stream/:streamID/pause", routes.pauseStream)
 	adminG.GET("/api/stream/:streamID/end", routes.endStream)
 	adminG.GET("/api/stream/:streamID/issue", routes.reportStreamIssue)
@@ -39,6 +38,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	// group for non-admin web api
 	g := router.Group("/")
 	g.Use(tools.InitStream(daoWrapper))
+	g.GET("/api/stream/:streamID", routes.getStream)
 	g.GET("/api/stream/:streamID/sections", routes.getVideoSections)
 }
 
@@ -200,17 +200,33 @@ func (r streamRoutes) getStream(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	stream := *tumLiveContext.Stream
 	course := *tumLiveContext.Course
-	c.JSON(http.StatusOK,
-		gin.H{"course": course.Name,
-			"courseID":    course.ID,
-			"streamID":    stream.ID,
-			"name":        stream.Name,
-			"description": stream.Description,
-			"start":       stream.Start,
-			"end":         stream.End,
-			"ingest":      fmt.Sprintf("%sstream?secret=%s", tools.Cfg.IngestBase, stream.StreamKey),
-			"live":        stream.LiveNow,
-			"vod":         stream.Recording})
+
+	if stream.Name == "" {
+		stream.Name = stream.GetName()
+	}
+
+	var response gin.H
+	if tumLiveContext.User != nil && tumLiveContext.UserIsAdmin() {
+		response =
+			gin.H{"course": course.Name,
+				"courseID":     course.ID,
+				"streamID":     stream.ID,
+				"name":         stream.Name,
+				"description":  stream.Description,
+				"start":        stream.Start,
+				"end":          stream.End,
+				"ingest":       fmt.Sprintf("%sstream?secret=%s", tools.Cfg.IngestBase, stream.StreamKey),
+				"live":         stream.LiveNow,
+				"vod":          stream.Recording,
+				"friendlyTime": stream.FriendlyTime()}
+	} else {
+		response =
+			gin.H{"name": stream.Name,
+				"description":  stream.Description,
+				"friendlyTime": stream.FriendlyTime()}
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func (r streamRoutes) getVideoSections(c *gin.Context) {

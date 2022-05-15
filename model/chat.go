@@ -46,7 +46,7 @@ type Chat struct {
 
 	UserID           string `gorm:"not null" json:"-"`
 	UserName         string `gorm:"not null" json:"name"`
-	Message          string `gorm:"not null" json:"-"`
+	Message          string `gorm:"type:text;not null;index:,class:FULLTEXT" json:"-"`
 	SanitizedMessage string `gorm:"-" json:"message"` // don't store the sanitized message in the database
 	StreamID         uint   `gorm:"not null" json:"-"`
 	Admin            bool   `gorm:"not null;default:false" json:"admin"`
