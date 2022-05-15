@@ -227,3 +227,14 @@ export function getPollOptionWidth(pollOptions, pollOption) {
     const fractionWidth = minWidth + fractionOfMax * (maxWidth - minWidth);
     return `${Math.ceil(fractionWidth).toString()}%`;
 }
+
+export function contextMenuHandler(e, contextMenu) {
+    if (contextMenu.shown) return contextMenu;
+    e.preventDefault();
+    const videoElem = document.querySelector("#my-video");
+    return {
+        shown: true,
+        locX: e.clientX - videoElem.getBoundingClientRect().left,
+        locY: e.clientY - videoElem.getBoundingClientRect().top,
+    };
+}

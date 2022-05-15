@@ -28,16 +28,19 @@
                 To view this video please enable JavaScript.
             </p></noscript>
         <div id="watchContent"
-             class="w-full">
+             x-data="{ contextMenu: { shown: false, locX: 0, locY: 0 } }"
+             class="w-full relative">
             <div class="bg-indigo-700 bg-opacity-20 border-t-4 border-indigo-700 w-full font-semibold text-2 rounded-t display-none"
                  x-show="paused" x-cloak>
                 <i class="fas fa-info-circle"></i> This lecture is currently paused.
             </div>
+
             <video
                     id="my-video"
                     class="video-js w-full vjs-theater-mode theater-mode"
                     controls
                     preload="auto"
+                    x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu)"
                     {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
                 {{else}}poster="/public/no_active_stream.jpg">{{end}}
                 {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
@@ -58,6 +61,18 @@
                     To view this video please enable JavaScript.
                 </p>
             </video>
+
+            <div
+                x-cloak
+                x-show="contextMenu.shown"
+                @click.outside="contextMenu = {...contextMenu, shown: false}"
+                class="origin-top-left absolute w-72 py-2 bg-gray-800/[.9] border-gray-100 border-1 rounded text-white text-sm"
+                :style="{ top: contextMenu.locY + 'px', left: contextMenu.locX + 'px' }"
+                role="menu" aria-orientation="vertical" tabindex="-1">
+                <div class="py-2 px-4 cursor-pointer hover:bg-white/10">
+                    Show detailed stats
+                </div>
+            </div>
         </div>
         <div id="streamInfo" class="mx-5 m-auto">
             <div class="flex justify-between align-middle mt-4">
