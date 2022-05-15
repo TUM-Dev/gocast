@@ -1,5 +1,6 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
+import { getBufferInfo, getBufferSeconds } from "./TUMLiveVjs";
 
 let chatInput: HTMLInputElement;
 
@@ -238,3 +239,26 @@ export function contextMenuHandler(e, contextMenu) {
         locY: e.clientY - videoElem.getBoundingClientRect().top,
     };
 }
+
+export const videoStatListener = {
+    videoStatIntervalId: null,
+    listen() {
+        if (this.videoStatIntervalId != null) {
+            return;
+        }
+        this.videoStatIntervalId = setInterval(this.update, 1000);
+    },
+    update() {
+        const data = {
+            bufferSeconds: getBufferSeconds(),
+        };
+        const event = new CustomEvent("newvideostats", { detail: data });
+        window.dispatchEvent(event);
+    },
+    clear() {
+        if (this.videoStatIntervalId != null) {
+            clearInterval(this.videoStatIntervalId);
+            this.videoStatIntervalId = null;
+        }
+    },
+};
