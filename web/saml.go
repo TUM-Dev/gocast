@@ -17,7 +17,7 @@ import (
 	"strings"
 )
 
-func configSaml(r *gin.Engine) {
+func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	// don't configure saml if no config is set
 	if tools.Cfg.Saml == nil {
 		return
@@ -142,7 +142,7 @@ func configSaml(r *gin.Engine) {
 			MatriculationNumber: matrNr,
 			LrzID:               lrzID,
 		}
-		err = dao.UpsertUser(&user)
+		err = daoWrapper.UsersDao.UpsertUser(&user)
 		if err != nil {
 			log.WithError(err).Error("Could not upsert user")
 			c.AbortWithStatus(http.StatusInternalServerError)

@@ -38,7 +38,7 @@ func GinServer() (err error) {
 		tools.CookieSecure = true
 	}
 
-	router.Use(tools.InitContext)
+	router.Use(tools.InitContext(dao.NewDaoWrapper()))
 
 	// event streams don't work with gzip, configure group without
 	chat := router.Group("/api/chat")
@@ -177,15 +177,16 @@ func main() {
 }
 
 func initCron() {
+	daoWrapper := dao.NewDaoWrapper()
 	cronService := cron.New()
 	//Fetch students every 12 hours
-	_, _ = cronService.AddFunc("0 */12 * * *", tum.FetchCourses)
+	_, _ = cronService.AddFunc("0 */12 * * *", tum.FetchCourses(daoWrapper))
 	//Collect livestream stats (viewers) every minute
-	_, _ = cronService.AddFunc("0-59 * * * *", api.CollectStats)
+	_, _ = cronService.AddFunc("0-59 * * * *", api.CollectStats(daoWrapper))
 	//Flush stale sentry exceptions and transactions every 5 minutes
 	_, _ = cronService.AddFunc("0-59/5 * * * *", func() { sentry.Flush(time.Minute * 2) })
 	//Look for due streams and notify workers about them
-	_, _ = cronService.AddFunc("0-59 * * * *", api.NotifyWorkers)
+	_, _ = cronService.AddFunc("0-59 * * * *", api.NotifyWorkers(daoWrapper))
 	cronService.Start()
 }
 

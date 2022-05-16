@@ -25,33 +25,39 @@ import (
 	"time"
 )
 
-func configGinCourseRouter(router *gin.Engine) {
-	router.POST("/api/course/activate/:token", activateCourseByToken)
-	router.GET("/api/lecture-halls-by-id", lectureHallsByID)
+func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
+	routes := coursesRoutes{daoWrapper}
+
+	router.POST("/api/course/activate/:token", routes.activateCourseByToken)
+	router.GET("/api/lecture-halls-by-id", routes.lectureHallsByID)
 	atLeastLecturerGroup := router.Group("/")
 	atLeastLecturerGroup.Use(tools.AtLeastLecturer)
-	atLeastLecturerGroup.POST("/api/courseInfo", courseInfo)
-	atLeastLecturerGroup.POST("/api/createCourse", createCourse)
+	atLeastLecturerGroup.POST("/api/courseInfo", routes.courseInfo)
+	atLeastLecturerGroup.POST("/api/createCourse", routes.createCourse)
 
 	adminOfCourseGroup := router.Group("/api/course/:courseID")
-	adminOfCourseGroup.Use(tools.InitCourse)
+	adminOfCourseGroup.Use(tools.InitCourse(dao.NewDaoWrapper()))
 	adminOfCourseGroup.Use(tools.AdminOfCourse)
-	adminOfCourseGroup.DELETE("/", deleteCourse)
-	adminOfCourseGroup.POST("/uploadVOD", uploadVOD)
-	adminOfCourseGroup.POST("/createLecture", createLecture)
-	adminOfCourseGroup.POST("/presets", updatePresets)
-	adminOfCourseGroup.POST("/deleteLectures", deleteLectures)
-	adminOfCourseGroup.POST("/renameLecture/:streamID", renameLecture)
-	adminOfCourseGroup.POST("/updateLectureSeries/:streamID", updateLectureSeries)
-	adminOfCourseGroup.PUT("/updateDescription/:streamID", updateDescription)
-	adminOfCourseGroup.DELETE("/deleteLectureSeries/:streamID", deleteLectureSeries)
-	adminOfCourseGroup.POST("/addUnit", addUnit)
-	adminOfCourseGroup.POST("/submitCut", submitCut)
-	adminOfCourseGroup.POST("/deleteUnit/:unitID", deleteUnit)
-	adminOfCourseGroup.GET("/stats", getStats)
-	adminOfCourseGroup.GET("/admins", getAdmins)
-	adminOfCourseGroup.PUT("/admins/:userID", addAdminToCourse)
-	adminOfCourseGroup.DELETE("/admins/:userID", removeAdminFromCourse)
+	adminOfCourseGroup.DELETE("/", routes.deleteCourse)
+	adminOfCourseGroup.POST("/uploadVOD", routes.uploadVOD)
+	adminOfCourseGroup.POST("/createLecture", routes.createLecture)
+	adminOfCourseGroup.POST("/presets", routes.updatePresets)
+	adminOfCourseGroup.POST("/deleteLectures", routes.deleteLectures)
+	adminOfCourseGroup.POST("/renameLecture/:streamID", routes.renameLecture)
+	adminOfCourseGroup.POST("/updateLectureSeries/:streamID", routes.updateLectureSeries)
+	adminOfCourseGroup.POST("/updateDescription/:streamID", routes.updateDescription)
+	adminOfCourseGroup.DELETE("/deleteLectureSeries/:streamID", routes.deleteLectureSeries)
+	adminOfCourseGroup.POST("/addUnit", routes.addUnit)
+	adminOfCourseGroup.POST("/submitCut", routes.submitCut)
+	adminOfCourseGroup.POST("/deleteUnit/:unitID", routes.deleteUnit)
+	adminOfCourseGroup.GET("/stats", routes.getStats)
+	adminOfCourseGroup.GET("/admins", routes.getAdmins)
+	adminOfCourseGroup.PUT("/admins/:userID", routes.addAdminToCourse)
+	adminOfCourseGroup.DELETE("/admins/:userID", routes.removeAdminFromCourse)
+}
+
+type coursesRoutes struct {
+	dao.DaoWrapper
 }
 
 const WorkerHTTPPort = "8060"
@@ -61,7 +67,7 @@ type uploadVodReq struct {
 	Title string    `form:"title"`
 }
 
-func uploadVOD(c *gin.Context) {
+func (r coursesRoutes) uploadVOD(c *gin.Context) {
 	log.Info("uploadVOD")
 	var req uploadVodReq
 	err := c.BindQuery(&req)
@@ -77,18 +83,18 @@ func uploadVOD(c *gin.Context) {
 		CourseID:     tlctx.Course.ID,
 		StreamStatus: model.StatusConverting,
 	}
-	err = dao.CreateStream(&stream)
+	err = r.StreamsDao.CreateStream(&stream)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "could not save stream: " + err.Error()})
 		return
 	}
 	key := uuid.NewV4().String()
-	err = dao.NewUploadKeyDao().CreateUploadKey(key, stream.ID)
+	err = r.UploadKeyDao.CreateUploadKey(key, stream.ID)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "can't create upload key: " + err.Error()})
 		return
 	}
-	workers := dao.GetAliveWorkers()
+	workers := r.WorkerDao.GetAliveWorkers()
 	if len(workers) == 0 {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "No workers available"})
 		return
@@ -111,7 +117,7 @@ func uploadVOD(c *gin.Context) {
 }
 
 // updatePresets updates the CameraPresets of a course
-func updatePresets(c *gin.Context) {
+func (r coursesRoutes) updatePresets(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -141,7 +147,7 @@ func updatePresets(c *gin.Context) {
 		}
 	}
 	course.SetCameraPresetPreference(presetSettings)
-	if err := dao.UpdateCourse(c, *course); err != nil {
+	if err := r.CoursesDao.UpdateCourse(c, *course); err != nil {
 		log.WithError(err).Error("failed to update course")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -149,13 +155,13 @@ func updatePresets(c *gin.Context) {
 
 }
 
-func activateCourseByToken(c *gin.Context) {
+func (r coursesRoutes) activateCourseByToken(c *gin.Context) {
 	t := c.Param("token")
 	if t == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "token is missing"})
 		return
 	}
-	course, err := dao.GetCourseByToken(t)
+	course, err := r.CoursesDao.GetCourseByToken(t)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Course not found. Is the token correct?"})
 		return
@@ -163,14 +169,14 @@ func activateCourseByToken(c *gin.Context) {
 	course.DeletedAt = gorm.DeletedAt{Valid: false}
 	course.VODEnabled = true
 	course.Visibility = "loggedin"
-	err = dao.UnDeleteCourse(c, course)
+	err = r.CoursesDao.UnDeleteCourse(c, course)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "Could not update course settings")
 		return
 	}
 }
 
-func removeAdminFromCourse(c *gin.Context) {
+func (r coursesRoutes) removeAdminFromCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -185,7 +191,7 @@ func removeAdminFromCourse(c *gin.Context) {
 		return
 	}
 
-	admins, err := dao.GetCourseAdmins(tumLiveContext.Course.ID)
+	admins, err := r.CoursesDao.GetCourseAdmins(tumLiveContext.Course.ID)
 	if err != nil {
 		log.WithError(err).Error("could not get course admins")
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -207,7 +213,7 @@ func removeAdminFromCourse(c *gin.Context) {
 		return
 	}
 
-	err = dao.RemoveAdminFromCourse(user.ID, tumLiveContext.Course.ID)
+	err = r.CoursesDao.RemoveAdminFromCourse(user.ID, tumLiveContext.Course.ID)
 	if err != nil {
 		log.WithError(err).Error("could not remove admin from course")
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -219,7 +225,7 @@ func removeAdminFromCourse(c *gin.Context) {
 	})
 }
 
-func addAdminToCourse(c *gin.Context) {
+func (r coursesRoutes) addAdminToCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -233,12 +239,12 @@ func addAdminToCourse(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	user, err := dao.GetUserByID(c, uint(idUint))
+	user, err := r.UsersDao.GetUserByID(c, uint(idUint))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	err = dao.AddAdminToCourse(user.ID, tumLiveContext.Course.ID)
+	err = r.CoursesDao.AddAdminToCourse(user.ID, tumLiveContext.Course.ID)
 	if err != nil {
 		log.WithError(err).Error("could not add admin to course")
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -246,7 +252,7 @@ func addAdminToCourse(c *gin.Context) {
 	}
 	if user.Role == model.GenericType || user.Role == model.StudentType {
 		user.Role = model.LecturerType
-		err := dao.UpdateUser(user)
+		err := r.UsersDao.UpdateUser(user)
 		if err != nil {
 			log.WithError(err).Error("could not update user")
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -259,7 +265,7 @@ func addAdminToCourse(c *gin.Context) {
 	})
 }
 
-func getAdmins(c *gin.Context) {
+func (r coursesRoutes) getAdmins(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -267,7 +273,7 @@ func getAdmins(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	admins, err := dao.GetCourseAdmins(tumLiveContext.Course.ID)
+	admins, err := r.CoursesDao.GetCourseAdmins(tumLiveContext.Course.ID)
 	if err != nil {
 		log.WithError(err).Error("error getting course admins")
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -290,7 +296,7 @@ type lhResp struct {
 	SelectedIndex   int                  `json:"selected_index"`
 }
 
-func lectureHallsByID(c *gin.Context) {
+func (r coursesRoutes) lectureHallsByID(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -309,7 +315,7 @@ func lectureHallsByID(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	course, err := dao.GetCourseById(c, uint(id))
+	course, err := r.CoursesDao.GetCourseById(c, uint(id))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
@@ -319,10 +325,10 @@ func lectureHallsByID(c *gin.Context) {
 		return
 	}
 
-	lectureHalls(c, course)
+	r.lectureHalls(c, course)
 }
 
-func lectureHalls(c *gin.Context, course model.Course) {
+func (r coursesRoutes) lectureHalls(c *gin.Context, course model.Course) {
 	var res []lhResp
 	lectureHallIDs := map[uint]bool{}
 	for _, s := range course.Streams {
@@ -331,7 +337,7 @@ func lectureHalls(c *gin.Context, course model.Course) {
 		}
 	}
 	for u := range lectureHallIDs {
-		lh, err := dao.GetLectureHallByID(u)
+		lh, err := r.LectureHallsDao.GetLectureHallByID(u)
 		if err != nil {
 			log.WithError(err).Error("Can't fetch lecture hall for stream")
 		} else {
@@ -353,7 +359,7 @@ func lectureHalls(c *gin.Context, course model.Course) {
 	c.JSON(http.StatusOK, res)
 }
 
-func submitCut(c *gin.Context) {
+func (r coursesRoutes) submitCut(c *gin.Context) {
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
@@ -364,14 +370,14 @@ func submitCut(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
 		return
 	}
-	stream, err := dao.GetStreamByID(context.Background(), strconv.Itoa(int(req.LectureID)))
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), strconv.Itoa(int(req.LectureID)))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "stream not found"})
 		return
 	}
 	stream.StartOffset = req.From
 	stream.EndOffset = req.To
-	if err = dao.SaveStream(&stream); err != nil {
+	if err = r.StreamsDao.SaveStream(&stream); err != nil {
 		panic(err)
 	}
 }
@@ -382,16 +388,16 @@ type submitCutRequest struct {
 	To        uint `json:"to"`
 }
 
-func deleteUnit(c *gin.Context) {
-	unit, err := dao.GetUnitByID(c.Param("unitID"))
+func (r coursesRoutes) deleteUnit(c *gin.Context) {
+	unit, err := r.StreamsDao.GetUnitByID(c.Param("unitID"))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "not found"})
 		return
 	}
-	dao.DeleteUnit(unit.Model.ID)
+	r.StreamsDao.DeleteUnit(unit.Model.ID)
 }
 
-func addUnit(c *gin.Context) {
+func (r coursesRoutes) addUnit(c *gin.Context) {
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
@@ -402,7 +408,7 @@ func addUnit(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
 		return
 	}
-	stream, err := dao.GetStreamByID(context.Background(), strconv.Itoa(int(req.LectureID)))
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), strconv.Itoa(int(req.LectureID)))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "stream not found"})
 		return
@@ -414,7 +420,7 @@ func addUnit(c *gin.Context) {
 		UnitEnd:         req.To,
 		StreamID:        stream.Model.ID,
 	})
-	if err = dao.UpdateStreamFullAssoc(&stream); err != nil {
+	if err = r.StreamsDao.UpdateStreamFullAssoc(&stream); err != nil {
 		panic(err)
 	}
 }
@@ -427,7 +433,7 @@ type addUnitRequest struct {
 	Description string `json:"description"`
 }
 
-func updateDescription(c *gin.Context) {
+func (r coursesRoutes) updateDescription(c *gin.Context) {
 	sIDInt, err := strconv.Atoi(c.Param("streamID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -439,13 +445,13 @@ func updateDescription(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	stream, err := dao.GetStreamByID(context.Background(), c.Param("streamID"))
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
 	stream.Description = req.Name
-	if err := dao.UpdateStream(stream); err != nil {
+	if err := r.StreamsDao.UpdateStream(stream); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't update lecture Description")
 		return
 	}
@@ -459,7 +465,7 @@ func updateDescription(c *gin.Context) {
 	}
 }
 
-func renameLecture(c *gin.Context) {
+func (r coursesRoutes) renameLecture(c *gin.Context) {
 	sIDInt, err := strconv.Atoi(c.Param("streamID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -471,13 +477,13 @@ func renameLecture(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	stream, err := dao.GetStreamByID(context.Background(), c.Param("streamID"))
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
 	stream.Name = req.Name
-	if err := dao.UpdateStream(stream); err != nil {
+	if err := r.StreamsDao.UpdateStream(stream); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't update lecture name")
 		return
 	}
@@ -491,8 +497,8 @@ func renameLecture(c *gin.Context) {
 	}
 }
 
-func updateLectureSeries(c *gin.Context) {
-	stream, err := dao.GetStreamByID(context.Background(), c.Param("streamID"))
+func (r coursesRoutes) updateLectureSeries(c *gin.Context) {
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
@@ -510,8 +516,8 @@ type renameLectureRequest struct {
 	Name string
 }
 
-func deleteLectureSeries(c *gin.Context) {
-	stream, err := dao.GetStreamByID(context.Background(), c.Param("streamID"))
+func (r coursesRoutes) deleteLectureSeries(c *gin.Context) {
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
@@ -529,7 +535,7 @@ func deleteLectureSeries(c *gin.Context) {
 	}
 }
 
-func deleteLectures(c *gin.Context) {
+func (r coursesRoutes) deleteLectures(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -553,7 +559,7 @@ func deleteLectures(c *gin.Context) {
 
 	var streams []model.Stream
 	for _, streamID := range req.StreamIDs {
-		stream, err := dao.GetStreamByID(context.Background(), streamID)
+		stream, err := r.StreamsDao.GetStreamByID(context.Background(), streamID)
 		if err != nil || stream.CourseID != tumLiveContext.Course.ID {
 			c.AbortWithStatus(http.StatusForbidden)
 			return
@@ -562,11 +568,11 @@ func deleteLectures(c *gin.Context) {
 	}
 
 	for _, stream := range streams {
-		dao.DeleteStream(strconv.Itoa(int(stream.ID)))
+		r.StreamsDao.DeleteStream(strconv.Itoa(int(stream.ID)))
 	}
 }
 
-func createLecture(c *gin.Context) {
+func (r coursesRoutes) createLecture(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -672,7 +678,7 @@ func createLecture(c *gin.Context) {
 		tumLiveContext.Course.Streams = append(tumLiveContext.Course.Streams, lecture)
 	}
 
-	err = dao.UpdateCourse(context.Background(), *tumLiveContext.Course)
+	err = r.CoursesDao.UpdateCourse(context.Background(), *tumLiveContext.Course)
 	if err != nil {
 		log.WithError(err).Warn("Can't update course")
 	}
@@ -688,7 +694,7 @@ type createLectureRequest struct {
 	DateSeries    []time.Time `json:"dateSeries"`
 }
 
-func createCourse(c *gin.Context) {
+func (r coursesRoutes) createCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -731,7 +737,7 @@ func createCourse(c *gin.Context) {
 	} else {
 		semester = "S"
 	}
-	_, err = dao.GetCourseBySlugYearAndTerm(c, req.Slug, semester, year)
+	_, err = r.CoursesDao.GetCourseBySlugYearAndTerm(c, req.Slug, semester, year)
 	if err == nil {
 		c.AbortWithStatusJSON(http.StatusConflict, gin.H{"message": "Course with slug already exists"})
 		return
@@ -753,24 +759,24 @@ func createCourse(c *gin.Context) {
 	if tumLiveContext.User.Role != model.AdminType {
 		course.Admins = []model.User{*tumLiveContext.User}
 	}
-	err = dao.CreateCourse(context.Background(), &course, true)
+	err = r.CoursesDao.CreateCourse(context.Background(), &course, true)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "Couldn't save course. Please reach out to us.")
 		return
 	}
-	courseWithID, err := dao.GetCourseBySlugYearAndTerm(context.Background(), req.Slug, semester, year)
+	courseWithID, err := r.CoursesDao.GetCourseBySlugYearAndTerm(context.Background(), req.Slug, semester, year)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "Could not get course for slug and term. Please reach out to us.")
 	}
 	// refresh enrollments and lectures
 	courses := make([]model.Course, 1)
 	courses[0] = courseWithID
-	go tum.GetEventsForCourses(courses)
-	go tum.FindStudentsForCourses(courses)
-	go tum.FetchCourses()
+	go tum.GetEventsForCourses(courses, r.DaoWrapper)
+	go tum.FindStudentsForCourses(courses, r.DaoWrapper)
+	go tum.FetchCourses(r.DaoWrapper)
 }
 
-func deleteCourse(c *gin.Context) {
+func (r coursesRoutes) deleteCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -785,7 +791,7 @@ func deleteCourse(c *gin.Context) {
 		"course": tumLiveContext.Course.ID,
 	}).Info("Delete Course Called")
 
-	dao.DeleteCourse(*tumLiveContext.Course)
+	r.CoursesDao.DeleteCourse(*tumLiveContext.Course)
 	dao.Cache.Clear()
 }
 
@@ -800,7 +806,7 @@ type createCourseRequest struct {
 	TeachingTerm string
 }
 
-func courseInfo(c *gin.Context) {
+func (r coursesRoutes) courseInfo(c *gin.Context) {
 	jsonData, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
