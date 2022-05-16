@@ -45,7 +45,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	adminOfCourseGroup.POST("/deleteLectures", routes.deleteLectures)
 	adminOfCourseGroup.POST("/renameLecture/:streamID", routes.renameLecture)
 	adminOfCourseGroup.POST("/updateLectureSeries/:streamID", routes.updateLectureSeries)
-	adminOfCourseGroup.POST("/updateDescription/:streamID", routes.updateDescription)
+	adminOfCourseGroup.PUT("/updateDescription/:streamID", routes.updateDescription)
 	adminOfCourseGroup.DELETE("/deleteLectureSeries/:streamID", routes.deleteLectureSeries)
 	adminOfCourseGroup.POST("/addUnit", routes.addUnit)
 	adminOfCourseGroup.POST("/submitCut", routes.submitCut)
