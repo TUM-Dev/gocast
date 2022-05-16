@@ -43,7 +43,6 @@
     "moment": "^2.29.3",
     "nouislider": "^15.6.0",
     "video.js": "^7.18.1",
-    "videojs-contrib-hls": "^5.15.0",
     "videojs-contrib-quality-levels": "^2.1.0",
     "videojs-hls-quality-selector": "^1.1.4",
     "videojs-seek-buttons": "^2.2.1"
