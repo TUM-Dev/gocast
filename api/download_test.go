@@ -17,236 +17,230 @@ import (
 	"testing"
 )
 
-func TestDownload_noContext(t *testing.T) {
+func TestDownload(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	fileId := "1"
+	t.Run("GET[no context]", func(t *testing.T) {
+		fileId := "1"
 
-	w := httptest.NewRecorder()
-	c, r := gin.CreateTestContext(w)
+		w := httptest.NewRecorder()
+		c, r := gin.CreateTestContext(w)
 
-	mockDaoWrapper := dao.DaoWrapper{}
+		mockDaoWrapper := dao.DaoWrapper{}
 
-	configGinDownloadRouter(r, mockDaoWrapper)
+		configGinDownloadRouter(r, mockDaoWrapper)
 
-	c.Request, _ = http.NewRequest(http.MethodGet, "/api/download/"+fileId, nil)
-	r.ServeHTTP(w, c.Request)
+		c.Request, _ = http.NewRequest(http.MethodGet, "/api/download/"+fileId, nil)
+		r.ServeHTTP(w, c.Request)
 
-	assert.Equal(t, http.StatusInternalServerError, w.Code)
-}
-
-func TestDownload_notLoggedIn(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	fileId := "1"
-
-	w := httptest.NewRecorder()
-	c, r := gin.CreateTestContext(w)
-
-	// Middleware to set Mock-TUMLiveContext
-	r.Use(func(c *gin.Context) {
-		c.Set("TUMLiveContext", tools.TUMLiveContext{User: nil})
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
 	})
 
-	mockDaoWrapper := dao.DaoWrapper{}
+	t.Run("GET[not logged in]", func(t *testing.T) {
+		fileId := "1"
 
-	configGinDownloadRouter(r, mockDaoWrapper)
+		w := httptest.NewRecorder()
+		c, r := gin.CreateTestContext(w)
 
-	c.Request, _ = http.NewRequest(http.MethodGet, "/api/download/"+fileId, nil)
-	r.ServeHTTP(w, c.Request)
+		// Middleware to set Mock-TUMLiveContext
+		r.Use(func(c *gin.Context) {
+			c.Set("TUMLiveContext", tools.TUMLiveContext{User: nil})
+		})
 
-	assert.Equal(t, http.StatusForbidden, w.Code)
-}
+		mockDaoWrapper := dao.DaoWrapper{}
 
-func TestDownload_fileDoesntExist(t *testing.T) {
-	gin.SetMode(gin.TestMode)
+		configGinDownloadRouter(r, mockDaoWrapper)
 
-	fileId := "1"
+		c.Request, _ = http.NewRequest(http.MethodGet, "/api/download/"+fileId, nil)
+		r.ServeHTTP(w, c.Request)
 
-	w := httptest.NewRecorder()
-	c, r := gin.CreateTestContext(w)
-
-	// Middleware to set Mock-TUMLiveContext
-	r.Use(func(c *gin.Context) {
-		c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-			Name: "Admin",
-			Role: model.AdminType,
-		}})
+		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 
-	ctrl := gomock.NewController(t)
-	fileDao := mock_dao.NewMockFileDao(ctrl)
+	t.Run("GET[file doesnt exist]", func(t *testing.T) {
+		fileId := "1"
 
-	fileDao.EXPECT().GetFileById(gomock.Eq(fileId)).Return(model.File{}, errors.New("")).AnyTimes()
+		w := httptest.NewRecorder()
+		c, r := gin.CreateTestContext(w)
 
-	mockDaoWrapper := dao.DaoWrapper{FileDao: fileDao}
+		// Middleware to set Mock-TUMLiveContext
+		r.Use(func(c *gin.Context) {
+			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+				Name: "Admin",
+				Role: model.AdminType,
+			}})
+		})
 
-	configGinDownloadRouter(r, mockDaoWrapper)
+		ctrl := gomock.NewController(t)
+		fileDao := mock_dao.NewMockFileDao(ctrl)
 
-	c.Request, _ = http.NewRequest(http.MethodGet, "/api/download/"+fileId, nil)
-	r.ServeHTTP(w, c.Request)
+		fileDao.EXPECT().GetFileById(gomock.Eq(fileId)).Return(model.File{}, errors.New("")).AnyTimes()
 
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-}
+		mockDaoWrapper := dao.DaoWrapper{FileDao: fileDao}
 
-func TestDownload_downloadsDisabled(t *testing.T) {
-	gin.SetMode(gin.TestMode)
+		configGinDownloadRouter(r, mockDaoWrapper)
 
-	fileId := "1"
-	streamId := (uint)(1234)
-	courseId := (uint)(4321)
+		c.Request, _ = http.NewRequest(http.MethodGet, "/api/download/"+fileId, nil)
+		r.ServeHTTP(w, c.Request)
 
-	w := httptest.NewRecorder()
-	c, r := gin.CreateTestContext(w)
-
-	// Middleware to set Mock-TUMLiveContext
-	r.Use(func(c *gin.Context) {
-		c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-			Name:                "Hansi",
-			Role:                model.StudentType,
-			AdministeredCourses: []model.Course{},
-		}})
+		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 
-	// file mock
-	fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
-	fileMock.EXPECT().GetFileById(gomock.Eq(fileId)).Return(model.File{
-		StreamID: streamId,
-		Path:     "/file",
-	}, nil).AnyTimes()
+	t.Run("GET[Downloads disabled]", func(t *testing.T) {
+		fileId := "1"
+		streamId := (uint)(1234)
+		courseId := (uint)(4321)
 
-	// streams mock
-	streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
-	streamsMock.EXPECT().GetStreamByID(gomock.Any(), fmt.Sprintf("%d", streamId)).Return(model.Stream{
-		CourseID: courseId,
-	}, nil).AnyTimes()
+		w := httptest.NewRecorder()
+		c, r := gin.CreateTestContext(w)
 
-	// course mock
-	courseMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
-	courseMock.EXPECT().GetCourseById(gomock.Any(), courseId).Return(model.Course{
-		UserID:           1, // User defined above has ID 0
-		DownloadsEnabled: false,
-	}, nil).AnyTimes()
+		// Middleware to set Mock-TUMLiveContext
+		r.Use(func(c *gin.Context) {
+			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+				Name:                "Hansi",
+				Role:                model.StudentType,
+				AdministeredCourses: []model.Course{},
+			}})
+		})
 
-	configGinDownloadRouter(r, dao.DaoWrapper{
-		FileDao:    fileMock,
-		StreamsDao: streamsMock,
-		CoursesDao: courseMock,
+		// file mock
+		fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
+		fileMock.EXPECT().GetFileById(gomock.Eq(fileId)).Return(model.File{
+			StreamID: streamId,
+			Path:     "/file",
+		}, nil).AnyTimes()
+
+		// streams mock
+		streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+		streamsMock.EXPECT().GetStreamByID(gomock.Any(), fmt.Sprintf("%d", streamId)).Return(model.Stream{
+			CourseID: courseId,
+		}, nil).AnyTimes()
+
+		// course mock
+		courseMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+		courseMock.EXPECT().GetCourseById(gomock.Any(), courseId).Return(model.Course{
+			UserID:           1, // User defined above has ID 0
+			DownloadsEnabled: false,
+		}, nil).AnyTimes()
+
+		configGinDownloadRouter(r, dao.DaoWrapper{
+			FileDao:    fileMock,
+			StreamsDao: streamsMock,
+			CoursesDao: courseMock,
+		})
+
+		c.Request, _ = http.NewRequest(http.MethodGet, "/api/download/"+fileId, nil)
+		r.ServeHTTP(w, c.Request)
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 
-	c.Request, _ = http.NewRequest(http.MethodGet, "/api/download/"+fileId, nil)
-	r.ServeHTTP(w, c.Request)
+	t.Run("GET[File not found]", func(t *testing.T) {
+		gin.SetMode(gin.TestMode)
 
-	assert.Equal(t, http.StatusForbidden, w.Code)
-}
+		fileId := "1"
+		streamId := (uint)(1234)
+		courseId := (uint)(4321)
 
-func TestDownload_fileNotFound(t *testing.T) {
-	gin.SetMode(gin.TestMode)
+		w := httptest.NewRecorder()
+		c, r := gin.CreateTestContext(w)
 
-	fileId := "1"
-	streamId := (uint)(1234)
-	courseId := (uint)(4321)
+		// Middleware to set Mock-TUMLiveContext
+		r.Use(func(c *gin.Context) {
+			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+				Name: "Admin",
+				Role: model.AdminType,
+			}})
+		})
 
-	w := httptest.NewRecorder()
-	c, r := gin.CreateTestContext(w)
+		// file mock
+		fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
+		fileMock.EXPECT().GetFileById(gomock.Eq(fileId)).Return(model.File{
+			StreamID: streamId,
+			Path:     "/file",
+		}, nil).AnyTimes()
 
-	// Middleware to set Mock-TUMLiveContext
-	r.Use(func(c *gin.Context) {
-		c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-			Name: "Admin",
-			Role: model.AdminType,
-		}})
+		// streams mock
+		streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+		streamsMock.EXPECT().GetStreamByID(gomock.Any(), fmt.Sprintf("%d", streamId)).Return(model.Stream{
+			CourseID: courseId,
+		}, nil).AnyTimes()
+
+		// course mock
+		courseMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+		courseMock.EXPECT().GetCourseById(gomock.Any(), courseId).Return(model.Course{
+			UserID:           1, // User defined above has ID 0
+			DownloadsEnabled: false,
+		}, nil).AnyTimes()
+
+		configGinDownloadRouter(r, dao.DaoWrapper{
+			FileDao:    fileMock,
+			StreamsDao: streamsMock,
+			CoursesDao: courseMock,
+		})
+
+		c.Request, _ = http.NewRequest(http.MethodGet, "/api/download/"+fileId, nil)
+		r.ServeHTTP(w, c.Request)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
 
-	// file mock
-	fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
-	fileMock.EXPECT().GetFileById(gomock.Eq(fileId)).Return(model.File{
-		StreamID: streamId,
-		Path:     "/file",
-	}, nil).AnyTimes()
+	t.Run("GET[success]", func(t *testing.T) {
+		fileId := "1"
+		filePath := "/tmp/download_test"
+		fileContent := "hello"
+		streamId := (uint)(1234)
+		courseId := (uint)(4321)
 
-	// streams mock
-	streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
-	streamsMock.EXPECT().GetStreamByID(gomock.Any(), fmt.Sprintf("%d", streamId)).Return(model.Stream{
-		CourseID: courseId,
-	}, nil).AnyTimes()
+		w := httptest.NewRecorder()
+		c, r := gin.CreateTestContext(w)
 
-	// course mock
-	courseMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
-	courseMock.EXPECT().GetCourseById(gomock.Any(), courseId).Return(model.Course{
-		UserID:           1, // User defined above has ID 0
-		DownloadsEnabled: false,
-	}, nil).AnyTimes()
+		// Middleware to set Mock-TUMLiveContext
+		r.Use(func(c *gin.Context) {
+			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+				Name: "Admin",
+				Role: model.AdminType,
+			}})
+		})
 
-	configGinDownloadRouter(r, dao.DaoWrapper{
-		FileDao:    fileMock,
-		StreamsDao: streamsMock,
-		CoursesDao: courseMock,
+		// create file with content to read
+		err := os.WriteFile(filePath, []byte(fileContent), 0666)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// file mock
+		fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
+		fileMock.EXPECT().GetFileById(gomock.Eq(fileId)).Return(model.File{
+			StreamID: streamId,
+			Path:     filePath,
+		}, nil).AnyTimes()
+
+		// streams mock
+		streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+		streamsMock.EXPECT().GetStreamByID(gomock.Any(), fmt.Sprintf("%d", streamId)).Return(model.Stream{
+			CourseID: courseId,
+		}, nil).AnyTimes()
+
+		// course mock
+		courseMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+		courseMock.EXPECT().GetCourseById(gomock.Any(), courseId).Return(model.Course{
+			UserID:           1, // User defined above has ID 0
+			DownloadsEnabled: false,
+		}, nil).AnyTimes()
+
+		configGinDownloadRouter(r, dao.DaoWrapper{
+			FileDao:    fileMock,
+			StreamsDao: streamsMock,
+			CoursesDao: courseMock,
+		})
+
+		c.Request, _ = http.NewRequest(http.MethodGet, "/api/download/"+fileId, nil)
+		r.ServeHTTP(w, c.Request)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, fileContent, w.Body.String())
+
+		_ = os.Remove(filePath)
 	})
-
-	c.Request, _ = http.NewRequest(http.MethodGet, "/api/download/"+fileId, nil)
-	r.ServeHTTP(w, c.Request)
-
-	assert.Equal(t, http.StatusNotFound, w.Code)
-}
-
-func TestDownload_success(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	fileId := "1"
-	filePath := "/tmp/download_test"
-	fileContent := "hello"
-	streamId := (uint)(1234)
-	courseId := (uint)(4321)
-
-	w := httptest.NewRecorder()
-	c, r := gin.CreateTestContext(w)
-
-	// Middleware to set Mock-TUMLiveContext
-	r.Use(func(c *gin.Context) {
-		c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-			Name: "Admin",
-			Role: model.AdminType,
-		}})
-	})
-
-	// create file with content to read
-	err := os.WriteFile(filePath, []byte(fileContent), 0666)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// file mock
-	fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
-	fileMock.EXPECT().GetFileById(gomock.Eq(fileId)).Return(model.File{
-		StreamID: streamId,
-		Path:     filePath,
-	}, nil).AnyTimes()
-
-	// streams mock
-	streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
-	streamsMock.EXPECT().GetStreamByID(gomock.Any(), fmt.Sprintf("%d", streamId)).Return(model.Stream{
-		CourseID: courseId,
-	}, nil).AnyTimes()
-
-	// course mock
-	courseMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
-	courseMock.EXPECT().GetCourseById(gomock.Any(), courseId).Return(model.Course{
-		UserID:           1, // User defined above has ID 0
-		DownloadsEnabled: false,
-	}, nil).AnyTimes()
-
-	configGinDownloadRouter(r, dao.DaoWrapper{
-		FileDao:    fileMock,
-		StreamsDao: streamsMock,
-		CoursesDao: courseMock,
-	})
-
-	c.Request, _ = http.NewRequest(http.MethodGet, "/api/download/"+fileId, nil)
-	r.ServeHTTP(w, c.Request)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, fileContent, w.Body.String())
-
-	_ = os.Remove(filePath)
 }
