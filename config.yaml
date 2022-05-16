@@ -15,6 +15,7 @@ campus:
   - secret1
   - secret2
 db:
+  host: localhost
   database: tumlive
   password: example
   user: root
