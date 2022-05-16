@@ -34,7 +34,7 @@ func TestDownloadICS(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 
-	t.Run("GET[coursesDao returns error]", func(t *testing.T) {
+	t.Run("GET[GetCourseBySlugYearAndTerm returns error]", func(t *testing.T) {
 		courseMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
 
 		w := httptest.NewRecorder()

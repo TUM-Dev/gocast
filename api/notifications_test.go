@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/joschahenningsen/TUM-Live/dao"
@@ -17,7 +18,7 @@ import (
 )
 
 func TestNotifications(t *testing.T) {
-	t.Run("GET[notificationDao returns error]", func(t *testing.T) {
+	t.Run("GET[GetNotifications returns error]", func(t *testing.T) {
 		notificationsMock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
 
 		w := httptest.NewRecorder()
@@ -122,7 +123,7 @@ func TestNotifications(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 
-	t.Run("POST[notificationsDao returns error]", func(t *testing.T) {
+	t.Run("POST[AddNotification returns error]", func(t *testing.T) {
 		notificationsMock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
 
 		w := httptest.NewRecorder()
@@ -175,5 +176,63 @@ func TestNotifications(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Equal(t, string(jResponse), w.Body.String())
+	})
+
+	t.Run("DELETE[invalid parameter 'id']", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, r := gin.CreateTestContext(w)
+		configNotificationsRouter(r, dao.DaoWrapper{})
+
+		c.Request, _ = http.NewRequest(http.MethodDelete, "/api/notifications/abc", nil)
+		r.ServeHTTP(w, c.Request)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("DELETE[DeleteNotification returns error]", func(t *testing.T) {
+		notificationsMock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
+
+		id := uint(1)
+
+		w := httptest.NewRecorder()
+		c, r := gin.CreateTestContext(w)
+		configNotificationsRouter(r, dao.DaoWrapper{NotificationsDao: notificationsMock})
+
+		notificationsMock.
+			EXPECT().
+			DeleteNotification(id).
+			Return(errors.New("")).
+			AnyTimes()
+
+		c.Request, _ = http.NewRequest(http.MethodDelete,
+			fmt.Sprintf("/api/notifications/%d", id), nil)
+		r.ServeHTTP(w, c.Request)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+
+	t.Run("DELETE[success]", func(t *testing.T) {
+		notificationsMock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
+
+		id := uint(1)
+
+		w := httptest.NewRecorder()
+		c, r := gin.CreateTestContext(w)
+		configNotificationsRouter(r, dao.DaoWrapper{NotificationsDao: notificationsMock})
+
+		notificationsMock.
+			EXPECT().
+			DeleteNotification(id).
+			Return(nil).
+			AnyTimes()
+
+		c.Request, _ = http.NewRequest(http.MethodDelete,
+			fmt.Sprintf("/api/notifications/%d", id), nil)
+		r.ServeHTTP(w, c.Request)
+
+		j, _ := json.Marshal(gin.H{"success": true})
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, string(j), w.Body.String())
 	})
 }
