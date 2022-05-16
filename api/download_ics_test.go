@@ -19,16 +19,13 @@ import (
 )
 
 func TestDownloadICS(t *testing.T) {
-	w := httptest.NewRecorder()
-	c, r := gin.CreateTestContext(w)
-
-	courseMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
-
-	configGinDownloadICSRouter(r, dao.DaoWrapper{CoursesDao: courseMock})
-
 	templates, _ := template.ParseFS(staticFS, "template/*.gotemplate")
 
-	t.Run("year not a int", func(t *testing.T) {
+	t.Run("GET[year not a int]", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, r := gin.CreateTestContext(w)
+		configGinDownloadICSRouter(r, dao.DaoWrapper{})
+
 		slug, term, year := "fda", "S", "abc"
 		c.Request, _ = http.NewRequest(http.MethodGet,
 			fmt.Sprintf("/api/download_ics/%s/%s/%s/events.ics", year, term, slug), nil)
@@ -37,7 +34,13 @@ func TestDownloadICS(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 
-	t.Run("coursesDao returns error", func(t *testing.T) {
+	t.Run("GET[coursesDao returns error]", func(t *testing.T) {
+		courseMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+
+		w := httptest.NewRecorder()
+		c, r := gin.CreateTestContext(w)
+		configGinDownloadICSRouter(r, dao.DaoWrapper{CoursesDao: courseMock})
+
 		year, term, slug := 2022, "S", "fda"
 		courseMock.
 			EXPECT().
@@ -52,7 +55,13 @@ func TestDownloadICS(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("GET[success]", func(t *testing.T) {
+		courseMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+
+		w := httptest.NewRecorder()
+		c, r := gin.CreateTestContext(w)
+		configGinDownloadICSRouter(r, dao.DaoWrapper{CoursesDao: courseMock})
+
 		var icsContentExpected bytes.Buffer
 		year, term, slug := 2022, "S", "fda"
 		createdAt := time.Now()
