@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>TUM Live</title>
+    {{template "headImports" .IndexData.VersionTag}}
+</head>
+<body>
+{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.userSettingsData*/ -}}
+{{template "header" .IndexData.TUMLiveContext}}
+<div class="w-full md:w-1/2 2xl:max-w-screen-xl mx-auto p-6 text-3">
+    <h1 class="text-2 text-3xl font-semibold">Settings</h1>
+
+    <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5"
+         x-data=" { initialName: '{{.IndexData.TUMLiveContext.User.Name}}', name: '{{.IndexData.TUMLiveContext.User.Name}}' } ">
+        <h2 class="text-2 text-xl font-semibold">Content</h2>
+        <div class="p-3">
+            <label for="displayName">Preferred Name (For lecture chat and greeting on start page.) <span
+                        class="text-warn font-semibold">You can only change this once every three months.</span></label>
+            <div class="pl-2 flex">
+                <input class="flex-grow w-auto mr-4" type="text" x-model="name" id="displayName">
+                <button type="button" :disabled="name === initialName"
+                        class="px-4 py-2 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500">
+                    Update Name
+                </button>
+            </div>
+            <p>Preferred greeting:</p>
+            <div class="pl-2">
+                <input class="w-auto" type="radio" name="greet" value="Moin" id="greeting1">
+                <label for="greeting1">Moin</label><br>
+                <input class="w-auto" type="radio" name="greet" value="Servus" id="greeting2">
+                <label for="greeting2">Servus</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
+        <h2 class="text-2 text-xl font-semibold">Privacy & Data Protection</h2>
+        <div class="p-3">
+            <div class="pl-2">
+                <input id="googleCast" type="checkbox" class="w-auto">
+                <label for="googleCast">Enable Google Cast integration (includes scripts loaded from Googles
+                    servers.)</label>
+            </div>
+            <div class="pl-2 mt-2 flex justify-end">
+                <button type="button"
+                        class="px-4 py-2 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500">
+                    Export my personal data
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center bg-white dark:bg-secondary rounded shadow p-4 my-5">
+        <i class="text-5">Not a lot going on here <b>yet</b>.
+            <a class="underline" target="_blank" rel="noopener"
+               href="https://github.com/joschahenningsen/TUM-Live/issues/new">Open an issue</a>
+            if you have any ideas what settings you miss :)
+        </i>
+    </div>
+</div>
+</body>
+</html>

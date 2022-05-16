@@ -32,6 +32,23 @@ type User struct {
 	Password            string         `gorm:"default:null" json:"-"`
 	Courses             []Course       `gorm:"many2many:course_users" json:"-"` // courses a lecturer invited this user to
 	AdministeredCourses []Course       `gorm:"many2many:course_admins"`         // courses this user is an admin of
+
+	Settings []UserSetting `gorm:"foreignkey:UserID"`
+}
+
+type UserSettingType int
+
+const (
+	PreferredName UserSettingType = iota + 1
+	EnableChromecast
+)
+
+type UserSetting struct {
+	gorm.Model
+
+	UserID uint   `gorm:"not null"`
+	Type   uint   `gorm:"not null"`
+	Value  string `gorm:"not null"` //json encoded setting
 }
 
 type argonParams struct {

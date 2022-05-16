@@ -15,6 +15,21 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type userSettingsData struct {
+	IndexData IndexData
+}
+
+func (r mainRoutes) settingsPage(c *gin.Context) {
+	d := userSettingsData{IndexData: NewIndexData()}
+	d.IndexData.TUMLiveContext = c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	err := templateExecutor.ExecuteTemplate(c.Writer, "user-settings.gohtml", d)
+	if err != nil {
+		log.Error(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+}
+
 func (r mainRoutes) LoginHandler(c *gin.Context) {
 	username := c.Request.FormValue("username")
 	password := c.Request.FormValue("password")
