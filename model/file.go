@@ -2,6 +2,7 @@ package model
 
 import (
 	"gorm.io/gorm"
+	"net/url"
 	"strings"
 )
 
@@ -43,5 +44,9 @@ func (f File) GetFriendlyFileName() string {
 }
 
 func (f File) IsURL() bool {
-	return strings.HasPrefix(f.Path, "https://") || strings.HasPrefix(f.Path, "http://")
+	parsedUrl, err := url.Parse(f.Path)
+	if err != nil {
+		return false
+	}
+	return parsedUrl.Scheme == "https://" || parsedUrl.Scheme == "http://"
 }

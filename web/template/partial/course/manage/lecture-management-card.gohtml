@@ -181,12 +181,15 @@
                        autocomplete="off">
             </div>
             <div class="w-full mt-3">
-                <div x-data="{ id: $id('text-input') }"
+                <div x-data="{ id: $id('text-input'), fileDropHover: false }"
                      class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
                     <label :for="id" class="hidden">Lecture description</label>
                     <textarea :id="id"
-                              @drop="(e) => lecture.onFileDrop(e)"
-                              class="grow border-none"
+                              @drop="(e) => lecture.onFileDrop(e); fileDropHover = false"
+                              @dragover="fileDropHover = true"
+                              @dragleave="fileDropHover = false"
+                              class="grow border-4 rounded"
+                              :class="fileDropHover ? 'shadow-sm border-blue-500/50' : 'border-transparent'"
                               placeholder="Add a nice description, links, and more. You can use Markdown. Drop files here."
                               autocomplete="off"
                               x-model="lecture.newDescription"
