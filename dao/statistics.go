@@ -19,7 +19,7 @@ type StatisticsDao interface {
 	GetCourseStatsWeekdays(courseID uint) ([]Stat, error)
 	GetCourseStatsHourly(courseID uint) ([]Stat, error)
 	GetStudentActivityCourseStats(courseID uint, live bool) ([]Stat, error)
-	GetCurrentLiveViewers(streamID uint) (int, error)
+	GetStreamNumLiveViews(streamID uint) (int, error)
 }
 
 type statisticsDao struct {
@@ -101,10 +101,10 @@ func (d statisticsDao) GetCourseStatsHourly(courseID uint) ([]Stat, error) {
 	return res, err
 }
 
-// GetCurrentLiveViewers returns the number of viewers currently watching a live stream.
-func (d statisticsDao) GetCurrentLiveViewers(streamID uint) (int, error) {
+// GetStreamNumLiveViews returns the number of viewers currently watching a live stream.
+func (d statisticsDao) GetStreamNumLiveViews(streamID uint) (int, error) {
 	var res int
-	err := DB.Raw(`SELECT viewers FROM stats WHERE stream_id = ? AND live = 1`, streamID).Scan(&res).Error
+	err := DB.Raw(`SELECT viewers FROM stats WHERE stream_id = ? AND live = 1 ORDER BY id DESC LIMIT 1`, streamID).Scan(&res).Error
 	return res, err
 }
 

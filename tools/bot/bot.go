@@ -137,13 +137,7 @@ func getFormattedMessageText(message string) string {
 // hasPrio returns true if 1% of the current viewers of a stream with streamID reported an issue.
 // When there threshold for sending an alert is greater than 1, it is also checked whether these reports are consecutive.
 func hasPrio(streamID uint, statsDao dao.StatisticsDao) bool {
-	liveViewers, err := statsDao.GetCurrentLiveViewers(streamID)
-	if err != nil {
-		sentry.CaptureException(err)
-		log.WithError(err).Error("Failed to get current live viewers")
-		return false
-	}
-	distinctReports := liveViewers
+	distinctReports := len(issuesPerStream[streamID])
 
 	for _, r1 := range issuesPerStream[streamID] {
 		for _, r2 := range issuesPerStream[streamID] {
@@ -151,6 +145,13 @@ func hasPrio(streamID uint, statsDao dao.StatisticsDao) bool {
 				distinctReports--
 			}
 		}
+	}
+
+	liveViewers, err := statsDao.GetStreamNumLiveViews(streamID)
+	if err != nil {
+		sentry.CaptureException(err)
+		log.WithError(err).Error("Failed to get current live viewers")
+		return false
 	}
 
 	percentOfViewersWithIssue := 100 * (float64(distinctReports) / float64(liveViewers))
