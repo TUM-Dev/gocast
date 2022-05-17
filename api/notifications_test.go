@@ -161,15 +161,14 @@ func TestNotifications(t *testing.T) {
 			Title:         &title,
 			SanitizedBody: "Brand new Features!",
 		}
-		jBody, _ := json.Marshal(notification)
-		body := bytes.NewBuffer(jBody)
+		req, _ := json.Marshal(notification)
 
 		notification.Body = notification.SanitizedBody // reverse json binding here too
 		notificationsMock.
 			EXPECT().
 			AddNotification(&notification).Return(nil).AnyTimes()
 
-		c.Request, _ = http.NewRequest(http.MethodPost, "/api/notifications/", body)
+		c.Request, _ = http.NewRequest(http.MethodPost, "/api/notifications/", bytes.NewBuffer(req))
 		r.ServeHTTP(w, c.Request)
 
 		jResponse, _ := json.Marshal(notification)
