@@ -131,101 +131,116 @@
             <div class="md:hidden inline-block">
                 {{template "actions" . }}
             </div>
-            <div class="border-b-2 dark:border-secondary mt-3"></div>
             {{if and .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
-            <div class="p-4 mt-2 md:space-x-2 space-y-2">
-                <button @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)"
-                        href="#"
-                        :title="paused?'End Pause (Turns on video and audio)':'Pause lecture (Turns off video and audio)'"
-                        class="bg-green-500 md:inline-block block text-center md:w-32 w-full text-white font-bold hover:bg-green-600 dark:hover:bg-green-600 rounded cursor-pointer p-2">
-                    <span x-show="!paused"><i class="fas fa-pause mr-1"></i>Pause</span>
-                    <span x-show="paused"><i class="fas fa-play mr-1"></i>Resume</span>
-                </button>
-                <button @click="window.location.href='?restart=1'"
-                        title="Issues with the stream? Restart it."
-                        class="bg-indigo-500 md:inline-block block text-center md:w-32 w-full text-white font-bold hover:bg-indigo-600 dark:hover:bg-indigo-600 rounded cursor-pointer p-2">
-                    <i class="fas fa-redo mr-1"></i>Restart
-                </button>
-                <button @click="$dispatch('stop')"
-                        title="Already finished? End the stream early."
-                        class="bg-red-500 md:inline-block text-center md:w-32 w-full text-white hover:bg-red-600 font-bold dark:hover:bg-red-600 rounded cursor-pointer p-2">
-                    <i class="fas fa-power-off mr-1"></i>Stop
-                </button>
-                {{if .AlertsEnabled}}
-                    <button @click="$dispatch('issue')"
-                            title="Issues with the stream? Send a report to the RGB."
-                            class="bg-amber-500 md:inline-block text-center md:w-32 w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
-                        <i class="fas fa-exclamation-triangle mr-1"></i>Problem
+                <div class="border-b-2 dark:border-secondary mt-3"></div>
+                <div class="p-4 mt-2 md:space-x-2 space-y-2">
+                    <button @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)"
+                            href="#"
+                            :title="paused?'End Pause (Turns on video and audio)':'Pause lecture (Turns off video and audio)'"
+                            class="bg-green-500 md:inline-block block text-center md:w-32 w-full text-white font-bold hover:bg-green-600 dark:hover:bg-green-600 rounded cursor-pointer p-2">
+                        <span x-show="!paused"><i class="fas fa-pause mr-1"></i>Pause</span>
+                        <span x-show="paused"><i class="fas fa-play mr-1"></i>Resume</span>
                     </button>
-                    {{/* Modal to enter feedback */}}
-                    <div x-cloak x-data="{ show : false, description : '', phone: '', mail: '', categories: [] }"
-                         @issue.window="show = true;"
-                         x-show="show" class="flex flex-wrap h-full overflow-y-scroll inline-block" :class="{ 'absolute inset-0 z-50 flex items-center justify-center': show }">
-                        <div @keydown.escape="show = false" class="dark:bg-secondary-light bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 sm:w-auto w-full md:max-w-md md:mx-auto rounded shadow-lg py-4 text-left px-6">
-                            <form @submit.prevent="watch.sendIssue(streamID, categories, name, phone, mail, description); show = false">
-                                <div class="font-bold text-xl mb-2">Report Technical Problem</div>
-                                <div class="font-bold text-md mb-2">Please select all relevant issue categories</div>
-                                <div>
-                                    <div>
-                                        <input class="h-4 w-4" type="checkbox" x-model.number="categories" value="1">
-                                        <span class="ml-2 text-4">Video</span>
+                    <button @click="window.location.href='?restart=1'"
+                            title="Issues with the stream? Restart it."
+                            class="bg-indigo-500 md:inline-block block text-center md:w-32 w-full text-white font-bold hover:bg-indigo-600 dark:hover:bg-indigo-600 rounded cursor-pointer p-2">
+                        <i class="fas fa-redo mr-1"></i>Restart
+                    </button>
+                    <button @click="$dispatch('stop')"
+                            title="Already finished? End the stream early."
+                            class="bg-red-500 md:inline-block text-center md:w-32 w-full text-white hover:bg-red-600 font-bold dark:hover:bg-red-600 rounded cursor-pointer p-2">
+                        <i class="fas fa-power-off mr-1"></i>Stop
+                    </button>
+                    {{if .AlertsEnabled}}
+                        <button @click="$dispatch('issue')"
+                                title="Issues with the stream? Send a report to the RGB."
+                                class="bg-amber-500 md:inline-block text-center md:w-32 md:float-right w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>Problem
+                        </button>
+                        {{/* Modal to enter feedback */}}
+                        <div x-cloak x-data="{ show : false, description : '', phone: '', mail: '', categories: [] }"
+                             @issue.window="show = true;"
+                             x-show="show" class="flex flex-wrap h-full overflow-y-scroll inline-block"
+                             :class="{ 'absolute inset-0 z-50 flex items-center justify-center': show }">
+                            <div @keydown.escape="show = false"
+                                 class="dark:bg-secondary-light bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 sm:w-auto w-full md:max-w-md md:mx-auto rounded shadow-lg py-4 text-left px-6">
+                                <form @submit.prevent="watch.sendIssue(streamID, categories, name, phone, mail, description); show = false">
+                                    <div class="font-bold text-xl mb-2">Report Technical Problem</div>
+                                    <div class="font-bold text-md mb-2">Please select all relevant issue categories
                                     </div>
                                     <div>
-                                        <input class="h-4 w-4" type="checkbox" x-model.number="categories" value="2">
-                                        <span class="ml-2 text-4">Audio</span>
+                                        <div>
+                                            <input class="h-4 w-4" type="checkbox" x-model.number="categories"
+                                                   value="1">
+                                            <span class="ml-2 text-4">Video</span>
+                                        </div>
+                                        <div>
+                                            <input class="h-4 w-4" type="checkbox" x-model.number="categories"
+                                                   value="2">
+                                            <span class="ml-2 text-4">Audio</span>
+                                        </div>
+                                        <div>
+                                            <input class="h-4 w-4" type="checkbox" x-model.number="categories"
+                                                   value="3">
+                                            <span class="ml-2 text-4">Camera</span>
+                                        </div>
+                                        <div>
+                                            <input class="h-4 w-4" type="checkbox" x-model.number="categories"
+                                                   value="4">
+                                            <span class="ml-2 text-4">Microphone</span>
+                                        </div>
+                                        <div>
+                                            <input class="h-4 w-4" type="checkbox" x-model.number="categories"
+                                                   value="5">
+                                            <span class="ml-2 text-4">Light</span>
+                                        </div>
+                                        <div>
+                                            <input class="h-4 w-4" type="checkbox" x-model.number="categories"
+                                                   value="6">
+                                            <span class="ml-2 text-4">Other</span>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <input class="h-4 w-4" type="checkbox" x-model.number="categories" value="3">
-                                        <span class="ml-2 text-4">Camera</span>
+                                    <div class="flex pb-3 mt-3">
+                                        <div>
+                                            <label for="description">Description of the issue</label>
+                                            <textarea required name="description" rows="0" cols="0" class="grow w-full"
+                                                      placeholder="Add a short description of the problem here."
+                                                      x-model="description"></textarea>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <input class="h-4 w-4" type="checkbox" x-model.number="categories" value="4">
-                                        <span class="ml-2 text-4">Microphone</span>
+                                    <div class="font-bold text-lg mb-2">Your contact information (optional)</div>
+                                    <div class="mt-3">
+                                        <label for="fname">Name</label>
+                                        <input name="fname" type="text" placeholder="Maria Musterfrau" x-model="name"
+                                               value="{{ .IndexData.TUMLiveContext.User.Name -}} {{- .IndexData.TUMLiveContext.User.Name }}">
                                     </div>
-                                    <div>
-                                        <input class="h-4 w-4" type="checkbox" x-model.number="categories" value="5">
-                                        <span class="ml-2 text-4">Light</span>
+                                    <div class="mt-3">
+                                        <label for="mail">Mail</label>
+                                        <input name="mail" type="email" placeholder="maria.musterfrau@provider.de"
+                                               x-model="mail">
                                     </div>
-                                    <div>
-                                        <input class="h-4 w-4" type="checkbox" x-model.number="categories" value="6">
-                                        <span class="ml-2 text-4">Other</span>
+                                    <div class="mt-3">
+                                        <label for="phone">Phone</label>
+                                        <input name="phone" type="text" placeholder="12345678" x-model="phone">
                                     </div>
-                                </div>
-                                <div class="flex pb-3 mt-3">
-                                    <div>
-                                        <label for="description">Description of the issue</label>
-                                        <textarea required name="description" rows="0" cols="0" class="grow w-full"
-                                                  placeholder="Add a short description of the problem here." x-model="description"></textarea>
+                                    <!--Footer-->
+                                    <div class="flex justify-end pt-2 space-x-2 mt-3">
+                                        <button class="bg-gray-500 inline-block text-center w-24 text-white hover:bg-gray-600 dark:hover:bg-gray-600 font-bold rounded cursor-pointer p-2"
+                                                @click="show = false; show = false">{{/* Dispatch is important, otherwise two clicks are needed */}}
+                                            Cancel
+                                        </button>
+                                        <button type="submit"
+                                                class="bg-amber-500 inline-block text-center w-24 text-white hover:bg-amber-600 dark:hover:bg-amber-600 font-bold rounded cursor-pointer p-2">
+                                            <i class="fa-solid fa-paper-plane mr-2"></i>Send
+                                        </button>
                                     </div>
-                                </div>
-                                <div class="font-bold text-lg mb-2">Your contact information (optional)</div>
-                                <div class="mt-3">
-                                    <label for="fname">Name</label>
-                                    <input name="fname" type="text" placeholder="Maria Musterfrau" x-model="name" value="{{ .IndexData.TUMLiveContext.User.Name -}} {{- .IndexData.TUMLiveContext.User.Name }}">
-                                </div>
-                                <div class="mt-3">
-                                    <label for="mail">Mail</label>
-                                    <input name="mail" type="email" placeholder="maria.musterfrau@provider.de" x-model="mail">
-                                </div>
-                                <div class="mt-3">
-                                    <label for="phone">Phone</label>
-                                    <input name="phone" type="text" placeholder="12345678" x-model="phone">
-                                </div>
-                                <!--Footer-->
-                                <div class="flex justify-end pt-2 space-x-2 mt-3">
-                                    <button class="bg-gray-500 inline-block text-center w-24 text-white hover:bg-gray-600 dark:hover:bg-gray-600 font-bold rounded cursor-pointer p-2"
-                                            @click="show = false; show = false">{{/* Dispatch is important, otherwise two clicks are needed */}}Cancel
-                                    </button>
-                                    <button type="submit"
-                                            class="bg-amber-500 inline-block text-center w-24 text-white hover:bg-amber-600 dark:hover:bg-amber-600 font-bold rounded cursor-pointer p-2"><i class="fa-solid fa-paper-plane mr-2"></i>Send
-                                    </button>
-                                </div>
-                            </form>
+                                </form>
+                            </div>
                         </div>
-                    </div>
-                {{end}}
+                    {{end}}
                 </div>
-                <span class="inline-block" x-data="{ 'showModal': false }" @stop.window="showModal=true" @keydown.escape="showModal = false" x-cloak>
+                <span class="inline-block" x-data="{ 'showModal': false }" @stop.window="showModal=true"
+                      @keydown.escape="showModal = false" x-cloak>
                     <section class="flex flex-wrap h-full">
                         <div class="overflow-auto" style="background-color: rgba(0,0,0,0.5)" x-show="showModal"
                              :class="{ 'absolute inset-0 z-10 flex items-center justify-center': showModal }">
@@ -265,44 +280,44 @@
                         </div>
                     </div>
                 </div>
-                {{end}}
-                <div x-data="{descriptionlen: {{len .Description}}, less:true}"
-                     class="text-3 py-4 video-description lg:col-span-2" x-show="descriptionlen > 0">
-                    <h6 class="font-bold text-3 pb-3">Video Description</h6>
-                    <div :class="less && 'truncate-children'"
-                         @descriptionupdate.window="$el.innerHTML=$event.detail.description; descriptionlen=$event.detail.description.length">
-                        {{if .Description}}{{.Description}}{{end}}
-                    </div>
-                    <button x-show="descriptionlen>128" class='text-xs text-gray-500 dark:text-gray-400 uppercase mt-2'
-                            @click="less = !less" x-text="less ? 'show more' : 'show less'">show less
-                    </button>
-                </div><!-- Video Sections -->
-                {{if $stream.VideoSections}}
-                    {{template "videosections" $stream}}
-                {{end}}
-                {{if .IsHighlightPage}}
-                    <ul class="w-full m-auto mb-4">
-                        {{template "course_list" .IndexData.TUMLiveContext}}
-                    </ul>
-                {{end}}
-            </div>
+            {{end}}
+            <div x-data="{descriptionlen: {{len .Description}}, less:true}"
+                 class="text-3 py-4 video-description lg:col-span-2" x-show="descriptionlen > 0">
+                <h6 class="font-bold text-3 pb-3">Video Description</h6>
+                <div :class="less && 'truncate-children'"
+                     @descriptionupdate.window="$el.innerHTML=$event.detail.description; descriptionlen=$event.detail.description.length">
+                    {{if .Description}}{{.Description}}{{end}}
+                </div>
+                <button x-show="descriptionlen>128" class='text-xs text-gray-500 dark:text-gray-400 uppercase mt-2'
+                        @click="less = !less" x-text="less ? 'show more' : 'show less'">show less
+                </button>
+            </div><!-- Video Sections -->
+            {{if $stream.VideoSections}}
+                {{template "videosections" $stream}}
+            {{end}}
+            {{if .IsHighlightPage}}
+                <ul class="w-full m-auto mb-4">
+                    {{template "course_list" .IndexData.TUMLiveContext}}
+                </ul>
+            {{end}}
         </div>
-        {{if $course.ChatEnabled}}
-            <div x-data="{show: $persist(false).as('chatOpen')}"
-                 class="mt-5 md:mt-0"
-                 :class="show ? 'w-full md:w-2/6 2xl:w-1/5 h-96 md:h-auto' : 'md:w-14  h-fit md:h-full'">
-                {{template "chat" .ChatData}}
-            </div>
-        {{end}}
     </div>
-    <script>
-        watch.initPlayer(true, false, false);
-        {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
-        watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
-        {{end}}
-        {{if $stream.Silences}}
-        watch.skipSilence({{$stream.GetSilencesJson}});
-        {{end}}
-    </script>
+    {{if $course.ChatEnabled}}
+        <div x-data="{show: $persist(false).as('chatOpen')}"
+             class="mt-5 md:mt-0"
+             :class="show ? 'w-full md:w-2/6 2xl:w-1/5 h-96 md:h-auto' : 'md:w-14  h-fit md:h-full'">
+            {{template "chat" .ChatData}}
+        </div>
+    {{end}}
+</div>
+<script>
+    watch.initPlayer(true, false, false);
+    {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
+    watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
+    {{end}}
+    {{if $stream.Silences}}
+    watch.skipSilence({{$stream.GetSilencesJson}});
+    {{end}}
+</script>
 </body>
 </html>
