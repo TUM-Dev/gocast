@@ -17,10 +17,11 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 	var req statReq
 	if c.ShouldBindQuery(&req) != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
+		return
 	}
 	var cid uint
 	// check if request is for server -> validate
-	cidFromContext := c.Param("courseId")
+	cidFromContext := c.Param("courseID")
 	if cidFromContext == "0" {
 		if ctx.(tools.TUMLiveContext).User.Role != model.AdminType {
 			c.AbortWithStatus(http.StatusForbidden)
@@ -32,6 +33,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 	}
 	switch req.Interval {
 	case "week":
+		fallthrough
 	case "day":
 		res, err := r.StatisticsDao.GetCourseStatsWeekdays(cid)
 		if err != nil {
