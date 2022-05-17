@@ -19,7 +19,8 @@ export class StreamSearch {
     }
 
     getResults(results: number[][]): object[] {
-        const all = []; // create key value pair from array of array
+        // flatten array of array, preserving only the first occurrence of each streamId
+        const all = [];
 
         results.forEach((result) => {
             result.forEach((streamId) => {

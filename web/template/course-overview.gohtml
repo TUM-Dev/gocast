@@ -24,7 +24,7 @@
             </div>
             <input @keyup="(e) => streamSearch.performSearch(e.target.value)"
                    name="lecture-search-input"
-                   placeholder="Search for lectures"
+                   placeholder="Search for a lecture"
                    class="bg-transparent border-0 outline-none w-full h-full font-light">
             <button @click="showLectureSearchModal = false; streamSearch.reset()"
                     class="py-1 px-3 border dark:border-gray-600 rounded shadow-sm my-auto">
