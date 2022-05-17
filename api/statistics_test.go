@@ -20,6 +20,17 @@ import (
 func TestStatistics(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
+	addAdminContext := func(r *gin.Engine, courseId uint) {
+		r.Use(func(c *gin.Context) {
+			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+				Role: model.AdminType,
+				AdministeredCourses: []model.Course{
+					{Model: gorm.Model{ID: courseId}},
+				},
+			}})
+		})
+	}
+
 	t.Run("GET[Invalid Body]", func(t *testing.T) {
 		coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
 
@@ -28,15 +39,7 @@ func TestStatistics(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, r := gin.CreateTestContext(w)
 
-		r.Use(func(c *gin.Context) {
-			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-				Name: "Admin",
-				Role: model.AdminType,
-				AdministeredCourses: []model.Course{
-					{Model: gorm.Model{ID: courseId}},
-				},
-			}})
-		})
+		addAdminContext(r, courseId)
 
 		coursesMock.
 			EXPECT().
@@ -63,7 +66,6 @@ func TestStatistics(t *testing.T) {
 
 		r.Use(func(c *gin.Context) {
 			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-				Name: "Student",
 				Role: model.StudentType,
 				AdministeredCourses: []model.Course{
 					{Model: gorm.Model{ID: courseId}},
@@ -99,15 +101,7 @@ func TestStatistics(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, r := gin.CreateTestContext(w)
 
-		r.Use(func(c *gin.Context) {
-			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-				Name: "Admin",
-				Role: model.AdminType,
-				AdministeredCourses: []model.Course{
-					{Model: gorm.Model{ID: courseId}},
-				},
-			}})
-		})
+		addAdminContext(r, courseId)
 
 		configGinCourseRouter(r, dao.DaoWrapper{CoursesDao: coursesMock})
 
@@ -184,15 +178,7 @@ func TestStatistics(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, r := gin.CreateTestContext(w)
 
-			r.Use(func(c *gin.Context) {
-				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-					Name: "Admin",
-					Role: model.AdminType,
-					AdministeredCourses: []model.Course{
-						{Model: gorm.Model{ID: courseId}},
-					},
-				}})
-			})
+			addAdminContext(r, courseId)
 
 			configGinCourseRouter(r, dao.DaoWrapper{CoursesDao: coursesMock, StatisticsDao: statisticsMock})
 
@@ -237,15 +223,45 @@ func TestStatistics(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, r := gin.CreateTestContext(w)
 
-			r.Use(func(c *gin.Context) {
-				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-					Name: "Admin",
-					Role: model.AdminType,
-					AdministeredCourses: []model.Course{
-						{Model: gorm.Model{ID: courseId}},
-					},
-				}})
-			})
+			addAdminContext(r, courseId)
+
+			statisticsMock.
+				EXPECT().
+				GetCourseStatsWeekdays(courseId).
+				Return(stats, nil).
+				AnyTimes()
+
+			configGinCourseRouter(r, dao.DaoWrapper{
+				CoursesDao:    coursesMock,
+				StatisticsDao: statisticsMock})
+
+			c.Request, _ = http.NewRequest(http.MethodGet,
+				fmt.Sprintf("/api/course/%d/stats?interval=week", courseId), nil)
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusOK, w.Code)
+			assert.Equal(t, string(respJson), w.Body.String())
+		})
+
+		t.Run("interval week or day, cid==0 - admin", func(t *testing.T) {
+			courseId = 0
+			resp.ChartType = "bar"
+			resp.Data.Datasets[0].Label = "Sum(viewers)"
+			resp.Data.Datasets[0].Data = stats
+
+			respJson, _ := json.Marshal(resp)
+
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			addAdminContext(r, courseId)
+
+			// re-mock GetCourseById since courseId has to be 0
+			coursesMock.
+				EXPECT().
+				GetCourseById(gomock.Any(), courseId).
+				Return(model.Course{Model: gorm.Model{ID: courseId}}, nil).
+				AnyTimes()
 
 			statisticsMock.
 				EXPECT().
@@ -275,15 +291,7 @@ func TestStatistics(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, r := gin.CreateTestContext(w)
 
-			r.Use(func(c *gin.Context) {
-				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-					Name: "Admin",
-					Role: model.AdminType,
-					AdministeredCourses: []model.Course{
-						{Model: gorm.Model{ID: courseId}},
-					},
-				}})
-			})
+			addAdminContext(r, courseId)
 
 			statisticsMock.
 				EXPECT().
@@ -315,15 +323,7 @@ func TestStatistics(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, r := gin.CreateTestContext(w)
 
-			r.Use(func(c *gin.Context) {
-				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-					Name: "Admin",
-					Role: model.AdminType,
-					AdministeredCourses: []model.Course{
-						{Model: gorm.Model{ID: courseId}},
-					},
-				}})
-			})
+			addAdminContext(r, courseId)
 
 			statisticsMock.
 				EXPECT().
@@ -355,15 +355,7 @@ func TestStatistics(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, r := gin.CreateTestContext(w)
 
-			r.Use(func(c *gin.Context) {
-				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-					Name: "Admin",
-					Role: model.AdminType,
-					AdministeredCourses: []model.Course{
-						{Model: gorm.Model{ID: courseId}},
-					},
-				}})
-			})
+			addAdminContext(r, courseId)
 
 			statisticsMock.
 				EXPECT().
@@ -391,15 +383,7 @@ func TestStatistics(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, r := gin.CreateTestContext(w)
 
-			r.Use(func(c *gin.Context) {
-				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-					Name: "Admin",
-					Role: model.AdminType,
-					AdministeredCourses: []model.Course{
-						{Model: gorm.Model{ID: courseId}},
-					},
-				}})
-			})
+			addAdminContext(r, courseId)
 
 			statisticsMock.
 				EXPECT().
@@ -427,15 +411,7 @@ func TestStatistics(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, r := gin.CreateTestContext(w)
 
-			r.Use(func(c *gin.Context) {
-				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-					Name: "Admin",
-					Role: model.AdminType,
-					AdministeredCourses: []model.Course{
-						{Model: gorm.Model{ID: courseId}},
-					},
-				}})
-			})
+			addAdminContext(r, courseId)
 
 			statisticsMock.
 				EXPECT().
@@ -463,15 +439,7 @@ func TestStatistics(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, r := gin.CreateTestContext(w)
 
-			r.Use(func(c *gin.Context) {
-				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-					Name: "Admin",
-					Role: model.AdminType,
-					AdministeredCourses: []model.Course{
-						{Model: gorm.Model{ID: courseId}},
-					},
-				}})
-			})
+			addAdminContext(r, courseId)
 
 			statisticsMock.
 				EXPECT().
@@ -503,15 +471,7 @@ func TestStatistics(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, r := gin.CreateTestContext(w)
 
-			r.Use(func(c *gin.Context) {
-				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-					Name: "Admin",
-					Role: model.AdminType,
-					AdministeredCourses: []model.Course{
-						{Model: gorm.Model{ID: courseId}},
-					},
-				}})
-			})
+			addAdminContext(r, courseId)
 
 			statisticsMock.
 				EXPECT().
