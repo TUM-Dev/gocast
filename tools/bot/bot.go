@@ -5,7 +5,6 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/microcosm-cc/bluemonday"
-	"github.com/russross/blackfriday/v2"
 	log "github.com/sirupsen/logrus"
 	"strings"
 	"time"
@@ -82,7 +81,7 @@ func GenerateInfoText(botInfo AlertMessage) string {
 
 	var infoText string
 
-	infoText += "🚨 **Technical problem**\n\n" +
+	infoText += "🚨 <b>Technical problem</b>\n\n" +
 		"<table><tr><th>Categories</th><td>" + botInfo.Categories + "</td></tr>" +
 		"<tr><th>Course name</th><td>" + botInfo.CourseName + "</td></tr>" +
 		"<tr><th>Stream URL</th><td>" + botInfo.StreamUrl + "</td></tr>" +
@@ -99,7 +98,7 @@ func GenerateInfoText(botInfo AlertMessage) string {
 			infoText += "<tr><th>Camera IP</th><td>" + botInfo.CameraIP + "</td></tr>"
 		}
 	}
-	infoText += "</table>📢 **Contact information**\n\n<table>"
+	infoText += "</table>📢 <b>Contact information</b>\n\n<table>"
 	// Has the person that reported the issue entered custom contact data?
 	if botInfo.Name != "" {
 		infoText += "<tr><th>Name</th><td>" + botInfo.User.Name + "</td></tr>"
@@ -125,12 +124,10 @@ func GenerateInfoText(botInfo AlertMessage) string {
 
 // getFormattedMessageText generates a HTML styled message bot info
 func getFormattedMessageText(message string) string {
-	unsafe := blackfriday.Run([]byte(message))
-	// Sanitization already in place since we want to edit user generated content soon
 	html := bluemonday.
 		UGCPolicy().
 		AddTargetBlankToFullyQualifiedLinks(true).
-		SanitizeBytes(unsafe)
+		SanitizeBytes([]byte(message))
 	return string(html)
 }
 
