@@ -201,32 +201,17 @@ func (r streamRoutes) getStream(c *gin.Context) {
 	stream := *tumLiveContext.Stream
 	course := *tumLiveContext.Course
 
-	if stream.Name == "" {
-		stream.Name = stream.GetName()
-	}
-
-	var response gin.H
-	if tumLiveContext.User != nil && tumLiveContext.UserIsAdmin() {
-		response =
-			gin.H{"course": course.Name,
-				"courseID":     course.ID,
-				"streamID":     stream.ID,
-				"name":         stream.Name,
-				"description":  stream.Description,
-				"start":        stream.Start,
-				"end":          stream.End,
-				"ingest":       fmt.Sprintf("%sstream?secret=%s", tools.Cfg.IngestBase, stream.StreamKey),
-				"live":         stream.LiveNow,
-				"vod":          stream.Recording,
-				"friendlyTime": stream.FriendlyTime()}
-	} else {
-		response =
-			gin.H{"name": stream.Name,
-				"description":  stream.Description,
-				"friendlyTime": stream.FriendlyTime()}
-	}
-
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, gin.H{
+		"course":      course.Name,
+		"courseID":    course.ID,
+		"streamID":    stream.ID,
+		"name":        stream.Name,
+		"description": stream.Description,
+		"start":       stream.Start,
+		"end":         stream.End,
+		"ingest":      fmt.Sprintf("%sstream?secret=%s", tools.Cfg.IngestBase, stream.StreamKey),
+		"live":        stream.LiveNow,
+		"vod":         stream.Recording})
 }
 
 func (r streamRoutes) getVideoSections(c *gin.Context) {

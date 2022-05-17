@@ -2,7 +2,6 @@ package dao
 
 import (
 	"errors"
-	"fmt"
 	"github.com/go-sql-driver/mysql"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"gorm.io/gorm"
@@ -29,8 +28,6 @@ type ChatDao interface {
 	ToggleLike(userID uint, chatID uint) error
 
 	CloseActivePoll(streamID uint) error
-
-	Search(q string, courseId uint) ([]uint, error)
 }
 
 type chatDao struct {
@@ -195,19 +192,4 @@ func (d chatDao) ToggleLike(userID uint, chatID uint) error {
 // CloseActivePoll closes poll for the stream with the given ID.
 func (d chatDao) CloseActivePoll(streamID uint) error {
 	return DB.Table("polls").Where("stream_id = ? AND active", streamID).Update("active", false).Error
-}
-
-func (d chatDao) Search(q string, courseId uint) ([]uint, error) {
-	var streamIds []uint
-	partialQ := fmt.Sprintf("%s*", q)
-	err := DB.
-		Model(&model.Chat{}).
-		Select("stream_id").
-		Distinct("stream_id").
-		Joins("join streams s on s.id = chats.stream_id").
-		Where("match(chats.message) against(? in boolean mode) "+
-			"AND s.course_id = ? AND s.recording = 1", partialQ, courseId).
-		Find(&streamIds).
-		Error
-	return streamIds, err
 }
