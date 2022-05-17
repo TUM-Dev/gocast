@@ -361,4 +361,4 @@ videojs.registerPlugin("watchProgress", watchProgress);
 videojs.registerComponent("Titlebar", Titlebar);
 videojs.registerComponent("StartInOverlay", StartInOverlay);
 airplay(videojs); //calls registerComponent internally
-chromecast(videojs); //calls registerComponent internally
+chromecast(videojs, { preloadWebComponents: true }); //calls registerComponent internally
