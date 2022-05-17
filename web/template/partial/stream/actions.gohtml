@@ -5,7 +5,15 @@
     {{$user := .IndexData.TUMLiveContext.User}}
 
     {{/* Icons for different actions student can do for a stream */}}
-    <span class="flex space-x-2 content-center">
+    <span class="flex content-center space-x-2">
+        {{/* Feedback button */}}
+        {{if $user}}
+            {{if not ($user.IsAdminOfCourse $course)}}
+                <button class="m-auto" title="Technical problems? Send us feedback!" @click="$dispatch('issue')">
+                    <i class="fas fa-exclamation-triangle text-4 hover:text-1"></i>
+                </button>
+            {{end}}
+        {{end}}
         {{/* Download button */}}
         {{if and (and $course.DownloadsEnabled $user) $stream.IsDownloadable}}
             {{template "downloadBtn" $stream.Files}}
@@ -14,27 +22,29 @@
         {{if $stream.PlaylistUrlPRES}}
             <a class="m-auto" title="Presentation only"
                href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/PRES">
-                <i class="fas fa-edit text-4 text-lg hover:text-1"></i>
+                <i class="text-lg fas fa-edit text-4 hover:text-1"></i>
             </a>
         {{end}}
         {{/* Switch video to camera */}}
         {{if $stream.PlaylistUrlCAM}}
             <a class="m-auto" title="Camera only"
                href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/CAM">
-                <i class="fas fa-camera text-4 text-lg hover:text-1"></i>
+                <i class="text-lg fas fa-camera text-4 hover:text-1"></i>
             </a>
         {{end}}
         {{/* Switch video to camera and presentation */}}
         {{if $stream.PlaylistUrl}}
             <a class="m-auto" title="Combined view"
                href="/w/{{$course.Slug}}/{{$stream.Model.ID}}">
-                <i class="fas fa-object-group text-4 text-lg hover:text-1"></i>
+                <i class="text-lg fas fa-object-group text-4 hover:text-1"></i>
             </a>
         {{end}}
         {{/* Copy HLS Link for video */}}
+        {{if or $stream.PlaylistUrlPRES (or $stream.PlaylistUrlCAM $stream.PlaylistUrl)}}
         <i title="Copy HLS URL"
-           class="m-auto fas fa-link text-4 text-lg dark:hover:text-white hover:text-black cursor-pointer"
-           onclick="global.copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))"></i>
+           class="m-auto text-lg cursor-pointer fas fa-link text-4 dark:hover:text-white hover:text-black"
+           onclick="global.copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))">
         </i>
+        {{end}}
     </span>
 {{end}}
