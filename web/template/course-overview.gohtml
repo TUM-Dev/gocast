@@ -6,45 +6,55 @@
     <script src="/static/assets/ts-dist/global.bundle.js?v={{.IndexData.VersionTag}}"></script>
     {{template "headImports" .IndexData.VersionTag}}
 </head>
-<body class="md:overflow-hidden" x-data="{showLectureSearchModal: false}">
+<body class="md:overflow-hidden" x-data="{searchContext: new global.SearchContext()}">
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.CoursePageData*/ -}}
 {{$course := .IndexData.TUMLiveContext.Course}}
 {{template "header" .IndexData.TUMLiveContext}}
-<div x-cloak x-show="showLectureSearchModal" x-data="{streamSearch: new global.StreamSearch({{$course.ID}})}"
+<div x-cloak x-show="searchContext.show"
+     x-data="{streamSearch: new global.StreamSearch({{$course.ID}})}"
      id="lecture-search-modal"
      class="flex absolute w-full h-screen backdrop-blur-sm p-2 z-50">
     <div class="w-full mt-5 md:mt-24 mx-auto md:w-2/4 bg-white border shadow rounded-lg h-fit dark:border-gray-600 dark:bg-secondary">
         <div class="flex px-3 py-1 border-b"
-             @click.outside="showLectureSearchModal = false; streamSearch.reset()">
+             @click.outside="searchContext.hideModal(streamSearch)">
             <div class="p-1 my-auto">
                 <i x-cloak x-show="!streamSearch.loading"
                    class="fa-solid fa-search text-lg text-gray-500 dark:text-gray-600"></i>
                 <i x-cloak x-show="streamSearch.loading"
                    class="fas fa-spinner animate-spin text-lg text-gray-500 dark:text-gray-600"></i>
             </div>
-            <input @keyup="(e) => streamSearch.performSearch(e.target.value)"
+            <input id = "search-input"
+                   @keyup.esc="searchContext.hideModal(streamSearch)"
+                   @keyup.up="streamSearch.focusUp()"
+                   @keyup.down="streamSearch.focusDown()"
+                   @keyup="(e) => streamSearch.OnBackspace(e)"
+                   @keypress="streamSearch.performSearch()"
+                   x-model="streamSearch.currentQ"
+                   type="search"
                    name="lecture-search-input"
                    placeholder="Search for a lecture"
-                   class="bg-transparent border-0 outline-none w-full h-full font-light">
-            <button @click="showLectureSearchModal = false; streamSearch.reset()"
-                    class="py-1 px-3 border dark:border-gray-600 rounded shadow-sm my-auto">
-                <i class="fa-solid fa-rotate-left text-xs"></i>
+                   class="bg-transparent border-0 outline-none w-full h-full font-light"
+                   autocomplete="off">
+            <button @click="searchContext.hideModal(streamSearch)"
+                    class="p-1 border dark:border-gray-600 rounded shadow-sm my-auto">
+                <span class="text-4 text-xs">ESC</span>
             </button>
         </div>
         <div x-show="streamSearch.results.length > 0"
+             @showresults="(e) => e.target.focus()"
              class="grid gap-2 p-4">
-            <template x-for="streamId in streamSearch.results" :key="streamId">
-                <a x-data="{stream: null}" x-init="stream = await streamSearch.getStreamFromResult(streamId)"
-                   :href="'/w/{{$course.Slug}}/' + streamId" target="_blank">
-                    <template x-if="stream != null">
-                        <div class="flex px-3 py-2 rounded-lg hover:cursor-pointer hover:bg-gray-50">
-                            <div class="grid my-auto">
-                                <span class="font-semibold text-3" x-text="stream.name"></span>
-                                <span class="font-light text-sm text-1" x-text="stream.friendlyTime"></span>
-                            </div>
-                            <span class="ml-auto my-auto fa-solid text-xs fa-chevron-right"></span>
+            <template x-for="(stream, i) in streamSearch.results" :key="stream.ID">
+                <a :href="'/w/{{$course.Slug}}/' + stream.ID" target="_blank">
+                    <div :class="i === streamSearch.focusIndex && 'bg-gray-50'"
+                         class="flex px-3 py-2 rounded-lg hover:cursor-pointer"
+                         @mouseleave="streamSearch.focusIndex = -1;"
+                         @mouseover="streamSearch.focusIndex = i;">
+                        <div class="grid my-auto">
+                            <span class="font-semibold text-3" x-text="stream.name"></span>
+                            <span class="font-light text-sm text-1" x-text="stream.friendlyTime"></span>
                         </div>
-                    </template>
+                        <span class="ml-auto my-auto fa-solid text-xs fa-chevron-right"></span>
+                    </div>
                 </a>
             </template>
         </div>
@@ -85,7 +95,7 @@
                             </button>
                         {{end}}
                         <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
-                                @click="showLectureSearchModal = true">
+                                @click="searchContext.showModal();">
                             <span class="text-sm dark:text-white">
                                 <i class="fa-solid fa-search"></i>
                             </span>
