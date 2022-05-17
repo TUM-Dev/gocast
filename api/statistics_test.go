@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
@@ -115,6 +116,92 @@ func TestStatistics(t *testing.T) {
 		r.ServeHTTP(w, c.Request)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("GET[DAO functions return error]", func(t *testing.T) {
+		coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+		statisticsMock := mock_dao.NewMockStatisticsDao(gomock.NewController(t))
+
+		courseId := uint(1)
+
+		intervals := []string{"week", "day", "hour", "activity-live", "activity-vod", "numStudents", "vodViews", "liveViews", "allDays"}
+
+		statisticsMock.
+			EXPECT().
+			GetCourseStatsWeekdays(courseId).
+			Return([]dao.Stat{}, errors.New("")).
+			AnyTimes()
+
+		statisticsMock.
+			EXPECT().
+			GetCourseStatsHourly(courseId).
+			Return([]dao.Stat{}, errors.New("")).
+			AnyTimes()
+
+		statisticsMock.
+			EXPECT().
+			GetStudentActivityCourseStats(courseId, true).
+			Return([]dao.Stat{}, errors.New("")).
+			AnyTimes()
+
+		statisticsMock.
+			EXPECT().
+			GetStudentActivityCourseStats(courseId, false).
+			Return([]dao.Stat{}, errors.New("")).
+			AnyTimes()
+
+		statisticsMock.
+			EXPECT().
+			GetCourseNumStudents(courseId).
+			Return(int64(0), errors.New("")).
+			AnyTimes()
+
+		statisticsMock.
+			EXPECT().
+			GetCourseNumVodViews(courseId).
+			Return(0, errors.New("")).
+			AnyTimes()
+
+		statisticsMock.
+			EXPECT().
+			GetCourseNumLiveViews(courseId).
+			Return(0, errors.New("")).
+			AnyTimes()
+
+		statisticsMock.
+			EXPECT().
+			GetCourseNumVodViewsPerDay(courseId).
+			Return([]dao.Stat{}, errors.New("")).
+			AnyTimes()
+
+		coursesMock.
+			EXPECT().
+			GetCourseById(gomock.Any(), courseId).
+			Return(model.Course{Model: gorm.Model{ID: courseId}}, nil).
+			AnyTimes()
+
+		for _, interval := range intervals {
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Name: "Admin",
+					Role: model.AdminType,
+					AdministeredCourses: []model.Course{
+						{Model: gorm.Model{ID: courseId}},
+					},
+				}})
+			})
+
+			configGinCourseRouter(r, dao.DaoWrapper{CoursesDao: coursesMock, StatisticsDao: statisticsMock})
+
+			c.Request, _ = http.NewRequest(http.MethodGet,
+				fmt.Sprintf("/api/course/%d/stats?interval=%s", courseId, interval), nil)
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusInternalServerError, w.Code)
+		}
 	})
 
 	t.Run("GET[success]", func(t *testing.T) {

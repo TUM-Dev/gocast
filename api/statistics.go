@@ -38,6 +38,8 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		res, err := r.StatisticsDao.GetCourseStatsWeekdays(cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsWeekdays failed")
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
 		}
 		resp := chartJs{
 			ChartType: "bar",
@@ -51,6 +53,8 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		res, err := r.StatisticsDao.GetCourseStatsHourly(cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsHourly failed")
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
 		}
 		resp := chartJs{
 			ChartType: "bar",
@@ -64,6 +68,8 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		resLive, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, true)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsLive failed")
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
 		}
 		resp := chartJs{
 			ChartType: "line",
@@ -80,6 +86,8 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		resVod, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, false)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsVod failed")
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
 		}
 		resp := chartJs{
 			ChartType: "line",
