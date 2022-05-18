@@ -15,7 +15,7 @@
      id="lecture-search-modal"
      class="flex absolute w-full h-screen backdrop-blur-sm p-2 z-50">
     <div class="w-full mt-5 md:mt-24 mx-auto md:w-2/4 bg-white border shadow rounded-lg h-fit dark:border-gray-600 dark:bg-secondary">
-        <div class="flex px-3 py-1 border-b"
+        <div class="flex px-3 py-1 border-b dark:border-gray-600"
              @click.outside="searchContext.hideModal(streamSearch)">
             <div class="p-1 my-auto">
                 <i x-cloak x-show="!streamSearch.loading"
@@ -45,7 +45,7 @@
              class="grid gap-2 p-4">
             <template x-for="(stream, i) in streamSearch.results" :key="stream.ID">
                 <a :href="'/w/{{$course.Slug}}/' + stream.ID" target="_blank">
-                    <div :class="i === streamSearch.focusIndex && 'bg-gray-50'"
+                    <div :class="i === streamSearch.focusIndex && 'bg-gray-50 dark:bg-gray-600'"
                          class="flex px-3 py-2 rounded-lg hover:cursor-pointer"
                          @mouseleave="streamSearch.focusIndex = -1;"
                          @mouseover="streamSearch.focusIndex = i;">
@@ -53,7 +53,7 @@
                             <span class="font-semibold text-3" x-text="stream.name"></span>
                             <span class="font-light text-sm text-1" x-text="stream.friendlyTime"></span>
                         </div>
-                        <span class="ml-auto my-auto fa-solid text-xs fa-chevron-right"></span>
+                        <span class="text-3 ml-auto my-auto fa-solid text-xs fa-chevron-right"></span>
                     </div>
                 </a>
             </template>

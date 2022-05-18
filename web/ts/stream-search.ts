@@ -5,11 +5,13 @@ export class StreamSearch {
     loading: boolean;
     currentQ: string;
     focusIndex: number;
+    cache: object;
 
     results: searchResponseItem[];
 
     constructor(courseId: number) {
         this.courseId = courseId;
+        this.cache = [];
         this.reset();
     }
 
@@ -26,13 +28,7 @@ export class StreamSearch {
         this.loading = true;
         this.timeout = setTimeout(async () => {
             if (this.currentQ !== "") {
-                await fetch(`/api/search/streams?q=${this.currentQ}&courseId=${this.courseId}`)
-                    .then((res) => {
-                        if (res.ok) {
-                            return res.json();
-                        }
-                        throw new Error("Can not perform search");
-                    })
+                this.cachedFetch()
                     .then((sr: searchResponse) => {
                         this.focusIndex = 0;
                         this.results = sr.results;
@@ -40,8 +36,8 @@ export class StreamSearch {
 
                         document.dispatchEvent(new CustomEvent("showresults"));
                     })
-                    .catch((error) => {
-                        console.log(error);
+                    .catch((err) => {
+                        console.log(err);
                         this.reset();
                     });
             } else {
@@ -62,6 +58,26 @@ export class StreamSearch {
 
     focusDown() {
         this.focusIndex = (this.focusIndex + 1) % this.results.length;
+    }
+
+    private cachedFetch(): Promise<searchResponse> {
+        const url = `/api/search/streams?q=${this.currentQ}&courseId=${this.courseId}`;
+        if (url in this.cache) {
+            return Promise.resolve(this.cache[url]);
+        }
+        return fetch(`/api/search/streams?q=${this.currentQ}&courseId=${this.courseId}`)
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error("Can not perform search");
+                }
+                return res.json();
+            })
+            .then((sr: searchResponse) => {
+                if (sr !== null) {
+                    this.cache[url] = sr;
+                }
+                return sr;
+            });
     }
 }
 
