@@ -69,8 +69,8 @@
         <!-- VoD -->
         <div {{if .IndexData.TUMLiveContext}}x-init="watchedTracker.init({{.WatchedData}})"
              x-data="watchedTracker = new global.WatchedTracker" {{end}}class="w-full md:row-span-6 md:col-span-3">
-            <div x-data="{asc: false, mirror: () => { global.mirror($el.querySelector('.vod-list'), ['.vod-list-month', '.vod-list-video']); }
-                    {{if .IndexData.TUMLiveContext.User}}, filterWatched: true, watchedAll: watchedTracker.userWatchedAll(){{end}}}"
+            <div x-data="{asc: $persist(false), mirror: () => { global.mirror($el.querySelector('.vod-list'), ['.vod-list-month', '.vod-list-video']); }
+                    {{if .IndexData.TUMLiveContext.User}}, filterWatched: $persist(false), watchedAll: watchedTracker.userWatchedAll(), watchedCount: watchedTracker.countWatched(){{end}}}"
                  class="bg-white h-full border dark:bg-secondary dark:border-gray-800 rounded-lg
                     shadow-sm flex flex-col">
                 <div class="flex justify-between h-16 px-3 border-b dark:border-gray-800">
@@ -85,14 +85,17 @@
                             </button>
                         {{end}}
                         {{if and .IndexData.TUMLiveContext.User .Course.HasRecordings }}
-                            <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
-                                    @click="filterWatched=!filterWatched"
-                                    :title="filterWatched ? 'Show watched streams' : 'Hide watched streams'">
-                            <span class="text-sm font-semibold uppercase dark:text-white">
-                                <i class="fa-solid w-5 mr-1"
-                                   :class="filterWatched ? 'fa-eye' : 'fa-eye-slash'"></i>watched
-                            </span>
-                            </button>
+                            <template x-if="watchedCount > 0">
+                                <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
+                                        @click="filterWatched=!filterWatched"
+                                        :title="filterWatched ? 'Show watched streams' : 'Hide watched streams'">
+                                        <span class="text-sm font-semibold uppercase dark:text-white">
+                                            <i class="fa-solid w-5 mr-1"
+                                               :class="filterWatched ? 'fa-eye-slash' : 'fa-eye'"></i>watched
+                                           (<span class="tabular-nums" x-text="watchedCount"></span>)
+                                        </span>
+                                </button>
+                            </template>
                         {{end}}
                         <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
                                 @click="searchContext.showModal();">
@@ -136,7 +139,8 @@
                 </span>
                     <div class="my-auto">
                         <h1 class="text-2xl font-bold text-3">Live Soon!</h1>
-                        <a class="font-light text-sm dark:text-white" href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}">
+                        <a class="font-light text-sm dark:text-white"
+                           href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}">
                             <i class="fas fa-angle-right"></i>
                             <span>Join waiting room</span>
                         </a>
