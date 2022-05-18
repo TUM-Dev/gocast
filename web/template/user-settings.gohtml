@@ -15,8 +15,7 @@
          x-data=" { initialName: '{{.IndexData.TUMLiveContext.User.GetPreferredName}}', name: '{{.IndexData.TUMLiveContext.User.GetPreferredName}}', err: '' } ">
         <h2 class="text-2 text-xl font-semibold">Content</h2>
         <div class="p-3">
-            <label for="displayName">Preferred Name (For lecture chat and greeting on start page.) <span
-                        class="text-warn font-semibold">You can only change this once every three months.</span></label>
+            <label for="displayName">Preferred Name <span class="text-5 italic">You can change this once every three months.</span></label>
             <p x-cloak x-show="err!==''" class="text-red-500" x-text="err"></p>
             <div class="pl-2 flex">
                 <input class="flex-grow w-auto mr-4" type="text" x-model="name" id="displayName" {{ if not .IndexData.TUMLiveContext.User.PreferredNameChangeAllowed }} readonly {{ end }}>
