@@ -62,7 +62,7 @@ func (d usersDao) DeleteUser(ctx context.Context, uid uint) (err error) {
 
 func (d usersDao) SearchUser(query string) (users []model.User, err error) {
 	q := "%" + query + "%"
-	res := DB.Where("UPPER(lrz_id) LIKE UPPER(?) OR UPPER(email) LIKE UPPER(?) OR UPPER(name) LIKE UPPER(?)", q, q, q).Limit(10).Find(&users)
+	res := DB.Where("UPPER(lrz_id) LIKE UPPER(?) OR UPPER(email) LIKE UPPER(?) OR UPPER(name) LIKE UPPER(?)", q, q, q).Limit(10).Preload("Settings").Find(&users)
 	return users, res.Error
 }
 
@@ -82,7 +82,7 @@ func (d usersDao) GetUserByEmail(ctx context.Context, email string) (user model.
 }
 
 func (d usersDao) GetAllAdminsAndLecturers(users *[]model.User) (err error) {
-	err = DB.Find(users, "role < 3").Error
+	err = DB.Preload("Settings").Find(users, "role < 3").Error
 	return err
 }
 

@@ -22,7 +22,7 @@
                 {{else}}
                     <div class="inline-block align-middle mt-0 mr-4" x-data="{ show: false }" @click.outside="show=false">
                         <a href="#" class="text-5 hover:text-1 font-medium" @mouseenter="show=true">
-                            {{.User.Name}}
+                            {{.User.GetPreferredName}}
                             <i class="fa-chevron-down fas"></i>
                         </a>
                         <div class="relative" @mouseleave="show=false">

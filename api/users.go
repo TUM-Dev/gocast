@@ -95,7 +95,7 @@ func (r usersRoutes) SearchUserForCourse(c *gin.Context) {
 	for i, user := range users {
 		res[i] = userForLecturerDto{
 			ID:       user.ID,
-			Name:     user.Name,
+			Name:     user.GetPreferredName(),
 			LastName: user.LastName,
 			Login:    user.GetLoginString(),
 		}
@@ -119,7 +119,7 @@ func (r usersRoutes) SearchUser(c *gin.Context) {
 			ID:    user.ID,
 			LrzID: lrzID,
 			Email: email,
-			Name:  user.Name,
+			Name:  user.GetPreferredName(),
 			Role:  user.Role,
 		}
 	}
