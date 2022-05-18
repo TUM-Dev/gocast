@@ -27,6 +27,7 @@ type UsersDao interface {
 	UpdateUser(user model.User) error
 	UpsertUser(user *model.User) error
 	AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error
+	AddUserSetting(userSetting *model.UserSetting) error
 }
 
 type usersDao struct {
@@ -90,7 +91,7 @@ func (d usersDao) GetUserByID(ctx context.Context, id uint) (user model.User, er
 		return cached.(model.User), nil
 	}
 	var foundUser model.User
-	dbErr := DB.Preload("AdministeredCourses").Preload("Courses.Streams").Find(&foundUser, "id = ?", id).Error
+	dbErr := DB.Preload("AdministeredCourses").Preload("Courses.Streams").Preload("Settings").Find(&foundUser, "id = ?", id).Error
 	if dbErr == nil {
 		Cache.SetWithTTL(fmt.Sprintf("userById%d", id), foundUser, 1, time.Second*10)
 	}
@@ -180,4 +181,13 @@ func (d usersDao) AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error
 type courseUsers struct {
 	CourseID uint
 	UserID   uint
+}
+
+func (d usersDao) AddUserSetting(userSetting *model.UserSetting) error {
+	defer Cache.Clear()
+	err := d.db.Exec("DELETE FROM user_settings WHERE user_id = ? AND type = ?", userSetting.UserID, userSetting.Type).Error
+	if err != nil {
+		return err
+	}
+	return d.db.Create(userSetting).Error
 }

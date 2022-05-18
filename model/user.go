@@ -11,6 +11,7 @@ import (
 	"golang.org/x/crypto/argon2"
 	"gorm.io/gorm"
 	"strings"
+	"time"
 )
 
 const (
@@ -40,15 +41,47 @@ type UserSettingType int
 
 const (
 	PreferredName UserSettingType = iota + 1
+	Greeting
 	EnableChromecast
+	CustomPlaybackSpeeds
 )
 
 type UserSetting struct {
 	gorm.Model
 
-	UserID uint   `gorm:"not null"`
-	Type   uint   `gorm:"not null"`
-	Value  string `gorm:"not null"` //json encoded setting
+	UserID uint            `gorm:"not null"`
+	Type   UserSettingType `gorm:"not null"`
+	Value  string          `gorm:"not null"` //json encoded setting
+}
+
+// GetPreferredName returns the preferred name of the user if set, otherwise the firstName from TUMOnline
+func (u User) GetPreferredName() string {
+	for _, setting := range u.Settings {
+		if setting.Type == PreferredName {
+			return setting.Value
+		}
+	}
+	return u.Name
+}
+
+// GetPreferredGreeting returns the preferred greeting of the user if set, otherwise Moin
+func (u User) GetPreferredGreeting() string {
+	for _, setting := range u.Settings {
+		if setting.Type == Greeting {
+			return setting.Value
+		}
+	}
+	return "Moin"
+}
+
+// PreferredNameChangeAllowed returns false if the user has set a preferred name within the last 3 months, otherwise true
+func (u User) PreferredNameChangeAllowed() bool {
+	for _, setting := range u.Settings {
+		if setting.Type == PreferredName && time.Since(setting.UpdatedAt) < time.Hour*24*30*3 {
+			return false
+		}
+	}
+	return true
 }
 
 type argonParams struct {

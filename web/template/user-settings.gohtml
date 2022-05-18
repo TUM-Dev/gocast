@@ -12,24 +12,29 @@
     <h1 class="text-2 text-3xl font-semibold">Settings</h1>
 
     <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5"
-         x-data=" { initialName: '{{.IndexData.TUMLiveContext.User.Name}}', name: '{{.IndexData.TUMLiveContext.User.Name}}' } ">
+         x-data=" { initialName: '{{.IndexData.TUMLiveContext.User.GetPreferredName}}', name: '{{.IndexData.TUMLiveContext.User.GetPreferredName}}', err: '' } ">
         <h2 class="text-2 text-xl font-semibold">Content</h2>
         <div class="p-3">
             <label for="displayName">Preferred Name (For lecture chat and greeting on start page.) <span
                         class="text-warn font-semibold">You can only change this once every three months.</span></label>
+            <p x-cloak x-show="err!==''" class="text-red-500" x-text="err"></p>
             <div class="pl-2 flex">
-                <input class="flex-grow w-auto mr-4" type="text" x-model="name" id="displayName">
+                <input class="flex-grow w-auto mr-4" type="text" x-model="name" id="displayName" {{ if not .IndexData.TUMLiveContext.User.PreferredNameChangeAllowed }} readonly {{ end }}>
                 <button type="button" :disabled="name === initialName"
+                        @click="global.updatePreferredName(global.UserSetting.Name, name).then((r) => {err=r; if(r==='') {initialName=name;}})"
                         class="px-4 py-2 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500">
                     Update Name
                 </button>
             </div>
             <p>Preferred greeting:</p>
-            <div class="pl-2">
-                <input class="w-auto" type="radio" name="greet" value="Moin" id="greeting1">
+            <div class="pl-2" x-data="{ currentGreeting: {{toJson .IndexData.TUMLiveContext.User.GetPreferredGreeting}}, err:'' }">
+                <input class="w-auto" type="radio" name="greet" value="Moin" id="greeting1" x-model="currentGreeting" :checked="currentGreeting==='Moin'"
+                       @change="global.updatePreferredName(global.UserSetting.Greeting, currentGreeting).then((r) => {err=r})">
                 <label for="greeting1">Moin</label><br>
-                <input class="w-auto" type="radio" name="greet" value="Servus" id="greeting2">
+                <input class="w-auto" type="radio" name="greet" value="Servus" id="greeting2" x-model="currentGreeting" :checked="currentGreeting==='Servus'"
+                       @change="global.updatePreferredName(global.UserSetting.Greeting, currentGreeting).then((r) => {err=r;})">
                 <label for="greeting2">Servus</label>
+                <p class="text-danger" x-cloak x-show="err!==''" x-text="err"></p>
             </div>
         </div>
     </div>

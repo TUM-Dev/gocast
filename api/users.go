@@ -21,6 +21,10 @@ import (
 
 func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := usersRoutes{daoWrapper}
+
+	router.POST("/api/users/settings/name", routes.updatePreferredName)
+	router.POST("/api/users/settings/greeting", routes.updatePreferredGreeting)
+
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
 	admins.POST("/createUser", routes.CreateUser)
@@ -306,6 +310,60 @@ func (r usersRoutes) forgotPassword(email string) {
 	err = tools.SendPasswordMail(email, body)
 	if err != nil {
 		log.Println("couldn't send password mail")
+	}
+}
+
+type userSettingsRequest struct {
+	Value string `json:"value"`
+}
+
+func (r usersRoutes) updatePreferredName(c *gin.Context) {
+	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+	if u == nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, "Login required")
+		return
+	}
+	var request userSettingsRequest
+	err := json.NewDecoder(c.Request.Body).Decode(&request)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "can't decode request")
+		return
+	}
+	for _, s := range u.Settings {
+		if s.Type == model.PreferredName && time.Since(s.UpdatedAt) < time.Hour*24*30*3 {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, "Preferred name already set within the last 3 months")
+			return
+		}
+	}
+	err = r.UsersDao.AddUserSetting(&model.UserSetting{
+		UserID: u.ID,
+		Type:   model.PreferredName,
+		Value:  request.Value,
+	})
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "an error occurred while writing to database")
+	}
+}
+
+func (r usersRoutes) updatePreferredGreeting(c *gin.Context) {
+	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+	if u == nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, "Login required")
+		return
+	}
+	var request userSettingsRequest
+	err := json.NewDecoder(c.Request.Body).Decode(&request)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "can't decode request")
+		return
+	}
+	err = r.UsersDao.AddUserSetting(&model.UserSetting{
+		UserID: u.ID,
+		Type:   model.Greeting,
+		Value:  request.Value,
+	})
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "an error occurred while writing to database")
 	}
 }
 

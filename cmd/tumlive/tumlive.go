@@ -139,6 +139,7 @@ func main() {
 		&model.VideoSection{},
 		&model.Notification{},
 		&model.UploadKey{},
+		&model.UserSetting{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
