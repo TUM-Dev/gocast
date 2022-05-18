@@ -25,14 +25,7 @@ Features include:
 
 ## Getting Started
 
-To get this running locally follow these steps:
-
-### Setup IPs
-
-In `/etc/hosts` add this: 
-```
-127.0.0.1  db
-```
+To get TUM-Live running locally follow these steps:
 
 ### Setup Database
 - Follow the steps [here](https://mariadb.com/kb/en/installing-and-using-mariadb-via-docker/) to install mariadb via docker.

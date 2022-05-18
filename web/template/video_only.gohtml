@@ -57,7 +57,7 @@
 </head>
 <body class="overflow-hidden">
 <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
-<video
+<video-js
         id="my-video"
         class="video-js w-full"
         controls
@@ -70,7 +70,7 @@
     <p class="vjs-no-js">
         To view this video please enable JavaScript.
     </p>
-</video>
+</video-js>
 </body>
 <script>
     watch.initPlayer(false, true, true, {{$course.Name}}, {{$stream.GetName}}, {{$course.GetStreamUrl $stream}}, {{$course.GetUrl}}, {{$stream.GetStartInSeconds}});

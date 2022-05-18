@@ -93,9 +93,10 @@ func main() {
 		defer sentry.Recover()
 	}
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
-		"%v:%v@tcp(db:3306)/%v?parseTime=true&loc=Local",
+		"%s:%s@tcp(%s:3306)/%s?parseTime=true&loc=Local",
 		tools.Cfg.Db.User,
 		tools.Cfg.Db.Password,
+		tools.Cfg.Db.Host,
 		tools.Cfg.Db.Database),
 	), &gorm.Config{
 		PrepareStmt: true,

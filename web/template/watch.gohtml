@@ -38,7 +38,7 @@
                  x-show="showliveended" @streamended.window="showliveended=true" x-cloak>
                 <i class="fas fa-info-circle"></i> This livestream has ended.
             </div>
-            <video
+            <video-js
                     id="my-video"
                     class="video-js w-full vjs-theater-mode theater-mode"
                     controls
@@ -62,7 +62,7 @@
                 <p class="vjs-no-js">
                     To view this video please enable JavaScript.
                 </p>
-            </video>
+            </video-js>
         </div>
         <div id="streamInfo" class="mx-5 m-auto">
             <div class="flex justify-between align-middle mt-4">
@@ -80,41 +80,40 @@
                                 {{/*When the stream ends its automatically reloaded, so this can be static*/}}
                                 <span class="flex mr-2">Stream has ended</span>
                             {{else}}
-                                <span class="flex space-x-2 mr-2">
-                                <span class="m-auto" id="viewerCount"></span>
-                                <span class="m-auto" id="ViewerDescText">Waiting</span>
-                                <span class="m-auto">&#183;</span>
-                                {{/* Timer / Countdown */}}
-                                <span class="flex text-lg text-4"
-                                      x-data="global.timer('{{$course.GetNextLectureDateFormatted}}', true)"
-                                      x-init="init();">
-                                    <template x-if="time().days !== '00'">
-                                        <span>More than a day left</span>
-                                    </template>
-                                    <template
-                                            x-if="time().days === '00' && time().minutes === '00' && time().hours === '00' && time().seconds === '00'">
-                                        <span>Stream is due</span>
-                                    </template>
-                                    <template
-                                            x-if="time().days === '00' && !(time().minutes === '00' && time().hours === '00' && time().seconds === '00')">
-                                        <span>
-                                            <span class="tabular-nums flex m-auto">
-                                                <span x-text="time().hours"></span>:
-                                                <span x-text="time().minutes"></span>:
-                                                <span x-text="time().seconds"></span>
+                                <span class="flex space-x-2 m-2">
+                                    <span class="m-auto" id="viewerCount"></span>
+                                    <span class="m-auto" id="ViewerDescText">Waiting</span>
+                                    <span class="m-auto">&#183;</span>
+                                    {{/* Timer / Countdown */}}
+                                    <span class="flex text-lg text-4"
+                                          x-data="global.timer('{{$course.GetNextLectureDateFormatted}}', true)"
+                                          x-init="init();">
+                                        <template x-if="time().days !== '00'">
+                                            <span>More than a day left</span>
+                                        </template>
+                                        <template
+                                                x-if="time().days === '00' && time().minutes === '00' && time().hours === '00' && time().seconds === '00'">
+                                            <span>Stream is due</span>
+                                        </template>
+                                        <template
+                                                x-if="time().days === '00' && !(time().minutes === '00' && time().hours === '00' && time().seconds === '00')">
+                                            <span>
+                                                <span class="tabular-nums flex m-auto">
+                                                    <span x-text="time().hours"></span>:
+                                                    <span x-text="time().minutes"></span>:
+                                                    <span x-text="time().seconds"></span>
+                                                </span>
                                             </span>
-                                        </span>
-                                    </template>
+                                        </template>
+                                    </span>
                                 </span>
-                                <span class="m-auto">&#183;</span>
-                            </span>
                             {{end}}
                         {{else}}
                             <span class="flex space-x-2 mr-2">
-                            <span class="m-auto" id="viewerCount"></span>
-                            <span class="m-auto" id="ViewerDescText">Watching</span>
-                            <span class="m-auto">&#183;</span>
-                        </span>
+                                <span class="m-auto" id="viewerCount"></span>
+                                <span class="m-auto" id="ViewerDescText">Watching</span>
+                                <span class="m-auto">&#183;</span>
+                            </span>
                         {{end}}
                     {{end}}
                     <span class="hidden md:inline-block">
@@ -122,7 +121,7 @@
                     </span>
                 </p>
             </div>
-            <div class="flex justify-between border-b-2 dark:border-secondary pb-4">
+            <div class="flex justify-between pb-4">
                 <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                     <span class="text-5 hover:text-1 hover:underline text-lg">{{$course.Name}}</span></a>
                 {{if $stream.LiveNow}}
@@ -134,61 +133,142 @@
                     {{end}}
                 {{end}}
             </div>
+            <div class="md:hidden inline-block">
+                {{template "actions" . }}
+            </div>
             {{if and .IsAdminOfCourse (and $stream.LectureHallID $stream.LiveNow)}}
-                <div class="border-t-2 border-secondary p-4 mt-2 space-x-2">
-                    <h3 class="text-4 mb-2 font-bold">Stream actions</h3>
+                <div class="border-b-2 dark:border-secondary mt-3"></div>
+                <div class="p-4 mt-2 md:space-x-2 space-y-2">
                     <button @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)"
                             href="#"
                             :title="paused?'End Pause (Turns on video and audio)':'Pause lecture (Turns off video and audio)'"
-                            class="bg-green-500 inline-block text-center w-24 text-white font-bold hover:bg-green-600 dark:hover:bg-green-600 rounded cursor-pointer p-2">
+                            class="bg-green-500 md:inline-block block text-center md:w-32 w-full text-white font-bold hover:bg-green-600 dark:hover:bg-green-600 rounded cursor-pointer p-2">
                         <span x-show="!paused"><i class="fas fa-pause mr-1"></i>Pause</span>
                         <span x-show="paused"><i class="fas fa-play mr-1"></i>Resume</span>
                     </button>
-                    <a href="?restart=1">
-                        <button @click="window.location.reload()" href="?restart=1"
-                                title="Issues with the stream? Restart it."
-                                class="bg-indigo-500 inline-block text-center w-24 text-white font-bold hover:bg-indigo-600 dark:hover:bg-indigo-600 rounded cursor-pointer p-2">
-                            <i class="fas fa-redo mr-1"></i>Restart
+                    <button @click="window.location.href='?restart=1'"
+                            title="Issues with the stream? Restart it."
+                            class="bg-indigo-500 md:inline-block block text-center md:w-32 w-full text-white font-bold hover:bg-indigo-600 dark:hover:bg-indigo-600 rounded cursor-pointer p-2">
+                        <i class="fas fa-redo mr-1"></i>Restart
+                    </button>
+                    <button @click="$dispatch('stop')"
+                            title="Already finished? End the stream early."
+                            class="bg-red-500 md:inline-block text-center md:w-32 w-full text-white hover:bg-red-600 font-bold dark:hover:bg-red-600 rounded cursor-pointer p-2">
+                        <i class="fas fa-power-off mr-1"></i>Stop
+                    </button>
+                    {{if .AlertsEnabled}}
+                        <button @click="$dispatch('issue')"
+                                title="Issues with the stream? Send a report to the RGB."
+                                class="bg-amber-500 md:inline-block text-center md:w-32 md:float-right w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>Problem
                         </button>
-                    </a>
-                    <span class="inline-block" x-data="{ 'showModal': false }" @keydown.escape="showModal = false"
-                          x-cloak>
-                        <button @click="showModal = true"
-                                title="Already finished? End the stream early."
-                                class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-600 font-bold dark:hover:bg-red-600 rounded cursor-pointer p-2">
-                            <i class="fas fa-power-off mr-1"></i>Stop
-                        </button>
-                        <section class="flex flex-wrap h-full">
-                            <div class="overflow-auto" style="background-color: rgba(0,0,0,0.5)" x-show="showModal"
-                                 :class="{ 'absolute inset-0 z-10 flex items-center justify-center': showModal }">
-                                <div class="dark:bg-secondary bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 w-auto md:max-w-md mx-auto rounded shadow-lg py-4 text-left px-6"
-                                     x-show="showModal" @click.away="showModal = false">
-                                    <!--Title-->
-                                    <div class="flex justify-between pb-3">
-                                        <p class="text-2 font-bold">Keep the recording after ending the stream?</p>
+                        {{/* Modal to enter feedback */}}
+                        <div x-cloak x-data="{ show : false, description : '', phone: '', mail: '', categories: [] }"
+                             @issue.window="show = true;"
+                             x-show="show" class="flex flex-wrap h-full overflow-y-scroll inline-block"
+                             :class="{ 'absolute inset-0 z-50 flex items-center justify-center': show }">
+                            <div @keydown.escape="show = false"
+                                 class="dark:bg-secondary-light bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 sm:w-auto w-full md:max-w-md md:mx-auto rounded shadow-lg py-4 text-left px-6">
+                                <form @submit.prevent="watch.sendIssue(streamID, categories, name, phone, mail, description); show = false">
+                                    <div class="font-bold text-xl mb-2">Report Technical Problem</div>
+                                    <div class="font-bold text-md mb-2">Please select all relevant issue categories
+                                    </div>
+                                    <div>
+                                        <div>
+                                            <input class="h-4 w-4" type="checkbox" x-model.number="categories"
+                                                   value="1">
+                                            <span class="ml-2 text-4">Video</span>
+                                        </div>
+                                        <div>
+                                            <input class="h-4 w-4" type="checkbox" x-model.number="categories"
+                                                   value="2">
+                                            <span class="ml-2 text-4">Audio</span>
+                                        </div>
+                                        <div>
+                                            <input class="h-4 w-4" type="checkbox" x-model.number="categories"
+                                                   value="3">
+                                            <span class="ml-2 text-4">Camera</span>
+                                        </div>
+                                        <div>
+                                            <input class="h-4 w-4" type="checkbox" x-model.number="categories"
+                                                   value="4">
+                                            <span class="ml-2 text-4">Microphone</span>
+                                        </div>
+                                        <div>
+                                            <input class="h-4 w-4" type="checkbox" x-model.number="categories"
+                                                   value="5">
+                                            <span class="ml-2 text-4">Light</span>
+                                        </div>
+                                        <div>
+                                            <input class="h-4 w-4" type="checkbox" x-model.number="categories"
+                                                   value="6">
+                                            <span class="ml-2 text-4">Other</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex pb-3 mt-3">
+                                        <div>
+                                            <label for="description">Description of the issue</label>
+                                            <textarea required name="description" rows="0" cols="0" class="grow w-full"
+                                                      placeholder="Add a short description of the problem here."
+                                                      x-model="description"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="font-bold text-lg mb-2">Your contact information (optional)</div>
+                                    <div class="mt-3">
+                                        <label for="fname">Name</label>
+                                        <input name="fname" type="text" placeholder="Maria Musterfrau" x-model="name"
+                                               value="{{ .IndexData.TUMLiveContext.User.Name -}} {{- .IndexData.TUMLiveContext.User.Name }}">
+                                    </div>
+                                    <div class="mt-3">
+                                        <label for="mail">Mail</label>
+                                        <input name="mail" type="email" placeholder="maria.musterfrau@provider.de"
+                                               x-model="mail">
+                                    </div>
+                                    <div class="mt-3">
+                                        <label for="phone">Phone</label>
+                                        <input name="phone" type="text" placeholder="12345678" x-model="phone">
                                     </div>
                                     <!--Footer-->
-                                    <div class="flex justify-start pt-2">
-                                        <button class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-600 dark:hover:bg-green-600 font-bold rounded cursor-pointer p-1 mr-3"
-                                                @click="fetch(`/api/stream/${streamID}/end?discard=${false}`).then(showModal = false)">Yes</button>
-                                        <button class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-600 dark:hover:bg-red-600 font-bold rounded cursor-pointer p-1 mr-3"
-                                                @click="fetch(`/api/stream/${streamID}/end?discard=${true}`).then(showModal = false)">No</button>
-                                        <button class="bg-gray-500 inline-block text-center w-24 text-white hover:bg-gray-600 dark:hover:bg-gray-600 font-bold rounded cursor-pointer p-1"
-                                                @click="showModal = false">Cancel</button>
+                                    <div class="flex justify-end pt-2 space-x-2 mt-3">
+                                        <button class="bg-gray-500 inline-block text-center w-24 text-white hover:bg-gray-600 dark:hover:bg-gray-600 font-bold rounded cursor-pointer p-2"
+                                                @click="show = false; show = false">{{/* Dispatch is important, otherwise two clicks are needed */}}
+                                            Cancel
+                                        </button>
+                                        <button type="submit"
+                                                class="bg-amber-500 inline-block text-center w-24 text-white hover:bg-amber-600 dark:hover:bg-amber-600 font-bold rounded cursor-pointer p-2">
+                                            <i class="fa-solid fa-paper-plane mr-2"></i>Send
+                                        </button>
                                     </div>
-                                </div>
+                                </form>
                             </div>
-                        </section>
-                    </span>
-                    {{if .AlertsEnabled}}
-                        <button @click="fetch(`/api/stream/${streamID}/issue`)"
-                                title="Issues with the stream? Send a report to the RGB."
-                                class="bg-amber-500 inline-block float-right text-center w-auto text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
-                            <i class="fas fa-exclamation-triangle mr-1"></i>Report Technical Problem
-                        </button>
+                        </div>
                     {{end}}
                 </div>
-                <div class="p-4">
+                <span class="inline-block" x-data="{ 'showModal': false }" @stop.window="showModal=true"
+                      @keydown.escape="showModal = false" x-cloak>
+                    <section class="flex flex-wrap h-full">
+                        <div class="overflow-auto" style="background-color: rgba(0,0,0,0.5)" x-show="showModal"
+                             :class="{ 'absolute inset-0 z-10 flex items-center justify-center': showModal }">
+                            <div class="dark:bg-secondary-light bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 w-auto md:max-w-md mx-auto rounded shadow-lg py-4 text-left px-6"
+                                 x-show="showModal" @click.away="showModal = false">
+                                <!--Title-->
+                                <div class="flex justify-between pb-3">
+                                    <p class="text-2 font-bold">Keep the recording after ending the stream?</p>
+                                </div>
+                                <!--Footer-->
+                                <div class="flex justify-start pt-2">
+                                    <button class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-600 dark:hover:bg-green-600 font-bold rounded cursor-pointer p-1 mr-3"
+                                            @click="fetch(`/api/stream/${streamID}/end?discard=${false}`).then(showModal = false)">Yes</button>
+                                    <button class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-600 dark:hover:bg-red-600 font-bold rounded cursor-pointer p-1 mr-3"
+                                            @click="fetch(`/api/stream/${streamID}/end?discard=${true}`).then(showModal = false)">No</button>
+                                    <button class="bg-gray-500 inline-block text-center w-24 text-white hover:bg-gray-600 dark:hover:bg-gray-600 font-bold rounded cursor-pointer p-1"
+                                            @click="showModal = false">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </span>
+                <div class="px-4 mt-auto">
                     <h3 class="text-4 mb-2 font-bold">Presets for {{.LectureHallName}}</h3>
                     <div class="w-full overflow-x-scroll scrollbarThin">
                         <div class="flex flex-row gap-x-2">
@@ -206,11 +286,7 @@
                     </div>
                 </div>
             {{end}}
-            <div class="flex justify-between align-middle mt-2 md:hidden">
-                {{template "actions" . }}
-            </div>
-
-            <div x-data="{descriptionlen: {{len .Description}}, less: true}"
+            <div x-data="{descriptionlen: {{len .Description}}, less:true}"
                  class="text-3 py-4 video-description lg:col-span-2" x-show="descriptionlen > 0">
                 <h6 class="font-bold text-3 pb-3">Video Description</h6>
                 <div :class="less && 'truncate-children'"
@@ -220,12 +296,10 @@
                 <button x-show="descriptionlen>128" class='text-xs text-gray-500 dark:text-gray-400 uppercase mt-2'
                         @click="less = !less" x-text="less ? 'show more' : 'show less'">show less
                 </button>
-            </div>
-            <!-- Video Sections -->
+            </div><!-- Video Sections -->
             {{if $stream.VideoSections}}
                 {{template "videosections" $stream}}
             {{end}}
-
             {{if .IsHighlightPage}}
                 <ul class="w-full m-auto mb-4">
                     {{template "course_list" .IndexData.TUMLiveContext}}
@@ -236,7 +310,7 @@
     {{if $course.ChatEnabled}}
         <div x-data="{show: $persist(false).as('chatOpen')}"
              class="mt-5 md:mt-0"
-             :class="show ? 'w-full md:w-2/6 2xl:w-1/5 h-96 md:h-auto' : 'md:w-14 h-fit md:h-full'">
+             :class="show ? 'w-full md:w-2/6 2xl:w-1/5 h-96 md:h-auto' : 'md:w-14  h-fit md:h-full'">
             {{template "chat" .ChatData}}
         </div>
     {{end}}
