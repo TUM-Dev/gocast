@@ -342,7 +342,7 @@ func (r coursesRoutes) lectureHallsByID(c *gin.Context) {
 }
 
 func (r coursesRoutes) lectureHalls(c *gin.Context, course model.Course) {
-	var res []lhResp
+	var lectureHallData []lhResp
 	lectureHallIDs := map[uint]bool{}
 	for _, s := range course.Streams {
 		if s.LectureHallID != 0 {
