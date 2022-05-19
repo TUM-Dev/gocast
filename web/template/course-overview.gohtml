@@ -114,7 +114,7 @@
                             <span class="text-sm font-semibold uppercase dark:text-white"
                                   x-text="showPlanned ? '&#x25B2; hide' : '&#x25BC; show'">&#x25B2; hide</span>
                         </button>
-                        <a class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
+                        <a class="hover:bg-gray-200 dark:hover:bg-gray-600 inline-block rounded px-2"
                            href="/api/download_ics/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}/events.ics"
                            :title="'Export lecture dates'"
                            x-show="lectures">
