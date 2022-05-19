@@ -1,8 +1,8 @@
 import { postData } from "./global";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
-import dom = videojs.dom;
 import airplay from "@silvermine/videojs-airplay";
+import dom = videojs.dom;
 
 require("videojs-seek-buttons");
 require("videojs-hls-quality-selector");
@@ -343,8 +343,75 @@ export class StartInOverlay extends Component {
 
 export function jumpTo(hours: number, minutes: number, seconds: number) {
     videojs("my-video").ready(() => {
-        player.currentTime(hours * 60 * 60 + minutes * 60 + seconds);
+        player.currentTime(toSeconds(hours, minutes, seconds));
     });
+}
+
+export class VideoSections {
+    readonly streamID: number;
+
+    list: object[];
+    currentHighlightIndex: number;
+
+    constructor(streamID) {
+        this.streamID = streamID;
+        this.list = [];
+        this.currentHighlightIndex = 0;
+    }
+
+    attachPlayerEvents() {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const that = this;
+        videojs("my-video").ready(() => {
+            player.on("timeupdate", function () {
+                const i = 0;
+                const currentTime = this.currentTime();
+                for (let i = 0; i < that.list.length; i++) {
+                    const section = that.list[i];
+                    const next = that.list[i + 1];
+
+                    // @ts-ignore
+                    const sectionSeconds = toSeconds(section.startHours, section.startMinutes, section.startSeconds);
+
+                    if (next === undefined || next === null) {
+                        if (sectionSeconds <= currentTime) {
+                            that.currentHighlightIndex = i;
+                        }
+                    } else {
+                        // @ts-ignore
+                        const nextSeconds = toSeconds(next.startHours, next.startMinutes, next.startSeconds);
+
+                        if (sectionSeconds <= currentTime && currentTime <= nextSeconds) {
+                            that.currentHighlightIndex = i;
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    async fetch() {
+        await fetch(`/api/stream/${this.streamID}/sections`)
+            .then((res: Response) => {
+                if (!res.ok) {
+                    throw new Error("Could not fetch sections");
+                }
+                return res.json();
+            })
+            .then((sections) => {
+                this.list = sections;
+                this.attachPlayerEvents();
+            })
+            .catch((err) => {
+                console.log(err);
+                this.list = [];
+                this.currentHighlightIndex = 0;
+            });
+    }
+}
+
+function toSeconds(hours: number, minutes: number, seconds: number): number {
+    return hours * 60 * 60 + minutes * 60 + seconds;
 }
 
 // Register the plugin with video.js.

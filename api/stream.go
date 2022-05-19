@@ -256,7 +256,21 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 	if err != nil {
 		log.WithError(err).Error("Can't get video sections")
 	}
-	c.JSON(http.StatusOK, sections)
+
+	response := []gin.H{}
+	for _, section := range sections {
+		response = append(response, gin.H{
+			"ID":                section.ID,
+			"startHours":        section.StartHours,
+			"startMinutes":      section.StartMinutes,
+			"startSeconds":      section.StartSeconds,
+			"description":       section.Description,
+			"friendlyTimestamp": section.TimestampAsString(),
+			"streamID":          section.StreamID,
+		})
+
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
