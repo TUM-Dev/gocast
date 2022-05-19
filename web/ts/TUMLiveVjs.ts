@@ -1,4 +1,4 @@
-import { postData } from "./global";
+import { postData, Section } from "./global";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import airplay from "@silvermine/videojs-airplay";
@@ -350,44 +350,13 @@ export function jumpTo(hours: number, minutes: number, seconds: number) {
 export class VideoSections {
     readonly streamID: number;
 
-    list: object[];
+    list: Section[];
     currentHighlightIndex: number;
 
     constructor(streamID) {
         this.streamID = streamID;
         this.list = [];
         this.currentHighlightIndex = 0;
-    }
-
-    attachPlayerEvents() {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        const that = this;
-        videojs("my-video").ready(() => {
-            player.on("timeupdate", function () {
-                const i = 0;
-                const currentTime = this.currentTime();
-                for (let i = 0; i < that.list.length; i++) {
-                    const section = that.list[i];
-                    const next = that.list[i + 1];
-
-                    // @ts-ignore
-                    const sectionSeconds = toSeconds(section.startHours, section.startMinutes, section.startSeconds);
-
-                    if (next === undefined || next === null) {
-                        if (sectionSeconds <= currentTime) {
-                            that.currentHighlightIndex = i;
-                        }
-                    } else {
-                        // @ts-ignore
-                        const nextSeconds = toSeconds(next.startHours, next.startMinutes, next.startSeconds);
-
-                        if (sectionSeconds <= currentTime && currentTime <= nextSeconds) {
-                            that.currentHighlightIndex = i;
-                        }
-                    }
-                }
-            });
-        });
     }
 
     async fetch() {
@@ -400,7 +369,7 @@ export class VideoSections {
             })
             .then((sections) => {
                 this.list = sections;
-                this.attachPlayerEvents();
+                attachCurrentTimeEvent(this);
             })
             .catch((err) => {
                 console.log(err);
@@ -408,6 +377,22 @@ export class VideoSections {
                 this.currentHighlightIndex = 0;
             });
     }
+}
+
+function attachCurrentTimeEvent(videoSection: VideoSections) {
+    player.ready(() => {
+        player.on("timeupdate", function () {
+            const currentTime = this.currentTime();
+            videoSection.currentHighlightIndex = videoSection.list.findIndex((section, i, list) => {
+                const next = list[i + 1];
+                const sectionSeconds = toSeconds(section.startHours, section.startMinutes, section.startSeconds);
+                return next === undefined || null // if last element and no next exists
+                    ? sectionSeconds <= currentTime
+                    : sectionSeconds <= currentTime &&
+                          currentTime <= toSeconds(next.startHours, next.startMinutes, next.startSeconds);
+            });
+        });
+    });
 }
 
 function toSeconds(hours: number, minutes: number, seconds: number): number {

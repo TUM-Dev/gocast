@@ -192,6 +192,18 @@ export function timer(expiry: string, leadingZero: boolean) {
     };
 }
 
+// TypeScript Mapping of model.VideoSection
+export type Section = {
+    description: string;
+
+    startHours: number;
+    startMinutes: number;
+    startSeconds: number;
+
+    streamID: number;
+    friendlyTimestamp?: string;
+};
+
 window.onload = function () {
     initHiddenCourses();
 };

@@ -1,11 +1,11 @@
-import { Delete, postData } from "./global";
+import { Delete, postData, Section } from "./global";
 
 export class VideoSection {
     private readonly streamID: number;
 
-    existingSections: section[];
-    newSections: section[];
-    current: section;
+    existingSections: Section[];
+    newSections: Section[];
+    current: Section;
     unsavedChanges: boolean;
 
     constructor(streamID) {
@@ -28,11 +28,12 @@ export class VideoSection {
             });
     }
     pushNewSection() {
+        this.current.friendlyTimestamp = VideoSection.timeStringAsString(this.current);
         this.newSections.push({ ...this.current });
         this.resetCurrent();
         this.unsavedChanges = true;
     }
-    removeNewSection(section: section) {
+    removeNewSection(section: Section) {
         this.newSections = this.newSections.filter((s) => s !== section);
         this.unsavedChanges = true;
     }
@@ -48,7 +49,7 @@ export class VideoSection {
             await this.load();
         });
     }
-    timeStringAsString(section): string {
+    private static timeStringAsString(section: Section): string {
         let s = "";
 
         if (section.startHours > 0) {
@@ -78,14 +79,3 @@ export class VideoSection {
         };
     }
 }
-
-// TypeScript Mapping of model.VideoSection
-type section = {
-    description: string;
-
-    startHours: number;
-    startMinutes: number;
-    startSeconds: number;
-
-    streamID: number;
-};
