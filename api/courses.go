@@ -148,6 +148,17 @@ func (r coursesRoutes) updateSourceSettings(c *gin.Context) {
 		}
 	}
 	course.SetCameraPresetPreference(presetSettings)
+
+	var sourceModeSettings []model.SourcePreference
+	for _, hall := range req {
+		sourceModeSettings = append(sourceModeSettings, model.SourcePreference{
+			LectureHallID: hall.LectureHallID,
+			SourceMode:    hall.SourceMode,
+		})
+	}
+
+	course.SetSourcePreference(sourceModeSettings)
+
 	if err := r.CoursesDao.UpdateCourse(c, *course); err != nil {
 		log.WithError(err).Error("failed to update course")
 		c.AbortWithStatus(http.StatusInternalServerError)
