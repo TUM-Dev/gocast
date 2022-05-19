@@ -32,6 +32,7 @@ type Course struct {
 	Token                   string
 	UserCreatedByToken      bool   `gorm:"default:false"`
 	CameraPresetPreferences string // json encoded. e.g. [{lectureHallID:1, presetID:4}, ...]
+	SourcePreferences       string // json encoded. e.g. [{lectureHallID:1, sourceMode:0}, ...]
 }
 
 // GetUrl returns the URL of the course, e.g. /course/2022/S/MyCourse
@@ -66,6 +67,30 @@ func (c *Course) SetCameraPresetPreference(pref []CameraPresetPreference) {
 		log.Println(err)
 	}
 	c.CameraPresetPreferences = string(pBytes)
+}
+
+type SourcePreference struct {
+	LectureHallID uint `json:"lecture_hall_id"`
+	SourceMode    int  `json:"source_mode"`
+}
+
+// GetSourcePreference retrieves the source preferences
+func (c Course) GetSourcePreference() []SourcePreference {
+	var res []SourcePreference
+	err := json.Unmarshal([]byte(c.SourcePreferences), &res)
+	if err != nil {
+		return []SourcePreference{}
+	}
+	return res
+}
+
+// SetSourcePreference updates the source preferences
+func (c *Course) SetSourcePreference(pref []SourcePreference) {
+	pBytes, err := json.Marshal(pref)
+	if err != nil {
+		log.Println(err)
+	}
+	c.SourcePreferences = string(pBytes)
 }
 
 // CompareTo used for sorting. Falling back to old java habits...

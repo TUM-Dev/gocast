@@ -116,8 +116,8 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 	p.ServeHTTP(c.Writer, c.Request)
 }
 
-// updatePresets updates the CameraPresets of a course
-func (r coursesRoutes) updatePresets(c *gin.Context) {
+// updateSourceSettings updates the CameraPresets of a course
+func (r coursesRoutes) updateSourceSettings(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -137,12 +137,13 @@ func (r coursesRoutes) updatePresets(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+
 	var presetSettings []model.CameraPresetPreference
 	for _, hall := range req {
-		if len(hall.Presets) != 0 && hall.SelectedIndex != 0 {
+		if len(hall.Presets) != 0 && hall.SelectedPresetID != 0 {
 			presetSettings = append(presetSettings, model.CameraPresetPreference{
-				LectureHallID: hall.Presets[hall.SelectedIndex-1].LectureHallId, // index count starts at 1
-				PresetID:      hall.SelectedIndex,
+				LectureHallID: hall.LectureHallID,
+				PresetID:      hall.SelectedPresetID,
 			})
 		}
 	}
