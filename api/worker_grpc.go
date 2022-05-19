@@ -563,74 +563,93 @@ func NotifyWorkers(daoWrapper dao.DaoWrapper) func() {
 				sentry.CaptureException(err)
 				continue
 			}
-			sources := []string{lectureHallForStream.CombIP, lectureHallForStream.PresIP, lectureHallForStream.CamIP}
-			for sourceNum, source := range sources {
-				if source == "" {
-					continue
-				}
-				var sourceType string
-				if sourceNum == 1 {
-					sourceType = "PRES"
-				} else if sourceNum == 2 {
-					sourceType = "CAM"
-				} else {
-					sourceType = "COMB"
-				}
-				server, err := daoWrapper.IngestServerDao.GetBestIngestServer()
-				if err != nil {
-					log.WithError(err).Error("Can't find ingest server")
-					continue
-				}
-				var slot model.StreamName
-				if sourceType == "COMB" { //try to find a transcoding slot for comb view:
-					slot, err = daoWrapper.IngestServerDao.GetTranscodedStreamSlot(server.ID)
-				}
-				if sourceType != "COMB" || err != nil {
-					slot, err = daoWrapper.IngestServerDao.GetStreamSlot(server.ID)
+
+			createStreamRequest := func(sourceType string, source string) {
+				{
+					if source == "" {
+						return
+					}
+					server, err := daoWrapper.IngestServerDao.GetBestIngestServer()
 					if err != nil {
-						log.WithError(err).Error("No free stream slot")
-						continue
+						log.WithError(err).Error("Can't find ingest server")
+						return
+					}
+					var slot model.StreamName
+					if sourceType == "COMB" { //try to find a transcoding slot for comb view:
+						slot, err = daoWrapper.IngestServerDao.GetTranscodedStreamSlot(server.ID)
+					}
+					if sourceType != "COMB" || err != nil {
+						slot, err = daoWrapper.IngestServerDao.GetStreamSlot(server.ID)
+						if err != nil {
+							log.WithError(err).Error("No free stream slot")
+							return
+						}
+					}
+					slot.StreamID = streams[i].ID
+					daoWrapper.IngestServerDao.SaveSlot(slot)
+					req := pb.StreamRequest{
+						SourceType:    sourceType,
+						SourceUrl:     source,
+						CourseSlug:    courseForStream.Slug,
+						Start:         timestamppb.New(streams[i].Start),
+						End:           timestamppb.New(streams[i].End),
+						PublishStream: courseForStream.LiveEnabled,
+						PublishVoD:    courseForStream.VODEnabled,
+						StreamID:      uint32(streams[i].ID),
+						CourseTerm:    courseForStream.TeachingTerm,
+						CourseYear:    uint32(courseForStream.Year),
+						StreamName:    slot.StreamName,
+						IngestServer:  server.Url,
+						OutUrl:        server.OutUrl,
+					}
+					workerIndex := getWorkerWithLeastWorkload(workers)
+					workers[workerIndex].Workload += 3
+					err = daoWrapper.StreamsDao.SaveWorkerForStream(streams[i], workers[workerIndex])
+					if err != nil {
+						log.WithError(err).Error("Could not save worker for stream")
+						return
+					}
+					conn, err := dialIn(workers[workerIndex])
+					if err != nil {
+						log.WithError(err).Error("Unable to dial server")
+						workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
+						return
+					}
+					client := pb.NewToWorkerClient(conn)
+					req.WorkerId = workers[workerIndex].WorkerID
+					resp, err := client.RequestStream(context.Background(), &req)
+					if err != nil || !resp.Ok {
+						log.WithError(err).Error("could not assign stream!")
+						workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
+					}
+					endConnection(conn)
+				}
+			}
+
+			for _, sourcePreference := range courseForStream.GetSourcePreference() {
+				if sourcePreference.LectureHallID == streams[i].LectureHallID {
+					switch sourcePreference.SourceMode {
+					// SourceMode == 1 -> Presentation Only
+					case 1:
+						createStreamRequest("PRES", lectureHallForStream.PresIP)
+						return
+					// SourceMode == 2 -> Camera Only
+					case 2:
+						createStreamRequest("CAM", lectureHallForStream.CamIP)
+						return
+					// SourceMode == other -> Combination view
+					default:
+						// Break out of the loop and do what's below
+						break
 					}
 				}
-				slot.StreamID = streams[i].ID
-				daoWrapper.IngestServerDao.SaveSlot(slot)
-				req := pb.StreamRequest{
-					SourceType:    sourceType,
-					SourceUrl:     source,
-					CourseSlug:    courseForStream.Slug,
-					Start:         timestamppb.New(streams[i].Start),
-					End:           timestamppb.New(streams[i].End),
-					PublishStream: courseForStream.LiveEnabled,
-					PublishVoD:    courseForStream.VODEnabled,
-					StreamID:      uint32(streams[i].ID),
-					CourseTerm:    courseForStream.TeachingTerm,
-					CourseYear:    uint32(courseForStream.Year),
-					StreamName:    slot.StreamName,
-					IngestServer:  server.Url,
-					OutUrl:        server.OutUrl,
-				}
-				workerIndex := getWorkerWithLeastWorkload(workers)
-				workers[workerIndex].Workload += 3
-				err = daoWrapper.StreamsDao.SaveWorkerForStream(streams[i], workers[workerIndex])
-				if err != nil {
-					log.WithError(err).Error("Could not save worker for stream")
-					return
-				}
-				conn, err := dialIn(workers[workerIndex])
-				if err != nil {
-					log.WithError(err).Error("Unable to dial server")
-					workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
-					continue
-				}
-				client := pb.NewToWorkerClient(conn)
-				req.WorkerId = workers[workerIndex].WorkerID
-				resp, err := client.RequestStream(context.Background(), &req)
-				if err != nil || !resp.Ok {
-					log.WithError(err).Error("could not assign stream!")
-					workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
-				}
-				endConnection(conn)
 			}
+			// If no preference or SourceMode != 1,2
+			createStreamRequest("PRES", lectureHallForStream.PresIP)
+			createStreamRequest("CAM", lectureHallForStream.CamIP)
+			createStreamRequest("COMB", lectureHallForStream.CombIP)
+			return
+
 		}
 	}
 }
