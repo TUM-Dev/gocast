@@ -1,0 +1,56 @@
+{{define "source-settings"}}
+    <div x-cloak class="mt-2" x-data="{halls: [], changed: false}"
+         x-init="fetch(`/api/lecture-halls-by-id?id=${document.getElementById('courseID').value}`).then(r=>r.json()).then(d=>halls=d)">
+        <template x-if="halls !== null && halls.length > 0">
+            <template x-for="hall in halls">
+                <div x-data="{selected_preset: undefined, selected_preset_name: ''}" class="ml-2"
+                        x-init="selected_preset = hall.presets.find(e => e.PresetID==hall.selected_preset_id); selected_preset_name = selected_preset in window ? '' : selected_preset.Name"
+                        @reinit.window="selected_preset = hall.presets.find(e => e.PresetID==hall.selected_preset_id); selected_preset_name = selected_preset in window ? '' : selected_preset.Name">
+                    <div class="flex justify-between">
+                        <p class="font-semibold px-1 my-auto" x-text="hall.lecture_hall_name"></p>
+                        <select class="text-black dark:bg-secondary bg-gray-100 p-2"
+                                id="sourceModeBulkSelect"
+                                @change="changed=true;"
+                                x-model.number="hall.source_mode">
+                            <option class="text-gray-300" value="0">Presentation & Camera
+                            </option>
+                            <option class="text-gray-300" value="1">Presentation Only
+                            </option>
+                            <option class="text-gray-300" value="2">Camera Only
+                            </option>
+                        </select>
+                    </div>
+                    <p class="font-semibold text-danger" x-show="selected_preset in window">No preset
+                        selected</p>
+                    <p class="text-green-400"
+                       x-show="!(selected_preset in window)"
+                       x-text="`Currently selected preset: ${selected_preset_name}`"></p>
+                    <div class="overflow-x-scroll flex flex-row gap-x-2" x-show="hall.presets.length>0">
+                        <template x-for="preset in hall.presets">
+                            <div class="text-center relative group" x-show="preset.Name!=='gelöscht'">
+                                <img :src="`/public/${preset.Image}`" alt="Preview"
+                                     style="min-width: 250px;"
+                                     width="250px">
+                                <label class="truncate block my-2">
+                                    <input @change="changed=true;"
+                                           type="radio"
+                                           class="w-auto"
+                                           :value="preset.PresetID"
+                                           x-model.number="hall.selected_preset_id"
+                                           :name="`preset${hall.lecture_hall_name.replace(/\s+/g, '')}`">
+                                    <span x-text="preset.Name"></span>
+                                </label>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+        </template>
+        <button x-cloak x-show="changed" class="bg-secondary-lighter rounded px-4 py-2 font-semibold text-white"
+            @click="fetch(`/api/course/${document.getElementById('courseID').value}/presets`, {method:'POST',  body:JSON.stringify(halls)}).then();changed=false;$dispatch('reinit')">
+            Save Presets</button>
+        <template x-if="halls === null || halls.length === 0">
+            <i class="text-5">No lecture halls found for this course.</i>
+        </template>
+    </div>
+{{end}}
