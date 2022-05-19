@@ -164,7 +164,6 @@ func (r coursesRoutes) updateSourceSettings(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-
 }
 
 func (r coursesRoutes) activateCourseByToken(c *gin.Context) {
@@ -303,9 +302,11 @@ func (r coursesRoutes) getAdmins(c *gin.Context) {
 }
 
 type lhResp struct {
-	LectureHallName string               `json:"lecture_hall_name"`
-	Presets         []model.CameraPreset `json:"presets"`
-	SelectedIndex   int                  `json:"selected_index"`
+	LectureHallName  string               `json:"lecture_hall_name"`
+	LectureHallID    uint                 `json:"lecture_hall_id"`
+	Presets          []model.CameraPreset `json:"presets"`
+	SourceMode       int                  `json:"source_mode"`
+	SelectedPresetID int                  `json:"selected_preset_id"`
 }
 
 func (r coursesRoutes) lectureHallsByID(c *gin.Context) {
@@ -353,22 +354,36 @@ func (r coursesRoutes) lectureHalls(c *gin.Context, course model.Course) {
 		if err != nil {
 			log.WithError(err).Error("Can't fetch lecture hall for stream")
 		} else {
-			res = append(res, lhResp{
+			// Find if sourceMode is specified for this lecture hall
+			sourceMode := func() int {
+				for _, pref := range course.GetSourcePreference() {
+					if u == pref.LectureHallID {
+						return pref.SourceMode
+					}
+				}
+				return 0
+			}()
+			lectureHallData = append(lectureHallData, lhResp{
 				LectureHallName: lh.Name,
+				LectureHallID:   lh.ID,
 				Presets:         lh.CameraPresets,
+				SourceMode:      sourceMode,
 			})
 		}
 	}
-	for _, preference := range course.GetCameraPresetPreference() {
-		for i, re := range res {
-			if len(re.Presets) != 0 && re.Presets[0].LectureHallId == preference.LectureHallID {
-				res[i].SelectedIndex = preference.PresetID
-				break
+
+	for i, response := range lectureHallData {
+		if len(response.Presets) != 0 {
+			for _, coursePref := range course.GetCameraPresetPreference() {
+				if response.LectureHallID == coursePref.LectureHallID {
+					lectureHallData[i].SelectedPresetID = coursePref.PresetID
+					break
+				}
 			}
 		}
 	}
 
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, lectureHallData)
 }
 
 func (r coursesRoutes) submitCut(c *gin.Context) {
@@ -609,7 +624,7 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 	// try parse lectureHallId
 	lectureHallId, err := strconv.ParseInt(req.LectureHallId, 10, 32)
 	if err != nil {
-		log.WithError(err).Error("invalid LectureHallId format")
+		log.WithError(err).Error("invalid LectureHallID format")
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
