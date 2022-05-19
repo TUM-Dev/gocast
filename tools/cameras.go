@@ -30,7 +30,7 @@ func FetchLHPresets(lectureHall model.LectureHall, lectureHallDao dao.LectureHal
 		}
 		/*for i := range presets {
 			findExistingImageForPreset(&presets[i], lectureHall.CameraPresets)
-			presets[i].LectureHallId = lectureHall.ID
+			presets[i].LectureHallID = lectureHall.ID
 		}*/
 		lectureHall.CameraPresets = presets
 		lectureHallDao.SaveLectureHallFullAssoc(lectureHall)
@@ -38,7 +38,7 @@ func FetchLHPresets(lectureHall model.LectureHall, lectureHallDao dao.LectureHal
 }
 
 func UsePreset(preset model.CameraPreset, lectureHallDao dao.LectureHallsDao) {
-	lectureHall, err := lectureHallDao.GetLectureHallByID(preset.LectureHallId)
+	lectureHall, err := lectureHallDao.GetLectureHallByID(preset.LectureHallID)
 	if err != nil {
 		sentry.CaptureException(err)
 		return
@@ -55,7 +55,7 @@ func UsePreset(preset model.CameraPreset, lectureHallDao dao.LectureHallsDao) {
 func TakeSnapshot(preset model.CameraPreset, lectureHallDao dao.LectureHallsDao) {
 	UsePreset(preset, lectureHallDao)
 	time.Sleep(time.Second * 10)
-	lectureHall, err := lectureHallDao.GetLectureHallByID(preset.LectureHallId)
+	lectureHall, err := lectureHallDao.GetLectureHallByID(preset.LectureHallID)
 	if err != nil {
 		sentry.CaptureException(err)
 		return
