@@ -10,8 +10,8 @@ require("videojs-contrib-quality-levels");
 const Button = videojs.getComponent("Button");
 let player;
 
-export function getBufferSeconds() {
-    return player.bufferedEnd() - player.currentTime();
+export function getPlayer() {
+    return player;
 }
 
 /**

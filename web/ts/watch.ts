@@ -1,6 +1,6 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
-import { getBufferInfo, getBufferSeconds } from "./TUMLiveVjs";
+import { getPlayer } from "./TUMLiveVjs";
 
 let chatInput: HTMLInputElement;
 
@@ -249,8 +249,17 @@ export const videoStatListener = {
         this.videoStatIntervalId = setInterval(this.update, 1000);
     },
     update() {
+        const player = getPlayer();
+        const vhs = player.tech().vhs;
+        window.player = player;
+        // temp1.getVideoPlaybackQuality()
         const data = {
-            bufferSeconds: getBufferSeconds(),
+            bufferSeconds: player.bufferedEnd() - player.currentTime(),
+            videoHeight: vhs.playlists.media().attributes.RESOLUTION.height,
+            videoWidth: vhs.playlists.media().attributes.RESOLUTION.width,
+            bandwidth: vhs.bandwidth, //player.tech().vhs.bandwidth(),
+            mediaRequests: vhs.stats.mediaRequests,
+            mediaRequestsFailed: vhs.stats.mediaRequestsErrored,
         };
         const event = new CustomEvent("newvideostats", { detail: data });
         window.dispatchEvent(event);

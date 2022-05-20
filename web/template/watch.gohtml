@@ -76,7 +76,7 @@
 
             <div
                     x-cloak
-                    x-data="{ data: { bufferSeconds: 0 } }"
+                    x-data="{ data: { bufferSeconds: 0, videoHeight: 0, videoWidth: 0, bandwidth: 0, mediaRequests: 0, mediaRequestsFailed: 0 } }"
                     x-show="videoStatsShown"
                     x-on:newvideostats.window="e => { data = e.detail }"
                     class="origin-top-left absolute w-72 p-4 bg-gray-800/[.9] border-gray-100 border-1 rounded text-white text-sm"
@@ -91,15 +91,28 @@
                 <div class="flex justify-between align-middle">
                     <div>
                         <div>Resolution: </div>
-                        <div>Framerate: </div>
-                        <div>Buffer: </div>
-                        <div>Network Speed: </div>
-                        <div>Current Buffer: </div>
+                        <div>Bandwidth: </div>
                     </div>
                     <div class="pr-4">
-                        <div x-text="(Math.round(data.bufferSeconds * 100) / 100) + ' Seconds'"></div>
+                        <div class="text-right" x-text="`${data.videoWidth}x${data.videoHeight}`"></div>
+                        <div class="text-right" x-text="Math.round(data.bandwidth / 1000000) + ' MBit/s'"></div>
                     </div>
                 </div>
+                <br>
+                <div>Buffer: </div>
+                <div class="flex justify-between align-middle">
+                    <div>
+                        <div class="pl-2">> Buffered Time:</div>
+                        <div class="pl-2">> Frames Requested: </div>
+                        <div class="pl-2">> Requests Failed: </div>
+                    </div>
+                    <div class="pr-4">
+                        <div class="text-right" x-text="(Math.round(data.bufferSeconds * 100) / 100) + 's'"></div>
+                        <div class="text-right" x-text="data.mediaRequests"></div>
+                        <div class="text-right" x-text="data.mediaRequestsFailed"></div>
+                    </div>
+                </div>
+
             </div>
         </div>
         <div id="streamInfo" class="mx-5 m-auto">
