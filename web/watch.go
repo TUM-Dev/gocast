@@ -58,14 +58,15 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 		}
 	}
 
-	switch tumLiveContext.Course.GetSourceModeForLectureHall(tumLiveContext.Stream.LectureHallID) {
-	// SourceMode == 1 -> Presentation Only
-	case 1:
-		data.Version = "PRES"
-	// SourceMode == 2 -> Camera Only
-	case 2:
-		data.Version = "CAM"
-		return
+	if tumLiveContext.Stream.LectureHallID != 0 {
+		switch tumLiveContext.Course.GetSourceModeForLectureHall(tumLiveContext.Stream.LectureHallID) {
+		// SourceMode == 1 -> Override Version to PRES
+		case 1:
+			data.Version = "PRES"
+		// SourceMode == 2 -> Override Version to CAM
+		case 2:
+			data.Version = "CAM"
+		}
 	}
 
 	// Check for fetching progress
