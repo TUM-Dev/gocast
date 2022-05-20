@@ -28,6 +28,7 @@
     "@fullcalendar/icalendar": "^5.11.0",
     "@fullcalendar/list": "^5.11.0",
     "@fullcalendar/timegrid": "^5.11.0",
+    "@silvermine/videojs-airplay": "^1.1.0",
     "@silvermine/videojs-quality-selector": "^1.2.5",
     "alpinejs": "^3.10.2",
     "chart.js": "^3.7.1",
@@ -42,7 +43,6 @@
     "moment": "^2.29.3",
     "nouislider": "^15.6.0",
     "video.js": "^7.18.1",
-    "videojs-contrib-hls": "^5.15.0",
     "videojs-contrib-quality-levels": "^2.1.0",
     "videojs-hls-quality-selector": "^1.1.4",
     "videojs-seek-buttons": "^2.2.1"

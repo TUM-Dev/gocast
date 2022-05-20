@@ -12,7 +12,8 @@
                 <div class="vod-list-month my-2" {{if $user}}x-show="!filterWatched || (filterWatched && !monthHidden)" x-data="{ monthHidden: watchedTracker.userWatchedMonth(`{{$lecture.Start.Month.String}}`) }"{{end}}> <!-- div with monthname <p> and all <li> elements -->
                 <p class="text-gray-500 text-sm uppercase">{{printf "%v %v" $lastMonth $lecture.Start.Year}}</p>
             {{end}}
-            <li class="vod-list-video p-2 w-full" {{if $user}}x-show="!filterWatched || (filterWatched && !watched)" x-data="{ watched: {{$lecture.Watched}} }"{{end}}>
+            <li class="vod-list-video p-2 w-full" {{if $user}}x-show="!filterWatched || (filterWatched && !watched)"
+                x-data="{ watched: {{$lecture.Watched}} }"{{end}}>
                 <div class="flex justify-between">
                     <div>
                         <div>
@@ -26,9 +27,12 @@
                                         @click="
                                         watched = !watched;
                                         watchedTracker.setWatched({{$lecture.Model.ID}}, watched);
+                                        watchedCount = watchedTracker.countWatched();
                                         monthHidden = watchedTracker.userWatchedMonth(`{{$lecture.Start.Month.String}}`); {{/* Updates state in the client and in the database */}}
                                         watchedAll = watchedTracker.userWatchedAll();">
-                                    <i :title="watched ? 'Mark as unwatched' : 'Mark as watched'" class="fa-solid text-l text-3 font-semibold" :class="watched ? 'fa-clock-rotate-left' : 'fa-check'"></i>
+                                    <i :title="watched ? 'Mark as unwatched' : 'Mark as watched'"
+                                       class="fa-solid text-l text-3 font-semibold"
+                                       :class="watched ? 'fa-clock-rotate-left' : 'fa-check'"></i>
                                 </button>
                             {{end}}
                         </div>
@@ -94,7 +98,8 @@
     {{end}}
     {{if and .User $course.HasRecordings}}
         </div>
-        <p x-show="watchedAll && filterWatched" class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">All VoDs watched</p>
+        <p x-show="watchedAll && filterWatched"
+           class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">All VoDs watched</p>
     {{end}}
     {{if eq $lastMonth -1}}
         <p class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">No VoDs yet</p>
