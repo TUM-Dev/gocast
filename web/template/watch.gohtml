@@ -47,14 +47,14 @@
                 {{else}}poster="/public/no_active_stream.jpg">{{end}}
                 {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
                     {{if not $stream.LiveNow}}
-                        <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
+                        <source src="{{if and ($course.CanUseSource $stream.LectureHallID "PRES") (eq .Version "PRES")}}{{$stream.PlaylistUrlPRES}}{{else if and ($course.CanUseSource $stream.LectureHallID "CAM") (eq .Version "CAM")}}{{$stream.PlaylistUrlCAM}}{{else if $course.CanUseSource $stream.LectureHallID "COMB"}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
                                 type="application/x-mpegURL"/>
                     {{else}}
-                        {{if eq .Version "CAM"}}
+                        {{if and ($course.CanUseSource $stream.LectureHallID "CAM") (eq .Version "CAM")}}
                             <source src="{{$stream.PlaylistUrlCAM}}{{.DVR}}" type="application/x-mpegURL"/>
-                        {{else if eq .Version "PRES"}}
+                        {{else if and ($course.CanUseSource $stream.LectureHallID "PRES") (eq .Version "PRES")}}
                             <source src="{{$stream.PlaylistUrlPRES}}{{.DVR}}" type="application/x-mpegURL"/>
-                        {{else}}
+                        {{else if $course.CanUseSource $stream.LectureHallID "COMB"}}
                             <source src="{{$stream.PlaylistUrl}}{{.DVR}}" type="application/x-mpegURL"/>
                         {{end}}
                     {{end}}
