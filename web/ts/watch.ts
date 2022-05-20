@@ -253,12 +253,11 @@ export const videoStatListener = {
             return;
         }
         this.videoStatIntervalId = setInterval(this.update, 1000);
+        this.update();
     },
     update() {
         const player = getPlayer();
         const vhs = player.tech().vhs;
-        window.player = player;
-        // temp1.getVideoPlaybackQuality()
         const data = {
             bufferSeconds: player.bufferedEnd() - player.currentTime(),
             videoHeight: vhs.playlists.media().attributes.RESOLUTION.height,
