@@ -355,19 +355,11 @@ func (r coursesRoutes) lectureHalls(c *gin.Context, course model.Course) {
 			log.WithError(err).Error("Can't fetch lecture hall for stream")
 		} else {
 			// Find if sourceMode is specified for this lecture hall
-			sourceMode := func() int {
-				for _, pref := range course.GetSourcePreference() {
-					if u == pref.LectureHallID {
-						return pref.SourceMode
-					}
-				}
-				return 0
-			}()
 			lectureHallData = append(lectureHallData, lhResp{
 				LectureHallName: lh.Name,
 				LectureHallID:   lh.ID,
 				Presets:         lh.CameraPresets,
-				SourceMode:      sourceMode,
+				SourceMode:      course.GetSourceModeForLectureHall(lh.ID),
 			})
 		}
 	}

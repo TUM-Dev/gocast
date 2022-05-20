@@ -626,30 +626,21 @@ func NotifyWorkers(daoWrapper dao.DaoWrapper) func() {
 				}
 			}
 
-			for _, sourcePreference := range courseForStream.GetSourcePreference() {
-				if sourcePreference.LectureHallID == streams[i].LectureHallID {
-					switch sourcePreference.SourceMode {
-					// SourceMode == 1 -> Presentation Only
-					case 1:
-						createStreamRequest("PRES", lectureHallForStream.PresIP)
-						return
-					// SourceMode == 2 -> Camera Only
-					case 2:
-						createStreamRequest("CAM", lectureHallForStream.CamIP)
-						return
-					// SourceMode == other -> Combination view
-					default:
-						// Break out of the loop and do what's below
-						break
-					}
-				}
+			switch courseForStream.GetSourceModeForLectureHall(streams[i].LectureHallID) {
+			// SourceMode == 1 -> Presentation Only
+			case 1:
+				createStreamRequest("PRES", lectureHallForStream.PresIP)
+				return
+			// SourceMode == 2 -> Camera Only
+			case 2:
+				createStreamRequest("CAM", lectureHallForStream.CamIP)
+				return
+			// SourceMode != 1,2 -> Combination view
+			default:
+				createStreamRequest("PRES", lectureHallForStream.PresIP)
+				createStreamRequest("CAM", lectureHallForStream.CamIP)
+				createStreamRequest("COMB", lectureHallForStream.CombIP)
 			}
-			// If no preference or SourceMode != 1,2
-			createStreamRequest("PRES", lectureHallForStream.PresIP)
-			createStreamRequest("CAM", lectureHallForStream.CamIP)
-			createStreamRequest("COMB", lectureHallForStream.CombIP)
-			return
-
 		}
 	}
 }

@@ -84,6 +84,16 @@ func (c Course) GetSourcePreference() []SourcePreference {
 	return res
 }
 
+// GetSourceModeForLectureHall retrieves the source preference for the given lecture hall, returns default SourcePreference if non-existing
+func (c Course) GetSourceModeForLectureHall(id uint) int {
+	for _, preference := range c.GetSourcePreference() {
+		if preference.LectureHallID == id {
+			return preference.SourceMode
+		}
+	}
+	return 0
+}
+
 // SetSourcePreference updates the source preferences
 func (c *Course) SetSourcePreference(pref []SourcePreference) {
 	pBytes, err := json.Marshal(pref)
