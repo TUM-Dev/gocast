@@ -51,14 +51,14 @@
                                 <i class="fas fa-download"></i>
                             </a>
                         {{end}}
-                        {{if $lecture.PlaylistUrlCAM}}
+                        {{if and ($course.CanUseSource $lecture.LectureHallID "CAM") $lecture.PlaylistUrlCAM}}
                             <a class="flex text-3 hover:text-gray-600"
                                title="Camera Only"
                                href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/CAM">
                                 <i class="fas fa-camera"></i>
                             </a>
                         {{end}}
-                        {{if $lecture.PlaylistUrlPRES}}
+                        {{if and ($course.CanUseSource $lecture.LectureHallID "PRES") $lecture.PlaylistUrlPRES}}
                             <a class="flex text-3 hover:text-gray-600"
                                title="Presentation Only"
                                href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/PRES">
