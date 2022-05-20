@@ -94,6 +94,20 @@ func (c Course) GetSourceModeForLectureHall(id uint) int {
 	return 0
 }
 
+// CanUseSource returns whether the specified source type is allowed for the lecture hall id given
+func (c Course) CanUseSource(lectureHallID uint, sourceType string) bool {
+	mode := c.GetSourceModeForLectureHall(lectureHallID)
+	switch sourceType {
+	case "PRES":
+		return mode != 2
+	case "CAM":
+		return mode != 1
+	case "COMB":
+		return mode != 1 && mode != 2
+	}
+	return false
+}
+
 // SetSourcePreference updates the source preferences
 func (c *Course) SetSourcePreference(pref []SourcePreference) {
 	pBytes, err := json.Marshal(pref)
