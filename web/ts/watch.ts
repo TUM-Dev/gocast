@@ -258,13 +258,15 @@ export const videoStatListener = {
     update() {
         const player = getPlayer();
         const vhs = player.tech().vhs;
+        const notAvailable = vhs == null;
+
         const data = {
-            bufferSeconds: player.bufferedEnd() - player.currentTime(),
-            videoHeight: vhs.playlists.media().attributes.RESOLUTION.height,
-            videoWidth: vhs.playlists.media().attributes.RESOLUTION.width,
-            bandwidth: vhs.bandwidth, //player.tech().vhs.bandwidth(),
-            mediaRequests: vhs.stats.mediaRequests,
-            mediaRequestsFailed: vhs.stats.mediaRequestsErrored,
+            bufferSeconds: notAvailable ? 0 : player.bufferedEnd() - player.currentTime(),
+            videoHeight: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.height,
+            videoWidth: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.width,
+            bandwidth: notAvailable ? 0 : vhs.bandwidth, //player.tech().vhs.bandwidth(),
+            mediaRequests: notAvailable ? 0 : vhs.stats.mediaRequests,
+            mediaRequestsFailed: notAvailable ? 0 : vhs.stats.mediaRequestsErrored,
         };
         const event = new CustomEvent("newvideostats", { detail: data });
         window.dispatchEvent(event);
