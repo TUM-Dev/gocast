@@ -6,6 +6,7 @@ import (
 	"crypto/subtle"
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/argon2"
@@ -72,6 +73,16 @@ func (u User) GetPreferredGreeting() string {
 		}
 	}
 	return "Moin"
+}
+
+func (u User) IsGoogleCastEnabled() (res bool) {
+	for _, setting := range u.Settings {
+		if setting.Type == EnableChromecast {
+			_ = json.Unmarshal([]byte(setting.Value), &res)
+			return res
+		}
+	}
+	return false
 }
 
 // PreferredNameChangeAllowed returns false if the user has set a preferred name within the last 3 months, otherwise true

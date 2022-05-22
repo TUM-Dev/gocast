@@ -6,7 +6,7 @@ export enum UserSetting {
     EnableCast = "enableCast",
 }
 
-export function updatePreferredName(t: UserSetting, value: string): Promise<string> {
+export function updatePreference(t: UserSetting, value: string|boolean): Promise<string> {
     return fetch(`${settingsAPIBaseURL}/${t}`, {
         method: "POST",
         headers: {

@@ -24,6 +24,9 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 	router.POST("/api/users/settings/name", routes.updatePreferredName)
 	router.POST("/api/users/settings/greeting", routes.updatePreferredGreeting)
+	router.POST("/api/users/settings/enableCast", routes.updateEnableCast)
+
+	router.GET("/api/users/exportData", routes.exportPersonalData)
 
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
@@ -365,6 +368,90 @@ func (r usersRoutes) updatePreferredGreeting(c *gin.Context) {
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "an error occurred while writing to database")
 	}
+}
+
+func (r usersRoutes) updateEnableCast(c *gin.Context) {
+	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+	if u == nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, "Login required")
+		return
+	}
+	var req struct{ Value bool }
+	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "can't decode request")
+		return
+	}
+	enabledBytes, _ := json.Marshal(req.Value)
+
+	err = r.UsersDao.AddUserSetting(&model.UserSetting{
+		UserID: u.ID,
+		Type:   model.EnableChromecast,
+		Value:  string(enabledBytes),
+	})
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "an error occurred while writing to database")
+	}
+}
+
+func (r usersRoutes) exportPersonalData(c *gin.Context) {
+	var resp personalData
+	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+	resp.UserData = struct {
+		Name      string    `json:"name,omitempty"`
+		LastName  *string   `json:"last_name,omitempty"`
+		Email     string    `json:"email,omitempty"`
+		LrzID     string    `json:"lrz_id,omitempty"`
+		MatrNr    string    `json:"matr_nr,omitempty"`
+		CreatedAt time.Time `json:"created_at"`
+	}{Name: u.Name, LastName: u.LastName, Email: u.Email.String, LrzID: u.LrzID, MatrNr: u.MatriculationNumber, CreatedAt: u.CreatedAt}
+	for _, course := range u.Courses {
+		resp.Enrollments = append(resp.Enrollments, struct {
+			Year   int    `json:"year,omitempty"`
+			Term   string `json:"term,omitempty"`
+			Course string `json:"course,omitempty"`
+		}{course.Year, course.TeachingTerm, course.Name})
+	}
+	chats, err := r.ChatDao.GetChatsByUser(u.ID)
+	if err != nil {
+		chats = []model.Chat{}
+	}
+	for _, chat := range chats {
+		resp.Chats = append(resp.Chats, struct {
+			StreamId  uint      `json:"stream_id,omitempty"`
+			Message   string    `json:"message,omitempty"`
+			CreatedAt time.Time `json:"created_at"`
+		}{chat.StreamID, chat.Message, chat.CreatedAt})
+	}
+	c.Header("Content-Disposition:", `attachment; filename="personal-data-export.json"`)
+	c.JSON(http.StatusOK, resp)
+}
+
+type personalData struct {
+	UserData struct {
+		Name      string    `json:"name,omitempty"`
+		LastName  *string   `json:"last_name,omitempty"`
+		Email     string    `json:"email,omitempty"`
+		LrzID     string    `json:"lrz_id,omitempty"`
+		MatrNr    string    `json:"matr_nr,omitempty"`
+		CreatedAt time.Time `json:"created_at"`
+	} `json:"user_data"`
+	Enrollments []struct {
+		Year   int    `json:"year,omitempty"`
+		Term   string `json:"term,omitempty"`
+		Course string `json:"course,omitempty"`
+	} `json:"enrollments,omitempty"`
+	VideoViews []struct {
+		VideoDate      time.Time `json:"video_date"`
+		Progress       time.Time `json:"progress"`
+		MarkedFinished bool      `json:"marked_finished,omitempty"`
+		Updated        time.Time `json:"updated"`
+	} `json:"video_views,omitempty"`
+	Chats []struct {
+		StreamId  uint      `json:"stream_id,omitempty"`
+		Message   string    `json:"message,omitempty"`
+		CreatedAt time.Time `json:"created_at"`
+	} `json:"chats,omitempty"`
 }
 
 type deleteUserRequest struct {
