@@ -20,282 +20,341 @@ import (
 func TestLectureHallsCRUD(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	t.Run("POST[Invalid Body]", func(t *testing.T) {
-		lectureHallId := uint(1)
+	t.Run("/createLectureHall", func(t *testing.T) {
+		t.Run("POST[Invalid Body]", func(t *testing.T) {
+			lectureHallId := uint(1)
 
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
 
-		r.Use(func(c *gin.Context) {
-			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-				Role: model.AdminType,
-			}})
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+
+			lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+			lectureHallMock.
+				EXPECT().
+				DeleteLectureHall(lectureHallId).
+				Return(errors.New("")).
+				AnyTimes()
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+
+			c.Request, _ = http.NewRequest(http.MethodPost, "/api/createLectureHall", nil)
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
 		})
 
-		lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
-		lectureHallMock.
-			EXPECT().
-			DeleteLectureHall(lectureHallId).
-			Return(errors.New("")).
-			AnyTimes()
+		t.Run("POST[Success]", func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
 
-		configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
 
-		c.Request, _ = http.NewRequest(http.MethodPost, "/api/createLectureHall", nil)
-		r.ServeHTTP(w, c.Request)
+			body, _ := json.Marshal(createLectureHallRequest{
+				Name:      "LH1",
+				CombIP:    "0.0.0.0",
+				PresIP:    "0.0.0.0",
+				CamIP:     "0.0.0.0",
+				CameraIP:  "0.0.0.0",
+				PwrCtrlIP: "0.0.0.0",
+			})
 
-		assert.Equal(t, http.StatusBadRequest, w.Code)
+			lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+			lectureHallMock.
+				EXPECT().
+				CreateLectureHall(gomock.Any()).AnyTimes()
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+
+			c.Request, _ = http.NewRequest(http.MethodPost, "/api/createLectureHall", bytes.NewBuffer(body))
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusOK, w.Code)
+		})
 	})
 
-	t.Run("POST[Success]", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
+	t.Run("/lectureHall/:id", func(t *testing.T) {
+		t.Run("PUT[Invalid Body]", func(t *testing.T) {
+			lectureHallId := uint(1)
 
-		r.Use(func(c *gin.Context) {
-			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-				Role: model.AdminType,
-			}})
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
+
+			c.Request, _ = http.NewRequest(http.MethodPut,
+				fmt.Sprintf("/api/lectureHall/%d", lectureHallId), nil)
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
 		})
 
-		body, _ := json.Marshal(createLectureHallRequest{
-			Name:      "LH1",
-			CombIP:    "0.0.0.0",
-			PresIP:    "0.0.0.0",
-			CamIP:     "0.0.0.0",
-			CameraIP:  "0.0.0.0",
-			PwrCtrlIP: "0.0.0.0",
+		t.Run("PUT[id not integer]", func(t *testing.T) {
+			lectureHallId := "abc"
+
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
+
+			jBody, _ := json.Marshal(updateLectureHallReq{CamIp: "0.0.0.0"})
+
+			c.Request, _ = http.NewRequest(http.MethodPut,
+				fmt.Sprintf("/api/lectureHall/%s", lectureHallId), bytes.NewBuffer(jBody))
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
 		})
 
-		lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
-		lectureHallMock.
-			EXPECT().
-			CreateLectureHall(gomock.Any()).AnyTimes()
+		t.Run("PUT[GetLectureHallByID returns error]", func(t *testing.T) {
+			lectureHallId := uint(1)
 
-		configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
 
-		c.Request, _ = http.NewRequest(http.MethodPost, "/api/createLectureHall", bytes.NewBuffer(body))
-		r.ServeHTTP(w, c.Request)
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
 
-		assert.Equal(t, http.StatusOK, w.Code)
+			lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+			lectureHallMock.
+				EXPECT().
+				GetLectureHallByID(lectureHallId).
+				Return(model.LectureHall{},
+					errors.New("")).
+				AnyTimes()
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+
+			jBody, _ := json.Marshal(updateLectureHallReq{CamIp: "0.0.0.0"})
+
+			c.Request, _ = http.NewRequest(http.MethodPut,
+				fmt.Sprintf("/api/lectureHall/%d", lectureHallId), bytes.NewBuffer(jBody))
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusNotFound, w.Code)
+		})
+
+		t.Run("PUT[SaveLectureHall returns error]", func(t *testing.T) {
+			lectureHallId := uint(1)
+
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+
+			lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+			lectureHallMock.
+				EXPECT().
+				GetLectureHallByID(lectureHallId).
+				Return(model.LectureHall{}, nil).
+				AnyTimes()
+			lectureHallMock.
+				EXPECT().
+				SaveLectureHall(gomock.Any()).
+				Return(errors.New("")).
+				AnyTimes()
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+
+			jBody, _ := json.Marshal(updateLectureHallReq{CamIp: "0.0.0.0"})
+
+			c.Request, _ = http.NewRequest(http.MethodPut,
+				fmt.Sprintf("/api/lectureHall/%d", lectureHallId), bytes.NewBuffer(jBody))
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusInternalServerError, w.Code)
+		})
+
+		t.Run("PUT[success]", func(t *testing.T) {
+			lectureHallId := uint(1)
+
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+
+			lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+			lectureHallMock.
+				EXPECT().
+				GetLectureHallByID(lectureHallId).
+				Return(model.LectureHall{}, nil)
+			lectureHallMock.
+				EXPECT().
+				SaveLectureHall(gomock.Any()).
+				Return(nil)
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+
+			jBody, _ := json.Marshal(updateLectureHallReq{CamIp: "0.0.0.0"})
+
+			c.Request, _ = http.NewRequest(http.MethodPut,
+				fmt.Sprintf("/api/lectureHall/%d", lectureHallId), bytes.NewBuffer(jBody))
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusOK, w.Code)
+		})
+
+		t.Run("DELETE[id not parameter]", func(t *testing.T) {
+			lectureHallId := "abc"
+
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
+
+			c.Request, _ = http.NewRequest(http.MethodDelete,
+				fmt.Sprintf("/api/lectureHall/%s", lectureHallId), nil)
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
+		})
+
+		t.Run("DELETE[DeleteLectureHall returns error]", func(t *testing.T) {
+			lectureHallId := uint(1)
+
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+
+			lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+			lectureHallMock.
+				EXPECT().
+				DeleteLectureHall(lectureHallId).
+				Return(errors.New("")).
+				AnyTimes()
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+
+			c.Request, _ = http.NewRequest(http.MethodDelete,
+				fmt.Sprintf("/api/lectureHall/%d", lectureHallId), nil)
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusInternalServerError, w.Code)
+		})
+
+		t.Run("DELETE[success]", func(t *testing.T) {
+			lectureHallId := uint(1)
+
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+
+			lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+			lectureHallMock.
+				EXPECT().
+				DeleteLectureHall(lectureHallId).
+				Return(nil).
+				AnyTimes()
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+
+			c.Request, _ = http.NewRequest(http.MethodDelete,
+				fmt.Sprintf("/api/lectureHall/%d", lectureHallId), nil)
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusOK, w.Code)
+		})
 	})
 
-	t.Run("PUT[Invalid Body]", func(t *testing.T) {
-		lectureHallId := uint(1)
+	t.Run("/lectureHall/:id/defaultPreset", func(t *testing.T) {
+		t.Run("POST[Invalid Body]", func(t *testing.T) {
+			lectureHallId := uint(1)
 
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
 
-		r.Use(func(c *gin.Context) {
-			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-				Role: model.AdminType,
-			}})
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
+
+			c.Request, _ = http.NewRequest(http.MethodPost,
+				fmt.Sprintf("/api/lectureHall/%d/defaultPreset", lectureHallId), nil)
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
 		})
 
-		configGinLectureHallApiRouter(r, dao.DaoWrapper{})
+		t.Run("POST[FindPreset returns error]", func(t *testing.T) {
+			lectureHallId := "1"
+			presetId := uint(3)
 
-		c.Request, _ = http.NewRequest(http.MethodPut,
-			fmt.Sprintf("/api/lectureHall/%d", lectureHallId), nil)
-		r.ServeHTTP(w, c.Request)
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
 
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-	})
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+			body, _ := json.Marshal(struct {
+				PresetID uint `json:"presetID"`
+			}{presetId})
 
-	t.Run("PUT[id not integer]", func(t *testing.T) {
-		lectureHallId := "abc"
+			lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+			lectureHallMock.
+				EXPECT().
+				FindPreset(lectureHallId, fmt.Sprintf("%d", presetId)).
+				Return(model.CameraPreset{}, errors.New("")).
+				AnyTimes()
 
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
 
-		r.Use(func(c *gin.Context) {
-			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-				Role: model.AdminType,
-			}})
+			c.Request, _ = http.NewRequest(http.MethodPost,
+				fmt.Sprintf("/api/lectureHall/%s/defaultPreset", lectureHallId), bytes.NewBuffer(body))
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusNotFound, w.Code)
 		})
-
-		configGinLectureHallApiRouter(r, dao.DaoWrapper{})
-
-		jBody, _ := json.Marshal(updateLectureHallReq{CamIp: "0.0.0.0"})
-
-		c.Request, _ = http.NewRequest(http.MethodPut,
-			fmt.Sprintf("/api/lectureHall/%s", lectureHallId), bytes.NewBuffer(jBody))
-		r.ServeHTTP(w, c.Request)
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-	})
-
-	t.Run("PUT[GetLectureHallByID returns error]", func(t *testing.T) {
-		lectureHallId := uint(1)
-
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
-
-		r.Use(func(c *gin.Context) {
-			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-				Role: model.AdminType,
-			}})
-		})
-
-		lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
-		lectureHallMock.
-			EXPECT().
-			GetLectureHallByID(lectureHallId).
-			Return(model.LectureHall{},
-				errors.New("")).
-			AnyTimes()
-
-		configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
-
-		jBody, _ := json.Marshal(updateLectureHallReq{CamIp: "0.0.0.0"})
-
-		c.Request, _ = http.NewRequest(http.MethodPut,
-			fmt.Sprintf("/api/lectureHall/%d", lectureHallId), bytes.NewBuffer(jBody))
-		r.ServeHTTP(w, c.Request)
-
-		assert.Equal(t, http.StatusNotFound, w.Code)
-	})
-
-	t.Run("PUT[SaveLectureHall returns error]", func(t *testing.T) {
-		lectureHallId := uint(1)
-
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
-
-		r.Use(func(c *gin.Context) {
-			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-				Role: model.AdminType,
-			}})
-		})
-
-		lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
-		lectureHallMock.
-			EXPECT().
-			GetLectureHallByID(lectureHallId).
-			Return(model.LectureHall{}, nil).
-			AnyTimes()
-		lectureHallMock.
-			EXPECT().
-			SaveLectureHall(gomock.Any()).
-			Return(errors.New("")).
-			AnyTimes()
-
-		configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
-
-		jBody, _ := json.Marshal(updateLectureHallReq{CamIp: "0.0.0.0"})
-
-		c.Request, _ = http.NewRequest(http.MethodPut,
-			fmt.Sprintf("/api/lectureHall/%d", lectureHallId), bytes.NewBuffer(jBody))
-		r.ServeHTTP(w, c.Request)
-
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
-	})
-
-	t.Run("PUT[success]", func(t *testing.T) {
-		lectureHallId := uint(1)
-
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
-
-		r.Use(func(c *gin.Context) {
-			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-				Role: model.AdminType,
-			}})
-		})
-
-		lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
-		lectureHallMock.
-			EXPECT().
-			GetLectureHallByID(lectureHallId).
-			Return(model.LectureHall{}, nil)
-		lectureHallMock.
-			EXPECT().
-			SaveLectureHall(gomock.Any()).
-			Return(nil)
-
-		configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
-
-		jBody, _ := json.Marshal(updateLectureHallReq{CamIp: "0.0.0.0"})
-
-		c.Request, _ = http.NewRequest(http.MethodPut,
-			fmt.Sprintf("/api/lectureHall/%d", lectureHallId), bytes.NewBuffer(jBody))
-		r.ServeHTTP(w, c.Request)
-
-		assert.Equal(t, http.StatusOK, w.Code)
-	})
-
-	t.Run("DELETE[id not parameter]", func(t *testing.T) {
-		lectureHallId := "abc"
-
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
-
-		r.Use(func(c *gin.Context) {
-			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-				Role: model.AdminType,
-			}})
-		})
-
-		configGinLectureHallApiRouter(r, dao.DaoWrapper{})
-
-		c.Request, _ = http.NewRequest(http.MethodDelete,
-			fmt.Sprintf("/api/lectureHall/%s", lectureHallId), nil)
-		r.ServeHTTP(w, c.Request)
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-	})
-
-	t.Run("DELETE[DeleteLectureHall returns error]", func(t *testing.T) {
-		lectureHallId := uint(1)
-
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
-
-		r.Use(func(c *gin.Context) {
-			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-				Role: model.AdminType,
-			}})
-		})
-
-		lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
-		lectureHallMock.
-			EXPECT().
-			DeleteLectureHall(lectureHallId).
-			Return(errors.New("")).
-			AnyTimes()
-
-		configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
-
-		c.Request, _ = http.NewRequest(http.MethodDelete,
-			fmt.Sprintf("/api/lectureHall/%d", lectureHallId), nil)
-		r.ServeHTTP(w, c.Request)
-
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
-	})
-
-	t.Run("DELETE[success]", func(t *testing.T) {
-		lectureHallId := uint(1)
-
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
-
-		r.Use(func(c *gin.Context) {
-			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-				Role: model.AdminType,
-			}})
-		})
-
-		lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
-		lectureHallMock.
-			EXPECT().
-			DeleteLectureHall(lectureHallId).
-			Return(nil).
-			AnyTimes()
-
-		configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
-
-		c.Request, _ = http.NewRequest(http.MethodDelete,
-			fmt.Sprintf("/api/lectureHall/%d", lectureHallId), nil)
-		r.ServeHTTP(w, c.Request)
-
-		assert.Equal(t, http.StatusOK, w.Code)
 	})
 }
