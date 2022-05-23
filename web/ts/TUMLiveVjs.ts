@@ -4,6 +4,8 @@ import videojs from "video.js";
 import airplay from "@silvermine/videojs-airplay";
 import dom = videojs.dom;
 
+import { handleHotkeys } from "./hotkeys";
+
 require("videojs-seek-buttons");
 require("videojs-hls-quality-selector");
 require("videojs-contrib-quality-levels");
@@ -45,16 +47,14 @@ export const initPlayer = function (
                 nativeTextTracks: false,
             },
             userActions: {
-                hotkeys: {},
+                hotkeys: handleHotkeys(),
             },
+            autoplay: autoplay,
         },
-        //nativeControlsForTouch: true,a
     );
     player.hlsQualitySelector();
-    if (autoplay) {
-        player.play();
-    }
     player.seekButtons({
+        // TODO user preferences, e.g. change to 5s
         backIndex: 0,
         forward: 15,
         back: 15,
@@ -95,7 +95,11 @@ export const initPlayer = function (
                 startIn: streamStartIn,
             });
         }
+        player.addChild("OverlayIcon", {});
     });
+    // handle hotkeys from anywhere on page
+    // TODO is this safe
+    document.addEventListener("keydown", (event) => player.handleKeyDown(event));
 };
 
 let skipTo = 0;
@@ -346,6 +350,45 @@ export class StartInOverlay extends Component {
     }
 }
 
+export class OverlayIcon extends Component {
+    private removeIconTimeout;
+    private readonly removeIconAfter;
+    private wrapper;
+
+    constructor(player, options) {
+        super(player, options);
+        this.removeIconAfter = options.removeIconAfter ?? 3000;
+        this.setupEl_();
+    }
+
+    setupEl_() {
+        this.wrapper = dom.createEl("div", { className: "vjs-overlay-icon-wrapper" });
+        dom.appendContent(this.el(), this.wrapper);
+    }
+
+    createEl() {
+        return super.createEl("div", {
+            className: "vjs-overlay-icon-container",
+        });
+    }
+
+    showIcon(className) {
+        this.removeIcon();
+        this.setupEl_();
+
+        this.el().classList.add("vjs-overlay-icon-animate");
+        this.removeIconTimeout = setTimeout(() => this.removeIcon(), this.removeIconAfter);
+
+        dom.appendContent(this.wrapper, dom.createEl("i", { className }));
+    }
+
+    removeIcon() {
+        clearTimeout(this.removeIconTimeout);
+        dom.emptyEl(this.el());
+        this.el().classList.remove("vjs-overlay-icon-animate");
+    }
+}
+
 export function jumpTo(hours: number, minutes: number, seconds: number) {
     videojs("my-video").ready(() => {
         player.currentTime(toSeconds(hours, minutes, seconds));
@@ -422,4 +465,5 @@ videojs.registerPlugin("skipSilence", skipSilence);
 videojs.registerPlugin("watchProgress", watchProgress);
 videojs.registerComponent("Titlebar", Titlebar);
 videojs.registerComponent("StartInOverlay", StartInOverlay);
+videojs.registerComponent("OverlayIcon", OverlayIcon);
 airplay(videojs); //calls registerComponent internally
