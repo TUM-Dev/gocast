@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	campusonline "github.com/RBG-TUM/CAMPUSOnline"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/joschahenningsen/TUM-Live/dao"
@@ -12,6 +13,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/stretchr/testify/assert"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -356,5 +358,481 @@ func TestLectureHallsCRUD(t *testing.T) {
 
 			assert.Equal(t, http.StatusNotFound, w.Code)
 		})
+
+		t.Run("POST[UnsetDefaults returns error]", func(t *testing.T) {
+			lectureHallId := "1"
+			presetId := uint(3)
+
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+			body, _ := json.Marshal(struct {
+				PresetID uint `json:"presetID"`
+			}{presetId})
+
+			lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+			lectureHallMock.
+				EXPECT().
+				FindPreset(lectureHallId, fmt.Sprintf("%d", presetId)).
+				Return(model.CameraPreset{}, nil).
+				AnyTimes()
+			lectureHallMock.
+				EXPECT().
+				UnsetDefaults(gomock.Any()).
+				Return(errors.New("")).
+				AnyTimes()
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+
+			c.Request, _ = http.NewRequest(http.MethodPost,
+				fmt.Sprintf("/api/lectureHall/%s/defaultPreset", lectureHallId), bytes.NewBuffer(body))
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusInternalServerError, w.Code)
+		})
+
+		t.Run("POST[SavePreset returns error]", func(t *testing.T) {
+			lectureHallId := "1"
+			presetId := uint(3)
+
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+			body, _ := json.Marshal(struct {
+				PresetID uint `json:"presetID"`
+			}{presetId})
+
+			lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+
+			lectureHallMock.
+				EXPECT().
+				FindPreset(lectureHallId, fmt.Sprintf("%d", presetId)).
+				Return(model.CameraPreset{}, nil).
+				AnyTimes()
+
+			lectureHallMock.
+				EXPECT().
+				UnsetDefaults(lectureHallId).
+				Return(nil).
+				AnyTimes()
+
+			lectureHallMock.
+				EXPECT().
+				SavePreset(gomock.Any()).
+				Return(errors.New("")).
+				AnyTimes()
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+
+			c.Request, _ = http.NewRequest(http.MethodPost,
+				fmt.Sprintf("/api/lectureHall/%s/defaultPreset", lectureHallId), bytes.NewBuffer(body))
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusInternalServerError, w.Code)
+		})
+
+		t.Run("POST[success]", func(t *testing.T) {
+			lectureHallId := "1"
+			presetId := uint(3)
+
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+			body, _ := json.Marshal(struct {
+				PresetID uint `json:"presetID"`
+			}{presetId})
+
+			lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+
+			lectureHallMock.
+				EXPECT().
+				FindPreset(lectureHallId, fmt.Sprintf("%d", presetId)).
+				Return(model.CameraPreset{}, nil).
+				AnyTimes()
+
+			lectureHallMock.
+				EXPECT().
+				UnsetDefaults(lectureHallId).
+				Return(nil).
+				AnyTimes()
+
+			lectureHallMock.
+				EXPECT().
+				SavePreset(model.CameraPreset{IsDefault: true}).
+				Return(nil).
+				AnyTimes()
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+
+			c.Request, _ = http.NewRequest(http.MethodPost,
+				fmt.Sprintf("/api/lectureHall/%s/defaultPreset", lectureHallId), bytes.NewBuffer(body))
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusOK, w.Code)
+		})
+	})
+}
+
+func TestCourseImport(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("/course-schedule", func(t *testing.T) {
+		t.Run("Get[Invalid form body]", func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			query := "?;=a"
+
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
+
+			// Using a semicolon makes ParseForm() return an error
+			c.Request, _ = http.NewRequest(http.MethodGet, "/api/course-schedule"+query, nil)
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
+		})
+
+		t.Run("Get[Invalid range]", func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			query := "?range=1 to"
+
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
+
+			c.Request, _ = http.NewRequest(http.MethodGet, "/api/course-schedule"+query, nil)
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
+		})
+
+		t.Run("Get[Invalid from in range]", func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			query := "?range=123 to 2022-05-23"
+
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
+
+			c.Request, _ = http.NewRequest(http.MethodGet, "/api/course-schedule"+query, nil)
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
+		})
+
+		t.Run("Get[Invalid to in range]", func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			query := "?range=2022-05-23 to 123"
+
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
+
+			c.Request, _ = http.NewRequest(http.MethodGet, "/api/course-schedule"+query, nil)
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
+		})
+
+		t.Run("Get[Invalid department]", func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			query := "?range=2022-05-23 to 2022-05-24&department=Ap"
+
+			r.Use(func(c *gin.Context) {
+				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}})
+			})
+
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
+
+			c.Request, _ = http.NewRequest(http.MethodGet, "/api/course-schedule"+query, nil)
+			r.ServeHTTP(w, c.Request)
+
+			assert.Equal(t, http.StatusBadRequest, w.Code)
+		})
+	})
+
+	t.Run("/course-schedule/:year/:term", func(t *testing.T) {
+		// importReq taken from courseimport.go
+		first := func(a interface{}, b interface{}) interface{} {
+			return a
+		}
+		type importReq struct {
+			Courses []campusonline.Course `json:"courses"`
+			OptIn   bool                  `json:"optIn"`
+		}
+		testData := []campusonline.Course{
+			{Title: "GBS",
+				Slug:   "GBS",
+				Import: false,
+				Events: []campusonline.Event{{RoomName: "1"}},
+				/*Contacts: []campusonline.ContactPerson{
+					{FirstName: "Bernhard", LastName: "Bauer", Email: "bb@xyz.com", MainContact: false},
+					{FirstName: "Hansi", LastName: "Huber", Email: "hh@xyz.com", MainContact: true},
+				},*/
+			},
+			{Title: "GDB",
+				Slug:   "GDB",
+				Import: true,
+				Events: []campusonline.Event{{RoomName: "1"}},
+			},
+			{Title: "FPV",
+				Slug:   "FPV",
+				Import: true,
+				Events: []campusonline.Event{{RoomName: "1"}},
+			},
+		}
+		testCases := []struct {
+			description    string
+			method         string
+			url            string
+			daoWrapper     dao.DaoWrapper
+			tumLiveContext *tools.TUMLiveContext
+			body           io.Reader
+			expectedCode   int
+		}{
+			{description: "POST [no context]",
+				method:         http.MethodPost,
+				url:            "/api/course-schedule/2022/S",
+				daoWrapper:     dao.DaoWrapper{},
+				tumLiveContext: nil,
+				body:           nil,
+				expectedCode:   http.StatusInternalServerError},
+			{description: "POST [invalid body]",
+				method:     http.MethodPost,
+				url:        "/api/course-schedule/2022/S",
+				daoWrapper: dao.DaoWrapper{},
+				tumLiveContext: &tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}},
+				body:         nil,
+				expectedCode: http.StatusBadRequest},
+			{description: "POST [invalid year]",
+				method:     http.MethodPost,
+				url:        "/api/course-schedule/ABC/S",
+				daoWrapper: dao.DaoWrapper{},
+				tumLiveContext: &tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}},
+				body: bytes.NewBuffer(first(json.Marshal(importReq{
+					Courses: []campusonline.Course{
+						{Title: "GBS", Slug: "GBS", Import: true},
+						{Title: "GDB", Slug: "GDB", Import: true},
+						{Title: "FPV", Slug: "FPV", Import: true},
+					},
+					OptIn: false,
+				})).([]byte)),
+				expectedCode: http.StatusBadRequest},
+			{description: "POST [invalid term]",
+				method:     http.MethodPost,
+				url:        "/api/course-schedule/2022/T",
+				daoWrapper: dao.DaoWrapper{},
+				tumLiveContext: &tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}},
+				body: bytes.NewBuffer(first(json.Marshal(importReq{
+					Courses: testData,
+					OptIn:   false,
+				})).([]byte)),
+				expectedCode: http.StatusBadRequest},
+			{description: "POST [CreateCourse returns error]",
+				method: http.MethodPost,
+				url:    "/api/course-schedule/2022/S",
+				daoWrapper: dao.DaoWrapper{
+					LectureHallsDao: func() dao.LectureHallsDao {
+						lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+						lectureHallMock.
+							EXPECT().
+							GetLectureHallByPartialName("1").
+							Return(model.LectureHall{}, nil).
+							AnyTimes()
+						return lectureHallMock
+					}(),
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							CreateCourse(gomock.Any(), gomock.Any(), gomock.Any()).
+							Return(errors.New("error")).AnyTimes()
+						coursesMock.
+							EXPECT().
+							AddAdminToCourse(gomock.Any(), gomock.Any()).
+							Return(nil).AnyTimes()
+						return coursesMock
+					}(),
+				},
+				tumLiveContext: &tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}},
+				body: bytes.NewBuffer(first(json.Marshal(importReq{
+					Courses: testData,
+					OptIn:   false,
+				})).([]byte)),
+				expectedCode: http.StatusInternalServerError},
+			{description: "POST [GetLectureHallByPartialName returns error]",
+				method: http.MethodPost,
+				url:    "/api/course-schedule/2022/S",
+				daoWrapper: dao.DaoWrapper{
+					LectureHallsDao: func() dao.LectureHallsDao {
+						lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+						lectureHallMock.
+							EXPECT().
+							GetLectureHallByPartialName("1").
+							Return(model.LectureHall{}, errors.New("error")).
+							AnyTimes()
+						return lectureHallMock
+					}(),
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							CreateCourse(gomock.Any(), gomock.Any(), gomock.Any()).
+							Return(nil).AnyTimes()
+						coursesMock.
+							EXPECT().
+							AddAdminToCourse(gomock.Any(), gomock.Any()).
+							Return(nil).AnyTimes()
+						return coursesMock
+					}(),
+				},
+				tumLiveContext: &tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}},
+				body: bytes.NewBuffer(first(json.Marshal(importReq{
+					Courses: testData,
+					OptIn:   false,
+				})).([]byte)),
+				expectedCode: http.StatusOK},
+			{description: "POST [AddAdminToCourse returns error]",
+				method: http.MethodPost,
+				url:    "/api/course-schedule/2022/S",
+				daoWrapper: dao.DaoWrapper{
+					LectureHallsDao: func() dao.LectureHallsDao {
+						lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+						lectureHallMock.
+							EXPECT().
+							GetLectureHallByPartialName("1").
+							Return(model.LectureHall{}, nil).
+							AnyTimes()
+						return lectureHallMock
+					}(),
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							CreateCourse(gomock.Any(), gomock.Any(), gomock.Any()).
+							Return(nil).AnyTimes()
+						coursesMock.
+							EXPECT().
+							AddAdminToCourse(gomock.Any(), gomock.Any()).
+							Return(errors.New("error")).AnyTimes()
+						return coursesMock
+					}(),
+				},
+				tumLiveContext: &tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}},
+				body: bytes.NewBuffer(first(json.Marshal(importReq{
+					Courses: testData,
+					OptIn:   false,
+				})).([]byte)),
+				expectedCode: http.StatusOK},
+			{description: "POST [success]",
+				method: http.MethodPost,
+				url:    "/api/course-schedule/2022/S",
+				daoWrapper: dao.DaoWrapper{
+					LectureHallsDao: func() dao.LectureHallsDao {
+						lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+						lectureHallMock.
+							EXPECT().
+							GetLectureHallByPartialName("1").
+							Return(model.LectureHall{}, nil).
+							AnyTimes()
+						return lectureHallMock
+					}(),
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							CreateCourse(gomock.Any(), gomock.Any(), gomock.Any()).
+							Return(nil).AnyTimes()
+						coursesMock.
+							EXPECT().
+							AddAdminToCourse(gomock.Any(), gomock.Any()).
+							Return(nil).AnyTimes()
+						return coursesMock
+					}(),
+				},
+				tumLiveContext: &tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}},
+				body: bytes.NewBuffer(first(json.Marshal(importReq{
+					Courses: testData,
+					OptIn:   false,
+				})).([]byte)),
+				expectedCode: http.StatusOK},
+		}
+
+		for _, testCase := range testCases {
+			t.Run(testCase.description, func(t *testing.T) {
+				w := httptest.NewRecorder()
+				c, r := gin.CreateTestContext(w)
+
+				if testCase.tumLiveContext != nil {
+					r.Use(func(c *gin.Context) {
+						c.Set("TUMLiveContext", *testCase.tumLiveContext)
+					})
+				}
+
+				configGinLectureHallApiRouter(r, testCase.daoWrapper)
+
+				c.Request, _ = http.NewRequest(testCase.method, testCase.url, testCase.body)
+				r.ServeHTTP(w, c.Request)
+
+				assert.Equal(t, testCase.expectedCode, w.Code)
+			})
+		}
 	})
 }
