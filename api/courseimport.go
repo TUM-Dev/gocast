@@ -74,7 +74,6 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 
 		var streams []model.Stream
 		for _, event := range courseReq.Events {
-			fmt.Println(event.RoomName)
 			lectureHall, err := r.LectureHallsDao.GetLectureHallByPartialName(event.RoomName)
 			if err != nil {
 				log.WithError(err).Error("No room found for request")
