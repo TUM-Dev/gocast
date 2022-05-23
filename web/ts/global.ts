@@ -192,6 +192,11 @@ export function timer(expiry: string, leadingZero: boolean) {
     };
 }
 
+// getLoginReferrer returns "/" if document.referrer === "http://<hostname>:<port>/login" and document.referrer if not
+export function getLoginReferrer(): string {
+    return document.referrer === window.location.origin + "/login" ? window.location.origin + "/" : document.referrer;
+}
+
 window.onload = function () {
     initHiddenCourses();
 };
