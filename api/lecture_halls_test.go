@@ -490,7 +490,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 
 func TestCourseImport(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-
+	tools.Cfg.Campus.Tokens = []string{"123", "456"} // Set tokens so that access at [1] doesn't panic
 	t.Run("/course-schedule", func(t *testing.T) {
 		testCases := testutils.TestCases{
 			"GET[Invalid form body]": testutils.TestCase{
@@ -500,7 +500,6 @@ func TestCourseImport(t *testing.T) {
 				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
 					Role: model.AdminType,
 				}},
-				Body:         nil,
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"GET[Invalid range]": testutils.TestCase{
@@ -510,7 +509,6 @@ func TestCourseImport(t *testing.T) {
 				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
 					Role: model.AdminType,
 				}},
-				Body:         nil,
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"GET[Invalid from in range]": testutils.TestCase{
@@ -520,7 +518,6 @@ func TestCourseImport(t *testing.T) {
 				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
 					Role: model.AdminType,
 				}},
-				Body:         nil,
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"GET[Invalid to in range]": testutils.TestCase{
@@ -530,7 +527,6 @@ func TestCourseImport(t *testing.T) {
 				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
 					Role: model.AdminType,
 				}},
-				Body:         nil,
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"Get[Invalid department]": testutils.TestCase{
@@ -540,7 +536,6 @@ func TestCourseImport(t *testing.T) {
 				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
 					Role: model.AdminType,
 				}},
-				Body:         nil,
 				ExpectedCode: http.StatusBadRequest,
 			},
 		}
