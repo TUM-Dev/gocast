@@ -44,7 +44,7 @@
     "nouislider": "^15.6.0",
     "video.js": "^7.18.1",
     "videojs-contrib-quality-levels": "^2.1.0",
-    "videojs-hls-quality-selector": "^1.1.4",
+    "videojs-hls-quality-selector": "github:chrisboustead/videojs-hls-quality-selector#pull/55/head",
     "videojs-seek-buttons": "^2.2.1"
   },
   "devDependencies": {
