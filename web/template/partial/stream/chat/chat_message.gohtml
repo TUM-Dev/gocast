@@ -2,9 +2,11 @@
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.ChatData*/ -}}
     {{$moderatedChat := .IndexData.TUMLiveContext.Course.ModeratedChatEnabled}}
     <template x-for="m in c.messages" :key="m.ID">
-        <div class="relative py-2 px-2"
-             :class="c.current.replyTo === m.ID && 'ring ring-blue-500/50'"
-             x-data="{ showReplies: false, m: m }" x-show="!m.deleted && m.replyTo && !m.replyTo.Valid">
+        <div class="relative py-2 px-2 $m.ID message"
+             :class="{'ring ring-blue-500/50' : c.current.replyTo === m.ID, 'opacity-75' : isGrayedOut === true}"
+             x-effect="isGrayedOut = m.grayedOutProxy.isGrayedOut"
+             x-data="{ showReplies: false, m: m, isGrayedOut: false}"
+             x-show="!m.deleted && m.replyTo && !m.replyTo.Valid">
             <!-- name and message -->
             <p class="group text-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded">
                 <span x-show="!m.visible && !c.admin" class="text-xs text-5 font-light block mb-1">

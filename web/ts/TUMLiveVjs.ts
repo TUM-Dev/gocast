@@ -276,6 +276,12 @@ export const watchProgress = function (streamID: number, lastProgress: number, l
     });
 };
 
+export const registerTimeWatcher = function (callBack : (currentPlayerTime: number) => void){
+    player.on("timeupdate", ()=>{
+        callBack(player.currentTime());
+    });
+}
+
 const Component = videojs.getComponent("Component");
 
 export class Titlebar extends Component {

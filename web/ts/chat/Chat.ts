@@ -2,6 +2,7 @@ import { NewChatMessage } from "./NewChatMessage";
 import { ChatUserList } from "./ChatUserList";
 import { EmojiList } from "./EmojiList";
 import { Poll } from "./Poll";
+import {registerTimeWatcher} from "../TUMLiveVjs";
 
 export class Chat {
     readonly userId: number;
@@ -28,6 +29,7 @@ export class Chat {
                         "</span>",
                 );
             }
+            m.grayedOutProxy = Alpine.reactive<GrayedOutProxy>({isGrayedOut:false} )
             return m;
         },
     ];
@@ -44,6 +46,8 @@ export class Chat {
         this.userId = userId;
         this.userName = userName;
         this.poll = new Poll(streamId);
+        this.greyOutMessagesAfterPlayerTime =  this.greyOutMessagesAfterPlayerTime.bind(this);
+        registerTimeWatcher(this.greyOutMessagesAfterPlayerTime);
     }
 
     async loadMessages() {
@@ -85,12 +89,10 @@ export class Chat {
     }
 
     onResolve(e) {
-        // @ts-ignore
         this.messages.find((m) => m.ID === e.detail.resolve).resolved = true;
     }
 
     onReply(e) {
-        // @ts-ignore
         this.messages.find((m) => m.ID === e.detail.replyTo.Int64).replies.push(e.detail);
     }
 
@@ -176,6 +178,10 @@ export class Chat {
         }
     }
 
+    greyOutMessagesAfterPlayerTime(playerTime: number) : void {
+           Error("Not implemented Exception");
+    }
+
     private addMessage(m: ChatMessage) {
         this.preprocessors.forEach((f) => (m = f(m)));
         this.messages.push(m);
@@ -205,10 +211,15 @@ type ChatMessage = {
     replyTo: object; // e.g.{Int64:0, Valid:false}
 
     addressedTo: number[];
-    resolved: false;
+    resolved: boolean;
     visible: true;
+    grayedOutProxy: GrayedOutProxy;
 
     CreatedAt: string;
     DeletedAt: string;
     UpdatedAt: string;
 };
+
+type GrayedOutProxy = {
+    isGrayedOut: boolean;
+}
