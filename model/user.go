@@ -65,6 +65,52 @@ func (u User) GetPreferredName() string {
 	return u.Name
 }
 
+type PlaybackSpeedSetting struct {
+	Speed   float32 `json:"speed"`
+	Enabled bool    `json:"enabled"`
+}
+
+type PlaybackSpeedSettings []PlaybackSpeedSetting
+
+func (s PlaybackSpeedSettings) GetEnabled() (res []float32) {
+	for _, setting := range s {
+		if setting.Enabled {
+			res = append(res, setting.Speed)
+		}
+	}
+	return res
+}
+
+var defaultPlaybackSpeeds = PlaybackSpeedSettings{
+	{0.25, false},
+	{0.5, true},
+	{0.75, true},
+	{1, true},
+	{1.25, true},
+	{1.5, true},
+	{1.75, true},
+	{2, true},
+	{2.5, false},
+	{3, false},
+	{3.5, false},
+}
+
+func (u *User) GetPlaybackSpeeds() (speeds PlaybackSpeedSettings) {
+	if u == nil {
+		return defaultPlaybackSpeeds
+	}
+	for _, setting := range u.Settings {
+		if setting.Type == CustomPlaybackSpeeds {
+			err := json.Unmarshal([]byte(setting.Value), &speeds)
+			if err != nil {
+				break
+			}
+			return speeds
+		}
+	}
+	return defaultPlaybackSpeeds
+}
+
 // GetPreferredGreeting returns the preferred greeting of the user if set, otherwise Moin
 func (u User) GetPreferredGreeting() string {
 	for _, setting := range u.Settings {
@@ -145,9 +191,9 @@ func (u *User) CoursesForSemester(year int, term string, context context.Context
 }
 
 var (
-	ErrInvalidHash                     = errors.New("the encoded hash is not in the correct format")
-	ErrIncompatibleVersion             = errors.New("incompatible version of argon2")
-	p                      argonParams = argonParams{
+	ErrInvalidHash         = errors.New("the encoded hash is not in the correct format")
+	ErrIncompatibleVersion = errors.New("incompatible version of argon2")
+	p                      = argonParams{
 		memory:      64 * 1024,
 		iterations:  3,
 		parallelism: 2,
