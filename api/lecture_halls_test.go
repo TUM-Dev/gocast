@@ -544,25 +544,7 @@ func TestCourseImport(t *testing.T) {
 				ExpectedCode: http.StatusBadRequest,
 			},
 		}
-		for name, testCase := range testCases {
-			t.Run(name, func(t *testing.T) {
-				w := httptest.NewRecorder()
-				c, r := gin.CreateTestContext(w)
-
-				if testCase.TumLiveContext != nil {
-					r.Use(func(c *gin.Context) {
-						c.Set("TUMLiveContext", *testCase.TumLiveContext)
-					})
-				}
-
-				configGinLectureHallApiRouter(r, testCase.DaoWrapper)
-
-				c.Request, _ = http.NewRequest(testCase.Method, testCase.Url, testCase.Body)
-				r.ServeHTTP(w, c.Request)
-
-				assert.Equal(t, testCase.ExpectedCode, w.Code)
-			})
-		}
+		testCases.Run(t, configGinLectureHallApiRouter)
 	})
 
 	t.Run("/course-schedule/:year/:term", func(t *testing.T) {
@@ -775,24 +757,6 @@ func TestCourseImport(t *testing.T) {
 				ExpectedCode: http.StatusOK},
 		}
 
-		for name, testCase := range testCases {
-			t.Run(name, func(t *testing.T) {
-				w := httptest.NewRecorder()
-				c, r := gin.CreateTestContext(w)
-
-				if testCase.TumLiveContext != nil {
-					r.Use(func(c *gin.Context) {
-						c.Set("TUMLiveContext", *testCase.TumLiveContext)
-					})
-				}
-
-				configGinLectureHallApiRouter(r, testCase.DaoWrapper)
-
-				c.Request, _ = http.NewRequest(testCase.Method, testCase.Url, testCase.Body)
-				r.ServeHTTP(w, c.Request)
-
-				assert.Equal(t, testCase.ExpectedCode, w.Code)
-			})
-		}
+		testCases.Run(t, configGinLectureHallApiRouter)
 	})
 }
