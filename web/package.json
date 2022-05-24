@@ -41,10 +41,11 @@
     "ical.js": "^1.5.0",
     "mini-css-extract-plugin": "^2.6.0",
     "moment": "^2.29.3",
+    "node-sass": "^7.0.1",
     "nouislider": "^15.6.0",
     "video.js": "^7.18.1",
     "videojs-contrib-quality-levels": "^2.1.0",
-    "videojs-hls-quality-selector": "github:chrisboustead/videojs-hls-quality-selector#pull/55/head",
+    "videojs-hls-quality-selector": "github:chrisboustead/videojs-hls-quality-selector",
     "videojs-seek-buttons": "^2.2.1"
   },
   "devDependencies": {
