@@ -359,3 +359,56 @@ func TestUsersCRUD(t *testing.T) {
 		testCases.Run(t, configGinUsersRouter)
 	})
 }
+
+func TestSearchUserForCourse(t *testing.T) {
+	t.Run("/searchUserForCourse", func(t *testing.T) {
+		users := []model.User{
+			{
+				Model: gorm.Model{ID: 1},
+				Name:  "Hansi",
+				Email: sql.NullString{String: "hansi@tum.de", Valid: true},
+				Role:  model.StudentType,
+			},
+			{
+				Model: gorm.Model{ID: 2},
+				Name:  "Hannes",
+				Email: sql.NullString{String: "hannes@tum.de", Valid: true},
+				Role:  model.StudentType,
+			},
+		}
+		response := testutils.First(json.Marshal([]userForLecturerDto{
+			{
+				ID:       users[0].ID,
+				Name:     users[0].Name,
+				LastName: users[0].LastName,
+				Login:    users[0].GetLoginString(),
+			},
+			{
+				ID:       users[1].ID,
+				Name:     users[1].Name,
+				LastName: users[1].LastName,
+				Login:    users[1].GetLoginString(),
+			},
+		})).([]byte)
+		testCases := testutils.TestCases{
+			"GET[success]": testutils.TestCase{
+				Method: http.MethodGet,
+				Url:    "/api/searchUserForCourse?q=han",
+				DaoWrapper: dao.DaoWrapper{
+					UsersDao: func() dao.UsersDao {
+						usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
+						usersMock.EXPECT().SearchUser("han").Return(users, nil).AnyTimes()
+						return usersMock
+					}(),
+				},
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
+					Role: model.LecturerType,
+				}},
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: response,
+			},
+		}
+
+		testCases.Run(t, configGinUsersRouter)
+	})
+}
