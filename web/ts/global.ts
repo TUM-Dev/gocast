@@ -192,9 +192,21 @@ export function timer(expiry: string, leadingZero: boolean) {
     };
 }
 
-// getLoginReferrer returns "/" if document.referrer === "http://<hostname>:<port>/login" and document.referrer if not
+// getLoginReferrer returns "/" if document.referrer === "http[s]://<hostname>:<port>/login" and document.referrer if not
 export function getLoginReferrer(): string {
-    return document.referrer === window.location.origin + "/login" ? window.location.origin + "/" : document.referrer;
+    const lastLocation = document.referrer.split("/"),
+        protocol = lastLocation[0],
+        host = lastLocation[2];
+
+    if (
+        window.location.protocol !== protocol ||
+        window.location.host !== host ||
+        document.referrer === window.location.origin + "/login"
+    ) {
+        return window.location.origin + "/";
+    }
+
+    return document.referrer;
 }
 
 window.onload = function () {
