@@ -30,10 +30,12 @@ export class LectureList {
 
 class LectureFile {
     readonly id: number;
+    readonly fileType: number;
     readonly friendlyName: string;
 
-    constructor({ id, friendlyName }) {
+    constructor({ id, fileType, friendlyName }) {
         this.id = id;
+        this.fileType = fileType;
         this.friendlyName = friendlyName;
     }
 }
@@ -63,7 +65,6 @@ export class Lecture {
     readonly isRecording: boolean;
     readonly isPast: boolean;
     readonly hasStats: boolean;
-    readonly files: LectureFile[];
 
     name: string;
     description: string;
@@ -77,6 +78,7 @@ export class Lecture {
     isSaving = false;
     isDeleted = false;
     lastErrors: string[] = [];
+    files: LectureFile[];
 
     clone() {
         return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
@@ -255,6 +257,77 @@ export class Lecture {
 
             return res;
         }
+    }
+
+    getDownloads() {
+        if (this.files === undefined || this.files === null) {
+            return [];
+        }
+        return this.files.filter((f: LectureFile) => f.fileType === 1);
+    }
+
+    async deleteFile(fileId: number) {
+        await fetch(`/api/stream/${this.lectureId}/files/${fileId}`, {
+            method: "DELETE",
+        })
+            .catch((err) => console.log(err))
+            .then(() => {
+                this.files = this.files.filter((f) => f.id !== fileId);
+            });
+    }
+
+    onFileDrop(e) {
+        e.preventDefault();
+        if (e.dataTransfer.items) {
+            const kind = e.dataTransfer.items[0].kind;
+            switch (kind) {
+                case "file": {
+                    this.postFile(e.dataTransfer.items[0].getAsFile());
+                    break;
+                }
+                case "string": {
+                    this.postFileAsURL(e.dataTransfer.getData("URL"));
+                }
+            }
+        }
+    }
+
+    hasAttachments(): boolean {
+        if (this.files === undefined || this.files === null) {
+            return false;
+        }
+        const attachments = this.files.filter((f) => f.fileType !== 1);
+        return attachments.length > 0;
+    }
+
+    private async postFile(file) {
+        const formData = new FormData();
+        formData.append("file", file);
+        await fetch(`/api/stream/${this.lectureId}/files?type=file`, {
+            method: "POST",
+            body: formData,
+        }).then((res) =>
+            res.json().then((id) => {
+                const friendlyName = file.name;
+                const fileType = 2;
+                this.files.push(new LectureFile({ id, fileType, friendlyName }));
+            }),
+        );
+    }
+
+    private async postFileAsURL(fileURL) {
+        const formData = new FormData();
+        formData.append("file_url", fileURL);
+        await fetch(`/api/stream/${this.lectureId}/files?type=url`, {
+            method: "POST",
+            body: formData,
+        }).then((res) =>
+            res.json().then((id) => {
+                const friendlyName = fileURL.substring(fileURL.lastIndexOf("/") + 1);
+                const fileType = 2;
+                this.files.push(new LectureFile({ id, fileType, friendlyName }));
+            }),
+        );
     }
 }
 

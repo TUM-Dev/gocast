@@ -34,6 +34,20 @@ func (m *MockFileDao) EXPECT() *MockFileDaoMockRecorder {
 	return m.recorder
 }
 
+// DeleteFile mocks base method.
+func (m *MockFileDao) DeleteFile(id uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteFile", id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteFile indicates an expected call of DeleteFile.
+func (mr *MockFileDaoMockRecorder) DeleteFile(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFile", reflect.TypeOf((*MockFileDao)(nil).DeleteFile), id)
+}
+
 // GetFileById mocks base method.
 func (m *MockFileDao) GetFileById(id string) (model.File, error) {
 	m.ctrl.T.Helper()
@@ -47,4 +61,32 @@ func (m *MockFileDao) GetFileById(id string) (model.File, error) {
 func (mr *MockFileDaoMockRecorder) GetFileById(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileById", reflect.TypeOf((*MockFileDao)(nil).GetFileById), id)
+}
+
+// NewFile mocks base method.
+func (m *MockFileDao) NewFile(f *model.File) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NewFile", f)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// NewFile indicates an expected call of NewFile.
+func (mr *MockFileDaoMockRecorder) NewFile(f interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewFile", reflect.TypeOf((*MockFileDao)(nil).NewFile), f)
+}
+
+// UpdateFile mocks base method.
+func (m *MockFileDao) UpdateFile(id string, f *model.File) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateFile", id, f)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateFile indicates an expected call of UpdateFile.
+func (mr *MockFileDaoMockRecorder) UpdateFile(id, f interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFile", reflect.TypeOf((*MockFileDao)(nil).UpdateFile), id, f)
 }

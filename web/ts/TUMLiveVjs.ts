@@ -11,6 +11,10 @@ require("videojs-contrib-quality-levels");
 const Button = videojs.getComponent("Button");
 let player;
 
+export function getPlayer() {
+    return player;
+}
+
 /**
  * Initialize the player and bind it to a DOM object my-video
  */

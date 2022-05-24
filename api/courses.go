@@ -45,7 +45,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	adminOfCourseGroup.POST("/deleteLectures", routes.deleteLectures)
 	adminOfCourseGroup.POST("/renameLecture/:streamID", routes.renameLecture)
 	adminOfCourseGroup.POST("/updateLectureSeries/:streamID", routes.updateLectureSeries)
-	adminOfCourseGroup.POST("/updateDescription/:streamID", routes.updateDescription)
+	adminOfCourseGroup.PUT("/updateDescription/:streamID", routes.updateDescription)
 	adminOfCourseGroup.DELETE("/deleteLectureSeries/:streamID", routes.deleteLectureSeries)
 	adminOfCourseGroup.POST("/addUnit", routes.addUnit)
 	adminOfCourseGroup.POST("/submitCut", routes.submitCut)
@@ -618,23 +618,7 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 			log.WithError(err).Error("Can't create folder for premiere")
 			return
 		}
-		//// Copy file to shared storage
-		//file, err := os.Create(fmt.Sprintf("%s/%s", premiereFolder, premiereFileName))
-		//if err != nil {
-		//	log.WithError(err).Error("Can't create file for premiere")
-		//	c.AbortWithStatus(http.StatusInternalServerError)
-		//	return
-		//}
-		//reqFile, _ := req.File.Open()
-		//_, err = io.Copy(file, reqFile)
-		//if err != nil {
-		//	log.WithError(err).Error("Can't write file for premiere")
-		//	c.AbortWithStatus(http.StatusInternalServerError)
-		//}
-		//_ = file.Close()
 	}
-	streamKey := uuid.NewV4().String()
-	streamKey = strings.ReplaceAll(streamKey, "-", "")
 	playlist := ""
 	if req.Vodup {
 		err := tools.UploadLRZ(fmt.Sprintf("%s/%s", premiereFolder, premiereFileName))
@@ -652,6 +636,9 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 
 	for _, date := range req.DateSeries {
 		endTime := date.Add(time.Minute * time.Duration(req.Duration))
+
+		streamKey := uuid.NewV4().String()
+		streamKey = strings.ReplaceAll(streamKey, "-", "")
 
 		lecture := model.Stream{
 			Name:          req.Title,
