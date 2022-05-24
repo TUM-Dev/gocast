@@ -80,9 +80,16 @@ func sendFile(c *gin.Context, file model.File) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
+
+	var filename string
+	if file.Filename != "" {
+		filename = file.Filename
+	} else {
+		filename = file.GetDownloadFileName()
+	}
 	c.Header("Content-Description", "File Transfer")
 	c.Header("Content-Transfer-Encoding", "binary")
-	c.Header("Content-Disposition", "attachment; filename="+file.GetDownloadFileName())
+	c.Header("Content-Disposition", "attachment; filename="+filename)
 	c.Header("Content-Type", "application/octet-stream")
 	c.Header("Content-Length", fmt.Sprintf("%d", stat.Size()))
 	c.File(file.Path)

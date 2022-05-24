@@ -11,15 +11,23 @@ import (
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/bot"
+	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 )
 
+const (
+	MAX_FILE_SIZE = 1000 * 1000 * 50 // 50 MB
+)
+
 func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := streamRoutes{daoWrapper}
+
 	// group for api users with token
 	tokenG := router.Group("/")
 	tokenG.Use(tools.AdminToken(daoWrapper))
@@ -40,6 +48,9 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	g := router.Group("/")
 	g.Use(tools.InitStream(daoWrapper))
 	g.GET("/api/stream/:streamID/sections", routes.getVideoSections)
+
+	adminG.POST("/api/stream/:streamID/files", routes.newAttachment)
+	adminG.DELETE("/api/stream/:streamID/files/:fid", routes.deleteAttachment)
 }
 
 type streamRoutes struct {
@@ -288,5 +299,90 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 	err = r.VideoSectionDao.Delete(uint(id))
 	if err != nil {
 		log.WithError(err).Error("Can't delete video-section")
+	}
+}
+
+func (r streamRoutes) newAttachment(c *gin.Context) {
+	foundContext, _ := c.Get("TUMLiveContext")
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	stream := *tumLiveContext.Stream
+	course := *tumLiveContext.Course
+
+	var path string
+	var filename string
+
+	switch c.Query("type") {
+	case "file":
+		file, err := c.FormFile("file")
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, "missing form parameter 'file'")
+			return
+		}
+
+		if file.Size > MAX_FILE_SIZE {
+			c.AbortWithStatusJSON(http.StatusBadRequest, "file too large (limit is 50mb)")
+			return
+		}
+
+		filename = file.Filename
+		fileUuid := uuid.NewV1()
+
+		filesFolder := fmt.Sprintf("%s/%s.%d/%s.%s/files",
+			tools.Cfg.Paths.Mass,
+			course.Name, course.Year,
+			course.Name, course.TeachingTerm)
+		path = fmt.Sprintf("%s/%s%s", filesFolder, fileUuid, filepath.Ext(file.Filename))
+
+		err = os.MkdirAll(filesFolder, os.ModePerm)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't create folder: "+filesFolder)
+			return
+		}
+
+		if err = c.SaveUploadedFile(file, path); err != nil {
+			log.WithError(err).Error("could not save file with path: " + path)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, "could not save file with path: "+path)
+			return
+		}
+	case "url":
+		path = c.PostForm("file_url")
+		_, filename = filepath.Split(path)
+		if path == "" {
+			c.AbortWithStatusJSON(http.StatusBadRequest, "missing form parameter 'file_url'")
+			return
+		}
+	default:
+		c.AbortWithStatusJSON(http.StatusBadRequest, "missing query parameter 'type'")
+		return
+	}
+
+	file := model.File{StreamID: stream.ID, Path: path, Filename: filename, Type: model.FILETYPE_ATTACHMENT}
+	if r.FileDao.NewFile(&file) != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "could not save file in database")
+		return
+	}
+
+	c.JSON(http.StatusOK, file.ID)
+}
+
+func (r streamRoutes) deleteAttachment(c *gin.Context) {
+	toDelete, err := r.FileDao.GetFileById(c.Param("fid"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	if !toDelete.IsURL() {
+		err = os.Remove(toDelete.Path)
+		if err != nil {
+			log.WithError(err).Error("could not delete file with path: " + toDelete.Path)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+	}
+	err = r.FileDao.DeleteFile(toDelete.ID)
+	if err != nil {
+		log.WithError(err).Error("could not delete file from database")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 }
