@@ -3,10 +3,11 @@ const settingsAPIBaseURL = "/api/users/settings";
 export enum UserSetting {
     Name = "name",
     Greeting = "greeting",
+    PlaybackSpeeds = "playbackSpeeds",
     EnableCast = "enableCast",
 }
 
-export function updatePreference(t: UserSetting, value: string|boolean): Promise<string> {
+export function updatePreference(t: UserSetting, value: string|boolean|number[]): Promise<string> {
     return fetch(`${settingsAPIBaseURL}/${t}`, {
         method: "POST",
         headers: {
