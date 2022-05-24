@@ -9,12 +9,13 @@ import (
 type TestCases map[string]TestCase
 
 type TestCase struct {
-	Method         string
-	Url            string
-	DaoWrapper     dao.DaoWrapper
-	TumLiveContext *tools.TUMLiveContext
-	Body           io.Reader
-	ExpectedCode   int
+	Method           string
+	Url              string
+	DaoWrapper       dao.DaoWrapper
+	TumLiveContext   *tools.TUMLiveContext
+	Body             io.Reader
+	ExpectedCode     int
+	ExpectedResponse []byte
 }
 
 func First(a interface{}, b interface{}) interface{} {
