@@ -8,6 +8,8 @@ import (
 
 const ASCII_LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVXYZ "
 
+type postprocess []func([]string) []string
+
 type KeywordExtractor interface {
 	Extract() ([]string, error)
 }
@@ -15,15 +17,20 @@ type KeywordExtractor interface {
 type ocrExtractor struct {
 	imageFiles []string
 	client     *gosseract.Client
+	pipeline   postprocess
 }
 
 func NewOcrExtractor(imageFiles []string) ocrExtractor {
 	client := gosseract.NewClient()
-	client.SetLanguage("eng")
-	client.SetWhitelist(ASCII_LETTERS)
+	_ = client.SetLanguage("eng")
+	_ = client.SetWhitelist(ASCII_LETTERS)
 	return ocrExtractor{
 		imageFiles: imageFiles,
 		client:     client,
+		pipeline: postprocess{
+			removeStopwords,
+			removeShortWords,
+		},
 	}
 }
 
@@ -38,16 +45,17 @@ func (e ocrExtractor) Extract() ([]string, error) {
 
 		// Replace newlines, split text into words
 		words := strings.Split(strings.Replace(text, "\n", "", -1), " ")
+		for _, processor := range e.pipeline {
+			words = processor(words)
+		}
 
-		clean := e.removeShortWords(e.removeStopwords(words))
-
-		unfiltered = append(unfiltered, clean...)
+		unfiltered = append(unfiltered, words...)
 	}
 	e.client.Close()
 	return unfiltered, nil
 }
 
-func (e ocrExtractor) removeStopwords(words []string) []string {
+func removeStopwords(words []string) []string {
 	res := make([]string, 0)
 	for _, word := range words {
 		clean := stopwords.CleanString(word, "en", false)
@@ -59,7 +67,7 @@ func (e ocrExtractor) removeStopwords(words []string) []string {
 	return res
 }
 
-func (e ocrExtractor) removeShortWords(words []string) []string {
+func removeShortWords(words []string) []string {
 	res := make([]string, 0)
 	for _, word := range words {
 		if len(word) > 2 {
