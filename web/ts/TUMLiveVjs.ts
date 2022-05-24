@@ -48,7 +48,7 @@ export const initPlayer = function (
         },
         //nativeControlsForTouch: true,a
     );
-    player.hlsQualitySelector();
+    //player.hlsQualitySelector();
     if (autoplay) {
         player.play();
     }
