@@ -12,8 +12,8 @@ import (
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/testutils"
 	"github.com/stretchr/testify/assert"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -492,113 +492,81 @@ func TestCourseImport(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	t.Run("/course-schedule", func(t *testing.T) {
-		t.Run("Get[Invalid form body]", func(t *testing.T) {
-			w := httptest.NewRecorder()
-			c, r := gin.CreateTestContext(w)
-
-			query := "?;=a"
-
-			r.Use(func(c *gin.Context) {
-				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+		testCases := testutils.TestCases{
+			"GET[Invalid form body]": testutils.TestCase{
+				Method:     http.MethodGet,
+				Url:        "/api/course-schedule?;=a", // Using a semicolon makes ParseForm() return an error
+				DaoWrapper: dao.DaoWrapper{},
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
 					Role: model.AdminType,
-				}})
-			})
-
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
-
-			// Using a semicolon makes ParseForm() return an error
-			c.Request, _ = http.NewRequest(http.MethodGet, "/api/course-schedule"+query, nil)
-			r.ServeHTTP(w, c.Request)
-
-			assert.Equal(t, http.StatusBadRequest, w.Code)
-		})
-
-		t.Run("Get[Invalid range]", func(t *testing.T) {
-			w := httptest.NewRecorder()
-			c, r := gin.CreateTestContext(w)
-
-			query := "?range=1 to"
-
-			r.Use(func(c *gin.Context) {
-				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+				}},
+				Body:         nil,
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"GET[Invalid range]": testutils.TestCase{
+				Method:     http.MethodGet,
+				Url:        "/api/course-schedule?range=1 to",
+				DaoWrapper: dao.DaoWrapper{},
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
 					Role: model.AdminType,
-				}})
-			})
-
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
-
-			c.Request, _ = http.NewRequest(http.MethodGet, "/api/course-schedule"+query, nil)
-			r.ServeHTTP(w, c.Request)
-
-			assert.Equal(t, http.StatusBadRequest, w.Code)
-		})
-
-		t.Run("Get[Invalid from in range]", func(t *testing.T) {
-			w := httptest.NewRecorder()
-			c, r := gin.CreateTestContext(w)
-
-			query := "?range=123 to 2022-05-23"
-
-			r.Use(func(c *gin.Context) {
-				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+				}},
+				Body:         nil,
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"GET[Invalid from in range]": testutils.TestCase{
+				Method:     http.MethodGet,
+				Url:        "/api/course-schedule?range=123 to 2022-05-23",
+				DaoWrapper: dao.DaoWrapper{},
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
 					Role: model.AdminType,
-				}})
-			})
-
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
-
-			c.Request, _ = http.NewRequest(http.MethodGet, "/api/course-schedule"+query, nil)
-			r.ServeHTTP(w, c.Request)
-
-			assert.Equal(t, http.StatusBadRequest, w.Code)
-		})
-
-		t.Run("Get[Invalid to in range]", func(t *testing.T) {
-			w := httptest.NewRecorder()
-			c, r := gin.CreateTestContext(w)
-
-			query := "?range=2022-05-23 to 123"
-
-			r.Use(func(c *gin.Context) {
-				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+				}},
+				Body:         nil,
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"GET[Invalid to in range]": testutils.TestCase{
+				Method:     http.MethodGet,
+				Url:        "/api/course-schedule?range=2022-05-23 to 123",
+				DaoWrapper: dao.DaoWrapper{},
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
 					Role: model.AdminType,
-				}})
-			})
-
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
-
-			c.Request, _ = http.NewRequest(http.MethodGet, "/api/course-schedule"+query, nil)
-			r.ServeHTTP(w, c.Request)
-
-			assert.Equal(t, http.StatusBadRequest, w.Code)
-		})
-
-		t.Run("Get[Invalid department]", func(t *testing.T) {
-			w := httptest.NewRecorder()
-			c, r := gin.CreateTestContext(w)
-
-			query := "?range=2022-05-23 to 2022-05-24&department=Ap"
-
-			r.Use(func(c *gin.Context) {
-				c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+				}},
+				Body:         nil,
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"Get[Invalid department]": testutils.TestCase{
+				Method:     http.MethodGet,
+				Url:        "/api/course-schedule?range=2022-05-23 to 2022-05-24&department=Ap",
+				DaoWrapper: dao.DaoWrapper{},
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
 					Role: model.AdminType,
-				}})
+				}},
+				Body:         nil,
+				ExpectedCode: http.StatusBadRequest,
+			},
+		}
+		for name, testCase := range testCases {
+			t.Run(name, func(t *testing.T) {
+				w := httptest.NewRecorder()
+				c, r := gin.CreateTestContext(w)
+
+				if testCase.TumLiveContext != nil {
+					r.Use(func(c *gin.Context) {
+						c.Set("TUMLiveContext", *testCase.TumLiveContext)
+					})
+				}
+
+				configGinLectureHallApiRouter(r, testCase.DaoWrapper)
+
+				c.Request, _ = http.NewRequest(testCase.Method, testCase.Url, testCase.Body)
+				r.ServeHTTP(w, c.Request)
+
+				assert.Equal(t, testCase.ExpectedCode, w.Code)
 			})
-
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
-
-			c.Request, _ = http.NewRequest(http.MethodGet, "/api/course-schedule"+query, nil)
-			r.ServeHTTP(w, c.Request)
-
-			assert.Equal(t, http.StatusBadRequest, w.Code)
-		})
+		}
 	})
 
 	t.Run("/course-schedule/:year/:term", func(t *testing.T) {
 		// importReq taken from courseimport.go
-		first := func(a interface{}, b interface{}) interface{} {
-			return a
-		}
 		type importReq struct {
 			Courses []campusonline.Course `json:"courses"`
 			OptIn   bool                  `json:"optIn"`
@@ -624,39 +592,31 @@ func TestCourseImport(t *testing.T) {
 				Events: []campusonline.Event{{RoomName: "1"}},
 			},
 		}
-		testCases := []struct {
-			description    string
-			method         string
-			url            string
-			daoWrapper     dao.DaoWrapper
-			tumLiveContext *tools.TUMLiveContext
-			body           io.Reader
-			expectedCode   int
-		}{
-			{description: "POST [no context]",
-				method:         http.MethodPost,
-				url:            "/api/course-schedule/2022/S",
-				daoWrapper:     dao.DaoWrapper{},
-				tumLiveContext: nil,
-				body:           nil,
-				expectedCode:   http.StatusInternalServerError},
-			{description: "POST [invalid body]",
-				method:     http.MethodPost,
-				url:        "/api/course-schedule/2022/S",
-				daoWrapper: dao.DaoWrapper{},
-				tumLiveContext: &tools.TUMLiveContext{User: &model.User{
+		testCases := testutils.TestCases{
+			"POST [no context]": testutils.TestCase{
+				Method:         http.MethodPost,
+				Url:            "/api/course-schedule/2022/S",
+				DaoWrapper:     dao.DaoWrapper{},
+				TumLiveContext: nil,
+				Body:           nil,
+				ExpectedCode:   http.StatusInternalServerError},
+			"POST [invalid body]": testutils.TestCase{
+				Method:     http.MethodPost,
+				Url:        "/api/course-schedule/2022/S",
+				DaoWrapper: dao.DaoWrapper{},
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
 					Role: model.AdminType,
 				}},
-				body:         nil,
-				expectedCode: http.StatusBadRequest},
-			{description: "POST [invalid year]",
-				method:     http.MethodPost,
-				url:        "/api/course-schedule/ABC/S",
-				daoWrapper: dao.DaoWrapper{},
-				tumLiveContext: &tools.TUMLiveContext{User: &model.User{
+				Body:         nil,
+				ExpectedCode: http.StatusBadRequest},
+			"POST [invalid year]": testutils.TestCase{
+				Method:     http.MethodPost,
+				Url:        "/api/course-schedule/ABC/S",
+				DaoWrapper: dao.DaoWrapper{},
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
 					Role: model.AdminType,
 				}},
-				body: bytes.NewBuffer(first(json.Marshal(importReq{
+				Body: bytes.NewBuffer(testutils.First(json.Marshal(importReq{
 					Courses: []campusonline.Course{
 						{Title: "GBS", Slug: "GBS", Import: true},
 						{Title: "GDB", Slug: "GDB", Import: true},
@@ -664,23 +624,23 @@ func TestCourseImport(t *testing.T) {
 					},
 					OptIn: false,
 				})).([]byte)),
-				expectedCode: http.StatusBadRequest},
-			{description: "POST [invalid term]",
-				method:     http.MethodPost,
-				url:        "/api/course-schedule/2022/T",
-				daoWrapper: dao.DaoWrapper{},
-				tumLiveContext: &tools.TUMLiveContext{User: &model.User{
+				ExpectedCode: http.StatusBadRequest},
+			"POST [invalid term]": testutils.TestCase{
+				Method:     http.MethodPost,
+				Url:        "/api/course-schedule/2022/T",
+				DaoWrapper: dao.DaoWrapper{},
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
 					Role: model.AdminType,
 				}},
-				body: bytes.NewBuffer(first(json.Marshal(importReq{
+				Body: bytes.NewBuffer(testutils.First(json.Marshal(importReq{
 					Courses: testData,
 					OptIn:   false,
 				})).([]byte)),
-				expectedCode: http.StatusBadRequest},
-			{description: "POST [CreateCourse returns error]",
-				method: http.MethodPost,
-				url:    "/api/course-schedule/2022/S",
-				daoWrapper: dao.DaoWrapper{
+				ExpectedCode: http.StatusBadRequest},
+			"POST [CreateCourse returns error]": testutils.TestCase{
+				Method: http.MethodPost,
+				Url:    "/api/course-schedule/2022/S",
+				DaoWrapper: dao.DaoWrapper{
 					LectureHallsDao: func() dao.LectureHallsDao {
 						lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 						lectureHallMock.
@@ -703,18 +663,18 @@ func TestCourseImport(t *testing.T) {
 						return coursesMock
 					}(),
 				},
-				tumLiveContext: &tools.TUMLiveContext{User: &model.User{
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
 					Role: model.AdminType,
 				}},
-				body: bytes.NewBuffer(first(json.Marshal(importReq{
+				Body: bytes.NewBuffer(testutils.First(json.Marshal(importReq{
 					Courses: testData,
 					OptIn:   false,
 				})).([]byte)),
-				expectedCode: http.StatusInternalServerError},
-			{description: "POST [GetLectureHallByPartialName returns error]",
-				method: http.MethodPost,
-				url:    "/api/course-schedule/2022/S",
-				daoWrapper: dao.DaoWrapper{
+				ExpectedCode: http.StatusInternalServerError},
+			"POST [GetLectureHallByPartialName returns error]": testutils.TestCase{
+				Method: http.MethodPost,
+				Url:    "/api/course-schedule/2022/S",
+				DaoWrapper: dao.DaoWrapper{
 					LectureHallsDao: func() dao.LectureHallsDao {
 						lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 						lectureHallMock.
@@ -737,18 +697,18 @@ func TestCourseImport(t *testing.T) {
 						return coursesMock
 					}(),
 				},
-				tumLiveContext: &tools.TUMLiveContext{User: &model.User{
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
 					Role: model.AdminType,
 				}},
-				body: bytes.NewBuffer(first(json.Marshal(importReq{
+				Body: bytes.NewBuffer(testutils.First(json.Marshal(importReq{
 					Courses: testData,
 					OptIn:   false,
 				})).([]byte)),
-				expectedCode: http.StatusOK},
-			{description: "POST [AddAdminToCourse returns error]",
-				method: http.MethodPost,
-				url:    "/api/course-schedule/2022/S",
-				daoWrapper: dao.DaoWrapper{
+				ExpectedCode: http.StatusOK},
+			"POST [AddAdminToCourse returns error]": testutils.TestCase{
+				Method: http.MethodPost,
+				Url:    "/api/course-schedule/2022/S",
+				DaoWrapper: dao.DaoWrapper{
 					LectureHallsDao: func() dao.LectureHallsDao {
 						lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 						lectureHallMock.
@@ -771,18 +731,18 @@ func TestCourseImport(t *testing.T) {
 						return coursesMock
 					}(),
 				},
-				tumLiveContext: &tools.TUMLiveContext{User: &model.User{
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
 					Role: model.AdminType,
 				}},
-				body: bytes.NewBuffer(first(json.Marshal(importReq{
+				Body: bytes.NewBuffer(testutils.First(json.Marshal(importReq{
 					Courses: testData,
 					OptIn:   false,
 				})).([]byte)),
-				expectedCode: http.StatusOK},
-			{description: "POST [success]",
-				method: http.MethodPost,
-				url:    "/api/course-schedule/2022/S",
-				daoWrapper: dao.DaoWrapper{
+				ExpectedCode: http.StatusOK},
+			"POST [success]": testutils.TestCase{
+				Method: http.MethodPost,
+				Url:    "/api/course-schedule/2022/S",
+				DaoWrapper: dao.DaoWrapper{
 					LectureHallsDao: func() dao.LectureHallsDao {
 						lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 						lectureHallMock.
@@ -805,33 +765,33 @@ func TestCourseImport(t *testing.T) {
 						return coursesMock
 					}(),
 				},
-				tumLiveContext: &tools.TUMLiveContext{User: &model.User{
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
 					Role: model.AdminType,
 				}},
-				body: bytes.NewBuffer(first(json.Marshal(importReq{
+				Body: bytes.NewBuffer(testutils.First(json.Marshal(importReq{
 					Courses: testData,
 					OptIn:   false,
 				})).([]byte)),
-				expectedCode: http.StatusOK},
+				ExpectedCode: http.StatusOK},
 		}
 
-		for _, testCase := range testCases {
-			t.Run(testCase.description, func(t *testing.T) {
+		for name, testCase := range testCases {
+			t.Run(name, func(t *testing.T) {
 				w := httptest.NewRecorder()
 				c, r := gin.CreateTestContext(w)
 
-				if testCase.tumLiveContext != nil {
+				if testCase.TumLiveContext != nil {
 					r.Use(func(c *gin.Context) {
-						c.Set("TUMLiveContext", *testCase.tumLiveContext)
+						c.Set("TUMLiveContext", *testCase.TumLiveContext)
 					})
 				}
 
-				configGinLectureHallApiRouter(r, testCase.daoWrapper)
+				configGinLectureHallApiRouter(r, testCase.DaoWrapper)
 
-				c.Request, _ = http.NewRequest(testCase.method, testCase.url, testCase.body)
+				c.Request, _ = http.NewRequest(testCase.Method, testCase.Url, testCase.Body)
 				r.ServeHTTP(w, c.Request)
 
-				assert.Equal(t, testCase.expectedCode, w.Code)
+				assert.Equal(t, testCase.ExpectedCode, w.Code)
 			})
 		}
 	})
