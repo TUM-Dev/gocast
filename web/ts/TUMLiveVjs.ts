@@ -11,6 +11,10 @@ require("videojs-contrib-quality-levels");
 const Button = videojs.getComponent("Button");
 let player;
 
+export function getPlayer() {
+    return player;
+}
+
 /**
  * Initialize the player and bind it to a DOM object my-video
  */
@@ -18,6 +22,7 @@ export const initPlayer = function (
     autoplay: boolean,
     fluid: boolean,
     isEmbedded: boolean,
+    playbackSpeeds: number[],
     courseName?: string,
     streamName?: string,
     streamUrl?: string,
@@ -29,7 +34,7 @@ export const initPlayer = function (
         {
             liveui: true,
             fluid: fluid,
-            playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+            playbackRates: playbackSpeeds,
             html5: {
                 reloadSourceOnError: true,
                 vhs: {

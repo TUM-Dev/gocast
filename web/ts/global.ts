@@ -1,4 +1,5 @@
 export * from "./notifications";
+export * from "./user-settings";
 
 export async function putData(url = "", data = {}) {
     return await fetch(url, {
@@ -190,6 +191,23 @@ export function timer(expiry: string, leadingZero: boolean) {
             };
         },
     };
+}
+
+// getLoginReferrer returns "/" if document.referrer === "http[s]://<hostname>:<port>/login" and document.referrer if not
+export function getLoginReferrer(): string {
+    const lastLocation = document.referrer.split("/"),
+        protocol = lastLocation[0],
+        host = lastLocation[2];
+
+    if (
+        window.location.protocol !== protocol ||
+        window.location.host !== host ||
+        document.referrer === window.location.origin + "/login"
+    ) {
+        return window.location.origin + "/";
+    }
+
+    return document.referrer;
 }
 
 // TypeScript Mapping of model.VideoSection
