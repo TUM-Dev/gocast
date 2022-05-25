@@ -361,7 +361,11 @@ export class VideoSections {
     constructor(streamID) {
         this.streamID = streamID;
         this.list = [];
-        this.currentHighlightIndex = 0;
+        this.currentHighlightIndex = -1;
+    }
+
+    isCurrent(i: number): boolean {
+        return this.currentHighlightIndex !== -1 && i === this.currentHighlightIndex;
     }
 
     async fetch() {

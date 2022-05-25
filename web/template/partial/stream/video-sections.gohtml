@@ -7,7 +7,7 @@
                 <button class="mb-1 flex bg-transparent outline-none border-0 rounded-lg mr-2 last:mr-0"
                         @click="watch.jumpTo(section.startHours, section.startMinutes, section.startSeconds)">
                     <span class="flex px-2 py-1 bg-white dark:bg-secondary justify-between w-full border hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg"
-                          :class="i === sections.currentHighlightIndex ? 'border-2 border-blue-500/50' : 'dark:border-gray-800'">
+                          :class="sections.isCurrent(i) ? 'border-2 border-blue-500/50' : 'dark:border-gray-800'">
                         <span x-text="section.description"
                               class="text-sm text-3 my-auto mr-3 whitespace-nowrap"></span>
                         <span x-text="section.friendlyTimestamp"
