@@ -53,7 +53,7 @@
                 {{range $user := .Users }}
                     {{if $user.Email}}
                         <tr class="px-3 dark:hover:bg-primary hover:bg-white">
-                            <td>{{$user.Name}}</td>
+                            <td>{{$user.GetPreferredName}}</td>
                             <td class="px-2">{{$user.Email.String}}</td>
                             <td>{{if eq $user.Password ""}}No{{else}}Yes{{end}}</td>
                         </tr>

@@ -294,7 +294,7 @@
     {{end}}
 </div>
 <script>
-    watch.initPlayer(true, false, false);
+    watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}});
     {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
     watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
     {{end}}
