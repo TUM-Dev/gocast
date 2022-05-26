@@ -24,6 +24,11 @@ require (
 )
 
 require (
+	github.com/bbalet/stopwords v1.0.0
+	github.com/otiai10/gosseract/v2 v2.3.1
+)
+
+require (
 	github.com/aws/aws-sdk-go v1.44.4 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect

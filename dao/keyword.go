@@ -20,5 +20,5 @@ func NewKeywordDao() KeywordDao {
 }
 
 func (d keywordDao) NewKeyword(keyword *model.Keyword) error {
-	return d.db.Save(keyword).Error
+	return DB.Save(keyword).Error
 }
