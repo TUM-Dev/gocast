@@ -210,6 +210,18 @@ export function getLoginReferrer(): string {
     return document.referrer;
 }
 
+// TypeScript Mapping of model.VideoSection
+export type Section = {
+    description: string;
+
+    startHours: number;
+    startMinutes: number;
+    startSeconds: number;
+
+    streamID: number;
+    friendlyTimestamp?: string;
+};
+
 window.onload = function () {
     initHiddenCourses();
 };
