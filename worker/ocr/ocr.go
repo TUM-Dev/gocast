@@ -20,9 +20,9 @@ type ocrExtractor struct {
 	pipeline   postprocess
 }
 
-func NewOcrExtractor(imageFiles []string) ocrExtractor {
+func NewOcrExtractor(imageFiles []string, languages []string) KeywordExtractor {
 	client := gosseract.NewClient()
-	_ = client.SetLanguage("eng")
+	_ = client.SetLanguage(languages...)
 	_ = client.SetWhitelist(ASCII_LETTERS)
 	return ocrExtractor{
 		imageFiles: imageFiles,
@@ -30,6 +30,7 @@ func NewOcrExtractor(imageFiles []string) ocrExtractor {
 		pipeline: postprocess{
 			removeStopwords,
 			removeShortWords,
+			removeDuplicates,
 		},
 	}
 }
@@ -71,6 +72,18 @@ func removeShortWords(words []string) []string {
 	res := make([]string, 0)
 	for _, word := range words {
 		if len(word) > 2 {
+			res = append(res, word)
+		}
+	}
+	return res
+}
+
+func removeDuplicates(words []string) []string {
+	check := map[string]bool{}
+	res := make([]string, 0)
+	for _, word := range words {
+		if !check[word] {
+			check[word] = true
 			res = append(res, word)
 		}
 	}
