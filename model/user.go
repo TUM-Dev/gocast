@@ -32,7 +32,6 @@ type User struct {
 	Password            string         `gorm:"default:null" json:"-"`
 	Courses             []Course       `gorm:"many2many:course_users" json:"-"` // courses a lecturer invited this user to
 	AdministeredCourses []Course       `gorm:"many2many:course_admins"`         // courses this user is an admin of
-	PinnedCourses       []Course	   `gorm:"many2many:pinned_courses"`
 }
 
 type argonParams struct {
