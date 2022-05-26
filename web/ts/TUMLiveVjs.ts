@@ -390,17 +390,26 @@ export class VideoSections {
 
 function attachCurrentTimeEvent(videoSection: VideoSections) {
     player.ready(() => {
-        player.on("timeupdate", function () {
-            const currentTime = this.currentTime();
-            videoSection.currentHighlightIndex = videoSection.list.findIndex((section, i, list) => {
-                const next = list[i + 1];
-                const sectionSeconds = toSeconds(section.startHours, section.startMinutes, section.startSeconds);
-                return next === undefined || null // if last element and no next exists
-                    ? sectionSeconds <= currentTime
-                    : sectionSeconds <= currentTime &&
-                          currentTime <= toSeconds(next.startHours, next.startMinutes, next.startSeconds);
-            });
-        });
+        let timer;
+        (function checkTimestamp() {
+            timer = setTimeout(() => {
+                hightlight(player, videoSection);
+                checkTimestamp();
+            }, 500);
+        })();
+        player.on("seeked", () => hightlight(player, videoSection));
+    });
+}
+
+function hightlight(player, videoSection) {
+    const currentTime = player.currentTime();
+    videoSection.currentHighlightIndex = videoSection.list.findIndex((section, i, list) => {
+        const next = list[i + 1];
+        const sectionSeconds = toSeconds(section.startHours, section.startMinutes, section.startSeconds);
+        return next === undefined || next === null // if last element and no next exists
+            ? sectionSeconds <= currentTime
+            : sectionSeconds <= currentTime &&
+                  currentTime <= toSeconds(next.startHours, next.startMinutes, next.startSeconds) - 1;
     });
 }
 
