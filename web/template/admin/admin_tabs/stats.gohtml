@@ -4,6 +4,10 @@
                                                         value="{{.TUMLiveContext.Course.Model.ID}}"></label>
     <h2 class="text-2xl text-1 my-auto mt-4 font-medium">Server Statistics</h2>
     <div class="grid grid-cols-4 gap-4 w-full pt-4 bg-gray-100 relative rounded-md my-3 shadow-md overflow-x-auto p-4 dark:bg-secondary-lighter">
+        <button class="h-10 px-5 ml-auto text-white bg-gray-500 dark:bg-gray-900 dark:hover:bg-gray-600 font-semibold rounded-sm shadow-lg focus:shadow-outline hover:bg-gray-600 absolute top-3 right-3" @click="step++; $dispatch(`notify${step}`)">
+            Download CSV
+        </button>
+
         <div class="col-span-4">
             <h2 class="text-2 font-medium">Quick stats</h2>
             <table class="m-2 text-sm">
