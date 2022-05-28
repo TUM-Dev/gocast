@@ -1,7 +1,7 @@
 import { Chat } from "./chat/Chat";
 
-export function initChat(isAdminOfCourse: boolean, streamId: number, userId: number, userName: string) {
-    return { c: new Chat(isAdminOfCourse, streamId, userId, userName) };
+export function initChat(isAdminOfCourse: boolean, streamId: number, streamStart:string, userId: number, userName: string) {
+    return { c: new Chat(isAdminOfCourse, streamId, streamStart, userId, userName) };
 }
 
 /*

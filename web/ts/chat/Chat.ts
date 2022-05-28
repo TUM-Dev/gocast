@@ -16,6 +16,7 @@ export class Chat {
     messages: ChatMessage[];
     users: ChatUserList;
     emojis: EmojiList;
+    startTime: Date;
     poll: Poll;
 
     preprocessors: ((m: ChatMessage) => ChatMessage)[] = [
@@ -29,12 +30,13 @@ export class Chat {
                         "</span>",
                 );
             }
+            // @ts-ignore
             m.grayedOutProxy = Alpine.reactive<GrayedOutProxy>({isGrayedOut:false} )
             return m;
         },
     ];
 
-    constructor(isAdminOfCourse: boolean, streamId: number, userId: number, userName: string) {
+    constructor(isAdminOfCourse: boolean, streamId: number, startTime: string, userId: number, userName: string) {
         this.orderByLikes = false;
         this.disconnected = false;
         this.current = new NewChatMessage();
@@ -46,6 +48,7 @@ export class Chat {
         this.userId = userId;
         this.userName = userName;
         this.poll = new Poll(streamId);
+        this.startTime = new Date(startTime);
         this.greyOutMessagesAfterPlayerTime =  this.greyOutMessagesAfterPlayerTime.bind(this);
         registerTimeWatcher(this.greyOutMessagesAfterPlayerTime);
     }
@@ -179,7 +182,8 @@ export class Chat {
     }
 
     greyOutMessagesAfterPlayerTime(playerTime: number) : void {
-           Error("Not implemented Exception");
+            console.log(this.startTime);
+           this.messages.forEach(message => message.grayedOutProxy.isGrayedOut = true);
     }
 
     private addMessage(m: ChatMessage) {
