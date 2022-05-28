@@ -12,6 +12,10 @@ type statReq struct {
 	Interval string `form:"interval" json:"interval" xml:"interval"  binding:"required"`
 }
 
+type statExportReq struct {
+	Format string `form:"format" json:"format" xml:"format"  binding:"required"`
+}
+
 func (r coursesRoutes) getStats(c *gin.Context) {
 	ctx, _ := c.Get("TUMLiveContext")
 	var req statReq
@@ -133,6 +137,42 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		}
 	default:
 		c.AbortWithStatus(http.StatusBadRequest)
+	}
+}
+
+func (r coursesRoutes) exportStats(c *gin.Context) {
+	ctx, _ := c.Get("TUMLiveContext")
+
+	var req statExportReq
+	if c.ShouldBindQuery(&req) != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+	}
+
+	var cid uint
+	// check if request is for server -> validate
+	cidFromContext := c.Param("courseId")
+	if cidFromContext == "0" {
+		if ctx.(tools.TUMLiveContext).User.Role != model.AdminType {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+		cid = 0
+	} else { // use course from context
+		cid = ctx.(tools.TUMLiveContext).Course.ID
+	}
+
+	if req.Format != "json" && req.Format != "csv" {
+		log.WithField("courseId", cid).Warn("exportStats failed, invalid format")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	res, err := r.StatisticsDao.GetCourseNumVodViewsPerDay(cid)
+	if err != nil {
+		log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
+		c.AbortWithStatus(http.StatusInternalServerError)
+	} else {
+		c.JSON(http.StatusOK, res)
 	}
 }
 

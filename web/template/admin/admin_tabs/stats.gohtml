@@ -4,9 +4,62 @@
                                                         value="{{.TUMLiveContext.Course.Model.ID}}"></label>
     <h2 class="text-2xl text-1 my-auto mt-4 font-medium">Server Statistics</h2>
     <div class="grid grid-cols-4 gap-4 w-full pt-4 bg-gray-100 relative rounded-md my-3 shadow-md overflow-x-auto p-4 dark:bg-secondary-lighter">
-        <button class="h-10 px-5 ml-auto text-white bg-gray-500 dark:bg-gray-900 dark:hover:bg-gray-600 font-semibold rounded-sm shadow-lg focus:shadow-outline hover:bg-gray-600 absolute top-3 right-3" @click="step++; $dispatch(`notify${step}`)">
-            Download CSV
-        </button>
+        <div class="absolute top-3 right-3">
+            <div
+                x-data="{
+                    open: false,
+                    toggle() {
+                        if (this.open) {
+                            return this.close()
+                        }
+                        this.$refs.button.focus()
+                        this.open = true
+                    },
+                    close(focusAfter) {
+                        if (! this.open) return
+                        this.open = false
+                        focusAfter && focusAfter.focus()
+                    }
+                }"
+                x-on:keydown.escape.prevent.stop="close($refs.button)"
+                x-on:focusin.window="! $refs.panel.contains($event.target) && close()"
+                x-id="['dropdown-button']"
+                class="relative "
+            >
+                <!-- Button -->
+                <button
+                    class="h-10 px-5 ml-auto text-white bg-gray-500 dark:bg-gray-900 dark:hover:bg-gray-600 font-semibold rounded-sm shadow-lg focus:shadow-outline hover:bg-gray-600"
+                    x-ref="button"
+                    x-on:click="toggle()"
+                    :aria-expanded="open"
+                    :aria-controls="$id('dropdown-button')"
+                    type="button"
+                >
+                    Export
+                </button>
+
+                <!-- Panel -->
+                <div
+                    x-ref="panel"
+                    x-show="open"
+                    x-transition.origin.top.left
+                    x-on:click.outside="close($refs.button)"
+                    :id="$id('dropdown-button')"
+                    style="display: none;"
+                    class="absolute right-0 mt-2 w-40 text-white bg-gray-500 dark:bg-gray-900 rounded shadow-md overflow-hidden"
+                >
+                    <div>
+                        <a x-on:click="close($refs.button); admin.downloadStats('json')" class="block w-full px-4 py-2 text-left text-sm dark:hover:bg-gray-600 cursor-pointer">
+                            Export as JSON
+                        </a>
+
+                        <a x-on:click="close($refs.button); admin.downloadStats('csv')"  class="block w-full px-4 py-2 text-left text-sm dark:hover:bg-gray-600 cursor-pointer">
+                            Export as CSV
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="col-span-4">
             <h2 class="text-2 font-medium">Quick stats</h2>

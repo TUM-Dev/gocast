@@ -1,6 +1,26 @@
 import { StatusCodes } from "http-status-codes";
 import Chart from "chart.js/auto";
 
+export function downloadStats(format: string) {
+    getAsync(
+        `/api/course/${(document.getElementById("courseID") as HTMLInputElement).value}/stats/export?format=${format}`,
+    ).then(async (res) => {
+        if (res.status === StatusCodes.OK) {
+            const objectUrl = window.URL.createObjectURL(await res.blob());
+
+            const anchor = document.createElement("a");
+            document.body.appendChild(anchor);
+            anchor.href = objectUrl;
+            anchor.download = `course-${
+                (document.getElementById("courseID") as HTMLInputElement).value
+            }-stats.${format}`;
+            anchor.click();
+            document.body.removeChild(anchor);
+            window.URL.revokeObjectURL(objectUrl);
+        }
+    });
+}
+
 export function loadStats(endpoint: string, targetEl: string) {
     const canvas = <HTMLCanvasElement>document.getElementById(targetEl);
     const ctx = canvas.getContext("2d");
