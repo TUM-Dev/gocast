@@ -1,7 +1,7 @@
 {{define "chat"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.ChatData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
-    {{$startTime := call .IndexData.TUMLiveContext.Stream.Start.String}}
+    {{$startTime := $stream.ParsableStartTime}}
     {{$userName := ""}}
     {{$userId := 0}}
     {{if .IndexData.TUMLiveContext.User}}
@@ -9,10 +9,10 @@
         {{$userId := .IndexData.TUMLiveContext.User.ID}}
     {{end}}
     <div x-cloak
-         x-data="watch.initChat({{.IsAdminOfCourse}}, {{$stream.ID}},{{$startTime}} {{$userId}},'{{$userName}}');"
+         x-data="watch.initChat({{.IsAdminOfCourse}}, {{$stream.ID}}, '{{$startTime}}', {{$userId}}, '{{$userName}}');"
          x-init="await Promise.all([c.loadMessages(), c.poll.load()]); $nextTick(() => { watch.scrollToBottom() })"
          x-on:chatmessage.window="e => c.onMessage(e);"
-         x-on:chatreply.window="e => c.onReply(e);"
+         x-on:chatreply.window="e => c.onReply(e);" ingest_servers
          x-on:chatlike.window="e => {c.onLike(e); $dispatch('reorder')}"
          x-on:chatdelete.window="e => c.onDelete(e);"
          x-on:chatresolve.window="e => c.onResolve(e);"

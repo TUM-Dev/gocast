@@ -2,7 +2,7 @@ import { NewChatMessage } from "./NewChatMessage";
 import { ChatUserList } from "./ChatUserList";
 import { EmojiList } from "./EmojiList";
 import { Poll } from "./Poll";
-import {registerTimeWatcher} from "../TUMLiveVjs";
+import { registerTimeWatcher } from "../TUMLiveVjs";
 
 export class Chat {
     readonly userId: number;
@@ -30,8 +30,11 @@ export class Chat {
                         "</span>",
                 );
             }
+
+            // Alpine.js is already imported by web/template/headImports.gohtml.
+            // Therefore, ignore type error caused by missing import.
             // @ts-ignore
-            m.grayedOutProxy = Alpine.reactive<GrayedOutProxy>({isGrayedOut:false} )
+            m.grayedOutProxy = Alpine.reactive<GrayedOutProxy>({ isGrayedOut: true });
             return m;
         },
     ];
@@ -49,8 +52,8 @@ export class Chat {
         this.userName = userName;
         this.poll = new Poll(streamId);
         this.startTime = new Date(startTime);
-        this.greyOutMessagesAfterPlayerTime =  this.greyOutMessagesAfterPlayerTime.bind(this);
-        registerTimeWatcher(this.greyOutMessagesAfterPlayerTime);
+        this.grayOutMessagesAfterPlayerTime = this.grayOutMessagesAfterPlayerTime.bind(this);
+        registerTimeWatcher(this.grayOutMessagesAfterPlayerTime);
     }
 
     async loadMessages() {
@@ -151,11 +154,11 @@ export class Chat {
             window.dispatchEvent(new CustomEvent(event));
         } else if (this.users.isValid()) {
             switch (e.keyCode) {
-                case 38: /* UP */ {
+                case 38 /* UP */: {
                     this.users.prev();
                     break;
                 }
-                case 40: /* DOWN */ {
+                case 40 /* DOWN */: {
                     this.users.next();
                     break;
                 }
@@ -181,9 +184,16 @@ export class Chat {
         }
     }
 
-    greyOutMessagesAfterPlayerTime(playerTime: number) : void {
-            console.log(this.startTime);
-           this.messages.forEach(message => message.grayedOutProxy.isGrayedOut = true);
+    /**
+     * Grays out all messages that were not sent at the same time in the livestream.
+     * @param playerTime time offset of current player time w.r.t. video start in seconds
+     */
+    grayOutMessagesAfterPlayerTime(playerTime: number): void {
+        const referenceTime = new Date(this.startTime);
+        referenceTime.setSeconds(referenceTime.getSeconds() + playerTime);
+        this.messages.forEach(
+            (message) => (message.grayedOutProxy.isGrayedOut = new Date(message.CreatedAt) > referenceTime),
+        );
     }
 
     private addMessage(m: ChatMessage) {
@@ -224,6 +234,8 @@ type ChatMessage = {
     UpdatedAt: string;
 };
 
+// Proxy returned from Alpine.js for observing grayed out state reactively.
+// Alpine.js does not seem to be able to track variable state reactively when using a boolean property only.
 type GrayedOutProxy = {
     isGrayedOut: boolean;
-}
+};

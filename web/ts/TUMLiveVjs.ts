@@ -276,11 +276,15 @@ export const watchProgress = function (streamID: number, lastProgress: number, l
     });
 };
 
-export const registerTimeWatcher = function (callBack : (currentPlayerTime: number) => void){
-    player.on("timeupdate", ()=>{
+/**
+ * Registers a time watcher that observes the time of the current player
+ * @param callBack call back function responsible for handling player time updates
+ */
+export const registerTimeWatcher = function (callBack: (currentPlayerTime: number) => void) {
+    player.on("timeupdate", () => {
         callBack(player.currentTime());
     });
-}
+};
 
 const Component = videojs.getComponent("Component");
 

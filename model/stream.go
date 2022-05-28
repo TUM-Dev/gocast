@@ -184,6 +184,11 @@ func (s Stream) FriendlyTime() string {
 	return s.Start.Format("02.01.2006 15:04") + " - " + s.End.Format("15:04")
 }
 
+// ParsableStartTime returns a JavaScript friendly formatted date string
+func (s Stream) ParsableStartTime() string {
+	return s.Start.Format("2006-01-02 15:04:05")
+}
+
 func (s Stream) FriendlyNextDate() string {
 	if now.With(s.Start).EndOfDay() == now.EndOfDay() {
 		return fmt.Sprintf("Today, %02d:%02d", s.Start.Hour(), s.Start.Minute())
