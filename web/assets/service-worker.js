@@ -11,6 +11,7 @@ const PREFETCH_CACHE_FILES = [
     "/static/assets/css-dist/main.css",
     "/static/assets/css/icons.css",
     "/static/assets/ts-dist/global.bundle.js",
+    "/static/assets/ts-dist/admin.bundle.js",
     "/static/node_modules/@alpinejs/persist/dist/cdn.min.js",
     "/static/node_modules/alpinejs/dist/cdn.js",
 ];
