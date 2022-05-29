@@ -3,9 +3,12 @@
     {{$moderatedChat := .IndexData.TUMLiveContext.Course.ModeratedChatEnabled}}
     <template x-for="m in c.messages" :key="m.ID">
         <div class="relative py-2 px-2 $m.ID message"
-             :class="{'ring ring-blue-500/50' : c.current.replyTo === m.ID, 'opacity-75' : isGrayedOut === true}"
+             x-ref="message"
+             :class="{'ring ring-blue-500/50' : c.current.replyTo === m.ID, 'opacity-75' : isGrayedOut}"
              x-effect="isGrayedOut = m.grayedOutProxy.isGrayedOut"
-             x-data="{ showReplies: false, m: m, isGrayedOut: false}"
+             x-effect="focusedMessageId = c.focusedMessageId"
+             x-init="$watch('focusedMessageId', value => {if (m.ID === value){document.getElementById('chatBox').scrollTop = $refs.message.offsetTop}});"
+             x-data="{ showReplies: false, m: m, isGrayedOut: true, c:c,  focusedMessageId:-1}"
              x-show="!m.deleted && m.replyTo && !m.replyTo.Valid">
             <!-- name and message -->
             <p class="group text-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded">

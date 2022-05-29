@@ -14,6 +14,7 @@ export class Chat {
     disconnected: boolean;
     current: NewChatMessage;
     messages: ChatMessage[];
+    focusedMessageId: number;
     users: ChatUserList;
     emojis: EmojiList;
     startTime: Date;
@@ -52,6 +53,7 @@ export class Chat {
         this.userName = userName;
         this.poll = new Poll(streamId);
         this.startTime = new Date(startTime);
+        this.focusedMessageId = -1;
         this.grayOutMessagesAfterPlayerTime = this.grayOutMessagesAfterPlayerTime.bind(this);
         registerTimeWatcher(this.grayOutMessagesAfterPlayerTime);
     }
@@ -192,9 +194,20 @@ export class Chat {
         //TODO revert:  const referenceTime = new Date(this.startTime);
         const referenceTime = new Date("Mon May 29 2022 01:55:00");
         referenceTime.setSeconds(referenceTime.getSeconds() + playerTime);
+
+        const grayOutCondition = (CreatedAt: string) =>{
+            const dateCreatedAt = new Date(CreatedAt);
+            return  dateCreatedAt > referenceTime;
+        };
         this.messages.forEach(
-            (message) => (message.grayedOutProxy.isGrayedOut = new Date(message.CreatedAt) > referenceTime),
+            (message) => message.grayedOutProxy.isGrayedOut = grayOutCondition(message.CreatedAt),
         );
+        const indexOfFocusedMessage = this.messages.findIndex((message) =>{
+            const val = grayOutCondition(message.CreatedAt);
+            return val;
+        }) - 1;
+
+        this.focusedMessageId = indexOfFocusedMessage >= 0 ?  this.messages[indexOfFocusedMessage].ID : -1;
     }
 
     private addMessage(m: ChatMessage) {
