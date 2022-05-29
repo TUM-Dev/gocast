@@ -96,7 +96,7 @@
             </li>
         {{end}}
     {{end}}
-    {{if and .User $course.HasRecordings}}
+    {{if and $user $course.HasRecordings}}
         </div>
         <p x-show="watchedAll && filterWatched"
            class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">All VoDs watched</p>
