@@ -207,8 +207,10 @@ export class Chat {
             return val;
         }) - 1;
 
-        this.focusedMessageId = indexOfFocusedMessage >= 0 ?  this.messages[indexOfFocusedMessage].ID : -1;
+        this.focusedMessageId = indexOfFocusedMessage;
     }
+
+    isMessageToBeFocused = (index : number) => index === this.focusedMessageId;
 
     private addMessage(m: ChatMessage) {
         this.preprocessors.forEach((f) => (m = f(m)));

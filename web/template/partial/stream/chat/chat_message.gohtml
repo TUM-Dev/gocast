@@ -1,12 +1,11 @@
 {{define "messageTemplate"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.ChatData*/ -}}
     {{$moderatedChat := .IndexData.TUMLiveContext.Course.ModeratedChatEnabled}}
-    <template x-for="m in c.messages" :key="m.ID">
+    <template x-for="(m, index) in c.messages" :key="m.ID">
         <div class="relative py-2 px-2 $m.ID message"
              x-ref="message"
              :class="{'ring ring-blue-500/50' : c.current.replyTo === m.ID, 'opacity-75' : isGrayedOut}"
-             x-effect="isGrayedOut = m.grayedOutProxy.isGrayedOut"
-             x-effect="focusedMessageId = c.focusedMessageId"
+             x-effect="isGrayedOut = m.grayedOutProxy.isGrayedOut;if (c.isMessageToBeFocused(index)){document.getElementById('chatBox').scrollTop = $refs.message.offsetTop;} console.log(c.isMessageToBeFocused(index));"
              x-init="$watch('focusedMessageId', value => {if (m.ID === value){document.getElementById('chatBox').scrollTop = $refs.message.offsetTop}});"
              x-data="{ showReplies: false, m: m, isGrayedOut: true, c:c,  focusedMessageId:-1}"
              x-show="!m.deleted && m.replyTo && !m.replyTo.Valid">
