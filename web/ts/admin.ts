@@ -77,6 +77,7 @@ export async function deleteLectureHall(lectureHallID: number) {
         }
     }
 }
+
 export function createUser() {
     const userName: string = (document.getElementById("name") as HTMLInputElement).value;
     const email: string = (document.getElementById("email") as HTMLInputElement).value;

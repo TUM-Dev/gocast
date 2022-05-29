@@ -126,6 +126,10 @@ func configMainRoute(router *gin.Engine) {
 	router.NoRoute(func(c *gin.Context) {
 		tools.RenderErrorPage(c, http.StatusNotFound, tools.PageNotFoundErrMsg)
 	})
+
+	loggedIn := router.Group("/")
+	loggedIn.Use(tools.LoggedIn)
+	loggedIn.GET("/settings", routes.settingsPage)
 }
 
 type mainRoutes struct {
