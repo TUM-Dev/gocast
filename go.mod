@@ -30,7 +30,7 @@ require (
 	google.golang.org/genproto v0.0.0-20220429170224-98d788798c3e // indirect
 	google.golang.org/grpc v1.46.0
 	google.golang.org/protobuf v1.28.0
-	gorm.io/driver/mysql v1.3.3 // indirect
+	gorm.io/driver/mysql v1.3.3
 	gorm.io/gorm v1.23.5
 	mvdan.cc/xurls/v2 v2.4.0
 )
@@ -38,13 +38,12 @@ require (
 require (
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
-	github.com/bbalet/stopwords v1.0.0
 	github.com/crewjam/saml v0.4.6
 	github.com/golang/mock v1.6.0
 	github.com/icholy/digest v0.1.15
 	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20220519095903-58f4f0fcf6a3
 	github.com/magiconair/properties v1.8.6
-	github.com/otiai10/gosseract/v2 v2.3.1
+	github.com/pkg/profile v1.6.0
 	github.com/stretchr/testify v1.7.1
 )
 
