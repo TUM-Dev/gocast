@@ -31,27 +31,24 @@ export const initPlayer = function (
     courseUrl?: string,
     streamStartIn?: number, // in seconds
 ) {
-    player = videojs(
-        "my-video",
-        {
-            liveui: true,
-            fluid: fluid,
-            playbackRates: playbackSpeeds,
-            html5: {
-                reloadSourceOnError: true,
-                vhs: {
-                    overrideNative: !videojs.browser.IS_SAFARI,
-                },
-                nativeVideoTracks: false,
-                nativeAudioTracks: false,
-                nativeTextTracks: false,
+    player = videojs("my-video", {
+        liveui: true,
+        fluid: fluid,
+        playbackRates: playbackSpeeds,
+        html5: {
+            reloadSourceOnError: true,
+            vhs: {
+                overrideNative: !videojs.browser.IS_SAFARI,
             },
-            userActions: {
-                hotkeys: handleHotkeys(),
-            },
-            autoplay: autoplay,
+            nativeVideoTracks: false,
+            nativeAudioTracks: false,
+            nativeTextTracks: false,
         },
-    );
+        userActions: {
+            hotkeys: handleHotkeys(),
+        },
+        autoplay: autoplay,
+    });
     player.hlsQualitySelector();
     player.seekButtons({
         // TODO user preferences, e.g. change to 5s
@@ -97,8 +94,7 @@ export const initPlayer = function (
         }
         player.addChild("OverlayIcon", {});
     });
-    // handle hotkeys from anywhere on page
-    // TODO is this safe
+    // handle hotkeys from anywhere on the page
     document.addEventListener("keydown", (event) => player.handleKeyDown(event));
 };
 

@@ -33,10 +33,6 @@ const handleWithClick = (name) => (player, event) => {
     ButtonComponent.prototype.handleClick.call(player, event);
 };
 
-function handleMute(player, event) {
-    handleWithClick("MuteToggle")(player, event);
-}
-
 const handleSeek = (forward: boolean) => (player, event) => {
     const controlBar = player.controlBar;
     (forward ? controlBar.seekForward : controlBar.seekBack).handleClick(event);
@@ -84,17 +80,17 @@ interface Hotkeys {
 /**
  * See {@link handleHotkeys}.
  */
-// TODO: is there any value to additional media key handling (MediaPause, MediaFastForward, ...)
 // see https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values for documentation
 export const defaultOptions = {
     hotkeys: {
         fullscreen: {
             match: ["f", "F"],
             handle: handleWithClick("FullscreenToggle"),
+            icon: (player) => vjsIcon(player.isFullscreen() ? "fullscreen-exit" : "fullscreen-enter"),
         },
         mute: {
             match: ["m", "M", "AudioVolumeMute", "VolumeMute"],
-            handle: handleMute,
+            handle: handleWithClick("MuteToggle"),
             icon: volumeIcon(true),
         },
         // "Spacebar" is for IE+old Firefox
