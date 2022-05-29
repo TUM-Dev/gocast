@@ -1,8 +1,8 @@
-import { postData } from "./global";
+import { postData, Section } from "./global";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
-import dom = videojs.dom;
 import airplay from "@silvermine/videojs-airplay";
+import dom = videojs.dom;
 
 require("videojs-seek-buttons");
 require("videojs-hls-quality-selector");
@@ -11,6 +11,10 @@ require("videojs-contrib-quality-levels");
 const Button = videojs.getComponent("Button");
 let player;
 
+export function getPlayer() {
+    return player;
+}
+
 /**
  * Initialize the player and bind it to a DOM object my-video
  */
@@ -18,6 +22,7 @@ export const initPlayer = function (
     autoplay: boolean,
     fluid: boolean,
     isEmbedded: boolean,
+    playbackSpeeds: number[],
     courseName?: string,
     streamName?: string,
     streamUrl?: string,
@@ -29,7 +34,7 @@ export const initPlayer = function (
         {
             liveui: true,
             fluid: fluid,
-            playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+            playbackRates: playbackSpeeds,
             html5: {
                 reloadSourceOnError: true,
                 vhs: {
@@ -343,8 +348,73 @@ export class StartInOverlay extends Component {
 
 export function jumpTo(hours: number, minutes: number, seconds: number) {
     videojs("my-video").ready(() => {
-        player.currentTime(hours * 60 * 60 + minutes * 60 + seconds);
+        player.currentTime(toSeconds(hours, minutes, seconds));
     });
+}
+
+export class VideoSections {
+    readonly streamID: number;
+
+    list: Section[];
+    currentHighlightIndex: number;
+
+    constructor(streamID) {
+        this.streamID = streamID;
+        this.list = [];
+        this.currentHighlightIndex = -1;
+    }
+
+    isCurrent(i: number): boolean {
+        return this.currentHighlightIndex !== -1 && i === this.currentHighlightIndex;
+    }
+
+    async fetch() {
+        await fetch(`/api/stream/${this.streamID}/sections`)
+            .then((res: Response) => {
+                if (!res.ok) {
+                    throw new Error("Could not fetch sections");
+                }
+                return res.json();
+            })
+            .then((sections) => {
+                this.list = sections;
+                attachCurrentTimeEvent(this);
+            })
+            .catch((err) => {
+                console.log(err);
+                this.list = [];
+                this.currentHighlightIndex = 0;
+            });
+    }
+}
+
+function attachCurrentTimeEvent(videoSection: VideoSections) {
+    player.ready(() => {
+        let timer;
+        (function checkTimestamp() {
+            timer = setTimeout(() => {
+                hightlight(player, videoSection);
+                checkTimestamp();
+            }, 500);
+        })();
+        player.on("seeked", () => hightlight(player, videoSection));
+    });
+}
+
+function hightlight(player, videoSection) {
+    const currentTime = player.currentTime();
+    videoSection.currentHighlightIndex = videoSection.list.findIndex((section, i, list) => {
+        const next = list[i + 1];
+        const sectionSeconds = toSeconds(section.startHours, section.startMinutes, section.startSeconds);
+        return next === undefined || next === null // if last element and no next exists
+            ? sectionSeconds <= currentTime
+            : sectionSeconds <= currentTime &&
+                  currentTime <= toSeconds(next.startHours, next.startMinutes, next.startSeconds) - 1;
+    });
+}
+
+function toSeconds(hours: number, minutes: number, seconds: number): number {
+    return hours * 60 * 60 + minutes * 60 + seconds;
 }
 
 // Register the plugin with video.js.

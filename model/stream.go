@@ -187,6 +187,7 @@ func (s Stream) getJson(lhs []LectureHall, course Course) gin.H {
 	for _, file := range s.Files {
 		files = append(files, gin.H{
 			"id":           file.ID,
+			"fileType":     file.Type,
 			"friendlyName": file.GetFriendlyFileName(),
 		})
 	}
@@ -218,4 +219,14 @@ func (s Stream) getJson(lhs []LectureHall, course Course) gin.H {
 		"end":              s.End,
 		"courseSlug":       course.Slug,
 	}
+}
+
+func (s Stream) Attachments() []File {
+	attachments := make([]File, 0)
+	for _, f := range s.Files {
+		if f.Type == FILETYPE_ATTACHMENT {
+			attachments = append(attachments, f)
+		}
+	}
+	return attachments
 }

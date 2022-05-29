@@ -93,10 +93,11 @@ func main() {
 		defer sentry.Recover()
 	}
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
-		"%s:%s@tcp(%s:3306)/%s?parseTime=true&loc=Local",
+		"%s:%s@tcp(%s:%d)/%s?parseTime=true&loc=Local",
 		tools.Cfg.Db.User,
 		tools.Cfg.Db.Password,
 		tools.Cfg.Db.Host,
+		tools.Cfg.Db.Port,
 		tools.Cfg.Db.Database),
 	), &gorm.Config{
 		PrepareStmt: true,
@@ -140,6 +141,7 @@ func main() {
 		&model.Notification{},
 		&model.UploadKey{},
 		&model.Keyword{},
+		&model.UserSetting{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)

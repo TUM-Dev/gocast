@@ -327,7 +327,7 @@ func (r chatRoutes) handleMessage(ctx tools.TUMLiveContext, session *melody.Sess
 	if !ctx.Course.ChatEnabled {
 		return
 	}
-	uname := ctx.User.Name
+	uname := ctx.User.GetPreferredName()
 	if chat.Anonymous && ctx.Course.AnonymousChatEnabled {
 		uname = "Anonymous"
 	}
@@ -424,7 +424,7 @@ func (r chatRoutes) getUsers(c *gin.Context) {
 	resp := make([]chatUserSearchDto, len(users))
 	for i, user := range users {
 		resp[i].ID = user.ID
-		resp[i].Name = user.Name
+		resp[i].Name = user.GetPreferredName()
 	}
 	c.JSON(http.StatusOK, resp)
 }

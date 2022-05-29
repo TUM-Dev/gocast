@@ -54,7 +54,7 @@
                 <div class="mt-3">
                     <label for="fname">Name</label>
                     <input name="fname" type="text" placeholder="Maria Musterfrau" x-model="name"
-                                                                                   value="{{ .IndexData.TUMLiveContext.User.Name -}} {{- .IndexData.TUMLiveContext.User.Name }}">
+                                                                                   value="{{if .IndexData.TUMLiveContext.User}}{{ .IndexData.TUMLiveContext.User.Name -}} {{- .IndexData.TUMLiveContext.User.Name }}{{end}}">
                 </div>
                 <div class="mt-3">
                     <label for="mail">Mail</label>
