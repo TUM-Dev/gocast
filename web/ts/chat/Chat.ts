@@ -189,7 +189,8 @@ export class Chat {
      * @param playerTime time offset of current player time w.r.t. video start in seconds
      */
     grayOutMessagesAfterPlayerTime(playerTime: number): void {
-        const referenceTime = new Date(this.startTime);
+        //TODO revert:  const referenceTime = new Date(this.startTime);
+        const referenceTime = new Date("Mon May 29 2022 01:55:00");
         referenceTime.setSeconds(referenceTime.getSeconds() + playerTime);
         this.messages.forEach(
             (message) => (message.grayedOutProxy.isGrayedOut = new Date(message.CreatedAt) > referenceTime),
