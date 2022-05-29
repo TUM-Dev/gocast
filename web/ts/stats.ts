@@ -2,8 +2,11 @@ import { StatusCodes } from "http-status-codes";
 import Chart from "chart.js/auto";
 
 export function downloadStats(format: string) {
+    const statsToExport = ["week", "hour", "activity-live", "activity-vod", "allDays", "quickStats"];
     getAsync(
-        `/api/course/${(document.getElementById("courseID") as HTMLInputElement).value}/stats/export?format=${format}`,
+        `/api/course/${
+            (document.getElementById("courseID") as HTMLInputElement).value
+        }/stats/export?interval[]=${statsToExport.join("&interval[]=")}&format=${format}`,
     ).then(async (res) => {
         if (res.status === StatusCodes.OK) {
             const objectUrl = window.URL.createObjectURL(await res.blob());
@@ -17,6 +20,8 @@ export function downloadStats(format: string) {
             anchor.click();
             document.body.removeChild(anchor);
             window.URL.revokeObjectURL(objectUrl);
+        } else {
+            alert("Something went wrong during export. Error-Code: " + res.status);
         }
     });
 }

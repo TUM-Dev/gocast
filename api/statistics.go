@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
@@ -13,7 +14,8 @@ type statReq struct {
 }
 
 type statExportReq struct {
-	Format string `form:"format" json:"format" xml:"format"  binding:"required"`
+	Format   string   `form:"format" binding:"required"`
+	Interval []string `form:"interval[]"  binding:"required"`
 }
 
 func (r coursesRoutes) getStats(c *gin.Context) {
@@ -167,12 +169,117 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 		return
 	}
 
-	res, err := r.StatisticsDao.GetCourseNumVodViewsPerDay(cid)
-	if err != nil {
-		log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
-		c.AbortWithStatus(http.StatusInternalServerError)
+	result := tools.ExportStatsContainer{}
+
+	for _, interval := range req.Interval {
+		switch interval {
+		case "week":
+		case "day":
+			res, err := r.StatisticsDao.GetCourseStatsWeekdays(cid)
+			if err != nil {
+				log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsWeekdays failed")
+			}
+			result = result.AddDataEntry(&tools.ExportDataEntry{
+				Name:  interval,
+				XName: "Weekday",
+				YName: "Sum(viewers)",
+				Data:  res,
+			})
+			break
+
+		case "hour":
+			res, err := r.StatisticsDao.GetCourseStatsHourly(cid)
+			if err != nil {
+				log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsHourly failed")
+			}
+			result = result.AddDataEntry(&tools.ExportDataEntry{
+				Name:  interval,
+				XName: "Hour",
+				YName: "Sum(viewers)",
+				Data:  res,
+			})
+			break
+
+		case "activity-live":
+			resLive, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, true)
+			if err != nil {
+				log.WithError(err).WithField("courseId", cid).Warn("GetStudentActivityCourseStats failed")
+			}
+			result = result.AddDataEntry(&tools.ExportDataEntry{
+				Name:  interval,
+				XName: "Week",
+				YName: "Live",
+				Data:  resLive,
+			})
+			break
+
+		case "activity-vod":
+			resVod, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, false)
+			if err != nil {
+				log.WithError(err).WithField("courseId", cid).Warn("GetStudentActivityCourseStats failed")
+			}
+			result = result.AddDataEntry(&tools.ExportDataEntry{
+				Name:  interval,
+				XName: "Week",
+				YName: "VoD",
+				Data:  resVod,
+			})
+			break
+
+		case "allDays":
+			res, err := r.StatisticsDao.GetCourseNumVodViewsPerDay(cid)
+			if err != nil {
+				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumVodViewsPerDay failed")
+			}
+			result = result.AddDataEntry(&tools.ExportDataEntry{
+				Name:  interval,
+				XName: "Week",
+				YName: "VoD",
+				Data:  res,
+			})
+			break
+
+		case "quickStats":
+			var quickStats []dao.Stat
+
+			numStudents, err := r.StatisticsDao.GetCourseNumStudents(cid)
+			if err != nil {
+				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumStudents failed")
+			} else {
+				quickStats = append(quickStats, dao.Stat{X: "Enrolled Students", Y: int(numStudents)})
+			}
+
+			vodViews, err := r.StatisticsDao.GetCourseNumVodViews(cid)
+			if err != nil {
+				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumVodViews failed")
+			} else {
+				quickStats = append(quickStats, dao.Stat{X: "Vod Views", Y: int(vodViews)})
+			}
+
+			liveViews, err := r.StatisticsDao.GetCourseNumLiveViews(cid)
+			if err != nil {
+				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
+			} else {
+				quickStats = append(quickStats, dao.Stat{X: "Live Views", Y: int(liveViews)})
+			}
+			result = result.AddDataEntry(&tools.ExportDataEntry{
+				Name:  interval,
+				XName: "Property",
+				YName: "Value",
+				Data:  quickStats,
+			})
+
+			break
+
+		default:
+			log.WithField("courseId", cid).Warn("Invalid export interval")
+		}
+	}
+
+	if req.Format == "json" {
+		c.JSON(http.StatusOK, result.ExportJson())
 	} else {
-		c.JSON(http.StatusOK, res)
+		c.String(http.StatusOK, result.ExportCsv())
 	}
 }
 
