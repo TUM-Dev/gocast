@@ -182,7 +182,7 @@
                         <span class="text-5 hover:text-1 hover:underline text-lg">{{$course.Name}}</span></a>
                     {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
                         <a class="hover:bg-gray-200 dark:hover:bg-gray-600 text-5 hover:text-1 hover:underline w-fit m-2 px-1 inline-block rounded my-auto"
-                           href="/admin/course/{{$course.Model.ID}}"
+                           href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
                            :title="'Edit course settings'">
                         <span class="font-semibold text-sm">
                            <i class="fa-solid w-fit py-2 fa-gears"></i>
