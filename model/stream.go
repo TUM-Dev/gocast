@@ -38,8 +38,7 @@ type Stream struct {
 	PlaylistUrl      string
 	PlaylistUrlPRES  string
 	PlaylistUrlCAM   string
-	FilePath         string //deprecated
-	LiveNow          bool   `gorm:"not null"`
+	LiveNow          bool `gorm:"not null"`
 	Recording        bool
 	Premiere         bool `gorm:"default:null"`
 	Ended            bool `gorm:"default:null"`
