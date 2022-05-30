@@ -104,6 +104,7 @@ type Config struct {
 		Password string `yaml:"password"`
 		Database string `yaml:"database"`
 		Host     string `yaml:"host"`
+		Port	 uint `yaml:"port"`
 	} `yaml:"db"`
 	Campus struct {
 		Base   string   `yaml:"base"`
