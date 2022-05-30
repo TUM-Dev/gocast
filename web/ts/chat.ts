@@ -24,6 +24,11 @@ export function scrollToTop() {
     document.getElementById("chatBox").scrollTo({ top: 0, behavior: "smooth" });
 }
 
+export function scrollToElement(element: HTMLElement){
+    const chatBox = document.getElementById("chatBox");
+    chatBox.scrollTop = element.offsetTop;
+}
+
 let orderByLikes = false; // sorting by likes or by time
 
 export function setOrder(obl: boolean) {

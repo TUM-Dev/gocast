@@ -14,7 +14,7 @@ export class Chat {
     disconnected: boolean;
     current: NewChatMessage;
     messages: ChatMessage[];
-    focusedMessageId: number;
+    focusedMessageId?: number;
     users: ChatUserList;
     emojis: EmojiList;
     startTime: Date;
@@ -202,15 +202,11 @@ export class Chat {
         this.messages.forEach(
             (message) => message.grayedOutProxy.isGrayedOut = grayOutCondition(message.CreatedAt),
         );
-        const indexOfFocusedMessage = this.messages.findIndex((message) =>{
-            const val = grayOutCondition(message.CreatedAt);
-            return val;
-        }) - 1;
-
-        this.focusedMessageId = indexOfFocusedMessage;
+        const notGrayedOutMessages = this.messages.filter((message) => !message.grayedOutProxy.isGrayedOut && message.visible);
+        this.focusedMessageId = notGrayedOutMessages.pop()?.ID;
     }
 
-    isMessageToBeFocused = (index : number) => index === this.focusedMessageId;
+    isMessageToBeFocused = (index : number) => this.messages[index].ID === this.focusedMessageId;
 
     private addMessage(m: ChatMessage) {
         this.preprocessors.forEach((f) => (m = f(m)));
