@@ -53,6 +53,38 @@ func (r mainRoutes) AboutPage(c *gin.Context) {
 	_ = templateExecutor.ExecuteTemplate(c.Writer, "about.gohtml", indexData)
 }
 
+func (r mainRoutes) PrivacyPage(c *gin.Context) {
+	var indexData IndexData
+	var tumLiveContext tools.TUMLiveContext
+	tumLiveContextQueried, found := c.Get("TUMLiveContext")
+	if found {
+		tumLiveContext = tumLiveContextQueried.(tools.TUMLiveContext)
+		indexData.TUMLiveContext = tumLiveContext
+	} else {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	indexData.VersionTag = VersionTag
+
+	_ = templateExecutor.ExecuteTemplate(c.Writer, "privacy.gohtml", indexData)
+}
+
+func (r mainRoutes) ImprintPage(c *gin.Context) {
+	var indexData IndexData
+	var tumLiveContext tools.TUMLiveContext
+	tumLiveContextQueried, found := c.Get("TUMLiveContext")
+	if found {
+		tumLiveContext = tumLiveContextQueried.(tools.TUMLiveContext)
+		indexData.TUMLiveContext = tumLiveContext
+	} else {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	indexData.VersionTag = VersionTag
+
+	_ = templateExecutor.ExecuteTemplate(c.Writer, "imprint.gohtml", indexData)
+}
+
 type IndexData struct {
 	VersionTag          string
 	TUMLiveContext      tools.TUMLiveContext
