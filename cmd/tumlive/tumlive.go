@@ -17,6 +17,7 @@ import (
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"net/http"
 	_ "net/http/pprof"
@@ -92,14 +93,20 @@ func main() {
 		defer sentry.Flush(2 * time.Second)
 		defer sentry.Recover()
 	}
-	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s?parseTime=true&loc=Local",
-		tools.Cfg.Db.User,
-		tools.Cfg.Db.Password,
-		tools.Cfg.Db.Host,
-		tools.Cfg.Db.Port,
-		tools.Cfg.Db.Database),
-	), &gorm.Config{
+	var conn gorm.Dialector
+	if tools.Cfg.Db.Sqlite != nil && *tools.Cfg.Db.Sqlite {
+		conn = sqlite.Open("docs/static/demo.sqlite")
+	} else {
+		conn = mysql.Open(fmt.Sprintf(
+			"%s:%s@tcp(%s:%d)/%s?parseTime=true&loc=Local",
+			*tools.Cfg.Db.User,
+			*tools.Cfg.Db.Password,
+			*tools.Cfg.Db.Host,
+			*tools.Cfg.Db.Port,
+			*tools.Cfg.Db.Database),
+		)
+	}
+	db, err := gorm.Open(conn, &gorm.Config{
 		PrepareStmt: true,
 	})
 

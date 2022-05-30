@@ -100,11 +100,12 @@ type Config struct {
 		SMIMEKey  string `yaml:"SMIMEKey"`
 	} `yaml:"mail"`
 	Db struct {
-		User     string `yaml:"user"`
-		Password string `yaml:"password"`
-		Database string `yaml:"database"`
-		Host     string `yaml:"host"`
-		Port	 uint `yaml:"port"`
+		Sqlite   *bool   `yaml:"sqlite"`
+		User     *string `yaml:"user"`
+		Password *string `yaml:"password"`
+		Database *string `yaml:"database"`
+		Host     *string `yaml:"host"`
+		Port     *uint   `yaml:"port"`
 	} `yaml:"db"`
 	Campus struct {
 		Base   string   `yaml:"base"`

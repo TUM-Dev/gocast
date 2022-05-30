@@ -18,6 +18,7 @@ campus:
   - secret1
   - secret2
 db:
+#  sqlite: true # uncomment if sqlite should be used instead.
   host: localhost
   port: 3306
   database: tumlive
