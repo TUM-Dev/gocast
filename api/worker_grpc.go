@@ -414,6 +414,12 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 	default:
 		stream.PlaylistUrl = req.HLSUrl
 	}
+	stream.ThumbnailSprite = model.File{
+		StreamID: uint(req.StreamID),
+		Path:     req.ThumbnailUrl,
+		Type:     model.FILETYPE_SPRITE,
+		Filename: "Test",
+	}
 	if err = s.StreamsDao.SaveStream(&stream); err != nil {
 		return nil, err
 	}

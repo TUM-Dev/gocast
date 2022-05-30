@@ -19,6 +19,11 @@ func upload(streamCtx *StreamContext) {
 		log.WithField("stream", streamCtx.getStreamName()).WithError(err).Error("Error uploading stream")
 	}
 	log.WithField("stream", streamCtx.getStreamName()).Info("Uploaded stream")
+	err = post(streamCtx.thumbnailSpritePath)
+	if err != nil {
+		log.WithField("stream", streamCtx.getStreamName()).WithError(err).Error("Error uploading thumbnail")
+	}
+	log.WithField("stream", streamCtx.getStreamName()).Info("Uploaded thumbnail")
 }
 
 func post(file string) error {

@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"fmt"
+	"github.com/joschahenningsen/thumbgen"
 	"io"
 	"os"
 	"os/exec"
@@ -100,6 +101,13 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 		log.WithField("File", ctx.getTranscodingFileName()).WithError(err).Error("Detecting silence failed.")
 		return
 	}
+
+	err = CreateThumbnailSprite(ctx)
+	if err != nil {
+		log.WithField("File", ctx.getTranscodingFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
+		return
+	}
+
 	notifySilenceResults(sd.Silences, ctx.streamId)
 	if ctx.TranscodingSuccessful {
 		err := markForDeletion(ctx)
@@ -107,6 +115,25 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 			log.WithField("stream", ctx.streamId).WithError(err).Error("Error marking for deletion")
 		}
 	}
+}
+
+func CreateThumbnailSprite(ctx *StreamContext) error {
+	// Create thumbnails
+	progress := make(chan int)
+	g, err := thumbgen.New("/home/alex/Videos/sample-mp4-file.mp4", 360, 100, ctx.thumbnailSpritePath, thumbgen.WithJpegCompression(70), thumbgen.WithProgressChan(&progress))
+	if err != nil {
+		fmt.Println(err)
+	}
+	go func() {
+		for {
+			p := <-progress
+			if p == 100 {
+				break
+			}
+		}
+	}()
+	err = g.Generate()
+	return err
 }
 
 // HandleStreamEndRequest ends all streams for a given streamID contained in request
@@ -192,6 +219,12 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	}
 	S.endTranscoding(streamCtx.getStreamName())
 	notifyTranscodingDone(streamCtx)
+
+	err = CreateThumbnailSprite(streamCtx)
+	if err != nil {
+		log.WithField("File", streamCtx.getTranscodingFileName()).WithError(err).Error("Creating thumbnail sprite failed")
+	}
+
 	if request.PublishVoD {
 		upload(streamCtx)
 		notifyUploadDone(streamCtx)
@@ -368,7 +401,8 @@ type StreamContext struct {
 
 	TranscodingSuccessful bool // TranscodingSuccessful is true if the transcoding was successful
 
-	recordingPath *string // recordingPath: path to the recording (overrides default path if set)
+	thumbnailSpritePath string  // path to the thumbnail sprite
+	recordingPath       *string // recordingPath: path to the recording (overrides default path if set)
 }
 
 // getRecordingFileName returns the filename a stream should be saved to before transcoding.

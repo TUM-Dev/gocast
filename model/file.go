@@ -6,9 +6,12 @@ import (
 	"strings"
 )
 
+type FileType uint
+
 const (
 	FILETYPE_DOWNLOAD = iota + 1
 	FILETYPE_ATTACHMENT
+	FILETYPE_SPRITE
 )
 
 type File struct {
@@ -17,7 +20,7 @@ type File struct {
 	StreamID uint   `gorm:"not null"`
 	Path     string `gorm:"not null"`
 	Filename string
-	Type     uint `gorm:"not null; default: 1"`
+	Type     FileType `gorm:"not null; default: 1"`
 }
 
 func (f File) GetDownloadFileName() string {

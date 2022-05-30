@@ -118,10 +118,11 @@ func notifyUploadDone(streamCtx *StreamContext) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	resp, err := client.NotifyUploadFinished(ctx, &pb.UploadFinished{
-		WorkerID:   cfg.WorkerID,
-		StreamID:   streamCtx.streamId,
-		HLSUrl:     fmt.Sprintf("https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s.mp4/playlist.m3u8", streamCtx.getStreamNameVoD()),
-		SourceType: streamCtx.streamVersion,
+		WorkerID:     cfg.WorkerID,
+		StreamID:     streamCtx.streamId,
+		HLSUrl:       fmt.Sprintf("https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s.mp4/playlist.m3u8", streamCtx.getStreamNameVoD()),
+		SourceType:   streamCtx.streamVersion,
+		ThumbnailUrl: streamCtx.thumbnailSpritePath,
 	})
 	if err != nil || !resp.Ok {
 		log.WithError(err).Error("Could not notify upload finished")

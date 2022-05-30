@@ -6,6 +6,7 @@ import dom = videojs.dom;
 
 import { handleHotkeys } from "./hotkeys";
 
+require("videojs-sprite-thumbnails");
 require("videojs-seek-buttons");
 require("videojs-hls-quality-selector");
 require("videojs-contrib-quality-levels");
@@ -25,6 +26,7 @@ export const initPlayer = function (
     fluid: boolean,
     isEmbedded: boolean,
     playbackSpeeds: number[],
+    spriteUrl?: string,
     courseName?: string,
     streamName?: string,
     streamUrl?: string,
@@ -49,6 +51,16 @@ export const initPlayer = function (
         },
         autoplay: autoplay,
     });
+    // setup 160x90 thumbnails in sprite.jpg,
+    player
+        .spriteThumbnails({
+            interval: 120,
+            url: spriteUrl,
+            width: 160,
+            height: 90,
+            downlink: 0, // TODO: Remove this
+        })
+        .log.level("debug");
     player.hlsQualitySelector();
     player.seekButtons({
         // TODO user preferences, e.g. change to 5s
@@ -66,7 +78,6 @@ export const initPlayer = function (
             addButtonToControlBar: true,
             buttonPositionIndex: -2,
         });
-
         const persistedVolume = window.localStorage.getItem("volume");
         if (persistedVolume !== null) {
             player.volume(persistedVolume);

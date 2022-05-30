@@ -144,6 +144,7 @@ message UploadFinished {
   uint32 StreamID = 2;
   string HLSUrl = 4;
   string SourceType = 5;
+  string ThumbnailUrl = 6;
 }
 
 message StreamStarted {

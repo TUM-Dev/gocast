@@ -58,6 +58,7 @@ type Stream struct {
 	StreamProgresses []StreamProgress `gorm:"foreignKey:StreamID"`
 	VideoSections    []VideoSection
 	StreamStatus     StreamStatus `gorm:"not null;default:1"`
+	ThumbnailSprite  File         // Contains a sprite with preview images of the stream.
 
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }

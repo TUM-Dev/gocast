@@ -48,6 +48,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	g := router.Group("/")
 	g.Use(tools.InitStream(daoWrapper))
 	g.GET("/api/stream/:streamID/sections", routes.getVideoSections)
+	g.GET("/api/stream/:streamID/thumbnails", routes.getThumbnailSprite)
 
 	adminG.POST("/api/stream/:streamID/files", routes.newAttachment)
 	adminG.DELETE("/api/stream/:streamID/files/:fid", routes.deleteAttachment)
@@ -282,6 +283,18 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 
 	}
 	c.JSON(http.StatusOK, response)
+}
+
+func (r streamRoutes) getThumbnailSprite(c *gin.Context) {
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	c.JSON(http.StatusOK,
+		gin.H{"sprite": tools.Cfg.WebUrl + tumLiveContext.Stream.ThumbnailSprite.Path})
 }
 
 func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
