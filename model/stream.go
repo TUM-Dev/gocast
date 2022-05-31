@@ -59,6 +59,7 @@ type Stream struct {
 	StreamProgresses []StreamProgress `gorm:"foreignKey:StreamID"`
 	VideoSections    []VideoSection
 	StreamStatus     StreamStatus `gorm:"not null;default:1"`
+	Private          bool         `gorm:"not null;default:false"`
 
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }

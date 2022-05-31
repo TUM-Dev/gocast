@@ -151,6 +151,9 @@ type argonParams struct {
 
 // IsAdminOfCourse checks if the user is an admin of the course
 func (u *User) IsAdminOfCourse(course Course) bool {
+	if u == nil {
+		return false
+	}
 	for _, c := range u.AdministeredCourses {
 		if c.ID == course.ID {
 			return true
