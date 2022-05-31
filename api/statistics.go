@@ -187,7 +187,6 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 				YName: "Sum(viewers)",
 				Data:  res,
 			})
-			break
 
 		case "hour":
 			res, err := r.StatisticsDao.GetCourseStatsHourly(cid)
@@ -200,7 +199,6 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 				YName: "Sum(viewers)",
 				Data:  res,
 			})
-			break
 
 		case "activity-live":
 			resLive, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, true)
@@ -213,7 +211,6 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 				YName: "Live",
 				Data:  resLive,
 			})
-			break
 
 		case "activity-vod":
 			resVod, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, false)
@@ -226,7 +223,6 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 				YName: "VoD",
 				Data:  resVod,
 			})
-			break
 
 		case "allDays":
 			res, err := r.StatisticsDao.GetCourseNumVodViewsPerDay(cid)
@@ -239,7 +235,6 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 				YName: "VoD",
 				Data:  res,
 			})
-			break
 
 		case "quickStats":
 			var quickStats []dao.Stat
@@ -270,8 +265,6 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 				YName: "Value",
 				Data:  quickStats,
 			})
-
-			break
 
 		default:
 			log.WithField("courseId", cid).Warn("Invalid export interval")
