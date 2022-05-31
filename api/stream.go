@@ -242,17 +242,17 @@ func (r streamRoutes) getStream(c *gin.Context) {
 	stream := *tumLiveContext.Stream
 	course := *tumLiveContext.Course
 
-	c.JSON(http.StatusOK,
-		gin.H{"course": course.Name,
-			"courseID":    course.ID,
-			"streamID":    stream.ID,
-			"name":        stream.Name,
-			"description": stream.Description,
-			"start":       stream.Start,
-			"end":         stream.End,
-			"ingest":      fmt.Sprintf("%sstream?secret=%s", tools.Cfg.IngestBase, stream.StreamKey),
-			"live":        stream.LiveNow,
-			"vod":         stream.Recording})
+	c.JSON(http.StatusOK, gin.H{
+		"course":      course.Name,
+		"courseID":    course.ID,
+		"streamID":    stream.ID,
+		"name":        stream.Name,
+		"description": stream.Description,
+		"start":       stream.Start,
+		"end":         stream.End,
+		"ingest":      fmt.Sprintf("%sstream?secret=%s", tools.Cfg.IngestBase, stream.StreamKey),
+		"live":        stream.LiveNow,
+		"vod":         stream.Recording})
 }
 
 func (r streamRoutes) getVideoSections(c *gin.Context) {
@@ -267,7 +267,21 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 	if err != nil {
 		log.WithError(err).Error("Can't get video sections")
 	}
-	c.JSON(http.StatusOK, sections)
+
+	response := []gin.H{}
+	for _, section := range sections {
+		response = append(response, gin.H{
+			"ID":                section.ID,
+			"startHours":        section.StartHours,
+			"startMinutes":      section.StartMinutes,
+			"startSeconds":      section.StartSeconds,
+			"description":       section.Description,
+			"friendlyTimestamp": section.TimestampAsString(),
+			"streamID":          section.StreamID,
+		})
+
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {

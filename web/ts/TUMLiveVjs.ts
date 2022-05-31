@@ -1,8 +1,10 @@
-import { postData } from "./global";
+import { postData, Section } from "./global";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
-import dom = videojs.dom;
 import airplay from "@silvermine/videojs-airplay";
+import dom = videojs.dom;
+
+import { handleHotkeys } from "./hotkeys";
 
 require("videojs-seek-buttons");
 require("videojs-hls-quality-selector");
@@ -22,38 +24,34 @@ export const initPlayer = function (
     autoplay: boolean,
     fluid: boolean,
     isEmbedded: boolean,
+    playbackSpeeds: number[],
     courseName?: string,
     streamName?: string,
     streamUrl?: string,
     courseUrl?: string,
     streamStartIn?: number, // in seconds
 ) {
-    player = videojs(
-        "my-video",
-        {
-            liveui: true,
-            fluid: fluid,
-            playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
-            html5: {
-                reloadSourceOnError: true,
-                vhs: {
-                    overrideNative: !videojs.browser.IS_SAFARI,
-                },
-                nativeVideoTracks: false,
-                nativeAudioTracks: false,
-                nativeTextTracks: false,
+    player = videojs("my-video", {
+        liveui: true,
+        fluid: fluid,
+        playbackRates: playbackSpeeds,
+        html5: {
+            reloadSourceOnError: true,
+            vhs: {
+                overrideNative: !videojs.browser.IS_SAFARI,
             },
-            userActions: {
-                hotkeys: {},
-            },
+            nativeVideoTracks: false,
+            nativeAudioTracks: false,
+            nativeTextTracks: false,
         },
-        //nativeControlsForTouch: true,a
-    );
+        userActions: {
+            hotkeys: handleHotkeys(),
+        },
+        autoplay: autoplay,
+    });
     player.hlsQualitySelector();
-    if (autoplay) {
-        player.play();
-    }
     player.seekButtons({
+        // TODO user preferences, e.g. change to 5s
         backIndex: 0,
         forward: 15,
         back: 15,
@@ -94,7 +92,10 @@ export const initPlayer = function (
                 startIn: streamStartIn,
             });
         }
+        player.addChild("OverlayIcon", {});
     });
+    // handle hotkeys from anywhere on the page
+    document.addEventListener("keydown", (event) => player.handleKeyDown(event));
 };
 
 let skipTo = 0;
@@ -345,10 +346,114 @@ export class StartInOverlay extends Component {
     }
 }
 
+export class OverlayIcon extends Component {
+    private removeIconTimeout;
+    private readonly removeIconAfter;
+    private wrapper;
+
+    constructor(player, options) {
+        super(player, options);
+        this.removeIconAfter = options.removeIconAfter ?? 3000;
+        this.setupEl_();
+    }
+
+    setupEl_() {
+        this.wrapper = dom.createEl("div", { className: "vjs-overlay-icon-wrapper" });
+        dom.appendContent(this.el(), this.wrapper);
+    }
+
+    createEl() {
+        return super.createEl("div", {
+            className: "vjs-overlay-icon-container",
+        });
+    }
+
+    showIcon(className) {
+        this.removeIcon();
+        this.setupEl_();
+
+        this.el().classList.add("vjs-overlay-icon-animate");
+        this.removeIconTimeout = setTimeout(() => this.removeIcon(), this.removeIconAfter);
+
+        dom.appendContent(this.wrapper, dom.createEl("i", { className }));
+    }
+
+    removeIcon() {
+        clearTimeout(this.removeIconTimeout);
+        dom.emptyEl(this.el());
+        this.el().classList.remove("vjs-overlay-icon-animate");
+    }
+}
+
 export function jumpTo(hours: number, minutes: number, seconds: number) {
     videojs("my-video").ready(() => {
-        player.currentTime(hours * 60 * 60 + minutes * 60 + seconds);
+        player.currentTime(toSeconds(hours, minutes, seconds));
     });
+}
+
+export class VideoSections {
+    readonly streamID: number;
+
+    list: Section[];
+    currentHighlightIndex: number;
+
+    constructor(streamID) {
+        this.streamID = streamID;
+        this.list = [];
+        this.currentHighlightIndex = -1;
+    }
+
+    isCurrent(i: number): boolean {
+        return this.currentHighlightIndex !== -1 && i === this.currentHighlightIndex;
+    }
+
+    async fetch() {
+        await fetch(`/api/stream/${this.streamID}/sections`)
+            .then((res: Response) => {
+                if (!res.ok) {
+                    throw new Error("Could not fetch sections");
+                }
+                return res.json();
+            })
+            .then((sections) => {
+                this.list = sections;
+                attachCurrentTimeEvent(this);
+            })
+            .catch((err) => {
+                console.log(err);
+                this.list = [];
+                this.currentHighlightIndex = 0;
+            });
+    }
+}
+
+function attachCurrentTimeEvent(videoSection: VideoSections) {
+    player.ready(() => {
+        let timer;
+        (function checkTimestamp() {
+            timer = setTimeout(() => {
+                hightlight(player, videoSection);
+                checkTimestamp();
+            }, 500);
+        })();
+        player.on("seeked", () => hightlight(player, videoSection));
+    });
+}
+
+function hightlight(player, videoSection) {
+    const currentTime = player.currentTime();
+    videoSection.currentHighlightIndex = videoSection.list.findIndex((section, i, list) => {
+        const next = list[i + 1];
+        const sectionSeconds = toSeconds(section.startHours, section.startMinutes, section.startSeconds);
+        return next === undefined || next === null // if last element and no next exists
+            ? sectionSeconds <= currentTime
+            : sectionSeconds <= currentTime &&
+                  currentTime <= toSeconds(next.startHours, next.startMinutes, next.startSeconds) - 1;
+    });
+}
+
+function toSeconds(hours: number, minutes: number, seconds: number): number {
+    return hours * 60 * 60 + minutes * 60 + seconds;
 }
 
 // Register the plugin with video.js.
@@ -356,4 +461,5 @@ videojs.registerPlugin("skipSilence", skipSilence);
 videojs.registerPlugin("watchProgress", watchProgress);
 videojs.registerComponent("Titlebar", Titlebar);
 videojs.registerComponent("StartInOverlay", StartInOverlay);
+videojs.registerComponent("OverlayIcon", OverlayIcon);
 airplay(videojs); //calls registerComponent internally

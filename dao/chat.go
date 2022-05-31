@@ -28,6 +28,8 @@ type ChatDao interface {
 	ToggleLike(userID uint, chatID uint) error
 
 	CloseActivePoll(streamID uint) error
+
+	GetChatsByUser(userID uint) ([]model.Chat, error)
 }
 
 type chatDao struct {
@@ -192,4 +194,8 @@ func (d chatDao) ToggleLike(userID uint, chatID uint) error {
 // CloseActivePoll closes poll for the stream with the given ID.
 func (d chatDao) CloseActivePoll(streamID uint) error {
 	return DB.Table("polls").Where("stream_id = ? AND active", streamID).Update("active", false).Error
+}
+
+func (d chatDao) GetChatsByUser(userID uint) (chats []model.Chat, err error) {
+	return chats, d.db.Find(&chats, "user_id = ?", userID).Error
 }

@@ -1,4 +1,5 @@
 export * from "./notifications";
+export * from "./user-settings";
 
 export async function putData(url = "", data = {}) {
     return await fetch(url, {
@@ -208,6 +209,18 @@ export function getLoginReferrer(): string {
 
     return document.referrer;
 }
+
+// TypeScript Mapping of model.VideoSection
+export type Section = {
+    description: string;
+
+    startHours: number;
+    startMinutes: number;
+    startSeconds: number;
+
+    streamID: number;
+    friendlyTimestamp?: string;
+};
 
 window.onload = function () {
     initHiddenCourses();

@@ -19,6 +19,7 @@ campus:
   - secret2
 db:
   host: localhost
+  port: 3306
   database: tumlive
   password: example
   user: root

@@ -208,7 +208,7 @@
         <div class="px-4 sm:px-6 xl:px-8">
             <div class="w-full">
                 {{if and (eq $curUser.Role 1) (eq .Page "users")}}
-                    {{template "users" .Users}}
+                    {{template "users" .UsersAsJson}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "course")}}
                     {{template "edit-course" .EditCourseData}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "lectureHalls")}}
