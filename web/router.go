@@ -91,6 +91,7 @@ func configMainRoute(router *gin.Engine) {
 	adminGroup.GET("/admin/server-stats", routes.AdminPage)
 	adminGroup.GET("/admin/course-import", routes.AdminPage)
 	adminGroup.GET("/admin/token", routes.AdminPage)
+	adminGroup.GET("/admin/texts", routes.AdminPage)
 	adminGroup.GET("/admin/notifications", routes.AdminPage)
 
 	courseAdminGroup := router.Group("/")

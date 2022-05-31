@@ -128,3 +128,25 @@ export async function updateUser(userID: number, role: number) {
         });
     return success ? role : -1;
 }
+
+export async function updateText(id: number, name: string, content: string) {
+    await fetch("/api/texts/" + id, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            name: name,
+            content: content,
+            type: 1, // model.TEXT_MARKDOWN
+        }),
+    })
+        .then((res) => {
+            if (res.status !== StatusCodes.OK) {
+                throw new Error(res.statusText);
+            }
+        })
+        .catch((err) => {
+            showMessage("There was an error updating the text: " + err);
+        });
+}
