@@ -1,12 +1,14 @@
 package api
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"strconv"
 )
 
 type statReq struct {
@@ -277,9 +279,18 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 	}
 
 	if req.Format == "json" {
-		c.JSON(http.StatusOK, result.ExportJson())
+		jsonResult, err := json.Marshal(result.ExportJson())
+		if err != nil {
+			log.WithError(err).WithField("courseId", cid).Warn("json.Marshal failed for stats export")
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		c.Header("Content-Disposition", "attachment; filename=course-"+strconv.Itoa(int(cid))+"-stats.json")
+		c.Data(http.StatusOK, "application/octet-stream", jsonResult)
 	} else {
-		c.String(http.StatusOK, result.ExportCsv())
+		c.Header("Content-Disposition", "attachment; filename=course-"+strconv.Itoa(int(cid))+"-stats.csv")
+		c.Data(http.StatusOK, "application/octet-stream", []byte(result.ExportCsv()))
 	}
 }
 

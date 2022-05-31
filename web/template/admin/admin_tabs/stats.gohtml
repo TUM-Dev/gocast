@@ -49,11 +49,10 @@
                     class="absolute right-0 mt-2 w-40 text-white bg-gray-500 dark:bg-gray-900 rounded shadow-md overflow-hidden"
                 >
                     <div>
-                        <a x-on:click="close($refs.button); admin.downloadStats('json')" class="block w-full px-4 py-2 text-left text-sm dark:hover:bg-gray-600 cursor-pointer">
+                        <a :href="admin.getStatsDownloadLink('json')" x-on:click="close($refs.button);" class="block w-full px-4 py-2 text-left text-sm dark:hover:bg-gray-600 cursor-pointer" download>
                             Export as JSON
                         </a>
-
-                        <a x-on:click="close($refs.button); admin.downloadStats('csv')"  class="block w-full px-4 py-2 text-left text-sm dark:hover:bg-gray-600 cursor-pointer">
+                        <a :href="admin.getStatsDownloadLink('csv')" x-on:click="close($refs.button);"  class="block w-full px-4 py-2 text-left text-sm dark:hover:bg-gray-600 cursor-pointer">
                             Export as CSV
                         </a>
                     </div>
