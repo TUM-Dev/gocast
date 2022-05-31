@@ -24,8 +24,8 @@ const (
 type Stream struct {
 	gorm.Model
 
-	Name             string
-	Description      string
+	Name             string `gorm:"index:,class:FULLTEXT"`
+	Description      string `gorm:"type:text;index:,class:FULLTEXT"`
 	CourseID         uint
 	Start            time.Time `gorm:"not null"`
 	End              time.Time `gorm:"not null"`

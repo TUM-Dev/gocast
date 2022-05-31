@@ -41,9 +41,8 @@ require (
 	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
 	github.com/crewjam/saml v0.4.6
 	github.com/golang/mock v1.6.0
-	github.com/google/uuid v1.1.2
 	github.com/icholy/digest v0.1.15
-	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20220501122901-59afcfe2763c
+	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20220516150142-ca8d8a2bd1a4
 	github.com/magiconair/properties v1.8.6
 	github.com/stretchr/testify v1.7.1
 )
@@ -66,6 +65,7 @@ require (
 	github.com/go-playground/validator/v10 v10.10.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/google/uuid v1.1.2 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/huandu/xstrings v1.3.1 // indirect
