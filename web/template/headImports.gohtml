@@ -15,7 +15,7 @@
     {{template "theme-selector-head"}}
     <style>[x-cloak] { display: none !important; }</style>
     <script>
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js', { scope: './' })
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
             .catch((err) => console.error("Service Worker Failed to Register", err))
     </script>
 {{end}}
