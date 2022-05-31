@@ -6,7 +6,7 @@
     <script src="/static/assets/ts-dist/global.bundle.js?v={{.IndexData.VersionTag}}"></script>
     {{template "headImports" .IndexData.VersionTag}}
 </head>
-<body class="md:overflow-hidden">
+<body>
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.CoursePageData*/ -}}
 {{template "header" .IndexData.TUMLiveContext}}
 {{$course := .IndexData.TUMLiveContext.Course}}
@@ -132,6 +132,5 @@
         </div>
     </div>
 </div>
-{{template "footer"}}
 </body>
 </html>

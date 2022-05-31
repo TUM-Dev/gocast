@@ -5,7 +5,6 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
 )
@@ -15,24 +14,12 @@ func configTextRouter(router *gin.Engine, wrapper dao.DaoWrapper) {
 	api := router.Group("/api")
 	{
 		api.Use(tools.Admin)
-		api.GET("/texts", routes.getAllTexts)
 		api.PUT("/texts/:id", routes.updateText)
 	}
 }
 
 type markdownTextRoutes struct {
 	dao.DaoWrapper
-}
-
-func (r markdownTextRoutes) getAllTexts(c *gin.Context) {
-	texts, err := r.TextDao.GetAll()
-	if err != nil {
-		log.WithError(err).Error("Could not get all texts")
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, texts)
 }
 
 type updateTextDao struct {

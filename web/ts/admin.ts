@@ -148,5 +148,8 @@ export async function updateText(id: number, name: string, content: string) {
         })
         .catch((err) => {
             showMessage("There was an error updating the text: " + err);
+        })
+        .then(() => {
+            showMessage(`Successfully updated "${name}"`);
         });
 }

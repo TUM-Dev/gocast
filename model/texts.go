@@ -19,7 +19,7 @@ type Text struct {
 	Type       uint   `gorm:"not null; default: 1"`
 }
 
-func (mt Text) render() template.HTML {
+func (mt Text) Render() template.HTML {
 	var renderedContent template.HTML = ""
 	switch mt.Type {
 	case TEXT_MARKDOWN:
@@ -28,6 +28,8 @@ func (mt Text) render() template.HTML {
 			UGCPolicy().
 			SanitizeBytes(unsafe)
 		renderedContent = template.HTML(html)
+	default:
+		renderedContent = template.HTML(mt.RawContent)
 	}
 	return renderedContent
 }

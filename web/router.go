@@ -78,9 +78,11 @@ func configMainRoute(router *gin.Engine) {
 	atLeastLecturerGroup.Use(tools.AtLeastLecturer)
 	atLeastLecturerGroup.GET("/admin", routes.AdminPage)
 	atLeastLecturerGroup.GET("/admin/create-course", routes.AdminPage)
-	router.GET("/about", routes.AboutPage)
-	router.GET("/privacy", routes.PrivacyPage)
-	router.GET("/imprint", routes.ImprintPage)
+
+	// INFO: Make sure the IDs are correct!
+	router.GET("/privacy", routes.TextPage(1))
+	router.GET("/imprint", routes.TextPage(2))
+	router.GET("/about", routes.TextPage(3))
 
 	adminGroup := router.Group("/")
 	adminGroup.GET("/admin/users", routes.AdminPage)

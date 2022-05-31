@@ -10,6 +10,7 @@ import (
 type TextDao interface {
 	New(*model.Text) error
 	GetAll() ([]model.Text, error)
+	GetById(uint) (model.Text, error)
 	Update(uint, *model.Text) error
 }
 
@@ -28,6 +29,11 @@ func (d textDao) New(text *model.Text) error {
 func (d textDao) GetAll() (texts []model.Text, err error) {
 	err = DB.Find(&texts).Error
 	return texts, err
+}
+
+func (d textDao) GetById(id uint) (text model.Text, err error) {
+	err = DB.Find(&text, "id = ?", id).Error
+	return text, err
 }
 
 func (d textDao) Update(id uint, text *model.Text) error {
