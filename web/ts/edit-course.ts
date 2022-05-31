@@ -1,5 +1,5 @@
-import { Delete, postData, putData, showMessage } from "./global";
-import { StatusCodes } from "http-status-codes";
+import {Delete, postData, putData, showMessage} from "./global";
+import {StatusCodes} from "http-status-codes";
 
 export enum UIEditMode {
     none,
@@ -23,7 +23,7 @@ export class LectureList {
     }
 
     static triggerUpdate() {
-        const event = new CustomEvent("newlectures", { detail: LectureList.lectures });
+        const event = new CustomEvent("newlectures", {detail: LectureList.lectures});
         window.dispatchEvent(event);
     }
 }
@@ -33,7 +33,7 @@ class LectureFile {
     readonly fileType: number;
     readonly friendlyName: string;
 
-    constructor({ id, fileType, friendlyName }) {
+    constructor({id, fileType, friendlyName}) {
         this.id = id;
         this.fileType = fileType;
         this.friendlyName = friendlyName;
@@ -56,7 +56,7 @@ export class Lecture {
     readonly lectureId: number;
     readonly streamKey: string;
     readonly seriesIdentifier: string;
-    readonly color: string;
+    color: string;
     readonly vodViews: number;
     start: Date;
     end: Date;
@@ -79,6 +79,7 @@ export class Lecture {
     isDeleted = false;
     lastErrors: string[] = [];
     files: LectureFile[];
+    private: boolean;
 
     clone() {
         return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
@@ -127,6 +128,25 @@ export class Lecture {
         this.uiEditMode = UIEditMode.single;
     }
 
+    async toggleVisibility() {
+        fetch(`/api/stream/${this.lectureId}/visibility`,
+            {
+                method: "PATCH",
+                body: JSON.stringify({private: !this.private}),
+                headers: {'Content-Type': 'application/json'}
+            }
+        ).then((r) => {
+            if (r.status == StatusCodes.OK) {
+                this.private = !this.private;
+                if (this.private) {
+                    this.color = "gray-500";
+                } else {
+                    this.color = "success";
+                }
+            }
+        })
+    }
+
     async saveEdit() {
         this.lastErrors = [];
         if (this.uiEditMode === UIEditMode.none) return;
@@ -156,7 +176,8 @@ export class Lecture {
                             return msg;
                         }
                         // eslint-disable-next-line no-empty
-                    } catch (_) {}
+                    } catch (_) {
+                    }
                     return text;
                 }),
             );
@@ -310,7 +331,7 @@ export class Lecture {
             res.json().then((id) => {
                 const friendlyName = file.name;
                 const fileType = 2;
-                this.files.push(new LectureFile({ id, fileType, friendlyName }));
+                this.files.push(new LectureFile({id, fileType, friendlyName}));
             }),
         );
     }
@@ -325,7 +346,7 @@ export class Lecture {
             res.json().then((id) => {
                 const friendlyName = fileURL.substring(fileURL.lastIndexOf("/") + 1);
                 const fileType = 2;
-                this.files.push(new LectureFile({ id, fileType, friendlyName }));
+                this.files.push(new LectureFile({id, fileType, friendlyName}));
             }),
         );
     }
@@ -354,14 +375,14 @@ export async function deleteLectures(cid: number, lids: number[]) {
 }
 
 export function saveLectureHall(streamIds: number[], lectureHall: string) {
-    return postData("/api/setLectureHall", { streamIds, lectureHall: parseInt(lectureHall) });
+    return postData("/api/setLectureHall", {streamIds, lectureHall: parseInt(lectureHall)});
 }
 
 // Used by schedule.ts
 export function saveLectureDescription(e: Event, cID: number, lID: number) {
     e.preventDefault();
     const input = (document.getElementById("lectureDescriptionInput" + lID) as HTMLInputElement).value;
-    postData("/api/course/" + cID + "/updateDescription/" + lID, { name: input }).then((res) => {
+    postData("/api/course/" + cID + "/updateDescription/" + lID, {name: input}).then((res) => {
         if (res.status == StatusCodes.OK) {
             document.getElementById("descriptionSubmitBtn" + lID).classList.add("invisible");
         } else {
@@ -374,7 +395,7 @@ export function saveLectureDescription(e: Event, cID: number, lID: number) {
 export function saveLectureName(e: Event, cID: number, lID: number) {
     e.preventDefault();
     const input = (document.getElementById("lectureNameInput" + lID) as HTMLInputElement).value;
-    postData("/api/course/" + cID + "/renameLecture/" + lID, { name: input }).then((res) => {
+    postData("/api/course/" + cID + "/renameLecture/" + lID, {name: input}).then((res) => {
         if (res.status == StatusCodes.OK) {
             document.getElementById("nameSubmitBtn" + lID).classList.add("invisible");
         } else {
@@ -499,7 +520,7 @@ export function createLectureForm() {
                     // todo: file: undefined,
                 };
                 if (this.formData.recurring) {
-                    for (const date of this.formData.recurringDates.filter(({ enabled }) => enabled)) {
+                    for (const date of this.formData.recurringDates.filter(({enabled}) => enabled)) {
                         payload.dateSeries.push(date.date.toISOString());
                     }
                 }
@@ -534,7 +555,7 @@ export function createLectureForm() {
                     return;
                 }
                 window.dispatchEvent(
-                    new CustomEvent("voduploadprogress", { detail: Math.floor(100 * (e.loaded / e.total)) }),
+                    new CustomEvent("voduploadprogress", {detail: Math.floor(100 * (e.loaded / e.total))}),
                 );
             };
             xhr.open("POST", `/api/course/${this.courseID}/uploadVOD?start=${this.formData.start}`);
@@ -546,7 +567,7 @@ export function createLectureForm() {
 export function deleteCourse(courseID: string) {
     if (confirm("Do you really want to delete this course? This includes all associated lectures.")) {
         const url = `/api/course/${courseID}/`;
-        fetch(url, { method: "DELETE" }).then((res) => {
+        fetch(url, {method: "DELETE"}).then((res) => {
             if (!res.ok) {
                 alert("Couldn't delete course.");
             } else {

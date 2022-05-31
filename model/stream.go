@@ -171,8 +171,12 @@ func (s Stream) FriendlyNextDate() string {
 	return s.Start.Format("Mon, January 02. 15:04")
 }
 
+// Color returns the ui color of the stream that indicates it's status
 func (s Stream) Color() string {
 	if s.Recording {
+		if s.Private {
+			return "gray-500"
+		}
 		return "success"
 	} else if s.LiveNow {
 		return "danger"
@@ -219,6 +223,7 @@ func (s Stream) getJson(lhs []LectureHall, course Course) gin.H {
 		"start":            s.Start,
 		"end":              s.End,
 		"courseSlug":       course.Slug,
+		"private":          s.Private,
 	}
 }
 
