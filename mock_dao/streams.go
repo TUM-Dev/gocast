@@ -412,21 +412,6 @@ func (mr *MockStreamsDaoMockRecorder) SaveWorkerForStream(stream, worker interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveWorkerForStream", reflect.TypeOf((*MockStreamsDao)(nil).SaveWorkerForStream), stream, worker)
 }
 
-// Search mocks base method.
-func (m *MockStreamsDao) Search(q string, courseId uint) ([]uint, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Search", q, courseId)
-	ret0, _ := ret[0].([]uint)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Search indicates an expected call of Search.
-func (mr *MockStreamsDaoMockRecorder) Search(q, courseId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockStreamsDao)(nil).Search), q, courseId)
-}
-
 // SetLectureHall mocks base method.
 func (m *MockStreamsDao) SetLectureHall(streamIDs []uint, lectureHallID uint) error {
 	m.ctrl.T.Helper()
