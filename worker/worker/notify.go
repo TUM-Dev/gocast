@@ -129,6 +129,25 @@ func notifyUploadDone(streamCtx *StreamContext) {
 	}
 }
 
+func notifyThumbnailDone(streamCtx *StreamContext) {
+	client, conn, err := GetClient()
+	if err != nil {
+		log.WithError(err).Error("Unable to dial tumlive")
+		return
+	}
+	defer closeConnection(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	resp, err := client.NotifyThumbnailsFinished(ctx, &pb.ThumbnailsFinished{
+		WorkerID: cfg.WorkerID,
+		StreamID: streamCtx.streamId,
+		FilePath: streamCtx.getThumbnailFileName(),
+	})
+	if err != nil || !resp.Ok {
+		log.WithError(err).Error("Could not notify thumbnail finished")
+	}
+}
+
 func GetClient() (pb.FromWorkerClient, *grpc.ClientConn, error) {
 	conn, err := grpc.Dial(fmt.Sprintf("%s:50052", cfg.MainBase), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {

@@ -26,7 +26,7 @@ export const initPlayer = function (
     fluid: boolean,
     isEmbedded: boolean,
     playbackSpeeds: number[],
-    spriteUrl?: string,
+    spriteID?: number,
     courseName?: string,
     streamName?: string,
     streamUrl?: string,
@@ -52,15 +52,20 @@ export const initPlayer = function (
         autoplay: autoplay,
     });
     // setup 160x90 thumbnails in sprite.jpg,
-    player
-        .spriteThumbnails({
-            interval: 120,
-            url: spriteUrl,
-            width: 160,
-            height: 90,
-            downlink: 0, // TODO: Remove this
-        })
-        .log.level("debug");
+    if (spriteID) {
+        player
+            .spriteThumbnails({
+                interval: 120,
+                url: "/api/downloads/" + spriteID,
+                width: 160,
+                height: 90,
+                downlink: 0, // TODO: Remove this
+            })
+            .log.level("debug");
+    } else {
+        console.log("No valid thumbnail sprite ID found.");
+    }
+
     player.hlsQualitySelector();
     player.seekButtons({
         // TODO user preferences, e.g. change to 5s

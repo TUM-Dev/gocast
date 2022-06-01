@@ -3,7 +3,6 @@ package worker
 import (
 	"context"
 	"fmt"
-	"github.com/joschahenningsen/thumbgen"
 	"io"
 	"os"
 	"os/exec"
@@ -101,39 +100,19 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 		log.WithField("File", ctx.getTranscodingFileName()).WithError(err).Error("Detecting silence failed.")
 		return
 	}
+	notifySilenceResults(sd.Silences, ctx.streamId)
 
 	err = CreateThumbnailSprite(ctx)
 	if err != nil {
-		log.WithField("File", ctx.getTranscodingFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
+		log.WithField("File", ctx.getThumbnailFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
 		return
 	}
-
-	notifySilenceResults(sd.Silences, ctx.streamId)
 	if ctx.TranscodingSuccessful {
 		err := markForDeletion(ctx)
 		if err != nil {
 			log.WithField("stream", ctx.streamId).WithError(err).Error("Error marking for deletion")
 		}
 	}
-}
-
-func CreateThumbnailSprite(ctx *StreamContext) error {
-	// Create thumbnails
-	progress := make(chan int)
-	g, err := thumbgen.New("/home/alex/Videos/sample-mp4-file.mp4", 360, 100, ctx.thumbnailSpritePath, thumbgen.WithJpegCompression(70), thumbgen.WithProgressChan(&progress))
-	if err != nil {
-		fmt.Println(err)
-	}
-	go func() {
-		for {
-			p := <-progress
-			if p == 100 {
-				break
-			}
-		}
-	}()
-	err = g.Generate()
-	return err
 }
 
 // HandleStreamEndRequest ends all streams for a given streamID contained in request
@@ -229,6 +208,12 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 		upload(streamCtx)
 		notifyUploadDone(streamCtx)
 	}
+
+	err = CreateThumbnailSprite(streamCtx)
+	if err != nil {
+		log.WithField("File", streamCtx.getThumbnailFileName()).WithError(err).Error("Creating thumbnail sprite failed")
+	}
+	notifyThumbnailDone(streamCtx)
 
 	if streamCtx.streamVersion == "COMB" {
 		S.startSilenceDetection(streamCtx)
@@ -334,6 +319,11 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 			log.WithField("stream", c.streamId).Debug("Successfully moved upload to target dir")
 		}
 	}
+	err = CreateThumbnailSprite(&c)
+	if err != nil {
+		log.WithField("File", c.getThumbnailFileName()).WithError(err).Error("Creating thumbnail sprite failed")
+	}
+	notifyThumbnailDone(&c)
 
 	S.startSilenceDetection(&c)
 	defer S.endSilenceDetection(&c)
@@ -441,6 +431,28 @@ func (s StreamContext) getTranscodingFileName() string {
 			s.startTime.Format("02012006"))
 	}
 	return fmt.Sprintf("%s/%d/%s/%s/%s/%s.mp4",
+		cfg.StorageDir,
+		s.teachingYear,
+		s.teachingTerm,
+		s.courseSlug,
+		s.startTime.Format("2006-01-02_15-04"),
+		s.getStreamName())
+}
+
+// getTranscodingFileName returns the filename a stream should be saved to after transcoding.
+// example: /srv/sharedMassStorage/2021/S/eidi/2021-09-23_10-00/eidi_2021-09-23_10-00_PRES.mp4
+func (s StreamContext) getThumbnailFileName() string {
+	if s.isSelfStream {
+		return fmt.Sprintf("%s/%d/%s/%s/%s/%s-%s-thumb.jpg",
+			cfg.StorageDir,
+			s.teachingYear,
+			s.teachingTerm,
+			s.courseSlug,
+			s.startTime.Format("2006-01-02_15-04"),
+			s.courseSlug,
+			s.startTime.Format("02012006"))
+	}
+	return fmt.Sprintf("%s/%d/%s/%s/%s/%s-thumb.jpg",
 		cfg.StorageDir,
 		s.teachingYear,
 		s.teachingTerm,

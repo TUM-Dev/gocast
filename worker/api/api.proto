@@ -85,6 +85,7 @@ service FromWorker {
   rpc NotifyStreamStarted(StreamStarted) returns (Status) {}
   rpc NotifyStreamFinished(StreamFinished) returns (Status) {}
   rpc NotifyUploadFinished(UploadFinished) returns (Status) {}
+  rpc NotifyThumbnailsFinished(ThumbnailsFinished) returns (Status) {}
   rpc SendSelfStreamRequest(SelfStreamRequest) returns (SelfStreamResponse) {}
   rpc GetStreamInfoForUpload(GetStreamInfoForUploadRequest) returns (GetStreamInfoForUploadResponse) {}
 }
@@ -130,6 +131,14 @@ message HeartBeat {
 message StreamFinished {
   string WorkerID = 1;
   uint32 StreamID = 2;
+}
+
+message ThumbnailsFinished {
+  string WorkerID = 1;
+  uint32 StreamID = 2;
+  string FilePath = 3;
+  uint32 ThumbnailInterval = 4;
+  string SourceType = 5;
 }
 
 message TranscodingFinished {

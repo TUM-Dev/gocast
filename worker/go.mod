@@ -23,11 +23,12 @@ require (
 	google.golang.org/protobuf v1.28.0
 )
 
+require github.com/joschahenningsen/thumbgen v0.0.0-20220520094518-cd7d68d0e7c9
+
 require (
 	github.com/aws/aws-sdk-go v1.44.4 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	github.com/joschahenningsen/thumbgen v0.0.0-20220520094518-cd7d68d0e7c9 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20220326011226-f1430873d8db // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
