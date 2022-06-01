@@ -15,7 +15,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v4
         with:
           images: ghcr.io/joschahenningsen/tum-live/test-server
           tags: |
