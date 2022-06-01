@@ -274,7 +274,7 @@ func (d streamsDao) GetStreamsWithWatchState(courseID uint, userID uint) (stream
 	queriedStreams := DB.Table("streams").Where("course_id = ? and deleted_at is NULL", courseID)
 	result := queriedStreams.
 		Joins("left join (select watched, stream_id from stream_progresses where user_id = ?) as sp on sp.stream_id = streams.id", userID).
-		Order("start asc").      // Order by start time, this is also the order that is used in the course page.
+		Order("start desc").     // order by descending start time, this is also the order that is used in the course page.
 		Session(&gorm.Session{}) // Session is required to scan multiple times
 
 	if err = result.Scan(&streams).Error; err != nil {

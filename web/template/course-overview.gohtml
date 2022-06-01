@@ -86,7 +86,7 @@
                     <div class="my-auto">
                         {{if .Course.HasRecordings}}
                             <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
-                                    x-init="mirror()"
+                                    x-init="if (asc) mirror();"
                                     @click="asc = !asc; mirror();">
                             <span class="text-sm font-semibold uppercase dark:text-white"
                                   x-text="asc ? '&#x25B2; asc' : '&#x25BC; desc'">desc &#x25BC;</span>
