@@ -10,7 +10,7 @@ require (
 	github.com/makasim/sentryhook v0.4.0
 	github.com/pkg/profile v1.6.0
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/shirou/gopsutil/v3 v3.22.4
+	github.com/shirou/gopsutil/v3 v3.22.5
 	github.com/sirupsen/logrus v1.8.1
 	github.com/tidwall/gjson v1.14.1
 	github.com/u2takey/ffmpeg-go v0.4.1
@@ -37,7 +37,6 @@ require (
 	github.com/tklauser/numcpus v0.4.0 // indirect
 	github.com/u2takey/go-utils v0.3.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
-	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
