@@ -27,6 +27,7 @@ export const initPlayer = function (
     isEmbedded: boolean,
     playbackSpeeds: number[],
     spriteID?: number,
+    spriteInterval?: number,
     courseName?: string,
     streamName?: string,
     streamUrl?: string,
@@ -55,11 +56,10 @@ export const initPlayer = function (
     if (spriteID) {
         player
             .spriteThumbnails({
-                interval: 120,
+                interval: spriteInterval,
                 url: "/api/downloads/" + spriteID,
                 width: 160,
                 height: 90,
-                downlink: 0, // TODO: Remove this
             })
             .log.level("debug");
     } else {

@@ -48,7 +48,7 @@ func TestGetRecordingFileName(t *testing.T) {
 
 func TestThumbnailCreation(t *testing.T) {
 	setup()
-	err := CreateThumbnailSprite(&s)
+	err := createThumbnailSprite(&s)
 	if err != nil {
 		return
 	}

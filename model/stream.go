@@ -51,7 +51,7 @@ type Stream struct {
 	LectureHallID     uint `gorm:"default:null"`
 	Silences          []Silence
 	Files             []File `gorm:"foreignKey:StreamID"`
-	ThumbnailInterval uint   `gorm:"default:null"`
+	ThumbnailInterval uint32 `gorm:"default:null"`
 	Paused            bool   `gorm:"default:false"`
 	StreamName        string
 	Duration          uint32           `gorm:"default:null"`

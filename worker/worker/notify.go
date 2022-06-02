@@ -142,6 +142,7 @@ func notifyThumbnailDone(streamCtx *StreamContext) {
 		WorkerID: cfg.WorkerID,
 		StreamID: streamCtx.streamId,
 		FilePath: streamCtx.getThumbnailFileName(),
+		Interval: streamCtx.duration / ThumbCount,
 	})
 	if err != nil || !resp.Ok {
 		log.WithError(err).Error("Could not notify thumbnail finished")
