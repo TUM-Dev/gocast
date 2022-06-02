@@ -4,7 +4,7 @@ ARG NGINX_RTMP_VERSION=1.2.2
 
 ##############################
 # Build the NGINX-build image.
-FROM alpine:3.15 as build-nginx
+FROM alpine:3.16 as build-nginx
 ARG NGINX_VERSION
 ARG NGINX_RTMP_VERSION
 
