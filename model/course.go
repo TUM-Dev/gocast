@@ -112,7 +112,8 @@ func (c Course) CanUseSource(lectureHallID uint, sourceType string) bool {
 func (c *Course) SetSourcePreference(pref []SourcePreference) {
 	pBytes, err := json.Marshal(pref)
 	if err != nil {
-		log.Println(err)
+		log.WithError(err).Error("could not marshal source preference")
+		return
 	}
 	c.SourcePreferences = string(pBytes)
 }
