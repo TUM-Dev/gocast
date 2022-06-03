@@ -281,7 +281,7 @@ export const watchProgress = function (streamID: number, lastProgress: number, l
  * @param callBack call back function responsible for handling player time updates
  */
 export const registerTimeWatcher = function (callBack: (currentPlayerTime: number) => void) {
-    player.on("timeupdate", () => {
+    player?.on("timeupdate", () => {
         callBack(player.currentTime());
     });
 };
