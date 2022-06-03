@@ -4,10 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"log"
 	"time"
 )
+
+// SourceMode 0 -> COMB, 1-> PRES, 2 -> CAM
+type SourceMode int
 
 type Course struct {
 	gorm.Model
@@ -70,8 +74,8 @@ func (c *Course) SetCameraPresetPreference(pref []CameraPresetPreference) {
 }
 
 type SourcePreference struct {
-	LectureHallID uint `json:"lecture_hall_id"`
-	SourceMode    int  `json:"source_mode"`
+	LectureHallID uint       `json:"lecture_hall_id"`
+	SourceMode    SourceMode `json:"source_mode"`
 }
 
 // GetSourcePreference retrieves the source preferences
@@ -85,7 +89,7 @@ func (c Course) GetSourcePreference() []SourcePreference {
 }
 
 // GetSourceModeForLectureHall retrieves the source preference for the given lecture hall, returns default SourcePreference if non-existing
-func (c Course) GetSourceModeForLectureHall(id uint) int {
+func (c Course) GetSourceModeForLectureHall(id uint) SourceMode {
 	for _, preference := range c.GetSourcePreference() {
 		if preference.LectureHallID == id {
 			return preference.SourceMode
@@ -105,14 +109,14 @@ func (c Course) CanUseSource(lectureHallID uint, sourceType string) bool {
 	case "COMB":
 		return mode != 1 && mode != 2
 	}
-	return false
+	return true
 }
 
 // SetSourcePreference updates the source preferences
 func (c *Course) SetSourcePreference(pref []SourcePreference) {
 	pBytes, err := json.Marshal(pref)
 	if err != nil {
-		log.WithError(err).Error("could not marshal source preference")
+		logrus.WithError(err).Error("Could not marshal source preference")
 		return
 	}
 	c.SourcePreferences = string(pBytes)
