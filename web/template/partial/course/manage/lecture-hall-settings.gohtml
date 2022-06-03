@@ -7,16 +7,16 @@
                         x-init="selected_preset = hall.presets.find(e => e.PresetID==hall.selected_preset_id); selected_preset_name = selected_preset in window ? '' : selected_preset.Name"
                         @reinit.window="selected_preset = hall.presets.find(e => e.PresetID==hall.selected_preset_id); selected_preset_name = selected_preset in window ? '' : selected_preset.Name">
                     <div class="flex justify-between">
-                        <p class="font-semibold px-1 my-auto" x-text="hall.lecture_hall_name"></p>
+                        <p class="font-semibold px-1 my-auto dark:text-white" x-text="hall.lecture_hall_name"></p>
                         <select class="text-black dark:bg-secondary bg-gray-100 p-2"
                                 id="sourceModeBulkSelect"
                                 @change="changed=true;"
                                 x-model.number="hall.source_mode">
-                            <option class="text-gray-300" value="0">Presentation & Camera
+                            <option class="text-gray-300 dark:text-white" value="0">Presentation & Camera
                             </option>
-                            <option class="text-gray-300" value="1">Presentation Only
+                            <option class="text-gray-300 dark:text-white" value="1">Presentation Only
                             </option>
-                            <option class="text-gray-300" value="2">Camera Only
+                            <option class="text-gray-300 dark:text-white" value="2">Camera Only
                             </option>
                         </select>
                     </div>
