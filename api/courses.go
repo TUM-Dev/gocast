@@ -305,7 +305,7 @@ type lhResp struct {
 	LectureHallName  string               `json:"lecture_hall_name"`
 	LectureHallID    uint                 `json:"lecture_hall_id"`
 	Presets          []model.CameraPreset `json:"presets"`
-	SourceMode       int                  `json:"source_mode"`
+	SourceMode       model.SourceMode     `json:"source_mode"`
 	SelectedPresetID int                  `json:"selected_preset_id"`
 }
 
