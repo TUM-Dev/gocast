@@ -31,12 +31,10 @@ export class Chat {
                         "</span>",
                 );
             }
-
-            // Alpine.js is already imported by web/template/headImports.gohtml.
-            // Therefore, ignore type error caused by missing import.
-            // @ts-ignore
-            m.grayedOutProxy = Alpine.reactive<GrayedOutProxy>({ isGrayedOut: true });
             return m;
+        },
+        (m: ChatMessage) => {
+            return { ...m, isGrayedOut: !this.orderByLikes };
         },
     ];
 
@@ -192,21 +190,20 @@ export class Chat {
      */
     grayOutMessagesAfterPlayerTime(playerTime: number): void {
         //TODO revert:  const referenceTime = new Date(this.startTime);
-        const referenceTime = new Date("Mon May 29 2022 01:55:00");
+        const referenceTime = new Date("Mon Jun 03 2022 12:28:30");
         referenceTime.setSeconds(referenceTime.getSeconds() + playerTime);
 
-        const grayOutCondition = (CreatedAt: string) =>{
+        const grayOutCondition = (CreatedAt: string) => {
             const dateCreatedAt = new Date(CreatedAt);
-            return  dateCreatedAt > referenceTime;
+            return dateCreatedAt > referenceTime;
         };
-        this.messages.forEach(
-            (message) => message.grayedOutProxy.isGrayedOut = grayOutCondition(message.CreatedAt),
-        );
-        const notGrayedOutMessages = this.messages.filter((message) => !message.grayedOutProxy.isGrayedOut && message.visible);
+        this.messages.forEach((message) => (message.isGrayedOut = grayOutCondition(message.CreatedAt)));
+        const notGrayedOutMessages = this.messages.filter((message) => !message.isGrayedOut && message.visible);
         this.focusedMessageId = notGrayedOutMessages.pop()?.ID;
+        window.dispatchEvent(new CustomEvent("chat-messages-updated"));
     }
 
-    isMessageToBeFocused = (index : number) => this.messages[index].ID === this.focusedMessageId;
+    isMessageToBeFocused = (index: number) => this.messages[index].ID === this.focusedMessageId;
 
     private addMessage(m: ChatMessage) {
         this.preprocessors.forEach((f) => (m = f(m)));
@@ -239,15 +236,9 @@ type ChatMessage = {
     addressedTo: number[];
     resolved: boolean;
     visible: true;
-    grayedOutProxy: GrayedOutProxy;
+    isGrayedOut: boolean;
 
     CreatedAt: string;
     DeletedAt: string;
     UpdatedAt: string;
-};
-
-// Proxy returned from Alpine.js for observing grayed out state reactively.
-// Alpine.js does not seem to be able to track variable state reactively when using a boolean property only.
-type GrayedOutProxy = {
-    isGrayedOut: boolean;
 };
