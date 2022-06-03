@@ -255,7 +255,7 @@ type StreamRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	WorkerId      string                 `protobuf:"bytes,1,opt,name=WorkerId,proto3" json:"WorkerId,omitempty"`
-	SourceType    string                 `protobuf:"bytes,2,opt,name=SourceMode,proto3" json:"SourceMode,omitempty"`
+	SourceType    string                 `protobuf:"bytes,2,opt,name=SourceType,proto3" json:"SourceType,omitempty"`
 	SourceUrl     string                 `protobuf:"bytes,3,opt,name=SourceUrl,proto3" json:"SourceUrl,omitempty"`
 	CourseSlug    string                 `protobuf:"bytes,4,opt,name=CourseSlug,proto3" json:"CourseSlug,omitempty"`
 	Start         *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=Start,proto3" json:"Start,omitempty"`
@@ -1110,7 +1110,7 @@ type UploadFinished struct {
 	WorkerID   string `protobuf:"bytes,1,opt,name=WorkerID,proto3" json:"WorkerID,omitempty"`
 	StreamID   uint32 `protobuf:"varint,2,opt,name=StreamID,proto3" json:"StreamID,omitempty"`
 	HLSUrl     string `protobuf:"bytes,4,opt,name=HLSUrl,proto3" json:"HLSUrl,omitempty"`
-	SourceType string `protobuf:"bytes,5,opt,name=SourceMode,proto3" json:"SourceMode,omitempty"`
+	SourceType string `protobuf:"bytes,5,opt,name=SourceType,proto3" json:"SourceType,omitempty"`
 }
 
 func (x *UploadFinished) Reset() {
@@ -1181,7 +1181,7 @@ type StreamStarted struct {
 	WorkerID   string `protobuf:"bytes,1,opt,name=WorkerID,proto3" json:"WorkerID,omitempty"`
 	StreamID   uint32 `protobuf:"varint,2,opt,name=StreamID,proto3" json:"StreamID,omitempty"`
 	HlsUrl     string `protobuf:"bytes,3,opt,name=HlsUrl,proto3" json:"HlsUrl,omitempty"`
-	SourceType string `protobuf:"bytes,5,opt,name=SourceMode,proto3" json:"SourceMode,omitempty"`
+	SourceType string `protobuf:"bytes,5,opt,name=SourceType,proto3" json:"SourceType,omitempty"`
 }
 
 func (x *StreamStarted) Reset() {
