@@ -2,16 +2,26 @@
     <div x-data="{sections: new watch.VideoSections('{{.ID}}')}"
          x-init="await sections.fetch()" class="w-full">
         <h6 class="font-bold text-3 pb-3">Sections</h6>
-        <div class="overflow-auto flex">
+        <div class="overflow-auto space-x-2 flex">
             <template x-for="(section, i) in sections.list">
-                <button class="mb-1 flex bg-transparent outline-none border-0 rounded-lg mr-2 last:mr-0"
+                <button class="flex w-32 mb-1 bg-transparent outline-none border-0 rounded-lg"
+                        x-data="{previewImgLoaded: false}"
                         @click="watch.jumpTo(section.startHours, section.startMinutes, section.startSeconds)">
-                    <span class="flex px-2 py-1 bg-white dark:bg-secondary justify-between w-full border hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg"
+                    <span class="flex flex-col h-full p-1 bg-white dark:bg-secondary justify-between w-full border hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg"
                           :class="sections.isCurrent(i) ? 'border-2 border-blue-500/50' : 'dark:border-gray-800'">
-                        <span x-text="section.description"
-                              class="text-sm text-3 my-auto mr-3 whitespace-nowrap"></span>
-                        <span x-text="section.friendlyTimestamp"
-                              class="text-sky-800 my-auto bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded">
+                        <img x-cloak x-show="previewImgLoaded"
+                             :src="`/api/stream/{{.ID}}/sections/preview?h=${section.startHours}&m=${section.startMinutes}&s=${section.startSeconds}`"
+                             width="128" height="32"
+                             @load="previewImgLoaded=true"
+                             alt="preview"
+                             class = "w-full h-16 rounded object-cover z-10">
+                        <span x-show="!previewImgLoaded" class = "block w-full h-16 bg-gray-50 rounded"></span>
+                         <span x-text="section.description"
+                            class="block text-left text-xs text-3 my-2 px-1"></span>
+                        <span class="flex flex-grow items-end flex-1 px-1 py-1">
+                            <span x-text="section.friendlyTimestamp"
+                                  class="block text-sky-800 ml-auto w-fit bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded">
+                            </span>
                         </span>
                     </span>
                 </button>

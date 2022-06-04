@@ -15,6 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -48,6 +49,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	g := router.Group("/")
 	g.Use(tools.InitStream(daoWrapper))
 	g.GET("/api/stream/:streamID/sections", routes.getVideoSections)
+	g.GET("/api/stream/:streamID/sections/preview", routes.getVideoSectionPreview)
 
 	adminG.POST("/api/stream/:streamID/files", routes.newAttachment)
 	adminG.DELETE("/api/stream/:streamID/files/:fid", routes.deleteAttachment)
@@ -282,6 +284,50 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 
 	}
 	c.JSON(http.StatusOK, response)
+}
+
+func (r streamRoutes) getVideoSectionPreview(c *gin.Context) {
+	min, h, s := c.Query("m"), c.Query("h"), c.Query("s")
+	if min == "" || h == "" || s == "" {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	f, err := os.CreateTemp("", "section-preview.*.jpeg")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	defer os.Remove(f.Name())
+	cmd := exec.Command("ffmpeg", "-y", "-ss", fmt.Sprintf("%s:%s:%s", h, min, s), "-i",
+		"/Users/matthias/Desktop/fpv-2022-05-09-12-00COMB.mp4",
+		"-vf",
+		fmt.Sprintf("scale=%d:-1", 256),
+		"-frames:v",
+		"1",
+		"-q:v",
+		"2", f.Name())
+	_, err = cmd.CombinedOutput()
+	if err != nil {
+		log.WithError(err).Error("Couldn't create preview")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	st, err := f.Stat()
+	if err != nil {
+		log.WithError(err).Error("Couldn't read file-stats")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	data := make([]byte, st.Size())
+	_, err = f.Read(data)
+	if err != nil {
+		log.WithError(err).Error("Couldn't read preview file from disk")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	c.Data(http.StatusOK, "image/jpeg", data)
 }
 
 func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
