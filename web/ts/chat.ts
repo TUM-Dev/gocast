@@ -24,7 +24,7 @@ export function scrollToTop() {
     document.getElementById("chatBox").scrollTo({ top: 0, behavior: "smooth" });
 }
 
-export function scrollToElement(element: HTMLElement){
+export function scrollToElement(element: HTMLElement) {
     const chatBox = document.getElementById("chatBox");
     chatBox.scrollTop = element.offsetTop;
 }
@@ -62,15 +62,6 @@ export function scrollToLatestMessage() {
     const c = document.getElementById("chatBox");
     c.scrollTo({ top: c.scrollHeight, behavior: "smooth" });
     window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
-}
-
-export function openChatPopUp(courseSlug: string, streamID: number) {
-    const height = window.innerHeight * 0.8;
-    window.open(
-        `/w/${courseSlug}/${streamID}/chat/popup`,
-        "_blank",
-        `popup=yes,width=420,innerWidth=420,height=${height},innerHeight=${height}`,
-    );
 }
 
 export function messageDateToString(date: string) {

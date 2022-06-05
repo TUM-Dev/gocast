@@ -10,6 +10,7 @@ export class Chat {
     readonly admin: boolean;
     readonly streamId: number;
 
+    windows: Window[];
     orderByLikes: boolean;
     disconnected: boolean;
     current: NewChatMessage;
@@ -52,8 +53,12 @@ export class Chat {
         this.poll = new Poll(streamId);
         this.startTime = new Date(startTime);
         this.focusedMessageId = -1;
+        this.windows = [window];
         this.grayOutMessagesAfterPlayerTime = this.grayOutMessagesAfterPlayerTime.bind(this);
         registerTimeWatcher(this.grayOutMessagesAfterPlayerTime);
+        window.addEventListener("beforeunload", () => {
+            this.windows.forEach((window) => window.close());
+        });
     }
 
     async loadMessages() {
@@ -184,6 +189,22 @@ export class Chat {
         }
     }
 
+    openChatPopUp(courseSlug: string, streamID: number) {
+        const height = window.innerHeight * 0.8;
+        const popUpWindow = window.open(
+            `/w/${courseSlug}/${streamID}/chat/popup`,
+            "_blank",
+            `popup=yes,width=420,innerWidth=420,height=${height},innerHeight=${height}`,
+        );
+
+        popUpWindow.addEventListener("beforeunload", (_) => {
+            this.windows = this.windows.filter((window) => window !== popUpWindow);
+        });
+
+        //popUpWindow.dispatchEvent(new CustomEvent("chat-messages-updated", { detail: this.messages }));
+        this.windows.push(popUpWindow);
+    }
+
     /**
      * Grays out all messages that were not sent at the same time in the livestream.
      * @param playerTime time offset of current player time w.r.t. video start in seconds
@@ -197,10 +218,17 @@ export class Chat {
             const dateCreatedAt = new Date(CreatedAt);
             return dateCreatedAt > referenceTime;
         };
-        this.messages.forEach((message) => (message.isGrayedOut = grayOutCondition(message.CreatedAt)));
-        const notGrayedOutMessages = this.messages.filter((message) => !message.isGrayedOut && message.visible);
-        this.focusedMessageId = notGrayedOutMessages.pop()?.ID;
-        window.dispatchEvent(new CustomEvent("chat-messages-updated"));
+
+        this.messages.forEach((message: ChatMessage) => (message.isGrayedOut = grayOutCondition(message.CreatedAt)));
+
+        const messagesNotGrayedOut = this.messages.filter(
+            (message: ChatMessage) => !message.isGrayedOut && message.visible,
+        );
+
+        this.focusedMessageId = messagesNotGrayedOut.pop()?.ID;
+        this.windows.forEach((window: Window) =>
+            window.dispatchEvent(new CustomEvent("chat-messages-updated", { detail: this.messages })),
+        );
     }
 
     isMessageToBeFocused = (index: number) => this.messages[index].ID === this.focusedMessageId;

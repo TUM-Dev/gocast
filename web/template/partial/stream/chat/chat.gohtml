@@ -19,6 +19,7 @@
          x-on:chatapprove.window="await c.loadMessages(); $nextTick(() => { watch.scrollToBottom() })"
          x-on:chatnewpoll.window="e => c.onNewPoll(e);"
          x-on:polloptionvotesupdate.window="e => c.onPollOptionVotesUpdate(e);"
+         @chat-messages-updated.window="(e) => (c.messages = e.detail)"
          @disconnected.window="c.disconnected = true;"
          @connected.window="c.disconnected = false;"
          @reorder="c.sortMessages()"
@@ -286,7 +287,7 @@
                         {{if not .IsPopUp}}
                             <button x-show="!{{.IsPopUp}}"
                                     class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200"
-                                    @click="watch.openChatPopUp('{{.IndexData.TUMLiveContext.Course.Slug}}', {{.IndexData.TUMLiveContext.Stream.Model.ID}})"
+                                    @click="c.openChatPopUp('{{.IndexData.TUMLiveContext.Course.Slug}}', {{.IndexData.TUMLiveContext.Stream.Model.ID}})"
                                     title="Popout Chat"
                                     type="button">
                                 <i class="fas fa-external-link-alt text-3 m-auto"></i>
