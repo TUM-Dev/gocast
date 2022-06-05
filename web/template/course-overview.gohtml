@@ -9,6 +9,7 @@
 <body class="md:overflow-hidden" x-data="{searchContext: new global.SearchContext()}">
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.CoursePageData*/ -}}
 {{$course := .IndexData.TUMLiveContext.Course}}
+{{$user := .IndexData.TUMLiveContext.User}}
 {{template "header" .IndexData.TUMLiveContext}}
 <div x-cloak x-show="searchContext.show"
      x-data="{streamSearch: new global.StreamSearch({{$course.ID}})}"
@@ -64,7 +65,7 @@
 <div class="m-auto px-1 sm:px-3 lg:px-5 w-full xl:w-2/3" style="height: calc(100vh - (6.5rem));">
     <div class="flex my-8 pl-2 md:pl-0">
         <h1 class="font-bold text-3xl text-3 my-auto">{{$course.Name}}</h1>
-        {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
+        {{if and $user or ($user.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
             <a class="hover:bg-gray-200 dark:hover:bg-gray-600 w-fit mx-2 inline-block rounded px-2 my-auto"
                href="/admin/course/{{$course.Model.ID}}"
                :title="'Edit course settings'">
@@ -78,7 +79,7 @@
         <div {{if .IndexData.TUMLiveContext}}x-init="watchedTracker.init({{.WatchedData}})"
              x-data="watchedTracker = new global.WatchedTracker" {{end}}class="w-full md:row-span-6 md:col-span-3">
             <div x-data="{asc: $persist(false), mirror: () => { global.mirror($el.querySelector('.vod-list'), ['.vod-list-month', '.vod-list-video']); }
-                    {{if .IndexData.TUMLiveContext.User}}, filterWatched: $persist(false), watchedAll: watchedTracker.userWatchedAll(), watchedCount: watchedTracker.countWatched(){{end}}}"
+                    {{if $user}}, filterWatched: $persist(false), watchedAll: watchedTracker.userWatchedAll(), watchedCount: watchedTracker.countWatched(){{end}}}"
                  class="bg-white h-full border dark:bg-secondary dark:border-gray-800 rounded-lg
                     shadow-sm flex flex-col">
                 <div class="flex justify-between h-16 px-3 border-b dark:border-gray-800">
@@ -92,7 +93,7 @@
                                   x-text="asc ? '&#x25B2; asc' : '&#x25BC; desc'">desc &#x25BC;</span>
                             </button>
                         {{end}}
-                        {{if and .IndexData.TUMLiveContext.User .Course.HasRecordings }}
+                        {{if and $user .Course.HasRecordings}}
                             <template x-if="watchedCount > 0">
                                 <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
                                         @click="filterWatched=!filterWatched"
