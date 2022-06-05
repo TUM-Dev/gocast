@@ -15,17 +15,16 @@ var s StreamContext
 func setup() {
 	cfg.WorkerID = "123"
 	s = StreamContext{
-		courseSlug:          "eidi",
-		teachingTerm:        "W",
-		teachingYear:        2021,
-		startTime:           time.Date(2021, 9, 23, 8, 0, 0, 0, time.Local),
-		streamId:            1,
-		streamVersion:       "COMB",
-		publishVoD:          true,
-		stream:              true,
-		endTime:             time.Now().Add(time.Hour),
-		commands:            nil,
-		thumbnailSpritePath: "/tmp/thumbnail_sprite.png",
+		courseSlug:    "eidi",
+		teachingTerm:  "W",
+		teachingYear:  2021,
+		startTime:     time.Date(2021, 9, 23, 8, 0, 0, 0, time.Local),
+		streamId:      1,
+		streamVersion: "COMB",
+		publishVoD:    true,
+		stream:        true,
+		endTime:       time.Now().Add(time.Hour),
+		commands:      nil,
 	}
 	cfg.TempDir = "/recordings"
 }
@@ -43,14 +42,6 @@ func TestGetRecordingFileName(t *testing.T) {
 	recordingNameShould := "/recordings/eidi-2021-09-23-08-00COMB.ts"
 	if got := s.getRecordingFileName(); got != recordingNameShould {
 		t.Errorf("Wrong recording name, should be %s but is %s", recordingNameShould, got)
-	}
-}
-
-func TestThumbnailCreation(t *testing.T) {
-	setup()
-	err := createThumbnailSprite(&s)
-	if err != nil {
-		return
 	}
 }
 

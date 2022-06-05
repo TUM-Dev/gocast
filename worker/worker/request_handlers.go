@@ -94,6 +94,14 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 		upload(ctx)
 		notifyUploadDone(ctx)
 	}
+
+	err = createThumbnailSprite(ctx)
+	if err != nil {
+		log.WithField("File", ctx.getThumbnailFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
+	} else {
+		notifyThumbnailDone(ctx)
+	}
+
 	S.startSilenceDetection(ctx)
 	defer S.endSilenceDetection(ctx)
 
@@ -105,11 +113,6 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 	}
 	notifySilenceResults(sd.Silences, ctx.streamId)
 
-	err = createThumbnailSprite(ctx)
-	if err != nil {
-		log.WithField("File", ctx.getThumbnailFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
-		return
-	}
 	if ctx.TranscodingSuccessful {
 		err := markForDeletion(ctx)
 		if err != nil {
@@ -215,8 +218,9 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	err = createThumbnailSprite(streamCtx)
 	if err != nil {
 		log.WithField("File", streamCtx.getThumbnailFileName()).WithError(err).Error("Creating thumbnail sprite failed")
+	} else {
+		notifyThumbnailDone(streamCtx)
 	}
-	notifyThumbnailDone(streamCtx)
 
 	if streamCtx.streamVersion == "COMB" {
 		S.startSilenceDetection(streamCtx)
@@ -325,8 +329,9 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 	err = createThumbnailSprite(&c)
 	if err != nil {
 		log.WithField("File", c.getThumbnailFileName()).WithError(err).Error("Creating thumbnail sprite failed")
+	} else {
+		notifyThumbnailDone(&c)
 	}
-	notifyThumbnailDone(&c)
 
 	S.startSilenceDetection(&c)
 	defer S.endSilenceDetection(&c)
@@ -464,6 +469,7 @@ func (s StreamContext) getThumbnailFileName() string {
 		s.getStreamName())
 }
 
+// createThumbnailSprite creates a thumbnail sprite from the given video file and stores it in mass storage.
 func createThumbnailSprite(ctx *StreamContext) error {
 	g, err := thumbgen.New(ctx.getTranscodingFileName(), 160, ThumbCount, ctx.getThumbnailFileName(), thumbgen.WithJpegCompression(70))
 	if err != nil {
