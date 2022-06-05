@@ -95,6 +95,8 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 		notifyUploadDone(ctx)
 	}
 
+	S.startThumbnailGeneration(ctx)
+	defer S.endThumbnailGeneration(ctx)
 	err = createThumbnailSprite(ctx)
 	if err != nil {
 		log.WithField("File", ctx.getThumbnailFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
@@ -205,21 +207,18 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	S.endTranscoding(streamCtx.getStreamName())
 	notifyTranscodingDone(streamCtx)
 
-	err = createThumbnailSprite(streamCtx)
-	if err != nil {
-		log.WithField("File", streamCtx.getTranscodingFileName()).WithError(err).Error("Creating thumbnail sprite failed")
-	}
-
-	if request.PublishVoD {
-		upload(streamCtx)
-		notifyUploadDone(streamCtx)
-	}
-
+	S.startThumbnailGeneration(streamCtx)
+	defer S.endThumbnailGeneration(streamCtx)
 	err = createThumbnailSprite(streamCtx)
 	if err != nil {
 		log.WithField("File", streamCtx.getThumbnailFileName()).WithError(err).Error("Creating thumbnail sprite failed")
 	} else {
 		notifyThumbnailDone(streamCtx)
+	}
+
+	if request.PublishVoD {
+		upload(streamCtx)
+		notifyUploadDone(streamCtx)
 	}
 
 	if streamCtx.streamVersion == "COMB" {
@@ -326,6 +325,8 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 			log.WithField("stream", c.streamId).Debug("Successfully moved upload to target dir")
 		}
 	}
+	S.startThumbnailGeneration(&c)
+	defer S.endThumbnailGeneration(&c)
 	err = createThumbnailSprite(&c)
 	if err != nil {
 		log.WithField("File", c.getThumbnailFileName()).WithError(err).Error("Creating thumbnail sprite failed")
@@ -473,7 +474,7 @@ func (s StreamContext) getThumbnailFileName() string {
 func createThumbnailSprite(ctx *StreamContext) error {
 	g, err := thumbgen.New(ctx.getTranscodingFileName(), 160, ThumbCount, ctx.getThumbnailFileName(), thumbgen.WithJpegCompression(70))
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 	err = g.Generate()
 	return err
