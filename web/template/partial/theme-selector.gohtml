@@ -1,8 +1,8 @@
 {{define "theme-selector-content"}}
     <div class="my-auto w-full min-h-30 max-h-60 overflow-y-auto">
         <template x-for="[modeId, mode] of Object.entries($store.theme.modes)" :key="modeId">
-            <div role="button" tabindex="0"
-                 x-data="{ active: () => modeId == $store.theme.activeMode }"
+            <button role="button" tabindex="0"
+                 x-data="{ active: () => modeId === $store.theme.activeMode }"
                  class="p-2 w-full border-b dark:border-gray-800 relative last:border-0
                                transition-colors duration-200 text-5 hover:text-1"
                  :class="(active() ? ['bg-gray-100', 'dark:bg-secondary-lighter'] : []).concat(mobile ? ['px-5'] : [])"
@@ -12,7 +12,7 @@
                     <i class="fa-solid" :class="['fa-' + mode.faIconId, mobile ? 'ml-8' : 'mr-2']"></i>
                     <p x-text="mode.name" :class="mobile ? 'mr-2' : ''"></p>
                 </div>
-            </div>
+            </button>
         </template>
     </div>
 {{end}}
@@ -24,7 +24,7 @@
 {{define "theme-selector"}}
     <div class="relative" x-data="{ show: false, mobile: false }">
         <button class="transition-colors duration-200 hover:text-gray-600
-                       dark:hover:text-white text-gray-400 mr-6 relative h-4 w-4"
+                       dark:hover:text-white text-gray-400 mr-6 relative w-4"
                 type="button" @click="show=!show">
             {{template "theme-switcher-icon"}}
         </button>

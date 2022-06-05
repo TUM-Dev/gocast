@@ -252,6 +252,21 @@ func (mr *MockChatDaoMockRecorder) ResolveChat(id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveChat", reflect.TypeOf((*MockChatDao)(nil).ResolveChat), id)
 }
 
+// Search mocks base method.
+func (m *MockChatDao) Search(q string, courseId uint) ([]uint, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Search", q, courseId)
+	ret0, _ := ret[0].([]uint)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search.
+func (mr *MockChatDaoMockRecorder) Search(q, courseId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockChatDao)(nil).Search), q, courseId)
+}
+
 // ToggleLike mocks base method.
 func (m *MockChatDao) ToggleLike(userID, chatID uint) error {
 	m.ctrl.T.Helper()
