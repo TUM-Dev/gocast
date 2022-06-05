@@ -686,6 +686,28 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 	}
 }
 
+func GetSectionPreview(workerDao dao.WorkerDao, playlistUrl string, hours, minutes, seconds uint32) ([]byte, error) {
+	workers := workerDao.GetAliveWorkers()
+	workerIndex := getWorkerWithLeastWorkload(workers)
+	workers[workerIndex].Workload += 1 // Not sure if that's a reasonable amount.
+	req := pb.SectionPreviewRequest{
+		PlaylistURL: playlistUrl,
+		Hours:       hours,
+		Minutes:     minutes,
+		Seconds:     seconds,
+	}
+	conn, err := dialIn(workers[workerIndex])
+	if err != nil {
+		log.WithError(err).Error("Unable to dial server")
+		endConnection(conn)
+		workers[workerIndex].Workload -= 1
+		return nil, err
+	}
+	client := pb.NewToWorkerClient(conn)
+	res, err := client.RequestSectionPreview(context.Background(), &req)
+	return res.GetPreviewImage(), err
+}
+
 // NotifyWorkersToStopStream notifies all workers for a given stream to quit encoding
 func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool, daoWrapper dao.DaoWrapper) {
 	workers, err := daoWrapper.StreamsDao.GetWorkersForStream(stream)

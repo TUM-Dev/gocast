@@ -11,6 +11,18 @@ service ToWorker {
   rpc RequestStreamEnd (EndStreamRequest) returns (Status) {}
   rpc RequestWaveform (WaveformRequest) returns (WaveFormResponse) {}
   rpc RequestCut (CutRequest) returns (CutResponse) {}
+  rpc RequestSectionPreview (SectionPreviewRequest) returns (SectionPreviewResponse) {}
+}
+
+message SectionPreviewResponse {
+  bytes PreviewImage = 1;
+}
+
+message SectionPreviewRequest {
+  string PlaylistURL = 1;
+  uint32 Hours = 2;
+  uint32 Minutes = 3;
+  uint32 Seconds = 4;
 }
 
 message CutRequest {

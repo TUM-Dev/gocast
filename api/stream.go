@@ -15,7 +15,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -286,48 +285,32 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+type sectionPreviewQuery struct {
+	Hours   uint32 `form:"h" binding:"required"`
+	Minutes uint32 `form:"m" binding:"required"`
+	Seconds uint32 `form:"s" binding:"required"`
+}
+
 func (r streamRoutes) getVideoSectionPreview(c *gin.Context) {
-	min, h, s := c.Query("m"), c.Query("h"), c.Query("s")
-	if min == "" || h == "" || s == "" {
+	var query sectionPreviewQuery
+	if c.ShouldBindQuery(&query) != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	f, err := os.CreateTemp("", "section-preview.*.jpeg")
+	stream, err := r.StreamsDao.GetStreamByID(c, c.Param("streamID"))
 	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-	defer os.Remove(f.Name())
-	cmd := exec.Command("ffmpeg", "-y", "-ss", fmt.Sprintf("%s:%s:%s", h, min, s), "-i",
-		"/Users/matthias/Desktop/fpv-2022-05-09-12-00COMB.mp4",
-		"-vf",
-		fmt.Sprintf("scale=%d:-1", 256),
-		"-frames:v",
-		"1",
-		"-q:v",
-		"2", f.Name())
-	_, err = cmd.CombinedOutput()
-	if err != nil {
-		log.WithError(err).Error("Couldn't create preview")
+		log.WithError(err).Error("Couldn't query stream")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	st, err := f.Stat()
+	image, err := GetSectionPreview(r.WorkerDao, stream.PlaylistUrl, query.Hours, query.Minutes, query.Seconds)
 	if err != nil {
-		log.WithError(err).Error("Couldn't read file-stats")
+		log.WithError(err).Error("Couldn't get image data")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-
-	data := make([]byte, st.Size())
-	_, err = f.Read(data)
-	if err != nil {
-		log.WithError(err).Error("Couldn't read preview file from disk")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	c.Data(http.StatusOK, "image/jpeg", data)
+	c.Data(http.StatusOK, "image/jpeg", image)
 }
 
 func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
