@@ -17,9 +17,7 @@ export const liveCoursesListener = {
 
         this.ws.onmessage = function (m) {
             const data = JSON.parse(m.data);
-            if ("viewers" in data && document.getElementById("viewerCount") != null) {
-                document.getElementById("viewerCount").innerText = data["viewers"];
-            }
+            console.log("Something with live stuff changed ...");
         };
 
         this.ws.onclose = function () {
