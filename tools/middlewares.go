@@ -202,6 +202,11 @@ func InitStream(wrapper dao.DaoWrapper) gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
+		if stream.Private && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(course)) {
+			RenderErrorPage(c, http.StatusForbidden, ForbiddenStreamAccess)
+			c.Abort()
+			return
+		}
 		if course.Visibility != "public" && course.Visibility != "hidden" {
 			if tumLiveContext.User == nil {
 				c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))

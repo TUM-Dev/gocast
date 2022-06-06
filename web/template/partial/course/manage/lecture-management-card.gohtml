@@ -80,13 +80,15 @@
                     </span>
                 </template>
                 <div x-show="lecture.isRecording">
-                    <div class="font-semibold bg-success border-success w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
+                    <div class="font-semibold border-success w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black"
+                         :class="lecture.private?'bg-gray-500':'bg-success'">
                         <template x-if="lecture.isConverting">
                             <div>
                                 <i class="fas fa-circle-notch animate-spin"></i>
                                 <span>Converting</span>
                             </div>
                         </template>
+                        <i title="This lecture is hidden" x-show="lecture.private" class="fas fa-eye-slash"></i>
                         <span x-show="!lecture.isConverting">VoD</span>
                     </div>
                 </div>
@@ -150,6 +152,13 @@
                             <button @click="lecture.deleteLecture(); closeMoreDropdown();"
                                     class="block w-full px-4 py-2 text-left text-sm text-red-400 dark:hover:text-red-500 hover:text-red-300">
                                 Delete Lecture
+                            </button>
+                            <button x-text="lecture.private?'Make public': 'Make private'"
+                                    class="block w-full px-4 py-2 text-left text-sm"
+                                    @click="lecture.toggleVisibility(); closeMoreDropdown()"
+                                    x-show="lecture.isRecording"
+                                    :class="lecture.private?'text-gray-400 dark:hover:text-gray-500 hover:text-gray-300':'text-red-400 dark:hover:text-red-500 hover:text-red-300'">
+                                Make private
                             </button>
                         </div>
                         <template x-if="lecture.seriesIdentifier.length > 0">
