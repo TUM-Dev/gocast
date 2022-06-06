@@ -3,7 +3,7 @@
         <template x-for="[modeId, mode] of Object.entries($store.theme.modes)" :key="modeId">
             <div role="button" tabindex="0"
                  x-data="{ active: () => modeId == $store.theme.activeMode }"
-                 class="p-2 w-full border-b dark:border-gray-800 relative last:border-0
+                 class="md:p-2 p-1 w-full md:border-b dark:border-gray-800 md:text-normal md:font-normal font-light text-sm relative last:border-0
                                transition-colors duration-200 text-5 hover:text-1"
                  :class="(active() ? ['bg-gray-100', 'dark:bg-secondary-lighter'] : []).concat(mobile ? ['px-5'] : [])"
                  type="button"

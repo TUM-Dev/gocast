@@ -1,0 +1,128 @@
+{{define "info-dropdown"}}
+    <div x-data="{showInfoDropdown: false}" class="relative text-right">
+        <button @click="showInfoDropdown=true;"
+                class="transition-colors duration-200 hover:text-gray-600 dark:hover:text-white text-gray-400">
+            <i class="fa fa-bars text-xl md:text-normal"></i>
+        </button>
+        <div class = "hidden md:block">
+            {{template "info-dropdown-desktop" .}}
+        </div>
+        <div class = "md:hidden">
+            {{template "info-dropdown-mobile" .}}
+        </div>
+    </div>
+{{end}}
+
+{{define "info-dropdown-desktop"}}
+    <div x-show="showInfoDropdown" @click.outside="showInfoDropdown=false"
+         class="absolute h-fit w-96 top-full text-left right-0 bg-white dark:bg-secondary mt-2 p-6 rounded-lg shadow-lg border dark:border-gray-600">
+        <div class="flex justify-between">
+            <div>
+                <div class="flex mb-3">
+                    <i class="text-3 fa-solid fa-building my-auto mr-2"></i>
+                    <h6 class="text-sm text-3 font-bold my-auto">TUM-Live</h6>
+                </div>
+                <div class="grid gap-2 pl-5">
+                    <a class="text-sm font-light text-5" href="/about">About</a>
+                    <a class="text-sm font-light text-5" href="/privacy">Data Privacy</a>
+                    <a class="text-sm font-light text-5" href="/imprint">Imprint</a>
+                </div>
+            </div>
+            <div>
+                <div class="flex mb-3">
+                    <i class="text-3 fa-solid fa-people-group my-auto mr-2"></i>
+                    <h6 class="text-3 font-bold text-sm">Community</h6>
+                </div>
+                <div class="grid gap-2 pl-7">
+                    <a class="flex text-sm font-light text-5" href="https://github.com/joschahenningsen/TUM-Live"
+                       aria-label="GitHub">
+                        GitHub <i class="vjs-icon-github my-auto ml-1"></i>
+                    </a>
+                    <a class="text-sm font-light text-5" href="/public/licenses.txt">
+                        We <i class="fas fa-heart text-danger"></i> OpenSource</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{{end}}
+
+{{define "info-dropdown-mobile"}}
+    <div x-show="showInfoDropdown" @click.outside="showInfoDropdown=false"
+         class="absolute w-56 text-left h-fit w-fit top-full right-0 bg-white dark:bg-secondary mt-2 p-6 rounded-lg shadow-lg border dark:border-gray-600">
+        <div class="grid gap-5">
+            <a href="/" class="flex">
+                <i class="text-3 fas fa-home w-8 mr-2"></i>
+                <h6 class="text-sm text-3 font-bold my-auto">Start</h6>
+            </a>
+            {{if not .User}}
+                <a href="/login" class = "flex">
+                    <i class="text-3 fas fa-sign-in-alt w-8 mr-2"></i>
+                    <h6 class="text-sm text-3 font-bold my-auto">Login</h6>
+                </a>
+            {{else}}
+                <a href="/logout" class ="flex">
+                    <i class="text-3 fas fa-sign-out-alt w-8 mr-2"></i>
+                    <h6 class="text-sm text-3 font-bold my-auto">Logout</h6>
+                </a>
+                {{if or (eq .User.Role 1) (eq .User.Role 2) }}
+                    <a href="/admin" class = "flex">
+                        <i class="text-3 fas fa-user-shield w-8 mr-2"></i>
+                        <h6 class="text-sm text-3 font-bold my-auto">Admin</h6>
+                    </a>
+                {{end}}
+            {{end}}
+            <div x-data="{open: false}">
+                <div class="flex justify-between">
+                    <div class = "flex">
+                        <i class="text-3 fa-solid my-auto mr-2 w-8" :class="'fa-' + (mode => mode.faSwitcherIconId ?? mode.faIconId)($store.theme.modes[$store.theme.activeMode])"></i>
+                        <h6 class="text-sm text-3 font-bold my-auto">Theme</h6>
+                    </div>
+                    <button @click="open=!open;">
+                        <i x-cloak x-show="!open" class = "text-3 fa fa-chevron-down ml-2"></i>
+                        <i x-show="open" class = "text-3 fa fa-chevron-up ml-2"></i>
+                    </button>
+                </div>
+                <div x-cloak x-show="open" class="grid gap-2 pl-10 pt-3">
+                    {{template "theme-selector-content"}}
+                </div>
+            </div>
+            <div x-data="{open: false}">
+                <div class="flex justify-between">
+                    <div class = "flex">
+                        <i class="text-3 fa-solid fa-building my-auto mr-2 w-8"></i>
+                        <h6 class="text-sm text-3 font-bold my-auto">TUM-Live</h6>
+                    </div>
+                    <button @click="open=!open;">
+                        <i x-cloak x-show="!open" class = "text-3 fa fa-chevron-down ml-2"></i>
+                        <i x-show="open" class = "text-3 fa fa-chevron-up ml-2"></i>
+                    </button>
+                </div>
+                <div x-cloak x-show="open" class="grid gap-2 pl-10 pt-3">
+                    <a class="text-sm font-light text-5" href="/about">About</a>
+                    <a class="text-sm font-light text-5" href="/privacy">Data Privacy</a>
+                    <a class="text-sm font-light text-5" href="/imprint">Imprint</a>
+                </div>
+            </div>
+            <div x-data="{open: false}">
+                <div class="flex justify-between">
+                    <div class = "flex">
+                        <i class="text-3 fa-solid fa-people-group my-auto mr-2 w-8"></i>
+                        <h6 class="text-sm text-3 font-bold my-auto">Community</h6>
+                    </div>
+                    <button @click="open=!open;">
+                        <i x-cloak x-show="!open" class = "text-3 fa fa-chevron-down ml-2"></i>
+                        <i x-show="open" class = "text-3 fa fa-chevron-up ml-2"></i>
+                    </button>
+                </div>
+                <div x-cloak x-show="open" class="grid gap-2 pl-10 pt-3">
+                    <a class="flex text-sm font-light text-5" href="https://github.com/joschahenningsen/TUM-Live"
+                       aria-label="GitHub">
+                        GitHub <i class="vjs-icon-github my-auto ml-1"></i>
+                    </a>
+                    <a class="text-sm font-light text-5" href="/public/licenses.txt">
+                        We <i class="fas fa-heart text-danger"></i> OpenSource</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{{end}}
