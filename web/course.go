@@ -156,7 +156,6 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 // CoursePageData is the data for the course page.
 type CoursePageData struct {
 	IndexData     IndexData
-	User          model.User
 	Course        model.Course
 	HighlightPage bool
 	WatchedData   string

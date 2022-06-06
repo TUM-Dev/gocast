@@ -4,13 +4,14 @@ import videojs from "video.js";
 // However, keycode uses deprecated event.keyCode https://github.com/timoxley/keycode/issues/52
 // The code used below avoids the mentioned IE issue (see link) by matching old key names too.
 
-// TODO: disable some actions for live streams (forward/backwards, seek to percentage, ...)
-
 // helpers
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+// optional type, e.g. optional(<value that may be undefined>).map((x) => <do something if not undefined>)
 const optional = (value) => ({
     value,
+    filter: (predicate) => optional(predicate(value) ? value : undefined),
     map: (ifPresent) => optional(value === undefined ? undefined : ifPresent(value)),
+    or: (other) => optional(value === undefined ? other : value),
 });
 const fa = (icon) => `fa-solid fa-${icon}`;
 const vjsIcon = (icon) => `vjs-icon-${icon}`;
@@ -31,6 +32,14 @@ const getIcon = (icon, player, event) => (typeof icon === "function" ? icon(play
 const handleWithClick = (name) => (player, event) => {
     const ButtonComponent = videojs.getComponent(name);
     ButtonComponent.prototype.handleClick.call(player, event);
+};
+
+const handleFullscreen = (player, event) => {
+    // grab the old fullscreen state before toggling, since the toggle doesn't (always) happen immediately
+    const isFullscreen = player.isFullscreen();
+    handleWithClick("FullscreenToggle")(player, event);
+
+    return vjsIcon(isFullscreen ? "fullscreen-exit" : "fullscreen-enter");
 };
 
 const handleSeek = (forward: boolean) => (player, event) => {
@@ -57,18 +66,38 @@ const handlePlaybackRate = (increase: boolean) => (player) => {
     }
 };
 
+// ["0", ..., "9"]
 const numberKeys = Array.from({ length: 10 }, (_, i) => i.toString());
 function matchSeekPercentage(player, event) {
     return optional(matchKeys(numberKeys, event)).map((key) => key / 10).value;
 }
 
+// returns the timestamp that is the given percentage into the total duration of the given time ranges
+// in practice the time ranges always seem to be [0, duration], in which case this just returns percentage * duration
+function timeRangesPercentageToTime(timeRanges: TimeRanges, percentage) {
+    const durations = Array.from({ length: timeRanges.length }, (_, i) => timeRanges.end(i) - timeRanges.start(i));
+    const totalDuration = durations.reduce((a, b) => a + b, 0);
+
+    const targetTime = totalDuration * percentage;
+    let cumulativeDuration = 0;
+    for (let i = 0; i < timeRanges.length; i++) {
+        if (cumulativeDuration + durations[i] >= targetTime)
+            return timeRanges.start(i) + (targetTime - cumulativeDuration);
+        cumulativeDuration += durations[i];
+    }
+    return undefined;
+}
+
+// percentage as a value in the range [0..1]
 const handleSeekPercentage = (player, _, percentage) => {
-    // TODO: what does player.duration() return for a live stream? Presumably NaN (same as before loading)
-    optional(player.duration() || undefined).map((duration) => {
-        const ended = player.ended();
-        player.currentTime(clamp(percentage, 0, 1) * duration);
-        if (ended) player.play();
-    });
+    // player.seekable returns time ranges, e.g. [[0,50],[55,70]]
+    optional(player.seekable())
+        .filter((trs) => trs.length > 0)
+        .map((trs) => {
+            const ended = player.ended();
+            player.currentTime(timeRangesPercentageToTime(trs, clamp(percentage, 0, 1)));
+            if (ended) player.play();
+        });
 };
 
 const handleSeekTo = (percentage) => (player, event) => handleSeekPercentage(player, event, percentage);
@@ -85,8 +114,7 @@ export const defaultOptions = {
     hotkeys: {
         fullscreen: {
             match: ["f", "F"],
-            handle: handleWithClick("FullscreenToggle"),
-            icon: (player) => vjsIcon(player.isFullscreen() ? "fullscreen-exit" : "fullscreen-enter"),
+            handle: handleFullscreen,
         },
         mute: {
             match: ["m", "M", "AudioVolumeMute", "VolumeMute"],
@@ -156,7 +184,7 @@ export const defaultOptions = {
  *  `handle` must be a function that receives the VideoJS player, the event and the return value of `match`
  *  (the last of which is the {@link KeyboardEvent#key} if `match` was an iterable of strings).
  *  `icon` is optional, and may be a class string or a function (passed the same arguments as `handle`)
- *  that returns a class string.
+ *  that returns a class string. Alternatively, `handle` may return such a class string, which is used if `icon` is not set.
  *  Custom actions are also supported.
  */
 export function handleHotkeys(extraOptions = {}) {
@@ -168,8 +196,10 @@ export function handleHotkeys(extraOptions = {}) {
             optional(matches(match, this, event)).map((data) => {
                 event.preventDefault();
                 event.stopPropagation();
-                handle(this, event, data);
-                optional(icon).map((i) => this.getChild("OverlayIcon").showIcon(getIcon(i, this, event)));
+                const handleIcon = handle(this, event, data);
+                optional(icon)
+                    .or(handleIcon)
+                    .map((i) => this.getChild("OverlayIcon").showIcon(getIcon(i, this, event)));
             });
         }
     };
