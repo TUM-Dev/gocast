@@ -72,7 +72,7 @@
                 x-show="visible"
                 x-on:updateheatmap.window="e => {visible = e.detail.visible; seekbar = e.detail.seekbar;}"
                 x-init="watch.repeatHeatMap.init()"
-                class="absolute bottom-[24px] rounded bg-gradient-to-t from-gray-800/[.6] to-gray-800/[.8] pt-2"
+                class="absolute bottom-[18px] rounded bg-gradient-to-t from-gray-800/[.6] pt-4 pointer-events-none"
                 :style="{width: seekbar.width, left: seekbar.x}"
             >
                 <svg height="100%" preserveAspectRatio="none" viewBox="0 0 1000 100"
