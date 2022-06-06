@@ -11,7 +11,7 @@
 {{template "header" .TUMLiveContext}}
 
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
-<div class="container flex flex-col pb-16">
+<div x-init="global.liveCoursesListener.init()" class="container flex flex-col pb-16">
     {{if .ServerNotifications}}
         {{range $notification := .ServerNotifications}}
             <p class="{{if $notification.Warn}} text-red-400{{else}} text-yellow-400{{end}}"><i
