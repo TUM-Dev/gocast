@@ -278,3 +278,37 @@ export const videoStatListener = {
         }
     },
 };
+
+export const repeatHeatMap = {
+    init() {
+        const seekBar = document.querySelector(".vjs-progress-control.vjs-control");
+        seekBar.addEventListener("mouseenter", this.show.bind(this));
+        seekBar.addEventListener("mouseleave", this.hide.bind(this));
+    },
+
+    show() {
+        const event = new CustomEvent("updateheatmap", { detail: { visible: true, seekbar: this.getSeekbarInfo() } });
+        window.dispatchEvent(event);
+    },
+
+    hide() {
+        const event = new CustomEvent("updateheatmap", {
+            detail: { visible: false, seekbar: { x: "0px", width: "0px" } },
+        });
+        window.dispatchEvent(event);
+    },
+
+    data() {
+        return "";
+    },
+
+    getSeekbarInfo() {
+        const seekBar = document.querySelector(".vjs-progress-control.vjs-control .vjs-progress-holder");
+        const left = seekBar.getBoundingClientRect().left;
+        const width = seekBar.getBoundingClientRect().width;
+        return {
+            x: left + "px",
+            width: width + "px",
+        };
+    },
+};
