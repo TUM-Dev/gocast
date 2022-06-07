@@ -15,8 +15,8 @@
 
 {{define "info-dropdown-desktop"}}
     <div x-show="showInfoDropdown" @click.outside="showInfoDropdown=false"
-         class="absolute h-fit w-96 top-full text-left right-0 bg-white dark:bg-secondary mt-2 p-6 rounded-lg shadow-lg border dark:border-gray-600">
-        <div class="flex justify-between">
+         class="absolute h-fit w-96 top-full text-left right-0 bg-white dark:bg-secondary mt-2 rounded-lg shadow-lg border dark:border-gray-800">
+        <div class="flex justify-between p-6">
             <div>
                 <div class="flex mb-3">
                     <i class="text-3 fa-solid fa-building my-auto mr-2"></i>
@@ -31,25 +31,35 @@
             <div>
                 <div class="flex mb-3">
                     <i class="text-3 fa-solid fa-people-group my-auto mr-2"></i>
-                    <h6 class="text-3 font-bold text-sm">Community</h6>
+                    <h6 class="text-3 font-bold text-sm">Contribute</h6>
                 </div>
                 <div class="grid gap-2 pl-7">
                     <a class="flex text-sm font-light text-5" href="https://github.com/joschahenningsen/TUM-Live"
                        aria-label="GitHub">
-                        GitHub <i class="vjs-icon-github my-auto ml-1"></i>
+                        <i class="vjs-icon-github my-auto"></i>-Repository
                     </a>
-                    <a class="text-sm font-light text-5" href="/public/licenses.txt">
-                        We <i class="fas fa-heart text-danger"></i> OpenSource</a>
+                    <a class="flex text-sm font-light text-5" href="https://github.com/joschahenningsen/TUM-Live/issues/new?assignees=&labels=&template=bug_report.md&title="
+                       aria-label="Bug report">
+                        Bug report
+                    </a>
+                    <a class="flex text-sm font-light text-5" href="https://github.com/joschahenningsen/TUM-Live/issues/new?assignees=&labels=enhancement&template=feature_request.md&title="
+                       aria-label="Feature request">
+                        Feature request
+                    </a>
                 </div>
             </div>
+        </div>
+        <div class = "border-t dark:border-gray-800 text-center px-2 py-2">
+            <a class="text-sm font-light text-5" href="/public/licenses.txt">
+                We <i class="fas fa-heart text-danger"></i> OpenSource</a>
         </div>
     </div>
 {{end}}
 
 {{define "info-dropdown-mobile"}}
     <div x-show="showInfoDropdown" @click.outside="showInfoDropdown=false"
-         class="absolute w-56 text-left h-fit w-fit top-full right-0 bg-white dark:bg-secondary mt-2 p-6 rounded-lg shadow-lg border dark:border-gray-600">
-        <div class="grid gap-5">
+         class="absolute w-56 text-left h-fit w-fit top-full right-0 bg-white dark:bg-secondary mt-2 rounded-lg shadow-lg border dark:border-gray-800">
+        <div class="grid gap-5 p-6">
             <a href="/" class="flex">
                 <i class="text-3 fas fa-home w-8 mr-2"></i>
                 <h6 class="text-sm text-3 font-bold my-auto">Start</h6>
@@ -107,7 +117,7 @@
                 <div class="flex justify-between">
                     <div class = "flex">
                         <i class="text-3 fa-solid fa-people-group my-auto mr-2 w-8"></i>
-                        <h6 class="text-sm text-3 font-bold my-auto">Community</h6>
+                        <h6 class="text-sm text-3 font-bold my-auto">Contribute</h6>
                     </div>
                     <button @click="open=!open;">
                         <i x-cloak x-show="!open" class = "text-3 fa fa-chevron-down ml-2"></i>
@@ -117,12 +127,22 @@
                 <div x-cloak x-show="open" class="grid gap-2 pl-10 pt-3">
                     <a class="flex text-sm font-light text-5" href="https://github.com/joschahenningsen/TUM-Live"
                        aria-label="GitHub">
-                        GitHub <i class="vjs-icon-github my-auto ml-1"></i>
+                        <i class="vjs-icon-github my-auto"></i>-Repository
                     </a>
-                    <a class="text-sm font-light text-5" href="/public/licenses.txt">
-                        We <i class="fas fa-heart text-danger"></i> OpenSource</a>
+                    <a class="flex text-sm font-light text-5" href="https://github.com/joschahenningsen/TUM-Live/issues/new?assignees=&labels=&template=bug_report.md&title="
+                       aria-label="Bug report">
+                        Bug report
+                    </a>
+                    <a class="flex text-sm font-light text-5" href="https://github.com/joschahenningsen/TUM-Live/issues/new?assignees=&labels=enhancement&template=feature_request.md&title="
+                       aria-label="Feature request">
+                        Feature request
+                    </a>
                 </div>
             </div>
+        </div>
+        <div class = "border-t dark:border-gray-800 text-center px-2 py-2">
+            <a class="text-sm font-light text-5" href="/public/licenses.txt">
+                We <i class="fas fa-heart text-danger"></i> OpenSource</a>
         </div>
     </div>
 {{end}}
