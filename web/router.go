@@ -60,10 +60,16 @@ func configGinStaticRouter(router gin.IRoutes) {
 		router.GET("/favicon.ico", func(c *gin.Context) {
 			c.FileFromFS("assets/favicon.ico", http.FS(staticFS))
 		})
+		router.GET("/service-worker.js", func(c *gin.Context) {
+			c.FileFromFS("assets/service-worker.js", http.FS(staticFS))
+		})
 	} else {
 		router.Static("/static", "web/")
 		router.GET("/favicon.ico", func(c *gin.Context) {
 			c.File("web/assets/favicon.ico")
+		})
+		router.GET("/service-worker.js", func(c *gin.Context) {
+			c.FileFromFS("assets/service-worker.js", http.FS(staticFS))
 		})
 	}
 }

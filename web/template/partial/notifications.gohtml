@@ -2,7 +2,7 @@
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.User*/ -}}
     <div class="relative" x-data="{ n: new global.Notifications(), show: false}" x-init="n.fetchNotifications();"
          @keyup.escape="show=false; n.writeToStorage(true)">
-        <button class="transition-colors duration-200 hover:text-gray-600 dark:hover:text-white text-gray-400 mr-6 relative h-4 w-4"
+        <button class="transition-colors duration-200 hover:text-gray-600 dark:hover:text-white text-gray-400 mr-6 relative w-4"
                 type="button" @click="show=!show; show===false && n.writeToStorage(true)">
             <span x-cloak x-show="n.notifications.some(notification => !notification.read)"
                   class="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full absolute -top-1 -right-1 h-3 w-3 border-2 border-white dark:border-secondary"> </span>

@@ -56,7 +56,7 @@ export class Lecture {
     readonly lectureId: number;
     readonly streamKey: string;
     readonly seriesIdentifier: string;
-    readonly color: string;
+    color: string;
     readonly vodViews: number;
     start: Date;
     end: Date;
@@ -79,6 +79,7 @@ export class Lecture {
     isDeleted = false;
     lastErrors: string[] = [];
     files: LectureFile[];
+    private: boolean;
 
     clone() {
         return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
@@ -125,6 +126,23 @@ export class Lecture {
         if (this.uiEditMode !== UIEditMode.none) return;
         this.resetNewFields();
         this.uiEditMode = UIEditMode.single;
+    }
+
+    async toggleVisibility() {
+        fetch(`/api/stream/${this.lectureId}/visibility`, {
+            method: "PATCH",
+            body: JSON.stringify({ private: !this.private }),
+            headers: { "Content-Type": "application/json" },
+        }).then((r) => {
+            if (r.status == StatusCodes.OK) {
+                this.private = !this.private;
+                if (this.private) {
+                    this.color = "gray-500";
+                } else {
+                    this.color = "success";
+                }
+            }
+        });
     }
 
     async saveEdit() {

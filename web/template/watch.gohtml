@@ -177,8 +177,19 @@
                 </p>
             </div>
             <div class="flex justify-between pb-4">
-                <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
-                    <span class="text-5 hover:text-1 hover:underline text-lg">{{$course.Name}}</span></a>
+                <div class="flex my-auto">
+                    <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
+                        <span class="text-5 hover:text-1 hover:underline text-lg">{{$course.Name}}</span></a>
+                    {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
+                        <a class="hover:bg-gray-200 dark:hover:bg-gray-600 text-5 hover:text-1 hover:underline w-fit m-2 px-1 inline-block rounded my-auto"
+                           href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
+                           :title="'Edit course settings'">
+                        <span class="font-semibold text-sm">
+                           <i class="fa-solid w-fit py-2 fa-pen"></i>
+                        </span>
+                        </a>{{end}}
+                </div>
+
                 {{if $stream.LiveNow}}
                     {{if .DVR}}
                         <a href="./{{$stream.Model.ID}}"><span class="text-5 hover:text-1 hover:underline text-lg">Disable Beta stream</span></a>

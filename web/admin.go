@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
@@ -287,6 +288,27 @@ type AdminPageData struct {
 	Tokens              []dao.AllTokensDto
 	Texts               []model.Text
 	Notifications       []model.Notification
+}
+
+func (apd AdminPageData) UsersAsJson() string {
+	type relevantUserInfo struct {
+		ID    uint   `json:"id"`
+		Name  string `json:"name"`
+		Role  uint   `json:"role"`
+		Email string `json:"email"`
+	}
+
+	users := make([]relevantUserInfo, len(apd.Users))
+	for i, user := range apd.Users {
+		users[i] = relevantUserInfo{
+			ID:    user.ID,
+			Name:  user.GetPreferredName(),
+			Role:  user.Role,
+			Email: user.Email.String,
+		}
+	}
+	jsonStr, _ := json.Marshal(users)
+	return string(jsonStr)
 }
 
 type EditCourseData struct {
