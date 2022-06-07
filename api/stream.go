@@ -286,14 +286,15 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 }
 
 type sectionPreviewQuery struct {
-	Hours   uint32 `form:"h" binding:"required"`
-	Minutes uint32 `form:"m" binding:"required"`
-	Seconds uint32 `form:"s" binding:"required"`
+	Hours   uint32 `form:"h"`
+	Minutes uint32 `form:"m"`
+	Seconds uint32 `form:"s"`
 }
 
 func (r streamRoutes) getVideoSectionPreview(c *gin.Context) {
 	var query sectionPreviewQuery
-	if c.ShouldBindQuery(&query) != nil {
+	if err := c.ShouldBind(&query); err != nil {
+		fmt.Println(err)
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
@@ -310,7 +311,7 @@ func (r streamRoutes) getVideoSectionPreview(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	c.Data(http.StatusOK, "image/jpeg", image)
+	c.Data(http.StatusOK, "image/png", image)
 }
 
 func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {

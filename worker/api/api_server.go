@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"os"
 	"os/exec"
 	"time"
 
@@ -64,37 +63,19 @@ func (s server) RequestStreamEnd(ctx context.Context, request *pb.EndStreamReque
 }
 
 func (s server) RequestSectionPreview(ctx context.Context, request *pb.SectionPreviewRequest) (*pb.SectionPreviewResponse, error) {
-	f, err := os.CreateTemp("", "section-preview.*.jpeg")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-	defer os.Remove(f.Name())
-
 	timestamp := fmt.Sprintf("%0d:%0d:%0d", request.Hours, request.Minutes, request.Seconds)
 	cmd := exec.Command("ffmpeg", "-y", "-ss", timestamp, "-i",
 		request.PlaylistURL,
 		"-vf",
-		fmt.Sprintf("scale=%d:-1", 256),
-		"-frames:v",
-		"1",
-		"-q:v",
-		"2", f.Name())
-	_, err = cmd.CombinedOutput()
+		fmt.Sprintf("scale=%d:-1", 156),
+		"-frames:v", "1",
+		"-q:v", "2",
+		"-f", "image2pipe", "pipe:1") // pipe binary data to stdout
+	out, err := cmd.Output()
 	if err != nil {
 		return &pb.SectionPreviewResponse{}, err
 	}
-	st, err := f.Stat()
-	if err != nil {
-		return &pb.SectionPreviewResponse{}, err
-	}
-
-	data := make([]byte, st.Size())
-	_, err = f.Read(data)
-	if err != nil {
-		return &pb.SectionPreviewResponse{}, err
-	}
-	return &pb.SectionPreviewResponse{PreviewImage: data}, nil
+	return &pb.SectionPreviewResponse{PreviewImage: out}, nil
 }
 
 //InitApi Initializes api endpoints
