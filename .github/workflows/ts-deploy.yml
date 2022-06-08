@@ -43,7 +43,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Docker meta
-        id: meta
+        id: metaWorker
         uses: docker/metadata-action@v4
         with:
           images: ghcr.io/joschahenningsen/tum-live/test-worker
@@ -66,8 +66,8 @@ jobs:
                 pull: true
                 push: true
                 build-args: version=${{ steps.vars.outputs.sha_short }}
-                tags: ${{ steps.meta.outputs.tags }}
-                labels: ${{ steps.meta.outputs.labels }}
+                tags: ${{ steps.metaWorker.outputs.tags }}
+                labels: ${{ steps.metaWorker.outputs.labels }}
       - name: Pull new Container
         run: |
           curl -H "Authorization: Bearer ${{ secrets.watchtowertoken }}" https://test.live.mm.rbg.tum.de/watchtower/v1/update
