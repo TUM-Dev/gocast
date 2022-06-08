@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/joschahenningsen/TUM-Live/worker/api"
+	"github.com/joschahenningsen/TUM-Live/worker/cfg"
 	"github.com/joschahenningsen/TUM-Live/worker/rest"
 	"github.com/joschahenningsen/TUM-Live/worker/worker"
 	"github.com/makasim/sentryhook"
@@ -34,6 +35,7 @@ func prepare() {
 
 func main() {
 	prepare()
+	cfg.Initialise()
 
 	worker.VersionTag = VersionTag
 	defer profile.Start(profile.MemProfile).Stop()
