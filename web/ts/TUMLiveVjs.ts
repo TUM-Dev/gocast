@@ -52,16 +52,13 @@ export const initPlayer = function (
         },
         autoplay: autoplay,
     });
-    // setup 160x90 thumbnails in sprite.jpg,
     if (spriteID) {
-        player
-            .spriteThumbnails({
-                interval: spriteInterval,
-                url: "/api/downloads/" + spriteID,
-                width: 160,
-                height: 90,
-            })
-            .log.level("debug");
+        player.spriteThumbnails({
+            interval: spriteInterval,
+            url: "/api/downloads/${spriteID}",
+            width: 160,
+            height: 90,
+        });
     } else {
         console.log("No valid thumbnail sprite ID found.");
     }

@@ -24,50 +24,61 @@ const (
 type Stream struct {
 	gorm.Model
 
-	Name              string `gorm:"index:,class:FULLTEXT"`
-	Description       string `gorm:"type:text;index:,class:FULLTEXT"`
-	CourseID          uint
-	Start             time.Time `gorm:"not null"`
-	End               time.Time `gorm:"not null"`
-	RoomName          string
-	RoomCode          string
-	EventTypeName     string
-	TUMOnlineEventID  uint
-	SeriesIdentifier  string `gorm:"default:null"`
-	StreamKey         string `gorm:"not null"`
-	PlaylistUrl       string
-	PlaylistUrlPRES   string
-	PlaylistUrlCAM    string
-	LiveNow           bool `gorm:"not null"`
-	Recording         bool
-	Premiere          bool `gorm:"default:null"`
-	Ended             bool `gorm:"default:null"`
-	Chats             []Chat
-	Stats             []Stat
-	Units             []StreamUnit
-	VodViews          uint `gorm:"default:0"` // todo: remove me before next semester
-	StartOffset       uint `gorm:"default:null"`
-	EndOffset         uint `gorm:"default:null"`
-	LectureHallID     uint `gorm:"default:null"`
-	Silences          []Silence
-	Files             []File `gorm:"foreignKey:StreamID"`
-	ThumbnailInterval uint32 `gorm:"default:null"`
-	Paused            bool   `gorm:"default:false"`
-	StreamName        string
-	Duration          uint32           `gorm:"default:null"`
-	StreamWorkers     []Worker         `gorm:"many2many:stream_workers;"`
-	StreamProgresses  []StreamProgress `gorm:"foreignKey:StreamID"`
-	VideoSections     []VideoSection
-	StreamStatus      StreamStatus `gorm:"not null;default:1"`
+	Name             string `gorm:"index:,class:FULLTEXT"`
+	Description      string `gorm:"type:text;index:,class:FULLTEXT"`
+	CourseID         uint
+	Start            time.Time `gorm:"not null"`
+	End              time.Time `gorm:"not null"`
+	RoomName         string
+	RoomCode         string
+	EventTypeName    string
+	TUMOnlineEventID uint
+	SeriesIdentifier string `gorm:"default:null"`
+	StreamKey        string `gorm:"not null"`
+	PlaylistUrl      string
+	PlaylistUrlPRES  string
+	PlaylistUrlCAM   string
+	LiveNow          bool `gorm:"not null"`
+	Recording        bool
+	Premiere         bool `gorm:"default:null"`
+	Ended            bool `gorm:"default:null"`
+	Chats            []Chat
+	Stats            []Stat
+	Units            []StreamUnit
+	VodViews         uint `gorm:"default:0"` // todo: remove me before next semester
+	StartOffset      uint `gorm:"default:null"`
+	EndOffset        uint `gorm:"default:null"`
+	LectureHallID    uint `gorm:"default:null"`
+	Silences         []Silence
+	Files            []File  `gorm:"foreignKey:StreamID"`
+	ThumbInterval    float32 `gorm:"default:null"`
+	Paused           bool    `gorm:"default:false"`
+	StreamName       string
+	Duration         uint32           `gorm:"default:null"`
+	StreamWorkers    []Worker         `gorm:"many2many:stream_workers;"`
+	StreamProgresses []StreamProgress `gorm:"foreignKey:StreamID"`
+	VideoSections    []VideoSection
+	StreamStatus     StreamStatus `gorm:"not null;default:1"`
 	Private          bool         `gorm:"not null;default:false"`
 
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }
 
-func (s Stream) GetThumbnailIdForType(version string) uint {
-	var fileType FileType
+// GetVodFiles returns all downloadable files that user can see when using the download dropdown for a stream.
+func (s Stream) GetVodFiles() []File {
+	dFiles := make([]File, 0)
+	for _, file := range s.Files {
+		if file.Type == FILETYPE_VOD {
+			dFiles = append(dFiles, file)
+		}
+	}
+	return dFiles
+}
 
-	switch version {
+// GetThumbIdForSource returns the id of file that stores the thumbnail sprite for a specific source type.
+func (s Stream) GetThumbIdForSource(source string) uint {
+	var fileType FileType
+	switch source {
 	case "COMB":
 		fileType = FILETYPE_THUMB_COMB
 	case "CAM":
@@ -75,14 +86,14 @@ func (s Stream) GetThumbnailIdForType(version string) uint {
 	case "PRES":
 		fileType = FILETYPE_THUMB_PRES
 	default:
-		return 0
+		return FILETYPE_INVALID
 	}
 	for _, file := range s.Files {
 		if file.Type == fileType {
 			return file.ID
 		}
 	}
-	return 0
+	return FILETYPE_INVALID
 }
 
 // GetStartInSeconds returns the number of seconds until the stream starts (or 0 if it has already started or is a vod)

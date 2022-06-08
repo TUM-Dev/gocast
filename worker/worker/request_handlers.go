@@ -3,7 +3,6 @@ package worker
 import (
 	"context"
 	"fmt"
-	"github.com/joschahenningsen/thumbgen"
 	"io"
 	"os"
 	"os/exec"
@@ -26,8 +25,6 @@ type safeStreams struct {
 
 // regularStreams keeps track of all lecture hall streams for the current worker
 var regularStreams = safeStreams{streams: make(map[uint32][]*StreamContext)}
-
-const ThumbCount = 200
 
 // addContext adds a stream context for a given streamID to the map in safeStreams
 func (s *safeStreams) addContext(streamID uint32, streamCtx *StreamContext) {
@@ -99,7 +96,7 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 	defer S.endThumbnailGeneration(ctx)
 	err = createThumbnailSprite(ctx)
 	if err != nil {
-		log.WithField("File", ctx.getThumbnailFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
+		log.WithField("File", ctx.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
 	} else {
 		notifyThumbnailDone(ctx)
 	}
@@ -211,7 +208,7 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	defer S.endThumbnailGeneration(streamCtx)
 	err = createThumbnailSprite(streamCtx)
 	if err != nil {
-		log.WithField("File", streamCtx.getThumbnailFileName()).WithError(err).Error("Creating thumbnail sprite failed")
+		log.WithField("File", streamCtx.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed")
 	} else {
 		notifyThumbnailDone(streamCtx)
 	}
@@ -329,7 +326,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 	defer S.endThumbnailGeneration(&c)
 	err = createThumbnailSprite(&c)
 	if err != nil {
-		log.WithField("File", c.getThumbnailFileName()).WithError(err).Error("Creating thumbnail sprite failed")
+		log.WithField("File", c.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed")
 	} else {
 		notifyThumbnailDone(&c)
 	}
@@ -448,9 +445,9 @@ func (s StreamContext) getTranscodingFileName() string {
 		s.getStreamName())
 }
 
-// getThumbnailFileName returns the path a thumbnail sprite should be saved to after transcoding.
+// getThumbnailSpriteFileName returns the path a thumbnail sprite should be saved to after transcoding.
 // example: /srv/sharedMassStorage/2021/S/eidi/2021-09-23_10-00/eidi_2021-09-23_10-00_PRES-thumb.jpg
-func (s StreamContext) getThumbnailFileName() string {
+func (s StreamContext) getThumbnailSpriteFileName() string {
 	if s.isSelfStream {
 		return fmt.Sprintf("%s/%d/%s/%s/%s/%s-%s-thumb.jpg",
 			cfg.StorageDir,
@@ -468,16 +465,6 @@ func (s StreamContext) getThumbnailFileName() string {
 		s.courseSlug,
 		s.startTime.Format("2006-01-02_15-04"),
 		s.getStreamName())
-}
-
-// createThumbnailSprite creates a thumbnail sprite from the given video file and stores it in mass storage.
-func createThumbnailSprite(ctx *StreamContext) error {
-	g, err := thumbgen.New(ctx.getTranscodingFileName(), 160, ThumbCount, ctx.getThumbnailFileName(), thumbgen.WithJpegCompression(70))
-	if err != nil {
-		return err
-	}
-	err = g.Generate()
-	return err
 }
 
 // getStreamName returns the stream name, used for the worker status

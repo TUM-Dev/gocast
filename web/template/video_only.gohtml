@@ -26,6 +26,7 @@
             bottom: 15px;
             left: 10px;
         }
+
         .video-js .vjs-title-bar {
             color: white;
 
@@ -47,9 +48,10 @@
           interacting with the player.
         */
         .video-js.vjs-paused.vjs-has-started .vjs-title-bar,
-        .video-js.vjs-user-active.vjs-has-started .vjs-title-bar{
+        .video-js.vjs-user-active.vjs-has-started .vjs-title-bar {
             display: block;
         }
+
         .vjs-has-started .vjs-start-in-overlay {
             display: none;
         }
@@ -65,7 +67,7 @@
         poster="/public/default_banner.jpg">
     {{if or $stream.LiveNow $stream.Recording}}
         <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
-            type="application/x-mpegURL"/>
+                type="application/x-mpegURL"/>
     {{end}}
     <p class="vjs-no-js">
         To view this video please enable JavaScript.
@@ -73,7 +75,7 @@
 </video-js>
 </body>
 <script>
-    watch.initPlayer(false, true, true, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.GetThumbnailIdForType .Version}}, {{$stream.ThumbnailInterval}}, {{$course.Name}}, {{$stream.GetName}}, {{$course.GetStreamUrl $stream}}, {{$course.GetUrl}}, {{$stream.GetStartInSeconds}});
+    watch.initPlayer(false, true, true, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.GetThumbnailIdForType .Version}}, {{$stream.ThumbInterval}}, {{$course.Name}}, {{$stream.GetName}}, {{$course.GetStreamUrl $stream}}, {{$course.GetUrl}}, {{$stream.GetStartInSeconds}});
     watch.startWebsocket()
     {{if $stream.Silences}}
     watch.skipSilence({{$stream.GetSilencesJson}});

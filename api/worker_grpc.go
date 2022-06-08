@@ -440,10 +440,9 @@ func (s server) NotifyThumbnailsFinished(ctx context.Context, req *pb.Thumbnails
 	case "PRES":
 		thumbType = model.FILETYPE_THUMB_PRES
 	default:
-		log.Error("Can't save thumbnail")
 		return nil, errors.New("unknown source type")
 	}
-	stream.ThumbnailInterval = req.Interval
+	stream.ThumbInterval = req.Interval
 	stream.Files = append(stream.Files, model.File{StreamID: stream.ID, Path: req.FilePath, Type: thumbType})
 	return &pb.Status{Ok: true}, nil
 }

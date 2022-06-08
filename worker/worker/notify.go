@@ -139,13 +139,14 @@ func notifyThumbnailDone(streamCtx *StreamContext) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	resp, err := client.NotifyThumbnailsFinished(ctx, &pb.ThumbnailsFinished{
-		WorkerID: cfg.WorkerID,
-		StreamID: streamCtx.streamId,
-		FilePath: streamCtx.getThumbnailFileName(),
-		Interval: streamCtx.duration / ThumbCount,
+		WorkerID:   cfg.WorkerID,
+		StreamID:   streamCtx.streamId,
+		FilePath:   streamCtx.getThumbnailSpriteFileName(),
+		Interval:   streamCtx.duration / ThumbCount,
+		SourceType: streamCtx.streamVersion,
 	})
 	if err != nil || !resp.Ok {
-		log.WithError(err).Error("Could not notify thumbnail finished")
+		log.WithError(err).Error("Could not notify thumbnail done")
 	}
 }
 
