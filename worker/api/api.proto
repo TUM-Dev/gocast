@@ -87,7 +87,7 @@ service FromWorker {
   rpc NotifyUploadFinished(UploadFinished) returns (Status) {}
   rpc SendSelfStreamRequest(SelfStreamRequest) returns (SelfStreamResponse) {}
   rpc GetStreamInfoForUpload(GetStreamInfoForUploadRequest) returns (GetStreamInfoForUploadResponse) {}
-  rpc NewKeyword(NewKeywordRequest) returns (Status) {}
+  rpc NewKeywords(NewKeywordsRequest) returns (Status) {}
 }
 
 message JoinWorkersRequest {
@@ -175,9 +175,9 @@ message GetStreamInfoForUploadResponse {
   uint32 StreamID = 6;
 }
 
-message NewKeywordRequest {
+message NewKeywordsRequest {
   string WorkerID = 1;
   uint32 StreamID = 2;
-  string Text = 3;
+  repeated string Keywords = 3;
   string Language = 4;
 }

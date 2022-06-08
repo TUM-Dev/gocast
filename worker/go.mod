@@ -24,6 +24,7 @@ require (
 require (
 	github.com/bbalet/stopwords v1.0.0
 	github.com/getsentry/sentry-go v0.13.0
+	github.com/joschahenningsen/thumbgen v0.0.0-20220601131629-d049c9087bf3
 	github.com/makasim/sentryhook v0.4.0
 	github.com/pkg/profile v1.6.0
 )

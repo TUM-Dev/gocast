@@ -20,6 +20,10 @@ type ocrExtractor struct {
 	pipeline   postprocess
 }
 
+func Merge(keywords1, keywords2 []string) {
+
+}
+
 func NewOcrExtractor(imageFiles []string, languages []string) KeywordExtractor {
 	client := gosseract.NewClient()
 	_ = client.SetLanguage(languages...)

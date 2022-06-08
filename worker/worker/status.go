@@ -19,9 +19,10 @@ var S *Status
 var VersionTag string
 
 const (
-	costStream           = 3
-	costTranscoding      = 2
-	costSilenceDetection = 1
+	costStream            = 3
+	costTranscoding       = 2
+	costSilenceDetection  = 1
+	costKeywordExtraction = 1
 )
 
 type Status struct {
@@ -149,4 +150,25 @@ func (s *Status) SendHeartbeat() {
 	if err != nil {
 		log.WithError(err).Error("Sending Heartbeat failed")
 	}
+}
+
+func (s *Status) startKeywordExtraction(streamCtx *StreamContext) {
+	defer s.SendHeartbeat()
+	statusLock.Lock()
+	defer statusLock.Unlock()
+	s.workload += costKeywordExtraction
+	s.Jobs = append(s.Jobs, fmt.Sprintf("extracting keywords for %s", streamCtx.getTranscodingFileName()))
+}
+
+func (s *Status) endKeywordExtraction(streamCtx *StreamContext) {
+	defer s.SendHeartbeat()
+	statusLock.Lock()
+	s.workload -= costKeywordExtraction
+	for i := range s.Jobs {
+		if s.Jobs[i] == fmt.Sprintf("extracting keywords for %s", streamCtx.getTranscodingFileName()) {
+			s.Jobs = append(s.Jobs[:i], s.Jobs[i+1:]...)
+			break
+		}
+	}
+	statusLock.Unlock()
 }

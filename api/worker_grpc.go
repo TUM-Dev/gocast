@@ -244,20 +244,23 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 	return &pb.Status{Ok: true}, nil
 }
 
-func (s server) NewKeyword(ctx context.Context, request *pb.NewKeywordRequest) (*pb.Status, error) {
+func (s server) NewKeywords(ctx context.Context, request *pb.NewKeywordsRequest) (*pb.Status, error) {
 	if _, err := s.DaoWrapper.WorkerDao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, errors.New("authentication failed: invalid worker id")
 	} else {
-		err := s.DaoWrapper.KeywordDao.NewKeyword(&model.Keyword{
-			StreamID: uint(request.StreamID),
-			Text:     request.Text,
-			Language: request.Language,
-		})
+		for _, keyword := range request.Keywords {
+			err := s.DaoWrapper.KeywordDao.NewKeyword(&model.Keyword{
+				StreamID: uint(request.StreamID),
+				Text:     keyword,
+				Language: request.Language,
+			})
 
-		if err != nil {
-			log.WithError(err).Println("Couldn't insert keyword")
-			return &pb.Status{Ok: false}, err
+			if err != nil {
+				log.WithError(err).Println("Couldn't insert keyword")
+				return &pb.Status{Ok: false}, err
+			}
 		}
+
 		return &pb.Status{Ok: true}, nil
 	}
 }

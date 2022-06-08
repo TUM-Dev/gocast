@@ -264,7 +264,7 @@ type FromWorkerClient interface {
 	NotifyUploadFinished(ctx context.Context, in *UploadFinished, opts ...grpc.CallOption) (*Status, error)
 	SendSelfStreamRequest(ctx context.Context, in *SelfStreamRequest, opts ...grpc.CallOption) (*SelfStreamResponse, error)
 	GetStreamInfoForUpload(ctx context.Context, in *GetStreamInfoForUploadRequest, opts ...grpc.CallOption) (*GetStreamInfoForUploadResponse, error)
-	NewKeyword(ctx context.Context, in *NewKeywordRequest, opts ...grpc.CallOption) (*Status, error)
+	NewKeywords(ctx context.Context, in *NewKeywordsRequest, opts ...grpc.CallOption) (*Status, error)
 }
 
 type fromWorkerClient struct {
@@ -356,9 +356,9 @@ func (c *fromWorkerClient) GetStreamInfoForUpload(ctx context.Context, in *GetSt
 	return out, nil
 }
 
-func (c *fromWorkerClient) NewKeyword(ctx context.Context, in *NewKeywordRequest, opts ...grpc.CallOption) (*Status, error) {
+func (c *fromWorkerClient) NewKeywords(ctx context.Context, in *NewKeywordsRequest, opts ...grpc.CallOption) (*Status, error) {
 	out := new(Status)
-	err := c.cc.Invoke(ctx, "/api.FromWorker/NewKeyword", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/api.FromWorker/NewKeywords", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -379,7 +379,7 @@ type FromWorkerServer interface {
 	NotifyUploadFinished(context.Context, *UploadFinished) (*Status, error)
 	SendSelfStreamRequest(context.Context, *SelfStreamRequest) (*SelfStreamResponse, error)
 	GetStreamInfoForUpload(context.Context, *GetStreamInfoForUploadRequest) (*GetStreamInfoForUploadResponse, error)
-	NewKeyword(context.Context, *NewKeywordRequest) (*Status, error)
+	NewKeywords(context.Context, *NewKeywordsRequest) (*Status, error)
 	mustEmbedUnimplementedFromWorkerServer()
 }
 
@@ -414,8 +414,8 @@ func (UnimplementedFromWorkerServer) SendSelfStreamRequest(context.Context, *Sel
 func (UnimplementedFromWorkerServer) GetStreamInfoForUpload(context.Context, *GetStreamInfoForUploadRequest) (*GetStreamInfoForUploadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStreamInfoForUpload not implemented")
 }
-func (UnimplementedFromWorkerServer) NewKeyword(context.Context, *NewKeywordRequest) (*Status, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method NewKeyword not implemented")
+func (UnimplementedFromWorkerServer) NewKeywords(context.Context, *NewKeywordsRequest) (*Status, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewKeywords not implemented")
 }
 func (UnimplementedFromWorkerServer) mustEmbedUnimplementedFromWorkerServer() {}
 
@@ -592,20 +592,20 @@ func _FromWorker_GetStreamInfoForUpload_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FromWorker_NewKeyword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NewKeywordRequest)
+func _FromWorker_NewKeywords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewKeywordsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FromWorkerServer).NewKeyword(ctx, in)
+		return srv.(FromWorkerServer).NewKeywords(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.FromWorker/NewKeyword",
+		FullMethod: "/api.FromWorker/NewKeywords",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FromWorkerServer).NewKeyword(ctx, req.(*NewKeywordRequest))
+		return srv.(FromWorkerServer).NewKeywords(ctx, req.(*NewKeywordsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -654,8 +654,8 @@ var FromWorker_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _FromWorker_GetStreamInfoForUpload_Handler,
 		},
 		{
-			MethodName: "NewKeyword",
-			Handler:    _FromWorker_NewKeyword_Handler,
+			MethodName: "NewKeywords",
+			Handler:    _FromWorker_NewKeywords_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
