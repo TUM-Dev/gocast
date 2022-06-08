@@ -41,6 +41,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	adminG.GET("/api/stream/:streamID/pause", routes.pauseStream)
 	adminG.GET("/api/stream/:streamID/end", routes.endStream)
 	adminG.POST("/api/stream/:streamID/issue", routes.reportStreamIssue)
+	adminG.PATCH("/api/stream/:streamID/visibility", routes.updateStreamVisibility)
 	adminG.POST("/api/stream/:streamID/sections", routes.createVideoSectionBatch)
 	adminG.DELETE("/api/stream/:streamID/sections/:id", routes.deleteVideoSection)
 
@@ -242,17 +243,17 @@ func (r streamRoutes) getStream(c *gin.Context) {
 	stream := *tumLiveContext.Stream
 	course := *tumLiveContext.Course
 
-	c.JSON(http.StatusOK,
-		gin.H{"course": course.Name,
-			"courseID":    course.ID,
-			"streamID":    stream.ID,
-			"name":        stream.Name,
-			"description": stream.Description,
-			"start":       stream.Start,
-			"end":         stream.End,
-			"ingest":      fmt.Sprintf("%sstream?secret=%s", tools.Cfg.IngestBase, stream.StreamKey),
-			"live":        stream.LiveNow,
-			"vod":         stream.Recording})
+	c.JSON(http.StatusOK, gin.H{
+		"course":      course.Name,
+		"courseID":    course.ID,
+		"streamID":    stream.ID,
+		"name":        stream.Name,
+		"description": stream.Description,
+		"start":       stream.Start,
+		"end":         stream.End,
+		"ingest":      fmt.Sprintf("%sstream?secret=%s", tools.Cfg.IngestBase, stream.StreamKey),
+		"live":        stream.LiveNow,
+		"vod":         stream.Recording})
 }
 
 func (r streamRoutes) getVideoSections(c *gin.Context) {
@@ -398,5 +399,21 @@ func (r streamRoutes) deleteAttachment(c *gin.Context) {
 		log.WithError(err).Error("could not delete file from database")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
+	}
+}
+
+func (r streamRoutes) updateStreamVisibility(c *gin.Context) {
+	stream := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).Stream
+	var req struct {
+		Private bool `json:"private"`
+	}
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "could not parse request body")
+		return
+	}
+	err = r.DaoWrapper.StreamsDao.ToggleVisibility(stream.ID, req.Private)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "could not update stream")
 	}
 }

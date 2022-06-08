@@ -51,6 +51,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	adminOfCourseGroup.POST("/submitCut", routes.submitCut)
 	adminOfCourseGroup.POST("/deleteUnit/:unitID", routes.deleteUnit)
 	adminOfCourseGroup.GET("/stats", routes.getStats)
+	adminOfCourseGroup.GET("/stats/export", routes.exportStats)
 	adminOfCourseGroup.GET("/admins", routes.getAdmins)
 	adminOfCourseGroup.PUT("/admins/:userID", routes.addAdminToCourse)
 	adminOfCourseGroup.DELETE("/admins/:userID", routes.removeAdminFromCourse)

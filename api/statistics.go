@@ -1,15 +1,23 @@
 package api
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"strconv"
 )
 
 type statReq struct {
 	Interval string `form:"interval" json:"interval" xml:"interval"  binding:"required"`
+}
+
+type statExportReq struct {
+	Format   string   `form:"format" binding:"required"`
+	Interval []string `form:"interval[]"  binding:"required"`
 }
 
 func (r coursesRoutes) getStats(c *gin.Context) {
@@ -133,6 +141,149 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		}
 	default:
 		c.AbortWithStatus(http.StatusBadRequest)
+	}
+}
+
+func (r coursesRoutes) exportStats(c *gin.Context) {
+	ctx, _ := c.Get("TUMLiveContext")
+
+	var req statExportReq
+	if c.ShouldBindQuery(&req) != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+	}
+
+	var cid uint
+	// check if request is for server -> validate
+	cidFromContext := c.Param("courseId")
+	if cidFromContext == "0" {
+		if ctx.(tools.TUMLiveContext).User.Role != model.AdminType {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+		cid = 0
+	} else { // use course from context
+		cid = ctx.(tools.TUMLiveContext).Course.ID
+	}
+
+	if req.Format != "json" && req.Format != "csv" {
+		log.WithField("courseId", cid).Warn("exportStats failed, invalid format")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	result := tools.ExportStatsContainer{}
+
+	for _, interval := range req.Interval {
+		switch interval {
+		case "week":
+		case "day":
+			res, err := r.StatisticsDao.GetCourseStatsWeekdays(cid)
+			if err != nil {
+				log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsWeekdays failed")
+			}
+			result = result.AddDataEntry(&tools.ExportDataEntry{
+				Name:  interval,
+				XName: "Weekday",
+				YName: "Sum(viewers)",
+				Data:  res,
+			})
+
+		case "hour":
+			res, err := r.StatisticsDao.GetCourseStatsHourly(cid)
+			if err != nil {
+				log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsHourly failed")
+			}
+			result = result.AddDataEntry(&tools.ExportDataEntry{
+				Name:  interval,
+				XName: "Hour",
+				YName: "Sum(viewers)",
+				Data:  res,
+			})
+
+		case "activity-live":
+			resLive, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, true)
+			if err != nil {
+				log.WithError(err).WithField("courseId", cid).Warn("GetStudentActivityCourseStats failed")
+			}
+			result = result.AddDataEntry(&tools.ExportDataEntry{
+				Name:  interval,
+				XName: "Week",
+				YName: "Live",
+				Data:  resLive,
+			})
+
+		case "activity-vod":
+			resVod, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, false)
+			if err != nil {
+				log.WithError(err).WithField("courseId", cid).Warn("GetStudentActivityCourseStats failed")
+			}
+			result = result.AddDataEntry(&tools.ExportDataEntry{
+				Name:  interval,
+				XName: "Week",
+				YName: "VoD",
+				Data:  resVod,
+			})
+
+		case "allDays":
+			res, err := r.StatisticsDao.GetCourseNumVodViewsPerDay(cid)
+			if err != nil {
+				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumVodViewsPerDay failed")
+			}
+			result = result.AddDataEntry(&tools.ExportDataEntry{
+				Name:  interval,
+				XName: "Week",
+				YName: "VoD",
+				Data:  res,
+			})
+
+		case "quickStats":
+			var quickStats []dao.Stat
+
+			numStudents, err := r.StatisticsDao.GetCourseNumStudents(cid)
+			if err != nil {
+				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumStudents failed")
+			} else {
+				quickStats = append(quickStats, dao.Stat{X: "Enrolled Students", Y: int(numStudents)})
+			}
+
+			vodViews, err := r.StatisticsDao.GetCourseNumVodViews(cid)
+			if err != nil {
+				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumVodViews failed")
+			} else {
+				quickStats = append(quickStats, dao.Stat{X: "Vod Views", Y: int(vodViews)})
+			}
+
+			liveViews, err := r.StatisticsDao.GetCourseNumLiveViews(cid)
+			if err != nil {
+				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
+			} else {
+				quickStats = append(quickStats, dao.Stat{X: "Live Views", Y: int(liveViews)})
+			}
+			result = result.AddDataEntry(&tools.ExportDataEntry{
+				Name:  interval,
+				XName: "Property",
+				YName: "Value",
+				Data:  quickStats,
+			})
+
+		default:
+			log.WithField("courseId", cid).Warn("Invalid export interval")
+		}
+	}
+
+	if req.Format == "json" {
+		jsonResult, err := json.Marshal(result.ExportJson())
+		if err != nil {
+			log.WithError(err).WithField("courseId", cid).Warn("json.Marshal failed for stats export")
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		c.Header("Content-Disposition", "attachment; filename=course-"+strconv.Itoa(int(cid))+"-stats.json")
+		c.Data(http.StatusOK, "application/octet-stream", jsonResult)
+	} else {
+		c.Header("Content-Disposition", "attachment; filename=course-"+strconv.Itoa(int(cid))+"-stats.csv")
+		c.Data(http.StatusOK, "application/octet-stream", []byte(result.ExportCsv()))
 	}
 }
 

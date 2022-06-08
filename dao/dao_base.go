@@ -29,6 +29,7 @@ type DaoWrapper struct {
 	IngestServerDao
 	VideoSectionDao
 	KeywordDao
+	SearchDao
 }
 
 func NewDaoWrapper() DaoWrapper {
@@ -49,6 +50,7 @@ func NewDaoWrapper() DaoWrapper {
 		NotificationsDao:      NewNotificiationsDao(),
 		IngestServerDao:       NewIngestServerDao(),
 		VideoSectionDao:       NewVideoSectionDao(),
+		SearchDao:             NewSearchDao(),
 		KeywordDao:            NewKeywordDao(),
 	}
 }
