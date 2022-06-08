@@ -3,8 +3,13 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/russross/blackfriday/v2"
+	"html/template"
+	"regexp"
 	"time"
+	"unicode"
+	"unicode/utf8"
+
+	"github.com/russross/blackfriday/v2"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/now"
@@ -235,4 +240,132 @@ func (s Stream) Attachments() []File {
 		}
 	}
 	return attachments
+}
+
+var TagExpr = regexp.MustCompile("<(/?)([A-Za-z0-9]+).*?>")
+var EntityExpr = regexp.MustCompile("&#?[A-Za-z0-9]+;")
+
+func (s Stream) GetTruncatedDescription() template.HTML {
+	buf := s.Description
+	voidElementTags := []string{"area", "base", "br", "col", "embed", "hr",
+		"img", "input", "keygen", "link", "meta",
+		"param", "source", "track", "wbr"}
+
+	// Check to see if no input was provided.
+	if buf == "" || len(buf) == 0 {
+		return ""
+	}
+
+	tagStack := []string{}
+	visible := 0
+	bufPtr := 0
+
+	for bufPtr < len(buf) && visible < 40 {
+
+		// Move to nearest tag and count visible characters along the way.
+		offset := 0
+		visibleCharacterMaxReached := false
+		entityDetected := false
+
+		for localOffset, runeValue := range buf[bufPtr:] {
+			offset = localOffset
+
+			if runeValue == '<' {
+				// Start of tag.
+				break
+			} else if runeValue == '&' {
+				// Possible start of HTML Entity
+				loc := EntityExpr.FindIndex([]byte(buf[bufPtr+localOffset:]))
+				if loc != nil && loc[0] == 0 {
+					// Entity found!
+					entityDetected = true
+					offset += loc[1] - 1 // Now pointing to ;
+				}
+				visible += 1
+			} else if unicode.IsPrint(runeValue) && !unicode.IsSpace(runeValue) {
+				// Printable, non-space character. Increment visible count.
+				visible += 1
+			}
+
+			// Check if the limit of visible characters has been reached.
+			if visible >= 40 {
+				visibleCharacterMaxReached = true
+				break
+			}
+
+			if entityDetected {
+				break
+			}
+		}
+
+		// Increment bufPtr to end of scanned section
+		bufPtr += offset
+
+		// Stop scanning if the end of the buffer was reached or if the max
+		// desired visible characters was reached
+		if visibleCharacterMaxReached || bufPtr >= len(buf)-1 {
+			break
+		}
+
+		// If an entity was detected, continue scanning for next tag
+		if entityDetected {
+			// Advance past the ;
+			bufPtr += 1
+			continue
+		}
+
+		// Now find the expression sub-matches
+		matches := TagExpr.FindSubmatch([]byte(buf[bufPtr:]))
+		tagName := string(matches[2])
+
+		// Advance pointer to the end of the tag
+		bufPtr += len(matches[0])
+
+		// If this is a void element, do not count it as a start tag
+		isVoidElement := false
+		for _, voidElementTagName := range voidElementTags {
+			if tagName == voidElementTagName {
+				isVoidElement = true
+				break
+			}
+		}
+		if isVoidElement {
+			continue
+		}
+
+		isStartTag := len(matches[1]) == 0
+
+		if isStartTag {
+			// This is a start tag. Push the tag to the stack.
+			tagStack = append(tagStack, tagName)
+		} else {
+			// This is an end tag. First, check to make sure the end tag is
+			// matches what's on top of the stack.
+			if len(tagStack) == 0 || tagStack[len(tagStack)-1] != tagName {
+				return ""
+			}
+
+			// Now, pop the tag stack.
+			tagStack = tagStack[0 : len(tagStack)-1]
+		}
+	}
+
+	// At this point, bufPtr points to the last rune that should be copied to
+	// the output stream. Increment bufPtr past this rune, turning bufPtr into
+	// the number of bytes that should be copied.
+	_, size := utf8.DecodeRune([]byte(buf[bufPtr:]))
+	bufPtr += size
+
+	// Copy the desired input to the output buffer.
+	output := buf[0:bufPtr]
+
+	// Copy ellipsis
+	output = output + "..."
+
+	// Finally, create a closing tag for each tag in the stack.
+	for i := len(tagStack) - 1; i >= 0; i-- {
+		output += fmt.Sprintf("</%s>", tagStack[i])
+	}
+
+	return template.HTML(output)
 }

@@ -1,0 +1,45 @@
+{{define "watch-info"}}
+    {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.WatchPageData*/ -}}
+    {{$stream := .IndexData.TUMLiveContext.Stream}}
+    {{$course := .IndexData.TUMLiveContext.Course}}
+    {{if $stream.Recording}}
+        {{if not $stream.LiveNow}}
+            {{if $stream.Ended }}
+                {{/* When the stream ends its automatically reloaded, so this can be static */}}
+                <span class="m-auto">Stream has ended</span>
+                <span class="m-auto">&#183;</span>
+            {{else}}
+                <span class="m-auto viewerCount"></span>
+                <span class="m-auto ViewerDescText">Waiting</span>
+                <span class="m-auto">&#183;</span>
+                {{/* Timer / Countdown */}}
+                <span class="flex text-lg text-4"
+                      x-data="global.timer('{{$course.GetNextLectureDateFormatted}}', true)"
+                      x-init="init();">
+                    <template x-if="time().days !== '00'">
+                        <span>In more than a day</span>
+                    </template>
+                    <template
+                            x-if="time().days === '00' && time().minutes === '00' && time().hours === '00' && time().seconds === '00'">
+                        <span>Stream is due</span>
+                    </template>
+                    <template
+                            x-if="time().days === '00' && !(time().minutes === '00' && time().hours === '00' && time().seconds === '00')">
+                        <span>
+                            <span class="tabular-nums flex m-auto">
+                                <span x-text="time().hours"></span>:
+                                <span x-text="time().minutes"></span>:
+                                <span x-text="time().seconds"></span>
+                            </span>
+                        </span>
+                    </template>
+                </span>
+                <span class="m-auto hidden lg:inline-flex">&#183;</span>
+            {{end}}
+        {{else}}
+            <span class="m-auto" id="viewerCount"></span>
+            <span class="m-auto" id="ViewerDescText">Watching</span>
+            <span class="m-auto">&#183;</span>
+        {{end}}
+    {{end}}
+{{end}}
