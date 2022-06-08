@@ -119,7 +119,7 @@ func (s *Status) endThumbnailGeneration(streamContext *StreamContext) {
 	statusLock.Lock()
 	s.workload -= costThumbnailGeneration
 	for i := range s.Jobs {
-		if s.Jobs[i] == fmt.Sprintf("transcoding %s", streamContext.getTranscodingFileName()) {
+		if s.Jobs[i] == fmt.Sprintf("generating thumbnail for  %s", streamContext.getTranscodingFileName()) {
 			s.Jobs = append(s.Jobs[:i], s.Jobs[i+1:]...)
 			break
 		}
