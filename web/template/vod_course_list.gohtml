@@ -4,7 +4,7 @@
     {{$lastMonth := -1}}
     {{$user := .IndexData.TUMLiveContext.User}}
     {{range $lecture := .Course.Streams}}
-        {{if $lecture.Recording}}
+        {{if and $lecture.Recording (not $lecture.Private)}}
             {{/* Do we have to create a new month?*/}}
             {{if ne $lecture.Start.Month $lastMonth}}
                 {{if ne $lastMonth -1}} </div> {{end}}
