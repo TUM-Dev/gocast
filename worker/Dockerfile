@@ -11,7 +11,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags "-w -extldflags '
 FROM alpine:3.16
 
 RUN apk add --no-cache \
-  ffmpeg=4.4.1-r2 \
+  ffmpeg=5.0.1-r1 \
   tzdata=2022a-r0
 
 COPY --from=builder /worker /worker
