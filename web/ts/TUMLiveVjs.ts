@@ -55,7 +55,7 @@ export const initPlayer = function (
     if (spriteID) {
         player.spriteThumbnails({
             interval: spriteInterval,
-            url: "/api/downloads/${spriteID}",
+            url: `/api/downloads/${spriteID}`,
             width: 160,
             height: 90,
         });
