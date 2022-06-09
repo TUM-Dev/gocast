@@ -142,7 +142,7 @@ func notifyThumbnailDone(streamCtx *StreamContext) {
 		WorkerID:   cfg.WorkerID,
 		StreamID:   streamCtx.streamId,
 		FilePath:   streamCtx.getThumbnailSpriteFileName(),
-		Interval:   streamCtx.duration / ThumbCount,
+		Interval:   float32(streamCtx.duration) / float32(ThumbCount),
 		SourceType: streamCtx.streamVersion,
 	})
 	if err != nil || !resp.Ok {
