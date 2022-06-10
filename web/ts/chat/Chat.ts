@@ -199,7 +199,10 @@ export class Chat {
             this.windows = this.windows.filter((window) => window !== popUpWindow);
         });
 
-        //popUpWindow.dispatchEvent(new CustomEvent("chat-messages-updated", { detail: this.messages }));
+        popUpWindow.dispatchEvent(
+            new CustomEvent("chat-messages-updated", { detail: JSON.parse(JSON.stringify(this.messages)) }),
+        );
+
         this.windows.push(popUpWindow);
     }
 
@@ -225,7 +228,9 @@ export class Chat {
 
         this.focusedMessageId = messagesNotGrayedOut.pop()?.ID;
         this.windows.forEach((window: Window) =>
-            window.dispatchEvent(new CustomEvent("chat-messages-updated", { detail: this.messages })),
+            window.dispatchEvent(
+                new CustomEvent("chat-messages-updated", { detail: JSON.parse(JSON.stringify(this.messages)) }),
+            ),
         );
     }
 
