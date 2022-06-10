@@ -26,8 +26,9 @@ export const initPlayer = function (
     fluid: boolean,
     isEmbedded: boolean,
     playbackSpeeds: number[],
-    spriteID?: number,
-    spriteInterval?: number,
+    spriteID: number,
+    spriteInterval: number,
+    streamID: number,
     courseName?: string,
     streamName?: string,
     streamUrl?: string,
@@ -55,7 +56,7 @@ export const initPlayer = function (
     if (spriteID) {
         player.spriteThumbnails({
             interval: spriteInterval,
-            url: `/api/downloads/${spriteID}`,
+            url: `/api/stream/${streamID}/thumbs/${spriteID}`,
             width: 160,
             height: 90,
         });

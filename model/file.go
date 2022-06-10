@@ -49,6 +49,10 @@ func (f File) GetFriendlyFileName() string {
 	return "Default view"
 }
 
+func (f File) IsThumb() bool {
+	return f.Type == FILETYPE_THUMB_CAM || f.Type == FILETYPE_THUMB_PRES || f.Type == FILETYPE_THUMB_COMB
+}
+
 func (f File) IsURL() bool {
 	parsedUrl, err := url.Parse(f.Path)
 	if err != nil {

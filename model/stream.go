@@ -80,15 +80,12 @@ func (s Stream) GetVodFiles() []File {
 func (s Stream) GetThumbIdForSource(source string) uint {
 	var fileType FileType
 	switch source {
-	case "COMB":
-		fileType = FILETYPE_THUMB_COMB
 	case "CAM":
 		fileType = FILETYPE_THUMB_CAM
 	case "PRES":
 		fileType = FILETYPE_THUMB_PRES
 	default:
-		log.WithField("source", source).Error("Invalid source type")
-		return FILETYPE_INVALID
+		fileType = FILETYPE_THUMB_COMB
 	}
 	for _, file := range s.Files {
 		if file.Type == fileType {
