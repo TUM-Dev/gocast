@@ -71,15 +71,11 @@ export class Chat {
     sortMessages() {
         this.messages.sort((m1, m2) => {
             if (this.orderByLikes) {
-                // @ts-ignore
                 if (m1.likes === m2.likes) {
-                    // @ts-ignore
-                    return m2.id - m1.id; // same amount of likes -> newer messages up
+                    return m2.ID - m1.ID; // same amount of likes -> newer messages up
                 }
-                // @ts-ignore
                 return m2.likes - m1.likes; // more likes -> up
             } else {
-                // @ts-ignore
                 return m1.ID < m2.ID ? -1 : 1; // newest messages last
             }
         });
@@ -90,12 +86,10 @@ export class Chat {
     }
 
     onDelete(e) {
-        // @ts-ignore
         this.messages.find((m) => m.ID === e.detail.delete).deleted = true;
     }
 
     onLike(e) {
-        // @ts-ignore
         this.messages.find((m) => m.ID === e.detail.likes).likes = e.detail.num;
     }
 
@@ -127,7 +121,6 @@ export class Chat {
         if (this.emojis.isValid()) {
             window.dispatchEvent(new CustomEvent("chatenter"));
         } else if (this.users.isValid()) {
-            // @ts-ignore
             this.current.addAddressee(this.users.getSelected());
             this.users.clear();
         } else {
@@ -264,6 +257,7 @@ type ChatMessage = {
     addressedTo: number[];
     resolved: boolean;
     visible: true;
+    deleted: boolean;
     isGrayedOut: boolean;
 
     CreatedAt: string;
