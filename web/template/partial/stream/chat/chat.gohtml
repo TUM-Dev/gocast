@@ -19,7 +19,10 @@
          x-on:chatapprove.window="await c.loadMessages(); $nextTick(() => { watch.scrollToBottom() })"
          x-on:chatnewpoll.window="e => c.onNewPoll(e);"
          x-on:polloptionvotesupdate.window="e => c.onPollOptionVotesUpdate(e);"
-         @chat-messages-updated.window="(e) => (c.messages = e.detail)"
+         @chat-messages-updated.window="async (e) => {
+             await $nextTick();
+             c.messages = e.detail;
+         }"
          @disconnected.window="c.disconnected = true;"
          @connected.window="c.disconnected = false;"
          @reorder="c.sortMessages()"
