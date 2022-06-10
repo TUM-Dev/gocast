@@ -7,22 +7,24 @@ import (
 	"html/template"
 )
 
+type InfoPageType uint
+
 const (
-	TEXT_MARKDOWN = iota + 1
+	INFOPAGE_MARKDOWN InfoPageType = iota + 1
 )
 
-type Text struct {
+type InfoPage struct {
 	gorm.Model
 
-	Name       string `gorm:"not null"` // e.g. 'privacy', 'imprint',...
-	RawContent string `gorm:"text; not null"`
-	Type       uint   `gorm:"not null; default: 1"`
+	Name       string       `gorm:"not null"` // e.g. 'privacy', 'imprint',...
+	RawContent string       `gorm:"text; not null"`
+	Type       InfoPageType `gorm:"not null; default: 1"`
 }
 
-func (mt Text) Render() template.HTML {
+func (mt InfoPage) Render() template.HTML {
 	var renderedContent template.HTML = ""
 	switch mt.Type {
-	case TEXT_MARKDOWN:
+	case INFOPAGE_MARKDOWN:
 		unsafe := blackfriday.Run([]byte(mt.RawContent))
 		html := bluemonday.
 			UGCPolicy().

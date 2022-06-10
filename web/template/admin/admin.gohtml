@@ -69,10 +69,10 @@
                                         class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                         class="relative">Token Management</span></a></li>
                         <li>
-                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "texts"}}text-1{{else}}text-5{{end}} relative block"
-                               href="/admin/texts"><span
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "info-pages"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/infopages"><span
                                         class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                        class="relative">Texts</span></a></li>
+                                        class="relative">Info Pages</span></a></li>
                     </ul>
                 </li>
             {{end}}
@@ -168,10 +168,10 @@
                                                 class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                                 class="relative">Token Management</span></a></li>
                                 <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "texts"}}text-1{{else}}text-5{{end}} relative block"
-                                       href="/admin/texts"><span
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "info-pages"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/infopages"><span
                                                 class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
-                                                class="relative">Texts</span></a></li>
+                                                class="relative">Info Pages</span></a></li>
                             </ul>
                         </li>
                     {{end}}
@@ -241,8 +241,8 @@
                     {{template "course-import" .}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "token")}}
                     {{template "token" .Tokens}}
-                {{else if and (eq $curUser.Role 1) (eq .Page "texts")}}
-                    {{template "texts" .Texts}}
+                {{else if and (eq $curUser.Role 1) (eq .Page "info-pages")}}
+                    {{template "info-pages" .InfoPages}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "notifications")}}
                     {{template "notification_management" .Notifications}}
                 {{end}}

@@ -54,7 +54,7 @@ func (r mainRoutes) AboutPage(c *gin.Context) {
 	_ = templateExecutor.ExecuteTemplate(c.Writer, "about.gohtml", indexData)
 }
 
-func (r mainRoutes) TextPage(id uint) gin.HandlerFunc {
+func (r mainRoutes) InfoPage(id uint) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var indexData IndexData
 		var tumLiveContext tools.TUMLiveContext
@@ -68,13 +68,13 @@ func (r mainRoutes) TextPage(id uint) gin.HandlerFunc {
 		}
 		indexData.VersionTag = VersionTag
 
-		text, err := r.TextDao.GetById(id)
+		text, err := r.InfoPageDao.GetById(id)
 		if err != nil {
 			log.WithError(err).Error("Could not get text with id")
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
-		_ = templateExecutor.ExecuteTemplate(c.Writer, "text.gohtml", struct {
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "info-page.gohtml", struct {
 			IndexData
 			Text template.HTML
 		}{indexData, text.Render()})

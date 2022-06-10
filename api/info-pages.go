@@ -9,8 +9,8 @@ import (
 	"strconv"
 )
 
-func configTextRouter(router *gin.Engine, wrapper dao.DaoWrapper) {
-	routes := markdownTextRoutes{wrapper}
+func configInfoPageRouter(router *gin.Engine, wrapper dao.DaoWrapper) {
+	routes := infoPageRoutes{wrapper}
 	api := router.Group("/api")
 	{
 		api.Use(tools.Admin)
@@ -18,19 +18,19 @@ func configTextRouter(router *gin.Engine, wrapper dao.DaoWrapper) {
 	}
 }
 
-type markdownTextRoutes struct {
+type infoPageRoutes struct {
 	dao.DaoWrapper
 }
 
 type updateTextDao struct {
-	Name       string `json:"name"`
-	RawContent string `json:"content"`
-	Type       uint   `json:"type"`
+	Name       string             `json:"name"`
+	RawContent string             `json:"content"`
+	Type       model.InfoPageType `json:"type"`
 }
 
-func (r markdownTextRoutes) updateText(c *gin.Context) {
+func (r infoPageRoutes) updateText(c *gin.Context) {
 	reqBody := updateTextDao{
-		Type: model.TEXT_MARKDOWN, // Use Markdown as default
+		Type: model.INFOPAGE_MARKDOWN, // Use Markdown as default
 	}
 
 	if err := c.BindJSON(&reqBody); err != nil {
@@ -44,7 +44,7 @@ func (r markdownTextRoutes) updateText(c *gin.Context) {
 		return
 	}
 
-	err = r.TextDao.Update(uint(id), &model.Text{
+	err = r.InfoPageDao.Update(uint(id), &model.InfoPage{
 		Name:       reqBody.Name,
 		RawContent: reqBody.RawContent,
 		Type:       reqBody.Type,
