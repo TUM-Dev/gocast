@@ -183,6 +183,11 @@ export class Chat {
     }
 
     openChatPopUp(courseSlug: string, streamID: number) {
+        // multiple popup chat windows seem to trigger Alpine.js exceptions
+        // which is probably caused by a race condition during the update of the
+        // chat messages array with the custom event
+
+        if (this.windows.length > 2) return;
         const height = window.innerHeight * 0.8;
         const popUpWindow = window.open(
             `/w/${courseSlug}/${streamID}/chat/popup`,
