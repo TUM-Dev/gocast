@@ -7,7 +7,7 @@ require (
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/icza/gox v0.0.0-20220321141217-e2d488ab2fbc
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
-	github.com/joschahenningsen/thumbgen v0.0.0-20220520094518-cd7d68d0e7c9
+	github.com/joschahenningsen/thumbgen v0.0.0-20220609221215-d567ca9d8567
 	github.com/makasim/sentryhook v0.4.0
 	github.com/pkg/profile v1.6.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -43,4 +43,13 @@ require (
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+)
+
+require (
+	github.com/mattn/go-runewidth v0.0.13 // indirect
+	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
+	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/schollz/progressbar/v3 v3.8.6 // indirect
+	golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898 // indirect
+	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171 // indirect
 )
