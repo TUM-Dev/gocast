@@ -211,6 +211,13 @@ export class Chat {
      * @param playerTime time offset of current player time w.r.t. video start in seconds
      */
     grayOutMessagesAfterPlayerTime(playerTime: number): void {
+        if (this.orderByLikes) {
+            if (this.messages.some((message) => message.isGrayedOut)) {
+                this.messages.forEach((message) => (message.isGrayedOut = false));
+                this.notifyMessagesUpdate(this.messages);
+            } else return;
+        }
+
         //TODO revert:  const referenceTime = new Date(this.startTime);
         const referenceTime = new Date("Mon Jun 03 2022 12:28:30");
         referenceTime.setSeconds(referenceTime.getSeconds() + playerTime);
