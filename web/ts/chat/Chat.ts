@@ -227,11 +227,7 @@ export class Chat {
         );
 
         this.focusedMessageId = messagesNotGrayedOut.pop()?.ID;
-        this.windows.forEach((window: Window) =>
-            window.dispatchEvent(
-                new CustomEvent("chat-messages-updated", { detail: JSON.parse(JSON.stringify(this.messages)) }),
-            ),
-        );
+        this.notifyMessagesUpdate(this.messages);
     }
 
     isMessageToBeFocused = (index: number) => this.messages[index].ID === this.focusedMessageId;
@@ -239,6 +235,14 @@ export class Chat {
     private addMessage(m: ChatMessage) {
         this.preprocessors.forEach((f) => (m = f(m)));
         this.messages.push(m);
+    }
+
+    private notifyMessagesUpdate(messages: ChatMessage[]) {
+        this.windows.forEach((window: Window) =>
+            window.dispatchEvent(
+                new CustomEvent("chat-messages-updated", { detail: JSON.parse(JSON.stringify(messages)) }),
+            ),
+        );
     }
 }
 
