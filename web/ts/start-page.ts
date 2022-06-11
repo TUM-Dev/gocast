@@ -10,7 +10,7 @@ export const liveCoursesListener = {
 
     connect(retryDelay: number) {
         const wsProto = window.location.protocol === "https:" ? `wss://` : `ws://`;
-        this.ws = new WebSocket(`${wsProto}${window.location.host}/api/live-courses/ws`);
+        this.ws = new WebSocket(`${wsProto}${window.location.host}/api/live-update/ws`);
         this.ws.onopen = function (e) {
             window.dispatchEvent(new CustomEvent("connected"));
         };
