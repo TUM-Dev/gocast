@@ -3,11 +3,14 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"github.com/RBG-TUM/commons"
 	"github.com/gabstv/melody"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/tum"
 	log "github.com/sirupsen/logrus"
 	"sync"
 )
@@ -54,7 +57,7 @@ func (r liveUpdateRoutes) handleLiveConnect(c *gin.Context) {
 
 	ctxMap := make(map[string]interface{}, 1)
 	ctxMap["ctx"] = c
-	ctxMap["ctx"] = c
+	ctxMap["dao"] = r.DaoWrapper
 
 	_ = liveMelody.HandleRequestWithKeys(c.Writer, c.Request, ctxMap)
 }
@@ -88,6 +91,8 @@ func liveUpdateDisconnectHandler(s *melody.Session) {
 
 var liveUpdateConnectionHandler = func(s *melody.Session) {
 	ctx, _ := s.Get("ctx") // get gin context
+	daoWrapper, _ := s.Get("dao")
+
 	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -99,13 +104,25 @@ var liveUpdateConnectionHandler = func(s *melody.Session) {
 		return
 	}
 
-	//courses := &tumLiveContext.User.Courses
+	var public []model.Course
+	var err error
+	year, term := tum.GetCurrentSemester()
+
+	if public, err = daoWrapper.(dao.DaoWrapper).CoursesDao.GetPublicAndLoggedInCourses(year, term); err != nil {
+		log.WithError(err).Error("could not fetch public and logged in courses")
+	}
+	public = commons.Unique(public, func(c model.Course) uint { return c.ID })
+
+	var courses []uint
+	for _, course := range public {
+		courses = append(courses, course.ID)
+	}
 
 	liveUpdateListenerMutex.Lock()
 	if liveUpdateListener[tumLiveContext.User.ID] != nil {
-		liveUpdateListener[tumLiveContext.User.ID] = &liveUpdateUserSessionsWrapper{append(liveUpdateListener[tumLiveContext.User.ID].sessions, s), liveUpdateListener[tumLiveContext.User.ID].courses}
+		liveUpdateListener[tumLiveContext.User.ID] = &liveUpdateUserSessionsWrapper{append(liveUpdateListener[tumLiveContext.User.ID].sessions, s), courses}
 	} else {
-		liveUpdateListener[tumLiveContext.User.ID] = &liveUpdateUserSessionsWrapper{[]*melody.Session{s}, []uint{}}
+		liveUpdateListener[tumLiveContext.User.ID] = &liveUpdateUserSessionsWrapper{[]*melody.Session{s}, courses}
 	}
 	liveUpdateListenerMutex.Unlock()
 }
