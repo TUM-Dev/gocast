@@ -1,21 +1,25 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/gabstv/melody"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
 	"sync"
 )
 
+const (
+	UpdateTypeCourseWentLive = "course_went_live"
+)
+
 var liveMelody *melody.Melody
 
 var liveUpdateListenerMutex sync.RWMutex
-var liveUpdateListener = map[uint]*liveUpdateSessionWrapper{}
+var liveUpdateListener = map[uint]*liveUpdateUserSessionsWrapper{}
 
 const maxLiveUpdateParticipants = 10000
 
@@ -23,9 +27,9 @@ type liveUpdateRoutes struct {
 	dao.DaoWrapper
 }
 
-type liveUpdateSessionWrapper struct {
+type liveUpdateUserSessionsWrapper struct {
 	sessions []*melody.Session
-	courses  *[]model.Course
+	courses  []uint
 }
 
 func configGinLiveUpdateRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
@@ -95,13 +99,29 @@ var liveUpdateConnectionHandler = func(s *melody.Session) {
 		return
 	}
 
-	courses := &tumLiveContext.User.Courses
+	//courses := &tumLiveContext.User.Courses
 
 	liveUpdateListenerMutex.Lock()
 	if liveUpdateListener[tumLiveContext.User.ID] != nil {
-		liveUpdateListener[tumLiveContext.User.ID] = &liveUpdateSessionWrapper{append(liveUpdateListener[tumLiveContext.User.ID].sessions, s), courses}
+		liveUpdateListener[tumLiveContext.User.ID] = &liveUpdateUserSessionsWrapper{append(liveUpdateListener[tumLiveContext.User.ID].sessions, s), liveUpdateListener[tumLiveContext.User.ID].courses}
 	} else {
-		liveUpdateListener[tumLiveContext.User.ID] = &liveUpdateSessionWrapper{[]*melody.Session{s}, courses}
+		liveUpdateListener[tumLiveContext.User.ID] = &liveUpdateUserSessionsWrapper{[]*melody.Session{s}, []uint{}}
+	}
+	liveUpdateListenerMutex.Unlock()
+}
+
+func NotifyLiveUpdateCourseWentLive(courseId uint) {
+	updateMessage, _ := json.Marshal(gin.H{"type": UpdateTypeCourseWentLive, "data": gin.H{"courseId": courseId}})
+	liveUpdateListenerMutex.Lock()
+	for _, userWrap := range liveUpdateListener {
+		for _, course := range userWrap.courses {
+			if course == courseId {
+				for _, session := range userWrap.sessions {
+					_ = session.Write(updateMessage)
+				}
+				break
+			}
+		}
 	}
 	liveUpdateListenerMutex.Unlock()
 }
