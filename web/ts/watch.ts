@@ -67,11 +67,8 @@ export function startWebsocket() {
 
     ws.onmessage = function (m) {
         const data = JSON.parse(m.data);
-        const x = document.getElementsByClassName("viewerCount");
-        if ("viewers" in data && x != null) {
-            for (let i = 0; i < x.length; i++) {
-                x[i].innerHTML = data["viewers"];
-            }
+        if ("viewers" in data && document.getElementById("viewerCount") != null) {
+            document.getElementById("viewerCount").innerText = data["viewers"];
         } else if ("live" in data) {
             if (data["live"]) {
                 // stream start, refresh page
@@ -151,15 +148,6 @@ export function startWebsocket() {
             return;
         }
         window.dispatchEvent(new CustomEvent("disconnected"));
-        ws.send(
-            JSON.stringify({
-                type: WSMessageType.Message,
-                msg: "MOIN",
-                anonymous: true,
-                replyTo: null,
-                addressedTo: null,
-            }),
-        );
         ws = null;
         retryInt *= 2; // exponential backoff
         setTimeout(startWebsocket, retryInt);
