@@ -457,7 +457,10 @@ func (r coursesRoutes) updateDescription(c *gin.Context) {
 		return
 	}
 	wsMsg := gin.H{
-		"description": stream.GetDescriptionHTML(),
+		"description": gin.H{
+			"full":      stream.GetDescriptionHTML(),
+			"truncated": stream.TruncatedDescription(),
+		},
 	}
 	if msg, err := json.Marshal(wsMsg); err == nil {
 		broadcastStream(sID, msg)

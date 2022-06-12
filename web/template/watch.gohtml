@@ -138,18 +138,18 @@
                         </span>
                         {{template "actions" .}}
                     </span>
-                </p>
-            </div>
-            <div class="flex justify-between pb-4">
-                <div class="flex my-auto">
-                    <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
-                        <span class="text-5 hover:text-1 hover:underline text-lg">{{$course.Name}}</span></a>
-                    {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
-                        <a class="hover:bg-gray-200 dark:hover:bg-gray-600 text-5 hover:text-1 hover:underline w-fit m-2 px-1 inline-block rounded my-auto"
-                           href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
-                           :title="'Edit course settings'">
+                    </p>
+                </div>
+                <div class="flex justify-between">
+                    <div class="flex my-auto">
+                        <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
+                            <span class="text-5 hover:text-1 hover:underline text-lg">{{$course.Name}}</span></a>
+                        {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
+                            <a class="hover:bg-gray-200 dark:hover:bg-gray-600 text-5 hover:text-1 w-fit m-2 px-1 inline-block rounded my-auto"
+                               href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
+                               :title="'Edit course settings'">
                         <span class="font-semibold text-sm">
-                           <i class="fa-solid w-fit py-2 fa-pen"></i>
+                           <i class="fa-solid w-fit py-1 fa-pen"></i>
                         </span>
                             </a>
                         {{end}}
@@ -170,31 +170,30 @@
                 </div>
             </div>
             <!-- Video description -->
-            <div x-data="{ less: true, descriptionlen: {{len .Description}} }"
+            {{$maxDescLen := 100}}
+            <div x-data="{ less: {{len .Description}}>{{$maxDescLen}}, full: `{{$stream.Description}}`, prev: `{{$stream.TruncatedDescription}}` }"
                  class="text-3 pt-2 video-description"
+                 x-show="full.length"
             >
-                <h6 class="font-bold text-3 pb-3 ml-1"><i class="fa-solid fa-circle-info mr-1"></i>Description</h6>
-                <div :class="less && 'truncate-children'"
-                     class="bg-secondary p-2 rounded-lg text-3 whitespace-normal"
-                     @descriptionupdate.window="content = $el.innerHTML=$event.detail.description;">
-                    <template x-if="less">
-                        <span>
-                            {{if $stream.GetDescriptionHTML}}{{$stream.GetTruncatedDescription}}{{end}}
-                        </span>
-                    </template>
-                    <template x-if="!less">
-                        <span>
-                            {{if $stream.GetDescriptionHTML}}{{.Description}}{{end}}
-                        </span>
-                    </template>
+                <h6 class="font-bold text-3 pb-3 ml-1"><i class="fa-solid fa-circle-info mr-1"></i>Description
+                </h6>
+                <div class="flex">
+                    <span class="text-3 px-3 shrink basis-8/12"
+                          x-html="less ? prev : full"
+                          @descriptionupdate.window="full = $el.innerHTML=$event.detail.description.full; prev =
+                    $el.innerHTML=$event.detail.description.truncated; less = full.length > {{$maxDescLen}};">
+                    </span>
                 </div>
-                <button x-show="descriptionlen>120" class='text-xs text-gray-500 dark:text-gray-400 uppercase mt-2'
-                        @click="less = !less" x-text="less ? 'show more' : 'show less'">show less
+                <button x-show="full.length>{{$maxDescLen}}"
+                        class='pl-3 text-xs text-gray-500 dark:text-gray-400 uppercase mt-2'
+                        @click="less = !less" x-text="less ? 'show more' : 'show less'">
                 </button>
             </div>
-            {{if or .IsAdminOfCourse $stream.LiveNow}}
+            {{if and .IsAdminOfCourse $stream.LiveNow}}
                 <!-- Admin control buttons -->
                 <div class="md:space-x-2 lg:space-y-0 space-y-2 pt-4">
+                    <h6 class="font-bold text-3 pb-3 ml-1"><i class="fa-solid fa-wrench mr-1"></i>Admin controls
+                    </h6>
                     {{/* Lecture hall is set, means no self-stream*/}}
                     {{if $stream.LectureHallID}}
                         <button @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)"
@@ -216,47 +215,16 @@
                         </button>
                     {{end}}
                     {{if .AlertsEnabled}}
-                        <button @click="$dispatch('issue')"
+                        <button @click="$dispatch('issue'); location.href = '#'; location.href = '#alertModal'"
                                 title="Issues with the stream? Send a report to the RGB."
-                                class="bg-amber-500 text-center md:w-32 md:float-right w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
+                                class="bg-amber-500 text-center inline-block md:w-32 md:float-right w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
                             <i class="fas fa-exclamation-triangle mr-1"></i>Problem
                         </button>
                     {{end}}
                 </div>
-                <!-- Modal when stopping a stream -->
-                <div class="inline-block" x-data="{ 'showModal': false }"
-                     @stop.window="showModal=true"
-                     @keydown.escape="showModal = false" x-cloak x-show="showModal">
-                    <section class="flex flex-wrap h-full">
-                        <div class="overflow-auto" style="background-color: rgba(0,0,0,0.5)" x-show="showModal"
-                             :class="{ 'absolute inset-0 z-10 flex items-center justify-center': showModal }">
-                            <div class="bg-secondary opacity-95 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 w-auto md:max-w-md mx-auto rounded shadow-lg py-4 text-left px-6"
-                                 @click.away="showModal = false">
-                                <!--Title-->
-                                <div class="flex justify-between pb-3">
-                                    <p class="text-2 font-bold">Keep the recording after ending the stream?</p>
-                                </div>
-                                <!--Footer-->
-                                <div class="flex justify-start pt-2">
-                                    <button class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-600 dark:hover:bg-green-600 font-bold rounded cursor-pointer p-1 mr-3"
-                                            @click="fetch(`/api/stream/${streamID}/end?discard=${false}`).then(showModal = false)">
-                                        Yes
-                                    </button>
-                                    <button class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-600 dark:hover:bg-red-600 font-bold rounded cursor-pointer p-1 mr-3"
-                                            @click="fetch(`/api/stream/${streamID}/end?discard=${true}`).then(showModal = false)">
-                                        No
-                                    </button>
-                                    <button class="bg-gray-500 inline-block text-center w-24 text-white hover:bg-gray-600 dark:hover:bg-gray-600 font-bold rounded cursor-pointer p-1"
-                                            @click="showModal = false">Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-                </div>
                 <div class="pt-2">
-                    <h3 class="font-bold text-3 grow"><i class="fa-solid fa-camera mr-1"></i>Presets
-                        for {{.LectureHallName}}</h3>
+                    <h6 class="font-bold text-3 pb-3 ml-1"><i class="fa-solid fa-camera mr-1"></i>Presets
+                        for {{.LectureHallName}}</h6>
                     <div class="w-full overflow-x-scroll scrollbarThin">
                         <div class="flex flex-row gap-x-2">
                             {{range $preset := .Presets}}
@@ -273,6 +241,38 @@
                     </div>
                 </div>
             {{end}}
+            <!-- Modal when stopping a stream -->
+            <div class="inline-block" x-data="{ 'showModal': false }"
+                 @stop.window="showModal=true"
+                 @keydown.escape="showModal = false" x-cloak x-show="showModal">
+                <section class="flex flex-wrap h-full">
+                    <div class="overflow-auto" x-show="showModal"
+                         :class="{ 'absolute inset-0 z-10 flex items-center justify-center': showModal }">
+                        <div class="dark:bg-secondary-light bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 w-auto md:max-w-md mx-auto rounded shadow-lg py-4 text-left
+                        px-6"
+                             @click.away="showModal = false">
+                            <!--Title-->
+                            <div class="flex justify-between pb-3">
+                                <p class="text-2 font-bold">Keep the recording after ending the stream?</p>
+                            </div>
+                            <!--Footer-->
+                            <div class="flex justify-start pt-2">
+                                <button class="bg-green-500 inline-block text-center w-24 text-white hover:bg-green-600 dark:hover:bg-green-600 font-bold rounded cursor-pointer p-1 mr-3"
+                                        @click="fetch(`/api/stream/${streamID}/end?discard=${false}`).then(showModal=false)">
+                                    Yes
+                                </button>
+                                <button class="bg-red-500 inline-block text-center w-24 text-white hover:bg-red-600 dark:hover:bg-red-600 font-bold rounded cursor-pointer p-1 mr-3"
+                                        @click="fetch(`/api/stream/${streamID}/end?discard=${true}`).then(showModal=false)">
+                                    No
+                                </button>
+                                <button class="bg-gray-500 inline-block text-center w-24 text-white hover:bg-gray-600 dark:hover:bg-gray-600 font-bold rounded cursor-pointer p-1"
+                                        @click="showModal = false">Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
             {{if .AlertsEnabled}}
                 {{template "alert-modal" . }}
             {{end}}

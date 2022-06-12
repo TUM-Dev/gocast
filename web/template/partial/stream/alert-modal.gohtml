@@ -1,11 +1,12 @@
 {{define "alert-modal"}}
     {{/* Modal to enter feedback */}}
     <div x-cloak x-data="{ show : false, description : '', phone: '', mail: '', categories: [] }"
+         id="alertModal"
          @issue.window="show = true;"
          x-show="show" class="flex flex-wrap h-full overflow-y-scroll inline-block "
          :class="{ 'absolute inset-0 z-50 flex items-center justify-center': show }">
         <div @keydown.escape="show = false"
-             class="bg-secondary backdrop-blur text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 sm:w-auto w-full md:max-w-md md:mx-auto rounded shadow-lg py-4 text-left px-6">
+             class="dark:bg-secondary-light bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 sm:w-auto w-full md:max-w-md md:mx-auto rounded shadow-lg py-4 text-left px-6">
             <form @submit.prevent="watch.sendIssue(streamID, categories, name, phone, mail, description); show = false">
                 <div class="font-bold text-xl mb-2">Report Technical Problem</div>
                 <div class="font-bold text-md mb-2">Please select all relevant issue categories

@@ -2,8 +2,8 @@ package model
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"html/template"
 	"regexp"
 	"time"
 	"unicode"
@@ -242,32 +242,49 @@ func (s Stream) Attachments() []File {
 	return attachments
 }
 
+var ErrUnbalancedTags = errors.New("unbalanced tags")
 var TagExpr = regexp.MustCompile("<(/?)([A-Za-z0-9]+).*?>")
 var EntityExpr = regexp.MustCompile("&#?[A-Za-z0-9]+;")
 
-func (s Stream) GetTruncatedDescription() template.HTML {
-	buf := s.Description
+// Based on: https://github.com/mborgerson/GoTruncateHtml
+// truncateHtml will truncate a given byte slice to a maximum of maxlen visible
+// characters and optionally append ellipsis. HTML tags are automatically closed
+// generating valid truncated HTML.
+func truncateHtml(buf []byte, maxlen int, ellipsis string) ([]byte, error) {
+	// Here's the gist: Scan the input bytestream. While scanning, count the
+	// number of visible characters--that is, characters which are not part of
+	// markup tags. When a start tag is encountered, push the tag name onto a
+	// stack. When visible character count >= maxlen, or the EOF is reached,
+	// stop counting. Copy from the input stream the bytes from the start to the
+	// current scanning pointer. Finally, pop each tag off the tag stack and
+	// append it to the output stream in the form of a closing tag.
+
+	// We will consider HTML or XHTML as valid input. The following elements,
+	// called "Void Elements" need not conform to the XHTML <tag /> convention
+	// of void elements and may appear simply as <tag>. Hence, if one of the
+	// following is picked up by the tag expression as a start tag, do not add
+	// it to the stack of tags that should be closed.
 	voidElementTags := []string{"area", "base", "br", "col", "embed", "hr",
 		"img", "input", "keygen", "link", "meta",
 		"param", "source", "track", "wbr"}
 
 	// Check to see if no input was provided.
-	if buf == "" || len(buf) == 0 {
-		return ""
+	if len(buf) == 0 || maxlen == 0 {
+		return []byte{}, nil
 	}
 
-	tagStack := []string{}
+	var tagStack []string
 	visible := 0
 	bufPtr := 0
 
-	for bufPtr < len(buf) && visible < 40 {
+	for bufPtr < len(buf) && visible < maxlen {
 
 		// Move to nearest tag and count visible characters along the way.
 		offset := 0
 		visibleCharacterMaxReached := false
 		entityDetected := false
 
-		for localOffset, runeValue := range buf[bufPtr:] {
+		for localOffset, runeValue := range string(buf[bufPtr:]) {
 			offset = localOffset
 
 			if runeValue == '<' {
@@ -275,7 +292,7 @@ func (s Stream) GetTruncatedDescription() template.HTML {
 				break
 			} else if runeValue == '&' {
 				// Possible start of HTML Entity
-				loc := EntityExpr.FindIndex([]byte(buf[bufPtr+localOffset:]))
+				loc := EntityExpr.FindIndex(buf[bufPtr+localOffset:])
 				if loc != nil && loc[0] == 0 {
 					// Entity found!
 					entityDetected = true
@@ -288,7 +305,7 @@ func (s Stream) GetTruncatedDescription() template.HTML {
 			}
 
 			// Check if the limit of visible characters has been reached.
-			if visible >= 40 {
+			if visible >= maxlen {
 				visibleCharacterMaxReached = true
 				break
 			}
@@ -315,7 +332,7 @@ func (s Stream) GetTruncatedDescription() template.HTML {
 		}
 
 		// Now find the expression sub-matches
-		matches := TagExpr.FindSubmatch([]byte(buf[bufPtr:]))
+		matches := TagExpr.FindSubmatch(buf[bufPtr:])
 		tagName := string(matches[2])
 
 		// Advance pointer to the end of the tag
@@ -342,7 +359,7 @@ func (s Stream) GetTruncatedDescription() template.HTML {
 			// This is an end tag. First, check to make sure the end tag is
 			// matches what's on top of the stack.
 			if len(tagStack) == 0 || tagStack[len(tagStack)-1] != tagName {
-				return ""
+				return nil, ErrUnbalancedTags
 			}
 
 			// Now, pop the tag stack.
@@ -353,19 +370,28 @@ func (s Stream) GetTruncatedDescription() template.HTML {
 	// At this point, bufPtr points to the last rune that should be copied to
 	// the output stream. Increment bufPtr past this rune, turning bufPtr into
 	// the number of bytes that should be copied.
-	_, size := utf8.DecodeRune([]byte(buf[bufPtr:]))
+	_, size := utf8.DecodeRune(buf[bufPtr:])
 	bufPtr += size
 
 	// Copy the desired input to the output buffer.
 	output := buf[0:bufPtr]
 
 	// Copy ellipsis
-	output = output + "..."
+	output = append(output, []byte(ellipsis)...)
 
 	// Finally, create a closing tag for each tag in the stack.
 	for i := len(tagStack) - 1; i >= 0; i-- {
-		output += fmt.Sprintf("</%s>", tagStack[i])
+		output = append(output, []byte(fmt.Sprintf("</%s>", tagStack[i]))...)
 	}
 
-	return template.HTML(output)
+	return output, nil
+}
+
+func (s Stream) TruncatedDescription() string {
+	desc := s.GetDescriptionHTML()
+	tr, err := truncateHtml([]byte(desc), 100, "...")
+	if err != nil {
+		_ = []byte("")
+	}
+	return string(tr)
 }
