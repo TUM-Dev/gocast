@@ -31,14 +31,6 @@ func NewPanasonicCam(ip string, auth *string) *PanasonicCam {
 	return &PanasonicCam{Ip: ip, Auth: auth}
 }
 
-func (c *PanasonicCam) GetInfo() (string, error) {
-	resp, err := makeAuthenticatedRequest(c.Auth, "GET", "", fmt.Sprintf("%s/getinfo?FILE=1", fmt.Sprintf(panasonicBaseUrl, c.Ip)))
-	if err != nil {
-		return "", err
-	}
-	return string(resp.Bytes()), nil
-}
-
 func (c PanasonicCam) TakeSnapshot(outDir string) (filename string, err error) {
 	log.Info(fmt.Sprintf("%s/view.cgi?action=snapshot", fmt.Sprintf(panasonicBaseUrl, c.Ip)))
 	resp, err := makeAuthenticatedRequest(c.Auth, "GET", "", fmt.Sprintf("%s/view.cgi?action=snapshot", fmt.Sprintf(panasonicBaseUrl, c.Ip)))

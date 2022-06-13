@@ -32,7 +32,7 @@ func (c *AxisCam) TakeSnapshot(outDir string) (filename string, err error) {
 	filename = fmt.Sprintf("%s%s", uuid.NewV4().String(), ".jpg")
 
 	err = saveResponseBuffer(outDir, filename, resp)
-	return filename, nil
+	return filename, err
 }
 
 //SetPreset tells the camera to use a preset specified by presetId
