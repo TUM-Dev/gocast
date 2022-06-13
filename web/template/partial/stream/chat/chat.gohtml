@@ -45,7 +45,18 @@
             <div x-show="show" class="ml-auto my-auto">
                     <span class="font-semibold text-gray-500 text-xs"
                           x-text="c.orderByLikes? 'Popular First': 'Live Chat'"></span>
-                <button @click="c.orderByLikes=!c.orderByLikes; watch.setOrder(c.orderByLikes); $dispatch('reorder'); c.orderByLikes? watch.scrollToTop(): watch.scrollToBottom()"
+                <button @click="
+                    c.orderByLikes=!c.orderByLikes;
+                    watch.setOrder(c.orderByLikes);
+                    $dispatch('reorder');
+                    if(c.orderByLikes) {
+                        c.deregisterPlayerTimeWatcher();
+                    }
+                    else {
+                        c.registerPlayerTimeWatcher();
+                    }
+                    c.orderByLikes? watch.scrollToTop(): watch.scrollToBottom()
+                "
                         class="bg-transparent border-0 font-semibold h-8 w-8 rounded
                                hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90"
                         title="Change Order">

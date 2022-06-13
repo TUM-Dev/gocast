@@ -2,7 +2,7 @@ import { NewChatMessage } from "./NewChatMessage";
 import { ChatUserList } from "./ChatUserList";
 import { EmojiList } from "./EmojiList";
 import { Poll } from "./Poll";
-import { registerTimeWatcher } from "../TUMLiveVjs";
+import { registerTimeWatcher, deregisterTimeWatcher } from "../TUMLiveVjs";
 
 export class Chat {
     readonly userId: number;
@@ -39,6 +39,8 @@ export class Chat {
         },
     ];
 
+    private timeWatcherCallBackFunction: () => void;
+
     constructor(isAdminOfCourse: boolean, streamId: number, startTime: string, userId: number, userName: string) {
         this.orderByLikes = false;
         this.disconnected = false;
@@ -55,7 +57,9 @@ export class Chat {
         this.focusedMessageId = -1;
         this.windows = [window];
         this.grayOutMessagesAfterPlayerTime = this.grayOutMessagesAfterPlayerTime.bind(this);
-        registerTimeWatcher(this.grayOutMessagesAfterPlayerTime);
+        this.deregisterPlayerTimeWatcher = this.deregisterPlayerTimeWatcher.bind(this);
+        this.registerPlayerTimeWatcher = this.registerPlayerTimeWatcher.bind(this);
+        this.registerPlayerTimeWatcher();
         window.addEventListener("beforeunload", () => {
             this.windows.forEach((window) => window.close());
         });
@@ -207,19 +211,37 @@ export class Chat {
     }
 
     /**
+     * registers for updates regarding current player time
+     */
+    registerPlayerTimeWatcher(): void {
+        this.timeWatcherCallBackFunction = registerTimeWatcher(this.grayOutMessagesAfterPlayerTime);
+    }
+
+    /**
+     * deregisters updates regarding current player time
+     */
+    deregisterPlayerTimeWatcher(): void {
+        if (this.timeWatcherCallBackFunction) {
+            deregisterTimeWatcher(this.timeWatcherCallBackFunction);
+            this.timeWatcherCallBackFunction = null;
+        }
+    }
+
+    /**
      * Grays out all messages that were not sent at the same time in the livestream.
      * @param playerTime time offset of current player time w.r.t. video start in seconds
      */
     grayOutMessagesAfterPlayerTime(playerTime: number): void {
-        if (this.orderByLikes) {
+        // TODO replace following by an handleOrderByLikesChanged function
+        /*if (this.orderByLikes) {
             if (this.messages.some((message) => message.isGrayedOut)) {
                 this.messages.forEach((message) => (message.isGrayedOut = false));
                 this.notifyMessagesUpdate(this.messages);
             } else return;
-        }
+        }*/
 
         //TODO revert:  const referenceTime = new Date(this.startTime);
-        const referenceTime = new Date("Mon Jun 03 2022 12:28:30");
+        const referenceTime = new Date("Sun Jun 12 2022 15:14:00");
         referenceTime.setSeconds(referenceTime.getSeconds() + playerTime);
 
         const grayOutCondition = (CreatedAt: string) => {

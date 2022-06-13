@@ -276,14 +276,29 @@ export const watchProgress = function (streamID: number, lastProgress: number, l
     });
 };
 
+const registeredTimeWatchers: (() => void)[] = [];
+
 /**
  * Registers a time watcher that observes the time of the current player
  * @param callBack call back function responsible for handling player time updates
+ * @return callBack function that got registered for listening to player time updates
+ * (can be used to deregister time watcher again in )
  */
-export const registerTimeWatcher = function (callBack: (currentPlayerTime: number) => void) {
-    player?.on("timeupdate", () => {
+export const registerTimeWatcher = function (callBack: (currentPlayerTime: number) => void): () => void {
+    const timeWatcherCallBack: () => void = () => {
         callBack(player.currentTime());
-    });
+    };
+    registeredTimeWatchers.push(timeWatcherCallBack);
+    player?.on("timeupdate", timeWatcherCallBack);
+    return timeWatcherCallBack;
+};
+
+/**
+ * Deregisters a time watching obeserver from the current player
+ * @param callBackToDeregister regestered callBack function
+ */
+export const deregisterTimeWatcher = function (callBackToDeregister: () => void) {
+    player?.off("timeupdate", callBackToDeregister);
 };
 
 const Component = videojs.getComponent("Component");
