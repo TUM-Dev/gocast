@@ -28,8 +28,8 @@ func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper
 	admins.POST("/takeSnapshot/:lectureHallID/:presetID", routes.takeSnapshot) //TODO: Test
 	admins.GET("/course-schedule", routes.getSchedule)
 	admins.POST("/course-schedule/:year/:term", routes.postSchedule)
-	admins.GET("/refreshLectureHallPresets/:lectureHallID", routes.refreshLectureHallPresets) //TODO: Test
-	admins.POST("/setLectureHall", routes.setLectureHall)                                     //TODO: Test
+	admins.GET("/refreshLectureHallPresets/:lectureHallID", routes.refreshLectureHallPresets)
+	admins.POST("/setLectureHall", routes.setLectureHall) //TODO: Test
 
 	adminsOfCourse := router.Group("/api/course/:courseID/")
 	adminsOfCourse.Use(tools.InitCourse(daoWrapper))
@@ -37,7 +37,7 @@ func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper
 	adminsOfCourse.Use(tools.AdminOfCourse)
 	adminsOfCourse.POST("/switchPreset/:lectureHallID/:presetID/:streamID", routes.switchPreset) //TODO: Test
 
-	router.GET("/api/hall/all.ics", routes.lectureHallIcal) //TODO: Test
+	router.GET("/api/hall/all.ics", routes.lectureHallIcal)
 }
 
 type lectureHallRoutes struct {

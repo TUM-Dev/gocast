@@ -147,7 +147,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 			lectureHallMock.
 				EXPECT().
 				GetLectureHallByID(lectureHallId).
-				Return(model.LectureHall{},
+				Return(testutils.EmptyLectureHall,
 					errors.New("")).
 				AnyTimes()
 
@@ -178,7 +178,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 			lectureHallMock.
 				EXPECT().
 				GetLectureHallByID(lectureHallId).
-				Return(model.LectureHall{}, nil).
+				Return(testutils.EmptyLectureHall, nil).
 				AnyTimes()
 			lectureHallMock.
 				EXPECT().
@@ -213,7 +213,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 			lectureHallMock.
 				EXPECT().
 				GetLectureHallByID(lectureHallId).
-				Return(model.LectureHall{}, nil)
+				Return(testutils.EmptyLectureHall, nil)
 			lectureHallMock.
 				EXPECT().
 				SaveLectureHall(gomock.Any()).
@@ -868,6 +868,120 @@ func TestLectureHallIcal(t *testing.T) {
 				ExpectedCode:     http.StatusOK,
 			},
 		}
+		testCases.Run(t, configGinLectureHallApiRouter)
+	})
+}
+
+func TestLectureHallPresets(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("/refreshLectureHallPresets/:lectureHallID", func(t *testing.T) {
+		lectureHallId := uint(123)
+		testCases := testutils.TestCases{
+			"GET [Invalid id]": testutils.TestCase{
+				Method:       "GET",
+				Url:          "/refreshLectureHallPresets/abc",
+				ExpectedCode: http.StatusNotFound,
+			},
+			"GET [GetLectureHallByID returns error]": testutils.TestCase{
+				Method: "GET",
+				Url:    "/refreshLectureHallPresets/123",
+				DaoWrapper: dao.DaoWrapper{
+					LectureHallsDao: func() dao.LectureHallsDao {
+						lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+						lectureHallMock.
+							EXPECT().
+							GetLectureHallByID(lectureHallId).
+							Return(testutils.EmptyLectureHall, errors.New("")).
+							AnyTimes()
+						return lectureHallMock
+					}(),
+				},
+				ExpectedCode: http.StatusNotFound,
+			},
+		}
+
+		testCases.Run(t, configGinLectureHallApiRouter)
+	})
+
+	t.Run("/switchPreset/:lectureHallID/:presetID/:streamID", func(t *testing.T) {
+		presetId := "1"
+		lectureHallId := "123"
+
+		testCourse := testutils.CourseFPV
+
+		url := fmt.Sprintf("/api/course/%d/switchPreset/%s/%s/%d", testCourse.ID, lectureHallId, presetId, testutils.StreamFPVLive.ID)
+		testCases := testutils.TestCases{
+			"POST [no context]": testutils.TestCase{
+				Method:         "POST",
+				Url:            url,
+				TumLiveContext: nil,
+				ExpectedCode:   http.StatusInternalServerError,
+			},
+			"POST [stream not live]": testutils.TestCase{
+				Method: "POST",
+				Url:    url,
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}},
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: func() dao.StreamsDao {
+						streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+						streamsMock.
+							EXPECT().
+							GetStreamByID(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
+							Return(testutils.StreamFPVNotLive, nil).AnyTimes()
+						return streamsMock
+					}(),
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), testCourse.ID).
+							Return(testCourse, nil).
+							AnyTimes()
+						return coursesMock
+					}(),
+				},
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"POST [FindPreset returns error]": testutils.TestCase{
+				Method: "POST",
+				Url:    url,
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}},
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: func() dao.StreamsDao {
+						streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+						streamsMock.
+							EXPECT().
+							GetStreamByID(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
+							Return(testutils.StreamFPVLive, nil).AnyTimes()
+						return streamsMock
+					}(),
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), testCourse.ID).
+							Return(testCourse, nil).
+							AnyTimes()
+						return coursesMock
+					}(),
+					LectureHallsDao: func() dao.LectureHallsDao {
+						lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+						lectureHallMock.
+							EXPECT().
+							FindPreset(lectureHallId, presetId).
+							Return(model.CameraPreset{}, errors.New("")).AnyTimes()
+						return lectureHallMock
+					}(),
+				},
+				ExpectedCode: http.StatusNotFound,
+			},
+		}
+
 		testCases.Run(t, configGinLectureHallApiRouter)
 	})
 }
