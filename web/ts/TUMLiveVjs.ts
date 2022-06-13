@@ -26,9 +26,9 @@ export const initPlayer = function (
     fluid: boolean,
     isEmbedded: boolean,
     playbackSpeeds: number[],
-    spriteID: number,
-    spriteInterval: number,
-    streamID: number,
+    spriteID?: number,
+    spriteInterval?: number,
+    streamID?: number,
     courseName?: string,
     streamName?: string,
     streamUrl?: string,
@@ -60,8 +60,6 @@ export const initPlayer = function (
             width: 160,
             height: 90,
         });
-    } else {
-        console.log("No valid thumbnail sprite ID found.");
     }
 
     player.hlsQualitySelector();

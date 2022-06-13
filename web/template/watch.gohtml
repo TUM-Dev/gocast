@@ -306,7 +306,11 @@
     {{end}}
 </div>
 <script>
+    {{if $stream.Recording}}
     watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    {{else}}
+    watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}});
+    {{end}}
     {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
     watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
     {{end}}
