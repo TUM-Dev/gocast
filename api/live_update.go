@@ -69,22 +69,25 @@ func liveUpdateDisconnectHandler(s *melody.Session) {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
 		return
 	}
+
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
+
+	var userId uint = 0
 	if tumLiveContext.User == nil {
-		return
+		userId = tumLiveContext.User.ID
 	}
 
 	liveUpdateListenerMutex.Lock()
 	var newSessions []*melody.Session
-	for _, session := range liveUpdateListener[tumLiveContext.User.ID].sessions {
+	for _, session := range liveUpdateListener[userId].sessions {
 		if session != s {
 			newSessions = append(newSessions, session)
 		}
 	}
 	if len(newSessions) == 0 {
-		delete(liveUpdateListener, tumLiveContext.User.ID)
+		delete(liveUpdateListener, userId)
 	} else {
-		liveUpdateListener[tumLiveContext.User.ID].sessions = newSessions
+		liveUpdateListener[userId].sessions = newSessions
 	}
 	liveUpdateListenerMutex.Unlock()
 }
@@ -98,31 +101,38 @@ var liveUpdateConnectionHandler = func(s *melody.Session) {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
 		return
 	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	if tumLiveContext.User == nil {
-		log.Error("need to be logged in to connect to live updates")
-		return
-	}
 
-	var public []model.Course
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+
+	var userCourses []model.Course
+	var userId uint = 0
 	var err error
 	year, term := tum.GetCurrentSemester()
 
-	if public, err = daoWrapper.(dao.DaoWrapper).CoursesDao.GetPublicAndLoggedInCourses(year, term); err != nil {
-		log.WithError(err).Error("could not fetch public and logged in courses")
+	if tumLiveContext.User != nil {
+		userId = tumLiveContext.User.ID
+		if userCourses, err = daoWrapper.(dao.DaoWrapper).CoursesDao.GetPublicAndLoggedInCourses(year, term); err != nil {
+			log.WithError(err).Error("could not fetch public and logged in courses")
+			return
+		}
+		userCourses = commons.Unique(userCourses, func(c model.Course) uint { return c.ID })
+	} else {
+		if userCourses, err = daoWrapper.(dao.DaoWrapper).CoursesDao.GetPublicCourses(year, term); err != nil {
+			log.WithError(err).Error("could not fetch public courses")
+			return
+		}
 	}
-	public = commons.Unique(public, func(c model.Course) uint { return c.ID })
 
 	var courses []uint
-	for _, course := range public {
+	for _, course := range userCourses {
 		courses = append(courses, course.ID)
 	}
 
 	liveUpdateListenerMutex.Lock()
-	if liveUpdateListener[tumLiveContext.User.ID] != nil {
-		liveUpdateListener[tumLiveContext.User.ID] = &liveUpdateUserSessionsWrapper{append(liveUpdateListener[tumLiveContext.User.ID].sessions, s), courses}
+	if liveUpdateListener[userId] != nil {
+		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{append(liveUpdateListener[userId].sessions, s), courses}
 	} else {
-		liveUpdateListener[tumLiveContext.User.ID] = &liveUpdateUserSessionsWrapper{[]*melody.Session{s}, courses}
+		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{[]*melody.Session{s}, courses}
 	}
 	liveUpdateListenerMutex.Unlock()
 }
