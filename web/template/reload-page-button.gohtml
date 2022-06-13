@@ -2,15 +2,15 @@
     <div
         x-data="{ show: false, updates: [] }"
         x-on:liveupdate.window="e => { console.log(e); show = true; updates = [...updates, e.detail.data] }"
-        class="fixed right-[20px] px-6 py-4 ease-in-out duration-500 rounded dark:text-white bg-white border shadow-sm dark:bg-secondary dark:border-gray-800"
+        class="fixed right-[20px] text-center px-6 py-4 ease-in-out w-[340px] duration-500 rounded dark:text-white bg-white border shadow-sm dark:bg-secondary dark:border-gray-800"
         :class="{ 'top-[100px]': show, 'top-[-200px]': !show }"
     >
-        Something changed on this page
-        <div class="pt-4 flex justify-between">
-            <button @click="() => (show = false)" class="px-4 py-2 text-2 text-black/30 dark:text-white/30 rounded hover:text-black/50 disabled:opacity-20 dark:hover:text-white/50">
+        Something has changed on this page
+        <div class="pt-6 flex justify-between">
+            <button @click="() => (show = false)" class="px-10 py-2 text-2 text-black/30 dark:text-white/30 rounded hover:text-black/50 disabled:opacity-20 dark:hover:text-white/50">
                 Dismiss
             </button>
-            <button @click="() => (show = false || location.reload())" class="px-8 py-2 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/40 disabled:opacity-20 dark:hover:bg-indigo-500/60">
+            <button @click="() => (show = false || location.reload())" class="px-10 py-2 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/40 disabled:opacity-20 dark:hover:bg-indigo-500/60">
                 Reload
             </button>
         </div>
