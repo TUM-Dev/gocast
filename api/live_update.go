@@ -73,7 +73,7 @@ func liveUpdateDisconnectHandler(s *melody.Session) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 
 	var userId uint = 0
-	if tumLiveContext.User == nil {
+	if tumLiveContext.User != nil {
 		userId = tumLiveContext.User.ID
 	}
 

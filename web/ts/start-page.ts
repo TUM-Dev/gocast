@@ -1,7 +1,7 @@
 const WS_INITIAL_RETRY_DELAY = 5000;
 const PAGE_LOADED = new Date();
 
-export const liveCoursesListener = {
+export const liveUpdateListener = {
     ws: WebSocket,
 
     init() {
@@ -17,7 +17,7 @@ export const liveCoursesListener = {
 
         this.ws.onmessage = function (m) {
             const data = JSON.parse(m.data);
-            console.log("Something with live stuff changed ...");
+            window.dispatchEvent(new CustomEvent("liveupdate", { detail: { data: data } }));
         };
 
         this.ws.onclose = function () {
