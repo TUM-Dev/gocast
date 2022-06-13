@@ -442,9 +442,9 @@ func (s server) NotifyThumbnailsFinished(ctx context.Context, req *pb.Thumbnails
 	default:
 		return nil, errors.New("unknown source type")
 	}
+	stream.Files = append(stream.Files, model.File{StreamID: stream.ID, Path: req.FilePath, Type: thumbType})
 	stream.ThumbInterval = req.Interval
-	err = s.FileDao.NewFile(&model.File{StreamID: stream.ID, Path: req.FilePath, Type: thumbType})
-	if err != nil {
+	if err = s.StreamsDao.SaveStream(&stream); err != nil {
 		return nil, err
 	}
 	return &pb.Status{Ok: true}, nil
