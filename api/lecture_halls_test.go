@@ -14,9 +14,12 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
+	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func TestLectureHallsCRUD(t *testing.T) {
@@ -752,6 +755,119 @@ func TestCourseImport(t *testing.T) {
 				ExpectedCode: http.StatusOK},
 		}
 
+		testCases.Run(t, configGinLectureHallApiRouter)
+	})
+}
+
+func TestLectureHallIcal(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("/api/hall/all.ics", func(t *testing.T) {
+		adminId := uint(0)
+		studentId := uint(111)
+		calendarResultsAdmin := []dao.CalendarResult{
+			{
+				StreamID:        1,
+				Created:         time.Now(),
+				Start:           time.Now(),
+				End:             time.Now(),
+				CourseName:      "FPV",
+				LectureHallName: "HS1",
+			},
+
+			{
+				StreamID:        2,
+				Created:         time.Now(),
+				Start:           time.Now(),
+				End:             time.Now(),
+				CourseName:      "GBS",
+				LectureHallName: "HS2",
+			},
+		}
+		calendarResultsLoggedIn := []dao.CalendarResult{
+			{
+				StreamID:        1,
+				Created:         time.Now(),
+				Start:           time.Now(),
+				End:             time.Now(),
+				CourseName:      "FPV",
+				LectureHallName: "HS1",
+			},
+		}
+		var icalAdmin bytes.Buffer
+		var icalLoggedIn bytes.Buffer
+		templ, _ := template.ParseFS(staticFS, "template/*.gotemplate")
+		_ = templ.ExecuteTemplate(&icalAdmin, "ical.gotemplate", calendarResultsAdmin)
+		_ = templ.ExecuteTemplate(&icalLoggedIn, "ical.gotemplate", calendarResultsLoggedIn)
+
+		testCases := testutils.TestCases{
+			"GET [no context]": testutils.TestCase{
+				Method:         "GET",
+				Url:            "/api/hall/all.ics",
+				TumLiveContext: nil,
+				ExpectedCode:   http.StatusInternalServerError,
+			},
+			"GET [GetStreamsForLectureHallIcal returns error]": testutils.TestCase{
+				Method: "GET",
+				Url:    "/api/hall/all.ics",
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}},
+				DaoWrapper: dao.DaoWrapper{
+					LectureHallsDao: func() dao.LectureHallsDao {
+						lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+						lectureHallMock.
+							EXPECT().
+							GetStreamsForLectureHallIcal(gomock.Any()).
+							Return(nil, errors.New("")).
+							AnyTimes()
+						return lectureHallMock
+					}(),
+				},
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"GET [success admin]": testutils.TestCase{
+				Method: "GET",
+				Url:    "/api/hall/all.ics",
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
+					Role: model.AdminType,
+				}},
+				DaoWrapper: dao.DaoWrapper{
+					LectureHallsDao: func() dao.LectureHallsDao {
+						lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+						lectureHallMock.
+							EXPECT().
+							GetStreamsForLectureHallIcal(adminId).
+							Return(calendarResultsAdmin, nil).
+							AnyTimes()
+						return lectureHallMock
+					}(),
+				},
+				ExpectedResponse: icalAdmin.Bytes(),
+				ExpectedCode:     http.StatusOK,
+			},
+			"GET [success student]": testutils.TestCase{
+				Method: "GET",
+				Url:    "/api/hall/all.ics",
+				TumLiveContext: &tools.TUMLiveContext{User: &model.User{
+					Model: gorm.Model{ID: studentId},
+					Role:  model.StudentType,
+				}},
+				DaoWrapper: dao.DaoWrapper{
+					LectureHallsDao: func() dao.LectureHallsDao {
+						lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+						lectureHallMock.
+							EXPECT().
+							GetStreamsForLectureHallIcal(studentId).
+							Return(calendarResultsLoggedIn, nil).
+							AnyTimes()
+						return lectureHallMock
+					}(),
+				},
+				ExpectedResponse: icalLoggedIn.Bytes(),
+				ExpectedCode:     http.StatusOK,
+			},
+		}
 		testCases.Run(t, configGinLectureHallApiRouter)
 	})
 }

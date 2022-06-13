@@ -25,19 +25,19 @@ func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper
 	admins.POST("/lectureHall/:id/defaultPreset", routes.updateLectureHallsDefaultPreset)
 	admins.DELETE("/lectureHall/:id", routes.deleteLectureHall)
 	admins.POST("/createLectureHall", routes.createLectureHall)
-	admins.POST("/takeSnapshot/:lectureHallID/:presetID", routes.takeSnapshot)
+	admins.POST("/takeSnapshot/:lectureHallID/:presetID", routes.takeSnapshot) //TODO: Test
 	admins.GET("/course-schedule", routes.getSchedule)
 	admins.POST("/course-schedule/:year/:term", routes.postSchedule)
-	admins.GET("/refreshLectureHallPresets/:lectureHallID", routes.refreshLectureHallPresets)
-	admins.POST("/setLectureHall", routes.setLectureHall)
+	admins.GET("/refreshLectureHallPresets/:lectureHallID", routes.refreshLectureHallPresets) //TODO: Test
+	admins.POST("/setLectureHall", routes.setLectureHall)                                     //TODO: Test
 
 	adminsOfCourse := router.Group("/api/course/:courseID/")
 	adminsOfCourse.Use(tools.InitCourse(daoWrapper))
 	adminsOfCourse.Use(tools.InitStream(daoWrapper))
 	adminsOfCourse.Use(tools.AdminOfCourse)
-	adminsOfCourse.POST("/switchPreset/:lectureHallID/:presetID/:streamID", routes.switchPreset)
+	adminsOfCourse.POST("/switchPreset/:lectureHallID/:presetID/:streamID", routes.switchPreset) //TODO: Test
 
-	router.GET("/api/hall/all.ics", routes.lectureHallIcal)
+	router.GET("/api/hall/all.ics", routes.lectureHallIcal) //TODO: Test
 }
 
 type lectureHallRoutes struct {
@@ -147,6 +147,7 @@ var staticFS embed.FS
 func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 	templ, err := template.ParseFS(staticFS, "template/*.gotemplate")
 	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	foundContext, exists := c.Get("TUMLiveContext")
@@ -163,6 +164,7 @@ func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 	}
 	icalData, err := r.LectureHallsDao.GetStreamsForLectureHallIcal(queryUid)
 	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	c.Header("content-type", "text/calendar")
