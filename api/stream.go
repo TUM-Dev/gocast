@@ -292,6 +292,7 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+
 	err := r.VideoSectionDao.Create(sections)
 	if err != nil {
 		log.WithError(err).Error("failed to create video sections")
@@ -403,7 +404,7 @@ func (r streamRoutes) deleteAttachment(c *gin.Context) {
 }
 
 func (r streamRoutes) updateStreamVisibility(c *gin.Context) {
-	stream := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).Stream
+	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	var req struct {
 		Private bool `json:"private"`
 	}
@@ -412,7 +413,16 @@ func (r streamRoutes) updateStreamVisibility(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "could not parse request body")
 		return
 	}
-	err = r.DaoWrapper.StreamsDao.ToggleVisibility(stream.ID, req.Private)
+
+	if err := r.AuditDao.Create(&model.Audit{
+		User:    ctx.User,
+		Message: fmt.Sprintf("%d: (Visibility: %v)", ctx.Stream.ID, req.Private), // e.g. "eidi:'Einführung in die Informatik' (2020, S)"
+		Type:    model.AuditStreamEdit,
+	}); err != nil {
+		log.Error("Create Audit:", err)
+	}
+
+	err = r.DaoWrapper.StreamsDao.ToggleVisibility(ctx.Stream.ID, req.Private)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "could not update stream")
 	}

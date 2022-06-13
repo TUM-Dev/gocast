@@ -141,6 +141,7 @@ func main() {
 		&model.Notification{},
 		&model.UploadKey{},
 		&model.UserSetting{},
+		&model.Audit{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
