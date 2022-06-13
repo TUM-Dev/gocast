@@ -8,6 +8,7 @@ import chromecast from "@silvermine/videojs-chromecast";
 require("videojs-seek-buttons");
 require("videojs-hls-quality-selector");
 require("videojs-contrib-quality-levels");
+chromecast(videojs, { preloadWebComponents: true }); //calls registerComponent internally
 
 const Button = videojs.getComponent("Button");
 let player;
@@ -49,9 +50,12 @@ export const initPlayer = function (
         //nativeControlsForTouch: true,a
     );
     //player.hlsQualitySelector();
-    if (autoplay) {
-        player.play();
-    }
+
+    player.chromecast({
+        addButtonToControlBar: true,
+        buttonPositionIndex: -2,
+    });
+
     player.seekButtons({
         backIndex: 0,
         forward: 15,
@@ -64,11 +68,6 @@ export const initPlayer = function (
     });
     player.ready(function () {
         player.airPlay({
-            addButtonToControlBar: true,
-            buttonPositionIndex: -2,
-        });
-
-        player.chromecast({
             addButtonToControlBar: true,
             buttonPositionIndex: -2,
         });
@@ -98,7 +97,16 @@ export const initPlayer = function (
                 startIn: streamStartIn,
             });
         }
+
+
     });
+    const source = document.getElementById("my-video").querySelector("source")
+    const url = source.src
+    const type = source.type
+    player.src({ type: type, src: url});
+    if (autoplay) {
+        player.play();
+    }
 };
 
 let skipTo = 0;
@@ -361,4 +369,4 @@ videojs.registerPlugin("watchProgress", watchProgress);
 videojs.registerComponent("Titlebar", Titlebar);
 videojs.registerComponent("StartInOverlay", StartInOverlay);
 airplay(videojs); //calls registerComponent internally
-chromecast(videojs, { preloadWebComponents: true }); //calls registerComponent internally
+
