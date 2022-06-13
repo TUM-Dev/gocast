@@ -1,7 +1,7 @@
 {{define "reloadpagebutton"}}
     <div
-        x-data="{ show: false, updates: [] }"
-        x-on:liveupdate.window="e => { console.log(e); show = true; updates = [...updates, e.detail.data] }"
+        x-data="{ show: false }"
+        x-on:liveupdate.window="e => { show = true }"
         class="fixed right-[20px] text-center px-6 py-4 ease-in-out w-[340px] duration-500 rounded dark:text-white bg-white border shadow-sm dark:bg-secondary dark:border-gray-800"
         :class="{ 'top-[100px]': show, 'top-[-200px]': !show }"
     >
