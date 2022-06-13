@@ -267,7 +267,12 @@ func handleCameraPositionSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) 
 	}
 	for _, preference := range preferences {
 		if preference.LectureHallID == stream.LectureHallID {
-			return camera.NewCamera(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(preference.PresetID)
+			switch lectureHall.CameraType {
+			case model.Axis:
+				return camera.NewAxisCam(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(preference.PresetID)
+			case model.Panasonic:
+				return camera.NewPanasonicCam(lectureHall.CameraIP, nil).SetPreset(preference.PresetID)
+			}
 		}
 	}
 	// no preset found for this lecture hall, use default
@@ -275,7 +280,13 @@ func handleCameraPositionSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) 
 	if err != nil {
 		return err
 	}
-	return camera.NewCamera(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(defaultPreset.PresetID)
+	switch lectureHall.CameraType {
+	case model.Axis:
+		return camera.NewAxisCam(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(defaultPreset.PresetID)
+	case model.Panasonic:
+		return camera.NewPanasonicCam(lectureHall.CameraIP, nil).SetPreset(defaultPreset.PresetID)
+	}
+	return nil
 }
 
 func handleLightOnSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) error {
