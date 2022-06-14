@@ -355,3 +355,28 @@ a.fc-event, a.fc-event:hover {
 .notificationBody a {
     @apply underline;
 }
+
+/* TUMLive-Markdown */
+
+.tum-live-markdown h1, .tum-live-markdown h2, .tum-live-markdown h3, .tum-live-markdown h4, .tum-live-markdown h5, .tum-live-markdown h6{
+    font-weight: bold;
+}
+
+.tum-live-markdown h1{
+    margin-bottom: 16px;
+}
+
+.tum-live-markdown h2, .tum-live-markdown h3, .tum-live-markdown h4, .tum-live-markdown h5, .tum-live-markdown h6{
+    margin-top: 16px;
+}
+
+.tum-live-markdown ul{
+    list-style-type: disc;
+    padding-left: 16px;
+    padding-bottom: 8px;
+    padding-top: 8px;
+}
+
+.tum-live-markdown a{
+    border-bottom: 1px solid black;
+}

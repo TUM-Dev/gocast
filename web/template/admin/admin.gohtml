@@ -73,6 +73,11 @@
                                href="/admin/audits"><span
                                         class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                         class="relative">Audits</span></a></li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "info-pages"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/infopages"><span
+                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                        class="relative">Info Pages</span></a></li>
                     </ul>
                 </li>
             {{end}}
@@ -172,6 +177,11 @@
                                        href="/admin/audits"><span
                                                 class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                                 class="relative">Audits</span></a></li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "info-pages"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/infopages"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Info Pages</span></a></li>
                             </ul>
                         </li>
                     {{end}}
@@ -241,6 +251,8 @@
                     {{template "course-import" .}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "token")}}
                     {{template "token" .Tokens}}
+                {{else if and (eq $curUser.Role 1) (eq .Page "info-pages")}}
+                    {{template "info-pages" .InfoPages}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "notifications")}}
                     {{template "notification_management" .Notifications}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "audits")}}

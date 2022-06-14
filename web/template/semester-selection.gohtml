@@ -4,7 +4,7 @@
     {{$currentTerm := .CurrentTerm}}
     <div x-cloak x-data="{showSemesterSelect: false}">
         <div x-show="showSemesterSelect"
-             class="lg:w-1/5 lg:bottom-5 lg:right-5 lg:backdrop-blur-none lg:h-auto
+             class="lg:w-1/5 lg:bottom-10 lg:right-4 lg:backdrop-blur-none lg:h-auto
                     flex content-end justify-end z-50 h-screen w-full fixed bottom-0 right-0 backdrop-blur-sm">
             <div @click.outside="showSemesterSelect = false"
                  class="lg:shadow-sm lg:rounded-lg h-fit bg-white border rounded-t-lg w-full mt-auto
@@ -32,7 +32,7 @@
             </div>
         </div>
         <button @click="showSemesterSelect = !showSemesterSelect"
-                class="lg:w-1/5 lg:right-5 lg:bottom-5 lg:rounded-lg
+                class="lg:w-1/5 lg:right-4 lg:bottom-10 lg:rounded-lg
                         flex w-full fixed bottom-0 bg-white border shadow-sm rounded-t-lg
                         h-12 px-4 dark:bg-secondary dark:border-gray-800">
             <span class="text-3 font-semibold text-sm mx-auto my-auto">{{$currentYear}}-{{$currentTerm}}</span>

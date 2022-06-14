@@ -26,6 +26,7 @@ func ConfigGinRouter(router *gin.Engine) {
 	configTokenRouter(router, daoWrapper)
 	configWorkerRouter(router, daoWrapper)
 	configNotificationsRouter(router, daoWrapper)
+	configInfoPageRouter(router, daoWrapper)
 	configGinSearchRouter(router, daoWrapper)
 	configAuditRouter(router, daoWrapper)
 }
