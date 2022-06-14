@@ -2,7 +2,7 @@
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.WatchPageData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     {{$course := .IndexData.TUMLiveContext.Course}}
-    {{if $stream.Recording}}
+    {{if not $stream.Recording}}
         {{if not $stream.LiveNow}}
             {{if $stream.Ended }}
                 {{/* When the stream ends its automatically reloaded, so this can be static */}}

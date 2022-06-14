@@ -389,7 +389,7 @@ func truncateHtml(buf []byte, maxlen int, ellipsis string) ([]byte, error) {
 
 func (s Stream) TruncatedDescription() string {
 	desc := s.GetDescriptionHTML()
-	tr, err := truncateHtml([]byte(desc), 100, "...")
+	tr, err := truncateHtml([]byte(desc), 150, "...")
 	if err != nil {
 		_ = []byte("")
 	}

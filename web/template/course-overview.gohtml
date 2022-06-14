@@ -24,7 +24,7 @@
                    class="fas fa-spinner animate-spin text-lg text-gray-500 dark:text-gray-600"></i>
             </div>
             <input id="search-input"
-                   @keyup.esc="searchContext.hideModal(streamSearch); console.log('moin')"
+                   @keyup.esc="searchContext.hideModal(streamSearch)"
                    @keyup.up="streamSearch.focusUp()"
                    @keyup.down="streamSearch.focusDown()"
                    @keyup="(e) => streamSearch.OnBackspace(e)"
