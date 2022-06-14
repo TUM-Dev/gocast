@@ -1,6 +1,9 @@
 package model
 
-import "gorm.io/gorm"
+import (
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+)
 
 type AuditType uint
 
@@ -33,6 +36,20 @@ func (t AuditType) String() string {
 	}[t-1]
 }
 
+func GetAllAuditTypes() []AuditType {
+	return []AuditType{AuditInfo,
+		AuditWarning,
+		AuditError,
+		AuditCourseCreate,
+		AuditCourseEdit,
+		AuditCourseDelete,
+		AuditStreamCreate,
+		AuditStreamEdit,
+		AuditStreamDelete,
+		AuditCameraMoved,
+	}
+}
+
 type Audit struct {
 	gorm.Model
 
@@ -40,4 +57,16 @@ type Audit struct {
 	UserID  *uint
 	Message string
 	Type    AuditType
+}
+
+// Json converts the audit into a json object consumed by apis
+func (a Audit) Json() gin.H {
+	return gin.H{
+		"type":      a.Type.String(),
+		"createdAt": a.CreatedAt.Format("Jan 02, 2006: 15:04:05"),
+		"id":        a.ID,
+		"message":   a.Message,
+		"userID":    a.UserID,
+		"userName":  a.User.GetLoginString(),
+	}
 }

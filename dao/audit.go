@@ -19,7 +19,9 @@ type auditDao struct {
 }
 
 func (a auditDao) Find(limit int, offset int, types ...model.AuditType) (audits []model.Audit, err error) {
-	return audits, a.db.Model(&model.Audit{}).
+	return audits, a.db.Debug().
+		Preload("User").
+		Model(&model.Audit{}).
 		Where("type in ?", types).
 		Limit(limit).
 		Offset(offset).

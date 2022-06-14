@@ -14,10 +14,10 @@ type auditRoutes struct {
 
 func configAuditRouter(r *gin.Engine, d dao.DaoWrapper) {
 	auditRouter := auditRoutes{d}
-	g := r.Group("/api/audits")
+	g := r.Group("/api")
 	g.Use(tools.Admin)
 	{
-		g.GET("/", auditRouter.getAudits)
+		g.GET("/audits", auditRouter.getAudits)
 	}
 }
 
@@ -33,10 +33,17 @@ func (r auditRoutes) getAudits(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 		return
 	}
+	if len(reqData.Types) == 0 {
+		reqData.Types = model.GetAllAuditTypes()
+	}
 	found, err := r.AuditDao.Find(reqData.Limit, reqData.Offset, reqData.Types...)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, found)
+	res := make([]gin.H, len(found))
+	for i := range res {
+		res[i] = found[i].Json()
+	}
+	c.JSON(http.StatusOK, res)
 }
