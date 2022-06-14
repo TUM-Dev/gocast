@@ -50,25 +50,36 @@ func (r downloadRoutes) download(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	log.Info(fmt.Sprintf("Download request, user: %d, file: %d[%s]", tumLiveContext.User.ID, file.ID, file.Path))
-	if tumLiveContext.User.IsAdminOfCourse(course) {
-		sendFile(c, file)
-		return
-	}
-	if course.DownloadsEnabled {
-		if course.Visibility == "hidden" || course.Visibility == "public" {
-			sendFile(c, file)
-			return
+
+	switch c.Query("type") {
+	case "serve":
+		sendFileContent(c, file)
+	case "download":
+		fallthrough
+	default:
+		if !tumLiveContext.User.IsAdminOfCourse(course) {
+			if !course.DownloadsEnabled || !(course.Visibility == "hidden" || course.Visibility == "public") ||
+				!tumLiveContext.User.IsEligibleToWatchCourse(course) || !tumLiveContext.User.IsAdminOfCourse(course) {
+				c.AbortWithStatus(http.StatusForbidden)
+				return
+			}
 		}
-		if tumLiveContext.User.IsEligibleToWatchCourse(course) {
-			sendFile(c, file)
-			return
-		}
+		log.Info(fmt.Sprintf("Download request, user: %d, file: %d[%s]", tumLiveContext.User.ID, file.ID, file.Path))
+		sendDownloadFile(c, file)
 	}
-	c.AbortWithStatus(http.StatusForbidden)
 }
 
-func sendFile(c *gin.Context, file model.File) {
+func sendFileContent(c *gin.Context, file model.File) {
+	image, err := os.ReadFile(file.Path)
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	c.Data(http.StatusOK, "image/jpg", image)
+}
+
+func sendDownloadFile(c *gin.Context, file model.File) {
 	f, err := os.Open(file.Path)
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
