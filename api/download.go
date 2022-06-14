@@ -54,7 +54,6 @@ func (r downloadRoutes) download(c *gin.Context) {
 	switch c.Query("type") {
 	case "serve":
 		sendFileContent(c, file)
-		break
 	case "download":
 		fallthrough
 	default:
