@@ -6,10 +6,10 @@ import (
 )
 
 type VideoSectionDao interface {
-	Create(sections []model.VideoSection) error
-	Update(section *model.VideoSection) error
-	Delete(videoSectionID uint) error
-	GetByStreamId(streamID uint) ([]model.VideoSection, error)
+	Create([]model.VideoSection) error
+	Update(*model.VideoSection) error
+	Delete(uint) error
+	GetByStreamId(uint) ([]model.VideoSection, error)
 }
 
 type videoSectionDao struct {
@@ -25,7 +25,7 @@ func (d videoSectionDao) Create(sections []model.VideoSection) error {
 }
 
 func (d videoSectionDao) Update(section *model.VideoSection) error {
-	return DB.Updates(&section).Error
+	return DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&section).Error
 }
 
 func (d videoSectionDao) Delete(videoSectionID uint) error {

@@ -24,7 +24,7 @@
                     <span class="flex flex-col h-full p-1 bg-white dark:bg-secondary justify-between w-full border hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg"
                           :class="sections.isCurrent(i) ? 'border-2 border-blue-500/50' : 'dark:border-gray-800'">
                         <img x-cloak x-show="previewImgLoaded"
-                             :src="`/api/stream/{{.ID}}/sections/preview?h=${section.startHours}&m=${section.startMinutes}&s=${section.startSeconds}`"
+                             :src="`/api/download/${section.fileID}?type=serve`"
                              width="128" height="32"
                              @load="previewImgLoaded=true"
                              alt="preview"

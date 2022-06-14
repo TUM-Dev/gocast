@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/u2takey/go-utils/uuid"
 	"net"
 	"os"
 	"os/exec"
@@ -63,7 +64,7 @@ func (s server) RequestStreamEnd(ctx context.Context, request *pb.EndStreamReque
 	return &pb.Status{Ok: true}, nil
 }
 
-func (s server) RegenerateSectionImages(ctx context.Context, request *pb.RegenerateSectionImagesRequest) (*pb.Status, error) {
+func (s server) CleanSectionImageFolder(ctx context.Context, request *pb.CleanSectionImageFolderRequest) (*pb.Status, error) {
 	folder := fmt.Sprintf("%s/%s/%d.%s/sections", cfg.StorageDir, request.CourseName, request.CourseYear, request.CourseTeachingTerm)
 	err := os.RemoveAll(folder) // clean up old section images
 	if err != nil {
@@ -73,21 +74,25 @@ func (s server) RegenerateSectionImages(ctx context.Context, request *pb.Regener
 	if err != nil {
 		return &pb.Status{Ok: false}, err
 	}
-	for _, timestamp := range request.Timestamps {
-		timestampStr := fmt.Sprintf("%0d:%0d:%0d", timestamp.Hours, timestamp.Minutes, timestamp.Seconds)
-		cmd := exec.Command("ffmpeg", "-y",
-			"-ss", timestampStr,
-			"-i", request.PlaylistURL,
-			"-vf", "scale=156:-1",
-			"-frames:v", "1",
-			"-q:v", "2",
-			fmt.Sprintf("%s/preview-%s.jpg", folder, timestampStr))
-		_, err := cmd.CombinedOutput()
-		if err != nil {
-			return &pb.Status{Ok: false}, err
-		}
-	}
 	return &pb.Status{Ok: true}, nil
+}
+
+func (s server) GenerateSectionImage(ctx context.Context, request *pb.GenerateSectionImageRequest) (*pb.GenerateSectionImageResponse, error) {
+	imagePath := fmt.Sprintf("%s/%s/%d.%s/sections/%s.jpg",
+		cfg.StorageDir, request.CourseName, request.CourseYear, request.CourseTeachingTerm, uuid.NewUUID())
+	timestampStr := fmt.Sprintf("%0d:%0d:%0d", request.Hours, request.Minutes, request.Seconds)
+	cmd := exec.Command("ffmpeg", "-y",
+		"-ss", timestampStr,
+		"-i", request.PlaylistURL,
+		"-vf", "scale=156:-1",
+		"-frames:v", "1",
+		"-q:v", "2",
+		imagePath)
+	_, err := cmd.CombinedOutput()
+	if err != nil {
+		return &pb.GenerateSectionImageResponse{}, err
+	}
+	return &pb.GenerateSectionImageResponse{Path: imagePath}, nil
 }
 
 //InitApi Initializes api endpoints

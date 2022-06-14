@@ -211,10 +211,11 @@ func TestDownload_success(t *testing.T) {
 	})
 
 	// create file with content to read
-	err := os.WriteFile(filePath, []byte(fileContent), 0666)
+	err := os.WriteFile(filePath, []byte(fileContent), os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer os.Remove(filePath)
 
 	// file mock
 	fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
@@ -233,7 +234,7 @@ func TestDownload_success(t *testing.T) {
 	courseMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
 	courseMock.EXPECT().GetCourseById(gomock.Any(), courseId).Return(model.Course{
 		UserID:           1, // User defined above has ID 0
-		DownloadsEnabled: false,
+		DownloadsEnabled: true,
 	}, nil).AnyTimes()
 
 	configGinDownloadRouter(r, dao.DaoWrapper{
@@ -247,6 +248,4 @@ func TestDownload_success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, fileContent, w.Body.String())
-
-	_ = os.Remove(filePath)
 }

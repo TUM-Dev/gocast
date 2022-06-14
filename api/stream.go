@@ -48,7 +48,6 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	g := router.Group("/")
 	g.Use(tools.InitStream(daoWrapper))
 	g.GET("/api/stream/:streamID/sections", routes.getVideoSections)
-	g.GET("/api/stream/:streamID/sections/preview", routes.getVideoSectionPreview)
 
 	adminG.POST("/api/stream/:streamID/files", routes.newAttachment)
 	adminG.DELETE("/api/stream/:streamID/files/:fid", routes.deleteAttachment)
@@ -279,39 +278,11 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 			"description":       section.Description,
 			"friendlyTimestamp": section.TimestampAsString(),
 			"streamID":          section.StreamID,
+			"fileID":            section.FileID,
 		})
 
 	}
 	c.JSON(http.StatusOK, response)
-}
-
-type sectionPreviewQuery struct {
-	Hours   uint32 `form:"h"`
-	Minutes uint32 `form:"m"`
-	Seconds uint32 `form:"s"`
-}
-
-func (r streamRoutes) getVideoSectionPreview(c *gin.Context) {
-	context := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-
-	var query sectionPreviewQuery
-	if err := c.ShouldBind(&query); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-
-	file := fmt.Sprintf(
-		"%s/%s/%d.%s/sections/preview-%0d:%0d:%0d.jpg",
-		tools.Cfg.Paths.Mass, context.Course.Name, context.Course.Year, context.Course.TeachingTerm,
-		query.Hours, query.Minutes, query.Seconds)
-
-	image, err := os.ReadFile(file)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-
-	c.Data(http.StatusOK, "image/jpg", image)
 }
 
 func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
@@ -334,10 +305,19 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 
-	go RegenerateVideoSectionImages(
-		r.WorkerDao, sections,
-		context.Stream.PlaylistUrl, context.Course.Name, context.Course.TeachingTerm,
-		uint32(context.Course.Year))
+	go func() {
+		parameters := generateVideoSectionImagesParameters{
+			sections:           sections,
+			playlistUrl:        context.Stream.PlaylistUrl,
+			courseName:         context.Course.Name,
+			courseTeachingTerm: context.Course.TeachingTerm,
+			courseYear:         uint32(context.Course.Year),
+		}
+		err := GenerateVideoSectionImages(r.DaoWrapper, &parameters)
+		if err != nil {
+			log.WithError(err).Error("failed to generate video section images")
+		}
+	}()
 }
 
 func (r streamRoutes) deleteVideoSection(c *gin.Context) {
@@ -359,10 +339,19 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 
-	go RegenerateVideoSectionImages(
-		r.WorkerDao, sections,
-		context.Stream.PlaylistUrl, context.Course.Name, context.Course.TeachingTerm,
-		uint32(context.Course.Year))
+	go func() {
+		parameters := generateVideoSectionImagesParameters{
+			sections:           sections,
+			playlistUrl:        context.Stream.PlaylistUrl,
+			courseName:         context.Course.Name,
+			courseTeachingTerm: context.Course.TeachingTerm,
+			courseYear:         uint32(context.Course.Year),
+		}
+		err := GenerateVideoSectionImages(r.DaoWrapper, &parameters)
+		if err != nil {
+			log.WithError(err).Error("failed to generate video section images")
+		}
+	}()
 }
 
 func (r streamRoutes) newAttachment(c *gin.Context) {

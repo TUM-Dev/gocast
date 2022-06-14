@@ -686,36 +686,62 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 	}
 }
 
-func RegenerateVideoSectionImages(workerDao dao.WorkerDao, sections []model.VideoSection,
-	playlistUrl, courseName, courseTeachingTerm string, courseYear uint32) error {
-	workers := workerDao.GetAliveWorkers()
+type generateVideoSectionImagesParameters struct {
+	sections                                    []model.VideoSection
+	playlistUrl, courseName, courseTeachingTerm string
+	courseYear                                  uint32
+}
+
+func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *generateVideoSectionImagesParameters) error {
+	workers := daoWrapper.WorkerDao.GetAliveWorkers()
 	workerIndex := getWorkerWithLeastWorkload(workers)
 	workers[workerIndex].Workload += 1 // Not sure if that's a reasonable amount.
 	conn, err := dialIn(workers[workerIndex])
-	if err != nil {
-		log.WithError(err).Error("Unable to dial server")
+	defer func() {
 		endConnection(conn)
 		workers[workerIndex].Workload -= 1
+	}()
+	if err != nil {
+		log.WithError(err).Error("Unable to dial server")
 		return err
 	}
+
 	client := pb.NewToWorkerClient(conn)
 
-	timestamps := make([]*pb.Timestamp, len(sections))
-	for _, section := range sections {
-		timestamps = append(timestamps, &pb.Timestamp{
-			Hours:   uint32(section.StartHours),
-			Minutes: uint32(section.StartMinutes),
-			Seconds: uint32(section.StartSeconds),
+	// remove old images
+	_, err = client.CleanSectionImageFolder(context.Background(), &pb.CleanSectionImageFolderRequest{
+		CourseName:         parameters.courseName,
+		CourseYear:         parameters.courseYear,
+		CourseTeachingTerm: parameters.courseTeachingTerm,
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, section := range parameters.sections {
+		res, err := client.GenerateSectionImage(context.Background(), &pb.GenerateSectionImageRequest{
+			PlaylistURL:        parameters.playlistUrl,
+			CourseName:         parameters.courseName,
+			CourseYear:         parameters.courseYear,
+			CourseTeachingTerm: parameters.courseTeachingTerm,
+			Hours:              uint32(section.StartHours),
+			Minutes:            uint32(section.StartMinutes),
+			Seconds:            uint32(section.StartSeconds),
 		})
+		if err != nil {
+			return err
+		}
+
+		imageFile := model.File{StreamID: section.StreamID, Path: res.Path, Type: model.FILETYPE_IMAGE_JPG}
+		if err := daoWrapper.FileDao.NewFile(&imageFile); err != nil {
+			return err
+		}
+
+		update := model.VideoSection{Model: gorm.Model{ID: section.ID}, FileID: imageFile.ID}
+		if err := daoWrapper.VideoSectionDao.Update(&update); err != nil {
+			return err
+		}
 	}
-	req := pb.RegenerateSectionImagesRequest{
-		PlaylistURL:        playlistUrl,
-		CourseName:         courseName,
-		CourseYear:         courseYear,
-		CourseTeachingTerm: courseTeachingTerm,
-		Timestamps:         timestamps,
-	}
-	_, err = client.RegenerateSectionImages(context.Background(), &req)
 	return nil
 }
 

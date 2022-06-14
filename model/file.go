@@ -9,6 +9,7 @@ import (
 const (
 	FILETYPE_DOWNLOAD = iota + 1
 	FILETYPE_ATTACHMENT
+	FILETYPE_IMAGE_JPG
 )
 
 type File struct {

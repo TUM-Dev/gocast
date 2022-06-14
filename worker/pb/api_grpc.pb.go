@@ -28,7 +28,8 @@ type ToWorkerClient interface {
 	RequestStreamEnd(ctx context.Context, in *EndStreamRequest, opts ...grpc.CallOption) (*Status, error)
 	RequestWaveform(ctx context.Context, in *WaveformRequest, opts ...grpc.CallOption) (*WaveFormResponse, error)
 	RequestCut(ctx context.Context, in *CutRequest, opts ...grpc.CallOption) (*CutResponse, error)
-	RegenerateSectionImages(ctx context.Context, in *RegenerateSectionImagesRequest, opts ...grpc.CallOption) (*Status, error)
+	CleanSectionImageFolder(ctx context.Context, in *CleanSectionImageFolderRequest, opts ...grpc.CallOption) (*Status, error)
+	GenerateSectionImage(ctx context.Context, in *GenerateSectionImageRequest, opts ...grpc.CallOption) (*GenerateSectionImageResponse, error)
 }
 
 type toWorkerClient struct {
@@ -84,9 +85,18 @@ func (c *toWorkerClient) RequestCut(ctx context.Context, in *CutRequest, opts ..
 	return out, nil
 }
 
-func (c *toWorkerClient) RegenerateSectionImages(ctx context.Context, in *RegenerateSectionImagesRequest, opts ...grpc.CallOption) (*Status, error) {
+func (c *toWorkerClient) CleanSectionImageFolder(ctx context.Context, in *CleanSectionImageFolderRequest, opts ...grpc.CallOption) (*Status, error) {
 	out := new(Status)
-	err := c.cc.Invoke(ctx, "/api.ToWorker/RegenerateSectionImages", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/api.ToWorker/CleanSectionImageFolder", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *toWorkerClient) GenerateSectionImage(ctx context.Context, in *GenerateSectionImageRequest, opts ...grpc.CallOption) (*GenerateSectionImageResponse, error) {
+	out := new(GenerateSectionImageResponse)
+	err := c.cc.Invoke(ctx, "/api.ToWorker/GenerateSectionImage", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +113,8 @@ type ToWorkerServer interface {
 	RequestStreamEnd(context.Context, *EndStreamRequest) (*Status, error)
 	RequestWaveform(context.Context, *WaveformRequest) (*WaveFormResponse, error)
 	RequestCut(context.Context, *CutRequest) (*CutResponse, error)
-	RegenerateSectionImages(context.Context, *RegenerateSectionImagesRequest) (*Status, error)
+	CleanSectionImageFolder(context.Context, *CleanSectionImageFolderRequest) (*Status, error)
+	GenerateSectionImage(context.Context, *GenerateSectionImageRequest) (*GenerateSectionImageResponse, error)
 	mustEmbedUnimplementedToWorkerServer()
 }
 
@@ -126,8 +137,11 @@ func (UnimplementedToWorkerServer) RequestWaveform(context.Context, *WaveformReq
 func (UnimplementedToWorkerServer) RequestCut(context.Context, *CutRequest) (*CutResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RequestCut not implemented")
 }
-func (UnimplementedToWorkerServer) RegenerateSectionImages(context.Context, *RegenerateSectionImagesRequest) (*Status, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RegenerateSectionImages not implemented")
+func (UnimplementedToWorkerServer) CleanSectionImageFolder(context.Context, *CleanSectionImageFolderRequest) (*Status, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CleanSectionImageFolder not implemented")
+}
+func (UnimplementedToWorkerServer) GenerateSectionImage(context.Context, *GenerateSectionImageRequest) (*GenerateSectionImageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateSectionImage not implemented")
 }
 func (UnimplementedToWorkerServer) mustEmbedUnimplementedToWorkerServer() {}
 
@@ -232,20 +246,38 @@ func _ToWorker_RequestCut_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ToWorker_RegenerateSectionImages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegenerateSectionImagesRequest)
+func _ToWorker_CleanSectionImageFolder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CleanSectionImageFolderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ToWorkerServer).RegenerateSectionImages(ctx, in)
+		return srv.(ToWorkerServer).CleanSectionImageFolder(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.ToWorker/RegenerateSectionImages",
+		FullMethod: "/api.ToWorker/CleanSectionImageFolder",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ToWorkerServer).RegenerateSectionImages(ctx, req.(*RegenerateSectionImagesRequest))
+		return srv.(ToWorkerServer).CleanSectionImageFolder(ctx, req.(*CleanSectionImageFolderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ToWorker_GenerateSectionImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenerateSectionImageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ToWorkerServer).GenerateSectionImage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.ToWorker/GenerateSectionImage",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ToWorkerServer).GenerateSectionImage(ctx, req.(*GenerateSectionImageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -278,8 +310,12 @@ var ToWorker_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ToWorker_RequestCut_Handler,
 		},
 		{
-			MethodName: "RegenerateSectionImages",
-			Handler:    _ToWorker_RegenerateSectionImages_Handler,
+			MethodName: "CleanSectionImageFolder",
+			Handler:    _ToWorker_CleanSectionImageFolder_Handler,
+		},
+		{
+			MethodName: "GenerateSectionImage",
+			Handler:    _ToWorker_GenerateSectionImage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
