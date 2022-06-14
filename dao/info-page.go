@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
-//go:generate mockgen -source=infopage.go -destination ../mock_dao/infopage.go
+//go:generate mockgen -source=info-page.go -destination ../mock_dao/info-page.go
 
 type InfoPageDao interface {
 	New(*model.InfoPage) error
