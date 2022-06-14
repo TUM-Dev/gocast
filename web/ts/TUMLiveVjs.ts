@@ -399,7 +399,6 @@ export class VideoSections {
 
     currentHighlightIndex: number;
     currentIndex: number;
-    currentSlice: Section[];
 
     constructor(streamID) {
         this.streamID = streamID;
@@ -450,12 +449,10 @@ export class VideoSections {
 
     next() {
         this.currentIndex = (this.currentIndex + 1) % this.list.length;
-        console.log("next: " + this.currentIndex);
     }
 
     prev() {
         this.currentIndex = (this.currentIndex - 1) % this.list.length;
-        console.log("prev: " + this.currentIndex);
     }
 }
 
