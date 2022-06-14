@@ -3,7 +3,7 @@
     <div x-cloak x-data="{ show : false, description : '', phone: '', mail: '', categories: [] }"
          id="alertModal"
          @issue.window="show = true;"
-         x-show="show" class="flex flex-wrap h-full overflow-y-scroll inline-block "
+         x-show="show" class="flex flex-wrap h-full overflow-y-scroll"
          :class="{ 'absolute inset-0 z-50 flex items-center justify-center': show }">
         <div @keydown.escape="show = false"
              class="dark:bg-secondary-light bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 sm:w-auto w-full md:max-w-md md:mx-auto rounded shadow-lg py-4 text-left px-6">

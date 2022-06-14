@@ -172,36 +172,36 @@
                     </div>
                 {{end}}
             </div>
-            {{if or .IsAdminOfCourse $stream.LiveNow}}
+            {{if and .IsAdminOfCourse $stream.LiveNow}}
                 <!-- Admin control buttons -->
                 <div class="pt-4">
                     <h6 class="font-bold text-3 pb-3 ml-1"><i class="fa-solid fa-wrench mr-1"></i>Admin controls
                     </h6>
-                    <div class="md:space-x-2 lg:space-y-0 space-y-2 px-2">
+                    <div class="md:space-x-2 lg:space-y-0 space-y-2 px-2 ">
                         {{/* Lecture hall is set, means no self-stream*/}}
                         {{if $stream.LectureHallID}}
                             <button @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)"
                                     href="#"
                                     :title="paused?'End Pause (turns on video and audio)':'Pause lecture (turns off video and audio)'"
-                                    class="bg-green-500 text-center md:w-32 w-full text-white font-bold hover:bg-green-600 dark:hover:bg-green-600 rounded cursor-pointer p-2">
+                                    class="bg-green-500 text-center lg:w-32 md:w-24 md:inline-block block w-full text-white font-bold hover:bg-green-600 dark:hover:bg-green-600 rounded cursor-pointer p-2">
                                 <span x-show="!paused"><i class="fas fa-pause mr-1"></i>Pause</span>
                                 <span x-show="paused"><i class="fas fa-play mr-1"></i>Resume</span>
                             </button>
                             <button @click="window.location.href='?restart=1'"
                                     title="Issues with the stream? Restart it."
-                                    class="bg-indigo-500 text-center md:w-32 w-full text-white font-bold hover:bg-indigo-600 dark:hover:bg-indigo-600 rounded cursor-pointer p-2">
+                                    class="bg-indigo-500 text-center lg:w-32 md:w-24 md:inline-block block w-full text-white font-bold hover:bg-indigo-600 dark:hover:bg-indigo-600 rounded cursor-pointer p-2">
                                 <i class="fas fa-redo mr-1"></i>Restart
                             </button>
                             <button @click="$dispatch('stop')"
                                     title="Already finished? End the stream early."
-                                    class="bg-red-500 text-center md:w-32 w-full text-white hover:bg-red-600 font-bold dark:hover:bg-red-600 rounded cursor-pointer p-2">
+                                    class="bg-red-500 text-center lg:w-32 md:w-24 md:inline-block block w-full text-white hover:bg-red-600 font-bold dark:hover:bg-red-600 rounded cursor-pointer p-2">
                                 <i class="fas fa-power-off mr-1"></i>Stop
                             </button>
                         {{end}}
                         {{if .AlertsEnabled}}
                             <button @click="$dispatch('issue');location.href='#';location.href='#alertModal'"
                                     title="Issues with the stream? Send a report to the RGB."
-                                    class="bg-amber-500 text-center md:w-32 {{if $stream.LectureHallID}}md:float-right{{end}} w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
+                                    class="bg-amber-500 text-center md:w-28 md:inline-block block lg:w-32 {{if $stream.LectureHallID}}md:float-right{{end}} w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
                                 <i class="fas fa-exclamation-triangle mr-1"></i>Problem
                             </button>
                         {{end}}
@@ -218,7 +218,7 @@
                                         <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
                                              src="https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fwww.blog.lehren.tum.de%2Fwp-content%2Fuploads%2F2018%2F12%2FH%25C3%25B6rsaal.jpg&sp=1655204098T3bc6f1cb389556d6f0bd4cc3fae1c8c02cb21903665f2a84da9def77a4a7faf2"
                                              alt="prev" width="150px"
-                                             class="border-2 dark:border-slate-400 border-slate-500 rounded-lg">
+                                             class="border-1 dark:border-slate-400 border-slate-500 rounded-lg">
                                         <i onclick="watch.usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}})"
                                            title="Switch to this preset"
                                            class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-exchange-alt cursor-pointer"></i>
@@ -285,10 +285,6 @@
             </div>
             {{if .AlertsEnabled}}
                 {{template "alert-modal" . }}
-            {{end}}
-            <!-- Video Sections -->
-            {{if $stream.VideoSections}}
-                {{template "videosections" $stream}}
             {{end}}
             {{if .IsHighlightPage}}
                 <ul class="w-full m-auto mb-4">
