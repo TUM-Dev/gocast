@@ -17,7 +17,9 @@ import (
 )
 
 func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
-	routes := lectureHallRoutes{daoWrapper}
+	routes := lectureHallRoutes{
+		daoWrapper,
+		tools.NewPresetUtility(daoWrapper.LectureHallsDao)}
 
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
@@ -42,6 +44,7 @@ func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper
 
 type lectureHallRoutes struct {
 	dao.DaoWrapper
+	presetUtility tools.PresetUtility
 }
 
 type updateLectureHallReq struct {
@@ -138,7 +141,7 @@ func (r lectureHallRoutes) refreshLectureHallPresets(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	tools.FetchLHPresets(lh, r.LectureHallsDao)
+	r.presetUtility.FetchLHPresets(lh)
 }
 
 //go:embed template
@@ -189,7 +192,7 @@ func (r lectureHallRoutes) switchPreset(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	tools.UsePreset(preset, r.LectureHallsDao)
+	r.presetUtility.UsePreset(preset)
 	time.Sleep(time.Second * 10)
 }
 
@@ -199,7 +202,7 @@ func (r lectureHallRoutes) takeSnapshot(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		sentry.CaptureException(err)
 	}
-	tools.TakeSnapshot(preset, r.LectureHallsDao)
+	r.presetUtility.TakeSnapshot(preset)
 	preset, err = r.LectureHallsDao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)

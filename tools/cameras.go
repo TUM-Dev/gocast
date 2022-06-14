@@ -10,17 +10,34 @@ import (
 	"time"
 )
 
+//go:generate mockgen -source=cameras.go -destination ../mock_tools/cameras.go
+
+type PresetUtility interface {
+	FetchCameraPresets(context.Context)
+	FetchLHPresets(model.LectureHall)
+	UsePreset(preset model.CameraPreset)
+	TakeSnapshot(preset model.CameraPreset)
+}
+
+type presetUtility struct {
+	LectureHallDao dao.LectureHallsDao
+}
+
+func NewPresetUtility(lectureHallDao dao.LectureHallsDao) PresetUtility {
+	return presetUtility{lectureHallDao}
+}
+
 //FetchCameraPresets Queries all cameras of lecture halls for their camera presets and saves them to the database
-func FetchCameraPresets(ctx context.Context, lectureHallDao dao.LectureHallsDao) {
+func (p presetUtility) FetchCameraPresets(ctx context.Context) {
 	span := sentry.StartSpan(ctx, "FetchCameraPresets")
 	defer span.Finish()
-	lectureHalls := lectureHallDao.GetAllLectureHalls()
+	lectureHalls := p.LectureHallDao.GetAllLectureHalls()
 	for _, lectureHall := range lectureHalls {
-		FetchLHPresets(lectureHall, lectureHallDao)
+		p.FetchLHPresets(lectureHall)
 	}
 }
 
-func FetchLHPresets(lectureHall model.LectureHall, lectureHallDao dao.LectureHallsDao) {
+func (p presetUtility) FetchLHPresets(lectureHall model.LectureHall) {
 	if lectureHall.CameraIP != "" {
 		cam := camera.NewCamera(lectureHall.CameraIP, Cfg.Auths.CamAuth)
 		presets, err := cam.GetPresets()
@@ -33,12 +50,12 @@ func FetchLHPresets(lectureHall model.LectureHall, lectureHallDao dao.LectureHal
 			presets[i].LectureHallId = lectureHall.ID
 		}*/
 		lectureHall.CameraPresets = presets
-		lectureHallDao.SaveLectureHallFullAssoc(lectureHall)
+		p.LectureHallDao.SaveLectureHallFullAssoc(lectureHall)
 	}
 }
 
-func UsePreset(preset model.CameraPreset, lectureHallDao dao.LectureHallsDao) {
-	lectureHall, err := lectureHallDao.GetLectureHallByID(preset.LectureHallId)
+func (p presetUtility) UsePreset(preset model.CameraPreset) {
+	lectureHall, err := p.LectureHallDao.GetLectureHallByID(preset.LectureHallId)
 	if err != nil {
 		sentry.CaptureException(err)
 		return
@@ -52,10 +69,10 @@ func UsePreset(preset model.CameraPreset, lectureHallDao dao.LectureHallsDao) {
 
 //TakeSnapshot Creates an image for a preset. Saves it to the disk and database.
 //Function is blocking and needs ~20 Seconds to complete! Only call in goroutine.
-func TakeSnapshot(preset model.CameraPreset, lectureHallDao dao.LectureHallsDao) {
-	UsePreset(preset, lectureHallDao)
+func (p presetUtility) TakeSnapshot(preset model.CameraPreset) {
+	p.UsePreset(preset)
 	time.Sleep(time.Second * 10)
-	lectureHall, err := lectureHallDao.GetLectureHallByID(preset.LectureHallId)
+	lectureHall, err := p.LectureHallDao.GetLectureHallByID(preset.LectureHallId)
 	if err != nil {
 		sentry.CaptureException(err)
 		return
@@ -67,7 +84,7 @@ func TakeSnapshot(preset model.CameraPreset, lectureHallDao dao.LectureHallsDao)
 		return
 	}
 	preset.Image = fileName
-	err = lectureHallDao.SavePreset(preset)
+	err = p.LectureHallDao.SavePreset(preset)
 	if err != nil {
 		log.WithField("Camera", c.Ip).WithError(err).Error("TakeSnapshot: failed to save snapshot file")
 		return
