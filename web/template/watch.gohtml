@@ -216,7 +216,7 @@
                                 {{range $preset := .Presets}}
                                     <div style="min-width: 150px" class="text-center relative group">
                                         <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
-                                             src="https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fwww.blog.lehren.tum.de%2Fwp-content%2Fuploads%2F2018%2F12%2FH%25C3%25B6rsaal.jpg&sp=1655204098T3bc6f1cb389556d6f0bd4cc3fae1c8c02cb21903665f2a84da9def77a4a7faf2"
+                                             src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
                                              alt="prev" width="150px"
                                              class="border-1 dark:border-slate-400 border-slate-500 rounded-lg">
                                         <i onclick="watch.usePreset({{$course.Model.ID}}, {{$preset.LectureHallId}}, {{$preset.PresetID}})"
