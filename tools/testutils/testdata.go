@@ -2,10 +2,20 @@ package testutils
 
 import (
 	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"gorm.io/gorm"
 	"time"
 )
 
+// Misc
+var (
+	TUMLiveContextStudent = tools.TUMLiveContext{
+		User: &model.User{Model: gorm.Model{ID: 42}, Role: model.StudentType}}
+	TUMLiveContextAdmin = tools.TUMLiveContext{
+		User: &model.User{Model: gorm.Model{ID: 1}, Role: model.AdminType}}
+)
+
+// Models
 var (
 	EmptyLectureHall = model.LectureHall{}
 	LectureHall      = model.LectureHall{
@@ -19,6 +29,13 @@ var (
 		RoomID:         0,
 		PwrCtrlIp:      "http://pwrctrlip.in.test.de",
 		LiveLightIndex: 0,
+	}
+	CameraPreset = model.CameraPreset{
+		Name:          "Home",
+		PresetID:      1,
+		Image:         "ccc47fae-847c-4a91-8a65-b26cbae6fbe2.jpg",
+		LectureHallId: LectureHall.ID,
+		IsDefault:     false,
 	}
 	CourseFPV = model.Course{
 		Model:                gorm.Model{ID: uint(40)},

@@ -25,7 +25,7 @@ func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper
 	admins.POST("/lectureHall/:id/defaultPreset", routes.updateLectureHallsDefaultPreset)
 	admins.DELETE("/lectureHall/:id", routes.deleteLectureHall)
 	admins.POST("/createLectureHall", routes.createLectureHall)
-	admins.POST("/takeSnapshot/:lectureHallID/:presetID", routes.takeSnapshot) //TODO: Test
+	admins.POST("/takeSnapshot/:lectureHallID/:presetID", routes.takeSnapshot)
 	admins.GET("/course-schedule", routes.getSchedule)
 	admins.POST("/course-schedule/:year/:term", routes.postSchedule)
 	admins.GET("/refreshLectureHallPresets/:lectureHallID", routes.refreshLectureHallPresets)
@@ -35,7 +35,7 @@ func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper
 	adminsOfCourse.Use(tools.InitCourse(daoWrapper))
 	adminsOfCourse.Use(tools.InitStream(daoWrapper))
 	adminsOfCourse.Use(tools.AdminOfCourse)
-	adminsOfCourse.POST("/switchPreset/:lectureHallID/:presetID/:streamID", routes.switchPreset) //TODO: Test
+	adminsOfCourse.POST("/switchPreset/:lectureHallID/:presetID/:streamID", routes.switchPreset)
 
 	router.GET("/api/hall/all.ics", routes.lectureHallIcal)
 }
@@ -200,12 +200,14 @@ func (r lectureHallRoutes) takeSnapshot(c *gin.Context) {
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		sentry.CaptureException(err)
+		return
 	}
 	tools.TakeSnapshot(preset, r.LectureHallsDao)
 	preset, err = r.LectureHallsDao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		sentry.CaptureException(err)
+		return
 	}
 	c.JSONP(http.StatusOK, gin.H{"path": fmt.Sprintf("/public/%s", preset.Image)})
 }
