@@ -34,6 +34,21 @@ func (m *MockProgressDao) EXPECT() *MockProgressDaoMockRecorder {
 	return m.recorder
 }
 
+// GetProgressesForUser mocks base method.
+func (m *MockProgressDao) GetProgressesForUser(userID uint) ([]model.StreamProgress, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProgressesForUser", userID)
+	ret0, _ := ret[0].([]model.StreamProgress)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProgressesForUser indicates an expected call of GetProgressesForUser.
+func (mr *MockProgressDaoMockRecorder) GetProgressesForUser(userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProgressesForUser", reflect.TypeOf((*MockProgressDao)(nil).GetProgressesForUser), userID)
+}
+
 // LoadProgress mocks base method.
 func (m *MockProgressDao) LoadProgress(userID, streamID uint) (model.StreamProgress, error) {
 	m.ctrl.T.Helper()

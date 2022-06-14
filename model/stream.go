@@ -59,6 +59,7 @@ type Stream struct {
 	StreamProgresses []StreamProgress `gorm:"foreignKey:StreamID"`
 	VideoSections    []VideoSection
 	StreamStatus     StreamStatus `gorm:"not null;default:1"`
+	Private          bool         `gorm:"not null;default:false"`
 
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }
@@ -170,8 +171,12 @@ func (s Stream) FriendlyNextDate() string {
 	return s.Start.Format("Mon, January 02. 15:04")
 }
 
+// Color returns the ui color of the stream that indicates it's status
 func (s Stream) Color() string {
 	if s.Recording {
+		if s.Private {
+			return "gray-500"
+		}
 		return "success"
 	} else if s.LiveNow {
 		return "danger"
@@ -218,6 +223,7 @@ func (s Stream) getJson(lhs []LectureHall, course Course) gin.H {
 		"start":            s.Start,
 		"end":              s.End,
 		"courseSlug":       course.Slug,
+		"private":          s.Private,
 	}
 }
 
