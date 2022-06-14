@@ -39,7 +39,7 @@ export class VideoSection {
     }
     publishNewSections() {
         postData(`/api/stream/${this.streamID}/sections`, this.newSections).then(async () => {
-            await this.load(); // load sections again to avaid js-sorting
+            await this.load(); // load sections again to avoid js-sorting
             this.newSections = [];
         });
         this.unsavedChanges = false;

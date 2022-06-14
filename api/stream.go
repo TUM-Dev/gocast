@@ -292,29 +292,30 @@ type sectionPreviewQuery struct {
 }
 
 func (r streamRoutes) getVideoSectionPreview(c *gin.Context) {
+	context := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	var query sectionPreviewQuery
 	if err := c.ShouldBind(&query); err != nil {
-		fmt.Println(err)
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	stream, err := r.StreamsDao.GetStreamByID(c, c.Param("streamID"))
+	file := fmt.Sprintf(
+		"%s/%s/%d.%s/sections/preview-%0d:%0d:%0d.jpg",
+		tools.Cfg.Paths.Mass, context.Course.Name, context.Course.Year, context.Course.TeachingTerm,
+		query.Hours, query.Minutes, query.Seconds)
+
+	image, err := os.ReadFile(file)
 	if err != nil {
-		log.WithError(err).Error("Couldn't query stream")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	image, err := GetSectionPreview(r.WorkerDao, stream.PlaylistUrl, query.Hours, query.Minutes, query.Seconds)
-	if err != nil {
-		log.WithError(err).Error("Couldn't get image data")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	c.Data(http.StatusOK, "image/png", image)
+
+	c.Data(http.StatusOK, "image/jpg", image)
 }
 
 func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
+	context := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	var sections []model.VideoSection
 	if err := c.BindJSON(&sections); err != nil {
 		log.WithError(err).Error("failed to bind video section JSON")
@@ -326,15 +327,22 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 		log.WithError(err).Error("failed to create video sections")
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
+
+	sections, err = r.VideoSectionDao.GetByStreamId(context.Stream.ID)
+	if err != nil {
+		log.WithError(err).Error("failed to create video sections")
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+
+	go RegenerateVideoSectionImages(
+		r.WorkerDao, sections,
+		context.Stream.PlaylistUrl, context.Course.Name, context.Course.TeachingTerm,
+		uint32(context.Course.Year))
 }
 
 func (r streamRoutes) deleteVideoSection(c *gin.Context) {
-	_, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
+	context := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	idAsString := c.Param("id")
 	id, err := strconv.Atoi(idAsString)
 	if err != nil {
@@ -344,6 +352,17 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 	if err != nil {
 		log.WithError(err).Error("Can't delete video-section")
 	}
+
+	sections, err := r.VideoSectionDao.GetByStreamId(context.Stream.ID)
+	if err != nil {
+		log.WithError(err).Error("failed to create video sections")
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+
+	go RegenerateVideoSectionImages(
+		r.WorkerDao, sections,
+		context.Stream.PlaylistUrl, context.Course.Name, context.Course.TeachingTerm,
+		uint32(context.Course.Year))
 }
 
 func (r streamRoutes) newAttachment(c *gin.Context) {

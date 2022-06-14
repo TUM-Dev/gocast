@@ -686,26 +686,37 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 	}
 }
 
-func GetSectionPreview(workerDao dao.WorkerDao, playlistUrl string, hours, minutes, seconds uint32) ([]byte, error) {
+func RegenerateVideoSectionImages(workerDao dao.WorkerDao, sections []model.VideoSection,
+	playlistUrl, courseName, courseTeachingTerm string, courseYear uint32) error {
 	workers := workerDao.GetAliveWorkers()
 	workerIndex := getWorkerWithLeastWorkload(workers)
 	workers[workerIndex].Workload += 1 // Not sure if that's a reasonable amount.
-	req := pb.SectionPreviewRequest{
-		PlaylistURL: playlistUrl,
-		Hours:       hours,
-		Minutes:     minutes,
-		Seconds:     seconds,
-	}
 	conn, err := dialIn(workers[workerIndex])
 	if err != nil {
 		log.WithError(err).Error("Unable to dial server")
 		endConnection(conn)
 		workers[workerIndex].Workload -= 1
-		return nil, err
+		return err
 	}
 	client := pb.NewToWorkerClient(conn)
-	res, err := client.RequestSectionPreview(context.Background(), &req)
-	return res.GetPreviewImage(), err
+
+	timestamps := make([]*pb.Timestamp, len(sections))
+	for _, section := range sections {
+		timestamps = append(timestamps, &pb.Timestamp{
+			Hours:   uint32(section.StartHours),
+			Minutes: uint32(section.StartMinutes),
+			Seconds: uint32(section.StartSeconds),
+		})
+	}
+	req := pb.RegenerateSectionImagesRequest{
+		PlaylistURL:        playlistUrl,
+		CourseName:         courseName,
+		CourseYear:         courseYear,
+		CourseTeachingTerm: courseTeachingTerm,
+		Timestamps:         timestamps,
+	}
+	_, err = client.RegenerateSectionImages(context.Background(), &req)
+	return nil
 }
 
 // NotifyWorkersToStopStream notifies all workers for a given stream to quit encoding

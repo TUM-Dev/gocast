@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"os/exec"
 	"time"
 
@@ -62,20 +63,31 @@ func (s server) RequestStreamEnd(ctx context.Context, request *pb.EndStreamReque
 	return &pb.Status{Ok: true}, nil
 }
 
-func (s server) RequestSectionPreview(ctx context.Context, request *pb.SectionPreviewRequest) (*pb.SectionPreviewResponse, error) {
-	timestamp := fmt.Sprintf("%0d:%0d:%0d", request.Hours, request.Minutes, request.Seconds)
-	cmd := exec.Command("ffmpeg", "-y", "-ss", timestamp, "-i",
-		request.PlaylistURL,
-		"-vf",
-		fmt.Sprintf("scale=%d:-1", 156),
-		"-frames:v", "1",
-		"-q:v", "2",
-		"-f", "image2pipe", "pipe:1") // pipe binary data to stdout
-	out, err := cmd.Output()
+func (s server) RegenerateSectionImages(ctx context.Context, request *pb.RegenerateSectionImagesRequest) (*pb.Status, error) {
+	folder := fmt.Sprintf("%s/%s/%d.%s/sections", cfg.StorageDir, request.CourseName, request.CourseYear, request.CourseTeachingTerm)
+	err := os.RemoveAll(folder) // clean up old section images
 	if err != nil {
-		return &pb.SectionPreviewResponse{}, err
+		return &pb.Status{Ok: false}, err
 	}
-	return &pb.SectionPreviewResponse{PreviewImage: out}, nil
+	err = os.MkdirAll(folder, os.ModePerm) // make sure folder exists
+	if err != nil {
+		return &pb.Status{Ok: false}, err
+	}
+	for _, timestamp := range request.Timestamps {
+		timestampStr := fmt.Sprintf("%0d:%0d:%0d", timestamp.Hours, timestamp.Minutes, timestamp.Seconds)
+		cmd := exec.Command("ffmpeg", "-y",
+			"-ss", timestampStr,
+			"-i", request.PlaylistURL,
+			"-vf", "scale=156:-1",
+			"-frames:v", "1",
+			"-q:v", "2",
+			fmt.Sprintf("%s/preview-%s.jpg", folder, timestampStr))
+		_, err := cmd.CombinedOutput()
+		if err != nil {
+			return &pb.Status{Ok: false}, err
+		}
+	}
+	return &pb.Status{Ok: true}, nil
 }
 
 //InitApi Initializes api endpoints

@@ -28,7 +28,7 @@ type ToWorkerClient interface {
 	RequestStreamEnd(ctx context.Context, in *EndStreamRequest, opts ...grpc.CallOption) (*Status, error)
 	RequestWaveform(ctx context.Context, in *WaveformRequest, opts ...grpc.CallOption) (*WaveFormResponse, error)
 	RequestCut(ctx context.Context, in *CutRequest, opts ...grpc.CallOption) (*CutResponse, error)
-	RequestSectionPreview(ctx context.Context, in *SectionPreviewRequest, opts ...grpc.CallOption) (*SectionPreviewResponse, error)
+	RegenerateSectionImages(ctx context.Context, in *RegenerateSectionImagesRequest, opts ...grpc.CallOption) (*Status, error)
 }
 
 type toWorkerClient struct {
@@ -84,9 +84,9 @@ func (c *toWorkerClient) RequestCut(ctx context.Context, in *CutRequest, opts ..
 	return out, nil
 }
 
-func (c *toWorkerClient) RequestSectionPreview(ctx context.Context, in *SectionPreviewRequest, opts ...grpc.CallOption) (*SectionPreviewResponse, error) {
-	out := new(SectionPreviewResponse)
-	err := c.cc.Invoke(ctx, "/api.ToWorker/RequestSectionPreview", in, out, opts...)
+func (c *toWorkerClient) RegenerateSectionImages(ctx context.Context, in *RegenerateSectionImagesRequest, opts ...grpc.CallOption) (*Status, error) {
+	out := new(Status)
+	err := c.cc.Invoke(ctx, "/api.ToWorker/RegenerateSectionImages", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ type ToWorkerServer interface {
 	RequestStreamEnd(context.Context, *EndStreamRequest) (*Status, error)
 	RequestWaveform(context.Context, *WaveformRequest) (*WaveFormResponse, error)
 	RequestCut(context.Context, *CutRequest) (*CutResponse, error)
-	RequestSectionPreview(context.Context, *SectionPreviewRequest) (*SectionPreviewResponse, error)
+	RegenerateSectionImages(context.Context, *RegenerateSectionImagesRequest) (*Status, error)
 	mustEmbedUnimplementedToWorkerServer()
 }
 
@@ -126,8 +126,8 @@ func (UnimplementedToWorkerServer) RequestWaveform(context.Context, *WaveformReq
 func (UnimplementedToWorkerServer) RequestCut(context.Context, *CutRequest) (*CutResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RequestCut not implemented")
 }
-func (UnimplementedToWorkerServer) RequestSectionPreview(context.Context, *SectionPreviewRequest) (*SectionPreviewResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RequestSectionPreview not implemented")
+func (UnimplementedToWorkerServer) RegenerateSectionImages(context.Context, *RegenerateSectionImagesRequest) (*Status, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegenerateSectionImages not implemented")
 }
 func (UnimplementedToWorkerServer) mustEmbedUnimplementedToWorkerServer() {}
 
@@ -232,20 +232,20 @@ func _ToWorker_RequestCut_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ToWorker_RequestSectionPreview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SectionPreviewRequest)
+func _ToWorker_RegenerateSectionImages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegenerateSectionImagesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ToWorkerServer).RequestSectionPreview(ctx, in)
+		return srv.(ToWorkerServer).RegenerateSectionImages(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.ToWorker/RequestSectionPreview",
+		FullMethod: "/api.ToWorker/RegenerateSectionImages",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ToWorkerServer).RequestSectionPreview(ctx, req.(*SectionPreviewRequest))
+		return srv.(ToWorkerServer).RegenerateSectionImages(ctx, req.(*RegenerateSectionImagesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -278,8 +278,8 @@ var ToWorker_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ToWorker_RequestCut_Handler,
 		},
 		{
-			MethodName: "RequestSectionPreview",
-			Handler:    _ToWorker_RequestSectionPreview_Handler,
+			MethodName: "RegenerateSectionImages",
+			Handler:    _ToWorker_RegenerateSectionImages_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
