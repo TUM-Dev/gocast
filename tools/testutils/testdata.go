@@ -12,7 +12,7 @@ var (
 	TUMLiveContextStudent = tools.TUMLiveContext{
 		User: &model.User{Model: gorm.Model{ID: 42}, Role: model.StudentType}}
 	TUMLiveContextAdmin = tools.TUMLiveContext{
-		User: &model.User{Model: gorm.Model{ID: 1}, Role: model.AdminType}}
+		User: &model.User{Model: gorm.Model{ID: 0}, Role: model.AdminType}}
 )
 
 // Models

@@ -29,7 +29,7 @@ func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper
 	admins.GET("/course-schedule", routes.getSchedule)
 	admins.POST("/course-schedule/:year/:term", routes.postSchedule)
 	admins.GET("/refreshLectureHallPresets/:lectureHallID", routes.refreshLectureHallPresets)
-	admins.POST("/setLectureHall", routes.setLectureHall) //TODO: Test
+	admins.POST("/setLectureHall", routes.setLectureHall)
 
 	adminsOfCourse := router.Group("/api/course/:courseID/")
 	adminsOfCourse.Use(tools.InitCourse(daoWrapper))
