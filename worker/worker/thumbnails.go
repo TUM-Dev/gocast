@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	ThumbCount  = 100 // How many thumbnails should be created
-	ThumbWidth  = 160 // Width in pixels, height is inferred by thumbgen
-	Compression = 70  // Compression in percent
+	ThumbCount  = 600 // How many thumbnails to generate, we use a static size, so we have a deterministic file size
+	ThumbWidth  = 200 // Width in pixels, height is inferred by thumbgen
+	Compression = 90  // Compression in percent
 )
 
 // createThumbnailSprite creates a thumbnail sprite from the given video file and stores it in mass storage.

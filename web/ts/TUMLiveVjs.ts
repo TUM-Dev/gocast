@@ -53,12 +53,13 @@ export const initPlayer = function (
         },
         autoplay: autoplay,
     });
-    if (spriteID) {
+    const isMobile = window.matchMedia && window.matchMedia("only screen and (max-width: 480px)").matches;
+    if (spriteID && !isMobile) {
         player.spriteThumbnails({
             interval: spriteInterval,
             url: `/api/stream/${streamID}/thumbs/${spriteID}`,
-            width: 160,
-            height: 90,
+            width: 200,
+            height: 112,
         });
     }
 
