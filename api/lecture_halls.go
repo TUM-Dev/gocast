@@ -16,10 +16,8 @@ import (
 	"time"
 )
 
-func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
-	routes := lectureHallRoutes{
-		daoWrapper,
-		tools.NewPresetUtility(daoWrapper.LectureHallsDao)}
+func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, utility tools.PresetUtility) {
+	routes := lectureHallRoutes{daoWrapper, utility}
 
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
