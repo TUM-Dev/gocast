@@ -142,6 +142,7 @@ func main() {
 		&model.UploadKey{},
 		&model.Keyword{},
 		&model.UserSetting{},
+		&model.InfoPage{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)

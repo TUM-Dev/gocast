@@ -67,6 +67,7 @@ func (r notificationRoutes) deleteNotification(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "id must be an integer"})
+		return
 	}
 	err = r.NotificationsDao.DeleteNotification(uint(id))
 	if err != nil {

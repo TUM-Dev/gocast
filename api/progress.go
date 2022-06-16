@@ -93,6 +93,7 @@ func (r progressRoutes) saveProgress(c *gin.Context) {
 	}
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
@@ -124,6 +125,7 @@ func (r progressRoutes) markWatched(c *gin.Context) {
 	}
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
