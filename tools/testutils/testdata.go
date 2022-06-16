@@ -16,14 +16,14 @@ import (
 // Misc
 var (
 	StartTime             = time.Now()
-	TUMLiveContextStudent = tools.TUMLiveContext{
-		User: &model.User{Model: gorm.Model{ID: 42}, Role: model.StudentType}}
-	TUMLiveContextAdmin = tools.TUMLiveContext{
-		User: &model.User{Model: gorm.Model{ID: 0}, Role: model.AdminType}}
+	TUMLiveContextStudent = tools.TUMLiveContext{User: &Student}
+	TUMLiveContextAdmin   = tools.TUMLiveContext{User: &Admin}
 )
 
 // Models
 var (
+	Student          = model.User{Model: gorm.Model{ID: 42}, Role: model.StudentType}
+	Admin            = model.User{Model: gorm.Model{ID: 0}, Role: model.AdminType}
 	EmptyLectureHall = model.LectureHall{}
 	LectureHall      = model.LectureHall{
 		Model:          gorm.Model{ID: uint(1)},
@@ -78,6 +78,7 @@ var (
 		PlaylistUrlPRES:  "https://url",
 		PlaylistUrlCAM:   "https://url",
 		LiveNow:          true,
+		LectureHallID:    LectureHall.ID,
 		VideoSections: []model.VideoSection{
 			{
 				Description:  "Introduction",
@@ -112,6 +113,22 @@ var (
 		PlaylistUrlPRES:  "https://url",
 		PlaylistUrlCAM:   "https://url",
 		LiveNow:          false,
+		LectureHallID:    LectureHall.ID,
+	}
+	SelfStream = model.Stream{
+		Model:            gorm.Model{ID: 420},
+		Name:             "Selfstream1",
+		Description:      "First selfstream",
+		CourseID:         CourseFPV.ID,
+		Start:            StartTime,
+		End:              StartTime.Add(time.Hour),
+		TUMOnlineEventID: 888261337,
+		SeriesIdentifier: "",
+		StreamKey:        "0dc3d-1337-1194-38f8-1337-7f16-bbe1-1111",
+		PlaylistUrl:      "https://url",
+		PlaylistUrlPRES:  "https://url",
+		PlaylistUrlCAM:   "https://url",
+		LiveNow:          false,
 	}
 	Worker1 = model.Worker{
 		WorkerID: "ed067fa3-2364-4dcd-bfd2-e0ffb8d751d4",
@@ -126,6 +143,12 @@ var (
 		Status:   "",
 		Workload: 0,
 		LastSeen: time.Now(),
+	}
+	AdminToken = model.Token{
+		UserID: Admin.ID,
+		User:   Admin,
+		Token:  "ed067f11-1337-4dcd-bfd2-4201b8d751d4",
+		Scope:  model.TokenScopeAdmin,
 	}
 )
 
@@ -147,21 +170,10 @@ func GetStreamMock(t *testing.T) dao.StreamsDao {
 		EXPECT().
 		ToggleVisibility(StreamFPVLive.ID, gomock.Any()).
 		Return(nil).AnyTimes()
-	return streamsMock
-}
-
-func GetStreamMockError(t *testing.T) dao.StreamsDao {
-	streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
 	streamsMock.
 		EXPECT().
-		GetStreamByID(gomock.Any(), gomock.Any()).
-		Return(model.Stream{}, errors.New("")).
-		AnyTimes()
-	streamsMock.
-		EXPECT().
-		SavePauseState(gomock.Any(), gomock.Any()).
-		Return(errors.New("")).
-		AnyTimes()
+		GetCurrentLive(gomock.Any()).
+		Return([]model.Stream{StreamFPVLive, SelfStream}, nil).AnyTimes()
 	return streamsMock
 }
 
@@ -225,6 +237,19 @@ func GetVideoSectionMockError(t *testing.T) dao.VideoSectionDao {
 		Delete(gomock.Any()).
 		Return(errors.New(""))
 	return sectionMock
+}
+
+func GetTokenMock(t *testing.T) dao.TokenDao {
+	tokenMock := mock_dao.NewMockTokenDao(gomock.NewController(t))
+	tokenMock.
+		EXPECT().
+		GetToken(AdminToken.Token).
+		Return(AdminToken, nil)
+	tokenMock.
+		EXPECT().
+		TokenUsed(AdminToken).
+		Return(nil)
+	return tokenMock
 }
 
 func GetProgressMock(t *testing.T) dao.ProgressDao {

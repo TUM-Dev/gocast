@@ -3,9 +3,12 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/golang/mock/gomock"
 	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/mock_dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
@@ -16,6 +19,89 @@ import (
 func TestStream(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
+	t.Run("GET/api/stream/live", func(t *testing.T) {
+		response := []liveStreamDto{
+			{
+				ID:          testutils.StreamFPVLive.ID,
+				CourseName:  testutils.CourseFPV.Name,
+				LectureHall: testutils.LectureHall.Name,
+				COMB:        testutils.StreamFPVLive.PlaylistUrl,
+				PRES:        testutils.StreamFPVLive.PlaylistUrlPRES,
+				CAM:         testutils.StreamFPVLive.PlaylistUrlCAM,
+				End:         testutils.StreamFPVLive.End,
+			},
+			{
+				ID:          testutils.SelfStream.ID,
+				CourseName:  testutils.CourseFPV.Name,
+				LectureHall: "Selfstream",
+				COMB:        testutils.SelfStream.PlaylistUrl,
+				PRES:        testutils.SelfStream.PlaylistUrlPRES,
+				CAM:         testutils.SelfStream.PlaylistUrlCAM,
+				End:         testutils.SelfStream.End,
+			},
+		}
+		url := fmt.Sprintf("/api/stream/live?token=%s", testutils.AdminToken.Token)
+		testCases := testutils.TestCases{
+			"GetCurrentLive returns error": {
+				Method: http.MethodGet,
+				Url:    url,
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: func() dao.StreamsDao {
+						streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+						streamsMock.EXPECT().GetCurrentLive(gomock.Any()).Return([]model.Stream{}, errors.New(""))
+						return streamsMock
+					}(),
+					TokenDao: testutils.GetTokenMock(t),
+				},
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"GetCourseById returns error": {
+				Method: http.MethodGet,
+				Url:    url,
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.EXPECT().GetCourseById(gomock.Any(), gomock.Any()).Return(model.Course{}, errors.New(""))
+						return coursesMock
+					}(),
+					LectureHallsDao: testutils.GetLectureHallMock(t),
+					TokenDao:        testutils.GetTokenMock(t),
+				},
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
+			},
+			"GetLectureHallByID returns error": {
+				Method: http.MethodGet,
+				Url:    url,
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					LectureHallsDao: func() dao.LectureHallsDao {
+						lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+						lectureHallMock.EXPECT().GetLectureHallByID(gomock.Any()).Return(model.LectureHall{}, errors.New(""))
+						return lectureHallMock
+					}(),
+					TokenDao: testutils.GetTokenMock(t),
+				},
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
+			},
+			"success": {
+				Method: http.MethodGet,
+				Url:    url,
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao:      testutils.GetStreamMock(t),
+					CoursesDao:      testutils.GetCoursesMock(t),
+					LectureHallsDao: testutils.GetLectureHallMock(t),
+					TokenDao:        testutils.GetTokenMock(t),
+				},
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
+			},
+		}
+		testCases.Run(t, configGinStreamRestRouter)
+	})
 	t.Run("GET/api/stream/:streamID", func(t *testing.T) {
 		course := testutils.CourseFPV
 		stream := testutils.StreamFPVLive
@@ -152,7 +238,7 @@ func TestStream(t *testing.T) {
 		}
 		testCases.Run(t, configGinStreamRestRouter)
 	})
-	t.Run("GET/api/stream/:streamID/visibility", func(t *testing.T) {
+	t.Run("PATCH/api/stream/:streamID/visibility", func(t *testing.T) {
 		url := fmt.Sprintf("/api/stream/%d/visibility", testutils.StreamFPVLive.ID)
 		testCases := testutils.TestCases{
 			"no context": testutils.TestCase{
@@ -185,6 +271,28 @@ func TestStream(t *testing.T) {
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				Body:           nil,
 				ExpectedCode:   http.StatusBadRequest,
+			},
+			"ToggleVisibility returns error": testutils.TestCase{
+				Method: http.MethodPatch,
+				Url:    url,
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: func() dao.StreamsDao {
+						streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+						streamsMock.
+							EXPECT().
+							GetStreamByID(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
+							Return(testutils.StreamFPVLive, nil).AnyTimes()
+						streamsMock.
+							EXPECT().
+							ToggleVisibility(testutils.StreamFPVLive.ID, gomock.Any()).
+							Return(errors.New("")).AnyTimes()
+						return streamsMock
+					}(),
+					CoursesDao: testutils.GetCoursesMock(t),
+				},
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				Body:           bytes.NewBuffer(testutils.First(json.Marshal(gin.H{"private": false})).([]byte)),
+				ExpectedCode:   http.StatusInternalServerError,
 			},
 			"success": testutils.TestCase{
 				Method: http.MethodPatch,
