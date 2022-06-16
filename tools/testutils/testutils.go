@@ -22,7 +22,6 @@ type TestCase struct {
 	DaoWrapper       dao.DaoWrapper
 	TumLiveContext   *tools.TUMLiveContext
 	Body             io.Reader
-	ContentType      string
 	ExpectedCode     int
 	ExpectedResponse []byte
 }

@@ -15,6 +15,7 @@ import (
 
 // Misc
 var (
+	StartTime             = time.Now()
 	TUMLiveContextStudent = tools.TUMLiveContext{
 		User: &model.User{Model: gorm.Model{ID: 42}, Role: model.StudentType}}
 	TUMLiveContextAdmin = tools.TUMLiveContext{
@@ -65,8 +66,8 @@ var (
 		Name:             "Lecture 1",
 		Description:      "First official stream",
 		CourseID:         CourseFPV.ID,
-		Start:            time.Now(),
-		End:              time.Now().Add(time.Hour),
+		Start:            StartTime,
+		End:              StartTime.Add(time.Hour),
 		RoomName:         "00.08.038, Seminarraum",
 		RoomCode:         "5608.EG.038",
 		EventTypeName:    "Abhaltung",
@@ -99,8 +100,8 @@ var (
 		Name:             "Lecture 1",
 		Description:      "First official stream",
 		CourseID:         CourseFPV.ID,
-		Start:            time.Now(),
-		End:              time.Now().Add(time.Hour),
+		Start:            StartTime,
+		End:              StartTime.Add(time.Hour),
 		RoomName:         "00.08.038, Seminarraum",
 		RoomCode:         "5608.EG.038",
 		EventTypeName:    "Abhaltung",
@@ -112,6 +113,20 @@ var (
 		PlaylistUrlCAM:   "https://url",
 		LiveNow:          false,
 	}
+	Worker1 = model.Worker{
+		WorkerID: "ed067fa3-2364-4dcd-bfd2-e0ffb8d751d4",
+		Host:     "worker1.local",
+		Status:   "",
+		Workload: 0,
+		LastSeen: time.Now(),
+	}
+	Worker2 = model.Worker{
+		WorkerID: "ed067fa3-2364-4dcd-bfd2-e0ffb8d751d4",
+		Host:     "worker2.local",
+		Status:   "",
+		Workload: 0,
+		LastSeen: time.Now(),
+	}
 )
 
 func GetStreamMock(t *testing.T) dao.StreamsDao {
@@ -119,7 +134,34 @@ func GetStreamMock(t *testing.T) dao.StreamsDao {
 	streamsMock.
 		EXPECT().
 		GetStreamByID(gomock.Any(), fmt.Sprintf("%d", StreamFPVLive.ID)).
-		Return(StreamFPVNotLive, nil).AnyTimes()
+		Return(StreamFPVLive, nil).AnyTimes()
+	streamsMock.
+		EXPECT().
+		GetWorkersForStream(StreamFPVLive).
+		Return([]model.Worker{Worker1, Worker2}, nil).AnyTimes()
+	streamsMock.
+		EXPECT().
+		ClearWorkersForStream(StreamFPVLive).
+		Return(nil).AnyTimes()
+	streamsMock.
+		EXPECT().
+		ToggleVisibility(StreamFPVLive.ID, gomock.Any()).
+		Return(nil).AnyTimes()
+	return streamsMock
+}
+
+func GetStreamMockError(t *testing.T) dao.StreamsDao {
+	streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+	streamsMock.
+		EXPECT().
+		GetStreamByID(gomock.Any(), gomock.Any()).
+		Return(model.Stream{}, errors.New("")).
+		AnyTimes()
+	streamsMock.
+		EXPECT().
+		SavePauseState(gomock.Any(), gomock.Any()).
+		Return(errors.New("")).
+		AnyTimes()
 	return streamsMock
 }
 
@@ -133,12 +175,38 @@ func GetCoursesMock(t *testing.T) dao.CoursesDao {
 	return coursesMock
 }
 
+func GetLectureHallMock(t *testing.T) dao.LectureHallsDao {
+	lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+	lectureHallMock.
+		EXPECT().
+		GetLectureHallByID(gomock.Any()).
+		Return(LectureHall, nil)
+	return lectureHallMock
+}
+
+func GetLectureHallMockError(t *testing.T) dao.LectureHallsDao {
+	lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+	lectureHallMock.
+		EXPECT().
+		GetLectureHallByID(gomock.Any()).
+		Return(model.LectureHall{}, errors.New(""))
+	return lectureHallMock
+}
+
 func GetVideoSectionMock(t *testing.T) dao.VideoSectionDao {
 	sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
 	sectionMock.
 		EXPECT().
 		GetByStreamId(StreamFPVLive.ID).
 		Return(StreamFPVLive.VideoSections, nil)
+	sectionMock.
+		EXPECT().
+		Create(gomock.Any()).
+		Return(nil)
+	sectionMock.
+		EXPECT().
+		Delete(gomock.Any()).
+		Return(nil)
 	return sectionMock
 }
 
@@ -148,5 +216,22 @@ func GetVideoSectionMockError(t *testing.T) dao.VideoSectionDao {
 		EXPECT().
 		GetByStreamId(StreamFPVLive.ID).
 		Return([]model.VideoSection{}, errors.New(""))
+	sectionMock.
+		EXPECT().
+		Create(gomock.Any()).
+		Return(errors.New(""))
+	sectionMock.
+		EXPECT().
+		Delete(gomock.Any()).
+		Return(errors.New(""))
 	return sectionMock
+}
+
+func GetProgressMock(t *testing.T) dao.ProgressDao {
+	progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
+	progressMock.
+		EXPECT().
+		SaveProgresses(gomock.Any()).
+		Return(nil).AnyTimes()
+	return progressMock
 }
