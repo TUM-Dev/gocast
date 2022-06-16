@@ -1,13 +1,16 @@
 package testutils
 
 import (
+	"bytes"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/stretchr/testify/assert"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -19,6 +22,7 @@ type TestCase struct {
 	DaoWrapper       dao.DaoWrapper
 	TumLiveContext   *tools.TUMLiveContext
 	Body             io.Reader
+	ContentType      string
 	ExpectedCode     int
 	ExpectedResponse []byte
 }
@@ -47,6 +51,17 @@ func (tc TestCases) Run(t *testing.T, configRouterFunc func(*gin.Engine, dao.Dao
 			}
 		})
 	}
+}
+
+func NewFormBody(values map[string]string) []byte {
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	for k, v := range values {
+		fw, _ := writer.CreateFormField(k)
+		_, _ = io.Copy(fw, strings.NewReader(v))
+	}
+	writer.Close()
+	return body.Bytes()
 }
 
 func First(a interface{}, b interface{}) interface{} {
