@@ -12,6 +12,30 @@
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
     <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
     <link rel="stylesheet" href="/static/node_modules/@silvermine/videojs-airplay/dist/silvermine-videojs-airplay.css">
+
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"></script>
+
+    <style>
+        .ui-resizable-handle {
+            width: 125em;
+            height: 125em;
+            padding: 0;
+            margin: 0;
+            background-color:rgba(255, 255, 255, 0.3);
+        }
+        .ui-resizable-se {
+            cursor: se-resize;
+            right: 0;
+            bottom: 0;
+        }
+        .ui-resizable-sw {
+            cursor: sw-resize;
+            left: 0;
+            bottom: 0;
+        }
+    </style>
     <link rel="stylesheet"
           href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
 </head>
@@ -39,32 +63,63 @@
                  x-show="showliveended" @streamended.window="showliveended=true" x-cloak>
                 <i class="fas fa-info-circle"></i> This livestream has ended.
             </div>
-            <video-js
-                    id="my-video"
-                    class="video-js w-full vjs-theater-mode theater-mode"
-                    controls
-                    preload="auto"
-                    x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu)"
-                    {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
-                {{else}}poster="/public/no_active_stream.jpg">{{end}}
-                {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
-                    {{if not $stream.LiveNow}}
-                        <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
-                                type="application/x-mpegURL"/>
-                    {{else}}
-                        {{if eq .Version "CAM"}}
-                            <source src="{{$stream.PlaylistUrlCAM}}{{.DVR}}" type="application/x-mpegURL"/>
-                        {{else if eq .Version "PRES"}}
-                            <source src="{{$stream.PlaylistUrlPRES}}{{.DVR}}" type="application/x-mpegURL"/>
+
+
+            {{if or (eq .Version "PRES") (eq .Version "CAM")}}
+            <div id="video-outer-container" class="w-full theater-mode py-0">
+                <video-js
+                            id="my-video"
+                            class="h-full w-full video-js vjs-theater-mode"
+                            controls
+                            preload="auto"
+                            x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu)"
+                            {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
+                        {{else}}poster="/public/no_active_stream.jpg">{{end}}
+                        {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
+                            {{if not $stream.LiveNow}}
+                                <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
+                                        type="application/x-mpegURL"/>
+                            {{else}}
+                                {{if eq .Version "CAM"}}
+                                    <source src="{{$stream.PlaylistUrlCAM}}{{.DVR}}" type="application/x-mpegURL"/>
+                                {{else if eq .Version "PRES"}}
+                                    <source src="{{$stream.PlaylistUrlPRES}}{{.DVR}}" type="application/x-mpegURL"/>
+                                {{else}}
+                                    <source src="{{$stream.PlaylistUrl}}{{.DVR}}" type="application/x-mpegURL"/>
+                                {{end}}
+                            {{end}}
+                        {{end}}
+                        <p class="vjs-no-js">
+                            To view this video please enable JavaScript.
+                        </p>
+                    </video-js></div>
+            {{else}}
+            <div id="video-outer-container" class="w-full theater-mode py-0">
+                <canvas id="video-pres" class="h-full w-full bg-blue-800"></canvas>
+                <canvas id="video-cam" class="h-full w-full bg-red-400"></canvas>
+            </div>
+                <video-js
+                        id="my-video"
+                        class="h-full w-full video-js vjs-theater-mode"
+                        controls
+                        preload="auto"
+                        x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu)"
+                        {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
+                    {{else}}poster="/public/no_active_stream.jpg">{{end}}
+                    {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
+                        {{if not $stream.LiveNow}}
+                            <source src="{{$stream.PlaylistUrl}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
+                                    type="application/x-mpegURL"/>
                         {{else}}
-                            <source src="{{$stream.PlaylistUrl}}{{.DVR}}" type="application/x-mpegURL"/>
+                                <source src="{{$stream.PlaylistUrl}}{{.DVR}}" type="application/x-mpegURL"/>
                         {{end}}
                     {{end}}
-                {{end}}
-                <p class="vjs-no-js">
-                    To view this video please enable JavaScript.
-                </p>
-            </video-js>
+                    <p class="vjs-no-js">
+                        To view this video please enable JavaScript.
+                    </p>
+                </video-js>
+
+            {{end}}
 
             <div
                 x-cloak
@@ -305,10 +360,146 @@
     {{end}}
 </div>
 <script>
+
     watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}});
+
+    {{if or (eq .Version "PRES") (eq .Version "CAM")}}
+    $( function() {
+        const video_container = $("#my-video");
+        const h = video_container.height();
+        const w = video_container.width();
+        video_container.wrap('<div style="height:' + h + 'px;width:' + w + 'px;"></div>');
+        video_container.parent().resizable({
+            alsoResize: "#my-video",
+            autoHide: true,
+            containment: "parent",
+            handles: "se, sw",
+            minHeight: Math.min(225, h),
+            minWidth: Math.min(400, w),
+        }).draggable({containment: "parent", scroll: false});
+        video_container.parent().find("div.ui-resizable-se").removeClass("ui-icon-gripsmall-diagonal-se").removeClass("ui-icon");
+        video_container.parent().find("div.ui-resizable-sw");
+
+    });
+
+    {{else}}
+
+    const pres = $("#video-pres");
+    const cam = $("#video-cam");
+    const outer = $("#video-outer-container");
+    const player = $("#my-video");
+    const canvas_cam = cam.get(0), canvas_pres = pres.get(0);
+    $( function() {
+        const start_h = outer.height();
+        const start_w = outer.width() / 2;
+        pres.wrap('<div style="height:' + start_h + 'px;width:' + start_w + 'px;position: absolute"></div>');
+        cam.wrap('<div style="height:' + start_h + 'px;width:' + start_w + 'px;position: absolute"></div>');
+        const video_container_pres = pres.parent();
+        const video_container_cam = cam.parent();
+        video_container_pres.resizable({
+            alsoResize: "#video-pres",
+            autoHide: true,
+            containment: "parent",
+            handles: "se, sw",
+            minHeight: Math.min(225, start_h),
+            minWidth: Math.min(400, start_w),
+            resize: ( e, u ) => {
+                canvas_pres.width = canvas_pres.clientWidth;
+                canvas_pres.height = canvas_pres.clientHeight;
+                video_container_pres.css({'z-index': 1});
+                video_container_cam.css({'z-index': 0});
+            }
+        }).draggable({
+            containment: "parent",
+            scroll: false,
+            stack: "#video-outer-container div"
+        });
+        video_container_cam.resizable({
+            alsoResize: "#video-cam",
+            autoHide: true,
+            containment: "parent",
+            handles: "se, sw",
+            minHeight: Math.min(225, start_h),
+            minWidth: Math.min(400, start_w),
+            resize: ( e, u ) => {
+                canvas_cam.width = canvas_cam.clientWidth;
+                canvas_cam.height = canvas_cam.clientHeight;
+                video_container_pres.css({'z-index': 0});
+                video_container_cam.css({'z-index': 1});
+            }
+        }).draggable({
+            containment: "parent",
+            scroll: false,
+            stack: "#video-outer-container div"
+        });
+        video_container_pres.find("div.ui-resizable-se").removeClass("ui-icon-gripsmall-diagonal-se").removeClass("ui-icon");
+        video_container_pres.find("div.ui-resizable-sw");
+        video_container_cam.find("div.ui-resizable-se").removeClass("ui-icon-gripsmall-diagonal-se").removeClass("ui-icon");
+        video_container_cam.find("div.ui-resizable-sw");
+        video_container_cam.css({left: video_container_pres.position().left + video_container_pres.width()});
+        player.css({position: 'absolute', top: '1000px'});
+
+        canvas_cam.width = canvas_cam.clientWidth;
+        canvas_cam.height = canvas_cam.clientHeight;
+
+        canvas_pres.width = canvas_pres.clientWidth;
+        canvas_pres.height = canvas_pres.clientHeight;
+    });
+
+    const source_p_x = 0, source_p_y = 0, source_p_w = 320, source_p_h = 180;
+    const source_c_x = 0, source_c_y = 0, source_c_w = 320, source_c_h = 180;
+    const factor = source_p_w / source_p_h;
+    const ctx_p = pres.get(0).getContext("2d");
+    const ctx_c = cam.get(0).getContext("2d");
+    const video = player.get(0).player.$("video");
+
+    function render() {
+        const w_p = pres.width(), h_p = pres.height();
+        const w_c = cam.width(), h_c = cam.height();
+
+        let dest_p_x = 0, dest_p_y = 0, dest_p_w = 0, dest_p_h = 0;
+        let dest_c_x = 0, dest_c_y = 0, dest_c_w = 0, dest_c_h = 0;
+
+        if (w_p >= h_p * factor ) {
+            dest_p_w = h_p * factor;
+            dest_p_x = (w_p - dest_p_w) / 2;
+            dest_p_y = 0;
+            dest_p_h = h_p;
+        } else {
+            dest_p_x = 0;
+            dest_p_w = w_p;
+            dest_p_h = w_p / factor;
+            dest_p_y = (h_p - dest_p_h) / 2;
+        }
+
+        if (w_c >= h_c * factor ) {
+            dest_c_w = h_c * factor;
+            dest_c_x = (w_c - dest_c_w) / 2;
+            dest_c_y = 0;
+            dest_c_h = h_c;
+        } else {
+            dest_c_x = 0;
+            dest_c_w = w_c;
+            dest_c_h = w_c / factor;
+            dest_c_y = (h_c - dest_c_h) / 2;
+        }
+
+        ctx_p.fillStyle = 'black';
+        ctx_p.fillRect(0, 0, w_p, h_p);
+        ctx_p.drawImage(video, source_p_x, source_p_y, source_p_w, source_p_h, dest_p_x, dest_p_y, dest_p_w, dest_p_h);
+
+        ctx_c.fillStyle = 'black';
+        ctx_c.fillRect(0, 0, w_c, h_c);
+        ctx_c.drawImage(video, source_c_x, source_c_y, source_c_w, source_c_h, dest_c_x, dest_c_y, dest_c_w, dest_c_h);
+        requestAnimationFrame(render);
+    }
+    render();
+    {{end}}
+
     {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
     watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
     {{end}}
+
     {{if $stream.Silences}}
     watch.skipSilence({{$stream.GetSilencesJson}});
     {{end}}
