@@ -16,6 +16,8 @@ import (
 *
 **/
 
+//go:generate mockgen -source=camera.go -destination ../mock_camera/camera.go
+
 const panasonicBaseUrl = "http://%s/cgi-bin"
 
 //PanasonicCam represents Panasonic IP cameras the TUM uses
