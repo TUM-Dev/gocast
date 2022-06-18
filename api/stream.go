@@ -279,6 +279,7 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 			"description":       section.Description,
 			"friendlyTimestamp": section.TimestampAsString(),
 			"streamID":          section.StreamID,
+			"fileID":            section.FileID,
 		})
 
 	}

@@ -67,13 +67,14 @@
             </video-js>
 
             <div
-                x-cloak
-                x-show="contextMenu.shown"
-                @click.outside="contextMenu = {...contextMenu, shown: false}"
-                class="origin-top-left absolute w-72 py-2 bg-gray-800/[.9] border-gray-100 border-1 rounded text-white text-sm"
-                :style="{ top: contextMenu.locY + 'px', left: contextMenu.locX + 'px' }"
-                role="menu" aria-orientation="vertical" tabindex="-1">
-                <button @click="contextMenu = {...contextMenu, shown: false}; videoStatsShown = true; watch.videoStatListener.listen();" class="py-2 px-4 w-full text-left cursor-pointer hover:bg-white/10">
+                    x-cloak
+                    x-show="contextMenu.shown"
+                    @click.outside="contextMenu = {...contextMenu, shown: false}"
+                    class="origin-top-left absolute w-72 py-2 bg-gray-800/[.9] border-gray-100 border-1 rounded text-white text-sm"
+                    :style="{ top: contextMenu.locY + 'px', left: contextMenu.locX + 'px' }"
+                    role="menu" aria-orientation="vertical" tabindex="-1">
+                <button @click="contextMenu = {...contextMenu, shown: false}; videoStatsShown = true; watch.videoStatListener.listen();"
+                        class="py-2 px-4 w-full text-left cursor-pointer hover:bg-white/10">
                     Show detailed stats
                 </button>
             </div>
@@ -94,8 +95,8 @@
                 </div>
                 <div class="flex justify-between align-middle">
                     <div>
-                        <div>Resolution: </div>
-                        <div>Bandwidth: </div>
+                        <div>Resolution:</div>
+                        <div>Bandwidth:</div>
                     </div>
                     <div class="pr-4">
                         <div class="text-right" x-text="`${data.videoWidth}x${data.videoHeight}`"></div>
@@ -103,12 +104,12 @@
                     </div>
                 </div>
                 <br>
-                <div>Buffer: </div>
+                <div>Buffer:</div>
                 <div class="flex justify-between align-middle">
                     <div>
                         <div class="pl-2">> Buffered Time:</div>
-                        <div class="pl-2">> Chunks Requested: </div>
-                        <div class="pl-2">> Requests Failed: </div>
+                        <div class="pl-2">> Chunks Requested:</div>
+                        <div class="pl-2">> Requests Failed:</div>
                     </div>
                     <div class="pr-4">
                         <div class="text-right" x-text="(Math.round(data.bufferSeconds * 100) / 100) + 's'"></div>
@@ -227,8 +228,8 @@
                     </button>
                     {{if .AlertsEnabled}}
                         <button @click="$dispatch('issue')"
-                               title="Issues with the stream? Send a report to the RGB."
-                               class="bg-amber-500 md:inline-block text-center md:w-32 md:float-right w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
+                                title="Issues with the stream? Send a report to the RGB."
+                                class="bg-amber-500 md:inline-block text-center md:w-32 md:float-right w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
                             <i class="fas fa-exclamation-triangle mr-1"></i>Problem
                         </button>
                     {{end}}

@@ -2,9 +2,9 @@ import { postData, Section } from "./global";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import airplay from "@silvermine/videojs-airplay";
-import dom = videojs.dom;
 
 import { handleHotkeys } from "./hotkeys";
+import dom = videojs.dom;
 
 require("videojs-seek-buttons");
 require("videojs-hls-quality-selector");
@@ -393,14 +393,28 @@ export function jumpTo(hours: number, minutes: number, seconds: number) {
 
 export class VideoSections {
     readonly streamID: number;
+    readonly sectionsPerGroup: number;
 
-    list: Section[];
+    private list: Section[];
+
     currentHighlightIndex: number;
+    currentIndex: number;
 
     constructor(streamID) {
         this.streamID = streamID;
         this.list = [];
         this.currentHighlightIndex = -1;
+
+        this.currentIndex = 0;
+        this.sectionsPerGroup = 4;
+    }
+
+    getList(): Section[] {
+        const currentHighlightPage = Math.floor(this.currentHighlightIndex / this.sectionsPerGroup);
+        return this.list.slice(
+            this.currentIndex * this.sectionsPerGroup,
+            this.currentIndex * this.sectionsPerGroup + this.sectionsPerGroup,
+        );
     }
 
     isCurrent(i: number): boolean {
@@ -424,6 +438,22 @@ export class VideoSections {
                 this.list = [];
                 this.currentHighlightIndex = 0;
             });
+    }
+
+    showNext(): boolean {
+        return this.currentIndex < this.list.length / this.sectionsPerGroup - 1;
+    }
+
+    showPrev(): boolean {
+        return this.currentIndex > 0;
+    }
+
+    next() {
+        this.currentIndex = (this.currentIndex + 1) % this.list.length;
+    }
+
+    prev() {
+        this.currentIndex = (this.currentIndex - 1) % this.list.length;
     }
 }
 

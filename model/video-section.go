@@ -14,6 +14,7 @@ type VideoSection struct {
 	StartSeconds uint   `gorm:"not null" json:"startSeconds"`
 
 	StreamID uint `gorm:"not null" json:"streamID"`
+	FileID   uint `gorm:"not null" json:"fileID"`
 }
 
 func (v VideoSection) TimestampAsString() string {
