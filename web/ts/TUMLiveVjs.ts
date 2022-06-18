@@ -58,8 +58,8 @@ export const initPlayer = function (
         player.spriteThumbnails({
             interval: spriteInterval,
             url: `/api/stream/${streamID}/thumbs/${spriteID}`,
-            width: 200,
-            height: 112,
+            width: 160,
+            height: 90,
         });
     }
 
