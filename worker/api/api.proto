@@ -137,7 +137,7 @@ message ThumbnailsFinished {
   string WorkerID = 1;
   uint32 StreamID = 2;
   string FilePath = 3;
-  float Interval = 4;
+  uint32 Interval = 4;
   string SourceType = 5;
 }
 

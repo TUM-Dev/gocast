@@ -51,9 +51,9 @@ type Stream struct {
 	EndOffset        uint `gorm:"default:null"`
 	LectureHallID    uint `gorm:"default:null"`
 	Silences         []Silence
-	Files            []File  `gorm:"foreignKey:StreamID"`
-	ThumbInterval    float32 `gorm:"default:null"`
-	Paused           bool    `gorm:"default:false"`
+	Files            []File `gorm:"foreignKey:StreamID"`
+	ThumbInterval    uint32 `gorm:"default:null"`
+	Paused           bool   `gorm:"default:false"`
 	StreamName       string
 	Duration         uint32           `gorm:"default:null"`
 	StreamWorkers    []Worker         `gorm:"many2many:stream_workers;"`

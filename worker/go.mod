@@ -7,7 +7,7 @@ require (
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/icza/gox v0.0.0-20220321141217-e2d488ab2fbc
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
-	github.com/joschahenningsen/thumbgen v0.0.0-20220615193059-e26013b9018c
+	github.com/joschahenningsen/thumbgen v0.0.0-20220618164424-9fcc2beb0084
 	github.com/makasim/sentryhook v0.4.0
 	github.com/pkg/profile v1.6.0
 	github.com/robfig/cron/v3 v3.0.1

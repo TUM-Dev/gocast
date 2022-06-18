@@ -393,7 +393,8 @@ type StreamContext struct {
 	discardVoD    bool           // whether the VoD should be discarded
 
 	// calculated after stream:
-	duration uint32 //duration of the stream in seconds
+	duration      uint32 //duration of the stream in seconds
+	thumbInterval uint32 // interval between thumbnails in seconds
 
 	TranscodingSuccessful bool // TranscodingSuccessful is true if the transcoding was successful
 
