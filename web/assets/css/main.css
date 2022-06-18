@@ -133,6 +133,12 @@ input, textarea {
     background-color: #3070b3 !important;
 }
 
+.video-js .vjs-time-tooltip {
+    border-radius: 2px !important;
+    border-width: 2px !important;
+    border-color: white !important;
+}
+
 /* slider for cutting videos: */
 .noUi-target {
     background: #1f2937 !important;
