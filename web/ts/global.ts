@@ -12,6 +12,7 @@ export async function putData(url = "", data = {}) {
 }
 
 export async function postData(url = "", data = {}) {
+    console.log(data);
     return await fetch(url, {
         method: "POST",
         headers: {

@@ -427,7 +427,7 @@ export class VideoSections {
     }
 }
 
-type SeekLoggerLogFunction = (position) => void;
+type SeekLoggerLogFunction = (position: number) => void;
 export class SeekLogger {
     readonly streamID: number;
     log: SeekLoggerLogFunction;
@@ -435,7 +435,7 @@ export class SeekLogger {
     initialSeekDone = false;
 
     constructor(streamID) {
-        this.streamID = streamID;
+        this.streamID = parseInt(streamID);
         this.log = debounce((position) => postData(`/api/seekReport`, { position, streamID: this.streamID }), 3000);
     }
 
@@ -443,7 +443,7 @@ export class SeekLogger {
         player.ready(() => {
             player.on("seeked", () => {
                 if (this.initialSeekDone) {
-                    return this.log(player.currentTime());
+                    return this.log(player.currentTime() / player.duration());
                 }
                 this.initialSeekDone = true;
             });
