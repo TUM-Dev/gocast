@@ -427,6 +427,30 @@ export class VideoSections {
     }
 }
 
+type SeekLoggerLogFunction = (position) => void;
+export class SeekLogger {
+    readonly streamID: number;
+    log: SeekLoggerLogFunction;
+
+    initialSeekDone = false;
+
+    constructor(streamID) {
+        this.streamID = streamID;
+        this.log = debounce((position) => postData(`/api/seekReport`, { position, streamID: this.streamID }), 3000);
+    }
+
+    attach() {
+        player.ready(() => {
+            player.on("seeked", () => {
+                if (this.initialSeekDone) {
+                    return this.log(player.currentTime());
+                }
+                this.initialSeekDone = true;
+            });
+        });
+    }
+}
+
 function attachCurrentTimeEvent(videoSection: VideoSections) {
     player.ready(() => {
         let timer;
@@ -454,6 +478,14 @@ function hightlight(player, videoSection) {
 
 function toSeconds(hours: number, minutes: number, seconds: number): number {
     return hours * 60 * 60 + minutes * 60 + seconds;
+}
+
+function debounce(func, timeout) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => func.apply(this, args), timeout);
+    };
 }
 
 // Register the plugin with video.js.

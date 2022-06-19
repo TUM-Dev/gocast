@@ -68,10 +68,10 @@
             </video-js>
 
             <div
-                x-data="{ visible: false, seekbar: { x: '0px', width: '0px' } }"
+                x-data="{ visible: false, seekbar: { x: '0px', width: '0px' }, seekLogger: new watch.SeekLogger('{{$stream.ID}}') }"
                 x-show="visible"
                 x-on:updateheatmap.window="e => {visible = e.detail.visible; seekbar = e.detail.seekbar;}"
-                x-init="watch.repeatHeatMap.init()"
+                x-init="watch.repeatHeatMap.init(); seekLogger.attach();"
                 class="absolute bottom-[18px] rounded bg-gradient-to-t from-gray-800/[.6] pt-4 pointer-events-none"
                 :style="{width: seekbar.width, left: seekbar.x}"
             >

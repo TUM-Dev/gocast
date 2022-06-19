@@ -66,6 +66,7 @@ func configProgressRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	progressBuff = newProgressBuffer()
 	go progressBuff.run()
 	router.POST("/api/progressReport", routes.saveProgress)
+	router.POST("/api/seekReport", routes.reportSeek)
 	router.POST("/api/watched", routes.markWatched)
 }
 
@@ -140,6 +141,39 @@ func (r progressRoutes) markWatched(c *gin.Context) {
 	if err != nil {
 		log.WithError(err).Error("Could not mark VoD as watched.")
 		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+}
+
+type reportSeekRequest struct {
+	StreamID uint    `json:"streamID"`
+	Position float64 `json:"position"`
+}
+
+// reportSeek adds entry for a user performed seek, to generate a heatmap later on
+func (r progressRoutes) reportSeek(c *gin.Context) {
+	var req reportSeekRequest
+	if err := c.Bind(&req); err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		return
+	}
+
+	// TODO: Limit user requests per timespan to prevent abuse. Maybe check if stream exists too.
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	if tumLiveContext.User == nil {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+
+	if err := r.VideoSeekDao.Add(model.VideoSeekPoint{
+		StreamID:     req.StreamID,
+		SeekPosition: req.Position,
+	}); err != nil {
 		return
 	}
 }
