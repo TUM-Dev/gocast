@@ -1,5 +1,5 @@
 {{define "videosections"}}
-    <div x-data="{loader: new watch.VideoSectionLoader('{{.ID}}}')}">
+    <div x-data="{client: new watch.VideoSectionClient('{{.ID}}}')}">
         <div class="hidden md:block">
             {{template "videosections-desktop" .}}
         </div>
@@ -10,7 +10,7 @@
 {{end}}
 
 {{define "videosections-desktop"}}
-    <div x-data="{vs: new watch.VideoSectionsDesktop()}" x-init="await vs.fetch(loader); watch.attachCurrentTimeEvent(vs);" class="flex">
+    <div x-data="{vs: new watch.VideoSectionsDesktop()}" x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);" class="flex">
         <div class="group relative">
             <div class="flex pb-3">
                 <h6 class="font-bold text-3">Sections</h6>
@@ -64,7 +64,7 @@
 
 {{define "videosections-mobile"}}
     <h6 class="font-bold text-3 pb-3">Sections</h6>
-    <div x-data="{vs: new watch.VideoSectionsMobile()}" x-init="await vs.fetch(loader); watch.attachCurrentTimeEvent(vs);"
+    <div x-data="{vs: new watch.VideoSectionsMobile()}" x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);"
          class="grid gap-1 overflow-y-scroll h-56">
         <template x-for="(s, i) in vs.getList()">
             <button x-cloak class="flex w-full bg-transparent outline-none border-0 rounded-lg"

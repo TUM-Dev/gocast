@@ -1,4 +1,5 @@
-import { postData, Section } from "./global";
+import { postData } from "./global";
+import { VideoSections } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import airplay from "@silvermine/videojs-airplay";
@@ -389,118 +390,6 @@ export function jumpTo(hours: number, minutes: number, seconds: number) {
     videojs("my-video").ready(() => {
         player.currentTime(toSeconds(hours, minutes, seconds));
     });
-}
-
-export class VideoSectionLoader {
-    readonly streamID: number;
-
-    constructor(streamID: number) {
-        this.streamID = streamID;
-    }
-
-    async fetch(): Promise<Section[]> {
-        return await fetch(`/api/stream/${this.streamID}/sections`).then((res: Response) => {
-            if (!res.ok) {
-                throw new Error("Could not fetch sections");
-            }
-            return res.json();
-        });
-    }
-}
-
-abstract class VideoSections {
-    protected list: Section[];
-
-    currentHighlightIndex: number;
-
-    constructor() {
-        this.list = [];
-        this.currentHighlightIndex = -1;
-    }
-
-    async fetch(loader: VideoSectionLoader) {
-        loader
-            .fetch()
-            .then((list) => {
-                this.list = list;
-            })
-            .catch((err) => {
-                console.log(err);
-                this.list = [];
-            });
-    }
-
-    abstract getList(): Section[];
-
-    abstract isCurrent(i: number): boolean;
-}
-
-export class VideoSectionsMobile extends VideoSections {
-    getList(): Section[] {
-        return this.list;
-    }
-
-    isCurrent(i: number): boolean {
-        return this.currentHighlightIndex !== -1 && i === this.currentHighlightIndex;
-    }
-}
-
-export class VideoSectionsDesktop extends VideoSections {
-    readonly sectionsPerGroup: number;
-
-    private followSections: boolean;
-    private currentIndex: number;
-
-    constructor() {
-        super();
-        this.currentIndex = 0;
-        this.followSections = false;
-        this.sectionsPerGroup = 4;
-    }
-
-    getList(): Section[] {
-        const currentHighlightPage = Math.floor(this.currentHighlightIndex / this.sectionsPerGroup);
-        const startIndex = this.followSections ? currentHighlightPage : this.currentIndex;
-        return this.list.slice(
-            startIndex * this.sectionsPerGroup,
-            startIndex * this.sectionsPerGroup + this.sectionsPerGroup,
-        );
-    }
-
-    isCurrent(i: number): boolean {
-        const idx =
-            this.currentHighlightIndex -
-            Math.floor(this.currentHighlightIndex / this.sectionsPerGroup) * this.sectionsPerGroup;
-        return this.validHighlightIndex() && this.onCurrentPage() && i === idx;
-    }
-
-    showNext(): boolean {
-        return this.currentIndex < this.list.length / this.sectionsPerGroup - 1;
-    }
-
-    showPrev(): boolean {
-        return this.currentIndex > 0;
-    }
-
-    next() {
-        this.currentIndex = (this.currentIndex + 1) % this.list.length;
-    }
-
-    prev() {
-        this.currentIndex = (this.currentIndex - 1) % this.list.length;
-    }
-
-    private validHighlightIndex(): boolean {
-        return this.currentHighlightIndex !== -1;
-    }
-
-    private onCurrentPage(): boolean {
-        const currentHighlightPage = Math.floor(this.currentHighlightIndex / this.sectionsPerGroup);
-        return (
-            (this.followSections ? currentHighlightPage : this.currentIndex) ===
-            Math.floor(this.currentHighlightIndex / this.sectionsPerGroup)
-        );
-    }
 }
 
 export function attachCurrentTimeEvent(videoSection: VideoSections) {
