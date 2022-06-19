@@ -10,7 +10,8 @@
 {{end}}
 
 {{define "videosections-desktop"}}
-    <div x-data="{vs: new watch.VideoSectionsDesktop()}" x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);" class="flex">
+    <div x-data="{vs: new watch.VideoSectionsDesktop()}"
+         x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);" class="flex">
         <div class="group relative">
             <div class="flex pb-3">
                 <h6 class="font-bold text-3">Sections</h6>
@@ -63,13 +64,26 @@
 {{end}}
 
 {{define "videosections-mobile"}}
-    <h6 class="font-bold text-3 pb-3">Sections</h6>
-    <div x-data="{vs: new watch.VideoSectionsMobile()}" x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);"
-         class="grid gap-1 overflow-y-scroll h-56">
-        <template x-for="(s, i) in vs.getList()">
-            <button x-cloak class="flex w-full bg-transparent outline-none border-0 rounded-lg"
-                    x-data="{previewImgLoaded: false}"
-                    @click="watch.jumpTo(s.startHours, s.startMinutes, s.startSeconds)">
+    <div x-data="{vs: new watch.VideoSectionsMobile()}"
+         x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);">
+        <div class="flex justify-between pb-3">
+            <h6 class="font-bold text-3">Sections</h6>
+            <template x-if="!vs.minimize">
+                <button @click="vs.minimize = true;" class="text-gray-500 my-auto font-light">
+                    Minimize
+                </button>
+            </template>
+            <template x-if="vs.minimize">
+                <button @click="vs.minimize = false;" class="text-gray-500 my-auto font-light">
+                    Show all
+                </button>
+            </template>
+        </div>
+        <div class="grid gap-1 overflow-y-scroll h-56">
+            <template x-for="(s, i) in vs.getList()" :key="s.fileID">
+                <button x-cloak class="flex w-full bg-transparent outline-none border-0 rounded-lg"
+                        x-data="{previewImgLoaded: false}"
+                        @click="watch.jumpTo(s.startHours, s.startMinutes, s.startSeconds)">
                     <span class="flex justify-between p-1 bg-white dark:bg-secondary justify-between w-full border hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg"
                           :class="vs.isCurrent(i) ? 'border-2 border-blue-500/50' : 'dark:border-gray-800'">
                         <span class="block">
@@ -92,7 +106,8 @@
                             </span>
                         </span>
                     </span>
-            </button>
-        </template>
+                </button>
+            </template>
+        </div>
     </div>
 {{end}}

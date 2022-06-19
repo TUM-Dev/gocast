@@ -62,12 +62,13 @@ export abstract class VideoSections {
  * @category watch-page
  */
 export class VideoSectionsMobile extends VideoSections {
+    minimize: boolean;
     getList(): Section[] {
-        return this.list;
+        return this.minimize ? [this.list.at(this.currentHighlightIndex)] : this.list;
     }
 
     isCurrent(i: number): boolean {
-        return this.currentHighlightIndex !== -1 && i === this.currentHighlightIndex;
+        return this.minimize ? true : this.currentHighlightIndex !== -1 && i === this.currentHighlightIndex;
     }
 }
 
