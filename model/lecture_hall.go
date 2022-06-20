@@ -10,13 +10,21 @@ type LectureHall struct {
 	CombIP         string
 	PresIP         string
 	CamIP          string
-	CameraIP       string // ip of the actual camera (not smp)
+	CameraIP       string     // ip of the actual camera (not smp)
+	CameraType     CameraType `gorm:"not null; default:1"`
 	Streams        []Stream
 	CameraPresets  []CameraPreset
 	RoomID         int    // used by TUMOnline
 	PwrCtrlIp      string // power control api for red live light
 	LiveLightIndex int    // id of power outlet for live light
 }
+
+type CameraType uint
+
+const (
+	Axis CameraType = iota + 1
+	Panasonic
+)
 
 func (l LectureHall) NumSources() int {
 	num := 0
