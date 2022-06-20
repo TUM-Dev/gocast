@@ -10,7 +10,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
-	"strings"
+	"os"
 	"testing"
 )
 
@@ -21,6 +21,7 @@ type TestCase struct {
 	Url              string
 	DaoWrapper       dao.DaoWrapper
 	TumLiveContext   *tools.TUMLiveContext
+	ContentType      string
 	Body             io.Reader
 	ExpectedCode     int
 	ExpectedResponse []byte
@@ -46,6 +47,9 @@ func (tc TestCases) Run(t *testing.T, configRouterFunc func(*gin.Engine, dao.Dao
 			configRouterFunc(r, testCase.DaoWrapper)
 
 			c.Request, _ = http.NewRequest(testCase.Method, testCase.Url, testCase.Body)
+			if len(testCase.ContentType) > 0 {
+				c.Request.Header.Set("Content-Type", testCase.ContentType)
+			}
 			r.ServeHTTP(w, c.Request)
 
 			assert.Equal(t, testCase.ExpectedCode, w.Code)
@@ -57,15 +61,14 @@ func (tc TestCases) Run(t *testing.T, configRouterFunc func(*gin.Engine, dao.Dao
 	}
 }
 
-func NewFormBody(values map[string]string) []byte {
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	for k, v := range values {
-		fw, _ := writer.CreateFormField(k)
-		_, _ = io.Copy(fw, strings.NewReader(v))
-	}
-	writer.Close()
-	return body.Bytes()
+func NewMultipartFormData(fieldName, fileName string) (bytes.Buffer, *multipart.Writer) {
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	file, _ := os.Open(fileName)
+	fw, _ := w.CreateFormFile(fieldName, file.Name())
+	io.Copy(fw, file)
+	w.Close()
+	return b, w
 }
 
 func First(a interface{}, b interface{}) interface{} {

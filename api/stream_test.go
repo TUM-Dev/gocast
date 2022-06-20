@@ -524,20 +524,24 @@ func TestStreamVideoSections(t *testing.T) {
 func TestAttachments(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	/*t.Run("POST/api/stream/:streamID/files", func(t *testing.T) {
-		url := fmt.Sprintf("/api/stream/%d/files", testutils.StreamFPVLive.ID)
+	t.Run("POST/api/stream/:streamID/files", func(t *testing.T) {
+		os.Create("/tmp/test.txt")
+		defer os.Remove("/tmp/test.txt")
 
+		formData, w := testutils.NewMultipartFormData("file", "/tmp/test.txt")
+
+		endpoint := fmt.Sprintf("/api/stream/%d/files", testutils.StreamFPVLive.ID)
 		testCases := testutils.TestCases{
 			"no context": {
 				Method:         "POST",
-				Url:            url,
+				Url:            endpoint,
 				DaoWrapper:     dao.DaoWrapper{},
 				TumLiveContext: nil,
 				ExpectedCode:   http.StatusInternalServerError,
 			},
 			"not Admin": {
 				Method: "POST",
-				Url:    url,
+				Url:    endpoint,
 				DaoWrapper: dao.DaoWrapper{
 					StreamsDao: func() dao.StreamsDao {
 						streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
@@ -560,9 +564,9 @@ func TestAttachments(t *testing.T) {
 				TumLiveContext: &testutils.TUMLiveContextStudent,
 				ExpectedCode:   http.StatusForbidden,
 			},
-			"type url, missing file_url": {
+			"invalid type": {
 				Method: "POST",
-				Url:    url + "?type=url",
+				Url:    endpoint + "?type=abc",
 				DaoWrapper: dao.DaoWrapper{
 					StreamsDao: func() dao.StreamsDao {
 						streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
@@ -585,9 +589,96 @@ func TestAttachments(t *testing.T) {
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				ExpectedCode:   http.StatusBadRequest,
 			},
-			"NewFile returns error": {
+			"type url, missing file_url": {
 				Method: "POST",
-				Url:    url + "?type=url",
+				Url:    endpoint + "?type=url",
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: func() dao.StreamsDao {
+						streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+						streamsMock.
+							EXPECT().
+							GetStreamByID(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
+							Return(testutils.StreamFPVNotLive, nil).AnyTimes()
+						return streamsMock
+					}(),
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						return coursesMock
+					}(),
+				},
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				ExpectedCode:   http.StatusBadRequest,
+			},
+			"type file, missing file parameter": {
+				Method: "POST",
+				Url:    endpoint + "?type=file",
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: func() dao.StreamsDao {
+						streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+						streamsMock.
+							EXPECT().
+							GetStreamByID(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
+							Return(testutils.StreamFPVNotLive, nil).AnyTimes()
+						return streamsMock
+					}(),
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						return coursesMock
+					}(),
+				},
+				ContentType:    w.FormDataContentType(),
+				Body:           bytes.NewBufferString(""),
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				ExpectedCode:   http.StatusBadRequest,
+			},
+			"type file, success": {
+				Method: "POST",
+				Url:    endpoint + "?type=file",
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: func() dao.StreamsDao {
+						streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+						streamsMock.
+							EXPECT().
+							GetStreamByID(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
+							Return(testutils.StreamFPVNotLive, nil).AnyTimes()
+						return streamsMock
+					}(),
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						return coursesMock
+					}(),
+					FileDao: func() dao.FileDao {
+						fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
+						fileMock.
+							EXPECT().
+							NewFile(gomock.Any()).
+							Return(nil)
+						return fileMock
+					}(),
+				},
+				ContentType:    w.FormDataContentType(),
+				Body:           bytes.NewBuffer(formData.Bytes()),
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				ExpectedCode:   http.StatusOK,
+			},
+			"type url, NewFile returns error": {
+				Method: "POST",
+				Url:    endpoint + "?type=url",
 				DaoWrapper: dao.DaoWrapper{
 					StreamsDao: func() dao.StreamsDao {
 						streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
@@ -612,12 +703,14 @@ func TestAttachments(t *testing.T) {
 						return fileMock
 					}(),
 				},
+				ContentType:    "application/x-www-form-urlencoded",
+				Body:           bytes.NewBufferString("file_url=https://storage.com/test.txt"),
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				ExpectedCode:   http.StatusInternalServerError,
 			},
 			"type url, success": {
 				Method: "POST",
-				Url:    url + "?type=url",
+				Url:    endpoint + "?type=url",
 				DaoWrapper: dao.DaoWrapper{
 					StreamsDao: func() dao.StreamsDao {
 						streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
@@ -638,24 +731,25 @@ func TestAttachments(t *testing.T) {
 					}(),
 					FileDao: func() dao.FileDao {
 						fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
-						fileMock.EXPECT().NewFile(model.File{
+						fileMock.EXPECT().NewFile(&model.File{
 							StreamID: testutils.StreamFPVLive.ID,
-							Path:     "https://files.tum.de/txt.txt",
-							Filename: "txt.txt",
+							Path:     "https://storage.com/test.txt",
+							Filename: "test.txt",
 							Type:     model.FILETYPE_ATTACHMENT,
 						}).Return(nil)
 						return fileMock
 					}(),
 				},
-				Body: bytes.NewBuffer(
-					testutils.NewFormBody(map[string]string{"file_url": "https://files.tum.de/txt.txt"})),
+				ContentType:    "application/x-www-form-urlencoded",
+				Body:           bytes.NewBufferString("file_url=https://storage.com/test.txt"),
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				ExpectedCode:   http.StatusOK,
 			},
 		}
 
 		testCases.Run(t, configGinStreamRestRouter)
-	})*/
+	})
+
 	t.Run("DELETE/api/stream/:streamID/files/:fid", func(t *testing.T) {
 		testFile := testutils.Attachment
 		testFileNotExists := testutils.AttachmentInvalidPath
