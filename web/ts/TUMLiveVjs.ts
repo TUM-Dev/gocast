@@ -11,10 +11,14 @@ require("videojs-hls-quality-selector");
 require("videojs-contrib-quality-levels");
 
 const Button = videojs.getComponent("Button");
-let players: any[] = [];
+const players = [];
 
 export function getPlayers(): any[] {
     return players;
+}
+
+export function getPlayer() {
+    return players[0];
 }
 
 /**
@@ -123,7 +127,7 @@ export const SkipSilenceToggle = videojs.extend(Button, {
 videojs.registerComponent("SkipSilenceToggle", SkipSilenceToggle);
 
 export const skipSilence = function (options) {
-    for (let player of players) {
+    for (const player of players) {
         player.ready(() => {
             player.addClass("vjs-skip-silence");
             const toggle = player.addChild("SkipSilenceToggle");
@@ -186,7 +190,7 @@ export const skipSilence = function (options) {
  * @param lastProgress The last progress fetched from the database
  */
 export const watchProgress = function (streamID: number, lastProgress: number) {
-    for (let player of players) {
+    for (const player of players) {
         player.ready(() => {
             let duration;
             let timer;
@@ -393,7 +397,7 @@ export class OverlayIcon extends Component {
 
 export function jumpTo(hours: number, minutes: number, seconds: number, id: string) {
     videojs(id).ready(() => {
-        for (let player of players)
+        for (const player of players)
             player.currentTime(toSeconds(hours, minutes, seconds));
     });
 }
@@ -435,7 +439,7 @@ export class VideoSections {
 }
 
 function attachCurrentTimeEvent(videoSection: VideoSections) {
-    for (let player of players)
+    for (const player of players)
         player.ready(() => {
             let timer;
             (function checkTimestamp() {
@@ -465,14 +469,14 @@ function toSeconds(hours: number, minutes: number, seconds: number): number {
 }
 
 function syncTime( event ) {
-    for (let p of players)
+    for (const p of players)
         p.currentTime(event.data.currentTime);
 }
 
 export function syncPlayers() {
     //const video_players = getAllPlayers().map((val) => new VideoPlayer({video: val, name: val.id()}));
     //const player2 = new VideoPlayer({ video: videojs("#video2"), name: "video2" });
-    for (let p of players) {
+    for (const p of players) {
 
     }
 }
