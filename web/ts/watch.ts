@@ -1,6 +1,8 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
-import { getPlayer } from "./TUMLiveVjs";
+import { getPlayers } from "./TUMLiveVjs";
+import videojs from "video.js";
+import getAllPlayers = videojs.getAllPlayers;
 
 let chatInput: HTMLInputElement;
 
@@ -238,6 +240,7 @@ export function getPollOptionWidth(pollOptions, pollOption) {
 export function contextMenuHandler(e, contextMenu) {
     if (contextMenu.shown) return contextMenu;
     e.preventDefault();
+    //TODO single video element here, may cause problems
     const videoElem = document.querySelector("#my-video");
     return {
         shown: true,
@@ -256,20 +259,21 @@ export const videoStatListener = {
         this.update();
     },
     update() {
-        const player = getPlayer();
-        const vhs = player.tech().vhs;
-        const notAvailable = vhs == null;
+        for (let player of getPlayers()) {
+            const vhs = player.tech().vhs;
+            const notAvailable = vhs == null;
 
-        const data = {
-            bufferSeconds: notAvailable ? 0 : player.bufferedEnd() - player.currentTime(),
-            videoHeight: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.height,
-            videoWidth: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.width,
-            bandwidth: notAvailable ? 0 : vhs.bandwidth, //player.tech().vhs.bandwidth(),
-            mediaRequests: notAvailable ? 0 : vhs.stats.mediaRequests,
-            mediaRequestsFailed: notAvailable ? 0 : vhs.stats.mediaRequestsErrored,
-        };
-        const event = new CustomEvent("newvideostats", { detail: data });
-        window.dispatchEvent(event);
+            const data = {
+                bufferSeconds: notAvailable ? 0 : player.bufferedEnd() - player.currentTime(),
+                videoHeight: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.height,
+                videoWidth: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.width,
+                bandwidth: notAvailable ? 0 : vhs.bandwidth, //player.tech().vhs.bandwidth(),
+                mediaRequests: notAvailable ? 0 : vhs.stats.mediaRequests,
+                mediaRequestsFailed: notAvailable ? 0 : vhs.stats.mediaRequestsErrored,
+            };
+            const event = new CustomEvent("newvideostats", { detail: data });
+            window.dispatchEvent(event);
+        }
     },
     clear() {
         if (this.videoStatIntervalId != null) {
