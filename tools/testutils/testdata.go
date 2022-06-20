@@ -186,7 +186,7 @@ func GetStreamMock(t *testing.T) dao.StreamsDao {
 	streamsMock.
 		EXPECT().
 		GetCurrentLive(gomock.Any()).
-		Return([]model.Stream{StreamFPVLive, SelfStream}, nil).AnyTimes()
+		Return([]model.Stream{StreamFPVLive}, nil).AnyTimes()
 	return streamsMock
 }
 
@@ -232,23 +232,6 @@ func GetVideoSectionMock(t *testing.T) dao.VideoSectionDao {
 		EXPECT().
 		Delete(gomock.Any()).
 		Return(nil)
-	return sectionMock
-}
-
-func GetVideoSectionMockError(t *testing.T) dao.VideoSectionDao {
-	sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
-	sectionMock.
-		EXPECT().
-		GetByStreamId(StreamFPVLive.ID).
-		Return([]model.VideoSection{}, errors.New(""))
-	sectionMock.
-		EXPECT().
-		Create(gomock.Any()).
-		Return(errors.New(""))
-	sectionMock.
-		EXPECT().
-		Delete(gomock.Any()).
-		Return(errors.New(""))
 	return sectionMock
 }
 

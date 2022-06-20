@@ -33,14 +33,16 @@ func TestStream(t *testing.T) {
 				CAM:         testutils.StreamFPVLive.PlaylistUrlCAM,
 				End:         testutils.StreamFPVLive.End,
 			},
+		}
+		responseLHError := []liveStreamDto{
 			{
-				ID:          testutils.SelfStream.ID,
+				ID:          testutils.StreamFPVLive.ID,
 				CourseName:  testutils.CourseFPV.Name,
 				LectureHall: "Selfstream",
-				COMB:        testutils.SelfStream.PlaylistUrl,
-				PRES:        testutils.SelfStream.PlaylistUrlPRES,
-				CAM:         testutils.SelfStream.PlaylistUrlCAM,
-				End:         testutils.SelfStream.End,
+				COMB:        testutils.StreamFPVLive.PlaylistUrl,
+				PRES:        testutils.StreamFPVLive.PlaylistUrlPRES,
+				CAM:         testutils.StreamFPVLive.PlaylistUrlCAM,
+				End:         testutils.StreamFPVLive.End,
 			},
 		}
 		url := fmt.Sprintf("/api/stream/live?token=%s", testutils.AdminToken.Token)
@@ -65,7 +67,11 @@ func TestStream(t *testing.T) {
 					StreamsDao: testutils.GetStreamMock(t),
 					CoursesDao: func() dao.CoursesDao {
 						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
-						coursesMock.EXPECT().GetCourseById(gomock.Any(), gomock.Any()).Return(model.Course{}, errors.New(""))
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), gomock.Any()).
+							Return(testutils.CourseFPV, errors.New("")).
+							AnyTimes()
 						return coursesMock
 					}(),
 					LectureHallsDao: testutils.GetLectureHallMock(t),
@@ -88,7 +94,7 @@ func TestStream(t *testing.T) {
 					TokenDao: testutils.GetTokenMock(t),
 				},
 				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
+				ExpectedResponse: testutils.First(json.Marshal(responseLHError)).([]byte),
 			},
 			"success": {
 				Method: http.MethodGet,
@@ -337,9 +343,16 @@ func TestStreamVideoSections(t *testing.T) {
 				Method: "GET",
 				Url:    url,
 				DaoWrapper: dao.DaoWrapper{
-					StreamsDao:      testutils.GetStreamMock(t),
-					CoursesDao:      testutils.GetCoursesMock(t),
-					VideoSectionDao: testutils.GetVideoSectionMockError(t),
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					VideoSectionDao: func() dao.VideoSectionDao {
+						sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
+						sectionMock.
+							EXPECT().
+							GetByStreamId(testutils.StreamFPVLive.ID).
+							Return([]model.VideoSection{}, errors.New(""))
+						return sectionMock
+					}(),
 				},
 				TumLiveContext:   &testutils.TUMLiveContextStudent,
 				ExpectedCode:     http.StatusOK,
@@ -349,9 +362,16 @@ func TestStreamVideoSections(t *testing.T) {
 				Method: "GET",
 				Url:    url,
 				DaoWrapper: dao.DaoWrapper{
-					StreamsDao:      testutils.GetStreamMock(t),
-					CoursesDao:      testutils.GetCoursesMock(t),
-					VideoSectionDao: testutils.GetVideoSectionMock(t),
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					VideoSectionDao: func() dao.VideoSectionDao {
+						sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
+						sectionMock.
+							EXPECT().
+							GetByStreamId(testutils.StreamFPVLive.ID).
+							Return(testutils.StreamFPVLive.VideoSections, nil)
+						return sectionMock
+					}(),
 				},
 				TumLiveContext:   &testutils.TUMLiveContextStudent,
 				ExpectedCode:     http.StatusOK,
@@ -398,9 +418,16 @@ func TestStreamVideoSections(t *testing.T) {
 				Method: "POST",
 				Url:    url,
 				DaoWrapper: dao.DaoWrapper{
-					StreamsDao:      testutils.GetStreamMock(t),
-					CoursesDao:      testutils.GetCoursesMock(t),
-					VideoSectionDao: testutils.GetVideoSectionMockError(t),
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					VideoSectionDao: func() dao.VideoSectionDao {
+						sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
+						sectionMock.
+							EXPECT().
+							Create(gomock.Any()).
+							Return(errors.New(""))
+						return sectionMock
+					}(),
 				},
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				Body:           bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
@@ -410,9 +437,16 @@ func TestStreamVideoSections(t *testing.T) {
 				Method: "POST",
 				Url:    url,
 				DaoWrapper: dao.DaoWrapper{
-					StreamsDao:      testutils.GetStreamMock(t),
-					CoursesDao:      testutils.GetCoursesMock(t),
-					VideoSectionDao: testutils.GetVideoSectionMock(t),
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					VideoSectionDao: func() dao.VideoSectionDao {
+						sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
+						sectionMock.
+							EXPECT().
+							Create(gomock.Any()).
+							Return(nil)
+						return sectionMock
+					}(),
 				},
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				Body:           bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
@@ -450,9 +484,16 @@ func TestStreamVideoSections(t *testing.T) {
 				Method: http.MethodDelete,
 				Url:    fmt.Sprintf("%s/%d", baseUrl, section.ID),
 				DaoWrapper: dao.DaoWrapper{
-					StreamsDao:      testutils.GetStreamMock(t),
-					CoursesDao:      testutils.GetCoursesMock(t),
-					VideoSectionDao: testutils.GetVideoSectionMockError(t),
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					VideoSectionDao: func() dao.VideoSectionDao {
+						sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
+						sectionMock.
+							EXPECT().
+							Delete(gomock.Any()).
+							Return(errors.New(""))
+						return sectionMock
+					}(),
 				},
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				ExpectedCode:   http.StatusInternalServerError,
@@ -461,9 +502,16 @@ func TestStreamVideoSections(t *testing.T) {
 				Method: http.MethodDelete,
 				Url:    fmt.Sprintf("%s/%d", baseUrl, section.ID),
 				DaoWrapper: dao.DaoWrapper{
-					StreamsDao:      testutils.GetStreamMock(t),
-					CoursesDao:      testutils.GetCoursesMock(t),
-					VideoSectionDao: testutils.GetVideoSectionMock(t),
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					VideoSectionDao: func() dao.VideoSectionDao {
+						sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
+						sectionMock.
+							EXPECT().
+							Delete(gomock.Any()).
+							Return(nil)
+						return sectionMock
+					}(),
 				},
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				ExpectedCode:   http.StatusOK,
