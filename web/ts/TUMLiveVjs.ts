@@ -36,7 +36,7 @@ export const initPlayer = function (
     courseUrl?: string,
     streamStartIn?: number, // in seconds
 ) {
-    const player:any = videojs(id, {
+    const player: any = videojs(id, {
         liveui: true,
         fluid: fluid,
         playbackRates: playbackSpeeds,
@@ -397,8 +397,7 @@ export class OverlayIcon extends Component {
 
 export function jumpTo(hours: number, minutes: number, seconds: number, id: string) {
     videojs(id).ready(() => {
-        for (const player of players)
-            player.currentTime(toSeconds(hours, minutes, seconds));
+        for (const player of players) player.currentTime(toSeconds(hours, minutes, seconds));
     });
 }
 
@@ -469,8 +468,7 @@ function toSeconds(hours: number, minutes: number, seconds: number): number {
 }
 
 function syncTime(event) {
-    for (const p of players)
-        p.currentTime(event.data.currentTime);
+    for (const p of players) p.currentTime(event.data.currentTime);
 }
 
 // Register the plugin with video.js.
@@ -480,4 +478,3 @@ videojs.registerComponent("Titlebar", Titlebar);
 videojs.registerComponent("StartInOverlay", StartInOverlay);
 videojs.registerComponent("OverlayIcon", OverlayIcon);
 airplay(videojs); //calls registerComponent internally
-
