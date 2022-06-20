@@ -13,11 +13,14 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
 	"net/http"
+	"os"
 	"testing"
 )
 
 func TestStream(t *testing.T) {
 	gin.SetMode(gin.TestMode)
+
+	t.Parallel()
 
 	t.Run("GET/api/stream/live", func(t *testing.T) {
 		response := []liveStreamDto{
@@ -312,6 +315,7 @@ func TestStream(t *testing.T) {
 
 func TestStreamVideoSections(t *testing.T) {
 	gin.SetMode(gin.TestMode)
+	t.Parallel()
 	t.Run("GET/api/stream/:streamID/sections", func(t *testing.T) {
 		// generate same response as in handler
 		response := []gin.H{}
@@ -469,21 +473,21 @@ func TestStreamVideoSections(t *testing.T) {
 	})
 }
 
-/*func TestAttachments(t *testing.T) {
+func TestAttachments(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	t.Run("/api/stream/:streamID/files", func(t *testing.T) {
+	/*t.Run("POST/api/stream/:streamID/files", func(t *testing.T) {
 		url := fmt.Sprintf("/api/stream/%d/files", testutils.StreamFPVLive.ID)
 
 		testCases := testutils.TestCases{
-			"POST[no context]": {
+			"no context": {
 				Method:         "POST",
 				Url:            url,
 				DaoWrapper:     dao.DaoWrapper{},
 				TumLiveContext: nil,
 				ExpectedCode:   http.StatusInternalServerError,
 			},
-			"POST[not Admin]": {
+			"not Admin": {
 				Method: "POST",
 				Url:    url,
 				DaoWrapper: dao.DaoWrapper{
@@ -508,7 +512,7 @@ func TestStreamVideoSections(t *testing.T) {
 				TumLiveContext: &testutils.TUMLiveContextStudent,
 				ExpectedCode:   http.StatusForbidden,
 			},
-			"POST[type url, missing file_url]": {
+			"type url, missing file_url": {
 				Method: "POST",
 				Url:    url + "?type=url",
 				DaoWrapper: dao.DaoWrapper{
@@ -533,7 +537,7 @@ func TestStreamVideoSections(t *testing.T) {
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				ExpectedCode:   http.StatusBadRequest,
 			},
-			"POST[NewFile returns error]": {
+			"NewFile returns error": {
 				Method: "POST",
 				Url:    url + "?type=url",
 				DaoWrapper: dao.DaoWrapper{
@@ -563,7 +567,7 @@ func TestStreamVideoSections(t *testing.T) {
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				ExpectedCode:   http.StatusInternalServerError,
 			},
-			"POST[type url, success]": {
+			"type url, success": {
 				Method: "POST",
 				Url:    url + "?type=url",
 				DaoWrapper: dao.DaoWrapper{
@@ -603,5 +607,111 @@ func TestStreamVideoSections(t *testing.T) {
 		}
 
 		testCases.Run(t, configGinStreamRestRouter)
+	})*/
+	t.Run("DELETE/api/stream/:streamID/files/:fid", func(t *testing.T) {
+		testFile := testutils.Attachment
+		testFileNotExists := testutils.AttachmentInvalidPath
+		url := fmt.Sprintf("/api/stream/%d/files/%d", testutils.StreamFPVLive.ID, testFile.ID)
+		testCases := testutils.TestCases{
+			"no context": testutils.TestCase{
+				Method:         http.MethodDelete,
+				Url:            url,
+				DaoWrapper:     dao.DaoWrapper{},
+				TumLiveContext: nil,
+				ExpectedCode:   http.StatusInternalServerError,
+			},
+			"not admin": testutils.TestCase{
+				Method: http.MethodDelete,
+				Url:    url,
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+				},
+				TumLiveContext: &testutils.TUMLiveContextStudent,
+				ExpectedCode:   http.StatusForbidden,
+			},
+			"GetFileById returns error": testutils.TestCase{
+				Method: http.MethodDelete,
+				Url:    url,
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					FileDao: func() dao.FileDao {
+						fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
+						fileMock.
+							EXPECT().
+							GetFileById(fmt.Sprintf("%d", testFile.ID)).
+							Return(model.File{}, errors.New(""))
+						return fileMock
+					}(),
+				},
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				ExpectedCode:   http.StatusBadRequest,
+			},
+			"non existing file": testutils.TestCase{
+				Method: http.MethodDelete,
+				Url:    url,
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					FileDao: func() dao.FileDao {
+						fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
+						fileMock.
+							EXPECT().
+							GetFileById(fmt.Sprintf("%d", testFileNotExists.ID)).
+							Return(testFileNotExists, nil)
+						return fileMock
+					}(),
+				},
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				ExpectedCode:   http.StatusInternalServerError,
+			},
+			"DeleteFile returns error": testutils.TestCase{
+				Method: http.MethodDelete,
+				Url:    url,
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					FileDao: func() dao.FileDao {
+						fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
+						fileMock.
+							EXPECT().
+							GetFileById(fmt.Sprintf("%d", testFile.ID)).
+							Return(testFile, nil)
+						fileMock.
+							EXPECT().
+							DeleteFile(testFile.ID).
+							Return(errors.New(""))
+						return fileMock
+					}(),
+				},
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				ExpectedCode:   http.StatusInternalServerError,
+				Before: func() {
+					_, _ = os.Create(testFile.Path)
+				},
+			},
+			"success": testutils.TestCase{
+				Method: http.MethodDelete,
+				Url:    url,
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					FileDao:    testutils.GetFileMock(t),
+				},
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				ExpectedCode:   http.StatusOK,
+				Before: func() {
+					_, _ = os.Create(testFile.Path)
+				},
+			},
+		}
+		testCases.Run(t, configGinStreamRestRouter)
+
+		// After a successful run, the file /tmp/test.txt should be deleted
+		if _, err := os.Stat(testFile.Path); !errors.Is(err, os.ErrNotExist) {
+			t.Fail()
+			_ = os.Remove(testFile.Path) // Then cleanup
+		}
 	})
-}*/
+}

@@ -79,6 +79,7 @@ var (
 		PlaylistUrlCAM:   "https://url",
 		LiveNow:          true,
 		LectureHallID:    LectureHall.ID,
+		Files:            []model.File{Attachment, AttachmentInvalidPath},
 		VideoSections: []model.VideoSection{
 			{
 				Description:  "Introduction",
@@ -149,6 +150,18 @@ var (
 		User:   Admin,
 		Token:  "ed067f11-1337-4dcd-bfd2-4201b8d751d4",
 		Scope:  model.TokenScopeAdmin,
+	}
+	Attachment = model.File{
+		StreamID: 1969,
+		Path:     "/tmp/test.txt",
+		Filename: "test.txt",
+		Type:     model.FILETYPE_ATTACHMENT,
+	}
+	AttachmentInvalidPath = model.File{
+		StreamID: 1969,
+		Path:     "/tmp/i_do_not_exist.txt",
+		Filename: "i_do_not_exist.txt",
+		Type:     model.FILETYPE_ATTACHMENT,
 	}
 )
 
@@ -250,6 +263,19 @@ func GetTokenMock(t *testing.T) dao.TokenDao {
 		TokenUsed(AdminToken).
 		Return(nil)
 	return tokenMock
+}
+
+func GetFileMock(t *testing.T) dao.FileDao {
+	fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
+	fileMock.
+		EXPECT().
+		GetFileById(fmt.Sprintf("%d", Attachment.ID)).
+		Return(Attachment, nil)
+	fileMock.
+		EXPECT().
+		DeleteFile(Attachment.ID).
+		Return(nil)
+	return fileMock
 }
 
 func GetProgressMock(t *testing.T) dao.ProgressDao {

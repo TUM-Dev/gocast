@@ -24,10 +24,15 @@ type TestCase struct {
 	Body             io.Reader
 	ExpectedCode     int
 	ExpectedResponse []byte
+
+	Before func()
 }
 
 func (tc TestCases) Run(t *testing.T, configRouterFunc func(*gin.Engine, dao.DaoWrapper)) {
 	for name, testCase := range tc {
+		if testCase.Before != nil {
+			testCase.Before()
+		}
 		t.Run(name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, r := gin.CreateTestContext(w)
