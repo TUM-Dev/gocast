@@ -3,7 +3,6 @@ import { NewChatMessage } from "./chat/NewChatMessage";
 import { getPlayers } from "./TUMLiveVjs";
 import videojs from "video.js";
 
-
 let chatInput: HTMLInputElement;
 
 export class Watch {
