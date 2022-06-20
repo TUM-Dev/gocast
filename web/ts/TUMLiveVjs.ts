@@ -13,7 +13,7 @@ require("videojs-contrib-quality-levels");
 const Button = videojs.getComponent("Button");
 const players = [];
 
-export function getPlayers(): any[] {
+export function getPlayers() {
     return players;
 }
 
@@ -36,7 +36,7 @@ export const initPlayer = function (
     courseUrl?: string,
     streamStartIn?: number, // in seconds
 ) {
-    let player: any = videojs(id, {
+    const player:any = videojs(id, {
         liveui: true,
         fluid: fluid,
         playbackRates: playbackSpeeds,
@@ -468,17 +468,9 @@ function toSeconds(hours: number, minutes: number, seconds: number): number {
     return hours * 60 * 60 + minutes * 60 + seconds;
 }
 
-function syncTime( event ) {
+function syncTime(event) {
     for (const p of players)
         p.currentTime(event.data.currentTime);
-}
-
-export function syncPlayers() {
-    //const video_players = getAllPlayers().map((val) => new VideoPlayer({video: val, name: val.id()}));
-    //const player2 = new VideoPlayer({ video: videojs("#video2"), name: "video2" });
-    for (const p of players) {
-
-    }
 }
 
 // Register the plugin with video.js.

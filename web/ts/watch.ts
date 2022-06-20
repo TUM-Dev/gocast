@@ -2,7 +2,7 @@ import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
 import { getPlayers } from "./TUMLiveVjs";
 import videojs from "video.js";
-import getAllPlayers = videojs.getAllPlayers;
+
 
 let chatInput: HTMLInputElement;
 
@@ -259,7 +259,7 @@ export const videoStatListener = {
         this.update();
     },
     update() {
-        for (let player of getPlayers()) {
+        for (const player of getPlayers()) {
             const vhs = player.tech().vhs;
             const notAvailable = vhs == null;
 
