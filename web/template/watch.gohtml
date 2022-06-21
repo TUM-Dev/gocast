@@ -132,14 +132,14 @@
                         {{end}}
                     </h1>
                     <!-- Desktop stream info -->
-                    {{if not $stream.Recording}}
-                        <span class="inline-flex space-x-2 text-lg text-4">
-                            <span class="hidden lg:inline-flex space-x-2">
+                    <span class="inline-flex space-x-2 text-lg text-4 hidden lg:inline-flex shrink-0">
+                        {{if not $stream.Recording}}
+                            <span class="inline-flex space-x-2">
                                 {{template "watch-info" .}}
                             </span>
-                            {{template "actions" .}}
-                        </span>
-                    {{end}}
+                        {{end}}
+                        {{template "actions" .}}
+                    </span>
                 </div>
                 <div class="flex justify-between">
                     <div class="flex my-auto">
@@ -163,6 +163,9 @@
                                         class="text-5 hover:text-1 hover:underline text-lg">Enable Timeshift (beta)</span></a>
                         {{end}}
                     {{end}}
+                </div>
+                <div class="block space-x-2 text-lg text-4 sm:hidden">
+                    {{template "actions" .}}
                 </div>
                 {{if not $stream.Recording}}
                     <div class="block space-x-2 text-lg text-4 sm:hidden">
