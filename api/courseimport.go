@@ -20,7 +20,7 @@ import (
 	"unicode"
 )
 
-func (r LectureHallRoutes) postSchedule(c *gin.Context) {
+func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 	resp := ""
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
@@ -157,7 +157,7 @@ func notifyCourseCreated(d MailTmpl, mailAddr string, subject string) error {
 	return tools.SendMail(tools.Cfg.Mail.Server, tools.Cfg.Mail.Sender, subject, body.String(), []string{mailAddr})
 }
 
-func (r LectureHallRoutes) getSchedule(c *gin.Context) {
+func (r lectureHallRoutes) getSchedule(c *gin.Context) {
 	err := c.Request.ParseForm()
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)

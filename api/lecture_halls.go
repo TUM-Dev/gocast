@@ -16,8 +16,8 @@ import (
 	"time"
 )
 
-func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, utility tools.PresetUtility) LectureHallRoutes {
-	routes := LectureHallRoutes{daoWrapper, utility}
+func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, utility tools.PresetUtility) {
+	routes := lectureHallRoutes{daoWrapper, utility}
 
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
@@ -38,17 +38,11 @@ func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper
 	adminsOfCourse.POST("/switchPreset/:lectureHallID/:presetID/:streamID", routes.switchPreset)
 
 	router.GET("/api/hall/all.ics", routes.lectureHallIcal)
-
-	return routes
 }
 
-type LectureHallRoutes struct {
+type lectureHallRoutes struct {
 	dao.DaoWrapper
 	presetUtility tools.PresetUtility
-}
-
-func (r LectureHallRoutes) setPresetUtility(utility tools.PresetUtility) {
-	r.presetUtility = utility
 }
 
 type updateLectureHallReq struct {
@@ -59,7 +53,7 @@ type updateLectureHallReq struct {
 	PwrCtrlIp string `json:"pwrCtrlIp"`
 }
 
-func (r LectureHallRoutes) updateLectureHall(c *gin.Context) {
+func (r lectureHallRoutes) updateLectureHall(c *gin.Context) {
 	var req updateLectureHallReq
 	err := c.BindJSON(&req)
 	if err != nil {
@@ -89,7 +83,7 @@ func (r LectureHallRoutes) updateLectureHall(c *gin.Context) {
 	}
 }
 
-func (r LectureHallRoutes) updateLectureHallsDefaultPreset(c *gin.Context) {
+func (r lectureHallRoutes) updateLectureHallsDefaultPreset(c *gin.Context) {
 	var req struct {
 		PresetID uint `json:"presetID"`
 	}
@@ -118,7 +112,7 @@ func (r LectureHallRoutes) updateLectureHallsDefaultPreset(c *gin.Context) {
 	}
 }
 
-func (r LectureHallRoutes) deleteLectureHall(c *gin.Context) {
+func (r lectureHallRoutes) deleteLectureHall(c *gin.Context) {
 	lhIDStr := c.Param("id")
 	lhID, err := strconv.Atoi(lhIDStr)
 	if err != nil {
@@ -133,7 +127,7 @@ func (r LectureHallRoutes) deleteLectureHall(c *gin.Context) {
 	}
 }
 
-func (r LectureHallRoutes) refreshLectureHallPresets(c *gin.Context) {
+func (r lectureHallRoutes) refreshLectureHallPresets(c *gin.Context) {
 	lhIDStr := c.Param("lectureHallID")
 	lhID, err := strconv.Atoi(lhIDStr)
 	if err != nil {
@@ -151,7 +145,7 @@ func (r LectureHallRoutes) refreshLectureHallPresets(c *gin.Context) {
 //go:embed template
 var staticFS embed.FS
 
-func (r LectureHallRoutes) lectureHallIcal(c *gin.Context) {
+func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 	templ, err := template.ParseFS(staticFS, "template/*.gotemplate")
 	if err != nil {
 		return
@@ -179,7 +173,7 @@ func (r LectureHallRoutes) lectureHallIcal(c *gin.Context) {
 	}
 }
 
-func (r LectureHallRoutes) switchPreset(c *gin.Context) {
+func (r lectureHallRoutes) switchPreset(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -200,7 +194,7 @@ func (r LectureHallRoutes) switchPreset(c *gin.Context) {
 	time.Sleep(time.Second * 10)
 }
 
-func (r LectureHallRoutes) takeSnapshot(c *gin.Context) {
+func (r lectureHallRoutes) takeSnapshot(c *gin.Context) {
 	preset, err := r.LectureHallsDao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
@@ -215,7 +209,7 @@ func (r LectureHallRoutes) takeSnapshot(c *gin.Context) {
 	c.JSONP(http.StatusOK, gin.H{"path": fmt.Sprintf("/public/%s", preset.Image)})
 }
 
-func (r LectureHallRoutes) setLectureHall(c *gin.Context) {
+func (r lectureHallRoutes) setLectureHall(c *gin.Context) {
 	var req setLectureHallRequest
 	err := c.BindJSON(&req)
 	if err != nil {
@@ -251,7 +245,7 @@ func (r LectureHallRoutes) setLectureHall(c *gin.Context) {
 	}
 }
 
-func (r LectureHallRoutes) createLectureHall(c *gin.Context) {
+func (r lectureHallRoutes) createLectureHall(c *gin.Context) {
 	var req createLectureHallRequest
 	err := c.BindJSON(&req)
 	if err != nil {
