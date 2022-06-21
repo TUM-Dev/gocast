@@ -431,6 +431,36 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 	return &pb.Status{Ok: true}, nil
 }
 
+// NotifyThumbnailsFinished receives and handles messages from workers about finished thumbnails.
+func (s server) NotifyThumbnailsFinished(ctx context.Context, req *pb.ThumbnailsFinished) (*pb.Status, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	if _, err := s.WorkerDao.GetWorkerByID(ctx, req.WorkerID); err != nil {
+		return nil, err
+	}
+	stream, err := s.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", req.StreamID))
+	if err != nil {
+		return nil, err
+	}
+	var thumbType model.FileType
+	switch req.SourceType {
+	case "COMB":
+		thumbType = model.FILETYPE_THUMB_COMB
+	case "CAM":
+		thumbType = model.FILETYPE_THUMB_CAM
+	case "PRES":
+		thumbType = model.FILETYPE_THUMB_PRES
+	default:
+		return nil, errors.New("unknown source type")
+	}
+	stream.Files = append(stream.Files, model.File{StreamID: stream.ID, Path: req.FilePath, Type: thumbType})
+	stream.ThumbInterval = req.Interval
+	if err = s.StreamsDao.SaveStream(&stream); err != nil {
+		return nil, err
+	}
+	return &pb.Status{Ok: true}, nil
+}
+
 // GetStreamInfoForUpload returns the stream info for a stream identified by its upload token.
 // after calling, the token is deleted.
 func (s server) GetStreamInfoForUpload(ctx context.Context, request *pb.GetStreamInfoForUploadRequest) (*pb.GetStreamInfoForUploadResponse, error) {

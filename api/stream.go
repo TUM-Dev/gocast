@@ -49,6 +49,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	g := router.Group("/")
 	g.Use(tools.InitStream(daoWrapper))
 	g.GET("/api/stream/:streamID/sections", routes.getVideoSections)
+	g.GET("/api/stream/:streamID/thumbs/:fid", routes.getThumbs)
 
 	adminG.POST("/api/stream/:streamID/files", routes.newAttachment)
 	adminG.DELETE("/api/stream/:streamID/files/:fid", routes.deleteAttachment)
@@ -66,6 +67,31 @@ type liveStreamDto struct {
 	PRES        string
 	CAM         string
 	End         time.Time
+}
+
+func (r streamRoutes) getThumbs(c *gin.Context) {
+	ctx, exists := c.Get("TUMLiveContext")
+	tumLiveContext := ctx.(tools.TUMLiveContext)
+
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	file, err := r.GetFileById(c.Param("fid"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	if !file.IsThumb() {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+	if tumLiveContext.Stream.ID != file.StreamID {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	sendFile(c, file)
 }
 
 // livestreams returns all streams that are live
