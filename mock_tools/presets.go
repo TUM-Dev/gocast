@@ -10,6 +10,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	model "github.com/joschahenningsen/TUM-Live/model"
+	camera "github.com/joschahenningsen/TUM-Live/tools/camera"
 )
 
 // MockPresetUtility is a mock of PresetUtility interface.
@@ -59,26 +60,41 @@ func (mr *MockPresetUtilityMockRecorder) FetchLHPresets(arg0 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchLHPresets", reflect.TypeOf((*MockPresetUtility)(nil).FetchLHPresets), arg0)
 }
 
-// TakeSnapshot mocks base method.
-func (m *MockPresetUtility) TakeSnapshot(preset model.CameraPreset) {
+// ProvideCamera mocks base method.
+func (m *MockPresetUtility) ProvideCamera(arg0 model.CameraType, arg1 string) (camera.Cam, error) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "TakeSnapshot", preset)
+	ret := m.ctrl.Call(m, "ProvideCamera", arg0, arg1)
+	ret0, _ := ret[0].(camera.Cam)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ProvideCamera indicates an expected call of ProvideCamera.
+func (mr *MockPresetUtilityMockRecorder) ProvideCamera(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProvideCamera", reflect.TypeOf((*MockPresetUtility)(nil).ProvideCamera), arg0, arg1)
+}
+
+// TakeSnapshot mocks base method.
+func (m *MockPresetUtility) TakeSnapshot(arg0 model.CameraPreset) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "TakeSnapshot", arg0)
 }
 
 // TakeSnapshot indicates an expected call of TakeSnapshot.
-func (mr *MockPresetUtilityMockRecorder) TakeSnapshot(preset interface{}) *gomock.Call {
+func (mr *MockPresetUtilityMockRecorder) TakeSnapshot(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TakeSnapshot", reflect.TypeOf((*MockPresetUtility)(nil).TakeSnapshot), preset)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TakeSnapshot", reflect.TypeOf((*MockPresetUtility)(nil).TakeSnapshot), arg0)
 }
 
 // UsePreset mocks base method.
-func (m *MockPresetUtility) UsePreset(preset model.CameraPreset) {
+func (m *MockPresetUtility) UsePreset(arg0 model.CameraPreset) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UsePreset", preset)
+	m.ctrl.Call(m, "UsePreset", arg0)
 }
 
 // UsePreset indicates an expected call of UsePreset.
-func (mr *MockPresetUtilityMockRecorder) UsePreset(preset interface{}) *gomock.Call {
+func (mr *MockPresetUtilityMockRecorder) UsePreset(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UsePreset", reflect.TypeOf((*MockPresetUtility)(nil).UsePreset), preset)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UsePreset", reflect.TypeOf((*MockPresetUtility)(nil).UsePreset), arg0)
 }
