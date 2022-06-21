@@ -20,7 +20,7 @@ export const liveUpdateListener = {
             window.dispatchEvent(new CustomEvent("liveupdate", { detail: { data: data } }));
         };
 
-        this.ws.onclose = function () {
+        this.ws.onclose = () => {
             // connection closed, discard old websocket and create a new one after backoff
             // don't recreate new connection if page has been loaded more than 12 hours ago
             if (new Date().valueOf() - PAGE_LOADED.valueOf() > 1000 * 60 * 60 * 12) {
