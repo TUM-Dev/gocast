@@ -78,16 +78,16 @@ func (mr *MockProgressDaoMockRecorder) SaveProgresses(progresses interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveProgresses", reflect.TypeOf((*MockProgressDao)(nil).SaveProgresses), progresses)
 }
 
-// SetWatchedState mocks base method.
-func (m *MockProgressDao) SetWatchedState(userID, streamID uint, watched bool) error {
+// SaveWatchedState mocks base method.
+func (m *MockProgressDao) SaveWatchedState(progress *model.StreamProgress) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetWatchedState", userID, streamID, watched)
+	ret := m.ctrl.Call(m, "SaveWatchedState", progress)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SetWatchedState indicates an expected call of SetWatchedState.
-func (mr *MockProgressDaoMockRecorder) SetWatchedState(userID, streamID, watched interface{}) *gomock.Call {
+// SaveWatchedState indicates an expected call of SaveWatchedState.
+func (mr *MockProgressDaoMockRecorder) SaveWatchedState(progress interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetWatchedState", reflect.TypeOf((*MockProgressDao)(nil).SetWatchedState), userID, streamID, watched)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveWatchedState", reflect.TypeOf((*MockProgressDao)(nil).SaveWatchedState), progress)
 }
