@@ -39,10 +39,16 @@ func (p presetUtility) FetchCameraPresets(ctx context.Context) {
 
 func (p presetUtility) FetchLHPresets(lectureHall model.LectureHall) {
 	if lectureHall.CameraIP != "" {
-		cam := camera.NewCamera(lectureHall.CameraIP, Cfg.Auths.CamAuth)
+		var cam camera.Cam
+		switch lectureHall.CameraType {
+		case model.Axis:
+			cam = camera.NewAxisCam(lectureHall.CameraIP, Cfg.Auths.CamAuth)
+		case model.Panasonic:
+			cam = camera.NewPanasonicCam(lectureHall.CameraIP, nil)
+		}
 		presets, err := cam.GetPresets()
 		if err != nil {
-			log.WithError(err).WithField("Camera", cam.Ip).Warn("FetchCameraPresets: failed to get Presets")
+			log.WithError(err).WithField("AxisCam", lectureHall.CameraIP).Warn("FetchCameraPresets: failed to get Presets")
 			return
 		}
 		/*for i := range presets {
@@ -60,8 +66,14 @@ func (p presetUtility) UsePreset(preset model.CameraPreset) {
 		sentry.CaptureException(err)
 		return
 	}
-	c := camera.NewCamera(lectureHall.CameraIP, Cfg.Auths.CamAuth)
-	err = c.SetPreset(preset.PresetID)
+	var cam camera.Cam
+	switch lectureHall.CameraType {
+	case model.Axis:
+		cam = camera.NewAxisCam(lectureHall.CameraIP, Cfg.Auths.CamAuth)
+	case model.Panasonic:
+		cam = camera.NewPanasonicCam(lectureHall.CameraIP, nil)
+	}
+	err = cam.SetPreset(preset.PresetID)
 	if err != nil {
 		log.WithError(err).Error("UsePreset: unable to set preset for camera")
 	}
@@ -77,16 +89,22 @@ func (p presetUtility) TakeSnapshot(preset model.CameraPreset) {
 		sentry.CaptureException(err)
 		return
 	}
-	c := camera.NewCamera(lectureHall.CameraIP, Cfg.Auths.CamAuth)
-	fileName, err := c.TakeSnapshot(Cfg.Paths.Static)
+	var cam camera.Cam
+	switch lectureHall.CameraType {
+	case model.Axis:
+		cam = camera.NewAxisCam(lectureHall.CameraIP, Cfg.Auths.CamAuth)
+	case model.Panasonic:
+		cam = camera.NewPanasonicCam(lectureHall.CameraIP, nil)
+	}
+	fileName, err := cam.TakeSnapshot(Cfg.Paths.Static)
 	if err != nil {
-		log.WithField("Camera", c.Ip).WithError(err).Error("TakeSnapshot: failed to get camera snapshot")
+		log.WithField("cam", lectureHall.CameraIP).WithError(err).Error("TakeSnapshot: failed to get camera snapshot")
 		return
 	}
 	preset.Image = fileName
 	err = p.LectureHallDao.SavePreset(preset)
 	if err != nil {
-		log.WithField("Camera", c.Ip).WithError(err).Error("TakeSnapshot: failed to save snapshot file")
+		log.WithField("cam", lectureHall.CameraIP).WithError(err).Error("TakeSnapshot: failed to save snapshot file")
 		return
 	}
 }
