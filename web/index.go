@@ -12,6 +12,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools/tum"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"html/template"
 	"net/http"
 	"sort"
 	"strconv"
@@ -51,6 +52,33 @@ func (r mainRoutes) AboutPage(c *gin.Context) {
 	indexData.VersionTag = VersionTag
 
 	_ = templateExecutor.ExecuteTemplate(c.Writer, "about.gohtml", indexData)
+}
+
+func (r mainRoutes) InfoPage(id uint) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var indexData IndexData
+		var tumLiveContext tools.TUMLiveContext
+		tumLiveContextQueried, found := c.Get("TUMLiveContext")
+		if found {
+			tumLiveContext = tumLiveContextQueried.(tools.TUMLiveContext)
+			indexData.TUMLiveContext = tumLiveContext
+		} else {
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		indexData.VersionTag = VersionTag
+
+		text, err := r.InfoPageDao.GetById(id)
+		if err != nil {
+			log.WithError(err).Error("Could not get text with id")
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "info-page.gohtml", struct {
+			IndexData
+			Text template.HTML
+		}{indexData, text.Render()})
+	}
 }
 
 type IndexData struct {

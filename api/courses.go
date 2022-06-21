@@ -36,7 +36,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	atLeastLecturerGroup.POST("/api/createCourse", routes.createCourse)
 
 	adminOfCourseGroup := router.Group("/api/course/:courseID")
-	adminOfCourseGroup.Use(tools.InitCourse(dao.NewDaoWrapper()))
+	adminOfCourseGroup.Use(tools.InitCourse(daoWrapper))
 	adminOfCourseGroup.Use(tools.AdminOfCourse)
 	adminOfCourseGroup.DELETE("/", routes.deleteCourse)
 	adminOfCourseGroup.POST("/uploadVOD", routes.uploadVOD)

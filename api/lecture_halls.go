@@ -2,7 +2,6 @@ package api
 
 import (
 	"embed"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
@@ -11,7 +10,6 @@ import (
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"text/template"
@@ -117,7 +115,7 @@ func (r lectureHallRoutes) deleteLectureHall(c *gin.Context) {
 	lhIDStr := c.Param("id")
 	lhID, err := strconv.Atoi(lhIDStr)
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
@@ -247,13 +245,9 @@ func (r lectureHallRoutes) setLectureHall(c *gin.Context) {
 }
 
 func (r lectureHallRoutes) createLectureHall(c *gin.Context) {
-	body, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
-		return
-	}
 	var req createLectureHallRequest
-	if err = json.Unmarshal(body, &req); err != nil {
+	err := c.BindJSON(&req)
+	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
 		return
 	}

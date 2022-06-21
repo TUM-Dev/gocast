@@ -82,6 +82,15 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 	}
+	var infopages []model.InfoPage
+	if c.Request.URL.Path == "/admin/infopages" {
+		page = "info-pages"
+		infopages, err = r.InfoPageDao.GetAll()
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			log.WithError(err).Error("couldn't query texts")
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
+	}
 	if c.Request.URL.Path == "/admin/server-stats" {
 		page = "serverStats"
 		streams, err := r.StreamsDao.GetAllStreams()
@@ -117,6 +126,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			CurY:                y,
 			CurT:                t,
 			Tokens:              tokens,
+			InfoPages:           infopages,
 			ServerNotifications: serverNotifications,
 			Notifications:       notifications,
 		})
@@ -276,6 +286,7 @@ type AdminPageData struct {
 	EditCourseData      EditCourseData
 	ServerNotifications []model.ServerNotification
 	Tokens              []dao.AllTokensDto
+	InfoPages           []model.InfoPage
 	Notifications       []model.Notification
 }
 

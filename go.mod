@@ -42,9 +42,9 @@ require (
 	github.com/crewjam/saml v0.4.6
 	github.com/golang/mock v1.6.0
 	github.com/icholy/digest v0.1.15
+	github.com/stretchr/testify v1.7.1
 	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20220601143036-b82f245ab856
 	github.com/magiconair/properties v1.8.6
-	github.com/stretchr/testify v1.7.1
 )
 
 require (
