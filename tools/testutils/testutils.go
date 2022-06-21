@@ -17,6 +17,7 @@ type TestCase struct {
 	Method           string
 	Url              string
 	DaoWrapper       dao.DaoWrapper
+	PresetUtility    *tools.PresetUtility
 	TumLiveContext   *tools.TUMLiveContext
 	Body             io.Reader
 	ExpectedCode     int

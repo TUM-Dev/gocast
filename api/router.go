@@ -15,14 +15,13 @@ func ConfigChatRouter(router *gin.RouterGroup) {
 //ConfigGinRouter for non ws endpoints
 func ConfigGinRouter(router *gin.Engine) {
 	daoWrapper := dao.NewDaoWrapper()
-	presetUtility := tools.NewPresetUtility(daoWrapper.LectureHallsDao)
 
 	configGinStreamRestRouter(router, daoWrapper)
 	configGinUsersRouter(router, daoWrapper)
 	configGinCourseRouter(router, daoWrapper)
 	configGinDownloadRouter(router, daoWrapper)
 	configGinDownloadICSRouter(router, daoWrapper)
-	configGinLectureHallApiRouter(router, daoWrapper, presetUtility)
+	configGinLectureHallApiRouter(router, daoWrapper, tools.NewPresetUtility(daoWrapper.LectureHallsDao))
 	configGinSexyApiRouter(router, daoWrapper)
 	configProgressRouter(router, daoWrapper)
 	configServerNotificationsRoutes(router, daoWrapper)

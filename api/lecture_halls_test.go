@@ -42,7 +42,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				Return(errors.New("")).
 				AnyTimes()
 
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			c.Request, _ = http.NewRequest(http.MethodPost, "/api/createLectureHall", nil)
 			r.ServeHTTP(w, c.Request)
@@ -74,7 +74,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				EXPECT().
 				CreateLectureHall(gomock.Any()).AnyTimes()
 
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			c.Request, _ = http.NewRequest(http.MethodPost, "/api/createLectureHall", bytes.NewBuffer(body))
 			r.ServeHTTP(w, c.Request)
@@ -96,7 +96,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				}})
 			})
 
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{}, tools.NewPresetUtility(nil))
 
 			c.Request, _ = http.NewRequest(http.MethodPut,
 				fmt.Sprintf("/api/lectureHall/%d", lectureHallId), nil)
@@ -117,7 +117,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				}})
 			})
 
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{}, tools.NewPresetUtility(nil))
 
 			jBody, _ := json.Marshal(updateLectureHallReq{CamIp: "0.0.0.0"})
 
@@ -148,7 +148,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 					errors.New("")).
 				AnyTimes()
 
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			jBody, _ := json.Marshal(updateLectureHallReq{CamIp: "0.0.0.0"})
 
@@ -183,7 +183,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				Return(errors.New("")).
 				AnyTimes()
 
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			jBody, _ := json.Marshal(updateLectureHallReq{CamIp: "0.0.0.0"})
 
@@ -216,7 +216,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				SaveLectureHall(gomock.Any()).
 				Return(nil)
 
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			jBody, _ := json.Marshal(updateLectureHallReq{CamIp: "0.0.0.0"})
 
@@ -239,7 +239,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				}})
 			})
 
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{}, tools.NewPresetUtility(nil))
 
 			c.Request, _ = http.NewRequest(http.MethodDelete,
 				fmt.Sprintf("/api/lectureHall/%s", lectureHallId), nil)
@@ -267,7 +267,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				Return(errors.New("")).
 				AnyTimes()
 
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			c.Request, _ = http.NewRequest(http.MethodDelete,
 				fmt.Sprintf("/api/lectureHall/%d", lectureHallId), nil)
@@ -295,7 +295,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				Return(nil).
 				AnyTimes()
 
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			c.Request, _ = http.NewRequest(http.MethodDelete,
 				fmt.Sprintf("/api/lectureHall/%d", lectureHallId), nil)
@@ -318,7 +318,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				}})
 			})
 
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{})
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{}, tools.NewPresetUtility(nil))
 
 			c.Request, _ = http.NewRequest(http.MethodPost,
 				fmt.Sprintf("/api/lectureHall/%d/defaultPreset", lectureHallId), nil)
@@ -350,7 +350,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				Return(model.CameraPreset{}, errors.New("")).
 				AnyTimes()
 
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			c.Request, _ = http.NewRequest(http.MethodPost,
 				fmt.Sprintf("/api/lectureHall/%s/defaultPreset", lectureHallId), bytes.NewBuffer(body))
@@ -387,7 +387,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				Return(errors.New("")).
 				AnyTimes()
 
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			c.Request, _ = http.NewRequest(http.MethodPost,
 				fmt.Sprintf("/api/lectureHall/%s/defaultPreset", lectureHallId), bytes.NewBuffer(body))
@@ -432,7 +432,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				Return(errors.New("")).
 				AnyTimes()
 
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			c.Request, _ = http.NewRequest(http.MethodPost,
 				fmt.Sprintf("/api/lectureHall/%s/defaultPreset", lectureHallId), bytes.NewBuffer(body))
@@ -477,7 +477,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				Return(nil).
 				AnyTimes()
 
-			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock})
+			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			c.Request, _ = http.NewRequest(http.MethodPost,
 				fmt.Sprintf("/api/lectureHall/%s/defaultPreset", lectureHallId), bytes.NewBuffer(body))
@@ -539,7 +539,9 @@ func TestCourseImport(t *testing.T) {
 				ExpectedCode: http.StatusBadRequest,
 			},
 		}
-		testCases.Run(t, configGinLectureHallApiRouter)
+		testCases.Run(t, func(router *gin.Engine, daoWrapper dao.DaoWrapper) {
+			configGinLectureHallApiRouter(router, daoWrapper, nil)
+		})
 	})
 
 	t.Run("/course-schedule/:year/:term", func(t *testing.T) {
@@ -752,6 +754,8 @@ func TestCourseImport(t *testing.T) {
 				ExpectedCode: http.StatusOK},
 		}
 
-		testCases.Run(t, configGinLectureHallApiRouter)
+		testCases.Run(t, func(router *gin.Engine, daoWrapper dao.DaoWrapper) {
+			configGinLectureHallApiRouter(router, daoWrapper, nil)
+		})
 	})
 }

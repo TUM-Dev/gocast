@@ -2,6 +2,7 @@ package tools
 
 import (
 	"context"
+	"errors"
 	"github.com/getsentry/sentry-go"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
@@ -10,13 +11,14 @@ import (
 	"time"
 )
 
-//go:generate mockgen -source=cameras.go -destination ../mock_tools/cameras.go
+//go:generate mockgen -source=presets.go -destination ../mock_tools/presets.go
 
 type PresetUtility interface {
 	FetchCameraPresets(context.Context)
 	FetchLHPresets(model.LectureHall)
-	UsePreset(preset model.CameraPreset)
-	TakeSnapshot(preset model.CameraPreset)
+	UsePreset(model.CameraPreset)
+	TakeSnapshot(model.CameraPreset)
+	ProvideCamera(model.CameraType, string) (camera.Cam, error)
 }
 
 type presetUtility struct {
@@ -25,6 +27,16 @@ type presetUtility struct {
 
 func NewPresetUtility(lectureHallDao dao.LectureHallsDao) PresetUtility {
 	return presetUtility{lectureHallDao}
+}
+
+func (p presetUtility) ProvideCamera(ctype model.CameraType, ip string) (camera.Cam, error) {
+	switch ctype {
+	case model.Axis:
+		return camera.NewAxisCam(ip, Cfg.Auths.CamAuth), nil
+	case model.Panasonic:
+		return camera.NewPanasonicCam(ip, nil), nil
+	}
+	return nil, errors.New("Invalid Camera Type")
 }
 
 //FetchCameraPresets Queries all cameras of lecture halls for their camera presets and saves them to the database
@@ -39,12 +51,10 @@ func (p presetUtility) FetchCameraPresets(ctx context.Context) {
 
 func (p presetUtility) FetchLHPresets(lectureHall model.LectureHall) {
 	if lectureHall.CameraIP != "" {
-		var cam camera.Cam
-		switch lectureHall.CameraType {
-		case model.Axis:
-			cam = camera.NewAxisCam(lectureHall.CameraIP, Cfg.Auths.CamAuth)
-		case model.Panasonic:
-			cam = camera.NewPanasonicCam(lectureHall.CameraIP, nil)
+		cam, err := p.ProvideCamera(lectureHall.CameraType, lectureHall.CameraIP)
+		if err != nil {
+			log.WithError(err)
+			return
 		}
 		presets, err := cam.GetPresets()
 		if err != nil {
@@ -66,12 +76,10 @@ func (p presetUtility) UsePreset(preset model.CameraPreset) {
 		sentry.CaptureException(err)
 		return
 	}
-	var cam camera.Cam
-	switch lectureHall.CameraType {
-	case model.Axis:
-		cam = camera.NewAxisCam(lectureHall.CameraIP, Cfg.Auths.CamAuth)
-	case model.Panasonic:
-		cam = camera.NewPanasonicCam(lectureHall.CameraIP, nil)
+	cam, err := p.ProvideCamera(lectureHall.CameraType, lectureHall.CameraIP)
+	if err != nil {
+		log.WithError(err)
+		return
 	}
 	err = cam.SetPreset(preset.PresetID)
 	if err != nil {
@@ -89,12 +97,10 @@ func (p presetUtility) TakeSnapshot(preset model.CameraPreset) {
 		sentry.CaptureException(err)
 		return
 	}
-	var cam camera.Cam
-	switch lectureHall.CameraType {
-	case model.Axis:
-		cam = camera.NewAxisCam(lectureHall.CameraIP, Cfg.Auths.CamAuth)
-	case model.Panasonic:
-		cam = camera.NewPanasonicCam(lectureHall.CameraIP, nil)
+	cam, err := p.ProvideCamera(lectureHall.CameraType, lectureHall.CameraIP)
+	if err != nil {
+		log.WithError(err)
+		return
 	}
 	fileName, err := cam.TakeSnapshot(Cfg.Paths.Static)
 	if err != nil {
