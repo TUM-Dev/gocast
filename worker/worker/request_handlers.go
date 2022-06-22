@@ -96,6 +96,16 @@ func HandleSelfStreamRecordEnd(streamCtx *StreamContext) {
 		upload(streamCtx)
 		notifyUploadDone(streamCtx)
 	}
+
+	S.startThumbnailGeneration(ctx)
+	defer S.endThumbnailGeneration(ctx)
+	err = createThumbnailSprite(ctx)
+	if err != nil {
+		log.WithField("File", ctx.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
+	} else {
+		notifyThumbnailDone(ctx)
+	}
+
 	S.startSilenceDetection(streamCtx)
 	defer S.endSilenceDetection(streamCtx)
 
@@ -106,6 +116,7 @@ func HandleSelfStreamRecordEnd(streamCtx *StreamContext) {
 		return
 	}
 	notifySilenceResults(sd.Silences, streamCtx.streamId)
+
 	if streamCtx.TranscodingSuccessful {
 		err := markForDeletion(streamCtx)
 		if err != nil {
@@ -204,6 +215,16 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	}
 	S.endTranscoding(streamCtx.getStreamName())
 	notifyTranscodingDone(streamCtx)
+
+	S.startThumbnailGeneration(streamCtx)
+	defer S.endThumbnailGeneration(streamCtx)
+	err = createThumbnailSprite(streamCtx)
+	if err != nil {
+		log.WithField("File", streamCtx.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed")
+	} else {
+		notifyThumbnailDone(streamCtx)
+	}
+
 	if request.PublishVoD {
 		upload(streamCtx)
 		notifyUploadDone(streamCtx)
@@ -320,6 +341,14 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 			log.WithField("stream", streamCtx.streamId).Debug("Successfully moved upload to target dir")
 		}
 	}
+	S.startThumbnailGeneration(&c)
+	defer S.endThumbnailGeneration(&c)
+	err = createThumbnailSprite(&c)
+	if err != nil {
+		log.WithField("File", c.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed")
+	} else {
+		notifyThumbnailDone(&c)
+	}
 
 	S.startSilenceDetection(&streamCtx)
 	defer S.endSilenceDetection(&streamCtx)
@@ -390,11 +419,13 @@ type StreamContext struct {
 	discardVoD    bool           // whether the VoD should be discarded
 
 	// calculated after stream:
-	duration uint32 //duration of the stream in seconds
+	duration      uint32 //duration of the stream in seconds
+	thumbInterval uint32 // interval between thumbnails in seconds
 
 	TranscodingSuccessful bool // TranscodingSuccessful is true if the transcoding was successful
 
-	recordingPath *string // recordingPath: path to the recording (overrides default path if set)
+	thumbnailSpritePath string  // path to the thumbnail sprite
+	recordingPath       *string // recordingPath: path to the recording (overrides default path if set)
 }
 
 // getRecordingFileName returns the filename a stream should be saved to before transcoding.
@@ -433,6 +464,28 @@ func (s StreamContext) getTranscodingFileName() string {
 			s.startTime.Format("02012006"))
 	}
 	return fmt.Sprintf("%s/%d/%s/%s/%s/%s.mp4",
+		cfg.StorageDir,
+		s.teachingYear,
+		s.teachingTerm,
+		s.courseSlug,
+		s.startTime.Format("2006-01-02_15-04"),
+		s.getStreamName())
+}
+
+// getThumbnailSpriteFileName returns the path a thumbnail sprite should be saved to after transcoding.
+// example: /srv/sharedMassStorage/2021/S/eidi/2021-09-23_10-00/eidi_2021-09-23_10-00_PRES-thumb.jpg
+func (s StreamContext) getThumbnailSpriteFileName() string {
+	if s.isSelfStream {
+		return fmt.Sprintf("%s/%d/%s/%s/%s/%s-%s-thumb.jpg",
+			cfg.StorageDir,
+			s.teachingYear,
+			s.teachingTerm,
+			s.courseSlug,
+			s.startTime.Format("2006-01-02_15-04"),
+			s.courseSlug,
+			s.startTime.Format("02012006"))
+	}
+	return fmt.Sprintf("%s/%d/%s/%s/%s/%s-thumb.jpg",
 		cfg.StorageDir,
 		s.teachingYear,
 		s.teachingTerm,

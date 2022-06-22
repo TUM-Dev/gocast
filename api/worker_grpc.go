@@ -288,7 +288,12 @@ func handleCameraPositionSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) 
 	}
 	for _, preference := range preferences {
 		if preference.LectureHallID == stream.LectureHallID {
-			return camera.NewCamera(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(preference.PresetID)
+			switch lectureHall.CameraType {
+			case model.Axis:
+				return camera.NewAxisCam(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(preference.PresetID)
+			case model.Panasonic:
+				return camera.NewPanasonicCam(lectureHall.CameraIP, nil).SetPreset(preference.PresetID)
+			}
 		}
 	}
 	// no preset found for this lecture hall, use default
@@ -296,7 +301,13 @@ func handleCameraPositionSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) 
 	if err != nil {
 		return err
 	}
-	return camera.NewCamera(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(defaultPreset.PresetID)
+	switch lectureHall.CameraType {
+	case model.Axis:
+		return camera.NewAxisCam(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(defaultPreset.PresetID)
+	case model.Panasonic:
+		return camera.NewPanasonicCam(lectureHall.CameraIP, nil).SetPreset(defaultPreset.PresetID)
+	}
+	return nil
 }
 
 func handleLightOnSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) error {
@@ -435,6 +446,36 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 	default:
 		stream.PlaylistUrl = req.HLSUrl
 	}
+	if err = s.StreamsDao.SaveStream(&stream); err != nil {
+		return nil, err
+	}
+	return &pb.Status{Ok: true}, nil
+}
+
+// NotifyThumbnailsFinished receives and handles messages from workers about finished thumbnails.
+func (s server) NotifyThumbnailsFinished(ctx context.Context, req *pb.ThumbnailsFinished) (*pb.Status, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	if _, err := s.WorkerDao.GetWorkerByID(ctx, req.WorkerID); err != nil {
+		return nil, err
+	}
+	stream, err := s.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", req.StreamID))
+	if err != nil {
+		return nil, err
+	}
+	var thumbType model.FileType
+	switch req.SourceType {
+	case "COMB":
+		thumbType = model.FILETYPE_THUMB_COMB
+	case "CAM":
+		thumbType = model.FILETYPE_THUMB_CAM
+	case "PRES":
+		thumbType = model.FILETYPE_THUMB_PRES
+	default:
+		return nil, errors.New("unknown source type")
+	}
+	stream.Files = append(stream.Files, model.File{StreamID: stream.ID, Path: req.FilePath, Type: thumbType})
+	stream.ThumbInterval = req.Interval
 	if err = s.StreamsDao.SaveStream(&stream); err != nil {
 		return nil, err
 	}

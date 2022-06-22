@@ -262,6 +262,7 @@ type FromWorkerClient interface {
 	NotifyStreamStarted(ctx context.Context, in *StreamStarted, opts ...grpc.CallOption) (*Status, error)
 	NotifyStreamFinished(ctx context.Context, in *StreamFinished, opts ...grpc.CallOption) (*Status, error)
 	NotifyUploadFinished(ctx context.Context, in *UploadFinished, opts ...grpc.CallOption) (*Status, error)
+	NotifyThumbnailsFinished(ctx context.Context, in *ThumbnailsFinished, opts ...grpc.CallOption) (*Status, error)
 	SendSelfStreamRequest(ctx context.Context, in *SelfStreamRequest, opts ...grpc.CallOption) (*SelfStreamResponse, error)
 	GetStreamInfoForUpload(ctx context.Context, in *GetStreamInfoForUploadRequest, opts ...grpc.CallOption) (*GetStreamInfoForUploadResponse, error)
 	NewKeywords(ctx context.Context, in *NewKeywordsRequest, opts ...grpc.CallOption) (*Status, error)
@@ -338,6 +339,15 @@ func (c *fromWorkerClient) NotifyUploadFinished(ctx context.Context, in *UploadF
 	return out, nil
 }
 
+func (c *fromWorkerClient) NotifyThumbnailsFinished(ctx context.Context, in *ThumbnailsFinished, opts ...grpc.CallOption) (*Status, error) {
+	out := new(Status)
+	err := c.cc.Invoke(ctx, "/api.FromWorker/NotifyThumbnailsFinished", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *fromWorkerClient) SendSelfStreamRequest(ctx context.Context, in *SelfStreamRequest, opts ...grpc.CallOption) (*SelfStreamResponse, error) {
 	out := new(SelfStreamResponse)
 	err := c.cc.Invoke(ctx, "/api.FromWorker/SendSelfStreamRequest", in, out, opts...)
@@ -377,6 +387,7 @@ type FromWorkerServer interface {
 	NotifyStreamStarted(context.Context, *StreamStarted) (*Status, error)
 	NotifyStreamFinished(context.Context, *StreamFinished) (*Status, error)
 	NotifyUploadFinished(context.Context, *UploadFinished) (*Status, error)
+	NotifyThumbnailsFinished(context.Context, *ThumbnailsFinished) (*Status, error)
 	SendSelfStreamRequest(context.Context, *SelfStreamRequest) (*SelfStreamResponse, error)
 	GetStreamInfoForUpload(context.Context, *GetStreamInfoForUploadRequest) (*GetStreamInfoForUploadResponse, error)
 	NewKeywords(context.Context, *NewKeywordsRequest) (*Status, error)
@@ -407,6 +418,9 @@ func (UnimplementedFromWorkerServer) NotifyStreamFinished(context.Context, *Stre
 }
 func (UnimplementedFromWorkerServer) NotifyUploadFinished(context.Context, *UploadFinished) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifyUploadFinished not implemented")
+}
+func (UnimplementedFromWorkerServer) NotifyThumbnailsFinished(context.Context, *ThumbnailsFinished) (*Status, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NotifyThumbnailsFinished not implemented")
 }
 func (UnimplementedFromWorkerServer) SendSelfStreamRequest(context.Context, *SelfStreamRequest) (*SelfStreamResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendSelfStreamRequest not implemented")
@@ -556,6 +570,24 @@ func _FromWorker_NotifyUploadFinished_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FromWorker_NotifyThumbnailsFinished_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ThumbnailsFinished)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FromWorkerServer).NotifyThumbnailsFinished(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.FromWorker/NotifyThumbnailsFinished",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FromWorkerServer).NotifyThumbnailsFinished(ctx, req.(*ThumbnailsFinished))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _FromWorker_SendSelfStreamRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SelfStreamRequest)
 	if err := dec(in); err != nil {
@@ -644,6 +676,10 @@ var FromWorker_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NotifyUploadFinished",
 			Handler:    _FromWorker_NotifyUploadFinished_Handler,
+		},
+		{
+			MethodName: "NotifyThumbnailsFinished",
+			Handler:    _FromWorker_NotifyThumbnailsFinished_Handler,
 		},
 		{
 			MethodName: "SendSelfStreamRequest",
