@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/russross/blackfriday/v2"
+	log "github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -91,6 +92,7 @@ func (s Stream) GetThumbIdForSource(source string) uint {
 			return file.ID
 		}
 	}
+	log.WithField("fileType", fileType).Error("Could not find thumbnail for file type")
 	return FILETYPE_INVALID
 }
 
