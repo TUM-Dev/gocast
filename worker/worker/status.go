@@ -23,10 +23,7 @@ const (
 	costTranscoding         = 2
 	costSilenceDetection    = 1
 	costThumbnailGeneration = 1
-	costStream            = 3
-	costTranscoding       = 2
-	costSilenceDetection  = 1
-	costKeywordExtraction = 1
+	costKeywordExtraction   = 1
 )
 
 type Status struct {
