@@ -16,9 +16,9 @@
             </button>
         {{end}}
 
-        {{/* Download button */}}
+        {{/* VoD download button */}}
         {{if and (and $course.DownloadsEnabled $user) $stream.IsDownloadable}}
-            {{template "downloadBtn" $stream.Files}}
+            {{template "downloadBtn" $stream.GetVodFiles}}
         {{end}}
         {{/* Switch video to presentation */}}
         {{if $stream.PlaylistUrlPRES}}
@@ -43,10 +43,10 @@
         {{end}}
         {{/* Copy HLS Link for video */}}
         {{if or $stream.PlaylistUrlPRES (or $stream.PlaylistUrlCAM $stream.PlaylistUrl)}}
-        <i title="Copy HLS URL"
-           class="m-auto text-lg cursor-pointer fas fa-link text-4 dark:hover:text-white hover:text-black"
-           onclick="global.copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))">
-        </i>
+            <i title="Copy HLS URL"
+               class="m-auto text-lg cursor-pointer fas fa-link text-4 dark:hover:text-white hover:text-black"
+               onclick="global.copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))">
+            </i>
         {{end}}
     </div>
 {{end}}
