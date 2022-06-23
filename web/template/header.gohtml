@@ -24,7 +24,7 @@
                          @click.outside="show=false">
                         <a href="#" class="text-5 hover:text-1 font-medium" @click="show=!show">
                             {{.User.GetPreferredName}}
-                            <i class="fa-chevron-down fas"></i>
+                            <i class="ml-1 fa-angle-down fas"></i>
                         </a>
                         <div class="relative">
                             <div x-cloak x-show="show"
