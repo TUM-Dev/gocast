@@ -43,7 +43,7 @@
                         </div>
                     </div>
                     <div class="flex space-x-3 my-auto">
-                        {{if (and $course.DownloadsEnabled $lecture.FilePath) }}
+                        {{if and (and $course.DownloadsEnabled $user) $lecture.IsDownloadable}}
                             <a class="flex text-3 rounded-full hover:text-gray-600"
                                title="Download Lecture"
                                href="/api/download/{{$lecture.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $lecture.Start.Month $lecture.Start.Day $lecture.Start.Year}}"

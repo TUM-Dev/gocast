@@ -15,9 +15,9 @@
                 <i class="fas fa-exclamation-triangle text-4 hover:text-1"></i>
             </button>
         {{end}}
-        {{/* Download button */}}
+        {{/* VoD download button */}}
         {{if and (and $course.DownloadsEnabled $user) $stream.IsDownloadable}}
-            {{template "downloadBtn" $stream.Files}}
+            {{template "downloadBtn" $stream.GetVodFiles}}
         {{end}}
         {{/* Switch video to presentation */}}
         {{if $stream.PlaylistUrlPRES}}
