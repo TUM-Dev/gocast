@@ -148,8 +148,9 @@ export class VideoSectionsAdmin {
 
     client: VideoSectionClient;
 
-    constructor(client: VideoSectionClient) {
+    constructor(client: VideoSectionClient, streamID: number) {
         this.client = client;
+        this.streamID = streamID;
 
         this.newSections = [];
         this.existingSections = [];
