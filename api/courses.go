@@ -61,7 +61,10 @@ type coursesRoutes struct {
 	dao.DaoWrapper
 }
 
-const WorkerHTTPPort = "8060"
+const (
+	WorkerHTTPPort = "8060"
+	CutOffLength   = 100
+)
 
 type uploadVodReq struct {
 	Start time.Time `form:"start" binding:"required"`
@@ -459,7 +462,7 @@ func (r coursesRoutes) updateDescription(c *gin.Context) {
 	wsMsg := gin.H{
 		"description": gin.H{
 			"full":      stream.GetDescriptionHTML(),
-			"truncated": stream.TruncatedDescription(),
+			"truncated": tools.Truncate(stream.GetDescriptionHTML(), 150),
 		},
 	}
 	if msg, err := json.Marshal(wsMsg); err == nil {

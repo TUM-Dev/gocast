@@ -237,8 +237,7 @@
                 {{template "videosections" $stream}}
             {{end}}
             <!-- Video description -->
-            {{$maxDescLen := 100}}
-            <div x-data="{ less: {{len .Description}}>{{$maxDescLen}}, full: `{{$stream.GetDescriptionHTML}}`, prev: `{{$stream.TruncatedDescription}}` }"
+            <div x-data="{ less: {{len .Description}}>{{.CutOffLength}}, full: `{{.Description}}`, prev: `{{.TruncatedDescription}}` }"
                  class="text-3 pt-2 video-description"
                  x-show="full.length"
             >
@@ -247,9 +246,9 @@
                 <div class="text-3 px-2"
                      x-html="less ? prev : full"
                      @descriptionupdate.window="full=$el.innerHTML=$event.detail.description.full;prev=
-                    $el.innerHTML=$event.detail.description.truncated;less=full.length>{{$maxDescLen}};">
+                    $el.innerHTML=$event.detail.description.truncated;less=full.length>{{.CutOffLength}};">
                 </div>
-                <button x-show="full.length>{{$maxDescLen}}"
+                <button x-show="full.length>{{.CutOffLength}}"
                         class="text-xs text-gray-500 dark:text-gray-400 uppercase mt-2 px-2"
                         @click="less = !less" x-text="less ? 'show more' : 'show less'">
                 </button>
