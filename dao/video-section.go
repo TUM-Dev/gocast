@@ -9,6 +9,7 @@ type VideoSectionDao interface {
 	Create([]model.VideoSection) error
 	Update(*model.VideoSection) error
 	Delete(uint) error
+	Get(uint) (model.VideoSection, error)
 	GetByStreamId(uint) ([]model.VideoSection, error)
 }
 
@@ -21,15 +22,20 @@ func NewVideoSectionDao() VideoSectionDao {
 }
 
 func (d videoSectionDao) Create(sections []model.VideoSection) error {
-	return DB.Create(&sections).Error
+	return d.db.Create(&sections).Error
 }
 
 func (d videoSectionDao) Update(section *model.VideoSection) error {
-	return DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&section).Error
+	return d.db.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&section).Error
 }
 
 func (d videoSectionDao) Delete(videoSectionID uint) error {
-	return DB.Delete(&model.VideoSection{}, "id = ?", videoSectionID).Error
+	return d.db.Delete(&model.VideoSection{}, "id = ?", videoSectionID).Error
+}
+
+func (d videoSectionDao) Get(videoSectionID uint) (section model.VideoSection, err error) {
+	err = d.db.Find(&section, "id = ?", videoSectionID).Error
+	return section, err
 }
 
 func (d videoSectionDao) GetByStreamId(streamID uint) ([]model.VideoSection, error) {

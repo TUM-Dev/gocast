@@ -91,7 +91,7 @@ func (r streamRoutes) getThumbs(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	sendFile(c, file)
+	sendDownloadFile(c, file)
 }
 
 // livestreams returns all streams that are live
@@ -348,37 +348,39 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 }
 
 func (r streamRoutes) deleteVideoSection(c *gin.Context) {
-	context := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-
 	idAsString := c.Param("id")
 	id, err := strconv.Atoi(idAsString)
 	if err != nil {
 		log.WithError(err).Error("Can't parse video-section id in url")
+		c.AbortWithStatus(http.StatusBadRequest)
 	}
+
+	old, err := r.VideoSectionDao.Get(uint(id))
+	if err != nil {
+		log.WithError(err).Error("Invalid ID")
+		c.AbortWithStatus(http.StatusBadRequest)
+	}
+
+	file, err := r.FileDao.GetFileById(fmt.Sprintf("%d", old.FileID))
+	if err != nil {
+		log.WithError(err).Error("Can't get file")
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+
 	err = r.VideoSectionDao.Delete(uint(id))
 	if err != nil {
 		log.WithError(err).Error("Can't delete video-section")
-	}
-
-	sections, err := r.VideoSectionDao.GetByStreamId(context.Stream.ID)
-	if err != nil {
-		log.WithError(err).Error("failed to create video sections")
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 
 	go func() {
-		parameters := generateVideoSectionImagesParameters{
-			sections:           sections,
-			playlistUrl:        context.Stream.PlaylistUrl,
-			courseName:         context.Course.Name,
-			courseTeachingTerm: context.Course.TeachingTerm,
-			courseYear:         uint32(context.Course.Year),
-		}
-		err := GenerateVideoSectionImages(r.DaoWrapper, &parameters)
+		err := DeleteVideoSectionImage(r.DaoWrapper.WorkerDao, file.Path)
 		if err != nil {
 			log.WithError(err).Error("failed to generate video section images")
 		}
 	}()
+
+	c.Status(http.StatusAccepted)
 }
 
 func (r streamRoutes) newAttachment(c *gin.Context) {
