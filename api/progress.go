@@ -146,7 +146,7 @@ func (r progressRoutes) markWatched(c *gin.Context) {
 }
 
 type reportSeekRequest struct {
-	StreamID uint    `json:"streamID"`
+	StreamID string  `json:"streamID"`
 	Position float64 `json:"position"`
 }
 
@@ -158,22 +158,9 @@ func (r progressRoutes) reportSeek(c *gin.Context) {
 		return
 	}
 
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		return
-	}
-
-	// TODO: Limit user requests per timespan to prevent abuse. Maybe check if stream exists too.
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	if tumLiveContext.User == nil {
-		c.AbortWithStatus(http.StatusForbidden)
-		return
-	}
-
-	if err := r.VideoSeekDao.Add(model.VideoSeekPoint{
-		StreamID:     req.StreamID,
-		SeekPosition: req.Position,
-	}); err != nil {
+	if err := r.VideoSeekDao.Add(req.StreamID, req.Position); err != nil {
+		log.WithError(err).Error("Could not add seek hit")
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 }

@@ -436,7 +436,10 @@ export class SeekLogger {
 
     constructor(streamID) {
         this.streamID = parseInt(streamID);
-        this.log = debounce((position) => postData(`/api/seekReport`, { position, streamID: this.streamID }), 3000);
+        this.log = debounce(
+            (position) => postData(`/api/seekReport`, { position, streamID: `${this.streamID}` }),
+            3000,
+        );
     }
 
     attach() {
@@ -447,6 +450,9 @@ export class SeekLogger {
                 }
                 this.initialSeekDone = true;
             });
+
+            // If there is no initial seek, reset after 1 second
+            setTimeout(() => (this.initialSeekDone = true), 1000);
         });
     }
 }
