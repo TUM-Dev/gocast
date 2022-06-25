@@ -5,17 +5,16 @@
     {{$user := .IndexData.TUMLiveContext.User}}
 
     {{/* Icons for different actions student can do for a stream */}}
-    <div class="flex content-center space-x-2">
-        {{/* File Attachment button (slides, etc.)*/}}
+    <div class="content-center space-x-1">
+        {{/* File Attachment button (slides, etc.) */}}
         {{template "attachments" $stream}}
-
         {{/* Feedback button */}}
         {{if and .AlertsEnabled ((and $user (not ($user.IsAdminOfCourse $course))))}}
-            <button class="m-auto" title="Technical problems? Send us feedback!" @click="$dispatch('issue')">
+            <button class="m-auto" title="Issues with the stream? Click to open a form to notify the RBG."
+                    @click="$dispatch('issue')">
                 <i class="fas fa-exclamation-triangle text-4 hover:text-1"></i>
             </button>
         {{end}}
-
         {{/* VoD download button */}}
         {{if and (and $course.DownloadsEnabled $user) $stream.IsDownloadable}}
             {{template "downloadBtn" $stream.GetVodFiles}}
