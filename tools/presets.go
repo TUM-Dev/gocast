@@ -36,7 +36,7 @@ func (p presetUtility) ProvideCamera(ctype model.CameraType, ip string) (camera.
 	case model.Panasonic:
 		return camera.NewPanasonicCam(ip, nil), nil
 	}
-	return nil, errors.New("Invalid Camera Type")
+	return nil, errors.New("invalid camera type")
 }
 
 //FetchCameraPresets Queries all cameras of lecture halls for their camera presets and saves them to the database
