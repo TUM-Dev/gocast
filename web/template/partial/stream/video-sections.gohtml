@@ -1,7 +1,7 @@
 {{define "videosections"}}
     <div x-data="{sections: new watch.VideoSections('{{.ID}}')}"
-         x-init="await sections.fetch()" class="w-full">
-        <h6 class="font-bold text-3 pb-3">Sections</h6>
+         x-init="await sections.fetch()" class="w-full px-2">
+        <h6 class="font-bold text-3 pb-3 pt-2"><i class="fa-solid fa-film mr-1"></i>Sections</h6>
         <div class="overflow-auto flex">
             <template x-for="(section, i) in sections.list">
                 <button class="mb-1 flex bg-transparent outline-none border-0 rounded-lg mr-2 last:mr-0"

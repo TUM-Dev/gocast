@@ -3,8 +3,9 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/russross/blackfriday/v2"
 	"time"
+
+	"github.com/russross/blackfriday/v2"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/now"
@@ -38,8 +39,7 @@ type Stream struct {
 	PlaylistUrl      string
 	PlaylistUrlPRES  string
 	PlaylistUrlCAM   string
-	FilePath         string //deprecated
-	LiveNow          bool   `gorm:"not null"`
+	LiveNow          bool `gorm:"not null"`
 	Recording        bool
 	Premiere         bool `gorm:"default:null"`
 	Ended            bool `gorm:"default:null"`
@@ -52,6 +52,7 @@ type Stream struct {
 	LectureHallID    uint `gorm:"default:null"`
 	Silences         []Silence
 	Files            []File `gorm:"foreignKey:StreamID"`
+	ThumbInterval    uint32 `gorm:"default:null"`
 	Paused           bool   `gorm:"default:false"`
 	StreamName       string
 	Duration         uint32           `gorm:"default:null"`
@@ -62,6 +63,36 @@ type Stream struct {
 	Private          bool         `gorm:"not null;default:false"`
 
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
+}
+
+// GetVodFiles returns all downloadable files that user can see when using the download dropdown for a stream.
+func (s Stream) GetVodFiles() []File {
+	dFiles := make([]File, 0)
+	for _, file := range s.Files {
+		if file.Type == FILETYPE_VOD {
+			dFiles = append(dFiles, file)
+		}
+	}
+	return dFiles
+}
+
+// GetThumbIdForSource returns the id of file that stores the thumbnail sprite for a specific source type.
+func (s Stream) GetThumbIdForSource(source string) uint {
+	var fileType FileType
+	switch source {
+	case "CAM":
+		fileType = FILETYPE_THUMB_CAM
+	case "PRES":
+		fileType = FILETYPE_THUMB_PRES
+	default:
+		fileType = FILETYPE_THUMB_COMB
+	}
+	for _, file := range s.Files {
+		if file.Type == fileType {
+			return file.ID
+		}
+	}
+	return FILETYPE_INVALID
 }
 
 // GetStartInSeconds returns the number of seconds until the stream starts (or 0 if it has already started or is a vod)
