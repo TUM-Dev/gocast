@@ -1,8 +1,8 @@
 {{define "videosections"}}
-    <div class = "flex">
+    <div class = "flex px-2">
         <div x-data="{sections: new watch.VideoSections('{{.ID}}')}"
              x-init="await sections.fetch()" class="group relative">
-            <h6 class="font-bold text-3 pb-3">Sections</h6>
+            <h6 class="font-bold text-3 pb-3 pt-2"><i class="fa-solid fa-film mr-1"></i>Sections</h6>
             <div class="relative space-x-2 flex">
                 <template x-if="sections.showPrev()">
                     <button @click="sections.prev()"

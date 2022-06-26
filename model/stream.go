@@ -3,8 +3,9 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/russross/blackfriday/v2"
 	"time"
+
+	"github.com/russross/blackfriday/v2"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/now"
