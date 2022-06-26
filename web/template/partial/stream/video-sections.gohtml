@@ -1,5 +1,5 @@
 {{define "videosections"}}
-    <div x-data="{client: new watch.VideoSectionClient('{{.ID}}}')}">
+    <div x-data="{client: new watch.VideoSectionClient('{{.ID}}')}">
         <div class="hidden md:block">
             {{template "videosections-desktop" .}}
         </div>
