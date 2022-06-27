@@ -163,6 +163,12 @@ var (
 		Filename: "i_do_not_exist.txt",
 		Type:     model.FILETYPE_ATTACHMENT,
 	}
+	InfoPage = model.InfoPage{
+		Model:      gorm.Model{ID: 1},
+		Name:       "Data Privacy",
+		RawContent: "#data privacy",
+		Type:       model.INFOPAGE_MARKDOWN,
+	}
 )
 
 func GetStreamMock(t *testing.T) dao.StreamsDao {
