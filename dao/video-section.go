@@ -5,6 +5,8 @@ import (
 	"gorm.io/gorm"
 )
 
+//go:generate mockgen -source=video-section.go -destination ../mock_dao/video-section.go
+
 type VideoSectionDao interface {
 	Create([]model.VideoSection) error
 	Update(*model.VideoSection) error

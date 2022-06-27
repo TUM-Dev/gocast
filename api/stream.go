@@ -297,12 +297,14 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 	if err != nil {
 		log.WithError(err).Error("failed to create video sections")
 		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 
 	sections, err = r.VideoSectionDao.GetByStreamId(context.Stream.ID)
 	if err != nil {
 		log.WithError(err).Error("failed to create video sections")
 		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 
 	go func() {
