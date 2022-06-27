@@ -131,31 +131,21 @@ func (r streamRoutes) liveStreams(c *gin.Context) {
 }
 
 func (r streamRoutes) endStream(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	discardVoD := c.Request.URL.Query().Get("discard") == "true"
 	log.Info(discardVoD)
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	NotifyWorkersToStopStream(*tumLiveContext.Stream, discardVoD, r.DaoWrapper)
 }
 
 func (r streamRoutes) pauseStream(c *gin.Context) {
 	pause := c.Request.URL.Query().Get("pause") == "true"
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	stream := tumLiveContext.Stream
 	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
 		log.WithError(err).Error("request to pause stream without lecture hall")
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	ge := goextron.New(fmt.Sprintf("http://%s", strings.ReplaceAll(lectureHall.CombIP, "extron3", "")), tools.Cfg.Auths.SmpUser, tools.Cfg.Auths.SmpUser) // todo
@@ -186,13 +176,8 @@ func (r streamRoutes) pauseStream(c *gin.Context) {
 
 // reportStreamIssue sends a notification to a matrix room that can be used for debugging technical issues.
 func (r streamRoutes) reportStreamIssue(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	stream := tumLiveContext.Stream
 
 	type alertMessage struct {
@@ -258,13 +243,7 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 }
 
 func (r streamRoutes) getStream(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	stream := *tumLiveContext.Stream
 	course := *tumLiveContext.Course
@@ -283,13 +262,7 @@ func (r streamRoutes) getStream(c *gin.Context) {
 }
 
 func (r streamRoutes) getVideoSections(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	sections, err := r.VideoSectionDao.GetByStreamId(tumLiveContext.Stream.ID)
 	if err != nil {
 		log.WithError(err).Error("Can't get video sections")
@@ -353,24 +326,28 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 	if err != nil {
 		log.WithError(err).Error("Can't parse video-section id in url")
 		c.AbortWithStatus(http.StatusBadRequest)
+		return
 	}
 
 	old, err := r.VideoSectionDao.Get(uint(id))
 	if err != nil {
 		log.WithError(err).Error("Invalid ID")
 		c.AbortWithStatus(http.StatusBadRequest)
+		return
 	}
 
 	file, err := r.FileDao.GetFileById(fmt.Sprintf("%d", old.FileID))
 	if err != nil {
 		log.WithError(err).Error("Can't get file")
 		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 
 	err = r.VideoSectionDao.Delete(uint(id))
 	if err != nil {
 		log.WithError(err).Error("Can't delete video-section")
 		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 
 	go func() {
