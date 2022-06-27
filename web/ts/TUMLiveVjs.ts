@@ -26,6 +26,7 @@ export const initPlayer = function (
     fluid: boolean,
     isEmbedded: boolean,
     playbackSpeeds: number[],
+    live: boolean,
     spriteID?: number,
     spriteInterval?: number,
     streamID?: number,
@@ -75,6 +76,10 @@ export const initPlayer = function (
         window.localStorage.setItem("volume", player.volume());
         window.localStorage.setItem("muted", player.muted());
     });
+    // handle rate store:
+    player.on("ratechange", function () {
+        window.localStorage.setItem("rate", player.playbackRate());
+    });
     player.ready(function () {
         player.airPlay({
             addButtonToControlBar: true,
@@ -87,6 +92,12 @@ export const initPlayer = function (
         const persistedMute = window.localStorage.getItem("muted");
         if (persistedMute !== null) {
             player.muted("true" === persistedMute);
+        }
+        if (!live) {
+            const persistedRate = window.localStorage.getItem("rate");
+            if (persistedRate !== null) {
+                player.playbackRate(persistedRate);
+            }
         }
         if (isEmbedded) {
             player.addChild("Titlebar", {
