@@ -31,7 +31,7 @@ func setup() {
 
 func TestGetTranscodingFileName(t *testing.T) {
 	setup()
-	transcodingNameShould := "/srv/cephfs/livestream/rec/TUM-Live/2021/W/eidi/2021-09-23_08-00/eidi-2021-09-23-08-00COMB.mp4"
+	transcodingNameShould := "/mass/2021/W/eidi/2021-09-23_08-00/eidi-2021-09-23-08-00COMB.mp4"
 	if got := s.getTranscodingFileName(); got != transcodingNameShould {
 		t.Errorf("Wrong transcoding name, should be %s but is %s", transcodingNameShould, got)
 	}

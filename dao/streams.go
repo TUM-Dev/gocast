@@ -404,6 +404,7 @@ func (d streamsDao) SaveStream(vod *model.Stream) error {
 		Files:           vod.Files,
 		Paused:          vod.Paused,
 		Duration:        vod.Duration,
+		ThumbInterval:   vod.ThumbInterval,
 		StreamStatus:    vod.StreamStatus,
 	}).Error
 	return err
