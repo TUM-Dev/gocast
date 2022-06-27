@@ -580,13 +580,8 @@ func (r coursesRoutes) deleteLectures(c *gin.Context) {
 }
 
 func (r coursesRoutes) createLecture(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	var req createLectureRequest
 	if err := c.ShouldBind(&req); err != nil {
 		log.WithError(err).Error("invalid form")
@@ -675,6 +670,7 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 	err = r.CoursesDao.UpdateCourse(context.Background(), *tumLiveContext.Course)
 	if err != nil {
 		log.WithError(err).Warn("Can't update course")
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }
 
@@ -771,14 +767,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 }
 
 func (r coursesRoutes) deleteCourse(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	log.WithFields(log.Fields{
 		"user":   tumLiveContext.User.ID,

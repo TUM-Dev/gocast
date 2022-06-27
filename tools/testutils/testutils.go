@@ -49,6 +49,8 @@ func (tc TestCases) Run(t *testing.T, configRouterFunc func(*gin.Engine, dao.Dao
 			c.Request, _ = http.NewRequest(testCase.Method, testCase.Url, testCase.Body)
 			if len(testCase.ContentType) > 0 {
 				c.Request.Header.Set("Content-Type", testCase.ContentType)
+			} else {
+				c.Request.Header.Set("Content-Type", "application/json")
 			}
 			r.ServeHTTP(w, c.Request)
 
