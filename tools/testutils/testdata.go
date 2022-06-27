@@ -228,23 +228,6 @@ func GetLectureHallMockError(t *testing.T) dao.LectureHallsDao {
 	return lectureHallMock
 }
 
-func GetVideoSectionMock(t *testing.T) dao.VideoSectionDao {
-	sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
-	sectionMock.
-		EXPECT().
-		GetByStreamId(StreamFPVLive.ID).
-		Return(StreamFPVLive.VideoSections, nil)
-	sectionMock.
-		EXPECT().
-		Create(gomock.Any()).
-		Return(nil)
-	sectionMock.
-		EXPECT().
-		Delete(gomock.Any()).
-		Return(nil)
-	return sectionMock
-}
-
 func GetTokenMock(t *testing.T) dao.TokenDao {
 	tokenMock := mock_dao.NewMockTokenDao(gomock.NewController(t))
 	tokenMock.

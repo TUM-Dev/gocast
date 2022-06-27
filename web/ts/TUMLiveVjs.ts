@@ -406,14 +406,20 @@ export function jumpTo(hours: number, minutes: number, seconds: number) {
 
 export class VideoSections {
     readonly streamID: number;
+    readonly sectionsPerGroup: number;
 
-    list: Section[];
+    private list: Section[];
+
     currentHighlightIndex: number;
+    currentIndex: number;
 
     constructor(streamID) {
         this.streamID = streamID;
         this.list = [];
         this.currentHighlightIndex = -1;
+
+        this.currentIndex = 0;
+        this.sectionsPerGroup = 4;
     }
 
     isCurrent(i: number): boolean {
@@ -437,6 +443,29 @@ export class VideoSections {
                 this.list = [];
                 this.currentHighlightIndex = 0;
             });
+    }
+
+    showSection(i: number): boolean {
+        return (
+            i >= this.currentIndex * this.sectionsPerGroup &&
+            i < this.currentIndex * this.sectionsPerGroup + this.sectionsPerGroup
+        );
+    }
+
+    showNext(): boolean {
+        return this.currentIndex < this.list.length / this.sectionsPerGroup - 1;
+    }
+
+    showPrev(): boolean {
+        return this.currentIndex > 0;
+    }
+
+    next() {
+        this.currentIndex = (this.currentIndex + 1) % this.list.length;
+    }
+
+    prev() {
+        this.currentIndex = (this.currentIndex - 1) % this.list.length;
     }
 }
 

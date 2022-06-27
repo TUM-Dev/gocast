@@ -727,6 +727,81 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 	}
 }
 
+type generateVideoSectionImagesParameters struct {
+	sections                                    []model.VideoSection
+	playlistUrl, courseName, courseTeachingTerm string
+	courseYear                                  uint32
+}
+
+func DeleteVideoSectionImage(workerDao dao.WorkerDao, path string) error {
+	workers := workerDao.GetAliveWorkers()
+	workerIndex := getWorkerWithLeastWorkload(workers)
+	conn, err := dialIn(workers[workerIndex])
+	defer func() {
+		endConnection(conn)
+	}()
+	if err != nil {
+		log.WithError(err).Error("Unable to dial server")
+		return err
+	}
+
+	client := pb.NewToWorkerClient(conn)
+
+	_, err = client.DeleteSectionImage(context.Background(), &pb.DeleteSectionImageRequest{Path: path})
+	return err
+}
+
+func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *generateVideoSectionImagesParameters) error {
+	workers := daoWrapper.WorkerDao.GetAliveWorkers()
+	workerIndex := getWorkerWithLeastWorkload(workers)
+	conn, err := dialIn(workers[workerIndex])
+	defer func() {
+		endConnection(conn)
+	}()
+	if err != nil {
+		log.WithError(err).Error("Unable to dial server")
+		return err
+	}
+
+	client := pb.NewToWorkerClient(conn)
+
+	// collect timestamps
+	sectionTimestamps := make([]*pb.Section, len(parameters.sections))
+	for i, section := range parameters.sections {
+		sectionTimestamps[i] = &pb.Section{
+			Hours:   uint32(section.StartHours),
+			Minutes: uint32(section.StartMinutes),
+			Seconds: uint32(section.StartSeconds),
+		}
+	}
+
+	// make request
+	res, err := client.GenerateSectionImages(context.Background(), &pb.GenerateSectionImageRequest{
+		PlaylistURL:        parameters.playlistUrl,
+		CourseName:         parameters.courseName,
+		CourseYear:         parameters.courseYear,
+		CourseTeachingTerm: parameters.courseTeachingTerm,
+		Sections:           sectionTimestamps,
+	})
+	if err != nil {
+		return err
+	}
+
+	// update database
+	for i, section := range parameters.sections {
+		imageFile := model.File{StreamID: section.StreamID, Path: res.Paths[i], Type: model.FILETYPE_IMAGE_JPG}
+		if err := daoWrapper.FileDao.NewFile(&imageFile); err != nil {
+			return err
+		}
+
+		update := model.VideoSection{Model: gorm.Model{ID: section.ID}, FileID: imageFile.ID}
+		if err := daoWrapper.VideoSectionDao.Update(&update); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // NotifyWorkersToStopStream notifies all workers for a given stream to quit encoding
 func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool, daoWrapper dao.DaoWrapper) {
 	workers, err := daoWrapper.StreamsDao.GetWorkersForStream(stream)

@@ -91,7 +91,7 @@ func (r streamRoutes) getThumbs(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	sendFile(c, file)
+	sendDownloadFile(c, file)
 }
 
 // livestreams returns all streams that are live
@@ -278,6 +278,7 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 			"description":       section.Description,
 			"friendlyTimestamp": section.TimestampAsString(),
 			"streamID":          section.StreamID,
+			"fileID":            section.FileID,
 		})
 
 	}
@@ -285,6 +286,7 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 }
 
 func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
+	context := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	var sections []model.VideoSection
 	if err := c.BindJSON(&sections); err != nil {
 		log.WithError(err).Error("failed to bind video section JSON")
@@ -296,7 +298,29 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 	if err != nil {
 		log.WithError(err).Error("failed to create video sections")
 		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
+
+	sections, err = r.VideoSectionDao.GetByStreamId(context.Stream.ID)
+	if err != nil {
+		log.WithError(err).Error("failed to create video sections")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	go func() {
+		parameters := generateVideoSectionImagesParameters{
+			sections:           sections,
+			playlistUrl:        context.Stream.PlaylistUrl,
+			courseName:         context.Course.Name,
+			courseTeachingTerm: context.Course.TeachingTerm,
+			courseYear:         uint32(context.Course.Year),
+		}
+		err := GenerateVideoSectionImages(r.DaoWrapper, &parameters)
+		if err != nil {
+			log.WithError(err).Error("failed to generate video section images")
+		}
+	}()
 }
 
 func (r streamRoutes) deleteVideoSection(c *gin.Context) {
@@ -307,12 +331,36 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+
+	old, err := r.VideoSectionDao.Get(uint(id))
+	if err != nil {
+		log.WithError(err).Error("Invalid ID")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	file, err := r.FileDao.GetFileById(fmt.Sprintf("%d", old.FileID))
+	if err != nil {
+		log.WithError(err).Error("Can't get file")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
 	err = r.VideoSectionDao.Delete(uint(id))
 	if err != nil {
 		log.WithError(err).Error("Can't delete video-section")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
+
+	go func() {
+		err := DeleteVideoSectionImage(r.DaoWrapper.WorkerDao, file.Path)
+		if err != nil {
+			log.WithError(err).Error("failed to generate video section images")
+		}
+	}()
+
+	c.Status(http.StatusAccepted)
 }
 
 func (r streamRoutes) newAttachment(c *gin.Context) {
