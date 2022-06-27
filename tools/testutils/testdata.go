@@ -61,6 +61,23 @@ var (
 		VodChatEnabled:       false,
 		Visibility:           "public",
 	}
+	CourseGBS = model.Course{
+		Model:                gorm.Model{ID: uint(42)},
+		UserID:               1,
+		Name:                 "Grundlagen: Betriebssysteme und Systemsoftware (IN0009)",
+		Slug:                 "gbs",
+		Year:                 0,
+		TeachingTerm:         "W",
+		TUMOnlineIdentifier:  "2021",
+		LiveEnabled:          true,
+		VODEnabled:           false,
+		DownloadsEnabled:     false,
+		ChatEnabled:          true,
+		AnonymousChatEnabled: false,
+		ModeratedChatEnabled: false,
+		VodChatEnabled:       false,
+		Visibility:           "public",
+	}
 	StreamFPVLive = model.Stream{
 		Model:            gorm.Model{ID: 1969},
 		Name:             "Lecture 1",
@@ -115,6 +132,21 @@ var (
 		PlaylistUrlCAM:   "https://url",
 		LiveNow:          false,
 		LectureHallID:    LectureHall.ID,
+	}
+	StreamGBSLive = model.Stream{
+		Model:            gorm.Model{ID: 96},
+		Name:             "Linker & Loader",
+		Description:      "Tweedback: ...",
+		CourseID:         CourseGBS.ID,
+		Start:            StartTime,
+		End:              StartTime.Add(time.Hour),
+		TUMOnlineEventID: 888333337,
+		SeriesIdentifier: "",
+		StreamKey:        "0dc3d-1337-7331-4201-1337-7f16-bbe1-2222",
+		PlaylistUrl:      "https://url",
+		PlaylistUrlPRES:  "https://url",
+		PlaylistUrlCAM:   "https://url",
+		LiveNow:          true,
 	}
 	SelfStream = model.Stream{
 		Model:            gorm.Model{ID: 420},

@@ -543,23 +543,10 @@ func (r coursesRoutes) deleteLectureSeries(c *gin.Context) {
 }
 
 func (r coursesRoutes) deleteLectures(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	var req deleteLecturesRequest
-	err = json.Unmarshal(jsonData, &req)
-	if err != nil {
+	if err := c.Bind(&req); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
