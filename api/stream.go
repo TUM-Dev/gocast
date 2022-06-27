@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
 	goextron "github.com/RBG-TUM/go-extron"
