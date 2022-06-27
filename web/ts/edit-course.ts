@@ -467,6 +467,7 @@ export function createLectureForm() {
             lectureHallId: 0,
             start: "",
             end: "",
+            isChatEnabled: false,
             duration: 0, // Duration in Minutes
             formatedDuration: "", // Duration in Minutes
             premiere: false,
@@ -544,6 +545,7 @@ export function createLectureForm() {
                     vodup: this.formData.vodup,
                     start: this.formData.start,
                     duration: this.formData.duration,
+                    isChatEnabled: this.formData.isChatEnabled,
                     dateSeries: [],
                     // todo: file: undefined,
                 };

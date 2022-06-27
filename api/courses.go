@@ -844,6 +844,7 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 			LectureHallID: uint(lectureHallId),
 			Start:         date,
 			End:           endTime,
+			ChatEnabled:   req.ChatEnabled,
 			StreamKey:     streamKey,
 			PlaylistUrl:   playlist,
 			LiveNow:       false,
@@ -889,6 +890,7 @@ type createLectureRequest struct {
 	LectureHallId string      `json:"lectureHallId"`
 	Start         time.Time   `json:"start"`
 	Duration      int         `json:"duration"`
+	ChatEnabled   bool        `json:"isChatEnabled"`
 	Premiere      bool        `json:"premiere"`
 	Vodup         bool        `json:"vodup"`
 	DateSeries    []time.Time `json:"dateSeries"`
