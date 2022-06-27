@@ -160,7 +160,7 @@ func TestWatched(t *testing.T) {
 			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{}})
 		})
 
-		progressMock.EXPECT().SaveProgresses(gomock.Any()).Return(errors.New(""))
+		progressMock.EXPECT().SaveWatchedState(gomock.Any()).Return(errors.New(""))
 
 		configProgressRouter(r, dao.DaoWrapper{ProgressDao: progressMock})
 
@@ -187,7 +187,7 @@ func TestWatched(t *testing.T) {
 			}})
 		})
 
-		progressMock.EXPECT().SaveProgresses(gomock.Any()).Return(nil)
+		progressMock.EXPECT().SaveWatchedState(gomock.Any()).Return(nil)
 
 		configProgressRouter(r, dao.DaoWrapper{ProgressDao: progressMock})
 
