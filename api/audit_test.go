@@ -6,27 +6,29 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
 	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/stretchr/testify/assert"
+	"github.com/joschahenningsen/TUM-Live/tools/testutils"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 )
 
 func TestGetAudits(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
+	t.Parallel()
+
 	// audit mock
 	mock := mock_dao.NewMockAuditDao(gomock.NewController(t))
 	mock.EXPECT().Find(gomock.Any(), gomock.Any(), gomock.Any()).Return([]model.Audit{}, nil).AnyTimes()
+	mock.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
 
-	w := httptest.NewRecorder()
-	c, r := gin.CreateTestContext(w)
-
-	configAuditRouter(r, dao.DaoWrapper{})
-	c.Request, _ = http.NewRequest(http.MethodGet, "/api/audits/?limit=1&offset=0&types[]=1", nil)
-	r.ServeHTTP(w, c.Request)
-
-	t.Log(w.Body.String())
-	assert.Equal(t, http.StatusOK, w.Code)
-
+	testCases := testutils.TestCases{
+		"get audits": {
+			Method:         http.MethodGet,
+			Url:            "/api/audits?limit=1&offset=0&types[]=1",
+			DaoWrapper:     dao.DaoWrapper{AuditDao: mock},
+			TumLiveContext: &testutils.TUMLiveContextAdmin,
+			ExpectedCode:   http.StatusOK,
+		},
+	}
+	testCases.Run(t, configAuditRouter)
 }

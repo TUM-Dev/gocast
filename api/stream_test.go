@@ -297,6 +297,11 @@ func TestStream(t *testing.T) {
 							Return(errors.New("")).AnyTimes()
 						return streamsMock
 					}(),
+					AuditDao: func() dao.AuditDao {
+						mock := mock_dao.NewMockAuditDao(gomock.NewController(t))
+						mock.EXPECT().Create(gomock.Any()).AnyTimes().Return(nil)
+						return mock
+					}(),
 					CoursesDao: testutils.GetCoursesMock(t),
 				},
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
@@ -309,6 +314,11 @@ func TestStream(t *testing.T) {
 				DaoWrapper: dao.DaoWrapper{
 					StreamsDao: testutils.GetStreamMock(t),
 					CoursesDao: testutils.GetCoursesMock(t),
+					AuditDao: func() dao.AuditDao {
+						mock := mock_dao.NewMockAuditDao(gomock.NewController(t))
+						mock.EXPECT().Create(gomock.Any()).AnyTimes().Return(nil)
+						return mock
+					}(),
 				},
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				Body:           bytes.NewBuffer(testutils.First(json.Marshal(gin.H{"private": false})).([]byte)),

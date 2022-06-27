@@ -1,10 +1,12 @@
 package api
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	"gorm.io/gorm"
 	"net/http"
 )
 
@@ -37,7 +39,7 @@ func (r auditRoutes) getAudits(c *gin.Context) {
 		reqData.Types = model.GetAllAuditTypes()
 	}
 	found, err := r.AuditDao.Find(reqData.Limit, reqData.Offset, reqData.Types...)
-	if err != nil {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
 		return
 	}

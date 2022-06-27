@@ -19,7 +19,7 @@ type auditDao struct {
 }
 
 func (a auditDao) Find(limit int, offset int, types ...model.AuditType) (audits []model.Audit, err error) {
-	return audits, a.db.Debug().
+	return audits, a.db.
 		Preload("User").
 		Model(&model.Audit{}).
 		Where("type in ?", types).

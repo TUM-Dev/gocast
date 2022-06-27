@@ -411,11 +411,12 @@ func (r streamRoutes) updateStreamVisibility(c *gin.Context) {
 		return
 	}
 
-	if err := r.AuditDao.Create(&model.Audit{
+	err = r.AuditDao.Create(&model.Audit{
 		User:    ctx.User,
 		Message: fmt.Sprintf("%d: (Visibility: %v)", ctx.Stream.ID, req.Private), // e.g. "eidi:'Einführung in die Informatik' (2020, S)"
 		Type:    model.AuditStreamEdit,
-	}); err != nil {
+	})
+	if err != nil {
 		log.Error("Create Audit:", err)
 	}
 

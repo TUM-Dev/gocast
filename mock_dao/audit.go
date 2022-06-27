@@ -35,7 +35,7 @@ func (m *MockAuditDao) EXPECT() *MockAuditDaoMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockAuditDao) Create(arg0 model.Audit) error {
+func (m *MockAuditDao) Create(arg0 *model.Audit) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0)
 	ret0, _ := ret[0].(error)

@@ -196,6 +196,10 @@ func GetStreamMock(t *testing.T) dao.StreamsDao {
 	return streamsMock
 }
 
+func GetAuditMock(t *testing.T) dao.AuditDao {
+	auditMock := mock_dao.NewMockAuditDao(gomock.NewController(t))
+	return auditMock
+}
 func GetCoursesMock(t *testing.T) dao.CoursesDao {
 	coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
 	coursesMock.
