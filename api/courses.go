@@ -428,16 +428,12 @@ func (r coursesRoutes) deleteUnit(c *gin.Context) {
 }
 
 func (r coursesRoutes) addUnit(c *gin.Context) {
-	body, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
-		return
-	}
 	var req addUnitRequest
-	if err = json.Unmarshal(body, &req); err != nil {
+	if err := c.BindJSON(&req); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
 		return
 	}
+
 	stream, err := r.StreamsDao.GetStreamByID(context.Background(), strconv.Itoa(int(req.LectureID)))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "stream not found"})
@@ -451,7 +447,8 @@ func (r coursesRoutes) addUnit(c *gin.Context) {
 		StreamID:        stream.Model.ID,
 	})
 	if err = r.StreamsDao.UpdateStreamFullAssoc(&stream); err != nil {
-		panic(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 }
 

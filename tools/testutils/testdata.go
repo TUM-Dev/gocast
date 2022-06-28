@@ -97,6 +97,16 @@ var (
 		LiveNow:          true,
 		LectureHallID:    LectureHall.ID,
 		Files:            []model.File{Attachment, AttachmentInvalidPath},
+		Units: []model.StreamUnit{
+			{
+				Model:           gorm.Model{ID: 1},
+				UnitName:        "Unit 1",
+				UnitDescription: "First unit",
+				UnitStart:       0,
+				UnitEnd:         1111,
+				StreamID:        1969,
+			},
+		},
 		VideoSections: []model.VideoSection{
 			{
 				Description:  "Introduction",
@@ -225,18 +235,34 @@ func GetStreamMock(t *testing.T) dao.StreamsDao {
 		EXPECT().
 		GetCurrentLive(gomock.Any()).
 		Return([]model.Stream{StreamFPVLive}, nil).AnyTimes()
+	streamsMock.
+		EXPECT().
+		UpdateStreamFullAssoc(gomock.Any()).
+		Return(nil).
+		AnyTimes()
+	streamsMock.
+		EXPECT().
+		GetUnitByID(fmt.Sprintf("%d", StreamFPVLive.Units[0].ID)).
+		Return(StreamFPVLive.Units[0], nil).
+		AnyTimes()
+	streamsMock.
+		EXPECT().
+		DeleteUnit(StreamFPVLive.Units[0].ID).
+		Return().
+		AnyTimes()
 	return streamsMock
 }
 
-func GetAuditMock(t *testing.T) dao.AuditDao {
-	auditMock := mock_dao.NewMockAuditDao(gomock.NewController(t))
-	return auditMock
-}
 func GetCoursesMock(t *testing.T) dao.CoursesDao {
 	coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
 	coursesMock.
 		EXPECT().
 		GetCourseById(gomock.Any(), CourseFPV.ID).
+		Return(CourseFPV, nil).
+		AnyTimes()
+	coursesMock.
+		EXPECT().
+		GetCourseBySlugYearAndTerm(gomock.Any(), CourseFPV.Slug, CourseFPV.TeachingTerm, CourseFPV.Year).
 		Return(CourseFPV, nil).
 		AnyTimes()
 	return coursesMock
@@ -284,6 +310,12 @@ func GetFileMock(t *testing.T) dao.FileDao {
 		DeleteFile(Attachment.ID).
 		Return(nil)
 	return fileMock
+}
+
+func GetAuditMock(t *testing.T) dao.AuditDao {
+	auditMock := mock_dao.NewMockAuditDao(gomock.NewController(t))
+	auditMock.EXPECT().Create(gomock.Any()).Return(nil)
+	return auditMock
 }
 
 func GetProgressMock(t *testing.T) dao.ProgressDao {
