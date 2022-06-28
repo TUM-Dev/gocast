@@ -15,14 +15,16 @@ import (
 
 // Misc
 var (
-	StartTime             = time.Now()
-	TUMLiveContextStudent = tools.TUMLiveContext{User: &Student}
-	TUMLiveContextAdmin   = tools.TUMLiveContext{User: &Admin}
+	StartTime              = time.Now()
+	TUMLiveContextStudent  = tools.TUMLiveContext{User: &Student}
+	TUMLiveContextLecturer = tools.TUMLiveContext{User: &Lecturer}
+	TUMLiveContextAdmin    = tools.TUMLiveContext{User: &Admin}
 )
 
 // Models
 var (
 	Student          = model.User{Model: gorm.Model{ID: 42}, Role: model.StudentType}
+	Lecturer         = model.User{Model: gorm.Model{ID: 31}, Role: model.LecturerType}
 	Admin            = model.User{Model: gorm.Model{ID: 0}, Role: model.AdminType}
 	EmptyLectureHall = model.LectureHall{}
 	LectureHall      = model.LectureHall{
@@ -254,6 +256,11 @@ func GetStreamMock(t *testing.T) dao.StreamsDao {
 	streamsMock.
 		EXPECT().
 		SaveStream(gomock.Any()).
+		Return(nil).
+		AnyTimes()
+	streamsMock.
+		EXPECT().
+		UpdateStream(gomock.Any()).
 		Return(nil).
 		AnyTimes()
 	return streamsMock

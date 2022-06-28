@@ -695,24 +695,14 @@ type createLectureRequest struct {
 }
 
 func (r coursesRoutes) createCourse(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	var req createCourseRequest
-	err = json.Unmarshal(jsonData, &req)
-	if err != nil {
+	if err := c.BindJSON(&req); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+
 	match, err := regexp.MatchString("(enrolled|public|loggedin|hidden)", req.Access)
 	if err != nil || !match {
 		c.AbortWithStatus(http.StatusBadRequest)
