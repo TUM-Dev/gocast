@@ -42,9 +42,7 @@ self.addEventListener("activate", function (e) {
 });
 
 self.addEventListener("fetch", (e) => {
-    console.log("[ServiceWorker] Fetch", e.request.url);
     if (e.request.method !== 'GET') {
-        console.log('WORKER: fetch event ignored.', e.request.method, e.request.url);
         return;
     }
 
