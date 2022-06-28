@@ -16,13 +16,13 @@ const PREFETCH_CACHE_FILES = [
     "/static/node_modules/@alpinejs/persist/dist/cdn.min.js",
     "/static/node_modules/alpinejs/dist/cdn.js",
 ];
-const CACHE_REQUEST_METHOD_WHITELIST = ["GET"];
-const CACHE_REQUEST_HOST_WHITELIST = [self.location.host];
+const CACHE_REQUEST_METHOD_ALLOWLIST = ["GET"];
+const CACHE_REQUEST_HOST_ALLOWLIST = [self.location.host];
 
 const shouldCacheReq = (req) => {
     // eslint-disable-next-line no-undef
     const urlHost = new URL(req.url).host;
-    return CACHE_REQUEST_METHOD_WHITELIST.includes(req.method) && CACHE_REQUEST_HOST_WHITELIST.includes(urlHost);
+    return CACHE_REQUEST_METHOD_ALLOWLIST.includes(req.method) && CACHE_REQUEST_HOST_ALLOWLIST.includes(urlHost);
 };
 
 self.addEventListener("install", function (e) {
