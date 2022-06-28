@@ -2,21 +2,22 @@
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.WatchPageData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     {{$course := .IndexData.TUMLiveContext.Course}}
-    <div x-data="{ viewers: 0 }" @viewers.window="console.log($event); viewers = $event.detail.viewers">
-    {{if not $stream.Recording}}
-        {{if not $stream.LiveNow}}
-            {{if $stream.Ended }}
-                {{/* When the stream ends its automatically reloaded, so this can be static */}}
-                <span class="m-auto">Stream has ended</span>
-                <span class="m-auto">&#183;</span>
-            {{else}}
-                <span class="m-auto" x-text="viewers"></span>
-                <span class="m-auto ViewerDescText">Waiting</span>
-                <span class="m-auto">&#183;</span>
-                {{/* Timer / Countdown */}}
-                <span class="flex text-lg text-4"
-                      x-data="global.timer('{{$course.GetNextLectureDateFormatted}}', true)"
-                      x-init="init();">
+    <div x-data="{ viewers: 0 }" @viewers.window="viewers = $event.detail.viewers"
+         class="inline-flex space-x-2">
+        {{if not $stream.Recording}}
+            {{if not $stream.LiveNow}}
+                {{if $stream.Ended }}
+                    {{/* When the stream ends its automatically reloaded, so this can be static */}}
+                    <span class="m-auto">Stream has ended</span>
+                    <span class="m-auto">&#183;</span>
+                {{else}}
+                    <span class="m-auto" x-text="viewers"></span>
+                    <span class="m-auto ViewerDescText">Waiting</span>
+                    <span class="m-auto">&#183;</span>
+                    {{/* Timer / Countdown */}}
+                    <span class="flex text-lg text-4"
+                          x-data="global.timer('{{$course.GetNextLectureDateFormatted}}', true)"
+                          x-init="init();">
                     <template x-if="time().days !== '00'">
                         <span>Starts in more than a day</span>
                     </template>
@@ -34,13 +35,13 @@
                             </span>
                         </span>
                     </template>
-                </span>
-                <span class="m-auto hidden lg:inline-flex">&#183;</span>
+                    </span>
+                {{end}}
+            {{else}}
+                <span class="m-auto" x-text="viewers"></span>
+                <span class="m-auto" id="ViewerDescText">Watching</span>
+                <span class="m-auto hidden sm:inline-flex">&#183;</span>
             {{end}}
-        {{else}}
-            <span class="m-auto" x-text="viewers"></span>
-            <span class="m-auto" id="ViewerDescText">Watching</span>
         {{end}}
-    {{end}}
     </div>
 {{end}}
