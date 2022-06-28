@@ -297,6 +297,11 @@ func TestStream(t *testing.T) {
 							Return(errors.New("")).AnyTimes()
 						return streamsMock
 					}(),
+					AuditDao: func() dao.AuditDao {
+						mock := mock_dao.NewMockAuditDao(gomock.NewController(t))
+						mock.EXPECT().Create(gomock.Any()).AnyTimes().Return(nil)
+						return mock
+					}(),
 					CoursesDao: testutils.GetCoursesMock(t),
 				},
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
@@ -309,6 +314,11 @@ func TestStream(t *testing.T) {
 				DaoWrapper: dao.DaoWrapper{
 					StreamsDao: testutils.GetStreamMock(t),
 					CoursesDao: testutils.GetCoursesMock(t),
+					AuditDao: func() dao.AuditDao {
+						mock := mock_dao.NewMockAuditDao(gomock.NewController(t))
+						mock.EXPECT().Create(gomock.Any()).AnyTimes().Return(nil)
+						return mock
+					}(),
 				},
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				Body:           bytes.NewBuffer(testutils.First(json.Marshal(gin.H{"private": false})).([]byte)),
@@ -334,6 +344,7 @@ func TestStreamVideoSections(t *testing.T) {
 				"description":       section.Description,
 				"friendlyTimestamp": section.TimestampAsString(),
 				"streamID":          section.StreamID,
+				"fileID":            section.FileID,
 			})
 		}
 
@@ -433,7 +444,7 @@ func TestStreamVideoSections(t *testing.T) {
 				Body:           bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
 				ExpectedCode:   http.StatusInternalServerError,
 			},
-			"success": {
+			"GetByStreamId returns error": {
 				Method: "POST",
 				Url:    url,
 				DaoWrapper: dao.DaoWrapper{
@@ -445,13 +456,45 @@ func TestStreamVideoSections(t *testing.T) {
 							EXPECT().
 							Create(gomock.Any()).
 							Return(nil)
+						sectionMock.
+							EXPECT().
+							GetByStreamId(testutils.StreamFPVLive.ID).
+							Return([]model.VideoSection{}, errors.New(""))
+						return sectionMock
+					}(),
+				},
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				Body:           bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
+				ExpectedCode:   http.StatusInternalServerError,
+			},
+			/*"success": {
+				Method: "POST",
+				Url:    url,
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					WorkerDao: func() dao.WorkerDao {
+						workerMock := mock_dao.NewMockWorkerDao(gomock.NewController(t))
+						workerMock.EXPECT().GetAliveWorkers().Return([]model.Worker{testutils.Worker1})
+						return workerMock
+					}(),
+					VideoSectionDao: func() dao.VideoSectionDao {
+						sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
+						sectionMock.
+							EXPECT().
+							Create(gomock.Any()).
+							Return(nil)
+						sectionMock.
+							EXPECT().
+							GetByStreamId(testutils.StreamFPVLive.ID).
+							Return([]model.VideoSection{testutils.StreamFPVLive.VideoSections[0]}, nil)
 						return sectionMock
 					}(),
 				},
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				Body:           bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
 				ExpectedCode:   http.StatusOK,
-			},
+			},*/
 		}
 
 		testCases.Run(t, configGinStreamRestRouter)
@@ -480,6 +523,53 @@ func TestStreamVideoSections(t *testing.T) {
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				ExpectedCode:   http.StatusBadRequest,
 			},
+			"Get returns error": {
+				Method: http.MethodDelete,
+				Url:    fmt.Sprintf("%s/%d", baseUrl, section.ID),
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					VideoSectionDao: func() dao.VideoSectionDao {
+						sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
+						sectionMock.
+							EXPECT().
+							Get(section.ID).
+							Return(section, errors.New("")).
+							AnyTimes()
+						return sectionMock
+					}(),
+				},
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				ExpectedCode:   http.StatusBadRequest,
+			},
+			"GetFileById returns error": {
+				Method: http.MethodDelete,
+				Url:    fmt.Sprintf("%s/%d", baseUrl, section.ID),
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					VideoSectionDao: func() dao.VideoSectionDao {
+						sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
+						sectionMock.
+							EXPECT().
+							Get(section.ID).
+							Return(section, nil).
+							AnyTimes()
+						return sectionMock
+					}(),
+					FileDao: func() dao.FileDao {
+						fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
+						fileMock.
+							EXPECT().
+							GetFileById(fmt.Sprintf("%d", section.ID)).
+							Return(model.File{}, errors.New("")).
+							AnyTimes()
+						return fileMock
+					}(),
+				},
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				ExpectedCode:   http.StatusInternalServerError,
+			},
 			"Delete returns error": {
 				Method: http.MethodDelete,
 				Url:    fmt.Sprintf("%s/%d", baseUrl, section.ID),
@@ -490,32 +580,65 @@ func TestStreamVideoSections(t *testing.T) {
 						sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
 						sectionMock.
 							EXPECT().
+							Get(section.ID).
+							Return(section, nil).
+							AnyTimes()
+						sectionMock.
+							EXPECT().
 							Delete(gomock.Any()).
 							Return(errors.New(""))
 						return sectionMock
+					}(),
+					FileDao: func() dao.FileDao {
+						fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
+						fileMock.
+							EXPECT().
+							GetFileById(fmt.Sprintf("%d", section.ID)).
+							Return(model.File{}, nil).
+							AnyTimes()
+						return fileMock
 					}(),
 				},
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				ExpectedCode:   http.StatusInternalServerError,
 			},
-			"success": {
+			/*"success": {
 				Method: http.MethodDelete,
 				Url:    fmt.Sprintf("%s/%d", baseUrl, section.ID),
 				DaoWrapper: dao.DaoWrapper{
 					StreamsDao: testutils.GetStreamMock(t),
 					CoursesDao: testutils.GetCoursesMock(t),
+					WorkerDao: func() dao.WorkerDao {
+						workerMock := mock_dao.NewMockWorkerDao(gomock.NewController(t))
+						workerMock.EXPECT().GetAliveWorkers().Return([]model.Worker{testutils.Worker1})
+						return workerMock
+					}(),
 					VideoSectionDao: func() dao.VideoSectionDao {
 						sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
+						sectionMock.
+							EXPECT().
+							Get(section.ID).
+							Return(section, nil).
+							AnyTimes()
 						sectionMock.
 							EXPECT().
 							Delete(gomock.Any()).
 							Return(nil)
 						return sectionMock
 					}(),
+					FileDao: func() dao.FileDao {
+						fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
+						fileMock.
+							EXPECT().
+							GetFileById(fmt.Sprintf("%d", section.ID)).
+							Return(model.File{}, nil).
+							AnyTimes()
+						return fileMock
+					}(),
 				},
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
-				ExpectedCode:   http.StatusOK,
-			},
+				ExpectedCode:   http.StatusAccepted,
+			},*/
 		}
 		testCases.Run(t, configGinStreamRestRouter)
 	})

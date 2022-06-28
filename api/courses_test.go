@@ -232,6 +232,11 @@ func TestCoursesLectureActions(t *testing.T) {
 							Return(errors.New(""))
 						return coursesMock
 					}(),
+					AuditDao: func() dao.AuditDao {
+						auditMock := mock_dao.NewMockAuditDao(gomock.NewController(t))
+						auditMock.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
+						return auditMock
+					}(),
 				},
 				Body: bytes.NewBuffer(
 					testutils.First(
@@ -272,6 +277,11 @@ func TestCoursesLectureActions(t *testing.T) {
 							UpdateCourse(gomock.Any(), gomock.Any()).
 							Return(nil)
 						return coursesMock
+					}(),
+					AuditDao: func() dao.AuditDao {
+						auditMock := mock_dao.NewMockAuditDao(gomock.NewController(t))
+						auditMock.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
+						return auditMock
 					}(),
 				},
 				Body: bytes.NewBuffer(
@@ -932,4 +942,9 @@ func TestCoursesLectureActions(t *testing.T) {
 		}
 		testCases.Run(t, configGinCourseRouter)
 	})
+}
+
+func TestUnits(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
 }

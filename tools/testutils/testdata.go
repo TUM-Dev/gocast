@@ -195,6 +195,12 @@ var (
 		Filename: "i_do_not_exist.txt",
 		Type:     model.FILETYPE_ATTACHMENT,
 	}
+	InfoPage = model.InfoPage{
+		Model:      gorm.Model{ID: 1},
+		Name:       "Data Privacy",
+		RawContent: "#data privacy",
+		Type:       model.INFOPAGE_MARKDOWN,
+	}
 )
 
 func GetStreamMock(t *testing.T) dao.StreamsDao {
@@ -222,6 +228,10 @@ func GetStreamMock(t *testing.T) dao.StreamsDao {
 	return streamsMock
 }
 
+func GetAuditMock(t *testing.T) dao.AuditDao {
+	auditMock := mock_dao.NewMockAuditDao(gomock.NewController(t))
+	return auditMock
+}
 func GetCoursesMock(t *testing.T) dao.CoursesDao {
 	coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
 	coursesMock.
@@ -248,23 +258,6 @@ func GetLectureHallMockError(t *testing.T) dao.LectureHallsDao {
 		GetLectureHallByID(gomock.Any()).
 		Return(model.LectureHall{}, errors.New(""))
 	return lectureHallMock
-}
-
-func GetVideoSectionMock(t *testing.T) dao.VideoSectionDao {
-	sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
-	sectionMock.
-		EXPECT().
-		GetByStreamId(StreamFPVLive.ID).
-		Return(StreamFPVLive.VideoSections, nil)
-	sectionMock.
-		EXPECT().
-		Create(gomock.Any()).
-		Return(nil)
-	sectionMock.
-		EXPECT().
-		Delete(gomock.Any()).
-		Return(nil)
-	return sectionMock
 }
 
 func GetTokenMock(t *testing.T) dao.TokenDao {

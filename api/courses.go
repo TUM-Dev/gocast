@@ -150,6 +150,15 @@ func (r coursesRoutes) updatePresets(c *gin.Context) {
 			})
 		}
 	}
+
+	if err := r.AuditDao.Create(&model.Audit{
+		User:    tumLiveContext.User,
+		Message: fmt.Sprintf("%s:'%s'", tumLiveContext.Course.Name, tumLiveContext.Course.Slug),
+		Type:    model.AuditCourseEdit,
+	}); err != nil {
+		log.Error("Create Audit:", err)
+	}
+
 	course.SetCameraPresetPreference(presetSettings)
 	if err := r.CoursesDao.UpdateCourse(c, *course); err != nil {
 		log.WithError(err).Error("failed to update course")
@@ -217,6 +226,14 @@ func (r coursesRoutes) removeAdminFromCourse(c *gin.Context) {
 		return
 	}
 
+	if err := r.AuditDao.Create(&model.Audit{
+		User:    tumLiveContext.User,
+		Message: fmt.Sprintf("%s:'%s' remove: %s (%d)", tumLiveContext.Course.Name, tumLiveContext.Course.Slug, user.GetPreferredName(), user.ID), // e.g. "eidi:'Einführung in die Informatik' (2020, S)"
+		Type:    model.AuditCourseEdit,
+	}); err != nil {
+		log.Error("Create Audit:", err)
+	}
+
 	err = r.CoursesDao.RemoveAdminFromCourse(user.ID, tumLiveContext.Course.ID)
 	if err != nil {
 		log.WithError(err).Error("could not remove admin from course")
@@ -248,6 +265,15 @@ func (r coursesRoutes) addAdminToCourse(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
+
+	if err := r.AuditDao.Create(&model.Audit{
+		User:    tumLiveContext.User,
+		Message: fmt.Sprintf("%s:'%s' add: %s (%d)", tumLiveContext.Course.Name, tumLiveContext.Course.Slug, user.GetPreferredName(), user.ID), // e.g. "eidi:'Einführung in die Informatik' (2020, S)"
+		Type:    model.AuditCourseEdit,
+	}); err != nil {
+		log.Error("Create Audit:", err)
+	}
+
 	err = r.CoursesDao.AddAdminToCourse(user.ID, tumLiveContext.Course.ID)
 	if err != nil {
 		log.WithError(err).Error("could not add admin to course")
@@ -524,6 +550,7 @@ type renameLectureRequest struct {
 }
 
 func (r coursesRoutes) deleteLectureSeries(c *gin.Context) {
+	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
@@ -534,7 +561,13 @@ func (r coursesRoutes) deleteLectureSeries(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "the stream is not in a lecture series")
 		return
 	}
-
+	if err := r.AuditDao.Create(&model.Audit{
+		User:    ctx.User,
+		Message: fmt.Sprintf("'%s': %s (%d and series)", ctx.Course.Name, stream.Start.Format("2006 02 Jan, 15:04"), stream.ID),
+		Type:    model.AuditStreamDelete,
+	}); err != nil {
+		log.Error("Create Audit:", err)
+	}
 	if err := r.StreamsDao.DeleteLectureSeries(stream.SeriesIdentifier); err != nil {
 		log.WithError(err).Error("couldn't delete lecture series")
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't delete lecture series")
@@ -562,6 +595,13 @@ func (r coursesRoutes) deleteLectures(c *gin.Context) {
 	}
 
 	for _, stream := range streams {
+		if err := r.AuditDao.Create(&model.Audit{
+			User:    tumLiveContext.User,
+			Message: fmt.Sprintf("'%s': %s (%d)", tumLiveContext.Course.Name, stream.Start.Format("2006 02 Jan, 15:04"), stream.ID),
+			Type:    model.AuditStreamDelete,
+		}); err != nil {
+			log.Error("Create Audit:", err)
+		}
 		r.StreamsDao.DeleteStream(strconv.Itoa(int(stream.ID)))
 	}
 }
@@ -651,6 +691,15 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 		if req.Premiere || req.Vodup {
 			lecture.Files = []model.File{{Path: fmt.Sprintf("%s/%s", premiereFolder, premiereFileName)}}
 		}
+
+		if err := r.AuditDao.Create(&model.Audit{
+			User:    tumLiveContext.User,
+			Message: fmt.Sprintf("Stream for '%s' Created. Time: %s", tumLiveContext.Course.Name, lecture.Start.Format("2006 02 Jan, 15:04")),
+			Type:    model.AuditStreamCreate,
+		}); err != nil {
+			log.Error("Create Audit:", err)
+		}
+
 		tumLiveContext.Course.Streams = append(tumLiveContext.Course.Streams, lecture)
 	}
 
@@ -736,6 +785,15 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 	if tumLiveContext.User.Role != model.AdminType {
 		course.Admins = []model.User{*tumLiveContext.User}
 	}
+
+	if err := r.AuditDao.Create(&model.Audit{
+		User:    tumLiveContext.User,
+		Message: fmt.Sprintf("%s:'%s' (%d, %s)", course.Slug, course.Name, course.Year, course.TeachingTerm), // e.g. "eidi:'Einführung in die Informatik' (2020, S)"
+		Type:    model.AuditCourseCreate,
+	}); err != nil {
+		log.Error("Create Audit:", err)
+	}
+
 	err = r.CoursesDao.CreateCourse(context.Background(), &course, true)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "Couldn't save course. Please reach out to us.")
@@ -760,6 +818,14 @@ func (r coursesRoutes) deleteCourse(c *gin.Context) {
 		"user":   tumLiveContext.User.ID,
 		"course": tumLiveContext.Course.ID,
 	}).Info("Delete Course Called")
+
+	if err := r.AuditDao.Create(&model.Audit{
+		User:    tumLiveContext.User,
+		Message: fmt.Sprintf("'%s' (%d, %s)[%d]", tumLiveContext.Course.Name, tumLiveContext.Course.Year, tumLiveContext.Course.TeachingTerm, tumLiveContext.Course.ID),
+		Type:    model.AuditCourseDelete,
+	}); err != nil {
+		log.Error("Create Audit:", err)
+	}
 
 	r.CoursesDao.DeleteCourse(*tumLiveContext.Course)
 	dao.Cache.Clear()
