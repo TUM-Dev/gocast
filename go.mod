@@ -42,8 +42,8 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/icholy/digest v0.1.15
 	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20220626210354-9ef94aba21b0
-	github.com/stretchr/testify v1.7.5
 	github.com/pkg/profile v1.6.0
+	github.com/stretchr/testify v1.7.5
 )
 
 require (

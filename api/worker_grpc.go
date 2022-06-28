@@ -248,17 +248,18 @@ func (s server) NewKeywords(ctx context.Context, request *pb.NewKeywordsRequest)
 	if _, err := s.DaoWrapper.WorkerDao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, errors.New("authentication failed: invalid worker id")
 	} else {
-		for _, keyword := range request.Keywords {
-			err := s.DaoWrapper.KeywordDao.NewKeyword(&model.Keyword{
+		keywords := make([]model.Keyword, len(request.Keywords))
+		for i, keyword := range request.Keywords {
+			keywords[i] = model.Keyword{
 				StreamID: uint(request.StreamID),
 				Text:     keyword,
 				Language: request.Language,
-			})
-
-			if err != nil {
-				log.WithError(err).Println("Couldn't insert keyword")
-				return &pb.Status{Ok: false}, err
 			}
+		}
+		err := s.DaoWrapper.KeywordDao.NewKeywords(keywords)
+		if err != nil {
+			log.WithError(err).Println("Couldn't insert keyword")
+			return &pb.Status{Ok: false}, err
 		}
 
 		return &pb.Status{Ok: true}, nil

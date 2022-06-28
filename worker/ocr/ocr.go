@@ -57,7 +57,7 @@ func (e ocrExtractor) Extract() ([]string, error) {
 }
 
 func removeStopwords(words []string) []string {
-	res := make([]string, 0)
+	res := make([]string, len(words))
 	for _, word := range words {
 		clean := stopwords.CleanString(word, "en", false)
 
@@ -69,7 +69,7 @@ func removeStopwords(words []string) []string {
 }
 
 func removeShortWords(words []string) []string {
-	res := make([]string, 0)
+	res := make([]string, len(words))
 	for _, word := range words {
 		if len(word) > 2 {
 			res = append(res, word)

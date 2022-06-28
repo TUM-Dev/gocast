@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/joschahenningsen/TUM-Live/worker/ocr"
+	"github.com/u2takey/go-utils/uuid"
 	"io"
 	"io/ioutil"
 	"os"
@@ -81,20 +82,20 @@ func HandleSelfStream(request *pb.SelfStreamResponse, slug string) *StreamContex
 	return streamCtx
 }
 
-func HandleSelfStreamRecordEnd(streamCtx *StreamContext) {
-	S.startTranscoding(streamCtx.getStreamName())
-	err := transcode(streamCtx)
+func HandleSelfStreamRecordEnd(ctx *StreamContext) {
+	S.startTranscoding(ctx.getStreamName())
+	err := transcode(ctx)
 	if err != nil {
-		streamCtx.TranscodingSuccessful = false
+		ctx.TranscodingSuccessful = false
 		log.Errorf("Error while transcoding: %v", err)
 	} else {
-		streamCtx.TranscodingSuccessful = true
+		ctx.TranscodingSuccessful = true
 	}
-	S.endTranscoding(streamCtx.getStreamName())
-	notifyTranscodingDone(streamCtx)
-	if streamCtx.publishVoD {
-		upload(streamCtx)
-		notifyUploadDone(streamCtx)
+	S.endTranscoding(ctx.getStreamName())
+	notifyTranscodingDone(ctx)
+	if ctx.publishVoD {
+		upload(ctx)
+		notifyUploadDone(ctx)
 	}
 
 	S.startThumbnailGeneration(ctx)
@@ -106,29 +107,29 @@ func HandleSelfStreamRecordEnd(streamCtx *StreamContext) {
 		notifyThumbnailDone(ctx)
 	}
 
-	S.startSilenceDetection(streamCtx)
-	defer S.endSilenceDetection(streamCtx)
+	S.startSilenceDetection(ctx)
+	defer S.endSilenceDetection(ctx)
 
-	sd := NewSilenceDetector(streamCtx.getTranscodingFileName())
+	sd := NewSilenceDetector(ctx.getTranscodingFileName())
 	err = sd.ParseSilence()
 	if err != nil {
-		log.WithField("File", streamCtx.getTranscodingFileName()).WithError(err).Error("Detecting silence failed.")
+		log.WithField("File", ctx.getTranscodingFileName()).WithError(err).Error("Detecting silence failed.")
 		return
 	}
-	notifySilenceResults(sd.Silences, streamCtx.streamId)
+	notifySilenceResults(sd.Silences, ctx.streamId)
 
-	if streamCtx.TranscodingSuccessful {
-		err := markForDeletion(streamCtx)
+	if ctx.TranscodingSuccessful {
+		err := markForDeletion(ctx)
 		if err != nil {
-			log.WithField("stream", streamCtx.streamId).WithError(err).Error("Error marking for deletion")
+			log.WithField("stream", ctx.streamId).WithError(err).Error("Error marking for deletion")
 		}
 	}
 
-	S.startKeywordExtraction(streamCtx)
-	defer S.endKeywordExtraction(streamCtx)
-	err = extractKeywords(streamCtx)
+	S.startKeywordExtraction(ctx)
+	defer S.endKeywordExtraction(ctx)
+	err = extractKeywords(ctx)
 	if err != nil {
-		log.WithField("File", streamCtx.getTranscodingFileName()).WithError(err).Error("Extracting keywords failed.")
+		log.WithField("File", ctx.getTranscodingFileName()).WithError(err).Error("Extracting keywords failed.")
 	}
 }
 
@@ -271,7 +272,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		log.WithError(err).Error("Error getting stream info for upload")
 		return
 	}
-	streamCtx := StreamContext{
+	c := StreamContext{
 		streamId:      resp.StreamID,
 		courseSlug:    resp.CourseSlug,
 		teachingTerm:  resp.CourseTerm,
@@ -282,7 +283,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		publishVoD:    true,
 		recordingPath: &localFile,
 	}
-	log.WithFields(log.Fields{"stream": streamCtx.streamId, "course": streamCtx.courseSlug, "file": localFile}).Debug("Handling upload request")
+	log.WithFields(log.Fields{"stream": c.streamId, "course": c.courseSlug, "file": localFile}).Debug("Handling upload request")
 
 	needsConversion := false
 
@@ -318,29 +319,30 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 	}
 
 	if needsConversion {
-		log.WithField("stream", streamCtx.streamId).Debug("Converting video from upload request")
-		S.startTranscoding(streamCtx.getStreamName())
-		err := transcode(&streamCtx)
+		log.WithField("stream", c.streamId).Debug("Converting video from upload request")
+		S.startTranscoding(c.getStreamName())
+		err := transcode(&c)
 		if err != nil {
 			log.WithError(err).Error("Error transcoding")
 		}
-		notifyTranscodingDone(&streamCtx)
-		S.endTranscoding(streamCtx.getStreamName())
+		notifyTranscodingDone(&c)
+		S.endTranscoding(c.getStreamName())
 
 	} else {
-		log.WithField("stream", streamCtx.streamId).Debug("Not converting video from upload request")
+		log.WithField("stream", c.streamId).Debug("Not converting video from upload request")
 		// create required directories
-		log.WithField("transcodingFileName", streamCtx.getTranscodingFileName()).Debug("Creating output directory")
-		if err = prepare(streamCtx.getTranscodingFileName()); err != nil {
+		log.WithField("transcodingFileName", c.getTranscodingFileName()).Debug("Creating output directory")
+		if err = prepare(c.getTranscodingFileName()); err != nil {
 			log.Error(err)
 		}
-		log.WithFields(log.Fields{"in": streamCtx.getRecordingTrashName(), "out": streamCtx.getTranscodingFileName()}).Debug("Copying file")
-		if err = moveFile(streamCtx.getRecordingFileName(), streamCtx.getTranscodingFileName()); err != nil {
+		log.WithFields(log.Fields{"in": c.getRecordingTrashName(), "out": c.getTranscodingFileName()}).Debug("Copying file")
+		if err = moveFile(c.getRecordingFileName(), c.getTranscodingFileName()); err != nil {
 			log.WithError(err).Error("Can't move upload to transcoding dir")
 		} else {
-			log.WithField("stream", streamCtx.streamId).Debug("Successfully moved upload to target dir")
+			log.WithField("stream", c.streamId).Debug("Successfully moved upload to target dir")
 		}
 	}
+
 	S.startThumbnailGeneration(&c)
 	defer S.endThumbnailGeneration(&c)
 	err = createThumbnailSprite(&c)
@@ -350,25 +352,25 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		notifyThumbnailDone(&c)
 	}
 
-	S.startSilenceDetection(&streamCtx)
-	defer S.endSilenceDetection(&streamCtx)
-	sd := NewSilenceDetector(streamCtx.getTranscodingFileName())
+	S.startSilenceDetection(&c)
+	defer S.endSilenceDetection(&c)
+	sd := NewSilenceDetector(c.getTranscodingFileName())
 	if err = sd.ParseSilence(); err != nil {
-		log.WithField("File", streamCtx.getTranscodingFileName()).WithError(err).Error("Detecting silence failed.")
+		log.WithField("File", c.getTranscodingFileName()).WithError(err).Error("Detecting silence failed.")
 	} else {
-		notifySilenceResults(sd.Silences, streamCtx.streamId)
+		notifySilenceResults(sd.Silences, c.streamId)
 	}
 
-	S.startKeywordExtraction(&streamCtx)
-	defer S.endKeywordExtraction(&streamCtx)
-	err = extractKeywords(&streamCtx)
+	S.startKeywordExtraction(&c)
+	defer S.endKeywordExtraction(&c)
+	err = extractKeywords(&c)
 	if err != nil {
-		log.WithField("File", streamCtx.getTranscodingFileName()).WithError(err).Error("Extracting keywords failed.")
+		log.WithField("File", c.getTranscodingFileName()).WithError(err).Error("Extracting keywords failed.")
 	}
 
-	upload(&streamCtx)
-	notifyUploadDone(&streamCtx)
-	_ = os.Remove(streamCtx.getRecordingFileName())
+	upload(&c)
+	notifyUploadDone(&c)
+	_ = os.Remove(c.getRecordingFileName())
 }
 
 // moveFile moves a file from sourcePath to destPath.
@@ -522,20 +524,24 @@ func extractKeywords(ctx *StreamContext) error {
 	log.WithField("File", ctx.getTranscodingFileName()).Println("Start extracting keywords")
 
 	// create temporary directory
+	outFileName := fmt.Sprintf("%s.jpeg", uuid.NewUUID())
 	dir, err := ioutil.TempDir("", "keyword-extraction")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(dir)
-	defer os.Remove("out.jpeg") // Remove thumbgen's out.jpeg
+	defer os.Remove(outFileName) // Remove thumbgen's out.jpeg
 
 	// generate images to process
 	g, err := thumbgen.New(ctx.getTranscodingFileName(), 768, 128,
-		"out.jpeg", thumbgen.WithJpegCompression(70), thumbgen.WithStoreSingleFrames(dir))
+		outFileName, thumbgen.WithJpegCompression(70), thumbgen.WithStoreSingleFrames(dir))
 	if err != nil {
 		return err
 	}
 	err = g.Generate()
+	if err != nil {
+		return err
+	}
 
 	fileInfoArray, err := ioutil.ReadDir(dir)
 	if err != nil {
