@@ -250,6 +250,11 @@ func GetStreamMock(t *testing.T) dao.StreamsDao {
 		DeleteUnit(StreamFPVLive.Units[0].ID).
 		Return().
 		AnyTimes()
+	streamsMock.
+		EXPECT().
+		SaveStream(gomock.Any()).
+		Return(nil).
+		AnyTimes()
 	return streamsMock
 }
 

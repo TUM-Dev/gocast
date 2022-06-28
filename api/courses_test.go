@@ -798,3 +798,100 @@ func TestUnits(t *testing.T) {
 		testCases.Run(t, configGinCourseRouter)
 	})
 }
+
+func TestCuts(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("POST/api/course/:courseID/submitCut", func(t *testing.T) {
+		url := fmt.Sprintf("/api/course/%d/submitCut", testutils.CourseFPV.ID)
+
+		request := submitCutRequest{
+			LectureID: testutils.StreamFPVLive.ID,
+			From:      0,
+			To:        1000,
+		}
+		testCases := testutils.TestCases{
+			"no context": {
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: nil,
+				ExpectedCode:   http.StatusInternalServerError,
+			},
+			"not admin": {
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextStudent,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+				},
+				ExpectedCode: http.StatusForbidden,
+			},
+			"invalid body": {
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+				},
+				Body:         nil,
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"can not find stream": {
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+					StreamsDao: func() dao.StreamsDao {
+						streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+						streamsMock.
+							EXPECT().
+							GetStreamByID(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
+							Return(testutils.StreamFPVLive, errors.New("")).
+							AnyTimes()
+						return streamsMock
+					}(),
+				},
+				Body:         bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
+				ExpectedCode: http.StatusNotFound,
+			},
+			"can not update stream": {
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+					StreamsDao: func() dao.StreamsDao {
+						streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+						streamsMock.
+							EXPECT().
+							GetStreamByID(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
+							Return(testutils.StreamFPVLive, nil).
+							AnyTimes()
+						streamsMock.
+							EXPECT().
+							SaveStream(gomock.Any()).
+							Return(errors.New("")).
+							AnyTimes()
+						return streamsMock
+					}(),
+				},
+				Body:         bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"success": {
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+					StreamsDao: testutils.GetStreamMock(t),
+				},
+				Body:         bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
+				ExpectedCode: http.StatusOK,
+			},
+		}
+
+		testCases.Run(t, configGinCourseRouter)
+	})
+}

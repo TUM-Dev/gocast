@@ -390,13 +390,8 @@ func (r coursesRoutes) lectureHalls(c *gin.Context, course model.Course) {
 }
 
 func (r coursesRoutes) submitCut(c *gin.Context) {
-	body, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
-		return
-	}
 	var req submitCutRequest
-	if err = json.Unmarshal(body, &req); err != nil {
+	if err := c.BindJSON(&req); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
 		return
 	}
@@ -408,7 +403,8 @@ func (r coursesRoutes) submitCut(c *gin.Context) {
 	stream.StartOffset = req.From
 	stream.EndOffset = req.To
 	if err = r.StreamsDao.SaveStream(&stream); err != nil {
-		panic(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 }
 
