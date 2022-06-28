@@ -19,7 +19,8 @@ const PREFETCH_CACHE_FILES = [
 const CACHE_REQUEST_METHOD_WHITELIST = ["GET"];
 
 const shouldCacheReq = (req) => {
-    return false;
+    if (!CACHE_REQUEST_METHOD_WHITELIST.includes(req.method)) return false;
+    return true;
 };
 
 self.addEventListener("install", function (e) {
