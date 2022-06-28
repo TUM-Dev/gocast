@@ -3,7 +3,11 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/u2takey/go-utils/uuid"
 	"net"
+	"os"
+	"os/exec"
 	"time"
 
 	"github.com/joschahenningsen/TUM-Live/worker/cfg"
@@ -58,6 +62,51 @@ func (s server) RequestStreamEnd(ctx context.Context, request *pb.EndStreamReque
 	}
 	go worker.HandleStreamEndRequest(request)
 	return &pb.Status{Ok: true}, nil
+}
+
+func (s server) GenerateSectionImages(ctx context.Context, request *pb.GenerateSectionImageRequest) (*pb.GenerateSectionImageResponse, error) {
+	folder := fmt.Sprintf("%s/%s/%d.%s/sections",
+		cfg.StorageDir, request.CourseName, request.CourseYear, request.CourseTeachingTerm)
+
+	err := os.RemoveAll(folder) // clean up old section images
+	if err != nil {
+		return &pb.GenerateSectionImageResponse{}, err
+	}
+	err = os.MkdirAll(folder, os.ModePerm) // make sure folder exists
+	if err != nil {
+		return &pb.GenerateSectionImageResponse{}, err
+	}
+
+	paths := make([]string, len(request.Sections))
+
+	for i, section := range request.Sections {
+		timestampStr := fmt.Sprintf("%0d:%0d:%0d", section.Hours, section.Minutes, section.Seconds)
+		path := fmt.Sprintf("%s/%s.jpg", folder, uuid.NewUUID())
+
+		cmd := exec.Command("ffmpeg", "-y",
+			"-ss", timestampStr,
+			"-i", request.PlaylistURL,
+			"-vf", "scale=156:-1",
+			"-frames:v", "1",
+			"-q:v", "2",
+			path)
+		_, err = cmd.CombinedOutput()
+		if err != nil {
+			return &pb.GenerateSectionImageResponse{}, err
+		}
+
+		paths[i] = path
+	}
+
+	return &pb.GenerateSectionImageResponse{Paths: paths}, nil
+}
+
+func (s server) DeleteSectionImage(ctx context.Context, request *pb.DeleteSectionImageRequest) (*pb.Status, error) {
+	err := os.RemoveAll(request.Path) // remove image file
+	if err != nil {
+		return &pb.Status{Ok: false}, err
+	}
+	return &pb.Status{Ok: true}, err
 }
 
 //InitApi Initializes api endpoints

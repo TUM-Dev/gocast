@@ -1,11 +1,12 @@
 {{define "alert-modal"}}
     {{/* Modal to enter feedback */}}
     <div x-cloak x-data="{ show : false, description : '', phone: '', mail: '', categories: [] }"
-                 @issue.window="show = true;"
-                 x-show="show" class="flex flex-wrap h-full overflow-y-scroll inline-block"
-                               :class="{ 'absolute inset-0 z-50 flex items-center justify-center': show }">
+         id="alertModal"
+         @issue.window="show = true;"
+         x-show="show" class="flex flex-wrap h-full overflow-y-scroll"
+         :class="{ 'absolute inset-0 z-50 flex items-center justify-center': show }">
         <div @keydown.escape="show = false"
-                               class="dark:bg-secondary-light bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 sm:w-auto w-full md:max-w-md md:mx-auto rounded shadow-lg py-4 text-left px-6">
+             class="dark:bg-secondary-light bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 sm:w-auto w-full md:max-w-md md:mx-auto rounded shadow-lg py-4 text-left px-6">
             <form @submit.prevent="watch.sendIssue(streamID, categories, name, phone, mail, description); show = false">
                 <div class="font-bold text-xl mb-2">Report Technical Problem</div>
                 <div class="font-bold text-md mb-2">Please select all relevant issue categories
@@ -13,32 +14,32 @@
                 <div>
                     <div>
                         <input class="h-4 w-4" type="checkbox" x-model.number="categories"
-                                               value="1">
+                               value="1">
                         <span class="ml-2 text-4">Video</span>
                     </div>
                     <div>
                         <input class="h-4 w-4" type="checkbox" x-model.number="categories"
-                                               value="2">
+                               value="2">
                         <span class="ml-2 text-4">Audio</span>
                     </div>
                     <div>
                         <input class="h-4 w-4" type="checkbox" x-model.number="categories"
-                                               value="3">
+                               value="3">
                         <span class="ml-2 text-4">Camera</span>
                     </div>
                     <div>
                         <input class="h-4 w-4" type="checkbox" x-model.number="categories"
-                                               value="4">
+                               value="4">
                         <span class="ml-2 text-4">Microphone</span>
                     </div>
                     <div>
                         <input class="h-4 w-4" type="checkbox" x-model.number="categories"
-                                               value="5">
+                               value="5">
                         <span class="ml-2 text-4">Light</span>
                     </div>
                     <div>
                         <input class="h-4 w-4" type="checkbox" x-model.number="categories"
-                                               value="6">
+                               value="6">
                         <span class="ml-2 text-4">Other</span>
                     </div>
                 </div>
@@ -46,20 +47,20 @@
                     <div>
                         <label for="description">Description of the issue</label>
                         <textarea required name="description" rows="0" cols="0" class="grow w-full"
-                                                                                placeholder="Add a short description of the problem here."
-                                                                                x-model="description"></textarea>
+                                  placeholder="Add a short description of the problem here."
+                                  x-model="description"></textarea>
                     </div>
                 </div>
                 <div class="font-bold text-lg mb-2">Your contact information (optional)</div>
                 <div class="mt-3">
                     <label for="fname">Name</label>
                     <input name="fname" type="text" placeholder="Maria Musterfrau" x-model="name"
-                                                                                   value="{{if .IndexData.TUMLiveContext.User}}{{ .IndexData.TUMLiveContext.User.Name -}} {{- .IndexData.TUMLiveContext.User.Name }}{{end}}">
+                           value="{{if .IndexData.TUMLiveContext.User}}{{ .IndexData.TUMLiveContext.User.Name -}} {{- .IndexData.TUMLiveContext.User.Name }}{{end}}">
                 </div>
                 <div class="mt-3">
                     <label for="mail">Mail</label>
                     <input name="mail" type="email" placeholder="maria.musterfrau@provider.de"
-                                                    x-model="mail">
+                           x-model="mail">
                 </div>
                 <div class="mt-3">
                     <label for="phone">Phone</label>
@@ -67,7 +68,8 @@
                 </div>
                 <!--Footer-->
                 <div class="flex justify-end pt-2 space-x-2 mt-3">
-                    <button type="button" class="bg-gray-500 inline-block text-center w-24 text-white hover:bg-gray-600 dark:hover:bg-gray-600 font-bold rounded cursor-pointer p-2"
+                    <button type="button"
+                            class="bg-gray-500 inline-block text-center w-24 text-white hover:bg-gray-600 dark:hover:bg-gray-600 font-bold rounded cursor-pointer p-2"
                             @click="show = false">Cancel
                     </button>
                     <button type="submit"

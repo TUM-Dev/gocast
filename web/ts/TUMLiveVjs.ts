@@ -26,6 +26,7 @@ export const initPlayer = function (
     fluid: boolean,
     isEmbedded: boolean,
     playbackSpeeds: number[],
+    live: boolean,
     spriteID?: number,
     spriteInterval?: number,
     streamID?: number,
@@ -75,6 +76,10 @@ export const initPlayer = function (
         window.localStorage.setItem("volume", player.volume());
         window.localStorage.setItem("muted", player.muted());
     });
+    // handle rate store:
+    player.on("ratechange", function () {
+        window.localStorage.setItem("rate", player.playbackRate());
+    });
     player.ready(function () {
         player.airPlay({
             addButtonToControlBar: true,
@@ -87,6 +92,12 @@ export const initPlayer = function (
         const persistedMute = window.localStorage.getItem("muted");
         if (persistedMute !== null) {
             player.muted("true" === persistedMute);
+        }
+        if (!live) {
+            const persistedRate = window.localStorage.getItem("rate");
+            if (persistedRate !== null) {
+                player.playbackRate(persistedRate);
+            }
         }
         if (isEmbedded) {
             player.addChild("Titlebar", {
@@ -406,14 +417,20 @@ export function jumpTo(hours: number, minutes: number, seconds: number) {
 
 export class VideoSections {
     readonly streamID: number;
+    readonly sectionsPerGroup: number;
 
-    list: Section[];
+    private list: Section[];
+
     currentHighlightIndex: number;
+    currentIndex: number;
 
     constructor(streamID) {
         this.streamID = streamID;
         this.list = [];
         this.currentHighlightIndex = -1;
+
+        this.currentIndex = 0;
+        this.sectionsPerGroup = 4;
     }
 
     isCurrent(i: number): boolean {
@@ -437,6 +454,29 @@ export class VideoSections {
                 this.list = [];
                 this.currentHighlightIndex = 0;
             });
+    }
+
+    showSection(i: number): boolean {
+        return (
+            i >= this.currentIndex * this.sectionsPerGroup &&
+            i < this.currentIndex * this.sectionsPerGroup + this.sectionsPerGroup
+        );
+    }
+
+    showNext(): boolean {
+        return this.currentIndex < this.list.length / this.sectionsPerGroup - 1;
+    }
+
+    showPrev(): boolean {
+        return this.currentIndex > 0;
+    }
+
+    next() {
+        this.currentIndex = (this.currentIndex + 1) % this.list.length;
+    }
+
+    prev() {
+        this.currentIndex = (this.currentIndex - 1) % this.list.length;
     }
 }
 

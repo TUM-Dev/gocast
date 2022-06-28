@@ -5,11 +5,14 @@ import (
 	"gorm.io/gorm"
 )
 
+//go:generate mockgen -source=video-section.go -destination ../mock_dao/video-section.go
+
 type VideoSectionDao interface {
-	Create(sections []model.VideoSection) error
-	Update(section *model.VideoSection) error
-	Delete(videoSectionID uint) error
-	GetByStreamId(streamID uint) ([]model.VideoSection, error)
+	Create([]model.VideoSection) error
+	Update(*model.VideoSection) error
+	Delete(uint) error
+	Get(uint) (model.VideoSection, error)
+	GetByStreamId(uint) ([]model.VideoSection, error)
 }
 
 type videoSectionDao struct {
@@ -21,15 +24,20 @@ func NewVideoSectionDao() VideoSectionDao {
 }
 
 func (d videoSectionDao) Create(sections []model.VideoSection) error {
-	return DB.Create(&sections).Error
+	return d.db.Create(&sections).Error
 }
 
 func (d videoSectionDao) Update(section *model.VideoSection) error {
-	return DB.Updates(&section).Error
+	return d.db.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&section).Error
 }
 
 func (d videoSectionDao) Delete(videoSectionID uint) error {
-	return DB.Delete(&model.VideoSection{}, "id = ?", videoSectionID).Error
+	return d.db.Delete(&model.VideoSection{}, "id = ?", videoSectionID).Error
+}
+
+func (d videoSectionDao) Get(videoSectionID uint) (section model.VideoSection, err error) {
+	err = d.db.Find(&section, "id = ?", videoSectionID).Error
+	return section, err
 }
 
 func (d videoSectionDao) GetByStreamId(streamID uint) ([]model.VideoSection, error) {

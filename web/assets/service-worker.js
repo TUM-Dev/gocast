@@ -3,6 +3,7 @@
    Network first cache strategy
  */
 const CACHE_NAME = "v1";
+const FALLBACK_TO_CACHE_TIMEOUT = 30000;
 const PREFETCH_CACHE_FILES = [
     "/",
     "/login",
@@ -15,6 +16,14 @@ const PREFETCH_CACHE_FILES = [
     "/static/node_modules/@alpinejs/persist/dist/cdn.min.js",
     "/static/node_modules/alpinejs/dist/cdn.js",
 ];
+const CACHE_REQUEST_METHOD_ALLOWLIST = ["GET"];
+const CACHE_REQUEST_HOST_ALLOWLIST = [self.location.host];
+
+const shouldCacheReq = (req) => {
+    // eslint-disable-next-line no-undef
+    const urlHost = new URL(req.url).host;
+    return CACHE_REQUEST_METHOD_ALLOWLIST.includes(req.method) && CACHE_REQUEST_HOST_ALLOWLIST.includes(urlHost);
+};
 
 self.addEventListener("install", function (e) {
     //console.log("[ServiceWorker] Installed");
@@ -42,7 +51,10 @@ self.addEventListener("activate", function (e) {
 });
 
 self.addEventListener("fetch", (e) => {
-    //console.log("[ServiceWorker] Fetch", e.request.url);
+    if (!shouldCacheReq(e.request)) {
+        //console.debug("Cache exception");
+        return;
+    }
 
     const fromNetwork = (request, timeout) =>
         new Promise((fulfill, reject) => {
@@ -57,5 +69,5 @@ self.addEventListener("fetch", (e) => {
     const fromCache = (request) =>
         caches.open(CACHE_NAME).then((cache) => cache.match(request).then((matching) => matching));
 
-    e.respondWith(fromNetwork(e.request, 10000).catch(() => fromCache(e.request)));
+    e.respondWith(fromNetwork(e.request, FALLBACK_TO_CACHE_TIMEOUT).catch(() => fromCache(e.request)));
 });

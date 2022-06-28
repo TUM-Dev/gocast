@@ -11,6 +11,30 @@ service ToWorker {
   rpc RequestStreamEnd (EndStreamRequest) returns (Status) {}
   rpc RequestWaveform (WaveformRequest) returns (WaveFormResponse) {}
   rpc RequestCut (CutRequest) returns (CutResponse) {}
+  rpc GenerateSectionImages (GenerateSectionImageRequest) returns (GenerateSectionImageResponse) {}
+  rpc DeleteSectionImage (DeleteSectionImageRequest) returns (Status) {}
+}
+
+message DeleteSectionImageRequest {
+  string Path = 1;
+}
+
+message GenerateSectionImageResponse {
+  repeated string Paths = 1;
+}
+
+message Section {
+  uint32 Hours = 1;
+  uint32 Minutes = 2;
+  uint32 Seconds = 3;
+}
+
+message GenerateSectionImageRequest {
+  string PlaylistURL = 1;
+  string CourseName = 2;
+  uint32 CourseYear = 3;
+  string CourseTeachingTerm = 4;
+  repeated Section Sections = 5;
 }
 
 message CutRequest {
