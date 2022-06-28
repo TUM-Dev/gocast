@@ -17,10 +17,12 @@ const PREFETCH_CACHE_FILES = [
     "/static/node_modules/alpinejs/dist/cdn.js",
 ];
 const CACHE_REQUEST_METHOD_WHITELIST = ["GET"];
+const CACHE_REQUEST_HOST_WHITELIST = [self.location.host];
 
 const shouldCacheReq = (req) => {
-    if (!CACHE_REQUEST_METHOD_WHITELIST.includes(req.method)) return false;
-    return true;
+    // eslint-disable-next-line no-undef
+    const urlHost = new URL(req.url).host;
+    return CACHE_REQUEST_METHOD_WHITELIST.includes(req.method) && CACHE_REQUEST_HOST_WHITELIST.includes(urlHost);
 };
 
 self.addEventListener("install", function (e) {
@@ -49,9 +51,8 @@ self.addEventListener("activate", function (e) {
 });
 
 self.addEventListener("fetch", (e) => {
-    //console.log("[ServiceWorker] Fetch", e.request.url);
     if (!shouldCacheReq(e.request)) {
-        e.respondWith(fetch(e.request));
+        //console.debug("Cache exception");
         return;
     }
 
