@@ -3,6 +3,7 @@
    Network first cache strategy
  */
 const CACHE_NAME = "v1";
+const FALLBACK_TO_CACHE_TIMEOUT = 30000;
 const PREFETCH_CACHE_FILES = [
     "/",
     "/login",
@@ -15,6 +16,11 @@ const PREFETCH_CACHE_FILES = [
     "/static/node_modules/@alpinejs/persist/dist/cdn.min.js",
     "/static/node_modules/alpinejs/dist/cdn.js",
 ];
+const CACHE_REQUEST_METHOD_WHITELIST = ["GET"];
+
+const shouldCacheReq = (req) => {
+    return false;
+};
 
 self.addEventListener("install", function (e) {
     //console.log("[ServiceWorker] Installed");
@@ -43,6 +49,10 @@ self.addEventListener("activate", function (e) {
 
 self.addEventListener("fetch", (e) => {
     //console.log("[ServiceWorker] Fetch", e.request.url);
+    if (!shouldCacheReq(e.request)) {
+        e.respondWith(fetch(e.request));
+        return;
+    }
 
     const fromNetwork = (request, timeout) =>
         new Promise((fulfill, reject) => {
@@ -57,5 +67,5 @@ self.addEventListener("fetch", (e) => {
     const fromCache = (request) =>
         caches.open(CACHE_NAME).then((cache) => cache.match(request).then((matching) => matching));
 
-    e.respondWith(fromNetwork(e.request, 10000).catch(() => fromCache(e.request)));
+    e.respondWith(fromNetwork(e.request, FALLBACK_TO_CACHE_TIMEOUT).catch(() => fromCache(e.request)));
 });
