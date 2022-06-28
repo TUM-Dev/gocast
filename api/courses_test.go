@@ -895,3 +895,441 @@ func TestCuts(t *testing.T) {
 		testCases.Run(t, configGinCourseRouter)
 	})
 }
+
+func TestAdminFunctions(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("GET/api/course/:courseID/admins", func(t *testing.T) {
+		url := fmt.Sprintf("/api/course/%d/admins", testutils.CourseFPV.ID)
+
+		response := []userForLecturerDto{
+			{
+				ID:    testutils.Admin.ID,
+				Name:  testutils.Admin.Name,
+				Login: testutils.Admin.GetLoginString(),
+			},
+			{
+				ID:    testutils.Admin.ID,
+				Name:  testutils.Admin.Name,
+				Login: testutils.Admin.GetLoginString(),
+			},
+		}
+		testCases := testutils.TestCases{
+			"no context": {
+				Method:         http.MethodGet,
+				Url:            url,
+				TumLiveContext: nil,
+				ExpectedCode:   http.StatusInternalServerError,
+			},
+			"not admin": {
+				Method:         http.MethodGet,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextStudent,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+				},
+				ExpectedCode: http.StatusForbidden,
+			},
+			"can not get course admins": {
+				Method:         http.MethodGet,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							GetCourseBySlugYearAndTerm(gomock.Any(),
+								testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm,
+								testutils.CourseFPV.Year).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							GetCourseAdmins(testutils.CourseFPV.ID).
+							Return([]model.User{}, errors.New("")).
+							AnyTimes()
+						return coursesMock
+					}(),
+				},
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"success": {
+				Method:         http.MethodGet,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+				},
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
+			},
+		}
+
+		testCases.Run(t, configGinCourseRouter)
+	})
+	t.Run("PUT/api/course/:courseID/admins/:userID", func(t *testing.T) {
+		url := fmt.Sprintf("/api/course/%d/admins/%d", testutils.CourseFPV.ID, testutils.Admin.ID)
+		urlStudent := fmt.Sprintf("/api/course/%d/admins/%d", testutils.CourseFPV.ID, testutils.Student.ID)
+
+		resAdmin := userForLecturerDto{
+			ID:    testutils.Admin.ID,
+			Name:  testutils.Admin.Name,
+			Login: testutils.Admin.GetLoginString(),
+		}
+
+		resStudent := userForLecturerDto{
+			ID:    testutils.Student.ID,
+			Name:  testutils.Student.Name,
+			Login: testutils.Student.GetLoginString(),
+		}
+
+		testCases := testutils.TestCases{
+			"no context": {
+				Method:         http.MethodPut,
+				Url:            url,
+				TumLiveContext: nil,
+				ExpectedCode:   http.StatusInternalServerError,
+			},
+			"not admin": {
+				Method:         http.MethodPut,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextStudent,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+				},
+				ExpectedCode: http.StatusForbidden,
+			},
+			"invalid userID": {
+				Method:         http.MethodPut,
+				Url:            fmt.Sprintf("/api/course/%d/admins/abc", testutils.CourseFPV.ID),
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+				},
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"user not found": {
+				Method:         http.MethodPut,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+					UsersDao: func() dao.UsersDao {
+						usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
+						usersMock.
+							EXPECT().
+							GetUserByID(gomock.Any(), testutils.Admin.ID).
+							Return(testutils.Admin, errors.New("")).AnyTimes()
+						return usersMock
+					}(),
+				},
+				ExpectedCode: http.StatusNotFound,
+			},
+			"can not add admin to course": {
+				Method:         http.MethodPut,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							GetCourseBySlugYearAndTerm(gomock.Any(),
+								testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							AddAdminToCourse(testutils.Admin.ID, testutils.CourseFPV.ID).
+							Return(errors.New("")).
+							AnyTimes()
+						return coursesMock
+					}(),
+					UsersDao: testutils.GetUsersMock(t),
+					AuditDao: testutils.GetAuditMock(t),
+				},
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"can not update user": {
+				Method:         http.MethodPut,
+				Url:            urlStudent,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							GetCourseBySlugYearAndTerm(gomock.Any(),
+								testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							AddAdminToCourse(testutils.Student.ID, testutils.CourseFPV.ID).
+							Return(nil).
+							AnyTimes()
+						return coursesMock
+					}(),
+					UsersDao: func() dao.UsersDao {
+						usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
+						usersMock.
+							EXPECT().
+							GetUserByID(gomock.Any(), testutils.Student.ID).
+							Return(testutils.Student, nil).
+							AnyTimes()
+						usersMock.
+							EXPECT().
+							UpdateUser(gomock.Any()).
+							Return(errors.New("")).
+							AnyTimes()
+						return usersMock
+					}(),
+					AuditDao: testutils.GetAuditMock(t),
+				},
+				ExpectedCode:     http.StatusInternalServerError,
+				ExpectedResponse: testutils.First(json.Marshal(resStudent)).([]byte),
+			},
+			"success": {
+				Method:         http.MethodPut,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+					UsersDao:   testutils.GetUsersMock(t),
+					AuditDao:   testutils.GetAuditMock(t),
+				},
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: testutils.First(json.Marshal(resAdmin)).([]byte),
+			},
+			"success, user not admin": {
+				Method:         http.MethodPut,
+				Url:            urlStudent,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							GetCourseBySlugYearAndTerm(gomock.Any(),
+								testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							AddAdminToCourse(testutils.Student.ID, testutils.CourseFPV.ID).
+							Return(nil).
+							AnyTimes()
+						return coursesMock
+					}(),
+					UsersDao: func() dao.UsersDao {
+						usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
+						usersMock.
+							EXPECT().
+							GetUserByID(gomock.Any(), testutils.Student.ID).
+							Return(testutils.Student, nil).
+							AnyTimes()
+						usersMock.
+							EXPECT().
+							UpdateUser(gomock.Any()).
+							Return(nil).
+							AnyTimes()
+						return usersMock
+					}(),
+					AuditDao: testutils.GetAuditMock(t),
+				},
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: testutils.First(json.Marshal(resStudent)).([]byte),
+			},
+		}
+
+		testCases.Run(t, configGinCourseRouter)
+	})
+	t.Run("DELETE/api/course/:courseID/admins/:userID", func(t *testing.T) {
+		url := fmt.Sprintf("/api/course/%d/admins/%d", testutils.CourseFPV.ID, testutils.Admin.ID)
+
+		response := userForLecturerDto{
+			ID:    testutils.Admin.ID,
+			Name:  testutils.Admin.Name,
+			Login: testutils.Admin.GetLoginString(),
+		}
+
+		testCases := testutils.TestCases{
+			"no context": {
+				Method:         http.MethodDelete,
+				Url:            url,
+				TumLiveContext: nil,
+				ExpectedCode:   http.StatusInternalServerError,
+			},
+			"not admin": {
+				Method:         http.MethodDelete,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextStudent,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+				},
+				ExpectedCode: http.StatusForbidden,
+			},
+			"invalid userID": {
+				Method:         http.MethodDelete,
+				Url:            fmt.Sprintf("/api/course/%d/admins/abc", testutils.CourseFPV.ID),
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+				},
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"can not get course admins": {
+				Method:         http.MethodDelete,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							GetCourseBySlugYearAndTerm(gomock.Any(),
+								testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							GetCourseAdmins(testutils.CourseFPV.ID).
+							Return([]model.User{}, errors.New("")).
+							AnyTimes()
+						return coursesMock
+					}(),
+				},
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"remove last admin": {
+				Method:         http.MethodDelete,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							GetCourseBySlugYearAndTerm(gomock.Any(),
+								testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							GetCourseAdmins(testutils.CourseFPV.ID).
+							Return([]model.User{testutils.Admin}, nil).
+							AnyTimes()
+						return coursesMock
+					}(),
+				},
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"invalid delete request": {
+				Method:         http.MethodDelete,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							GetCourseBySlugYearAndTerm(gomock.Any(),
+								testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							GetCourseAdmins(testutils.CourseFPV.ID).
+							Return([]model.User{testutils.Student}, nil). // student.id != admin.id from url
+							AnyTimes()
+						return coursesMock
+					}(),
+				},
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"can not remove admin": {
+				Method:         http.MethodDelete,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					AuditDao: testutils.GetAuditMock(t),
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							GetCourseBySlugYearAndTerm(gomock.Any(),
+								testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							GetCourseAdmins(testutils.CourseFPV.ID).
+							Return([]model.User{testutils.Admin, testutils.Admin}, nil).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							RemoveAdminFromCourse(testutils.Admin.ID, testutils.CourseFPV.ID).
+							Return(errors.New("")).
+							AnyTimes()
+						return coursesMock
+					}(),
+				},
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"success": {
+				Method:         http.MethodDelete,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					AuditDao:   testutils.GetAuditMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+				},
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
+			},
+		}
+
+		testCases.Run(t, configGinCourseRouter)
+	})
+}

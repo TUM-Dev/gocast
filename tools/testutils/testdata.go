@@ -60,6 +60,7 @@ var (
 		ModeratedChatEnabled: false,
 		VodChatEnabled:       false,
 		Visibility:           "public",
+		Admins:               []model.User{Admin},
 	}
 	CourseGBS = model.Course{
 		Model:                gorm.Model{ID: uint(42)},
@@ -270,6 +271,21 @@ func GetCoursesMock(t *testing.T) dao.CoursesDao {
 		GetCourseBySlugYearAndTerm(gomock.Any(), CourseFPV.Slug, CourseFPV.TeachingTerm, CourseFPV.Year).
 		Return(CourseFPV, nil).
 		AnyTimes()
+	coursesMock.
+		EXPECT().
+		GetCourseAdmins(CourseFPV.ID).
+		Return([]model.User{Admin, Admin}, nil).
+		AnyTimes()
+	coursesMock.
+		EXPECT().
+		AddAdminToCourse(Admin.ID, CourseFPV.ID).
+		Return(nil).
+		AnyTimes()
+	coursesMock.
+		EXPECT().
+		RemoveAdminFromCourse(Admin.ID, CourseFPV.ID).
+		Return(nil).
+		AnyTimes()
 	return coursesMock
 }
 
@@ -321,6 +337,16 @@ func GetAuditMock(t *testing.T) dao.AuditDao {
 	auditMock := mock_dao.NewMockAuditDao(gomock.NewController(t))
 	auditMock.EXPECT().Create(gomock.Any()).Return(nil)
 	return auditMock
+}
+
+func GetUsersMock(t *testing.T) dao.UsersDao {
+	usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
+	usersMock.
+		EXPECT().
+		GetUserByID(gomock.Any(), Admin.ID).
+		Return(Admin, nil).
+		AnyTimes()
+	return usersMock
 }
 
 func GetProgressMock(t *testing.T) dao.ProgressDao {

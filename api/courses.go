@@ -190,14 +190,7 @@ func (r coursesRoutes) activateCourseByToken(c *gin.Context) {
 }
 
 func (r coursesRoutes) removeAdminFromCourse(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	userID, err := strconv.ParseUint(c.Param("userID"), 10, 32)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -247,13 +240,7 @@ func (r coursesRoutes) removeAdminFromCourse(c *gin.Context) {
 }
 
 func (r coursesRoutes) addAdminToCourse(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	id := c.Param("userID")
 	idUint, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
@@ -296,13 +283,7 @@ func (r coursesRoutes) addAdminToCourse(c *gin.Context) {
 }
 
 func (r coursesRoutes) getAdmins(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	admins, err := r.CoursesDao.GetCourseAdmins(tumLiveContext.Course.ID)
 	if err != nil {
 		log.WithError(err).Error("error getting course admins")
