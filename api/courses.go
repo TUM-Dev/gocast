@@ -511,7 +511,7 @@ func (r coursesRoutes) updateLectureSeries(c *gin.Context) {
 		return
 	}
 
-	if err := dao.UpdateLectureSeries(stream); err != nil {
+	if err := r.StreamsDao.UpdateLectureSeries(stream); err != nil {
 		log.WithError(err).Error("couldn't update lecture series")
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't update lecture series")
 		return
@@ -535,7 +535,7 @@ func (r coursesRoutes) deleteLectureSeries(c *gin.Context) {
 		return
 	}
 
-	if err := dao.DeleteLectureSeries(stream.SeriesIdentifier); err != nil {
+	if err := r.StreamsDao.DeleteLectureSeries(stream.SeriesIdentifier); err != nil {
 		log.WithError(err).Error("couldn't delete lecture series")
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't delete lecture series")
 		return
