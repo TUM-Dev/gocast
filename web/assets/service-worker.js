@@ -69,5 +69,5 @@ self.addEventListener("fetch", (e) => {
     const fromCache = (request) =>
         caches.open(CACHE_NAME).then((cache) => cache.match(request).then((matching) => matching));
 
-    e.respondWith(fromNetwork(e.request, 10000).catch(() => fromCache(e.request)));
+    e.respondWith(fromNetwork(e.request, FALLBACK_TO_CACHE_TIMEOUT).catch(() => fromCache(e.request)));
 });
