@@ -194,6 +194,11 @@
                        autocomplete="off">
             </div>
             <div class="w-full mt-3">
+                <div class="w-full ml-5">
+                    <input @change="lecture.updateIsDirty()" x-model="lecture.newIsChatEnabled"
+                           class="w-auto mr-2" type="checkbox"/>
+                    <span>Enable Live Chat</span>
+                </div>
                 <div x-data="{ id: $id('text-input'), fileDropHover: false }"
                      class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
                     <label :for="id" class="hidden">Lecture description</label>

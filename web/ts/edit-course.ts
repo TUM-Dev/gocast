@@ -1,4 +1,4 @@
-import { Delete, postData, putData, showMessage } from "./global";
+import {Delete, patchData, postData, putData, showMessage} from "./global";
 import { StatusCodes } from "http-status-codes";
 
 export enum UIEditMode {
@@ -17,6 +17,7 @@ export class LectureList {
             l = Object.assign(l, lecture);
             l.start = new Date(lecture.start);
             l.end = new Date(lecture.end);
+            l.isChatEnabled = lecture.isChatEnabled;
             LectureList.lectures.push(l);
         });
         LectureList.triggerUpdate();
@@ -75,10 +76,12 @@ export class Lecture {
     description: string;
     lectureHallId: string;
     lectureHallName: string;
+    isChatEnabled: boolean = false;
     uiEditMode: UIEditMode = UIEditMode.none;
     newName: string;
     newDescription: string;
     newLectureHallId: string;
+    newIsChatEnabled: boolean = false;
     isDirty = false;
     isSaving = false;
     isDeleted = false;
@@ -111,13 +114,15 @@ export class Lecture {
         this.isDirty =
             this.newName !== this.name ||
             this.newDescription !== this.description ||
-            this.newLectureHallId !== this.lectureHallId;
+            this.newLectureHallId !== this.lectureHallId ||
+            this.newIsChatEnabled !== this.isChatEnabled;
     }
 
     resetNewFields() {
         this.newName = this.name;
         this.newDescription = this.description;
         this.newLectureHallId = this.lectureHallId;
+        this.newIsChatEnabled = this.isChatEnabled;
         this.isDirty = false;
         this.lastErrors = [];
     }
@@ -185,6 +190,7 @@ export class Lecture {
         if (this.newName !== this.name) promises.push(this.saveNewLectureName());
         if (this.newDescription !== this.description) promises.push(this.saveNewLectureDescription());
         if (this.newLectureHallId !== this.lectureHallId) promises.push(this.saveNewLectureHall());
+        if (this.newIsChatEnabled !== this.isChatEnabled) promises.push(this.saveNewIsChatEnabled());
 
         const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
 
@@ -254,6 +260,15 @@ export class Lecture {
             this.lectureHallName = "";
         }
 
+        return res;
+    }
+
+    async saveNewIsChatEnabled() {
+        const res = await saveIsChatEnabled(this.lectureId, this.newIsChatEnabled);
+
+        if (res.status == StatusCodes.OK) {
+            this.isChatEnabled = this.newIsChatEnabled;
+        }
         return res;
     }
 
@@ -400,6 +415,10 @@ export async function deleteLectures(cid: number, lids: number[]) {
         LectureList.lectures = LectureList.lectures.filter((l) => !lids.includes(l.lectureId));
         LectureList.triggerUpdate();
     }
+}
+
+export function saveIsChatEnabled(streamId: number, chatIsEnabled: boolean){
+    return patchData("/api/stream/" + streamId + "/update/chat-enabled", {streamId, chatIsEnabled})
 }
 
 export function saveLectureHall(streamIds: number[], lectureHall: string) {
