@@ -3,7 +3,7 @@
     <form method="post" action="/api/createLecture"
           x-data="admin.createLectureForm()"
           @submit.prevent="submitData"
-          x-init="courseID = {{.IndexData.TUMLiveContext.Course.Model.ID}}">
+          x-init="courseID = {{.IndexData.TUMLiveContext.Course.Model.ID}}; $el.reset()">
         <div class="flex">
             <div class="w-1/4">
                 <label>

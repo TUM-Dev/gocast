@@ -11,12 +11,12 @@
 
 {{define "videosections-desktop"}}
     <div x-data="{vs: new watch.VideoSectionsDesktop()}"
-         x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);" class="flex">
+         x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);" class="flex pt-3">
         <div class="group relative">
             <div class="flex pb-3">
                 <h6 class="font-bold text-3">Sections</h6>
                 <template x-if="!vs.followSections">
-                    <button @click="vs.followSections = true;" class="text-gray-500 text-xs my-auto font-light ml-2">
+                    <button @click="vs.followSections = true;" class="text-gray-500 text-xs my-auto font-light ml-2 hover:underline">
                         (Follow sections)
                     </button>
                 </template>
@@ -47,7 +47,7 @@
                              @load="previewImgLoaded=true"
                              alt="preview"
                              class="w-full h-16 rounded object-cover z-10">
-                        <span x-show="!previewImgLoaded" class="block w-full h-16 bg-gray-50 rounded"></span>
+                        <span x-show="!previewImgLoaded" class="block w-full h-16 bg-gray-50 dark:bg-gray-700 rounded"></span>
                          <span x-text="s.description"
                                class="block text-left text-xs text-3 my-2 px-1"></span>
                         <span class="flex flex-grow items-end flex-1 px-1 py-1">
@@ -65,7 +65,7 @@
 
 {{define "videosections-mobile"}}
     <div x-data="{vs: new watch.VideoSectionsMobile()}"
-         x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);">
+         x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);" class = "pt-3">
         <div class="flex justify-between pb-3">
             <h6 class="font-bold text-3">Sections</h6>
             <template x-if="!vs.minimize">
@@ -109,5 +109,6 @@
                 </button>
             </template>
         </div>
+    </div>
     </div>
 {{end}}

@@ -52,7 +52,7 @@ func (r downloadRoutes) download(c *gin.Context) {
 
 	switch c.Query("type") {
 	case "serve":
-		sendFileContent(c, file)
+		sendImageContent(c, file)
 	case "download":
 		fallthrough
 	default:
@@ -68,7 +68,7 @@ func (r downloadRoutes) download(c *gin.Context) {
 	}
 }
 
-func sendFileContent(c *gin.Context, file model.File) {
+func sendImageContent(c *gin.Context, file model.File) {
 	image, err := os.ReadFile(file.Path)
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)

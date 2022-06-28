@@ -63,6 +63,9 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	if c.Request.URL.Path == "/admin/course-import" {
 		page = "courseImport"
 	}
+	if c.Request.URL.Path == "/admin/audits" {
+		page = "audits"
+	}
 	var notifications []model.Notification
 	if c.Request.URL.Path == "/admin/notifications" {
 		page = "notifications"
