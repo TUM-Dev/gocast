@@ -17,7 +17,6 @@ export class LectureList {
             l = Object.assign(l, lecture);
             l.start = new Date(lecture.start);
             l.end = new Date(lecture.end);
-            l.isChatEnabled = lecture.isChatEnabled;
             LectureList.lectures.push(l);
         });
         LectureList.triggerUpdate();
