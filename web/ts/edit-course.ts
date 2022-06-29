@@ -417,8 +417,8 @@ export async function deleteLectures(cid: number, lids: number[]) {
     }
 }
 
-export function saveIsChatEnabled(streamId: number, chatIsEnabled: boolean){
-    return patchData("/api/stream/" + streamId + "/chat/enabled", {streamId, chatIsEnabled})
+export function saveIsChatEnabled(streamId: number, isChatEnabled: boolean){
+    return patchData("/api/stream/" + streamId + "/chat/enabled", {streamId, isChatEnabled});
 }
 
 export function saveLectureHall(streamIds: number[], lectureHall: string) {
