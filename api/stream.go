@@ -50,7 +50,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			admins.GET("/end", routes.endStream)
 			admins.POST("/issue", routes.reportStreamIssue)
 			admins.PATCH("/visibility", routes.updateStreamVisibility)
-			admins.PATCH("/update/chat-enabled", routes.updateChatEnabled)
+			admins.PATCH("/chat/enabled", routes.updateChatEnabled)
 			sections := admins.Group("/sections")
 			{
 				sections.POST("", routes.createVideoSectionBatch)
