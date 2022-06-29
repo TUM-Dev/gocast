@@ -60,6 +60,7 @@ func removeStopwords(words []string) []string {
 	res := make([]string, len(words))
 	for _, word := range words {
 		clean := stopwords.CleanString(word, "en", false)
+		clean = stopwords.CleanString(clean, "de", false)
 
 		if len(clean) > 0 {
 			res = append(res, strings.TrimSpace(clean))
