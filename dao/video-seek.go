@@ -10,6 +10,7 @@ const maxChunksPerVideo = 150
 
 type VideoSeekDao interface {
 	Add(streamID string, pos float64) error
+	Get(streamID string) ([]model.VideoSeekChunk, error)
 }
 
 type videoSeekDao struct {
@@ -38,4 +39,14 @@ func (d videoSeekDao) Add(streamID string, pos float64) error {
 		Hits:       1,
 		StreamID:   stream.ID,
 	}).Error
+}
+
+func (d videoSeekDao) Get(streamID string) ([]model.VideoSeekChunk, error) {
+	var chunks []model.VideoSeekChunk
+
+	if err := DB.Find(&chunks, "stream_id = ?", streamID).Error; err != nil {
+		return nil, err
+	}
+
+	return chunks, nil
 }

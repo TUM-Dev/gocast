@@ -489,7 +489,7 @@ export class SeekLogger {
 
     constructor(streamID) {
         this.streamID = parseInt(streamID);
-        this.log = debounce((position) => postData(`/api/seekReport`, { position, streamID: `${this.streamID}` }), 0);
+        this.log = debounce((position) => postData(`/api/seekReport/${this.streamID}`, { position }), 0);
     }
 
     attach() {

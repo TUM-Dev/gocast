@@ -66,8 +66,10 @@ func configProgressRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	progressBuff = newProgressBuffer()
 	go progressBuff.run()
 	router.POST("/api/progressReport", routes.saveProgress)
-	router.POST("/api/seekReport", routes.reportSeek)
 	router.POST("/api/watched", routes.markWatched)
+
+	router.POST("/api/seekReport/:streamID", routes.reportSeek)
+	router.GET("/api/seekReport/:streamID", routes.getSeek)
 }
 
 // progressRoutes contains a DaoWrapper object and all route functions dangle from it.
@@ -148,7 +150,6 @@ func (r progressRoutes) markWatched(c *gin.Context) {
 }
 
 type reportSeekRequest struct {
-	StreamID string  `json:"streamID"`
 	Position float64 `json:"position"`
 }
 
@@ -160,9 +161,32 @@ func (r progressRoutes) reportSeek(c *gin.Context) {
 		return
 	}
 
-	if err := r.VideoSeekDao.Add(req.StreamID, req.Position); err != nil {
+	if err := r.VideoSeekDao.Add(c.Param("streamID"), req.Position); err != nil {
 		log.WithError(err).Error("Could not add seek hit")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
+}
+
+// getSeek get seeks for a video
+func (r progressRoutes) getSeek(c *gin.Context) {
+	chunks, err := r.VideoSeekDao.Get(c.Param("streamID"))
+
+	if err != nil {
+		log.WithError(err).Error("Could not get seek hits")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	var values []gin.H
+	for _, chunk := range chunks {
+		values = append(values, gin.H{
+			"index": chunk.ChunkIndex,
+			"value": chunk.Hits,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"values": values,
+	})
 }
