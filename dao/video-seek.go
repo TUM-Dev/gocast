@@ -4,11 +4,9 @@ import (
 	"github.com/joschahenningsen/TUM-Live/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"time"
 )
 
-// 90 Minutes lecture would have worst case of 1080 chunks
-const chunkSize = time.Second * 5
+const maxChunksPerVideo = 150
 
 type VideoSeekDao interface {
 	Add(streamID string, pos float64) error
@@ -28,7 +26,9 @@ func (d videoSeekDao) Add(streamID string, pos float64) error {
 		return err
 	}
 
-	chunk := uint((float64(stream.Duration) / 100 * pos) / float64(chunkSize))
+	hitPos := float64(stream.Duration) * pos
+	chunkTimeRange := float64(stream.Duration) / maxChunksPerVideo
+	chunk := uint(hitPos / chunkTimeRange)
 
 	return DB.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "chunk_index"}, {Name: "stream_id"}},
