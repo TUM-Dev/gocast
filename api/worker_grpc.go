@@ -735,6 +735,9 @@ type generateVideoSectionImagesParameters struct {
 
 func DeleteVideoSectionImage(workerDao dao.WorkerDao, path string) error {
 	workers := workerDao.GetAliveWorkers()
+	if len(workers) == 0 {
+		return errors.New("no workers available")
+	}
 	workerIndex := getWorkerWithLeastWorkload(workers)
 	conn, err := dialIn(workers[workerIndex])
 	defer func() {
@@ -753,6 +756,9 @@ func DeleteVideoSectionImage(workerDao dao.WorkerDao, path string) error {
 
 func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *generateVideoSectionImagesParameters) error {
 	workers := daoWrapper.WorkerDao.GetAliveWorkers()
+	if len(workers) == 0 {
+		return errors.New("no workers available")
+	}
 	workerIndex := getWorkerWithLeastWorkload(workers)
 	conn, err := dialIn(workers[workerIndex])
 	defer func() {

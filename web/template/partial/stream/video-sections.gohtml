@@ -1,5 +1,5 @@
 {{define "videosections"}}
-    <div x-data="{client: new watch.VideoSectionClient('{{.ID}}')}">
+    <div x-data="{client: new watch.VideoSectionClient('{{.ID}}')}" class="px-2#">
         <div class="hidden md:block">
             {{template "videosections-desktop" .}}
         </div>
@@ -14,10 +14,11 @@
          x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);" class="flex pt-3">
         <div class="group relative">
             <div class="flex pb-3">
-                <h6 class="font-bold text-3">Sections</h6>
+                <h6 class="font-bold text-3 pb-3 pt-2"><i class="fa-solid fa-film mr-1"></i>Sections</h6>
                 <template x-if="!vs.followSections">
-                    <button @click="vs.followSections = true;" class="text-gray-500 text-xs my-auto font-light ml-2 hover:underline">
-                        (Follow sections)
+                    <button @click="vs.followSections = true;"
+                            class="text-xs text-gray-500 dark:text-gray-400 uppercase ml-3">
+                        Follow sections
                     </button>
                 </template>
             </div>
@@ -47,7 +48,8 @@
                              @load="previewImgLoaded=true"
                              alt="preview"
                              class="w-full h-16 rounded object-cover z-10">
-                        <span x-show="!previewImgLoaded" class="block w-full h-16 bg-gray-50 dark:bg-gray-700 rounded"></span>
+                        <span x-show="!previewImgLoaded"
+                              class="block w-full h-16 bg-gray-50 dark:bg-gray-700 rounded"></span>
                          <span x-text="s.description"
                                class="block text-left text-xs text-3 my-2 px-1"></span>
                         <span class="flex flex-grow items-end flex-1 px-1 py-1">
@@ -65,9 +67,9 @@
 
 {{define "videosections-mobile"}}
     <div x-data="{vs: new watch.VideoSectionsMobile()}"
-         x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);" class = "pt-3">
+         x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);" class="pt-3">
         <div class="flex justify-between pb-3">
-            <h6 class="font-bold text-3">Sections</h6>
+            <h6 class="font-bold text-3 pb-3 pt-2"><i class="fa-solid fa-film mr-1"></i>Sections</h6>
             <template x-if="!vs.minimize">
                 <button @click="vs.minimize = true;" class="text-gray-500 my-auto font-light">
                     Minimize
@@ -79,11 +81,12 @@
                 </button>
             </template>
         </div>
-        <div class="grid gap-1 overflow-y-scroll h-56">
-            <template x-for="(s, i) in vs.getList()" :key="s.fileID">
-                <button x-cloak class="flex w-full bg-transparent outline-none border-0 rounded-lg"
-                        x-data="{previewImgLoaded: false}"
-                        @click="watch.jumpTo(s.startHours, s.startMinutes, s.startSeconds)">
+        <div class="p-1 border bg-gray-100 rounded dark:bg-gray-400 dark:border-gray-600">
+            <div class="grid gap-1 overflow-y-scroll" :class="vs.minimize ? 'h-fit' : 'h-56'">
+                <template x-for="(s, i) in vs.getList()" :key="s.fileID">
+                    <button x-cloak class="flex w-full bg-transparent outline-none border-0 rounded-lg"
+                            x-data="{previewImgLoaded: false}"
+                            @click="watch.jumpTo(s.startHours, s.startMinutes, s.startSeconds)">
                     <span class="flex justify-between p-1 bg-white dark:bg-secondary justify-between w-full border hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg"
                           :class="vs.isCurrent(i) ? 'border-2 border-blue-500/50' : 'dark:border-gray-800'">
                         <span class="block">
@@ -106,9 +109,9 @@
                             </span>
                         </span>
                     </span>
-                </button>
-            </template>
+                    </button>
+                </template>
+            </div>
         </div>
-    </div>
     </div>
 {{end}}

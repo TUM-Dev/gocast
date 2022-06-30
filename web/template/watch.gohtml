@@ -246,7 +246,7 @@
                 <div class="text-3 px-2"
                      x-html="less ? prev : full"
                      @descriptionupdate.window="full=$el.innerHTML=$event.detail.description.full;prev=
-                    $el.innerHTML=$event.detail.description.truncated;less=full.length>{{.CutOffLength}};">
+                     $el.innerHTML=$event.detail.description.truncated;less=full.length>{{.CutOffLength}};">
                 </div>
                 <button x-show="full.length>{{.CutOffLength}}"
                         class="text-xs text-gray-500 dark:text-gray-400 uppercase mt-2 px-2"
