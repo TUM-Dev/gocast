@@ -1,5 +1,5 @@
 {{define "header"}} {{- /*gotype: github.com/joschahenningsen/TUM-Live/tools.TUMLiveContext*/ -}}
-<div x-data="{showMobNav: false, dark: false}" class="inline">
+<div x-data="{dark: false}" class="inline">
     <nav class="flex z-40 lg:z-50 sticky top-0 w-full items-center justify-between dark:bg-secondary bg-white
                     shadow border-b dark:border-0 p-3 h-20 z-40">
         <a title="Start" href="/" class="flex items-center flex-no-shrink text-white mr-6">
@@ -8,8 +8,8 @@
                       d="M49.986,7v31h8V7h37v38h-7V14h-8v31h-7V14h-8v31h-22V14h-7v31h-7V14h-7V7H49.986z"></path>
             </svg>
         </a>
-        <div class="hidden md:flex grow items-center w-auto">
-            <div class="text-sm grow">
+        <div class="md:flex grow items-center w-auto">
+            <div class="hidden md:flex text-sm grow">
                 <a href="/"
                    class="block inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
                     Start
@@ -20,22 +20,25 @@
                         Login
                     </a>
                 {{else}}
-                    <div class="inline-block align-middle mt-0 mr-4" x-data="{ show: false }" @click.outside="show=false">
-                        <a href="#" class="text-5 hover:text-1 font-medium" @mouseenter="show=true">
+                    <div class="inline-block align-middle mt-0 mr-4" x-data="{ show: false }"
+                         @click.outside="show=false">
+                        <a role="button" class="text-5 hover:text-1 font-medium" @click="show=!show">
                             {{.User.GetPreferredName}}
-                            <i class="fa-chevron-down fas"></i>
+                            <i class="ml-1 fa-angle-down fas"></i>
                         </a>
-                        <div class="relative" @mouseleave="show=false">
+                        <div class="relative">
                             <div x-cloak x-show="show"
                                  @click.outside="show=false"
                                  class="origin-top-right absolute left-0 mt-4 shadow-sm rounded-lg h-fit bg-white border w-36 dark:bg-secondary dark:border-gray-800 overflow-hidden">
-                                <a href="/logout" class="w-full border-b dark:border-gray-800 relative transition-colors duration-200 text-5 hover:text-1">
+                                <a href="/logout"
+                                   class="w-full border-b dark:border-gray-800 relative transition-colors duration-200 text-5 hover:text-1">
                                     <div class="flex items-center p-2">
                                         <i class="fa-solid fa-sign-out mr-2"></i>
                                         <p>Logout</p>
                                     </div>
                                 </a>
-                                <a href="/settings" class="w-full relative transition-colors duration-200 text-5 hover:text-1">
+                                <a href="/settings"
+                                   class="w-full relative transition-colors duration-200 text-5 hover:text-1">
                                     <div class="flex items-center p-2">
                                         <i class="fa-solid fa-gear mr-2"></i>
                                         <p>Settings</p>
@@ -52,74 +55,16 @@
                         </a>
                     {{end}}
                 {{end}}
-                <a href="/about"
-                   class="inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
-                    About
-                </a>
             </div>
-            <div class="flex">
-                {{template "theme-selector"}}
-                {{template "notifications"}}
-                <a class="mr-3" rel="noopener" href="https://github.com/joschahenningsen/TUM-Live"
-                   aria-label="GitHub"><i
-                            class="transition-colors duration-200 hover:text-gray-600
-                            dark:hover:text-white text-gray-400 vjs-icon-github"></i></a>
+            <div class="md:flex">
+                <div class="hidden md:flex">
+                    {{template "theme-selector"}}
+                    {{template "notifications"}}
+                </div>
+                {{template "info-dropdown" .}}
             </div>
-        </div>
-        <div class="md:hidden mr-3">
-            <button class="text-3 text-4xl" @click="showMobNav = true;">
-                &#8801;
-            </button>
         </div>
     </nav>
-    <div id="hamburger"
-         class="md:hidden z-50 fixed right-0 top-0 h-screen w-full backdrop-blur-sm"
-         :class="showMobNav || 'hidden'">
-        <div class="w-10/12 bg-white dark:bg-secondary shadow ml-auto h-full pb-4 rounded-l-lg">
-            <div class="pl-5 py-3 border-b h-16 dark:border-gray-600">
-                <button class="text-3 text-3xl my-auto" @click="showMobNav = false;">&#8614;</button>
-            </div>
-            <a href="/" class="block font-semibold text-3 px-5 py-2 border-b dark:border-gray-600">
-                <i class="fas fa-home w-8"></i>
-                <span class="ml-2 text-sm">Start</span>
-            </a>
-            {{if not .User}}
-                <a href="/login"
-                   class="block font-semibold text-3 px-5 py-2 border-b dark:border-gray-600">
-                    <i class="fas fa-sign-in-alt w-8"></i>
-                    <span class="ml-2 text-sm">Login</span>
-                </a>
-            {{else}}
-                <a href="/logout"
-                   class="block font-semibold text-3 px-5 py-2 border-b dark:border-gray-600">
-                    <i class="fas fa-sign-out-alt w-8"></i>
-                    <span class="ml-2 text-sm">Logout</span>
-                </a>
-                {{if or (eq .User.Role 1) (eq .User.Role 2) }}
-                    <a href="/admin"
-                       class="block font-semibold text-3 px-5 py-2 border-b dark:border-gray-600">
-                        <i class="fas fa-user-shield w-8"></i>
-                        <span class="ml-2 text-sm">Admin</span>
-                    </a>
-                {{end}}
-            {{end}}
-            <a href="/about"
-               class="block font-semibold text-3 px-5 py-2 border-b dark:border-gray-600">
-                <i class="fas fa-info-circle w-8"></i>
-                <span class="ml-2 text-sm">About</span>
-            </a>
-            {{template "theme-selector-mobile"}}
-            <a class="my-auto" rel="noopener" href="https://github.com/joschahenningsen/TUM-Live" aria-label="GitHub">
-                <div class="flex justify-end px-5 py-2 border-b dark:border-gray-600
-                            text-sm transition-colors duration-200 text-5 hover:text-1">
-                    <span class="uppercase mr-2 my-auto">GitHub</span>
-                    <div class="w-12 flex justify-end">
-                        <i class="vjs-icon-github"></i>
-                    </div>
-                </div>
-            </a>
-        </div>
-    </div>
     <div id="alertBox" class="fixed top-24 z-50 left-0 right-0 hidden text-center">
         <div class="p-2 bg-indigo-800 items-center text-indigo-100 leading-none lg:rounded-full flex lg:inline-flex"
              role="alert">

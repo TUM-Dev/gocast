@@ -221,6 +221,7 @@ export type Section = {
 
     streamID: number;
     friendlyTimestamp?: string;
+    fileID?: number;
 };
 
 window.onload = function () {

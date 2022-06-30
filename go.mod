@@ -11,12 +11,12 @@ require (
 	github.com/gabstv/melody v1.0.2
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/gin-contrib/gzip v0.0.5
-	github.com/gin-gonic/gin v1.8.0
+	github.com/gin-gonic/gin v1.8.1
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
 	github.com/go-gormigrate/gormigrate/v2 v2.0.2
 	github.com/go-ldap/ldap/v3 v3.4.3
 	github.com/go-sql-driver/mysql v1.6.0
-	github.com/golang-jwt/jwt/v4 v4.4.1
+	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/jinzhu/now v1.1.5
@@ -27,27 +27,28 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.12.0
-	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
-	google.golang.org/genproto v0.0.0-20220601144221-27df5f98adab // indirect
+	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
+	google.golang.org/genproto v0.0.0-20220627151210-f754eecb4be7 // indirect
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.0
 	gorm.io/driver/mysql v1.3.4
-	gorm.io/gorm v1.23.5
+	gorm.io/gorm v1.23.6
 	mvdan.cc/xurls/v2 v2.4.0
 )
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
-	github.com/crewjam/saml v0.4.6
+	github.com/crewjam/saml v0.4.8
 	github.com/golang/mock v1.6.0
 	github.com/icholy/digest v0.1.15
-	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20220601143036-b82f245ab856
-	github.com/magiconair/properties v1.8.6
-	github.com/stretchr/testify v1.7.1
+	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20220626210354-9ef94aba21b0
+	github.com/stretchr/testify v1.7.5
 )
 
 require (
+	// this version works - newer commits have breaking changes - do not update
+	// github.com/Azure/go-ntlmssp v0.0.0-20211209120228-48547f28849e // indirect
 	github.com/Azure/go-ntlmssp v0.0.0-20211209120228-48547f28849e // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
@@ -75,6 +76,7 @@ require (
 	github.com/jonboulle/clockwork v0.3.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
+	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
@@ -83,7 +85,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
-	github.com/pelletier/go-toml/v2 v2.0.1 // indirect
+	github.com/pelletier/go-toml/v2 v2.0.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russellhaering/goxmldsig v1.1.1 // indirect
@@ -92,10 +94,10 @@ require (
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/subosito/gotenv v1.3.0 // indirect
+	github.com/subosito/gotenv v1.4.0 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
-	golang.org/x/net v0.0.0-20220531201128-c960675eff93 // indirect
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
+	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
+	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.66.6 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

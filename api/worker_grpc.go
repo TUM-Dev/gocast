@@ -267,7 +267,12 @@ func handleCameraPositionSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) 
 	}
 	for _, preference := range preferences {
 		if preference.LectureHallID == stream.LectureHallID {
-			return camera.NewCamera(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(preference.PresetID)
+			switch lectureHall.CameraType {
+			case model.Axis:
+				return camera.NewAxisCam(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(preference.PresetID)
+			case model.Panasonic:
+				return camera.NewPanasonicCam(lectureHall.CameraIP, nil).SetPreset(preference.PresetID)
+			}
 		}
 	}
 	// no preset found for this lecture hall, use default
@@ -275,7 +280,13 @@ func handleCameraPositionSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) 
 	if err != nil {
 		return err
 	}
-	return camera.NewCamera(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(defaultPreset.PresetID)
+	switch lectureHall.CameraType {
+	case model.Axis:
+		return camera.NewAxisCam(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(defaultPreset.PresetID)
+	case model.Panasonic:
+		return camera.NewPanasonicCam(lectureHall.CameraIP, nil).SetPreset(defaultPreset.PresetID)
+	}
+	return nil
 }
 
 func handleLightOnSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) error {
@@ -414,6 +425,36 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 	default:
 		stream.PlaylistUrl = req.HLSUrl
 	}
+	if err = s.StreamsDao.SaveStream(&stream); err != nil {
+		return nil, err
+	}
+	return &pb.Status{Ok: true}, nil
+}
+
+// NotifyThumbnailsFinished receives and handles messages from workers about finished thumbnails.
+func (s server) NotifyThumbnailsFinished(ctx context.Context, req *pb.ThumbnailsFinished) (*pb.Status, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	if _, err := s.WorkerDao.GetWorkerByID(ctx, req.WorkerID); err != nil {
+		return nil, err
+	}
+	stream, err := s.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", req.StreamID))
+	if err != nil {
+		return nil, err
+	}
+	var thumbType model.FileType
+	switch req.SourceType {
+	case "COMB":
+		thumbType = model.FILETYPE_THUMB_COMB
+	case "CAM":
+		thumbType = model.FILETYPE_THUMB_CAM
+	case "PRES":
+		thumbType = model.FILETYPE_THUMB_PRES
+	default:
+		return nil, errors.New("unknown source type")
+	}
+	stream.Files = append(stream.Files, model.File{StreamID: stream.ID, Path: req.FilePath, Type: thumbType})
+	stream.ThumbInterval = req.Interval
 	if err = s.StreamsDao.SaveStream(&stream); err != nil {
 		return nil, err
 	}
@@ -684,6 +725,81 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 		}
 		endConnection(conn)
 	}
+}
+
+type generateVideoSectionImagesParameters struct {
+	sections                                    []model.VideoSection
+	playlistUrl, courseName, courseTeachingTerm string
+	courseYear                                  uint32
+}
+
+func DeleteVideoSectionImage(workerDao dao.WorkerDao, path string) error {
+	workers := workerDao.GetAliveWorkers()
+	workerIndex := getWorkerWithLeastWorkload(workers)
+	conn, err := dialIn(workers[workerIndex])
+	defer func() {
+		endConnection(conn)
+	}()
+	if err != nil {
+		log.WithError(err).Error("Unable to dial server")
+		return err
+	}
+
+	client := pb.NewToWorkerClient(conn)
+
+	_, err = client.DeleteSectionImage(context.Background(), &pb.DeleteSectionImageRequest{Path: path})
+	return err
+}
+
+func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *generateVideoSectionImagesParameters) error {
+	workers := daoWrapper.WorkerDao.GetAliveWorkers()
+	workerIndex := getWorkerWithLeastWorkload(workers)
+	conn, err := dialIn(workers[workerIndex])
+	defer func() {
+		endConnection(conn)
+	}()
+	if err != nil {
+		log.WithError(err).Error("Unable to dial server")
+		return err
+	}
+
+	client := pb.NewToWorkerClient(conn)
+
+	// collect timestamps
+	sectionTimestamps := make([]*pb.Section, len(parameters.sections))
+	for i, section := range parameters.sections {
+		sectionTimestamps[i] = &pb.Section{
+			Hours:   uint32(section.StartHours),
+			Minutes: uint32(section.StartMinutes),
+			Seconds: uint32(section.StartSeconds),
+		}
+	}
+
+	// make request
+	res, err := client.GenerateSectionImages(context.Background(), &pb.GenerateSectionImageRequest{
+		PlaylistURL:        parameters.playlistUrl,
+		CourseName:         parameters.courseName,
+		CourseYear:         parameters.courseYear,
+		CourseTeachingTerm: parameters.courseTeachingTerm,
+		Sections:           sectionTimestamps,
+	})
+	if err != nil {
+		return err
+	}
+
+	// update database
+	for i, section := range parameters.sections {
+		imageFile := model.File{StreamID: section.StreamID, Path: res.Paths[i], Type: model.FILETYPE_IMAGE_JPG}
+		if err := daoWrapper.FileDao.NewFile(&imageFile); err != nil {
+			return err
+		}
+
+		update := model.VideoSection{Model: gorm.Model{ID: section.ID}, FileID: imageFile.ID}
+		if err := daoWrapper.VideoSectionDao.Update(&update); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // NotifyWorkersToStopStream notifies all workers for a given stream to quit encoding

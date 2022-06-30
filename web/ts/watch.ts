@@ -67,8 +67,8 @@ export function startWebsocket() {
 
     ws.onmessage = function (m) {
         const data = JSON.parse(m.data);
-        if ("viewers" in data && document.getElementById("viewerCount") != null) {
-            document.getElementById("viewerCount").innerText = data["viewers"];
+        if ("viewers" in data) {
+            window.dispatchEvent(new CustomEvent("viewers", { detail: { viewers: data["viewers"] } }));
         } else if ("live" in data) {
             if (data["live"]) {
                 // stream start, refresh page

@@ -6,9 +6,16 @@ import (
 	"strings"
 )
 
+type FileType uint
+
 const (
-	FILETYPE_DOWNLOAD = iota + 1
+	FILETYPE_INVALID = iota
+	FILETYPE_VOD
 	FILETYPE_ATTACHMENT
+	FILETYPE_IMAGE_JPG
+	FILETYPE_THUMB_COMB
+	FILETYPE_THUMB_CAM
+	FILETYPE_THUMB_PRES
 )
 
 type File struct {
@@ -17,7 +24,7 @@ type File struct {
 	StreamID uint   `gorm:"not null"`
 	Path     string `gorm:"not null"`
 	Filename string
-	Type     uint `gorm:"not null; default: 1"`
+	Type     FileType `gorm:"not null; default: 1"`
 }
 
 func (f File) GetDownloadFileName() string {
@@ -41,6 +48,10 @@ func (f File) GetFriendlyFileName() string {
 		return f.Filename
 	}
 	return "Default view"
+}
+
+func (f File) IsThumb() bool {
+	return f.Type == FILETYPE_THUMB_CAM || f.Type == FILETYPE_THUMB_PRES || f.Type == FILETYPE_THUMB_COMB
 }
 
 func (f File) IsURL() bool {
