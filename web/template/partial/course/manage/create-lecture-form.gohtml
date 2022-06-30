@@ -17,7 +17,7 @@
                     <span class="text-3">Recurring Event</span>
                 </label><br>
                 <label>
-                    <input type="checkbox" x-model="formData.isChatEnabled"
+                    <input type="checkbox" x-model="formData.isChatEnabled" x-init="formData.isChatEnabled = {{.IndexData.TUMLiveContext.Course.ChatEnabled}}"
                            class="w-auto">
                     <span class="text-3">Enable Live Chat</span>
                 </label>
