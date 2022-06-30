@@ -1,4 +1,4 @@
-import {Delete, patchData, postData, putData, showMessage} from "./global";
+import { Delete, patchData, postData, putData, showMessage } from "./global";
 import { StatusCodes } from "http-status-codes";
 
 export enum UIEditMode {
@@ -75,12 +75,12 @@ export class Lecture {
     description: string;
     lectureHallId: string;
     lectureHallName: string;
-    isChatEnabled: boolean = false;
+    isChatEnabled = false;
     uiEditMode: UIEditMode = UIEditMode.none;
     newName: string;
     newDescription: string;
     newLectureHallId: string;
-    newIsChatEnabled: boolean = false;
+    newIsChatEnabled = false;
     isDirty = false;
     isSaving = false;
     isDeleted = false;
@@ -416,8 +416,8 @@ export async function deleteLectures(cid: number, lids: number[]) {
     }
 }
 
-export function saveIsChatEnabled(streamId: number, isChatEnabled: boolean){
-    return patchData("/api/stream/" + streamId + "/chat/enabled", {streamId, isChatEnabled});
+export function saveIsChatEnabled(streamId: number, isChatEnabled: boolean) {
+    return patchData("/api/stream/" + streamId + "/chat/enabled", { streamId, isChatEnabled });
 }
 
 export function saveLectureHall(streamIds: number[], lectureHall: string) {
