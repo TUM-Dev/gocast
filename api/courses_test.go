@@ -22,8 +22,6 @@ import (
 func TestCoursesCRUD(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	t.Parallel()
-
 	t.Run("DELETE/api/course/:courseID", func(t *testing.T) {
 		url := fmt.Sprintf("/api/course/%d/", testutils.CourseFPV.ID)
 
@@ -56,31 +54,35 @@ func TestCoursesCRUD(t *testing.T) {
 				},
 				ExpectedCode: http.StatusForbidden,
 			},
-			/*"success": {
-				Method: http.MethodDelete,
-				Url:    url,
-				DaoWrapper: dao.DaoWrapper{
-					CoursesDao: func() dao.CoursesDao {
-						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
-						coursesMock.
-							EXPECT().
-							GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
-							Return(testutils.CourseFPV, nil).
-							AnyTimes()
-						coursesMock.
-							EXPECT().
-							GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
-							Return(testutils.CourseFPV, nil).
-							AnyTimes()
-						coursesMock.
-							EXPECT().
-							DeleteCourse(gomock.Any())
-						return coursesMock
-					}(),
+			/*
+				TODO: Mock Cache object
+				"success": {
+					Method: http.MethodDelete,
+					Url:    url,
+					DaoWrapper: dao.DaoWrapper{
+						AuditDao: testutils.GetAuditMock(t),
+						CoursesDao: func() dao.CoursesDao {
+							coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+							coursesMock.
+								EXPECT().
+								GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
+								Return(testutils.CourseFPV, nil).
+								AnyTimes()
+							coursesMock.
+								EXPECT().
+								GetCourseBySlugYearAndTerm(gomock.Any(), testutils.CourseFPV.Slug, testutils.CourseFPV.TeachingTerm, testutils.CourseFPV.Year).
+								Return(testutils.CourseFPV, nil).
+								AnyTimes()
+							coursesMock.
+								EXPECT().
+								DeleteCourse(gomock.Any())
+							return coursesMock
+						}(),
+					},
+					TumLiveContext: &testutils.TUMLiveContextAdmin,
+					ExpectedCode:   http.StatusOK,
 				},
-				TumLiveContext: &testutils.TUMLiveContextAdmin,
-				ExpectedCode:   http.StatusOK,
-			},*/
+			*/
 		}
 
 		testCases.Run(t, configGinCourseRouter)
@@ -94,7 +96,7 @@ func TestCoursesCRUD(t *testing.T) {
 		}
 		tools.SetTemplateExecutor(templateExecutor)
 
-		/*request := createCourseRequest{
+		request := createCourseRequest{
 			Access:       "enrolled",
 			EnChat:       false,
 			EnDL:         false,
@@ -102,7 +104,7 @@ func TestCoursesCRUD(t *testing.T) {
 			Name:         "New Course",
 			Slug:         "NC",
 			TeachingTerm: "Sommersemester 2020",
-		}*/
+		}
 
 		requestInvalidAccess := createCourseRequest{
 			Access:       "abc",
@@ -123,6 +125,23 @@ func TestCoursesCRUD(t *testing.T) {
 			Slug:         "NC",
 			TeachingTerm: "Sommersemester 20",
 		}
+
+		newCourse := model.Course{
+			UserID:              testutils.Lecturer.ID,
+			Name:                request.Name,
+			Slug:                request.Slug,
+			Year:                2020, // Taken from 'request'
+			TeachingTerm:        "S",  // Taken from 'request'
+			TUMOnlineIdentifier: request.CourseID,
+			VODEnabled:          request.EnVOD,
+			DownloadsEnabled:    request.EnDL,
+			ChatEnabled:         request.EnChat,
+			Visibility:          request.Access,
+			Streams:             []model.Stream{},
+			Admins:              []model.User{testutils.Lecturer},
+		}
+
+		ctrl := gomock.NewController(t)
 
 		testCases := testutils.TestCases{
 			"no context": {
@@ -160,6 +179,115 @@ func TestCoursesCRUD(t *testing.T) {
 					testutils.First(json.Marshal(requestInvalidTerm)).([]byte)),
 				ExpectedCode: http.StatusBadRequest,
 			},
+			"conflict with existing course": {
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextLecturer,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+						coursesMock.
+							EXPECT().
+							GetCourseBySlugYearAndTerm(gomock.Any(), request.Slug, "S", 2020).
+							Return(model.Course{}, nil).
+							AnyTimes()
+						return coursesMock
+					}(),
+				},
+				Body: bytes.NewBuffer(
+					testutils.First(json.Marshal(request)).([]byte)),
+				ExpectedCode: http.StatusConflict,
+			},
+			"can not create course": {
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextLecturer,
+				DaoWrapper: dao.DaoWrapper{
+					AuditDao: testutils.GetAuditMock(t),
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+						coursesMock.
+							EXPECT().
+							GetCourseBySlugYearAndTerm(gomock.Any(), request.Slug, "S", 2020).
+							Return(model.Course{}, errors.New("")).
+							AnyTimes()
+						coursesMock.
+							EXPECT().
+							CreateCourse(gomock.Any(), &newCourse, true).
+							Return(errors.New("")).
+							AnyTimes()
+						return coursesMock
+					}(),
+				},
+				Body: bytes.NewBuffer(
+					testutils.First(json.Marshal(request)).([]byte)),
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"can not get new course": {
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextLecturer,
+				DaoWrapper: dao.DaoWrapper{
+					AuditDao: testutils.GetAuditMock(t),
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+						first := coursesMock.
+							EXPECT().
+							GetCourseBySlugYearAndTerm(gomock.Any(), request.Slug, "S", 2020).
+							Return(model.Course{}, errors.New("")).Times(1)
+						second := coursesMock.
+							EXPECT().
+							GetCourseBySlugYearAndTerm(gomock.Any(), request.Slug, "S", 2020).
+							Return(newCourse, errors.New("")).Times(1)
+
+						gomock.InOrder(first, second)
+
+						coursesMock.
+							EXPECT().
+							CreateCourse(gomock.Any(), &newCourse, true).
+							Return(nil).
+							AnyTimes()
+						return coursesMock
+					}(),
+				},
+				Body: bytes.NewBuffer(
+					testutils.First(json.Marshal(request)).([]byte)),
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			/*
+				TODO: Mock tum package functions
+				"success S": {
+					Method:         http.MethodPost,
+					Url:            url,
+					TumLiveContext: &testutils.TUMLiveContextLecturer,
+					DaoWrapper: dao.DaoWrapper{
+						AuditDao: testutils.GetAuditMock(t),
+						CoursesDao: func() dao.CoursesDao {
+							coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+							first := coursesMock.
+								EXPECT().
+								GetCourseBySlugYearAndTerm(gomock.Any(), request.Slug, "S", 2020).
+								Return(model.Course{}, errors.New("")).Times(1)
+							second := coursesMock.
+								EXPECT().
+								GetCourseBySlugYearAndTerm(gomock.Any(), request.Slug, "S", 2020).
+								Return(newCourse, nil).Times(1)
+
+							gomock.InOrder(first, second)
+
+							coursesMock.
+								EXPECT().
+								CreateCourse(gomock.Any(), &newCourse, true).
+								Return(nil).
+								AnyTimes()
+							return coursesMock
+						}(),
+					},
+					Body: bytes.NewBuffer(
+						testutils.First(json.Marshal(request)).([]byte)),
+					ExpectedCode: http.StatusOK,
+				},
+			*/
 		}
 		testCases.Run(t, configGinCourseRouter)
 	})
@@ -167,8 +295,6 @@ func TestCoursesCRUD(t *testing.T) {
 
 func TestCoursesLectureActions(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-
-	t.Parallel()
 
 	t.Run("POST/api/course/:courseID/createLecture", func(t *testing.T) {
 		url := fmt.Sprintf("/api/course/%d/createLecture", testutils.CourseFPV.ID)
@@ -1505,6 +1631,76 @@ func TestAdminFunctions(t *testing.T) {
 				},
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
+			},
+		}
+
+		testCases.Run(t, configGinCourseRouter)
+	})
+}
+
+func TestLectureHallsById(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("GET/api/lecture-halls-by-id", func(t *testing.T) {
+		url := fmt.Sprintf("/api/lecture-halls-by-id?id=%d", testutils.CourseFPV.ID)
+
+		ctrl := gomock.NewController(t)
+
+		testCases := testutils.TestCases{
+			"no context": {
+				Method:         http.MethodGet,
+				Url:            url,
+				TumLiveContext: nil,
+				ExpectedCode:   http.StatusInternalServerError,
+			},
+			"invalid id": {
+				Method:         http.MethodGet,
+				Url:            "/api/lecture-halls-by-id?id=abc",
+				TumLiveContext: &testutils.TUMLiveContextStudent,
+				ExpectedCode:   http.StatusBadRequest,
+			},
+			"course not found": {
+				Method: http.MethodGet,
+				Url:    url,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
+							Return(testutils.CourseFPV, errors.New("")).
+							AnyTimes()
+						return coursesMock
+					}(),
+				},
+				TumLiveContext: &testutils.TUMLiveContextStudent,
+				ExpectedCode:   http.StatusNotFound,
+			},
+			"is not admin of course": {
+				Method: http.MethodGet,
+				Url:    url,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+						return coursesMock
+					}(),
+				},
+				TumLiveContext: &testutils.TUMLiveContextStudent,
+				ExpectedCode:   http.StatusForbidden,
+			},
+			"success": {
+				Method: http.MethodGet,
+				Url:    url,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+				},
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				ExpectedCode:   http.StatusOK,
 			},
 		}
 

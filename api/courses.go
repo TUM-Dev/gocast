@@ -766,6 +766,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 	courseWithID, err := r.CoursesDao.GetCourseBySlugYearAndTerm(context.Background(), req.Slug, semester, year)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "Could not get course for slug and term. Please reach out to us.")
+		return
 	}
 	// refresh enrollments and lectures
 	courses := make([]model.Course, 1)
