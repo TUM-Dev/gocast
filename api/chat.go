@@ -79,7 +79,7 @@ func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 			log.WithError(err).Warn("could not unmarshal request")
 			return
 		}
-		log.Print(!(tumLiveContext.Course.ChatEnabled && tumLiveContext.Stream.ChatEnabled))
+		
 		if !(tumLiveContext.Course.ChatEnabled && tumLiveContext.Stream.ChatEnabled) {
 			ctx.(*gin.Context).AbortWithStatus(http.StatusForbidden)
 			return
