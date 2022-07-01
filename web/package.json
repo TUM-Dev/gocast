@@ -51,7 +51,7 @@
   "devDependencies": {
     "@types/video.js": "^7.3.42",
     "@typescript-eslint/eslint-plugin": "^5.30.0",
-    "@typescript-eslint/parser": "^5.30.0",
+    "@typescript-eslint/parser": "^5.30.1",
     "autoprefixer": "^10.4.7",
     "css-loader": "^6.7.1",
     "eslint": "^8.18.0",
