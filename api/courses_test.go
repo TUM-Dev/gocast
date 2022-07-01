@@ -13,6 +13,8 @@ import (
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
+	"github.com/u2takey/go-utils/uuid"
+	"gorm.io/gorm"
 	"html/template"
 	"net/http"
 	"testing"
@@ -1646,6 +1648,12 @@ func TestLectureHallsById(t *testing.T) {
 
 		ctrl := gomock.NewController(t)
 
+		response := []lhResp{
+			{
+				LectureHallName: testutils.LectureHall.Name,
+				Presets:         testutils.LectureHall.CameraPresets},
+		}
+
 		testCases := testutils.TestCases{
 			"no context": {
 				Method:         http.MethodGet,
@@ -1698,9 +1706,92 @@ func TestLectureHallsById(t *testing.T) {
 				Url:    url,
 				DaoWrapper: dao.DaoWrapper{
 					CoursesDao: testutils.GetCoursesMock(t),
+					LectureHallsDao: func() dao.LectureHallsDao {
+						lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
+						lectureHallMock.
+							EXPECT().
+							GetLectureHallByID(testutils.LectureHall.ID).
+							Return(testutils.LectureHall, nil)
+						return lectureHallMock
+					}(),
 				},
-				TumLiveContext: &testutils.TUMLiveContextAdmin,
-				ExpectedCode:   http.StatusOK,
+				TumLiveContext:   &testutils.TUMLiveContextAdmin,
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
+			},
+		}
+
+		testCases.Run(t, configGinCourseRouter)
+	})
+}
+
+func TestActivateToken(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("POST/api/course/activate/:token", func(t *testing.T) {
+		token := uuid.NewUUID()
+		url := fmt.Sprintf("/api/course/activate/%s", token)
+
+		ctrl := gomock.NewController(t)
+
+		testCases := testutils.TestCases{
+			"course not found": testutils.TestCase{
+				Method: http.MethodPost,
+				Url:    url,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+						coursesMock.
+							EXPECT().
+							GetCourseByToken(token).
+							Return(model.Course{}, errors.New(""))
+						return coursesMock
+					}(),
+				},
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"can not un-delete course": testutils.TestCase{
+				Method: http.MethodPost,
+				Url:    url,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+						coursesMock.
+							EXPECT().
+							GetCourseByToken(token).
+							Return(model.Course{}, nil)
+						coursesMock.
+							EXPECT().
+							UnDeleteCourse(gomock.Any(), gomock.Any()).
+							Return(errors.New(""))
+						return coursesMock
+					}(),
+				},
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"success": testutils.TestCase{
+				Method: http.MethodPost,
+				Url:    url,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: func() dao.CoursesDao {
+						courseCopy := testutils.CourseFPV
+						courseCopy.DeletedAt = gorm.DeletedAt{Valid: false}
+						courseCopy.VODEnabled = true
+						courseCopy.Visibility = "loggedin"
+
+						coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+						coursesMock.
+							EXPECT().
+							GetCourseByToken(token).
+							Return(courseCopy, nil)
+						coursesMock.
+							EXPECT().
+							UnDeleteCourse(gomock.Any(), courseCopy).
+							Return(nil)
+						return coursesMock
+					}(),
+				},
+				ExpectedCode: http.StatusOK,
 			},
 		}
 

@@ -39,9 +39,9 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	adminOfCourseGroup.Use(tools.InitCourse(daoWrapper))
 	adminOfCourseGroup.Use(tools.AdminOfCourse)
 	adminOfCourseGroup.DELETE("/", routes.deleteCourse)
-	adminOfCourseGroup.POST("/uploadVOD", routes.uploadVOD)
+	adminOfCourseGroup.POST("/uploadVOD", routes.uploadVOD) // TODO: test
 	adminOfCourseGroup.POST("/createLecture", routes.createLecture)
-	adminOfCourseGroup.POST("/presets", routes.updatePresets)
+	adminOfCourseGroup.POST("/presets", routes.updatePresets) // TODO: test
 	adminOfCourseGroup.POST("/deleteLectures", routes.deleteLectures)
 	adminOfCourseGroup.POST("/renameLecture/:streamID", routes.renameLecture)
 	adminOfCourseGroup.POST("/updateLectureSeries/:streamID", routes.updateLectureSeries)
