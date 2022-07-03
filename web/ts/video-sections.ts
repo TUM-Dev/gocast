@@ -90,6 +90,7 @@ export class VideoSectionsDesktop extends VideoSections {
     }
 
     getList(): Section[] {
+        console.log("hello");
         const currentHighlightPage = Math.floor(this.currentHighlightIndex / this.sectionsPerGroup);
         const startIndex = this.followSections ? currentHighlightPage : this.currentIndex;
         return this.list.slice(
