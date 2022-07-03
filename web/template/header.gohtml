@@ -22,11 +22,11 @@
                 {{else}}
                     <div class="inline-block align-middle mt-0 mr-4" x-data="{ show: false }"
                          @click.outside="show=false">
-                        <a href="#" class="text-5 hover:text-1 font-medium" @mouseenter="show=true">
+                        <a role="button" class="text-5 hover:text-1 font-medium" @click="show=!show">
                             {{.User.GetPreferredName}}
-                            <i class="fa-chevron-down fas"></i>
+                            <i class="ml-1 fa-angle-down fas"></i>
                         </a>
-                        <div class="relative" @mouseleave="show=false">
+                        <div class="relative">
                             <div x-cloak x-show="show"
                                  @click.outside="show=false"
                                  class="origin-top-right absolute left-0 mt-4 shadow-sm rounded-lg h-fit bg-white border w-36 dark:bg-secondary dark:border-gray-800 overflow-hidden">

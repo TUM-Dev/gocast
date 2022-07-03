@@ -15,7 +15,7 @@
                 <div class="text-3 font-semibold">
                     <input @change="$event.target.checked ? selectedLectures.push({ id: lecture.lectureId, isPast: lecture.isPast }) : (selectedLectures = selectedLectures.filter(({id}) => id != lecture.lectureId))"
                            class="w-auto mr-2" type="checkbox"/>
-                    <span x-text="lecture.startDateFormatted()"></span>
+                    <a :href="`/w/${lecture.courseSlug}/${lecture.lectureId}`"><span x-text="lecture.startDateFormatted()"></span> <i class="fas fa-external-link"></i></a>
                 </div>
                 <div class="text-3 font-sans ml-6" x-data="{ showKeys: false }">
                     <span x-text="lecture.startTimeFormatted()"></span>
