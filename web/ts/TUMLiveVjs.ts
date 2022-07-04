@@ -1,10 +1,11 @@
-import { postData, Section } from "./global";
+import { postData } from "./global";
+import { VideoSections } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import airplay from "@silvermine/videojs-airplay";
-import dom = videojs.dom;
 
 import { handleHotkeys } from "./hotkeys";
+import dom = videojs.dom;
 
 require("videojs-sprite-thumbnails");
 require("videojs-seek-buttons");
@@ -507,7 +508,7 @@ export class SeekLogger {
     }
 }
 
-function attachCurrentTimeEvent(videoSection: VideoSections) {
+export function attachCurrentTimeEvent(videoSection: VideoSections) {
     player.ready(() => {
         let timer;
         (function checkTimestamp() {
