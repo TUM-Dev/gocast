@@ -122,15 +122,10 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 
 // updatePresets updates the CameraPresets of a course
 func (r coursesRoutes) updatePresets(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	course := tumLiveContext.Course
-	if course == nil {
+	if course == nil { // Unreachable code bc. of .InitCourse()?
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}

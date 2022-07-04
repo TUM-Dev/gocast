@@ -1798,3 +1798,115 @@ func TestActivateToken(t *testing.T) {
 		testCases.Run(t, configGinCourseRouter)
 	})
 }
+
+func TestPresets(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("POST/api/course/:courseID/presets", func(t *testing.T) {
+		url := fmt.Sprintf("/api/course/%d/presets", testutils.CourseFPV.ID)
+
+		request := []lhResp{
+			{
+				LectureHallName: "HS-4",
+				Presets: []model.CameraPreset{
+					{
+						Name:          "Preset 1",
+						PresetID:      1,
+						Image:         "375ed239-c37d-450e-9d4f-1fbdb5a2dec5.jpg",
+						LectureHallId: testutils.LectureHall.ID,
+						IsDefault:     false,
+					},
+				},
+				SelectedIndex: 1,
+			},
+		}
+
+		presetSettings := []model.CameraPresetPreference{
+			{
+				LectureHallID: testutils.LectureHall.ID,
+				PresetID:      1,
+			},
+		}
+
+		afterSetPresetPreference := testutils.CourseFPV
+		afterSetPresetPreference.CameraPresetPreferences = string(testutils.First(json.Marshal(presetSettings)).([]byte))
+
+		testCases := testutils.TestCases{
+			"no context": {
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: nil,
+				ExpectedCode:   http.StatusInternalServerError,
+			},
+			"not admin": {
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextStudent,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+				},
+				ExpectedCode: http.StatusForbidden,
+			},
+			"invalid body": {
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+				},
+				Body:         nil,
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"can not update course": {
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					AuditDao: testutils.GetAuditMock(t),
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+
+						coursesMock.
+							EXPECT().
+							UpdateCourse(gomock.Any(), afterSetPresetPreference).
+							Return(errors.New(""))
+						return coursesMock
+					}(),
+				},
+				Body:         bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"success": {
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					AuditDao: testutils.GetAuditMock(t),
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+						coursesMock.
+							EXPECT().
+							GetCourseById(gomock.Any(), testutils.CourseFPV.ID).
+							Return(testutils.CourseFPV, nil).
+							AnyTimes()
+
+						coursesMock.
+							EXPECT().
+							UpdateCourse(gomock.Any(), afterSetPresetPreference).
+							Return(nil)
+						return coursesMock
+					}(),
+				},
+				Body:         bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
+				ExpectedCode: http.StatusOK,
+			},
+		}
+
+		testCases.Run(t, configGinCourseRouter)
+	})
+}
