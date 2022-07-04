@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func configGinSexyApiRouter(router gin.IRoutes, daoWrapper dao.DaoWrapper) {
+func configGinSexyApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := sexyRoutes{daoWrapper}
 	router.GET("/api/sexy", routes.getStreamInfo)
 }

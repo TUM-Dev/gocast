@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -169,17 +168,15 @@ func TestCoursesCRUD(t *testing.T) {
 				Method:         http.MethodPost,
 				Url:            url,
 				TumLiveContext: &testutils.TUMLiveContextLecturer,
-				Body: bytes.NewBuffer(
-					testutils.First(json.Marshal(requestInvalidAccess)).([]byte)),
-				ExpectedCode: http.StatusBadRequest,
+				Body:           requestInvalidAccess,
+				ExpectedCode:   http.StatusBadRequest,
 			},
 			"invalid term": {
 				Method:         http.MethodPost,
 				Url:            url,
 				TumLiveContext: &testutils.TUMLiveContextLecturer,
-				Body: bytes.NewBuffer(
-					testutils.First(json.Marshal(requestInvalidTerm)).([]byte)),
-				ExpectedCode: http.StatusBadRequest,
+				Body:           requestInvalidTerm,
+				ExpectedCode:   http.StatusBadRequest,
 			},
 			"conflict with existing course": {
 				Method:         http.MethodPost,
@@ -196,8 +193,7 @@ func TestCoursesCRUD(t *testing.T) {
 						return coursesMock
 					}(),
 				},
-				Body: bytes.NewBuffer(
-					testutils.First(json.Marshal(request)).([]byte)),
+				Body:         request,
 				ExpectedCode: http.StatusConflict,
 			},
 			"can not create course": {
@@ -221,8 +217,7 @@ func TestCoursesCRUD(t *testing.T) {
 						return coursesMock
 					}(),
 				},
-				Body: bytes.NewBuffer(
-					testutils.First(json.Marshal(request)).([]byte)),
+				Body:         request,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"can not get new course": {
@@ -252,8 +247,7 @@ func TestCoursesCRUD(t *testing.T) {
 						return coursesMock
 					}(),
 				},
-				Body: bytes.NewBuffer(
-					testutils.First(json.Marshal(request)).([]byte)),
+				Body:         request,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			/*
@@ -334,14 +328,10 @@ func TestCoursesLectureActions(t *testing.T) {
 				DaoWrapper: dao.DaoWrapper{
 					CoursesDao: testutils.GetCoursesMock(t),
 				},
-				Body: bytes.NewBuffer(
-					testutils.First(
-						json.Marshal(
-							createLectureRequest{
-								LectureHallId: "1",
-								Premiere:      true,
-							},
-						)).([]byte)),
+				Body: createLectureRequest{
+					LectureHallId: "1",
+					Premiere:      true,
+				},
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"invalid lectureHallId": {
@@ -351,19 +341,15 @@ func TestCoursesLectureActions(t *testing.T) {
 				DaoWrapper: dao.DaoWrapper{
 					CoursesDao: testutils.GetCoursesMock(t),
 				},
-				Body: bytes.NewBuffer(
-					testutils.First(
-						json.Marshal(
-							createLectureRequest{
-								Title:         "Lecture 1",
-								LectureHallId: "abc",
-								Start:         time.Now(),
-								Duration:      90,
-								Premiere:      false,
-								Vodup:         false,
-								DateSeries:    []time.Time{},
-							},
-						)).([]byte)),
+				Body: createLectureRequest{
+					Title:         "Lecture 1",
+					LectureHallId: "abc",
+					Start:         time.Now(),
+					Duration:      90,
+					Premiere:      false,
+					Vodup:         false,
+					DateSeries:    []time.Time{},
+				},
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not update course": {
@@ -395,21 +381,17 @@ func TestCoursesLectureActions(t *testing.T) {
 						return auditMock
 					}(),
 				},
-				Body: bytes.NewBuffer(
-					testutils.First(
-						json.Marshal(
-							createLectureRequest{
-								Title:         "Lecture 1",
-								LectureHallId: "1",
-								Start:         time.Now(),
-								Duration:      90,
-								Premiere:      false,
-								Vodup:         false,
-								DateSeries: []time.Time{
-									time.Now(),
-								},
-							},
-						)).([]byte)),
+				Body: createLectureRequest{
+					Title:         "Lecture 1",
+					LectureHallId: "1",
+					Start:         time.Now(),
+					Duration:      90,
+					Premiere:      false,
+					Vodup:         false,
+					DateSeries: []time.Time{
+						time.Now(),
+					},
+				},
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -441,21 +423,17 @@ func TestCoursesLectureActions(t *testing.T) {
 						return auditMock
 					}(),
 				},
-				Body: bytes.NewBuffer(
-					testutils.First(
-						json.Marshal(
-							createLectureRequest{
-								Title:         "Lecture 1",
-								LectureHallId: "1",
-								Start:         time.Now(),
-								Duration:      90,
-								Premiere:      false,
-								Vodup:         false,
-								DateSeries: []time.Time{
-									time.Now(),
-								},
-							},
-						)).([]byte)),
+				Body: createLectureRequest{
+					Title:         "Lecture 1",
+					LectureHallId: "1",
+					Start:         time.Now(),
+					Duration:      90,
+					Premiere:      false,
+					Vodup:         false,
+					DateSeries: []time.Time{
+						time.Now(),
+					},
+				},
 				ExpectedCode: http.StatusOK,
 			},
 		}
@@ -507,10 +485,9 @@ func TestCoursesLectureActions(t *testing.T) {
 						return streamsMock
 					}(),
 				},
-				Body: bytes.NewBuffer(testutils.First(
-					json.Marshal(deleteLecturesRequest{StreamIDs: []string{
-						fmt.Sprintf("%d", testutils.StreamGBSLive.ID)},
-					})).([]byte)),
+				Body: deleteLecturesRequest{StreamIDs: []string{
+					fmt.Sprintf("%d", testutils.StreamGBSLive.ID)},
+				},
 				ExpectedCode: http.StatusForbidden,
 			},
 			"success": {
@@ -535,10 +512,9 @@ func TestCoursesLectureActions(t *testing.T) {
 					}(),
 					AuditDao: testutils.GetAuditMock(t),
 				},
-				Body: bytes.NewBuffer(testutils.First(
-					json.Marshal(deleteLecturesRequest{StreamIDs: []string{
-						fmt.Sprintf("%d", testutils.StreamFPVLive.ID)},
-					})).([]byte)),
+				Body: deleteLecturesRequest{StreamIDs: []string{
+					fmt.Sprintf("%d", testutils.StreamFPVLive.ID)},
+				},
 				ExpectedCode: http.StatusOK,
 			},
 		}
@@ -598,10 +574,9 @@ func TestCoursesLectureActions(t *testing.T) {
 					}(),
 					CoursesDao: testutils.GetCoursesMock(t),
 				},
-				Body: bytes.NewBuffer(
-					testutils.First(json.Marshal(renameLectureRequest{
-						Name: "Proofs #1",
-					})).([]byte)),
+				Body: renameLectureRequest{
+					Name: "Proofs #1",
+				},
 				ExpectedCode: http.StatusNotFound,
 			},
 			"can not update stream": {
@@ -625,10 +600,9 @@ func TestCoursesLectureActions(t *testing.T) {
 					}(),
 					CoursesDao: testutils.GetCoursesMock(t),
 				},
-				Body: bytes.NewBuffer(
-					testutils.First(json.Marshal(renameLectureRequest{
-						Name: "Proofs #1",
-					})).([]byte)),
+				Body: renameLectureRequest{
+					Name: "Proofs #1",
+				},
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -652,10 +626,9 @@ func TestCoursesLectureActions(t *testing.T) {
 					}(),
 					CoursesDao: testutils.GetCoursesMock(t),
 				},
-				Body: bytes.NewBuffer(
-					testutils.First(json.Marshal(renameLectureRequest{
-						Name: "Proofs #1",
-					})).([]byte)),
+				Body: renameLectureRequest{
+					Name: "Proofs #1",
+				},
 				ExpectedCode: http.StatusOK,
 			},
 		}
@@ -909,7 +882,7 @@ func TestCoursesLectureActions(t *testing.T) {
 						return streamsMock
 					}(),
 				},
-				Body:         bytes.NewBuffer(testutils.First(json.Marshal(body)).([]byte)),
+				Body:         body,
 				ExpectedCode: http.StatusNotFound,
 			},
 			"can not update stream": {
@@ -933,7 +906,7 @@ func TestCoursesLectureActions(t *testing.T) {
 						return streamsMock
 					}(),
 				},
-				Body:         bytes.NewBuffer(testutils.First(json.Marshal(body)).([]byte)),
+				Body:         body,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -944,7 +917,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					CoursesDao: testutils.GetCoursesMock(t),
 					StreamsDao: testutils.GetStreamMock(t),
 				},
-				Body:         bytes.NewBuffer(testutils.First(json.Marshal(body)).([]byte)),
+				Body:         body,
 				ExpectedCode: http.StatusOK,
 			},
 		}
@@ -1008,7 +981,7 @@ func TestUnits(t *testing.T) {
 						return streamsMock
 					}(),
 				},
-				Body:         bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
+				Body:         request,
 				ExpectedCode: http.StatusNotFound,
 			},
 			"can not update stream associations": {
@@ -1032,7 +1005,7 @@ func TestUnits(t *testing.T) {
 						return streamsMock
 					}(),
 				},
-				Body:         bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
+				Body:         request,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -1043,7 +1016,7 @@ func TestUnits(t *testing.T) {
 					CoursesDao: testutils.GetCoursesMock(t),
 					StreamsDao: testutils.GetStreamMock(t),
 				},
-				Body:         bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
+				Body:         request,
 				ExpectedCode: http.StatusOK,
 			},
 		}
@@ -1158,7 +1131,7 @@ func TestCuts(t *testing.T) {
 						return streamsMock
 					}(),
 				},
-				Body:         bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
+				Body:         request,
 				ExpectedCode: http.StatusNotFound,
 			},
 			"can not update stream": {
@@ -1182,7 +1155,7 @@ func TestCuts(t *testing.T) {
 						return streamsMock
 					}(),
 				},
-				Body:         bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
+				Body:         request,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -1193,7 +1166,7 @@ func TestCuts(t *testing.T) {
 					CoursesDao: testutils.GetCoursesMock(t),
 					StreamsDao: testutils.GetStreamMock(t),
 				},
-				Body:         bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
+				Body:         request,
 				ExpectedCode: http.StatusOK,
 			},
 		}
@@ -1878,7 +1851,7 @@ func TestPresets(t *testing.T) {
 						return coursesMock
 					}(),
 				},
-				Body:         bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
+				Body:         request,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -1902,7 +1875,7 @@ func TestPresets(t *testing.T) {
 						return coursesMock
 					}(),
 				},
-				Body:         bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
+				Body:         request,
 				ExpectedCode: http.StatusOK,
 			},
 		}

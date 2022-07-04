@@ -9,18 +9,17 @@ import (
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
-	"github.com/stretchr/testify/assert"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 )
 
 func TestSexy(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	const ENDPOINT_URL = "/api/sexy"
 
-	t.Run("/api/sexy", func(t *testing.T) {
+	t.Run("GET/api/sexy", func(t *testing.T) {
+		url := "/api/sexy"
+
 		now := time.Now()
 		courses := []model.Course{
 			{
@@ -93,9 +92,9 @@ func TestSexy(t *testing.T) {
 		})).([]byte)
 
 		testCases := testutils.TestCases{
-			"GET[GetAllCourses returns error]": testutils.TestCase{
+			"can not get courses": testutils.TestCase{
 				Method: http.MethodGet,
-				Url:    ENDPOINT_URL,
+				Url:    url,
 				DaoWrapper: dao.DaoWrapper{
 					CoursesDao: func() dao.CoursesDao {
 						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
@@ -105,9 +104,9 @@ func TestSexy(t *testing.T) {
 				},
 				ExpectedCode: http.StatusInternalServerError,
 			},
-			"GET[success]": testutils.TestCase{
+			"success": testutils.TestCase{
 				Method: http.MethodGet,
-				Url:    ENDPOINT_URL,
+				Url:    url,
 				DaoWrapper: dao.DaoWrapper{
 					CoursesDao: func() dao.CoursesDao {
 						coursesMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
@@ -120,28 +119,6 @@ func TestSexy(t *testing.T) {
 			},
 		}
 
-		for name, testCase := range testCases {
-			t.Run(name, func(t *testing.T) {
-				w := httptest.NewRecorder()
-				c, r := gin.CreateTestContext(w)
-
-				if testCase.TumLiveContext != nil {
-					r.Use(func(c *gin.Context) {
-						c.Set("TUMLiveContext", *testCase.TumLiveContext)
-					})
-				}
-
-				configGinSexyApiRouter(r, testCase.DaoWrapper)
-
-				c.Request, _ = http.NewRequest(testCase.Method, testCase.Url, testCase.Body)
-				r.ServeHTTP(w, c.Request)
-
-				assert.Equal(t, testCase.ExpectedCode, w.Code)
-
-				if len(testCase.ExpectedResponse) > 0 {
-					assert.Equal(t, string(testCase.ExpectedResponse), w.Body.String())
-				}
-			})
-		}
+		testCases.Run(t, configGinSexyApiRouter)
 	})
 }
