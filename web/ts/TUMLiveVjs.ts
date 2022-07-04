@@ -416,72 +416,8 @@ export function jumpTo(hours: number, minutes: number, seconds: number) {
     });
 }
 
-export class VideoSections {
-    readonly streamID: number;
-    readonly sectionsPerGroup: number;
-
-    private list: Section[];
-
-    currentHighlightIndex: number;
-    currentIndex: number;
-
-    constructor(streamID) {
-        this.streamID = streamID;
-        this.list = [];
-        this.currentHighlightIndex = -1;
-
-        this.currentIndex = 0;
-        this.sectionsPerGroup = 4;
-    }
-
-    isCurrent(i: number): boolean {
-        return this.currentHighlightIndex !== -1 && i === this.currentHighlightIndex;
-    }
-
-    async fetch() {
-        await fetch(`/api/stream/${this.streamID}/sections`)
-            .then((res: Response) => {
-                if (!res.ok) {
-                    throw new Error("Could not fetch sections");
-                }
-                return res.json();
-            })
-            .then((sections) => {
-                this.list = sections;
-                attachCurrentTimeEvent(this);
-            })
-            .catch((err) => {
-                console.log(err);
-                this.list = [];
-                this.currentHighlightIndex = 0;
-            });
-    }
-
-    showSection(i: number): boolean {
-        return (
-            i >= this.currentIndex * this.sectionsPerGroup &&
-            i < this.currentIndex * this.sectionsPerGroup + this.sectionsPerGroup
-        );
-    }
-
-    showNext(): boolean {
-        return this.currentIndex < this.list.length / this.sectionsPerGroup - 1;
-    }
-
-    showPrev(): boolean {
-        return this.currentIndex > 0;
-    }
-
-    next() {
-        this.currentIndex = (this.currentIndex + 1) % this.list.length;
-    }
-
-    prev() {
-        this.currentIndex = (this.currentIndex - 1) % this.list.length;
-    }
-}
-
 type SeekLoggerLogFunction = (position: number) => void;
+const SEEK_LOGGER_DEBOUNCE_TIMEOUT = 4000;
 export class SeekLogger {
     readonly streamID: number;
     log: SeekLoggerLogFunction;
@@ -490,7 +426,10 @@ export class SeekLogger {
 
     constructor(streamID) {
         this.streamID = parseInt(streamID);
-        this.log = debounce((position) => postData(`/api/seekReport/${this.streamID}`, { position }), 4000);
+        this.log = debounce(
+            (position) => postData(`/api/seekReport/${this.streamID}`, { position }),
+            SEEK_LOGGER_DEBOUNCE_TIMEOUT,
+        );
     }
 
     attach() {
