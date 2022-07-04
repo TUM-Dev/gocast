@@ -177,14 +177,14 @@ var (
 	}
 	Worker1 = model.Worker{
 		WorkerID: "ed067fa3-2364-4dcd-bfd2-e0ffb8d751d4",
-		Host:     "worker1.local",
+		Host:     "localhost",
 		Status:   "",
 		Workload: 0,
 		LastSeen: time.Now(),
 	}
 	Worker2 = model.Worker{
 		WorkerID: "ed067fa3-2364-4dcd-bfd2-e0ffb8d751d4",
-		Host:     "worker2.local",
+		Host:     "localhost",
 		Status:   "",
 		Workload: 0,
 		LastSeen: time.Now(),
@@ -260,6 +260,11 @@ func GetStreamMock(t *testing.T) dao.StreamsDao {
 	streamsMock.
 		EXPECT().
 		UpdateStream(gomock.Any()).
+		Return(nil).
+		AnyTimes()
+	streamsMock.
+		EXPECT().
+		CreateStream(gomock.Any()).
 		Return(nil).
 		AnyTimes()
 	return streamsMock
@@ -353,6 +358,15 @@ func GetUsersMock(t *testing.T) dao.UsersDao {
 		Return(Admin, nil).
 		AnyTimes()
 	return usersMock
+}
+
+func GetUploadKeyMock(t *testing.T) dao.UploadKeyDao {
+	streamsMock := mock_dao.NewMockUploadKeyDao(gomock.NewController(t))
+	streamsMock.
+		EXPECT().
+		CreateUploadKey(gomock.Any(), gomock.Any()).
+		Return(nil)
+	return streamsMock
 }
 
 func GetProgressMock(t *testing.T) dao.ProgressDao {

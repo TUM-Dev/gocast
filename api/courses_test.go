@@ -1910,3 +1910,126 @@ func TestPresets(t *testing.T) {
 		testCases.Run(t, configGinCourseRouter)
 	})
 }
+
+func TestUploadVOD(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("POST/api/course/:courseID/uploadVOD", func(t *testing.T) {
+		baseUrl := fmt.Sprintf("/api/course/%d/uploadVOD", testutils.CourseFPV.ID)
+		url := fmt.Sprintf("%s?start=2022-07-04T10:00:00.000Z&title=VOD1", baseUrl)
+
+		ctrl := gomock.NewController(t)
+
+		testCases := testutils.TestCases{
+			"no context": {
+				Method:         http.MethodPost,
+				Url:            baseUrl,
+				TumLiveContext: nil,
+				ExpectedCode:   http.StatusInternalServerError,
+			},
+			"not admin": {
+				Method:         http.MethodPost,
+				Url:            baseUrl,
+				TumLiveContext: &testutils.TUMLiveContextStudent,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+				},
+				ExpectedCode: http.StatusForbidden,
+			},
+			"invalid query": {
+				Method:         http.MethodPost,
+				Url:            baseUrl,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+				},
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"can not create stream": {
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+					StreamsDao: func() dao.StreamsDao {
+						streamsMock := mock_dao.NewMockStreamsDao(ctrl)
+						streamsMock.
+							EXPECT().
+							CreateStream(gomock.Any()).
+							Return(errors.New(""))
+						return streamsMock
+					}(),
+				},
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"can note create upload key": {
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: testutils.GetCoursesMock(t),
+					StreamsDao: func() dao.StreamsDao {
+						streamsMock := mock_dao.NewMockStreamsDao(ctrl)
+						streamsMock.
+							EXPECT().
+							CreateStream(gomock.Any()).
+							Return(nil)
+						return streamsMock
+					}(),
+					UploadKeyDao: func() dao.UploadKeyDao {
+						streamsMock := mock_dao.NewMockUploadKeyDao(ctrl)
+						streamsMock.
+							EXPECT().
+							CreateUploadKey(gomock.Any(), gomock.Any()).
+							Return(errors.New(""))
+						return streamsMock
+					}(),
+				},
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"no workers available": {
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao:   testutils.GetCoursesMock(t),
+					StreamsDao:   testutils.GetStreamMock(t),
+					UploadKeyDao: testutils.GetUploadKeyMock(t),
+					WorkerDao: func() dao.WorkerDao {
+						streamsMock := mock_dao.NewMockWorkerDao(ctrl)
+						streamsMock.
+							EXPECT().
+							GetAliveWorkers().
+							Return([]model.Worker{})
+						return streamsMock
+					}(),
+				},
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			/*
+				TODO: Prevent p.ServeHTTP
+				"success": {
+					Method:         http.MethodPost,
+					Url:            url,
+					TumLiveContext: &testutils.TUMLiveContextAdmin,
+					DaoWrapper: dao.DaoWrapper{
+						CoursesDao:   testutils.GetCoursesMock(t),
+						StreamsDao:   testutils.GetStreamMock(t),
+						UploadKeyDao: testutils.GetUploadKeyMock(t),
+						WorkerDao: func() dao.WorkerDao {
+							streamsMock := mock_dao.NewMockWorkerDao(ctrl)
+							streamsMock.
+								EXPECT().
+								GetAliveWorkers().
+								Return([]model.Worker{testutils.Worker1})
+							return streamsMock
+						}(),
+					},
+					ExpectedCode: http.StatusOK,
+				},
+			*/
+		}
+		testCases.Run(t, configGinCourseRouter)
+	})
+
+}
