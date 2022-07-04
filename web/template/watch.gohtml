@@ -15,10 +15,10 @@
     <link rel="stylesheet"
           href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
 </head>
-<body x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}}"
+<body x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}, seekLogger: new watch.SeekLogger('{{$stream.ID}}')}"
       x-on:pausestart.window="paused=true"
       x-on:pauseend.window="paused=false"
-      x-init="new watch.Watch(); watch.startWebsocket()">
+      x-init="new watch.Watch(); watch.startWebsocket(); seekLogger.attach();">
 {{template "header" .IndexData.TUMLiveContext}}
 <div id="watchPageMainWrapper" class="w-full md:flex md:flex-nowrap md:justify-between"
      style="height: calc(100vh - 5rem)">
@@ -65,28 +65,6 @@
                     To view this video please enable JavaScript.
                 </p>
             </video-js>
-
-            <div
-                    x-data="{ visible: false, seekbar: { x: '0px', width: '0px' }, seekLogger: new watch.SeekLogger('{{$stream.ID}}'), heatMapPath: null }"
-                    x-show="visible"
-                    x-on:updateheatmappath.window="e => { console.log('testy2'); heatMapPath = e.detail.heatMapPath; }"
-                    x-on:updateheatmapvisibility.window="e => { console.log('testy1'); visible = e.detail.visible; seekbar = e.detail.seekbar; }"
-                    x-init="seekLogger.attach(); watch.repeatHeatMap.init('{{$stream.ID}}');"
-                    class="absolute bottom-[18px] rounded bg-gradient-to-t from-gray-800/[.6] pt-4 pointer-events-none"
-                    :style="{width: seekbar.width, left: seekbar.x}"
-            >
-                <svg x-if="heatMapPath" height="100%" preserveAspectRatio="none" viewBox="0 0 1000 100"
-                     width="100%" style="height: 30px;">
-                    <defs>
-                        <clipPath id="heatmap">
-                            <path class="tumlive-heat-map-path"
-                                  :d="heatMapPath"
-                                  fill="white" fill-opacity="0.6"></path>
-                        </clipPath>
-                    </defs>
-                    <rect clip-path="url(#heatmap)" fill="white" fill-opacity="0.4" height="100%" width="100%" x="0" y="0"></rect>
-                </svg>
-            </div>
 
             <div
                     x-cloak
