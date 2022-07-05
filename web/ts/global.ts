@@ -77,7 +77,8 @@ export function pinCourse(id: number, name: string) {
         ? JSON.parse(localStorage.getItem("pinnedCourses"))
         : new Array<Array<string>>();
     if (!pinned.find((strings) => strings[0] === id.toString() && strings[1] === name)) {
-        pinned.push([id.toString(), name]);
+        const elems = document.getElementsByClassName("group course" + id.toString());
+        pinned.push([id.toString(), name, elems[0]?.outerHTML]);
         localStorage.setItem("pinnedCourses", JSON.stringify(pinned));
     } else {
         const newPinned: Array<Array<string>> = pinned.filter((e) => {
@@ -117,12 +118,10 @@ export function initPinnedCourses() {
         document.getElementById("pinnedCoursesHeader")?.classList.remove("hidden");
     const pinnedCoursesList = document.getElementById("pinnedCoursesHeader") as HTMLElement;
     pinned?.forEach((p) => {
-        const elems = document.getElementsByClassName("course" + p[0]);
-        if (elems.length > 0) {
-            let elem = elems[1].cloneNode(true);
-
-            pinnedCoursesList.parentNode.insertBefore(elem, pinnedCoursesList.nextSibling);
-        }
+        let template = document.createElement('template');
+        p[2] = p[2].trim(); // Never return a text node of whitespace as the result
+        template.innerHTML = p[2];
+        pinnedCoursesList.parentNode.insertBefore(template.content.firstChild, pinnedCoursesList.nextSibling);
     });
 }
 
