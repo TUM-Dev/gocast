@@ -109,6 +109,23 @@ export function mirror(parent: Element, levelSelectors: string[], levelIndex = 0
     }
 }
 
+export function initPinnedCourses() {
+    const pinned: Array<Array<string>> = localStorage.getItem("pinnedCourses")
+        ? JSON.parse(localStorage.getItem("pinnedCourses"))
+        : new Array<Array<string>>();
+    if (pinned.length != 0)
+        document.getElementById("pinnedCoursesHeader")?.classList.remove("hidden");
+    const pinnedCoursesList = document.getElementById("pinnedCoursesHeader") as HTMLElement;
+    pinned?.forEach((p) => {
+        const elems = document.getElementsByClassName("course" + p[0]);
+        if (elems.length > 0) {
+            let elem = elems[1].cloneNode(true);
+
+            pinnedCoursesList.parentNode.insertBefore(elem, pinnedCoursesList.nextSibling);
+        }
+    });
+}
+
 export function initHiddenCourses() {
     const el = document.getElementById("hiddenCoursesText");
     if (!el) {
@@ -241,4 +258,5 @@ export type Section = {
 
 window.onload = function () {
     initHiddenCourses();
+    initPinnedCourses();
 };
