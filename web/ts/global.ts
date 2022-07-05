@@ -76,21 +76,15 @@ export function pinCourse(id: number, name: string) {
     const pinned: Array<Array<string>> = localStorage.getItem("pinnedCourses")
         ? JSON.parse(localStorage.getItem("pinnedCourses"))
         : new Array<Array<string>>();
-    if (!(pinned.indexOf([id.toString(), name]) !== -1)) {
+    if (!pinned.find((strings) => strings[0] === id.toString() && strings[1] === name)) {
         pinned.push([id.toString(), name]);
         localStorage.setItem("pinnedCourses", JSON.stringify(pinned));
+    } else {
+        const newPinned: Array<Array<string>> = pinned.filter((e) => {
+            return e[0] !== id.toString();
+        });
+        localStorage.setItem("pinnedCourses", JSON.stringify(newPinned));
     }
-    document.location.reload();
-}
-
-export function unpinCourse(id: string) {
-    const pinned: Array<Array<string>> = localStorage.getItem("pinnedCourses")
-        ? JSON.parse(localStorage.getItem("pinnedCourses"))
-        : new Array<Array<string>>();
-    const newHidden: Array<Array<string>> = pinned.filter((e) => {
-        return e[0] !== id;
-    });
-    localStorage.setItem("pinnedCourses", JSON.stringify(newHidden));
     document.location.reload();
 }
 
