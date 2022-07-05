@@ -133,12 +133,12 @@ func (r progressRoutes) markWatched(c *gin.Context) {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
-	progress := model.StreamProgress{
+	prog := model.StreamProgress{
 		UserID:   tumLiveContext.User.ID,
 		StreamID: request.StreamID,
 		Watched:  request.Watched,
 	}
-	err = r.ProgressDao.SaveProgresses([]model.StreamProgress{progress})
+	err = r.ProgressDao.SaveWatchedState(&prog)
 	if err != nil {
 		log.WithError(err).Error("Could not mark VoD as watched.")
 		c.AbortWithStatus(http.StatusInternalServerError)

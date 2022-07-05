@@ -23,7 +23,7 @@
                 <i x-cloak x-show="streamSearch.loading"
                    class="fas fa-spinner animate-spin text-lg text-gray-500 dark:text-gray-600"></i>
             </div>
-            <input id = "search-input"
+            <input id="search-input"
                    @keyup.esc="searchContext.hideModal(streamSearch)"
                    @keyup.up="streamSearch.focusUp()"
                    @keyup.down="streamSearch.focusDown()"
@@ -34,7 +34,8 @@
                    name="lecture-search-input"
                    placeholder="Search for a lecture"
                    class="bg-transparent border-0 outline-none w-full h-full font-light"
-                   autocomplete="off">
+                   autocomplete="off"
+            >
             <button @click="searchContext.hideModal(streamSearch)"
                     class="p-1 border dark:border-gray-600 rounded shadow-sm my-auto">
                 <span class="text-4 text-xs">ESC</span>

@@ -23,7 +23,7 @@ func NewFileDao() FileDao {
 }
 
 func (d fileDao) NewFile(f *model.File) error {
-	return DB.Create(f).Error
+	return DB.Create(&f).Error
 }
 
 func (d fileDao) GetFileById(id string) (f model.File, err error) {

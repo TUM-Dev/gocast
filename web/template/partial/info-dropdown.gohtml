@@ -1,5 +1,5 @@
 {{define "info-dropdown"}}
-    <div x-data="{showInfoDropdown: false}" class="relative text-right md:mt-px">
+    <div x-cloak x-data="{showInfoDropdown: false, show: false, mobile: false}" class="relative text-right md:mt-px">
         <button @click="showInfoDropdown=true;"
                 class="transition-colors duration-200 hover:text-gray-600 dark:hover:text-white text-gray-400">
             <i class="fa fa-bars text-xl md:text-normal"></i>

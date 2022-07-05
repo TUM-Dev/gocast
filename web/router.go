@@ -26,7 +26,6 @@ var templatePaths = []string{
 	"template/partial/*.gohtml",
 	"template/partial/stream/*.gohtml",
 	"template/partial/course/manage/*.gohtml",
-	"template/partial/admin/*.gohtml",
 	"template/partial/stream/chat/*.gohtml",
 	"template/partial/course/manage/*.gohtml",
 }
@@ -101,6 +100,7 @@ func configMainRoute(router *gin.Engine) {
 	adminGroup.GET("/admin/token", routes.AdminPage)
 	adminGroup.GET("/admin/infopages", routes.AdminPage)
 	adminGroup.GET("/admin/notifications", routes.AdminPage)
+	adminGroup.GET("/admin/audits", routes.AdminPage)
 
 	courseAdminGroup := router.Group("/")
 	courseAdminGroup.Use(tools.InitCourse(daoWrapper))

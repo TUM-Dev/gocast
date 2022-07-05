@@ -1,21 +1,117 @@
 {{define "videosections"}}
-    <div x-data="{sections: new watch.VideoSections('{{.ID}}')}"
-         x-init="await sections.fetch()" class="w-full">
-        <h6 class="font-bold text-3 pb-3">Sections</h6>
-        <div class="overflow-auto flex">
-            <template x-for="(section, i) in sections.list">
-                <button class="mb-1 flex bg-transparent outline-none border-0 rounded-lg mr-2 last:mr-0"
-                        @click="watch.jumpTo(section.startHours, section.startMinutes, section.startSeconds)">
-                    <span class="flex px-2 py-1 bg-white dark:bg-secondary justify-between w-full border hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg"
-                          :class="sections.isCurrent(i) ? 'border-2 border-blue-500/50' : 'dark:border-gray-800'">
-                        <span x-text="section.description"
-                              class="text-sm text-3 my-auto mr-3 whitespace-nowrap"></span>
-                        <span x-text="section.friendlyTimestamp"
-                              class="text-sky-800 my-auto bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded">
+    <div x-data="{client: new watch.VideoSectionClient('{{.ID}}')}">
+        <div class="hidden md:block">
+            {{template "videosections-desktop" .}}
+        </div>
+        <div class="md:hidden">
+            {{template "videosections-mobile" .}}
+        </div>
+    </div>
+{{end}}
+
+{{define "videosections-desktop"}}
+    <div x-data="{vs: new watch.VideoSectionsDesktop()}"
+         x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);" class="flex pt-3">
+        <div class="group relative">
+            <div class="flex pb-3">
+                <h6 class="font-bold text-3 pb-3 pt-2"><i class="fa-solid fa-film mr-1"></i>Sections</h6>
+                <template x-if="!vs.followSections">
+                    <button @click="vs.followSections = true;"
+                            class="text-xs text-gray-500 dark:text-gray-400 uppercase ml-3">
+                        Follow sections
+                    </button>
+                </template>
+            </div>
+            <div class="relative space-x-2 flex">
+                <template x-if="vs.showPrev()">
+                    <button @click="vs.prev();vs.followSections = false;"
+                            class="group-hover:block hidden absolute -left-4 z-50 bg-white border shadow text-sm py-2 px-3 my-auto h-fit top-0 bottom-0 rounded-lg hover:bg-gray-50 hover:dark:bg-gray-600 dark:border-gray-800 dark:bg-secondary">
+                        <i class="fa fa-chevron-left text-3"></i>
+                    </button>
+                </template>
+                <template x-if="vs.showNext()">
+                    <button @click="vs.next();vs.followSections = false;"
+                            class="group-hover:block hidden absolute -right-4 z-50 bg-white border shadow text-sm py-2 px-3 my-auto h-fit top-0 bottom-0 rounded-lg hover:bg-gray-50 hover:dark:bg-gray-600 dark:border-gray-800 dark:bg-secondary">
+                        <i class="fa fa-chevron-right text-3"></i>
+                    </button>
+                </template>
+                <template x-for="(s, i) in vs.getList()" :key="s.fileID">
+                    <button x-cloak class="relative flex h-40 w-32 mb-1 bg-transparent outline-none border-0 rounded-lg"
+                            x-data="{previewImgLoaded: false}"
+                            @click="watch.jumpTo(s.startHours, s.startMinutes, s.startSeconds); vs.followSections = false;">
+                    <span class="flex flex-col h-full p-1 bg-white dark:bg-secondary justify-between w-full border hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg"
+                          :class="vs.isCurrent(i) ? 'border-2 border-blue-500/50' : 'dark:border-gray-800'">
+                        <img x-cloak x-show="previewImgLoaded"
+                             src=""
+                             :src="`/api/download/${s.fileID}?type=serve`"
+                             width="128" height="32"
+                             @load="previewImgLoaded=true"
+                             alt="preview"
+                             class="w-full h-16 rounded object-cover z-10">
+                        <span x-show="!previewImgLoaded"
+                              class="block w-full h-16 bg-gray-50 dark:bg-gray-700 rounded"></span>
+                         <span x-text="s.description"
+                               class="block text-left text-xs text-3 mt-2 mb-auto px-1"></span>
+                        <span class="absolute bottom-1 right-1 px-1 py-1">
+                            <span x-text="s.friendlyTimestamp"
+                                  class="block text-sky-800 ml-auto w-fit bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded">
+                            </span>
                         </span>
                     </span>
+                    </button>
+                </template>
+            </div>
+        </div>
+    </div>
+{{end}}
+
+{{define "videosections-mobile"}}
+    <div x-data="{vs: new watch.VideoSectionsMobile()}"
+         x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);" class="pt-3">
+        <div class="flex justify-between pb-3">
+            <h6 class="font-bold text-3 pb-3 pt-2"><i class="fa-solid fa-film mr-1"></i>Sections</h6>
+            <template x-if="!vs.minimize">
+                <button @click="vs.minimize = true;" class="text-gray-500 my-auto font-light">
+                    Minimize
                 </button>
             </template>
+            <template x-if="vs.minimize">
+                <button @click="vs.minimize = false;" class="text-gray-500 my-auto font-light">
+                    Show all
+                </button>
+            </template>
+        </div>
+        <div class="p-1 border bg-gray-100 rounded dark:bg-gray-400 dark:border-gray-600">
+            <div class="grid gap-1 overflow-y-scroll" :class="vs.minimize ? 'h-fit' : 'h-56'">
+                <template x-for="(s, i) in vs.getList()" :key="s.fileID">
+                    <button x-cloak class="flex w-full bg-transparent outline-none border-0 rounded-lg"
+                            x-data="{previewImgLoaded: false}"
+                            @click="watch.jumpTo(s.startHours, s.startMinutes, s.startSeconds)">
+                    <span class="flex justify-between p-1 bg-white dark:bg-secondary justify-between w-full border hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg"
+                          :class="vs.isCurrent(i) ? 'border-2 border-blue-500/50' : 'dark:border-gray-800'">
+                        <span class="block">
+                            <img x-cloak x-show="previewImgLoaded"
+                                 src=""
+                                 :src="`/api/download/${s.fileID}?type=serve`"
+                                 width="128" height="32"
+                                 @load="previewImgLoaded=true"
+                                 alt="preview"
+                                 class="w-full h-16 rounded object-cover z-10">
+                            <span x-show="!previewImgLoaded" class="block w-full h-16 bg-gray-50 rounded"></span>
+                        </span>
+                        <span class="block">
+                             <span x-text="s.description"
+                                   class="block text-left text-xs text-3 my-2 px-1"></span>
+                            <span class="flex flex-grow items-end flex-1 px-1 py-1">
+                                <span x-text="s.friendlyTimestamp"
+                                      class="block text-sky-800 ml-auto w-fit bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded">
+                                </span>
+                            </span>
+                        </span>
+                    </span>
+                    </button>
+                </template>
+            </div>
         </div>
     </div>
 {{end}}
