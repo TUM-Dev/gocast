@@ -132,16 +132,14 @@
                         {{end}}
                     </h1>
                     <!-- Desktop stream info -->
-                    <span class="inline-flex space-x-2 text-lg text-4 hidden lg:inline-flex shrink-0">
+                    <span class="space-x-2 text-lg text-4 hidden sm:inline-flex shrink-0">
                         {{if not $stream.Recording}}
-                            <span class="inline-flex space-x-2">
-                                {{template "watch-info" .}}
-                            </span>
+                            {{template "watch-info" .}}
                         {{end}}
                         {{template "actions" .}}
                     </span>
                 </div>
-                <div class="flex justify-between">
+                <div class="flex justify-between flex-col sm:flex-row">
                     <div class="flex my-auto">
                         <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                             <span class="text-5 hover:text-1 hover:underline text-lg">{{$course.Name}}</span></a>
@@ -164,16 +162,14 @@
                         {{end}}
                     {{end}}
                 </div>
+                {{if not $stream.Recording}}
+                    <div class="block space-x-2 text-lg text-4 sm:hidden">
+                        {{template "watch-info" .}}
+                    </div>
+                {{end}}
                 <div class="block space-x-2 text-lg text-4 sm:hidden">
                     {{template "actions" .}}
                 </div>
-                {{if not $stream.Recording}}
-                    <div class="block space-x-2 text-lg text-4 sm:hidden">
-                        <span class="inline-flex space-x-2">
-                            {{template "watch-info" .}}
-                        </span>
-                    </div>
-                {{end}}
             </div>
             {{if and .IsAdminOfCourse $stream.LiveNow}}
                 <!-- Admin control buttons -->
@@ -203,8 +199,8 @@
                         {{end}}
                         {{if .AlertsEnabled}}
                             <button @click="$dispatch('issue');location.href='#';location.href='#alertModal'"
-                                    title="Issues with the stream? Send a report to the RGB."
-                                    class="bg-amber-500 text-center md:w-28 md:inline-block block lg:w-32 {{if $stream.LectureHallID}}md:float-right{{end}} w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
+                                title="Issues with the stream? Send a report to the RGB."
+                                class="bg-amber-500 text-center md:w-28 md:inline-block block lg:w-32 {{if $stream.LectureHallID}}md:float-right{{end}} w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
                                 <i class="fas fa-exclamation-triangle mr-1"></i>Problem
                             </button>
                         {{end}}
@@ -246,7 +242,7 @@
                 <div class="text-3 px-2"
                      x-html="less ? prev : full"
                      @descriptionupdate.window="full=$el.innerHTML=$event.detail.description.full;prev=
-                    $el.innerHTML=$event.detail.description.truncated;less=full.length>{{.CutOffLength}};">
+                     $el.innerHTML=$event.detail.description.truncated;less=full.length>{{.CutOffLength}};">
                 </div>
                 <button x-show="full.length>{{.CutOffLength}}"
                         class="text-xs text-gray-500 dark:text-gray-400 uppercase mt-2 px-2"
@@ -305,9 +301,9 @@
 </div>
 <script>
     {{if $stream.Recording}}
-    watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
     {{else}}
-    watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}});
+    watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
     {{end}}
     {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
     watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	log "github.com/sirupsen/logrus"
@@ -27,7 +28,7 @@ func (r searchRoutes) searchStreams(c *gin.Context) {
 
 	courseId, err := strconv.Atoi(courseIdS)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "can not parse courseId")
+		c.AbortWithStatusJSON(http.StatusBadRequest, fmt.Sprintf("'%s' is not a valid courseID", courseIdS))
 		return
 	}
 
@@ -36,7 +37,7 @@ func (r searchRoutes) searchStreams(c *gin.Context) {
 	endTime := time.Now()
 	if err != nil {
 		log.WithError(err).Error("could not perform search")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, fmt.Sprintf("could not perform search: %s", err.Error()))
 		return
 	}
 

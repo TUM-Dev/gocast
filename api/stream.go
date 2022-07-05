@@ -91,7 +91,7 @@ func (r streamRoutes) getThumbs(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	sendFile(c, file)
+	sendDownloadFile(c, file)
 }
 
 // livestreams returns all streams that are live
@@ -131,31 +131,21 @@ func (r streamRoutes) liveStreams(c *gin.Context) {
 }
 
 func (r streamRoutes) endStream(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	discardVoD := c.Request.URL.Query().Get("discard") == "true"
 	log.Info(discardVoD)
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	NotifyWorkersToStopStream(*tumLiveContext.Stream, discardVoD, r.DaoWrapper)
 }
 
 func (r streamRoutes) pauseStream(c *gin.Context) {
 	pause := c.Request.URL.Query().Get("pause") == "true"
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	stream := tumLiveContext.Stream
 	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
 		log.WithError(err).Error("request to pause stream without lecture hall")
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	ge := goextron.New(fmt.Sprintf("http://%s", strings.ReplaceAll(lectureHall.CombIP, "extron3", "")), tools.Cfg.Auths.SmpUser, tools.Cfg.Auths.SmpUser) // todo
@@ -186,13 +176,8 @@ func (r streamRoutes) pauseStream(c *gin.Context) {
 
 // reportStreamIssue sends a notification to a matrix room that can be used for debugging technical issues.
 func (r streamRoutes) reportStreamIssue(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	stream := tumLiveContext.Stream
 
 	type alertMessage struct {
@@ -258,13 +243,7 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 }
 
 func (r streamRoutes) getStream(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	stream := *tumLiveContext.Stream
 	course := *tumLiveContext.Course
@@ -283,13 +262,7 @@ func (r streamRoutes) getStream(c *gin.Context) {
 }
 
 func (r streamRoutes) getVideoSections(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	sections, err := r.VideoSectionDao.GetByStreamId(tumLiveContext.Stream.ID)
 	if err != nil {
 		log.WithError(err).Error("Can't get video sections")
@@ -305,6 +278,7 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 			"description":       section.Description,
 			"friendlyTimestamp": section.TimestampAsString(),
 			"streamID":          section.StreamID,
+			"fileID":            section.FileID,
 		})
 
 	}
@@ -312,35 +286,81 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 }
 
 func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
+	context := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	var sections []model.VideoSection
 	if err := c.BindJSON(&sections); err != nil {
 		log.WithError(err).Error("failed to bind video section JSON")
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+
 	err := r.VideoSectionDao.Create(sections)
 	if err != nil {
 		log.WithError(err).Error("failed to create video sections")
 		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
-}
 
-func (r streamRoutes) deleteVideoSection(c *gin.Context) {
-	_, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
+	sections, err = r.VideoSectionDao.GetByStreamId(context.Stream.ID)
+	if err != nil {
+		log.WithError(err).Error("failed to create video sections")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
+
+	go func() {
+		parameters := generateVideoSectionImagesParameters{
+			sections:           sections,
+			playlistUrl:        context.Stream.PlaylistUrl,
+			courseName:         context.Course.Name,
+			courseTeachingTerm: context.Course.TeachingTerm,
+			courseYear:         uint32(context.Course.Year),
+		}
+		err := GenerateVideoSectionImages(r.DaoWrapper, &parameters)
+		if err != nil {
+			log.WithError(err).Error("failed to generate video section images")
+		}
+	}()
+}
+
+func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 	idAsString := c.Param("id")
 	id, err := strconv.Atoi(idAsString)
 	if err != nil {
 		log.WithError(err).Error("Can't parse video-section id in url")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
 	}
+
+	old, err := r.VideoSectionDao.Get(uint(id))
+	if err != nil {
+		log.WithError(err).Error("Invalid ID")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	file, err := r.FileDao.GetFileById(fmt.Sprintf("%d", old.FileID))
+	if err != nil {
+		log.WithError(err).Error("Can't get file")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
 	err = r.VideoSectionDao.Delete(uint(id))
 	if err != nil {
 		log.WithError(err).Error("Can't delete video-section")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
+
+	go func() {
+		err := DeleteVideoSectionImage(r.DaoWrapper.WorkerDao, file.Path)
+		if err != nil {
+			log.WithError(err).Error("failed to generate video section images")
+		}
+	}()
+
+	c.Status(http.StatusAccepted)
 }
 
 func (r streamRoutes) newAttachment(c *gin.Context) {
@@ -429,7 +449,7 @@ func (r streamRoutes) deleteAttachment(c *gin.Context) {
 }
 
 func (r streamRoutes) updateStreamVisibility(c *gin.Context) {
-	stream := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).Stream
+	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	var req struct {
 		Private bool `json:"private"`
 	}
@@ -438,7 +458,17 @@ func (r streamRoutes) updateStreamVisibility(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, "could not parse request body")
 		return
 	}
-	err = r.DaoWrapper.StreamsDao.ToggleVisibility(stream.ID, req.Private)
+
+	err = r.AuditDao.Create(&model.Audit{
+		User:    ctx.User,
+		Message: fmt.Sprintf("%d: (Visibility: %v)", ctx.Stream.ID, req.Private), // e.g. "eidi:'Einführung in die Informatik' (2020, S)"
+		Type:    model.AuditStreamEdit,
+	})
+	if err != nil {
+		log.Error("Create Audit:", err)
+	}
+
+	err = r.DaoWrapper.StreamsDao.ToggleVisibility(ctx.Stream.ID, req.Private)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "could not update stream")
 	}

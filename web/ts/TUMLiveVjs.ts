@@ -1,10 +1,11 @@
-import { postData, Section } from "./global";
+import { postData } from "./global";
+import { VideoSections } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import airplay from "@silvermine/videojs-airplay";
-import dom = videojs.dom;
 
 import { handleHotkeys } from "./hotkeys";
+import dom = videojs.dom;
 
 require("videojs-sprite-thumbnails");
 require("videojs-seek-buttons");
@@ -26,6 +27,7 @@ export const initPlayer = function (
     fluid: boolean,
     isEmbedded: boolean,
     playbackSpeeds: number[],
+    live: boolean,
     spriteID?: number,
     spriteInterval?: number,
     streamID?: number,
@@ -75,6 +77,10 @@ export const initPlayer = function (
         window.localStorage.setItem("volume", player.volume());
         window.localStorage.setItem("muted", player.muted());
     });
+    // handle rate store:
+    player.on("ratechange", function () {
+        window.localStorage.setItem("rate", player.playbackRate());
+    });
     player.ready(function () {
         player.airPlay({
             addButtonToControlBar: true,
@@ -87,6 +93,12 @@ export const initPlayer = function (
         const persistedMute = window.localStorage.getItem("muted");
         if (persistedMute !== null) {
             player.muted("true" === persistedMute);
+        }
+        if (!live) {
+            const persistedRate = window.localStorage.getItem("rate");
+            if (persistedRate !== null) {
+                player.playbackRate(persistedRate);
+            }
         }
         if (isEmbedded) {
             player.addChild("Titlebar", {
@@ -404,43 +416,7 @@ export function jumpTo(hours: number, minutes: number, seconds: number) {
     });
 }
 
-export class VideoSections {
-    readonly streamID: number;
-
-    list: Section[];
-    currentHighlightIndex: number;
-
-    constructor(streamID) {
-        this.streamID = streamID;
-        this.list = [];
-        this.currentHighlightIndex = -1;
-    }
-
-    isCurrent(i: number): boolean {
-        return this.currentHighlightIndex !== -1 && i === this.currentHighlightIndex;
-    }
-
-    async fetch() {
-        await fetch(`/api/stream/${this.streamID}/sections`)
-            .then((res: Response) => {
-                if (!res.ok) {
-                    throw new Error("Could not fetch sections");
-                }
-                return res.json();
-            })
-            .then((sections) => {
-                this.list = sections;
-                attachCurrentTimeEvent(this);
-            })
-            .catch((err) => {
-                console.log(err);
-                this.list = [];
-                this.currentHighlightIndex = 0;
-            });
-    }
-}
-
-function attachCurrentTimeEvent(videoSection: VideoSections) {
+export function attachCurrentTimeEvent(videoSection: VideoSections) {
     player.ready(() => {
         let timer;
         (function checkTimestamp() {
