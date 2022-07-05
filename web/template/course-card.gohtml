@@ -1,11 +1,14 @@
 {{define "course-card"}}{{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Course*/ -}}
 <div class="pt-1 group course{{.Model.ID}}">
-    <div class="flex items-center">
-
+    <div class="flex items-center" x-data="{menu_open: false}">
+        <i class="fa-solid fa-ellipsis opacity-0 group-hover:opacity-100 transition-colors duration-200 dark:hover:text-white hover:text-black text-gray-500 mr-2 cursor-pointer"
+           title="Show context menu" @click="menu_open = !menu_open"></i>
+        <div x-show="menu_open">
             <i class="fancyeye opacity-0 group-hover:opacity-100 transition-colors duration-200 dark:hover:text-white hover:text-black text-gray-500 mr-2 cursor-pointer"
                title="Hide this course" onclick="global.hideCourse({{.Model.ID}}, {{.Name}})"></i>
             <i class="fa-solid fa-thumbtack opacity-0 group-hover:opacity-100 transition-colors duration-200 dark:hover:text-white hover:text-black text-gray-500 mr-2 cursor-pointer"
                title="Pin/Unpin this course" onclick="global.pinCourse({{.Model.ID}}, {{.Name}})"></i>
+        </div>
         <a href="/course/{{.Year}}/{{.TeachingTerm}}/{{.Slug}}" class="text-lg text-3">{{.Name}}</a>
     </div>
     <div class="flex">
