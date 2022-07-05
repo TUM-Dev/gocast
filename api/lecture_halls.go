@@ -80,6 +80,7 @@ func (r lectureHallRoutes) updateLectureHall(c *gin.Context) {
 	if err != nil {
 		log.WithError(err).Error("Error while updating lecture hall")
 		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -176,13 +177,8 @@ func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 }
 
 func (r lectureHallRoutes) switchPreset(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	if tumLiveContext.Stream == nil || !tumLiveContext.Stream.LiveNow {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
