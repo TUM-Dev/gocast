@@ -114,11 +114,12 @@ export function initPinnedCourses() {
     const pinned: Array<Array<string>> = localStorage.getItem("pinnedCourses")
         ? JSON.parse(localStorage.getItem("pinnedCourses"))
         : new Array<Array<string>>();
-    if (pinned.length != 0)
+    if (pinned.length != 0) {
         document.getElementById("pinnedCoursesHeader")?.classList.remove("hidden");
+    }
     const pinnedCoursesList = document.getElementById("pinnedCoursesHeader") as HTMLElement;
     pinned?.forEach((p) => {
-        let template = document.createElement('template');
+        const template = document.createElement("template");
         p[2] = p[2].trim(); // Never return a text node of whitespace as the result
         template.innerHTML = p[2];
         pinnedCoursesList.parentNode.insertBefore(template.content.firstChild, pinnedCoursesList.nextSibling);
