@@ -72,21 +72,12 @@ export function unhideCourse(id: string) {
     document.location.reload();
 }
 
-export function pinCourse(id: number, name: string) {
-    const pinned: Array<Array<string>> = localStorage.getItem("pinnedCourses")
-        ? JSON.parse(localStorage.getItem("pinnedCourses"))
-        : new Array<Array<string>>();
-    if (!pinned.find((strings) => strings[0] === id.toString() && strings[1] === name)) {
-        const elems = document.getElementsByClassName("group course" + id.toString());
-        pinned.push([id.toString(), name, elems[0]?.outerHTML]);
-        localStorage.setItem("pinnedCourses", JSON.stringify(pinned));
-    } else {
-        const newPinned: Array<Array<string>> = pinned.filter((e) => {
-            return e[0] !== id.toString();
-        });
-        localStorage.setItem("pinnedCourses", JSON.stringify(newPinned));
-    }
-    document.location.reload();
+export function pinCourse(id: number) {
+    postData(`/api/users/pinCourse`, { courseID: id }).then((response: Response) => {
+        if (response.status !== StatusCodes.OK) {
+            showMessage("There was an error pinning the course: " + response.body);
+        }
+    });
 }
 
 /**
@@ -108,22 +99,6 @@ export function mirror(parent: Element, levelSelectors: string[], levelIndex = 0
         b.replaceWith(a);
         placeholder.replaceWith(b);
     }
-}
-
-export function initPinnedCourses() {
-    const pinned: Array<Array<string>> = localStorage.getItem("pinnedCourses")
-        ? JSON.parse(localStorage.getItem("pinnedCourses"))
-        : new Array<Array<string>>();
-    if (pinned.length != 0) {
-        document.getElementById("pinnedCoursesHeader")?.classList.remove("hidden");
-    }
-    const pinnedCoursesList = document.getElementById("pinnedCoursesHeader") as HTMLElement;
-    pinned?.forEach((p) => {
-        const template = document.createElement("template");
-        p[2] = p[2].trim(); // Never return a text node of whitespace as the result
-        template.innerHTML = p[2];
-        pinnedCoursesList.parentNode.insertBefore(template.content.firstChild, pinnedCoursesList.nextSibling);
-    });
 }
 
 export function initHiddenCourses() {
@@ -258,5 +233,4 @@ export type Section = {
 
 window.onload = function () {
     initHiddenCourses();
-    initPinnedCourses();
 };
