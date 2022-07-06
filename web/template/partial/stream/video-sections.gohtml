@@ -11,34 +11,35 @@
 
 {{define "videosections-desktop"}}
     <div x-data="{vs: new watch.VideoSectionsDesktop()}"
-         x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);" class="flex pt-3">
+         x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);" class="flex">
         <div class="group relative">
-            <div class="flex pb-3">
-                <h6 class="font-bold text-3 pb-3 pt-2"><i class="fa-solid fa-film mr-1"></i>Sections</h6>
-                <template x-if="!vs.followSections">
-                    <button @click="vs.followSections = true;"
-                            class="text-xs text-gray-500 dark:text-gray-400 uppercase ml-3">
-                        Follow sections
-                    </button>
-                </template>
-            </div>
-            <div class="relative space-x-2 flex">
-                <template x-if="vs.showPrev()">
-                    <button @click="vs.prev();vs.followSections = false;"
-                            class="group-hover:block hidden absolute -left-4 z-50 bg-white border shadow text-sm py-2 px-3 my-auto h-fit top-0 bottom-0 rounded-lg hover:bg-gray-50 hover:dark:bg-gray-600 dark:border-gray-800 dark:bg-secondary">
-                        <i class="fa fa-chevron-left text-3"></i>
-                    </button>
-                </template>
-                <template x-if="vs.showNext()">
-                    <button @click="vs.next();vs.followSections = false;"
-                            class="group-hover:block hidden absolute -right-4 z-50 bg-white border shadow text-sm py-2 px-3 my-auto h-fit top-0 bottom-0 rounded-lg hover:bg-gray-50 hover:dark:bg-gray-600 dark:border-gray-800 dark:bg-secondary">
-                        <i class="fa fa-chevron-right text-3"></i>
-                    </button>
-                </template>
-                <template x-for="(s, i) in vs.getList()" :key="s.fileID">
-                    <button x-cloak class="relative flex h-40 w-32 mb-1 bg-transparent outline-none border-0 rounded-lg"
-                            x-data="{previewImgLoaded: false}"
-                            @click="watch.jumpTo(s.startHours, s.startMinutes, s.startSeconds); vs.followSections = false;">
+            <div class="flex">
+                <i class="fa-solid fa-film mr-1 text-3 mt-1"></i>
+                <div class="grid gap-1 px-2">
+                    <template x-if="!vs.followSections">
+                        <button @click="vs.followSections = true;"
+                                class="hover:bg-gray-200 dark:hover:bg-gray-600 text-5 hover:text-1 mb-1 text-xs rounded h-fit w-fit font-semibold px-2 py-1 my-auto uppercase">
+                            Follow sections
+                        </button>
+                    </template>
+                    <div class="relative flex">
+                        <template x-if="vs.showPrev()">
+                            <button @click="vs.prev();vs.followSections = false;"
+                                    class="group-hover:block hidden absolute -left-4 z-50 bg-white border shadow text-sm py-2 px-3 my-auto h-fit top-0 bottom-0 rounded-lg hover:bg-gray-50 hover:dark:bg-gray-600 dark:border-gray-800 dark:bg-secondary">
+                                <i class="fa fa-chevron-left text-3"></i>
+                            </button>
+                        </template>
+                        <template x-if="vs.showNext()">
+                            <button @click="vs.next();vs.followSections = false;"
+                                    class="group-hover:block hidden absolute -right-2 z-50 bg-white border shadow text-sm py-2 px-3 my-auto h-fit top-0 bottom-0 rounded-lg hover:bg-gray-50 hover:dark:bg-gray-600 dark:border-gray-800 dark:bg-secondary">
+                                <i class="fa fa-chevron-right text-3"></i>
+                            </button>
+                        </template>
+                        <template x-for="(s, i) in vs.getList()" :key="s.fileID">
+                            <button x-cloak
+                                    class="relative flex h-40 w-32 mb-1 mr-2 bg-transparent outline-none border-0 rounded-lg"
+                                    x-data="{previewImgLoaded: false}"
+                                    @click="watch.jumpTo(s.startHours, s.startMinutes, s.startSeconds); vs.followSections = false;">
                     <span class="flex flex-col h-full p-1 bg-white dark:bg-secondary justify-between w-full border hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg"
                           :class="vs.isCurrent(i) ? 'border-2 border-blue-500/50' : 'dark:border-gray-800'">
                         <img x-cloak x-show="previewImgLoaded"
@@ -58,8 +59,10 @@
                             </span>
                         </span>
                     </span>
-                    </button>
-                </template>
+                            </button>
+                        </template>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -68,25 +71,29 @@
 {{define "videosections-mobile"}}
     <div x-data="{vs: new watch.VideoSectionsMobile()}"
          x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);" class="pt-3">
-        <div class="flex justify-between pb-3">
-            <h6 class="font-bold text-3 pb-3 pt-2"><i class="fa-solid fa-film mr-1"></i>Sections</h6>
-            <template x-if="!vs.minimize">
-                <button @click="vs.minimize = true;" class="text-gray-500 my-auto font-light">
-                    Minimize
-                </button>
-            </template>
-            <template x-if="vs.minimize">
-                <button @click="vs.minimize = false;" class="text-gray-500 my-auto font-light">
-                    Show all
-                </button>
-            </template>
-        </div>
-        <div class="p-1 border bg-gray-100 rounded dark:bg-gray-400 dark:border-gray-600">
-            <div class="grid gap-1 overflow-y-scroll" :class="vs.minimize ? 'h-fit' : 'h-56'">
-                <template x-for="(s, i) in vs.getList()" :key="s.fileID">
-                    <button x-cloak class="flex w-full bg-transparent outline-none border-0 rounded-lg"
-                            x-data="{previewImgLoaded: false}"
-                            @click="watch.jumpTo(s.startHours, s.startMinutes, s.startSeconds)">
+        <div class="flex">
+            <i class="fa-solid fa-film mr-1 text-3 mt-1"></i>
+            <div class = "w-full px-2">
+                <div class="flex mb-2">
+                    <template x-if="!vs.minimize">
+                        <button @click="vs.minimize = true;"
+                                class="hover:bg-gray-200 dark:hover:bg-gray-600 text-5 hover:text-1 mb-1 text-xs rounded h-fit w-fit font-semibold px-2 py-1 my-auto uppercase">
+                            Minimize
+                        </button>
+                    </template>
+                    <template x-if="vs.minimize">
+                        <button @click="vs.minimize = false;"
+                                class="hover:bg-gray-200 dark:hover:bg-gray-600 text-5 hover:text-1 mb-1 text-xs rounded h-fit w-fit font-semibold px-2 py-1 my-auto uppercase">
+                            Show all
+                        </button>
+                    </template>
+                </div>
+                <div class="p-1 border bg-gray-100 rounded dark:bg-gray-800 dark:border-gray-800">
+                    <div class="grid gap-1 overflow-y-scroll" :class="vs.minimize ? 'h-fit' : 'h-56'">
+                        <template x-for="(s, i) in vs.getList()" :key="s.fileID">
+                            <button x-cloak class="flex w-full bg-transparent outline-none border-0 rounded-lg"
+                                    x-data="{previewImgLoaded: false}"
+                                    @click="watch.jumpTo(s.startHours, s.startMinutes, s.startSeconds)">
                     <span class="flex justify-between p-1 bg-white dark:bg-secondary justify-between w-full border hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg"
                           :class="vs.isCurrent(i) ? 'border-2 border-blue-500/50' : 'dark:border-gray-800'">
                         <span class="block">
@@ -109,8 +116,10 @@
                             </span>
                         </span>
                     </span>
-                    </button>
-                </template>
+                            </button>
+                        </template>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
