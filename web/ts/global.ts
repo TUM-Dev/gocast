@@ -212,6 +212,7 @@ export function getLoginReferrer(): string {
 
 // TypeScript Mapping of model.VideoSection
 export type Section = {
+    ID?: number;
     description: string;
 
     startHours: number;
