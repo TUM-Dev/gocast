@@ -24,33 +24,21 @@
          @reorder="c.sortMessages()"
          @keyup.escape="c.current.replyTo=0"
          id="chatWrapper"
-         class="flex relative flex-col text-1 bg-white dark:bg-secondary h-full border-l z-40 dark:border-gray-800">
+         class="flex relative flex-col text-1 h-full">
         <!-- Chat header -->
-        <div class="flex sticky top-0 w-full px-3 max-h-12 h-12 justify-between bg-white z-40 border-b dark:bg-secondary dark:border-gray-800
-                    {{if .IsPopUp}} xl:w-1/2 md:w-3/4 md:mx-auto md:border md:rounded-b-lg{{end}}"
-             :class="show ? 'border-b' : 'border-0'"
+        <div class="flex sticky top-0 w-full px-3 max-h-12 h-12 border-b justify-between"
              style="min-height: 3rem;"> <!-- since there is no min-h-12 class -->
-            {{if not .IsPopUp}}
-                <div class="relative my-auto">
-                    <button @click="show = !show;"
-                            class="peer bg-transparent border-0 font-semibold text-xl h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90 md:rotate-0"
-                            title="Toggle Chat">
-                        <span x-text="show ? '&#8614;' : '&#8612;'">&#8614;</span></button>
-                </div>
-            {{end}}
-            <div x-show="show" class="ml-auto my-auto">
-                    <span class="font-semibold text-gray-500 text-xs"
-                          x-text="c.orderByLikes? 'Popular First': 'Live Chat'"></span>
+            <div x-show="showChat" class="ml-auto my-auto">
                 <button @click="c.orderByLikes=!c.orderByLikes; watch.setOrder(c.orderByLikes); $dispatch('reorder'); c.orderByLikes? watch.scrollToTop(): watch.scrollToBottom()"
-                        class="bg-transparent border-0 font-semibold h-8 w-8 rounded
-                               hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90"
+                        x-text="c.orderByLikes? 'Popular First': 'Live Chat'"
+                        class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 text-5 text-xs rounded font-semibold px-2 py-1 my-auto uppercase"
                         title="Change Order">
                     <i class="fas fa-exchange-alt"></i>
                 </button>
             </div>
         </div>
         <!-- Active Poll UI -->
-        <template x-if="show && c.poll.activePoll && !c.admin">
+        <template x-if="showChat && c.poll.activePoll && !c.admin">
             <div class="z-50 absolute w-full top-12">
                 <div class="text-white bg-sky-600 dark:bg-sky-700 text-center p-2">Active Poll</div>
                 <div class="shadow-lg p-4 bg-white dark:text-white dark:bg-secondary-lighter border-b dark:border-gray-800 rounded-b-lg">
@@ -78,7 +66,7 @@
                 </div>
             </div>
         </template>
-        <template x-if="show && c.poll.activePoll && c.admin">
+        <template x-if="showChat && c.poll.activePoll && c.admin">
             <div class="z-50 absolute top-12 w-full">
                 <div class="text-white bg-sky-600 dark:bg-sky-700 text-center p-2">Active Poll</div>
                 <div class="shadow-lg p-4 bg-white dark:text-white dark:bg-secondary-lighter border-b dark:border-gray-800 rounded-b-lg">
@@ -108,7 +96,7 @@
                 </div>
             </div>
         </template>
-        <template x-if="show && c.poll.result">
+        <template x-if="showChat && c.poll.result">
             <div class="z-50 absolute top-12 w-full">
                 <div class="text-white bg-sky-600 dark:bg-sky-700 text-center p-2 relative">
                     Poll Result
@@ -136,18 +124,17 @@
         </template>
 
         <!-- Messages -->
-        <div x-show="show"
+        <div x-show="showChat"
              id="chatBox"
              class="h-full w-full overflow-y-scroll overflow-x-hidden px-1 z-40 {{if .IsPopUp}}xl:w-1/2 md:w-3/4 md:mx-auto{{end}}">
             {{template "messageTemplate" .}}
         </div>
 
         <!-- Messages -->
-        <div class="z-50 bg-white w-full">
+        <div>
             {{template "chatprompts"}}
-            <form x-show="show" id="chatForm"
-                  class="z-50 sticky w-full bottom-0 inset-x-0 p-2 bg-white dark:bg-secondary 2xl:flex 2xl:justify-between
-              {{if .IsPopUp}} xl:w-1/2 md:w-3/4 md:mx-auto md:border md:rounded-t-lg {{end}}"
+            <form x-show="showChat" id="chatForm"
+                  class="sticky w-full bottom-0 inset-x-0 p-2"
                   x-on:sendmessage.window="c.current.send()"
                   @submit.prevent="c.onSubmit()">
                 <div class="w-full">
@@ -267,7 +254,7 @@
                                    :placeholder="c.getInputPlaceHolder()"
                                    :disabled="c.disconnected"
                                    {{end}}autocomplete="off">
-                            <div x-show="show" class="absolute right-3 top-0 bottom-0 flex">
+                            <div x-show="showChat" class="absolute right-3 top-0 bottom-0 flex">
                                 <div x-show="c.disconnected"
                                      class="m-auto">
                                     <svg class="w-5 h-5 animate-spin text-sky-400 dark:text-indigo-400 fill-sky-600 dark:fill-indigo-600"

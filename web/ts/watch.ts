@@ -2,11 +2,29 @@ import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
 import { getPlayer } from "./TUMLiveVjs";
 
-let chatInput: HTMLInputElement;
-
 export class Watch {
+    private readonly player: HTMLElement;
+    private chat: HTMLElement;
+
     constructor() {
-        // Empty
+        this.player = document.getElementById("watchContent");
+        this.chat = document.getElementById("chat-box");
+        this.attachListener();
+        this.resizeChat();
+    }
+
+    private attachListener() {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const that = this;
+        window.addEventListener("resize", function () {
+            that.resizeChat();
+        });
+    }
+
+    private resizeChat() {
+        if (this.chat !== undefined && this.player !== undefined) {
+            this.chat.style.height = `${this.player.getBoundingClientRect().height}px`;
+        }
     }
 }
 
