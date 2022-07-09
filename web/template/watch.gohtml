@@ -20,9 +20,9 @@
       x-on:pauseend.window="paused=false"
       x-init="new watch.Watch(); watch.startWebsocket()">
 {{template "header" .IndexData.TUMLiveContext}}
-<div id="watchPageMainWrapper" class = "lg:px-2 lg:pb-1">
+<div id="watchPageMainWrapper" class="lg:px-5 lg:pb-1">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
-    <div class="flex flex-wrap shadow border">
+    <div class="flex flex-wrap shadow border dark:shadow-0 dark:border-0">
         <div id="watchWrapper" :class="showChat ? 'basis-3/4' : 'basis-full'">
             <noscript><p class="vjs-no-js">
                     To view this video please enable JavaScript.
@@ -128,9 +128,9 @@
         {{if $course.ChatEnabled}}
             <div x-show="showChat"
                  :class="showChat ? 'basis-1/4' : 'basis-0'"
-                 class="bg-white px-2 dark:bg-secondary">
+                 class="bg-white dark:bg-secondary shadow z-40">
                 <div id="chat-box"
-                     class="border rounded shadow-sm dark:border-0">
+                     class="">
                     {{template "chat" .ChatData}}
                 </div>
             </div>
@@ -182,8 +182,11 @@
                             <!-- Desktop Open Chat -->
                             <button @click="showChat = !showChat;"
                                     title="Open Chat"
-                                    class="bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-secondary rounded-lg px-3 py-2 w-fit">
-                                <i class="fa-solid fa-comments text-4"></i>
+                                    :class="showChat ? 'bg-gray-200 hover:bg-gray-100 dark:bg-secondary dark:hover:bg-secondary-light' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-secondary'"
+                                    class="rounded-lg px-3 py-2 w-fit">
+                                <i class="fa-solid text-4"
+                                   :class="showChat ? 'fa-comment-slash' : 'fa-comments'">
+                                </i>
                             </button>
                         </div>
 

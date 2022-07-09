@@ -1,5 +1,5 @@
 {{define "chatprompts"}}
-    <div x-cloak x-show="show"
+    <div x-cloak
          x-data="{showNewMsgIndicator:false}"
          x-on:messageindicator.window="e => {showNewMsgIndicator = e.detail.show}" {{/* show "new message" indicator */}}
          class="relative -top-10 h-0 w-full text-center">

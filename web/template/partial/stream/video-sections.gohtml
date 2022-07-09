@@ -41,7 +41,7 @@
                                     x-data="{previewImgLoaded: false}"
                                     @click="watch.jumpTo(s.startHours, s.startMinutes, s.startSeconds); vs.followSections = false;">
                     <span class="flex flex-col h-full p-1 bg-white dark:bg-secondary justify-between w-full border hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg"
-                          :class="vs.isCurrent(i) ? 'border-2 border-blue-500/50' : 'dark:border-gray-800'">
+                          :class="vs.isCurrent(i) ? 'border-2 border-blue-500/50 dark:border-indigo-600/50' : 'dark:border-gray-800'">
                         <template x-if="s.fileID !== 0">
                             <img x-cloak x-show="previewImgLoaded"
                                  src=""
@@ -97,7 +97,7 @@
                                     x-data="{previewImgLoaded: false}"
                                     @click="watch.jumpTo(s.startHours, s.startMinutes, s.startSeconds)">
                     <span class="flex justify-between p-1 bg-white dark:bg-secondary justify-between w-full border hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg"
-                          :class="vs.isCurrent(i) ? 'border-2 border-blue-500/50' : 'dark:border-gray-800'">
+                          :class="vs.isCurrent(i) ? 'border-2 border-blue-500/50 dark:border-indigo-600/50' : 'dark:border-gray-800'">
                         <span class="block">
                             <template x-if="s.fileID !== 0">
                             <img x-cloak x-show="previewImgLoaded"

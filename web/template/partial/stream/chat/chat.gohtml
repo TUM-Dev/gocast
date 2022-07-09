@@ -26,9 +26,9 @@
          id="chatWrapper"
          class="flex relative flex-col text-1 h-full">
         <!-- Chat header -->
-        <div class="flex sticky top-0 w-full px-3 max-h-12 h-12 border-b justify-between"
+        <div class="flex sticky top-0 w-full px-3 max-h-12 h-12 border-b justify-between dark:border-0"
              style="min-height: 3rem;"> <!-- since there is no min-h-12 class -->
-            <div x-show="showChat" class="ml-auto my-auto">
+            <div class="ml-auto my-auto">
                 <button @click="c.orderByLikes=!c.orderByLikes; watch.setOrder(c.orderByLikes); $dispatch('reorder'); c.orderByLikes? watch.scrollToTop(): watch.scrollToBottom()"
                         x-text="c.orderByLikes? 'Popular First': 'Live Chat'"
                         class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 text-5 text-xs rounded font-semibold px-2 py-1 my-auto uppercase"
@@ -38,7 +38,7 @@
             </div>
         </div>
         <!-- Active Poll UI -->
-        <template x-if="showChat && c.poll.activePoll && !c.admin">
+        <template x-if="c.poll.activePoll && !c.admin">
             <div class="z-50 absolute w-full top-12">
                 <div class="text-white bg-sky-600 dark:bg-sky-700 text-center p-2">Active Poll</div>
                 <div class="shadow-lg p-4 bg-white dark:text-white dark:bg-secondary-lighter border-b dark:border-gray-800 rounded-b-lg">
@@ -66,7 +66,7 @@
                 </div>
             </div>
         </template>
-        <template x-if="showChat && c.poll.activePoll && c.admin">
+        <template x-if="c.poll.activePoll && c.admin">
             <div class="z-50 absolute top-12 w-full">
                 <div class="text-white bg-sky-600 dark:bg-sky-700 text-center p-2">Active Poll</div>
                 <div class="shadow-lg p-4 bg-white dark:text-white dark:bg-secondary-lighter border-b dark:border-gray-800 rounded-b-lg">
@@ -96,7 +96,7 @@
                 </div>
             </div>
         </template>
-        <template x-if="showChat && c.poll.result">
+        <template x-if="c.poll.result">
             <div class="z-50 absolute top-12 w-full">
                 <div class="text-white bg-sky-600 dark:bg-sky-700 text-center p-2 relative">
                     Poll Result
@@ -124,16 +124,15 @@
         </template>
 
         <!-- Messages -->
-        <div x-show="showChat"
-             id="chatBox"
-             class="h-full w-full overflow-y-scroll overflow-x-hidden px-1 z-40 {{if .IsPopUp}}xl:w-1/2 md:w-3/4 md:mx-auto{{end}}">
+        <div id="chatBox"
+             class="grid gap-3 content-start h-full w-full overflow-y-scroll overflow-x-hidden px-1 z-40">
             {{template "messageTemplate" .}}
         </div>
 
         <!-- Messages -->
         <div>
             {{template "chatprompts"}}
-            <form x-show="showChat" id="chatForm"
+            <form id="chatForm"
                   class="sticky w-full bottom-0 inset-x-0 p-2"
                   x-on:sendmessage.window="c.current.send()"
                   @submit.prevent="c.onSubmit()">
@@ -230,9 +229,9 @@
                         <!-- input -->
                         <div x-show="!c.poll.showCreateUI"
                              class="relative flex my-auto bg-gray-200 rounded-lg border-2 border-transparent dark:bg-gray-600
-                                    focus-within:border-sky-600
+                                    focus-within:border-blue-500/50
                                     dark:focus-within:border-indigo-600"
-                             :class="c.users.isValid() && 'border-sky-600 dark:border-indigo-600'">
+                             :class="c.users.isValid() && 'border-sky-600 dark:border-indigo-600/50'">
                             {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
                                 <input type="checkbox" name="anonymous" id="anonymous" class="hidden"
                                        x-model="c.current.anonymous" :disabled="c.disconnected">
@@ -254,7 +253,7 @@
                                    :placeholder="c.getInputPlaceHolder()"
                                    :disabled="c.disconnected"
                                    {{end}}autocomplete="off">
-                            <div x-show="showChat" class="absolute right-3 top-0 bottom-0 flex">
+                            <div class="absolute right-3 top-0 bottom-0 flex">
                                 <div x-show="c.disconnected"
                                      class="m-auto">
                                     <svg class="w-5 h-5 animate-spin text-sky-400 dark:text-indigo-400 fill-sky-600 dark:fill-indigo-600"
