@@ -1,10 +1,14 @@
 package dao
 
 import (
+	"errors"
 	"github.com/joschahenningsen/TUM-Live/model"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
+
+//go:generate mockgen -source=video-seek.go -destination ../mock_dao/video-seek.go
 
 const maxChunksPerVideo = 150
 
@@ -27,9 +31,13 @@ func (d videoSeekDao) Add(streamID string, pos float64) error {
 		return err
 	}
 
-	hitPos := float64(stream.Duration) * pos
+	if (pos / float64(stream.Duration)) > 1 {
+		log.Error("position is bigger than stream duration")
+		return errors.New("position is bigger than stream duration")
+	}
+
 	chunkTimeRange := float64(stream.Duration) / maxChunksPerVideo
-	chunk := uint(hitPos / chunkTimeRange)
+	chunk := uint(pos / chunkTimeRange)
 
 	return DB.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "chunk_index"}, {Name: "stream_id"}},

@@ -436,7 +436,7 @@ export class SeekLogger {
         player.ready(() => {
             player.on("seeked", () => {
                 if (this.initialSeekDone) {
-                    return this.log(player.currentTime() / player.duration());
+                    return this.log(player.currentTime());
                 }
                 this.initialSeekDone = true;
             });
