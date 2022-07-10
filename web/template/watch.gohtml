@@ -67,6 +67,28 @@
             </video-js>
 
             <div
+                    x-data="{ visible: false, seekbar: { x: '0px', width: '0px' }, seekLogger: new watch.SeekLogger('{{$stream.ID}}'), heatMapPath: null }"
+                    x-show="visible"
+                    x-on:updateheatmappath.window="e => { console.log('testy2'); heatMapPath = e.detail.heatMapPath; }"
+                    x-on:updateheatmapvisibility.window="e => { console.log('testy1'); visible = e.detail.visible; seekbar = e.detail.seekbar; }"
+                    x-init="seekLogger.attach(); watch.repeatHeatMap.init('{{$stream.ID}}');"
+                    class="absolute bottom-[18px] rounded bg-gradient-to-t from-gray-800/[.6] pt-4 pointer-events-none"
+                    :style="{width: seekbar.width, left: seekbar.x}"
+            >
+                <svg x-if="heatMapPath" height="100%" preserveAspectRatio="none" viewBox="0 0 1000 100"
+                     width="100%" style="height: 30px;">
+                    <defs>
+                        <clipPath id="heatmap">
+                            <path class="tumlive-heat-map-path"
+                                  :d="heatMapPath"
+                                  fill="white" fill-opacity="0.6"></path>
+                        </clipPath>
+                    </defs>
+                    <rect clip-path="url(#heatmap)" fill="white" fill-opacity="0.4" height="100%" width="100%" x="0" y="0"></rect>
+                </svg>
+            </div>
+
+            <div
                     x-cloak
                     x-show="contextMenu.shown"
                     @click.outside="contextMenu = {...contextMenu, shown: false}"
