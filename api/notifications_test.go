@@ -26,6 +26,7 @@ func TestNotifications(t *testing.T) {
 		r.Use(func(c *gin.Context) {
 			c.Set("TUMLiveContext", tools.TUMLiveContext{})
 		})
+		r.Use(tools.ErrorHandler)
 		configNotificationsRouter(r, dao.DaoWrapper{NotificationsDao: notificationsMock})
 
 		targets := []model.NotificationTarget{model.TargetAll}
@@ -50,6 +51,7 @@ func TestNotifications(t *testing.T) {
 		r.Use(func(c *gin.Context) {
 			c.Set("TUMLiveContext", tools.TUMLiveContext{User: nil})
 		})
+		r.Use(tools.ErrorHandler)
 		configNotificationsRouter(r, dao.DaoWrapper{NotificationsDao: notificationsMock})
 
 		notifications := []model.Notification{
@@ -84,6 +86,7 @@ func TestNotifications(t *testing.T) {
 				Role: model.AdminType,
 			}})
 		})
+		r.Use(tools.ErrorHandler)
 		configNotificationsRouter(r, dao.DaoWrapper{NotificationsDao: notificationsMock})
 
 		notifications := []model.Notification{
@@ -113,6 +116,7 @@ func TestNotifications(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, r := gin.CreateTestContext(w)
+		r.Use(tools.ErrorHandler)
 		configNotificationsRouter(r, dao.DaoWrapper{NotificationsDao: notificationsMock})
 
 		invalidJson := bytes.NewBufferString("{")
@@ -128,6 +132,7 @@ func TestNotifications(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, r := gin.CreateTestContext(w)
+		r.Use(tools.ErrorHandler)
 		configNotificationsRouter(r, dao.DaoWrapper{NotificationsDao: notificationsMock})
 
 		title := "Now!"
@@ -154,6 +159,7 @@ func TestNotifications(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, r := gin.CreateTestContext(w)
+		r.Use(tools.ErrorHandler)
 		configNotificationsRouter(r, dao.DaoWrapper{NotificationsDao: notificationsMock})
 
 		title := "Now!"
@@ -180,6 +186,7 @@ func TestNotifications(t *testing.T) {
 	t.Run("DELETE[invalid parameter 'id']", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, r := gin.CreateTestContext(w)
+		r.Use(tools.ErrorHandler)
 		configNotificationsRouter(r, dao.DaoWrapper{})
 
 		c.Request, _ = http.NewRequest(http.MethodDelete, "/api/notifications/abc", nil)
@@ -195,6 +202,7 @@ func TestNotifications(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, r := gin.CreateTestContext(w)
+		r.Use(tools.ErrorHandler)
 		configNotificationsRouter(r, dao.DaoWrapper{NotificationsDao: notificationsMock})
 
 		notificationsMock.
@@ -217,6 +225,7 @@ func TestNotifications(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, r := gin.CreateTestContext(w)
+		r.Use(tools.ErrorHandler)
 		configNotificationsRouter(r, dao.DaoWrapper{NotificationsDao: notificationsMock})
 
 		notificationsMock.
