@@ -8,10 +8,10 @@
            title="Show context menu" @click="menu_open = !menu_open"></i>
         <div x-show="menu_open">
             <i class="fancyeye opacity-0 group-hover:opacity-100 transition-colors duration-200 dark:hover:text-white hover:text-black text-gray-500 mr-2 cursor-pointer"
-               title="Hide this course" onclick="global.hideCourse({{$course.Model.ID}}, {{$course.Name}})"></i>
+               title="Hide this course" onclick="global.hideCourse({{$course.Model.ID}}, {{$course.Name}});{{if $course.Pinned}}global.unpinCourse({{$course.Model.ID}}){{end}}"></i>
             {{if $user}}
             <i class="fa-solid fa-thumbtack opacity-0 group-hover:opacity-100 transition-colors duration-200 dark:hover:text-white hover:text-black text-gray-500 mr-2 cursor-pointer"
-               {{if $course.Pinned}}title="Unpin this course" onclick="global.unpinCourse({{$course.Model.ID}})"{{else}}title="Pin this course" onclick="global.pinCourse({{$course.Model.ID}})"{{end}}></i>
+               {{if $course.Pinned}}title="Unpin this course" onclick="global.unpinCourse({{$course.Model.ID}})" {{else}}title="Pin this course" onclick="global.pinCourse({{$course.Model.ID}})"{{end}}></i>
             {{end}}
         </div>
         <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}" class="text-lg text-3">{{$course.Name}}</a>
@@ -52,7 +52,6 @@
             {{else}}
                 No upcoming Lectures
             {{end}}
-        </p>
     </div>
 </div>
 {{end}}
