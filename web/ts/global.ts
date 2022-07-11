@@ -1,3 +1,5 @@
+import {StatusCodes} from "http-status-codes";
+
 export * from "./notifications";
 export * from "./user-settings";
 
@@ -78,6 +80,16 @@ export function pinCourse(id: number) {
             showMessage("There was an error pinning the course: " + response.body);
         }
     });
+    document.location.reload();
+}
+
+export function unpinCourse(id: number) {
+    postData(`/api/users/unpinCourse`, { courseID: id }).then((response: Response) => {
+        if (response.status !== StatusCodes.OK) {
+            showMessage("There was an error unpinning the course: " + response.body);
+        }
+    });
+    document.location.reload();
 }
 
 /**
