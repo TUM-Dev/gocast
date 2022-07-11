@@ -12,6 +12,7 @@ import (
 
 func configNotificationsRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := notificationRoutes{daoWrapper}
+
 	notifications := r.Group("/api/notifications")
 	notifications.GET("/", routes.getNotifications)
 	notifications.POST("/", routes.createNotification)

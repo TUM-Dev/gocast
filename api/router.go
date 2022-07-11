@@ -9,12 +9,15 @@ import (
 // ConfigChatRouter configure gin router for chat (without gzip)
 func ConfigChatRouter(router *gin.RouterGroup) {
 	daoWrapper := dao.NewDaoWrapper()
+	router.Use(tools.ErrorHandler)
 	configGinChatRouter(router, daoWrapper)
 }
 
 //ConfigGinRouter for non ws endpoints
 func ConfigGinRouter(router *gin.Engine) {
 	daoWrapper := dao.NewDaoWrapper()
+
+	router.Use(tools.ErrorHandler)
 
 	configGinStreamRestRouter(router, daoWrapper)
 	configGinUsersRouter(router, daoWrapper)
