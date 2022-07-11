@@ -727,6 +727,29 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 	}
 }
 
+func regenerateThumbs(daoWrapper dao.DaoWrapper, path string) error {
+	workers := daoWrapper.WorkerDao.GetAliveWorkers()
+	workerIndex := getWorkerWithLeastWorkload(workers)
+	conn, err := dialIn(workers[workerIndex])
+	defer func() {
+		endConnection(conn)
+	}()
+	if err != nil {
+		log.WithError(err).Error("Unable to dial server")
+		return err
+	}
+	client := pb.NewToWorkerClient(conn)
+	res, err := client.GenerateThumbnails(context.Background(), &pb.GenerateThumbnailRequest{Path: path})
+	if !res.Ok {
+		log.WithError(err).Error("did not get response from worker for thumbnail generation request")
+	}
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type generateVideoSectionImagesParameters struct {
 	sections                                    []model.VideoSection
 	playlistUrl, courseName, courseTeachingTerm string
