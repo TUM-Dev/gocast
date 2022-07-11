@@ -1,4 +1,4 @@
-import {StatusCodes} from "http-status-codes";
+import { StatusCodes } from "http-status-codes";
 
 export * from "./notifications";
 export * from "./user-settings";
@@ -79,8 +79,8 @@ export function pinCourse(id: number) {
         if (response.status !== StatusCodes.OK) {
             showMessage("There was an error pinning the course: " + response.body);
         }
+        document.location.reload();
     });
-    document.location.reload();
 }
 
 export function unpinCourse(id: number) {
@@ -88,8 +88,8 @@ export function unpinCourse(id: number) {
         if (response.status !== StatusCodes.OK) {
             showMessage("There was an error unpinning the course: " + response.body);
         }
+        document.location.reload();
     });
-    document.location.reload();
 }
 
 /**
