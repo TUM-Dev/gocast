@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"net/http"
 	"time"
 )
@@ -19,7 +20,11 @@ type sexyRoutes struct {
 func (r sexyRoutes) getStreamInfo(context *gin.Context) {
 	courses, err := r.CoursesDao.GetAllCourses()
 	if err != nil {
-		context.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"status": "something went wrong"})
+		_ = context.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get all courses",
+			Err:           err,
+		})
 		return
 	}
 	var resp []course

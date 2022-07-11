@@ -9,9 +9,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
-	"github.com/stretchr/testify/assert"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 )
@@ -120,28 +118,8 @@ func TestSexy(t *testing.T) {
 			},
 		}
 
-		for name, testCase := range testCases {
-			t.Run(name, func(t *testing.T) {
-				w := httptest.NewRecorder()
-				c, r := gin.CreateTestContext(w)
-
-				if testCase.TumLiveContext != nil {
-					r.Use(func(c *gin.Context) {
-						c.Set("TUMLiveContext", *testCase.TumLiveContext)
-					})
-				}
-
-				configGinSexyApiRouter(r, testCase.DaoWrapper)
-
-				c.Request, _ = http.NewRequest(testCase.Method, testCase.Url, testCase.Body)
-				r.ServeHTTP(w, c.Request)
-
-				assert.Equal(t, testCase.ExpectedCode, w.Code)
-
-				if len(testCase.ExpectedResponse) > 0 {
-					assert.Equal(t, string(testCase.ExpectedResponse), w.Body.String())
-				}
-			})
-		}
+		testCases.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
+			configGinSexyApiRouter(engine, wrapper)
+		})
 	})
 }
