@@ -36,7 +36,9 @@ func (r mainRoutes) MainPage(c *gin.Context) {
 	indexData.LoadPublicCourses(r.CoursesDao)
 	indexData.LoadPinnedCourses()
 
-	_ = templateExecutor.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
+	if err := templateExecutor.ExecuteTemplate(c.Writer, "index.gohtml", indexData); err != nil {
+		log.WithError(err).Errorf("Could not execute template: 'index.gohtml'")
+	}
 }
 
 func (r mainRoutes) AboutPage(c *gin.Context) {
