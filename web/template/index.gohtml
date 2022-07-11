@@ -22,7 +22,14 @@
         <p class="text-2"><a href="/login" class="underline">Log in</a> to see your courses</p>
     {{else if .TUMLiveContext.User.Name}}
         <p class="text-2">{{.TUMLiveContext.User.GetPreferredGreeting}} {{.TUMLiveContext.User.GetPreferredName}}, nice to see you!</p>
-        <h2 class="text-2xl text-1 mt-2 hidden" id="pinnedCoursesHeader">Pinned Courses</h2>
+    {{end}}
+    {{if .PinnedCourses}}
+        <h2 class="text-2xl text-1 mt-2">Pinned Courses</h2>
+        {{range $course := .PinnedCourses}}
+            {{if not $course.IsHidden}}
+                {{template "course-card" $course}}
+            {{end}}
+        {{end}}
     {{end}}
     {{if .LiveStreams}}
         <h2 class="text-2xl text-1">Active Livestreams</h2>
