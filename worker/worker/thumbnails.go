@@ -12,7 +12,7 @@ const (
 )
 
 // createThumbnailSprite creates a thumbnail sprite from the given video file and stores it in mass storage.
-func createThumbnailSprite(ctx *StreamContext) error {
+func createThumbnailSprite(ctx *StreamContext, source string) error {
 	secondsPerHour := uint32(time.Hour.Seconds())
 	switch {
 	case ctx.duration < secondsPerHour:
@@ -23,7 +23,7 @@ func createThumbnailSprite(ctx *StreamContext) error {
 		ctx.thumbInterval = 30
 	}
 	log.WithField("File", ctx.getThumbnailSpriteFileName()).Info("Start creating thumbnail sprite")
-	g, err := thumbgen.New(ctx.getTranscodingFileName(), ThumbWidth, int(ctx.thumbInterval), ctx.getThumbnailSpriteFileName(), thumbgen.WithJpegCompression(Compression))
+	g, err := thumbgen.New(source, ThumbWidth, int(ctx.thumbInterval), ctx.getThumbnailSpriteFileName(), thumbgen.WithJpegCompression(Compression))
 	if err != nil {
 		return err
 	}

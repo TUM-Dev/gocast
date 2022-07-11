@@ -94,7 +94,7 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 
 	S.startThumbnailGeneration(ctx)
 	defer S.endThumbnailGeneration(ctx)
-	err = createThumbnailSprite(ctx)
+	err = createThumbnailSprite(ctx, ctx.getTranscodingFileName())
 	if err != nil {
 		log.WithField("File", ctx.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
 	} else {
@@ -117,6 +117,24 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 		if err != nil {
 			log.WithField("stream", ctx.streamId).WithError(err).Error("Error marking for deletion")
 		}
+	}
+}
+
+// HandleThumbnailRequest creates a thumbnail on demand.
+func HandleThumbnailRequest(request *pb.GenerateThumbnailRequest) {
+	streamCtx := &StreamContext{
+		recordingPath: &request.Path,
+	}
+	if streamCtx.recordingPath == nil {
+		return
+	}
+	S.startThumbnailGeneration(streamCtx)
+	defer S.endThumbnailGeneration(streamCtx)
+	err := createThumbnailSprite(streamCtx, *streamCtx.recordingPath)
+	if err != nil {
+		log.WithField("File", streamCtx.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
+	} else {
+		notifyThumbnailDone(streamCtx)
 	}
 }
 
@@ -206,7 +224,7 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 
 	S.startThumbnailGeneration(streamCtx)
 	defer S.endThumbnailGeneration(streamCtx)
-	err = createThumbnailSprite(streamCtx)
+	err = createThumbnailSprite(streamCtx, streamCtx.getTranscodingFileName())
 	if err != nil {
 		log.WithField("File", streamCtx.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed")
 	} else {
@@ -324,7 +342,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 	}
 	S.startThumbnailGeneration(&c)
 	defer S.endThumbnailGeneration(&c)
-	err = createThumbnailSprite(&c)
+	err = createThumbnailSprite(&c, c.getTranscodingFileName())
 	if err != nil {
 		log.WithField("File", c.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed")
 	} else {
