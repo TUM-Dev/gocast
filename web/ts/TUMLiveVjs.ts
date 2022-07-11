@@ -9,7 +9,6 @@ import dom = videojs.dom;
 
 require("videojs-sprite-thumbnails");
 require("videojs-seek-buttons");
-require("videojs-hls-quality-selector");
 require("videojs-contrib-quality-levels");
 
 const Button = videojs.getComponent("Button");
@@ -64,8 +63,6 @@ export const initPlayer = function (
             height: 90,
         });
     }
-
-    player.hlsQualitySelector();
     player.seekButtons({
         // TODO user preferences, e.g. change to 5s
         backIndex: 0,
