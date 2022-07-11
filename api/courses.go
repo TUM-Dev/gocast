@@ -27,7 +27,6 @@ import (
 
 func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := coursesRoutes{daoWrapper}
-
 	router.POST("/api/course/activate/:token", routes.activateCourseByToken)
 	router.GET("/api/lecture-halls-by-id", routes.lectureHallsByID)
 	atLeastLecturerGroup := router.Group("/")
@@ -76,7 +75,11 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 	var req uploadVodReq
 	err := c.BindQuery(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request: " + err.Error()})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind query",
+			Err:           err,
+		})
 		return
 	}
 	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
@@ -89,24 +92,40 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 	}
 	err = r.StreamsDao.CreateStream(&stream)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "could not save stream: " + err.Error()})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not save stream",
+			Err:           err,
+		})
 		return
 	}
 	key := uuid.NewV4().String()
 	err = r.UploadKeyDao.CreateUploadKey(key, stream.ID)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "can't create upload key: " + err.Error()})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not create upload key",
+			Err:           err,
+		})
 		return
 	}
 	workers := r.WorkerDao.GetAliveWorkers()
 	if len(workers) == 0 {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "No workers available"})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "no workers available",
+			Err:           err,
+		})
 		return
 	}
 	w := workers[getWorkerWithLeastWorkload(workers)]
 	u, err := url.Parse("http://" + w.Host + ":" + WorkerHTTPPort + "/upload?" + c.Request.URL.Query().Encode() + "&key=" + key)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Errorf("parse proxy url: %v", err)})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: fmt.Sprintf("parse proxy url: %v", err),
+			Err:           err,
+		})
 		return
 	}
 	p := httputil.NewSingleHostReverseProxy(u)
@@ -125,20 +144,30 @@ func (r coursesRoutes) updatePresets(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	course := tumLiveContext.Course
 	if course == nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "course not found",
+		})
 		return
 	}
 
 	var req []lhResp
 	err := c.BindJSON(&req)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid body",
+			Err:           err,
+		})
 		return
 	}
 	var presetSettings []model.CameraPresetPreference
@@ -160,9 +189,13 @@ func (r coursesRoutes) updatePresets(c *gin.Context) {
 	}
 
 	course.SetCameraPresetPreference(presetSettings)
-	if err := r.CoursesDao.UpdateCourse(c, *course); err != nil {
+	if err = r.CoursesDao.UpdateCourse(c, *course); err != nil {
 		log.WithError(err).Error("failed to update course")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "failed to update course",
+			Err:           err,
+		})
 		return
 	}
 
