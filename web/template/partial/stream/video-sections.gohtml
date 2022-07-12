@@ -35,19 +35,21 @@
                         <i class="fa fa-chevron-right text-3"></i>
                     </button>
                 </template>
-                <template x-for="(s, i) in vs.getList()" :key="s.fileID">
+                <template x-for="(s, i) in vs.getList()" :key="s.ID">
                     <button x-cloak class="relative flex h-40 w-32 mb-1 bg-transparent outline-none border-0 rounded-lg"
                             x-data="{previewImgLoaded: false}"
                             @click="watch.jumpTo(s.startHours, s.startMinutes, s.startSeconds); vs.followSections = false;">
                     <span class="flex flex-col h-full p-1 bg-white dark:bg-secondary justify-between w-full border hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg"
                           :class="vs.isCurrent(i) ? 'border-2 border-blue-500/50' : 'dark:border-gray-800'">
-                        <img x-cloak x-show="previewImgLoaded"
-                             src=""
-                             :src="`/api/download/${s.fileID}?type=serve`"
-                             width="128" height="32"
-                             @load="previewImgLoaded=true"
-                             alt="preview"
-                             class="w-full h-16 rounded object-cover z-10">
+                        <template x-if="s.fileID !== 0">
+                            <img x-cloak x-show="previewImgLoaded"
+                                 src=""
+                                 :src="`/api/download/${s.fileID}?type=serve`"
+                                 width="128" height="32"
+                                 @load="previewImgLoaded=true"
+                                 alt="preview"
+                                 class="w-full h-16 rounded object-cover z-10">
+                        </template>
                         <span x-show="!previewImgLoaded"
                               class="block w-full h-16 bg-gray-50 dark:bg-gray-700 rounded"></span>
                          <span x-text="s.description"
@@ -83,13 +85,14 @@
         </div>
         <div class="p-1 border bg-gray-100 rounded dark:bg-gray-400 dark:border-gray-600">
             <div class="grid gap-1 overflow-y-scroll" :class="vs.minimize ? 'h-fit' : 'h-56'">
-                <template x-for="(s, i) in vs.getList()" :key="s.fileID">
+                <template x-for="(s, i) in vs.getList()" :key="s.ID">
                     <button x-cloak class="flex w-full bg-transparent outline-none border-0 rounded-lg"
                             x-data="{previewImgLoaded: false}"
                             @click="watch.jumpTo(s.startHours, s.startMinutes, s.startSeconds)">
                     <span class="flex justify-between p-1 bg-white dark:bg-secondary justify-between w-full border hover:dark:bg-gray-600 hover:bg-gray-200 rounded-lg"
                           :class="vs.isCurrent(i) ? 'border-2 border-blue-500/50' : 'dark:border-gray-800'">
                         <span class="block">
+                            <template x-if="s.fileID !== 0">
                             <img x-cloak x-show="previewImgLoaded"
                                  src=""
                                  :src="`/api/download/${s.fileID}?type=serve`"
@@ -97,6 +100,7 @@
                                  @load="previewImgLoaded=true"
                                  alt="preview"
                                  class="w-full h-16 rounded object-cover z-10">
+                            </template>
                             <span x-show="!previewImgLoaded" class="block w-full h-16 bg-gray-50 rounded"></span>
                         </span>
                         <span class="block">

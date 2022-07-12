@@ -96,6 +96,7 @@ func (r lectureHallRoutes) updateLectureHall(c *gin.Context) {
 			CustomMessage: "error while updating lecture hall",
 			Err:           err,
 		})
+		return
 	}
 }
 
@@ -196,6 +197,7 @@ var staticFS embed.FS
 func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 	templ, err := template.ParseFS(staticFS, "template/*.gotemplate")
 	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	foundContext, exists := c.Get("TUMLiveContext")
@@ -215,6 +217,7 @@ func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 	}
 	icalData, err := r.LectureHallsDao.GetStreamsForLectureHallIcal(queryUid)
 	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	c.Header("content-type", "text/calendar")
@@ -225,16 +228,8 @@ func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 }
 
 func (r lectureHallRoutes) switchPreset(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "context should exist but doesn't",
-		})
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	if tumLiveContext.Stream == nil || !tumLiveContext.Stream.LiveNow {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
@@ -264,6 +259,7 @@ func (r lectureHallRoutes) takeSnapshot(c *gin.Context) {
 			Err:           err,
 		})
 		sentry.CaptureException(err)
+		return
 	}
 	r.presetUtility.TakeSnapshot(preset)
 	preset, err = r.LectureHallsDao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
@@ -274,6 +270,7 @@ func (r lectureHallRoutes) takeSnapshot(c *gin.Context) {
 			Err:           err,
 		})
 		sentry.CaptureException(err)
+		return
 	}
 	c.JSONP(http.StatusOK, gin.H{"path": fmt.Sprintf("/public/%s", preset.Image)})
 }
