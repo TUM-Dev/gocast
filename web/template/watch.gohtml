@@ -130,8 +130,8 @@
         {{if $course.ChatEnabled}}
             <div x-show="showChat"
                  :class="showChat ? 'lg:basis-1/4' : 'lg:basis-0'"
-                 class="z-40 basis-full order-3 mx-5 border rounded lg:border-0 lg:shadow lg:order-none lg:mx-0 dark:border-0">
-                <div id="chat-box">
+                 class="z-40 basis-full order-3 border rounded p-1 mx-2 bg-gray-100 lg:border-0 lg:shadow lg:order-none lg:mx-0 lg:p-0 lg:bg-transparent">
+                <div id="chat-box" class = "bg-white rounded md:bg-transparent md:rounded-0">
                     {{template "chat" .ChatData}}
                 </div>
             </div>
@@ -170,7 +170,7 @@
 
                 <!-- Desktop stream info-->
                 <div class="grid gap-3">
-                    <div class="space-x-2 text-lg text-4 hidden sm:inline-flex shrink-0 my-auto">
+                    <div class="space-x-2 text-lg text-4 hidden md:inline-flex shrink-0 my-auto">
                         {{if not $stream.Recording}}
                             {{template "watch-info" .}}
                         {{end}}
@@ -206,11 +206,18 @@
             </div>
 
             <!-- Mobile stream info -->
-            <div class="sm:hidden flex justify-between py-5 border-b dark:border-gray-800 text-3">
+            <div class="md:hidden flex justify-between pt-3 text-3">
                 {{if not $stream.Recording}}
                     {{template "watch-info" .}}
                 {{end}}
                 {{template "actions" .}}
+                <!-- Desktop Open Chat -->
+                <button @click="showChat = !showChat;"
+                        title="Open Chat"
+                        :class="showChat ? 'bg-gray-200 hover:bg-gray-100 dark:bg-secondary dark:hover:bg-secondary-light' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-secondary'"
+                        class="rounded-lg px-3 py-2 w-fit">
+                    <i class="fa-solid fa-comments text-4"></i>
+                </button>
             </div>
         </div>
         {{if and .IsAdminOfCourse $stream.LiveNow}}

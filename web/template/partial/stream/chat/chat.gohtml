@@ -30,10 +30,11 @@
              style="min-height: 3rem;"> <!-- since there is no min-h-12 class -->
             <div class="ml-auto my-auto">
                 <button @click="c.orderByLikes=!c.orderByLikes; watch.setOrder(c.orderByLikes); $dispatch('reorder'); c.orderByLikes? watch.scrollToTop(): watch.scrollToBottom()"
-                        x-text="c.orderByLikes? 'Popular First': 'Live Chat'"
                         class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 text-5 text-xs rounded font-semibold px-2 py-1 my-auto uppercase"
                         title="Change Order">
-                    <i class="fas fa-exchange-alt"></i>
+                    <span x-text="c.orderByLikes? 'Popular First': 'Live Chat'"></span>
+                    <i x-show="c.orderByLikes" class="fa-solid fa-arrow-up-short-wide"></i>
+                    <i x-show="!c.orderByLikes" class="fa-solid fa-arrow-down-short-wide"></i>
                 </button>
             </div>
         </div>
@@ -125,7 +126,7 @@
 
         <!-- Messages -->
         <div id="chatBox"
-             class="grid gap-3 content-start h-full w-full overflow-y-scroll overflow-x-hidden px-1 z-40">
+             class="grid content-start h-full w-full overflow-y-scroll overflow-x-hidden px-4 py-2 z-40">
             {{template "messageTemplate" .}}
         </div>
 
@@ -230,7 +231,7 @@
                         <div x-show="!c.poll.showCreateUI"
                              class="relative flex my-auto bg-gray-200 rounded-lg border-2 border-transparent dark:bg-gray-600
                                     focus-within:border-blue-500/50
-                                    dark:focus-within:border-indigo-600"
+                                    dark:focus-within:border-indigo-600/50"
                              :class="c.users.isValid() && 'border-sky-600 dark:border-indigo-600/50'">
                             {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
                                 <input type="checkbox" name="anonymous" id="anonymous" class="hidden"
