@@ -41,9 +41,8 @@ func ErrorHandler(c *gin.Context) {
 			c.JSON(e.Status, e.ToResponse())
 			return
 		default:
-			e := err.Err.(error)
 			c.Errors = []*gin.Error{} // clear errors so they don't get logged
-			c.JSON(http.StatusInternalServerError, e.Error())
+			c.JSON(http.StatusInternalServerError, err.Err.Error())
 			return
 		}
 	}
