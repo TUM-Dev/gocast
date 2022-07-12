@@ -41,7 +41,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				DeleteLectureHall(lectureHallId).
 				Return(errors.New("")).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			c.Request, _ = http.NewRequest(http.MethodPost, "/api/createLectureHall", nil)
@@ -95,7 +95,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 					Role: model.AdminType,
 				}})
 			})
-
+			r.Use(tools.ErrorHandler)
 			configGinLectureHallApiRouter(r, dao.DaoWrapper{}, tools.NewPresetUtility(nil))
 
 			c.Request, _ = http.NewRequest(http.MethodPut,
@@ -116,7 +116,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 					Role: model.AdminType,
 				}})
 			})
-
+			r.Use(tools.ErrorHandler)
 			configGinLectureHallApiRouter(r, dao.DaoWrapper{}, tools.NewPresetUtility(nil))
 
 			jBody, _ := json.Marshal(updateLectureHallReq{CamIp: "0.0.0.0"})
@@ -147,7 +147,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				Return(model.LectureHall{},
 					errors.New("")).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			jBody, _ := json.Marshal(updateLectureHallReq{CamIp: "0.0.0.0"})
@@ -182,7 +182,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				SaveLectureHall(gomock.Any()).
 				Return(errors.New("")).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			jBody, _ := json.Marshal(updateLectureHallReq{CamIp: "0.0.0.0"})
@@ -215,7 +215,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				EXPECT().
 				SaveLectureHall(gomock.Any()).
 				Return(nil)
-
+			r.Use(tools.ErrorHandler)
 			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			jBody, _ := json.Marshal(updateLectureHallReq{CamIp: "0.0.0.0"})
@@ -238,7 +238,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 					Role: model.AdminType,
 				}})
 			})
-
+			r.Use(tools.ErrorHandler)
 			configGinLectureHallApiRouter(r, dao.DaoWrapper{}, tools.NewPresetUtility(nil))
 
 			c.Request, _ = http.NewRequest(http.MethodDelete,
@@ -266,7 +266,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				DeleteLectureHall(lectureHallId).
 				Return(errors.New("")).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			c.Request, _ = http.NewRequest(http.MethodDelete,
@@ -294,7 +294,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				DeleteLectureHall(lectureHallId).
 				Return(nil).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			c.Request, _ = http.NewRequest(http.MethodDelete,
@@ -317,7 +317,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 					Role: model.AdminType,
 				}})
 			})
-
+			r.Use(tools.ErrorHandler)
 			configGinLectureHallApiRouter(r, dao.DaoWrapper{}, tools.NewPresetUtility(nil))
 
 			c.Request, _ = http.NewRequest(http.MethodPost,
@@ -349,7 +349,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				FindPreset(lectureHallId, fmt.Sprintf("%d", presetId)).
 				Return(model.CameraPreset{}, errors.New("")).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			c.Request, _ = http.NewRequest(http.MethodPost,
@@ -386,7 +386,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				UnsetDefaults(gomock.Any()).
 				Return(errors.New("")).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			c.Request, _ = http.NewRequest(http.MethodPost,
@@ -431,7 +431,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				SavePreset(gomock.Any()).
 				Return(errors.New("")).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			c.Request, _ = http.NewRequest(http.MethodPost,
@@ -476,7 +476,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				SavePreset(model.CameraPreset{IsDefault: true}).
 				Return(nil).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			c.Request, _ = http.NewRequest(http.MethodPost,
