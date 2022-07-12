@@ -41,13 +41,19 @@ export function showMessage(msg: string) {
     alertBox.classList.remove("hidden");
 }
 
-export function copyToClipboard(text: string) {
-    const dummy = document.createElement("input");
-    document.body.appendChild(dummy);
-    dummy.value = text;
-    dummy.select();
-    document.execCommand("copy");
-    document.body.removeChild(dummy);
+/**
+ * Copies a string to the clipboard using clipboard API.
+ * @param text the string that is copied to the clipboard.
+ */
+export async function copyToClipboard(text: string): Promise<boolean> {
+    return navigator.clipboard.writeText(text).then(
+        () => {
+            return true;
+        },
+        () => {
+            return false;
+        },
+    );
 }
 
 export function hideCourse(id: number, name: string) {
