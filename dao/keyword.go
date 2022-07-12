@@ -8,7 +8,7 @@ import (
 //go:generate mockgen -source=keyword.go -destination ../mock_dao/keyword.go
 
 type KeywordDao interface {
-	NewKeyword(keyword *model.Keyword) error
+	NewKeywords(keyword []model.Keyword) error
 }
 
 type keywordDao struct {
@@ -19,6 +19,6 @@ func NewKeywordDao() KeywordDao {
 	return keywordDao{db: DB}
 }
 
-func (d keywordDao) NewKeyword(keyword *model.Keyword) error {
-	return d.db.Save(keyword).Error
+func (d keywordDao) NewKeywords(keyword []model.Keyword) error {
+	return DB.Create(keyword).Error
 }

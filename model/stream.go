@@ -3,14 +3,13 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/russross/blackfriday/v2"
-	log "github.com/sirupsen/logrus"
-	"time"
-
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/russross/blackfriday/v2"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"time"
 )
 
 // StreamStatus is the status of a stream (e.g. converting)

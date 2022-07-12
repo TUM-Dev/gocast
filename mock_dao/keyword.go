@@ -34,16 +34,16 @@ func (m *MockKeywordDao) EXPECT() *MockKeywordDaoMockRecorder {
 	return m.recorder
 }
 
-// NewKeyword mocks base method.
-func (m *MockKeywordDao) NewKeyword(keyword *model.Keyword) error {
+// NewKeywords mocks base method.
+func (m *MockKeywordDao) NewKeywords(keyword *model.Keyword) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewKeyword", keyword)
+	ret := m.ctrl.Call(m, "NewKeywords", keyword)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// NewKeyword indicates an expected call of NewKeyword.
-func (mr *MockKeywordDaoMockRecorder) NewKeyword(keyword interface{}) *gomock.Call {
+// NewKeywords indicates an expected call of NewKeywords.
+func (mr *MockKeywordDaoMockRecorder) NewKeywords(keyword interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewKeyword", reflect.TypeOf((*MockKeywordDao)(nil).NewKeyword), keyword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewKeywords", reflect.TypeOf((*MockKeywordDao)(nil).NewKeywords), keyword)
 }

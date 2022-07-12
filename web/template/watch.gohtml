@@ -199,8 +199,8 @@
                         {{end}}
                         {{if .AlertsEnabled}}
                             <button @click="$dispatch('issue');location.href='#';location.href='#alertModal'"
-                                    title="Issues with the stream? Send a report to the RGB."
-                                    class="bg-amber-500 text-center md:w-28 md:inline-block block lg:w-32 {{if $stream.LectureHallID}}md:float-right{{end}} w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
+                                title="Issues with the stream? Send a report to the RGB."
+                                class="bg-amber-500 text-center md:w-28 md:inline-block block lg:w-32 {{if $stream.LectureHallID}}md:float-right{{end}} w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
                                 <i class="fas fa-exclamation-triangle mr-1"></i>Problem
                             </button>
                         {{end}}
@@ -242,7 +242,7 @@
                 <div class="text-3 px-2"
                      x-html="less ? prev : full"
                      @descriptionupdate.window="full=$el.innerHTML=$event.detail.description.full;prev=
-                    $el.innerHTML=$event.detail.description.truncated;less=full.length>{{.CutOffLength}};">
+                     $el.innerHTML=$event.detail.description.truncated;less=full.length>{{.CutOffLength}};">
                 </div>
                 <button x-show="full.length>{{.CutOffLength}}"
                         class="text-xs text-gray-500 dark:text-gray-400 uppercase mt-2 px-2"
