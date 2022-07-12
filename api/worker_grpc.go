@@ -217,18 +217,9 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 				}
 			}()
 		}
-		// wait 2 hours to clear the dvr cache
+		// wait to clear the dvr cache
 		go func() {
-			time.Sleep(time.Hour * 2)
-			err := s.DaoWrapper.IngestServerDao.RemoveStreamFromSlot(stream.ID)
-			if err != nil {
-				log.WithError(err).Error("Can't remove stream from streamName")
-			}
-		}()
-
-		// wait 2 hours to clear the dvr cache
-		go func() {
-			time.Sleep(time.Hour * 2)
+			time.Sleep(time.Minute * 30)
 			err := s.DaoWrapper.IngestServerDao.RemoveStreamFromSlot(stream.ID)
 			if err != nil {
 				log.WithError(err).Error("Can't remove stream from streamName")
@@ -757,6 +748,9 @@ type generateVideoSectionImagesParameters struct {
 
 func DeleteVideoSectionImage(workerDao dao.WorkerDao, path string) error {
 	workers := workerDao.GetAliveWorkers()
+	if len(workers) == 0 {
+		return errors.New("no workers available")
+	}
 	workerIndex := getWorkerWithLeastWorkload(workers)
 	conn, err := dialIn(workers[workerIndex])
 	defer func() {
@@ -775,6 +769,9 @@ func DeleteVideoSectionImage(workerDao dao.WorkerDao, path string) error {
 
 func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *generateVideoSectionImagesParameters) error {
 	workers := daoWrapper.WorkerDao.GetAliveWorkers()
+	if len(workers) == 0 {
+		return errors.New("no workers available")
+	}
 	workerIndex := getWorkerWithLeastWorkload(workers)
 	conn, err := dialIn(workers[workerIndex])
 	defer func() {

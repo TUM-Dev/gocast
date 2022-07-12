@@ -6,6 +6,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
+	"github.com/joschahenningsen/TUM-Live/mock_tools"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"gorm.io/gorm"
@@ -214,7 +215,7 @@ func GetLectureHallMock(t *testing.T) dao.LectureHallsDao {
 	lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 	lectureHallMock.
 		EXPECT().
-		GetLectureHallByID(gomock.Any()).
+		GetLectureHallByID(LectureHall.ID).
 		Return(LectureHall, nil)
 	return lectureHallMock
 }
@@ -261,4 +262,11 @@ func GetProgressMock(t *testing.T) dao.ProgressDao {
 		SaveProgresses(gomock.Any()).
 		Return(nil).AnyTimes()
 	return progressMock
+}
+
+func GetPresetUtilityMock(ctrl *gomock.Controller) tools.PresetUtility {
+	mockPresetUtility := mock_tools.NewMockPresetUtility(ctrl)
+	mockPresetUtility.EXPECT().FetchLHPresets(LectureHall).Return().AnyTimes()
+	mockPresetUtility.EXPECT().TakeSnapshot(CameraPreset).Return().AnyTimes()
+	return mockPresetUtility
 }
