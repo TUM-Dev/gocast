@@ -12,7 +12,6 @@ import (
 
 func configGinSearchRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := searchRoutes{daoWrapper}
-	router.Use(tools.ErrorHandler)
 	router.GET("/api/search/streams", routes.searchStreams)
 }
 
