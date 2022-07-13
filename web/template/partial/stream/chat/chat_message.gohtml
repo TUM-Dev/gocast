@@ -16,6 +16,7 @@
                     This message is currently only visible to admins.
                 </span>
             </div>
+
             <div class="relative group p-2 rounded
                 {{if .IsPopUp}}
                     hover:bg-gray-100 dark:hover:bg-gray-700
@@ -87,9 +88,9 @@
                     </template>
                     <template x-if="m.likes > 0">
                         <div class="flex">
-                            <div class = "flex text-xs border text-5 px-2 rounded-full h-5 shadow-sm dark:border-gray-600 dark:shadow-0">
+                            <div class="flex text-xs border text-5 px-2 rounded-full h-5 shadow-sm dark:border-gray-600 dark:shadow-0">
                                 <i class="fas fa-thumbs-up m-auto"></i>
-                                <span class = "m-auto ml-1" x-text="m.likes"></span>
+                                <span class="m-auto ml-1" x-text="m.likes"></span>
                             </div>
                         </div>
                     </template>
@@ -98,20 +99,19 @@
                                 class="text-5 uppercase text-xs hover:bg-gray-200 dark:hover:bg-gray-600 px-2 rounded"
                                 @click="showReplies=!showReplies">
                             <span>replies</span>
-                            <i class = "fa-solid ml-1" :class="showReplies ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                            <i class="fa-solid ml-1" :class="showReplies ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                         </button>
                     </template>
                 </div>
             </template>
+
             <!-- replies -->
-            <div x-cloak x-show="showReplies" class="">
+            <div x-cloak x-show="showReplies" class="grid gap-y-3 py-1 pl-2 mt-2 ml-4 border-l-2 dark:border-secondary-light">
                 <template x-for="reply in m.replies">
-                    <div class="border-l-2 pl-2 pt-1 pb-1 dark:border-secondary-light">
-                        <div class="mb-2">
-                                    <span x-show="reply.admin"
-                                          class="text-white bg-red-400 p-1 text-xs rounded fas fa-video"></span>
-                            <span class="text-2 font-semibold" x-text="reply.name"
-                                  :style="'color:'+reply.color"></span>
+                    <div class = "grid gap-y-1">
+                        <div>
+                            <span x-show="reply.admin" class="text-white bg-red-400 p-1 text-xs rounded fas fa-video"></span>
+                            <span class="text-2 font-semibold" x-text="reply.name" :style="'color:'+reply.color"></span>
                         </div>
                         <div class="group p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
                             <div class="flex justify-between">

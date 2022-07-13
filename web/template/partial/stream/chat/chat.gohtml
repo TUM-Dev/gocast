@@ -38,6 +38,25 @@
                 </button>
             </div>
         </div>
+        <div class="flex align-middle py-2 px-3 justify-between sticky top-12 border-b dark:border-0">
+            <div class="flex text-5 text-xs">
+                <span class="uppercase font-light my-auto">admin</span>
+                <i class="fa-solid fa-toolbox my-auto ml-2"></i>
+            </div>
+            <div>
+                <button x-show="c.admin"
+                        class="hover:bg-gray-200 dark:hover:bg-gray-600 text-5 text-xs rounded font-semibold px-2 py-1 my-auto uppercase"
+                        :class="c.poll.showCreateUI && 'bg-gray-200 dark:bg-gray-600'"
+                        @click="c.poll.showCreateUI = !c.poll.showCreateUI; c.users.clear()"
+                        title="Create Poll"
+                        tabindex="-1"
+                        :disabled="c.poll.activePoll || c.disconnected"
+                        type="button">
+                    <span>new poll</span>
+                    <i class = "fa-solid fa-list ml-2"></i>
+                </button>
+            </div>
+        </div>
         <!-- Active Poll UI -->
         <template x-if="c.poll.activePoll && !c.admin">
             <div class="z-50 absolute w-full top-12">
@@ -269,7 +288,7 @@
                         </div>
                     </div>
                     <!-- popout and send button -->
-                    <div class="flex mt-2" :class="{{.IsPopUp}} ? 'justify-end' : 'justify-between'">
+                    <div class="flex justify-between px-1" :class="{{.IsPopUp}} ? 'justify-end' : 'justify-between'">
                         {{if not .IsPopUp}}
                             <button x-show="!{{.IsPopUp}}"
                                     class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200"
@@ -279,28 +298,16 @@
                                 <i class="fas fa-external-link-alt text-3 m-auto"></i>
                             </button>
                         {{end}}
-                        <span>
-                            <button x-show="c.admin && !c.poll.showCreateUI"
-                                    class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800 disabled:bg-gray-400 disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400 rounded border-0 focus:outline-none px-4 text-white text-sm ml-auto"
-                                    @click="c.poll.showCreateUI = !c.poll.showCreateUI; c.users.clear()"
-                                    title="Create Poll"
-                                    tabindex="-1"
-                                    :disabled="c.poll.activePoll || c.disconnected"
-                                    type="button">
-                                <i class = "fa-solid fa-question"></i>
-                            </button>
-                            <button tabindex="-1"
-                                    class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
-                                   disabled:bg-gray-400 disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400
-                                   rounded border-0 focus:outline-none px-4 text-white text-sm ml-auto"
-                                    title="Send message"
-                                    type="submit"
+                        <button tabindex="-1"
+                                class="h-8 bg-blue-500 hover:bg-blue-600 dark:bg-indigo-600 dark:hover:bg-indigo-700
+                                   disabled:bg-gray-400 dark:disabled:bg-gray-400 rounded border-0 focus:outline-none px-4 text-white text-sm"
+                                title="Send message"
+                                type="submit"
                                 {{if not (.IndexData.TUMLiveContext.User)}} disabled {{end}}
                                 :disabled="c.current.isEmpty() || c.disconnected">
                             <span class="font-semibold">Send</span>
                             <span class="fas fa-paper-plane ml-2"></span>
                         </button>
-                        </span>
                     </div>
                 </div>
             </form>
