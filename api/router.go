@@ -20,7 +20,6 @@ func ConfigGinRouter(router *gin.Engine) {
 	configGinDownloadRouter(router, daoWrapper)
 	configGinDownloadICSRouter(router, daoWrapper)
 	configGinLectureHallApiRouter(router, daoWrapper)
-	configGinSexyApiRouter(router, daoWrapper)
 	configProgressRouter(router, daoWrapper)
 	configServerNotificationsRoutes(router, daoWrapper)
 	configTokenRouter(router, daoWrapper)
