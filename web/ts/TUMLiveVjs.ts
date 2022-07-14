@@ -1,14 +1,14 @@
-import { postData, Section } from "./global";
+import { postData } from "./global";
+import { VideoSections } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import airplay from "@silvermine/videojs-airplay";
-import dom = videojs.dom;
 
 import { handleHotkeys } from "./hotkeys";
+import dom = videojs.dom;
 
 require("videojs-sprite-thumbnails");
 require("videojs-seek-buttons");
-require("videojs-hls-quality-selector");
 require("videojs-contrib-quality-levels");
 
 const Button = videojs.getComponent("Button");
@@ -63,8 +63,6 @@ export const initPlayer = function (
             height: 90,
         });
     }
-
-    player.hlsQualitySelector();
     player.seekButtons({
         // TODO user preferences, e.g. change to 5s
         backIndex: 0,
@@ -415,72 +413,7 @@ export function jumpTo(hours: number, minutes: number, seconds: number) {
     });
 }
 
-export class VideoSections {
-    readonly streamID: number;
-    readonly sectionsPerGroup: number;
-
-    private list: Section[];
-
-    currentHighlightIndex: number;
-    currentIndex: number;
-
-    constructor(streamID) {
-        this.streamID = streamID;
-        this.list = [];
-        this.currentHighlightIndex = -1;
-
-        this.currentIndex = 0;
-        this.sectionsPerGroup = 4;
-    }
-
-    isCurrent(i: number): boolean {
-        return this.currentHighlightIndex !== -1 && i === this.currentHighlightIndex;
-    }
-
-    async fetch() {
-        await fetch(`/api/stream/${this.streamID}/sections`)
-            .then((res: Response) => {
-                if (!res.ok) {
-                    throw new Error("Could not fetch sections");
-                }
-                return res.json();
-            })
-            .then((sections) => {
-                this.list = sections;
-                attachCurrentTimeEvent(this);
-            })
-            .catch((err) => {
-                console.log(err);
-                this.list = [];
-                this.currentHighlightIndex = 0;
-            });
-    }
-
-    showSection(i: number): boolean {
-        return (
-            i >= this.currentIndex * this.sectionsPerGroup &&
-            i < this.currentIndex * this.sectionsPerGroup + this.sectionsPerGroup
-        );
-    }
-
-    showNext(): boolean {
-        return this.currentIndex < this.list.length / this.sectionsPerGroup - 1;
-    }
-
-    showPrev(): boolean {
-        return this.currentIndex > 0;
-    }
-
-    next() {
-        this.currentIndex = (this.currentIndex + 1) % this.list.length;
-    }
-
-    prev() {
-        this.currentIndex = (this.currentIndex - 1) % this.list.length;
-    }
-}
-
-function attachCurrentTimeEvent(videoSection: VideoSections) {
+export function attachCurrentTimeEvent(videoSection: VideoSections) {
     player.ready(() => {
         let timer;
         (function checkTimestamp() {

@@ -4,12 +4,12 @@ go 1.18
 
 // Direct dependencies
 require (
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/icza/gox v0.0.0-20220321141217-e2d488ab2fbc
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/joschahenningsen/thumbgen v0.0.0-20220618164424-9fcc2beb0084
-	github.com/makasim/sentryhook v0.4.0
-	github.com/pkg/profile v1.6.0
+	github.com/otiai10/gosseract/v2 v2.3.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil/v3 v3.22.5
 	github.com/sirupsen/logrus v1.8.1
@@ -18,6 +18,14 @@ require (
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.0
+)
+
+require (
+	github.com/bbalet/stopwords v1.0.0
+	github.com/getsentry/sentry-go v0.13.0
+	github.com/joschahenningsen/thumbgen v0.0.0-20220601131629-d049c9087bf3
+	github.com/makasim/sentryhook v0.4.0
+	github.com/pkg/profile v1.6.0
 )
 
 // Indirect dependencies

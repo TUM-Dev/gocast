@@ -20,6 +20,7 @@ require (
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/jinzhu/now v1.1.5
+	// todo: handle breaking changes in bluemomday.
 	github.com/microcosm-cc/bluemonday v1.0.18
 	github.com/pkg/profile v1.6.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -28,11 +29,11 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.12.0
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
-	google.golang.org/genproto v0.0.0-20220627151210-f754eecb4be7 // indirect
+	google.golang.org/genproto v0.0.0-20220630174209-ad1d48641aa7 // indirect
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.0
 	gorm.io/driver/mysql v1.3.4
-	gorm.io/gorm v1.23.6
+	gorm.io/gorm v1.23.7
 	mvdan.cc/xurls/v2 v2.4.0
 )
 
@@ -42,8 +43,8 @@ require (
 	github.com/crewjam/saml v0.4.8
 	github.com/golang/mock v1.6.0
 	github.com/icholy/digest v0.1.15
-	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20220626210354-9ef94aba21b0
-	github.com/stretchr/testify v1.7.5
+	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20220629170038-3924db026345
+	github.com/stretchr/testify v1.8.0
 )
 
 require (
@@ -64,7 +65,7 @@ require (
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.11.0 // indirect
-	github.com/goccy/go-json v0.9.7 // indirect
+	github.com/goccy/go-json v0.9.8 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
@@ -88,6 +89,8 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	// This version works. Breaking changes, update with care:
+	// github.com/russellhaering/goxmldsig v1.1.1 // indirect
 	github.com/russellhaering/goxmldsig v1.1.1 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/spf13/afero v1.8.2 // indirect
@@ -96,8 +99,8 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.0 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
-	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
-	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b // indirect
+	golang.org/x/net v0.0.0-20220630215102-69896b714898 // indirect
+	golang.org/x/sys v0.0.0-20220702020025-31831981b65f // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.66.6 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

@@ -12,5 +12,5 @@ export * from "../token-management";
 export * from "../worker";
 export * from "../courseAdminManagement";
 export * from "../notification-management";
-export * from "../VideoSection";
 export * from "../audits";
+export { VideoSectionClient, VideoSectionsAdmin } from "../video-sections";

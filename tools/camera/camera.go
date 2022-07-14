@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+//go:generate mockgen -source=camera.go -destination ../../mock_tools/mock_camera/camera.go
+
 type Cam interface {
 	// SetPreset moves the camera to the preset identified by preset.
 	SetPreset(presetId int) error
