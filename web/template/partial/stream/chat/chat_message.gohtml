@@ -79,7 +79,7 @@
             </div>
 
             <!-- like count & open reply button -->
-            <template x-if="m.likes > 0 ||m.replies.length > 0 || m.resolved">
+            <template x-if="m.likes > 0 || m.replies.length > 0 || m.resolved">
                 <div class="flex space-x-2 align-middle">
                     <template x-if="m.resolved">
                         <div class="flex text-xs w-5 h-5 border-2 border-success shadow-sm text-5 rounded-full my-auto">
@@ -94,7 +94,7 @@
                             </div>
                         </div>
                     </template>
-                    <template x-if="m.replies.length>0">
+                    <template x-if="m.replies.length > 0">
                         <button
                                 class="text-5 uppercase text-xs hover:bg-gray-200 dark:hover:bg-gray-600 px-2 rounded"
                                 @click="showReplies=!showReplies">
