@@ -82,8 +82,8 @@
             <template x-if="m.likes > 0 || m.replies.length > 0 || m.resolved">
                 <div class="flex space-x-2 align-middle">
                     <template x-if="m.resolved">
-                        <div class="flex text-xs w-5 h-5 border-2 border-success shadow-sm text-5 rounded-full my-auto">
-                            <i class="fas fa-check text-success m-auto"></i>
+                        <div class="flex text-xs h-5 w-5 bg-green-100/50 rounded-full border border-success shadow-sm my-auto dark:bg-transparent dark:shadow-0">
+                            <i class="fa-solid fa-check text-success m-auto"></i>
                         </div>
                     </template>
                     <template x-if="m.likes > 0">
