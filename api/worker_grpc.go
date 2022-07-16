@@ -556,6 +556,7 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 			s.StreamsDao.SaveCOMBURL(&stream, request.HlsUrl)
 		}
 		NotifyViewersLiveState(stream.Model.ID, true)
+		NotifyLiveUpdateCourseWentLive(stream.Model.ID)
 	}()
 
 	return &pb.Status{Ok: true}, nil
