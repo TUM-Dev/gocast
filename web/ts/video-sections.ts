@@ -63,6 +63,7 @@ export abstract class VideoSections {
  */
 export class VideoSectionsMobile extends VideoSections {
     minimize: boolean;
+
     getList(): Section[] {
         return this.minimize ? [this.list.at(this.currentHighlightIndex)] : this.list;
     }
@@ -90,9 +91,8 @@ export class VideoSectionsDesktop extends VideoSections {
     }
 
     getList(): Section[] {
-        console.log("hello");
         const currentHighlightPage = Math.floor(this.currentHighlightIndex / this.sectionsPerGroup);
-        const startIndex = this.followSections ? currentHighlightPage : this.currentIndex;
+        const startIndex = this.followSections && this.validHighlightIndex() ? currentHighlightPage : this.currentIndex;
         return this.list.slice(
             startIndex * this.sectionsPerGroup,
             startIndex * this.sectionsPerGroup + this.sectionsPerGroup,

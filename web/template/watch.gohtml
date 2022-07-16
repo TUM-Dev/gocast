@@ -12,8 +12,6 @@
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
     <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
     <link rel="stylesheet" href="/static/node_modules/@silvermine/videojs-airplay/dist/silvermine-videojs-airplay.css">
-    <link rel="stylesheet"
-          href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
 </head>
 <body x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}, seekLogger: new watch.SeekLogger('{{$stream.ID}}')}"
       x-on:pausestart.window="paused=true"
@@ -199,8 +197,8 @@
                         {{end}}
                         {{if .AlertsEnabled}}
                             <button @click="$dispatch('issue');location.href='#';location.href='#alertModal'"
-                                title="Issues with the stream? Send a report to the RGB."
-                                class="bg-amber-500 text-center md:w-28 md:inline-block block lg:w-32 {{if $stream.LectureHallID}}md:float-right{{end}} w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
+                                    title="Issues with the stream? Send a report to the RGB."
+                                    class="bg-amber-500 text-center md:w-28 md:inline-block block lg:w-32 {{if $stream.LectureHallID}}md:float-right{{end}} w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
                                 <i class="fas fa-exclamation-triangle mr-1"></i>Problem
                             </button>
                         {{end}}

@@ -3,14 +3,13 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-	"time"
-
-	"github.com/russross/blackfriday/v2"
-
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/russross/blackfriday/v2"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"time"
 )
 
 // StreamStatus is the status of a stream (e.g. converting)
@@ -92,6 +91,7 @@ func (s Stream) GetThumbIdForSource(source string) uint {
 			return file.ID
 		}
 	}
+	log.WithField("fileType", fileType).Error("Could not find thumbnail for file type")
 	return FILETYPE_INVALID
 }
 
