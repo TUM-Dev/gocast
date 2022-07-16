@@ -144,6 +144,7 @@ func main() {
 		&model.UserSetting{},
 		&model.Audit{},
 		&model.InfoPage{},
+		&model.Bookmark{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
