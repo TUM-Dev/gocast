@@ -62,19 +62,34 @@ func (mr *MockBookmarkDaoMockRecorder) Delete(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockBookmarkDao)(nil).Delete), arg0)
 }
 
-// GetByStreamID mocks base method.
-func (m *MockBookmarkDao) GetByStreamID(arg0 uint) ([]model.Bookmark, error) {
+// GetByID mocks base method.
+func (m *MockBookmarkDao) GetByID(arg0 uint) (model.Bookmark, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByStreamID", arg0)
+	ret := m.ctrl.Call(m, "GetByID", arg0)
+	ret0, _ := ret[0].(model.Bookmark)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByID indicates an expected call of GetByID.
+func (mr *MockBookmarkDaoMockRecorder) GetByID(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockBookmarkDao)(nil).GetByID), arg0)
+}
+
+// GetByStreamID mocks base method.
+func (m *MockBookmarkDao) GetByStreamID(arg0, arg1 uint) ([]model.Bookmark, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByStreamID", arg0, arg1)
 	ret0, _ := ret[0].([]model.Bookmark)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetByStreamID indicates an expected call of GetByStreamID.
-func (mr *MockBookmarkDaoMockRecorder) GetByStreamID(arg0 interface{}) *gomock.Call {
+func (mr *MockBookmarkDaoMockRecorder) GetByStreamID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByStreamID", reflect.TypeOf((*MockBookmarkDao)(nil).GetByStreamID), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByStreamID", reflect.TypeOf((*MockBookmarkDao)(nil).GetByStreamID), arg0, arg1)
 }
 
 // Update mocks base method.
