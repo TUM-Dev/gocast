@@ -24,6 +24,7 @@ func ConfigGinRouter(router *gin.Engine) {
 	configGinLectureHallApiRouter(router, daoWrapper, tools.NewPresetUtility(daoWrapper.LectureHallsDao))
 	configGinSexyApiRouter(router, daoWrapper)
 	configProgressRouter(router, daoWrapper)
+	configSeekStatsRouter(router, daoWrapper)
 	configServerNotificationsRoutes(router, daoWrapper)
 	configTokenRouter(router, daoWrapper)
 	configWorkerRouter(router, daoWrapper)

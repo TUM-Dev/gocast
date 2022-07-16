@@ -170,6 +170,21 @@ var (
 		RawContent: "#data privacy",
 		Type:       model.INFOPAGE_MARKDOWN,
 	}
+	FPVNotLiveVideoSeekChunk1 = model.VideoSeekChunk{
+		ChunkIndex: 1,
+		StreamID:   StreamFPVNotLive.ID,
+		Hits:       247,
+	}
+	FPVNotLiveVideoSeekChunk2 = model.VideoSeekChunk{
+		ChunkIndex: 2,
+		StreamID:   StreamFPVNotLive.ID,
+		Hits:       112,
+	}
+	FPVNotLiveVideoSeekChunk3 = model.VideoSeekChunk{
+		ChunkIndex: 3,
+		StreamID:   StreamFPVNotLive.ID,
+		Hits:       788,
+	}
 )
 
 func GetStreamMock(t *testing.T) dao.StreamsDao {

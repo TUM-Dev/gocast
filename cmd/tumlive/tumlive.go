@@ -138,6 +138,7 @@ func main() {
 		&model.Poll{},
 		&model.PollOption{},
 		&model.VideoSection{},
+		&model.VideoSeekChunk{},
 		&model.Notification{},
 		&model.UploadKey{},
 		&model.Keyword{},
