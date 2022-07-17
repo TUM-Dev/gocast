@@ -27,7 +27,7 @@ func NewProgressDao() ProgressDao {
 
 // GetProgressesForUser returns all stored progresses for a user.
 func (d progressDao) GetProgressesForUser(userID uint) (r []model.StreamProgress, err error) {
-	return r, d.db.Where("user_id = ?", userID).Find(&r).Error
+	return r, DB.Where("user_id = ?", userID).Find(&r).Error
 }
 
 // SaveProgresses saves a slice of stream progresses. If a progress already exists, it will be updated.

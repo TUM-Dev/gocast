@@ -24,7 +24,6 @@ func setup() {
 		publishVoD:    true,
 		stream:        true,
 		endTime:       time.Now().Add(time.Hour),
-		commands:      nil,
 	}
 	cfg.TempDir = "/recordings"
 }
