@@ -35,7 +35,7 @@ func (m *MockKeywordDao) EXPECT() *MockKeywordDaoMockRecorder {
 }
 
 // NewKeywords mocks base method.
-func (m *MockKeywordDao) NewKeywords(keyword []model.Keyword) error {
+func (m *MockKeywordDao) NewKeywords(keyword *model.Keyword) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewKeywords", keyword)
 	ret0, _ := ret[0].(error)
