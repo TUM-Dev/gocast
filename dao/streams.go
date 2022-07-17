@@ -51,6 +51,8 @@ type StreamsDao interface {
 	DeleteStream(streamID string)
 	DeleteUnit(id uint)
 	DeleteStreamsWithTumID(ids []uint)
+	UpdateLectureSeries(model.Stream) error
+	DeleteLectureSeries(string) error
 }
 
 type streamsDao struct {
@@ -202,7 +204,7 @@ func UpdateStream(stream model.Stream) error {
 	return err
 }
 
-func UpdateLectureSeries(stream model.Stream) error {
+func (d streamsDao) UpdateLectureSeries(stream model.Stream) error {
 	defer Cache.Clear()
 	err := DB.Table("streams").Where(
 		"`series_identifier` = ? AND `deleted_at` IS NULL",
@@ -214,7 +216,7 @@ func UpdateLectureSeries(stream model.Stream) error {
 	return err
 }
 
-func DeleteLectureSeries(seriesIdentifier string) error {
+func (d streamsDao) DeleteLectureSeries(seriesIdentifier string) error {
 	defer Cache.Clear()
 	err := DB.Delete(&model.Stream{}, "`series_identifier` = ?", seriesIdentifier).Error
 	return err

@@ -14,8 +14,6 @@ import (
 func TestGetAudits(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	t.Parallel()
-
 	// audit mock
 	mock := mock_dao.NewMockAuditDao(gomock.NewController(t))
 	mock.EXPECT().Find(gomock.Any(), gomock.Any(), gomock.Any()).Return([]model.Audit{}, nil).AnyTimes()
