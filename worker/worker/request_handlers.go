@@ -90,6 +90,9 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 	} else {
 		ctx.TranscodingSuccessful = true
 	}
+	if ctx.canceled {
+		return
+	}
 	S.endTranscoding(ctx.getStreamName())
 	notifyTranscodingDone(ctx)
 	if ctx.publishVoD {
@@ -156,7 +159,8 @@ func HandleStreamEnd(ctx *StreamContext, cancelTranscoding bool) {
 	cancelCmdGroup(ctx.streamCmd)
 	if cancelTranscoding {
 		ctx.publishVoD = false
-		cancelCmdGroup(ctx.transcodingCmd)
+		ctx.canceled = true
+		cancelCmd(ctx.transcodingCmd)
 	}
 }
 
@@ -429,11 +433,13 @@ type StreamContext struct {
 	streamCmd      *exec.Cmd // command used for streaming
 	transcodingCmd *exec.Cmd // command used for transcoding
 	isSelfStream   bool      //deprecated
-	streamName     string    // ingest target
-	ingestServer   string    // ingest tumlive e.g. rtmp://user:password@my.tumlive
-	stopped        bool      // whether the stream has been stopped
-	outUrl         string    // url the stream will be available at
-	discardVoD     bool      // whether the VoD should be discarded
+	canceled       bool      // selfstreams are canceled when the same stream starts again.
+
+	streamName   string // ingest target
+	ingestServer string // ingest tumlive e.g. rtmp://user:password@my.tumlive
+	stopped      bool   // whether the stream has been stopped
+	outUrl       string // url the stream will be available at
+	discardVoD   bool   // whether the VoD should be discarded
 
 	// calculated after stream:
 	duration      uint32 //duration of the stream in seconds
