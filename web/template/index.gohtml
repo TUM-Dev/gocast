@@ -11,6 +11,7 @@
 {{template "header" .TUMLiveContext}}
 
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
+{{$user := .TUMLiveContext.User}}
 <div x-init="global.liveUpdateListener.init()" class="container flex flex-col pb-16">
     {{if .ServerNotifications}}
         {{range $notification := .ServerNotifications}}
@@ -22,6 +23,14 @@
         <p class="text-2"><a href="/login" class="underline">Log in</a> to see your courses</p>
     {{else if .TUMLiveContext.User.Name}}
         <p class="text-2">{{.TUMLiveContext.User.GetPreferredGreeting}} {{.TUMLiveContext.User.GetPreferredName}}, nice to see you!</p>
+    {{end}}
+    {{if .PinnedCourses}}
+        <h2 class="text-2xl text-1 mt-2">Pinned Courses</h2>
+        {{range $course := .PinnedCourses}}
+            {{if not $course.IsHidden}}
+                {{template "course-card" (dict "course" $course "user" $user)}}
+            {{end}}
+        {{end}}
     {{end}}
     {{if .LiveStreams}}
         <h2 class="text-2xl text-1">Active Livestreams</h2>
@@ -46,13 +55,13 @@
     {{end}}
     {{range $course := .Courses }}
         {{if not $course.IsHidden}}
-            {{template "course-card" $course}}
+            {{template "course-card" (dict "course" $course "user" $user) }}
         {{end}}
     {{end}}
     {{if .PublicCourses}}
         <h2 class="text-2xl text-1 mt-2">Public Courses</h2>
         {{range $course := .PublicCourses }}
-            {{template "course-card" $course}}
+            {{template "course-card" (dict "course" $course "user" $user)}}
         {{end}}
     {{end}}
     <div>

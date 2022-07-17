@@ -25,6 +25,7 @@ type UsersDao interface {
 	GetUserByResetKey(key string) (model.User, error)
 	DeleteResetKey(key string)
 	UpdateUser(user model.User) error
+	PinCourse(user model.User, course model.Course, pin bool) error
 	UpsertUser(user *model.User) error
 	AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error
 	AddUserSetting(userSetting *model.UserSetting) error
@@ -91,7 +92,7 @@ func (d usersDao) GetUserByID(ctx context.Context, id uint) (user model.User, er
 		return cached.(model.User), nil
 	}
 	var foundUser model.User
-	dbErr := DB.Preload("AdministeredCourses").Preload("Courses.Streams").Preload("Settings").Find(&foundUser, "id = ?", id).Error
+	dbErr := DB.Preload("AdministeredCourses").Preload("PinnedCourses.Streams").Preload("Courses.Streams").Preload("Settings").Find(&foundUser, "id = ?", id).Error
 	if dbErr == nil {
 		Cache.SetWithTTL(fmt.Sprintf("userById%d", id), foundUser, 1, time.Second*10)
 	}
@@ -126,6 +127,15 @@ func (d usersDao) DeleteResetKey(key string) {
 
 func (d usersDao) UpdateUser(user model.User) error {
 	return DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&user).Error
+}
+
+func (d usersDao) PinCourse(user model.User, course model.Course, pin bool) error {
+	defer Cache.Clear()
+	if pin {
+		return DB.Model(&user).Association("PinnedCourses").Append(&course)
+	} else {
+		return DB.Model(&user).Association("PinnedCourses").Delete(&course)
+	}
 }
 
 func (d usersDao) UpsertUser(user *model.User) error {
