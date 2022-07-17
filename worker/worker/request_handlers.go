@@ -47,7 +47,6 @@ func HandlePremiere(request *pb.PremiereRequest) {
 		streamVersion: "",
 		courseSlug:    "PREMIERE",
 		stream:        true,
-		commands:      nil,
 		ingestServer:  request.IngestServer,
 		outUrl:        request.OutUrl,
 	}
@@ -145,24 +144,33 @@ func (s *safeStreams) endStreams(request *pb.EndStreamRequest) {
 	stream := s.streams[request.StreamID]
 	for _, streamContext := range stream {
 		streamContext.discardVoD = request.DiscardVoD
-		HandleStreamEnd(streamContext)
+		HandleStreamEnd(streamContext, false)
 	}
 	// All streams should be ended right now, so we can delete them
 	delete(s.streams, request.StreamID)
 }
 
 // HandleStreamEnd stops the ffmpeg instance by sending a SIGINT to it and prevents the loop to restart it by marking the stream context as stopped.
-func HandleStreamEnd(ctx *StreamContext) {
+func HandleStreamEnd(ctx *StreamContext, cancelTranscoding bool) {
 	ctx.stopped = true
-	if ctx.streamCmd != nil && ctx.streamCmd.Process != nil {
-		pgid, err := syscall.Getpgid(ctx.streamCmd.Process.Pid)
+	cancelCmd(ctx.streamCmd)
+	if cancelTranscoding {
+		ctx.publishVoD = false
+		cancelCmd(ctx.transcodingCmd)
+	}
+}
+
+func cancelCmd(cmd *exec.Cmd) {
+	if cmd != nil && cmd.Process != nil {
+		pgid, err := syscall.Getpgid(cmd.Process.Pid)
 		if err != nil {
-			log.WithError(err).WithField("streamID", ctx.streamId).Warn("Can't find pgid for ffmpeg")
+			log.WithError(err).WithField("cmd", cmd.String()).Warn("Can't find pgid for ffmpeg")
 		} else {
+			log.Info("Sending SIGINT to pgid: -", pgid)
 			// We use the new pgid that we created in stream.go to actually interrupt the shell process with all its children
 			err := syscall.Kill(-pgid, syscall.SIGINT) // Note that the - is used to kill process groups
 			if err != nil {
-				log.WithError(err).WithField("streamID", ctx.streamId).Warn("Can't interrupt ffmpeg")
+				log.WithError(err).WithField("cmd", cmd.String()).Warn("Can't interrupt ffmpeg")
 			}
 		}
 	} else {
@@ -401,24 +409,24 @@ func moveFile(sourcePath, destPath string) error {
 
 // StreamContext contains all important information on a stream
 type StreamContext struct {
-	streamId      uint32         //id of the stream
-	sourceUrl     string         //url of the streams source, e.g. 10.0.0.4
-	courseSlug    string         //slug of the course, e.g. eidi
-	teachingTerm  string         //S or W depending on the courses teaching-term
-	teachingYear  uint32         //Year the course takes place in
-	startTime     time.Time      //time the stream should start
-	endTime       time.Time      //end of the stream (including +10 minute safety)
-	streamVersion string         //version of the stream to be handled, e.g. PRES, COMB or CAM
-	publishVoD    bool           //whether file should be uploaded
-	stream        bool           //whether streaming is enabled
-	commands      map[string]int //map command type to pid, e.g. "stream"->123
-	streamCmd     *exec.Cmd      // command used for streaming
-	isSelfStream  bool           //deprecated
-	streamName    string         // ingest target
-	ingestServer  string         // ingest tumlive e.g. rtmp://user:password@my.tumlive
-	stopped       bool           // whether the stream has been stopped
-	outUrl        string         // url the stream will be available at
-	discardVoD    bool           // whether the VoD should be discarded
+	streamId       uint32    //id of the stream
+	sourceUrl      string    //url of the streams source, e.g. 10.0.0.4
+	courseSlug     string    //slug of the course, e.g. eidi
+	teachingTerm   string    //S or W depending on the courses teaching-term
+	teachingYear   uint32    //Year the course takes place in
+	startTime      time.Time //time the stream should start
+	endTime        time.Time //end of the stream (including +10 minute safety)
+	streamVersion  string    //version of the stream to be handled, e.g. PRES, COMB or CAM
+	publishVoD     bool      //whether file should be uploaded
+	stream         bool      //whether streaming is enabled
+	streamCmd      *exec.Cmd // command used for streaming
+	transcodingCmd *exec.Cmd // command used for transcoding
+	isSelfStream   bool      //deprecated
+	streamName     string    // ingest target
+	ingestServer   string    // ingest tumlive e.g. rtmp://user:password@my.tumlive
+	stopped        bool      // whether the stream has been stopped
+	outUrl         string    // url the stream will be available at
+	discardVoD     bool      // whether the VoD should be discarded
 
 	// calculated after stream:
 	duration      uint32 //duration of the stream in seconds
