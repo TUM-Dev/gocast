@@ -255,12 +255,10 @@ func (r usersRoutes) addSingleUserToCourse(name string, email string, course mod
 	}
 }
 
-type pinRequest struct {
-	CourseID uint `json:"courseID"`
-}
-
 func (r usersRoutes) pinCourse(c *gin.Context, pin bool) {
-	var request pinRequest
+	var request struct {
+		CourseID uint `json:"courseID"`
+	}
 	err := c.BindJSON(&request)
 	if err != nil {
 		log.WithError(err).Error("Could not bind JSON.")
