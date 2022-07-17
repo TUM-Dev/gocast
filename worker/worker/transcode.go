@@ -30,7 +30,7 @@ func transcode(streamCtx *StreamContext) error {
 		cmd = exec.Command("nice", "-n", "10", "ffmpeg", "-y", "-nostats", "-i", in, "-vsync", "2", "-c:v", "libx264", "-level", "4.0", "-movflags", "+faststart", "-c:a", "aac", "-b:a", "128k", "-crf", "26", out)
 	}
 	log.WithFields(log.Fields{"input": in, "output": out, "command": cmd.String()}).Info("Transcoding")
-
+	streamCtx.transcodingCmd = cmd
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		log.WithFields(log.Fields{"output": string(output)}).Error("Transcoding failed")

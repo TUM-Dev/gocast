@@ -13,7 +13,7 @@
             </a>
         </div>
         {{range $lectureHall := .}}
-        <div x-data="{
+        <div id="{{$lectureHall.Model.ID}}" x-data="{
             changed:false,
             saved:false,
             savingFailed:false,
@@ -24,7 +24,8 @@
             cameraIp: '{{$lectureHall.CameraIP}}',
             pwrCtrlIp: '{{$lectureHall.PwrCtrlIp}}',
             id: '{{$lectureHall.ID}}',}"
-             class="w-full dark:border-secondary rounded-sm mb-6 bg-gray-100 shadow-md dark:bg-secondary-lighter shadow-md my-auto">
+             :class="window.location.hash.substr(1)===`${id}`?'dark:border-blue-500 border-blue-500':'dark:border-secondary'"
+             class="w-full rounded-sm mb-6 bg-gray-100 shadow-md dark:bg-secondary-lighter shadow-md my-auto border">
             <div class="dark:bg-secondary bg-gray-200 text-4 rounded-sm text-sm uppercase font-bold py-3 px-6 mb-3">
                 {{$lectureHall.Name}}
             </div>

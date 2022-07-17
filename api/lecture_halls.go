@@ -16,8 +16,8 @@ import (
 	"time"
 )
 
-func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
-	routes := lectureHallRoutes{daoWrapper}
+func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, utility tools.PresetUtility) {
+	routes := lectureHallRoutes{daoWrapper, utility}
 
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
@@ -42,6 +42,7 @@ func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper
 
 type lectureHallRoutes struct {
 	dao.DaoWrapper
+	presetUtility tools.PresetUtility
 }
 
 type updateLectureHallReq struct {
@@ -79,6 +80,7 @@ func (r lectureHallRoutes) updateLectureHall(c *gin.Context) {
 	if err != nil {
 		log.WithError(err).Error("Error while updating lecture hall")
 		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -138,7 +140,7 @@ func (r lectureHallRoutes) refreshLectureHallPresets(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	tools.FetchLHPresets(lh, r.LectureHallsDao)
+	r.presetUtility.FetchLHPresets(lh)
 }
 
 //go:embed template
@@ -147,6 +149,7 @@ var staticFS embed.FS
 func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 	templ, err := template.ParseFS(staticFS, "template/*.gotemplate")
 	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	foundContext, exists := c.Get("TUMLiveContext")
@@ -163,6 +166,7 @@ func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 	}
 	icalData, err := r.LectureHallsDao.GetStreamsForLectureHallIcal(queryUid)
 	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	c.Header("content-type", "text/calendar")
@@ -173,13 +177,8 @@ func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 }
 
 func (r lectureHallRoutes) switchPreset(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	if tumLiveContext.Stream == nil || !tumLiveContext.Stream.LiveNow {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
@@ -189,7 +188,7 @@ func (r lectureHallRoutes) switchPreset(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	tools.UsePreset(preset, r.LectureHallsDao)
+	r.presetUtility.UsePreset(preset)
 	time.Sleep(time.Second * 10)
 }
 
@@ -198,12 +197,14 @@ func (r lectureHallRoutes) takeSnapshot(c *gin.Context) {
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		sentry.CaptureException(err)
+		return
 	}
-	tools.TakeSnapshot(preset, r.LectureHallsDao)
+	r.presetUtility.TakeSnapshot(preset)
 	preset, err = r.LectureHallsDao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		sentry.CaptureException(err)
+		return
 	}
 	c.JSONP(http.StatusOK, gin.H{"path": fmt.Sprintf("/public/%s", preset.Image)})
 }

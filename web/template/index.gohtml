@@ -12,7 +12,7 @@
 
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
 {{$user := .TUMLiveContext.User}}
-<div class="container flex flex-col pb-16">
+<div x-init="global.liveUpdateListener.init()" class="container flex flex-col pb-16">
     {{if .ServerNotifications}}
         {{range $notification := .ServerNotifications}}
             <p class="{{if $notification.Warn}} text-red-400{{else}} text-yellow-400{{end}}"><i
@@ -46,6 +46,7 @@
                 {{end}}
                 <span class="bg-red-800 text-red-100 px-2 mr-1 capitalize rounded-full font-semibold">Live</span>
                 <span class="font-light text-3">{{printf "until %2d:%02d" $liveStream.Stream.End.Hour $liveStream.Stream.End.Minute}}</span>
+                {{if and $liveStream.LectureHall}}<a href="/admin/lectureHalls#{{$liveStream.LectureHall.Model.ID}}" class="font-semibold text-3"> - <i class="fas fa-location-pin"></i> {{$liveStream.LectureHall.Name}}</a>{{end}}
             </p>
         </div>
     {{end}}
@@ -72,6 +73,7 @@
     </div>
 </div>
 {{template "semesterselection" .}}
+{{template "reloadpagebutton" .}}
 </body>
 <!--       _
        .__(.)< (MEOW)

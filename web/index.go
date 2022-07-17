@@ -202,9 +202,19 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType) {
 			continue
 		}
+		var lectureHall *model.LectureHall
+		if tumLiveContext.User != nil && tumLiveContext.User.Role == model.AdminType && stream.LectureHallID != 0 {
+			lh, err := daoWrapper.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
+			if err != nil {
+				log.WithError(err).Error(err)
+			} else {
+				lectureHall = &lh
+			}
+		}
 		livestreams = append(livestreams, CourseStream{
-			Course: courseForLiveStream,
-			Stream: stream,
+			Course:      courseForLiveStream,
+			Stream:      stream,
+			LectureHall: lectureHall,
 		})
 	}
 
@@ -273,8 +283,9 @@ func (d *IndexData) LoadPublicCourses(coursesDao dao.CoursesDao) {
 }
 
 type CourseStream struct {
-	Course model.Course
-	Stream model.Stream
+	Course      model.Course
+	Stream      model.Stream
+	LectureHall *model.LectureHall
 }
 
 func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {

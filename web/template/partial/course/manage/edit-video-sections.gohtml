@@ -1,6 +1,6 @@
 {{define "editvideosections"}}
-    <div x-data="{videoSection: new admin.VideoSection(lecture.lectureId)}"
-         x-init="await videoSection.load()"
+    <div x-data="{videoSection: new admin.VideoSectionsAdmin(new admin.VideoSectionClient(lecture.lectureId), lecture.lectureId)}"
+         x-init="await videoSection.fetch()"
          class="border dark:border-gray-600 rounded mt-3">
         <template x-if="videoSection !== undefined">
             <div>
@@ -125,6 +125,5 @@
                 </button>
             </div>
         </template>
-
     </div>
 {{end}}

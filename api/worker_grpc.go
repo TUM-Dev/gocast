@@ -217,18 +217,9 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 				}
 			}()
 		}
-		// wait 2 hours to clear the dvr cache
+		// wait to clear the dvr cache
 		go func() {
-			time.Sleep(time.Hour * 2)
-			err := s.DaoWrapper.IngestServerDao.RemoveStreamFromSlot(stream.ID)
-			if err != nil {
-				log.WithError(err).Error("Can't remove stream from streamName")
-			}
-		}()
-
-		// wait 2 hours to clear the dvr cache
-		go func() {
-			time.Sleep(time.Hour * 2)
+			time.Sleep(time.Minute * 30)
 			err := s.DaoWrapper.IngestServerDao.RemoveStreamFromSlot(stream.ID)
 			if err != nil {
 				log.WithError(err).Error("Can't remove stream from streamName")
@@ -242,6 +233,28 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 		NotifyViewersLiveState(uint(request.StreamID), false)
 	}
 	return &pb.Status{Ok: true}, nil
+}
+
+func (s server) NewKeywords(ctx context.Context, request *pb.NewKeywordsRequest) (*pb.Status, error) {
+	if _, err := s.DaoWrapper.WorkerDao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
+		return nil, errors.New("authentication failed: invalid worker id")
+	} else {
+		keywords := make([]model.Keyword, len(request.Keywords))
+		for i, keyword := range request.Keywords {
+			keywords[i] = model.Keyword{
+				StreamID: uint(request.StreamID),
+				Text:     keyword,
+				Language: request.Language,
+			}
+		}
+		err := s.DaoWrapper.KeywordDao.NewKeywords(keywords)
+		if err != nil {
+			log.WithError(err).Println("Couldn't insert keyword")
+			return &pb.Status{Ok: false}, err
+		}
+
+		return &pb.Status{Ok: true}, nil
+	}
 }
 
 func handleCameraPositionSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) error {
@@ -543,6 +556,7 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 			s.StreamsDao.SaveCOMBURL(&stream, request.HlsUrl)
 		}
 		NotifyViewersLiveState(stream.Model.ID, true)
+		NotifyLiveUpdateCourseWentLive(stream.Model.ID)
 	}()
 
 	return &pb.Status{Ok: true}, nil
@@ -735,6 +749,9 @@ type generateVideoSectionImagesParameters struct {
 
 func DeleteVideoSectionImage(workerDao dao.WorkerDao, path string) error {
 	workers := workerDao.GetAliveWorkers()
+	if len(workers) == 0 {
+		return errors.New("no workers available")
+	}
 	workerIndex := getWorkerWithLeastWorkload(workers)
 	conn, err := dialIn(workers[workerIndex])
 	defer func() {
@@ -753,6 +770,9 @@ func DeleteVideoSectionImage(workerDao dao.WorkerDao, path string) error {
 
 func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *generateVideoSectionImagesParameters) error {
 	workers := daoWrapper.WorkerDao.GetAliveWorkers()
+	if len(workers) == 0 {
+		return errors.New("no workers available")
+	}
 	workerIndex := getWorkerWithLeastWorkload(workers)
 	conn, err := dialIn(workers[workerIndex])
 	defer func() {
