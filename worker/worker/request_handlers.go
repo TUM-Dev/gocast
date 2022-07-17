@@ -90,10 +90,11 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 	} else {
 		ctx.TranscodingSuccessful = true
 	}
+	S.endTranscoding(ctx.getStreamName())
 	if ctx.canceled {
+		// self stream restarted while transcoding
 		return
 	}
-	S.endTranscoding(ctx.getStreamName())
 	notifyTranscodingDone(ctx)
 	if ctx.publishVoD {
 		upload(ctx)
