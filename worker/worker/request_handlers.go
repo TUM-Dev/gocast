@@ -153,14 +153,14 @@ func (s *safeStreams) endStreams(request *pb.EndStreamRequest) {
 // HandleStreamEnd stops the ffmpeg instance by sending a SIGINT to it and prevents the loop to restart it by marking the stream context as stopped.
 func HandleStreamEnd(ctx *StreamContext, cancelTranscoding bool) {
 	ctx.stopped = true
-	cancelCmd(ctx.streamCmd)
+	cancelCmdGroup(ctx.streamCmd)
 	if cancelTranscoding {
 		ctx.publishVoD = false
 		cancelCmd(ctx.transcodingCmd)
 	}
 }
 
-func cancelCmd(cmd *exec.Cmd) {
+func cancelCmdGroup(cmd *exec.Cmd) {
 	if cmd != nil && cmd.Process != nil {
 		pgid, err := syscall.Getpgid(cmd.Process.Pid)
 		if err != nil {
@@ -172,6 +172,18 @@ func cancelCmd(cmd *exec.Cmd) {
 			if err != nil {
 				log.WithError(err).WithField("cmd", cmd.String()).Warn("Can't interrupt ffmpeg")
 			}
+		}
+	} else {
+		log.Warn("context has no command or process to end")
+	}
+}
+
+func cancelCmd(cmd *exec.Cmd) {
+	if cmd != nil && cmd.Process != nil {
+		log.Info("Sending SIGINT to pid: ", cmd.Process.Pid)
+		err := cmd.Process.Signal(syscall.SIGINT)
+		if err != nil {
+			log.WithError(err).WithField("cmd", cmd.String()).Warn("Can't interrupt ffmpeg")
 		}
 	} else {
 		log.Warn("context has no command or process to end")
