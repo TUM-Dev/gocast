@@ -156,22 +156,17 @@ func HandleStreamEnd(ctx *StreamContext, cancelTranscoding bool) {
 	cancelCmdGroup(ctx.streamCmd)
 	if cancelTranscoding {
 		ctx.publishVoD = false
-		cancelCmd(ctx.transcodingCmd)
+		cancelCmdGroup(ctx.transcodingCmd)
 	}
 }
 
 func cancelCmdGroup(cmd *exec.Cmd) {
 	if cmd != nil && cmd.Process != nil {
-		pgid, err := syscall.Getpgid(cmd.Process.Pid)
+		log.Info("Sending SIGINT to pgid: ", -cmd.Process.Pid)
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true} // avoid suicide when killing group (assign new group id)
+		err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
 		if err != nil {
-			log.WithError(err).WithField("cmd", cmd.String()).Warn("Can't find pgid for ffmpeg")
-		} else {
-			log.Info("Sending SIGINT to pgid: -", pgid)
-			// We use the new pgid that we created in stream.go to actually interrupt the shell process with all its children
-			err := syscall.Kill(-pgid, syscall.SIGINT) // Note that the - is used to kill process groups
-			if err != nil {
-				log.WithError(err).WithField("cmd", cmd.String()).Warn("Can't interrupt ffmpeg")
-			}
+			log.WithError(err).WithField("cmd", cmd.String()).Warn("can't kill command group")
 		}
 	} else {
 		log.Warn("context has no command or process to end")
