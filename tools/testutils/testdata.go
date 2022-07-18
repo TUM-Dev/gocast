@@ -53,7 +53,7 @@ var (
 		UserID:               1,
 		Name:                 "Funktionale Programmierung und Verifikation (IN0003)",
 		Slug:                 "fpv",
-		Year:                 0,
+		Year:                 2022,
 		TeachingTerm:         "W",
 		TUMOnlineIdentifier:  "2020",
 		LiveEnabled:          true,
