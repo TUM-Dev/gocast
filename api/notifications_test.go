@@ -81,7 +81,7 @@ func TestNotifications(t *testing.T) {
 				DaoWrapper: dao.DaoWrapper{
 					NotificationsDao: notificationDao([]model.NotificationTarget{model.TargetAll, model.TargetUser, model.TargetLecturer}),
 				},
-				TumLiveContext:   &testutils.TUMLiveContextAdmin,
+				TumLiveContext:   &testutils.TUMLiveContextLecturer,
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: res,
 			},
@@ -91,7 +91,7 @@ func TestNotifications(t *testing.T) {
 				DaoWrapper: dao.DaoWrapper{
 					NotificationsDao: notificationDao([]model.NotificationTarget{model.TargetAll, model.TargetUser, model.TargetStudent}),
 				},
-				TumLiveContext:   &testutils.TUMLiveContextAdmin,
+				TumLiveContext:   &testutils.TUMLiveContextStudent,
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: res,
 			},
