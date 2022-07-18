@@ -267,6 +267,8 @@ export class Lecture {
 
         if (res.status == StatusCodes.OK) {
             this.isChatEnabled = this.newIsChatEnabled;
+        } else {
+             res.text().then((t) => showMessage(t));
         }
         return res;
     }
