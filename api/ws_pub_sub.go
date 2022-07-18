@@ -75,6 +75,8 @@ func BroadcastToPubSubChannel(channelName string, payload gin.H) error {
 		}
 		pubSubClientsMutex.Unlock()
 	}
+
+	return nil
 }
 
 func SendInPubSubChannel(channelName string, clientId string, payload gin.H) error {
