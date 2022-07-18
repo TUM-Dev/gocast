@@ -1,199 +1,128 @@
 package api
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	"github.com/stretchr/testify/assert"
-	"gorm.io/gorm"
+	"github.com/joschahenningsen/TUM-Live/tools/testutils"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 )
 
 func TestProgressReport(t *testing.T) {
-	const PROGRESS_REPORT_URL = "/api/progressReport"
+	gin.SetMode(gin.TestMode)
 
-	t.Run("POST [invalid body]", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
+	t.Run("POST/api/progressReport", func(t *testing.T) {
+		url := "/api/progressReport"
 
-		configProgressRouter(r, dao.DaoWrapper{})
-
-		c.Request, _ = http.NewRequest(http.MethodPost, PROGRESS_REPORT_URL, nil)
-		r.ServeHTTP(w, c.Request)
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-	})
-
-	t.Run("POST [no context]", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
-
-		body, _ := json.Marshal(progressRequest{
+		req := progressRequest{
 			StreamID: uint(1),
 			Progress: 0,
-		})
+		}
 
-		configProgressRouter(r, dao.DaoWrapper{})
+		testCases := testutils.TestCases{
+			"invalid body": {
+				Method:       http.MethodPost,
+				Url:          url,
+				Body:         nil,
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"no context": {
+				Method:       http.MethodPost,
+				Url:          url,
+				Body:         req,
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"not logged in": {
+				Method:         http.MethodPost,
+				Url:            url,
+				Body:           req,
+				TumLiveContext: &testutils.TUMLiveContextUserNil,
+				ExpectedCode:   http.StatusForbidden,
+			},
+			"success": {
+				Method:         http.MethodPost,
+				Url:            url,
+				Body:           req,
+				TumLiveContext: &testutils.TUMLiveContextStudent,
+				ExpectedCode:   http.StatusOK,
+			},
+		}
 
-		c.Request, _ = http.NewRequest(http.MethodPost, PROGRESS_REPORT_URL, bytes.NewBuffer(body))
-		r.ServeHTTP(w, c.Request)
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-	})
-
-	t.Run("POST [not logged in]", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
-
-		body, _ := json.Marshal(progressRequest{
-			StreamID: uint(1),
-			Progress: 0,
-		})
-
-		r.Use(func(c *gin.Context) {
-			c.Set("TUMLiveContext", tools.TUMLiveContext{User: nil})
-		})
-
-		configProgressRouter(r, dao.DaoWrapper{})
-
-		c.Request, _ = http.NewRequest(http.MethodPost, PROGRESS_REPORT_URL, bytes.NewBuffer(body))
-		r.ServeHTTP(w, c.Request)
-
-		assert.Equal(t, http.StatusForbidden, w.Code)
-	})
-
-	t.Run("POST [success]", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
-
-		body, _ := json.Marshal(progressRequest{
-			StreamID: uint(1),
-			Progress: 0,
-		})
-
-		r.Use(func(c *gin.Context) {
-			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{}})
-		})
-
-		configProgressRouter(r, dao.DaoWrapper{})
-
-		c.Request, _ = http.NewRequest(http.MethodPost, PROGRESS_REPORT_URL, bytes.NewBuffer(body))
-		r.ServeHTTP(w, c.Request)
-
-		assert.Equal(t, http.StatusOK, w.Code)
+		testCases.Run(t, configProgressRouter)
 	})
 }
 
 func TestWatched(t *testing.T) {
-	const WATCHED_URL = "/api/watched"
+	gin.SetMode(gin.TestMode)
 
-	t.Run("POST [invalid body]", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
+	t.Run("POST/api/watched", func(t *testing.T) {
+		url := "/api/watched"
 
-		configProgressRouter(r, dao.DaoWrapper{})
-
-		c.Request, _ = http.NewRequest(http.MethodPost, WATCHED_URL, nil)
-		r.ServeHTTP(w, c.Request)
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-	})
-
-	t.Run("POST [no context]", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
-
-		body, _ := json.Marshal(watchedRequest{
-			StreamID: uint(1),
+		req := watchedRequest{
+			StreamID: testutils.StreamFPVLive.ID,
 			Watched:  true,
-		})
+		}
 
-		configProgressRouter(r, dao.DaoWrapper{})
+		testCases := testutils.TestCases{
+			"invalid body": {
+				Method:       http.MethodPost,
+				Url:          url,
+				Body:         nil,
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"no context": {
+				Method:         http.MethodPost,
+				Url:            url,
+				Body:           req,
+				TumLiveContext: nil,
+				ExpectedCode:   http.StatusBadRequest,
+			},
+			"not logged in": {
+				Method:         http.MethodPost,
+				Url:            url,
+				Body:           req,
+				TumLiveContext: &testutils.TUMLiveContextUserNil,
+				ExpectedCode:   http.StatusForbidden,
+			},
+			"can not save progress": {
+				Method:         http.MethodPost,
+				Url:            url,
+				Body:           req,
+				TumLiveContext: &testutils.TUMLiveContextStudent,
+				DaoWrapper: dao.DaoWrapper{
+					ProgressDao: func() dao.ProgressDao {
+						progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
+						progressMock.
+							EXPECT().
+							SaveWatchedState(gomock.Any()).
+							Return(errors.New(""))
+						return progressMock
+					}(),
+				},
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"success": {
+				Method:         http.MethodPost,
+				Url:            url,
+				Body:           req,
+				TumLiveContext: &testutils.TUMLiveContextStudent,
+				DaoWrapper: dao.DaoWrapper{
+					ProgressDao: func() dao.ProgressDao {
+						progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
+						progressMock.
+							EXPECT().
+							SaveWatchedState(gomock.Any()).
+							Return(nil)
+						return progressMock
+					}(),
+				},
+				ExpectedCode: http.StatusOK,
+			},
+		}
 
-		c.Request, _ = http.NewRequest(http.MethodPost, WATCHED_URL, bytes.NewBuffer(body))
-		r.ServeHTTP(w, c.Request)
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-	})
-
-	t.Run("POST [not logged in]", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
-
-		body, _ := json.Marshal(watchedRequest{
-			StreamID: uint(1),
-			Watched:  true,
-		})
-
-		r.Use(func(c *gin.Context) {
-			c.Set("TUMLiveContext", tools.TUMLiveContext{User: nil})
-		})
-
-		configProgressRouter(r, dao.DaoWrapper{})
-
-		c.Request, _ = http.NewRequest(http.MethodPost, WATCHED_URL, bytes.NewBuffer(body))
-		r.ServeHTTP(w, c.Request)
-
-		assert.Equal(t, http.StatusForbidden, w.Code)
-	})
-
-	t.Run("POST [SaveProgresses returns error]", func(t *testing.T) {
-		progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
-
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
-
-		body, _ := json.Marshal(watchedRequest{
-			StreamID: uint(1),
-			Watched:  true,
-		})
-
-		r.Use(func(c *gin.Context) {
-			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{}})
-		})
-
-		progressMock.EXPECT().SaveWatchedState(gomock.Any()).Return(errors.New(""))
-
-		configProgressRouter(r, dao.DaoWrapper{ProgressDao: progressMock})
-
-		c.Request, _ = http.NewRequest(http.MethodPost, WATCHED_URL, bytes.NewBuffer(body))
-		r.ServeHTTP(w, c.Request)
-
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
-	})
-
-	t.Run("POST [success]", func(t *testing.T) {
-		progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
-
-		w := httptest.NewRecorder()
-		c, r := gin.CreateTestContext(w)
-
-		body, _ := json.Marshal(watchedRequest{
-			StreamID: uint(1),
-			Watched:  true,
-		})
-
-		r.Use(func(c *gin.Context) {
-			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
-				Model: gorm.Model{ID: 1},
-			}})
-		})
-
-		progressMock.EXPECT().SaveWatchedState(gomock.Any()).Return(nil)
-
-		configProgressRouter(r, dao.DaoWrapper{ProgressDao: progressMock})
-
-		c.Request, _ = http.NewRequest(http.MethodPost, WATCHED_URL, bytes.NewBuffer(body))
-		r.ServeHTTP(w, c.Request)
-
-		assert.Equal(t, http.StatusOK, w.Code)
+		testCases.Run(t, configProgressRouter)
 	})
 }

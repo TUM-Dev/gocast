@@ -20,6 +20,7 @@ var (
 	TUMLiveContextStudent  = tools.TUMLiveContext{User: &Student}
 	TUMLiveContextLecturer = tools.TUMLiveContext{User: &Lecturer}
 	TUMLiveContextAdmin    = tools.TUMLiveContext{User: &Admin}
+	TUMLiveContextUserNil  = tools.TUMLiveContext{User: nil}
 )
 
 // Models
