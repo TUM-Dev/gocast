@@ -58,7 +58,7 @@ var (
 		LiveEnabled:          true,
 		VODEnabled:           false,
 		DownloadsEnabled:     false,
-		ChatEnabled:          false,
+		ChatEnabled:          true,
 		AnonymousChatEnabled: false,
 		ModeratedChatEnabled: false,
 		VodChatEnabled:       false,
@@ -228,6 +228,17 @@ var (
 		ChunkIndex: 3,
 		StreamID:   StreamFPVNotLive.ID,
 		Hits:       788,
+	}
+	PollStreamFPVLive = model.Poll{
+		Model:    gorm.Model{ID: uint(3)},
+		StreamID: StreamFPVLive.ID,
+		Stream:   StreamFPVLive,
+		Question: "1+1=?",
+		Active:   true,
+		PollOptions: []model.PollOption{
+			{Model: gorm.Model{ID: 0}, Answer: "2", Votes: []model.User{Student}},
+			{Model: gorm.Model{ID: 1}, Answer: "3", Votes: []model.User{}},
+		},
 	}
 )
 
