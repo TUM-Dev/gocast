@@ -28,31 +28,34 @@ const (
 func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := streamRoutes{daoWrapper}
 
-	// group for api users with token
-	tokenG := router.Group("/")
-	tokenG.Use(tools.AdminToken(daoWrapper))
-	tokenG.GET("/api/stream/live", routes.liveStreams)
+	stream := router.Group("/api/stream")
+	{
+		// Endpoint for API users with token
+		stream.GET("/live", tools.AdminToken(daoWrapper), routes.liveStreams)
+	}
 
-	// group for web api
-	adminG := router.Group("/")
-	adminG.Use(tools.InitStream(daoWrapper))
-	adminG.Use(tools.AdminOfCourse)
-	adminG.GET("/api/stream/:streamID", routes.getStream)
-	adminG.GET("/api/stream/:streamID/pause", routes.pauseStream)
-	adminG.GET("/api/stream/:streamID/end", routes.endStream)
-	adminG.POST("/api/stream/:streamID/issue", routes.reportStreamIssue)
-	adminG.PATCH("/api/stream/:streamID/visibility", routes.updateStreamVisibility)
-	adminG.POST("/api/stream/:streamID/sections", routes.createVideoSectionBatch)
-	adminG.DELETE("/api/stream/:streamID/sections/:id", routes.deleteVideoSection)
+	streamById := stream.Group("/:streamID")
+	streamById.Use(tools.InitStream(daoWrapper))
+	{
+		// All User Endpoints
+		streamById.GET("/sections", routes.getVideoSections)
+		streamById.GET("/thumbs/:fid", routes.getThumbs)
+	}
+	{
+		// Admin-Only Endpoints
+		admins := streamById.Use(tools.AdminOfCourse)
+		admins.GET("", routes.getStream)
+		admins.GET("/pause", routes.pauseStream)
+		admins.GET("/end", routes.endStream)
+		admins.POST("/issue", routes.reportStreamIssue)
+		admins.PATCH("/visibility", routes.updateStreamVisibility)
 
-	// group for non-admin web api
-	g := router.Group("/")
-	g.Use(tools.InitStream(daoWrapper))
-	g.GET("/api/stream/:streamID/sections", routes.getVideoSections)
-	g.GET("/api/stream/:streamID/thumbs/:fid", routes.getThumbs)
+		admins.POST("/sections", routes.createVideoSectionBatch)
+		admins.DELETE("/sections/:id", routes.deleteVideoSection)
 
-	adminG.POST("/api/stream/:streamID/files", routes.newAttachment)
-	adminG.DELETE("/api/stream/:streamID/files/:fid", routes.deleteAttachment)
+		admins.POST("/files", routes.newAttachment)
+		admins.DELETE("/files/:fid", routes.deleteAttachment)
+	}
 }
 
 type streamRoutes struct {
