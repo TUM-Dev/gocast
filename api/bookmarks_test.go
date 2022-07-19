@@ -19,7 +19,7 @@ func TestBookmarks(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	t.Run("POST/api/bookmarks", func(t *testing.T) {
-		url := fmt.Sprintf("/api/bookmarks")
+		url := "/api/bookmarks"
 
 		req := AddBookmarkRequest{
 			StreamID:    testutils.StreamFPVLive.ID,
