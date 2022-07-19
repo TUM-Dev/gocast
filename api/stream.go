@@ -32,29 +32,29 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	{
 		// Endpoint for API users with token
 		stream.GET("/live", tools.AdminToken(daoWrapper), routes.liveStreams)
-	}
 
-	streamById := stream.Group("/:streamID")
-	streamById.Use(tools.InitStream(daoWrapper))
-	{
-		// All User Endpoints
-		streamById.GET("/sections", routes.getVideoSections)
-		streamById.GET("/thumbs/:fid", routes.getThumbs)
-	}
-	{
-		// Admin-Only Endpoints
-		admins := streamById.Use(tools.AdminOfCourse)
-		admins.GET("", routes.getStream)
-		admins.GET("/pause", routes.pauseStream)
-		admins.GET("/end", routes.endStream)
-		admins.POST("/issue", routes.reportStreamIssue)
-		admins.PATCH("/visibility", routes.updateStreamVisibility)
+		streamById := stream.Group("/:streamID")
+		streamById.Use(tools.InitStream(daoWrapper))
+		{
+			// All User Endpoints
+			streamById.GET("/sections", routes.getVideoSections)
+			streamById.GET("/thumbs/:fid", routes.getThumbs)
+		}
+		{
+			// Admin-Only Endpoints
+			admins := streamById.Use(tools.AdminOfCourse)
+			admins.GET("", routes.getStream)
+			admins.GET("/pause", routes.pauseStream)
+			admins.GET("/end", routes.endStream)
+			admins.POST("/issue", routes.reportStreamIssue)
+			admins.PATCH("/visibility", routes.updateStreamVisibility)
 
-		admins.POST("/sections", routes.createVideoSectionBatch)
-		admins.DELETE("/sections/:id", routes.deleteVideoSection)
+			admins.POST("/sections", routes.createVideoSectionBatch)
+			admins.DELETE("/sections/:id", routes.deleteVideoSection)
 
-		admins.POST("/files", routes.newAttachment)
-		admins.DELETE("/files/:fid", routes.deleteAttachment)
+			admins.POST("/files", routes.newAttachment)
+			admins.DELETE("/files/:fid", routes.deleteAttachment)
+		}
 	}
 }
 
