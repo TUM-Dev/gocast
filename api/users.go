@@ -27,6 +27,13 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	router.POST("/api/users/settings/enableCast", routes.updateEnableCast)
 	router.POST("/api/users/settings/playbackSpeeds", routes.updatePlaybackSpeeds)
 
+	router.POST("/api/users/pinCourse", func(c *gin.Context) {
+		routes.pinCourse(c, true)
+	})
+	router.POST("/api/users/unpinCourse", func(c *gin.Context) {
+		routes.pinCourse(c, false)
+	})
+
 	router.GET("/api/users/exportData", routes.exportPersonalData)
 
 	admins := router.Group("/api")
@@ -285,6 +292,42 @@ func (r usersRoutes) addSingleUserToCourse(name string, email string, course mod
 		if err != nil {
 			log.Printf("%v", err)
 		}
+	}
+}
+
+func (r usersRoutes) pinCourse(c *gin.Context, pin bool) {
+	var request struct {
+		CourseID uint `json:"courseID"`
+	}
+	err := c.BindJSON(&request)
+	if err != nil {
+		log.WithError(err).Error("Could not bind JSON.")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	if tumLiveContext.User == nil {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+
+	// Find course
+	course, err := r.CoursesDao.GetCourseById(context.Background(), request.CourseID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	// Update user in database
+	err = r.UsersDao.PinCourse(*tumLiveContext.User, course, pin)
+	if err != nil {
+		log.WithError(err).Error("Can't update user")
+		return
 	}
 }
 

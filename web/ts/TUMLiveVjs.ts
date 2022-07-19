@@ -9,7 +9,6 @@ import dom = videojs.dom;
 
 require("videojs-sprite-thumbnails");
 require("videojs-seek-buttons");
-require("videojs-hls-quality-selector");
 require("videojs-contrib-quality-levels");
 
 const Button = videojs.getComponent("Button");
@@ -64,8 +63,6 @@ export const initPlayer = function (
             height: 90,
         });
     }
-
-    player.hlsQualitySelector();
     player.seekButtons({
         // TODO user preferences, e.g. change to 5s
         backIndex: 0,
@@ -416,6 +413,37 @@ export function jumpTo(hours: number, minutes: number, seconds: number) {
     });
 }
 
+type SeekLoggerLogFunction = (position: number) => void;
+const SEEK_LOGGER_DEBOUNCE_TIMEOUT = 4000;
+export class SeekLogger {
+    readonly streamID: number;
+    log: SeekLoggerLogFunction;
+
+    initialSeekDone = false;
+
+    constructor(streamID) {
+        this.streamID = parseInt(streamID);
+        this.log = debounce(
+            (position) => postData(`/api/seekReport/${this.streamID}`, { position }),
+            SEEK_LOGGER_DEBOUNCE_TIMEOUT,
+        );
+    }
+
+    attach() {
+        player.ready(() => {
+            player.on("seeked", () => {
+                if (this.initialSeekDone) {
+                    return this.log(player.currentTime());
+                }
+                this.initialSeekDone = true;
+            });
+
+            // If there is no initial seek, reset after 3 second
+            setTimeout(() => (this.initialSeekDone = true), 3000);
+        });
+    }
+}
+
 export function attachCurrentTimeEvent(videoSection: VideoSections) {
     player.ready(() => {
         let timer;
@@ -443,6 +471,14 @@ function hightlight(player, videoSection) {
 
 function toSeconds(hours: number, minutes: number, seconds: number): number {
     return hours * 60 * 60 + minutes * 60 + seconds;
+}
+
+function debounce(func, timeout) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => func.apply(this, args), timeout);
+    };
 }
 
 // Register the plugin with video.js.

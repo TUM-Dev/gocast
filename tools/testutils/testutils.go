@@ -2,6 +2,8 @@ package testutils
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/tools"
@@ -22,7 +24,7 @@ type TestCase struct {
 	DaoWrapper       dao.DaoWrapper
 	TumLiveContext   *tools.TUMLiveContext
 	ContentType      string
-	Body             io.Reader
+	Body             interface{}
 	ExpectedCode     int
 	ExpectedResponse []byte
 
@@ -34,6 +36,8 @@ func (tc TestCases) Run(t *testing.T, configRouterFunc func(*gin.Engine, dao.Dao
 		if testCase.Before != nil {
 			testCase.Before()
 		}
+
+		// Run test
 		t.Run(name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, r := gin.CreateTestContext(w)
@@ -48,10 +52,8 @@ func (tc TestCases) Run(t *testing.T, configRouterFunc func(*gin.Engine, dao.Dao
 
 			configRouterFunc(r, testCase.DaoWrapper)
 
-			c.Request, _ = http.NewRequest(testCase.Method, testCase.Url, testCase.Body)
-			if len(testCase.ContentType) > 0 {
-				c.Request.Header.Set("Content-Type", testCase.ContentType)
-			}
+			c.Request, _ = http.NewRequest(testCase.Method, testCase.Url, testCase.getBody())
+			c.Request.Header.Set("Content-Type", testCase.getContentType())
 			r.ServeHTTP(w, c.Request)
 
 			assert.Equal(t, testCase.ExpectedCode, w.Code)
@@ -60,6 +62,35 @@ func (tc TestCases) Run(t *testing.T, configRouterFunc func(*gin.Engine, dao.Dao
 				assert.Equal(t, string(testCase.ExpectedResponse), w.Body.String())
 			}
 		})
+	}
+}
+
+func (c TestCase) getContentType() string {
+	if len(c.ContentType) > 0 {
+		return c.ContentType
+	}
+
+	return "application/json"
+}
+
+func (c TestCase) getBody() io.Reader {
+	if c.Body == nil {
+		return bytes.NewBuffer([]byte{})
+	}
+	switch c.Body.(type) {
+	case io.Reader:
+		return c.Body.(io.Reader)
+	case string:
+		return bytes.NewBufferString(c.Body.(string))
+	case []byte:
+		return bytes.NewBuffer(c.Body.([]byte))
+	default:
+		j, err := json.Marshal(c.Body)
+		if err != nil {
+			panic(errors.New("invalid body type"))
+		}
+
+		return bytes.NewBuffer(j)
 	}
 }
 

@@ -141,16 +141,8 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 
 // updatePresets updates the CameraPresets of a course
 func (r coursesRoutes) updatePresets(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "context should exist but doesn't",
-		})
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	course := tumLiveContext.Course
 	if course == nil {
 		_ = c.Error(tools.RequestError{
@@ -223,14 +215,7 @@ func (r coursesRoutes) activateCourseByToken(c *gin.Context) {
 }
 
 func (r coursesRoutes) removeAdminFromCourse(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	userID, err := strconv.ParseUint(c.Param("userID"), 10, 32)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -280,13 +265,7 @@ func (r coursesRoutes) removeAdminFromCourse(c *gin.Context) {
 }
 
 func (r coursesRoutes) addAdminToCourse(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	id := c.Param("userID")
 	idUint, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
@@ -329,13 +308,7 @@ func (r coursesRoutes) addAdminToCourse(c *gin.Context) {
 }
 
 func (r coursesRoutes) getAdmins(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	admins, err := r.CoursesDao.GetCourseAdmins(tumLiveContext.Course.ID)
 	if err != nil {
 		log.WithError(err).Error("error getting course admins")
@@ -423,13 +396,8 @@ func (r coursesRoutes) lectureHalls(c *gin.Context, course model.Course) {
 }
 
 func (r coursesRoutes) submitCut(c *gin.Context) {
-	body, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
-		return
-	}
 	var req submitCutRequest
-	if err = json.Unmarshal(body, &req); err != nil {
+	if err := c.BindJSON(&req); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
 		return
 	}
@@ -441,7 +409,8 @@ func (r coursesRoutes) submitCut(c *gin.Context) {
 	stream.StartOffset = req.From
 	stream.EndOffset = req.To
 	if err = r.StreamsDao.SaveStream(&stream); err != nil {
-		panic(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -461,16 +430,12 @@ func (r coursesRoutes) deleteUnit(c *gin.Context) {
 }
 
 func (r coursesRoutes) addUnit(c *gin.Context) {
-	body, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
-		return
-	}
 	var req addUnitRequest
-	if err = json.Unmarshal(body, &req); err != nil {
+	if err := c.BindJSON(&req); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
 		return
 	}
+
 	stream, err := r.StreamsDao.GetStreamByID(context.Background(), strconv.Itoa(int(req.LectureID)))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "stream not found"})
@@ -484,7 +449,8 @@ func (r coursesRoutes) addUnit(c *gin.Context) {
 		StreamID:        stream.Model.ID,
 	})
 	if err = r.StreamsDao.UpdateStreamFullAssoc(&stream); err != nil {
-		panic(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -570,7 +536,7 @@ func (r coursesRoutes) updateLectureSeries(c *gin.Context) {
 		return
 	}
 
-	if err := dao.UpdateLectureSeries(stream); err != nil {
+	if err := r.StreamsDao.UpdateLectureSeries(stream); err != nil {
 		log.WithError(err).Error("couldn't update lecture series")
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't update lecture series")
 		return
@@ -601,7 +567,7 @@ func (r coursesRoutes) deleteLectureSeries(c *gin.Context) {
 	}); err != nil {
 		log.Error("Create Audit:", err)
 	}
-	if err := dao.DeleteLectureSeries(stream.SeriesIdentifier); err != nil {
+	if err := r.StreamsDao.DeleteLectureSeries(stream.SeriesIdentifier); err != nil {
 		log.WithError(err).Error("couldn't delete lecture series")
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't delete lecture series")
 		return
@@ -609,23 +575,10 @@ func (r coursesRoutes) deleteLectureSeries(c *gin.Context) {
 }
 
 func (r coursesRoutes) deleteLectures(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	var req deleteLecturesRequest
-	err = json.Unmarshal(jsonData, &req)
-	if err != nil {
+	if err := c.Bind(&req); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
@@ -653,13 +606,8 @@ func (r coursesRoutes) deleteLectures(c *gin.Context) {
 }
 
 func (r coursesRoutes) createLecture(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	var req createLectureRequest
 	if err := c.ShouldBind(&req); err != nil {
 		log.WithError(err).Error("invalid form")
@@ -757,6 +705,7 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 	err = r.CoursesDao.UpdateCourse(context.Background(), *tumLiveContext.Course)
 	if err != nil {
 		log.WithError(err).Warn("Can't update course")
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 }
 
@@ -771,24 +720,14 @@ type createLectureRequest struct {
 }
 
 func (r coursesRoutes) createCourse(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	var req createCourseRequest
-	err = json.Unmarshal(jsonData, &req)
-	if err != nil {
+	if err := c.BindJSON(&req); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+
 	match, err := regexp.MatchString("(enrolled|public|loggedin|hidden)", req.Access)
 	if err != nil || !match {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -852,6 +791,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 	courseWithID, err := r.CoursesDao.GetCourseBySlugYearAndTerm(context.Background(), req.Slug, semester, year)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "Could not get course for slug and term. Please reach out to us.")
+		return
 	}
 	// refresh enrollments and lectures
 	courses := make([]model.Course, 1)
@@ -862,14 +802,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 }
 
 func (r coursesRoutes) deleteCourse(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	log.WithFields(log.Fields{
 		"user":   tumLiveContext.User.ID,

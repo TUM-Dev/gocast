@@ -20,8 +20,6 @@ import (
 func TestStream(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	t.Parallel()
-
 	t.Run("GET/api/stream/live", func(t *testing.T) {
 		response := []liveStreamDto{
 			{
@@ -331,7 +329,6 @@ func TestStream(t *testing.T) {
 
 func TestStreamVideoSections(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	t.Parallel()
 	t.Run("GET/api/stream/:streamID/sections", func(t *testing.T) {
 		// generate same response as in handler
 		response := []gin.H{}
