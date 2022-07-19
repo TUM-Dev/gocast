@@ -230,6 +230,15 @@ var (
 		StreamID:   StreamFPVNotLive.ID,
 		Hits:       788,
 	}
+	Bookmark = model.Bookmark{
+		Model:       gorm.Model{ID: 1},
+		Description: "Klausurrelevant",
+		Hours:       1,
+		Minutes:     33,
+		Seconds:     7,
+		UserID:      Student.ID,
+		StreamID:    StreamFPVLive.ID,
+	}
 )
 
 func GetStreamMock(t *testing.T) dao.StreamsDao {

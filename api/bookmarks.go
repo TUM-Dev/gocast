@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
@@ -14,6 +15,7 @@ func configGinBookmarksRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := bookmarkRoutes{daoWrapper}
 	bookmarks := router.Group("/api/bookmarks")
 	{
+		//bookmarks.Use(tools.InitContext(daoWrapper))
 		bookmarks.Use(tools.LoggedIn)
 		bookmarks.POST("", routes.Add)
 		bookmarks.GET("", routes.GetByStreamID)
@@ -26,7 +28,7 @@ type bookmarkRoutes struct {
 	dao.DaoWrapper
 }
 
-type AddRequest struct {
+type AddBookmarkRequest struct {
 	StreamID    uint   `json:"streamID"`
 	Description string `json:"description"`
 	Hours       uint   `json:"hours"`
@@ -34,7 +36,7 @@ type AddRequest struct {
 	Seconds     uint   `json:"seconds"`
 }
 
-func (r AddRequest) ToBookmark(userID uint) model.Bookmark {
+func (r AddBookmarkRequest) ToBookmark(userID uint) model.Bookmark {
 	return model.Bookmark{
 		Description: r.Description,
 		Hours:       r.Hours,
@@ -47,13 +49,14 @@ func (r AddRequest) ToBookmark(userID uint) model.Bookmark {
 
 func (r bookmarkRoutes) Add(c *gin.Context) {
 	var err error
-	var req AddRequest
+	var req AddBookmarkRequest
 	var user *model.User
 	var bookmark model.Bookmark
 
 	err = c.BindJSON(&req)
 	if err != nil {
 		// TODO: New Error handling
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
@@ -62,29 +65,36 @@ func (r bookmarkRoutes) Add(c *gin.Context) {
 	err = r.BookmarkDao.Add(&bookmark)
 	if err != nil {
 		// TODO: New Error handling
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 }
 
-type GetQuery struct {
-	StreamID uint `form:"streamID"`
+type GetBookmarksQuery struct {
+	StreamID uint `form:"streamID" binding:"required"`
 }
 
 func (r bookmarkRoutes) GetByStreamID(c *gin.Context) {
 	var err error
-	var query GetQuery
+	var query GetBookmarksQuery
 	var user *model.User
 	var bookmarks []model.Bookmark
 
 	err = c.BindQuery(&query)
 	if err != nil {
 		// TODO: New Error handling
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	user = c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
 	bookmarks, err = r.BookmarkDao.GetByStreamID(query.StreamID, user.ID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+		c.AbortWithStatus(http.StatusInternalServerError)
 		// TODO: New Error handling
 		return
 	}
@@ -92,14 +102,14 @@ func (r bookmarkRoutes) GetByStreamID(c *gin.Context) {
 	c.JSON(http.StatusOK, bookmarks)
 }
 
-type UpdateRequest struct {
+type UpdateBookmarkRequest struct {
 	Description string `json:"description"`
 	Hours       uint   `json:"hours"`
 	Minutes     uint   `json:"minutes"`
 	Seconds     uint   `json:"seconds"`
 }
 
-func (r UpdateRequest) ToBookmark(id uint) model.Bookmark {
+func (r UpdateBookmarkRequest) ToBookmark(id uint) model.Bookmark {
 	return model.Bookmark{
 		Model:       gorm.Model{ID: id},
 		Description: r.Description,
@@ -111,7 +121,7 @@ func (r UpdateRequest) ToBookmark(id uint) model.Bookmark {
 
 func (r bookmarkRoutes) Update(c *gin.Context) {
 	var err error
-	var req UpdateRequest
+	var req UpdateBookmarkRequest
 	var user *model.User
 	var bookmark model.Bookmark
 	var id int
@@ -119,12 +129,14 @@ func (r bookmarkRoutes) Update(c *gin.Context) {
 	id, err = strconv.Atoi(c.Param("id"))
 	if err != nil {
 		// TODO: New Error handling
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	err = c.BindJSON(&req)
 	if err != nil {
 		// TODO: New Error handling
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
@@ -132,6 +144,11 @@ func (r bookmarkRoutes) Update(c *gin.Context) {
 	bookmark, err = r.BookmarkDao.GetByID(uint(id))
 	if err != nil {
 		// TODO: New Error handling
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
@@ -145,6 +162,7 @@ func (r bookmarkRoutes) Update(c *gin.Context) {
 	err = r.BookmarkDao.Update(&bookmark)
 	if err != nil {
 		// TODO: New Error handling
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 }
@@ -158,6 +176,7 @@ func (r bookmarkRoutes) Delete(c *gin.Context) {
 	id, err = strconv.Atoi(c.Param("id"))
 	if err != nil {
 		// TODO: New Error handling
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
@@ -165,6 +184,11 @@ func (r bookmarkRoutes) Delete(c *gin.Context) {
 	bookmark, err = r.BookmarkDao.GetByID(uint(id))
 	if err != nil {
 		// TODO: New Error handling
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
@@ -177,6 +201,7 @@ func (r bookmarkRoutes) Delete(c *gin.Context) {
 	err = r.BookmarkDao.Delete(uint(id))
 	if err != nil {
 		// TODO: New Error handling
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 }
