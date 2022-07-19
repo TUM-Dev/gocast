@@ -217,14 +217,10 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 				}
 			}()
 		}
-		// wait to clear the dvr cache
-		go func() {
-			time.Sleep(time.Minute * 30)
-			err := s.DaoWrapper.IngestServerDao.RemoveStreamFromSlot(stream.ID)
-			if err != nil {
-				log.WithError(err).Error("Can't remove stream from streamName")
-			}
-		}()
+		err = s.DaoWrapper.IngestServerDao.RemoveStreamFromSlot(stream.ID)
+		if err != nil {
+			log.WithError(err).Error("Can't remove stream from streamName")
+		}
 
 		err = s.StreamsDao.SetStreamNotLiveById(uint(request.StreamID))
 		if err != nil {
@@ -556,6 +552,7 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 			s.StreamsDao.SaveCOMBURL(&stream, request.HlsUrl)
 		}
 		NotifyViewersLiveState(stream.Model.ID, true)
+		NotifyLiveUpdateCourseWentLive(stream.Model.ID)
 	}()
 
 	return &pb.Status{Ok: true}, nil

@@ -43,6 +43,8 @@ func GinServer() (err error) {
 	// event streams don't work with gzip, configure group without
 	chat := router.Group("/api/chat")
 	api.ConfigChatRouter(chat)
+	liveUpdates := router.Group("/api/live-update")
+	api.ConfigLiveUpdateRouter(liveUpdates)
 
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	api.ConfigGinRouter(router)
@@ -138,6 +140,7 @@ func main() {
 		&model.Poll{},
 		&model.PollOption{},
 		&model.VideoSection{},
+		&model.VideoSeekChunk{},
 		&model.Notification{},
 		&model.UploadKey{},
 		&model.Keyword{},
