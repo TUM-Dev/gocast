@@ -28,7 +28,7 @@ func TestReportSeek(t *testing.T) {
 			"position": testPosition,
 		})).([]byte)
 
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"missing position": {
 				Method:       http.MethodPost,
 				Url:          fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID),
@@ -82,9 +82,7 @@ func TestReportSeek(t *testing.T) {
 				},
 				ExpectedCode: http.StatusOK,
 			},
-		}
-
-		testCases.Run(t, configSeekStatsRouter)
+		}.Run(t, configSeekStatsRouter)
 	})
 
 	response := gin.H{
@@ -109,7 +107,7 @@ func TestReportSeek(t *testing.T) {
 
 		ctrl := gomock.NewController(t)
 
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"failed to read video seek chunks": {
 				Method: http.MethodGet,
 				Url:    fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID),
@@ -141,8 +139,6 @@ func TestReportSeek(t *testing.T) {
 				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
 				ExpectedCode:     http.StatusOK,
 			},
-		}
-
-		testCases.Run(t, configSeekStatsRouter)
+		}.Run(t, configSeekStatsRouter)
 	})
 }

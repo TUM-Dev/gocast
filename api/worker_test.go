@@ -17,7 +17,7 @@ func TestWorker(t *testing.T) {
 
 	t.Run("DELETE/api/workers/:workerID", func(t *testing.T) {
 		url := fmt.Sprintf("/api/workers/%s", testutils.Worker1.WorkerID)
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"can not delete worker": {
 				Method: http.MethodDelete,
 				Url:    url,
@@ -52,8 +52,6 @@ func TestWorker(t *testing.T) {
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				ExpectedCode:   http.StatusOK,
 			},
-		}
-
-		testCases.Run(t, configWorkerRouter)
+		}.Run(t, configWorkerRouter)
 	})
 }

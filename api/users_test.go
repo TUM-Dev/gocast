@@ -205,7 +205,7 @@ func TestUsersCRUD(t *testing.T) {
 			Role: model.AdminType,
 		})).([]byte)
 
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"POST[Invalid Body]": testutils.TestCase{
 				Method:     http.MethodPost,
 				Url:        "/api/users/update",
@@ -266,9 +266,7 @@ func TestUsersCRUD(t *testing.T) {
 				Body:         bytes.NewBuffer(request),
 				ExpectedCode: http.StatusOK,
 			},
-		}
-
-		testCases.Run(t, configGinUsersRouter)
+		}.Run(t, configGinUsersRouter)
 	})
 
 	t.Run("/deleteUser", func(t *testing.T) {
@@ -277,7 +275,7 @@ func TestUsersCRUD(t *testing.T) {
 			Id: userId,
 		})).([]byte)
 
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"POST[Invalid Body]": testutils.TestCase{
 				Method:     http.MethodPost,
 				Url:        "/api/deleteUser",
@@ -354,9 +352,7 @@ func TestUsersCRUD(t *testing.T) {
 				Body:         bytes.NewBuffer(request),
 				ExpectedCode: http.StatusOK,
 			},
-		}
-
-		testCases.Run(t, configGinUsersRouter)
+		}.Run(t, configGinUsersRouter)
 	})
 }
 
@@ -390,7 +386,7 @@ func TestSearchUserForCourse(t *testing.T) {
 				Login:    users[1].GetLoginString(),
 			},
 		})).([]byte)
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"GET[success]": testutils.TestCase{
 				Method: http.MethodGet,
 				Url:    "/api/searchUserForCourse?q=han",
@@ -407,8 +403,6 @@ func TestSearchUserForCourse(t *testing.T) {
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: response,
 			},
-		}
-
-		testCases.Run(t, configGinUsersRouter)
+		}.Run(t, configGinUsersRouter)
 	})
 }

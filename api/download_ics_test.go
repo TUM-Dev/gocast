@@ -29,7 +29,7 @@ func TestDownloadICS(t *testing.T) {
 
 		_ = templates.ExecuteTemplate(&res, "ics.gotemplate", calendarEntries)
 
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"invalid year": {
 				Method:       http.MethodGet,
 				Url:          fmt.Sprintf("/api/download_ics/%s/%s/%s/events.ics", "abc", term, slug),
@@ -73,8 +73,6 @@ func TestDownloadICS(t *testing.T) {
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: res.Bytes(),
 			},
-		}
-
-		testCases.Run(t, configGinDownloadICSRouter)
+		}.Run(t, configGinDownloadICSRouter)
 	})
 }

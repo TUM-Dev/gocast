@@ -19,7 +19,7 @@ func TestGetAudits(t *testing.T) {
 	mock.EXPECT().Find(gomock.Any(), gomock.Any(), gomock.Any()).Return([]model.Audit{}, nil).AnyTimes()
 	mock.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
 
-	testCases := testutils.TestCases{
+	testutils.TestCases{
 		"get audits": {
 			Method:         http.MethodGet,
 			Url:            "/api/audits?limit=1&offset=0&types[]=1",
@@ -27,6 +27,5 @@ func TestGetAudits(t *testing.T) {
 			TumLiveContext: &testutils.TUMLiveContextAdmin,
 			ExpectedCode:   http.StatusOK,
 		},
-	}
-	testCases.Run(t, configAuditRouter)
+	}.Run(t, configAuditRouter)
 }

@@ -66,7 +66,7 @@ func TestWatched(t *testing.T) {
 			Watched:  true,
 		}
 
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"invalid body": {
 				Method:       http.MethodPost,
 				Url:          url,
@@ -121,8 +121,6 @@ func TestWatched(t *testing.T) {
 				},
 				ExpectedCode: http.StatusOK,
 			},
-		}
-
-		testCases.Run(t, configProgressRouter)
+		}.Run(t, configProgressRouter)
 	})
 }

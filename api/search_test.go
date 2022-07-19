@@ -34,7 +34,7 @@ func TestSearch(t *testing.T) {
 			},
 		}
 
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"missing query": {
 				Method:       http.MethodGet,
 				Url:          baseUrl,
@@ -81,8 +81,6 @@ func TestSearch(t *testing.T) {
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
 			},
-		}
-
-		testCases.Run(t, configGinSearchRouter)
+		}.Run(t, configGinSearchRouter)
 	})
 }

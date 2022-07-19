@@ -27,7 +27,7 @@ func TestMessages(t *testing.T) {
 
 		res, _ := json.Marshal(chats)
 
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"no context": {
 				Method:         http.MethodGet,
 				Url:            url,
@@ -74,9 +74,7 @@ func TestMessages(t *testing.T) {
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: res,
 			},
-		}
-
-		testCases.Run(t, func(r *gin.Engine, wrapper dao.DaoWrapper) {
+		}.Run(t, func(r *gin.Engine, wrapper dao.DaoWrapper) {
 			configGinChatRouter(r.Group("/api/chat"), wrapper)
 		})
 	})
@@ -103,7 +101,7 @@ func TestActivePoll(t *testing.T) {
 			"submitted":   submitted,
 		})
 
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"no context": {
 				Method:         http.MethodGet,
 				Url:            url,
@@ -140,9 +138,7 @@ func TestActivePoll(t *testing.T) {
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: res,
 			},
-		}
-
-		testCases.Run(t, func(r *gin.Engine, wrapper dao.DaoWrapper) {
+		}.Run(t, func(r *gin.Engine, wrapper dao.DaoWrapper) {
 			configGinChatRouter(r.Group("/api/chat"), wrapper)
 		})
 	})
@@ -174,7 +170,7 @@ func TestUsers(t *testing.T) {
 
 		res, _ := json.Marshal(usersResponse)
 
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"no context": {
 				Method:         http.MethodGet,
 				Url:            url,
@@ -201,9 +197,7 @@ func TestUsers(t *testing.T) {
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: res,
 			},
-		}
-
-		testCases.Run(t, func(r *gin.Engine, wrapper dao.DaoWrapper) {
+		}.Run(t, func(r *gin.Engine, wrapper dao.DaoWrapper) {
 			configGinChatRouter(r.Group("/api/chat"), wrapper)
 		})
 	})

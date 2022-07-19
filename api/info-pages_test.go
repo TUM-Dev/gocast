@@ -36,7 +36,7 @@ func TestInfoPagesCRUD(t *testing.T) {
 
 	url := fmt.Sprintf("/api/texts/%d", testutils.InfoPage.ID)
 	t.Run("PUT/api/texts/:id", func(t *testing.T) {
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"no context": {
 				Method:         http.MethodPut,
 				Url:            url,
@@ -111,7 +111,6 @@ func TestInfoPagesCRUD(t *testing.T) {
 				Body:           bytes.NewBuffer(body),
 				ExpectedCode:   http.StatusOK,
 			},
-		}
-		testCases.Run(t, configInfoPageRouter)
+		}.Run(t, configInfoPageRouter)
 	})
 }
