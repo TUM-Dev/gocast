@@ -109,15 +109,17 @@ func TestNotifications(t *testing.T) {
 
 		testutils.TestCases{
 			"invalid body": {
-				Method:       http.MethodPost,
-				Url:          url,
-				DaoWrapper:   dao.DaoWrapper{},
-				Body:         nil,
-				ExpectedCode: http.StatusBadRequest,
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				DaoWrapper:     dao.DaoWrapper{},
+				Body:           nil,
+				ExpectedCode:   http.StatusBadRequest,
 			},
 			"can not add notification": {
-				Method: http.MethodPost,
-				Url:    url,
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				DaoWrapper: dao.DaoWrapper{
 					NotificationsDao: func() dao.NotificationsDao {
 						mock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
@@ -134,8 +136,9 @@ func TestNotifications(t *testing.T) {
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
-				Method: http.MethodPost,
-				Url:    url,
+				Method:         http.MethodPost,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				DaoWrapper: dao.DaoWrapper{
 					NotificationsDao: func() dao.NotificationsDao {
 						mock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
@@ -162,13 +165,15 @@ func TestNotifications(t *testing.T) {
 
 		testutils.TestCases{
 			"invalid id": {
-				Method:       http.MethodDelete,
-				Url:          "/api/notifications/abc",
-				ExpectedCode: http.StatusBadRequest,
+				Method:         http.MethodDelete,
+				Url:            "/api/notifications/abc",
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
+				ExpectedCode:   http.StatusBadRequest,
 			},
 			"can not delete notification": {
-				Method: http.MethodDelete,
-				Url:    url,
+				Method:         http.MethodDelete,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				DaoWrapper: dao.DaoWrapper{
 					NotificationsDao: func() dao.NotificationsDao {
 						mock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
@@ -183,8 +188,9 @@ func TestNotifications(t *testing.T) {
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
-				Method: http.MethodDelete,
-				Url:    url,
+				Method:         http.MethodDelete,
+				Url:            url,
+				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				DaoWrapper: dao.DaoWrapper{
 					NotificationsDao: func() dao.NotificationsDao {
 						mock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
