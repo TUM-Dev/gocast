@@ -42,18 +42,25 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 		}
 		{
 			// Admin-Only Endpoints
-			admins := streamById.Use(tools.AdminOfCourse)
+			admins := streamById.Group("")
+			admins.Use(tools.AdminOfCourse)
 			admins.GET("", routes.getStream)
 			admins.GET("/pause", routes.pauseStream)
 			admins.GET("/end", routes.endStream)
 			admins.POST("/issue", routes.reportStreamIssue)
 			admins.PATCH("/visibility", routes.updateStreamVisibility)
 
-			admins.POST("/sections", routes.createVideoSectionBatch)
-			admins.DELETE("/sections/:id", routes.deleteVideoSection)
+			sections := admins.Group("/sections")
+			{
+				sections.POST("", routes.createVideoSectionBatch)
+				sections.DELETE("/:id", routes.deleteVideoSection)
+			}
 
-			admins.POST("/files", routes.newAttachment)
-			admins.DELETE("/files/:fid", routes.deleteAttachment)
+			files := admins.Group("files")
+			{
+				files.POST("", routes.newAttachment)
+				files.DELETE("/:fid", routes.deleteAttachment)
+			}
 		}
 	}
 }
