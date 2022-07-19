@@ -14,9 +14,11 @@ func configNotificationsRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := notificationRoutes{daoWrapper}
 
 	notifications := r.Group("/api/notifications")
-	notifications.GET("/", routes.getNotifications)
-	notifications.POST("/", routes.createNotification)
-	notifications.DELETE("/:id", routes.deleteNotification)
+	{
+		notifications.GET("/", routes.getNotifications)
+		notifications.POST("/", tools.Admin, routes.createNotification)
+		notifications.DELETE("/:id", tools.Admin, routes.deleteNotification)
+	}
 }
 
 type notificationRoutes struct {
