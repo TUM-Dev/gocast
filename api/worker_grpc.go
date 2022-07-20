@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -558,6 +559,20 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 	return &pb.Status{Ok: true}, nil
 }
 
+func (s server) NotifyTranscodingProgress(srv pb.FromWorker_NotifyTranscodingProgressServer) error {
+	for {
+		resp, err := srv.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			log.Warn("cannot receive %v", err)
+			return nil
+		}
+		log.Printf("Progress: %d", resp.Progress)
+	}
+}
+
 func isHlsUrlOk(url string) bool {
 	r, err := http.Get(url)
 	if err != nil {
@@ -881,7 +896,7 @@ func init() {
 	}
 	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
 		MaxConnectionIdle:     time.Minute,
-		MaxConnectionAge:      time.Minute,
+		MaxConnectionAge:      time.Minute * 5,
 		MaxConnectionAgeGrace: time.Second * 5,
 		Time:                  time.Minute * 10,
 		Timeout:               time.Second * 20,
