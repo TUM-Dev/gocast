@@ -412,6 +412,20 @@ func (mr *MockStreamsDaoMockRecorder) SaveStream(vod interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveStream", reflect.TypeOf((*MockStreamsDao)(nil).SaveStream), vod)
 }
 
+// SaveTranscodingProgress mocks base method.
+func (m *MockStreamsDao) SaveTranscodingProgress(progress model.TranscodingProgress) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveTranscodingProgress", progress)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveTranscodingProgress indicates an expected call of SaveTranscodingProgress.
+func (mr *MockStreamsDaoMockRecorder) SaveTranscodingProgress(progress interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTranscodingProgress", reflect.TypeOf((*MockStreamsDao)(nil).SaveTranscodingProgress), progress)
+}
+
 // SaveWorkerForStream mocks base method.
 func (m *MockStreamsDao) SaveWorkerForStream(stream model.Stream, worker model.Worker) error {
 	m.ctrl.T.Helper()

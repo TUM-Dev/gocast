@@ -562,14 +562,22 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 func (s server) NotifyTranscodingProgress(srv pb.FromWorker_NotifyTranscodingProgressServer) error {
 	for {
 		resp, err := srv.Recv()
-		if err == io.EOF {
+		if err == io.EOF || errors.Is(err, context.Canceled) {
 			return nil
 		}
 		if err != nil {
-			log.Warn("cannot receive %v", err)
+			log.Warnf("cannot receive %v", err)
 			return nil
 		}
-		log.Printf("Progress: %d", resp.Progress)
+		err = s.DaoWrapper.StreamsDao.SaveTranscodingProgress(model.TranscodingProgress{
+			StreamID: uint(resp.StreamId),
+			Version:  model.StreamVersion(resp.Version),
+			Progress: int(resp.Progress),
+		})
+		if err != nil {
+			return err
+		}
+
 	}
 }
 

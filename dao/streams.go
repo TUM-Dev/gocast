@@ -45,6 +45,7 @@ type StreamsDao interface {
 	SaveCOMBURL(stream *model.Stream, url string)
 	SaveCAMURL(stream *model.Stream, url string)
 	SavePRESURL(stream *model.Stream, url string)
+	SaveTranscodingProgress(progress model.TranscodingProgress) error
 	SaveStream(vod *model.Stream) error
 	ToggleVisibility(streamId uint, private bool) error
 
@@ -65,6 +66,10 @@ func NewStreamsDao() StreamsDao {
 
 func (d streamsDao) CreateStream(stream *model.Stream) error {
 	return DB.Create(stream).Error
+}
+
+func (d streamsDao) SaveTranscodingProgress(progress model.TranscodingProgress) error {
+	return DB.Clauses(clause.OnConflict{UpdateAll: true}).Create(&progress).Error
 }
 
 //AddVodView Adds a stat entry to the database or increases the one existing for this hour
