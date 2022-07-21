@@ -115,7 +115,8 @@ func cleanupSessions() {
 	for id, sessions := range sessionsMap {
 		var newSessions []*sessionWrapper
 		for i, session := range sessions {
-			if !session.session.IsClosed() {
+			clientId, _ := session.session.Get("id")
+			if !session.session.IsClosed() && IsSubscribed(clientId.(string), ChatPubSubRoomName) {
 				newSessions = append(newSessions, sessions[i])
 			}
 		}

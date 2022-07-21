@@ -16,19 +16,12 @@ import (
 )
 
 const (
+	LiveUpdatePubSubRoomName = "live-update"
 	UpdateTypeCourseWentLive = "course_went_live"
 )
 
-var liveMelody *melody.Melody
-
 var liveUpdateListenerMutex sync.RWMutex
 var liveUpdateListener = map[uint]*liveUpdateUserSessionsWrapper{}
-
-const maxLiveUpdateParticipants = 10000
-
-type liveUpdateRoutes struct {
-	dao.DaoWrapper
-}
 
 type liveUpdateUserSessionsWrapper struct {
 	sessions []*melody.Session
@@ -36,33 +29,13 @@ type liveUpdateUserSessionsWrapper struct {
 }
 
 func configGinLiveUpdateRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
-	routes := liveUpdateRoutes{daoWrapper}
-
-	router.GET("/ws", routes.handleLiveConnect)
-
-	if liveMelody == nil {
-		log.Printf("creating liveMelody")
-		liveMelody = melody.New()
-	}
-
-	liveMelody.HandleConnect(liveUpdateConnectionHandler)
-	liveMelody.HandleDisconnect(liveUpdateDisconnectHandler)
+	RegisterPubSubChannel(LiveUpdatePubSubRoomName, PubSubMessageHandlers{
+		onSubscribe:   liveUpdateOnSubscribe,
+		onUnsubscribe: liveUpdateOnUnsubscribe,
+	})
 }
 
-func (r liveUpdateRoutes) handleLiveConnect(c *gin.Context) {
-	// max participants in chat to prevent attacks
-	if liveMelody.Len() > maxLiveUpdateParticipants {
-		return
-	}
-
-	ctxMap := make(map[string]interface{}, 1)
-	ctxMap["ctx"] = c
-	ctxMap["dao"] = r.DaoWrapper
-
-	_ = liveMelody.HandleRequestWithKeys(c.Writer, c.Request, ctxMap)
-}
-
-func liveUpdateDisconnectHandler(s *melody.Session) {
+func liveUpdateOnUnsubscribe(s *melody.Session) {
 	ctx, _ := s.Get("ctx") // get gin context
 	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 	if !exists {
@@ -92,7 +65,7 @@ func liveUpdateDisconnectHandler(s *melody.Session) {
 	liveUpdateListenerMutex.Unlock()
 }
 
-var liveUpdateConnectionHandler = func(s *melody.Session) {
+func liveUpdateOnSubscribe(s *melody.Session) {
 	ctx, _ := s.Get("ctx") // get gin context
 	daoWrapper, _ := s.Get("dao")
 

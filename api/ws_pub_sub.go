@@ -27,7 +27,14 @@ var pubSubClientsMutex sync.RWMutex
 var pubSubClients = map[string]*WSPubSubClient{}
 var pubSubChannels = map[string]*PubSubChannel{}
 
-type PubSubHandlerFunc func(*melody.Session)
+type PubSubEventHandlerFunc func(s *melody.Session)
+type PubSubMessageHandlerFunc func(s *melody.Session, message *WSPubSubMessage)
+
+type PubSubMessageHandlers = struct {
+	onSubscribe   PubSubEventHandlerFunc
+	onUnsubscribe PubSubEventHandlerFunc
+	onMessage     PubSubMessageHandlerFunc
+}
 
 type WSPubSubClient = struct {
 	session *melody.Session
@@ -36,21 +43,37 @@ type WSPubSubClient = struct {
 
 type PubSubChannel = struct {
 	channelName string
-	handler     PubSubHandlerFunc
+	handlers    PubSubMessageHandlers
 	subscribers map[string]bool
 	mutex       sync.RWMutex
 }
 
-type wsPubSubMessage struct {
-	Type    string `json:"type"`
-	Channel string `json:"channel"`
+type WSPubSubMessage struct {
+	Type    string          `json:"type"`
+	Channel string          `json:"channel"`
+	Payload json.RawMessage `json:"payload"`
+}
+
+type wsPubSubRoutes struct {
+	dao.DaoWrapper
+}
+
+func IsSubscribed(clientId string, channelName string) bool {
+	channel, ok := pubSubChannels[channelName]
+	if !ok {
+		return false
+	}
+
+	channel.mutex.Lock()
+	defer channel.mutex.Unlock()
+	return channel.subscribers[clientId]
 }
 
 // RegisterPubSubChannel registers a pubSub channel handler for a specific channelName
-func RegisterPubSubChannel(channelName string, handler PubSubHandlerFunc) {
+func RegisterPubSubChannel(channelName string, handlers PubSubMessageHandlers) {
 	pubSubChannels[channelName] = &PubSubChannel{
 		channelName: channelName,
-		handler:     handler,
+		handlers:    handlers,
 		subscribers: map[string]bool{},
 	}
 }
@@ -118,20 +141,20 @@ func nextId() (string, error) {
 }
 
 func configGinWSPubSubRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
-	routes := liveUpdateRoutes{daoWrapper}
+	routes := wsPubSubRoutes{daoWrapper}
 
 	if pubSubMelody == nil {
 		log.Printf("creating melody")
-		liveMelody = melody.New()
+		pubSubMelody = melody.New()
 	}
 	pubSubMelody.HandleConnect(wsPubSubConnectionHandler)
 	pubSubMelody.HandleDisconnect(wsPubSubDisconnectHandler)
-	m.HandleMessage(wsPubSubMessageHandler)
+	pubSubMelody.HandleMessage(wsPubSubMessageHandler)
 
 	router.GET("/ws", routes.handleWSPubSubConnect)
 }
 
-func (r liveUpdateRoutes) handleWSPubSubConnect(c *gin.Context) {
+func (r wsPubSubRoutes) handleWSPubSubConnect(c *gin.Context) {
 	id, err := nextId()
 	if err != nil {
 		log.WithError(err).Warn("could not generate a uuid for a ws client")
@@ -169,13 +192,19 @@ func wsPubSubDisconnectHandler(s *melody.Session) {
 	delete(pubSubClients, id.(string))
 	for _, channel := range pubSubChannels {
 		channel.mutex.Lock()
-		delete(channel.subscribers, id.(string))
+		if _, ok := channel.subscribers[id.(string)]; ok {
+			delete(channel.subscribers, id.(string))
+			if channel.handlers.onUnsubscribe != nil {
+				channel.handlers.onUnsubscribe(s)
+			}
+		}
 		channel.mutex.Unlock()
 	}
 	pubSubClientsMutex.Unlock()
 }
 
-func subscribeClientToChannel(clientId string, channelName string) {
+func subscribeClientToChannel(s *melody.Session, channelName string) {
+	clientId, _ := s.Get("id")
 	channel, ok := pubSubChannels[channelName]
 	if !ok {
 		log.Warn("client tried to subscribe to non existing channel")
@@ -184,10 +213,15 @@ func subscribeClientToChannel(clientId string, channelName string) {
 	channel.mutex.Lock()
 	defer channel.mutex.Unlock()
 
-	channel.subscribers[clientId] = true
+	channel.subscribers[clientId.(string)] = true
+
+	if channel.handlers.onSubscribe != nil {
+		channel.handlers.onSubscribe(s)
+	}
 }
 
-func unsubscribeFromChannel(clientId string, channelName string) {
+func unsubscribeFromChannel(s *melody.Session, channelName string) {
+	clientId, _ := s.Get("id")
 	channel, ok := pubSubChannels[channelName]
 	if !ok {
 		log.Warn("client tried to unsubscribe to non existing channel")
@@ -196,11 +230,25 @@ func unsubscribeFromChannel(clientId string, channelName string) {
 	channel.mutex.Lock()
 	defer channel.mutex.Unlock()
 
-	delete(channel.subscribers, clientId)
+	delete(channel.subscribers, clientId.(string))
+
+	if channel.handlers.onUnsubscribe != nil {
+		channel.handlers.onUnsubscribe(s)
+	}
+}
+
+func handleChannelMessage(s *melody.Session, req *WSPubSubMessage) {
+	channel, ok := pubSubChannels[req.Channel]
+	if !ok {
+		log.WithField("type", req.Type).Warn("unknown channel on websocket message")
+		return
+	}
+	if channel.handlers.onMessage != nil {
+		channel.handlers.onMessage(s, req)
+	}
 }
 
 func wsPubSubMessageHandler(s *melody.Session, msg []byte) {
-	id, _ := s.Get("id")   // get gin context
 	ctx, _ := s.Get("ctx") // get gin context
 	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 	if !exists {
@@ -213,7 +261,7 @@ func wsPubSubMessageHandler(s *melody.Session, msg []byte) {
 		return
 	}
 
-	var req wsPubSubMessage
+	var req WSPubSubMessage
 	err := json.Unmarshal(msg, &req)
 	if err != nil {
 		log.WithError(err).Warn("could not unmarshal request")
@@ -222,11 +270,11 @@ func wsPubSubMessageHandler(s *melody.Session, msg []byte) {
 
 	switch req.Type {
 	case PubSubMessageTypeSubscribe:
-		subscribeClientToChannel(id.(string), req.Channel)
+		subscribeClientToChannel(s, req.Channel)
 	case PubSubMessageTypeUnsubscribe:
-		unsubscribeFromChannel(id.(string), req.Channel)
+		unsubscribeFromChannel(s, req.Channel)
 	case PubSubMessageTypeChannelMessage:
-		// TODO: pass data messages to right handler
+		handleChannelMessage(s, &req)
 	default:
 		log.WithField("type", req.Type).Warn("unknown pubsub websocket request type")
 	}

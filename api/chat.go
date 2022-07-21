@@ -19,9 +19,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var m *melody.Melody
+const (
+	ChatPubSubRoomName = "chat"
+)
 
-const maxParticipants = 10000
+//var m *melody.Melody
+
+//const maxParticipants = 10000
 
 func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 	routes := chatRoutes{daoWrapper}
@@ -31,52 +35,55 @@ func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 	wsGroup.GET("/messages", routes.getMessages)
 	wsGroup.GET("/active-poll", routes.getActivePoll)
 	wsGroup.GET("/users", routes.getUsers)
-	wsGroup.GET("/ws", routes.ChatStream)
+	/*wsGroup.GET("/ws", routes.ChatStream)
 	if m == nil {
 		log.Printf("creating melody")
 		m = melody.New()
-	}
+	}*/
 
-	m.HandleConnect(connHandler)
+	RegisterPubSubChannel(LiveUpdatePubSubRoomName, PubSubMessageHandlers{
+		onSubscribe:   chatOnSubscribe,
+		onUnsubscribe: chatOnUnsubscribe,
+		onMessage: func(s *melody.Session, message *WSPubSubMessage) {
+			ctx, _ := s.Get("ctx") // get gin context
+			foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
+			if !exists {
+				sentry.CaptureException(errors.New("context should exist but doesn't"))
+				ctx.(*gin.Context).AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			tumLiveContext := foundContext.(tools.TUMLiveContext)
+			if tumLiveContext.User == nil {
+				return
+			}
 
-	m.HandleMessage(func(s *melody.Session, msg []byte) {
-		ctx, _ := s.Get("ctx") // get gin context
-		foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
-		if !exists {
-			sentry.CaptureException(errors.New("context should exist but doesn't"))
-			ctx.(*gin.Context).AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-		tumLiveContext := foundContext.(tools.TUMLiveContext)
-		if tumLiveContext.User == nil {
-			return
-		}
-		var req wsReq
-		err := json.Unmarshal(msg, &req)
-		if err != nil {
-			log.WithError(err).Warn("could not unmarshal request")
-			return
-		}
-		switch req.Type {
-		case "message":
-			routes.handleMessage(tumLiveContext, s, msg)
-		case "like":
-			routes.handleLike(tumLiveContext, msg)
-		case "delete":
-			routes.handleDelete(tumLiveContext, msg)
-		case "start_poll":
-			routes.handleStartPoll(tumLiveContext, msg)
-		case "submit_poll_option_vote":
-			routes.handleSubmitPollOptionVote(tumLiveContext, msg)
-		case "close_active_poll":
-			routes.handleCloseActivePoll(tumLiveContext)
-		case "resolve":
-			routes.handleResolve(tumLiveContext, msg)
-		case "approve":
-			routes.handleApprove(tumLiveContext, msg)
-		default:
-			log.WithField("type", req.Type).Warn("unknown websocket request type")
-		}
+			req, err := message.wsReqPayload()
+
+			if err != nil {
+				log.WithError(err).Warn("could not unmarshal request")
+				return
+			}
+			switch req.Type {
+			case "message":
+				routes.handleMessage(tumLiveContext, s, message.Payload)
+			case "like":
+				routes.handleLike(tumLiveContext, message.Payload)
+			case "delete":
+				routes.handleDelete(tumLiveContext, message.Payload)
+			case "start_poll":
+				routes.handleStartPoll(tumLiveContext, message.Payload)
+			case "submit_poll_option_vote":
+				routes.handleSubmitPollOptionVote(tumLiveContext, message.Payload)
+			case "close_active_poll":
+				routes.handleCloseActivePoll(tumLiveContext)
+			case "resolve":
+				routes.handleResolve(tumLiveContext, message.Payload)
+			case "approve":
+				routes.handleApprove(tumLiveContext, message.Payload)
+			default:
+				log.WithField("type", req.Type).Warn("unknown websocket request type")
+			}
+		},
 	})
 
 	//delete closed sessions every second
@@ -476,6 +483,12 @@ func (r chatRoutes) getActivePoll(c *gin.Context) {
 	})
 }
 
+func (m WSPubSubMessage) wsReqPayload() (res wsReq, err error) {
+	dbByte, _ := json.Marshal(m.Payload)
+	err = json.Unmarshal(dbByte, &res)
+	return res, err
+}
+
 type wsReq struct {
 	Type string `json:"type"`
 }
@@ -545,29 +558,57 @@ func NotifyViewersLiveState(streamId uint, live bool) {
 	broadcastStream(streamId, req)
 }
 
-func (r chatRoutes) ChatStream(c *gin.Context) {
-	// max participants in chat to prevent attacks
-	if m.Len() > maxParticipants {
-		return
+func chatOnSubscribe(s *melody.Session) {
+	var c *gin.Context
+	if ctx, ok := s.Get("ctx"); ok {
+		c = ctx.(*gin.Context)
 	}
-	joinTime := time.Now()
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	defer afterDisconnect(c.Param("streamID"), joinTime, tumLiveContext.Stream.Recording, r.DaoWrapper)
-	ctxMap := make(map[string]interface{}, 1)
-	ctxMap["ctx"] = c
 
-	_ = m.HandleRequestWithKeys(c.Writer, c.Request, ctxMap)
+	joinTime := time.Now()
+	c.Set("chat.joinTime", joinTime)
+
+	connHandler(s)
 }
 
-func afterDisconnect(id string, jointime time.Time, recording bool, daoWrapper dao.DaoWrapper) {
+func chatOnUnsubscribe(s *melody.Session) {
+	var c *gin.Context
+	if ctx, ok := s.Get("ctx"); ok {
+		c = ctx.(*gin.Context)
+	} else {
+		sentry.CaptureException(errors.New("gin context should exist but doesn't"))
+		return
+	}
+
+	var daoWrapper *dao.DaoWrapper
+	if ctx, ok := s.Get("dao"); ok {
+		daoWrapper = ctx.(*dao.DaoWrapper)
+	} else {
+		sentry.CaptureException(errors.New("daoWrapper should exist but doesn't"))
+		return
+	}
+
+	var tumLiveContext tools.TUMLiveContext
+	if foundContext, exists := c.Get("TUMLiveContext"); exists {
+		tumLiveContext = foundContext.(tools.TUMLiveContext)
+	} else {
+		sentry.CaptureException(errors.New("tumLiveContext should exist but doesn't"))
+		return
+	}
+
+	var joinTime time.Time
+	if foundContext, exists := s.Get("chat.joinTime"); exists {
+		joinTime = foundContext.(time.Time)
+	} else {
+		sentry.CaptureException(errors.New("jointime should exist but doesn't"))
+		return
+	}
+
+	defer afterUnsubscribe(c.Param("streamID"), joinTime, tumLiveContext.Stream.Recording, daoWrapper)
+}
+
+func afterUnsubscribe(id string, joinTime time.Time, recording bool, daoWrapper *dao.DaoWrapper) {
 	// watched at least 5 minutes of the lecture and stream is VoD? Count as view.
-	if recording && jointime.Before(time.Now().Add(time.Minute*-5)) {
+	if recording && joinTime.Before(time.Now().Add(time.Minute*-5)) {
 		err := daoWrapper.AddVodView(id)
 		if err != nil {
 			log.WithError(err).Error("Can't save vod view")
