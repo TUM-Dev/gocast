@@ -1,6 +1,8 @@
 {{define "course_settings"}}
     {{- /* gotype:github.com/joschahenningsen/TUM-Live/model.Course */ -}}
-    <form method="post">
+    <div x-data="{
+            showCourseSettingsModal:false}">
+    <form id="course-settings-form" method="post" @submit.prevent="if({{.HasIndividualChatEnabledSettings}}) showCourseSettingsModal=true;" >
         <h3 class="text-lg font-light mt-2">Visibility of this course</h3>
         <div class="px-4 text-4 mt-2">
             <label class="inline-flex items-center w-full" for="public">
@@ -89,5 +91,6 @@
             <a class="btn border-0 font-semibold" href="{{.Model.ID}}/stats">Statistics</a>
         </div>
     </form>
-        {{template "course-settings-modal"}}
+    {{template "course-settings-modal"}}
+    </div>
 {{end}}
