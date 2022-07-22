@@ -34,8 +34,11 @@ func (r mainRoutes) MainPage(c *gin.Context) {
 	indexData.LoadCoursesForRole(c, spanMain, r.CoursesDao)
 	indexData.LoadLivestreams(c, r.DaoWrapper)
 	indexData.LoadPublicCourses(r.CoursesDao)
+	indexData.LoadPinnedCourses()
 
-	_ = templateExecutor.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
+	if err := templateExecutor.ExecuteTemplate(c.Writer, "index.gohtml", indexData); err != nil {
+		log.WithError(err).Errorf("Could not execute template: 'index.gohtml'")
+	}
 }
 
 func (r mainRoutes) AboutPage(c *gin.Context) {
@@ -89,6 +92,7 @@ type IndexData struct {
 	IsStudent           bool
 	LiveStreams         []CourseStream
 	Courses             []model.Course
+	PinnedCourses       []model.Course
 	PublicCourses       []model.Course
 	Semesters           []dao.Semester
 	CurrentYear         int
@@ -198,9 +202,19 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType) {
 			continue
 		}
+		var lectureHall *model.LectureHall
+		if tumLiveContext.User != nil && tumLiveContext.User.Role == model.AdminType && stream.LectureHallID != 0 {
+			lh, err := daoWrapper.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
+			if err != nil {
+				log.WithError(err).Error(err)
+			} else {
+				lectureHall = &lh
+			}
+		}
 		livestreams = append(livestreams, CourseStream{
-			Course: courseForLiveStream,
-			Stream: stream,
+			Course:      courseForLiveStream,
+			Stream:      stream,
+			LectureHall: lectureHall,
 		})
 	}
 
@@ -234,6 +248,21 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span, co
 	d.Courses = commons.Unique(courses, func(c model.Course) uint { return c.ID })
 }
 
+func (d *IndexData) LoadPinnedCourses() {
+	var pinnedCourses []model.Course
+
+	if d.TUMLiveContext.User != nil {
+		pinnedCourses = d.TUMLiveContext.User.PinnedCourses
+		for i := range pinnedCourses {
+			pinnedCourses[i].Pinned = true
+		}
+		sortCourses(pinnedCourses)
+		d.PinnedCourses = commons.Unique(pinnedCourses, func(c model.Course) uint { return c.ID })
+	} else {
+		d.PinnedCourses = []model.Course{}
+	}
+}
+
 // LoadPublicCourses Load public courses of user. Filter courses which are already in IndexData.Courses
 func (d *IndexData) LoadPublicCourses(coursesDao dao.CoursesDao) {
 	var public []model.Course
@@ -254,8 +283,9 @@ func (d *IndexData) LoadPublicCourses(coursesDao dao.CoursesDao) {
 }
 
 type CourseStream struct {
-	Course model.Course
-	Stream model.Stream
+	Course      model.Course
+	Stream      model.Stream
+	LectureHall *model.LectureHall
 }
 
 func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {

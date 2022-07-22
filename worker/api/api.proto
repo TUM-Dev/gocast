@@ -112,6 +112,7 @@ service FromWorker {
   rpc NotifyThumbnailsFinished(ThumbnailsFinished) returns (Status) {}
   rpc SendSelfStreamRequest(SelfStreamRequest) returns (SelfStreamResponse) {}
   rpc GetStreamInfoForUpload(GetStreamInfoForUploadRequest) returns (GetStreamInfoForUploadResponse) {}
+  rpc NewKeywords(NewKeywordsRequest) returns (Status) {}
 }
 
 message JoinWorkersRequest {
@@ -206,4 +207,11 @@ message GetStreamInfoForUploadResponse {
   google.protobuf.Timestamp StreamStart = 4;
   google.protobuf.Timestamp StreamEnd = 5;
   uint32 StreamID = 6;
+}
+
+message NewKeywordsRequest {
+  string WorkerID = 1;
+  uint32 StreamID = 2;
+  repeated string Keywords = 3;
+  string Language = 4;
 }

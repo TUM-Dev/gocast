@@ -1,6 +1,8 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
 import { getPlayers  } from "./TUMLiveVjs";
+import { Get, postData } from "./global";
+
 
 let chatInput: HTMLInputElement;
 
