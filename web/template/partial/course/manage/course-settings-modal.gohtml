@@ -1,7 +1,7 @@
 {{define "course-settings-modal"}}
     <div class="select-none" x-data="{valueToOverWrite:false}" role="alertdialog"
          :class="{ 'absolute inset-0 z-50 flex items-center justify-center': showCourseSettingsModal}">
-        <div @keydown.escape="showCourseSettingsModal = false" @keydown.tab="" x-show="showCourseSettingsModal" x-data="{valueToOverWrite:valueToOverWrite}"
+        <div @keydown.escape="showCourseSettingsModal = false" @keydown.tab="" x-show="showCourseSettingsModal" x-trap="showCourseSettingsModal" x-data="{valueToOverWrite:valueToOverWrite}"
              class="dark:bg-secondary-light bg-gray-200 text-3 fixed top-50 left-50 sm:w-auto overflow-y-auto w-full md:max-w-md md:mx-auto rounded shadow-lg py-4 text-left px-6">
             <h3><span x-text="valueToOverWrite?'Enable':'Disable'"></span> chat for each stream? </h3>
             <hr class="pb-2">
