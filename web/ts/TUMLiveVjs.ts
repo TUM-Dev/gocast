@@ -12,16 +12,18 @@ require("videojs-hls-quality-selector");
 require("videojs-contrib-quality-levels");
 
 const Button = videojs.getComponent("Button");
-let player;
 
-export function getPlayer() {
-    return player;
+let players = [];
+
+export function getPlayers() {
+    return players;
 }
 
 /**
  * Initialize the player and bind it to a DOM object my-video
  */
 export const initPlayer = function (
+    id: string,
     autoplay: boolean,
     fluid: boolean,
     isEmbedded: boolean,
@@ -36,7 +38,8 @@ export const initPlayer = function (
     courseUrl?: string,
     streamStartIn?: number, // in seconds
 ) {
-    player = videojs("my-video", {
+    let player;
+    player = videojs( id, {
         liveui: true,
         fluid: fluid,
         playbackRates: playbackSpeeds,
@@ -120,6 +123,7 @@ export const initPlayer = function (
     });
     // handle hotkeys from anywhere on the page
     document.addEventListener("keydown", (event) => player.handleKeyDown(event));
+    players.push(player);
 };
 
 let skipTo = 0;
@@ -144,58 +148,60 @@ export const SkipSilenceToggle = videojs.extend(Button, {
 videojs.registerComponent("SkipSilenceToggle", SkipSilenceToggle);
 
 export const skipSilence = function (options) {
-    player.ready(() => {
-        player.addClass("vjs-skip-silence");
-        const toggle = player.addChild("SkipSilenceToggle");
-        toggle.el().classList.add("invisible");
-        player.el().insertBefore(toggle.el(), player.bigPlayButton.el());
+    for (let j = 0; j < players.length; j++) {
+        players[j].ready(() => {
+            players[j].addClass("vjs-skip-silence");
+            const toggle = players[j].addChild("SkipSilenceToggle");
+            toggle.el().classList.add("invisible");
+            players[j].el().insertBefore(toggle.el(), players[j].bigPlayButton.el());
 
-        let isShowing = false;
-        const silences = JSON.parse(options);
-        const len = silences.length;
-        const intervalMillis = 100;
+            let isShowing = false;
+            const silences = JSON.parse(options);
+            const len = silences.length;
+            const intervalMillis = 100;
 
-        let i = 0;
-        let timer;
+            let i = 0;
+            let timer;
 
-        // Triggered when user presses play
-        player.on("play", () => {
-            timer = setInterval(() => {
-                toggleSkipSilence();
-            }, intervalMillis);
-        });
+            // Triggered when user presses play
+            players[j].on("play", () => {
+                timer = setInterval(() => {
+                    toggleSkipSilence();
+                }, intervalMillis);
+            });
 
-        const toggleSkipSilence = () => {
-            const ctime = player.currentTime();
-            let shouldShow = false;
-            for (i = 0; i < len; i++) {
-                if (ctime >= silences[i].start && ctime < silences[i].end) {
-                    shouldShow = true;
-                    skipTo = silences[i].end;
-                    break;
+            const toggleSkipSilence = () => {
+                const ctime = players[j].currentTime();
+                let shouldShow = false;
+                for (i = 0; i < len; i++) {
+                    if (ctime >= silences[i].start && ctime < silences[i].end) {
+                        shouldShow = true;
+                        skipTo = silences[i].end;
+                        break;
+                    }
                 }
-            }
-            if (isShowing && !shouldShow) {
-                console.log("Not showing.");
-                isShowing = false;
-                toggle.el().classList.add("invisible");
-            } else if (!isShowing && shouldShow) {
-                console.log("Showing.");
-                isShowing = true;
-                toggle.el().classList.remove("invisible");
-            }
-        };
+                if (isShowing && !shouldShow) {
+                    console.log("Not showing.");
+                    isShowing = false;
+                    toggle.el().classList.add("invisible");
+                } else if (!isShowing && shouldShow) {
+                    console.log("Showing.");
+                    isShowing = true;
+                    toggle.el().classList.remove("invisible");
+                }
+            };
 
-        // Triggered on pause and skipping the video
-        player.on("pause", () => {
-            clearInterval(timer);
-        });
+            // Triggered on pause and skipping the video
+            players[j].on("pause", () => {
+                clearInterval(timer);
+            });
 
-        // Triggered when the video has no time left
-        player.on("ended", () => {
-            clearInterval(timer);
+            // Triggered when the video has no time left
+            players[j].on("ended", () => {
+                clearInterval(timer);
+            });
         });
-    });
+    }
 };
 
 /**
@@ -205,72 +211,189 @@ export const skipSilence = function (options) {
  * @param lastProgress The last progress fetched from the database
  */
 export const watchProgress = function (streamID: number, lastProgress: number) {
-    const player = videojs("my-video");
-    player.ready(() => {
-        let duration;
-        let timer;
-        let iOSReady = false;
-        let intervalMillis = 10000;
+    for (let j = 0; j < players.length; j++) {
+        players[j].ready(() => {
+            let duration;
+            let timer;
+            let iOSReady = false;
+            let intervalMillis = 10000;
 
-        // Fetch the user's video progress from the database and set the time in the player
-        player.on("loadedmetadata", () => {
-            duration = player.duration();
-            player.currentTime(lastProgress * duration);
-        });
-
-        // iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
-        // not sufficient here.
-        // See https://stackoverflow.com/questions/28823567/how-to-set-currenttime-in-video-js-in-safari-for-ios.
-        if (videojs.browser.IS_IOS) {
-            player.on("canplaythrough", () => {
-                // Can be executed multiple times during playback
-                if (!iOSReady) {
-                    player.currentTime(lastProgress * duration);
-                    iOSReady = true;
-                }
+            // Fetch the user's video progress from the database and set the time in the player
+            players[j].on("loadedmetadata", () => {
+                duration = players[j].duration();
+                players[j].currentTime(lastProgress * duration);
             });
-        }
 
-        const reportProgress = () => {
-            const progress = player.currentTime() / duration;
-            postData("/api/progressReport", {
-                streamID: streamID,
-                progress: progress,
-            }).then((r) => {
-                if (r.status !== StatusCodes.OK) {
-                    console.log(r);
-                    intervalMillis *= 2; // Binary exponential backoff for load balancing
-                }
-            });
-        };
-
-        // Triggered when user presses play
-        player.on("play", () => {
-            // See https://developer.mozilla.org/en-US/docs/Web/API/setInterval#ensure_that_execution_duration_is_shorter_than_interval_frequency
-            (function reportNextProgress() {
-                timer = setTimeout(function () {
-                    reportProgress();
-                    reportNextProgress();
-                }, intervalMillis);
-            })();
-        });
-
-        // Triggered on pause and skipping the video
-        player.on("pause", () => {
-            clearInterval(timer);
-            // "Bug" on iOS: The video is automatically paused at the beginning
-            if (!iOSReady && videojs.browser.IS_IOS) {
-                return;
+            // iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
+            // not sufficient here.
+            // See https://stackoverflow.com/questions/28823567/how-to-set-currenttime-in-video-js-in-safari-for-ios.
+            if (videojs.browser.IS_IOS) {
+                players[j].on("canplaythrough", () => {
+                    // Can be executed multiple times during playback
+                    if (!iOSReady) {
+                        players[j].currentTime(lastProgress * duration);
+                        iOSReady = true;
+                    }
+                });
             }
-            reportProgress();
+
+            const reportProgress = () => {
+                const progress = players[j].currentTime() / duration;
+                postData("/api/progressReport", {
+                    streamID: streamID,
+                    progress: progress,
+                }).then((r) => {
+                    if (r.status !== StatusCodes.OK) {
+                        console.log(r);
+                        intervalMillis *= 2; // Binary exponential backoff for load balancing
+                    }
+                });
+            };
+
+            // Triggered when user presses play
+            players[j].on("play", () => {
+                // See https://developer.mozilla.org/en-US/docs/Web/API/setInterval#ensure_that_execution_duration_is_shorter_than_interval_frequency
+                (function reportNextProgress() {
+                    timer = setTimeout(function () {
+                        reportProgress();
+                        reportNextProgress();
+                    }, intervalMillis);
+                })();
+            });
+
+            // Triggered on pause and skipping the video
+            players[j].on("pause", () => {
+                clearInterval(timer);
+                // "Bug" on iOS: The video is automatically paused at the beginning
+                if (!iOSReady && videojs.browser.IS_IOS) {
+                    return;
+                }
+                reportProgress();
+            });
+
+            // Triggered when the video has no time left
+            players[j].on("ended", () => {
+                clearInterval(timer);
+            });
+        });
+    }
+};
+
+/**
+ * @function syncTime
+ * Sets the currentTime of all players to the currentTime of the j-th player without triggering any events.
+ * @param j Player index
+ */
+function syncTime(j: number) {
+    const t = players[j].currentTime();
+    // Remove all event listeners from all players except j
+    for (let k = 0; k < players.length; k++) {
+        if (k == j) continue;
+        players[k].off();
+    }
+
+    // Seek all players to timestamp t
+    for (let k = 0; k < players.length; k++) {
+        if (k == j) continue;
+        players[k].currentTime(t);
+    }
+
+    // Add all event listeners back
+    for (let k = 0; k < players.length; k++) {
+        if (k == j) continue;
+        players[k].one("canplay", () => {
+            addEventListenersForSyncing(k);
         });
 
-        // Triggered when the video has no time left
-        player.on("ended", () => {
-            clearInterval(timer);
+        // Update parts of the control bar
+        const { durationDisplay, remainingTimeDisplay } = players[k].controlBar || {};
+        if (durationDisplay) {
+            durationDisplay.updateContent();
+        }
+        if (remainingTimeDisplay) {
+            remainingTimeDisplay.updateContent();
+        }
+    }
+}
+
+/**
+ * Adds the necessary event listeners for syncing the players.
+ * @param j Player index
+ */
+const addEventListenersForSyncing = function (j: number) {
+    players[j].on("play", () => {
+        for (let k = 0; k < players.length; k++) {
+            if (k == j) continue;
+
+            let playPromise = players[k].play();
+            if (playPromise !== undefined) {
+                playPromise.then(_ => {
+                    // Playback started
+                }).catch(_ => {
+                    for (let k = 0; k < players.length; k++) {
+                        players[k].pause();
+                    }
+                });
+            }
+        }
+    });
+
+    players[j].on("ratechange", () => {
+        for (let k = 0; k < players.length; k++) {
+            if (k == j) continue;
+            players[k].playbackRate(players[j].playbackRate())
+        }
+    });
+
+    players[j].on("pause", () => {
+        for (let k = 0; k < players.length; k++) {
+            if (k == j) continue;
+            players[k].pause();
+        }
+        syncTime(j);
+    });
+
+    players[j].on("seeked", () => syncTime(j));
+
+    players[j].on("stalled", () => {
+        for (let k = 0; k < players.length; k++) {
+            players[k].pause();
+        }
+    });
+
+    players[j].on("waiting", () => {
+        // Pause other players while buffering
+        for (let k = 0; k < players.length; k++) {
+            if (k == j) continue;
+            players[k].pause();
+        }
+        // When ready to play start playing
+        players[j].one("canplay", () => {
+            players[j].play()
         });
     });
+
+    players[j].on("ended", () => {
+        for (let k = 0; k < players.length; k++) {
+            if (k == j) continue;
+            players[k].pause();
+        }
+    });
+}
+
+/**
+ * @function syncPlayers
+ * Adds event listeners to all players for syncing.
+ */
+export const syncPlayers = function () {
+    players[0].ready(() => {
+        for (let j = 0; j < players.length; j++) {
+            addEventListenersForSyncing(j);
+        }
+    });
 };
+
+
 
 const Component = videojs.getComponent("Component");
 
@@ -410,9 +533,11 @@ export class OverlayIcon extends Component {
 }
 
 export function jumpTo(hours: number, minutes: number, seconds: number) {
-    videojs("my-video").ready(() => {
-        player.currentTime(toSeconds(hours, minutes, seconds));
-    });
+    for (let j = 0; j < players.length; j++) {
+        players[j].ready(() => {
+            players[j].currentTime(toSeconds(hours, minutes, seconds));
+        });
+    }
 }
 
 export class VideoSections {
@@ -481,16 +606,18 @@ export class VideoSections {
 }
 
 function attachCurrentTimeEvent(videoSection: VideoSections) {
-    player.ready(() => {
-        let timer;
-        (function checkTimestamp() {
-            timer = setTimeout(() => {
-                hightlight(player, videoSection);
-                checkTimestamp();
-            }, 500);
-        })();
-        player.on("seeked", () => hightlight(player, videoSection));
-    });
+    for (let j = 0; j < players.length; j++) {
+        players[j].ready(() => {
+            let timer;
+            (function checkTimestamp() {
+                timer = setTimeout(() => {
+                    hightlight(players[j], videoSection);
+                    checkTimestamp();
+                }, 500);
+            })();
+            players[j].on("seeked", () => hightlight(players[j], videoSection));
+        });
+    }
 }
 
 function hightlight(player, videoSection) {
