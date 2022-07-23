@@ -453,6 +453,15 @@ export function saveIsChatEnabled(streamId: number, isChatEnabled: boolean) {
     return patchData("/api/stream/" + streamId + "/chat/enabled", { streamId, isChatEnabled });
 }
 
+export async function saveIsChatEnabledForAllLectures(lectures: Lecture[], isChatEnabled: boolean) {
+    const promises = [];
+    for (const lecture of lectures) {
+        promises.push(saveIsChatEnabled(lecture.lectureId, isChatEnabled));
+    }
+    const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
+    return errors.length <= 0;
+}
+
 export function saveLectureHall(streamIds: number[], lectureHall: string) {
     return postData("/api/setLectureHall", { streamIds, lectureHall: parseInt(lectureHall) });
 }
@@ -661,19 +670,5 @@ export function deleteCourse(courseID: string) {
     }
 }
 
-export const initCourseSettings = (
-    visibility: Visibility,
-    enableVOD: boolean,
-    enableDownloads: boolean,
-    enableChat: boolean,
-    allowAnonymousMessages: boolean,
-    chatModerationEnabled: boolean,
-): CourseSettings =>
-    new CourseSettings(
-        visibility,
-        enableVOD,
-        enableDownloads,
-        enableChat,
-        allowAnonymousMessages,
-        chatModerationEnabled,
-    );
+export const initCourseSettings = (): CourseSettings =>
+    new CourseSettings(Visibility.hidden, false, false, false, false, false);

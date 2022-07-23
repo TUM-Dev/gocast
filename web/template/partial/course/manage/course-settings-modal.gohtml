@@ -1,5 +1,5 @@
 {{define "course-settings-modal"}}
-    <div class="select-none" x-data="{valueToOverWrite:false}" role="alertdialog"
+    <div class="select-none" role="alertdialog"
          :class="{ 'absolute inset-0 z-50 flex items-center justify-center': showCourseSettingsModal}">
         <div @keydown.escape="showCourseSettingsModal = false" @keydown.tab="" x-show="showCourseSettingsModal" x-trap="showCourseSettingsModal" x-data="{valueToOverWrite:valueToOverWrite}"
              class="dark:bg-secondary-light bg-gray-200 text-3 fixed top-50 left-50 sm:w-auto overflow-y-auto w-full md:max-w-md md:mx-auto rounded shadow-lg py-4 text-left px-6">
@@ -14,16 +14,21 @@
                 </p>
                 <br>
                 <div class="grid grid-cols-3 gap-4">
-                <button class="border  border-gray-300  shadow-sm text-gray-600
-            hover:border-black hover:text-black
-            bg-green-500 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
-            dark:hover:text-white">Overwrite
+                <button @click="
+                   result = await admin.saveIsChatEnabledForAllLectures(admin.LectureList.lectures, valueToOverWrite);
+                " class="border  border-gray-300  shadow-sm text-gray-600
+                hover:border-black hover:text-black
+                bg-green-500 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
+                dark:hover:text-white">Overwrite
                 </button>
-                <button class="border bg-orange-500 border-gray-300 shadow-sm text-gray-600
+                <button @click="
+                    document.getElementById('course-settings-form').dispatchEvent(new CustomEvent('submit', {cancelable:true}));
+                    showCourseSettingsModal=false;
+                " class="border bg-orange-500 border-gray-300 shadow-sm text-gray-600
                 hover:border-black hover:text-black
                 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
                 dark:hover:text-white">Enable Without Overwriting</button>
-                <button @click="showCourseSettingsModal=false" class="border  border-gray-300  shadow-sm text-gray-600
+                <button @click="showCourseSettingsModal=false; submitEvent=null" class="border  border-gray-300  shadow-sm text-gray-600
             hover:border-black hover:text-black
             bg-red-500 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
             dark:hover:text-white">Abort</button>
