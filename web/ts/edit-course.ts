@@ -69,6 +69,10 @@ export class CourseSettings {
         this.allowAnonymousMessages = allowAnonymousMessages;
         this.chatModerationEnabled = chatModerationEnabled;
     }
+
+    static init(): CourseSettings {
+        return new CourseSettings(Visibility.hidden, false, false, false, false, false);
+    }
 }
 
 class TranscodingProgress {

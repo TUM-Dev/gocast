@@ -1,43 +1,30 @@
 {{define "course_settings"}}
     {{- /* gotype:github.com/joschahenningsen/TUM-Live/model.Course */ -}}
     <div x-data="{
-            showCourseSettingsModal:false, submitEvent:false, valueToOverWrite:false}">
-    <form id="course-settings-form" method="post" @submit="
-                if({{.HasIndividualChatEnabledSettings}}){
-                    if(submitEvent){
-                        submitEvent=false;
-                        return;
-                    }
-                    submitEvent = true;
-                    $event.preventDefault();
-                    showCourseSettingsModal=true;
-                    return;
-                }
-                else if(valueToOverWrite === {{.ChatEnabled}}){
-                    result = (async () => await admin.saveIsChatEnabledForAllLectures(admin.LectureList.lectures, valueToOverWrite))();
-                }">
+            showCourseSettingsModal:false, submitEvent:false, valueToOverWrite:false, formData:admin.CourseSettings.init() }">
+    <form id="course-settings-form" method="post" @submit.prevent="">
         <h3 class="text-lg font-light mt-2">Visibility of this course</h3>
         <div class="px-4 text-4 mt-2">
             <label class="inline-flex items-center w-full" for="public">
-                <input class="mr-3 w-auto form-radio" type="radio" id="public" name="access" value="public"
+                <input x-model="formData.visibility" class="mr-3 w-auto form-radio" type="radio" id="public" name="access" value="public"
                         {{if .}} {{if eq .Visibility "public"}}checked{{end}}{{else}}checked{{end}}>
                 <span>Public: Everyone can see this course</span>
             </label>
             <label class="inline-flex items-center w-full" for="enrolled">
-                <input class="mr-3 w-auto form-radio" type="radio" id="enrolled" name="access"
+                <input  x-model="formData.visibility" class="mr-3 w-auto form-radio" type="radio" id="enrolled" name="access"
                        value="enrolled" {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Course*/ -}}
                         {{if not (and . .TUMOnlineIdentifier)}}disabled{{end}}
                         {{if .}} {{if eq .Visibility "enrolled"}}checked{{end}}{{end}}>
                 <span>Enrolled: Only students enrolled in TUMOnline can see this course</span>
             </label>
             <label class="inline-flex items-center w-full" for="loggedin">
-                <input class="mr-3 w-auto form-radio" type="radio" id="loggedin" name="access"
+                <input  x-model="formData.visibility" class="mr-3 w-auto form-radio" type="radio" id="loggedin" name="access"
                        value="loggedin"
                         {{if .}} {{if eq .Visibility "loggedin"}}checked{{end}}{{end}}>
                 <span>Logged in: Only users with a TUM account can see this course</span>
             </label>
             <label class="inline-flex items-center w-full" for="hidden">
-                <input class="mr-3 w-auto form-radio" type="radio" id="hidden" name="access"
+                <input x-model="formData.visibility" class="mr-3 w-auto form-radio" type="radio" id="hidden" name="access"
                        value="hidden"
                         {{if .}} {{if eq .Visibility "hidden"}}checked{{end}}{{end}}>
                 <span>Hidden: only visible for users with this link: <br>
@@ -49,7 +36,7 @@
         <div class="px-4 mt-2">
             <div>
                 <label class="inline-flex items-center" for="enVOD">
-                    <input class="w-auto form-checkbox" id="enVOD" name="enVOD" type="checkbox"
+                    <input x-model="formData.enableVOD" class="w-auto form-checkbox" id="enVOD" name="enVOD" type="checkbox"
                            {{if and . .VODEnabled}}checked{{end}}
                             {{if not .}}checked{{end}}>
                     <span class="ml-2">Enable VOD</span>
@@ -57,7 +44,7 @@
             </div>
             <div>
                 <label class="inline-flex items-center" for="enDL">
-                    <input class="w-auto form-checkbox" id="enDL" name="enDL" type="checkbox"
+                    <input x-model="formData.enableDownloads" class="w-auto form-checkbox" id="enDL" name="enDL" type="checkbox"
                            {{if and . .DownloadsEnabled}}checked{{end}}
                             {{if not .}}checked{{end}}>
                     <span class="ml-2">Enable Downloads</span>
@@ -65,7 +52,7 @@
             </div>
             <div x-init="valueToOverWrite={{.ChatEnabled}}">
                 <label class="inline-flex items-center" for="enChat">
-                    <input x-model="valueToOverWrite"
+                    <input x-model="formData.isChatEnabled"
                            class="w-auto form-checkbox"
                            id="enChat" name="enChat"
                            type="checkbox"
@@ -74,7 +61,7 @@
                     <span class="ml-2">Enable Live Chat</span>
                 </label>
                 <label class="inline-flex items-center pl-2" for="enChatAnon">
-                    <input :disabled="!valueToOverWrite"
+                    <input x-model="formData.allowAnonymousMessages" :disabled="!valueToOverWrite"
                            class="w-auto form-checkbox"
                            id="enChatAnon" name="enChatAnon"
                            type="checkbox"
@@ -83,7 +70,7 @@
                     <span class="ml-2">Allow Anonymous Messages</span>
                 </label>
                 <label class="inline-flex items-center pl-2" for="enChatMod">
-                    <input :disabled="!valueToOverWrite"
+                    <input x-model="formData.chatModerationEnabled" :disabled="!valueToOverWrite"
                            class="w-auto form-checkbox"
                            id="enChatMod" name="enChatMod"
                            type="checkbox"
