@@ -7,6 +7,13 @@ export enum UIEditMode {
     series,
 }
 
+export enum Visibility {
+    public = "public",
+    enrolled = "enrolled",
+    loggedIn = "loggedin",
+    hidden = "hidden",
+}
+
 export class LectureList {
     static lectures: Lecture[] = [];
 
@@ -37,6 +44,30 @@ class LectureFile {
         this.id = id;
         this.fileType = fileType;
         this.friendlyName = friendlyName;
+    }
+}
+
+export class CourseSettings {
+    visibility: Visibility;
+    enableVOD: boolean;
+    enableDownloads: boolean;
+    enableChat: boolean;
+    allowAnonymousMessages: boolean;
+    chatModerationEnabled: boolean;
+    constructor(
+        visibility: Visibility,
+        enableVOD: boolean,
+        enableDownloads: boolean,
+        enableChat: boolean,
+        allowAnonymousMessages: boolean,
+        chatModerationEnabled: boolean,
+    ) {
+        this.visibility = visibility;
+        this.enableVOD = enableVOD;
+        this.enableDownloads = enableDownloads;
+        this.enableChat = enableChat;
+        this.allowAnonymousMessages = allowAnonymousMessages;
+        this.chatModerationEnabled = chatModerationEnabled;
     }
 }
 
@@ -268,7 +299,7 @@ export class Lecture {
         if (res.status == StatusCodes.OK) {
             this.isChatEnabled = this.newIsChatEnabled;
         } else {
-             res.text().then((t) => showMessage(t));
+            res.text().then((t) => showMessage(t));
         }
         return res;
     }
@@ -629,3 +660,20 @@ export function deleteCourse(courseID: string) {
         });
     }
 }
+
+export const initCourseSettings = (
+    visibility: Visibility,
+    enableVOD: boolean,
+    enableDownloads: boolean,
+    enableChat: boolean,
+    allowAnonymousMessages: boolean,
+    chatModerationEnabled: boolean,
+): CourseSettings =>
+    new CourseSettings(
+        visibility,
+        enableVOD,
+        enableDownloads,
+        enableChat,
+        allowAnonymousMessages,
+        chatModerationEnabled,
+    );
