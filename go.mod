@@ -45,6 +45,7 @@ require (
 	github.com/icholy/digest v0.1.15
 	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20220629170038-3924db026345
 	github.com/stretchr/testify v1.8.0
+	github.com/u2takey/go-utils v0.3.1
 )
 
 require (
