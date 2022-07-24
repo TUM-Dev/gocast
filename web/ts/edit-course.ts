@@ -157,7 +157,9 @@ export class Lecture {
         }
         setTimeout(() => {
             for (let i = 0; i < this.transcodingProgresses.length; i++) {
-                fetch(`/api/course/${this.courseId}/stream/${this.lectureId}/transcodingProgress?v=${this.transcodingProgresses[i].version}`)
+                fetch(
+                    `/api/course/${this.courseId}/stream/${this.lectureId}/transcodingProgress?v=${this.transcodingProgresses[i].version}`,
+                )
                     .then((r) => {
                         return r.json() as Promise<number>;
                     })
