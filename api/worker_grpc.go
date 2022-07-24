@@ -386,6 +386,12 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 	if err != nil {
 		return nil, err
 	}
+
+	err = s.StreamsDao.RemoveTranscodingProgress(model.StreamVersion(request.SourceType), stream.ID)
+	if err != nil {
+		log.WithError(err).Error("error removing transcoding progress")
+	}
+
 	// look for file to prevent duplication
 	shouldAddFile := true
 	for _, file := range stream.Files {

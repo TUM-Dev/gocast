@@ -46,7 +46,7 @@ type StreamsDao interface {
 	SaveCAMURL(stream *model.Stream, url string)
 	SavePRESURL(stream *model.Stream, url string)
 	SaveTranscodingProgress(progress model.TranscodingProgress) error
-	RemoveTranscodingProgress(streamVersion model.StreamVersion) error
+	RemoveTranscodingProgress(streamVersion model.StreamVersion, streamId uint) error
 	GetTranscodingProgressByVersion(streamVersion model.StreamVersion, streamId uint) (model.TranscodingProgress, error)
 	SaveStream(vod *model.Stream) error
 	ToggleVisibility(streamId uint, private bool) error
@@ -423,8 +423,8 @@ func (d streamsDao) SaveStream(vod *model.Stream) error {
 	return err
 }
 
-func (d streamsDao) RemoveTranscodingProgress(streamVersion model.StreamVersion) error {
-	return DB.Unscoped().Where("version = ?", streamVersion).Delete(&model.TranscodingProgress{}).Error
+func (d streamsDao) RemoveTranscodingProgress(streamVersion model.StreamVersion, streamId uint) error {
+	return DB.Unscoped().Where("version = ? AND stream_id = ?", streamVersion, streamId).Delete(&model.TranscodingProgress{}).Error
 }
 
 func (d streamsDao) DeleteStream(streamID string) {
