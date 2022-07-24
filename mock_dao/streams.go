@@ -304,6 +304,21 @@ func (mr *MockStreamsDaoMockRecorder) GetStreamsWithWatchState(courseID, userID 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStreamsWithWatchState", reflect.TypeOf((*MockStreamsDao)(nil).GetStreamsWithWatchState), courseID, userID)
 }
 
+// GetTranscodingProgressByVersion mocks base method.
+func (m *MockStreamsDao) GetTranscodingProgressByVersion(streamVersion model.StreamVersion, streamId uint) (model.TranscodingProgress, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTranscodingProgressByVersion", streamVersion, streamId)
+	ret0, _ := ret[0].(model.TranscodingProgress)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTranscodingProgressByVersion indicates an expected call of GetTranscodingProgressByVersion.
+func (mr *MockStreamsDaoMockRecorder) GetTranscodingProgressByVersion(streamVersion, streamId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTranscodingProgressByVersion", reflect.TypeOf((*MockStreamsDao)(nil).GetTranscodingProgressByVersion), streamVersion, streamId)
+}
+
 // GetUnitByID mocks base method.
 func (m *MockStreamsDao) GetUnitByID(id string) (model.StreamUnit, error) {
 	m.ctrl.T.Helper()

@@ -47,6 +47,7 @@ type StreamsDao interface {
 	SavePRESURL(stream *model.Stream, url string)
 	SaveTranscodingProgress(progress model.TranscodingProgress) error
 	RemoveTranscodingProgress(streamVersion model.StreamVersion) error
+	GetTranscodingProgressByVersion(streamVersion model.StreamVersion, streamId uint) (model.TranscodingProgress, error)
 	SaveStream(vod *model.Stream) error
 	ToggleVisibility(streamId uint, private bool) error
 
@@ -59,6 +60,11 @@ type StreamsDao interface {
 
 type streamsDao struct {
 	db *gorm.DB
+}
+
+func (d streamsDao) GetTranscodingProgressByVersion(v model.StreamVersion, streamId uint) (p model.TranscodingProgress, err error) {
+	err = DB.Where("version = ? AND stream_id = ?", v, streamId).First(&p).Error
+	return
 }
 
 func NewStreamsDao() StreamsDao {

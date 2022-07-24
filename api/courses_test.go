@@ -2004,5 +2004,47 @@ func TestUploadVOD(t *testing.T) {
 		}
 		testCases.Run(t, configGinCourseRouter)
 	})
+}
 
+func TestGetTranscodingProgress(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	t.Run("GET /api/course/:id/stream/:id/transcodingProgress", func(t *testing.T) {
+		testCases := testutils.TestCases{
+			"Admin, OK": testutils.TestCase{
+				Method: "GET",
+				Url:    "/api/course/40/stream/1969/transcodingProgress",
+				DaoWrapper: dao.DaoWrapper{
+					StreamsDao: func() dao.StreamsDao {
+						smock := mock_dao.NewMockStreamsDao(ctrl)
+						smock.EXPECT().GetStreamByID(gomock.Any(), "1969").MinTimes(1).MaxTimes(1).Return(testutils.StreamFPVNotLive, nil)
+						smock.EXPECT().GetTranscodingProgressByVersion(model.COMB, uint(1969)).MinTimes(1).MaxTimes(1).Return(model.TranscodingProgress{Progress: 69}, nil)
+						return smock
+					}(),
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+						coursesMock.EXPECT().GetCourseById(gomock.Any(), uint(40)).MinTimes(1).MaxTimes(1).Return(testutils.CourseFPV, nil)
+						return coursesMock
+					}(),
+				},
+				TumLiveContext:   &testutils.TUMLiveContextAdmin,
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: []byte("69"),
+			},
+			"Student, Forbidden": testutils.TestCase{
+				Method: "GET",
+				Url:    "/api/course/40/stream/1969/transcodingProgress",
+				DaoWrapper: dao.DaoWrapper{
+					CoursesDao: func() dao.CoursesDao {
+						coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+						coursesMock.EXPECT().GetCourseById(gomock.Any(), uint(40)).MinTimes(1).MaxTimes(1).Return(testutils.CourseFPV, nil)
+						return coursesMock
+					}(),
+				},
+				TumLiveContext:   &testutils.TUMLiveContextStudent,
+				ExpectedCode:     http.StatusForbidden,
+				ExpectedResponse: []byte(""),
+			},
+		}
+		testCases.Run(t, configGinCourseRouter)
+	})
 }
