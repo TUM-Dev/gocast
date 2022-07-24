@@ -42,7 +42,7 @@
                         {{end}}
                     </p>
                 </div>
-                <div x-show="lecture.isConverting" class="p-4">
+                <div x-show="lecture.isConverting" class="p-4" x-init="lecture.keepProgressesUpdated()">
                     <span class="text-1 font-semibold text-sm">Converting:</span>
                     <template x-for="p in lecture.transcodingProgresses">
                         <div class="w-full ml-2">
