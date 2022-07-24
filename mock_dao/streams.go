@@ -334,6 +334,20 @@ func (mr *MockStreamsDaoMockRecorder) GetWorkersForStream(stream interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkersForStream", reflect.TypeOf((*MockStreamsDao)(nil).GetWorkersForStream), stream)
 }
 
+// RemoveTranscodingProgress mocks base method.
+func (m *MockStreamsDao) RemoveTranscodingProgress(streamVersion model.StreamVersion) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveTranscodingProgress", streamVersion)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveTranscodingProgress indicates an expected call of RemoveTranscodingProgress.
+func (mr *MockStreamsDaoMockRecorder) RemoveTranscodingProgress(streamVersion interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTranscodingProgress", reflect.TypeOf((*MockStreamsDao)(nil).RemoveTranscodingProgress), streamVersion)
+}
+
 // SaveCAMURL mocks base method.
 func (m *MockStreamsDao) SaveCAMURL(stream *model.Stream, url string) {
 	m.ctrl.T.Helper()

@@ -12,15 +12,6 @@ import (
 	"time"
 )
 
-// StreamStatus is the status of a stream (e.g. converting)
-type StreamStatus int
-
-const (
-	StatusUnknown    StreamStatus = iota + 1 // StatusUnknown is the default status of a stream
-	StatusConverting                         // StatusConverting indicates that a worker is currently converting the stream.
-	StatusConverted                          // StatusConverted indicates that the stream has been converted.
-)
-
 type Stream struct {
 	gorm.Model
 
@@ -58,7 +49,6 @@ type Stream struct {
 	StreamWorkers         []Worker         `gorm:"many2many:stream_workers;"`
 	StreamProgresses      []StreamProgress `gorm:"foreignKey:StreamID"`
 	VideoSections         []VideoSection
-	StreamStatus          StreamStatus          `gorm:"not null;default:1"`
 	TranscodingProgresses []TranscodingProgress `gorm:"foreignKey:StreamID"`
 	Private               bool                  `gorm:"not null;default:false"`
 
@@ -112,7 +102,7 @@ func (s Stream) GetName() string {
 }
 
 func (s Stream) IsConverting() bool {
-	return s.StreamStatus == StatusConverting
+	return len(s.TranscodingProgresses) > 0
 }
 
 // IsDownloadable returns true if the stream is a recording and has at least one file associated with it.
@@ -247,7 +237,7 @@ func (s Stream) getJson(lhs []LectureHall, course Course) gin.H {
 		"streamKey":             s.StreamKey,
 		"isLiveNow":             s.LiveNow,
 		"isRecording":           s.Recording,
-		"isConverting":          s.StreamStatus == StatusConverting,
+		"isConverting":          s.IsConverting(),
 		"transcodingProgresses": s.TranscodingProgresses,
 		"isPast":                s.IsPast(),
 		"hasStats":              s.Stats != nil,

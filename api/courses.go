@@ -81,11 +81,10 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 	}
 	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	stream := model.Stream{
-		Name:         req.Title,
-		Start:        req.Start,
-		End:          req.Start.Add(time.Hour),
-		CourseID:     tlctx.Course.ID,
-		StreamStatus: model.StatusConverting,
+		Name:     req.Title,
+		Start:    req.Start,
+		End:      req.Start.Add(time.Hour),
+		CourseID: tlctx.Course.ID,
 	}
 	err = r.StreamsDao.CreateStream(&stream)
 	if err != nil {
