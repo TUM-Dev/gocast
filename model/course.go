@@ -215,17 +215,3 @@ func (c Course) AdminJson(lhs []LectureHall) []gin.H {
 	}
 	return res
 }
-
-// HasIndividualChatEnabledSettings returns true if at least one stream has other IsChatEnabled setting than the others, false otherwise
-func (c Course) HasIndividualChatEnabledSettings() bool {
-	if len(c.Streams) < 1 {
-		return false
-	}
-	var lastIsChatEnabled = c.Streams[1].ChatEnabled
-	for i := 1; i < len(c.Streams); i++ {
-		if c.Streams[i].ChatEnabled != lastIsChatEnabled {
-			return true
-		}
-	}
-	return false
-}
