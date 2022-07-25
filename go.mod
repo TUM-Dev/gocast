@@ -48,6 +48,8 @@ require (
 	github.com/u2takey/go-utils v0.3.1
 )
 
+require github.com/matthiasreumann/gomino v0.0.1
+
 require (
 	// this version works - newer commits have breaking changes - do not update
 	// github.com/Azure/go-ntlmssp v0.0.0-20211209120228-48547f28849e // indirect

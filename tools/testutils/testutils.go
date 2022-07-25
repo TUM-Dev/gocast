@@ -16,6 +16,18 @@ import (
 	"testing"
 )
 
+func Equal(t *testing.T, a, b interface{}) {
+	assert.Equal(t, a, b)
+}
+
+func TUMLiveMiddleware(ctx tools.TUMLiveContext) []func(c *gin.Context) {
+	return []func(ctx2 *gin.Context){
+		func(c *gin.Context) {
+			c.Set("TUMLiveContext", ctx)
+		},
+	}
+}
+
 type TestCases map[string]TestCase
 
 type TestCase struct {

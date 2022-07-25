@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -10,10 +9,15 @@ import (
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
+	"github.com/matthiasreumann/gomino"
 	"gorm.io/gorm"
 	"net/http"
 	"testing"
 )
+
+func BookmarksRouterWrapper(r *gin.Engine) {
+	configGinBookmarksRouter(r, dao.DaoWrapper{})
+}
 
 func TestBookmarks(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -31,130 +35,149 @@ func TestBookmarks(t *testing.T) {
 
 		bookmark := req.ToBookmark(testutils.Student.ID)
 
-		testutils.TestCases{
+		gomino.TestCases{
 			"not logged in": {
-				Method:         http.MethodPost,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextEmpty,
-				ExpectedCode:   http.StatusFound,
+				Router:       BookmarksRouterWrapper,
+				Method:       http.MethodPost,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextEmpty),
+				ExpectedCode: http.StatusFound,
 			},
 			"invalid body": {
-				Method:         http.MethodPost,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				Body:           nil,
-				ExpectedCode:   http.StatusBadRequest,
+				Router:       BookmarksRouterWrapper,
+				Method:       http.MethodPost,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Body:         nil,
+				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not add bookmark": {
-				Method:         http.MethodPost,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				DaoWrapper: dao.DaoWrapper{
-					BookmarkDao: func() dao.BookmarkDao {
-						mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
-						mock.
-							EXPECT().
-							Add(&bookmark).
-							Return(errors.New("")).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						BookmarkDao: func() dao.BookmarkDao {
+							mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								Add(&bookmark).
+								Return(errors.New("")).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configGinBookmarksRouter(r, wrapper)
 				},
+				Method:       http.MethodPost,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				Body:         req,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
-				Method:         http.MethodPost,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				DaoWrapper: dao.DaoWrapper{
-					BookmarkDao: func() dao.BookmarkDao {
-						mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
-						mock.
-							EXPECT().
-							Add(&bookmark).
-							Return(nil).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						BookmarkDao: func() dao.BookmarkDao {
+							mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								Add(&bookmark).
+								Return(nil).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configGinBookmarksRouter(r, wrapper)
 				},
+				Method:       http.MethodPost,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				Body:         req,
 				ExpectedCode: http.StatusOK,
 			},
-		}.Run(t, configGinBookmarksRouter)
+		}.Run(t, testutils.Equal)
 	})
 	t.Run("GET/api/bookmarks", func(t *testing.T) {
 		baseUrl := "/api/bookmarks"
 
 		bookmarks := []model.Bookmark{testutils.Bookmark}
 
-		testutils.TestCases{
+		gomino.TestCases{
 			"not logged in": {
-				Method:         http.MethodGet,
-				Url:            baseUrl,
-				TumLiveContext: &testutils.TUMLiveContextEmpty,
-				ExpectedCode:   http.StatusFound,
+				Router:       BookmarksRouterWrapper,
+				Method:       http.MethodGet,
+				Url:          baseUrl,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextEmpty),
+				ExpectedCode: http.StatusFound,
 			},
 			"invalid query": {
-				Method:         http.MethodGet,
-				Url:            baseUrl,
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				ExpectedCode:   http.StatusBadRequest,
+				Router:       BookmarksRouterWrapper,
+				Method:       http.MethodGet,
+				Url:          baseUrl,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not find stream": {
-				Method:         http.MethodGet,
-				Url:            fmt.Sprintf("%s?streamID=%d", baseUrl, testutils.StreamFPVLive.ID),
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				DaoWrapper: dao.DaoWrapper{
-					BookmarkDao: func() dao.BookmarkDao {
-						mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
-						mock.
-							EXPECT().
-							GetByStreamID(testutils.StreamFPVLive.ID, testutils.Student.ID).
-							Return([]model.Bookmark{}, gorm.ErrRecordNotFound).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						BookmarkDao: func() dao.BookmarkDao {
+							mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								GetByStreamID(testutils.StreamFPVLive.ID, testutils.Student.ID).
+								Return([]model.Bookmark{}, gorm.ErrRecordNotFound).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configGinBookmarksRouter(r, wrapper)
 				},
+				Method:       http.MethodGet,
+				Url:          fmt.Sprintf("%s?streamID=%d", baseUrl, testutils.StreamFPVLive.ID),
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				Body:         nil,
 				ExpectedCode: http.StatusNotFound,
 			},
 			"database error": {
-				Method:         http.MethodGet,
-				Url:            fmt.Sprintf("%s?streamID=%d", baseUrl, testutils.StreamFPVLive.ID),
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				DaoWrapper: dao.DaoWrapper{
-					BookmarkDao: func() dao.BookmarkDao {
-						mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
-						mock.
-							EXPECT().
-							GetByStreamID(testutils.StreamFPVLive.ID, testutils.Student.ID).
-							Return([]model.Bookmark{}, errors.New("")).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						BookmarkDao: func() dao.BookmarkDao {
+							mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								GetByStreamID(testutils.StreamFPVLive.ID, testutils.Student.ID).
+								Return([]model.Bookmark{}, errors.New("")).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configGinBookmarksRouter(r, wrapper)
 				},
+				Method:       http.MethodGet,
+				Url:          fmt.Sprintf("%s?streamID=%d", baseUrl, testutils.StreamFPVLive.ID),
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
-				Method:         http.MethodGet,
-				Url:            fmt.Sprintf("%s?streamID=%d", baseUrl, testutils.StreamFPVLive.ID),
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				DaoWrapper: dao.DaoWrapper{
-					BookmarkDao: func() dao.BookmarkDao {
-						mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
-						mock.
-							EXPECT().
-							GetByStreamID(testutils.StreamFPVLive.ID, testutils.Student.ID).
-							Return(bookmarks, nil).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						BookmarkDao: func() dao.BookmarkDao {
+							mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								GetByStreamID(testutils.StreamFPVLive.ID, testutils.Student.ID).
+								Return(bookmarks, nil).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configGinBookmarksRouter(r, wrapper)
 				},
+				Method:           http.MethodGet,
+				Url:              fmt.Sprintf("%s?streamID=%d", baseUrl, testutils.StreamFPVLive.ID),
+				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: testutils.First(json.Marshal(bookmarks)).([]byte),
+				ExpectedResponse: bookmarks,
 			},
-		}.Run(t, configGinBookmarksRouter)
+		}.Run(t, testutils.Equal)
 	})
 	t.Run("PUT/api/bookmarks/:id", func(t *testing.T) {
 		url := fmt.Sprintf("/api/bookmarks/%d", testutils.Bookmark.ID)
@@ -168,239 +191,274 @@ func TestBookmarks(t *testing.T) {
 
 		updatedBookmark := req.ToBookmark(testutils.Bookmark.ID)
 
-		testutils.TestCases{
+		gomino.TestCases{
 			"not logged in": {
-				Method:         http.MethodPut,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextEmpty,
-				ExpectedCode:   http.StatusFound,
+				Router:       BookmarksRouterWrapper,
+				Method:       http.MethodPut,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextEmpty),
+				ExpectedCode: http.StatusFound,
 			},
 			"invalid id": {
-				Method:         http.MethodPut,
-				Url:            "/api/bookmarks/abc",
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				ExpectedCode:   http.StatusBadRequest,
+				Router:       BookmarksRouterWrapper,
+				Method:       http.MethodPut,
+				Url:          "/api/bookmarks/abc",
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				ExpectedCode: http.StatusBadRequest,
 			},
 			"invalid body": {
-				Method:         http.MethodPut,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				Body:           nil,
-				ExpectedCode:   http.StatusBadRequest,
+				Router:       BookmarksRouterWrapper,
+				Method:       http.MethodPut,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Body:         nil,
+				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not find bookmark": {
-				Method:         http.MethodPut,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				DaoWrapper: dao.DaoWrapper{
-					BookmarkDao: func() dao.BookmarkDao {
-						mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
-						mock.
-							EXPECT().
-							GetByID(testutils.Bookmark.ID).
-							Return(testutils.Bookmark, gorm.ErrRecordNotFound).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						BookmarkDao: func() dao.BookmarkDao {
+							mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								GetByID(testutils.Bookmark.ID).
+								Return(testutils.Bookmark, gorm.ErrRecordNotFound).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configGinBookmarksRouter(r, wrapper)
 				},
+				Method:       http.MethodPut,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				Body:         req,
 				ExpectedCode: http.StatusNotFound,
 			},
 			"can not find bookmark - database error": {
-				Method:         http.MethodPut,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				DaoWrapper: dao.DaoWrapper{
-					BookmarkDao: func() dao.BookmarkDao {
-						mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
-						mock.
-							EXPECT().
-							GetByID(testutils.Bookmark.ID).
-							Return(testutils.Bookmark, errors.New("")).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						BookmarkDao: func() dao.BookmarkDao {
+							mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								GetByID(testutils.Bookmark.ID).
+								Return(testutils.Bookmark, errors.New("")).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configGinBookmarksRouter(r, wrapper)
 				},
+				Method:       http.MethodPut,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				Body:         req,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"invalid user": {
-				Method:         http.MethodPut,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextLecturer,
-				DaoWrapper: dao.DaoWrapper{
-					BookmarkDao: func() dao.BookmarkDao {
-						mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
-						mock.
-							EXPECT().
-							GetByID(testutils.Bookmark.ID).
-							Return(testutils.Bookmark, nil).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						BookmarkDao: func() dao.BookmarkDao {
+							mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								GetByID(testutils.Bookmark.ID).
+								Return(testutils.Bookmark, nil).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configGinBookmarksRouter(r, wrapper)
 				},
+				Method:       http.MethodPut,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextLecturer),
 				Body:         req,
 				ExpectedCode: http.StatusForbidden,
 			},
 			"can not update bookmark": {
-				Method:         http.MethodPut,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				DaoWrapper: dao.DaoWrapper{
-					BookmarkDao: func() dao.BookmarkDao {
-						mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
-						mock.
-							EXPECT().
-							GetByID(testutils.Bookmark.ID).
-							Return(testutils.Bookmark, nil).
-							AnyTimes()
-						mock.
-							EXPECT().
-							Update(&updatedBookmark).
-							Return(errors.New("")).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						BookmarkDao: func() dao.BookmarkDao {
+							mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								GetByID(testutils.Bookmark.ID).
+								Return(testutils.Bookmark, nil).
+								AnyTimes()
+							mock.
+								EXPECT().
+								Update(&updatedBookmark).
+								Return(errors.New("")).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configGinBookmarksRouter(r, wrapper)
 				},
+				Method:       http.MethodPut,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				Body:         req,
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"success": {
-				Method:         http.MethodPut,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				DaoWrapper: dao.DaoWrapper{
-					BookmarkDao: func() dao.BookmarkDao {
-						mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
-						mock.
-							EXPECT().
-							GetByID(testutils.Bookmark.ID).
-							Return(testutils.Bookmark, nil).
-							AnyTimes()
-						mock.
-							EXPECT().
-							Update(&updatedBookmark).
-							Return(nil).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						BookmarkDao: func() dao.BookmarkDao {
+							mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								GetByID(testutils.Bookmark.ID).
+								Return(testutils.Bookmark, nil).
+								AnyTimes()
+							mock.
+								EXPECT().
+								Update(&updatedBookmark).
+								Return(nil).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configGinBookmarksRouter(r, wrapper)
 				},
+				Method:       http.MethodPut,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				Body:         req,
 				ExpectedCode: http.StatusOK,
 			},
-		}.Run(t, configGinBookmarksRouter)
+		}.Run(t, testutils.Equal)
 	})
 	t.Run("DELETE/api/bookmarks/:id", func(t *testing.T) {
 		url := fmt.Sprintf("/api/bookmarks/%d", testutils.Bookmark.ID)
 
-		testutils.TestCases{
+		gomino.TestCases{
 			"not logged in": {
-				Method:         http.MethodDelete,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextEmpty,
-				ExpectedCode:   http.StatusFound,
+				Router:       BookmarksRouterWrapper,
+				Method:       http.MethodDelete,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextEmpty),
+				ExpectedCode: http.StatusFound,
 			},
 			"invalid id": {
-				Method:         http.MethodDelete,
-				Url:            "/api/bookmarks/abc",
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				ExpectedCode:   http.StatusBadRequest,
+				Router:       BookmarksRouterWrapper,
+				Method:       http.MethodDelete,
+				Url:          "/api/bookmarks/abc",
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not find bookmark": {
-				Method:         http.MethodDelete,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				DaoWrapper: dao.DaoWrapper{
-					BookmarkDao: func() dao.BookmarkDao {
-						mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
-						mock.
-							EXPECT().
-							GetByID(testutils.Bookmark.ID).
-							Return(testutils.Bookmark, gorm.ErrRecordNotFound).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						BookmarkDao: func() dao.BookmarkDao {
+							mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								GetByID(testutils.Bookmark.ID).
+								Return(testutils.Bookmark, gorm.ErrRecordNotFound).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configGinBookmarksRouter(r, wrapper)
 				},
+				Method:       http.MethodDelete,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode: http.StatusNotFound,
 			},
 			"can not find bookmark - database error": {
-				Method:         http.MethodDelete,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				DaoWrapper: dao.DaoWrapper{
-					BookmarkDao: func() dao.BookmarkDao {
-						mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
-						mock.
-							EXPECT().
-							GetByID(testutils.Bookmark.ID).
-							Return(testutils.Bookmark, errors.New("")).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						BookmarkDao: func() dao.BookmarkDao {
+							mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								GetByID(testutils.Bookmark.ID).
+								Return(testutils.Bookmark, errors.New("")).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configGinBookmarksRouter(r, wrapper)
 				},
+				Method:       http.MethodDelete,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"invalid user": {
-				Method:         http.MethodDelete,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextLecturer,
-				DaoWrapper: dao.DaoWrapper{
-					BookmarkDao: func() dao.BookmarkDao {
-						mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
-						mock.
-							EXPECT().
-							GetByID(testutils.Bookmark.ID).
-							Return(testutils.Bookmark, nil).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						BookmarkDao: func() dao.BookmarkDao {
+							mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								GetByID(testutils.Bookmark.ID).
+								Return(testutils.Bookmark, nil).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configGinBookmarksRouter(r, wrapper)
 				},
+				Method:       http.MethodDelete,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextLecturer),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"can not delete bookmark": {
-				Method:         http.MethodDelete,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				DaoWrapper: dao.DaoWrapper{
-					BookmarkDao: func() dao.BookmarkDao {
-						mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
-						mock.
-							EXPECT().
-							GetByID(testutils.Bookmark.ID).
-							Return(testutils.Bookmark, nil).
-							AnyTimes()
-						mock.
-							EXPECT().
-							Delete(testutils.Bookmark.ID).
-							Return(errors.New("")).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						BookmarkDao: func() dao.BookmarkDao {
+							mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								GetByID(testutils.Bookmark.ID).
+								Return(testutils.Bookmark, nil).
+								AnyTimes()
+							mock.
+								EXPECT().
+								Delete(testutils.Bookmark.ID).
+								Return(errors.New("")).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configGinBookmarksRouter(r, wrapper)
 				},
+				Method:       http.MethodDelete,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
-				Method:         http.MethodDelete,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				DaoWrapper: dao.DaoWrapper{
-					BookmarkDao: func() dao.BookmarkDao {
-						mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
-						mock.
-							EXPECT().
-							GetByID(testutils.Bookmark.ID).
-							Return(testutils.Bookmark, nil).
-							AnyTimes()
-						mock.
-							EXPECT().
-							Delete(testutils.Bookmark.ID).
-							Return(nil).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						BookmarkDao: func() dao.BookmarkDao {
+							mock := mock_dao.NewMockBookmarkDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								GetByID(testutils.Bookmark.ID).
+								Return(testutils.Bookmark, nil).
+								AnyTimes()
+							mock.
+								EXPECT().
+								Delete(testutils.Bookmark.ID).
+								Return(nil).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configGinBookmarksRouter(r, wrapper)
 				},
+				Method:       http.MethodDelete,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode: http.StatusOK,
 			},
-		}.Run(t, configGinBookmarksRouter)
+		}.Run(t, testutils.Equal)
 	})
 }
