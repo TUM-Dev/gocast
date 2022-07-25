@@ -27,7 +27,7 @@ func TestDownload(t *testing.T) {
 	streamId := (uint)(1234)
 	courseId := (uint)(4321)
 	filePath := "/tmp/download_test"
-	fileContent := []byte("hello123")
+	fileContent := []byte("hello123") // TODO: Bug in gomino (fix after update)
 	url := fmt.Sprintf("/api/download/%s", fileId)
 
 	// create file with content to read
