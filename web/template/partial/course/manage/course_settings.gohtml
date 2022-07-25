@@ -5,10 +5,7 @@
     }">
     <form id="course-settings-form" method="post" @submit.prevent="
         async () => {
-            if(isChatEnabledForCourse === {{.ChatEnabled}}){
-               admin.sendCourseSettingsForm({{.Model.ID}});
-            }
-            else if({{.HasIndividualChatEnabledSettings}}){
+            if({{.HasIndividualChatEnabledSettings}}){
                showCourseSettingsModal = true;
             }
             else{
