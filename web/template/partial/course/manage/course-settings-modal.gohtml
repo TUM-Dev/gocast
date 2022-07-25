@@ -15,7 +15,7 @@
                 <br>
                 <div class="grid grid-cols-3 gap-4">
                 <button @click="
-                   await admin.submitFormAndEnableAllIndividualChats({{.Model.ID}})
+                   await admin.submitFormAndEnableAllIndividualChats({{.Model.ID}}, isChatEnabledForCourse);
                    showCourseSettingsModal = false;
                    window.location.reload();
                 " class="border  border-gray-300  shadow-sm text-gray-600
@@ -24,13 +24,13 @@
                 dark:hover:text-white">Overwrite
                 </button>
                 <button @click="
-                    admin.sendCourseSettingsForm({{.Model.Id}})
+                    admin.sendCourseSettingsForm({{.Model.ID}})
                     showCourseSettingsModal = false;
                     window.location.reload();
                 " class="border bg-orange-500 border-gray-300 shadow-sm text-gray-600
                 hover:border-black hover:text-black
                 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
-                dark:hover:text-white">Enable Without Overwriting</button>
+                dark:hover:text-white"><span x-text="isChatEnabledForCourse ? 'Enable' : 'Disable'"></span> Without Overwriting</button>
                 <button @click="showCourseSettingsModal = false;" class="border  border-gray-300  shadow-sm text-gray-600
             hover:border-black hover:text-black
             bg-red-500 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
