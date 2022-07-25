@@ -7,13 +7,6 @@ export enum UIEditMode {
     series,
 }
 
-export enum Visibility {
-    public = "public",
-    enrolled = "enrolled",
-    loggedIn = "loggedin",
-    hidden = "hidden",
-}
-
 export class LectureList {
     static lectures: Lecture[] = [];
 
@@ -44,37 +37,6 @@ class LectureFile {
         this.id = id;
         this.fileType = fileType;
         this.friendlyName = friendlyName;
-    }
-}
-
-export class CourseSettings {
-    visibility: Visibility;
-    enableVOD: boolean;
-    enableDownloads: boolean;
-    enableChat: boolean;
-    allowAnonymousMessages: boolean;
-    chatModerationEnabled: boolean;
-    courseId: number;
-    constructor(
-        visibility: Visibility,
-        enableVOD: boolean,
-        enableDownloads: boolean,
-        enableChat: boolean,
-        allowAnonymousMessages: boolean,
-        chatModerationEnabled: boolean,
-        courseId: number,
-    ) {
-        this.visibility = visibility;
-        this.enableVOD = enableVOD;
-        this.enableDownloads = enableDownloads;
-        this.enableChat = enableChat;
-        this.allowAnonymousMessages = allowAnonymousMessages;
-        this.chatModerationEnabled = chatModerationEnabled;
-        this.courseId = courseId;
-    }
-
-    static init(): CourseSettings {
-        return new CourseSettings(Visibility.hidden, false, false, false, false, false, -1);
     }
 }
 
