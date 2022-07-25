@@ -10,6 +10,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
+	"github.com/matthiasreumann/gomino"
 	"net/http"
 	"testing"
 )
@@ -25,8 +26,6 @@ func TestNotifications(t *testing.T) {
 			{SanitizedBody: "Brand new features!"},
 		}
 
-		res, _ := json.Marshal(notifications)
-
 		notificationDao := func(targets []model.NotificationTarget) dao.NotificationsDao {
 			notificationsMock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
 			notificationsMock.
@@ -37,65 +36,80 @@ func TestNotifications(t *testing.T) {
 			return notificationsMock
 		}
 
-		testutils.TestCases{
+		gomino.TestCases{
 			"can not get notifications": {
-				Method: http.MethodGet,
-				Url:    url,
-				DaoWrapper: dao.DaoWrapper{
-					NotificationsDao: func() dao.NotificationsDao {
-						notificationsMock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
-						notificationsMock.
-							EXPECT().
-							GetNotifications([]model.NotificationTarget{model.TargetAll}).
-							Return([]model.Notification{}, errors.New("")).
-							AnyTimes()
-						return notificationsMock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						NotificationsDao: func() dao.NotificationsDao {
+							notificationsMock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
+							notificationsMock.
+								EXPECT().
+								GetNotifications([]model.NotificationTarget{model.TargetAll}).
+								Return([]model.Notification{}, errors.New("")).
+								AnyTimes()
+							return notificationsMock
+						}(),
+					}
+					configNotificationsRouter(r, wrapper)
 				},
-				TumLiveContext: &testutils.TUMLiveContextEmpty,
-				ExpectedCode:   http.StatusNotFound,
+				Method:       http.MethodGet,
+				Url:          url,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextEmpty),
+				ExpectedCode: http.StatusNotFound,
 			},
 			"success not logged in": {
-				Method: http.MethodGet,
-				Url:    url,
-				DaoWrapper: dao.DaoWrapper{
-					NotificationsDao: notificationDao([]model.NotificationTarget{model.TargetAll}),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						NotificationsDao: notificationDao([]model.NotificationTarget{model.TargetAll}),
+					}
+					configNotificationsRouter(r, wrapper)
 				},
-				TumLiveContext:   &testutils.TUMLiveContextEmpty,
+				Method:           http.MethodGet,
+				Url:              url,
+				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextEmpty),
 				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: res,
-			},
-			"success admin": {
-				Method: http.MethodGet,
-				Url:    url,
-				DaoWrapper: dao.DaoWrapper{
-					NotificationsDao: notificationDao([]model.NotificationTarget{model.TargetAll, model.TargetUser, model.TargetAdmin}),
-				},
-				TumLiveContext:   &testutils.TUMLiveContextAdmin,
-				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: res,
-			},
-			"success lecturer": {
-				Method: http.MethodGet,
-				Url:    url,
-				DaoWrapper: dao.DaoWrapper{
-					NotificationsDao: notificationDao([]model.NotificationTarget{model.TargetAll, model.TargetUser, model.TargetLecturer}),
-				},
-				TumLiveContext:   &testutils.TUMLiveContextLecturer,
-				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: res,
+				ExpectedResponse: notifications,
 			},
 			"success student": {
-				Method: http.MethodGet,
-				Url:    url,
-				DaoWrapper: dao.DaoWrapper{
-					NotificationsDao: notificationDao([]model.NotificationTarget{model.TargetAll, model.TargetUser, model.TargetStudent}),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						NotificationsDao: notificationDao([]model.NotificationTarget{model.TargetAll, model.TargetUser, model.TargetStudent}),
+					}
+					configNotificationsRouter(r, wrapper)
 				},
-				TumLiveContext:   &testutils.TUMLiveContextStudent,
+				Method:           http.MethodGet,
+				Url:              url,
+				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: res,
+				ExpectedResponse: notifications,
 			},
-		}.Run(t, configNotificationsRouter)
+			"success lecturer": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						NotificationsDao: notificationDao([]model.NotificationTarget{model.TargetAll, model.TargetUser, model.TargetLecturer}),
+					}
+					configNotificationsRouter(r, wrapper)
+				},
+				Method:           http.MethodGet,
+				Url:              url,
+				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextLecturer),
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: notifications,
+			},
+			"success admin": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						NotificationsDao: notificationDao([]model.NotificationTarget{model.TargetAll, model.TargetUser, model.TargetAdmin}),
+					}
+					configNotificationsRouter(r, wrapper)
+				},
+				Method:           http.MethodGet,
+				Url:              url,
+				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: notifications,
+			},
+		}.Run(t, testutils.Equal)
 	})
 
 	t.Run("POST/api/notifications/", func(t *testing.T) {
