@@ -22,6 +22,13 @@ export class LectureList {
         LectureList.triggerUpdate();
     }
 
+    static hasIndividualChatEnabledSettings(): boolean {
+        const lectures = this.lectures;
+        if (lectures.length < 2) return false;
+        const first = lectures[0];
+        return lectures.slice(1).some((lecture) => lecture.isChatEnabled !== first.isChatEnabled);
+    }
+
     static triggerUpdate() {
         const event = new CustomEvent("newlectures", { detail: LectureList.lectures });
         window.dispatchEvent(event);

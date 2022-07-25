@@ -3,17 +3,19 @@
     <div x-data="{
         showCourseSettingsModal:false, isChatEnabledForCourse: {{.ChatEnabled}}
     }">
-    <form id="course-settings-form" method="post" @submit.prevent="
-        async () => {
-            if({{.HasIndividualChatEnabledSettings}}){
-               showCourseSettingsModal = true;
+    <form id="course-settings-form" method="post"
+        @submit.prevent="
+            async () => {
+                if(admin.LectureList.hasIndividualChatEnabledSettings()){
+                   showCourseSettingsModal = true;
+                }
+                else{
+                    await admin.submitFormAndEnableAllIndividualChats({{.Model.ID}}, isChatEnabledForCourse);
+                    window.location.reload();
+                }
             }
-            else{
-                await admin.submitFormAndEnableAllIndividualChats({{.Model.ID}}, isChatEnabledForCourse);
-                window.location.reload();
-            }
-        }
-    ">
+        "
+    >
         <h3 class="text-lg font-light mt-2">Visibility of this course</h3>
         <div class="px-4 text-4 mt-2">
             <label class="inline-flex items-center w-full" for="public">
