@@ -13,8 +13,8 @@
             }
             else{
                 await admin.submitFormAndEnableAllIndividualChats({{.Model.ID}}, isChatEnabledForCourse);
+                window.location.reload();
             }
-            window.location.reload();
         }
     ">
         <h3 class="text-lg font-light mt-2">Visibility of this course</h3>

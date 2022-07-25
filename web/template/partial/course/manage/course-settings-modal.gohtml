@@ -16,14 +16,17 @@
                 <div class="grid grid-cols-3 gap-4">
                 <button @click="
                    await admin.submitFormAndEnableAllIndividualChats({{.Model.ID}})
+                   showCourseSettingsModal = false;
+                   window.location.reload();
                 " class="border  border-gray-300  shadow-sm text-gray-600
                 hover:border-black hover:text-black
                 bg-green-500 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
                 dark:hover:text-white">Overwrite
                 </button>
                 <button @click="
-                    document.getElementById('course-settings-form').dispatchEvent(new CustomEvent('submit', {cancelable:true}));
-                    showCourseSettingsModal=false;
+                    admin.sendCourseSettingsForm({{.Model.Id}})
+                    showCourseSettingsModal = false;
+                    window.location.reload();
                 " class="border bg-orange-500 border-gray-300 shadow-sm text-gray-600
                 hover:border-black hover:text-black
                 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
