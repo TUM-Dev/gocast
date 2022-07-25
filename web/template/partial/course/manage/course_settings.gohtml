@@ -1,8 +1,31 @@
 {{define "course_settings"}}
     {{- /* gotype:github.com/joschahenningsen/TUM-Live/model.Course */ -}}
     <div x-data="{
-            showCourseSettingsModal:false, submitEvent:false, valueToOverWrite:false, formData:admin.CourseSettings.init() }">
-    <form id="course-settings-form" method="post" @submit.prevent="">
+        showCourseSettingsModal:false, submitEvent:false,
+        formData: new admin.CourseSettings(
+            '{{.Visibility}}',
+            {{.VODEnabled}},
+            {{.DownloadsEnabled}},
+            {{.ChatEnabled}},
+            {{.AnonymousChatEnabled}},
+            {{.ModeratedChatEnabled}},
+            {{.Model.ID}}
+        )
+    }">
+    <form id="course-settings-form" method="post" @submit.prevent="
+        async () => {
+            if(formData.isChatEnabled === {{.ChatEnabled}}){
+               admin.sendCourseSettingsForm({{.Model.ID}});
+            }
+            else if({{.HasIndividualChatEnabledSettings}}){
+               showCourseSettingsModal = true;
+            }
+            else{
+                await admin.submitFormAndEnableAllIndividualChats({{.Model.ID}}, formData.isChatEnabled);
+            }
+            window.location.reload();
+        }
+    ">
         <h3 class="text-lg font-light mt-2">Visibility of this course</h3>
         <div class="px-4 text-4 mt-2">
             <label class="inline-flex items-center w-full" for="public">
@@ -50,7 +73,7 @@
                     <span class="ml-2">Enable Downloads</span>
                 </label>
             </div>
-            <div x-init="valueToOverWrite={{.ChatEnabled}}">
+            <div x-init="formData.isChatEnabled={{.ChatEnabled}}">
                 <label class="inline-flex items-center" for="enChat">
                     <input x-model="formData.isChatEnabled"
                            class="w-auto form-checkbox"
@@ -61,7 +84,7 @@
                     <span class="ml-2">Enable Live Chat</span>
                 </label>
                 <label class="inline-flex items-center pl-2" for="enChatAnon">
-                    <input x-model="formData.allowAnonymousMessages" :disabled="!valueToOverWrite"
+                    <input x-model="formData.allowAnonymousMessages" :disabled="!formData.isChatEnabled"
                            class="w-auto form-checkbox"
                            id="enChatAnon" name="enChatAnon"
                            type="checkbox"
@@ -70,7 +93,7 @@
                     <span class="ml-2">Allow Anonymous Messages</span>
                 </label>
                 <label class="inline-flex items-center pl-2" for="enChatMod">
-                    <input x-model="formData.chatModerationEnabled" :disabled="!valueToOverWrite"
+                    <input x-model="formData.chatModerationEnabled" :disabled="!formData.isChatEnabled"
                            class="w-auto form-checkbox"
                            id="enChatMod" name="enChatMod"
                            type="checkbox"

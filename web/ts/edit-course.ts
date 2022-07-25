@@ -1,4 +1,4 @@
-import { Delete, patchData, postData, putData, showMessage } from "./global";
+import { Delete, patchData, postData, putData, sendFormData, showMessage } from "./global";
 import { StatusCodes } from "http-status-codes";
 
 export enum UIEditMode {
@@ -54,6 +54,7 @@ export class CourseSettings {
     enableChat: boolean;
     allowAnonymousMessages: boolean;
     chatModerationEnabled: boolean;
+    courseId: number;
     constructor(
         visibility: Visibility,
         enableVOD: boolean,
@@ -61,6 +62,7 @@ export class CourseSettings {
         enableChat: boolean,
         allowAnonymousMessages: boolean,
         chatModerationEnabled: boolean,
+        courseId: number,
     ) {
         this.visibility = visibility;
         this.enableVOD = enableVOD;
@@ -68,10 +70,11 @@ export class CourseSettings {
         this.enableChat = enableChat;
         this.allowAnonymousMessages = allowAnonymousMessages;
         this.chatModerationEnabled = chatModerationEnabled;
+        this.courseId = courseId;
     }
 
     static init(): CourseSettings {
-        return new CourseSettings(Visibility.hidden, false, false, false, false, false);
+        return new CourseSettings(Visibility.hidden, false, false, false, false, false, -1);
     }
 }
 
@@ -457,9 +460,9 @@ export function saveIsChatEnabled(streamId: number, isChatEnabled: boolean) {
     return patchData("/api/stream/" + streamId + "/chat/enabled", { streamId, isChatEnabled });
 }
 
-export async function saveIsChatEnabledForAllLectures(lectures: Lecture[], isChatEnabled: boolean) {
+export async function saveIsChatEnabledForAllLectures(isChatEnabled: boolean) {
     const promises = [];
-    for (const lecture of lectures) {
+    for (const lecture of LectureList.lectures) {
         promises.push(saveIsChatEnabled(lecture.lectureId, isChatEnabled));
     }
     const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
@@ -661,6 +664,18 @@ export function createLectureForm() {
     };
 }
 
+export function sendCourseSettingsForm(courseId: number) {
+    const form = document.getElementById("course-settings-form") as HTMLFormElement;
+    const formData = new FormData(form);
+    sendFormData(`/admin/course/${courseId}`, formData);
+}
+
+export async function submitFormAndEnableAllIndividualChats(courseId: number, isChatEnabled: boolean) {
+    const res = await saveIsChatEnabledForAllLectures(isChatEnabled);
+    sendCourseSettingsForm(courseId);
+    return res;
+}
+
 export function deleteCourse(courseID: string) {
     if (confirm("Do you really want to delete this course? This includes all associated lectures.")) {
         const url = `/api/course/${courseID}/`;
@@ -673,6 +688,3 @@ export function deleteCourse(courseID: string) {
         });
     }
 }
-
-export const initCourseSettings = (): CourseSettings =>
-    new CourseSettings(Visibility.hidden, false, false, false, false, false);

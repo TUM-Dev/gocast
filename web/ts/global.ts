@@ -40,6 +40,13 @@ export async function Delete(url = "") {
     });
 }
 
+export function sendFormData(url, formData: FormData) {
+    const HttpReq = new XMLHttpRequest();
+    HttpReq.open("POST", url, false);
+    HttpReq.send(formData);
+    return HttpReq.responseText;
+}
+
 export function Get(yourUrl) {
     const HttpReq = new XMLHttpRequest();
     HttpReq.open("GET", yourUrl, false);
