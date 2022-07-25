@@ -28,15 +28,15 @@ type liveUpdateUserSessionsWrapper struct {
 	courses  []uint
 }
 
-func configGinLiveUpdateRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
+func RegisterLiveUpdatePubSubChannel() {
 	RegisterPubSubChannel(LiveUpdatePubSubRoomName, PubSubMessageHandlers{
 		onSubscribe:   liveUpdateOnSubscribe,
 		onUnsubscribe: liveUpdateOnUnsubscribe,
 	})
 }
 
-func liveUpdateOnUnsubscribe(s *melody.Session) {
-	ctx, _ := s.Get("ctx") // get gin context
+func liveUpdateOnUnsubscribe(psc *PubSubContext) {
+	ctx, _ := psc.Get("ctx") // get gin context
 	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -53,7 +53,7 @@ func liveUpdateOnUnsubscribe(s *melody.Session) {
 	liveUpdateListenerMutex.Lock()
 	var newSessions []*melody.Session
 	for _, session := range liveUpdateListener[userId].sessions {
-		if session != s {
+		if session != psc.Client.session {
 			newSessions = append(newSessions, session)
 		}
 	}
@@ -65,9 +65,9 @@ func liveUpdateOnUnsubscribe(s *melody.Session) {
 	liveUpdateListenerMutex.Unlock()
 }
 
-func liveUpdateOnSubscribe(s *melody.Session) {
-	ctx, _ := s.Get("ctx") // get gin context
-	daoWrapper, _ := s.Get("dao")
+func liveUpdateOnSubscribe(psc *PubSubContext) {
+	ctx, _ := psc.Get("ctx") // get gin context
+	daoWrapper, _ := psc.Get("dao")
 
 	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 	if !exists {
@@ -103,9 +103,9 @@ func liveUpdateOnSubscribe(s *melody.Session) {
 
 	liveUpdateListenerMutex.Lock()
 	if liveUpdateListener[userId] != nil {
-		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{append(liveUpdateListener[userId].sessions, s), courses}
+		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{append(liveUpdateListener[userId].sessions, psc.Client.session), courses}
 	} else {
-		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{[]*melody.Session{s}, courses}
+		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{[]*melody.Session{psc.Client.session}, courses}
 	}
 	liveUpdateListenerMutex.Unlock()
 }

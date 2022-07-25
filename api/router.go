@@ -12,10 +12,14 @@ func ConfigChatRouter(router *gin.RouterGroup) {
 	configGinChatRouter(router, daoWrapper)
 }
 
-// ConfigLiveUpdateRouter configure gin router for live-updates (without gzip)
-func ConfigLiveUpdateRouter(router *gin.RouterGroup) {
+// ConfigWSPubSubRouter configure gin router for live-updates (without gzip)
+func ConfigWSPubSubRouter(router *gin.RouterGroup) {
 	daoWrapper := dao.NewDaoWrapper()
-	configGinLiveUpdateRouter(router, daoWrapper)
+	configGinWSPubSubRouter(router, daoWrapper)
+
+	// Register Channels
+	RegisterLiveUpdatePubSubChannel()
+	RegisterChatPubSubChannel()
 }
 
 //ConfigGinRouter for non ws endpoints

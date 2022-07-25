@@ -20,32 +20,20 @@ import (
 )
 
 const (
-	ChatPubSubRoomName = "chat"
+	ChatPubSubRoomName = "chat/:streamID"
 )
 
 //var m *melody.Melody
 
 //const maxParticipants = 10000
 
-func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
-	routes := chatRoutes{daoWrapper}
-
-	wsGroup := router.Group("/:streamID")
-	wsGroup.Use(tools.InitStream(daoWrapper))
-	wsGroup.GET("/messages", routes.getMessages)
-	wsGroup.GET("/active-poll", routes.getActivePoll)
-	wsGroup.GET("/users", routes.getUsers)
-	/*wsGroup.GET("/ws", routes.ChatStream)
-	if m == nil {
-		log.Printf("creating melody")
-		m = melody.New()
-	}*/
-
-	RegisterPubSubChannel(LiveUpdatePubSubRoomName, PubSubMessageHandlers{
+func RegisterChatPubSubChannel() {
+	RegisterPubSubChannel(ChatPubSubRoomName, PubSubMessageHandlers{
 		onSubscribe:   chatOnSubscribe,
 		onUnsubscribe: chatOnUnsubscribe,
-		onMessage: func(s *melody.Session, message *WSPubSubMessage) {
-			ctx, _ := s.Get("ctx") // get gin context
+		onMessage: func(psc *PubSubContext, message *WSPubSubMessage) {
+			ctx, _ := psc.Get("ctx") // get gin context
+			daoWrapper, _ := psc.Get("dao")
 			foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 			if !exists {
 				sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -57,6 +45,7 @@ func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 				return
 			}
 
+			routes := chatRoutes{daoWrapper.(dao.DaoWrapper)}
 			req, err := message.wsReqPayload()
 
 			if err != nil {
@@ -65,7 +54,7 @@ func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 			}
 			switch req.Type {
 			case "message":
-				routes.handleMessage(tumLiveContext, s, message.Payload)
+				routes.handleMessage(tumLiveContext, psc.Client.session, message.Payload)
 			case "like":
 				routes.handleLike(tumLiveContext, message.Payload)
 			case "delete":
@@ -93,6 +82,21 @@ func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 			cleanupSessions()
 		}
 	}()
+}
+
+func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
+	routes := chatRoutes{daoWrapper}
+
+	wsGroup := router.Group("/:streamID")
+	wsGroup.Use(tools.InitStream(daoWrapper))
+	wsGroup.GET("/messages", routes.getMessages)
+	wsGroup.GET("/active-poll", routes.getActivePoll)
+	wsGroup.GET("/users", routes.getUsers)
+	/*wsGroup.GET("/ws", routes.ChatStream)
+	if m == nil {
+		log.Printf("creating melody")
+		m = melody.New()
+	}*/
 }
 
 type chatRoutes struct {
@@ -558,21 +562,16 @@ func NotifyViewersLiveState(streamId uint, live bool) {
 	broadcastStream(streamId, req)
 }
 
-func chatOnSubscribe(s *melody.Session) {
-	var c *gin.Context
-	if ctx, ok := s.Get("ctx"); ok {
-		c = ctx.(*gin.Context)
-	}
-
+func chatOnSubscribe(psc *PubSubContext) {
 	joinTime := time.Now()
-	c.Set("chat.joinTime", joinTime)
+	psc.Set("chat.joinTime", joinTime)
 
-	connHandler(s)
+	connHandler(psc.Client.session)
 }
 
-func chatOnUnsubscribe(s *melody.Session) {
+func chatOnUnsubscribe(psc *PubSubContext) {
 	var c *gin.Context
-	if ctx, ok := s.Get("ctx"); ok {
+	if ctx, ok := psc.Get("ctx"); ok {
 		c = ctx.(*gin.Context)
 	} else {
 		sentry.CaptureException(errors.New("gin context should exist but doesn't"))
@@ -580,7 +579,7 @@ func chatOnUnsubscribe(s *melody.Session) {
 	}
 
 	var daoWrapper *dao.DaoWrapper
-	if ctx, ok := s.Get("dao"); ok {
+	if ctx, ok := psc.Get("dao"); ok {
 		daoWrapper = ctx.(*dao.DaoWrapper)
 	} else {
 		sentry.CaptureException(errors.New("daoWrapper should exist but doesn't"))
@@ -596,7 +595,7 @@ func chatOnUnsubscribe(s *melody.Session) {
 	}
 
 	var joinTime time.Time
-	if foundContext, exists := s.Get("chat.joinTime"); exists {
+	if foundContext, exists := psc.Get("chat.joinTime"); exists {
 		joinTime = foundContext.(time.Time)
 	} else {
 		sentry.CaptureException(errors.New("jointime should exist but doesn't"))

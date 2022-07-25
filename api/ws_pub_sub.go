@@ -12,6 +12,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"regexp"
 	"sync"
 )
 
@@ -21,14 +22,38 @@ const (
 	PubSubMessageTypeChannelMessage = "message"
 )
 
+var paramRegex = regexp.MustCompile(`:([A-Za-z\d]+)`)
+
 var pubSubMelody *melody.Melody
 
 var pubSubClientsMutex sync.RWMutex
 var pubSubClients = map[string]*WSPubSubClient{}
 var pubSubChannels = map[string]*PubSubChannel{}
 
-type PubSubEventHandlerFunc func(s *melody.Session)
-type PubSubMessageHandlerFunc func(s *melody.Session, message *WSPubSubMessage)
+type PubSubContext struct {
+	params map[string]string
+	Client *WSPubSubClient
+}
+
+func (psc *PubSubContext) Get(key string) (value interface{}, exists bool) {
+	if psc.Client == nil || psc.Client.session == nil {
+		return nil, false
+	}
+	return psc.Client.session.Get(key)
+}
+
+func (psc *PubSubContext) Set(key string, value interface{}) {
+	if psc.Client != nil && psc.Client.session != nil {
+		psc.Client.session.Set(key, value)
+	}
+}
+
+func (psc *PubSubContext) Param(key string) string {
+	return psc.params[key]
+}
+
+type PubSubEventHandlerFunc func(s *PubSubContext)
+type PubSubMessageHandlerFunc func(s *PubSubContext, message *WSPubSubMessage)
 
 type PubSubMessageHandlers = struct {
 	onSubscribe   PubSubEventHandlerFunc
@@ -44,7 +69,7 @@ type WSPubSubClient = struct {
 type PubSubChannel = struct {
 	channelName string
 	handlers    PubSubMessageHandlers
-	subscribers map[string]bool
+	subscribers map[string]*PubSubContext
 	mutex       sync.RWMutex
 }
 
@@ -66,7 +91,8 @@ func IsSubscribed(clientId string, channelName string) bool {
 
 	channel.mutex.Lock()
 	defer channel.mutex.Unlock()
-	return channel.subscribers[clientId]
+	var _, exists = channel.subscribers[clientId]
+	return exists
 }
 
 // RegisterPubSubChannel registers a pubSub channel handler for a specific channelName
@@ -74,7 +100,7 @@ func RegisterPubSubChannel(channelName string, handlers PubSubMessageHandlers) {
 	pubSubChannels[channelName] = &PubSubChannel{
 		channelName: channelName,
 		handlers:    handlers,
-		subscribers: map[string]bool{},
+		subscribers: map[string]*PubSubContext{},
 	}
 }
 
@@ -192,10 +218,10 @@ func wsPubSubDisconnectHandler(s *melody.Session) {
 	delete(pubSubClients, id.(string))
 	for _, channel := range pubSubChannels {
 		channel.mutex.Lock()
-		if _, ok := channel.subscribers[id.(string)]; ok {
+		if context, ok := channel.subscribers[id.(string)]; ok {
 			delete(channel.subscribers, id.(string))
 			if channel.handlers.onUnsubscribe != nil {
-				channel.handlers.onUnsubscribe(s)
+				channel.handlers.onUnsubscribe(context)
 			}
 		}
 		channel.mutex.Unlock()
@@ -205,18 +231,27 @@ func wsPubSubDisconnectHandler(s *melody.Session) {
 
 func subscribeClientToChannel(s *melody.Session, channelName string) {
 	clientId, _ := s.Get("id")
+
+	// TODO: Somehow match the channel name also with Params! :)
 	channel, ok := pubSubChannels[channelName]
 	if !ok {
 		log.Warn("client tried to subscribe to non existing channel")
 	}
 
+	pubSubClientsMutex.Lock()
+	defer pubSubClientsMutex.Unlock()
+
+	var context = PubSubContext{
+		Client: pubSubClients[clientId.(string)],
+	}
+
 	channel.mutex.Lock()
 	defer channel.mutex.Unlock()
 
-	channel.subscribers[clientId.(string)] = true
+	channel.subscribers[clientId.(string)] = &context
 
 	if channel.handlers.onSubscribe != nil {
-		channel.handlers.onSubscribe(s)
+		channel.handlers.onSubscribe(&context)
 	}
 }
 
@@ -230,21 +265,27 @@ func unsubscribeFromChannel(s *melody.Session, channelName string) {
 	channel.mutex.Lock()
 	defer channel.mutex.Unlock()
 
-	delete(channel.subscribers, clientId.(string))
+	if context, ok := channel.subscribers[clientId.(string)]; ok {
+		delete(channel.subscribers, clientId.(string))
 
-	if channel.handlers.onUnsubscribe != nil {
-		channel.handlers.onUnsubscribe(s)
+		if channel.handlers.onUnsubscribe != nil {
+			channel.handlers.onUnsubscribe(context)
+		}
 	}
 }
 
 func handleChannelMessage(s *melody.Session, req *WSPubSubMessage) {
+	clientId, _ := s.Get("id")
 	channel, ok := pubSubChannels[req.Channel]
 	if !ok {
 		log.WithField("type", req.Type).Warn("unknown channel on websocket message")
 		return
 	}
-	if channel.handlers.onMessage != nil {
-		channel.handlers.onMessage(s, req)
+
+	if context, ok := channel.subscribers[clientId.(string)]; ok {
+		if channel.handlers.onMessage != nil {
+			channel.handlers.onMessage(context, req)
+		}
 	}
 }
 
