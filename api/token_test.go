@@ -29,23 +29,13 @@ func TestToken(t *testing.T) {
 		}
 		gomino.TestCases{
 			"POST[No Context]": {
-				Router:       TokenRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          url,
 				ExpectedCode: http.StatusInternalServerError,
 			},
-
 			"POST[Invalid Body]": {
-				Router:       TokenRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"POST[Invalid Scope]": {
-				Router:       TokenRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				Body:         req{Expires: &now, Scope: "invalid"},
 				ExpectedCode: http.StatusBadRequest,
@@ -61,8 +51,6 @@ func TestToken(t *testing.T) {
 					}
 					configTokenRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				Body:         req{Expires: &now, Scope: model.TokenScopeAdmin},
 				ExpectedCode: http.StatusInternalServerError,
@@ -78,13 +66,14 @@ func TestToken(t *testing.T) {
 					}
 					configTokenRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				Body:         req{Expires: &now, Scope: model.TokenScopeAdmin},
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Router(TokenRouterWrapper).
+			Method(http.MethodPost).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 
 	t.Run("/:id", func(t *testing.T) {
@@ -101,8 +90,6 @@ func TestToken(t *testing.T) {
 					}
 					configTokenRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusInternalServerError,
 			},
@@ -117,11 +104,11 @@ func TestToken(t *testing.T) {
 					}
 					configTokenRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Method(http.MethodDelete).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 }
