@@ -40,28 +40,17 @@ func TestInfoPagesCRUD(t *testing.T) {
 	t.Run("PUT/api/texts/:id", func(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
-				Router:       InfoPagesRouterWrapper,
-				Method:       http.MethodPut,
-				Url:          url,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
-				Router:       InfoPagesRouterWrapper,
-				Method:       http.MethodPut,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"invalid body": {
-				Router:       InfoPagesRouterWrapper,
-				Method:       http.MethodPut,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"invalid id": {
-				Router:       InfoPagesRouterWrapper,
-				Method:       http.MethodPut,
 				Url:          "/api/texts/abc",
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				Body:         req,
@@ -86,8 +75,6 @@ func TestInfoPagesCRUD(t *testing.T) {
 					}
 					configInfoPageRouter(r, wrapper)
 				},
-				Method:       http.MethodPut,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				Body:         req,
 				ExpectedCode: http.StatusBadRequest,
@@ -111,12 +98,13 @@ func TestInfoPagesCRUD(t *testing.T) {
 					}
 					configInfoPageRouter(r, wrapper)
 				},
-				Method:       http.MethodPut,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				Body:         req,
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Router(InfoPagesRouterWrapper).
+			Method(http.MethodPut).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 }
