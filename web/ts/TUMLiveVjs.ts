@@ -136,7 +136,9 @@ export const SkipSilenceToggle = videojs.extend(Button, {
         (this.el().firstChild as HTMLElement).classList.add("icon-forward");
     },
     handleClick: function () {
-        videojs("my-video").currentTime(skipTo);
+        for (let i = 0; i < players.length; i++) {
+            players[i].currentTime(skipTo);
+        }
     },
     buildCSSClass: function () {
         return `vjs-skip-silence-control`;
@@ -284,33 +286,11 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
  */
 function syncTime(j: number) {
     const t = players[j].currentTime();
-    // Remove all event listeners from all players except j
-    for (let k = 0; k < players.length; k++) {
-        if (k == j) continue;
-        players[k].off();
-    }
 
     // Seek all players to timestamp t
     for (let k = 0; k < players.length; k++) {
         if (k == j) continue;
         players[k].currentTime(t);
-    }
-
-    // Add all event listeners back
-    for (let k = 0; k < players.length; k++) {
-        if (k == j) continue;
-        players[k].one("canplay", () => {
-            addEventListenersForSyncing(k);
-        });
-
-        // Update parts of the control bar
-        const { durationDisplay, remainingTimeDisplay } = players[k].controlBar || {};
-        if (durationDisplay) {
-            durationDisplay.updateContent();
-        }
-        if (remainingTimeDisplay) {
-            remainingTimeDisplay.updateContent();
-        }
     }
 }
 
@@ -348,10 +328,7 @@ const addEventListenersForSyncing = function (j: number) {
             if (k == j) continue;
             players[k].pause();
         }
-        syncTime(j);
     });
-
-    players[j].on("seeked", () => syncTime(j));
 
     players[j].on("stalled", () => {
         for (let k = 0; k < players.length; k++) {
@@ -377,6 +354,8 @@ const addEventListenersForSyncing = function (j: number) {
             players[k].pause();
         }
     });
+
+    //window.setInterval(() => syncTime(0), 200);
 }
 
 /**
@@ -555,10 +534,10 @@ export class SeekLogger {
     }
 
     attach() {
-        player.ready(() => {
-            player.on("seeked", () => {
+        players[0].ready(() => {
+            players[0].on("seeked", () => {
                 if (this.initialSeekDone) {
-                    return this.log(player.currentTime());
+                    return this.log(players[0].currentTime());
                 }
                 this.initialSeekDone = true;
             });
