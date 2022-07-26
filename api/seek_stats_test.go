@@ -31,9 +31,6 @@ func TestReportSeek(t *testing.T) {
 
 		gomino.TestCases{
 			"missing position": {
-				Router:       ReportSeekRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"invalid courseId": {
@@ -50,7 +47,6 @@ func TestReportSeek(t *testing.T) {
 					}
 					configSeekStatsRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
 				Url:          fmt.Sprintf("%s/abc", baseUrl),
 				Body:         body,
 				ExpectedCode: http.StatusInternalServerError,
@@ -69,8 +65,6 @@ func TestReportSeek(t *testing.T) {
 					}
 					configSeekStatsRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID),
 				Body:         body,
 				ExpectedCode: http.StatusInternalServerError,
 			},
@@ -88,12 +82,13 @@ func TestReportSeek(t *testing.T) {
 					}
 					configSeekStatsRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID),
 				Body:         body,
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Router(ReportSeekRouterWrapper).
+			Method(http.MethodPost).
+			Url(fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID)).
+			Run(t, testutils.Equal)
 	})
 
 	response := gin.H{
@@ -133,8 +128,6 @@ func TestReportSeek(t *testing.T) {
 					}
 					configSeekStatsRouter(r, wrapper)
 				},
-				Method:       http.MethodGet,
-				Url:          fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -151,11 +144,11 @@ func TestReportSeek(t *testing.T) {
 					}
 					configSeekStatsRouter(r, wrapper)
 				},
-				Method:           http.MethodGet,
-				Url:              fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID),
 				ExpectedResponse: response,
 				ExpectedCode:     http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Method(http.MethodGet).
+			Url(fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID)).
+			Run(t, testutils.Equal)
 	})
 }
