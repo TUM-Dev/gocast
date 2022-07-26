@@ -24,7 +24,7 @@ import (
 
 // OsSignal contains the current os signal received.
 // Application exits when it's terminating (kill, int, sigusr, term)
-var OsSignal = make(chan os.Signal, 1)
+var OsSignal chan os.Signal
 var VersionTag = "dev"
 
 // prepare checks if the required dependencies are installed
@@ -79,6 +79,7 @@ func main() {
 	go api.InitApi(":50051")
 	go rest.InitApi(":8060")
 	worker.Setup()
+	OsSignal = make(chan os.Signal, 1)
 	awaitSignal()
 }
 
