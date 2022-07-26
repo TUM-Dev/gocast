@@ -15,6 +15,10 @@ import (
 	"testing"
 )
 
+func NotificationsRouterWrapper(r *gin.Engine) {
+	configNotificationsRouter(r, dao.DaoWrapper{})
+}
+
 func TestNotifications(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
@@ -52,8 +56,6 @@ func TestNotifications(t *testing.T) {
 					}
 					configNotificationsRouter(r, wrapper)
 				},
-				Method:       http.MethodGet,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextEmpty),
 				ExpectedCode: http.StatusNotFound,
 			},
@@ -64,8 +66,6 @@ func TestNotifications(t *testing.T) {
 					}
 					configNotificationsRouter(r, wrapper)
 				},
-				Method:           http.MethodGet,
-				Url:              url,
 				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextEmpty),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: notifications,
@@ -77,8 +77,6 @@ func TestNotifications(t *testing.T) {
 					}
 					configNotificationsRouter(r, wrapper)
 				},
-				Method:           http.MethodGet,
-				Url:              url,
 				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: notifications,
@@ -90,8 +88,6 @@ func TestNotifications(t *testing.T) {
 					}
 					configNotificationsRouter(r, wrapper)
 				},
-				Method:           http.MethodGet,
-				Url:              url,
 				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextLecturer),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: notifications,
@@ -103,13 +99,13 @@ func TestNotifications(t *testing.T) {
 					}
 					configNotificationsRouter(r, wrapper)
 				},
-				Method:           http.MethodGet,
-				Url:              url,
 				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: notifications,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Method(http.MethodGet).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 
 	t.Run("POST/api/notifications/", func(t *testing.T) {
@@ -121,54 +117,55 @@ func TestNotifications(t *testing.T) {
 			SanitizedBody: "Brand new Features!",
 		}
 
-		testutils.TestCases{
+		gomino.TestCases{
 			"invalid body": {
-				Method:         http.MethodPost,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextAdmin,
-				DaoWrapper:     dao.DaoWrapper{},
-				Body:           nil,
-				ExpectedCode:   http.StatusBadRequest,
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not add notification": {
-				Method:         http.MethodPost,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextAdmin,
-				DaoWrapper: dao.DaoWrapper{
-					NotificationsDao: func() dao.NotificationsDao {
-						mock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
-						notification.Body = notification.SanitizedBody // reverse json binding here too
-						mock.
-							EXPECT().
-							AddNotification(&notification).
-							Return(errors.New("")).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						NotificationsDao: func() dao.NotificationsDao {
+							mock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
+							notification.Body = notification.SanitizedBody // reverse json binding here too
+							mock.
+								EXPECT().
+								AddNotification(&notification).
+								Return(errors.New("")).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configNotificationsRouter(r, wrapper)
 				},
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				Body:         notification,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
-				Method:         http.MethodPost,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextAdmin,
-				DaoWrapper: dao.DaoWrapper{
-					NotificationsDao: func() dao.NotificationsDao {
-						mock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
-						notification.Body = notification.SanitizedBody // reverse json binding here too
-						mock.
-							EXPECT().
-							AddNotification(&notification).
-							Return(nil).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						NotificationsDao: func() dao.NotificationsDao {
+							mock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
+							notification.Body = notification.SanitizedBody // reverse json binding here too
+							mock.
+								EXPECT().
+								AddNotification(&notification).
+								Return(nil).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configNotificationsRouter(r, wrapper)
 				},
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				Body:         notification,
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, configNotificationsRouter)
+			}}.
+			Router(NotificationsRouterWrapper).
+			Method(http.MethodPost).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 
 	t.Run("DELETE/api/notifications/:id", func(t *testing.T) {
@@ -177,48 +174,52 @@ func TestNotifications(t *testing.T) {
 
 		res, _ := json.Marshal(gin.H{"success": true})
 
-		testutils.TestCases{
+		gomino.TestCases{
 			"invalid id": {
-				Method:         http.MethodDelete,
-				Url:            "/api/notifications/abc",
-				TumLiveContext: &testutils.TUMLiveContextAdmin,
-				ExpectedCode:   http.StatusBadRequest,
+				Url:          "/api/notifications/abc",
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not delete notification": {
-				Method:         http.MethodDelete,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextAdmin,
-				DaoWrapper: dao.DaoWrapper{
-					NotificationsDao: func() dao.NotificationsDao {
-						mock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
-						mock.
-							EXPECT().
-							DeleteNotification(id).
-							Return(errors.New("")).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						NotificationsDao: func() dao.NotificationsDao {
+							mock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								DeleteNotification(id).
+								Return(errors.New("")).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configNotificationsRouter(r, wrapper)
 				},
+				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
-				Method:         http.MethodDelete,
-				Url:            url,
-				TumLiveContext: &testutils.TUMLiveContextAdmin,
-				DaoWrapper: dao.DaoWrapper{
-					NotificationsDao: func() dao.NotificationsDao {
-						mock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
-						mock.
-							EXPECT().
-							DeleteNotification(id).
-							Return(nil).
-							AnyTimes()
-						return mock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						NotificationsDao: func() dao.NotificationsDao {
+							mock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
+							mock.
+								EXPECT().
+								DeleteNotification(id).
+								Return(nil).
+								AnyTimes()
+							return mock
+						}(),
+					}
+					configNotificationsRouter(r, wrapper)
 				},
+				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: res,
-			},
-		}.Run(t, configNotificationsRouter)
+			}}.
+			Router(NotificationsRouterWrapper).
+			Method(http.MethodDelete).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 }
