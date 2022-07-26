@@ -293,6 +293,18 @@ function syncTime(j: number) {
     }
 }
 
+let lastSeek = 0;
+
+function throttle(func, timeFrame) {
+    return () => {
+        const now = Date.now();
+        if (now - lastSeek >= timeFrame) {
+            func();
+            lastSeek = now;
+        }
+    };
+}
+
 /**
  * Adds the necessary event listeners for syncing the players.
  * @param j Player index
@@ -331,22 +343,17 @@ const addEventListenersForSyncing = function (j: number) {
         }
     });
 
-    players[j].on("stalled", () => {
-        for (let k = 0; k < players.length; k++) {
-            players[k].pause();
-        }
-    });
+    players[j].on(
+        "seeked",
+        throttle(() => syncTime(j), 2000),
+    );
 
     players[j].on("waiting", () => {
-        // Pause other players while buffering
         for (let k = 0; k < players.length; k++) {
             if (k == j) continue;
             players[k].pause();
         }
-        // When ready to play start playing
-        players[j].one("canplay", () => {
-            players[j].play();
-        });
+        players[j].one("canplay", () => players[j].play());
     });
 
     players[j].on("ended", () => {
@@ -355,8 +362,6 @@ const addEventListenersForSyncing = function (j: number) {
             players[k].pause();
         }
     });
-
-    //window.setInterval(() => syncTime(0), 200);
 };
 
 /**
