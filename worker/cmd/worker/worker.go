@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/profile"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials/insecure"
 	"net/http"
 	_ "net/http/pprof"
@@ -41,21 +42,20 @@ func prepare() {
 
 func main() {
 	prepare()
-
-	// join main tumlive:
-	var conn *grpc.ClientConn
-	var err error
-	// retry connecting to tumlive every 5 seconds until successful
-	for {
-		conn, err = grpc.Dial(fmt.Sprintf("%s:50052", cfg.MainBase), grpc.WithTransportCredentials(insecure.NewCredentials()))
-		if err == nil {
-			break
-		} else {
-			log.Warnf("Could not connect to main tumlive: %v\n", err)
-			time.Sleep(time.Second * 5)
-		}
+	log.Infof("Trying to connect worker %s to %s:50052", cfg.WorkerID, cfg.MainBase)
+	conn, err := grpc.Dial(fmt.Sprintf("%s:50052", cfg.MainBase), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithConnectParams(grpc.ConnectParams{
+		Backoff: backoff.Config{
+			BaseDelay:  1 * time.Second,
+			Multiplier: 1.6,
+			MaxDelay:   30 * time.Second,
+		}}), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("Could not connect to main base: %v", err)
 	}
+	defer conn.Close()
+	log.Info("Dial-in to tumlive backend was successful")
 
+	// Register worker with the backend.
 	client := pb.NewFromWorkerClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
