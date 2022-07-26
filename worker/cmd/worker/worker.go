@@ -27,16 +27,12 @@ import (
 var OsSignal = make(chan os.Signal, 1)
 var VersionTag = "dev"
 
-//prepare checks if the required dependencies are installed
+// prepare checks if the required dependencies are installed
 func prepare() {
 	//check if ffmpeg is installed
 	_, err := exec.LookPath("ffmpeg")
 	if err != nil {
 		log.Fatal("ffmpeg is not installed")
-	}
-	_, err = exec.LookPath("tesseract")
-	if err != nil {
-		log.Fatal("tesseract is not installed")
 	}
 }
 
