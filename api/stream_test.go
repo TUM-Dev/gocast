@@ -1,8 +1,6 @@
 package api
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -20,6 +18,16 @@ import (
 
 func StreamRouterWrapper(r *gin.Engine) {
 	configGinStreamRestRouter(r, dao.DaoWrapper{})
+}
+
+func StreamDefaultRouter(t *testing.T) func(r *gin.Engine) {
+	return func(r *gin.Engine) {
+		wrapper := dao.DaoWrapper{
+			StreamsDao: testutils.GetStreamMock(t),
+			CoursesDao: testutils.GetCoursesMock(t),
+		}
+		configGinStreamRestRouter(r, wrapper)
+	}
 }
 
 func TestStream(t *testing.T) {
@@ -62,8 +70,6 @@ func TestStream(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodGet,
-				Url:          url,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"GetCourseById returns error": {
@@ -84,10 +90,8 @@ func TestStream(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:           http.MethodGet,
-				Url:              url,
 				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
+				ExpectedResponse: response,
 			},
 			"GetLectureHallByID returns error": {
 				Router: func(r *gin.Engine) {
@@ -103,10 +107,8 @@ func TestStream(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:           http.MethodGet,
-				Url:              url,
 				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: testutils.First(json.Marshal(responseLHError)).([]byte),
+				ExpectedResponse: responseLHError,
 			},
 			"success": {
 				Router: func(r *gin.Engine) {
@@ -118,12 +120,12 @@ func TestStream(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:           http.MethodGet,
-				Url:              url,
 				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
-			},
-		}.Run(t, testutils.Equal)
+				ExpectedResponse: response,
+			}}.
+			Method(http.MethodGet).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 	t.Run("GET/api/stream/:streamID", func(t *testing.T) {
 		course := testutils.CourseFPV
@@ -141,73 +143,33 @@ func TestStream(t *testing.T) {
 			"vod":         stream.Recording}
 
 		url := fmt.Sprintf("/api/stream/%d", testutils.StreamFPVLive.ID)
+
 		gomino.TestCases{
 			"no context": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: testutils.GetStreamMock(t),
-						CoursesDao: testutils.GetCoursesMock(t),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Method:       http.MethodGet,
-				Url:          url,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: testutils.GetStreamMock(t),
-						CoursesDao: testutils.GetCoursesMock(t),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Method:       http.MethodGet,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"success": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: testutils.GetStreamMock(t),
-						CoursesDao: testutils.GetCoursesMock(t),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Method:           http.MethodGet,
-				Url:              url,
 				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: response,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Router(StreamDefaultRouter(t)).
+			Method(http.MethodGet).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 	t.Run("GET/api/stream/:streamID/pause", func(t *testing.T) {
 		url := fmt.Sprintf("/api/stream/%d/pause", testutils.StreamFPVLive.ID)
+
 		gomino.TestCases{
 			"no context": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: testutils.GetStreamMock(t),
-						CoursesDao: testutils.GetCoursesMock(t),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Method:       http.MethodGet,
-				Url:          url,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: testutils.GetStreamMock(t),
-						CoursesDao: testutils.GetCoursesMock(t),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Method:       http.MethodGet,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode: http.StatusForbidden,
 			},
@@ -220,38 +182,21 @@ func TestStream(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodGet,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusInternalServerError,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Router(StreamDefaultRouter(t)).
+			Method(http.MethodGet).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 	t.Run("GET/api/stream/:streamID/end", func(t *testing.T) {
 		url := fmt.Sprintf("/api/stream/%d/end", testutils.StreamFPVLive.ID)
 		gomino.TestCases{
 			"no context": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: testutils.GetStreamMock(t),
-						CoursesDao: testutils.GetCoursesMock(t),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Method:       http.MethodGet,
-				Url:          url,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: testutils.GetStreamMock(t),
-						CoursesDao: testutils.GetCoursesMock(t),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Method:       http.MethodGet,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode: http.StatusForbidden,
 			},
@@ -275,50 +220,27 @@ func TestStream(t *testing.T) {
 					ProgressDao: testutils.GetProgressMock(t),
 				},
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
-				ExpectedCode:   http.StatusOK,
-			},*/
-		}.Run(t, testutils.Equal)
+				ExpectedCode:   http.StatusOK,},*/
+		}.
+			Router(StreamDefaultRouter(t)).
+			Method(http.MethodGet).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 	t.Run("PATCH/api/stream/:streamID/visibility", func(t *testing.T) {
 		url := fmt.Sprintf("/api/stream/%d/visibility", testutils.StreamFPVLive.ID)
 		gomino.TestCases{
 			"no context": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: testutils.GetStreamMock(t),
-						CoursesDao: testutils.GetCoursesMock(t),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
 				Method:       http.MethodPatch,
 				Url:          url,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: testutils.GetStreamMock(t),
-						CoursesDao: testutils.GetCoursesMock(t),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Method:       http.MethodPatch,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"invalid body": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: testutils.GetStreamMock(t),
-						CoursesDao: testutils.GetCoursesMock(t),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Method:       http.MethodPatch,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
-				Body:         nil,
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"ToggleVisibility returns error": {
@@ -345,10 +267,8 @@ func TestStream(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodPatch,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
-				Body:         bytes.NewBuffer(testutils.First(json.Marshal(gin.H{"private": false})).([]byte)),
+				Body:         gin.H{"private": false},
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -364,13 +284,14 @@ func TestStream(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodPatch,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
-				Body:         bytes.NewBuffer(testutils.First(json.Marshal(gin.H{"private": false})).([]byte)),
+				Body:         gin.H{"private": false},
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Router(StreamDefaultRouter(t)).
+			Method(http.MethodPatch).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 }
 
@@ -410,8 +331,6 @@ func TestStreamVideoSections(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:           http.MethodGet,
-				Url:              url,
 				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: []gin.H{},
@@ -432,13 +351,13 @@ func TestStreamVideoSections(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:           http.MethodGet,
-				Url:              url,
 				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
-			},
-		}.Run(t, testutils.Equal)
+				ExpectedResponse: response,
+			}}.
+			Method(http.MethodGet).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 	t.Run("POST/api/stream/:streamID/sections", func(t *testing.T) {
 		request := []model.VideoSection{
@@ -453,28 +372,10 @@ func TestStreamVideoSections(t *testing.T) {
 		url := fmt.Sprintf("/api/stream/%d/sections", testutils.StreamFPVLive.ID)
 		gomino.TestCases{
 			"Not Admin": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: testutils.GetStreamMock(t),
-						CoursesDao: testutils.GetCoursesMock(t),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Method:       http.MethodPost,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"Invalid Body": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: testutils.GetStreamMock(t),
-						CoursesDao: testutils.GetCoursesMock(t),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Method:       http.MethodPost,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusBadRequest,
 			},
@@ -494,8 +395,6 @@ func TestStreamVideoSections(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				Body:         request,
 				ExpectedCode: http.StatusInternalServerError,
@@ -520,8 +419,6 @@ func TestStreamVideoSections(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				Body:         request,
 				ExpectedCode: http.StatusInternalServerError,
@@ -554,34 +451,22 @@ func TestStreamVideoSections(t *testing.T) {
 				Body:           bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
 				ExpectedCode:   http.StatusOK,
 			},*/
-		}.Run(t, testutils.Equal)
+		}.
+			Router(StreamDefaultRouter(t)).
+			Method(http.MethodPost).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 	t.Run("DELETE/api/stream/:streamID/sections", func(t *testing.T) {
 		section := testutils.StreamFPVLive.VideoSections[0]
 		baseUrl := fmt.Sprintf("/api/stream/%d/sections", testutils.StreamFPVLive.ID)
+		url := fmt.Sprintf("%s/%d", baseUrl, section.ID)
 		gomino.TestCases{
 			"Not Admin": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: testutils.GetStreamMock(t),
-						CoursesDao: testutils.GetCoursesMock(t),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Method:       http.MethodDelete,
-				Url:          fmt.Sprintf("%s/%d", baseUrl, section.ID),
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"Invalid ID": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao: testutils.GetStreamMock(t),
-						CoursesDao: testutils.GetCoursesMock(t),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Method:       http.MethodDelete,
 				Url:          fmt.Sprintf("%s/%s", baseUrl, "abc"),
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusBadRequest,
@@ -603,8 +488,6 @@ func TestStreamVideoSections(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          fmt.Sprintf("%s/%d", baseUrl, section.ID),
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusBadRequest,
 			},
@@ -634,8 +517,6 @@ func TestStreamVideoSections(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          fmt.Sprintf("%s/%d", baseUrl, section.ID),
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusInternalServerError,
 			},
@@ -669,8 +550,6 @@ func TestStreamVideoSections(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          fmt.Sprintf("%s/%d", baseUrl, section.ID),
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusInternalServerError,
 			},
@@ -711,7 +590,11 @@ func TestStreamVideoSections(t *testing.T) {
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				ExpectedCode:   http.StatusAccepted,
 			},*/
-		}.Run(t, testutils.Equal)
+		}.
+			Router(StreamDefaultRouter(t)).
+			Method(http.MethodDelete).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 }
 
@@ -727,9 +610,6 @@ func TestAttachments(t *testing.T) {
 		endpoint := fmt.Sprintf("/api/stream/%d/files", testutils.StreamFPVLive.ID)
 		gomino.TestCases{
 			"no context": {
-				Router:       StreamRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          endpoint,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not Admin": {
@@ -755,8 +635,6 @@ func TestAttachments(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          endpoint,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode: http.StatusForbidden,
 			},
@@ -783,7 +661,6 @@ func TestAttachments(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
 				Url:          endpoint + "?type=abc",
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusBadRequest,
@@ -811,7 +688,6 @@ func TestAttachments(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
 				Url:          endpoint + "?type=url",
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusBadRequest,
@@ -839,10 +715,9 @@ func TestAttachments(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
 				Url:          endpoint + "?type=file",
 				ContentType:  w.FormDataContentType(),
-				Body:         bytes.NewBufferString(""),
+				Body:         "",
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusBadRequest,
 			},
@@ -910,10 +785,9 @@ func TestAttachments(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
 				Url:          endpoint + "?type=url",
 				ContentType:  "application/x-www-form-urlencoded",
-				Body:         bytes.NewBufferString("file_url=https://storage.com/test.txt"),
+				Body:         "file_url=https://storage.com/test.txt",
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusInternalServerError,
 			},
@@ -950,14 +824,16 @@ func TestAttachments(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
 				Url:          endpoint + "?type=url",
 				ContentType:  "application/x-www-form-urlencoded",
-				Body:         bytes.NewBufferString("file_url=https://storage.com/test.txt"),
+				Body:         "file_url=https://storage.com/test.txt",
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Router(StreamRouterWrapper).
+			Method(http.MethodPost).
+			Url(endpoint).
+			Run(t, testutils.Equal)
 	})
 
 	t.Run("DELETE/api/stream/:streamID/files/:fid", func(t *testing.T) {
@@ -979,8 +855,6 @@ func TestAttachments(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				ExpectedCode: http.StatusForbidden,
 			},
@@ -1000,8 +874,6 @@ func TestAttachments(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusBadRequest,
 			},
@@ -1021,8 +893,6 @@ func TestAttachments(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusInternalServerError,
 			},
@@ -1046,8 +916,6 @@ func TestAttachments(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusInternalServerError,
 				Before: func() {
@@ -1063,15 +931,15 @@ func TestAttachments(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				ExpectedCode: http.StatusOK,
 				Before: func() {
 					_, _ = os.Create(testFile.Path)
 				},
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Method(http.MethodDelete).
+			Url(url).
+			Run(t, testutils.Equal)
 
 		// After a successful run, the file /tmp/test.txt should be deleted
 		if _, err := os.Stat(testFile.Path); !errors.Is(err, os.ErrNotExist) {
