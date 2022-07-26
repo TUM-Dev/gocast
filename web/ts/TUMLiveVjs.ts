@@ -13,7 +13,7 @@ require("videojs-contrib-quality-levels");
 
 const Button = videojs.getComponent("Button");
 
-let players = [];
+const players = [];
 
 export function getPlayers() {
     return players;
@@ -38,8 +38,7 @@ export const initPlayer = function (
     courseUrl?: string,
     streamStartIn?: number, // in seconds
 ) {
-    let player;
-    player = videojs( id, {
+    const player = videojs(id, {
         liveui: true,
         fluid: fluid,
         playbackRates: playbackSpeeds,
@@ -56,7 +55,7 @@ export const initPlayer = function (
             hotkeys: handleHotkeys(),
         },
         autoplay: autoplay,
-    });
+    }) as any;
     const isMobile = window.matchMedia && window.matchMedia("only screen and (max-width: 480px)").matches;
     if (spriteID && !isMobile) {
         player.spriteThumbnails({
@@ -136,7 +135,9 @@ export const SkipSilenceToggle = videojs.extend(Button, {
         (this.el().firstChild as HTMLElement).classList.add("icon-forward");
     },
     handleClick: function () {
-        videojs("my-video").currentTime(skipTo);
+        for (let i = 0; i < players.length; i++) {
+            players[i].currentTime(skipTo);
+        }
     },
     buildCSSClass: function () {
         return `vjs-skip-silence-control`;
@@ -284,33 +285,11 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
  */
 function syncTime(j: number) {
     const t = players[j].currentTime();
-    // Remove all event listeners from all players except j
-    for (let k = 0; k < players.length; k++) {
-        if (k == j) continue;
-        players[k].off();
-    }
 
     // Seek all players to timestamp t
     for (let k = 0; k < players.length; k++) {
         if (k == j) continue;
         players[k].currentTime(t);
-    }
-
-    // Add all event listeners back
-    for (let k = 0; k < players.length; k++) {
-        if (k == j) continue;
-        players[k].one("canplay", () => {
-            addEventListenersForSyncing(k);
-        });
-
-        // Update parts of the control bar
-        const { durationDisplay, remainingTimeDisplay } = players[k].controlBar || {};
-        if (durationDisplay) {
-            durationDisplay.updateContent();
-        }
-        if (remainingTimeDisplay) {
-            remainingTimeDisplay.updateContent();
-        }
     }
 }
 
@@ -323,15 +302,17 @@ const addEventListenersForSyncing = function (j: number) {
         for (let k = 0; k < players.length; k++) {
             if (k == j) continue;
 
-            let playPromise = players[k].play();
+            const playPromise = players[k].play();
             if (playPromise !== undefined) {
-                playPromise.then(_ => {
-                    // Playback started
-                }).catch(_ => {
-                    for (let k = 0; k < players.length; k++) {
-                        players[k].pause();
-                    }
-                });
+                playPromise
+                    .then((_) => {
+                        // Playback started
+                    })
+                    .catch((_) => {
+                        for (let k = 0; k < players.length; k++) {
+                            players[k].pause();
+                        }
+                    });
             }
         }
     });
@@ -339,7 +320,7 @@ const addEventListenersForSyncing = function (j: number) {
     players[j].on("ratechange", () => {
         for (let k = 0; k < players.length; k++) {
             if (k == j) continue;
-            players[k].playbackRate(players[j].playbackRate())
+            players[k].playbackRate(players[j].playbackRate());
         }
     });
 
@@ -348,10 +329,7 @@ const addEventListenersForSyncing = function (j: number) {
             if (k == j) continue;
             players[k].pause();
         }
-        syncTime(j);
     });
-
-    players[j].on("seeked", () => syncTime(j));
 
     players[j].on("stalled", () => {
         for (let k = 0; k < players.length; k++) {
@@ -367,7 +345,7 @@ const addEventListenersForSyncing = function (j: number) {
         }
         // When ready to play start playing
         players[j].one("canplay", () => {
-            players[j].play()
+            players[j].play();
         });
     });
 
@@ -377,7 +355,9 @@ const addEventListenersForSyncing = function (j: number) {
             players[k].pause();
         }
     });
-}
+
+    //window.setInterval(() => syncTime(0), 200);
+};
 
 /**
  * @function syncPlayers
@@ -390,8 +370,6 @@ export const syncPlayers = function () {
         }
     });
 };
-
-
 
 const Component = videojs.getComponent("Component");
 
@@ -555,10 +533,10 @@ export class SeekLogger {
     }
 
     attach() {
-        player.ready(() => {
-            player.on("seeked", () => {
+        players[0].ready(() => {
+            players[0].on("seeked", () => {
                 if (this.initialSeekDone) {
-                    return this.log(player.currentTime());
+                    return this.log(players[0].currentTime());
                 }
                 this.initialSeekDone = true;
             });

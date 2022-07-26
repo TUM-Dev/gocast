@@ -1,8 +1,7 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
-import { getPlayers  } from "./TUMLiveVjs";
+import { getPlayers } from "./TUMLiveVjs";
 import { Get, postData } from "./global";
-
 
 let chatInput: HTMLInputElement;
 
@@ -271,7 +270,7 @@ export const videoStatListener = {
                 mediaRequests: notAvailable ? 0 : vhs.stats.mediaRequests,
                 mediaRequestsFailed: notAvailable ? 0 : vhs.stats.mediaRequestsErrored,
             };
-            const event = new CustomEvent("newvideostats", {detail: data});
+            const event = new CustomEvent("newvideostats", { detail: data });
             window.dispatchEvent(event);
         }
     },
