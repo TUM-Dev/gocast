@@ -40,20 +40,14 @@ func TestSearch(t *testing.T) {
 
 		gomino.TestCases{
 			"missing query": {
-				Router:       SearchRouterWrapper,
-				Method:       http.MethodGet,
 				Url:          baseUrl,
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"missing courseId": {
-				Router:       SearchRouterWrapper,
-				Method:       http.MethodGet,
 				Url:          fmt.Sprintf("%s?q=abc", baseUrl),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"invalid courseId": {
-				Router:       SearchRouterWrapper,
-				Method:       http.MethodGet,
 				Url:          fmt.Sprintf("%s?q=%s&courseId=abc", baseUrl, queryString),
 				ExpectedCode: http.StatusBadRequest,
 			},
@@ -71,8 +65,6 @@ func TestSearch(t *testing.T) {
 					}
 					configGinSearchRouter(r, wrapper)
 				},
-				Method:       http.MethodGet,
-				Url:          fmt.Sprintf("%s?q=%s&courseId=%d", baseUrl, queryString, testutils.CourseFPV.ID),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -89,11 +81,12 @@ func TestSearch(t *testing.T) {
 					}
 					configGinSearchRouter(r, wrapper)
 				},
-				Method:           http.MethodGet,
-				Url:              fmt.Sprintf("%s?q=%s&courseId=%d", baseUrl, queryString, testutils.CourseFPV.ID),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: response,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Router(SearchRouterWrapper).
+			Method(http.MethodGet).
+			Url(fmt.Sprintf("%s?q=%s&courseId=%d", baseUrl, queryString, testutils.CourseFPV.ID)).
+			Run(t, testutils.Equal)
 	})
 }
