@@ -301,7 +301,7 @@ func TestBookmarks(t *testing.T) {
 				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
 				Body:         req,
-				ExpectedCode: http.StatusBadRequest,
+				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
 				Router: func(r *gin.Engine) {

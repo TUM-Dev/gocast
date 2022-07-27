@@ -16,6 +16,7 @@ func configGinBookmarksRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	bookmarks := router.Group("/api/bookmarks")
 	{
 		//bookmarks.Use(tools.InitContext(daoWrapper))
+		bookmarks.Use(tools.ErrorHandler)
 		bookmarks.Use(tools.LoggedIn)
 		bookmarks.POST("", routes.Add)
 		bookmarks.GET("", routes.GetByStreamID)
@@ -55,8 +56,11 @@ func (r bookmarkRoutes) Add(c *gin.Context) {
 
 	err = c.BindJSON(&req)
 	if err != nil {
-		// TODO: New Error handling
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 
@@ -64,8 +68,11 @@ func (r bookmarkRoutes) Add(c *gin.Context) {
 	bookmark = req.ToBookmark(user.ID)
 	err = r.BookmarkDao.Add(&bookmark)
 	if err != nil {
-		// TODO: New Error handling
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can add bookmark",
+			Err:           err,
+		})
 		return
 	}
 }
@@ -82,8 +89,11 @@ func (r bookmarkRoutes) GetByStreamID(c *gin.Context) {
 
 	err = c.BindQuery(&query)
 	if err != nil {
-		// TODO: New Error handling
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind query",
+			Err:           err,
+		})
 		return
 	}
 
@@ -91,11 +101,17 @@ func (r bookmarkRoutes) GetByStreamID(c *gin.Context) {
 	bookmarks, err = r.BookmarkDao.GetByStreamID(query.StreamID, user.ID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.AbortWithStatus(http.StatusNotFound)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusNotFound,
+				CustomMessage: "invalid stream",
+			})
 			return
 		}
-		c.AbortWithStatus(http.StatusInternalServerError)
-		// TODO: New Error handling
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get bookmarks",
+			Err:           err,
+		})
 		return
 	}
 
@@ -128,41 +144,59 @@ func (r bookmarkRoutes) Update(c *gin.Context) {
 
 	id, err = strconv.Atoi(c.Param("id"))
 	if err != nil {
-		// TODO: New Error handling
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid id",
+			Err:           err,
+		})
 		return
 	}
 
 	err = c.BindJSON(&req)
 	if err != nil {
-		// TODO: New Error handling
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 
 	user = c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
 	bookmark, err = r.BookmarkDao.GetByID(uint(id))
 	if err != nil {
-		// TODO: New Error handling
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.AbortWithStatus(http.StatusNotFound)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusNotFound,
+				CustomMessage: "invalid bookmark id",
+				Err:           err,
+			})
 			return
 		}
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get bookmarks by id",
+			Err:           err,
+		})
 		return
 	}
 
 	if bookmark.UserID != user.ID {
-		// TODO: New Error handling
-		c.AbortWithStatus(http.StatusForbidden)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusForbidden,
+			CustomMessage: "logged in user is not the creator of the bookmark",
+		})
 		return
 	}
 
 	bookmark = req.ToBookmark(uint(id))
 	err = r.BookmarkDao.Update(&bookmark)
 	if err != nil {
-		// TODO: New Error handling
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not update bookmark",
+			Err:           err,
+		})
 		return
 	}
 }
@@ -175,33 +209,48 @@ func (r bookmarkRoutes) Delete(c *gin.Context) {
 
 	id, err = strconv.Atoi(c.Param("id"))
 	if err != nil {
-		// TODO: New Error handling
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid id",
+			Err:           err,
+		})
 		return
 	}
 
 	user = c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
 	bookmark, err = r.BookmarkDao.GetByID(uint(id))
 	if err != nil {
-		// TODO: New Error handling
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.AbortWithStatus(http.StatusNotFound)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusNotFound,
+				CustomMessage: "invalid bookmark id",
+				Err:           err,
+			})
 			return
 		}
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get bookmarks by id",
+			Err:           err,
+		})
 		return
 	}
 
 	if bookmark.UserID != user.ID {
-		// TODO: New Error handling
-		c.AbortWithStatus(http.StatusForbidden)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusForbidden,
+			CustomMessage: "logged in user is not the creator of the bookmark",
+		})
 		return
 	}
 
 	err = r.BookmarkDao.Delete(uint(id))
 	if err != nil {
-		// TODO: New Error handling
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not delete bookmark",
+			Err:           err,
+		})
 		return
 	}
 }

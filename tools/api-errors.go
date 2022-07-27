@@ -31,7 +31,6 @@ func (r RequestError) ToResponse() gin.H {
 
 func ErrorHandler(c *gin.Context) {
 	c.Next()
-
 	if len(c.Errors) > 0 {
 		err := c.Errors[0]
 		switch err.Err.(type) {
