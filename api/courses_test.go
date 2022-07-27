@@ -1381,8 +1381,7 @@ func TestAdminFunctions(t *testing.T) {
 					}(),
 					AuditDao: testutils.GetAuditMock(t),
 				},
-				ExpectedCode:     http.StatusInternalServerError,
-				ExpectedResponse: testutils.First(json.Marshal(resStudent)).([]byte),
+				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
 				Method:         http.MethodPut,

@@ -34,7 +34,7 @@ func TestWorker(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		workerDaoMock := mock_dao.NewMockWorkerDao(ctrl)
 		workerDaoMock.EXPECT().DeleteWorker(workerId).Return(errors.New("")).AnyTimes()
-
+		r.Use(tools.ErrorHandler)
 		configWorkerRouter(r, dao.DaoWrapper{WorkerDao: workerDaoMock})
 
 		c.Request, _ = http.NewRequest(http.MethodDelete, "/api/workers/"+workerId, nil)
@@ -60,7 +60,7 @@ func TestWorker(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		workerDaoMock := mock_dao.NewMockWorkerDao(ctrl)
 		workerDaoMock.EXPECT().DeleteWorker(workerId).Return(nil).AnyTimes()
-
+		r.Use(tools.ErrorHandler)
 		configWorkerRouter(r, dao.DaoWrapper{WorkerDao: workerDaoMock})
 
 		c.Request, _ = http.NewRequest(http.MethodDelete, "/api/workers/"+workerId, nil)

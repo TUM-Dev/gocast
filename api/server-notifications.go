@@ -26,7 +26,12 @@ func (r serverNotificationRoutes) updateServerNotification(c *gin.Context) {
 	var req notificationReq
 	if err := c.ShouldBind(&req); err != nil {
 		log.Printf("%v", err)
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
 	}
 	notification := model.ServerNotification{
 		Text:    req.Text,
@@ -36,7 +41,12 @@ func (r serverNotificationRoutes) updateServerNotification(c *gin.Context) {
 	}
 	err := r.ServerNotificationDao.UpdateServerNotification(notification, req.Id)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not update server notification",
+			Err:           err,
+		})
+		return
 	}
 	c.Redirect(http.StatusFound, "/admin/server-notifications")
 }
@@ -45,7 +55,12 @@ func (r serverNotificationRoutes) createServerNotification(c *gin.Context) {
 	var req notificationReq
 	if err := c.ShouldBind(&req); err != nil {
 		log.Printf("%v", err)
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
 	}
 	notification := model.ServerNotification{
 		Text:    req.Text,
@@ -55,7 +70,12 @@ func (r serverNotificationRoutes) createServerNotification(c *gin.Context) {
 	}
 	err := r.ServerNotificationDao.CreateServerNotification(notification)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not create server notification",
+			Err:           err,
+		})
+		return
 	}
 	c.Redirect(http.StatusFound, "/admin/server-notifications")
 }

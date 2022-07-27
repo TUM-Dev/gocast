@@ -31,13 +31,21 @@ func (r downloadICSRoutes) downloadICS(c *gin.Context) {
 	slug, term := c.Param("slug"), c.Param("term")
 	year, err := strconv.Atoi(c.Param("year"))
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid year",
+			Err:           err,
+		})
 		return
 	}
 
 	course, err := r.CoursesDao.GetCourseBySlugYearAndTerm(c, slug, term, year)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not get course",
+			Err:           err,
+		})
 		return
 	}
 
@@ -51,7 +59,11 @@ func (r downloadICSRoutes) downloadICS(c *gin.Context) {
 	c.Header("Content-Disposition", "attachment; filename="+course.Slug+course.TeachingTerm+strconv.Itoa(course.Year)+".ics")
 	err = r.templates.ExecuteTemplate(c.Writer, "ics.gotemplate", acc)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get generate .ics",
+			Err:           err,
+		})
 	}
 }
 

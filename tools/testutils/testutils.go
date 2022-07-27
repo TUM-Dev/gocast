@@ -42,6 +42,8 @@ func (tc TestCases) Run(t *testing.T, configRouterFunc func(*gin.Engine, dao.Dao
 			w := httptest.NewRecorder()
 			c, r := gin.CreateTestContext(w)
 
+			r.Use(tools.ErrorHandler)
+
 			if testCase.TumLiveContext != nil {
 				r.Use(func(c *gin.Context) {
 					c.Set("TUMLiveContext", *testCase.TumLiveContext)

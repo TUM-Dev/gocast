@@ -47,6 +47,8 @@ func TestStatistics(t *testing.T) {
 			Return(model.Course{}, nil).
 			AnyTimes()
 
+		r.Use(tools.ErrorHandler)
+
 		configGinCourseRouter(r, dao.DaoWrapper{CoursesDao: coursesMock})
 
 		c.Request, _ = http.NewRequest(http.MethodGet,
@@ -78,7 +80,7 @@ func TestStatistics(t *testing.T) {
 			GetCourseById(gomock.Any(), courseId).
 			Return(model.Course{}, nil).
 			AnyTimes()
-
+		r.Use(tools.ErrorHandler)
 		configGinCourseRouter(r, dao.DaoWrapper{CoursesDao: coursesMock})
 		c.Request, _ = http.NewRequest(http.MethodGet,
 			fmt.Sprintf("/api/course/%d/stats?interval=week", courseId), nil)
@@ -102,7 +104,7 @@ func TestStatistics(t *testing.T) {
 		c, r := gin.CreateTestContext(w)
 
 		addAdminContext(r, courseId)
-
+		r.Use(tools.ErrorHandler)
 		configGinCourseRouter(r, dao.DaoWrapper{CoursesDao: coursesMock})
 
 		c.Request, _ = http.NewRequest(http.MethodGet,
@@ -179,7 +181,7 @@ func TestStatistics(t *testing.T) {
 			c, r := gin.CreateTestContext(w)
 
 			addAdminContext(r, courseId)
-
+			r.Use(tools.ErrorHandler)
 			configGinCourseRouter(r, dao.DaoWrapper{CoursesDao: coursesMock, StatisticsDao: statisticsMock})
 
 			c.Request, _ = http.NewRequest(http.MethodGet,
@@ -230,7 +232,7 @@ func TestStatistics(t *testing.T) {
 				GetCourseStatsWeekdays(courseId).
 				Return(stats, nil).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinCourseRouter(r, dao.DaoWrapper{
 				CoursesDao:    coursesMock,
 				StatisticsDao: statisticsMock})
@@ -268,7 +270,7 @@ func TestStatistics(t *testing.T) {
 				GetCourseStatsWeekdays(courseId).
 				Return(stats, nil).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinCourseRouter(r, dao.DaoWrapper{
 				CoursesDao:    coursesMock,
 				StatisticsDao: statisticsMock})
@@ -298,7 +300,7 @@ func TestStatistics(t *testing.T) {
 				GetCourseStatsHourly(courseId).
 				Return(stats, nil).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinCourseRouter(r, dao.DaoWrapper{
 				CoursesDao:    coursesMock,
 				StatisticsDao: statisticsMock})
@@ -330,7 +332,7 @@ func TestStatistics(t *testing.T) {
 				GetStudentActivityCourseStats(courseId, true).
 				Return(stats, nil).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinCourseRouter(r, dao.DaoWrapper{
 				CoursesDao:    coursesMock,
 				StatisticsDao: statisticsMock})
@@ -362,7 +364,7 @@ func TestStatistics(t *testing.T) {
 				GetStudentActivityCourseStats(courseId, false).
 				Return(stats, nil).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinCourseRouter(r, dao.DaoWrapper{
 				CoursesDao:    coursesMock,
 				StatisticsDao: statisticsMock})
@@ -390,7 +392,7 @@ func TestStatistics(t *testing.T) {
 				GetCourseNumStudents(courseId).
 				Return(numStudents, nil).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinCourseRouter(r, dao.DaoWrapper{
 				CoursesDao:    coursesMock,
 				StatisticsDao: statisticsMock})
@@ -418,7 +420,7 @@ func TestStatistics(t *testing.T) {
 				GetCourseNumVodViews(courseId).
 				Return(views, nil).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinCourseRouter(r, dao.DaoWrapper{
 				CoursesDao:    coursesMock,
 				StatisticsDao: statisticsMock})
@@ -446,7 +448,7 @@ func TestStatistics(t *testing.T) {
 				GetCourseNumLiveViews(courseId).
 				Return(views, nil).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinCourseRouter(r, dao.DaoWrapper{
 				CoursesDao:    coursesMock,
 				StatisticsDao: statisticsMock})
@@ -478,7 +480,7 @@ func TestStatistics(t *testing.T) {
 				GetCourseNumVodViewsPerDay(courseId).
 				Return(stats, nil).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinCourseRouter(r, dao.DaoWrapper{
 				CoursesDao:    coursesMock,
 				StatisticsDao: statisticsMock})
