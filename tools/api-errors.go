@@ -39,11 +39,11 @@ func ErrorHandler(c *gin.Context) {
 			e := err.Err.(RequestError)
 			c.Errors = []*gin.Error{} // clear errors so they don't get logged
 			c.JSON(e.Status, e.ToResponse())
-			return
 		default:
 			c.Errors = []*gin.Error{} // clear errors so they don't get logged
 			c.JSON(http.StatusInternalServerError, err.Err.Error())
-			return
 		}
+		c.Abort()
+		return
 	}
 }
