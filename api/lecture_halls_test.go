@@ -241,7 +241,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				DeleteLectureHall(lectureHallId).
 				Return(nil).
 				AnyTimes()
-
+			r.Use(tools.ErrorHandler)
 			configGinLectureHallApiRouter(r, dao.DaoWrapper{LectureHallsDao: lectureHallMock}, tools.NewPresetUtility(lectureHallMock))
 
 			c.Request, _ = http.NewRequest(http.MethodDelete,
@@ -796,7 +796,7 @@ func TestLectureHallPresets(t *testing.T) {
 				Method:         http.MethodGet,
 				Url:            "/api/refreshLectureHallPresets/abc",
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
-				ExpectedCode:   http.StatusNotFound,
+				ExpectedCode:   http.StatusBadRequest,
 			},
 			"lecture hall not found": testutils.TestCase{
 				Method:         http.MethodGet,

@@ -87,7 +87,7 @@ func TestInfoPagesCRUD(t *testing.T) {
 				},
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				Body:           bytes.NewBuffer(body),
-				ExpectedCode:   http.StatusBadRequest,
+				ExpectedCode:   http.StatusInternalServerError,
 			},
 			"success": {
 				Method: http.MethodPut,

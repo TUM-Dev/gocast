@@ -9,6 +9,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
 	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 	"html/template"
@@ -24,6 +25,7 @@ func TestDownloadICS(t *testing.T) {
 	t.Run("GET[year not a int]", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, r := gin.CreateTestContext(w)
+		r.Use(tools.ErrorHandler)
 		configGinDownloadICSRouter(r, dao.DaoWrapper{})
 
 		slug, term, year := "fda", "S", "abc"
@@ -39,7 +41,10 @@ func TestDownloadICS(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, r := gin.CreateTestContext(w)
+		r.Use(tools.ErrorHandler)
 		configGinDownloadICSRouter(r, dao.DaoWrapper{CoursesDao: courseMock})
+
+		r.Use(tools.ErrorHandler)
 
 		year, term, slug := 2022, "S", "fda"
 		courseMock.
@@ -60,6 +65,7 @@ func TestDownloadICS(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, r := gin.CreateTestContext(w)
+		r.Use(tools.ErrorHandler)
 		configGinDownloadICSRouter(r, dao.DaoWrapper{CoursesDao: courseMock})
 
 		var icsContentExpected bytes.Buffer

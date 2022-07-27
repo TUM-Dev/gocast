@@ -23,7 +23,7 @@ func TestProgressReport(t *testing.T) {
 	t.Run("POST [invalid body]", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, r := gin.CreateTestContext(w)
-
+		r.Use(tools.ErrorHandler)
 		configProgressRouter(r, dao.DaoWrapper{})
 
 		c.Request, _ = http.NewRequest(http.MethodPost, PROGRESS_REPORT_URL, nil)
@@ -40,7 +40,7 @@ func TestProgressReport(t *testing.T) {
 			StreamID: uint(1),
 			Progress: 0,
 		})
-
+		r.Use(tools.ErrorHandler)
 		configProgressRouter(r, dao.DaoWrapper{})
 
 		c.Request, _ = http.NewRequest(http.MethodPost, PROGRESS_REPORT_URL, bytes.NewBuffer(body))
@@ -61,7 +61,7 @@ func TestProgressReport(t *testing.T) {
 		r.Use(func(c *gin.Context) {
 			c.Set("TUMLiveContext", tools.TUMLiveContext{User: nil})
 		})
-
+		r.Use(tools.ErrorHandler)
 		configProgressRouter(r, dao.DaoWrapper{})
 
 		c.Request, _ = http.NewRequest(http.MethodPost, PROGRESS_REPORT_URL, bytes.NewBuffer(body))
@@ -82,7 +82,7 @@ func TestProgressReport(t *testing.T) {
 		r.Use(func(c *gin.Context) {
 			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{}})
 		})
-
+		r.Use(tools.ErrorHandler)
 		configProgressRouter(r, dao.DaoWrapper{})
 
 		c.Request, _ = http.NewRequest(http.MethodPost, PROGRESS_REPORT_URL, bytes.NewBuffer(body))
@@ -98,7 +98,7 @@ func TestWatched(t *testing.T) {
 	t.Run("POST [invalid body]", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, r := gin.CreateTestContext(w)
-
+		r.Use(tools.ErrorHandler)
 		configProgressRouter(r, dao.DaoWrapper{})
 
 		c.Request, _ = http.NewRequest(http.MethodPost, WATCHED_URL, nil)
@@ -115,7 +115,7 @@ func TestWatched(t *testing.T) {
 			StreamID: uint(1),
 			Watched:  true,
 		})
-
+		r.Use(tools.ErrorHandler)
 		configProgressRouter(r, dao.DaoWrapper{})
 
 		c.Request, _ = http.NewRequest(http.MethodPost, WATCHED_URL, bytes.NewBuffer(body))
@@ -132,11 +132,10 @@ func TestWatched(t *testing.T) {
 			StreamID: uint(1),
 			Watched:  true,
 		})
-
 		r.Use(func(c *gin.Context) {
 			c.Set("TUMLiveContext", tools.TUMLiveContext{User: nil})
 		})
-
+		r.Use(tools.ErrorHandler)
 		configProgressRouter(r, dao.DaoWrapper{})
 
 		c.Request, _ = http.NewRequest(http.MethodPost, WATCHED_URL, bytes.NewBuffer(body))
@@ -155,7 +154,7 @@ func TestWatched(t *testing.T) {
 			StreamID: uint(1),
 			Watched:  true,
 		})
-
+		r.Use(tools.ErrorHandler)
 		r.Use(func(c *gin.Context) {
 			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{}})
 		})
@@ -180,7 +179,7 @@ func TestWatched(t *testing.T) {
 			StreamID: uint(1),
 			Watched:  true,
 		})
-
+		r.Use(tools.ErrorHandler)
 		r.Use(func(c *gin.Context) {
 			c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
 				Model: gorm.Model{ID: 1},

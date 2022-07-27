@@ -26,27 +26,45 @@ func (r downloadRoutes) download(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	if tumLiveContext.User == nil {
-		c.AbortWithStatus(http.StatusForbidden)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusForbidden,
+			CustomMessage: "not logged in",
+		})
 		return
 	}
 	file, err := r.FileDao.GetFileById(c.Param("id"))
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not find file",
+			Err:           err,
+		})
 		return
 	}
 	stream, err := r.StreamsDao.GetStreamByID(c, fmt.Sprintf("%d", file.StreamID))
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get stream",
+			Err:           err,
+		})
 		return
 	}
 	course, err := r.CoursesDao.GetCourseById(c, stream.CourseID)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get course",
+			Err:           err,
+		})
 		return
 	}
 
@@ -59,7 +77,10 @@ func (r downloadRoutes) download(c *gin.Context) {
 		if !tumLiveContext.User.IsAdminOfCourse(course) {
 			if !course.DownloadsEnabled || !(course.Visibility == "hidden" || course.Visibility == "public") ||
 				!tumLiveContext.User.IsEligibleToWatchCourse(course) || !tumLiveContext.User.IsAdminOfCourse(course) {
-				c.AbortWithStatus(http.StatusForbidden)
+				_ = c.Error(tools.RequestError{
+					Status:        http.StatusForbidden,
+					CustomMessage: "user not allowed to get file",
+				})
 				return
 			}
 		}
@@ -81,13 +102,21 @@ func sendImageContent(c *gin.Context, file model.File) {
 func sendDownloadFile(c *gin.Context, file model.File) {
 	f, err := os.Open(file.Path)
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not open file",
+			Err:           err,
+		})
 		return
 	}
 	defer f.Close()
 	stat, err := f.Stat()
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not read stats from file",
+			Err:           err,
+		})
 		return
 	}
 

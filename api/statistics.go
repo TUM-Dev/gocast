@@ -23,8 +23,12 @@ type statExportReq struct {
 func (r coursesRoutes) getStats(c *gin.Context) {
 	ctx, _ := c.Get("TUMLiveContext")
 	var req statReq
-	if c.ShouldBindQuery(&req) != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+	if err := c.ShouldBindQuery(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind query",
+			Err:           err,
+		})
 		return
 	}
 	var cid uint
@@ -32,7 +36,10 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 	cidFromContext := c.Param("courseID")
 	if cidFromContext == "0" {
 		if ctx.(tools.TUMLiveContext).User.Role != model.AdminType {
-			c.AbortWithStatus(http.StatusForbidden)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusForbidden,
+				CustomMessage: "not admin",
+			})
 			return
 		}
 		cid = 0
@@ -46,7 +53,11 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		res, err := r.StatisticsDao.GetCourseStatsWeekdays(cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsWeekdays failed")
-			c.AbortWithStatus(http.StatusInternalServerError)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not get course stats weekdays",
+				Err:           err,
+			})
 			return
 		}
 		resp := chartJs{
@@ -61,7 +72,11 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		res, err := r.StatisticsDao.GetCourseStatsHourly(cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsHourly failed")
-			c.AbortWithStatus(http.StatusInternalServerError)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not get course stats hourly",
+				Err:           err,
+			})
 			return
 		}
 		resp := chartJs{
@@ -76,7 +91,11 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		resLive, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, true)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsLive failed")
-			c.AbortWithStatus(http.StatusInternalServerError)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not get student activity course stats",
+				Err:           err,
+			})
 			return
 		}
 		resp := chartJs{
@@ -94,7 +113,11 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		resVod, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, false)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsVod failed")
-			c.AbortWithStatus(http.StatusInternalServerError)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not get student activity course stats",
+				Err:           err,
+			})
 			return
 		}
 		resp := chartJs{
@@ -111,7 +134,12 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		res, err := r.StatisticsDao.GetCourseNumStudents(cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumStudents failed")
-			c.AbortWithStatus(http.StatusInternalServerError)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not get course num students",
+				Err:           err,
+			})
+			return
 		} else {
 			c.JSON(http.StatusOK, gin.H{"res": res})
 		}
@@ -119,7 +147,12 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		res, err := r.StatisticsDao.GetCourseNumVodViews(cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumVodViews failed")
-			c.AbortWithStatus(http.StatusInternalServerError)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not getcourse num vod views",
+				Err:           err,
+			})
+			return
 		} else {
 			c.JSON(http.StatusOK, gin.H{"res": res})
 		}
@@ -127,7 +160,12 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		res, err := r.StatisticsDao.GetCourseNumLiveViews(cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
-			c.AbortWithStatus(http.StatusInternalServerError)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not get course num live views",
+				Err:           err,
+			})
+			return
 		} else {
 			c.JSON(http.StatusOK, gin.H{"res": res})
 		}
@@ -136,7 +174,12 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 			res, err := r.StatisticsDao.GetCourseNumVodViewsPerDay(cid)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
-				c.AbortWithStatus(http.StatusInternalServerError)
+				_ = c.Error(tools.RequestError{
+					Status:        http.StatusInternalServerError,
+					CustomMessage: "can not get course num vod views per day",
+					Err:           err,
+				})
+				return
 			} else {
 				resp := chartJs{
 					ChartType: "bar",
@@ -150,7 +193,11 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 			}
 		}
 	default:
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid interval",
+		})
+		return
 	}
 }
 
@@ -158,8 +205,13 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 	ctx, _ := c.Get("TUMLiveContext")
 
 	var req statExportReq
-	if c.ShouldBindQuery(&req) != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+	if err := c.ShouldBindQuery(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind query",
+			Err:           err,
+		})
+		return
 	}
 
 	var cid uint
@@ -167,7 +219,10 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 	cidFromContext := c.Param("courseId")
 	if cidFromContext == "0" {
 		if ctx.(tools.TUMLiveContext).User.Role != model.AdminType {
-			c.AbortWithStatus(http.StatusForbidden)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusForbidden,
+				CustomMessage: "not admin",
+			})
 			return
 		}
 		cid = 0
@@ -177,7 +232,10 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 
 	if req.Format != "json" && req.Format != "csv" {
 		log.WithField("courseId", cid).Warn("exportStats failed, invalid format")
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "exportStats failed, invalid format",
+		})
 		return
 	}
 
@@ -285,7 +343,11 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 		jsonResult, err := json.Marshal(result.ExportJson())
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("json.Marshal failed for stats export")
-			c.AbortWithStatus(http.StatusInternalServerError)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "json.Marshal failed for stats export",
+				Err:           err,
+			})
 			return
 		}
 

@@ -565,7 +565,7 @@ func TestStreamVideoSections(t *testing.T) {
 					}(),
 				},
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
-				ExpectedCode:   http.StatusInternalServerError,
+				ExpectedCode:   http.StatusNotFound,
 			},
 			"Delete returns error": {
 				Method: http.MethodDelete,
