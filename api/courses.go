@@ -54,6 +54,11 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	adminOfCourseGroup.GET("/admins", routes.getAdmins)
 	adminOfCourseGroup.PUT("/admins/:userID", routes.addAdminToCourse)
 	adminOfCourseGroup.DELETE("/admins/:userID", routes.removeAdminFromCourse)
+
+	withStream := adminOfCourseGroup.Group("/stream/:streamID")
+	withStream.Use(tools.InitStream(daoWrapper))
+	withStream.GET("/transcodingProgress", routes.getTranscodingProgress)
+
 }
 
 type coursesRoutes struct {
@@ -84,11 +89,10 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 	}
 	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	stream := model.Stream{
-		Name:         req.Title,
-		Start:        req.Start,
-		End:          req.Start.Add(time.Hour),
-		CourseID:     tlctx.Course.ID,
-		StreamStatus: model.StatusConverting,
+		Name:     req.Title,
+		Start:    req.Start,
+		End:      req.Start.Add(time.Hour),
+		CourseID: tlctx.Course.ID,
 	}
 	err = r.StreamsDao.CreateStream(&stream)
 	if err != nil {
@@ -1055,6 +1059,21 @@ func (r coursesRoutes) courseInfo(c *gin.Context) {
 		return
 	}
 	c.JSON(200, courseInfo)
+}
+
+func (r coursesRoutes) getTranscodingProgress(c *gin.Context) {
+	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	version := c.DefaultQuery("v", string(model.COMB))
+	p, err := r.StreamsDao.GetTranscodingProgressByVersion(model.StreamVersion(version), ctx.Stream.ID)
+	if err == gorm.ErrRecordNotFound {
+		c.JSON(http.StatusOK, 100)
+		return
+	}
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, p.Progress)
 }
 
 type getCourseRequest struct {
