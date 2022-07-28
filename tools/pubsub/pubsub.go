@@ -2,81 +2,81 @@ package pubsub
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/gabstv/melody"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
-type WSPubSubMessage struct {
+const (
+	MessageTypeSubscribe      = "subscribe"
+	MessageTypeUnsubscribe    = "unsubscribe"
+	MessageTypeChannelMessage = "message"
+)
+
+type Message struct {
 	Type    string          `json:"type"`
 	Channel string          `json:"channel"`
 	Payload json.RawMessage `json:"payload"`
 }
 
-type PubSub = struct {
+type PubSub struct {
+	melody   *melody.Melody
 	clients  ClientStore
 	channels ChannelStore
+}
+
+func New() *PubSub {
+	instance := PubSub{}
+	instance.init()
+	return &instance
+}
+
+type handlerFunc func(c *Client)
+type handlerDataFunc func(c *Client, data []byte)
+
+func (p *PubSub) mapEventToClient(handler handlerFunc) func(*melody.Session) {
+	return func(s *melody.Session) {
+		id, _ := s.Get("id")
+		client := p.clients.Get(id.(string))
+		handler(client)
+	}
+}
+
+func (p *PubSub) mapDataEventToClient(handler handlerDataFunc) func(*melody.Session, []byte) {
+	return func(s *melody.Session, data []byte) {
+		id, _ := s.Get("id")
+		client := p.clients.Get(id.(string))
+		handler(client, data)
+	}
 }
 
 func (p *PubSub) RegisterPubSubChannel(channelName string, handlers MessageHandlers) {
 	p.channels.Register(channelName, handlers)
 }
 
-func (p *PubSub) Init(melody *melody.Melody) {
-	melody.HandleConnect(p.connectHandler)
-	melody.HandleDisconnect(p.disconnectHandler)
-	melody.HandleMessage(p.MessageHandler)
+func (p *PubSub) init() {
+	p.melody = melody.New()
+	p.melody.HandleConnect(p.connectHandler)
+	p.melody.HandleDisconnect(p.mapEventToClient(p.disconnectHandler))
+	p.melody.HandleMessage(p.mapDataEventToClient(p.messageHandler))
+}
+
+func (p *PubSub) HandleRequest(writer http.ResponseWriter, request *http.Request, properties map[string]interface{}) error {
+	return p.melody.HandleRequestWithKeys(writer, request, properties)
 }
 
 func (p *PubSub) connectHandler(s *melody.Session) {
-	id, _ := s.Get("id")   // get client id
-	ctx, _ := s.Get("ctx") // get gin context
-
-	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	p.clients
+	client := p.clients.Join(s, s.Keys())
+	s.Set("id", client.Id)
 }
 
-func (p *PubSub) disconnectHandler(s *melody.Session) {
-	id, _ := s.Get("id")
-
-	pubSubClientsMutex.Lock()
-	delete(pubSubClients, id.(string))
-	for _, channel := range pubSubChannels {
-		channel.mutex.Lock()
-		if context, ok := channel.subscribers[id.(string)]; ok {
-			delete(channel.subscribers, id.(string))
-			if channel.handlers.onUnsubscribe != nil {
-				channel.handlers.onUnsubscribe(context)
-			}
-		}
-		channel.mutex.Unlock()
-	}
-	pubSubClientsMutex.Unlock()
+func (p *PubSub) disconnectHandler(c *Client) {
+	p.channels.UnsubscribeAll(c.Id)
+	p.clients.Remove(c.Id)
 }
 
-func messageHandler(s *melody.Session, msg []byte) {
-	ctx, _ := s.Get("ctx") // get gin context
-	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		ctx.(*gin.Context).AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	if tumLiveContext.User == nil {
-		return
-	}
-
-	var req WSPubSubMessage
+func (p *PubSub) messageHandler(c *Client, msg []byte) {
+	var req Message
 	err := json.Unmarshal(msg, &req)
 	if err != nil {
 		log.WithError(err).Warn("could not unmarshal request")
@@ -84,121 +84,13 @@ func messageHandler(s *melody.Session, msg []byte) {
 	}
 
 	switch req.Type {
-	case PubSubMessageTypeSubscribe:
-		subscribeClientToChannel(s, req.Channel)
-	case PubSubMessageTypeUnsubscribe:
-		unsubscribeFromChannel(s, req.Channel)
-	case PubSubMessageTypeChannelMessage:
-		handleChannelMessage(s, &req)
+	case MessageTypeSubscribe:
+		p.channels.Subscribe(c, req.Channel)
+	case MessageTypeUnsubscribe:
+		p.channels.Unsubscribe(c.Id, req.Channel)
+	case MessageTypeChannelMessage:
+		p.channels.OnMessage(c, &req)
 	default:
 		log.WithField("type", req.Type).Warn("unknown pubsub websocket request type")
-	}
-}
-
-func BroadcastToPubSubChannel(channelName string, payload gin.H) error {
-	channel, ok := pubSubChannels[channelName]
-	if !ok {
-		return errors.New("ChannelName does not exist")
-	}
-
-	message, _ := json.Marshal(gin.H{"channel": channelName, "payload": payload})
-
-	channel.mutex.Lock()
-	defer channel.mutex.Unlock()
-
-	for clientId, _ := range channel.subscribers {
-		pubSubClientsMutex.Lock()
-		if subscriberSession, ok := pubSubClients[clientId]; ok {
-			if err := subscriberSession.session.Write(message); err != nil {
-				log.WithError(err).Warn("failed to send broadcast message to subscriber")
-			}
-		}
-		pubSubClientsMutex.Unlock()
-	}
-
-	return nil
-}
-
-func SendInPubSubChannel(channelName string, clientId string, payload gin.H) error {
-	channel, ok := pubSubChannels[channelName]
-	if ok {
-		return errors.New("ChannelName does not exist")
-	}
-
-	channel.mutex.Lock()
-	defer channel.mutex.Unlock()
-
-	if _, ok := channel.subscribers[clientId]; ok {
-		return errors.New("no subscriber found")
-	}
-
-	pubSubClientsMutex.Lock()
-	subscriberSession, ok := pubSubClients[clientId]
-	if !ok {
-		return errors.New("subscriber session not found")
-	}
-	pubSubClientsMutex.Unlock()
-
-	message, _ := json.Marshal(gin.H{"channel": channelName, "payload": payload})
-	return subscriberSession.session.Write(message)
-}
-
-func subscribeClientToChannel(s *melody.Session, channelName string) {
-	clientId, _ := s.Get("id")
-
-	// TODO: Somehow match the channel name also with Params! :)
-	channel, ok := pubSubChannels[channelName]
-	if !ok {
-		log.Warn("client tried to subscribe to non existing channel")
-	}
-
-	pubSubClientsMutex.Lock()
-	defer pubSubClientsMutex.Unlock()
-
-	var context = PubSubContext{
-		Client: pubSubClients[clientId.(string)],
-	}
-
-	channel.mutex.Lock()
-	defer channel.mutex.Unlock()
-
-	channel.subscribers[clientId.(string)] = &context
-
-	if channel.handlers.onSubscribe != nil {
-		channel.handlers.onSubscribe(&context)
-	}
-}
-
-func unsubscribeFromChannel(s *melody.Session, channelName string) {
-	clientId, _ := s.Get("id")
-	channel, ok := pubSubChannels[channelName]
-	if !ok {
-		log.Warn("client tried to unsubscribe to non existing channel")
-	}
-
-	channel.mutex.Lock()
-	defer channel.mutex.Unlock()
-
-	if context, ok := channel.subscribers[clientId.(string)]; ok {
-		delete(channel.subscribers, clientId.(string))
-
-		if channel.handlers.onUnsubscribe != nil {
-			channel.handlers.onUnsubscribe(context)
-		}
-	}
-}
-
-func handleChannelMessage(s *melody.Session, req *WSPubSubMessage) {
-	clientId, _ := s.Get("id")
-	channel, ok := pubSubChannels[req.Channel]
-	if !ok {
-		log.WithField("type", req.Type).Warn("unknown channel on websocket message")
-		return
-	}
-
-	if context, ok := channel.subscribers[clientId.(string)]; ok {
-		if channel.handlers.onMessage != nil {
-			channel.handlers.onMessage(context, req)
-		}
 	}
 }

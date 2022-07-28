@@ -8,7 +8,7 @@ import (
 
 var uuidGen, _ = uuid.NewUUID()
 
-type ClientStore = struct {
+type ClientStore struct {
 	clients map[string]*Client
 	mutex   sync.RWMutex
 }
@@ -21,7 +21,7 @@ func (c *ClientStore) NextId() string {
 	return uuidString
 }
 
-func (c *ClientStore) Join(session *melody.Session, props map[string]*interface{}) *Client {
+func (c *ClientStore) Join(session *melody.Session, props map[string]interface{}) *Client {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	client := Client{
@@ -31,6 +31,12 @@ func (c *ClientStore) Join(session *melody.Session, props map[string]*interface{
 	}
 	c.clients[client.Id] = &client
 	return &client
+}
+
+func (c *ClientStore) Get(id string) *Client {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	return c.clients[id]
 }
 
 func (c *ClientStore) Remove(id string) {

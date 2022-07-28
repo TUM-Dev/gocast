@@ -1,8 +1,9 @@
 package pubsub
 
 type Context struct {
-	params map[string]string
-	Client *Client
+	Client   *Client
+	FullPath string
+	params   map[string]string
 }
 
 func (context *Context) SetParams(params map[string]string) {

@@ -7,15 +7,15 @@ import (
 const channelPathSep = "/"
 
 type EventHandlerFunc func(s *Context)
-type MessageHandlerFunc func(s *Context, message *WSPubSubMessage)
+type MessageHandlerFunc func(s *Context, message *Message)
 
-type MessageHandlers = struct {
+type MessageHandlers struct {
 	onSubscribe   EventHandlerFunc
 	onUnsubscribe EventHandlerFunc
 	onMessage     MessageHandlerFunc
 }
 
-type Channel = struct {
+type Channel struct {
 	path        []string
 	handlers    MessageHandlers
 	subscribers ChannelSubscribers
@@ -49,10 +49,42 @@ func (c *Channel) Subscribe(context *Context) {
 	}
 }
 
-func (c *Channel) Unsubscribe(context *Context) {
-	c.subscribers.Remove(context.ClientId)
+func (c *Channel) HandleMessage(client *Client, message *Message) {
+	if c.handlers.onMessage == nil {
+		return
+	}
 
+	if context, ok := c.subscribers.GetContext(message.Channel, client.Id); ok {
+		c.handlers.onMessage(context, message)
+	}
+}
+
+func (c *Channel) IsSubscribed(path string, clientId string) bool {
+	return c.subscribers.IsSubscribed(path, clientId)
+}
+
+func (c *Channel) Unsubscribe(path string, clientId string) bool {
+	context, isSubscriber := c.subscribers.GetContext(path, clientId)
+	if !isSubscriber {
+		return false
+	}
+
+	c.subscribers.Remove(path, clientId)
 	if c.handlers.onUnsubscribe != nil {
 		c.handlers.onUnsubscribe(context)
 	}
+
+	return true
+}
+
+func (c *Channel) UnsubscribeAllPaths(clientId string) bool {
+	removed := c.subscribers.RemoveAllPaths(clientId)
+
+	if c.handlers.onUnsubscribe != nil {
+		for _, context := range removed {
+			c.handlers.onUnsubscribe(context)
+		}
+	}
+
+	return true
 }

@@ -2,10 +2,10 @@ package pubsub
 
 import "github.com/gabstv/melody"
 
-type Client = struct {
+type Client struct {
 	Id         string
 	Session    *melody.Session
-	properties map[string]*interface{}
+	properties map[string]interface{}
 }
 
 func (client *Client) Get(key string) (value interface{}, exists bool) {
@@ -15,6 +15,6 @@ func (client *Client) Get(key string) (value interface{}, exists bool) {
 	return nil, false
 }
 
-func (client *Client) Set(key string, value *interface{}) {
+func (client *Client) Set(key string, value interface{}) {
 	client.properties[key] = value
 }
