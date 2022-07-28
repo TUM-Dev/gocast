@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -385,6 +386,12 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 	if err != nil {
 		return nil, err
 	}
+
+	err = s.StreamsDao.RemoveTranscodingProgress(model.StreamVersion(request.SourceType), stream.ID)
+	if err != nil {
+		log.WithError(err).Error("error removing transcoding progress")
+	}
+
 	// look for file to prevent duplication
 	shouldAddFile := true
 	for _, file := range stream.Files {
@@ -400,7 +407,6 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 	if request.Duration != 0 {
 		stream.Duration = request.Duration
 	}
-	stream.StreamStatus = model.StatusConverted
 	err = s.DaoWrapper.StreamsDao.SaveStream(&stream)
 	if err != nil {
 		log.WithError(err).Error("Can't save stream")
@@ -425,7 +431,6 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 		return nil, nil
 	}
 	stream.Recording = true
-	stream.StreamStatus = model.StatusUnknown
 	switch req.SourceType {
 	case "CAM":
 		stream.PlaylistUrlCAM = req.HLSUrl
@@ -556,6 +561,28 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 	}()
 
 	return &pb.Status{Ok: true}, nil
+}
+
+func (s server) NotifyTranscodingProgress(srv pb.FromWorker_NotifyTranscodingProgressServer) error {
+	for {
+		resp, err := srv.Recv()
+		if err == io.EOF || errors.Is(err, context.Canceled) {
+			return nil
+		}
+		if err != nil {
+			log.Warnf("cannot receive %v", err)
+			return nil
+		}
+		err = s.DaoWrapper.StreamsDao.SaveTranscodingProgress(model.TranscodingProgress{
+			StreamID: uint(resp.StreamId),
+			Version:  model.StreamVersion(resp.Version),
+			Progress: int(resp.Progress),
+		})
+		if err != nil {
+			return err
+		}
+
+	}
 }
 
 func isHlsUrlOk(url string) bool {
@@ -881,7 +908,7 @@ func init() {
 	}
 	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
 		MaxConnectionIdle:     time.Minute,
-		MaxConnectionAge:      time.Minute,
+		MaxConnectionAge:      time.Minute * 5,
 		MaxConnectionAgeGrace: time.Second * 5,
 		Time:                  time.Minute * 10,
 		Timeout:               time.Second * 20,

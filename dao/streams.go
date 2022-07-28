@@ -45,6 +45,9 @@ type StreamsDao interface {
 	SaveCOMBURL(stream *model.Stream, url string)
 	SaveCAMURL(stream *model.Stream, url string)
 	SavePRESURL(stream *model.Stream, url string)
+	SaveTranscodingProgress(progress model.TranscodingProgress) error
+	RemoveTranscodingProgress(streamVersion model.StreamVersion, streamId uint) error
+	GetTranscodingProgressByVersion(streamVersion model.StreamVersion, streamId uint) (model.TranscodingProgress, error)
 	SaveStream(vod *model.Stream) error
 	ToggleVisibility(streamId uint, private bool) error
 
@@ -59,12 +62,21 @@ type streamsDao struct {
 	db *gorm.DB
 }
 
+func (d streamsDao) GetTranscodingProgressByVersion(v model.StreamVersion, streamId uint) (p model.TranscodingProgress, err error) {
+	err = DB.Where("version = ? AND stream_id = ?", v, streamId).First(&p).Error
+	return
+}
+
 func NewStreamsDao() StreamsDao {
 	return streamsDao{db: DB}
 }
 
 func (d streamsDao) CreateStream(stream *model.Stream) error {
 	return DB.Create(stream).Error
+}
+
+func (d streamsDao) SaveTranscodingProgress(progress model.TranscodingProgress) error {
+	return DB.Clauses(clause.OnConflict{UpdateAll: true}).Create(&progress).Error
 }
 
 //AddVodView Adds a stat entry to the database or increases the one existing for this hour
@@ -407,9 +419,12 @@ func (d streamsDao) SaveStream(vod *model.Stream) error {
 		Paused:          vod.Paused,
 		Duration:        vod.Duration,
 		ThumbInterval:   vod.ThumbInterval,
-		StreamStatus:    vod.StreamStatus,
 	}).Error
 	return err
+}
+
+func (d streamsDao) RemoveTranscodingProgress(streamVersion model.StreamVersion, streamId uint) error {
+	return DB.Unscoped().Where("version = ? AND stream_id = ?", streamVersion, streamId).Delete(&model.TranscodingProgress{}).Error
 }
 
 func (d streamsDao) DeleteStream(streamID string) {

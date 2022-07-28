@@ -32,7 +32,11 @@ func (r auditRoutes) getAudits(c *gin.Context) {
 	var reqData req
 	err := c.BindQuery(&reqData)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind query",
+			Err:           err,
+		})
 		return
 	}
 	if len(reqData.Types) == 0 {
@@ -40,7 +44,11 @@ func (r auditRoutes) getAudits(c *gin.Context) {
 	}
 	found, err := r.AuditDao.Find(reqData.Limit, reqData.Offset, reqData.Types...)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not find audits",
+			Err:           err,
+		})
 		return
 	}
 	res := make([]gin.H, len(found))

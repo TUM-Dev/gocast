@@ -141,7 +141,7 @@ func TestUsersCRUD(t *testing.T) {
 				Url:          url,
 				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
 				Body:         bytes.NewBuffer([]byte{}),
-				ExpectedCode: http.StatusInternalServerError,
+				ExpectedCode: http.StatusBadRequest,
 			},
 			"POST[CreateUser(lecturer) returns error]": {
 				Router: func(r *gin.Engine) {

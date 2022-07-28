@@ -11,7 +11,7 @@
         :key="lecture.lectureId"
         class="w-full mb-4 pb-4 relative dark:bg-gray-800 bg-gray-50 rounded shadow">
         <div class="border-t-2 flex justify-between mb-2" :class="'border-' + lecture.color">
-            <div class="pt-2 px-2">
+            <div class="pt-2 px-2 w-full">
                 <div class="text-3 font-semibold">
                     <input @change="$event.target.checked ? selectedLectures.push({ id: lecture.lectureId, isPast: lecture.isPast }) : (selectedLectures = selectedLectures.filter(({id}) => id != lecture.lectureId))"
                            class="w-auto mr-2" type="checkbox"/>
@@ -42,7 +42,17 @@
                         {{end}}
                     </p>
                 </div>
-
+                <div x-show="lecture.isConverting" class="p-4" x-init="lecture.keepProgressesUpdated()">
+                    <span class="text-1 font-semibold text-sm">Converting:</span>
+                    <template x-for="p in lecture.transcodingProgresses">
+                        <div class="w-full ml-2">
+                            <div class="font-semibold text-sm text-4" x-text="`${p.version} (${p.progress}%)`"></div>
+                            <div class="w-full bg-gray-200 rounded-full h-1.5 mb-1 dark:bg-gray-700">
+                                <div class="bg-blue-600 h-1.5 rounded-full dark:bg-blue-500" :style="`width: ${p.progress}%`"></div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
                 <div x-show="lecture.uiEditMode == 0"
                      class="text-2 font-sans ml-6 mt-2 pl-3 border-l-4 border-gray-500 dark:border-white">
                     <span class="italic text-gray-400 dark:text-gray-600" x-show="lecture.name.length === 0">Unknown Name</span>
@@ -82,12 +92,6 @@
                 <div x-show="lecture.isRecording">
                     <div class="font-semibold border-success w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black"
                          :class="lecture.private?'bg-gray-500':'bg-success'">
-                        <template x-if="lecture.isConverting">
-                            <div>
-                                <i class="fas fa-circle-notch animate-spin"></i>
-                                <span>Converting</span>
-                            </div>
-                        </template>
                         <i title="This lecture is hidden" x-show="lecture.private" class="fas fa-eye-slash"></i>
                         <span x-show="!lecture.isConverting">VoD</span>
                     </div>
