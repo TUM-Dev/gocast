@@ -40,6 +40,11 @@ class LectureFile {
     }
 }
 
+class TranscodingProgress {
+    version: string;
+    progress: number;
+}
+
 export class Lecture {
     static dateFormatOptions: Intl.DateTimeFormatOptions = {
         weekday: "long",
@@ -61,7 +66,7 @@ export class Lecture {
     start: Date;
     end: Date;
     readonly isLiveNow: boolean;
-    readonly isConverting: boolean;
+    isConverting: boolean;
     readonly isRecording: boolean;
     readonly isPast: boolean;
     readonly hasStats: boolean;
@@ -78,6 +83,7 @@ export class Lecture {
     isSaving = false;
     isDeleted = false;
     lastErrors: string[] = [];
+    transcodingProgresses: TranscodingProgress[];
     files: LectureFile[];
     private: boolean;
 
@@ -143,6 +149,31 @@ export class Lecture {
                 }
             }
         });
+    }
+
+    async keepProgressesUpdated() {
+        if (!this.isConverting) {
+            return;
+        }
+        setTimeout(() => {
+            for (let i = 0; i < this.transcodingProgresses.length; i++) {
+                fetch(
+                    `/api/course/${this.courseId}/stream/${this.lectureId}/transcodingProgress?v=${this.transcodingProgresses[i].version}`,
+                )
+                    .then((r) => {
+                        return r.json() as Promise<number>;
+                    })
+                    .then((r) => {
+                        if (r === 100) {
+                            this.transcodingProgresses.splice(i, 1);
+                        } else {
+                            this.transcodingProgresses[i].progress = r;
+                        }
+                    });
+            }
+            this.isConverting = this.transcodingProgresses.length > 0;
+            this.keepProgressesUpdated();
+        }, 5000);
     }
 
     async saveEdit() {

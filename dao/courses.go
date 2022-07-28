@@ -200,7 +200,7 @@ func (d coursesDao) GetCourseByToken(token string) (course model.Course, err err
 
 func (d coursesDao) GetCourseById(ctx context.Context, id uint) (course model.Course, err error) {
 	var foundCourse model.Course
-	dbErr := DB.Preload("Streams.Stats").Preload("Streams.Files").Preload("Streams", func(db *gorm.DB) *gorm.DB {
+	dbErr := DB.Preload("Streams.TranscodingProgresses").Preload("Streams.Stats").Preload("Streams.Files").Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("streams.start desc")
 	}).Find(&foundCourse, "id = ?", id).Error
 	return foundCourse, dbErr

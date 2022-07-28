@@ -136,7 +136,7 @@ func TestUsersCRUD(t *testing.T) {
 					Role: model.AdminType,
 				}},
 				Body:         bytes.NewBuffer([]byte{}),
-				ExpectedCode: http.StatusInternalServerError,
+				ExpectedCode: http.StatusBadRequest,
 			},
 			"POST[CreateUser(lecturer) returns error]": testutils.TestCase{
 				Method: http.MethodPost,
