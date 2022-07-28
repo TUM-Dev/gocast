@@ -10,9 +10,9 @@ type EventHandlerFunc func(s *Context)
 type MessageHandlerFunc func(s *Context, message *Message)
 
 type MessageHandlers struct {
-	onSubscribe   EventHandlerFunc
-	onUnsubscribe EventHandlerFunc
-	onMessage     MessageHandlerFunc
+	OnSubscribe   EventHandlerFunc
+	OnUnsubscribe EventHandlerFunc
+	OnMessage     MessageHandlerFunc
 }
 
 type Channel struct {
@@ -44,18 +44,18 @@ func (c *Channel) PathMatches(path string) (bool, map[string]string) {
 func (c *Channel) Subscribe(context *Context) {
 	c.subscribers.Add(context)
 
-	if c.handlers.onSubscribe != nil {
-		c.handlers.onSubscribe(context)
+	if c.handlers.OnSubscribe != nil {
+		c.handlers.OnSubscribe(context)
 	}
 }
 
 func (c *Channel) HandleMessage(client *Client, message *Message) {
-	if c.handlers.onMessage == nil {
+	if c.handlers.OnMessage == nil {
 		return
 	}
 
 	if context, ok := c.subscribers.GetContext(message.Channel, client.Id); ok {
-		c.handlers.onMessage(context, message)
+		c.handlers.OnMessage(context, message)
 	}
 }
 
@@ -70,8 +70,8 @@ func (c *Channel) Unsubscribe(path string, clientId string) bool {
 	}
 
 	c.subscribers.Remove(path, clientId)
-	if c.handlers.onUnsubscribe != nil {
-		c.handlers.onUnsubscribe(context)
+	if c.handlers.OnUnsubscribe != nil {
+		c.handlers.OnUnsubscribe(context)
 	}
 
 	return true
@@ -80,9 +80,9 @@ func (c *Channel) Unsubscribe(path string, clientId string) bool {
 func (c *Channel) UnsubscribeAllPaths(clientId string) bool {
 	removed := c.subscribers.RemoveAllPaths(clientId)
 
-	if c.handlers.onUnsubscribe != nil {
+	if c.handlers.OnUnsubscribe != nil {
 		for _, context := range removed {
-			c.handlers.onUnsubscribe(context)
+			c.handlers.OnUnsubscribe(context)
 		}
 	}
 

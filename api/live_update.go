@@ -10,6 +10,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/pubsub"
 	"github.com/joschahenningsen/TUM-Live/tools/tum"
 	log "github.com/sirupsen/logrus"
 	"sync"
@@ -29,14 +30,14 @@ type liveUpdateUserSessionsWrapper struct {
 }
 
 func RegisterLiveUpdatePubSubChannel() {
-	RegisterPubSubChannel(LiveUpdatePubSubRoomName, PubSubMessageHandlers{
-		onSubscribe:   liveUpdateOnSubscribe,
-		onUnsubscribe: liveUpdateOnUnsubscribe,
+	PubSubSocket.RegisterPubSubChannel(LiveUpdatePubSubRoomName, pubsub.MessageHandlers{
+		OnSubscribe:   liveUpdateOnSubscribe,
+		OnUnsubscribe: liveUpdateOnUnsubscribe,
 	})
 }
 
-func liveUpdateOnUnsubscribe(psc *PubSubContext) {
-	ctx, _ := psc.Get("ctx") // get gin context
+func liveUpdateOnUnsubscribe(psc *pubsub.Context) {
+	ctx, _ := psc.Client.Get("ctx") // get gin context
 	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -53,7 +54,7 @@ func liveUpdateOnUnsubscribe(psc *PubSubContext) {
 	liveUpdateListenerMutex.Lock()
 	var newSessions []*melody.Session
 	for _, session := range liveUpdateListener[userId].sessions {
-		if session != psc.Client.session {
+		if session != psc.Client.Session {
 			newSessions = append(newSessions, session)
 		}
 	}
@@ -65,9 +66,9 @@ func liveUpdateOnUnsubscribe(psc *PubSubContext) {
 	liveUpdateListenerMutex.Unlock()
 }
 
-func liveUpdateOnSubscribe(psc *PubSubContext) {
-	ctx, _ := psc.Get("ctx") // get gin context
-	daoWrapper, _ := psc.Get("dao")
+func liveUpdateOnSubscribe(psc *pubsub.Context) {
+	ctx, _ := psc.Client.Get("ctx") // get gin context
+	daoWrapper, _ := psc.Client.Get("dao")
 
 	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 	if !exists {
@@ -103,9 +104,9 @@ func liveUpdateOnSubscribe(psc *PubSubContext) {
 
 	liveUpdateListenerMutex.Lock()
 	if liveUpdateListener[userId] != nil {
-		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{append(liveUpdateListener[userId].sessions, psc.Client.session), courses}
+		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{append(liveUpdateListener[userId].sessions, psc.Client.Session), courses}
 	} else {
-		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{[]*melody.Session{psc.Client.session}, courses}
+		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{[]*melody.Session{psc.Client.Session}, courses}
 	}
 	liveUpdateListenerMutex.Unlock()
 }
