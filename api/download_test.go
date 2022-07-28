@@ -8,6 +8,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
 	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
 	"github.com/matthiasreumann/gomino"
 	"log"
@@ -41,15 +42,12 @@ func TestDownload(t *testing.T) {
 		gomino.TestCases{
 			"GET[no context]": {
 				Router:       DownloadRouterWrapper,
-				Method:       http.MethodGet,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"GET[not logged in]": {
 				Router:       DownloadRouterWrapper,
-				Method:       http.MethodGet,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextEmpty),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextEmpty)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"GET[file doesnt exist]": {
@@ -67,9 +65,7 @@ func TestDownload(t *testing.T) {
 					}
 					configGinDownloadRouter(r, wrapper)
 				},
-				Method:       http.MethodGet,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"GET[Downloads disabled]": {
@@ -105,9 +101,7 @@ func TestDownload(t *testing.T) {
 					}
 					configGinDownloadRouter(r, wrapper)
 				},
-				Method:       http.MethodGet,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"GET[File not found]": {
@@ -143,9 +137,7 @@ func TestDownload(t *testing.T) {
 					}
 					configGinDownloadRouter(r, wrapper)
 				},
-				Method:       http.MethodGet,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusNotFound,
 			},
 			"GET[success-download]": {
@@ -181,9 +173,7 @@ func TestDownload(t *testing.T) {
 					}
 					configGinDownloadRouter(r, wrapper)
 				},
-				Method:           http.MethodGet,
-				Url:              url,
-				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: fileContent,
 			},
@@ -220,12 +210,13 @@ func TestDownload(t *testing.T) {
 					}
 					configGinDownloadRouter(r, wrapper)
 				},
-				Method:           http.MethodGet,
 				Url:              url + "?type=static",
-				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: fileContent,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Method(http.MethodGet).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 }

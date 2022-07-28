@@ -20,11 +20,13 @@ func Equal(t *testing.T, a, b interface{}) {
 	assert.Equal(t, a, b)
 }
 
-func TUMLiveMiddleware(ctx tools.TUMLiveContext) []func(c *gin.Context) {
-	return []func(ctx2 *gin.Context){
-		func(c *gin.Context) {
-			c.Set("TUMLiveContext", ctx)
-		},
+func GetMiddlewares(mw ...func(ctx *gin.Context)) []func(c *gin.Context) {
+	return mw
+}
+
+func TUMLiveContext(ctx tools.TUMLiveContext) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		c.Set("TUMLiveContext", ctx)
 	}
 }
 

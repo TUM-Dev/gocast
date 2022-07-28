@@ -7,6 +7,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
 	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
 	"github.com/matthiasreumann/gomino"
 	"net/http"
@@ -29,14 +30,15 @@ func TestToken(t *testing.T) {
 		}
 		gomino.TestCases{
 			"POST[No Context]": {
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"POST[Invalid Body]": {
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"POST[Invalid Scope]": {
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         req{Expires: &now, Scope: "invalid"},
 				ExpectedCode: http.StatusBadRequest,
 			},
@@ -51,7 +53,7 @@ func TestToken(t *testing.T) {
 					}
 					configTokenRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         req{Expires: &now, Scope: model.TokenScopeAdmin},
 				ExpectedCode: http.StatusInternalServerError,
 			},
@@ -66,7 +68,7 @@ func TestToken(t *testing.T) {
 					}
 					configTokenRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         req{Expires: &now, Scope: model.TokenScopeAdmin},
 				ExpectedCode: http.StatusOK,
 			}}.
@@ -90,7 +92,7 @@ func TestToken(t *testing.T) {
 					}
 					configTokenRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"DELETE[Success]": {
@@ -104,7 +106,7 @@ func TestToken(t *testing.T) {
 					}
 					configTokenRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
 			}}.
 			Method(http.MethodDelete).

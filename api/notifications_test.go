@@ -9,6 +9,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
 	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
 	"github.com/matthiasreumann/gomino"
 	"net/http"
@@ -56,7 +57,7 @@ func TestNotifications(t *testing.T) {
 					}
 					configNotificationsRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextEmpty),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextEmpty)),
 				ExpectedCode: http.StatusNotFound,
 			},
 			"success not logged in": {
@@ -66,7 +67,7 @@ func TestNotifications(t *testing.T) {
 					}
 					configNotificationsRouter(r, wrapper)
 				},
-				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextEmpty),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextEmpty)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: notifications,
 			},
@@ -77,7 +78,7 @@ func TestNotifications(t *testing.T) {
 					}
 					configNotificationsRouter(r, wrapper)
 				},
-				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: notifications,
 			},
@@ -88,7 +89,7 @@ func TestNotifications(t *testing.T) {
 					}
 					configNotificationsRouter(r, wrapper)
 				},
-				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextLecturer),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextLecturer)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: notifications,
 			},
@@ -99,7 +100,7 @@ func TestNotifications(t *testing.T) {
 					}
 					configNotificationsRouter(r, wrapper)
 				},
-				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: notifications,
 			}}.
@@ -119,7 +120,7 @@ func TestNotifications(t *testing.T) {
 
 		gomino.TestCases{
 			"invalid body": {
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not add notification": {
@@ -138,7 +139,7 @@ func TestNotifications(t *testing.T) {
 					}
 					configNotificationsRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         notification,
 				ExpectedCode: http.StatusInternalServerError,
 			},
@@ -158,7 +159,7 @@ func TestNotifications(t *testing.T) {
 					}
 					configNotificationsRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         notification,
 				ExpectedCode: http.StatusOK,
 			}}.
@@ -177,7 +178,7 @@ func TestNotifications(t *testing.T) {
 		gomino.TestCases{
 			"invalid id": {
 				Url:          "/api/notifications/abc",
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not delete notification": {
@@ -195,7 +196,7 @@ func TestNotifications(t *testing.T) {
 					}
 					configNotificationsRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -213,7 +214,7 @@ func TestNotifications(t *testing.T) {
 					}
 					configNotificationsRouter(r, wrapper)
 				},
-				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: res,
 			}}.

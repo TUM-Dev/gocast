@@ -6,6 +6,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
 	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
 	"github.com/matthiasreumann/gomino"
 	"net/http"
@@ -28,7 +29,7 @@ func TestGetAudits(t *testing.T) {
 			},
 			Method:       http.MethodGet,
 			Url:          "/api/audits?limit=1&offset=0&types[]=1",
-			Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+			Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 			ExpectedCode: http.StatusOK,
 		},
 	}.Run(t, testutils.Equal)

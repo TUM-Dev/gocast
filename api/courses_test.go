@@ -34,8 +34,7 @@ func TestCoursesCRUD(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodDelete,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
@@ -58,9 +57,7 @@ func TestCoursesCRUD(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			/*
@@ -92,7 +89,7 @@ func TestCoursesCRUD(t *testing.T) {
 					ExpectedCode:   http.StatusOK,
 				},
 			*/
-		}.Run(t, testutils.Equal)
+		}.Method(http.MethodDelete).Url(url).Run(t, testutils.Equal)
 	})
 	t.Run("POST/api/createCourse", func(t *testing.T) {
 		url := "/api/createCourse"
@@ -153,38 +150,29 @@ func TestCoursesCRUD(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not lecturer": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"invalid body": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         nil,
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"invalid access": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         requestInvalidAccess,
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"invalid term": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         requestInvalidTerm,
 				ExpectedCode: http.StatusBadRequest,
 			},
@@ -203,9 +191,7 @@ func TestCoursesCRUD(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
 				ExpectedCode: http.StatusConflict,
 			},
@@ -230,9 +216,7 @@ func TestCoursesCRUD(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextLecturer),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextLecturer)),
 				Body:         request,
 				ExpectedCode: http.StatusInternalServerError,
 			},
@@ -263,9 +247,7 @@ func TestCoursesCRUD(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextLecturer),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextLecturer)),
 				Body:         request,
 				ExpectedCode: http.StatusInternalServerError,
 			},
@@ -303,7 +285,7 @@ func TestCoursesCRUD(t *testing.T) {
 					ExpectedCode: http.StatusOK,
 				},
 			*/
-		}.Run(t, testutils.Equal)
+		}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
 	})
 }
 
@@ -316,8 +298,7 @@ func TestCoursesLectureActions(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
@@ -327,9 +308,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"invalid body": {
@@ -339,9 +318,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         nil,
 				ExpectedCode: http.StatusBadRequest,
 			},
@@ -352,9 +329,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:      http.MethodPost,
-				Url:         url,
-				Middlewares: testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body: createLectureRequest{
 					LectureHallId: "1",
 					Premiere:      true,
@@ -368,9 +343,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:      http.MethodPost,
-				Url:         url,
-				Middlewares: testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body: createLectureRequest{
 					Title:         "Lecture 1",
 					LectureHallId: "abc",
@@ -411,9 +384,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:      http.MethodPost,
-				Url:         url,
-				Middlewares: testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body: createLectureRequest{
 					Title:         "Lecture 1",
 					LectureHallId: "1",
@@ -456,9 +427,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:      http.MethodPost,
-				Url:         url,
-				Middlewares: testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body: createLectureRequest{
 					Title:         "Lecture 1",
 					LectureHallId: "1",
@@ -471,8 +440,10 @@ func TestCoursesLectureActions(t *testing.T) {
 					},
 				},
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Method(http.MethodPost).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 	t.Run("POST/api/course/:courseID/deleteLecture", func(t *testing.T) {
 		url := fmt.Sprintf("/api/course/%d/deleteLectures", testutils.CourseFPV.ID)
@@ -480,8 +451,7 @@ func TestCoursesLectureActions(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
@@ -491,9 +461,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"invalid body": {
@@ -503,9 +471,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         nil,
 				ExpectedCode: http.StatusBadRequest,
 			},
@@ -525,9 +491,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:      http.MethodPost,
-				Url:         url,
-				Middlewares: testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body: deleteLecturesRequest{StreamIDs: []string{
 					fmt.Sprintf("%d", testutils.StreamGBSLive.ID)},
 				},
@@ -555,15 +519,12 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:      http.MethodPost,
-				Url:         url,
-				Middlewares: testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body: deleteLecturesRequest{StreamIDs: []string{
 					fmt.Sprintf("%d", testutils.StreamFPVLive.ID)},
 				},
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
 	})
 	t.Run("POST/api/course/:courseID/renameLecture/:streamID", func(t *testing.T) {
 		url := fmt.Sprintf("/api/course/%d/renameLecture/%d", testutils.CourseFPV.ID, testutils.StreamFPVLive.ID)
@@ -571,8 +532,7 @@ func TestCoursesLectureActions(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
@@ -582,9 +542,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"invalid streamID": {
@@ -594,9 +552,8 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
 				Url:          fmt.Sprintf("/api/course/%d/renameLecture/abc", testutils.CourseFPV.ID),
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"invalid body": {
@@ -606,9 +563,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         nil,
 				ExpectedCode: http.StatusBadRequest,
 			},
@@ -628,9 +583,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:      http.MethodPost,
-				Url:         url,
-				Middlewares: testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body: renameLectureRequest{
 					Name: "Proofs #1",
 				},
@@ -657,9 +610,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:      http.MethodPost,
-				Url:         url,
-				Middlewares: testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body: renameLectureRequest{
 					Name: "Proofs #1",
 				},
@@ -686,15 +637,12 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:      http.MethodPost,
-				Url:         url,
-				Middlewares: testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body: renameLectureRequest{
 					Name: "Proofs #1",
 				},
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
 	})
 	t.Run("POST/api/course/:courseID/updateLectureSeries/:streamID", func(t *testing.T) {
 		url := fmt.Sprintf("/api/course/%d/updateLectureSeries/%d", testutils.CourseFPV.ID, testutils.StreamFPVLive.ID)
@@ -702,8 +650,7 @@ func TestCoursesLectureActions(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
@@ -713,9 +660,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"stream not found": {
@@ -734,9 +679,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusNotFound,
 			},
 			"can not update lecture series": {
@@ -760,9 +703,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -786,12 +727,12 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Method(http.MethodPost).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 	t.Run("DELETE/api/course/:courseID/deleteLectureSeries/:streamID", func(t *testing.T) {
 		url := fmt.Sprintf("/api/course/%d/deleteLectureSeries/%d", testutils.CourseFPV.ID, testutils.StreamFPVLive.ID)
@@ -799,8 +740,7 @@ func TestCoursesLectureActions(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodDelete,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
@@ -810,9 +750,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"stream not found": {
@@ -831,9 +769,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusNotFound,
 			},
 			"invalid series-identifier": {
@@ -852,9 +788,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not delete lecture-series": {
@@ -879,9 +813,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -906,12 +838,12 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Method(http.MethodDelete).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 	t.Run("PUT/api/course/:courseID/updateDescription/:streamID", func(t *testing.T) {
 		url := fmt.Sprintf("/api/course/%d/updateDescription/%d", testutils.CourseFPV.ID, testutils.StreamFPVLive.ID)
@@ -922,8 +854,7 @@ func TestCoursesLectureActions(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodPut,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
@@ -933,9 +864,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPut,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"invalid streamID": {
@@ -945,9 +874,8 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPut,
 				Url:          fmt.Sprintf("/api/course/%d/updateDescription/abc", testutils.CourseFPV.ID),
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"invalid body": {
@@ -957,9 +885,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPut,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not find stream": {
@@ -978,9 +904,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPut,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         body,
 				ExpectedCode: http.StatusNotFound,
 			},
@@ -1005,9 +929,7 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPut,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         body,
 				ExpectedCode: http.StatusInternalServerError,
 			},
@@ -1019,13 +941,13 @@ func TestCoursesLectureActions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPut,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         body,
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Method(http.MethodPut).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 }
 
@@ -1046,8 +968,7 @@ func TestUnits(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
@@ -1057,9 +978,7 @@ func TestUnits(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"invalid body": {
@@ -1069,10 +988,7 @@ func TestUnits(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
-				Body:         nil,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not find stream": {
@@ -1091,9 +1007,7 @@ func TestUnits(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
 				ExpectedCode: http.StatusNotFound,
 			},
@@ -1118,9 +1032,7 @@ func TestUnits(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
 				ExpectedCode: http.StatusInternalServerError,
 			},
@@ -1132,13 +1044,10 @@ func TestUnits(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
 	})
 	t.Run("POST/api/course/:courseID/deleteUnit/:unitID", func(t *testing.T) {
 		unit := testutils.StreamFPVLive.Units[0]
@@ -1148,8 +1057,7 @@ func TestUnits(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
@@ -1159,9 +1067,7 @@ func TestUnits(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"can not find unit": {
@@ -1180,9 +1086,7 @@ func TestUnits(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusNotFound,
 			},
 			"success": {
@@ -1193,12 +1097,9 @@ func TestUnits(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
 	})
 }
 
@@ -1216,8 +1117,7 @@ func TestCuts(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
@@ -1227,9 +1127,7 @@ func TestCuts(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"invalid body": {
@@ -1239,9 +1137,7 @@ func TestCuts(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         nil,
 				ExpectedCode: http.StatusBadRequest,
 			},
@@ -1261,9 +1157,7 @@ func TestCuts(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
 				ExpectedCode: http.StatusNotFound,
 			},
@@ -1288,9 +1182,7 @@ func TestCuts(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
 				ExpectedCode: http.StatusInternalServerError,
 			},
@@ -1302,13 +1194,10 @@ func TestCuts(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
 	})
 }
 
@@ -1333,8 +1222,7 @@ func TestAdminFunctions(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodGet,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
@@ -1344,9 +1232,7 @@ func TestAdminFunctions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodGet,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"can not get course admins": {
@@ -1376,9 +1262,7 @@ func TestAdminFunctions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodGet,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -1388,13 +1272,10 @@ func TestAdminFunctions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:           http.MethodGet,
-				Url:              url,
-				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: response,
-			},
-		}.Run(t, testutils.Equal)
+			}}.Method(http.MethodGet).Url(url).Run(t, testutils.Equal)
 	})
 	t.Run("PUT/api/course/:courseID/admins/:userID", func(t *testing.T) {
 		url := fmt.Sprintf("/api/course/%d/admins/%d", testutils.CourseFPV.ID, testutils.Admin.ID)
@@ -1415,8 +1296,7 @@ func TestAdminFunctions(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodPut,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
@@ -1427,8 +1307,7 @@ func TestAdminFunctions(t *testing.T) {
 					configGinCourseRouter(r, wrapper)
 				},
 				Method:       http.MethodPut,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"invalid userID": {
@@ -1438,9 +1317,8 @@ func TestAdminFunctions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPut,
 				Url:          fmt.Sprintf("/api/course/%d/admins/abc", testutils.CourseFPV.ID),
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"user not found": {
@@ -1458,9 +1336,7 @@ func TestAdminFunctions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPut,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusNotFound,
 			},
 			"can not add admin to course": {
@@ -1491,9 +1367,7 @@ func TestAdminFunctions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPut,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"can not update user": {
@@ -1537,9 +1411,8 @@ func TestAdminFunctions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPut,
 				Url:          urlStudent,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -1551,9 +1424,7 @@ func TestAdminFunctions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:           http.MethodPut,
-				Url:              url,
-				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: resAdmin,
 			},
@@ -1598,13 +1469,14 @@ func TestAdminFunctions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:           http.MethodPut,
 				Url:              urlStudent,
-				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: resStudent,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Method(http.MethodPut).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 	t.Run("DELETE/api/course/:courseID/admins/:userID", func(t *testing.T) {
 		url := fmt.Sprintf("/api/course/%d/admins/%d", testutils.CourseFPV.ID, testutils.Admin.ID)
@@ -1618,8 +1490,7 @@ func TestAdminFunctions(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodDelete,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
@@ -1629,9 +1500,7 @@ func TestAdminFunctions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"invalid userID": {
@@ -1641,9 +1510,8 @@ func TestAdminFunctions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
 				Url:          fmt.Sprintf("/api/course/%d/admins/abc", testutils.CourseFPV.ID),
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not get course admins": {
@@ -1672,9 +1540,7 @@ func TestAdminFunctions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"remove last admin": {
@@ -1703,9 +1569,7 @@ func TestAdminFunctions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"invalid delete request": {
@@ -1734,9 +1598,7 @@ func TestAdminFunctions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not remove admin": {
@@ -1771,9 +1633,7 @@ func TestAdminFunctions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodDelete,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -1784,13 +1644,13 @@ func TestAdminFunctions(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:           http.MethodDelete,
-				Url:              url,
-				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
-			},
-		}.Run(t, testutils.Equal)
+				ExpectedResponse: response,
+			}}.
+			Method(http.MethodDelete).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 }
 
@@ -1811,15 +1671,14 @@ func TestLectureHallsById(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodGet,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"invalid id": {
 				Router:       CourseRouterWrapper,
 				Method:       http.MethodGet,
 				Url:          "/api/lecture-halls-by-id?id=abc",
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"course not found": {
@@ -1837,9 +1696,7 @@ func TestLectureHallsById(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodGet,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusNotFound,
 			},
 			"is not admin of course": {
@@ -1857,9 +1714,7 @@ func TestLectureHallsById(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodGet,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"success": {
@@ -1877,13 +1732,11 @@ func TestLectureHallsById(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:           http.MethodGet,
-				Url:              url,
-				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: response,
 			},
-		}.Run(t, testutils.Equal)
+		}.Method(http.MethodGet).Url(url).Run(t, testutils.Equal)
 	})
 }
 
@@ -1911,8 +1764,7 @@ func TestActivateToken(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not un-delete course": {
@@ -1933,8 +1785,7 @@ func TestActivateToken(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -1960,11 +1811,12 @@ func TestActivateToken(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Method(http.MethodPost).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 }
 
@@ -2003,8 +1855,7 @@ func TestPresets(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodPost,
-				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
@@ -2014,9 +1865,7 @@ func TestPresets(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"invalid body": {
@@ -2026,10 +1875,7 @@ func TestPresets(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
-				Body:         nil,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not update course": {
@@ -2053,9 +1899,7 @@ func TestPresets(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
 				ExpectedCode: http.StatusInternalServerError,
 			},
@@ -2080,13 +1924,13 @@ func TestPresets(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, testutils.Equal)
+			}}.
+			Method(http.MethodPost).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 }
 
@@ -2102,8 +1946,8 @@ func TestUploadVOD(t *testing.T) {
 		gomino.TestCases{
 			"no context": {
 				Router:       CourseRouterWrapper,
-				Method:       http.MethodPost,
 				Url:          baseUrl,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
@@ -2113,9 +1957,8 @@ func TestUploadVOD(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
 				Url:          baseUrl,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"invalid query": {
@@ -2125,9 +1968,8 @@ func TestUploadVOD(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
 				Url:          baseUrl,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not create stream": {
@@ -2145,9 +1987,7 @@ func TestUploadVOD(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"can note create upload key": {
@@ -2173,9 +2013,7 @@ func TestUploadVOD(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"no workers available": {
@@ -2195,9 +2033,7 @@ func TestUploadVOD(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			/*
@@ -2222,49 +2058,54 @@ func TestUploadVOD(t *testing.T) {
 					ExpectedCode: http.StatusOK,
 				},
 			*/
-		}.Run(t, testutils.Equal)
+		}.
+			Method(http.MethodPost).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 }
 
 func TestGetTranscodingProgress(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Run("GET /api/course/:id/stream/:id/transcodingProgress", func(t *testing.T) {
-		testCases := testutils.TestCases{
-			"Admin, OK": testutils.TestCase{
-				Method: "GET",
-				Url:    "/api/course/40/stream/1969/transcodingProgress",
-				DaoWrapper: dao.DaoWrapper{
-					StreamsDao: func() dao.StreamsDao {
-						smock := mock_dao.NewMockStreamsDao(ctrl)
-						smock.EXPECT().GetStreamByID(gomock.Any(), "1969").MinTimes(1).MaxTimes(1).Return(testutils.StreamFPVNotLive, nil)
-						smock.EXPECT().GetTranscodingProgressByVersion(model.COMB, uint(1969)).MinTimes(1).MaxTimes(1).Return(model.TranscodingProgress{Progress: 69}, nil)
-						return smock
-					}(),
-					CoursesDao: func() dao.CoursesDao {
-						coursesMock := mock_dao.NewMockCoursesDao(ctrl)
-						coursesMock.EXPECT().GetCourseById(gomock.Any(), uint(40)).MinTimes(1).MaxTimes(1).Return(testutils.CourseFPV, nil)
-						return coursesMock
-					}(),
+		gomino.TestCases{
+			"Admin, OK": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						StreamsDao: func() dao.StreamsDao {
+							smock := mock_dao.NewMockStreamsDao(ctrl)
+							smock.EXPECT().GetStreamByID(gomock.Any(), "1969").MinTimes(1).MaxTimes(1).Return(testutils.StreamFPVNotLive, nil)
+							smock.EXPECT().GetTranscodingProgressByVersion(model.COMB, uint(1969)).MinTimes(1).MaxTimes(1).Return(model.TranscodingProgress{Progress: 69}, nil)
+							return smock
+						}(),
+						CoursesDao: func() dao.CoursesDao {
+							coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+							coursesMock.EXPECT().GetCourseById(gomock.Any(), uint(40)).MinTimes(1).MaxTimes(1).Return(testutils.CourseFPV, nil)
+							return coursesMock
+						}(),
+					}
+					configGinCourseRouter(r, wrapper)
 				},
-				TumLiveContext:   &testutils.TUMLiveContextAdmin,
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: []byte("69"),
+				ExpectedResponse: "69",
 			},
-			"Student, Forbidden": testutils.TestCase{
-				Method: "GET",
-				Url:    "/api/course/40/stream/1969/transcodingProgress",
-				DaoWrapper: dao.DaoWrapper{
-					CoursesDao: func() dao.CoursesDao {
-						coursesMock := mock_dao.NewMockCoursesDao(ctrl)
-						coursesMock.EXPECT().GetCourseById(gomock.Any(), uint(40)).MinTimes(1).MaxTimes(1).Return(testutils.CourseFPV, nil)
-						return coursesMock
-					}(),
+			"Student, Forbidden": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						CoursesDao: func() dao.CoursesDao {
+							coursesMock := mock_dao.NewMockCoursesDao(ctrl)
+							coursesMock.EXPECT().GetCourseById(gomock.Any(), uint(40)).MinTimes(1).MaxTimes(1).Return(testutils.CourseFPV, nil)
+							return coursesMock
+						}(),
+					}
+					configGinCourseRouter(r, wrapper)
 				},
-				TumLiveContext:   &testutils.TUMLiveContextStudent,
-				ExpectedCode:     http.StatusForbidden,
-				ExpectedResponse: []byte(""),
-			},
-		}
-		testCases.Run(t, configGinCourseRouter)
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
+				ExpectedCode: http.StatusForbidden,
+			}}.
+			Method(http.MethodGet).
+			Url("/api/course/40/stream/1969/transcodingProgress").
+			Run(t, testutils.Equal)
 	})
 }

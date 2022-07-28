@@ -70,6 +70,7 @@ func TestStream(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"GetCourseById returns error": {
@@ -90,6 +91,7 @@ func TestStream(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: response,
 			},
@@ -107,6 +109,7 @@ func TestStream(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: responseLHError,
 			},
@@ -120,6 +123,7 @@ func TestStream(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: response,
 			}}.
@@ -149,11 +153,11 @@ func TestStream(t *testing.T) {
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"success": {
-				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: response,
 			}}.
@@ -170,7 +174,7 @@ func TestStream(t *testing.T) {
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"GetLectureHallByID returns error": {
@@ -182,7 +186,7 @@ func TestStream(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			}}.
 			Router(StreamDefaultRouter(t)).
@@ -197,7 +201,7 @@ func TestStream(t *testing.T) {
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			/*"success discard": testutils.TestCase{
@@ -236,11 +240,11 @@ func TestStream(t *testing.T) {
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"invalid body": {
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"ToggleVisibility returns error": {
@@ -267,7 +271,7 @@ func TestStream(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         gin.H{"private": false},
 				ExpectedCode: http.StatusInternalServerError,
 			},
@@ -284,7 +288,7 @@ func TestStream(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         gin.H{"private": false},
 				ExpectedCode: http.StatusOK,
 			}}.
@@ -331,7 +335,7 @@ func TestStreamVideoSections(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: []gin.H{},
 			},
@@ -351,7 +355,7 @@ func TestStreamVideoSections(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Middlewares:      testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: response,
 			}}.
@@ -372,11 +376,11 @@ func TestStreamVideoSections(t *testing.T) {
 		url := fmt.Sprintf("/api/stream/%d/sections", testutils.StreamFPVLive.ID)
 		gomino.TestCases{
 			"Not Admin": {
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"Invalid Body": {
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"Create returns error": {
@@ -395,7 +399,7 @@ func TestStreamVideoSections(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
 				ExpectedCode: http.StatusInternalServerError,
 			},
@@ -419,7 +423,7 @@ func TestStreamVideoSections(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				Body:         request,
 				ExpectedCode: http.StatusInternalServerError,
 			},
@@ -463,12 +467,12 @@ func TestStreamVideoSections(t *testing.T) {
 		url := fmt.Sprintf("%s/%d", baseUrl, section.ID)
 		gomino.TestCases{
 			"Not Admin": {
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"Invalid ID": {
 				Url:          fmt.Sprintf("%s/%s", baseUrl, "abc"),
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"Get returns error": {
@@ -488,7 +492,7 @@ func TestStreamVideoSections(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"GetFileById returns error": {
@@ -517,8 +521,8 @@ func TestStreamVideoSections(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
-				ExpectedCode: http.StatusInternalServerError,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode: http.StatusNotFound,
 			},
 			"Delete returns error": {
 				Router: func(r *gin.Engine) {
@@ -550,7 +554,7 @@ func TestStreamVideoSections(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			/*"success": {
@@ -635,7 +639,7 @@ func TestAttachments(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"invalid type": {
@@ -662,7 +666,7 @@ func TestAttachments(t *testing.T) {
 					configGinStreamRestRouter(r, wrapper)
 				},
 				Url:          endpoint + "?type=abc",
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"type url, missing file_url": {
@@ -689,7 +693,7 @@ func TestAttachments(t *testing.T) {
 					configGinStreamRestRouter(r, wrapper)
 				},
 				Url:          endpoint + "?type=url",
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"type file, missing file parameter": {
@@ -718,7 +722,7 @@ func TestAttachments(t *testing.T) {
 				Url:          endpoint + "?type=file",
 				ContentType:  w.FormDataContentType(),
 				Body:         "",
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			// The Test below currently fails since the tester can't mkdir
@@ -788,7 +792,7 @@ func TestAttachments(t *testing.T) {
 				Url:          endpoint + "?type=url",
 				ContentType:  "application/x-www-form-urlencoded",
 				Body:         "file_url=https://storage.com/test.txt",
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"type url, success": {
@@ -827,7 +831,7 @@ func TestAttachments(t *testing.T) {
 				Url:          endpoint + "?type=url",
 				ContentType:  "application/x-www-form-urlencoded",
 				Body:         "file_url=https://storage.com/test.txt",
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
 			}}.
 			Router(StreamRouterWrapper).
@@ -845,6 +849,7 @@ func TestAttachments(t *testing.T) {
 				Router:       StreamRouterWrapper,
 				Method:       http.MethodDelete,
 				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"not admin": {
@@ -855,7 +860,7 @@ func TestAttachments(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextStudent),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"GetFileById returns error": {
@@ -874,7 +879,7 @@ func TestAttachments(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"non existing file": {
@@ -893,7 +898,7 @@ func TestAttachments(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"DeleteFile returns error": {
@@ -916,7 +921,7 @@ func TestAttachments(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 				Before: func() {
 					_, _ = os.Create(testFile.Path)
@@ -931,7 +936,7 @@ func TestAttachments(t *testing.T) {
 					}
 					configGinStreamRestRouter(r, wrapper)
 				},
-				Middlewares:  testutils.TUMLiveMiddleware(testutils.TUMLiveContextAdmin),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusOK,
 				Before: func() {
 					_, _ = os.Create(testFile.Path)

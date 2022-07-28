@@ -8,6 +8,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
 	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
 	"github.com/matthiasreumann/gomino"
 	"net/http"
@@ -41,14 +42,17 @@ func TestSearch(t *testing.T) {
 		gomino.TestCases{
 			"missing query": {
 				Url:          baseUrl,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"missing courseId": {
 				Url:          fmt.Sprintf("%s?q=abc", baseUrl),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"invalid courseId": {
 				Url:          fmt.Sprintf("%s?q=%s&courseId=abc", baseUrl, queryString),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not perform search": {
@@ -65,6 +69,7 @@ func TestSearch(t *testing.T) {
 					}
 					configGinSearchRouter(r, wrapper)
 				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -81,6 +86,7 @@ func TestSearch(t *testing.T) {
 					}
 					configGinSearchRouter(r, wrapper)
 				},
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: response,
 			}}.
