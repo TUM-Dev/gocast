@@ -34,7 +34,7 @@ func TestDownload(t *testing.T) {
 	defer os.Remove(filePath)
 
 	t.Run("/download/:id", func(t *testing.T) {
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"GET[no context]": {
 				Method:         "GET",
 				Url:            url,
@@ -216,8 +216,6 @@ func TestDownload(t *testing.T) {
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: []byte(fileContent),
 			},
-		}
-
-		testCases.Run(t, configGinDownloadRouter)
+		}.Run(t, configGinDownloadRouter)
 	})
 }

@@ -35,7 +35,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 			PwrCtrlIP: "0.0.0.0",
 		})
 
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"no context": {
 				Method:         http.MethodPost,
 				Url:            url,
@@ -76,8 +76,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				Body:           bytes.NewBuffer(body),
 				ExpectedCode:   http.StatusOK,
 			},
-		}
-		testCases.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
+		}.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
 			configGinLectureHallApiRouter(engine, wrapper, testutils.GetPresetUtilityMock(ctrl))
 		})
 	})
@@ -85,7 +84,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 	t.Run("PUT/api/lectureHall/:id", func(t *testing.T) {
 		url := fmt.Sprintf("/api/lectureHall/%d", testutils.LectureHall.ID)
 
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"no context": {
 				Method:         http.MethodPut,
 				Url:            url,
@@ -169,8 +168,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				ExpectedCode: http.StatusOK,
 				Body:         bytes.NewBuffer(testutils.First(json.Marshal(updateLectureHallReq{CamIp: "0.0.0.0"})).([]byte)),
 			},
-		}
-		testCases.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
+		}.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
 			configGinLectureHallApiRouter(engine, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
 		})
 
@@ -255,7 +253,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 	t.Run("DELETE/api/lectureHall/:id", func(t *testing.T) {
 		url := fmt.Sprintf("/api/lectureHall/%d", testutils.LectureHall.ID)
 
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"no context": {
 				Method:         http.MethodDelete,
 				Url:            url,
@@ -302,8 +300,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				},
 				ExpectedCode: http.StatusOK,
 			},
-		}
-		testCases.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
+		}.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
 			configGinLectureHallApiRouter(engine, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
 		})
 	})
@@ -316,7 +313,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 			}{
 				uint(testutils.CameraPreset.PresetID),
 			})
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"no context": {
 				Method:         http.MethodPost,
 				Url:            url,
@@ -426,8 +423,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 				Body:         bytes.NewBuffer(body),
 				ExpectedCode: http.StatusOK,
 			},
-		}
-		testCases.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
+		}.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
 			configGinLectureHallApiRouter(engine, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
 		})
 	})
@@ -437,7 +433,7 @@ func TestCourseImport(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	tools.Cfg.Campus.Tokens = []string{"123", "456"} // Set tokens so that access at [1] doesn't panic
 	t.Run("GET/api/course-schedule", func(t *testing.T) {
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"invalid form body": testutils.TestCase{
 				Method:         http.MethodGet,
 				Url:            "/api/course-schedule?;=a", // Using a semicolon makes ParseForm() return an error
@@ -473,8 +469,7 @@ func TestCourseImport(t *testing.T) {
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				ExpectedCode:   http.StatusBadRequest,
 			},
-		}
-		testCases.Run(t, func(router *gin.Engine, daoWrapper dao.DaoWrapper) {
+		}.Run(t, func(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			configGinLectureHallApiRouter(router, daoWrapper, nil)
 		})
 	})
@@ -502,7 +497,7 @@ func TestCourseImport(t *testing.T) {
 				Events: []campusonline.Event{{RoomName: "1"}},
 			},
 		}
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"POST [no context]": testutils.TestCase{
 				Method:         http.MethodPost,
 				Url:            "/api/course-schedule/2022/S",
@@ -667,9 +662,7 @@ func TestCourseImport(t *testing.T) {
 					OptIn:   false,
 				})).([]byte)),
 				ExpectedCode: http.StatusOK},
-		}
-
-		testCases.Run(t, func(router *gin.Engine, daoWrapper dao.DaoWrapper) {
+		}.Run(t, func(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			configGinLectureHallApiRouter(router, daoWrapper, nil)
 		})
 	})
@@ -717,7 +710,7 @@ func TestLectureHallIcal(t *testing.T) {
 		_ = templ.ExecuteTemplate(&icalAdmin, "ical.gotemplate", calendarResultsAdmin)
 		_ = templ.ExecuteTemplate(&icalLoggedIn, "ical.gotemplate", calendarResultsLoggedIn)
 
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"no context": testutils.TestCase{
 				Method:         http.MethodGet,
 				Url:            url,
@@ -777,8 +770,7 @@ func TestLectureHallIcal(t *testing.T) {
 				ExpectedResponse: icalLoggedIn.Bytes(),
 				ExpectedCode:     http.StatusOK,
 			},
-		}
-		testCases.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
+		}.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
 			configGinLectureHallApiRouter(engine, wrapper, testutils.GetPresetUtilityMock(ctrl))
 		})
 	})
@@ -791,7 +783,7 @@ func TestLectureHallPresets(t *testing.T) {
 
 	t.Run("GET/refreshLectureHallPresets/:lectureHallID", func(t *testing.T) {
 		url := fmt.Sprintf("/api/refreshLectureHallPresets/%d", testutils.LectureHall.ID)
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"invalid id": testutils.TestCase{
 				Method:         http.MethodGet,
 				Url:            "/api/refreshLectureHallPresets/abc",
@@ -824,9 +816,7 @@ func TestLectureHallPresets(t *testing.T) {
 				},
 				ExpectedCode: http.StatusOK,
 			},
-		}
-
-		testCases.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
+		}.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
 			configGinLectureHallApiRouter(engine, wrapper, testutils.GetPresetUtilityMock(ctrl))
 		})
 	})
@@ -840,7 +830,7 @@ func TestLectureHallPresets(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		url := fmt.Sprintf("/api/course/%d/switchPreset/%s/%s/%d", testCourse.ID, lectureHallId, presetId, testutils.StreamFPVLive.ID)
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"POST [no context]": testutils.TestCase{
 				Method:         "POST",
 				Url:            url,
@@ -905,9 +895,7 @@ func TestLectureHallPresets(t *testing.T) {
 				},
 				ExpectedCode: http.StatusNotFound,
 			},
-		}
-
-		testCases.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
+		}.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
 			configGinLectureHallApiRouter(engine, wrapper, testutils.GetPresetUtilityMock(ctrl))
 		})
 	})
@@ -923,7 +911,7 @@ func TestLectureHallTakeSnapshot(t *testing.T) {
 		lectureHallIDStr := fmt.Sprintf("%d", testutils.LectureHall.ID)
 
 		url := fmt.Sprintf("/api/takeSnapshot/%d/%d", testutils.LectureHall.ID, testutils.CameraPreset.PresetID)
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"can not find preset": {
 				Method: http.MethodPost,
 				Url:    url,
@@ -979,9 +967,7 @@ func TestLectureHallTakeSnapshot(t *testing.T) {
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: testutils.First(json.Marshal(gin.H{"path": fmt.Sprintf("/public/%s", testutils.CameraPreset.Image)})).([]byte),
 			},
-		}
-
-		testCases.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
+		}.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
 			configGinLectureHallApiRouter(engine, wrapper, testutils.GetPresetUtilityMock(ctrl))
 		})
 	})
@@ -1004,7 +990,7 @@ func TestLectureHallSetLH(t *testing.T) {
 			StreamIDs:     []uint{fpvStream.ID},
 			LectureHallID: 0,
 		}
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"invalid body": testutils.TestCase{
 				Method:         http.MethodPost,
 				Url:            url,
@@ -1143,9 +1129,7 @@ func TestLectureHallSetLH(t *testing.T) {
 				Body:         bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
 				ExpectedCode: http.StatusOK,
 			},
-		}
-
-		testCases.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
+		}.Run(t, func(engine *gin.Engine, wrapper dao.DaoWrapper) {
 			configGinLectureHallApiRouter(engine, wrapper, testutils.GetPresetUtilityMock(ctrl))
 		})
 	})
