@@ -1850,7 +1850,7 @@ func TestPresets(t *testing.T) {
 		}
 
 		afterSetPresetPreference := testutils.CourseFPV
-		afterSetPresetPreference.CameraPresetPreferences = string(testutils.First(json.Marshal(presetSettings)).([]byte))
+		afterSetPresetPreference.CameraPresetPreferences = string(gomino.First(json.Marshal(presetSettings)).([]byte))
 
 		gomino.TestCases{
 			"no context": {

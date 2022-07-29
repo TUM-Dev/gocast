@@ -40,12 +40,12 @@ func TestUsersCRUD(t *testing.T) {
 		response := []userSearchDTO{
 			{ID: users[0].ID,
 				LrzID: tools.MaskLogin(users[0].LrzID),
-				Email: testutils.First(tools.MaskEmail(users[0].Email.String)).(string),
+				Email: gomino.First(tools.MaskEmail(users[0].Email.String)).(string),
 				Name:  users[0].Name,
 				Role:  users[0].Role},
 			{ID: users[1].ID,
 				LrzID: tools.MaskLogin(users[1].LrzID),
-				Email: testutils.First(tools.MaskEmail(users[1].Email.String)).(string),
+				Email: gomino.First(tools.MaskEmail(users[1].Email.String)).(string),
 				Name:  users[1].Name, Role: users[1].Role}}
 		gomino.TestCases{
 			"GET[Query to short]": {

@@ -609,7 +609,7 @@ func TestAttachments(t *testing.T) {
 		os.Create("/tmp/test.txt")
 		defer os.Remove("/tmp/test.txt")
 
-		_, w := testutils.NewMultipartFormData("file", "/tmp/test.txt")
+		_, w := gomino.NewMultipartFormData("file", "/tmp/test.txt")
 
 		endpoint := fmt.Sprintf("/api/stream/%d/files", testutils.StreamFPVLive.ID)
 		gomino.TestCases{
