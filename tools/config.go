@@ -104,7 +104,7 @@ type Config struct {
 		Password string `yaml:"password"`
 		Database string `yaml:"database"`
 		Host     string `yaml:"host"`
-		Port	 uint `yaml:"port"`
+		Port     uint   `yaml:"port"`
 	} `yaml:"db"`
 	Campus struct {
 		Base   string   `yaml:"base"`
@@ -150,10 +150,19 @@ type Config struct {
 	WebUrl      string  `yaml:"webUrl"`
 	WorkerToken string  `yaml:"workerToken"` // used for workers to join the worker pool
 	JWTKey      *string `yaml:"jwtKey"`
+	Monitoring  struct {
+		SentryDSN  *string  `yaml:"sentryDSN"`
+		SampleRate *float64 `yaml:"sampleRate"`
+	} `yaml:"monitoring"`
 }
 
 func (Config) GetJWTKey() *rsa.PrivateKey {
 	return jwtKey
+}
+
+// SentryEnabled returns true if sentry is configured and the values are valid
+func (c Config) SentryEnabled() bool {
+	return c.Monitoring.SentryDSN != nil && *c.Monitoring.SentryDSN != "" && c.Monitoring.SampleRate != nil
 }
 
 var jwtKey *rsa.PrivateKey

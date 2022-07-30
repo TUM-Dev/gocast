@@ -2,6 +2,7 @@ package tools
 
 import (
 	"errors"
+	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -66,6 +67,10 @@ func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 			c.Set("TUMLiveContext", TUMLiveContext{})
 			return
 		} else {
+			if s, ok := c.Get("sentry.span"); ok {
+				span := s.(*sentry.Span)
+				span.SetTag("user_id", fmt.Sprintf("%d", user.Model.ID))
+			}
 			c.Set("TUMLiveContext", TUMLiveContext{User: &user, SamlSubjectID: token.Claims.(*JWTClaims).SamlSubjectID})
 			return
 		}
@@ -315,6 +320,22 @@ func AdminToken(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 			return
 		}
 	}
+}
+
+// SentryTrace starts a sentry span at the beginning of each request and ends it afterward.
+func SentryTrace(c *gin.Context) {
+	if strings.HasSuffix(c.Request.URL.Path, "/ws") {
+		return // don't log websocket requests
+	}
+	// name request like gin path spec (e.g. GET /api/courses/:id)
+	s := sentry.StartSpan(c, "HTTP Handle", sentry.TransactionName(c.Request.Method+" "+c.FullPath()))
+	s.SetTag("url", c.Request.URL.Path)
+	c.Set("sentry.span", s)
+
+	c.Next()
+
+	s.SetTag("status", fmt.Sprintf("%d", c.Writer.Status()))
+	s.Finish()
 }
 
 type TUMLiveContext struct {

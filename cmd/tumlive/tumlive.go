@@ -32,8 +32,13 @@ var VersionTag = "development"
 func GinServer() (err error) {
 	router := gin.Default()
 	gin.SetMode(gin.ReleaseMode)
-	// capture performance with sentry
+
+	// attach sentrygin even if not configured because it will just add some stubs.
 	router.Use(sentrygin.New(sentrygin.Options{Repanic: true}))
+	if tools.Cfg.SentryEnabled() {
+		router.Use(tools.SentryTrace)
+	}
+
 	if VersionTag != "development" {
 		tools.CookieSecure = true
 	}
@@ -78,11 +83,11 @@ func main() {
 	if VersionTag == "development" {
 		env = "development"
 	}
-	if os.Getenv("SentryDSN") != "" {
+	if tools.Cfg.SentryEnabled() {
 		err := sentry.Init(sentry.ClientOptions{
-			Dsn:              os.Getenv("SentryDSN"),
+			Dsn:              *tools.Cfg.Monitoring.SentryDSN,
 			Release:          VersionTag,
-			TracesSampleRate: 0.15,
+			TracesSampleRate: *tools.Cfg.Monitoring.SampleRate,
 			Debug:            true,
 			AttachStacktrace: true,
 			Environment:      env,

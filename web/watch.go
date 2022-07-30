@@ -17,8 +17,6 @@ import (
 )
 
 func (r mainRoutes) WatchPage(c *gin.Context) {
-	span := sentry.StartSpan(c, "GET /w", sentry.TransactionName("GET /w"))
-	defer span.Finish()
 	var data WatchPageData
 	err := data.Prepare(c, r.LectureHallsDao)
 	if err != nil {

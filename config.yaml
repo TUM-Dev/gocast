@@ -84,3 +84,6 @@ paths:
   static: /var/www/static
 weburl: https://live.rbg.tum.de
 workertoken: 2657575f-40e4-4278-9ca1-f3a5ed667cff
+monitoring:
+  #sentryDSN: https://<key>@sentry.host/<project>
+  #sampleRate: 0.1 # 0 to 1, percentage of traced requests.
