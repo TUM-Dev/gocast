@@ -6,7 +6,10 @@
 
              :class="{'ring ring-blue-500/50' : c.current.replyTo === m.ID, 'opacity-60' : isGrayedOut}"
              x-init="$watch('isGrayedOut', () => {if (c.isMessageToBeFocused(index)){watch.scrollToElement($refs.message)}} )"
-             @chat-messages-updated.window="isGrayedOut=m.isGrayedOut"
+             @chat-messages-updated.window="
+                isGrayedOut=m.isGrayedOut;
+                if ($event.detail.focusUpdated && c.isMessageToBeFocused(index)){watch.scrollToElement($refs.message)};
+            "
              x-data="{ showReplies: false, c:c, isGrayedOut: true}"
              x-show="!m.deleted && m.replyTo && !m.replyTo.Valid">
             <!-- name and message -->
