@@ -256,7 +256,7 @@ export class Chat {
         );
 
         this.focusedMessageId = messagesNotGrayedOut.pop()?.ID;
-        this.notifyMessagesUpdate(this.messages);
+        this.notifyMessagesUpdate();
     }
 
     isMessageToBeFocused = (index: number) => this.messages[index].ID === this.focusedMessageId;
@@ -266,12 +266,8 @@ export class Chat {
         this.messages.push(m);
     }
 
-    private notifyMessagesUpdate(messages: ChatMessage[]) {
-        this.windows.forEach((window: Window) =>
-            window.dispatchEvent(
-                new CustomEvent("chat-messages-updated", { detail: JSON.parse(JSON.stringify(messages)) }),
-            ),
-        );
+    private notifyMessagesUpdate() {
+        this.windows.forEach((window: Window) => window.dispatchEvent(new CustomEvent("chat-messages-updated")));
     }
 }
 
