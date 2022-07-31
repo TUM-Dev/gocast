@@ -18,7 +18,7 @@
                     <div>
                         <div>
                             <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}"
-                               class="text-l text-3 font-semibold p-0">
+                               class="text-lg text-3 font-semibold p-0">
                                 {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
                             </a>
                             {{if $user}}
@@ -31,7 +31,7 @@
                                         monthHidden = watchedTracker.userWatchedMonth(`{{$lecture.Start.Month.String}}`); {{/* Updates state in the client and in the database */}}
                                         watchedAll = watchedTracker.userWatchedAll();">
                                     <i :title="watched ? 'Mark as unwatched' : 'Mark as watched'"
-                                       class="fa-solid text-l text-3 font-semibold"
+                                       class="fa-solid text-lg text-3 font-semibold"
                                        :class="watched ? 'fa-clock-rotate-left' : 'fa-check'"></i>
                                 </button>
                             {{end}}

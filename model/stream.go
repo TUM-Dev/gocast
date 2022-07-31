@@ -52,7 +52,8 @@ type Stream struct {
 	TranscodingProgresses []TranscodingProgress `gorm:"foreignKey:StreamID"`
 	Private               bool                  `gorm:"not null;default:false"`
 
-	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
+	Watched  bool    `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
+	Progress float64 `gorm:"-"`
 }
 
 // GetVodFiles returns all downloadable files that user can see when using the download dropdown for a stream.

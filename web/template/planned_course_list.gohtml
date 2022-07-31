@@ -16,11 +16,11 @@
                         <div>
                             {{if $lecture.IsComingUp}}
                                 <a href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}"
-                                   class="text-l text-3 font-semibold p-0">
+                                   class="text-lg text-3 font-semibold p-0">
                                     {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
                                 </a>
                             {{else}}
-                                <span class="text-l text-3 font-semibold p-0">
+                                <span class="text-lg text-3 font-semibold p-0">
                                     {{if $lecture.Name}}{{$lecture.Name}}{{else}}Lecture: {{$lecture.Start.Month}} {{printf "%02d." $lecture.Start.Day}} {{$lecture.Start.Year}}{{end}}
                                 </span>
                             {{end}}

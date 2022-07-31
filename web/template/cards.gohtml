@@ -1,0 +1,259 @@
+{{define "box-border"}}border dark:border-gray-800 rounded-lg{{end}}
+
+{{/*TODO: make dynamic*/}}
+{{/*TODO: is this done*/}}
+{{define "timestamp"}}
+    <div x-data="{ timestamp: global.DateTime.fromSeconds({{get . "date" | unixEpoch}}) }"
+         :title="timestamp.toLocaleString(global.DateTime.DATETIME_MED_WITH_WEEKDAY)"
+         class="inline-block">
+        <i class="pr-1 fas fa-clock"></i>
+        {{with get . "context"}}<span>{{.}}{{end}}
+        <span x-text="timestamp.toRelative()"></span>
+    {{if get . "context"}}</span>{{end}}
+    </div>
+{{end}}
+
+{{define "dropdown-actions"}} {{/*actions, icon? (fa icon), show-button-if? (alpine expression)*/}}
+    {{template "dropdown-head" dict "icon" (get . "icon") "show-button-if" (get . "show-button-if")}}
+    <ul class="absolute right-0 z-50 h-fit w-48 top-full text-left bg-white dark:bg-secondary rounded-lg shadow border dark:border-gray-800
+                        flex flex-col py-2">
+        {{range $action := get . "actions"}}
+            <li>
+                <button class="py-[0.125rem] px-2 w-full text-sm font-normal text-4 hover:text-1 hover: duration-100 flex flex-row gap-1 [align-items:center]"
+                        {{with get . "action"}}@click="{{.}}"{{end}}>
+                    <div class="mt-[0.05em] w-6 h-6 flex justify-center [align-items:center]">
+                        {{with get . "icon"}}<i class="fas fa-{{.}}"></i>{{end}}
+                    </div>
+                    <span class="pr-1">{{get . "label"}}</span>
+                </button>
+            </li>
+        {{end}}
+    </ul>
+    {{template "dropdown-tail"}}
+{{end}}
+
+{{define "item-card-head"}} {{/*title, title-url?, subtitle?, subtitle-url?, date?, date-context?, location?, badges?, actions?*/}}
+{{$args := .}}
+<div class="{{if get . "show-border"}}p-6 {{template "box-border"}}{{else}}p-2{{end}} h-full" x-data="{ hover: false }" @mouseover="hover = true" @mouseover.away="hover = false" >
+    <div class="flex flex-row space-between">
+        {{/*Main Content*/}}
+        <div class="grow flex flex-col gap-1 text-sm text-5 font-light">
+            <div>
+                <h3 class="text-lg text-2 hover:text-1 duration-100 font-semibold inline">
+                    {{with get . "title-url"}}<a href="{{.}}">{{end}}
+                        {{get . "title"}}
+                    {{if get . "title-url"}}</a>{{end}}
+                </h3>
+
+                {{with get . "subtitle"}}
+                    <p>
+                        {{with get $args "subtitle-url"}}<a class="hover:text-1 duration-100" href="{{.}}">{{end}}
+                            {{.}}
+                        {{if get $args "subtitle-url"}}</a>{{end}}
+                    </p>
+                {{end}}
+            </div>
+{{end}}
+
+{{define "item-card-tail"}}
+{{$args := .}}
+            {{if pick . "date" "location" | values | compact}} {{/*any of date or location set*/}}
+                <div class="flex flex-row flex-wrap gap-x-6 gap-y-1">
+                    {{with get . "date"}}
+                        {{template "timestamp" dict "date" . "context" (get $args "date-context")}}
+                    {{end}}
+    {{/*                {{$location := dict "id" 1 "name" "TUM Campus im Olympiapark: Hörsaal 1b (nur Mo-Do)"}}*/}}
+                    {{$location := dict "id" 1 "name" "Hörsaal 1b (nur Mo-Do)"}}
+                    {{with get . "location"}}{{$_ := $location | set "id" .Model.ID | set "name" .Name}}{{end}}
+                    <div class="inline-block">
+                        <span>
+                            <a class="hover:text-1 duration-100" href="/admin/lectureHalls#{{get $location "id"}}">
+                                <i class="pr-1 fas fa-location-pin"></i>
+                                {{get $location "name"}}
+                            </a>
+                        </span>
+                    </div>
+                    {{/*TODO: remove dummy and make conditional on get . "location"*/}}
+                </div>
+            {{end}}
+
+            {{with get . "badges"}}
+                <div class="media-card-badges my-1 text-xs flex flex-row flex-wrap gap-2">
+                    {{range $badge := .}}
+                        <div class="{{get . "color"}} inline-block px-3 py-[0.125rem] rounded-full">
+                            <span class="uppercase font-semibold">
+                                {{with get . "icon"}}<i class="pr-1 fas fa-{{.}}"></i>{{end}}
+                                {{get . "label"}}
+                            </span>
+                        </div>
+                    {{end}}
+                </div>
+            {{end}}
+        </div>
+        {{/*Dropdown Menu*/}}
+        {{with get . "actions"}}
+            {{template "dropdown-actions" dict "actions" . "show-button-if" "hover"}}
+        {{end}}
+    </div>
+</div>
+{{end}}
+
+{{define "item-card"}}
+    {{template "item-card-head" .}}
+    {{template "item-card-tail" .}}
+{{end}}
+
+{{define "stream-card"}} {{/*stream, standalone?, course?, lectureHall?*/}}
+
+{{/*TODO: default title*/}}
+{{/*TODO: pinned courses*/}}
+{{$stream := get . "stream"}}
+{{$course := get . "course"}}
+{{$standalone := get . "standalone" | default false}} {{/*default true doesn't work because false is empty too*/}}
+{{$lectureHall := get . "lectureHall"}}
+
+<div class="h-full"
+        data-course-name="{{$course.Name}}"
+        {{if $standalone}}
+            x-data="{
+                hide: function() { global.hideCourse({{$course.Model.ID}}, $el.dataset$courseName);{{if $course.Pinned}}global.unpinCourse({{$course.Model.ID}});{{end}} },
+                pinUnpin: function() { {{if $course.Pinned}}global.unpinCourse({{$course.Model.ID}}){{else}}global.pinCourse({{$course.Model.ID}}){{end}}; } }"
+        {{end}}>
+{{template "item-card" dict
+    "title" ($stream.Name | default (printf "%s: TODO (Unnamed) Live Stream" $course.Name))
+    "title-url" (printf "/w/%s/%d" $course.Slug $stream.Model.ID)
+    "subtitle" ($standalone | ternary $course.Name "")
+    "subtitle-url" ($standalone | ternary (printf "/course/%d/%s/%s" $course.Year $course.TeachingTerm $course.Slug) "")
+    "badges" (list
+        ($stream.LiveNow | ternary (dict "label" "Live" "color" "bg-danger text-white" "icon" "tower-cell") (dict))
+        ($course.IsHidden | ternary (dict "label" "Hidden" "color" "bg-blue-800 text-white" "icon" "eye-slash") (dict))
+        | compact)
+    "date" $stream.End
+    "date-context" ($stream.LiveNow | ternary "Ends " "Streamed ")
+    "location" $lectureHall
+    "actions" ($standalone | ternary
+        (list
+            (dict "label" "Hide this course" "icon" "eye-slash" "action" "hide()")
+            (dict "label" ($course.Pinned | ternary "Unpin this course" "Pin this course") "icon" "thumbtack" "action" "pinUnpin()")
+            | compact)
+        (list))}}
+
+{{/*    (randNumeric 1 | atoi | ge 5 | ternary (dict "label" "Live" "color" "bg-red-700 text-white" "icon" "tower-cell") (dict))*/}}
+{{/*    ((.Course.IsHidden | and false | or (randNumeric 1 | atoi | ge 5)) | ternary (dict "label" "Hidden" "color" "bg-blue-800 text-white" "icon" "eye-slash") (dict))*/}}
+</div>
+{{end}}
+
+{{/*<div x-show="menu_open" x-cloak>*/}}
+{{/*    <i class="fancyeye opacity-0 group-hover:opacity-100 transition-colors duration-200 dark:hover:text-white hover:text-black text-gray-500 mr-2 cursor-pointer"*/}}
+{{/*       title="Hide this course" onclick="global.hideCourse({{$course.Model.ID}}, {{$course.Name}});{{if $course.Pinned}}global.unpinCourse({{$course.Model.ID}}){{end}}"></i>*/}}
+{{/*    {{if $user}}*/}}
+{{/*        <i class="fa-solid fa-thumbtack opacity-0 group-hover:opacity-100 transition-colors duration-200 dark:hover:text-white hover:text-black text-gray-500 mr-2 cursor-pointer"*/}}
+{{/*           {{if $course.Pinned}}title="Unpin this course" onclick="global.unpinCourse({{$course.Model.ID}})" {{else}}title="Pin this course" onclick="global.pinCourse({{$course.Model.ID}})"{{end}}></i>*/}}
+{{/*    {{end}}*/}}
+{{/*</div>*/}}
+
+
+{{define "course-card-2"}} {{/*course, user*/}}
+{{/*TODO: countdown*/}}
+{{/*TODO: proper labels for pin/unpin*/}}
+{{/*TODO: hiding courses*/}}
+{{/*TODO: why user?*/}}
+{{$course := get . "course"}}
+{{$user := get . "user"}}
+<div data-course-name="{{$course.Name}}" x-data="{
+    hide: function() { global.hideCourse({{$course.Model.ID}}, $el.dataset.courseName);{{if $course.Pinned}}global.unpinCourse({{$course.Model.ID}});{{end}} },
+    pinUnpin: function() { {{if $course.Pinned}}global.unpinCourse({{$course.Model.ID}}){{else}}global.pinCourse({{$course.Model.ID}}){{end}}; } }">
+{{template "item-card" dict
+    "title" $course.Name
+    "title-url" (printf "/course/%d/%s/%s" $course.Year $course.TeachingTerm $course.Slug)
+    "badges" (list
+        (randNumeric 1 | atoi | ge 5 | and false | ternary (dict "label" "New" "color" "bg-gray-700 text-white") (dict))
+        | compact)
+    "location" .LectureHall
+    "actions" (list
+        (dict "label" "Hide this course" "icon" "eye-slash" "action" "hide()")
+        (dict "label" ($course.Pinned | ternary "Unpin this course" "Pin this course") "icon" "thumbtack" "action" "pinUnpin()")
+        | compact)}}
+</div>
+{{end}}
+
+{{/*{{define "stream-card"}}*/}}
+{{/*{{$liveStream := .}}*/}}
+{{/*<div class="pt-1 px-4 mb-2 course{{$liveStream.Course.Model.ID}}">*/}}
+{{/*    <a href="/w/{{$liveStream.Course.Slug}}/{{$liveStream.Stream.Model.ID}}">*/}}
+{{/*        <h3 class="text-lg text-2 inline">{{$liveStream.Course.Name}}{{if $liveStream.Stream.Name}}: {{$liveStream.Stream.Name}}{{end}}</h3>*/}}
+{{/*    </a>*/}}
+{{/*    <p class="font-sans font-light text-sm">*/}}
+{{/*        {{if $liveStream.Course.IsHidden}} {{- /* only admins have hidden courses here */ -}}*/}}
+{{/*        <span class="bg-blue-800 text-blue-100 px-2 mr-1 capitalize rounded-full font-semibold">Hidden</span>*/}}
+{{/*        {{end}}*/}}
+{{/*        <span class="bg-red-800 text-red-100 px-2 mr-1 capitalize rounded-full font-semibold">Live</span>*/}}
+{{/*        <span class="font-light text-3">{{printf "until %2d:%02d" $liveStream.Stream.End.Hour $liveStream.Stream.End.Minute}}</span>*/}}
+{{/*        {{if and $liveStream.LectureHall}}<a href="/admin/lectureHalls#{{$liveStream.LectureHall.Model.ID}}" class="font-semibold text-3"> - <i class="fas fa-location-pin"></i> {{$liveStream.LectureHall.Name}}</a>{{end}}*/}}
+{{/*    </p>*/}}
+{{/*</div>*/}}
+{{/*{{end}}*/}}
+
+{{define "course-group-head"}}
+
+{{/*TODO duplication with course-card-2*/}}
+<div data-course-name="{{.Name}}" x-data="{
+        hide: function() { global.hideCourse({{.Model.ID}}, $el.dataset.courseName);{{if .Pinned}}global.unpinCourse({{.Model.ID}});{{end}} },
+        pinUnpin: function() { {{if .Pinned}}global.unpinCourse({{.Model.ID}}){{else}}global.pinCourse({{.Model.ID}}){{end}}; } }">
+
+    {{template "item-card-head" dict
+        "title" .Name
+        "title-url" (printf "/course/%d/%s/%s" .Year .TeachingTerm .Slug)}}
+
+    {{$course := .}}
+    {{/*Order of conditions is important*/}}
+    {{/*TODO: restore the full logic*/}}
+    {{if .IsLive | and false}}
+        Live now
+    {{else if .HasNextLecture}}
+        {{template "timestamp" dict "date" .GetNextLecture.Start "context" "Scheduled "}}
+    {{else}}
+        No upcoming lectures
+    {{end}}
+
+    <div class="mt-2">
+{{end}}
+
+{{define "course-group-tail"}}
+    </div>
+    {{template "item-card-tail" dict
+    "actions" (list
+        (dict "label" "Hide this course" "icon" "eye-slash" "action" "hide()")
+        (dict "label" (.Pinned | default false | ternary "Unpin this course" "Pin this course") "icon" "thumbtack" "action" "pinUnpin()")
+        | compact)}}
+</div>
+{{end}}
+
+{{define "card-container-head"}}
+<div class="px-2 pl-5 h-[0.6rem]">
+    <span class="p-2 font-normal text-5 bg-white dark:bg-secondary uppercase">{{. | default "Latest"}}</span>
+</div>
+<div class="{{template "box-border"}} {{/*flex flex-col*/}} {{/*md:flex-row*/}}">
+    <div class="w-full p-5 pt-4">
+{{end}}
+
+{{define "card-container-tail"}}
+    </div>
+</div>
+{{end}}
+
+{{define "card-grid-head"}}
+<div class="flex flex-col gap-2 md:gap-4 md:flex-row md:flex-wrap [align-items:stretch]">
+{{end}}
+
+{{define "card-grid-tail"}}
+</div>
+{{end}}
+
+{{define "card-grid-item-head"}}
+<div class="md:w-[calc((100%-1rem)/2)] 2xl:w-[calc((100%-2rem)/3)]"> {{/*account for flex gap*/}}
+{{end}}
+
+{{define "card-grid-item-tail"}}
+</div>
+{{end}}

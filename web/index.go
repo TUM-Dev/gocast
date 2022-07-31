@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"time"
 )
 
 var VersionTag string
@@ -35,6 +36,8 @@ func (r mainRoutes) MainPage(c *gin.Context) {
 	indexData.LoadLivestreams(c, r.DaoWrapper)
 	indexData.LoadPublicCourses(r.CoursesDao)
 	indexData.LoadPinnedCourses()
+	indexData.LoadSuggestedStreams(c, r.DaoWrapper, 16)
+	indexData.PropagatePinnedCourses()
 
 	if err := templateExecutor.ExecuteTemplate(c.Writer, "index.gohtml", indexData); err != nil {
 		log.WithError(err).Errorf("Could not execute template: 'index.gohtml'")
@@ -91,6 +94,7 @@ type IndexData struct {
 	IsAdmin             bool
 	IsStudent           bool
 	LiveStreams         []CourseStream
+	SuggestedStreams    []CourseStream
 	Courses             []model.Course
 	PinnedCourses       []model.Course
 	PublicCourses       []model.Course
@@ -219,6 +223,111 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 	}
 
 	d.LiveStreams = livestreams
+}
+
+// LoadSuggestedStreams loads suggested streams into the IndexData. Livestreams, courses and pinned courses need to be loaded already.
+// TODO: properly query the database, this is a hack
+// TODO: respect pinning
+func (d *IndexData) LoadSuggestedStreams(c *gin.Context, daoWrapper dao.DaoWrapper, limit int) {
+	if limit == 0 {
+		limit = 16
+	}
+	var suggestedStreams []CourseStream
+	var relevantCourses []model.Course
+
+	relevantCourses = append(relevantCourses, d.Courses...)
+	relevantCourses = append(relevantCourses, d.PinnedCourses...)
+	relevantCourses = commons.Unique(relevantCourses, func(c model.Course) uint { return c.ID })
+
+	for _, stream := range d.LiveStreams {
+		// logged-in users only see streams from their courses and their pinned courses suggested
+		var keep = true
+		if len(relevantCourses) > 0 {
+			keep = false
+			for _, course := range relevantCourses {
+				if stream.Course.ID == course.ID {
+					keep = true
+					break
+				}
+			}
+		}
+		if !keep {
+			continue
+		}
+		suggestedStreams = append(suggestedStreams, stream)
+	}
+
+	// TODO: logged out users should maybe see recent VoDs from all courses instead of none
+	if d.TUMLiveContext.User != nil {
+		var suggestedVoDs []CourseStream
+		var now = time.Now()
+		for _, course := range relevantCourses {
+			streams, err := daoWrapper.GetStreamsWithWatchState(course.ID, d.TUMLiveContext.User.ID)
+			if err != nil {
+				log.WithError(err).Error("could not get live streams??")
+				continue
+			}
+			for _, stream := range streams {
+				// filter out watched streams and upcoming streams
+				if stream.End.After(now) || stream.Watched || stream.Progress > 0.5 {
+					continue
+				}
+				var lectureHall *model.LectureHall
+				if d.TUMLiveContext.User.Role == model.AdminType && stream.LectureHallID != 0 {
+					lh, err := daoWrapper.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
+					if err != nil {
+						log.WithError(err).Error(err)
+					} else {
+						lectureHall = &lh
+					}
+				}
+				suggestedVoDs = append(suggestedVoDs, CourseStream{
+					Course:      course,
+					Stream:      stream,
+					LectureHall: lectureHall,
+				})
+			}
+		}
+		sort.Slice(suggestedVoDs, func(i, j int) bool { return suggestedVoDs[i].Stream.End.After(suggestedVoDs[j].Stream.End) })
+		suggestedStreams = append(suggestedStreams, suggestedVoDs...)
+	}
+
+	suggestedStreams = commons.Unique(suggestedStreams, func(c CourseStream) uint { return c.Stream.ID })
+	d.SuggestedStreams = suggestedStreams
+	if len(suggestedStreams) > limit {
+		d.SuggestedStreams = suggestedStreams[0:limit]
+	}
+}
+
+//LiveStreams         []CourseStream
+//SuggestedStreams    []CourseStream
+//Courses             []model.Course
+//PinnedCourses       []model.Course
+//PublicCourses
+
+// PropagatePinnedCourses
+// TODO replace with proper implementation
+func (d *IndexData) PropagatePinnedCourses() {
+	if d.TUMLiveContext.User != nil {
+		var targetCourses []*model.Course
+		for _, streamCourses := range []*[]CourseStream{&d.LiveStreams, &d.SuggestedStreams} {
+			for i := range *streamCourses {
+				targetCourses = append(targetCourses, &((*streamCourses)[i].Course))
+			}
+		}
+		for _, courses := range []*[]model.Course{&d.Courses, &d.PinnedCourses} {
+			for i := range *courses {
+				targetCourses = append(targetCourses, &((*courses)[i]))
+			}
+		}
+		for _, pinnedCourse := range d.TUMLiveContext.User.PinnedCourses {
+			for _, targetCourse := range targetCourses {
+				if pinnedCourse.ID == targetCourse.ID {
+					targetCourse.Pinned = true
+				}
+			}
+		}
+	}
 }
 
 // LoadCoursesForRole Load all courses of user. Distinguishes between admin, lecturer, and normal users.

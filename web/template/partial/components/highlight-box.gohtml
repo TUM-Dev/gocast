@@ -1,0 +1,33 @@
+{{define "highlight-box-head"}}
+<div class="w-full">
+    {{$expand_if := get . "expand-if" | default "true"}} {{/*TODO: wrap in brackets*/}}
+    <div class="flex flex-col bg-white dark:bg-secondary border dark:border-gray-800 rounded-lg shadow-sm"
+         :class="{{$expand_if}} ? 'h-full' : 'h-fit'">
+        {{/* Header */}}
+        <div class="flex justify-between h-16 px-3"
+             :class="{{$expand_if}} && 'border-b dark:border-gray-800'">
+            <span class="{{with get . "highlight-color"}}{{.}} rounded-full px-5 text-white{{else}}text-1 px-4{{end}} text-lg font-bold my-auto">{{get . "title"}}</span>
+            <div class="my-auto">
+{{/*                <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2 my-auto"*/}}
+{{/*                        @click="showPlanned = !showPlanned;">*/}}
+{{/*                        <span class="text-sm font-semibold uppercase dark:text-white"*/}}
+{{/*                              x-text="showPlanned ? '&#x25B2; hide' : '&#x25BC; show'">&#x25B2; hide</span>*/}}
+{{/*                </button>*/}}
+{{/*                <a class="hover:bg-gray-200 dark:hover:bg-gray-600 inline-block rounded px-2"*/}}
+{{/*                   href="/api/download_ics/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}/events.ics"*/}}
+{{/*                   :title="'Export lecture dates'"*/}}
+{{/*                   x-show="lectures">*/}}
+{{/*                            <span class="text-sm font-semibold uppercase dark:text-white">*/}}
+{{/*                                <i class="fa-solid w-5 mr-1 fa-calendar"></i>ics*/}}
+{{/*                            </span>*/}}
+{{/*                </a>*/}}
+            </div>
+        </div>
+        <div x-show="{{$expand_if}}" class="p-5 pt-3">
+{{end}}
+
+{{define "highlight-box-tail"}}
+        </div>
+    </div>
+</div>
+{{end}}

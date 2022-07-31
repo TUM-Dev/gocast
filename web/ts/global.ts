@@ -4,6 +4,9 @@ export * from "./notifications";
 export * from "./user-settings";
 export * from "./start-page";
 
+import { DateTime } from "luxon";
+export { DateTime };
+
 export async function putData(url = "", data = {}) {
     return await fetch(url, {
         method: "PUT",

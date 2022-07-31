@@ -1,0 +1,21 @@
+{{define "dropdown-head"}}
+<div x-cloak x-data="{ open: false, focused: false }" class="relative text-right md:mt-px"
+        @focusin.outside="focused = false; open = false;" @click.outside="open = false; focused = false;">
+    <div class="w-8 h-8">
+        <button :class="(open || focused || ({{get . "show-button-if" | default "true"}})) ? '' : 'opacity-0'"
+                @focus="focused = true;" @click="open = !open;"
+                class="{{/*border border-solid border-black*/}} duration-100 w-full h-full rounded-full flex justify-center [align-items:center]">
+            <i class="text-5 hover:text-1 transition-colors duration-200 fa fa-{{get . "icon" | default "ellipsis-vertical"}} text-xl md:text-normal"></i>
+        </button>
+    </div>
+
+    <div class="relative text-1" x-show="open">
+{{/*        <div class="border border-solid right-0 left-auto border-black absolute z-50 overflow-visible" >*/}}
+{{end}}
+
+{{define "dropdown-tail"}}
+{{/*        </div>*/}}
+    </div>
+</div>
+{{end}}
+

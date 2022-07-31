@@ -282,8 +282,10 @@ func (d streamsDao) GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Str
 
 // GetStreamsWithWatchState returns a list of streams with their progress information.
 func (d streamsDao) GetStreamsWithWatchState(courseID uint, userID uint) (streams []model.Stream, err error) {
+	// TODO: is the progress tracking even working as of now?
 	type watchedState struct {
-		Watched bool
+		Watched  bool
+		Progress float64
 	}
 	var watchedStates []watchedState
 	queriedStreams := DB.Table("streams").Where("course_id = ? and deleted_at is NULL", courseID)
@@ -299,6 +301,7 @@ func (d streamsDao) GetStreamsWithWatchState(courseID uint, userID uint) (stream
 	// Updates the watch state for each stream to compensate for split query.
 	for i := range streams {
 		streams[i].Watched = watchedStates[i].Watched
+		streams[i].Progress = watchedStates[i].Progress
 	}
 	return
 }

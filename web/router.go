@@ -24,6 +24,7 @@ var templatePaths = []string{
 	"template/admin/*.gohtml",
 	"template/admin/admin_tabs/*.gohtml",
 	"template/partial/*.gohtml",
+	"template/partial/components/*.gohtml",
 	"template/partial/stream/*.gohtml",
 	"template/partial/course/manage/*.gohtml",
 	"template/partial/stream/chat/*.gohtml",
