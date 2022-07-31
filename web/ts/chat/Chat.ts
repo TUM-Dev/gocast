@@ -253,10 +253,15 @@ export class Chat {
             return dateCreatedAt > referenceTime;
         };
 
-        this.messages.forEach((message: ChatMessage) => (message.isGrayedOut = grayOutCondition(message.CreatedAt)));
+        this.messages.forEach((message: ChatMessage) => {
+            if (!message.replyTo.Valid) {
+                message.isGrayedOut = grayOutCondition(message.CreatedAt);
+                message.replies.forEach((reply) => (reply.isGrayedOut = message.isGrayedOut));
+            }
+        });
 
         const messagesNotGrayedOut = this.messages.filter(
-            (message: ChatMessage) => !message.isGrayedOut && message.visible,
+            (message: ChatMessage) => !message.isGrayedOut && !message.replyTo.Valid && message.visible,
         );
 
         this.focusedMessageId = messagesNotGrayedOut.pop()?.ID;
