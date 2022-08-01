@@ -61,7 +61,7 @@ export class Chat {
         this.registerPlayerTimeWatcher = this.registerPlayerTimeWatcher.bind(this);
         this.registerPlayerTimeWatcher();
         window.addEventListener("beforeunload", () => {
-            this.popUpWindow.close();
+            this.popUpWindow?.close();
         });
     }
 
@@ -110,6 +110,22 @@ export class Chat {
             this.poll.result = null;
             this.poll.activePoll = { ...e.detail, selected: null };
         }
+    }
+
+    onPopUpMessagesUpdated(e) {
+        const messagesToUpdate: ChatMessage[] = e.detail;
+        if (messagesToUpdate) {
+            this.messages = [];
+            messagesToUpdate.forEach((message) => this.messages.push(message));
+        }
+    }
+
+    onGrayedOutUpdated(e) {
+        this.messages.find((m) => m.ID === e.detail.ID).isGrayedOut = e.detail.isGrayedOut;
+    }
+
+    onFocusUpdated(e) {
+        this.focusedMessageId = e.detail.ID;
     }
 
     onPollOptionVotesUpdate(e) {
@@ -205,7 +221,16 @@ export class Chat {
             this.popUpWindow = null;
         });
 
-        popUpWindow.dispatchEvent(new CustomEvent("chat-messages-updated"));
+        popUpWindow.addEventListener("chatinitialized", () => {
+            this.messages.forEach((message) => {
+                const type: MessageUpdateType = "chatupdategrayedout";
+                const payload: MessageUpdate = { ID: message.ID, isGrayedOut: message.isGrayedOut };
+                popUpWindow.dispatchEvent(new CustomEvent(type, { detail: payload }));
+            });
+            const type: MessageUpdateType = "chatupdatefocus";
+            const payload: FocusUpdate = { ID: this.focusedMessageId };
+            popUpWindow.dispatchEvent(new CustomEvent(type, { detail: payload }));
+        });
 
         this.popUpWindow = popUpWindow;
     }
@@ -240,8 +265,9 @@ export class Chat {
             } else return;
         }*/
 
-        //TODO revert:  const referenceTime = new Date(this.startTime);
-        const referenceTime = new Date("Sun Jun 12 2022 15:14:00");
+        // TODO remove following line only for debugging
+        this.startTime = new Date("Sun Jul 31 2022 10:55:00");
+        const referenceTime = new Date(this.startTime);
         referenceTime.setSeconds(referenceTime.getSeconds() + playerTime);
 
         const grayOutCondition = (CreatedAt: string) => {
@@ -249,22 +275,36 @@ export class Chat {
             return dateCreatedAt > referenceTime;
         };
 
+        const grayedOutUpdates: GrayedOutUpdate[] = [];
+        const messagesNotGrayedOut = [];
         this.messages.forEach((message: ChatMessage) => {
             if (!message.replyTo.Valid) {
-                message.isGrayedOut = grayOutCondition(message.CreatedAt);
-                message.replies.forEach((reply) => (reply.isGrayedOut = message.isGrayedOut));
+                const shouldBeGrayedOut = grayOutCondition(message.CreatedAt);
+                if (message.isGrayedOut !== shouldBeGrayedOut) {
+                    grayedOutUpdates.push({ ID: message.ID, isGrayedOut: shouldBeGrayedOut });
+                }
+
+                message.replies.forEach((reply) =>
+                    grayedOutUpdates.push({ ID: reply.ID, isGrayedOut: shouldBeGrayedOut }),
+                );
+
+                if (!shouldBeGrayedOut && message.visible) {
+                    messagesNotGrayedOut.push(message);
+                }
             }
         });
 
-        const messagesNotGrayedOut = this.messages.filter(
-            (message: ChatMessage) => !message.isGrayedOut && !message.replyTo.Valid && message.visible,
-        );
-
-        const focusedMessageId = messagesNotGrayedOut.pop()?.ID ?? this.messages[0]?.ID;
+        const focusedMessageId: number = messagesNotGrayedOut.pop()?.ID ?? this.messages[0]?.ID;
         const focusedMessageChanged = this.focusedMessageId !== focusedMessageId;
-        this.focusedMessageId = focusedMessageId;
 
-        this.notifyMessagesUpdate({ focusUpdated: focusedMessageChanged });
+        if (focusedMessageChanged) {
+            console.log(focusedMessageId);
+            this.notifyMessagesUpdate("chatupdatefocus", { ID: focusedMessageId });
+        }
+
+        grayedOutUpdates.forEach((grayedOutUpdate) =>
+            this.notifyMessagesUpdate("chatupdategrayedout", grayedOutUpdate),
+        );
     }
 
     isMessageToBeFocused = (index: number) => this.messages[index].ID === this.focusedMessageId;
@@ -274,9 +314,9 @@ export class Chat {
         this.messages.push(m);
     }
 
-    private notifyMessagesUpdate(payload: object) {
+    private notifyMessagesUpdate(type: MessageUpdateType, payload: MessageUpdate) {
         [window, this.popUpWindow].forEach((window: Window) =>
-            window?.dispatchEvent(new CustomEvent("chat-messages-updated", { detail: payload })),
+            window?.dispatchEvent(new CustomEvent(type, { detail: payload })),
         );
     }
 }
@@ -300,8 +340,8 @@ type ChatMessage = {
     liked: false;
     likes: number;
 
-    replies: object[];
-    replyTo: object; // e.g.{Int64:0, Valid:false}
+    replies: ChatMessage[];
+    replyTo: Reply; // e.g.{Int64:0, Valid:false}
 
     addressedTo: number[];
     resolved: boolean;
@@ -313,3 +353,20 @@ type ChatMessage = {
     DeletedAt: string;
     UpdatedAt: string;
 };
+
+type Reply = {
+    Int64: number;
+    Valid: boolean;
+};
+
+type GrayedOutUpdate = {
+    ID: number;
+    isGrayedOut: boolean;
+};
+
+type FocusUpdate = {
+    ID: number;
+};
+
+type MessageUpdate = FocusUpdate | GrayedOutUpdate;
+type MessageUpdateType = "chatupdatefocus" | "chatupdategrayedout";

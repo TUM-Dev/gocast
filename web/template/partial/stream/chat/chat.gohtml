@@ -10,7 +10,7 @@
     {{end}}
     <div x-cloak
          x-data="watch.initChat({{.IsAdminOfCourse}}, {{$stream.ID}}, '{{$startTime}}', {{$userId}}, '{{$userName}}');"
-         x-init="await Promise.all([c.loadMessages(), c.poll.load()]); $nextTick(() => { watch.scrollToBottom() })"
+         x-init="await Promise.all([c.loadMessages(), c.poll.load()]); $nextTick(() => { watch.scrollToBottom(); window.dispatchEvent(new CustomEvent('chatinitialized')); })"
          x-on:chatmessage.window="e => c.onMessage(e);"
          x-on:chatreply.window="e => c.onReply(e);" ingest_servers
          x-on:chatlike.window="e => {c.onLike(e); $dispatch('reorder')}"
@@ -19,6 +19,9 @@
          x-on:chatapprove.window="await c.loadMessages(); $nextTick(() => { watch.scrollToBottom() })"
          x-on:chatnewpoll.window="e => c.onNewPoll(e);"
          x-on:polloptionvotesupdate.window="e => c.onPollOptionVotesUpdate(e);"
+         @chatpopupmessageupdate.window="e => initPromise.next(() => c.onPopUpMessagesUpdated(e));"
+         @chatupdategrayedout.window = "e => c.onGrayedOutUpdated(e);"
+         @chatupdatefocus.window = "e => c.onFocusUpdated(e);"
          @disconnected.window="c.disconnected = true;"
          @connected.window="c.disconnected = false;"
          @reorder="c.sortMessages()"

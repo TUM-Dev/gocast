@@ -4,13 +4,9 @@
     <template x-for="(m, index) in c.messages" :key="m.ID">
         <div x-ref="message"  class="relative py-2 px-2 $m.ID message"
 
-             :class="{'ring ring-blue-500/50' : c.current.replyTo === m.ID, 'opacity-60' : isGrayedOut}"
-             x-init="$watch('isGrayedOut', () => {if (c.isMessageToBeFocused(index)){watch.scrollToElement($refs.message)}} )"
-             @chat-messages-updated.window="
-                isGrayedOut=m.isGrayedOut;
-                if ($event.detail.focusUpdated && c.isMessageToBeFocused(index)){watch.scrollToElement($refs.message)};
-            "
-             x-data="{ showReplies: false, c:c, isGrayedOut: true}"
+             :class="{'ring ring-blue-500/50' : c.current.replyTo === m.ID, 'opacity-60' : m.isGrayedOut}"
+             x-init="$watch('c.focusedMessageId', () => {if (c.isMessageToBeFocused(index)){watch.scrollToElement($refs.message)}} )"
+             x-data="{ showReplies: false}"
              x-show="!m.deleted && m.replyTo && !m.replyTo.Valid">
             <!-- name and message -->
             <p  class="group text-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded">
