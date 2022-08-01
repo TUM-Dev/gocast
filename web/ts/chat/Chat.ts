@@ -69,10 +69,6 @@ export class Chat {
         this.messages = [];
         fetchMessages(this.streamId).then((messages) => {
             messages.forEach((m) => this.addMessage(m));
-            //resolve deep copies to references
-            this.messages.forEach(
-                (m) => (m.replies = m.replies.map((reply) => this.messages.find((m) => m.ID === reply.ID))),
-            );
         });
     }
 
@@ -106,7 +102,7 @@ export class Chat {
     }
 
     onReply(e) {
-        this.messages.find((m) => m.ID === e.detail.replyTo.Int64).replies.push(this.messages.find(e.detail.ID));
+        this.messages.find((m) => m.ID === e.detail.replyTo.Int64).replies.push(e.detail);
     }
 
     onNewPoll(e) {
@@ -304,8 +300,8 @@ type ChatMessage = {
     liked: false;
     likes: number;
 
-    replies: ChatMessage[];
-    replyTo: Reply; // e.g.{Int64:0, Valid:false}
+    replies: object[];
+    replyTo: object; // e.g.{Int64:0, Valid:false}
 
     addressedTo: number[];
     resolved: boolean;
@@ -316,9 +312,4 @@ type ChatMessage = {
     CreatedAt: string;
     DeletedAt: string;
     UpdatedAt: string;
-};
-
-type Reply = {
-    Int64: number;
-    Valid: boolean;
 };
