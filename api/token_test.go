@@ -22,7 +22,7 @@ func TestToken(t *testing.T) {
 			Expires *time.Time `json:"expires"`
 			Scope   string     `json:"scope"`
 		}
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"POST[No Context]": testutils.TestCase{
 				Method:         http.MethodPost,
 				Url:            "/api/token/create",
@@ -84,13 +84,11 @@ func TestToken(t *testing.T) {
 				})).([]byte)),
 				ExpectedCode: http.StatusOK,
 			},
-		}
-
-		testCases.Run(t, configTokenRouter)
+		}.Run(t, configTokenRouter)
 	})
 
 	t.Run("/:id", func(t *testing.T) {
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"DELETE[DeleteToken returns error]": testutils.TestCase{
 				Method: http.MethodDelete,
 				Url:    "/api/token/1",
@@ -117,8 +115,6 @@ func TestToken(t *testing.T) {
 				TumLiveContext: &tools.TUMLiveContext{User: &model.User{Role: model.AdminType}},
 				ExpectedCode:   http.StatusOK,
 			},
-		}
-
-		testCases.Run(t, configTokenRouter)
+		}.Run(t, configTokenRouter)
 	})
 }

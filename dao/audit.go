@@ -23,6 +23,7 @@ func (a auditDao) Find(limit int, offset int, types ...model.AuditType) (audits 
 		Preload("User").
 		Model(&model.Audit{}).
 		Where("type in ?", types).
+		Order("created_at desc").
 		Limit(limit).
 		Offset(offset).
 		Find(&audits).Error

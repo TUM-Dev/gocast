@@ -44,7 +44,7 @@ func TestStream(t *testing.T) {
 			},
 		}
 		url := fmt.Sprintf("/api/stream/live?token=%s", testutils.AdminToken.Token)
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"GetCurrentLive returns error": {
 				Method: http.MethodGet,
 				Url:    url,
@@ -106,8 +106,7 @@ func TestStream(t *testing.T) {
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
 			},
-		}
-		testCases.Run(t, configGinStreamRestRouter)
+		}.Run(t, configGinStreamRestRouter)
 	})
 	t.Run("GET/api/stream/:streamID", func(t *testing.T) {
 		course := testutils.CourseFPV
@@ -125,7 +124,7 @@ func TestStream(t *testing.T) {
 			"vod":         stream.Recording}
 
 		url := fmt.Sprintf("/api/stream/%d", testutils.StreamFPVLive.ID)
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"no context": testutils.TestCase{
 				Method: http.MethodGet,
 				Url:    url,
@@ -157,12 +156,11 @@ func TestStream(t *testing.T) {
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
 			},
-		}
-		testCases.Run(t, configGinStreamRestRouter)
+		}.Run(t, configGinStreamRestRouter)
 	})
 	t.Run("GET/api/stream/:streamID/pause", func(t *testing.T) {
 		url := fmt.Sprintf("/api/stream/%d/pause", testutils.StreamFPVLive.ID)
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"no context": testutils.TestCase{
 				Method: http.MethodGet,
 				Url:    url,
@@ -194,12 +192,11 @@ func TestStream(t *testing.T) {
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				ExpectedCode:   http.StatusInternalServerError,
 			},
-		}
-		testCases.Run(t, configGinStreamRestRouter)
+		}.Run(t, configGinStreamRestRouter)
 	})
 	t.Run("GET/api/stream/:streamID/end", func(t *testing.T) {
 		url := fmt.Sprintf("/api/stream/%d/end", testutils.StreamFPVLive.ID)
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"no context": testutils.TestCase{
 				Method: http.MethodGet,
 				Url:    url,
@@ -242,12 +239,11 @@ func TestStream(t *testing.T) {
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				ExpectedCode:   http.StatusOK,
 			},*/
-		}
-		testCases.Run(t, configGinStreamRestRouter)
+		}.Run(t, configGinStreamRestRouter)
 	})
 	t.Run("PATCH/api/stream/:streamID/visibility", func(t *testing.T) {
 		url := fmt.Sprintf("/api/stream/%d/visibility", testutils.StreamFPVLive.ID)
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"no context": testutils.TestCase{
 				Method: http.MethodPatch,
 				Url:    url,
@@ -322,8 +318,7 @@ func TestStream(t *testing.T) {
 				Body:           bytes.NewBuffer(testutils.First(json.Marshal(gin.H{"private": false})).([]byte)),
 				ExpectedCode:   http.StatusOK,
 			},
-		}
-		testCases.Run(t, configGinStreamRestRouter)
+		}.Run(t, configGinStreamRestRouter)
 	})
 }
 
@@ -346,7 +341,7 @@ func TestStreamVideoSections(t *testing.T) {
 		}
 
 		url := fmt.Sprintf("/api/stream/%d/sections", testutils.StreamFPVLive.ID)
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"GetByStreamId returns error": {
 				Method: "GET",
 				Url:    url,
@@ -385,9 +380,7 @@ func TestStreamVideoSections(t *testing.T) {
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
 			},
-		}
-
-		testCases.Run(t, configGinStreamRestRouter)
+		}.Run(t, configGinStreamRestRouter)
 	})
 	t.Run("POST/api/stream/:streamID/sections", func(t *testing.T) {
 		request := []model.VideoSection{
@@ -400,7 +393,7 @@ func TestStreamVideoSections(t *testing.T) {
 			},
 		}
 		url := fmt.Sprintf("/api/stream/%d/sections", testutils.StreamFPVLive.ID)
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"Not Admin": {
 				Method: "POST",
 				Url:    url,
@@ -492,14 +485,12 @@ func TestStreamVideoSections(t *testing.T) {
 				Body:           bytes.NewBuffer(testutils.First(json.Marshal(request)).([]byte)),
 				ExpectedCode:   http.StatusOK,
 			},*/
-		}
-
-		testCases.Run(t, configGinStreamRestRouter)
+		}.Run(t, configGinStreamRestRouter)
 	})
 	t.Run("DELETE/api/stream/:streamID/sections", func(t *testing.T) {
 		section := testutils.StreamFPVLive.VideoSections[0]
 		baseUrl := fmt.Sprintf("/api/stream/%d/sections", testutils.StreamFPVLive.ID)
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"Not Admin": {
 				Method: http.MethodDelete,
 				Url:    fmt.Sprintf("%s/%d", baseUrl, section.ID),
@@ -636,8 +627,7 @@ func TestStreamVideoSections(t *testing.T) {
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				ExpectedCode:   http.StatusAccepted,
 			},*/
-		}
-		testCases.Run(t, configGinStreamRestRouter)
+		}.Run(t, configGinStreamRestRouter)
 	})
 }
 
@@ -651,7 +641,7 @@ func TestAttachments(t *testing.T) {
 		_, w := testutils.NewMultipartFormData("file", "/tmp/test.txt")
 
 		endpoint := fmt.Sprintf("/api/stream/%d/files", testutils.StreamFPVLive.ID)
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"no context": {
 				Method:         http.MethodPost,
 				Url:            endpoint,
@@ -866,16 +856,14 @@ func TestAttachments(t *testing.T) {
 				TumLiveContext: &testutils.TUMLiveContextAdmin,
 				ExpectedCode:   http.StatusOK,
 			},
-		}
-
-		testCases.Run(t, configGinStreamRestRouter)
+		}.Run(t, configGinStreamRestRouter)
 	})
 
 	t.Run("DELETE/api/stream/:streamID/files/:fid", func(t *testing.T) {
 		testFile := testutils.Attachment
 		testFileNotExists := testutils.AttachmentInvalidPath
 		url := fmt.Sprintf("/api/stream/%d/files/%d", testutils.StreamFPVLive.ID, testFile.ID)
-		testCases := testutils.TestCases{
+		testutils.TestCases{
 			"no context": testutils.TestCase{
 				Method:         http.MethodDelete,
 				Url:            url,
@@ -968,8 +956,7 @@ func TestAttachments(t *testing.T) {
 					_, _ = os.Create(testFile.Path)
 				},
 			},
-		}
-		testCases.Run(t, configGinStreamRestRouter)
+		}.Run(t, configGinStreamRestRouter)
 
 		// After a successful run, the file /tmp/test.txt should be deleted
 		if _, err := os.Stat(testFile.Path); !errors.Is(err, os.ErrNotExist) {

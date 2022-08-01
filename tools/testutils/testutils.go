@@ -29,6 +29,8 @@ func TUMLiveMiddleware(ctx tools.TUMLiveContext) []func(c *gin.Context) {
 	}
 }
 
+type HttpHeader map[string]string
+
 type TestCases map[string]TestCase
 
 type TestCase struct {
@@ -38,6 +40,7 @@ type TestCase struct {
 	TumLiveContext   *tools.TUMLiveContext
 	ContentType      string
 	Body             interface{}
+	ExpectedHeader   HttpHeader
 	ExpectedCode     int
 	ExpectedResponse []byte
 
@@ -68,6 +71,10 @@ func (tc TestCases) Run(t *testing.T, configRouterFunc func(*gin.Engine, dao.Dao
 			c.Request, _ = http.NewRequest(testCase.Method, testCase.Url, testCase.getBody())
 			c.Request.Header.Set("Content-Type", testCase.getContentType())
 			r.ServeHTTP(w, c.Request)
+
+			for field, expected := range testCase.ExpectedHeader {
+				assert.Equal(t, expected, w.Header().Get(field))
+			}
 
 			assert.Equal(t, testCase.ExpectedCode, w.Code)
 
