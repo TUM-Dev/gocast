@@ -15,8 +15,6 @@ func configGinBookmarksRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := bookmarkRoutes{daoWrapper}
 	bookmarks := router.Group("/api/bookmarks")
 	{
-		//bookmarks.Use(tools.InitContext(daoWrapper))
-		bookmarks.Use(tools.ErrorHandler)
 		bookmarks.Use(tools.LoggedIn)
 		bookmarks.POST("", routes.Add)
 		bookmarks.GET("", routes.GetByStreamID)
