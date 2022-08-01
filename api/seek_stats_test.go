@@ -1,8 +1,6 @@
 package api
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -11,9 +9,14 @@ import (
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
+	"github.com/matthiasreumann/gomino"
 	"net/http"
 	"testing"
 )
+
+func ReportSeekRouterWrapper(r *gin.Engine) {
+	configSeekStatsRouter(r, dao.DaoWrapper{})
+}
 
 func TestReportSeek(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -24,65 +27,68 @@ func TestReportSeek(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		testPosition := 120.32
-		testBody := testutils.First(json.Marshal(gin.H{
-			"position": testPosition,
-		})).([]byte)
+		body := gin.H{"position": testPosition}
 
-		testutils.TestCases{
+		gomino.TestCases{
 			"missing position": {
-				Method:       http.MethodPost,
-				Url:          fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"invalid courseId": {
-				Method: http.MethodPost,
-				Url:    fmt.Sprintf("%s/abc", baseUrl),
-				Body:   bytes.NewBuffer(testBody),
-				DaoWrapper: dao.DaoWrapper{
-					VideoSeekDao: func() dao.VideoSeekDao {
-						searchMock := mock_dao.NewMockVideoSeekDao(ctrl)
-						searchMock.
-							EXPECT().
-							Add("abc", testPosition).
-							Return(errors.New(""))
-						return searchMock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						VideoSeekDao: func() dao.VideoSeekDao {
+							searchMock := mock_dao.NewMockVideoSeekDao(ctrl)
+							searchMock.
+								EXPECT().
+								Add("abc", testPosition).
+								Return(errors.New(""))
+							return searchMock
+						}(),
+					}
+					configSeekStatsRouter(r, wrapper)
 				},
+				Url:          fmt.Sprintf("%s/abc", baseUrl),
+				Body:         body,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"can not add seek record": {
-				Method: http.MethodPost,
-				Url:    fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID),
-				Body:   bytes.NewBuffer(testBody),
-				DaoWrapper: dao.DaoWrapper{
-					VideoSeekDao: func() dao.VideoSeekDao {
-						searchMock := mock_dao.NewMockVideoSeekDao(ctrl)
-						searchMock.
-							EXPECT().
-							Add(fmt.Sprintf("%d", testutils.StreamFPVNotLive.ID), testPosition).
-							Return(errors.New(""))
-						return searchMock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						VideoSeekDao: func() dao.VideoSeekDao {
+							searchMock := mock_dao.NewMockVideoSeekDao(ctrl)
+							searchMock.
+								EXPECT().
+								Add(fmt.Sprintf("%d", testutils.StreamFPVNotLive.ID), testPosition).
+								Return(errors.New(""))
+							return searchMock
+						}(),
+					}
+					configSeekStatsRouter(r, wrapper)
 				},
+				Body:         body,
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
-				Method: http.MethodPost,
-				Url:    fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID),
-				Body:   bytes.NewBuffer(testBody),
-				DaoWrapper: dao.DaoWrapper{
-					VideoSeekDao: func() dao.VideoSeekDao {
-						searchMock := mock_dao.NewMockVideoSeekDao(ctrl)
-						searchMock.
-							EXPECT().
-							Add(fmt.Sprintf("%d", testutils.StreamFPVNotLive.ID), testPosition).
-							Return(nil)
-						return searchMock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						VideoSeekDao: func() dao.VideoSeekDao {
+							searchMock := mock_dao.NewMockVideoSeekDao(ctrl)
+							searchMock.
+								EXPECT().
+								Add(fmt.Sprintf("%d", testutils.StreamFPVNotLive.ID), testPosition).
+								Return(nil)
+							return searchMock
+						}(),
+					}
+					configSeekStatsRouter(r, wrapper)
 				},
+				Body:         body,
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, configSeekStatsRouter)
+			}}.
+			Router(ReportSeekRouterWrapper).
+			Method(http.MethodPost).
+			Url(fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID)).
+			Run(t, testutils.Equal)
 	})
 
 	response := gin.H{
@@ -107,38 +113,42 @@ func TestReportSeek(t *testing.T) {
 
 		ctrl := gomock.NewController(t)
 
-		testutils.TestCases{
+		gomino.TestCases{
 			"failed to read video seek chunks": {
-				Method: http.MethodGet,
-				Url:    fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID),
-				DaoWrapper: dao.DaoWrapper{
-					VideoSeekDao: func() dao.VideoSeekDao {
-						searchMock := mock_dao.NewMockVideoSeekDao(ctrl)
-						searchMock.
-							EXPECT().
-							Get(fmt.Sprintf("%d", testutils.StreamFPVNotLive.ID)).
-							Return(nil, errors.New(""))
-						return searchMock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						VideoSeekDao: func() dao.VideoSeekDao {
+							searchMock := mock_dao.NewMockVideoSeekDao(ctrl)
+							searchMock.
+								EXPECT().
+								Get(fmt.Sprintf("%d", testutils.StreamFPVNotLive.ID)).
+								Return(nil, errors.New(""))
+							return searchMock
+						}(),
+					}
+					configSeekStatsRouter(r, wrapper)
 				},
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
-				Method: http.MethodGet,
-				Url:    fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID),
-				DaoWrapper: dao.DaoWrapper{
-					VideoSeekDao: func() dao.VideoSeekDao {
-						searchMock := mock_dao.NewMockVideoSeekDao(ctrl)
-						searchMock.
-							EXPECT().
-							Get(fmt.Sprintf("%d", testutils.StreamFPVNotLive.ID)).
-							Return([]model.VideoSeekChunk{testutils.FPVNotLiveVideoSeekChunk1, testutils.FPVNotLiveVideoSeekChunk2, testutils.FPVNotLiveVideoSeekChunk3}, nil)
-						return searchMock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						VideoSeekDao: func() dao.VideoSeekDao {
+							searchMock := mock_dao.NewMockVideoSeekDao(ctrl)
+							searchMock.
+								EXPECT().
+								Get(fmt.Sprintf("%d", testutils.StreamFPVNotLive.ID)).
+								Return([]model.VideoSeekChunk{testutils.FPVNotLiveVideoSeekChunk1, testutils.FPVNotLiveVideoSeekChunk2, testutils.FPVNotLiveVideoSeekChunk3}, nil)
+							return searchMock
+						}(),
+					}
+					configSeekStatsRouter(r, wrapper)
 				},
-				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
+				ExpectedResponse: response,
 				ExpectedCode:     http.StatusOK,
-			},
-		}.Run(t, configSeekStatsRouter)
+			}}.
+			Method(http.MethodGet).
+			Url(fmt.Sprintf("%s/%d", baseUrl, testutils.StreamFPVNotLive.ID)).
+			Run(t, testutils.Equal)
 	})
 }
