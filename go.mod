@@ -14,7 +14,7 @@ require (
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
 	github.com/go-gormigrate/gormigrate/v2 v2.0.2
-	github.com/go-ldap/ldap/v3 v3.4.3
+	github.com/go-ldap/ldap/v3 v3.4.4
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/golang/glog v1.0.0 // indirect
@@ -53,7 +53,7 @@ require github.com/matthiasreumann/gomino v0.0.2
 require (
 	// this version works - newer commits have breaking changes - do not update
 	// github.com/Azure/go-ntlmssp v0.0.0-20211209120228-48547f28849e // indirect
-	github.com/Azure/go-ntlmssp v0.0.0-20211209120228-48547f28849e // indirect
+	github.com/Azure/go-ntlmssp v0.0.0-20220621081337-cb9428e4ac1e // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/antchfx/xpath v1.2.1 // indirect
