@@ -363,7 +363,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		}
 	}
 
-	/*S.startThumbnailGeneration(&c)
+	S.startThumbnailGeneration(&c)
 	defer S.endThumbnailGeneration(&c)
 	err = createThumbnailSprite(&c)
 	if err != nil {
@@ -379,7 +379,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		log.WithField("File", c.getTranscodingFileName()).WithError(err).Error("Detecting silence failed.")
 	} else {
 		notifySilenceResults(sd.Silences, c.streamId)
-	}*/
+	}
 
 	S.startKeywordExtraction(&c)
 	defer S.endKeywordExtraction(&c)
