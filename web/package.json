@@ -34,7 +34,7 @@
     "chart.js": "^3.8.0",
     "extract-loader": "^5.1.0",
     "flatpickr": "^4.6.13",
-    "fullcalendar": "^5.11.0",
+    "fullcalendar": "^5.11.2",
     "handlebars": "^4.7.7",
     "handlebars-loader": "^1.7.2",
     "http-status-codes": "^2.2.0",
