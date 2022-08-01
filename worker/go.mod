@@ -12,7 +12,7 @@ require (
 	github.com/otiai10/gosseract/v2 v2.3.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil/v3 v3.22.6
-	github.com/sirupsen/logrus v1.8.1
+	github.com/sirupsen/logrus v1.9.0
 	github.com/tidwall/gjson v1.14.1
 	github.com/u2takey/ffmpeg-go v0.4.1
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
@@ -42,7 +42,7 @@ require (
 	github.com/u2takey/go-utils v0.3.1
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
-	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b // indirect
+	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20220627151210-f754eecb4be7 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
