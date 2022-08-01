@@ -89,7 +89,7 @@ export const wsPubSubClient = {
                 }
             };
 
-            this._ws.onmessage = function (m) {
+            this._ws.onmessage = (m) => {
                 const data = JSON.parse(m.data);
                 this._handleMessage(data);
             };

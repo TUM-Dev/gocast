@@ -11,6 +11,10 @@ func createKey(path string, clientId string) string {
 	return clientId + "__" + path
 }
 
+func (subs *ChannelSubscribers) init() {
+	subs.subscribers = map[string]*Context{}
+}
+
 func (subs *ChannelSubscribers) IsSubscribed(path string, clientId string) bool {
 	subs.mutex.Lock()
 	defer subs.mutex.Unlock()

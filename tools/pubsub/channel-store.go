@@ -9,12 +9,18 @@ type ChannelStore struct {
 	channels map[string]*Channel
 }
 
+func (s *ChannelStore) init() {
+	s.channels = map[string]*Channel{}
+}
+
 func (s *ChannelStore) Register(path string, handlers MessageHandlers) {
-	s.channels[path] = &Channel{
+	channel := Channel{
 		path:        strings.Split(path, channelPathSep),
 		handlers:    handlers,
 		subscribers: ChannelSubscribers{},
 	}
+	channel.subscribers.init()
+	s.channels[path] = &channel
 }
 
 func (s *ChannelStore) Get(path string) (bool, *Channel, map[string]string) {

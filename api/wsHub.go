@@ -11,6 +11,8 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -113,10 +115,11 @@ func BroadcastStats(streamsDao dao.StreamsDao) {
 
 func cleanupSessions() {
 	for id, sessions := range sessionsMap {
+		roomName := strings.Replace(ChatPubSubRoomName, ":streamID", strconv.Itoa(int(id)), -1)
 		var newSessions []*sessionWrapper
 		for i, session := range sessions {
 			clientId, _ := session.session.Get("id")
-			if !session.session.IsClosed() && IsSubscribed(clientId.(string), ChatPubSubRoomName) {
+			if !session.session.IsClosed() && PubSubInstance.IsSubscribed(roomName, clientId.(string)) {
 				newSessions = append(newSessions, sessions[i])
 			}
 		}

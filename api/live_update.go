@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/RBG-TUM/commons"
-	"github.com/gabstv/melody"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
@@ -14,6 +13,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools/tum"
 	log "github.com/sirupsen/logrus"
 	"sync"
+	"time"
 )
 
 const (
@@ -25,12 +25,12 @@ var liveUpdateListenerMutex sync.RWMutex
 var liveUpdateListener = map[uint]*liveUpdateUserSessionsWrapper{}
 
 type liveUpdateUserSessionsWrapper struct {
-	sessions []*melody.Session
+	sessions []*pubsub.Context
 	courses  []uint
 }
 
 func RegisterLiveUpdatePubSubChannel() {
-	PubSubSocket.RegisterPubSubChannel(LiveUpdatePubSubRoomName, pubsub.MessageHandlers{
+	PubSubInstance.RegisterPubSubChannel(LiveUpdatePubSubRoomName, pubsub.MessageHandlers{
 		OnSubscribe:   liveUpdateOnSubscribe,
 		OnUnsubscribe: liveUpdateOnUnsubscribe,
 	})
@@ -52,9 +52,9 @@ func liveUpdateOnUnsubscribe(psc *pubsub.Context) {
 	}
 
 	liveUpdateListenerMutex.Lock()
-	var newSessions []*melody.Session
+	var newSessions []*pubsub.Context
 	for _, session := range liveUpdateListener[userId].sessions {
-		if session != psc.Client.Session {
+		if session != psc {
 			newSessions = append(newSessions, session)
 		}
 	}
@@ -104,11 +104,14 @@ func liveUpdateOnSubscribe(psc *pubsub.Context) {
 
 	liveUpdateListenerMutex.Lock()
 	if liveUpdateListener[userId] != nil {
-		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{append(liveUpdateListener[userId].sessions, psc.Client.Session), courses}
+		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{append(liveUpdateListener[userId].sessions, psc), courses}
 	} else {
-		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{[]*melody.Session{psc.Client.Session}, courses}
+		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{[]*pubsub.Context{psc}, courses}
 	}
 	liveUpdateListenerMutex.Unlock()
+
+	time.Sleep(5 * time.Second)
+	NotifyLiveUpdateCourseWentLive(327)
 }
 
 func NotifyLiveUpdateCourseWentLive(courseId uint) {
@@ -118,7 +121,7 @@ func NotifyLiveUpdateCourseWentLive(courseId uint) {
 		for _, course := range userWrap.courses {
 			if course == courseId {
 				for _, session := range userWrap.sessions {
-					_ = session.Write(updateMessage)
+					_ = session.Send(updateMessage)
 				}
 				break
 			}

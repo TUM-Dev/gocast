@@ -9,6 +9,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/pubsub"
 	"net/http"
 	"strconv"
 	"time"
@@ -28,12 +29,12 @@ const (
 //const maxParticipants = 10000
 
 func RegisterChatPubSubChannel() {
-	RegisterPubSubChannel(ChatPubSubRoomName, PubSubMessageHandlers{
-		onSubscribe:   chatOnSubscribe,
-		onUnsubscribe: chatOnUnsubscribe,
-		onMessage: func(psc *PubSubContext, message *WSPubSubMessage) {
-			ctx, _ := psc.Get("ctx") // get gin context
-			daoWrapper, _ := psc.Get("dao")
+	PubSubInstance.RegisterPubSubChannel(ChatPubSubRoomName, pubsub.MessageHandlers{
+		OnSubscribe:   chatOnSubscribe,
+		OnUnsubscribe: chatOnUnsubscribe,
+		OnMessage: func(psc *pubsub.Context, message *pubsub.Message) {
+			ctx, _ := psc.Client.Get("ctx") // get gin context
+			daoWrapper, _ := psc.Client.Get("dao")
 			foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 			if !exists {
 				sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -46,7 +47,7 @@ func RegisterChatPubSubChannel() {
 			}
 
 			routes := chatRoutes{daoWrapper.(dao.DaoWrapper)}
-			req, err := message.wsReqPayload()
+			req, err := parseChatPayload(message)
 
 			if err != nil {
 				log.WithError(err).Warn("could not unmarshal request")
@@ -54,7 +55,7 @@ func RegisterChatPubSubChannel() {
 			}
 			switch req.Type {
 			case "message":
-				routes.handleMessage(tumLiveContext, psc.Client.session, message.Payload)
+				routes.handleMessage(tumLiveContext, psc.Client.Session, message.Payload)
 			case "like":
 				routes.handleLike(tumLiveContext, message.Payload)
 			case "delete":
@@ -487,7 +488,7 @@ func (r chatRoutes) getActivePoll(c *gin.Context) {
 	})
 }
 
-func (m WSPubSubMessage) wsReqPayload() (res wsReq, err error) {
+func parseChatPayload(m *pubsub.Message) (res wsReq, err error) {
 	dbByte, _ := json.Marshal(m.Payload)
 	err = json.Unmarshal(dbByte, &res)
 	return res, err
@@ -562,16 +563,16 @@ func NotifyViewersLiveState(streamId uint, live bool) {
 	broadcastStream(streamId, req)
 }
 
-func chatOnSubscribe(psc *PubSubContext) {
+func chatOnSubscribe(psc *pubsub.Context) {
 	joinTime := time.Now()
-	psc.Set("chat.joinTime", joinTime)
+	psc.Client.Set("chat.joinTime", joinTime)
 
-	connHandler(psc.Client.session)
+	connHandler(psc.Client.Session)
 }
 
-func chatOnUnsubscribe(psc *PubSubContext) {
+func chatOnUnsubscribe(psc *pubsub.Context) {
 	var c *gin.Context
-	if ctx, ok := psc.Get("ctx"); ok {
+	if ctx, ok := psc.Client.Get("ctx"); ok {
 		c = ctx.(*gin.Context)
 	} else {
 		sentry.CaptureException(errors.New("gin context should exist but doesn't"))
@@ -579,7 +580,7 @@ func chatOnUnsubscribe(psc *PubSubContext) {
 	}
 
 	var daoWrapper *dao.DaoWrapper
-	if ctx, ok := psc.Get("dao"); ok {
+	if ctx, ok := psc.Client.Get("dao"); ok {
 		daoWrapper = ctx.(*dao.DaoWrapper)
 	} else {
 		sentry.CaptureException(errors.New("daoWrapper should exist but doesn't"))
@@ -595,7 +596,7 @@ func chatOnUnsubscribe(psc *PubSubContext) {
 	}
 
 	var joinTime time.Time
-	if foundContext, exists := psc.Get("chat.joinTime"); exists {
+	if foundContext, exists := psc.Client.Get("chat.joinTime"); exists {
 		joinTime = foundContext.(time.Time)
 	} else {
 		sentry.CaptureException(errors.New("jointime should exist but doesn't"))

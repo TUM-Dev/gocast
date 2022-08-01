@@ -11,7 +11,7 @@ type wsPubSubRoutes struct {
 	dao.DaoWrapper
 }
 
-var PubSubSocket = pubsub.New()
+var PubSubInstance = pubsub.New()
 
 func configGinWSPubSubRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 	routes := wsPubSubRoutes{daoWrapper}
@@ -23,7 +23,7 @@ func (r wsPubSubRoutes) handleWSPubSubConnect(c *gin.Context) {
 	properties["ctx"] = c
 	properties["dao"] = r.DaoWrapper
 
-	if err := PubSubSocket.HandleRequest(c.Writer, c.Request, properties); err != nil {
+	if err := PubSubInstance.HandleRequest(c.Writer, c.Request, properties); err != nil {
 		log.WithError(err).Warn("Something went wrong while handling PubSub-Socket request")
 	}
 }

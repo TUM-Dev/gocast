@@ -34,6 +34,21 @@ func New() *PubSub {
 type handlerFunc func(c *Client)
 type handlerDataFunc func(c *Client, data []byte)
 
+func (p *PubSub) RegisterPubSubChannel(channelName string, handlers MessageHandlers) {
+	p.channels.Register(channelName, handlers)
+}
+
+func (p *PubSub) HandleRequest(writer http.ResponseWriter, request *http.Request, properties map[string]interface{}) error {
+	return p.melody.HandleRequestWithKeys(writer, request, properties)
+}
+
+func (p *PubSub) IsSubscribed(channelPath string, clientId string) bool {
+	if found, channel, _ := p.channels.Get(channelPath); found {
+		return channel.IsSubscribed(channelPath, clientId)
+	}
+	return false
+}
+
 func (p *PubSub) mapEventToClient(handler handlerFunc) func(*melody.Session) {
 	return func(s *melody.Session) {
 		id, _ := s.Get("id")
@@ -50,19 +65,13 @@ func (p *PubSub) mapDataEventToClient(handler handlerDataFunc) func(*melody.Sess
 	}
 }
 
-func (p *PubSub) RegisterPubSubChannel(channelName string, handlers MessageHandlers) {
-	p.channels.Register(channelName, handlers)
-}
-
 func (p *PubSub) init() {
 	p.melody = melody.New()
+	p.clients.init()
+	p.channels.init()
 	p.melody.HandleConnect(p.connectHandler)
 	p.melody.HandleDisconnect(p.mapEventToClient(p.disconnectHandler))
 	p.melody.HandleMessage(p.mapDataEventToClient(p.messageHandler))
-}
-
-func (p *PubSub) HandleRequest(writer http.ResponseWriter, request *http.Request, properties map[string]interface{}) error {
-	return p.melody.HandleRequestWithKeys(writer, request, properties)
 }
 
 func (p *PubSub) connectHandler(s *melody.Session) {
