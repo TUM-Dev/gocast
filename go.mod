@@ -6,7 +6,7 @@ require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20220404002235-e6c4212c5f63
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
 	github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769
-	github.com/antchfx/xmlquery v1.3.11
+	github.com/antchfx/xmlquery v1.3.12
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/gabstv/melody v1.0.2
 	github.com/getsentry/sentry-go v0.13.0
