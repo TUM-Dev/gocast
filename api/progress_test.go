@@ -6,11 +6,16 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
+	"github.com/matthiasreumann/gomino"
 	"net/http"
 	"testing"
 )
 
+func ProgressRouterWrapper(r *gin.Engine) {
+	configProgressRouter(r, dao.DaoWrapper{})
+}
 func TestProgressReport(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
@@ -22,36 +27,33 @@ func TestProgressReport(t *testing.T) {
 			Progress: 0,
 		}
 
-		testCases := testutils.TestCases{
+		gomino.TestCases{
 			"invalid body": {
-				Method:       http.MethodPost,
-				Url:          url,
-				Body:         nil,
+				Router:       ProgressRouterWrapper,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"no context": {
-				Method:       http.MethodPost,
-				Url:          url,
+				Router:       ProgressRouterWrapper,
 				Body:         req,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"not logged in": {
-				Method:         http.MethodPost,
-				Url:            url,
-				Body:           req,
-				TumLiveContext: &testutils.TUMLiveContextUserNil,
-				ExpectedCode:   http.StatusForbidden,
+				Router:       ProgressRouterWrapper,
+				Body:         req,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextUserNil)),
+				ExpectedCode: http.StatusForbidden,
 			},
 			"success": {
-				Method:         http.MethodPost,
-				Url:            url,
-				Body:           req,
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				ExpectedCode:   http.StatusOK,
-			},
-		}
-
-		testCases.Run(t, configProgressRouter)
+				Router:       ProgressRouterWrapper,
+				Body:         req,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
+				ExpectedCode: http.StatusOK,
+			}}.
+			Method(http.MethodPost).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 }
 
@@ -66,61 +68,62 @@ func TestWatched(t *testing.T) {
 			Watched:  true,
 		}
 
-		testutils.TestCases{
+		gomino.TestCases{
 			"invalid body": {
-				Method:       http.MethodPost,
-				Url:          url,
-				Body:         nil,
+				Router:       ProgressRouterWrapper,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"no context": {
-				Method:         http.MethodPost,
-				Url:            url,
-				Body:           req,
-				TumLiveContext: nil,
-				ExpectedCode:   http.StatusBadRequest,
+				Router:       ProgressRouterWrapper,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
+				Body:         req,
+				ExpectedCode: http.StatusBadRequest,
 			},
 			"not logged in": {
-				Method:         http.MethodPost,
-				Url:            url,
-				Body:           req,
-				TumLiveContext: &testutils.TUMLiveContextUserNil,
-				ExpectedCode:   http.StatusForbidden,
+				Router:       ProgressRouterWrapper,
+				Body:         req,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextUserNil)),
+				ExpectedCode: http.StatusForbidden,
 			},
 			"can not save progress": {
-				Method:         http.MethodPost,
-				Url:            url,
-				Body:           req,
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				DaoWrapper: dao.DaoWrapper{
-					ProgressDao: func() dao.ProgressDao {
-						progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
-						progressMock.
-							EXPECT().
-							SaveWatchedState(gomock.Any()).
-							Return(errors.New(""))
-						return progressMock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						ProgressDao: func() dao.ProgressDao {
+							progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
+							progressMock.
+								EXPECT().
+								SaveWatchedState(gomock.Any()).
+								Return(errors.New(""))
+							return progressMock
+						}(),
+					}
+					configProgressRouter(r, wrapper)
 				},
+				Body:         req,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
-				Method:         http.MethodPost,
-				Url:            url,
-				Body:           req,
-				TumLiveContext: &testutils.TUMLiveContextStudent,
-				DaoWrapper: dao.DaoWrapper{
-					ProgressDao: func() dao.ProgressDao {
-						progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
-						progressMock.
-							EXPECT().
-							SaveWatchedState(gomock.Any()).
-							Return(nil)
-						return progressMock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						ProgressDao: func() dao.ProgressDao {
+							progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
+							progressMock.
+								EXPECT().
+								SaveWatchedState(gomock.Any()).
+								Return(nil)
+							return progressMock
+						}(),
+					}
+					configProgressRouter(r, wrapper)
 				},
+				Body:         req,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode: http.StatusOK,
-			},
-		}.Run(t, configProgressRouter)
+			}}.
+			Method(http.MethodPost).
+			Url(url).
+			Run(t, testutils.Equal)
 	})
 }
