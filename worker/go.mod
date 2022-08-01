@@ -11,7 +11,7 @@ require (
 	github.com/joschahenningsen/thumbgen v0.0.0-20220618164424-9fcc2beb0084
 	github.com/otiai10/gosseract/v2 v2.3.1
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/shirou/gopsutil/v3 v3.22.6
+	github.com/shirou/gopsutil/v3 v3.22.7
 	github.com/sirupsen/logrus v1.8.1
 	github.com/tidwall/gjson v1.14.1
 	github.com/u2takey/ffmpeg-go v0.4.1
