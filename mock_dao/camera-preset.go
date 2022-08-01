@@ -5,6 +5,7 @@
 package mock_dao
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,16 +36,16 @@ func (m *MockCameraPresetDao) EXPECT() *MockCameraPresetDaoMockRecorder {
 }
 
 // GetDefaultCameraPreset mocks base method.
-func (m *MockCameraPresetDao) GetDefaultCameraPreset(lectureHallID uint) (model.CameraPreset, error) {
+func (m *MockCameraPresetDao) GetDefaultCameraPreset(ctx context.Context, lectureHallID uint) (model.CameraPreset, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDefaultCameraPreset", lectureHallID)
+	ret := m.ctrl.Call(m, "GetDefaultCameraPreset", ctx, lectureHallID)
 	ret0, _ := ret[0].(model.CameraPreset)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetDefaultCameraPreset indicates an expected call of GetDefaultCameraPreset.
-func (mr *MockCameraPresetDaoMockRecorder) GetDefaultCameraPreset(lectureHallID interface{}) *gomock.Call {
+func (mr *MockCameraPresetDaoMockRecorder) GetDefaultCameraPreset(ctx, lectureHallID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDefaultCameraPreset", reflect.TypeOf((*MockCameraPresetDao)(nil).GetDefaultCameraPreset), lectureHallID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDefaultCameraPreset", reflect.TypeOf((*MockCameraPresetDao)(nil).GetDefaultCameraPreset), ctx, lectureHallID)
 }

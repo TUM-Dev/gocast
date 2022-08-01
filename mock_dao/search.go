@@ -5,6 +5,7 @@
 package mock_dao
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,16 +36,16 @@ func (m *MockSearchDao) EXPECT() *MockSearchDaoMockRecorder {
 }
 
 // Search mocks base method.
-func (m *MockSearchDao) Search(q string, courseId uint) ([]model.Stream, error) {
+func (m *MockSearchDao) Search(ctx context.Context, q string, courseId uint) ([]model.Stream, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Search", q, courseId)
+	ret := m.ctrl.Call(m, "Search", ctx, q, courseId)
 	ret0, _ := ret[0].([]model.Stream)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Search indicates an expected call of Search.
-func (mr *MockSearchDaoMockRecorder) Search(q, courseId interface{}) *gomock.Call {
+func (mr *MockSearchDaoMockRecorder) Search(ctx, q, courseId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearchDao)(nil).Search), q, courseId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearchDao)(nil).Search), ctx, q, courseId)
 }

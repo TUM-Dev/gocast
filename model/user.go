@@ -1,7 +1,6 @@
 package model
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/subtle"
 	"database/sql"
@@ -175,7 +174,7 @@ func (u *User) IsEligibleToWatchCourse(course Course) bool {
 	return u.IsAdminOfCourse(course)
 }
 
-func (u *User) CoursesForSemester(year int, term string, context context.Context) []Course {
+func (u *User) CoursesForSemester(year int, term string) []Course {
 	var cMap = make(map[uint]Course)
 	for _, c := range u.Courses {
 		if c.Year == year && c.TeachingTerm == term {

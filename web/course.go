@@ -30,7 +30,7 @@ func (r mainRoutes) editCourseByTokenPage(c *gin.Context) {
 	}
 
 	indexData := NewIndexDataWithContext(c)
-	course, err := r.CoursesDao.GetCourseByToken(c.Request.Form.Get("token"))
+	course, err := r.CoursesDao.GetCourseByToken(c, c.Request.Form.Get("token"))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Course not found"})
 		return
@@ -41,14 +41,14 @@ func (r mainRoutes) editCourseByTokenPage(c *gin.Context) {
 		IndexData: indexData,
 	}
 
-	err = templateExecutor.ExecuteTemplate(c.Writer, "edit-course-by-token.gohtml", d)
+	err = templateExecutor.ExecuteTemplate(c, c.Writer, "edit-course-by-token.gohtml", d)
 	if err != nil {
 		log.Println(err)
 	}
 }
 
 func (r mainRoutes) HighlightPage(c *gin.Context) {
-	course, err := r.CoursesDao.GetCourseByShortLink(c.Param("shortLink"))
+	course, err := r.CoursesDao.GetCourseByShortLink(c, c.Param("shortLink"))
 	if err != nil {
 		tools.RenderErrorPage(c, http.StatusNotFound, tools.PageNotFoundErrMsg)
 		return
@@ -85,7 +85,7 @@ func (r mainRoutes) HighlightPage(c *gin.Context) {
 		Version:         "",
 		IsHighlightPage: true,
 	}
-	if err = templateExecutor.ExecuteTemplate(c.Writer, "watch.gohtml", d2); err != nil {
+	if err = templateExecutor.ExecuteTemplate(c, c.Writer, "watch.gohtml", d2); err != nil {
 		log.Printf("%v", err)
 		return
 	}
@@ -106,15 +106,14 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 	// When a user is not logged-in, we don't need the progress data for watch page since
 	// it is only saved for logged-in users.
 	if tumLiveContext.User == nil {
-		err := templateExecutor.ExecuteTemplate(c.Writer, "course-overview.gohtml",
-			CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course})
+		err := templateExecutor.ExecuteTemplate(c, c.Writer, "course-overview.gohtml", CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course})
 		if err != nil {
 			sentrygin.GetHubFromContext(c).CaptureException(err)
 		}
 		return
 	}
 
-	streamsWithWatchState, err := r.StreamsDao.GetStreamsWithWatchState((*tumLiveContext.Course).ID, (*tumLiveContext.User).ID)
+	streamsWithWatchState, err := r.StreamsDao.GetStreamsWithWatchState(c, (*tumLiveContext.Course).ID, (*tumLiveContext.User).ID)
 	if err != nil {
 		sentry.CaptureException(err)
 		log.WithError(err).Error("loading streamsWithWatchState and progresses for a given course and user failed")
@@ -146,8 +145,7 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 		sentry.CaptureException(err)
 		log.WithError(err).Error("marshalling watched infos for client failed")
 	}
-	err = templateExecutor.ExecuteTemplate(c.Writer, "course-overview.gohtml",
-		CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course, WatchedData: string(encoded)})
+	err = templateExecutor.ExecuteTemplate(c, c.Writer, "course-overview.gohtml", CoursePageData{IndexData: indexData, Course: *tumLiveContext.Course, WatchedData: string(encoded)})
 	if err != nil {
 		sentrygin.GetHubFromContext(c).CaptureException(err)
 	}

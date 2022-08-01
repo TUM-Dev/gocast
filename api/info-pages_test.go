@@ -64,7 +64,7 @@ func TestInfoPagesCRUD(t *testing.T) {
 							infoPageMock := mock_dao.NewMockInfoPageDao(gomock.NewController(t))
 							infoPageMock.
 								EXPECT().
-								Update(testutils.InfoPage.ID, &model.InfoPage{
+								Update(gomock.Any(), testutils.InfoPage.ID, &model.InfoPage{
 									Name:       req.Name,
 									RawContent: req.RawContent,
 									Type:       req.Type,
@@ -87,7 +87,7 @@ func TestInfoPagesCRUD(t *testing.T) {
 							infoPageMock := mock_dao.NewMockInfoPageDao(gomock.NewController(t))
 							infoPageMock.
 								EXPECT().
-								Update(testutils.InfoPage.ID, &model.InfoPage{
+								Update(gomock.Any(), testutils.InfoPage.ID, &model.InfoPage{
 									Name:       req.Name,
 									RawContent: req.RawContent,
 									Type:       req.Type,

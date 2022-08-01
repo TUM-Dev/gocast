@@ -91,7 +91,7 @@ func (r streamRoutes) getThumbs(c *gin.Context) {
 		})
 		return
 	}
-	file, err := r.GetFileById(c.Param("fid"))
+	file, err := r.GetFileById(c, c.Param("fid"))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,
@@ -137,7 +137,7 @@ func (r streamRoutes) liveStreams(c *gin.Context) {
 		}
 		lectureHall := "Selfstream"
 		if s.LectureHallID != 0 {
-			l, err := r.LectureHallsDao.GetLectureHallByID(s.LectureHallID)
+			l, err := r.LectureHallsDao.GetLectureHallByID(c, s.LectureHallID)
 			if err != nil {
 				log.Error(err)
 			} else {
@@ -169,7 +169,7 @@ func (r streamRoutes) pauseStream(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	stream := tumLiveContext.Stream
-	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
+	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(c, stream.LectureHallID)
 	if err != nil {
 		log.WithError(err).Error("request to pause stream without lecture hall")
 		_ = c.Error(tools.RequestError{
@@ -197,7 +197,7 @@ func (r streamRoutes) pauseStream(c *gin.Context) {
 		log.WithError(err).Error("Can't mute/unmute")
 		return
 	}
-	err = r.StreamsDao.SavePauseState(stream.ID, pause)
+	err = r.StreamsDao.SavePauseState(c, stream.ID, pause)
 	if err != nil {
 		log.WithError(err).Error("Pause: Can't save stream")
 	} else {
@@ -230,7 +230,7 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 	}
 
 	// Get lecture hall of the stream that has issues.
-	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
+	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(c, stream.LectureHallID)
 	if err != nil {
 		sentry.CaptureException(err)
 		_ = c.Error(tools.RequestError{
@@ -312,7 +312,7 @@ func (r streamRoutes) getStream(c *gin.Context) {
 
 func (r streamRoutes) getVideoSections(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-	sections, err := r.VideoSectionDao.GetByStreamId(tumLiveContext.Stream.ID)
+	sections, err := r.VideoSectionDao.GetByStreamId(c, tumLiveContext.Stream.ID)
 	if err != nil {
 		log.WithError(err).Error("Can't get video sections")
 	}
@@ -347,7 +347,7 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 		return
 	}
 
-	err := r.VideoSectionDao.Create(sections)
+	err := r.VideoSectionDao.Create(c, sections)
 	if err != nil {
 		log.WithError(err).Error("failed to create video sections")
 		_ = c.Error(tools.RequestError{
@@ -358,7 +358,7 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 		return
 	}
 
-	sections, err = r.VideoSectionDao.GetByStreamId(context.Stream.ID)
+	sections, err = r.VideoSectionDao.GetByStreamId(c, context.Stream.ID)
 	if err != nil {
 		log.WithError(err).Error("failed to get video sections")
 		_ = c.Error(tools.RequestError{
@@ -397,7 +397,7 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 		return
 	}
 
-	old, err := r.VideoSectionDao.Get(uint(id))
+	old, err := r.VideoSectionDao.Get(c, uint(id))
 	if err != nil {
 		log.WithError(err).Error("invalid video-section id")
 		_ = c.Error(tools.RequestError{
@@ -408,7 +408,7 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 		return
 	}
 
-	file, err := r.FileDao.GetFileById(fmt.Sprintf("%d", old.FileID))
+	file, err := r.FileDao.GetFileById(c, fmt.Sprintf("%d", old.FileID))
 	if err != nil {
 		log.WithError(err).Error("can not find file")
 		_ = c.Error(tools.RequestError{
@@ -419,7 +419,7 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 		return
 	}
 
-	err = r.VideoSectionDao.Delete(uint(id))
+	err = r.VideoSectionDao.Delete(c, uint(id))
 	if err != nil {
 		log.WithError(err).Error("can not delete video-section")
 		_ = c.Error(tools.RequestError{
@@ -516,7 +516,7 @@ func (r streamRoutes) newAttachment(c *gin.Context) {
 	}
 
 	file := model.File{StreamID: stream.ID, Path: path, Filename: filename, Type: model.FILETYPE_ATTACHMENT}
-	if err := r.FileDao.NewFile(&file); err != nil {
+	if err := r.FileDao.NewFile(c, &file); err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not save file in database",
@@ -529,7 +529,7 @@ func (r streamRoutes) newAttachment(c *gin.Context) {
 }
 
 func (r streamRoutes) deleteAttachment(c *gin.Context) {
-	toDelete, err := r.FileDao.GetFileById(c.Param("fid"))
+	toDelete, err := r.FileDao.GetFileById(c, c.Param("fid"))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
@@ -550,7 +550,7 @@ func (r streamRoutes) deleteAttachment(c *gin.Context) {
 			return
 		}
 	}
-	err = r.FileDao.DeleteFile(toDelete.ID)
+	err = r.FileDao.DeleteFile(c, toDelete.ID)
 	if err != nil {
 		log.WithError(err).Error("can not delete file from database")
 		_ = c.Error(tools.RequestError{
@@ -577,7 +577,7 @@ func (r streamRoutes) updateStreamVisibility(c *gin.Context) {
 		return
 	}
 
-	err = r.AuditDao.Create(&model.Audit{
+	err = r.AuditDao.Create(c, &model.Audit{
 		User:    ctx.User,
 		Message: fmt.Sprintf("%d: (Visibility: %v)", ctx.Stream.ID, req.Private), // e.g. "eidi:'Einführung in die Informatik' (2020, S)"
 		Type:    model.AuditStreamEdit,
@@ -586,7 +586,7 @@ func (r streamRoutes) updateStreamVisibility(c *gin.Context) {
 		log.Error("Create Audit:", err)
 	}
 
-	err = r.DaoWrapper.StreamsDao.ToggleVisibility(ctx.Stream.ID, req.Private)
+	err = r.DaoWrapper.StreamsDao.ToggleVisibility(c, ctx.Stream.ID, req.Private)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

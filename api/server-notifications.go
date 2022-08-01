@@ -39,7 +39,7 @@ func (r serverNotificationRoutes) updateServerNotification(c *gin.Context) {
 		Start:   req.From,
 		Expires: req.Expires,
 	}
-	err := r.ServerNotificationDao.UpdateServerNotification(notification, req.Id)
+	err := r.ServerNotificationDao.UpdateServerNotification(c, notification, req.Id)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -68,7 +68,7 @@ func (r serverNotificationRoutes) createServerNotification(c *gin.Context) {
 		Start:   req.From,
 		Expires: req.Expires,
 	}
-	err := r.ServerNotificationDao.CreateServerNotification(notification)
+	err := r.ServerNotificationDao.CreateServerNotification(c, notification)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

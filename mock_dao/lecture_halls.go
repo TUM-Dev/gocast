@@ -5,6 +5,7 @@
 package mock_dao
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -36,155 +37,155 @@ func (m *MockLectureHallsDao) EXPECT() *MockLectureHallsDaoMockRecorder {
 }
 
 // CreateLectureHall mocks base method.
-func (m *MockLectureHallsDao) CreateLectureHall(lectureHall model.LectureHall) {
+func (m *MockLectureHallsDao) CreateLectureHall(ctx context.Context, lectureHall model.LectureHall) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "CreateLectureHall", lectureHall)
+	m.ctrl.Call(m, "CreateLectureHall", ctx, lectureHall)
 }
 
 // CreateLectureHall indicates an expected call of CreateLectureHall.
-func (mr *MockLectureHallsDaoMockRecorder) CreateLectureHall(lectureHall interface{}) *gomock.Call {
+func (mr *MockLectureHallsDaoMockRecorder) CreateLectureHall(ctx, lectureHall interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateLectureHall", reflect.TypeOf((*MockLectureHallsDao)(nil).CreateLectureHall), lectureHall)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateLectureHall", reflect.TypeOf((*MockLectureHallsDao)(nil).CreateLectureHall), ctx, lectureHall)
 }
 
 // DeleteLectureHall mocks base method.
-func (m *MockLectureHallsDao) DeleteLectureHall(id uint) error {
+func (m *MockLectureHallsDao) DeleteLectureHall(ctx context.Context, id uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteLectureHall", id)
+	ret := m.ctrl.Call(m, "DeleteLectureHall", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteLectureHall indicates an expected call of DeleteLectureHall.
-func (mr *MockLectureHallsDaoMockRecorder) DeleteLectureHall(id interface{}) *gomock.Call {
+func (mr *MockLectureHallsDaoMockRecorder) DeleteLectureHall(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteLectureHall", reflect.TypeOf((*MockLectureHallsDao)(nil).DeleteLectureHall), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteLectureHall", reflect.TypeOf((*MockLectureHallsDao)(nil).DeleteLectureHall), ctx, id)
 }
 
 // FindPreset mocks base method.
-func (m *MockLectureHallsDao) FindPreset(lectureHallID, presetID string) (model.CameraPreset, error) {
+func (m *MockLectureHallsDao) FindPreset(ctx context.Context, lectureHallID, presetID string) (model.CameraPreset, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindPreset", lectureHallID, presetID)
+	ret := m.ctrl.Call(m, "FindPreset", ctx, lectureHallID, presetID)
 	ret0, _ := ret[0].(model.CameraPreset)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FindPreset indicates an expected call of FindPreset.
-func (mr *MockLectureHallsDaoMockRecorder) FindPreset(lectureHallID, presetID interface{}) *gomock.Call {
+func (mr *MockLectureHallsDaoMockRecorder) FindPreset(ctx, lectureHallID, presetID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindPreset", reflect.TypeOf((*MockLectureHallsDao)(nil).FindPreset), lectureHallID, presetID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindPreset", reflect.TypeOf((*MockLectureHallsDao)(nil).FindPreset), ctx, lectureHallID, presetID)
 }
 
 // GetAllLectureHalls mocks base method.
-func (m *MockLectureHallsDao) GetAllLectureHalls() []model.LectureHall {
+func (m *MockLectureHallsDao) GetAllLectureHalls(ctx context.Context) []model.LectureHall {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllLectureHalls")
+	ret := m.ctrl.Call(m, "GetAllLectureHalls", ctx)
 	ret0, _ := ret[0].([]model.LectureHall)
 	return ret0
 }
 
 // GetAllLectureHalls indicates an expected call of GetAllLectureHalls.
-func (mr *MockLectureHallsDaoMockRecorder) GetAllLectureHalls() *gomock.Call {
+func (mr *MockLectureHallsDaoMockRecorder) GetAllLectureHalls(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllLectureHalls", reflect.TypeOf((*MockLectureHallsDao)(nil).GetAllLectureHalls))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllLectureHalls", reflect.TypeOf((*MockLectureHallsDao)(nil).GetAllLectureHalls), ctx)
 }
 
 // GetLectureHallByID mocks base method.
-func (m *MockLectureHallsDao) GetLectureHallByID(id uint) (model.LectureHall, error) {
+func (m *MockLectureHallsDao) GetLectureHallByID(ctx context.Context, id uint) (model.LectureHall, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLectureHallByID", id)
+	ret := m.ctrl.Call(m, "GetLectureHallByID", ctx, id)
 	ret0, _ := ret[0].(model.LectureHall)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetLectureHallByID indicates an expected call of GetLectureHallByID.
-func (mr *MockLectureHallsDaoMockRecorder) GetLectureHallByID(id interface{}) *gomock.Call {
+func (mr *MockLectureHallsDaoMockRecorder) GetLectureHallByID(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLectureHallByID", reflect.TypeOf((*MockLectureHallsDao)(nil).GetLectureHallByID), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLectureHallByID", reflect.TypeOf((*MockLectureHallsDao)(nil).GetLectureHallByID), ctx, id)
 }
 
 // GetLectureHallByPartialName mocks base method.
-func (m *MockLectureHallsDao) GetLectureHallByPartialName(name string) (model.LectureHall, error) {
+func (m *MockLectureHallsDao) GetLectureHallByPartialName(ctx context.Context, name string) (model.LectureHall, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLectureHallByPartialName", name)
+	ret := m.ctrl.Call(m, "GetLectureHallByPartialName", ctx, name)
 	ret0, _ := ret[0].(model.LectureHall)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetLectureHallByPartialName indicates an expected call of GetLectureHallByPartialName.
-func (mr *MockLectureHallsDaoMockRecorder) GetLectureHallByPartialName(name interface{}) *gomock.Call {
+func (mr *MockLectureHallsDaoMockRecorder) GetLectureHallByPartialName(ctx, name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLectureHallByPartialName", reflect.TypeOf((*MockLectureHallsDao)(nil).GetLectureHallByPartialName), name)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLectureHallByPartialName", reflect.TypeOf((*MockLectureHallsDao)(nil).GetLectureHallByPartialName), ctx, name)
 }
 
 // GetStreamsForLectureHallIcal mocks base method.
-func (m *MockLectureHallsDao) GetStreamsForLectureHallIcal(userId uint) ([]dao.CalendarResult, error) {
+func (m *MockLectureHallsDao) GetStreamsForLectureHallIcal(ctx context.Context, userId uint) ([]dao.CalendarResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetStreamsForLectureHallIcal", userId)
+	ret := m.ctrl.Call(m, "GetStreamsForLectureHallIcal", ctx, userId)
 	ret0, _ := ret[0].([]dao.CalendarResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetStreamsForLectureHallIcal indicates an expected call of GetStreamsForLectureHallIcal.
-func (mr *MockLectureHallsDaoMockRecorder) GetStreamsForLectureHallIcal(userId interface{}) *gomock.Call {
+func (mr *MockLectureHallsDaoMockRecorder) GetStreamsForLectureHallIcal(ctx, userId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStreamsForLectureHallIcal", reflect.TypeOf((*MockLectureHallsDao)(nil).GetStreamsForLectureHallIcal), userId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStreamsForLectureHallIcal", reflect.TypeOf((*MockLectureHallsDao)(nil).GetStreamsForLectureHallIcal), ctx, userId)
 }
 
 // SaveLectureHall mocks base method.
-func (m *MockLectureHallsDao) SaveLectureHall(lectureHall model.LectureHall) error {
+func (m *MockLectureHallsDao) SaveLectureHall(ctx context.Context, lectureHall model.LectureHall) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveLectureHall", lectureHall)
+	ret := m.ctrl.Call(m, "SaveLectureHall", ctx, lectureHall)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SaveLectureHall indicates an expected call of SaveLectureHall.
-func (mr *MockLectureHallsDaoMockRecorder) SaveLectureHall(lectureHall interface{}) *gomock.Call {
+func (mr *MockLectureHallsDaoMockRecorder) SaveLectureHall(ctx, lectureHall interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveLectureHall", reflect.TypeOf((*MockLectureHallsDao)(nil).SaveLectureHall), lectureHall)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveLectureHall", reflect.TypeOf((*MockLectureHallsDao)(nil).SaveLectureHall), ctx, lectureHall)
 }
 
 // SaveLectureHallFullAssoc mocks base method.
-func (m *MockLectureHallsDao) SaveLectureHallFullAssoc(lectureHall model.LectureHall) {
+func (m *MockLectureHallsDao) SaveLectureHallFullAssoc(ctx context.Context, lectureHall model.LectureHall) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SaveLectureHallFullAssoc", lectureHall)
+	m.ctrl.Call(m, "SaveLectureHallFullAssoc", ctx, lectureHall)
 }
 
 // SaveLectureHallFullAssoc indicates an expected call of SaveLectureHallFullAssoc.
-func (mr *MockLectureHallsDaoMockRecorder) SaveLectureHallFullAssoc(lectureHall interface{}) *gomock.Call {
+func (mr *MockLectureHallsDaoMockRecorder) SaveLectureHallFullAssoc(ctx, lectureHall interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveLectureHallFullAssoc", reflect.TypeOf((*MockLectureHallsDao)(nil).SaveLectureHallFullAssoc), lectureHall)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveLectureHallFullAssoc", reflect.TypeOf((*MockLectureHallsDao)(nil).SaveLectureHallFullAssoc), ctx, lectureHall)
 }
 
 // SavePreset mocks base method.
-func (m *MockLectureHallsDao) SavePreset(preset model.CameraPreset) error {
+func (m *MockLectureHallsDao) SavePreset(ctx context.Context, preset model.CameraPreset) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SavePreset", preset)
+	ret := m.ctrl.Call(m, "SavePreset", ctx, preset)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SavePreset indicates an expected call of SavePreset.
-func (mr *MockLectureHallsDaoMockRecorder) SavePreset(preset interface{}) *gomock.Call {
+func (mr *MockLectureHallsDaoMockRecorder) SavePreset(ctx, preset interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePreset", reflect.TypeOf((*MockLectureHallsDao)(nil).SavePreset), preset)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePreset", reflect.TypeOf((*MockLectureHallsDao)(nil).SavePreset), ctx, preset)
 }
 
 // UnsetDefaults mocks base method.
-func (m *MockLectureHallsDao) UnsetDefaults(lectureHallID string) error {
+func (m *MockLectureHallsDao) UnsetDefaults(ctx context.Context, lectureHallID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UnsetDefaults", lectureHallID)
+	ret := m.ctrl.Call(m, "UnsetDefaults", ctx, lectureHallID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UnsetDefaults indicates an expected call of UnsetDefaults.
-func (mr *MockLectureHallsDaoMockRecorder) UnsetDefaults(lectureHallID interface{}) *gomock.Call {
+func (mr *MockLectureHallsDaoMockRecorder) UnsetDefaults(ctx, lectureHallID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnsetDefaults", reflect.TypeOf((*MockLectureHallsDao)(nil).UnsetDefaults), lectureHallID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnsetDefaults", reflect.TypeOf((*MockLectureHallsDao)(nil).UnsetDefaults), ctx, lectureHallID)
 }

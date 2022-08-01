@@ -88,7 +88,7 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 
 		var streams []model.Stream
 		for _, event := range courseReq.Events {
-			lectureHall, err := r.LectureHallsDao.GetLectureHallByPartialName(event.RoomName)
+			lectureHall, err := r.LectureHallsDao.GetLectureHallByPartialName(c, event.RoomName)
 			if err != nil {
 				log.WithError(err).Error("No room found for request")
 				continue
@@ -122,7 +122,7 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 			time.Sleep(time.Millisecond * 200) // wait a bit, otherwise ldap locks us out
 			user.Name = name
 			user.Role = model.LecturerType
-			err = r.UsersDao.UpsertUser(user)
+			err = r.UsersDao.UpsertUser(c, user)
 			if err != nil {
 				log.Error(err)
 			} else {
@@ -130,7 +130,7 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 			}
 		}
 		for _, user := range users {
-			if err := r.CoursesDao.AddAdminToCourse(user.ID, course.ID); err != nil {
+			if err := r.CoursesDao.AddAdminToCourse(c, user.ID, course.ID); err != nil {
 				log.WithError(err).Error("can't add admin to course")
 			}
 			err := notifyCourseCreated(MailTmpl{

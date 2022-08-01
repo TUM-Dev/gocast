@@ -87,7 +87,7 @@ func GetEventsForCourses(courses []model.Course, daoWrapper dao.DaoWrapper) {
 		for i := range deleted {
 			ids[i] = deleted[i].SingleEventID
 		}
-		daoWrapper.StreamsDao.DeleteStreamsWithTumID(ids)
+		daoWrapper.StreamsDao.DeleteStreamsWithTumID(context.Background(), ids)
 		for _, event := range events {
 			stream, err := daoWrapper.StreamsDao.GetStreamByTumOnlineID(context.Background(), event.SingleEventID)
 			if err != nil { // Lecture does not exist yet

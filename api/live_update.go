@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/RBG-TUM/commons"
@@ -111,13 +112,13 @@ var liveUpdateConnectionHandler = func(s *melody.Session) {
 
 	if tumLiveContext.User != nil {
 		userId = tumLiveContext.User.ID
-		if userCourses, err = daoWrapper.(dao.DaoWrapper).CoursesDao.GetPublicAndLoggedInCourses(year, term); err != nil {
+		if userCourses, err = daoWrapper.(dao.DaoWrapper).CoursesDao.GetPublicAndLoggedInCourses(context.Background(), year, term); err != nil {
 			log.WithError(err).Error("could not fetch public and logged in courses")
 			return
 		}
 		userCourses = commons.Unique(userCourses, func(c model.Course) uint { return c.ID })
 	} else {
-		if userCourses, err = daoWrapper.(dao.DaoWrapper).CoursesDao.GetPublicCourses(year, term); err != nil {
+		if userCourses, err = daoWrapper.(dao.DaoWrapper).CoursesDao.GetPublicCourses(context.Background(), year, term); err != nil {
 			log.WithError(err).Error("could not fetch public courses")
 			return
 		}

@@ -5,6 +5,7 @@
 package mock_dao
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,73 +36,73 @@ func (m *MockServerNotificationDao) EXPECT() *MockServerNotificationDaoMockRecor
 }
 
 // CreateServerNotification mocks base method.
-func (m *MockServerNotificationDao) CreateServerNotification(notification model.ServerNotification) error {
+func (m *MockServerNotificationDao) CreateServerNotification(ctx context.Context, notification model.ServerNotification) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateServerNotification", notification)
+	ret := m.ctrl.Call(m, "CreateServerNotification", ctx, notification)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CreateServerNotification indicates an expected call of CreateServerNotification.
-func (mr *MockServerNotificationDaoMockRecorder) CreateServerNotification(notification interface{}) *gomock.Call {
+func (mr *MockServerNotificationDaoMockRecorder) CreateServerNotification(ctx, notification interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateServerNotification", reflect.TypeOf((*MockServerNotificationDao)(nil).CreateServerNotification), notification)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateServerNotification", reflect.TypeOf((*MockServerNotificationDao)(nil).CreateServerNotification), ctx, notification)
 }
 
 // DeleteServerNotification mocks base method.
-func (m *MockServerNotificationDao) DeleteServerNotification(notificationId string) error {
+func (m *MockServerNotificationDao) DeleteServerNotification(ctx context.Context, notificationId string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteServerNotification", notificationId)
+	ret := m.ctrl.Call(m, "DeleteServerNotification", ctx, notificationId)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteServerNotification indicates an expected call of DeleteServerNotification.
-func (mr *MockServerNotificationDaoMockRecorder) DeleteServerNotification(notificationId interface{}) *gomock.Call {
+func (mr *MockServerNotificationDaoMockRecorder) DeleteServerNotification(ctx, notificationId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteServerNotification", reflect.TypeOf((*MockServerNotificationDao)(nil).DeleteServerNotification), notificationId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteServerNotification", reflect.TypeOf((*MockServerNotificationDao)(nil).DeleteServerNotification), ctx, notificationId)
 }
 
 // GetAllServerNotifications mocks base method.
-func (m *MockServerNotificationDao) GetAllServerNotifications() ([]model.ServerNotification, error) {
+func (m *MockServerNotificationDao) GetAllServerNotifications(ctx context.Context) ([]model.ServerNotification, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllServerNotifications")
+	ret := m.ctrl.Call(m, "GetAllServerNotifications", ctx)
 	ret0, _ := ret[0].([]model.ServerNotification)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllServerNotifications indicates an expected call of GetAllServerNotifications.
-func (mr *MockServerNotificationDaoMockRecorder) GetAllServerNotifications() *gomock.Call {
+func (mr *MockServerNotificationDaoMockRecorder) GetAllServerNotifications(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllServerNotifications", reflect.TypeOf((*MockServerNotificationDao)(nil).GetAllServerNotifications))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllServerNotifications", reflect.TypeOf((*MockServerNotificationDao)(nil).GetAllServerNotifications), ctx)
 }
 
 // GetCurrentServerNotifications mocks base method.
-func (m *MockServerNotificationDao) GetCurrentServerNotifications() ([]model.ServerNotification, error) {
+func (m *MockServerNotificationDao) GetCurrentServerNotifications(ctx context.Context) ([]model.ServerNotification, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCurrentServerNotifications")
+	ret := m.ctrl.Call(m, "GetCurrentServerNotifications", ctx)
 	ret0, _ := ret[0].([]model.ServerNotification)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetCurrentServerNotifications indicates an expected call of GetCurrentServerNotifications.
-func (mr *MockServerNotificationDaoMockRecorder) GetCurrentServerNotifications() *gomock.Call {
+func (mr *MockServerNotificationDaoMockRecorder) GetCurrentServerNotifications(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentServerNotifications", reflect.TypeOf((*MockServerNotificationDao)(nil).GetCurrentServerNotifications))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentServerNotifications", reflect.TypeOf((*MockServerNotificationDao)(nil).GetCurrentServerNotifications), ctx)
 }
 
 // UpdateServerNotification mocks base method.
-func (m *MockServerNotificationDao) UpdateServerNotification(notification model.ServerNotification, id string) error {
+func (m *MockServerNotificationDao) UpdateServerNotification(ctx context.Context, notification model.ServerNotification, id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateServerNotification", notification, id)
+	ret := m.ctrl.Call(m, "UpdateServerNotification", ctx, notification, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateServerNotification indicates an expected call of UpdateServerNotification.
-func (mr *MockServerNotificationDaoMockRecorder) UpdateServerNotification(notification, id interface{}) *gomock.Call {
+func (mr *MockServerNotificationDaoMockRecorder) UpdateServerNotification(ctx, notification, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateServerNotification", reflect.TypeOf((*MockServerNotificationDao)(nil).UpdateServerNotification), notification, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateServerNotification", reflect.TypeOf((*MockServerNotificationDao)(nil).UpdateServerNotification), ctx, notification, id)
 }

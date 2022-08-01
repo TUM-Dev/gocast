@@ -5,6 +5,7 @@
 package mock_dao
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,23 +36,23 @@ func (m *MockAuditDao) EXPECT() *MockAuditDaoMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockAuditDao) Create(arg0 *model.Audit) error {
+func (m *MockAuditDao) Create(ctx context.Context, audit *model.Audit) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", arg0)
+	ret := m.ctrl.Call(m, "Create", ctx, audit)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockAuditDaoMockRecorder) Create(arg0 interface{}) *gomock.Call {
+func (mr *MockAuditDaoMockRecorder) Create(ctx, audit interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockAuditDao)(nil).Create), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockAuditDao)(nil).Create), ctx, audit)
 }
 
 // Find mocks base method.
-func (m *MockAuditDao) Find(limit, offset int, types ...model.AuditType) ([]model.Audit, error) {
+func (m *MockAuditDao) Find(ctx context.Context, limit, offset int, types ...model.AuditType) ([]model.Audit, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{limit, offset}
+	varargs := []interface{}{ctx, limit, offset}
 	for _, a := range types {
 		varargs = append(varargs, a)
 	}
@@ -62,8 +63,8 @@ func (m *MockAuditDao) Find(limit, offset int, types ...model.AuditType) ([]mode
 }
 
 // Find indicates an expected call of Find.
-func (mr *MockAuditDaoMockRecorder) Find(limit, offset interface{}, types ...interface{}) *gomock.Call {
+func (mr *MockAuditDaoMockRecorder) Find(ctx, limit, offset interface{}, types ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{limit, offset}, types...)
+	varargs := append([]interface{}{ctx, limit, offset}, types...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockAuditDao)(nil).Find), varargs...)
 }

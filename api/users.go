@@ -80,7 +80,7 @@ func (r usersRoutes) updateUser(c *gin.Context) {
 		return
 	}
 	user.Role = req.Role
-	err = r.UsersDao.UpdateUser(user)
+	err = r.UsersDao.UpdateUser(c, user)
 	if err != nil {
 		log.WithError(err).Error("can not update user")
 		_ = c.Error(tools.RequestError{
@@ -103,7 +103,7 @@ func (r usersRoutes) prepareUserSearch(c *gin.Context) (users []model.User, err 
 		})
 		return nil, errors.New("query too short (minimum length is 3)")
 	}
-	users, err = r.UsersDao.SearchUser(q)
+	users, err = r.UsersDao.SearchUser(c, q)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -186,7 +186,7 @@ func (r usersRoutes) DeleteUser(c *gin.Context) {
 		return
 	}
 	// currently admins can not be deleted.
-	res, err := r.UsersDao.IsUserAdmin(context.Background(), deleteRequest.Id)
+	res, err := r.UsersDao.IsUserAdmin(c, deleteRequest.Id)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -203,7 +203,7 @@ func (r usersRoutes) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	err = r.UsersDao.DeleteUser(context.Background(), deleteRequest.Id)
+	err = r.UsersDao.DeleteUser(c, deleteRequest.Id)
 	if err != nil {
 		sentry.CaptureException(err)
 		defer sentry.Flush(time.Second * 2)
@@ -233,11 +233,11 @@ func (r usersRoutes) CreateUserForCourse(c *gin.Context) {
 	userEmail := c.PostForm("newUserEmail")
 
 	if batchUsers != "" {
-		go r.addUserBatchToCourse(batchUsers, *tumLiveContext.Course)
+		go r.addUserBatchToCourse(c, batchUsers, *tumLiveContext.Course)
 		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 		return
 	} else if userName != "" && userEmail != "" {
-		r.addSingleUserToCourse(userName, userEmail, *tumLiveContext.Course)
+		r.addSingleUserToCourse(c, userName, userEmail, *tumLiveContext.Course)
 		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 		return
 	} else {
@@ -250,20 +250,20 @@ func (r usersRoutes) CreateUserForCourse(c *gin.Context) {
 
 }
 
-func (r usersRoutes) addUserBatchToCourse(users string, course model.Course) {
+func (r usersRoutes) addUserBatchToCourse(c context.Context, users string, course model.Course) {
 	lines := strings.Split(users, "\n")
 	for _, userLine := range lines {
 		userArr := strings.Split(userLine, ",")
 		if len(userArr) != 2 {
 			continue
 		}
-		r.addSingleUserToCourse(userArr[0], strings.TrimSpace(userArr[1]), course)
+		r.addSingleUserToCourse(c, userArr[0], strings.TrimSpace(userArr[1]), course)
 		time.Sleep(time.Second * 2) // send at most one email per two seconds to prevent spam blocking.
 	}
 }
 
-func (r usersRoutes) addSingleUserToCourse(name string, email string, course model.Course) {
-	if foundUser, err := r.UsersDao.GetUserByEmail(context.Background(), email); err != nil {
+func (r usersRoutes) addSingleUserToCourse(c context.Context, name string, email string, course model.Course) {
+	if foundUser, err := r.UsersDao.GetUserByEmail(c, email); err != nil {
 		// user not in database yet. Create them & send registration link
 		createdUser := model.User{
 			Name:     name,
@@ -272,15 +272,15 @@ func (r usersRoutes) addSingleUserToCourse(name string, email string, course mod
 			Password: "",
 			Courses:  []model.Course{course},
 		}
-		if err = r.UsersDao.CreateUser(context.Background(), &createdUser); err != nil {
+		if err = r.UsersDao.CreateUser(c, &createdUser); err != nil {
 			log.Printf("%v", err)
 		} else {
-			go r.forgotPassword(email)
+			go r.forgotPassword(c, email)
 		}
 	} else {
 		// user Found, append the new course and notify via mail.
 		foundUser.Courses = append(foundUser.Courses, course)
-		err := r.UsersDao.UpdateUser(foundUser)
+		err := r.UsersDao.UpdateUser(c, foundUser)
 		if err != nil {
 			log.WithError(err).Error("Can't update user")
 			return
@@ -317,14 +317,14 @@ func (r usersRoutes) pinCourse(c *gin.Context, pin bool) {
 	}
 
 	// Find course
-	course, err := r.CoursesDao.GetCourseById(context.Background(), request.CourseID)
+	course, err := r.CoursesDao.GetCourseById(c, request.CourseID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	// Update user in database
-	err = r.UsersDao.PinCourse(*tumLiveContext.User, course, pin)
+	err = r.UsersDao.PinCourse(c, *tumLiveContext.User, course, pin)
 	if err != nil {
 		log.WithError(err).Error("Can't update user")
 		return
@@ -332,7 +332,7 @@ func (r usersRoutes) pinCourse(c *gin.Context, pin bool) {
 }
 
 func (r usersRoutes) CreateUser(c *gin.Context) {
-	usersEmpty, err := r.UsersDao.AreUsersEmpty(context.Background())
+	usersEmpty, err := r.UsersDao.AreUsersEmpty(c)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -353,9 +353,9 @@ func (r usersRoutes) CreateUser(c *gin.Context) {
 	}
 	var createdUser model.User
 	if usersEmpty {
-		createdUser, err = r.createUserHelper(request, model.AdminType)
+		createdUser, err = r.createUserHelper(c, request, model.AdminType)
 	} else {
-		createdUser, err = r.createUserHelper(request, model.LecturerType)
+		createdUser, err = r.createUserHelper(c, request, model.LecturerType)
 	}
 	if err != nil {
 		_ = c.Error(tools.RequestError{
@@ -368,7 +368,7 @@ func (r usersRoutes) CreateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, createUserResponse{Name: createdUser.Name, Email: createdUser.Email.String, Role: createdUser.Role})
 }
 
-func (r usersRoutes) createUserHelper(request createUserRequest, userType uint) (user model.User, err error) {
+func (r usersRoutes) createUserHelper(c context.Context, request createUserRequest, userType uint) (user model.User, err error) {
 	var u = model.User{
 		Name:  request.Name,
 		Email: sql.NullString{String: request.Email, Valid: true},
@@ -380,23 +380,23 @@ func (r usersRoutes) createUserHelper(request createUserRequest, userType uint) 
 			return u, errors.New("user could not be created")
 		}
 	}
-	dbErr := r.UsersDao.CreateUser(context.Background(), &u)
+	dbErr := r.UsersDao.CreateUser(c, &u)
 	if dbErr != nil {
 		return u, errors.New("user could not be created")
 	}
 	if userType != model.AdminType { //generate password set link and send out email
-		go r.forgotPassword(request.Email)
+		go r.forgotPassword(c, request.Email)
 	}
 	return u, nil
 }
 
-func (r usersRoutes) forgotPassword(email string) {
-	u, err := r.UsersDao.GetUserByEmail(context.Background(), email)
+func (r usersRoutes) forgotPassword(c context.Context, email string) {
+	u, err := r.UsersDao.GetUserByEmail(c, email)
 	if err != nil {
 		log.Println("couldn't get user by email")
 		return
 	}
-	registerLink, err := r.UsersDao.CreateRegisterLink(context.Background(), u)
+	registerLink, err := r.UsersDao.CreateRegisterLink(c, u)
 	if err != nil {
 		log.Println("couldn't create register link")
 		return
@@ -444,7 +444,7 @@ func (r usersRoutes) updatePreferredName(c *gin.Context) {
 			return
 		}
 	}
-	err = r.UsersDao.AddUserSetting(&model.UserSetting{
+	err = r.UsersDao.AddUserSetting(c, &model.UserSetting{
 		UserID: u.ID,
 		Type:   model.PreferredName,
 		Value:  request.Value,
@@ -478,7 +478,7 @@ func (r usersRoutes) updatePreferredGreeting(c *gin.Context) {
 		})
 		return
 	}
-	err = r.UsersDao.AddUserSetting(&model.UserSetting{
+	err = r.UsersDao.AddUserSetting(c, &model.UserSetting{
 		UserID: u.ID,
 		Type:   model.Greeting,
 		Value:  request.Value,
@@ -519,7 +519,7 @@ func (r usersRoutes) updatePlaybackSpeeds(c *gin.Context) {
 		return
 	}
 	settingBytes, _ := json.Marshal(req.Value)
-	err := r.DaoWrapper.UsersDao.AddUserSetting(&model.UserSetting{UserID: u.ID, Type: model.CustomPlaybackSpeeds, Value: string(settingBytes)})
+	err := r.DaoWrapper.UsersDao.AddUserSetting(c, &model.UserSetting{UserID: u.ID, Type: model.CustomPlaybackSpeeds, Value: string(settingBytes)})
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -551,7 +551,7 @@ func (r usersRoutes) updateEnableCast(c *gin.Context) {
 	}
 	enabledBytes, _ := json.Marshal(req.Value)
 
-	err = r.UsersDao.AddUserSetting(&model.UserSetting{
+	err = r.UsersDao.AddUserSetting(c, &model.UserSetting{
 		UserID: u.ID,
 		Type:   model.EnableChromecast,
 		Value:  string(enabledBytes),
@@ -584,7 +584,7 @@ func (r usersRoutes) exportPersonalData(c *gin.Context) {
 			Course string `json:"course,omitempty"`
 		}{course.Year, course.TeachingTerm, course.Name})
 	}
-	progresses, err := r.ProgressDao.GetProgressesForUser(u.ID)
+	progresses, err := r.ProgressDao.GetProgressesForUser(c, u.ID)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -600,7 +600,7 @@ func (r usersRoutes) exportPersonalData(c *gin.Context) {
 			MarkedFinished bool    `json:"marked_finished,omitempty"`
 		}{StreamID: progress.StreamID, Progress: progress.Progress, MarkedFinished: progress.Watched})
 	}
-	chats, err := r.ChatDao.GetChatsByUser(u.ID)
+	chats, err := r.ChatDao.GetChatsByUser(c, u.ID)
 	if err != nil {
 		chats = []model.Chat{}
 	}

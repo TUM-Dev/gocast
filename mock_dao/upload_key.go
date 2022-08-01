@@ -5,6 +5,7 @@
 package mock_dao
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,44 +36,44 @@ func (m *MockUploadKeyDao) EXPECT() *MockUploadKeyDaoMockRecorder {
 }
 
 // CreateUploadKey mocks base method.
-func (m *MockUploadKeyDao) CreateUploadKey(key string, stream uint) error {
+func (m *MockUploadKeyDao) CreateUploadKey(ctx context.Context, key string, stream uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateUploadKey", key, stream)
+	ret := m.ctrl.Call(m, "CreateUploadKey", ctx, key, stream)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CreateUploadKey indicates an expected call of CreateUploadKey.
-func (mr *MockUploadKeyDaoMockRecorder) CreateUploadKey(key, stream interface{}) *gomock.Call {
+func (mr *MockUploadKeyDaoMockRecorder) CreateUploadKey(ctx, key, stream interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUploadKey", reflect.TypeOf((*MockUploadKeyDao)(nil).CreateUploadKey), key, stream)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUploadKey", reflect.TypeOf((*MockUploadKeyDao)(nil).CreateUploadKey), ctx, key, stream)
 }
 
 // DeleteUploadKey mocks base method.
-func (m *MockUploadKeyDao) DeleteUploadKey(key model.UploadKey) error {
+func (m *MockUploadKeyDao) DeleteUploadKey(ctx context.Context, key model.UploadKey) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteUploadKey", key)
+	ret := m.ctrl.Call(m, "DeleteUploadKey", ctx, key)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteUploadKey indicates an expected call of DeleteUploadKey.
-func (mr *MockUploadKeyDaoMockRecorder) DeleteUploadKey(key interface{}) *gomock.Call {
+func (mr *MockUploadKeyDaoMockRecorder) DeleteUploadKey(ctx, key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUploadKey", reflect.TypeOf((*MockUploadKeyDao)(nil).DeleteUploadKey), key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUploadKey", reflect.TypeOf((*MockUploadKeyDao)(nil).DeleteUploadKey), ctx, key)
 }
 
 // GetUploadKey mocks base method.
-func (m *MockUploadKeyDao) GetUploadKey(key string) (model.UploadKey, error) {
+func (m *MockUploadKeyDao) GetUploadKey(ctx context.Context, key string) (model.UploadKey, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUploadKey", key)
+	ret := m.ctrl.Call(m, "GetUploadKey", ctx, key)
 	ret0, _ := ret[0].(model.UploadKey)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUploadKey indicates an expected call of GetUploadKey.
-func (mr *MockUploadKeyDaoMockRecorder) GetUploadKey(key interface{}) *gomock.Call {
+func (mr *MockUploadKeyDaoMockRecorder) GetUploadKey(ctx, key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUploadKey", reflect.TypeOf((*MockUploadKeyDao)(nil).GetUploadKey), key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUploadKey", reflect.TypeOf((*MockUploadKeyDao)(nil).GetUploadKey), ctx, key)
 }

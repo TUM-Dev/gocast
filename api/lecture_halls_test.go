@@ -54,7 +54,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(ctrl)
 							lectureHallMock.
 								EXPECT().
-								DeleteLectureHall(testutils.LectureHall.ID).
+								DeleteLectureHall(gomock.Any(), testutils.LectureHall.ID).
 								Return(errors.New("")).
 								AnyTimes()
 							return lectureHallMock
@@ -72,7 +72,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(ctrl)
 							lectureHallMock.
 								EXPECT().
-								CreateLectureHall(gomock.Any()).AnyTimes()
+								CreateLectureHall(gomock.Any(), gomock.Any()).AnyTimes()
 							return lectureHallMock
 						}(),
 					}
@@ -113,7 +113,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetLectureHallByID(testutils.LectureHall.ID).
+								GetLectureHallByID(gomock.Any(), testutils.LectureHall.ID).
 								Return(testutils.LectureHall, errors.New("")).
 								AnyTimes()
 							return lectureHallMock
@@ -132,12 +132,12 @@ func TestLectureHallsCRUD(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetLectureHallByID(testutils.LectureHall.ID).
+								GetLectureHallByID(gomock.Any(), testutils.LectureHall.ID).
 								Return(testutils.LectureHall, nil).
 								AnyTimes()
 							lectureHallMock.
 								EXPECT().
-								SaveLectureHall(gomock.Any()).
+								SaveLectureHall(gomock.Any(), gomock.Any()).
 								Return(errors.New("")).
 								AnyTimes()
 							return lectureHallMock
@@ -156,12 +156,12 @@ func TestLectureHallsCRUD(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetLectureHallByID(testutils.LectureHall.ID).
+								GetLectureHallByID(gomock.Any(), testutils.LectureHall.ID).
 								Return(testutils.LectureHall, nil).
 								AnyTimes()
 							lectureHallMock.
 								EXPECT().
-								SaveLectureHall(gomock.Any()).
+								SaveLectureHall(gomock.Any(), gomock.Any()).
 								Return(nil).
 								AnyTimes()
 							return lectureHallMock
@@ -277,7 +277,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								DeleteLectureHall(testutils.LectureHall.ID).
+								DeleteLectureHall(gomock.Any(), testutils.LectureHall.ID).
 								Return(errors.New("")).
 								AnyTimes()
 							return lectureHallMock
@@ -295,7 +295,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								DeleteLectureHall(testutils.LectureHall.ID).
+								DeleteLectureHall(gomock.Any(), testutils.LectureHall.ID).
 								Return(nil).
 								AnyTimes()
 							return lectureHallMock
@@ -335,7 +335,7 @@ func TestLectureHallsCRUD(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								FindPreset(fmt.Sprintf("%d", testutils.LectureHall.ID), fmt.Sprintf("%d", testutils.CameraPreset.PresetID)).
+								FindPreset(gomock.Any(), fmt.Sprintf("%d", testutils.LectureHall.ID), fmt.Sprintf("%d", testutils.CameraPreset.PresetID)).
 								Return(testutils.CameraPreset, errors.New("")).
 								AnyTimes()
 							return lectureHallMock
@@ -354,12 +354,12 @@ func TestLectureHallsCRUD(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								FindPreset(fmt.Sprintf("%d", testutils.LectureHall.ID), fmt.Sprintf("%d", testutils.CameraPreset.PresetID)).
+								FindPreset(gomock.Any(), fmt.Sprintf("%d", testutils.LectureHall.ID), fmt.Sprintf("%d", testutils.CameraPreset.PresetID)).
 								Return(testutils.CameraPreset, nil).
 								AnyTimes()
 							lectureHallMock.
 								EXPECT().
-								UnsetDefaults(gomock.Any()).
+								UnsetDefaults(gomock.Any(), gomock.Any()).
 								Return(errors.New("")).
 								AnyTimes()
 							return lectureHallMock
@@ -378,17 +378,17 @@ func TestLectureHallsCRUD(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								FindPreset(fmt.Sprintf("%d", testutils.LectureHall.ID), fmt.Sprintf("%d", testutils.CameraPreset.PresetID)).
+								FindPreset(gomock.Any(), fmt.Sprintf("%d", testutils.LectureHall.ID), fmt.Sprintf("%d", testutils.CameraPreset.PresetID)).
 								Return(testutils.CameraPreset, nil).
 								AnyTimes()
 							lectureHallMock.
 								EXPECT().
-								UnsetDefaults(gomock.Any()).
+								UnsetDefaults(gomock.Any(), gomock.Any()).
 								Return(nil).
 								AnyTimes()
 							lectureHallMock.
 								EXPECT().
-								SavePreset(gomock.Any()).
+								SavePreset(gomock.Any(), gomock.Any()).
 								Return(errors.New("")).
 								AnyTimes()
 							return lectureHallMock
@@ -409,17 +409,17 @@ func TestLectureHallsCRUD(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								FindPreset(fmt.Sprintf("%d", testutils.LectureHall.ID), fmt.Sprintf("%d", testutils.CameraPreset.PresetID)).
+								FindPreset(gomock.Any(), fmt.Sprintf("%d", testutils.LectureHall.ID), fmt.Sprintf("%d", testutils.CameraPreset.PresetID)).
 								Return(testutils.CameraPreset, nil).
 								AnyTimes()
 							lectureHallMock.
 								EXPECT().
-								UnsetDefaults(gomock.Any()).
+								UnsetDefaults(gomock.Any(), gomock.Any()).
 								Return(nil).
 								AnyTimes()
 							lectureHallMock.
 								EXPECT().
-								SavePreset(gomock.Any()).
+								SavePreset(gomock.Any(), gomock.Any()).
 								Return(nil).
 								AnyTimes()
 							return lectureHallMock
@@ -532,7 +532,7 @@ func TestCourseImport(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetLectureHallByPartialName("1").
+								GetLectureHallByPartialName(gomock.Any(), "1").
 								Return(model.LectureHall{}, nil).
 								AnyTimes()
 							return lectureHallMock
@@ -545,7 +545,7 @@ func TestCourseImport(t *testing.T) {
 								Return(errors.New("error")).AnyTimes()
 							coursesMock.
 								EXPECT().
-								AddAdminToCourse(gomock.Any(), gomock.Any()).
+								AddAdminToCourse(gomock.Any(), gomock.Any(), gomock.Any()).
 								Return(nil).AnyTimes()
 							return coursesMock
 						}(),
@@ -566,7 +566,7 @@ func TestCourseImport(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetLectureHallByPartialName("1").
+								GetLectureHallByPartialName(gomock.Any(), "1").
 								Return(model.LectureHall{}, errors.New("error")).
 								AnyTimes()
 							return lectureHallMock
@@ -579,7 +579,7 @@ func TestCourseImport(t *testing.T) {
 								Return(nil).AnyTimes()
 							coursesMock.
 								EXPECT().
-								AddAdminToCourse(gomock.Any(), gomock.Any()).
+								AddAdminToCourse(gomock.Any(), gomock.Any(), gomock.Any()).
 								Return(nil).AnyTimes()
 							return coursesMock
 						}(),
@@ -600,7 +600,7 @@ func TestCourseImport(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetLectureHallByPartialName("1").
+								GetLectureHallByPartialName(gomock.Any(), "1").
 								Return(model.LectureHall{}, nil).
 								AnyTimes()
 							return lectureHallMock
@@ -613,7 +613,7 @@ func TestCourseImport(t *testing.T) {
 								Return(nil).AnyTimes()
 							coursesMock.
 								EXPECT().
-								AddAdminToCourse(gomock.Any(), gomock.Any()).
+								AddAdminToCourse(gomock.Any(), gomock.Any(), gomock.Any()).
 								Return(errors.New("error")).AnyTimes()
 							return coursesMock
 						}(),
@@ -635,7 +635,7 @@ func TestCourseImport(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetLectureHallByPartialName("1").
+								GetLectureHallByPartialName(gomock.Any(), "1").
 								Return(model.LectureHall{}, nil).
 								AnyTimes()
 							return lectureHallMock
@@ -648,7 +648,7 @@ func TestCourseImport(t *testing.T) {
 								Return(nil).AnyTimes()
 							coursesMock.
 								EXPECT().
-								AddAdminToCourse(gomock.Any(), gomock.Any()).
+								AddAdminToCourse(gomock.Any(), gomock.Any(), gomock.Any()).
 								Return(nil).AnyTimes()
 							return coursesMock
 						}(),
@@ -722,7 +722,7 @@ func TestLectureHallIcal(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetStreamsForLectureHallIcal(gomock.Any()).
+								GetStreamsForLectureHallIcal(gomock.Any(), gomock.Any()).
 								Return(nil, errors.New("")).
 								AnyTimes()
 							return lectureHallMock
@@ -740,7 +740,7 @@ func TestLectureHallIcal(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetStreamsForLectureHallIcal(testutils.TUMLiveContextAdmin.User.ID).
+								GetStreamsForLectureHallIcal(gomock.Any(), testutils.TUMLiveContextAdmin.User.ID).
 								Return(calendarResultsAdmin, nil).
 								AnyTimes()
 							return lectureHallMock
@@ -759,7 +759,7 @@ func TestLectureHallIcal(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetStreamsForLectureHallIcal(testutils.TUMLiveContextStudent.User.ID).
+								GetStreamsForLectureHallIcal(gomock.Any(), testutils.TUMLiveContextStudent.User.ID).
 								Return(calendarResultsLoggedIn, nil).
 								AnyTimes()
 							return lectureHallMock
@@ -798,7 +798,7 @@ func TestLectureHallPresets(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(ctrl)
 							lectureHallMock.
 								EXPECT().
-								GetLectureHallByID(testutils.LectureHall.ID).
+								GetLectureHallByID(gomock.Any(), testutils.LectureHall.ID).
 								Return(testutils.EmptyLectureHall, errors.New("")).
 								AnyTimes()
 							return lectureHallMock
@@ -886,7 +886,7 @@ func TestLectureHallPresets(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								FindPreset(lectureHallId, presetId).
+								FindPreset(gomock.Any(), lectureHallId, presetId).
 								Return(model.CameraPreset{}, errors.New("")).AnyTimes()
 							return lectureHallMock
 						}(),
@@ -920,7 +920,7 @@ func TestLectureHallTakeSnapshot(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(ctrl)
 							lectureHallMock.
 								EXPECT().
-								FindPreset(lectureHallIDStr, presetIdStr).
+								FindPreset(gomock.Any(), lectureHallIDStr, presetIdStr).
 								Return(model.CameraPreset{}, errors.New("")).AnyTimes()
 							return lectureHallMock
 						}(),
@@ -938,11 +938,11 @@ func TestLectureHallTakeSnapshot(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(ctrl)
 							first := lectureHallMock.
 								EXPECT().
-								FindPreset(lectureHallIDStr, presetIdStr).
+								FindPreset(gomock.Any(), lectureHallIDStr, presetIdStr).
 								Return(testutils.CameraPreset, nil)
 							second := lectureHallMock.
 								EXPECT().
-								FindPreset(lectureHallIDStr, presetIdStr).
+								FindPreset(gomock.Any(), lectureHallIDStr, presetIdStr).
 								Return(testutils.CameraPreset, errors.New(""))
 							gomock.InOrder(first, second)
 							return lectureHallMock
@@ -961,7 +961,7 @@ func TestLectureHallTakeSnapshot(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(ctrl)
 							lectureHallMock.
 								EXPECT().
-								FindPreset(lectureHallIDStr, presetIdStr).
+								FindPreset(gomock.Any(), lectureHallIDStr, presetIdStr).
 								Return(testutils.CameraPreset, nil).
 								AnyTimes()
 							return lectureHallMock
@@ -1005,7 +1005,7 @@ func TestLectureHallSetLH(t *testing.T) {
 							streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
 							streamsMock.
 								EXPECT().
-								GetStreamsByIds(request.StreamIDs).
+								GetStreamsByIds(gomock.Any(), request.StreamIDs).
 								Return([]model.Stream{}, errors.New("")).
 								AnyTimes()
 							return streamsMock
@@ -1024,12 +1024,12 @@ func TestLectureHallSetLH(t *testing.T) {
 							streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
 							streamsMock.
 								EXPECT().
-								GetStreamsByIds(request.StreamIDs).
+								GetStreamsByIds(gomock.Any(), request.StreamIDs).
 								Return([]model.Stream{fpvStream}, nil).
 								AnyTimes()
 							streamsMock.
 								EXPECT().
-								UnsetLectureHall(request.StreamIDs).
+								UnsetLectureHall(gomock.Any(), request.StreamIDs).
 								Return(errors.New("")).
 								AnyTimes()
 							return streamsMock
@@ -1048,7 +1048,7 @@ func TestLectureHallSetLH(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetLectureHallByID(lectureHall.ID).
+								GetLectureHallByID(gomock.Any(), lectureHall.ID).
 								Return(model.LectureHall{}, errors.New("")).
 								AnyTimes()
 							return lectureHallMock
@@ -1057,12 +1057,12 @@ func TestLectureHallSetLH(t *testing.T) {
 							streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
 							streamsMock.
 								EXPECT().
-								GetStreamsByIds(request.StreamIDs).
+								GetStreamsByIds(gomock.Any(), request.StreamIDs).
 								Return([]model.Stream{fpvStream}, nil).
 								AnyTimes()
 							streamsMock.
 								EXPECT().
-								UnsetLectureHall(request.StreamIDs).
+								UnsetLectureHall(gomock.Any(), request.StreamIDs).
 								Return(nil).
 								AnyTimes()
 							return streamsMock
@@ -1082,17 +1082,17 @@ func TestLectureHallSetLH(t *testing.T) {
 							streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
 							streamsMock.
 								EXPECT().
-								GetStreamsByIds(request.StreamIDs).
+								GetStreamsByIds(gomock.Any(), request.StreamIDs).
 								Return([]model.Stream{fpvStream}, nil).
 								AnyTimes()
 							streamsMock.
 								EXPECT().
-								UnsetLectureHall(request.StreamIDs).
+								UnsetLectureHall(gomock.Any(), request.StreamIDs).
 								Return(nil).
 								AnyTimes()
 							streamsMock.
 								EXPECT().
-								SetLectureHall(request.StreamIDs, request.LectureHallID).
+								SetLectureHall(gomock.Any(), request.StreamIDs, request.LectureHallID).
 								Return(errors.New("")).
 								AnyTimes()
 							return streamsMock
@@ -1112,17 +1112,17 @@ func TestLectureHallSetLH(t *testing.T) {
 							streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
 							streamsMock.
 								EXPECT().
-								GetStreamsByIds(request.StreamIDs).
+								GetStreamsByIds(gomock.Any(), request.StreamIDs).
 								Return([]model.Stream{fpvStream}, nil).
 								AnyTimes()
 							streamsMock.
 								EXPECT().
-								UnsetLectureHall(request.StreamIDs).
+								UnsetLectureHall(gomock.Any(), request.StreamIDs).
 								Return(nil).
 								AnyTimes()
 							streamsMock.
 								EXPECT().
-								SetLectureHall(request.StreamIDs, request.LectureHallID).
+								SetLectureHall(gomock.Any(), request.StreamIDs, request.LectureHallID).
 								Return(nil).
 								AnyTimes()
 							return streamsMock

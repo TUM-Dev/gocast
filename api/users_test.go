@@ -60,7 +60,7 @@ func TestUsersCRUD(t *testing.T) {
 					wrapper := dao.DaoWrapper{
 						UsersDao: func() dao.UsersDao {
 							usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
-							usersMock.EXPECT().SearchUser("han").Return([]model.User{}, errors.New(""))
+							usersMock.EXPECT().SearchUser(gomock.Any(), "han").Return([]model.User{}, errors.New(""))
 							return usersMock
 						}(),
 					}
@@ -76,7 +76,7 @@ func TestUsersCRUD(t *testing.T) {
 					wrapper := dao.DaoWrapper{
 						UsersDao: func() dao.UsersDao {
 							usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
-							usersMock.EXPECT().SearchUser("han").Return(users, nil)
+							usersMock.EXPECT().SearchUser(gomock.Any(), "han").Return(users, nil)
 							return usersMock
 						}(),
 					}
@@ -240,7 +240,7 @@ func TestUsersCRUD(t *testing.T) {
 						UsersDao: func() dao.UsersDao {
 							usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
 							usersMock.EXPECT().GetUserByID(gomock.Any(), userId).Return(model.User{}, nil).AnyTimes()
-							usersMock.EXPECT().UpdateUser(model.User{Role: model.AdminType}).Return(errors.New("")).AnyTimes()
+							usersMock.EXPECT().UpdateUser(gomock.Any(), model.User{Role: model.AdminType}).Return(errors.New("")).AnyTimes()
 							return usersMock
 						}(),
 					}
@@ -258,7 +258,7 @@ func TestUsersCRUD(t *testing.T) {
 						UsersDao: func() dao.UsersDao {
 							usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
 							usersMock.EXPECT().GetUserByID(gomock.Any(), userId).Return(model.User{}, nil).AnyTimes()
-							usersMock.EXPECT().UpdateUser(model.User{Role: model.AdminType}).Return(nil).AnyTimes()
+							usersMock.EXPECT().UpdateUser(gomock.Any(), model.User{Role: model.AdminType}).Return(nil).AnyTimes()
 							return usersMock
 						}(),
 					}
@@ -394,7 +394,7 @@ func TestSearchUserForCourse(t *testing.T) {
 					wrapper := dao.DaoWrapper{
 						UsersDao: func() dao.UsersDao {
 							usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
-							usersMock.EXPECT().SearchUser("han").Return(users, nil).AnyTimes()
+							usersMock.EXPECT().SearchUser(gomock.Any(), "han").Return(users, nil).AnyTimes()
 							return usersMock
 						}(),
 					}

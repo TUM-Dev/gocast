@@ -50,7 +50,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 	case "week":
 		fallthrough
 	case "day":
-		res, err := r.StatisticsDao.GetCourseStatsWeekdays(cid)
+		res, err := r.StatisticsDao.GetCourseStatsWeekdays(c, cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsWeekdays failed")
 			_ = c.Error(tools.RequestError{
@@ -69,7 +69,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		resp.Data.Datasets[0].Data = res
 		c.JSON(http.StatusOK, resp)
 	case "hour":
-		res, err := r.StatisticsDao.GetCourseStatsHourly(cid)
+		res, err := r.StatisticsDao.GetCourseStatsHourly(c, cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsHourly failed")
 			_ = c.Error(tools.RequestError{
@@ -88,7 +88,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		resp.Data.Datasets[0].Data = res
 		c.JSON(http.StatusOK, resp)
 	case "activity-live":
-		resLive, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, true)
+		resLive, err := r.StatisticsDao.GetStudentActivityCourseStats(c, cid, true)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsLive failed")
 			_ = c.Error(tools.RequestError{
@@ -110,7 +110,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 
 		c.JSON(http.StatusOK, resp)
 	case "activity-vod":
-		resVod, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, false)
+		resVod, err := r.StatisticsDao.GetStudentActivityCourseStats(c, cid, false)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsVod failed")
 			_ = c.Error(tools.RequestError{
@@ -131,7 +131,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		resp.Data.Datasets[0].BackgroundColor = ""
 		c.JSON(http.StatusOK, resp)
 	case "numStudents":
-		res, err := r.StatisticsDao.GetCourseNumStudents(cid)
+		res, err := r.StatisticsDao.GetCourseNumStudents(c, cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumStudents failed")
 			_ = c.Error(tools.RequestError{
@@ -144,7 +144,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"res": res})
 		}
 	case "vodViews":
-		res, err := r.StatisticsDao.GetCourseNumVodViews(cid)
+		res, err := r.StatisticsDao.GetCourseNumVodViews(c, cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumVodViews failed")
 			_ = c.Error(tools.RequestError{
@@ -157,7 +157,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"res": res})
 		}
 	case "liveViews":
-		res, err := r.StatisticsDao.GetCourseNumLiveViews(cid)
+		res, err := r.StatisticsDao.GetCourseNumLiveViews(c, cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
 			_ = c.Error(tools.RequestError{
@@ -171,7 +171,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		}
 	case "allDays":
 		{
-			res, err := r.StatisticsDao.GetCourseNumVodViewsPerDay(cid)
+			res, err := r.StatisticsDao.GetCourseNumVodViewsPerDay(c, cid)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
 				_ = c.Error(tools.RequestError{
@@ -245,7 +245,7 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 		switch interval {
 		case "week":
 		case "day":
-			res, err := r.StatisticsDao.GetCourseStatsWeekdays(cid)
+			res, err := r.StatisticsDao.GetCourseStatsWeekdays(c, cid)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsWeekdays failed")
 			}
@@ -257,7 +257,7 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 			})
 
 		case "hour":
-			res, err := r.StatisticsDao.GetCourseStatsHourly(cid)
+			res, err := r.StatisticsDao.GetCourseStatsHourly(c, cid)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsHourly failed")
 			}
@@ -269,7 +269,7 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 			})
 
 		case "activity-live":
-			resLive, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, true)
+			resLive, err := r.StatisticsDao.GetStudentActivityCourseStats(c, cid, true)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetStudentActivityCourseStats failed")
 			}
@@ -281,7 +281,7 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 			})
 
 		case "activity-vod":
-			resVod, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, false)
+			resVod, err := r.StatisticsDao.GetStudentActivityCourseStats(c, cid, false)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetStudentActivityCourseStats failed")
 			}
@@ -293,7 +293,7 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 			})
 
 		case "allDays":
-			res, err := r.StatisticsDao.GetCourseNumVodViewsPerDay(cid)
+			res, err := r.StatisticsDao.GetCourseNumVodViewsPerDay(c, cid)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumVodViewsPerDay failed")
 			}
@@ -307,21 +307,21 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 		case "quickStats":
 			var quickStats []dao.Stat
 
-			numStudents, err := r.StatisticsDao.GetCourseNumStudents(cid)
+			numStudents, err := r.StatisticsDao.GetCourseNumStudents(c, cid)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumStudents failed")
 			} else {
 				quickStats = append(quickStats, dao.Stat{X: "Enrolled Students", Y: int(numStudents)})
 			}
 
-			vodViews, err := r.StatisticsDao.GetCourseNumVodViews(cid)
+			vodViews, err := r.StatisticsDao.GetCourseNumVodViews(c, cid)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumVodViews failed")
 			} else {
 				quickStats = append(quickStats, dao.Stat{X: "Vod Views", Y: int(vodViews)})
 			}
 
-			liveViews, err := r.StatisticsDao.GetCourseNumLiveViews(cid)
+			liveViews, err := r.StatisticsDao.GetCourseNumLiveViews(c, cid)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
 			} else {

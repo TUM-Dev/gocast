@@ -52,7 +52,7 @@ func (r infoPageRoutes) updateText(c *gin.Context) {
 		return
 	}
 
-	err = r.InfoPageDao.Update(uint(id), &model.InfoPage{
+	err = r.InfoPageDao.Update(c, uint(id), &model.InfoPage{
 		Name:       reqBody.Name,
 		RawContent: reqBody.RawContent,
 		Type:       reqBody.Type,

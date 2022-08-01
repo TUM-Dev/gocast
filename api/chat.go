@@ -97,6 +97,7 @@ type chatRoutes struct {
 }
 
 func (r chatRoutes) handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []byte) {
+	c := context.Background()
 	var req submitPollOptionVote
 	if err := json.Unmarshal(msg, &req); err != nil {
 		log.WithError(err).Warn("could not unmarshal submit poll answer request")
@@ -106,12 +107,12 @@ func (r chatRoutes) handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []b
 		return
 	}
 
-	if err := r.ChatDao.AddChatPollOptionVote(req.PollOptionId, ctx.User.ID); err != nil {
+	if err := r.ChatDao.AddChatPollOptionVote(c, req.PollOptionId, ctx.User.ID); err != nil {
 		log.WithError(err).Warn("could not add poll option vote")
 		return
 	}
 
-	voteCount, _ := r.ChatDao.GetPollOptionVoteCount(req.PollOptionId)
+	voteCount, _ := r.ChatDao.GetPollOptionVoteCount(c, req.PollOptionId)
 
 	voteUpdateMap := gin.H{
 		"pollOptionId": req.PollOptionId,
@@ -127,6 +128,7 @@ func (r chatRoutes) handleSubmitPollOptionVote(ctx tools.TUMLiveContext, msg []b
 }
 
 func (r chatRoutes) handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
+	c := context.Background()
 	type startPollReq struct {
 		wsReq
 		Question    string   `json:"question"`
@@ -165,7 +167,7 @@ func (r chatRoutes) handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
 		PollOptions: pollOptions,
 	}
 
-	if err := r.ChatDao.AddChatPoll(&poll); err != nil {
+	if err := r.ChatDao.AddChatPoll(c, &poll); err != nil {
 		return
 	}
 
@@ -186,22 +188,23 @@ func (r chatRoutes) handleStartPoll(ctx tools.TUMLiveContext, msg []byte) {
 }
 
 func (r chatRoutes) handleCloseActivePoll(ctx tools.TUMLiveContext) {
+	c := context.Background()
 	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
 		return
 	}
 
-	poll, err := r.ChatDao.GetActivePoll(ctx.Stream.ID)
+	poll, err := r.ChatDao.GetActivePoll(c, ctx.Stream.ID)
 	if err != nil {
 		return
 	}
 
-	if err = r.ChatDao.CloseActivePoll(ctx.Stream.ID); err != nil {
+	if err = r.ChatDao.CloseActivePoll(c, ctx.Stream.ID); err != nil {
 		return
 	}
 
 	var pollOptions []gin.H
 	for _, option := range poll.PollOptions {
-		voteCount, _ := r.ChatDao.GetPollOptionVoteCount(option.ID)
+		voteCount, _ := r.ChatDao.GetPollOptionVoteCount(c, option.ID)
 		pollOptions = append(pollOptions, option.GetStatsMap(voteCount))
 	}
 
@@ -216,6 +219,7 @@ func (r chatRoutes) handleCloseActivePoll(ctx tools.TUMLiveContext) {
 }
 
 func (r chatRoutes) handleResolve(ctx tools.TUMLiveContext, msg []byte) {
+	c := context.Background()
 	var req resolveReq
 	err := json.Unmarshal(msg, &req)
 	if err != nil {
@@ -226,7 +230,7 @@ func (r chatRoutes) handleResolve(ctx tools.TUMLiveContext, msg []byte) {
 		return
 	}
 
-	err = r.ChatDao.ResolveChat(req.Id)
+	err = r.ChatDao.ResolveChat(c, req.Id)
 	if err != nil {
 		log.WithError(err).Error("could not delete chat")
 	}
@@ -243,6 +247,7 @@ func (r chatRoutes) handleResolve(ctx tools.TUMLiveContext, msg []byte) {
 }
 
 func (r chatRoutes) handleDelete(ctx tools.TUMLiveContext, msg []byte) {
+	c := context.Background()
 	var req deleteReq
 	err := json.Unmarshal(msg, &req)
 	if err != nil {
@@ -252,7 +257,7 @@ func (r chatRoutes) handleDelete(ctx tools.TUMLiveContext, msg []byte) {
 	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
 		return
 	}
-	err = r.ChatDao.DeleteChat(req.Id)
+	err = r.ChatDao.DeleteChat(c, req.Id)
 	if err != nil {
 		log.WithError(err).Error("could not delete chat")
 	}
@@ -268,6 +273,7 @@ func (r chatRoutes) handleDelete(ctx tools.TUMLiveContext, msg []byte) {
 }
 
 func (r chatRoutes) handleApprove(ctx tools.TUMLiveContext, msg []byte) {
+	c := context.Background()
 	var req approveReq
 	err := json.Unmarshal(msg, &req)
 	if err != nil {
@@ -277,7 +283,7 @@ func (r chatRoutes) handleApprove(ctx tools.TUMLiveContext, msg []byte) {
 	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
 		return
 	}
-	err = r.ChatDao.ApproveChat(req.Id)
+	err = r.ChatDao.ApproveChat(c, req.Id)
 	if err != nil {
 		log.WithError(err).Error("could not approve chat")
 	}
@@ -293,6 +299,7 @@ func (r chatRoutes) handleApprove(ctx tools.TUMLiveContext, msg []byte) {
 }
 
 func (r chatRoutes) handleLike(ctx tools.TUMLiveContext, msg []byte) {
+	c := context.Background()
 	var req likeReq
 	err := json.Unmarshal(msg, &req)
 	if err != nil {
@@ -300,12 +307,12 @@ func (r chatRoutes) handleLike(ctx tools.TUMLiveContext, msg []byte) {
 		return
 	}
 
-	err = r.ChatDao.ToggleLike(ctx.User.ID, req.Id)
+	err = r.ChatDao.ToggleLike(c, ctx.User.ID, req.Id)
 	if err != nil {
 		log.WithError(err).Error("error liking/unliking message")
 		return
 	}
-	numLikes, err := r.ChatDao.GetNumLikes(req.Id)
+	numLikes, err := r.ChatDao.GetNumLikes(c, req.Id)
 	if err != nil {
 		log.WithError(err).Error("error getting num of chat likes")
 		return
@@ -323,6 +330,7 @@ func (r chatRoutes) handleLike(ctx tools.TUMLiveContext, msg []byte) {
 }
 
 func (r chatRoutes) handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte) {
+	c := context.Background()
 	var chat chatReq
 	if err := json.Unmarshal(msg, &chat); err != nil {
 		log.WithError(err).Error("error unmarshaling chat message")
@@ -362,7 +370,7 @@ func (r chatRoutes) handleMessage(ctx tools.TUMLiveContext, session *melody.Sess
 		AddressedToIds: chat.AddressedTo,
 	}
 	chatForDb.SanitiseMessage()
-	err := r.ChatDao.AddMessage(&chatForDb)
+	err := r.ChatDao.AddMessage(c, &chatForDb)
 	if err != nil {
 		if errors.Is(err, model.ErrCooledDown) {
 			sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, session)
@@ -401,9 +409,9 @@ func (r chatRoutes) getMessages(c *gin.Context) {
 	var err error
 	var chats []model.Chat
 	if isAdmin {
-		chats, err = r.ChatDao.GetAllChats(uid, tumLiveContext.Stream.ID)
+		chats, err = r.ChatDao.GetAllChats(c, uid, tumLiveContext.Stream.ID)
 	} else {
-		chats, err = r.ChatDao.GetVisibleChats(uid, tumLiveContext.Stream.ID)
+		chats, err = r.ChatDao.GetVisibleChats(c, uid, tumLiveContext.Stream.ID)
 	}
 	if err != nil {
 		_ = c.Error(tools.RequestError{
@@ -426,7 +434,7 @@ func (r chatRoutes) getUsers(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	users, err := r.ChatDao.GetChatUsers(tumLiveContext.Stream.ID)
+	users, err := r.ChatDao.GetChatUsers(c, tumLiveContext.Stream.ID)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -465,13 +473,13 @@ func (r chatRoutes) getActivePoll(c *gin.Context) {
 		})
 		return
 	}
-	poll, err := r.ChatDao.GetActivePoll(tumLiveContext.Stream.ID)
+	poll, err := r.ChatDao.GetActivePoll(c, tumLiveContext.Stream.ID)
 	if err != nil {
 		c.JSON(http.StatusOK, nil)
 		return
 	}
 
-	submitted, err := r.ChatDao.GetPollUserVote(poll.ID, tumLiveContext.User.ID)
+	submitted, err := r.ChatDao.GetPollUserVote(c, poll.ID, tumLiveContext.User.ID)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -487,7 +495,7 @@ func (r chatRoutes) getActivePoll(c *gin.Context) {
 		voteCount := int64(0)
 
 		if isAdminOfCourse {
-			voteCount, err = r.ChatDao.GetPollOptionVoteCount(option.ID)
+			voteCount, err = r.ChatDao.GetPollOptionVoteCount(c, option.ID)
 			if err != nil {
 				log.WithError(err).Warn("could not get poll option vote count")
 			}
@@ -554,7 +562,7 @@ func CollectStats(daoWrapper dao.DaoWrapper) func() {
 			if s, err := daoWrapper.GetStreamByID(context.Background(), fmt.Sprintf("%d", sID)); err == nil {
 				if s.LiveNow { // store stats for livestreams only
 					s.Stats = append(s.Stats, stat)
-					if err := daoWrapper.AddStat(stat); err != nil {
+					if err := daoWrapper.AddStat(context.Background(), stat); err != nil {
 						log.WithError(err).Error("Saving stat failed")
 					}
 				}
@@ -596,7 +604,7 @@ func (r chatRoutes) ChatStream(c *gin.Context) {
 func afterDisconnect(id string, jointime time.Time, recording bool, daoWrapper dao.DaoWrapper) {
 	// watched at least 5 minutes of the lecture and stream is VoD? Count as view.
 	if recording && jointime.Before(time.Now().Add(time.Minute*-5)) {
-		err := daoWrapper.AddVodView(id)
+		err := daoWrapper.AddVodView(context.Background(), id)
 		if err != nil {
 			log.WithError(err).Error("Can't save vod view")
 		}

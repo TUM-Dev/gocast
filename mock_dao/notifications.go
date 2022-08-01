@@ -5,6 +5,7 @@
 package mock_dao
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,52 +36,52 @@ func (m *MockNotificationsDao) EXPECT() *MockNotificationsDaoMockRecorder {
 }
 
 // AddNotification mocks base method.
-func (m *MockNotificationsDao) AddNotification(notification *model.Notification) error {
+func (m *MockNotificationsDao) AddNotification(ctx context.Context, notification *model.Notification) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddNotification", notification)
+	ret := m.ctrl.Call(m, "AddNotification", ctx, notification)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddNotification indicates an expected call of AddNotification.
-func (mr *MockNotificationsDaoMockRecorder) AddNotification(notification interface{}) *gomock.Call {
+func (mr *MockNotificationsDaoMockRecorder) AddNotification(ctx, notification interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNotification", reflect.TypeOf((*MockNotificationsDao)(nil).AddNotification), notification)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNotification", reflect.TypeOf((*MockNotificationsDao)(nil).AddNotification), ctx, notification)
 }
 
 // DeleteNotification mocks base method.
-func (m *MockNotificationsDao) DeleteNotification(id uint) error {
+func (m *MockNotificationsDao) DeleteNotification(ctx context.Context, id uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteNotification", id)
+	ret := m.ctrl.Call(m, "DeleteNotification", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteNotification indicates an expected call of DeleteNotification.
-func (mr *MockNotificationsDaoMockRecorder) DeleteNotification(id interface{}) *gomock.Call {
+func (mr *MockNotificationsDaoMockRecorder) DeleteNotification(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNotification", reflect.TypeOf((*MockNotificationsDao)(nil).DeleteNotification), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNotification", reflect.TypeOf((*MockNotificationsDao)(nil).DeleteNotification), ctx, id)
 }
 
 // GetAllNotifications mocks base method.
-func (m *MockNotificationsDao) GetAllNotifications() ([]model.Notification, error) {
+func (m *MockNotificationsDao) GetAllNotifications(ctx context.Context) ([]model.Notification, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllNotifications")
+	ret := m.ctrl.Call(m, "GetAllNotifications", ctx)
 	ret0, _ := ret[0].([]model.Notification)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllNotifications indicates an expected call of GetAllNotifications.
-func (mr *MockNotificationsDaoMockRecorder) GetAllNotifications() *gomock.Call {
+func (mr *MockNotificationsDaoMockRecorder) GetAllNotifications(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllNotifications", reflect.TypeOf((*MockNotificationsDao)(nil).GetAllNotifications))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllNotifications", reflect.TypeOf((*MockNotificationsDao)(nil).GetAllNotifications), ctx)
 }
 
 // GetNotifications mocks base method.
-func (m *MockNotificationsDao) GetNotifications(target ...model.NotificationTarget) ([]model.Notification, error) {
+func (m *MockNotificationsDao) GetNotifications(ctx context.Context, target ...model.NotificationTarget) ([]model.Notification, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{}
+	varargs := []interface{}{ctx}
 	for _, a := range target {
 		varargs = append(varargs, a)
 	}
@@ -91,7 +92,8 @@ func (m *MockNotificationsDao) GetNotifications(target ...model.NotificationTarg
 }
 
 // GetNotifications indicates an expected call of GetNotifications.
-func (mr *MockNotificationsDaoMockRecorder) GetNotifications(target ...interface{}) *gomock.Call {
+func (mr *MockNotificationsDaoMockRecorder) GetNotifications(ctx interface{}, target ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotifications", reflect.TypeOf((*MockNotificationsDao)(nil).GetNotifications), target...)
+	varargs := append([]interface{}{ctx}, target...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotifications", reflect.TypeOf((*MockNotificationsDao)(nil).GetNotifications), varargs...)
 }

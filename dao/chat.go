@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"context"
 	"errors"
 	"github.com/go-sql-driver/mysql"
 	"github.com/joschahenningsen/TUM-Live/model"
@@ -10,26 +11,26 @@ import (
 //go:generate mockgen -source=chat.go -destination ../mock_dao/chat.go
 
 type ChatDao interface {
-	AddChatPollOptionVote(pollOptionId uint, userId uint) error
-	AddChatPoll(poll *model.Poll) error
-	AddMessage(chat *model.Chat) error
+	AddChatPollOptionVote(ctx context.Context, pollOptionId uint, userId uint) error
+	AddChatPoll(ctx context.Context, poll *model.Poll) error
+	AddMessage(ctx context.Context, chat *model.Chat) error
 
-	GetChatUsers(streamid uint) ([]model.User, error)
-	GetNumLikes(chatID uint) (int64, error)
-	GetVisibleChats(userID uint, streamID uint) ([]model.Chat, error)
-	GetAllChats(userID uint, streamID uint) ([]model.Chat, error)
-	GetActivePoll(streamID uint) (model.Poll, error)
-	GetPollUserVote(pollId uint, userId uint) (uint, error)
-	GetPollOptionVoteCount(pollOptionId uint) (int64, error)
+	GetChatUsers(ctx context.Context, streamid uint) ([]model.User, error)
+	GetNumLikes(ctx context.Context, chatID uint) (int64, error)
+	GetVisibleChats(ctx context.Context, userID uint, streamID uint) ([]model.Chat, error)
+	GetAllChats(ctx context.Context, userID uint, streamID uint) ([]model.Chat, error)
+	GetActivePoll(ctx context.Context, streamID uint) (model.Poll, error)
+	GetPollUserVote(ctx context.Context, pollId uint, userId uint) (uint, error)
+	GetPollOptionVoteCount(ctx context.Context, pollOptionId uint) (int64, error)
 
-	ApproveChat(id uint) error
-	DeleteChat(id uint) error
-	ResolveChat(id uint) error
-	ToggleLike(userID uint, chatID uint) error
+	ApproveChat(ctx context.Context, id uint) error
+	DeleteChat(ctx context.Context, id uint) error
+	ResolveChat(ctx context.Context, id uint) error
+	ToggleLike(ctx context.Context, userID uint, chatID uint) error
 
-	CloseActivePoll(streamID uint) error
+	CloseActivePoll(ctx context.Context, streamID uint) error
 
-	GetChatsByUser(userID uint) ([]model.Chat, error)
+	GetChatsByUser(ctx context.Context, userID uint) ([]model.Chat, error)
 }
 
 type chatDao struct {
@@ -40,21 +41,21 @@ func NewChatDao() ChatDao {
 	return chatDao{db: DB}
 }
 
-func (d chatDao) AddChatPollOptionVote(pollOptionId uint, userId uint) error {
-	return DB.Exec("INSERT INTO poll_option_user_votes (poll_option_id, user_id) VALUES (?, ?)", pollOptionId, userId).Error
+func (d chatDao) AddChatPollOptionVote(ctx context.Context, pollOptionId uint, userId uint) error {
+	return DB.WithContext(ctx).Exec("INSERT INTO poll_option_user_votes (poll_option_id, user_id) VALUES (?, ?)", pollOptionId, userId).Error
 }
 
-func (d chatDao) AddChatPoll(poll *model.Poll) error {
-	return DB.Save(poll).Error
+func (d chatDao) AddChatPoll(ctx context.Context, poll *model.Poll) error {
+	return DB.WithContext(ctx).Save(poll).Error
 }
 
-func (d chatDao) AddMessage(chat *model.Chat) error {
-	err := DB.Save(chat).Error
+func (d chatDao) AddMessage(ctx context.Context, chat *model.Chat) error {
+	err := DB.WithContext(ctx).Save(chat).Error
 	if err != nil {
 		return err
 	}
 	for _, userId := range chat.AddressedToIds {
-		err := DB.Exec("INSERT INTO chat_user_addressedto (chat_id, user_id) VALUES (?, ?)", chat.ID, userId).Error
+		err := DB.WithContext(ctx).Exec("INSERT INTO chat_user_addressedto (chat_id, user_id) VALUES (?, ?)", chat.ID, userId).Error
 		if err != nil {
 			return err
 		}
@@ -62,9 +63,9 @@ func (d chatDao) AddMessage(chat *model.Chat) error {
 	return nil
 }
 
-func (d chatDao) GetChatUsers(streamid uint) ([]model.User, error) {
+func (d chatDao) GetChatUsers(ctx context.Context, streamid uint) ([]model.User, error) {
 	var users []model.User
-	query := DB.Model(&model.User{}).Select("distinct users.*").Joins("join chats c on c.user_id = users.id")
+	query := DB.WithContext(ctx).Model(&model.User{}).Select("distinct users.*").Joins("join chats c on c.user_id = users.id")
 	query.Where("c.stream_id = ? AND c.user_name <> ?", streamid, "Anonymous")
 	err := query.Scan(&users).Error
 	if users == nil { // If no messages have been sent
@@ -74,18 +75,18 @@ func (d chatDao) GetChatUsers(streamid uint) ([]model.User, error) {
 }
 
 // GetNumLikes returns the number of likes for a message
-func (d chatDao) GetNumLikes(chatID uint) (int64, error) {
+func (d chatDao) GetNumLikes(ctx context.Context, chatID uint) (int64, error) {
 	var numLikes int64
-	err := DB.Table("chat_user_likes").Where("chat_id = ?", chatID).Count(&numLikes).Error
+	err := DB.WithContext(ctx).Table("chat_user_likes").Where("chat_id = ?", chatID).Count(&numLikes).Error
 	return numLikes, err
 }
 
 // GetVisibleChats returns all visible chats for the stream with the given ID
 // or sent by user with id 'userID'
 // Number of likes are inserted and the user's like status is determined
-func (d chatDao) GetVisibleChats(userID uint, streamID uint) ([]model.Chat, error) {
+func (d chatDao) GetVisibleChats(ctx context.Context, userID uint, streamID uint) ([]model.Chat, error) {
 	var chats []model.Chat
-	query := DB.Preload("Replies").Preload("UserLikes").Preload("AddressedToUsers")
+	query := DB.WithContext(ctx).Preload("Replies").Preload("UserLikes").Preload("AddressedToUsers")
 	query.Where("(visible = 1) OR (user_id = ?)", userID).Find(&chats, "stream_id = ?", streamID)
 	err := query.Error
 	if err != nil {
@@ -109,9 +110,9 @@ func (d chatDao) GetVisibleChats(userID uint, streamID uint) ([]model.Chat, erro
 
 // GetAllChats returns all chats for the stream with the given ID
 // Number of likes are inserted and the user's like status is determined
-func (d chatDao) GetAllChats(userID uint, streamID uint) ([]model.Chat, error) {
+func (d chatDao) GetAllChats(ctx context.Context, userID uint, streamID uint) ([]model.Chat, error) {
 	var chats []model.Chat
-	query := DB.Preload("Replies").Preload("UserLikes").Preload("AddressedToUsers").Find(&chats, "stream_id = ?", streamID)
+	query := DB.WithContext(ctx).Preload("Replies").Preload("UserLikes").Preload("AddressedToUsers").Find(&chats, "stream_id = ?", streamID)
 	err := query.Error
 	if err != nil {
 		return nil, err
@@ -133,16 +134,16 @@ func (d chatDao) GetAllChats(userID uint, streamID uint) ([]model.Chat, error) {
 }
 
 // GetActivePoll returns the active poll for the stream with the given ID.
-func (d chatDao) GetActivePoll(streamID uint) (model.Poll, error) {
+func (d chatDao) GetActivePoll(ctx context.Context, streamID uint) (model.Poll, error) {
 	var activePoll model.Poll
-	err := DB.Preload("PollOptions").First(&activePoll, "stream_id = ? AND active = true", streamID).Error
+	err := DB.WithContext(ctx).Preload("PollOptions").First(&activePoll, "stream_id = ? AND active = true", streamID).Error
 	return activePoll, err
 }
 
 // GetPollUserVote returns the id of the PollOption that the user has voted for. If no vote was found then 0.
-func (d chatDao) GetPollUserVote(pollId uint, userId uint) (uint, error) {
+func (d chatDao) GetPollUserVote(ctx context.Context, pollId uint, userId uint) (uint, error) {
 	var pollOptionIds []uint
-	err := DB.Table("poll_option_user_votes").Select("poll_option_user_votes.poll_option_id").Joins("JOIN chat_poll_options ON chat_poll_options.poll_option_id=poll_option_user_votes.poll_option_id").Where("poll_id = ? AND user_id = ?", pollId, userId).Find(&pollOptionIds).Error
+	err := DB.WithContext(ctx).Table("poll_option_user_votes").Select("poll_option_user_votes.poll_option_id").Joins("JOIN chat_poll_options ON chat_poll_options.poll_option_id=poll_option_user_votes.poll_option_id").Where("poll_id = ? AND user_id = ?", pollId, userId).Find(&pollOptionIds).Error
 	if err != nil {
 		return 0, err
 	}
@@ -154,9 +155,9 @@ func (d chatDao) GetPollUserVote(pollId uint, userId uint) (uint, error) {
 }
 
 // GetPollOptionVoteCount returns the vote count of a specific poll-option
-func (d chatDao) GetPollOptionVoteCount(pollOptionId uint) (int64, error) {
+func (d chatDao) GetPollOptionVoteCount(ctx context.Context, pollOptionId uint) (int64, error) {
 	var count int64
-	err := DB.Table("poll_option_user_votes").Where("poll_option_id = ?", pollOptionId).Count(&count).Error
+	err := DB.WithContext(ctx).Table("poll_option_user_votes").Where("poll_option_id = ?", pollOptionId).Count(&count).Error
 	if err != nil {
 		return 0, err
 	}
@@ -164,38 +165,38 @@ func (d chatDao) GetPollOptionVoteCount(pollOptionId uint) (int64, error) {
 }
 
 // ApproveChat sets the attribute 'visible' to true
-func (d chatDao) ApproveChat(id uint) error {
-	return DB.Model(&model.Chat{}).Where("id = ?", id).Updates(map[string]interface{}{"visible": true}).Error
+func (d chatDao) ApproveChat(ctx context.Context, id uint) error {
+	return DB.WithContext(ctx).Model(&model.Chat{}).Where("id = ?", id).Updates(map[string]interface{}{"visible": true}).Error
 }
 
 // DeleteChat removes a chat with the given id from the database.
-func (d chatDao) DeleteChat(id uint) error {
-	return DB.Model(&model.Chat{}).Delete(&model.Chat{}, id).Error
+func (d chatDao) DeleteChat(ctx context.Context, id uint) error {
+	return DB.WithContext(ctx).Model(&model.Chat{}).Delete(&model.Chat{}, id).Error
 }
 
 // ResolveChat sets the attribute resolved of chat with the given id to true
-func (d chatDao) ResolveChat(id uint) error {
-	return DB.Model(&model.Chat{}).Where("id = ?", id).Update("resolved", true).Error
+func (d chatDao) ResolveChat(ctx context.Context, id uint) error {
+	return DB.WithContext(ctx).Model(&model.Chat{}).Where("id = ?", id).Update("resolved", true).Error
 }
 
 // ToggleLike adds a like to a message from the user if it doesn't exist, or removes it if it does
-func (d chatDao) ToggleLike(userID uint, chatID uint) error {
-	err := DB.Exec("INSERT INTO chat_user_likes (user_id, chat_id) VALUES (?, ?)", userID, chatID).Error
+func (d chatDao) ToggleLike(ctx context.Context, userID uint, chatID uint) error {
+	err := DB.WithContext(ctx).Exec("INSERT INTO chat_user_likes (user_id, chat_id) VALUES (?, ?)", userID, chatID).Error
 	if err == nil {
 		return nil // like was added successfully
 	}
 	var mysqlErr *mysql.MySQLError
 	if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 { // 1062: duplicate entry -> message already liked -> remove
-		return DB.Exec("DELETE FROM chat_user_likes WHERE user_id = ? AND chat_id = ?", userID, chatID).Error
+		return DB.WithContext(ctx).Exec("DELETE FROM chat_user_likes WHERE user_id = ? AND chat_id = ?", userID, chatID).Error
 	}
 	return err // some other error
 }
 
 // CloseActivePoll closes poll for the stream with the given ID.
-func (d chatDao) CloseActivePoll(streamID uint) error {
-	return DB.Table("polls").Where("stream_id = ? AND active", streamID).Update("active", false).Error
+func (d chatDao) CloseActivePoll(ctx context.Context, streamID uint) error {
+	return DB.WithContext(ctx).Table("polls").Where("stream_id = ? AND active", streamID).Update("active", false).Error
 }
 
-func (d chatDao) GetChatsByUser(userID uint) (chats []model.Chat, err error) {
-	return chats, d.db.Find(&chats, "user_id = ?", userID).Error
+func (d chatDao) GetChatsByUser(ctx context.Context, userID uint) (chats []model.Chat, err error) {
+	return chats, d.db.WithContext(ctx).Find(&chats, "user_id = ?", userID).Error
 }

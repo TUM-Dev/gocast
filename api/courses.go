@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -94,7 +93,7 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 		End:      req.Start.Add(time.Hour),
 		CourseID: tlctx.Course.ID,
 	}
-	err = r.StreamsDao.CreateStream(&stream)
+	err = r.StreamsDao.CreateStream(c, &stream)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -104,7 +103,7 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 		return
 	}
 	key := uuid.NewV4().String()
-	err = r.UploadKeyDao.CreateUploadKey(key, stream.ID)
+	err = r.UploadKeyDao.CreateUploadKey(c, key, stream.ID)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -113,7 +112,7 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 		})
 		return
 	}
-	workers := r.WorkerDao.GetAliveWorkers()
+	workers := r.WorkerDao.GetAliveWorkers(c)
 	if len(workers) == 0 {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -176,7 +175,7 @@ func (r coursesRoutes) updatePresets(c *gin.Context) {
 		}
 	}
 
-	if err := r.AuditDao.Create(&model.Audit{
+	if err := r.AuditDao.Create(c, &model.Audit{
 		User:    tumLiveContext.User,
 		Message: fmt.Sprintf("%s:'%s'", tumLiveContext.Course.Name, tumLiveContext.Course.Slug),
 		Type:    model.AuditCourseEdit,
@@ -206,7 +205,7 @@ func (r coursesRoutes) activateCourseByToken(c *gin.Context) {
 		})
 		return
 	}
-	course, err := r.CoursesDao.GetCourseByToken(t)
+	course, err := r.CoursesDao.GetCourseByToken(c, t)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
@@ -241,7 +240,7 @@ func (r coursesRoutes) removeAdminFromCourse(c *gin.Context) {
 		return
 	}
 
-	admins, err := r.CoursesDao.GetCourseAdmins(tumLiveContext.Course.ID)
+	admins, err := r.CoursesDao.GetCourseAdmins(c, tumLiveContext.Course.ID)
 	if err != nil {
 		log.WithError(err).Error("could not get course admins")
 		_ = c.Error(tools.RequestError{
@@ -273,7 +272,7 @@ func (r coursesRoutes) removeAdminFromCourse(c *gin.Context) {
 		return
 	}
 
-	if err := r.AuditDao.Create(&model.Audit{
+	if err := r.AuditDao.Create(c, &model.Audit{
 		User:    tumLiveContext.User,
 		Message: fmt.Sprintf("%s:'%s' remove: %s (%d)", tumLiveContext.Course.Name, tumLiveContext.Course.Slug, user.GetPreferredName(), user.ID), // e.g. "eidi:'Einführung in die Informatik' (2020, S)"
 		Type:    model.AuditCourseEdit,
@@ -281,7 +280,7 @@ func (r coursesRoutes) removeAdminFromCourse(c *gin.Context) {
 		log.Error("Create Audit:", err)
 	}
 
-	err = r.CoursesDao.RemoveAdminFromCourse(user.ID, tumLiveContext.Course.ID)
+	err = r.CoursesDao.RemoveAdminFromCourse(c, user.ID, tumLiveContext.Course.ID)
 	if err != nil {
 		log.WithError(err).Error("could not remove admin from course")
 		_ = c.Error(tools.RequestError{
@@ -320,7 +319,7 @@ func (r coursesRoutes) addAdminToCourse(c *gin.Context) {
 		return
 	}
 
-	if err := r.AuditDao.Create(&model.Audit{
+	if err := r.AuditDao.Create(c, &model.Audit{
 		User:    tumLiveContext.User,
 		Message: fmt.Sprintf("%s:'%s' add: %s (%d)", tumLiveContext.Course.Name, tumLiveContext.Course.Slug, user.GetPreferredName(), user.ID), // e.g. "eidi:'Einführung in die Informatik' (2020, S)"
 		Type:    model.AuditCourseEdit,
@@ -328,7 +327,7 @@ func (r coursesRoutes) addAdminToCourse(c *gin.Context) {
 		log.Error("Create Audit:", err)
 	}
 
-	err = r.CoursesDao.AddAdminToCourse(user.ID, tumLiveContext.Course.ID)
+	err = r.CoursesDao.AddAdminToCourse(c, user.ID, tumLiveContext.Course.ID)
 	if err != nil {
 		log.WithError(err).Error("could not add admin to course")
 		_ = c.Error(tools.RequestError{
@@ -340,7 +339,7 @@ func (r coursesRoutes) addAdminToCourse(c *gin.Context) {
 	}
 	if user.Role == model.GenericType || user.Role == model.StudentType {
 		user.Role = model.LecturerType
-		err = r.UsersDao.UpdateUser(user)
+		err = r.UsersDao.UpdateUser(c, user)
 		if err != nil {
 			log.WithError(err).Error("could not update user")
 			_ = c.Error(tools.RequestError{
@@ -360,7 +359,7 @@ func (r coursesRoutes) addAdminToCourse(c *gin.Context) {
 
 func (r coursesRoutes) getAdmins(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-	admins, err := r.CoursesDao.GetCourseAdmins(tumLiveContext.Course.ID)
+	admins, err := r.CoursesDao.GetCourseAdmins(c, tumLiveContext.Course.ID)
 	if err != nil {
 		log.WithError(err).Error("error getting course admins")
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -441,7 +440,7 @@ func (r coursesRoutes) lectureHalls(c *gin.Context, course model.Course) {
 		}
 	}
 	for u := range lectureHallIDs {
-		lh, err := r.LectureHallsDao.GetLectureHallByID(u)
+		lh, err := r.LectureHallsDao.GetLectureHallByID(c, u)
 		if err != nil {
 			log.WithError(err).Error("Can't fetch lecture hall for stream")
 		} else {
@@ -473,7 +472,7 @@ func (r coursesRoutes) submitCut(c *gin.Context) {
 		})
 		return
 	}
-	stream, err := r.StreamsDao.GetStreamByID(context.Background(), strconv.Itoa(int(req.LectureID)))
+	stream, err := r.StreamsDao.GetStreamByID(c, strconv.Itoa(int(req.LectureID)))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,
@@ -484,7 +483,7 @@ func (r coursesRoutes) submitCut(c *gin.Context) {
 	}
 	stream.StartOffset = req.From
 	stream.EndOffset = req.To
-	if err = r.StreamsDao.SaveStream(&stream); err != nil {
+	if err = r.StreamsDao.SaveStream(c, &stream); err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not save stream",
@@ -501,7 +500,7 @@ type submitCutRequest struct {
 }
 
 func (r coursesRoutes) deleteUnit(c *gin.Context) {
-	unit, err := r.StreamsDao.GetUnitByID(c.Param("unitID"))
+	unit, err := r.StreamsDao.GetUnitByID(c, c.Param("unitID"))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,
@@ -510,7 +509,7 @@ func (r coursesRoutes) deleteUnit(c *gin.Context) {
 		})
 		return
 	}
-	r.StreamsDao.DeleteUnit(unit.Model.ID)
+	r.StreamsDao.DeleteUnit(c, unit.Model.ID)
 }
 
 func (r coursesRoutes) addUnit(c *gin.Context) {
@@ -524,7 +523,7 @@ func (r coursesRoutes) addUnit(c *gin.Context) {
 		return
 	}
 
-	stream, err := r.StreamsDao.GetStreamByID(context.Background(), strconv.Itoa(int(req.LectureID)))
+	stream, err := r.StreamsDao.GetStreamByID(c, strconv.Itoa(int(req.LectureID)))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,
@@ -540,7 +539,7 @@ func (r coursesRoutes) addUnit(c *gin.Context) {
 		UnitEnd:         req.To,
 		StreamID:        stream.Model.ID,
 	})
-	if err = r.StreamsDao.UpdateStreamFullAssoc(&stream); err != nil {
+	if err = r.StreamsDao.UpdateStreamFullAssoc(c, &stream); err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not update stream full assoc",
@@ -578,7 +577,7 @@ func (r coursesRoutes) updateDescription(c *gin.Context) {
 		})
 		return
 	}
-	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
+	stream, err := r.StreamsDao.GetStreamByID(c, c.Param("streamID"))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,
@@ -588,7 +587,7 @@ func (r coursesRoutes) updateDescription(c *gin.Context) {
 		return
 	}
 	stream.Description = req.Name
-	if err = r.StreamsDao.UpdateStream(stream); err != nil {
+	if err = r.StreamsDao.UpdateStream(c, stream); err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "couldn't update lecture Description",
@@ -629,7 +628,7 @@ func (r coursesRoutes) renameLecture(c *gin.Context) {
 		})
 		return
 	}
-	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
+	stream, err := r.StreamsDao.GetStreamByID(c, c.Param("streamID"))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,
@@ -639,7 +638,7 @@ func (r coursesRoutes) renameLecture(c *gin.Context) {
 		return
 	}
 	stream.Name = req.Name
-	if err = r.StreamsDao.UpdateStream(stream); err != nil {
+	if err = r.StreamsDao.UpdateStream(c, stream); err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "couldn't update lecture name",
@@ -658,7 +657,7 @@ func (r coursesRoutes) renameLecture(c *gin.Context) {
 }
 
 func (r coursesRoutes) updateLectureSeries(c *gin.Context) {
-	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
+	stream, err := r.StreamsDao.GetStreamByID(c, c.Param("streamID"))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,
@@ -668,7 +667,7 @@ func (r coursesRoutes) updateLectureSeries(c *gin.Context) {
 		return
 	}
 
-	if err = r.StreamsDao.UpdateLectureSeries(stream); err != nil {
+	if err = r.StreamsDao.UpdateLectureSeries(c, stream); err != nil {
 		log.WithError(err).Error("couldn't update lecture series")
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -686,7 +685,7 @@ type renameLectureRequest struct {
 
 func (r coursesRoutes) deleteLectureSeries(c *gin.Context) {
 	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
+	stream, err := r.StreamsDao.GetStreamByID(c, c.Param("streamID"))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,
@@ -703,14 +702,14 @@ func (r coursesRoutes) deleteLectureSeries(c *gin.Context) {
 		})
 		return
 	}
-	if err := r.AuditDao.Create(&model.Audit{
+	if err := r.AuditDao.Create(c, &model.Audit{
 		User:    ctx.User,
 		Message: fmt.Sprintf("'%s': %s (%d and series)", ctx.Course.Name, stream.Start.Format("2006 02 Jan, 15:04"), stream.ID),
 		Type:    model.AuditStreamDelete,
 	}); err != nil {
 		log.Error("Create Audit:", err)
 	}
-	if err := r.StreamsDao.DeleteLectureSeries(stream.SeriesIdentifier); err != nil {
+	if err := r.StreamsDao.DeleteLectureSeries(c, stream.SeriesIdentifier); err != nil {
 		log.WithError(err).Error("couldn't delete lecture series")
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't delete lecture series")
 		return
@@ -732,7 +731,7 @@ func (r coursesRoutes) deleteLectures(c *gin.Context) {
 
 	var streams []model.Stream
 	for _, streamID := range req.StreamIDs {
-		stream, err := r.StreamsDao.GetStreamByID(context.Background(), streamID)
+		stream, err := r.StreamsDao.GetStreamByID(c, streamID)
 		if err != nil || stream.CourseID != tumLiveContext.Course.ID {
 			_ = c.Error(tools.RequestError{
 				Status:        http.StatusForbidden,
@@ -745,14 +744,14 @@ func (r coursesRoutes) deleteLectures(c *gin.Context) {
 	}
 
 	for _, stream := range streams {
-		if err := r.AuditDao.Create(&model.Audit{
+		if err := r.AuditDao.Create(c, &model.Audit{
 			User:    tumLiveContext.User,
 			Message: fmt.Sprintf("'%s': %s (%d)", tumLiveContext.Course.Name, stream.Start.Format("2006 02 Jan, 15:04"), stream.ID),
 			Type:    model.AuditStreamDelete,
 		}); err != nil {
 			log.Error("Create Audit:", err)
 		}
-		r.StreamsDao.DeleteStream(strconv.Itoa(int(stream.ID)))
+		r.StreamsDao.DeleteStream(c, strconv.Itoa(int(stream.ID)))
 	}
 }
 
@@ -861,7 +860,7 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 			lecture.Files = []model.File{{Path: fmt.Sprintf("%s/%s", premiereFolder, premiereFileName)}}
 		}
 
-		if err := r.AuditDao.Create(&model.Audit{
+		if err := r.AuditDao.Create(c, &model.Audit{
 			User:    tumLiveContext.User,
 			Message: fmt.Sprintf("Stream for '%s' Created. Time: %s", tumLiveContext.Course.Name, lecture.Start.Format("2006 02 Jan, 15:04")),
 			Type:    model.AuditStreamCreate,
@@ -872,7 +871,7 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 		tumLiveContext.Course.Streams = append(tumLiveContext.Course.Streams, lecture)
 	}
 
-	err = r.CoursesDao.UpdateCourse(context.Background(), *tumLiveContext.Course)
+	err = r.CoursesDao.UpdateCourse(c, *tumLiveContext.Course)
 	if err != nil {
 		log.WithError(err).Warn("can not update course")
 		_ = c.Error(tools.RequestError{
@@ -969,7 +968,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		course.Admins = []model.User{*tumLiveContext.User}
 	}
 
-	if err := r.AuditDao.Create(&model.Audit{
+	if err := r.AuditDao.Create(c, &model.Audit{
 		User:    tumLiveContext.User,
 		Message: fmt.Sprintf("%s:'%s' (%d, %s)", course.Slug, course.Name, course.Year, course.TeachingTerm), // e.g. "eidi:'Einführung in die Informatik' (2020, S)"
 		Type:    model.AuditCourseCreate,
@@ -977,7 +976,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		log.Error("Create Audit:", err)
 	}
 
-	err = r.CoursesDao.CreateCourse(context.Background(), &course, true)
+	err = r.CoursesDao.CreateCourse(c, &course, true)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -986,7 +985,7 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 		})
 		return
 	}
-	courseWithID, err := r.CoursesDao.GetCourseBySlugYearAndTerm(context.Background(), req.Slug, semester, year)
+	courseWithID, err := r.CoursesDao.GetCourseBySlugYearAndTerm(c, req.Slug, semester, year)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -1011,7 +1010,7 @@ func (r coursesRoutes) deleteCourse(c *gin.Context) {
 		"course": tumLiveContext.Course.ID,
 	}).Info("Delete Course Called")
 
-	if err := r.AuditDao.Create(&model.Audit{
+	if err := r.AuditDao.Create(c, &model.Audit{
 		User:    tumLiveContext.User,
 		Message: fmt.Sprintf("'%s' (%d, %s)[%d]", tumLiveContext.Course.Name, tumLiveContext.Course.Year, tumLiveContext.Course.TeachingTerm, tumLiveContext.Course.ID),
 		Type:    model.AuditCourseDelete,
@@ -1019,7 +1018,7 @@ func (r coursesRoutes) deleteCourse(c *gin.Context) {
 		log.Error("Create Audit:", err)
 	}
 
-	r.CoursesDao.DeleteCourse(*tumLiveContext.Course)
+	r.CoursesDao.DeleteCourse(c, *tumLiveContext.Course)
 	dao.Cache.Clear()
 }
 
@@ -1064,7 +1063,7 @@ func (r coursesRoutes) courseInfo(c *gin.Context) {
 func (r coursesRoutes) getTranscodingProgress(c *gin.Context) {
 	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	version := c.DefaultQuery("v", string(model.COMB))
-	p, err := r.StreamsDao.GetTranscodingProgressByVersion(model.StreamVersion(version), ctx.Stream.ID)
+	p, err := r.StreamsDao.GetTranscodingProgressByVersion(c, model.StreamVersion(version), ctx.Stream.ID)
 	if err == gorm.ErrRecordNotFound {
 		c.JSON(http.StatusOK, 100)
 		return

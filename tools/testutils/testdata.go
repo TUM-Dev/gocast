@@ -252,15 +252,15 @@ func GetStreamMock(t *testing.T) dao.StreamsDao {
 		Return(StreamFPVLive, nil).AnyTimes()
 	streamsMock.
 		EXPECT().
-		GetWorkersForStream(StreamFPVLive).
+		GetWorkersForStream(gomock.Any(), StreamFPVLive).
 		Return([]model.Worker{Worker1, Worker2}, nil).AnyTimes()
 	streamsMock.
 		EXPECT().
-		ClearWorkersForStream(StreamFPVLive).
+		ClearWorkersForStream(gomock.Any(), StreamFPVLive).
 		Return(nil).AnyTimes()
 	streamsMock.
 		EXPECT().
-		ToggleVisibility(StreamFPVLive.ID, gomock.Any()).
+		ToggleVisibility(gomock.Any(), StreamFPVLive.ID, gomock.Any()).
 		Return(nil).AnyTimes()
 	streamsMock.
 		EXPECT().
@@ -268,32 +268,32 @@ func GetStreamMock(t *testing.T) dao.StreamsDao {
 		Return([]model.Stream{StreamFPVLive}, nil).AnyTimes()
 	streamsMock.
 		EXPECT().
-		UpdateStreamFullAssoc(gomock.Any()).
+		UpdateStreamFullAssoc(gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
 	streamsMock.
 		EXPECT().
-		GetUnitByID(fmt.Sprintf("%d", StreamFPVLive.Units[0].ID)).
+		GetUnitByID(gomock.Any(), fmt.Sprintf("%d", StreamFPVLive.Units[0].ID)).
 		Return(StreamFPVLive.Units[0], nil).
 		AnyTimes()
 	streamsMock.
 		EXPECT().
-		DeleteUnit(StreamFPVLive.Units[0].ID).
+		DeleteUnit(gomock.Any(), StreamFPVLive.Units[0].ID).
 		Return().
 		AnyTimes()
 	streamsMock.
 		EXPECT().
-		SaveStream(gomock.Any()).
+		SaveStream(gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
 	streamsMock.
 		EXPECT().
-		UpdateStream(gomock.Any()).
+		UpdateStream(gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
 	streamsMock.
 		EXPECT().
-		CreateStream(gomock.Any()).
+		CreateStream(gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
 	return streamsMock
@@ -313,17 +313,17 @@ func GetCoursesMock(t *testing.T) dao.CoursesDao {
 		AnyTimes()
 	coursesMock.
 		EXPECT().
-		GetCourseAdmins(CourseFPV.ID).
+		GetCourseAdmins(gomock.Any(), CourseFPV.ID).
 		Return([]model.User{Admin, Admin}, nil).
 		AnyTimes()
 	coursesMock.
 		EXPECT().
-		AddAdminToCourse(Admin.ID, CourseFPV.ID).
+		AddAdminToCourse(gomock.Any(), Admin.ID, CourseFPV.ID).
 		Return(nil).
 		AnyTimes()
 	coursesMock.
 		EXPECT().
-		RemoveAdminFromCourse(Admin.ID, CourseFPV.ID).
+		RemoveAdminFromCourse(gomock.Any(), Admin.ID, CourseFPV.ID).
 		Return(nil).
 		AnyTimes()
 	return coursesMock
@@ -333,7 +333,7 @@ func GetLectureHallMock(t *testing.T) dao.LectureHallsDao {
 	lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 	lectureHallMock.
 		EXPECT().
-		GetLectureHallByID(LectureHall.ID).
+		GetLectureHallByID(gomock.Any(), LectureHall.ID).
 		Return(LectureHall, nil)
 	return lectureHallMock
 }
@@ -342,7 +342,7 @@ func GetLectureHallMockError(t *testing.T) dao.LectureHallsDao {
 	lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 	lectureHallMock.
 		EXPECT().
-		GetLectureHallByID(gomock.Any()).
+		GetLectureHallByID(gomock.Any(), gomock.Any()).
 		Return(model.LectureHall{}, errors.New(""))
 	return lectureHallMock
 }
@@ -351,11 +351,11 @@ func GetTokenMock(t *testing.T) dao.TokenDao {
 	tokenMock := mock_dao.NewMockTokenDao(gomock.NewController(t))
 	tokenMock.
 		EXPECT().
-		GetToken(AdminToken.Token).
-		Return(AdminToken, nil)
+		GetToken(gomock.Any(), AdminToken.Token).
+		Return(gomock.Any(), AdminToken, nil)
 	tokenMock.
 		EXPECT().
-		TokenUsed(AdminToken).
+		TokenUsed(gomock.Any(), AdminToken).
 		Return(nil)
 	return tokenMock
 }
@@ -364,18 +364,18 @@ func GetFileMock(t *testing.T) dao.FileDao {
 	fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
 	fileMock.
 		EXPECT().
-		GetFileById(fmt.Sprintf("%d", Attachment.ID)).
+		GetFileById(gomock.Any(), fmt.Sprintf("%d", Attachment.ID)).
 		Return(Attachment, nil)
 	fileMock.
 		EXPECT().
-		DeleteFile(Attachment.ID).
+		DeleteFile(gomock.Any(), Attachment.ID).
 		Return(nil)
 	return fileMock
 }
 
 func GetAuditMock(t *testing.T) dao.AuditDao {
 	auditMock := mock_dao.NewMockAuditDao(gomock.NewController(t))
-	auditMock.EXPECT().Create(gomock.Any()).Return(nil)
+	auditMock.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil)
 	return auditMock
 }
 
@@ -393,7 +393,7 @@ func GetUploadKeyMock(t *testing.T) dao.UploadKeyDao {
 	streamsMock := mock_dao.NewMockUploadKeyDao(gomock.NewController(t))
 	streamsMock.
 		EXPECT().
-		CreateUploadKey(gomock.Any(), gomock.Any()).
+		CreateUploadKey(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil)
 	return streamsMock
 }
@@ -402,7 +402,7 @@ func GetProgressMock(t *testing.T) dao.ProgressDao {
 	progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
 	progressMock.
 		EXPECT().
-		SaveProgresses(gomock.Any()).
+		SaveProgresses(gomock.Any(), gomock.Any()).
 		Return(nil).AnyTimes()
 	return progressMock
 }

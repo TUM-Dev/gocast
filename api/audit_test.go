@@ -19,7 +19,7 @@ func TestGetAudits(t *testing.T) {
 	// audit mock
 	mock := mock_dao.NewMockAuditDao(gomock.NewController(t))
 	mock.EXPECT().Find(gomock.Any(), gomock.Any(), gomock.Any()).Return([]model.Audit{}, nil).AnyTimes()
-	mock.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
+	mock.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	gomino.TestCases{
 		"get audits": {

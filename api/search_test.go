@@ -62,7 +62,7 @@ func TestSearch(t *testing.T) {
 							searchMock := mock_dao.NewMockSearchDao(ctrl)
 							searchMock.
 								EXPECT().
-								Search(queryString, testutils.CourseFPV.ID).
+								Search(gomock.Any(), queryString, testutils.CourseFPV.ID).
 								Return([]model.Stream{}, errors.New(""))
 							return searchMock
 						}(),
@@ -79,7 +79,7 @@ func TestSearch(t *testing.T) {
 							searchMock := mock_dao.NewMockSearchDao(ctrl)
 							searchMock.
 								EXPECT().
-								Search(queryString, testutils.CourseFPV.ID).
+								Search(gomock.Any(), queryString, testutils.CourseFPV.ID).
 								Return([]model.Stream{testutils.StreamFPVNotLive}, nil)
 							return searchMock
 						}(),

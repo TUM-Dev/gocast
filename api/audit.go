@@ -42,7 +42,7 @@ func (r auditRoutes) getAudits(c *gin.Context) {
 	if len(reqData.Types) == 0 {
 		reqData.Types = model.GetAllAuditTypes()
 	}
-	found, err := r.AuditDao.Find(reqData.Limit, reqData.Offset, reqData.Types...)
+	found, err := r.AuditDao.Find(c, reqData.Limit, reqData.Offset, reqData.Types...)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

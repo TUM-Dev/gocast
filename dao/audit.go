@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"context"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"gorm.io/gorm"
 )
@@ -9,17 +10,17 @@ import (
 
 type AuditDao interface {
 	// Create a new audit for the database
-	Create(*model.Audit) error
+	Create(ctx context.Context, audit *model.Audit) error
 	// Find audits
-	Find(limit int, offset int, types ...model.AuditType) (audits []model.Audit, err error)
+	Find(ctx context.Context, limit int, offset int, types ...model.AuditType) (audits []model.Audit, err error)
 }
 
 type auditDao struct {
 	db *gorm.DB
 }
 
-func (a auditDao) Find(limit int, offset int, types ...model.AuditType) (audits []model.Audit, err error) {
-	return audits, a.db.
+func (a auditDao) Find(ctx context.Context, limit int, offset int, types ...model.AuditType) (audits []model.Audit, err error) {
+	return audits, a.db.WithContext(ctx).
 		Preload("User").
 		Model(&model.Audit{}).
 		Where("type in ?", types).
@@ -29,8 +30,8 @@ func (a auditDao) Find(limit int, offset int, types ...model.AuditType) (audits 
 		Find(&audits).Error
 }
 
-func (a auditDao) Create(audit *model.Audit) error {
-	return a.db.Create(audit).Error
+func (a auditDao) Create(ctx context.Context, audit *model.Audit) error {
+	return a.db.WithContext(ctx).Create(audit).Error
 }
 
 func NewAuditDao() AuditDao {

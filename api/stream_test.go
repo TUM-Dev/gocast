@@ -102,7 +102,7 @@ func TestStream(t *testing.T) {
 						CoursesDao: testutils.GetCoursesMock(t),
 						LectureHallsDao: func() dao.LectureHallsDao {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
-							lectureHallMock.EXPECT().GetLectureHallByID(gomock.Any()).Return(model.LectureHall{}, errors.New(""))
+							lectureHallMock.EXPECT().GetLectureHallByID(gomock.Any(), gomock.Any()).Return(model.LectureHall{}, errors.New(""))
 							return lectureHallMock
 						}(),
 						TokenDao: testutils.GetTokenMock(t),
@@ -258,13 +258,13 @@ func TestStream(t *testing.T) {
 								Return(testutils.StreamFPVLive, nil).AnyTimes()
 							streamsMock.
 								EXPECT().
-								ToggleVisibility(testutils.StreamFPVLive.ID, gomock.Any()).
+								ToggleVisibility(gomock.Any(), testutils.StreamFPVLive.ID, gomock.Any()).
 								Return(errors.New("")).AnyTimes()
 							return streamsMock
 						}(),
 						AuditDao: func() dao.AuditDao {
 							mock := mock_dao.NewMockAuditDao(gomock.NewController(t))
-							mock.EXPECT().Create(gomock.Any()).AnyTimes().Return(nil)
+							mock.EXPECT().Create(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 							return mock
 						}(),
 						CoursesDao: testutils.GetCoursesMock(t),
@@ -282,7 +282,7 @@ func TestStream(t *testing.T) {
 						CoursesDao: testutils.GetCoursesMock(t),
 						AuditDao: func() dao.AuditDao {
 							mock := mock_dao.NewMockAuditDao(gomock.NewController(t))
-							mock.EXPECT().Create(gomock.Any()).AnyTimes().Return(nil)
+							mock.EXPECT().Create(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 							return mock
 						}(),
 					}
@@ -328,7 +328,7 @@ func TestStreamVideoSections(t *testing.T) {
 							sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
 							sectionMock.
 								EXPECT().
-								GetByStreamId(testutils.StreamFPVLive.ID).
+								GetByStreamId(gomock.Any(), testutils.StreamFPVLive.ID).
 								Return([]model.VideoSection{}, errors.New(""))
 							return sectionMock
 						}(),
@@ -348,7 +348,7 @@ func TestStreamVideoSections(t *testing.T) {
 							sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
 							sectionMock.
 								EXPECT().
-								GetByStreamId(testutils.StreamFPVLive.ID).
+								GetByStreamId(gomock.Any(), testutils.StreamFPVLive.ID).
 								Return(testutils.StreamFPVLive.VideoSections, nil)
 							return sectionMock
 						}(),
@@ -392,7 +392,7 @@ func TestStreamVideoSections(t *testing.T) {
 							sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
 							sectionMock.
 								EXPECT().
-								Create(gomock.Any()).
+								Create(gomock.Any(), gomock.Any()).
 								Return(errors.New(""))
 							return sectionMock
 						}(),
@@ -412,11 +412,11 @@ func TestStreamVideoSections(t *testing.T) {
 							sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
 							sectionMock.
 								EXPECT().
-								Create(gomock.Any()).
+								Create(gomock.Any(), gomock.Any()).
 								Return(nil)
 							sectionMock.
 								EXPECT().
-								GetByStreamId(testutils.StreamFPVLive.ID).
+								GetByStreamId(gomock.Any(), testutils.StreamFPVLive.ID).
 								Return([]model.VideoSection{}, errors.New(""))
 							return sectionMock
 						}(),
@@ -484,7 +484,7 @@ func TestStreamVideoSections(t *testing.T) {
 							sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
 							sectionMock.
 								EXPECT().
-								Get(section.ID).
+								Get(gomock.Any(), section.ID).
 								Return(section, errors.New("")).
 								AnyTimes()
 							return sectionMock
@@ -504,7 +504,7 @@ func TestStreamVideoSections(t *testing.T) {
 							sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
 							sectionMock.
 								EXPECT().
-								Get(section.ID).
+								Get(gomock.Any(), section.ID).
 								Return(section, nil).
 								AnyTimes()
 							return sectionMock
@@ -513,7 +513,7 @@ func TestStreamVideoSections(t *testing.T) {
 							fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
 							fileMock.
 								EXPECT().
-								GetFileById(fmt.Sprintf("%d", section.ID)).
+								GetFileById(gomock.Any(), fmt.Sprintf("%d", section.ID)).
 								Return(model.File{}, errors.New("")).
 								AnyTimes()
 							return fileMock
@@ -533,12 +533,12 @@ func TestStreamVideoSections(t *testing.T) {
 							sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
 							sectionMock.
 								EXPECT().
-								Get(section.ID).
+								Get(gomock.Any(), section.ID).
 								Return(section, nil).
 								AnyTimes()
 							sectionMock.
 								EXPECT().
-								Delete(gomock.Any()).
+								Delete(gomock.Any(), gomock.Any()).
 								Return(errors.New(""))
 							return sectionMock
 						}(),
@@ -546,7 +546,7 @@ func TestStreamVideoSections(t *testing.T) {
 							fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
 							fileMock.
 								EXPECT().
-								GetFileById(fmt.Sprintf("%d", section.ID)).
+								GetFileById(gomock.Any(), fmt.Sprintf("%d", section.ID)).
 								Return(model.File{}, nil).
 								AnyTimes()
 							return fileMock
@@ -783,7 +783,7 @@ func TestAttachments(t *testing.T) {
 						}(),
 						FileDao: func() dao.FileDao {
 							fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
-							fileMock.EXPECT().NewFile(gomock.Any()).Return(errors.New(""))
+							fileMock.EXPECT().NewFile(gomock.Any(), gomock.Any()).Return(errors.New(""))
 							return fileMock
 						}(),
 					}
@@ -817,7 +817,7 @@ func TestAttachments(t *testing.T) {
 						}(),
 						FileDao: func() dao.FileDao {
 							fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
-							fileMock.EXPECT().NewFile(&model.File{
+							fileMock.EXPECT().NewFile(gomock.Any(), &model.File{
 								StreamID: testutils.StreamFPVLive.ID,
 								Path:     "https://storage.com/test.txt",
 								Filename: "test.txt",
@@ -872,7 +872,7 @@ func TestAttachments(t *testing.T) {
 							fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
 							fileMock.
 								EXPECT().
-								GetFileById(fmt.Sprintf("%d", testFile.ID)).
+								GetFileById(gomock.Any(), fmt.Sprintf("%d", testFile.ID)).
 								Return(model.File{}, errors.New(""))
 							return fileMock
 						}(),
@@ -891,7 +891,7 @@ func TestAttachments(t *testing.T) {
 							fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
 							fileMock.
 								EXPECT().
-								GetFileById(fmt.Sprintf("%d", testFileNotExists.ID)).
+								GetFileById(gomock.Any(), fmt.Sprintf("%d", testFileNotExists.ID)).
 								Return(testFileNotExists, nil)
 							return fileMock
 						}(),
@@ -910,11 +910,11 @@ func TestAttachments(t *testing.T) {
 							fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
 							fileMock.
 								EXPECT().
-								GetFileById(fmt.Sprintf("%d", testFile.ID)).
+								GetFileById(gomock.Any(), fmt.Sprintf("%d", testFile.ID)).
 								Return(testFile, nil)
 							fileMock.
 								EXPECT().
-								DeleteFile(testFile.ID).
+								DeleteFile(gomock.Any(), testFile.ID).
 								Return(errors.New(""))
 							return fileMock
 						}(),

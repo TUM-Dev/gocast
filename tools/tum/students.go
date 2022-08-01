@@ -1,6 +1,7 @@
 package tum
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/antchfx/xmlquery"
@@ -24,7 +25,7 @@ func FindStudentsForCourses(courses []model.Course, usersDao dao.UsersDao) {
 			log.WithError(err).WithField("TUMOnlineIdentifier", courses[i].TUMOnlineIdentifier).Error("FindStudentsForCourses: Can't get Students for course with id")
 			continue
 		}
-		err = usersDao.AddUsersToCourseByTUMIDs(studentIDs, courses[i].ID)
+		err = usersDao.AddUsersToCourseByTUMIDs(context.Background(), studentIDs, courses[i].ID)
 		if err != nil {
 			log.WithError(err).Error("FindStudentsForCourses: Can't add users to course")
 		}

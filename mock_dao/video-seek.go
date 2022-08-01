@@ -5,6 +5,7 @@
 package mock_dao
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,30 +36,30 @@ func (m *MockVideoSeekDao) EXPECT() *MockVideoSeekDaoMockRecorder {
 }
 
 // Add mocks base method.
-func (m *MockVideoSeekDao) Add(streamID string, pos float64) error {
+func (m *MockVideoSeekDao) Add(ctx context.Context, streamID string, pos float64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Add", streamID, pos)
+	ret := m.ctrl.Call(m, "Add", ctx, streamID, pos)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Add indicates an expected call of Add.
-func (mr *MockVideoSeekDaoMockRecorder) Add(streamID, pos interface{}) *gomock.Call {
+func (mr *MockVideoSeekDaoMockRecorder) Add(ctx, streamID, pos interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockVideoSeekDao)(nil).Add), streamID, pos)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockVideoSeekDao)(nil).Add), ctx, streamID, pos)
 }
 
 // Get mocks base method.
-func (m *MockVideoSeekDao) Get(streamID string) ([]model.VideoSeekChunk, error) {
+func (m *MockVideoSeekDao) Get(ctx context.Context, streamID string) ([]model.VideoSeekChunk, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", streamID)
+	ret := m.ctrl.Call(m, "Get", ctx, streamID)
 	ret0, _ := ret[0].([]model.VideoSeekChunk)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockVideoSeekDaoMockRecorder) Get(streamID interface{}) *gomock.Call {
+func (mr *MockVideoSeekDaoMockRecorder) Get(ctx, streamID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockVideoSeekDao)(nil).Get), streamID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockVideoSeekDao)(nil).Get), ctx, streamID)
 }

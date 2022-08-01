@@ -27,7 +27,7 @@ func TestWorker(t *testing.T) {
 							workerDaoMock := mock_dao.NewMockWorkerDao(gomock.NewController(t))
 							workerDaoMock.
 								EXPECT().
-								DeleteWorker(testutils.Worker1.WorkerID).
+								DeleteWorker(gomock.Any(), testutils.Worker1.WorkerID).
 								Return(errors.New("")).
 								AnyTimes()
 							return workerDaoMock
@@ -45,7 +45,7 @@ func TestWorker(t *testing.T) {
 							workerDaoMock := mock_dao.NewMockWorkerDao(gomock.NewController(t))
 							workerDaoMock.
 								EXPECT().
-								DeleteWorker(testutils.Worker1.WorkerID).
+								DeleteWorker(gomock.Any(), testutils.Worker1.WorkerID).
 								Return(nil).
 								AnyTimes()
 							return workerDaoMock

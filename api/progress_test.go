@@ -93,7 +93,7 @@ func TestWatched(t *testing.T) {
 							progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
 							progressMock.
 								EXPECT().
-								SaveWatchedState(gomock.Any()).
+								SaveWatchedState(gomock.Any(), gomock.Any()).
 								Return(errors.New(""))
 							return progressMock
 						}(),
@@ -111,7 +111,7 @@ func TestWatched(t *testing.T) {
 							progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
 							progressMock.
 								EXPECT().
-								SaveWatchedState(gomock.Any()).
+								SaveWatchedState(gomock.Any(), gomock.Any()).
 								Return(nil)
 							return progressMock
 						}(),

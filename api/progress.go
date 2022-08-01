@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
@@ -43,7 +44,7 @@ func (b *progressBuffer) flush() error {
 	if len(b.progresses) == 0 {
 		return nil
 	}
-	err := dao.Progress.SaveProgresses(b.progresses)
+	err := dao.Progress.SaveProgresses(context.Background(), b.progresses)
 	b.progresses = []model.StreamProgress{}
 	return err
 }
@@ -158,7 +159,7 @@ func (r progressRoutes) markWatched(c *gin.Context) {
 		StreamID: request.StreamID,
 		Watched:  request.Watched,
 	}
-	err = r.ProgressDao.SaveWatchedState(&prog)
+	err = r.ProgressDao.SaveWatchedState(c, &prog)
 	if err != nil {
 		log.WithError(err).Error("can not mark VoD as watched.")
 		_ = c.Error(tools.RequestError{

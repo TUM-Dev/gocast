@@ -5,6 +5,7 @@
 package mock_dao
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,59 +36,59 @@ func (m *MockProgressDao) EXPECT() *MockProgressDaoMockRecorder {
 }
 
 // GetProgressesForUser mocks base method.
-func (m *MockProgressDao) GetProgressesForUser(userID uint) ([]model.StreamProgress, error) {
+func (m *MockProgressDao) GetProgressesForUser(ctx context.Context, userID uint) ([]model.StreamProgress, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProgressesForUser", userID)
+	ret := m.ctrl.Call(m, "GetProgressesForUser", ctx, userID)
 	ret0, _ := ret[0].([]model.StreamProgress)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetProgressesForUser indicates an expected call of GetProgressesForUser.
-func (mr *MockProgressDaoMockRecorder) GetProgressesForUser(userID interface{}) *gomock.Call {
+func (mr *MockProgressDaoMockRecorder) GetProgressesForUser(ctx, userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProgressesForUser", reflect.TypeOf((*MockProgressDao)(nil).GetProgressesForUser), userID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProgressesForUser", reflect.TypeOf((*MockProgressDao)(nil).GetProgressesForUser), ctx, userID)
 }
 
 // LoadProgress mocks base method.
-func (m *MockProgressDao) LoadProgress(userID, streamID uint) (model.StreamProgress, error) {
+func (m *MockProgressDao) LoadProgress(ctx context.Context, userID, streamID uint) (model.StreamProgress, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoadProgress", userID, streamID)
+	ret := m.ctrl.Call(m, "LoadProgress", ctx, userID, streamID)
 	ret0, _ := ret[0].(model.StreamProgress)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // LoadProgress indicates an expected call of LoadProgress.
-func (mr *MockProgressDaoMockRecorder) LoadProgress(userID, streamID interface{}) *gomock.Call {
+func (mr *MockProgressDaoMockRecorder) LoadProgress(ctx, userID, streamID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadProgress", reflect.TypeOf((*MockProgressDao)(nil).LoadProgress), userID, streamID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadProgress", reflect.TypeOf((*MockProgressDao)(nil).LoadProgress), ctx, userID, streamID)
 }
 
 // SaveProgresses mocks base method.
-func (m *MockProgressDao) SaveProgresses(progresses []model.StreamProgress) error {
+func (m *MockProgressDao) SaveProgresses(ctx context.Context, progresses []model.StreamProgress) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveProgresses", progresses)
+	ret := m.ctrl.Call(m, "SaveProgresses", ctx, progresses)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SaveProgresses indicates an expected call of SaveProgresses.
-func (mr *MockProgressDaoMockRecorder) SaveProgresses(progresses interface{}) *gomock.Call {
+func (mr *MockProgressDaoMockRecorder) SaveProgresses(ctx, progresses interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveProgresses", reflect.TypeOf((*MockProgressDao)(nil).SaveProgresses), progresses)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveProgresses", reflect.TypeOf((*MockProgressDao)(nil).SaveProgresses), ctx, progresses)
 }
 
 // SaveWatchedState mocks base method.
-func (m *MockProgressDao) SaveWatchedState(progress *model.StreamProgress) error {
+func (m *MockProgressDao) SaveWatchedState(ctx context.Context, progress *model.StreamProgress) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveWatchedState", progress)
+	ret := m.ctrl.Call(m, "SaveWatchedState", ctx, progress)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SaveWatchedState indicates an expected call of SaveWatchedState.
-func (mr *MockProgressDaoMockRecorder) SaveWatchedState(progress interface{}) *gomock.Call {
+func (mr *MockProgressDaoMockRecorder) SaveWatchedState(ctx, progress interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveWatchedState", reflect.TypeOf((*MockProgressDao)(nil).SaveWatchedState), progress)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveWatchedState", reflect.TypeOf((*MockProgressDao)(nil).SaveWatchedState), ctx, progress)
 }

@@ -36,60 +36,60 @@ func (m *MockWorkerDao) EXPECT() *MockWorkerDaoMockRecorder {
 }
 
 // CreateWorker mocks base method.
-func (m *MockWorkerDao) CreateWorker(worker *model.Worker) error {
+func (m *MockWorkerDao) CreateWorker(ctx context.Context, worker *model.Worker) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateWorker", worker)
+	ret := m.ctrl.Call(m, "CreateWorker", ctx, worker)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CreateWorker indicates an expected call of CreateWorker.
-func (mr *MockWorkerDaoMockRecorder) CreateWorker(worker interface{}) *gomock.Call {
+func (mr *MockWorkerDaoMockRecorder) CreateWorker(ctx, worker interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWorker", reflect.TypeOf((*MockWorkerDao)(nil).CreateWorker), worker)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWorker", reflect.TypeOf((*MockWorkerDao)(nil).CreateWorker), ctx, worker)
 }
 
 // DeleteWorker mocks base method.
-func (m *MockWorkerDao) DeleteWorker(workerID string) error {
+func (m *MockWorkerDao) DeleteWorker(ctx context.Context, workerID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteWorker", workerID)
+	ret := m.ctrl.Call(m, "DeleteWorker", ctx, workerID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteWorker indicates an expected call of DeleteWorker.
-func (mr *MockWorkerDaoMockRecorder) DeleteWorker(workerID interface{}) *gomock.Call {
+func (mr *MockWorkerDaoMockRecorder) DeleteWorker(ctx, workerID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWorker", reflect.TypeOf((*MockWorkerDao)(nil).DeleteWorker), workerID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWorker", reflect.TypeOf((*MockWorkerDao)(nil).DeleteWorker), ctx, workerID)
 }
 
 // GetAliveWorkers mocks base method.
-func (m *MockWorkerDao) GetAliveWorkers() []model.Worker {
+func (m *MockWorkerDao) GetAliveWorkers(ctx context.Context) []model.Worker {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAliveWorkers")
+	ret := m.ctrl.Call(m, "GetAliveWorkers", ctx)
 	ret0, _ := ret[0].([]model.Worker)
 	return ret0
 }
 
 // GetAliveWorkers indicates an expected call of GetAliveWorkers.
-func (mr *MockWorkerDaoMockRecorder) GetAliveWorkers() *gomock.Call {
+func (mr *MockWorkerDaoMockRecorder) GetAliveWorkers(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAliveWorkers", reflect.TypeOf((*MockWorkerDao)(nil).GetAliveWorkers))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAliveWorkers", reflect.TypeOf((*MockWorkerDao)(nil).GetAliveWorkers), ctx)
 }
 
 // GetAllWorkers mocks base method.
-func (m *MockWorkerDao) GetAllWorkers() ([]model.Worker, error) {
+func (m *MockWorkerDao) GetAllWorkers(ctx context.Context) ([]model.Worker, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllWorkers")
+	ret := m.ctrl.Call(m, "GetAllWorkers", ctx)
 	ret0, _ := ret[0].([]model.Worker)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllWorkers indicates an expected call of GetAllWorkers.
-func (mr *MockWorkerDaoMockRecorder) GetAllWorkers() *gomock.Call {
+func (mr *MockWorkerDaoMockRecorder) GetAllWorkers(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllWorkers", reflect.TypeOf((*MockWorkerDao)(nil).GetAllWorkers))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllWorkers", reflect.TypeOf((*MockWorkerDao)(nil).GetAllWorkers), ctx)
 }
 
 // GetWorkerByHostname mocks base method.
@@ -123,15 +123,15 @@ func (mr *MockWorkerDaoMockRecorder) GetWorkerByID(ctx, workerID interface{}) *g
 }
 
 // SaveWorker mocks base method.
-func (m *MockWorkerDao) SaveWorker(worker model.Worker) error {
+func (m *MockWorkerDao) SaveWorker(ctx context.Context, worker model.Worker) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveWorker", worker)
+	ret := m.ctrl.Call(m, "SaveWorker", ctx, worker)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SaveWorker indicates an expected call of SaveWorker.
-func (mr *MockWorkerDaoMockRecorder) SaveWorker(worker interface{}) *gomock.Call {
+func (mr *MockWorkerDaoMockRecorder) SaveWorker(ctx, worker interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveWorker", reflect.TypeOf((*MockWorkerDao)(nil).SaveWorker), worker)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveWorker", reflect.TypeOf((*MockWorkerDao)(nil).SaveWorker), ctx, worker)
 }

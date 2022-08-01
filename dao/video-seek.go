@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"context"
 	"errors"
 	"github.com/joschahenningsen/TUM-Live/model"
 	log "github.com/sirupsen/logrus"
@@ -13,8 +14,8 @@ import (
 const maxChunksPerVideo = 150
 
 type VideoSeekDao interface {
-	Add(streamID string, pos float64) error
-	Get(streamID string) ([]model.VideoSeekChunk, error)
+	Add(ctx context.Context, streamID string, pos float64) error
+	Get(ctx context.Context, streamID string) ([]model.VideoSeekChunk, error)
 }
 
 type videoSeekDao struct {
@@ -25,9 +26,9 @@ func NewVideoSeekDao() VideoSeekDao {
 	return videoSeekDao{db: DB}
 }
 
-func (d videoSeekDao) Add(streamID string, pos float64) error {
+func (d videoSeekDao) Add(ctx context.Context, streamID string, pos float64) error {
 	var stream *model.Stream
-	if err := DB.First(&stream, "id = ?", streamID).Error; err != nil {
+	if err := DB.WithContext(ctx).First(&stream, "id = ?", streamID).Error; err != nil {
 		return err
 	}
 
@@ -39,7 +40,7 @@ func (d videoSeekDao) Add(streamID string, pos float64) error {
 	chunkTimeRange := float64(stream.Duration) / maxChunksPerVideo
 	chunk := uint(pos / chunkTimeRange)
 
-	return DB.Clauses(clause.OnConflict{
+	return DB.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "chunk_index"}, {Name: "stream_id"}},
 		DoUpdates: clause.Assignments(map[string]interface{}{"hits": gorm.Expr("hits + 1")}),
 	}).Create(&model.VideoSeekChunk{
@@ -49,10 +50,10 @@ func (d videoSeekDao) Add(streamID string, pos float64) error {
 	}).Error
 }
 
-func (d videoSeekDao) Get(streamID string) ([]model.VideoSeekChunk, error) {
+func (d videoSeekDao) Get(ctx context.Context, streamID string) ([]model.VideoSeekChunk, error) {
 	var chunks []model.VideoSeekChunk
 
-	if err := DB.Find(&chunks, "stream_id = ?", streamID).Error; err != nil {
+	if err := DB.WithContext(ctx).Find(&chunks, "stream_id = ?", streamID).Error; err != nil {
 		return nil, err
 	}
 

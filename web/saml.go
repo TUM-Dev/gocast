@@ -142,7 +142,7 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 			MatriculationNumber: matrNr,
 			LrzID:               lrzID,
 		}
-		err = daoWrapper.UsersDao.UpsertUser(&user)
+		err = daoWrapper.UsersDao.UpsertUser(c, &user)
 		if err != nil {
 			log.WithError(err).Error("Could not upsert user")
 			c.AbortWithStatus(http.StatusInternalServerError)

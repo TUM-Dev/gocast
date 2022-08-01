@@ -23,7 +23,7 @@ type workerRoutes struct {
 
 func (r workerRoutes) deleteWorker(c *gin.Context) {
 	id := c.Param("id")
-	err := r.dao.DeleteWorker(id)
+	err := r.dao.DeleteWorker(c, id)
 	if err != nil {
 		log.WithError(err).Error("can not delete worker")
 		_ = c.Error(tools.RequestError{

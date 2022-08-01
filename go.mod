@@ -48,12 +48,12 @@ require (
 	github.com/u2takey/go-utils v0.3.1
 )
 
-require github.com/matthiasreumann/gomino v0.0.2
-
 require (
-	github.com/hashicorp/errwrap v1.0.0 // indirect
-	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/hashicorp/go-multierror v1.1.1
+	github.com/matthiasreumann/gomino v0.0.2
 )
+
+require github.com/hashicorp/errwrap v1.0.0 // indirect
 
 require (
 	// this version works - newer commits have breaking changes - do not update

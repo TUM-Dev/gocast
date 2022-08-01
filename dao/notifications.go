@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"context"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"gorm.io/gorm"
 )
@@ -8,12 +9,12 @@ import (
 //go:generate mockgen -source=notifications.go -destination ../mock_dao/notifications.go
 
 type NotificationsDao interface {
-	AddNotification(notification *model.Notification) error
+	AddNotification(ctx context.Context, notification *model.Notification) error
 
-	GetNotifications(target ...model.NotificationTarget) ([]model.Notification, error)
-	GetAllNotifications() ([]model.Notification, error)
+	GetNotifications(ctx context.Context, target ...model.NotificationTarget) ([]model.Notification, error)
+	GetAllNotifications(ctx context.Context) ([]model.Notification, error)
 
-	DeleteNotification(id uint) error
+	DeleteNotification(ctx context.Context, id uint) error
 }
 
 type notificationsDao struct {
@@ -25,24 +26,24 @@ func NewNotificiationsDao() NotificationsDao {
 }
 
 // AddNotification adds a new notification to the database
-func (d notificationsDao) AddNotification(notification *model.Notification) error {
-	return DB.Create(notification).Error
+func (d notificationsDao) AddNotification(ctx context.Context, notification *model.Notification) error {
+	return DB.WithContext(ctx).Create(notification).Error
 }
 
 // GetNotifications returns all notifications for the specified targets
-func (d notificationsDao) GetNotifications(target ...model.NotificationTarget) ([]model.Notification, error) {
+func (d notificationsDao) GetNotifications(ctx context.Context, target ...model.NotificationTarget) ([]model.Notification, error) {
 	var notifications []model.Notification
-	err := DB.Where("target IN ?", target).Order("id DESC").Find(&notifications).Error
+	err := DB.WithContext(ctx).Where("target IN ?", target).Order("id DESC").Find(&notifications).Error
 	return notifications, err
 }
 
-func (d notificationsDao) GetAllNotifications() ([]model.Notification, error) {
+func (d notificationsDao) GetAllNotifications(ctx context.Context) ([]model.Notification, error) {
 	var notifications []model.Notification
-	err := DB.Find(&notifications).Error
+	err := DB.WithContext(ctx).Find(&notifications).Error
 	return notifications, err
 }
 
 // DeleteNotification deletes a notification from the database
-func (d notificationsDao) DeleteNotification(id uint) error {
-	return DB.Unscoped().Delete(&model.Notification{}, id).Error
+func (d notificationsDao) DeleteNotification(ctx context.Context, id uint) error {
+	return DB.WithContext(ctx).Unscoped().Delete(&model.Notification{}, id).Error
 }

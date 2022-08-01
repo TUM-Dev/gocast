@@ -5,6 +5,7 @@
 package mock_dao
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,59 +36,59 @@ func (m *MockInfoPageDao) EXPECT() *MockInfoPageDaoMockRecorder {
 }
 
 // GetAll mocks base method.
-func (m *MockInfoPageDao) GetAll() ([]model.InfoPage, error) {
+func (m *MockInfoPageDao) GetAll(ctx context.Context) ([]model.InfoPage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll")
+	ret := m.ctrl.Call(m, "GetAll", ctx)
 	ret0, _ := ret[0].([]model.InfoPage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAll indicates an expected call of GetAll.
-func (mr *MockInfoPageDaoMockRecorder) GetAll() *gomock.Call {
+func (mr *MockInfoPageDaoMockRecorder) GetAll(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockInfoPageDao)(nil).GetAll))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockInfoPageDao)(nil).GetAll), ctx)
 }
 
 // GetById mocks base method.
-func (m *MockInfoPageDao) GetById(arg0 uint) (model.InfoPage, error) {
+func (m *MockInfoPageDao) GetById(ctx context.Context, id uint) (model.InfoPage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetById", arg0)
+	ret := m.ctrl.Call(m, "GetById", ctx, id)
 	ret0, _ := ret[0].(model.InfoPage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetById indicates an expected call of GetById.
-func (mr *MockInfoPageDaoMockRecorder) GetById(arg0 interface{}) *gomock.Call {
+func (mr *MockInfoPageDaoMockRecorder) GetById(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetById", reflect.TypeOf((*MockInfoPageDao)(nil).GetById), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetById", reflect.TypeOf((*MockInfoPageDao)(nil).GetById), ctx, id)
 }
 
 // New mocks base method.
-func (m *MockInfoPageDao) New(arg0 *model.InfoPage) error {
+func (m *MockInfoPageDao) New(ctx context.Context, infoPage *model.InfoPage) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "New", arg0)
+	ret := m.ctrl.Call(m, "New", ctx, infoPage)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // New indicates an expected call of New.
-func (mr *MockInfoPageDaoMockRecorder) New(arg0 interface{}) *gomock.Call {
+func (mr *MockInfoPageDaoMockRecorder) New(ctx, infoPage interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "New", reflect.TypeOf((*MockInfoPageDao)(nil).New), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "New", reflect.TypeOf((*MockInfoPageDao)(nil).New), ctx, infoPage)
 }
 
 // Update mocks base method.
-func (m *MockInfoPageDao) Update(arg0 uint, arg1 *model.InfoPage) error {
+func (m *MockInfoPageDao) Update(ctx context.Context, id uint, infoPage *model.InfoPage) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", arg0, arg1)
+	ret := m.ctrl.Call(m, "Update", ctx, id, infoPage)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockInfoPageDaoMockRecorder) Update(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockInfoPageDaoMockRecorder) Update(ctx, id, infoPage interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockInfoPageDao)(nil).Update), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockInfoPageDao)(nil).Update), ctx, id, infoPage)
 }

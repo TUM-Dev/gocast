@@ -40,7 +40,7 @@ func (r downloadRoutes) download(c *gin.Context) {
 		})
 		return
 	}
-	file, err := r.FileDao.GetFileById(c.Param("id"))
+	file, err := r.FileDao.GetFileById(c, c.Param("id"))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,

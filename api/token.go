@@ -26,7 +26,7 @@ type tokenRoutes struct {
 
 func (r tokenRoutes) deleteToken(c *gin.Context) {
 	id := c.Param("id")
-	err := r.TokenDao.DeleteToken(id)
+	err := r.TokenDao.DeleteToken(c, id)
 	if err != nil {
 		log.WithError(err).Error("can not delete token")
 		_ = c.Error(tools.RequestError{
@@ -76,7 +76,7 @@ func (r tokenRoutes) createToken(c *gin.Context) {
 		Expires: expires,
 		Scope:   req.Scope,
 	}
-	err = r.TokenDao.AddToken(token)
+	err = r.TokenDao.AddToken(c, token)
 	if err != nil {
 		log.WithError(err).Error("can not create token")
 		_ = c.Error(tools.RequestError{

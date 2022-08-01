@@ -131,7 +131,7 @@ func TestNotifications(t *testing.T) {
 							notification.Body = notification.SanitizedBody // reverse json binding here too
 							mock.
 								EXPECT().
-								AddNotification(&notification).
+								AddNotification(gomock.Any(), &notification).
 								Return(errors.New("")).
 								AnyTimes()
 							return mock
@@ -151,7 +151,7 @@ func TestNotifications(t *testing.T) {
 							notification.Body = notification.SanitizedBody // reverse json binding here too
 							mock.
 								EXPECT().
-								AddNotification(&notification).
+								AddNotification(gomock.Any(), &notification).
 								Return(nil).
 								AnyTimes()
 							return mock
@@ -188,7 +188,7 @@ func TestNotifications(t *testing.T) {
 							mock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
 							mock.
 								EXPECT().
-								DeleteNotification(id).
+								DeleteNotification(gomock.Any(), id).
 								Return(errors.New("")).
 								AnyTimes()
 							return mock
@@ -206,7 +206,7 @@ func TestNotifications(t *testing.T) {
 							mock := mock_dao.NewMockNotificationsDao(gomock.NewController(t))
 							mock.
 								EXPECT().
-								DeleteNotification(id).
+								DeleteNotification(gomock.Any(), id).
 								Return(nil).
 								AnyTimes()
 							return mock

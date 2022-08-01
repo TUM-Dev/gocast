@@ -23,15 +23,15 @@ func (r mainRoutes) MainPage(c *gin.Context) {
 	IsFreshInstallation(c, r.UsersDao)
 
 	indexData := NewIndexDataWithContext(c)
-	indexData.LoadCurrentNotifications(r.ServerNotificationDao)
+	indexData.loadCurrentNotifications(c, r.ServerNotificationDao)
 	indexData.SetYearAndTerm(c)
 	indexData.LoadSemesters(c, r.CoursesDao)
 	indexData.LoadCoursesForRole(c, r.CoursesDao)
 	indexData.LoadLivestreams(c, r.DaoWrapper)
-	indexData.LoadPublicCourses(r.CoursesDao)
+	indexData.LoadPublicCourses(c, r.CoursesDao)
 	indexData.LoadPinnedCourses()
 
-	if err := templateExecutor.ExecuteTemplate(c.Writer, "index.gohtml", indexData); err != nil {
+	if err := templateExecutor.ExecuteTemplate(c, c.Writer, "index.gohtml", indexData); err != nil {
 		log.WithError(err).Errorf("Could not execute template: 'index.gohtml'")
 	}
 }
@@ -49,7 +49,7 @@ func (r mainRoutes) AboutPage(c *gin.Context) {
 	}
 	indexData.VersionTag = VersionTag
 
-	_ = templateExecutor.ExecuteTemplate(c.Writer, "about.gohtml", indexData)
+	_ = templateExecutor.ExecuteTemplate(c, c.Writer, "about.gohtml", indexData)
 }
 
 func (r mainRoutes) InfoPage(id uint) gin.HandlerFunc {
@@ -66,13 +66,13 @@ func (r mainRoutes) InfoPage(id uint) gin.HandlerFunc {
 		}
 		indexData.VersionTag = VersionTag
 
-		text, err := r.InfoPageDao.GetById(id)
+		text, err := r.InfoPageDao.GetById(c, id)
 		if err != nil {
 			log.WithError(err).Error("Could not get text with id")
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
-		_ = templateExecutor.ExecuteTemplate(c.Writer, "info-page.gohtml", struct {
+		_ = templateExecutor.ExecuteTemplate(c, c.Writer, "info-page.gohtml", struct {
 			IndexData
 			Text template.HTML
 		}{indexData, text.Render()})
@@ -122,19 +122,19 @@ func NewIndexDataWithContext(c *gin.Context) IndexData {
 
 // IsFreshInstallation Checks whether there are users in the database and executes the appropriate template for it
 func IsFreshInstallation(c *gin.Context, usersDao dao.UsersDao) {
-	res, err := usersDao.AreUsersEmpty(context.Background()) // fresh installation?
+	res, err := usersDao.AreUsersEmpty(c) // fresh installation?
 	if err != nil {
-		_ = templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", nil)
+		_ = templateExecutor.ExecuteTemplate(c, c.Writer, "error.gohtml", nil)
 		return
 	} else if res {
-		_ = templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData())
+		_ = templateExecutor.ExecuteTemplate(c, c.Writer, "onboarding.gohtml", NewIndexData())
 		return
 	}
 }
 
-// LoadCurrentNotifications Loads notifications from the database into the IndexData object
-func (d *IndexData) LoadCurrentNotifications(serverNoticationDao dao.ServerNotificationDao) {
-	if notifications, err := serverNoticationDao.GetCurrentServerNotifications(); err == nil {
+// loadCurrentNotifications Loads notifications from the database into the IndexData object
+func (d *IndexData) loadCurrentNotifications(c context.Context, serverNoticationDao dao.ServerNotificationDao) {
+	if notifications, err := serverNoticationDao.GetCurrentServerNotifications(c); err == nil {
 		d.ServerNotifications = notifications
 	} else if err != gorm.ErrRecordNotFound {
 		log.WithError(err).Warn("could not get server notifications")
@@ -170,7 +170,7 @@ func (d *IndexData) LoadSemesters(ctx context.Context, coursesDao dao.CoursesDao
 // LoggedIn streams can only be seen by logged-in users.
 // Enrolled streams can only be seen by users which are allowed to.
 func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
-	streams, err := daoWrapper.GetCurrentLive(context.Background())
+	streams, err := daoWrapper.GetCurrentLive(c)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		log.WithError(err).Error("could not get current live streams")
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
@@ -181,7 +181,7 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 	var livestreams []CourseStream
 
 	for _, stream := range streams {
-		courseForLiveStream, _ := daoWrapper.GetCourseById(context.Background(), stream.CourseID)
+		courseForLiveStream, _ := daoWrapper.GetCourseById(c, stream.CourseID)
 
 		// only show streams for logged in users if they are logged in
 		if courseForLiveStream.Visibility == "loggedin" && tumLiveContext.User == nil {
@@ -199,7 +199,7 @@ func (d *IndexData) LoadLivestreams(c *gin.Context, daoWrapper dao.DaoWrapper) {
 		}
 		var lectureHall *model.LectureHall
 		if tumLiveContext.User != nil && tumLiveContext.User.Role == model.AdminType && stream.LectureHallID != 0 {
-			lh, err := daoWrapper.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
+			lh, err := daoWrapper.LectureHallsDao.GetLectureHallByID(c, stream.LectureHallID)
 			if err != nil {
 				log.WithError(err).Error(err)
 			} else {
@@ -223,10 +223,10 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, coursesDao dao.CoursesDao
 	if d.TUMLiveContext.User != nil {
 		switch d.TUMLiveContext.User.Role {
 		case model.AdminType:
-			courses = coursesDao.GetAllCoursesForSemester(d.CurrentYear, d.CurrentTerm, c)
+			courses = coursesDao.GetAllCoursesForSemester(c, d.CurrentYear, d.CurrentTerm)
 		case model.LecturerType:
 			{
-				courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm, c)
+				courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm)
 				coursesForLecturer, err :=
 					coursesDao.GetCourseForLecturerIdByYearAndTerm(c, d.CurrentYear, d.CurrentTerm, d.TUMLiveContext.User.ID)
 				if err == nil {
@@ -234,7 +234,7 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, coursesDao dao.CoursesDao
 				}
 			}
 		default:
-			courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm, c)
+			courses = d.TUMLiveContext.User.CoursesForSemester(d.CurrentYear, d.CurrentTerm)
 		}
 	}
 
@@ -259,14 +259,14 @@ func (d *IndexData) LoadPinnedCourses() {
 }
 
 // LoadPublicCourses Load public courses of user. Filter courses which are already in IndexData.Courses
-func (d *IndexData) LoadPublicCourses(coursesDao dao.CoursesDao) {
+func (d *IndexData) LoadPublicCourses(c context.Context, coursesDao dao.CoursesDao) {
 	var public []model.Course
 	var err error
 
 	if d.TUMLiveContext.User != nil {
-		public, err = coursesDao.GetPublicAndLoggedInCourses(d.CurrentYear, d.CurrentTerm)
+		public, err = coursesDao.GetPublicAndLoggedInCourses(c, d.CurrentYear, d.CurrentTerm)
 	} else {
-		public, err = coursesDao.GetPublicCourses(d.CurrentYear, d.CurrentTerm)
+		public, err = coursesDao.GetPublicCourses(c, d.CurrentYear, d.CurrentTerm)
 	}
 
 	if err != nil {

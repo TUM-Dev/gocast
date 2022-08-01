@@ -33,7 +33,7 @@ func (r seekStatsRoutes) reportSeek(c *gin.Context) {
 		return
 	}
 
-	if err := r.VideoSeekDao.Add(c.Param("streamID"), req.Position); err != nil {
+	if err := r.VideoSeekDao.Add(c, c.Param("streamID"), req.Position); err != nil {
 		log.WithError(err).Error("Could not add seek hit")
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -42,7 +42,7 @@ func (r seekStatsRoutes) reportSeek(c *gin.Context) {
 
 // getSeek get seeks for a video
 func (r seekStatsRoutes) getSeek(c *gin.Context) {
-	chunks, err := r.VideoSeekDao.Get(c.Param("streamID"))
+	chunks, err := r.VideoSeekDao.Get(c, c.Param("streamID"))
 
 	if err != nil {
 		log.WithError(err).Error("Could not get seek hits")

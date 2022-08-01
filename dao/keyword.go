@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"context"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"gorm.io/gorm"
 )
@@ -8,7 +9,7 @@ import (
 //go:generate mockgen -source=keyword.go -destination ../mock_dao/keyword.go
 
 type KeywordDao interface {
-	NewKeywords(keyword []model.Keyword) error
+	NewKeywords(ctx context.Context, keyword []model.Keyword) error
 }
 
 type keywordDao struct {
@@ -19,6 +20,6 @@ func NewKeywordDao() KeywordDao {
 	return keywordDao{db: DB}
 }
 
-func (d keywordDao) NewKeywords(keyword []model.Keyword) error {
-	return DB.Create(keyword).Error
+func (d keywordDao) NewKeywords(ctx context.Context, keyword []model.Keyword) error {
+	return DB.WithContext(ctx).Create(keyword).Error
 }

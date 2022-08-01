@@ -23,7 +23,7 @@ func (r mainRoutes) settingsPage(c *gin.Context) {
 	d := userSettingsData{IndexData: NewIndexData()}
 	d.IndexData.TUMLiveContext = c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
-	err := templateExecutor.ExecuteTemplate(c.Writer, "user-settings.gohtml", d)
+	err := templateExecutor.ExecuteTemplate(c, c.Writer, "user-settings.gohtml", d)
 	if err != nil {
 		log.Error(err)
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -44,7 +44,7 @@ func (r mainRoutes) LoginHandler(c *gin.Context) {
 	}
 
 	if tools.Cfg.Ldap.UseForLogin {
-		if data, err = loginWithTumCredentials(username, password, r.UsersDao); err == nil {
+		if data, err = loginWithTumCredentials(c, username, password, r.UsersDao); err == nil {
 			startSession(c, data)
 			c.Redirect(http.StatusFound, getRedirectUrl(c))
 			return
@@ -53,7 +53,7 @@ func (r mainRoutes) LoginHandler(c *gin.Context) {
 		}
 	}
 
-	_ = templateExecutor.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(true))
+	_ = templateExecutor.ExecuteTemplate(c, c.Writer, "login.gohtml", NewLoginPageData(true))
 }
 
 func getRedirectUrl(c *gin.Context) string {
@@ -116,7 +116,7 @@ func loginWithUserCredentials(username, password string, usersDao dao.UsersDao) 
 
 // loginWithTumCredentials Try to login with tum credentials
 // Returns pointer to sessionData if successful and nil if not
-func loginWithTumCredentials(username, password string, usersDao dao.UsersDao) (*sessionData, error) {
+func loginWithTumCredentials(c context.Context, username, password string, usersDao dao.UsersDao) (*sessionData, error) {
 	loginResp, err := tum.LoginWithTumCredentials(username, password)
 	if err == nil {
 		user := model.User{
@@ -125,7 +125,7 @@ func loginWithTumCredentials(username, password string, usersDao dao.UsersDao) (
 			MatriculationNumber: loginResp.UserId,
 			LrzID:               loginResp.LrzIdent,
 		}
-		err = usersDao.UpsertUser(&user)
+		err = usersDao.UpsertUser(c, &user)
 		if err != nil {
 			log.Printf("%v", err)
 			return nil, err
@@ -144,7 +144,7 @@ func (r mainRoutes) LoginPage(c *gin.Context) {
 		d.IDPName = tools.Cfg.Saml.IdpName
 		d.IDPColor = tools.Cfg.Saml.IdpColor
 	}
-	_ = templateExecutor.ExecuteTemplate(c.Writer, "login.gohtml", d)
+	_ = templateExecutor.ExecuteTemplate(c, c.Writer, "login.gohtml", d)
 }
 
 func (r mainRoutes) LogoutPage(c *gin.Context) {
@@ -156,36 +156,36 @@ func (r mainRoutes) CreatePasswordPage(c *gin.Context) {
 	if c.Request.Method == "POST" {
 		p1 := c.Request.FormValue("password")
 		p2 := c.Request.FormValue("passwordConfirm")
-		u, err := r.UsersDao.GetUserByResetKey(c.Param("key"))
+		u, err := r.UsersDao.GetUserByResetKey(c, c.Param("key"))
 		if err != nil {
 			c.Redirect(http.StatusFound, "/")
 			return
 		}
 		if p1 != p2 {
-			_ = templateExecutor.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
+			_ = templateExecutor.ExecuteTemplate(c, c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
 			return
 		}
 		err = u.SetPassword(p1)
 		if err != nil {
 			log.WithError(err).Error("error setting password.")
-			_ = templateExecutor.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
+			_ = templateExecutor.ExecuteTemplate(c, c.Writer, "passwordreset.gohtml", NewLoginPageData(true))
 			return
 		} else {
-			err := r.UsersDao.UpdateUser(u)
+			err := r.UsersDao.UpdateUser(c, u)
 			if err != nil {
 				log.WithError(err).Error("CreatePasswordPage: Can't update user")
 			}
-			r.UsersDao.DeleteResetKey(c.Param("key"))
+			r.UsersDao.DeleteResetKey(c, c.Param("key"))
 			c.Redirect(http.StatusFound, "/")
 		}
 		return
 	} else {
-		_, err := r.UsersDao.GetUserByResetKey(c.Param("key"))
+		_, err := r.UsersDao.GetUserByResetKey(c, c.Param("key"))
 		if err != nil {
 			c.Redirect(http.StatusFound, "/")
 			return
 		}
-		_ = templateExecutor.ExecuteTemplate(c.Writer, "passwordreset.gohtml", NewLoginPageData(false))
+		_ = templateExecutor.ExecuteTemplate(c, c.Writer, "passwordreset.gohtml", NewLoginPageData(false))
 	}
 }
 

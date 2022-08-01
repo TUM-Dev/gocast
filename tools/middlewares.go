@@ -88,7 +88,7 @@ func LoggedIn(c *gin.Context) {
 // RenderErrorPage renders the error page with the given error code and message.
 // the gin context is always aborted after this function is called.
 func RenderErrorPage(c *gin.Context, status int, message string) {
-	err := templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{
+	err := templateExecutor.ExecuteTemplate(c, c.Writer, "error.gohtml", ErrorPageData{
 		Status:  status,
 		Message: message,
 	})
@@ -303,7 +303,7 @@ func AdminToken(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		queryParams := c.Request.URL.Query()
 		token := queryParams.Get("token")
-		t, err := daoWrapper.TokenDao.GetToken(token)
+		t, err := daoWrapper.TokenDao.GetToken(c, token)
 		if err != nil {
 			c.Status(http.StatusForbidden)
 			RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
@@ -314,7 +314,7 @@ func AdminToken(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 			RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
 			return
 		}
-		err = daoWrapper.TokenDao.TokenUsed(t)
+		err = daoWrapper.TokenDao.TokenUsed(c, t)
 		if err != nil {
 			log.WithError(err).Warn("error marking token as used")
 			return

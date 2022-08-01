@@ -36,31 +36,31 @@ func (m *MockUsersDao) EXPECT() *MockUsersDaoMockRecorder {
 }
 
 // AddUserSetting mocks base method.
-func (m *MockUsersDao) AddUserSetting(userSetting *model.UserSetting) error {
+func (m *MockUsersDao) AddUserSetting(ctx context.Context, userSetting *model.UserSetting) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddUserSetting", userSetting)
+	ret := m.ctrl.Call(m, "AddUserSetting", ctx, userSetting)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddUserSetting indicates an expected call of AddUserSetting.
-func (mr *MockUsersDaoMockRecorder) AddUserSetting(userSetting interface{}) *gomock.Call {
+func (mr *MockUsersDaoMockRecorder) AddUserSetting(ctx, userSetting interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUserSetting", reflect.TypeOf((*MockUsersDao)(nil).AddUserSetting), userSetting)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUserSetting", reflect.TypeOf((*MockUsersDao)(nil).AddUserSetting), ctx, userSetting)
 }
 
 // AddUsersToCourseByTUMIDs mocks base method.
-func (m *MockUsersDao) AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error {
+func (m *MockUsersDao) AddUsersToCourseByTUMIDs(ctx context.Context, matrNr []string, courseID uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddUsersToCourseByTUMIDs", matrNr, courseID)
+	ret := m.ctrl.Call(m, "AddUsersToCourseByTUMIDs", ctx, matrNr, courseID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddUsersToCourseByTUMIDs indicates an expected call of AddUsersToCourseByTUMIDs.
-func (mr *MockUsersDaoMockRecorder) AddUsersToCourseByTUMIDs(matrNr, courseID interface{}) *gomock.Call {
+func (mr *MockUsersDaoMockRecorder) AddUsersToCourseByTUMIDs(ctx, matrNr, courseID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUsersToCourseByTUMIDs", reflect.TypeOf((*MockUsersDao)(nil).AddUsersToCourseByTUMIDs), matrNr, courseID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUsersToCourseByTUMIDs", reflect.TypeOf((*MockUsersDao)(nil).AddUsersToCourseByTUMIDs), ctx, matrNr, courseID)
 }
 
 // AreUsersEmpty mocks base method.
@@ -108,15 +108,15 @@ func (mr *MockUsersDaoMockRecorder) CreateUser(ctx, user interface{}) *gomock.Ca
 }
 
 // DeleteResetKey mocks base method.
-func (m *MockUsersDao) DeleteResetKey(key string) {
+func (m *MockUsersDao) DeleteResetKey(ctx context.Context, key string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DeleteResetKey", key)
+	m.ctrl.Call(m, "DeleteResetKey", ctx, key)
 }
 
 // DeleteResetKey indicates an expected call of DeleteResetKey.
-func (mr *MockUsersDaoMockRecorder) DeleteResetKey(key interface{}) *gomock.Call {
+func (mr *MockUsersDaoMockRecorder) DeleteResetKey(ctx, key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResetKey", reflect.TypeOf((*MockUsersDao)(nil).DeleteResetKey), key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResetKey", reflect.TypeOf((*MockUsersDao)(nil).DeleteResetKey), ctx, key)
 }
 
 // DeleteUser mocks base method.
@@ -134,17 +134,17 @@ func (mr *MockUsersDaoMockRecorder) DeleteUser(ctx, uid interface{}) *gomock.Cal
 }
 
 // GetAllAdminsAndLecturers mocks base method.
-func (m *MockUsersDao) GetAllAdminsAndLecturers(users *[]model.User) error {
+func (m *MockUsersDao) GetAllAdminsAndLecturers(ctx context.Context, users *[]model.User) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllAdminsAndLecturers", users)
+	ret := m.ctrl.Call(m, "GetAllAdminsAndLecturers", ctx, users)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // GetAllAdminsAndLecturers indicates an expected call of GetAllAdminsAndLecturers.
-func (mr *MockUsersDaoMockRecorder) GetAllAdminsAndLecturers(users interface{}) *gomock.Call {
+func (mr *MockUsersDaoMockRecorder) GetAllAdminsAndLecturers(ctx, users interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllAdminsAndLecturers", reflect.TypeOf((*MockUsersDao)(nil).GetAllAdminsAndLecturers), users)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllAdminsAndLecturers", reflect.TypeOf((*MockUsersDao)(nil).GetAllAdminsAndLecturers), ctx, users)
 }
 
 // GetUserByEmail mocks base method.
@@ -178,18 +178,18 @@ func (mr *MockUsersDaoMockRecorder) GetUserByID(ctx, id interface{}) *gomock.Cal
 }
 
 // GetUserByResetKey mocks base method.
-func (m *MockUsersDao) GetUserByResetKey(key string) (model.User, error) {
+func (m *MockUsersDao) GetUserByResetKey(ctx context.Context, key string) (model.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserByResetKey", key)
+	ret := m.ctrl.Call(m, "GetUserByResetKey", ctx, key)
 	ret0, _ := ret[0].(model.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUserByResetKey indicates an expected call of GetUserByResetKey.
-func (mr *MockUsersDaoMockRecorder) GetUserByResetKey(key interface{}) *gomock.Call {
+func (mr *MockUsersDaoMockRecorder) GetUserByResetKey(ctx, key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByResetKey", reflect.TypeOf((*MockUsersDao)(nil).GetUserByResetKey), key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByResetKey", reflect.TypeOf((*MockUsersDao)(nil).GetUserByResetKey), ctx, key)
 }
 
 // IsUserAdmin mocks base method.
@@ -208,58 +208,58 @@ func (mr *MockUsersDaoMockRecorder) IsUserAdmin(ctx, uid interface{}) *gomock.Ca
 }
 
 // PinCourse mocks base method.
-func (m *MockUsersDao) PinCourse(user model.User, course model.Course, pin bool) error {
+func (m *MockUsersDao) PinCourse(ctx context.Context, user model.User, course model.Course, pin bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PinCourse", user, course, pin)
+	ret := m.ctrl.Call(m, "PinCourse", ctx, user, course, pin)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // PinCourse indicates an expected call of PinCourse.
-func (mr *MockUsersDaoMockRecorder) PinCourse(user, course, pin interface{}) *gomock.Call {
+func (mr *MockUsersDaoMockRecorder) PinCourse(ctx, user, course, pin interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PinCourse", reflect.TypeOf((*MockUsersDao)(nil).PinCourse), user, course, pin)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PinCourse", reflect.TypeOf((*MockUsersDao)(nil).PinCourse), ctx, user, course, pin)
 }
 
 // SearchUser mocks base method.
-func (m *MockUsersDao) SearchUser(query string) ([]model.User, error) {
+func (m *MockUsersDao) SearchUser(ctx context.Context, query string) ([]model.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchUser", query)
+	ret := m.ctrl.Call(m, "SearchUser", ctx, query)
 	ret0, _ := ret[0].([]model.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchUser indicates an expected call of SearchUser.
-func (mr *MockUsersDaoMockRecorder) SearchUser(query interface{}) *gomock.Call {
+func (mr *MockUsersDaoMockRecorder) SearchUser(ctx, query interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchUser", reflect.TypeOf((*MockUsersDao)(nil).SearchUser), query)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchUser", reflect.TypeOf((*MockUsersDao)(nil).SearchUser), ctx, query)
 }
 
 // UpdateUser mocks base method.
-func (m *MockUsersDao) UpdateUser(user model.User) error {
+func (m *MockUsersDao) UpdateUser(ctx context.Context, user model.User) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateUser", user)
+	ret := m.ctrl.Call(m, "UpdateUser", ctx, user)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateUser indicates an expected call of UpdateUser.
-func (mr *MockUsersDaoMockRecorder) UpdateUser(user interface{}) *gomock.Call {
+func (mr *MockUsersDaoMockRecorder) UpdateUser(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUser", reflect.TypeOf((*MockUsersDao)(nil).UpdateUser), user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUser", reflect.TypeOf((*MockUsersDao)(nil).UpdateUser), ctx, user)
 }
 
 // UpsertUser mocks base method.
-func (m *MockUsersDao) UpsertUser(user *model.User) error {
+func (m *MockUsersDao) UpsertUser(ctx context.Context, user *model.User) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertUser", user)
+	ret := m.ctrl.Call(m, "UpsertUser", ctx, user)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertUser indicates an expected call of UpsertUser.
-func (mr *MockUsersDaoMockRecorder) UpsertUser(user interface{}) *gomock.Call {
+func (mr *MockUsersDaoMockRecorder) UpsertUser(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertUser", reflect.TypeOf((*MockUsersDao)(nil).UpsertUser), user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertUser", reflect.TypeOf((*MockUsersDao)(nil).UpsertUser), ctx, user)
 }

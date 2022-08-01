@@ -57,7 +57,7 @@ func TestDownload(t *testing.T) {
 							fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
 							fileMock.
 								EXPECT().
-								GetFileById(gomock.Eq(fileId)).
+								GetFileById(gomock.Any(), gomock.Eq(fileId)).
 								Return(model.File{}, errors.New("")).
 								AnyTimes()
 							return fileMock
@@ -75,7 +75,7 @@ func TestDownload(t *testing.T) {
 							fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
 							fileMock.
 								EXPECT().
-								GetFileById(gomock.Eq(fileId)).
+								GetFileById(gomock.Any(), gomock.Eq(fileId)).
 								Return(model.File{StreamID: streamId, Path: "/file"}, nil).
 								AnyTimes()
 							return fileMock
@@ -111,7 +111,7 @@ func TestDownload(t *testing.T) {
 							fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
 							fileMock.
 								EXPECT().
-								GetFileById(gomock.Eq(fileId)).
+								GetFileById(gomock.Any(), gomock.Eq(fileId)).
 								Return(model.File{StreamID: streamId, Path: "/file"}, nil).
 								AnyTimes()
 							return fileMock
@@ -147,7 +147,7 @@ func TestDownload(t *testing.T) {
 							fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
 							fileMock.
 								EXPECT().
-								GetFileById(gomock.Eq(fileId)).
+								GetFileById(gomock.Any(), gomock.Eq(fileId)).
 								Return(model.File{StreamID: streamId, Path: filePath}, nil).
 								AnyTimes()
 							return fileMock
@@ -184,7 +184,7 @@ func TestDownload(t *testing.T) {
 							fileMock := mock_dao.NewMockFileDao(gomock.NewController(t))
 							fileMock.
 								EXPECT().
-								GetFileById(gomock.Eq(fileId)).
+								GetFileById(gomock.Any(), gomock.Eq(fileId)).
 								Return(model.File{StreamID: streamId, Path: filePath}, nil).
 								AnyTimes()
 							return fileMock

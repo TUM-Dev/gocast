@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"context"
 	"fmt"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools/timing"
@@ -10,16 +11,16 @@ import (
 //go:generate mockgen -source=statistics.go -destination ../mock_dao/statistics.go
 
 type StatisticsDao interface {
-	AddStat(stat model.Stat) error
+	AddStat(ctx context.Context, stat model.Stat) error
 
-	GetCourseNumStudents(courseID uint) (int64, error)
-	GetCourseNumVodViews(courseID uint) (int, error)
-	GetCourseNumLiveViews(courseID uint) (int, error)
-	GetCourseNumVodViewsPerDay(courseID uint) ([]Stat, error)
-	GetCourseStatsWeekdays(courseID uint) ([]Stat, error)
-	GetCourseStatsHourly(courseID uint) ([]Stat, error)
-	GetStudentActivityCourseStats(courseID uint, live bool) ([]Stat, error)
-	GetStreamNumLiveViews(streamID uint) (int, error)
+	GetCourseNumStudents(ctx context.Context, courseID uint) (int64, error)
+	GetCourseNumVodViews(ctx context.Context, courseID uint) (int, error)
+	GetCourseNumLiveViews(ctx context.Context, courseID uint) (int, error)
+	GetCourseNumVodViewsPerDay(ctx context.Context, courseID uint) ([]Stat, error)
+	GetCourseStatsWeekdays(ctx context.Context, courseID uint) ([]Stat, error)
+	GetCourseStatsHourly(ctx context.Context, courseID uint) ([]Stat, error)
+	GetStudentActivityCourseStats(ctx context.Context, courseID uint, live bool) ([]Stat, error)
+	GetStreamNumLiveViews(ctx context.Context, streamID uint) (int, error)
 }
 
 type statisticsDao struct {
@@ -31,30 +32,30 @@ func NewStatisticsDao() StatisticsDao {
 }
 
 // AddStat adds a new statistic entry to the database
-func (d statisticsDao) AddStat(stat model.Stat) error {
-	return DB.Create(&stat).Error
+func (d statisticsDao) AddStat(ctx context.Context, stat model.Stat) error {
+	return DB.WithContext(ctx).Create(&stat).Error
 }
 
 //GetCourseNumStudents returns the number of students enrolled in the course
-func (d statisticsDao) GetCourseNumStudents(courseID uint) (int64, error) {
+func (d statisticsDao) GetCourseNumStudents(ctx context.Context, courseID uint) (int64, error) {
 	var res int64
-	err := DB.Table("course_users").Where("course_id = ? OR ? = 0", courseID, courseID).Count(&res).Error
+	err := DB.WithContext(ctx).Table("course_users").Where("course_id = ? OR ? = 0", courseID, courseID).Count(&res).Error
 	return res, err
 }
 
 //GetCourseNumVodViews returns the sum of vod views of a course
-func (d statisticsDao) GetCourseNumVodViews(courseID uint) (int, error) {
+func (d statisticsDao) GetCourseNumVodViews(ctx context.Context, courseID uint) (int, error) {
 	var res int
-	err := DB.Raw(`SELECT SUM(stats.viewers) FROM stats
+	err := DB.WithContext(ctx).Raw(`SELECT SUM(stats.viewers) FROM stats
 		JOIN streams s ON s.id = stats.stream_id
 		WHERE (s.course_id = ? or ? = 0) AND live = 0`, courseID, courseID).Scan(&res).Error
 	return res, err
 }
 
 //GetCourseNumLiveViews returns the sum of live views of a course based on the maximum views per lecture
-func (d statisticsDao) GetCourseNumLiveViews(courseID uint) (int, error) {
+func (d statisticsDao) GetCourseNumLiveViews(ctx context.Context, courseID uint) (int, error) {
 	var res int
-	err := DB.Raw(`WITH views_per_stream AS (SELECT MAX(stats.viewers) AS y
+	err := DB.WithContext(ctx).Raw(`WITH views_per_stream AS (SELECT MAX(stats.viewers) AS y
 		FROM stats
         	JOIN streams s ON s.id = stats.stream_id
 		WHERE (s.course_id = ? OR ? = 0)
@@ -66,9 +67,9 @@ func (d statisticsDao) GetCourseNumLiveViews(courseID uint) (int, error) {
 }
 
 //GetCourseNumVodViewsPerDay returns the daily amount of vod views for each day
-func (d statisticsDao) GetCourseNumVodViewsPerDay(courseID uint) ([]Stat, error) {
+func (d statisticsDao) GetCourseNumVodViewsPerDay(ctx context.Context, courseID uint) ([]Stat, error) {
 	var res []Stat
-	err := DB.Raw(`SELECT DATE_FORMAT(stats.time, GET_FORMAT(DATE, 'EUR')) AS x, sum(viewers) AS y
+	err := DB.WithContext(ctx).Raw(`SELECT DATE_FORMAT(stats.time, GET_FORMAT(DATE, 'EUR')) AS x, sum(viewers) AS y
 		FROM stats
 			JOIN streams s ON s.id = stats.stream_id
 		WHERE (s.course_id = ? OR ? = 0) AND live = 0
@@ -78,9 +79,9 @@ func (d statisticsDao) GetCourseNumVodViewsPerDay(courseID uint) ([]Stat, error)
 }
 
 //GetCourseStatsWeekdays returns the days and their sum of vod views of a course
-func (d statisticsDao) GetCourseStatsWeekdays(courseID uint) ([]Stat, error) {
+func (d statisticsDao) GetCourseStatsWeekdays(ctx context.Context, courseID uint) ([]Stat, error) {
 	var res []Stat
-	err := DB.Raw(`SELECT DAYNAME(stats.time) AS x, SUM(stats.viewers) as y
+	err := DB.WithContext(ctx).Raw(`SELECT DAYNAME(stats.time) AS x, SUM(stats.viewers) as y
 		FROM stats
 			JOIN streams s ON s.id = stats.stream_id
 		WHERE (s.course_id = ? OR ? = 0) AND stats.live = 0
@@ -90,9 +91,9 @@ func (d statisticsDao) GetCourseStatsWeekdays(courseID uint) ([]Stat, error) {
 }
 
 //GetCourseStatsHourly returns the hours with most vod viewing activity of a course
-func (d statisticsDao) GetCourseStatsHourly(courseID uint) ([]Stat, error) {
+func (d statisticsDao) GetCourseStatsHourly(ctx context.Context, courseID uint) ([]Stat, error) {
 	var res []Stat
-	err := DB.Raw(`SELECT HOUR(stats.time) AS x, SUM(stats.viewers) as y
+	err := DB.WithContext(ctx).Raw(`SELECT HOUR(stats.time) AS x, SUM(stats.viewers) as y
 		FROM stats
 			JOIN streams s ON s.id = stats.stream_id
 		WHERE (s.course_id = ? or ? = 0) AND stats.live = 0
@@ -102,15 +103,15 @@ func (d statisticsDao) GetCourseStatsHourly(courseID uint) ([]Stat, error) {
 }
 
 // GetStreamNumLiveViews returns the number of viewers currently watching a live stream.
-func (d statisticsDao) GetStreamNumLiveViews(streamID uint) (int, error) {
+func (d statisticsDao) GetStreamNumLiveViews(ctx context.Context, streamID uint) (int, error) {
 	var res int
-	err := DB.Raw(`SELECT viewers FROM stats WHERE stream_id = ? AND live = 1 ORDER BY id DESC LIMIT 1`, streamID).Scan(&res).Error
+	err := DB.WithContext(ctx).Raw(`SELECT viewers FROM stats WHERE stream_id = ? AND live = 1 ORDER BY id DESC LIMIT 1`, streamID).Scan(&res).Error
 	return res, err
 }
 
 // GetStudentActivityCourseStats fetches statistics on the activity of the course specified by courseID
 // if courseID is 0, stats for all courses are fetched. live specifies whether to get live or vod stats.
-func (d statisticsDao) GetStudentActivityCourseStats(courseID uint, live bool) ([]Stat, error) {
+func (d statisticsDao) GetStudentActivityCourseStats(ctx context.Context, courseID uint, live bool) ([]Stat, error) {
 	var res []struct {
 		Year  uint
 		Week  uint
@@ -120,7 +121,7 @@ func (d statisticsDao) GetStudentActivityCourseStats(courseID uint, live bool) (
 	if !live {
 		countMethod = "SUM" // vod views are summed up
 	}
-	err := DB.Raw(`SELECT year(stats.time) AS year, week(stats.time) AS week, `+countMethod+`(stats.viewers) AS count
+	err := DB.WithContext(ctx).Raw(`SELECT year(stats.time) AS year, week(stats.time) AS week, `+countMethod+`(stats.viewers) AS count
 		FROM stats
         	JOIN streams s ON s.id = stats.stream_id
 		WHERE (s.course_id = ? OR ? = 0) AND stats.live = ? AND week(stats.time) > 0

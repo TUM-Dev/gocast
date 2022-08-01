@@ -378,7 +378,7 @@ func TestCoursesLectureActions(t *testing.T) {
 						}(),
 						AuditDao: func() dao.AuditDao {
 							auditMock := mock_dao.NewMockAuditDao(gomock.NewController(t))
-							auditMock.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
+							auditMock.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 							return auditMock
 						}(),
 					}
@@ -421,7 +421,7 @@ func TestCoursesLectureActions(t *testing.T) {
 						}(),
 						AuditDao: func() dao.AuditDao {
 							auditMock := mock_dao.NewMockAuditDao(gomock.NewController(t))
-							auditMock.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
+							auditMock.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 							return auditMock
 						}(),
 					}
@@ -510,7 +510,7 @@ func TestCoursesLectureActions(t *testing.T) {
 								AnyTimes()
 							streamsMock.
 								EXPECT().
-								DeleteStream(fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
+								DeleteStream(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVLive.ID)).
 								Return().
 								AnyTimes()
 							return streamsMock
@@ -601,7 +601,7 @@ func TestCoursesLectureActions(t *testing.T) {
 								AnyTimes()
 							streamsMock.
 								EXPECT().
-								UpdateStream(gomock.Any()).
+								UpdateStream(gomock.Any(), gomock.Any()).
 								Return(errors.New("")).
 								AnyTimes()
 							return streamsMock
@@ -628,7 +628,7 @@ func TestCoursesLectureActions(t *testing.T) {
 								AnyTimes()
 							streamsMock.
 								EXPECT().
-								UpdateStream(gomock.Any()).
+								UpdateStream(gomock.Any(), gomock.Any()).
 								Return(nil).
 								AnyTimes()
 							return streamsMock
@@ -695,7 +695,7 @@ func TestCoursesLectureActions(t *testing.T) {
 								AnyTimes()
 							streamsMock.
 								EXPECT().
-								UpdateLectureSeries(testutils.StreamFPVLive).
+								UpdateLectureSeries(gomock.Any(), testutils.StreamFPVLive).
 								Return(errors.New("")).
 								AnyTimes()
 							return streamsMock
@@ -719,7 +719,7 @@ func TestCoursesLectureActions(t *testing.T) {
 								AnyTimes()
 							streamsMock.
 								EXPECT().
-								UpdateLectureSeries(testutils.StreamFPVLive).
+								UpdateLectureSeries(gomock.Any(), testutils.StreamFPVLive).
 								Return(nil).
 								AnyTimes()
 							return streamsMock
@@ -805,7 +805,7 @@ func TestCoursesLectureActions(t *testing.T) {
 								AnyTimes()
 							streamsMock.
 								EXPECT().
-								DeleteLectureSeries(testutils.StreamFPVLive.SeriesIdentifier).
+								DeleteLectureSeries(gomock.Any(), testutils.StreamFPVLive.SeriesIdentifier).
 								Return(errors.New("")).
 								AnyTimes()
 							return streamsMock
@@ -830,7 +830,7 @@ func TestCoursesLectureActions(t *testing.T) {
 								AnyTimes()
 							streamsMock.
 								EXPECT().
-								DeleteLectureSeries(testutils.StreamFPVLive.SeriesIdentifier).
+								DeleteLectureSeries(gomock.Any(), testutils.StreamFPVLive.SeriesIdentifier).
 								Return(nil).
 								AnyTimes()
 							return streamsMock
@@ -921,7 +921,7 @@ func TestCoursesLectureActions(t *testing.T) {
 								AnyTimes()
 							streamsMock.
 								EXPECT().
-								UpdateStream(gomock.Any()).
+								UpdateStream(gomock.Any(), gomock.Any()).
 								Return(errors.New("")).
 								AnyTimes()
 							return streamsMock
@@ -1024,7 +1024,7 @@ func TestUnits(t *testing.T) {
 								AnyTimes()
 							streamsMock.
 								EXPECT().
-								UpdateStreamFullAssoc(gomock.Any()).
+								UpdateStreamFullAssoc(gomock.Any(), gomock.Any()).
 								Return(errors.New("")).
 								AnyTimes()
 							return streamsMock
@@ -1078,7 +1078,7 @@ func TestUnits(t *testing.T) {
 							streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
 							streamsMock.
 								EXPECT().
-								GetUnitByID(fmt.Sprintf("%d", unit.ID)).
+								GetUnitByID(gomock.Any(), fmt.Sprintf("%d", unit.ID)).
 								Return(unit, errors.New("")).
 								AnyTimes()
 							return streamsMock
@@ -1174,7 +1174,7 @@ func TestCuts(t *testing.T) {
 								AnyTimes()
 							streamsMock.
 								EXPECT().
-								SaveStream(gomock.Any()).
+								SaveStream(gomock.Any(), gomock.Any()).
 								Return(errors.New("")).
 								AnyTimes()
 							return streamsMock
@@ -1254,7 +1254,7 @@ func TestAdminFunctions(t *testing.T) {
 								AnyTimes()
 							coursesMock.
 								EXPECT().
-								GetCourseAdmins(testutils.CourseFPV.ID).
+								GetCourseAdmins(gomock.Any(), testutils.CourseFPV.ID).
 								Return([]model.User{}, errors.New("")).
 								AnyTimes()
 							return coursesMock
@@ -1357,7 +1357,7 @@ func TestAdminFunctions(t *testing.T) {
 								AnyTimes()
 							coursesMock.
 								EXPECT().
-								AddAdminToCourse(testutils.Admin.ID, testutils.CourseFPV.ID).
+								AddAdminToCourse(gomock.Any(), testutils.Admin.ID, testutils.CourseFPV.ID).
 								Return(errors.New("")).
 								AnyTimes()
 							return coursesMock
@@ -1388,7 +1388,7 @@ func TestAdminFunctions(t *testing.T) {
 								AnyTimes()
 							coursesMock.
 								EXPECT().
-								AddAdminToCourse(testutils.Student.ID, testutils.CourseFPV.ID).
+								AddAdminToCourse(gomock.Any(), testutils.Student.ID, testutils.CourseFPV.ID).
 								Return(nil).
 								AnyTimes()
 							return coursesMock
@@ -1402,7 +1402,7 @@ func TestAdminFunctions(t *testing.T) {
 								AnyTimes()
 							usersMock.
 								EXPECT().
-								UpdateUser(gomock.Any()).
+								UpdateUser(gomock.Any(), gomock.Any()).
 								Return(errors.New("")).
 								AnyTimes()
 							return usersMock
@@ -1446,7 +1446,7 @@ func TestAdminFunctions(t *testing.T) {
 								AnyTimes()
 							coursesMock.
 								EXPECT().
-								AddAdminToCourse(testutils.Student.ID, testutils.CourseFPV.ID).
+								AddAdminToCourse(gomock.Any(), testutils.Student.ID, testutils.CourseFPV.ID).
 								Return(nil).
 								AnyTimes()
 							return coursesMock
@@ -1460,7 +1460,7 @@ func TestAdminFunctions(t *testing.T) {
 								AnyTimes()
 							usersMock.
 								EXPECT().
-								UpdateUser(gomock.Any()).
+								UpdateUser(gomock.Any(), gomock.Any()).
 								Return(nil).
 								AnyTimes()
 							return usersMock
@@ -1532,7 +1532,7 @@ func TestAdminFunctions(t *testing.T) {
 								AnyTimes()
 							coursesMock.
 								EXPECT().
-								GetCourseAdmins(testutils.CourseFPV.ID).
+								GetCourseAdmins(gomock.Any(), testutils.CourseFPV.ID).
 								Return([]model.User{}, errors.New("")).
 								AnyTimes()
 							return coursesMock
@@ -1561,7 +1561,7 @@ func TestAdminFunctions(t *testing.T) {
 								AnyTimes()
 							coursesMock.
 								EXPECT().
-								GetCourseAdmins(testutils.CourseFPV.ID).
+								GetCourseAdmins(gomock.Any(), testutils.CourseFPV.ID).
 								Return([]model.User{testutils.Admin}, nil).
 								AnyTimes()
 							return coursesMock
@@ -1590,7 +1590,7 @@ func TestAdminFunctions(t *testing.T) {
 								AnyTimes()
 							coursesMock.
 								EXPECT().
-								GetCourseAdmins(testutils.CourseFPV.ID).
+								GetCourseAdmins(gomock.Any(), testutils.CourseFPV.ID).
 								Return([]model.User{testutils.Student}, nil). // student.id != admin.id from url
 								AnyTimes()
 							return coursesMock
@@ -1620,12 +1620,12 @@ func TestAdminFunctions(t *testing.T) {
 								AnyTimes()
 							coursesMock.
 								EXPECT().
-								GetCourseAdmins(testutils.CourseFPV.ID).
+								GetCourseAdmins(gomock.Any(), testutils.CourseFPV.ID).
 								Return([]model.User{testutils.Admin, testutils.Admin}, nil).
 								AnyTimes()
 							coursesMock.
 								EXPECT().
-								RemoveAdminFromCourse(testutils.Admin.ID, testutils.CourseFPV.ID).
+								RemoveAdminFromCourse(gomock.Any(), testutils.Admin.ID, testutils.CourseFPV.ID).
 								Return(errors.New("")).
 								AnyTimes()
 							return coursesMock
@@ -1725,7 +1725,7 @@ func TestLectureHallsById(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetLectureHallByID(testutils.LectureHall.ID).
+								GetLectureHallByID(gomock.Any(), testutils.LectureHall.ID).
 								Return(testutils.LectureHall, nil)
 							return lectureHallMock
 						}(),
@@ -1757,7 +1757,7 @@ func TestActivateToken(t *testing.T) {
 							coursesMock := mock_dao.NewMockCoursesDao(ctrl)
 							coursesMock.
 								EXPECT().
-								GetCourseByToken(token).
+								GetCourseByToken(gomock.Any(), token).
 								Return(model.Course{}, errors.New(""))
 							return coursesMock
 						}(),
@@ -1774,7 +1774,7 @@ func TestActivateToken(t *testing.T) {
 							coursesMock := mock_dao.NewMockCoursesDao(ctrl)
 							coursesMock.
 								EXPECT().
-								GetCourseByToken(token).
+								GetCourseByToken(gomock.Any(), token).
 								Return(model.Course{}, nil)
 							coursesMock.
 								EXPECT().
@@ -1800,7 +1800,7 @@ func TestActivateToken(t *testing.T) {
 							coursesMock := mock_dao.NewMockCoursesDao(ctrl)
 							coursesMock.
 								EXPECT().
-								GetCourseByToken(token).
+								GetCourseByToken(gomock.Any(), token).
 								Return(courseCopy, nil)
 							coursesMock.
 								EXPECT().
@@ -1980,7 +1980,7 @@ func TestUploadVOD(t *testing.T) {
 							streamsMock := mock_dao.NewMockStreamsDao(ctrl)
 							streamsMock.
 								EXPECT().
-								CreateStream(gomock.Any()).
+								CreateStream(gomock.Any(), gomock.Any()).
 								Return(errors.New(""))
 							return streamsMock
 						}(),
@@ -1998,7 +1998,7 @@ func TestUploadVOD(t *testing.T) {
 							streamsMock := mock_dao.NewMockStreamsDao(ctrl)
 							streamsMock.
 								EXPECT().
-								CreateStream(gomock.Any()).
+								CreateStream(gomock.Any(), gomock.Any()).
 								Return(nil)
 							return streamsMock
 						}(),
@@ -2006,7 +2006,7 @@ func TestUploadVOD(t *testing.T) {
 							streamsMock := mock_dao.NewMockUploadKeyDao(ctrl)
 							streamsMock.
 								EXPECT().
-								CreateUploadKey(gomock.Any(), gomock.Any()).
+								CreateUploadKey(gomock.Any(), gomock.Any(), gomock.Any()).
 								Return(errors.New(""))
 							return streamsMock
 						}(),
@@ -2026,7 +2026,7 @@ func TestUploadVOD(t *testing.T) {
 							streamsMock := mock_dao.NewMockWorkerDao(ctrl)
 							streamsMock.
 								EXPECT().
-								GetAliveWorkers().
+								GetAliveWorkers(gomock.Any()).
 								Return([]model.Worker{})
 							return streamsMock
 						}(),
@@ -2075,7 +2075,7 @@ func TestGetTranscodingProgress(t *testing.T) {
 						StreamsDao: func() dao.StreamsDao {
 							smock := mock_dao.NewMockStreamsDao(ctrl)
 							smock.EXPECT().GetStreamByID(gomock.Any(), "1969").MinTimes(1).MaxTimes(1).Return(testutils.StreamFPVNotLive, nil)
-							smock.EXPECT().GetTranscodingProgressByVersion(model.COMB, uint(1969)).MinTimes(1).MaxTimes(1).Return(model.TranscodingProgress{Progress: 69}, nil)
+							smock.EXPECT().GetTranscodingProgressByVersion(gomock.Any(), model.COMB, uint(1969)).MinTimes(1).MaxTimes(1).Return(model.TranscodingProgress{Progress: 69}, nil)
 							return smock
 						}(),
 						CoursesDao: func() dao.CoursesDao {

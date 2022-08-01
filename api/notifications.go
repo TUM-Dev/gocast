@@ -40,7 +40,7 @@ func (r notificationRoutes) getNotifications(c *gin.Context) {
 			targets = append(targets, model.TargetStudent)
 		}
 	}
-	notifications, err := r.NotificationsDao.GetNotifications(targets...)
+	notifications, err := r.NotificationsDao.GetNotifications(c, targets...)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,
@@ -66,7 +66,7 @@ func (r notificationRoutes) createNotification(c *gin.Context) {
 		notification.Title = nil
 	}
 	notification.Body = notification.SanitizedBody // reverse json binding
-	if err := r.NotificationsDao.AddNotification(&notification); err != nil {
+	if err := r.NotificationsDao.AddNotification(c, &notification); err != nil {
 		log.Error(err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -88,7 +88,7 @@ func (r notificationRoutes) deleteNotification(c *gin.Context) {
 		})
 		return
 	}
-	err = r.NotificationsDao.DeleteNotification(uint(id))
+	err = r.NotificationsDao.DeleteNotification(c, uint(id))
 	if err != nil {
 		log.WithError(err).Error("error deleting notification")
 		_ = c.Error(tools.RequestError{

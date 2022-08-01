@@ -5,6 +5,7 @@
 package mock_dao
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,15 +36,15 @@ func (m *MockKeywordDao) EXPECT() *MockKeywordDaoMockRecorder {
 }
 
 // NewKeywords mocks base method.
-func (m *MockKeywordDao) NewKeywords(keyword *model.Keyword) error {
+func (m *MockKeywordDao) NewKeywords(ctx context.Context, keyword []model.Keyword) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewKeywords", keyword)
+	ret := m.ctrl.Call(m, "NewKeywords", ctx, keyword)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // NewKeywords indicates an expected call of NewKeywords.
-func (mr *MockKeywordDaoMockRecorder) NewKeywords(keyword interface{}) *gomock.Call {
+func (mr *MockKeywordDaoMockRecorder) NewKeywords(ctx, keyword interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewKeywords", reflect.TypeOf((*MockKeywordDao)(nil).NewKeywords), keyword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewKeywords", reflect.TypeOf((*MockKeywordDao)(nil).NewKeywords), ctx, keyword)
 }

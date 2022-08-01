@@ -5,6 +5,7 @@
 package mock_dao
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,73 +36,73 @@ func (m *MockVideoSectionDao) EXPECT() *MockVideoSectionDaoMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockVideoSectionDao) Create(arg0 []model.VideoSection) error {
+func (m *MockVideoSectionDao) Create(ctx context.Context, sections []model.VideoSection) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", arg0)
+	ret := m.ctrl.Call(m, "Create", ctx, sections)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockVideoSectionDaoMockRecorder) Create(arg0 interface{}) *gomock.Call {
+func (mr *MockVideoSectionDaoMockRecorder) Create(ctx, sections interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockVideoSectionDao)(nil).Create), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockVideoSectionDao)(nil).Create), ctx, sections)
 }
 
 // Delete mocks base method.
-func (m *MockVideoSectionDao) Delete(arg0 uint) error {
+func (m *MockVideoSectionDao) Delete(ctx context.Context, id uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", arg0)
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockVideoSectionDaoMockRecorder) Delete(arg0 interface{}) *gomock.Call {
+func (mr *MockVideoSectionDaoMockRecorder) Delete(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockVideoSectionDao)(nil).Delete), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockVideoSectionDao)(nil).Delete), ctx, id)
 }
 
 // Get mocks base method.
-func (m *MockVideoSectionDao) Get(arg0 uint) (model.VideoSection, error) {
+func (m *MockVideoSectionDao) Get(ctx context.Context, id uint) (model.VideoSection, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", arg0)
+	ret := m.ctrl.Call(m, "Get", ctx, id)
 	ret0, _ := ret[0].(model.VideoSection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockVideoSectionDaoMockRecorder) Get(arg0 interface{}) *gomock.Call {
+func (mr *MockVideoSectionDaoMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockVideoSectionDao)(nil).Get), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockVideoSectionDao)(nil).Get), ctx, id)
 }
 
 // GetByStreamId mocks base method.
-func (m *MockVideoSectionDao) GetByStreamId(arg0 uint) ([]model.VideoSection, error) {
+func (m *MockVideoSectionDao) GetByStreamId(ctx context.Context, id uint) ([]model.VideoSection, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByStreamId", arg0)
+	ret := m.ctrl.Call(m, "GetByStreamId", ctx, id)
 	ret0, _ := ret[0].([]model.VideoSection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetByStreamId indicates an expected call of GetByStreamId.
-func (mr *MockVideoSectionDaoMockRecorder) GetByStreamId(arg0 interface{}) *gomock.Call {
+func (mr *MockVideoSectionDaoMockRecorder) GetByStreamId(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByStreamId", reflect.TypeOf((*MockVideoSectionDao)(nil).GetByStreamId), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByStreamId", reflect.TypeOf((*MockVideoSectionDao)(nil).GetByStreamId), ctx, id)
 }
 
 // Update mocks base method.
-func (m *MockVideoSectionDao) Update(arg0 *model.VideoSection) error {
+func (m *MockVideoSectionDao) Update(ctx context.Context, section *model.VideoSection) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", arg0)
+	ret := m.ctrl.Call(m, "Update", ctx, section)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockVideoSectionDaoMockRecorder) Update(arg0 interface{}) *gomock.Call {
+func (mr *MockVideoSectionDaoMockRecorder) Update(ctx, section interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockVideoSectionDao)(nil).Update), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockVideoSectionDao)(nil).Update), ctx, section)
 }

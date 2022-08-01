@@ -88,7 +88,7 @@ func TestStatistics(t *testing.T) {
 							statisticsMock := mock_dao.NewMockStatisticsDao(gomock.NewController(t))
 							statisticsMock.
 								EXPECT().
-								GetCourseStatsWeekdays(testutils.CourseFPV.ID).
+								GetCourseStatsWeekdays(gomock.Any(), testutils.CourseFPV.ID).
 								Return(stats, nil).
 								AnyTimes()
 							return statisticsMock
@@ -123,7 +123,7 @@ func TestStatistics(t *testing.T) {
 							statisticsMock := mock_dao.NewMockStatisticsDao(gomock.NewController(t))
 							statisticsMock.
 								EXPECT().
-								GetCourseStatsWeekdays(uint(0)).
+								GetCourseStatsWeekdays(gomock.Any(), uint(0)).
 								Return(stats, nil).
 								AnyTimes()
 							return statisticsMock
@@ -150,7 +150,7 @@ func TestStatistics(t *testing.T) {
 							statisticsMock := mock_dao.NewMockStatisticsDao(gomock.NewController(t))
 							statisticsMock.
 								EXPECT().
-								GetCourseStatsHourly(testutils.CourseFPV.ID).
+								GetCourseStatsHourly(gomock.Any(), testutils.CourseFPV.ID).
 								Return(stats, nil).
 								AnyTimes()
 							return statisticsMock
@@ -177,7 +177,7 @@ func TestStatistics(t *testing.T) {
 							statisticsMock := mock_dao.NewMockStatisticsDao(gomock.NewController(t))
 							statisticsMock.
 								EXPECT().
-								GetStudentActivityCourseStats(testutils.CourseFPV.ID, true).
+								GetStudentActivityCourseStats(gomock.Any(), testutils.CourseFPV.ID, true).
 								Return(stats, nil).
 								AnyTimes()
 							return statisticsMock
@@ -206,7 +206,7 @@ func TestStatistics(t *testing.T) {
 							statisticsMock := mock_dao.NewMockStatisticsDao(gomock.NewController(t))
 							statisticsMock.
 								EXPECT().
-								GetStudentActivityCourseStats(testutils.CourseFPV.ID, false).
+								GetStudentActivityCourseStats(gomock.Any(), testutils.CourseFPV.ID, false).
 								Return(stats, nil).
 								AnyTimes()
 							return statisticsMock
@@ -235,7 +235,7 @@ func TestStatistics(t *testing.T) {
 							statisticsMock := mock_dao.NewMockStatisticsDao(gomock.NewController(t))
 							statisticsMock.
 								EXPECT().
-								GetCourseNumStudents(testutils.CourseFPV.ID).
+								GetCourseNumStudents(gomock.Any(), testutils.CourseFPV.ID).
 								Return(numStudents, nil).
 								AnyTimes()
 							return statisticsMock
@@ -256,7 +256,7 @@ func TestStatistics(t *testing.T) {
 							statisticsMock := mock_dao.NewMockStatisticsDao(gomock.NewController(t))
 							statisticsMock.
 								EXPECT().
-								GetCourseNumVodViews(testutils.CourseFPV.ID).
+								GetCourseNumVodViews(gomock.Any(), testutils.CourseFPV.ID).
 								Return(views, nil).
 								AnyTimes()
 							return statisticsMock
@@ -277,7 +277,7 @@ func TestStatistics(t *testing.T) {
 							statisticsMock := mock_dao.NewMockStatisticsDao(gomock.NewController(t))
 							statisticsMock.
 								EXPECT().
-								GetCourseNumLiveViews(testutils.CourseFPV.ID).
+								GetCourseNumLiveViews(gomock.Any(), testutils.CourseFPV.ID).
 								Return(views, nil).
 								AnyTimes()
 							return statisticsMock
@@ -298,7 +298,7 @@ func TestStatistics(t *testing.T) {
 							statisticsMock := mock_dao.NewMockStatisticsDao(gomock.NewController(t))
 							statisticsMock.
 								EXPECT().
-								GetCourseNumVodViewsPerDay(testutils.CourseFPV.ID).
+								GetCourseNumVodViewsPerDay(gomock.Any(), testutils.CourseFPV.ID).
 								Return(stats, nil).
 								AnyTimes()
 							return statisticsMock
@@ -330,49 +330,49 @@ func TestStatistics(t *testing.T) {
 							statisticsMock := mock_dao.NewMockStatisticsDao(gomock.NewController(t))
 							statisticsMock.
 								EXPECT().
-								GetCourseStatsWeekdays(testutils.CourseFPV.ID).
+								GetCourseStatsWeekdays(gomock.Any(), testutils.CourseFPV.ID).
 								Return([]dao.Stat{}, errors.New("")).
 								AnyTimes()
 
 							statisticsMock.
 								EXPECT().
-								GetCourseStatsHourly(testutils.CourseFPV.ID).
+								GetCourseStatsHourly(gomock.Any(), testutils.CourseFPV.ID).
 								Return([]dao.Stat{}, errors.New("")).
 								AnyTimes()
 
 							statisticsMock.
 								EXPECT().
-								GetStudentActivityCourseStats(testutils.CourseFPV.ID, true).
+								GetStudentActivityCourseStats(gomock.Any(), testutils.CourseFPV.ID, true).
 								Return([]dao.Stat{}, errors.New("")).
 								AnyTimes()
 
 							statisticsMock.
 								EXPECT().
-								GetStudentActivityCourseStats(testutils.CourseFPV.ID, false).
+								GetStudentActivityCourseStats(gomock.Any(), testutils.CourseFPV.ID, false).
 								Return([]dao.Stat{}, errors.New("")).
 								AnyTimes()
 
 							statisticsMock.
 								EXPECT().
-								GetCourseNumStudents(testutils.CourseFPV.ID).
+								GetCourseNumStudents(gomock.Any(), testutils.CourseFPV.ID).
 								Return(int64(0), errors.New("")).
 								AnyTimes()
 
 							statisticsMock.
 								EXPECT().
-								GetCourseNumVodViews(testutils.CourseFPV.ID).
+								GetCourseNumVodViews(gomock.Any(), testutils.CourseFPV.ID).
 								Return(0, errors.New("")).
 								AnyTimes()
 
 							statisticsMock.
 								EXPECT().
-								GetCourseNumLiveViews(testutils.CourseFPV.ID).
+								GetCourseNumLiveViews(gomock.Any(), testutils.CourseFPV.ID).
 								Return(0, errors.New("")).
 								AnyTimes()
 
 							statisticsMock.
 								EXPECT().
-								GetCourseNumVodViewsPerDay(testutils.CourseFPV.ID).
+								GetCourseNumVodViewsPerDay(gomock.Any(), testutils.CourseFPV.ID).
 								Return([]dao.Stat{}, errors.New("")).
 								AnyTimes()
 							return statisticsMock

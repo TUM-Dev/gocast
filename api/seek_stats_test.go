@@ -40,7 +40,7 @@ func TestReportSeek(t *testing.T) {
 							searchMock := mock_dao.NewMockVideoSeekDao(ctrl)
 							searchMock.
 								EXPECT().
-								Add("abc", testPosition).
+								Add(gomock.Any(), "abc", testPosition).
 								Return(errors.New(""))
 							return searchMock
 						}(),
@@ -58,7 +58,7 @@ func TestReportSeek(t *testing.T) {
 							searchMock := mock_dao.NewMockVideoSeekDao(ctrl)
 							searchMock.
 								EXPECT().
-								Add(fmt.Sprintf("%d", testutils.StreamFPVNotLive.ID), testPosition).
+								Add(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVNotLive.ID), testPosition).
 								Return(errors.New(""))
 							return searchMock
 						}(),
@@ -75,7 +75,7 @@ func TestReportSeek(t *testing.T) {
 							searchMock := mock_dao.NewMockVideoSeekDao(ctrl)
 							searchMock.
 								EXPECT().
-								Add(fmt.Sprintf("%d", testutils.StreamFPVNotLive.ID), testPosition).
+								Add(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVNotLive.ID), testPosition).
 								Return(nil)
 							return searchMock
 						}(),
@@ -121,7 +121,7 @@ func TestReportSeek(t *testing.T) {
 							searchMock := mock_dao.NewMockVideoSeekDao(ctrl)
 							searchMock.
 								EXPECT().
-								Get(fmt.Sprintf("%d", testutils.StreamFPVNotLive.ID)).
+								Get(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVNotLive.ID)).
 								Return(nil, errors.New(""))
 							return searchMock
 						}(),
@@ -137,7 +137,7 @@ func TestReportSeek(t *testing.T) {
 							searchMock := mock_dao.NewMockVideoSeekDao(ctrl)
 							searchMock.
 								EXPECT().
-								Get(fmt.Sprintf("%d", testutils.StreamFPVNotLive.ID)).
+								Get(gomock.Any(), fmt.Sprintf("%d", testutils.StreamFPVNotLive.ID)).
 								Return([]model.VideoSeekChunk{testutils.FPVNotLiveVideoSeekChunk1, testutils.FPVNotLiveVideoSeekChunk2, testutils.FPVNotLiveVideoSeekChunk3}, nil)
 							return searchMock
 						}(),

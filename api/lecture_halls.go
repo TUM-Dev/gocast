@@ -74,7 +74,7 @@ func (r lectureHallRoutes) updateLectureHall(c *gin.Context) {
 		})
 		return
 	}
-	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(uint(idUint))
+	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(c, uint(idUint))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,
@@ -88,7 +88,7 @@ func (r lectureHallRoutes) updateLectureHall(c *gin.Context) {
 	lectureHall.PresIP = req.PresIP
 	lectureHall.CameraIP = req.CameraIp
 	lectureHall.PwrCtrlIp = req.PwrCtrlIp
-	err = r.LectureHallsDao.SaveLectureHall(lectureHall)
+	err = r.LectureHallsDao.SaveLectureHall(c, lectureHall)
 	if err != nil {
 		log.WithError(err).Error("error while updating lecture hall")
 		_ = c.Error(tools.RequestError{
@@ -113,7 +113,7 @@ func (r lectureHallRoutes) updateLectureHallsDefaultPreset(c *gin.Context) {
 		})
 		return
 	}
-	preset, err := r.LectureHallsDao.FindPreset(c.Param("id"), fmt.Sprintf("%d", req.PresetID))
+	preset, err := r.LectureHallsDao.FindPreset(c, c.Param("id"), fmt.Sprintf("%d", req.PresetID))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,
@@ -123,7 +123,7 @@ func (r lectureHallRoutes) updateLectureHallsDefaultPreset(c *gin.Context) {
 		return
 	}
 	preset.IsDefault = true
-	err = r.LectureHallsDao.UnsetDefaults(c.Param("id"))
+	err = r.LectureHallsDao.UnsetDefaults(c, c.Param("id"))
 	if err != nil {
 		log.WithError(err).Error("error unsetting default presets")
 		_ = c.Error(tools.RequestError{
@@ -133,7 +133,7 @@ func (r lectureHallRoutes) updateLectureHallsDefaultPreset(c *gin.Context) {
 		})
 		return
 	}
-	err = r.LectureHallsDao.SavePreset(preset)
+	err = r.LectureHallsDao.SavePreset(c, preset)
 	if err != nil {
 		log.WithError(err).Error("error saving preset as default")
 		_ = c.Error(tools.RequestError{
@@ -157,7 +157,7 @@ func (r lectureHallRoutes) deleteLectureHall(c *gin.Context) {
 		return
 	}
 
-	err = r.LectureHallsDao.DeleteLectureHall(uint(lhID))
+	err = r.LectureHallsDao.DeleteLectureHall(c, uint(lhID))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -179,7 +179,7 @@ func (r lectureHallRoutes) refreshLectureHallPresets(c *gin.Context) {
 		})
 		return
 	}
-	lh, err := r.LectureHallsDao.GetLectureHallByID(uint(lhID))
+	lh, err := r.LectureHallsDao.GetLectureHallByID(c, uint(lhID))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,
@@ -215,7 +215,7 @@ func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 	if tumLiveContext.User != nil && tumLiveContext.User.Role != model.AdminType {
 		queryUid = tumLiveContext.User.ID
 	}
-	icalData, err := r.LectureHallsDao.GetStreamsForLectureHallIcal(queryUid)
+	icalData, err := r.LectureHallsDao.GetStreamsForLectureHallIcal(c, queryUid)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -237,7 +237,7 @@ func (r lectureHallRoutes) switchPreset(c *gin.Context) {
 		})
 		return
 	}
-	preset, err := r.LectureHallsDao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
+	preset, err := r.LectureHallsDao.FindPreset(c, c.Param("lectureHallID"), c.Param("presetID"))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,
@@ -251,7 +251,7 @@ func (r lectureHallRoutes) switchPreset(c *gin.Context) {
 }
 
 func (r lectureHallRoutes) takeSnapshot(c *gin.Context) {
-	preset, err := r.LectureHallsDao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
+	preset, err := r.LectureHallsDao.FindPreset(c, c.Param("lectureHallID"), c.Param("presetID"))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,
@@ -262,7 +262,7 @@ func (r lectureHallRoutes) takeSnapshot(c *gin.Context) {
 		return
 	}
 	r.presetUtility.TakeSnapshot(preset)
-	preset, err = r.LectureHallsDao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
+	preset, err = r.LectureHallsDao.FindPreset(c, c.Param("lectureHallID"), c.Param("presetID"))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,
@@ -287,7 +287,7 @@ func (r lectureHallRoutes) setLectureHall(c *gin.Context) {
 		return
 	}
 
-	streams, err := r.StreamsDao.GetStreamsByIds(req.StreamIDs)
+	streams, err := r.StreamsDao.GetStreamsByIds(c, req.StreamIDs)
 	if err != nil || len(streams) != len(req.StreamIDs) {
 		log.WithError(err).Error("can not get all streams to update lecture hall")
 		_ = c.Error(tools.RequestError{
@@ -299,7 +299,7 @@ func (r lectureHallRoutes) setLectureHall(c *gin.Context) {
 	}
 
 	if req.LectureHallID == 0 {
-		err = r.StreamsDao.UnsetLectureHall(req.StreamIDs)
+		err = r.StreamsDao.UnsetLectureHall(c, req.StreamIDs)
 		if err != nil {
 			log.WithError(err).Error("can not update lecture hall for streams")
 			_ = c.Error(tools.RequestError{
@@ -311,7 +311,7 @@ func (r lectureHallRoutes) setLectureHall(c *gin.Context) {
 		return
 	}
 
-	_, err = r.LectureHallsDao.GetLectureHallByID(req.LectureHallID)
+	_, err = r.LectureHallsDao.GetLectureHallByID(c, req.LectureHallID)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusNotFound,
@@ -320,7 +320,7 @@ func (r lectureHallRoutes) setLectureHall(c *gin.Context) {
 		})
 		return
 	}
-	err = r.StreamsDao.SetLectureHall(req.StreamIDs, req.LectureHallID)
+	err = r.StreamsDao.SetLectureHall(c, req.StreamIDs, req.LectureHallID)
 	if err != nil {
 		log.WithError(err).Error("can not update lecture hall")
 		_ = c.Error(tools.RequestError{
@@ -343,7 +343,7 @@ func (r lectureHallRoutes) createLectureHall(c *gin.Context) {
 		})
 		return
 	}
-	r.LectureHallsDao.CreateLectureHall(model.LectureHall{
+	r.LectureHallsDao.CreateLectureHall(c, model.LectureHall{
 		Name:      req.Name,
 		CombIP:    req.CombIP,
 		PresIP:    req.PresIP,

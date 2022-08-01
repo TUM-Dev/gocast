@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"errors"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
@@ -40,7 +41,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	data.ChatData.IsPopUp = false
 
 	if data.IsAdminOfCourse && tumLiveContext.Stream.LectureHallID != 0 {
-		lectureHall, err := r.LectureHallsDao.GetLectureHallByID(tumLiveContext.Stream.LectureHallID)
+		lectureHall, err := r.LectureHallsDao.GetLectureHallByID(c, tumLiveContext.Stream.LectureHallID)
 		if err != nil {
 			sentry.CaptureException(err)
 		} else {
@@ -57,7 +58,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	}
 	// Check for fetching progress
 	if tumLiveContext.User != nil && tumLiveContext.Stream.Recording {
-		progress, err := dao.Progress.LoadProgress(tumLiveContext.User.ID, tumLiveContext.Stream.ID)
+		progress, err := dao.Progress.LoadProgress(c, tumLiveContext.User.ID, tumLiveContext.Stream.ID)
 		if err != nil {
 			data.Progress = model.StreamProgress{Progress: 0}
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -85,12 +86,12 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 		data.TruncatedDescription = template.HTML(tools.Truncate(data.IndexData.TUMLiveContext.Stream.GetDescriptionHTML(), data.CutOffLength))
 	}
 	if c.Query("video_only") == "1" {
-		err := templateExecutor.ExecuteTemplate(c.Writer, "video_only.gohtml", data)
+		err := templateExecutor.ExecuteTemplate(c, c.Writer, "video_only.gohtml", data)
 		if err != nil {
 			log.Printf("couldn't render template: %v\n", err)
 		}
 	} else {
-		err := templateExecutor.ExecuteTemplate(c.Writer, "watch.gohtml", data)
+		err := templateExecutor.ExecuteTemplate(c, c.Writer, "watch.gohtml", data)
 		if err != nil {
 			log.Printf("couldn't render template: %v\n", err)
 		}
@@ -132,7 +133,7 @@ func (d *WatchPageData) Prepare(c *gin.Context, lectureHallsDao dao.LectureHalls
 
 func (d *WatchPageData) prepareLectureHall(c tools.TUMLiveContext, lectureHallsDao dao.LectureHallsDao) error {
 	if c.Stream.LectureHallID != 0 {
-		lectureHall, err := lectureHallsDao.GetLectureHallByID(c.Stream.LectureHallID)
+		lectureHall, err := lectureHallsDao.GetLectureHallByID(context.Background(), c.Stream.LectureHallID)
 		if err != nil {
 			return err
 		}

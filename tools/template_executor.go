@@ -1,21 +1,32 @@
 package tools
 
 import (
+	"context"
 	"github.com/Masterminds/sprig/v3"
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"html/template"
 	"io"
 )
 
 type TemplateExecutor interface {
-	ExecuteTemplate(w io.Writer, name string, data interface{}) error
+	ExecuteTemplate(ctx context.Context, w io.Writer, name string, data interface{}) error
 }
 
 type DebugTemplateExecutor struct {
 	Patterns []string
 }
 
-func (e DebugTemplateExecutor) ExecuteTemplate(w io.Writer, name string, data interface{}) error {
+func (e DebugTemplateExecutor) ExecuteTemplate(c context.Context, w io.Writer, name string, data interface{}) error {
+	var span *sentry.Span
+	if ctx, ok := c.(*gin.Context); ok {
+		if s, ok := ctx.Get("sentry.span"); ok {
+			if sTmp, ok := s.(*sentry.Span); ok {
+				span = sentry.StartSpan(sTmp.Context(), "HTML Render")
+			}
+		}
+	}
 	if len(e.Patterns) == 0 {
 		panic("Provide at least one pattern for the debug template executor.")
 	}
@@ -33,13 +44,29 @@ func (e DebugTemplateExecutor) ExecuteTemplate(w io.Writer, name string, data in
 		}
 	}
 
-	return t.ExecuteTemplate(w, name, data)
+	err = t.ExecuteTemplate(w, name, data)
+	if span != nil {
+		span.Finish()
+	}
+	return err
 }
 
 type ReleaseTemplateExecutor struct {
 	Template *template.Template
 }
 
-func (e ReleaseTemplateExecutor) ExecuteTemplate(w io.Writer, name string, data interface{}) error {
-	return e.Template.ExecuteTemplate(w, name, data)
+func (e ReleaseTemplateExecutor) ExecuteTemplate(c context.Context, w io.Writer, name string, data interface{}) error {
+	var span *sentry.Span
+	if ctx, ok := c.(*gin.Context); ok {
+		if s, ok := ctx.Get("sentry.span"); ok {
+			if sTmp, ok := s.(*sentry.Span); ok {
+				span = sentry.StartSpan(sTmp.Context(), "HTML Render")
+			}
+		}
+	}
+	err := e.Template.ExecuteTemplate(w, name, data)
+	if span != nil {
+		span.Finish()
+	}
+	return err
 }

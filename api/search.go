@@ -39,7 +39,7 @@ func (r searchRoutes) searchStreams(c *gin.Context) {
 	}
 
 	startTime := time.Now()
-	searchResults, err := r.SearchDao.Search(q, uint(courseId))
+	searchResults, err := r.SearchDao.Search(c, q, uint(courseId))
 	endTime := time.Now()
 	if err != nil {
 		_ = c.Error(tools.RequestError{

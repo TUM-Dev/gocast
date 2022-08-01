@@ -43,7 +43,7 @@ func TestMessages(t *testing.T) {
 							chatMock := mock_dao.NewMockChatDao(gomock.NewController(t))
 							chatMock.
 								EXPECT().
-								GetAllChats(testutils.Admin.ID, testutils.StreamFPVLive.ID).
+								GetAllChats(gomock.Any(), testutils.Admin.ID, testutils.StreamFPVLive.ID).
 								Return(chats, nil).
 								AnyTimes()
 							return chatMock
@@ -64,7 +64,7 @@ func TestMessages(t *testing.T) {
 							chatMock := mock_dao.NewMockChatDao(gomock.NewController(t))
 							chatMock.
 								EXPECT().
-								GetVisibleChats(testutils.Student.ID, testutils.StreamFPVLive.ID).
+								GetVisibleChats(gomock.Any(), testutils.Student.ID, testutils.StreamFPVLive.ID).
 								Return(chats, nil).
 								AnyTimes()
 							return chatMock
@@ -118,17 +118,17 @@ func TestActivePoll(t *testing.T) {
 							chatMock := mock_dao.NewMockChatDao(gomock.NewController(t))
 							chatMock.
 								EXPECT().
-								GetActivePoll(testutils.StreamFPVLive.ID).
+								GetActivePoll(gomock.Any(), testutils.StreamFPVLive.ID).
 								Return(testutils.PollStreamFPVLive, nil).
 								AnyTimes()
 							chatMock.
 								EXPECT().
-								GetPollUserVote(testutils.PollStreamFPVLive.ID, testutils.Admin.ID).
+								GetPollUserVote(gomock.Any(), testutils.PollStreamFPVLive.ID, testutils.Admin.ID).
 								Return(submitted, nil).
 								AnyTimes()
 							chatMock.
 								EXPECT().
-								GetPollOptionVoteCount(gomock.Any()).
+								GetPollOptionVoteCount(gomock.Any(), gomock.Any()).
 								Return(int64(1), nil).
 								AnyTimes()
 							return chatMock
@@ -184,7 +184,7 @@ func TestUsers(t *testing.T) {
 							chatMock := mock_dao.NewMockChatDao(gomock.NewController(t))
 							chatMock.
 								EXPECT().
-								GetChatUsers(testutils.StreamFPVLive.ID).
+								GetChatUsers(gomock.Any(), testutils.StreamFPVLive.ID).
 								Return(users, nil).
 								AnyTimes()
 							return chatMock

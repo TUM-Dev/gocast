@@ -5,6 +5,7 @@
 package mock_dao
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,84 +36,84 @@ func (m *MockIngestServerDao) EXPECT() *MockIngestServerDaoMockRecorder {
 }
 
 // GetBestIngestServer mocks base method.
-func (m *MockIngestServerDao) GetBestIngestServer() (model.IngestServer, error) {
+func (m *MockIngestServerDao) GetBestIngestServer(ctx context.Context) (model.IngestServer, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBestIngestServer")
+	ret := m.ctrl.Call(m, "GetBestIngestServer", ctx)
 	ret0, _ := ret[0].(model.IngestServer)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetBestIngestServer indicates an expected call of GetBestIngestServer.
-func (mr *MockIngestServerDaoMockRecorder) GetBestIngestServer() *gomock.Call {
+func (mr *MockIngestServerDaoMockRecorder) GetBestIngestServer(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBestIngestServer", reflect.TypeOf((*MockIngestServerDao)(nil).GetBestIngestServer))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBestIngestServer", reflect.TypeOf((*MockIngestServerDao)(nil).GetBestIngestServer), ctx)
 }
 
 // GetStreamSlot mocks base method.
-func (m *MockIngestServerDao) GetStreamSlot(ingestServerID uint) (model.StreamName, error) {
+func (m *MockIngestServerDao) GetStreamSlot(ctx context.Context, ingestServerID uint) (model.StreamName, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetStreamSlot", ingestServerID)
+	ret := m.ctrl.Call(m, "GetStreamSlot", ctx, ingestServerID)
 	ret0, _ := ret[0].(model.StreamName)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetStreamSlot indicates an expected call of GetStreamSlot.
-func (mr *MockIngestServerDaoMockRecorder) GetStreamSlot(ingestServerID interface{}) *gomock.Call {
+func (mr *MockIngestServerDaoMockRecorder) GetStreamSlot(ctx, ingestServerID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStreamSlot", reflect.TypeOf((*MockIngestServerDao)(nil).GetStreamSlot), ingestServerID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStreamSlot", reflect.TypeOf((*MockIngestServerDao)(nil).GetStreamSlot), ctx, ingestServerID)
 }
 
 // GetTranscodedStreamSlot mocks base method.
-func (m *MockIngestServerDao) GetTranscodedStreamSlot(ingestServerID uint) (model.StreamName, error) {
+func (m *MockIngestServerDao) GetTranscodedStreamSlot(ctx context.Context, ingestServerID uint) (model.StreamName, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTranscodedStreamSlot", ingestServerID)
+	ret := m.ctrl.Call(m, "GetTranscodedStreamSlot", ctx, ingestServerID)
 	ret0, _ := ret[0].(model.StreamName)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetTranscodedStreamSlot indicates an expected call of GetTranscodedStreamSlot.
-func (mr *MockIngestServerDaoMockRecorder) GetTranscodedStreamSlot(ingestServerID interface{}) *gomock.Call {
+func (mr *MockIngestServerDaoMockRecorder) GetTranscodedStreamSlot(ctx, ingestServerID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTranscodedStreamSlot", reflect.TypeOf((*MockIngestServerDao)(nil).GetTranscodedStreamSlot), ingestServerID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTranscodedStreamSlot", reflect.TypeOf((*MockIngestServerDao)(nil).GetTranscodedStreamSlot), ctx, ingestServerID)
 }
 
 // RemoveStreamFromSlot mocks base method.
-func (m *MockIngestServerDao) RemoveStreamFromSlot(streamID uint) error {
+func (m *MockIngestServerDao) RemoveStreamFromSlot(ctx context.Context, streamID uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveStreamFromSlot", streamID)
+	ret := m.ctrl.Call(m, "RemoveStreamFromSlot", ctx, streamID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveStreamFromSlot indicates an expected call of RemoveStreamFromSlot.
-func (mr *MockIngestServerDaoMockRecorder) RemoveStreamFromSlot(streamID interface{}) *gomock.Call {
+func (mr *MockIngestServerDaoMockRecorder) RemoveStreamFromSlot(ctx, streamID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveStreamFromSlot", reflect.TypeOf((*MockIngestServerDao)(nil).RemoveStreamFromSlot), streamID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveStreamFromSlot", reflect.TypeOf((*MockIngestServerDao)(nil).RemoveStreamFromSlot), ctx, streamID)
 }
 
 // SaveIngestServer mocks base method.
-func (m *MockIngestServerDao) SaveIngestServer(server model.IngestServer) {
+func (m *MockIngestServerDao) SaveIngestServer(ctx context.Context, server model.IngestServer) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SaveIngestServer", server)
+	m.ctrl.Call(m, "SaveIngestServer", ctx, server)
 }
 
 // SaveIngestServer indicates an expected call of SaveIngestServer.
-func (mr *MockIngestServerDaoMockRecorder) SaveIngestServer(server interface{}) *gomock.Call {
+func (mr *MockIngestServerDaoMockRecorder) SaveIngestServer(ctx, server interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveIngestServer", reflect.TypeOf((*MockIngestServerDao)(nil).SaveIngestServer), server)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveIngestServer", reflect.TypeOf((*MockIngestServerDao)(nil).SaveIngestServer), ctx, server)
 }
 
 // SaveSlot mocks base method.
-func (m *MockIngestServerDao) SaveSlot(slot model.StreamName) {
+func (m *MockIngestServerDao) SaveSlot(ctx context.Context, slot model.StreamName) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SaveSlot", slot)
+	m.ctrl.Call(m, "SaveSlot", ctx, slot)
 }
 
 // SaveSlot indicates an expected call of SaveSlot.
-func (mr *MockIngestServerDaoMockRecorder) SaveSlot(slot interface{}) *gomock.Call {
+func (mr *MockIngestServerDaoMockRecorder) SaveSlot(ctx, slot interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSlot", reflect.TypeOf((*MockIngestServerDao)(nil).SaveSlot), slot)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSlot", reflect.TypeOf((*MockIngestServerDao)(nil).SaveSlot), ctx, slot)
 }
