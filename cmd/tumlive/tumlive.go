@@ -115,7 +115,11 @@ func main() {
 		sentry.Flush(time.Second * 5)
 		log.Fatalf("%v", err)
 	}
+
 	dao.DB = db
+	if tools.Cfg.SentryEnabled() {
+		dao.InitSentryMiddlewares()
+	}
 
 	err = dao.Migrator.RunBefore(db)
 	if err != nil {

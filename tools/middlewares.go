@@ -330,11 +330,27 @@ func SentryTrace(c *gin.Context) {
 	// name request like gin path spec (e.g. GET /api/courses/:id)
 	s := sentry.StartSpan(c, "HTTP Handle", sentry.TransactionName(c.Request.Method+" "+c.FullPath()))
 	s.SetTag("url", c.Request.URL.Path)
+	s.SetTag("user_agent", c.Request.UserAgent())
 	c.Set("sentry.span", s)
 
 	c.Next()
 
-	s.SetTag("status", fmt.Sprintf("%d", c.Writer.Status()))
+	switch c.Writer.Status() {
+	case http.StatusOK:
+		s.Status = sentry.SpanStatusOK
+	case http.StatusUnauthorized, http.StatusForbidden:
+		s.Status = sentry.SpanStatusPermissionDenied
+	case http.StatusInternalServerError:
+		s.Status = sentry.SpanStatusInternalError
+	case http.StatusNotFound:
+		s.Status = sentry.SpanStatusNotFound
+	case http.StatusBadRequest:
+		s.Status = sentry.SpanStatusInvalidArgument
+	case http.StatusFound, http.StatusSeeOther, http.StatusTemporaryRedirect, http.StatusPermanentRedirect:
+		s.Status = sentry.SpanStatusAlreadyExists // sentry doesn't have a status for redirects.
+	default:
+		s.Status = sentry.SpanStatusUnknown
+	}
 	s.Finish()
 }
 
