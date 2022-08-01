@@ -10,7 +10,7 @@ export class Chat {
     readonly admin: boolean;
     readonly streamId: number;
 
-    windows: Window[];
+    popUpWindow: Window;
     orderByLikes: boolean;
     disconnected: boolean;
     current: NewChatMessage;
@@ -55,13 +55,13 @@ export class Chat {
         this.poll = new Poll(streamId);
         this.startTime = new Date(startTime);
         this.focusedMessageId = -1;
-        this.windows = [window];
+        this.popUpWindow = null;
         this.grayOutMessagesAfterPlayerTime = this.grayOutMessagesAfterPlayerTime.bind(this);
         this.deregisterPlayerTimeWatcher = this.deregisterPlayerTimeWatcher.bind(this);
         this.registerPlayerTimeWatcher = this.registerPlayerTimeWatcher.bind(this);
         this.registerPlayerTimeWatcher();
         window.addEventListener("beforeunload", () => {
-            this.windows.forEach((window) => window.close());
+            this.popUpWindow.close();
         });
     }
 
@@ -194,8 +194,10 @@ export class Chat {
         // multiple popup chat windows seem to trigger Alpine.js exceptions
         // which is probably caused by a race condition during the update of the
         // chat messages array with the custom event
-
-        if (this.windows.length > 2) return;
+        if (this.popUpWindow) {
+            this.popUpWindow.focus();
+            return;
+        }
         const height = window.innerHeight * 0.8;
         const popUpWindow = window.open(
             `/w/${courseSlug}/${streamID}/chat/popup`,
@@ -204,14 +206,12 @@ export class Chat {
         );
 
         popUpWindow.addEventListener("beforeunload", (_) => {
-            this.windows = this.windows.filter((window) => window !== popUpWindow);
+            this.popUpWindow = null;
         });
 
-        popUpWindow.dispatchEvent(
-            new CustomEvent("chat-messages-updated", { detail: JSON.parse(JSON.stringify(this.messages)) }),
-        );
+        popUpWindow.dispatchEvent(new CustomEvent("chat-messages-updated"));
 
-        this.windows.push(popUpWindow);
+        this.popUpWindow = popUpWindow;
     }
 
     /**
@@ -270,6 +270,7 @@ export class Chat {
 
         this.notifyMessagesUpdate({ focusUpdated: focusedMessageChanged });
     }
+
     isMessageToBeFocused = (index: number) => this.messages[index].ID === this.focusedMessageId;
 
     private addMessage(m: ChatMessage) {
@@ -278,8 +279,8 @@ export class Chat {
     }
 
     private notifyMessagesUpdate(payload: object) {
-        this.windows.forEach((window: Window) =>
-            window.dispatchEvent(new CustomEvent("chat-messages-updated", { detail: payload })),
+        [window, this.popUpWindow].forEach((window: Window) =>
+            window?.dispatchEvent(new CustomEvent("chat-messages-updated", { detail: payload })),
         );
     }
 }
