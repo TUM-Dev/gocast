@@ -363,7 +363,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		}
 	}
 
-	S.startThumbnailGeneration(&c)
+	/*S.startThumbnailGeneration(&c)
 	defer S.endThumbnailGeneration(&c)
 	err = createThumbnailSprite(&c)
 	if err != nil {
@@ -379,7 +379,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		log.WithField("File", c.getTranscodingFileName()).WithError(err).Error("Detecting silence failed.")
 	} else {
 		notifySilenceResults(sd.Silences, c.streamId)
-	}
+	}*/
 
 	S.startKeywordExtraction(&c)
 	defer S.endKeywordExtraction(&c)
@@ -577,14 +577,8 @@ func extractKeywords(ctx *StreamContext) error {
 	}
 
 	// extract keywords
-	engExtractor := ocr.NewOcrExtractor(files, []string{"eng"})
+	engExtractor := ocr.NewOcrExtractor(files, []string{"eng", "deu"})
 	engKeywords, err := engExtractor.Extract()
-	if err != nil {
-		return err
-	}
-
-	deuExtractor := ocr.NewOcrExtractor(files, []string{"deu"})
-	deuKeywords, err := deuExtractor.Extract()
 	if err != nil {
 		return err
 	}
@@ -599,22 +593,6 @@ func extractKeywords(ctx *StreamContext) error {
 		WorkerID: cfg.WorkerID,
 		StreamID: ctx.streamId,
 		Keywords: engKeywords,
-		Language: "eng",
-	})
-
-	if err != nil {
-		return err
-	}
-
-	if !status.GetOk() {
-		return errors.New(status.String())
-	}
-
-	status, err = fromWorkerClient.NewKeywords(context.Background(), &pb.NewKeywordsRequest{
-		WorkerID: cfg.WorkerID,
-		StreamID: ctx.streamId,
-		Keywords: deuKeywords,
-		Language: "deu",
 	})
 
 	if err != nil {

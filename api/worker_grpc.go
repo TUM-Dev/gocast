@@ -241,10 +241,9 @@ func (s server) NewKeywords(ctx context.Context, request *pb.NewKeywordsRequest)
 			keywords[i] = model.Keyword{
 				StreamID: uint(request.StreamID),
 				Text:     keyword,
-				Language: request.Language,
 			}
 		}
-		err := s.DaoWrapper.KeywordDao.NewKeywords(keywords)
+		err = s.DaoWrapper.KeywordDao.NewKeywords(keywords)
 		if err != nil {
 			log.WithError(err).Println("Couldn't insert keyword")
 			return &pb.Status{Ok: false}, err
