@@ -156,6 +156,7 @@ func main() {
 		&model.UserSetting{},
 		&model.Audit{},
 		&model.InfoPage{},
+		&model.Bookmark{},
 		&model.TranscodingProgress{},
 	)
 	if err != nil {
