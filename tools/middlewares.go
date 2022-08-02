@@ -322,10 +322,16 @@ func AdminToken(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 	}
 }
 
+// noTracePrefixes won't be traced as they are quite noisy
+var noTracePrefixes = []string{"/api/progressReport", "/static", "/api/seekReport"}
+
+// noTraceSuffixes won't be traced as they are quite noisy
+var noTraceSuffixes = []string{"/ws"}
+
 // SentryTrace starts a sentry span at the beginning of each request and ends it afterward.
 func SentryTrace(c *gin.Context) {
-	if strings.HasSuffix(c.Request.URL.Path, "/ws") {
-		return // don't log websocket requests
+	if hasAnyPrefix(c.Request.URL.Path, noTracePrefixes) || hasAnySuffix(c.Request.URL.Path, noTraceSuffixes) {
+		return // don't log all requests
 	}
 	// name request like gin path spec (e.g. GET /api/courses/:id)
 	s := sentry.StartSpan(c, "HTTP Handle", sentry.TransactionName(c.Request.Method+" "+c.FullPath()))
@@ -366,4 +372,22 @@ func (c *TUMLiveContext) UserIsAdmin() bool {
 		return false
 	}
 	return c.User.IsAdminOfCourse(*c.Course)
+}
+
+func hasAnyPrefix(s string, prefixes []string) bool {
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(s, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasAnySuffix(s string, suffixes []string) bool {
+	for _, prefix := range suffixes {
+		if strings.HasPrefix(s, prefix) {
+			return true
+		}
+	}
+	return false
 }
