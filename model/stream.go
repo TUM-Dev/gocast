@@ -43,6 +43,7 @@ type Stream struct {
 	Silences              []Silence
 	Files                 []File `gorm:"foreignKey:StreamID"`
 	ThumbInterval         uint32 `gorm:"default:null"`
+	Thumbnail             string `gorm:"default:null"`
 	Paused                bool   `gorm:"default:false"`
 	StreamName            string
 	Duration              uint32           `gorm:"default:null"`

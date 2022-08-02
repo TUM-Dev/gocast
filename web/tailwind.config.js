@@ -39,6 +39,11 @@ module.exports = {
             blur: {
                 xxs: "1px",
             },
+            screens: {
+                'hover-hover': {
+                    raw: '(hover: hover) and (pointer: fine)'
+                }
+            }
         },
     },
     variants: {

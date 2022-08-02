@@ -13,87 +13,92 @@
     </div>
 {{end}}
 
-{{define "dropdown-actions"}} {{/*actions, icon? (fa icon), show-button-if? (alpine expression)*/}}
-    {{template "dropdown-head" dict "icon" (get . "icon") "show-button-if" (get . "show-button-if")}}
-    <ul class="absolute right-0 z-50 h-fit w-48 top-full text-left bg-white dark:bg-secondary rounded-lg shadow border dark:border-gray-800
-                        flex flex-col py-2">
-        {{range $action := get . "actions"}}
-            <li>
-                <button class="py-[0.125rem] px-2 w-full text-sm font-normal text-4 hover:text-1 hover: duration-100 flex flex-row gap-1 [align-items:center]"
-                        {{with get . "action"}}@click="{{.}}"{{end}}>
-                    <div class="mt-[0.05em] w-6 h-6 flex justify-center [align-items:center]">
-                        {{with get . "icon"}}<i class="fas fa-{{.}}"></i>{{end}}
-                    </div>
-                    <span class="pr-1">{{get . "label"}}</span>
-                </button>
-            </li>
-        {{end}}
-    </ul>
-    {{template "dropdown-tail"}}
-{{end}}
-
-{{define "item-card-head"}} {{/*title, title-url?, subtitle?, subtitle-url?, date?, date-context?, location?, badges?, actions?*/}}
+{{define "item-card-head"}} {{/*title, title-url?, thumbnail-url?, watch-progress, subtitle?, subtitle-url?, date?, date-context?, location?, badges?, actions?*/}}
 {{$args := .}}
-<div class="{{if get . "show-border"}}p-6 {{template "box-border"}}{{else}}p-2{{end}} h-full" x-data="{ hover: false }" @mouseover="hover = true" @mouseover.away="hover = false" >
-    <div class="flex flex-row space-between">
-        {{/*Main Content*/}}
-        <div class="grow flex flex-col gap-1 text-sm text-5 font-light">
-            <div>
-                <h3 class="text-lg text-2 hover:text-1 duration-100 font-semibold inline">
-                    {{with get . "title-url"}}<a href="{{.}}">{{end}}
-                        {{get . "title"}}
-                    {{if get . "title-url"}}</a>{{end}}
-                </h3>
+<div class="{{if get . "show-border"}}p-6 {{template "box-border"}}{{else}}p-2{{end}} h-full"
+        x-data="{ hover: false }" @mouseover="hover = true" @mouseover.away="hover = false" >
+    {{/* outer container: thumbnail on top, remaining content below */}}
+    <div class="flex flex-col gap-2">
+        {{with get . "thumbnail-url"}}
+            {{with get $args "title-url"}}<a href="{{.}}">{{end}}
+                {{$watch_progress := get $args "watch-progress" | default (divf (randInt 0 101 | float64) 100.0)}}
+                <div class="rounded-lg overflow-hidden w-full [aspect-ratio:16/9] bg-gray-500 grid grid-cols-2 grid-rows-2"
+                        {{with $watch_progress}}
+                            style="grid-template-columns: {{. | mulf 100}}% auto; grid-template-rows: 1fr 0.25rem"
+                        {{end}}>
+                    <div class="row-start-1 col-start-1 row-span-2 col-span-2">
+                        <img class="w-full h-full object-contain" src="https://picsum.photos/1920{{if randInt 0 2 | eq 0}}/1080{{end}}/?random={{randNumeric 16}}" alt="" />
+                    </div>
+                    {{if $watch_progress}}
+                        <div class="row-start-2 col-start-2 col-span-1 row-span-1 bg-gray-50 opacity-50"></div>
+                        <div class="row-start-2 col-start-1 col-span-1 row-span-1 bg-danger"></div>
+                    {{end}}
+                </div>
+            {{if get $args "title-url"}}</a>{{end}}
+        {{end}}
+        {{/* inner container: content on the left, dropdown in the top-right corner */}}
+        <div class="flex flex-row space-between">
+            {{/* main content */}}
+            <div class="grow flex flex-col gap-1 text-sm text-5 font-light">
+                <div>
+                    {{/* title */}}
+                    <h3 class="text-lg text-2 hover:text-1 duration-100 font-semibold inline">
+                        {{with get . "title-url"}}<a href="{{.}}">{{end}}
+                            {{get . "title"}}
+                        {{if get . "title-url"}}</a>{{end}}
+                    </h3>
 
-                {{with get . "subtitle"}}
-                    <p>
-                        {{with get $args "subtitle-url"}}<a class="hover:text-1 duration-100" href="{{.}}">{{end}}
-                            {{.}}
-                        {{if get $args "subtitle-url"}}</a>{{end}}
-                    </p>
-                {{end}}
-            </div>
+                    {{/* subtitle */}}
+                    {{with get . "subtitle"}}
+                        <h4>
+                            {{with get $args "subtitle-url"}}<a class="hover:text-1 duration-100" href="{{.}}">{{end}}
+                                {{.}}
+                            {{if get $args "subtitle-url"}}</a>{{end}}
+                        </h4>
+                    {{end}}
+                </div>
 {{end}}
 
 {{define "item-card-tail"}}
 {{$args := .}}
-            {{if pick . "date" "location" | values | compact}} {{/*any of date or location set*/}}
-                <div class="flex flex-row flex-wrap gap-x-6 gap-y-1">
-                    {{with get . "date"}}
-                        {{template "timestamp" dict "date" . "context" (get $args "date-context")}}
-                    {{end}}
+                {{if pick . "date" "location" | values | compact}} {{/*any of date or location set*/}}
+                    <div class="flex flex-row flex-wrap gap-x-6 gap-y-1">
+                        {{with get . "date"}}
+                            {{template "timestamp" dict "date" . "context" (get $args "date-context")}}
+                        {{end}}
     {{/*                {{$location := dict "id" 1 "name" "TUM Campus im Olympiapark: Hörsaal 1b (nur Mo-Do)"}}*/}}
-                    {{$location := dict "id" 1 "name" "Hörsaal 1b (nur Mo-Do)"}}
-                    {{with get . "location"}}{{$_ := $location | set "id" .Model.ID | set "name" .Name}}{{end}}
-                    <div class="inline-block">
-                        <span>
-                            <a class="hover:text-1 duration-100" href="/admin/lectureHalls#{{get $location "id"}}">
-                                <i class="pr-1 fas fa-location-pin"></i>
-                                {{get $location "name"}}
-                            </a>
-                        </span>
+                        {{$location := dict "id" 1 "name" "Hörsaal 1b (nur Mo-Do)"}}
+                        {{with get . "location"}}{{$_ := $location | set "id" .Model.ID | set "name" .Name}}{{end}}
+    {{/*                    <div class="inline-block">*/}}
+    {{/*                        <span>*/}}
+    {{/*                            <a class="hover:text-1 duration-100" href="/admin/lectureHalls#{{get $location "id"}}">*/}}
+    {{/*                                <i class="pr-1 fas fa-location-pin"></i>*/}}
+    {{/*                                {{get $location "name"}}*/}}
+    {{/*                            </a>*/}}
+    {{/*                        </span>*/}}
+    {{/*                    </div>*/}}
+                        {{/*TODO: remove dummy and make conditional on get . "location"*/}}
                     </div>
-                    {{/*TODO: remove dummy and make conditional on get . "location"*/}}
-                </div>
-            {{end}}
+                {{end}}
 
-            {{with get . "badges"}}
-                <div class="media-card-badges my-1 text-xs flex flex-row flex-wrap gap-2">
-                    {{range $badge := .}}
-                        <div class="{{get . "color"}} inline-block px-3 py-[0.125rem] rounded-full">
-                            <span class="uppercase font-semibold">
-                                {{with get . "icon"}}<i class="pr-1 fas fa-{{.}}"></i>{{end}}
-                                {{get . "label"}}
-                            </span>
-                        </div>
-                    {{end}}
-                </div>
+                {{with get . "badges"}}
+                    <div class="media-card-badges my-1 text-xs flex flex-row flex-wrap gap-2">
+                        {{range $badge := .}}
+                            <div class="{{get . "color"}} inline-block px-3 py-[0.125rem] rounded-full">
+                                <span class="uppercase font-semibold">
+                                    {{with get . "icon"}}<i class="pr-1 fas fa-{{.}}"></i>{{end}}
+                                    {{get . "label"}}
+                                </span>
+                            </div>
+                        {{end}}
+                    </div>
+                {{end}}
+            </div>
+            {{/*Dropdown Menu*/}}
+            {{with get . "actions"}}
+                {{template "dropdown-actions" dict "actions" . "show-button-if" "hover" "width" 40}}
             {{end}}
         </div>
-        {{/*Dropdown Menu*/}}
-        {{with get . "actions"}}
-            {{template "dropdown-actions" dict "actions" . "show-button-if" "hover"}}
-        {{end}}
     </div>
 </div>
 {{end}}
@@ -124,6 +129,7 @@
     "title-url" (printf "/w/%s/%d" $course.Slug $stream.Model.ID)
     "subtitle" ($standalone | ternary $course.Name "")
     "subtitle-url" ($standalone | ternary (printf "/course/%d/%s/%s" $course.Year $course.TeachingTerm $course.Slug) "")
+    "thumbnail-url" (true | default "TODO replace this with an actual url")
     "badges" (list
         ($stream.LiveNow | ternary (dict "label" "Live" "color" "bg-danger text-white" "icon" "tower-cell") (dict))
         ($course.IsHidden | ternary (dict "label" "Hidden" "color" "bg-blue-800 text-white" "icon" "eye-slash") (dict))
@@ -133,8 +139,8 @@
     "location" $lectureHall
     "actions" ($standalone | ternary
         (list
-            (dict "label" "Hide this course" "icon" "eye-slash" "action" "hide()")
-            (dict "label" ($course.Pinned | ternary "Unpin this course" "Pin this course") "icon" "thumbtack" "action" "pinUnpin()")
+            (dict "label" "Hide course" "icon" "eye-slash" "action" "hide()")
+            (dict "label" ($course.Pinned | ternary "Unpin this course" "Pin course") "icon" "thumbtack" "action" "pinUnpin()")
             | compact)
         (list))}}
 
@@ -145,7 +151,7 @@
 
 {{/*<div x-show="menu_open" x-cloak>*/}}
 {{/*    <i class="fancyeye opacity-0 group-hover:opacity-100 transition-colors duration-200 dark:hover:text-white hover:text-black text-gray-500 mr-2 cursor-pointer"*/}}
-{{/*       title="Hide this course" onclick="global.hideCourse({{$course.Model.ID}}, {{$course.Name}});{{if $course.Pinned}}global.unpinCourse({{$course.Model.ID}}){{end}}"></i>*/}}
+{{/*       title="Hide course" onclick="global.hideCourse({{$course.Model.ID}}, {{$course.Name}});{{if $course.Pinned}}global.unpinCourse({{$course.Model.ID}}){{end}}"></i>*/}}
 {{/*    {{if $user}}*/}}
 {{/*        <i class="fa-solid fa-thumbtack opacity-0 group-hover:opacity-100 transition-colors duration-200 dark:hover:text-white hover:text-black text-gray-500 mr-2 cursor-pointer"*/}}
 {{/*           {{if $course.Pinned}}title="Unpin this course" onclick="global.unpinCourse({{$course.Model.ID}})" {{else}}title="Pin this course" onclick="global.pinCourse({{$course.Model.ID}})"{{end}}></i>*/}}
@@ -171,8 +177,8 @@
         | compact)
     "location" .LectureHall
     "actions" (list
-        (dict "label" "Hide this course" "icon" "eye-slash" "action" "hide()")
-        (dict "label" ($course.Pinned | ternary "Unpin this course" "Pin this course") "icon" "thumbtack" "action" "pinUnpin()")
+        (dict "label" "Hide course" "icon" "eye-slash" "action" "hide()")
+        (dict "label" ($course.Pinned | ternary "Unpin this course" "Pin course") "icon" "thumbtack" "action" "pinUnpin()")
         | compact)}}
 </div>
 {{end}}
@@ -223,18 +229,18 @@
     </div>
     {{template "item-card-tail" dict
     "actions" (list
-        (dict "label" "Hide this course" "icon" "eye-slash" "action" "hide()")
-        (dict "label" (.Pinned | default false | ternary "Unpin this course" "Pin this course") "icon" "thumbtack" "action" "pinUnpin()")
+        (dict "label" "Hide course" "icon" "eye-slash" "action" "hide()")
+        (dict "label" (.Pinned | default false | ternary "Unpin course" "Pin course") "icon" "thumbtack" "action" "pinUnpin()")
         | compact)}}
 </div>
 {{end}}
 
 {{define "card-container-head"}}
-<div class="px-2 pl-5 h-[0.6rem]">
-    <span class="p-2 font-normal text-5 bg-white dark:bg-secondary uppercase">{{. | default "Latest"}}</span>
+<div class="px-2 pl-5 h-[0.6rem] ">
+    <span class="p-2 font-normal text-5 bg-white dark:bg-secondary uppercase">{{.}}</span>
 </div>
-<div class="{{template "box-border"}} {{/*flex flex-col*/}} {{/*md:flex-row*/}}">
-    <div class="w-full p-5 pt-4">
+<div class="pt-[0.4rem] {{template "box-border"}} {{/*flex flex-col*/}} {{/*md:flex-row*/}}">
+    <div class="w-full p-5 py-4">
 {{end}}
 
 {{define "card-container-tail"}}
@@ -243,7 +249,7 @@
 {{end}}
 
 {{define "card-grid-head"}}
-<div class="flex flex-col gap-2 md:gap-4 md:flex-row md:flex-wrap [align-items:stretch]">
+<div class="flex flex-col gap-6 sm:gap-4 sm:flex-row sm:flex-wrap [align-items:stretch]">
 {{end}}
 
 {{define "card-grid-tail"}}
@@ -251,7 +257,7 @@
 {{end}}
 
 {{define "card-grid-item-head"}}
-<div class="md:w-[calc((100%-1rem)/2)] 2xl:w-[calc((100%-2rem)/3)]"> {{/*account for flex gap*/}}
+<div class="sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-2rem)/3)] 2xl:w-[calc((100%-3rem)/4)]"> {{/*account for flex gap*/}}
 {{end}}
 
 {{define "card-grid-item-tail"}}

@@ -8,6 +8,7 @@
              :class="{{$expand_if}} && 'border-b dark:border-gray-800'">
             <span class="{{with get . "highlight-color"}}{{.}} rounded-full px-5 text-white{{else}}text-1 px-4{{end}} text-lg font-bold my-auto">{{get . "title"}}</span>
             <div class="my-auto">
+                {{/*TODO: actions*/}}
 {{/*                <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2 my-auto"*/}}
 {{/*                        @click="showPlanned = !showPlanned;">*/}}
 {{/*                        <span class="text-sm font-semibold uppercase dark:text-white"*/}}
@@ -23,7 +24,7 @@
 {{/*                </a>*/}}
             </div>
         </div>
-        <div x-show="{{$expand_if}}" class="p-5 pt-3">
+        <div x-show="{{$expand_if}}" class="px-5 py-4">
 {{end}}
 
 {{define "highlight-box-tail"}}

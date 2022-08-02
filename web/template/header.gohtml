@@ -1,62 +1,44 @@
 {{define "header"}} {{- /*gotype: github.com/joschahenningsen/TUM-Live/tools.TUMLiveContext*/ -}}
 <div x-data="{dark: false}" class="inline">
     <nav class="flex z-40 lg:z-50 sticky top-0 w-full items-center justify-between dark:bg-secondary bg-white
-                    shadow border-b dark:border-0 p-3 h-20 z-40">
-        <a title="Start" href="/" class="flex items-center flex-no-shrink text-white mr-6">
-            <svg class="mr-2" width="100" height="54" viewBox="0 0 100 54" xmlns="http://www.w3.org/2000/svg">
+                    shadow-sm border-b dark:border-0 p-4 md:px-8 h-16 z-40">
+        <a title="Start" href="/" class="h-full flex items-center flex-no-shrink text-white mr-6">
+            <svg class="w-[calc((5*73px)/7)]" viewBox="0 0 73 38" xmlns="http://www.w3.org/2000/svg">
                 <path fill="#3070B3"
-                      d="M49.986,7v31h8V7h37v38h-7V14h-8v31h-7V14h-8v31h-22V14h-7v31h-7V14h-7V7H49.986z"></path>
+                      d="M28 0v31h8V0h37v38h-7V7h-8v31h-7V7h-8v31H21V7h-7v31H7V7H0V0h28z"/>
             </svg>
         </a>
         <div class="md:flex grow items-center w-auto">
-            <div class="hidden md:flex text-sm grow">
+            <div class="hidden md:flex [align-items:center] gap-3 text-sm font-semibold grow text-5">
                 <a href="/"
-                   class="block inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
+                   class="block inline-block align-middle">
                     Start
                 </a>
                 {{if not .User}}
                     <a href="/login"
-                       class="block inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
+                       class="block inline-block align-middle hover:text-1">
                         Login
                     </a>
                 {{else}}
-                    <div class="inline-block align-middle mt-0 mr-4" x-data="{ show: false }"
-                         @click.outside="show=false">
-                        <a role="button" class="text-5 hover:text-1 font-medium" @click="show=!show">
-                            {{.User.GetPreferredName}}
-                            <i class="ml-1 fa-angle-down fas"></i>
-                        </a>
-                        <div class="relative">
-                            <div x-cloak x-show="show"
-                                 @click.outside="show=false"
-                                 class="origin-top-right absolute left-0 mt-4 shadow-sm rounded-lg h-fit bg-white border w-36 dark:bg-secondary dark:border-gray-800 overflow-hidden">
-                                <a href="/logout"
-                                   class="w-full border-b dark:border-gray-800 relative transition-colors duration-200 text-5 hover:text-1">
-                                    <div class="flex items-center p-2">
-                                        <i class="fa-solid fa-sign-out mr-2"></i>
-                                        <p>Logout</p>
-                                    </div>
-                                </a>
-                                <a href="/settings"
-                                   class="w-full relative transition-colors duration-200 text-5 hover:text-1">
-                                    <div class="flex items-center p-2">
-                                        <i class="fa-solid fa-gear mr-2"></i>
-                                        <p>Settings</p>
-                                    </div>
-                                </a>
-                            </div>
-                        </div>
+                    <div class="hover:text-1">
+                        {{template "dropdown-actions" dict
+                            "text" .User.GetPreferredName
+                            "icon" "angle-down"
+                            "width" 36
+                            "actions" (list
+                                (dict "label" "Log out" "icon" "sign-out" "url" "/logout")
+                                (dict "label" "Settings" "icon" "gear" "url" "/settings"))}}
                     </div>
 
                     {{if or (eq .User.Role 1) (eq .User.Role 2) }}
                         <a href="/admin"
-                           class="inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
+                           class="inline-block align-middle hover:text-1">
                             Admin
                         </a>
                     {{end}}
                 {{end}}
             </div>
-            <div class="mr-6 md:flex">
+            <div class="md:flex">
                 <div class="hidden md:flex">
                     {{template "theme-selector"}}
                     {{template "notifications"}}

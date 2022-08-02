@@ -15,16 +15,16 @@
 <div x-init="global.liveUpdateListener.init()" class="m-auto px-1 sm:px-3 lg:px-5 w-full xl:w-2/3 flex flex-col pb-16">
 
     <div class="my-8 pl-2 md:pl-0">
-        <h1 class="font-bold text-3xl text-3 my-auto">Streams and Courses</h1>
-        {{if not .TUMLiveContext.User}}
-            <p class="text-2"><a href="/login" class="underline">Log in</a> to see your courses</p>
-        {{else if .TUMLiveContext.User.Name}}
-            <p class="text-2">
+        <h1 class="font-bold text-3xl text-1 my-auto">Streams and Courses</h1>
+        <p class="text-lg text-3">
+            {{if not .TUMLiveContext.User}}
+                <a href="/login" class="underline">Log in</a> to see your courses
+            {{else if .TUMLiveContext.User.Name}}
                 {{.TUMLiveContext.User.GetPreferredGreeting}}
                 <span class="underline"><a href="/settings">{{.TUMLiveContext.User.GetPreferredName}}</a></span>,
                 nice to see you!
-            </p>
-        {{end}}
+            {{end}}
+        </p>
     </div>
 
     {{if .ServerNotifications}}
@@ -91,7 +91,7 @@
                 {{template "highlight-box-head" dict "title" "My Courses"}} {{/*"highlight-color" "dark:bg-red-500 bg-red-600" */}}
                     <div class="flex flex-col gap-6">
                         {{if get $has_courses_where "pinned"}}
-                            <div class="py-2">
+                            <div>
                                 {{if get $has_courses_where "my-courses"}}
                                     <p class="mx-2 mb-2 text-5 text-sm uppercase">Pinned</p>
                                 {{end}}
@@ -102,20 +102,21 @@
                                     {{range $i, $course := $args.PinnedCourses}}
                                         {{if not $course.IsHidden}}
                                             {{template "course-group-head" $course}}
-                                                {{template "card-container-head"}}
+                                                {{/*TODO: dropdown button unnecessarily reduces width of container*/}}
+                                                {{template "card-container-head" "Latest"}}
                                                     {{template "card-grid-head"}}
                                                         {{range $_ := list 1}}
-                                                            {{/*TODO: show only past streams*/}}
-                                                            {{range $i, $stream := $course.Streams}}
-                                                                {{/*TODO: show the three most recent streams including a live stream if live now*/}}
-                                                                {{if ge $i 3 | or (ge $i 1 | and (randNumeric 2 | atoi | ge 30))}}{{break}}{{end}}
-                                                                {{template "card-grid-item-head"}}
-                                                                    {{template "stream-card" dict
-                                                                        "stream" $stream
-                                                                        "course" $course
-                                                                        "standalone" false}}
-                                                                {{template "card-grid-item-tail"}}
-                                                            {{end}}
+                                                        {{/*TODO: show only past streams*/}}
+                                                        {{/*TODO: show the three most recent streams including a live stream if live now*/}}
+                                                        {{range $i, $stream := $course.Streams}}
+                                                            {{if ge $i 3 | or (ge $i 1 | and (randInt 0 101 | ge 30))}}{{break}}{{end}}
+                                                            {{template "card-grid-item-head"}}
+                                                                {{template "stream-card" dict
+                                                                    "stream" $stream
+                                                                    "course" $course
+                                                                    "standalone" false}}
+                                                            {{template "card-grid-item-tail"}}
+                                                        {{end}}
                                                         {{end}}
                                                     {{template "card-grid-tail"}}
                                                 {{template "card-container-tail"}}
@@ -128,7 +129,7 @@
                         {{end}}
                         {{/*TODO: duplication*/}}
                         {{if get $has_courses_where "my-courses"}}
-                            <div class="py-2">
+                            <div>
                                 {{if get $has_courses_where "pinned"}}
                                     <p class="mx-2 mb-2 text-5 text-sm uppercase">Registered</p>
                                 {{end}}
@@ -138,7 +139,7 @@
                                         {{range $i, $course := $args.Courses}}
                                             {{if and (not $course.IsHidden) (not $course.Pinned)}}
                                                 {{template "course-group-head" $course}}
-                                                    {{template "card-container-head"}}
+                                                    {{template "card-container-head" "Latest"}}
                                                         {{template "card-grid-head"}}
                                                             {{range $_ := list 1}}
                                                                 {{/*TODO: show only past streams*/}}

@@ -1,21 +1,49 @@
 {{define "dropdown-head"}}
-<div x-cloak x-data="{ open: false, focused: false }" class="relative text-right md:mt-px"
-        @focusin.outside="focused = false; open = false;" @click.outside="open = false; focused = false;">
-    <div class="w-8 h-8">
-        <button :class="(open || focused || ({{get . "show-button-if" | default "true"}})) ? '' : 'opacity-0'"
-                @focus="focused = true;" @click="open = !open;"
-                class="{{/*border border-solid border-black*/}} duration-100 w-full h-full rounded-full flex justify-center [align-items:center]">
-            <i class="text-5 hover:text-1 transition-colors duration-200 fa fa-{{get . "icon" | default "ellipsis-vertical"}} text-xl md:text-normal"></i>
-        </button>
-    </div>
+<div x-cloak x-data="{ open: false, focused: false }"
+        @focusin.outside="focused = false; open = false;" @click.outside="open = false; focused = false;"
+        class="">
+    {{/* hide the button only on devices where there is hover support, when the dropdown is closed and a custom property evaluates to false*/}}
+    <button {{with get . "show-button-if"}}:class="(open || focused || ({{.}})) ? '' : 'hover-hover:opacity-0'"{{end}}
+            @focus="focused = true;" @click="open = !open;"
+            class="{{/*border border-black border-solid*/}} duration-100 rounded-full">
+        <div class="flex gap-2 [align-items:center] text-5 hover:text-1 transition-colors duration-200">
+            {{with get . "text"}}
+                <span class="inline-block">{{.}}</span>
+            {{end}}
+            <span class="{{/*border border-black border-solid*/}} {{if not (get . "text")}}w-[2em] h-[2em]{{end}} flex justify-center [align-items:center]">
+                <i class="{{/*border border-black border-solid*/}} fa fa-{{get . "icon" | default "ellipsis-vertical"}} "></i>
+            </span>
+        </div>
+    </button>
 
-    <div class="relative text-1" x-show="open">
-{{/*        <div class="border border-solid right-0 left-auto border-black absolute z-50 overflow-visible" >*/}}
+    <div class="relative" x-show="open">
 {{end}}
 
 {{define "dropdown-tail"}}
-{{/*        </div>*/}}
     </div>
 </div>
 {{end}}
 
+{{define "dropdown-actions"}} {{/*actions, icon? (fa icon), show-button-if? (alpine expression)*/}}
+{{template "dropdown-head" omit . "actions"}}
+<ul class="absolute right-0 top-full z-50 h-fit w-48
+                rounded-lg shadow bg-white dark:bg-secondary border dark:border-gray-800
+                flex flex-col py-2"
+            style="width: {{divf (get . "width" | default 48 | float64) 4}}rem">
+    {{range $action := get . "actions"}}
+        <li>
+            {{with get . "url"}}<a href="{{.}}">{{end}}
+                <button class="py-[0.125rem] px-2 w-full text-sm font-light text-4 hover:text-1 hover: duration-100 flex flex-row gap-1 [align-items:center]"
+                        {{with get . "action"}}@click="{{.}}"{{end}}>
+                    {{/* replace div inside button (which is forbidden) with span.block */}}
+                    <span class="block mt-[0.05em] w-6 h-6 flex justify-center [align-items:center]">
+                            {{with get . "icon"}}<i class="fas fa-{{.}}"></i>{{end}}
+                        </span>
+                    <span class="pr-1">{{get . "label"}}</span>
+                </button>
+            {{if get . "url"}}</a>{{end}}
+        </li>
+    {{end}}
+</ul>
+{{template "dropdown-tail"}}
+{{end}}
