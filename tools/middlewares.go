@@ -385,7 +385,7 @@ func hasAnyPrefix(s string, prefixes []string) bool {
 
 func hasAnySuffix(s string, suffixes []string) bool {
 	for _, prefix := range suffixes {
-		if strings.HasPrefix(s, prefix) {
+		if strings.HasSuffix(s, prefix) {
 			return true
 		}
 	}
