@@ -5,6 +5,7 @@
 package mock_dao
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,73 +36,73 @@ func (m *MockBookmarkDao) EXPECT() *MockBookmarkDaoMockRecorder {
 }
 
 // Add mocks base method.
-func (m *MockBookmarkDao) Add(arg0 *model.Bookmark) error {
+func (m *MockBookmarkDao) Add(arg0 context.Context, arg1 *model.Bookmark) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Add", arg0)
+	ret := m.ctrl.Call(m, "Add", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Add indicates an expected call of Add.
-func (mr *MockBookmarkDaoMockRecorder) Add(arg0 interface{}) *gomock.Call {
+func (mr *MockBookmarkDaoMockRecorder) Add(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockBookmarkDao)(nil).Add), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockBookmarkDao)(nil).Add), arg0, arg1)
 }
 
 // Delete mocks base method.
-func (m *MockBookmarkDao) Delete(arg0 uint) error {
+func (m *MockBookmarkDao) Delete(arg0 context.Context, arg1 uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", arg0)
+	ret := m.ctrl.Call(m, "Delete", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockBookmarkDaoMockRecorder) Delete(arg0 interface{}) *gomock.Call {
+func (mr *MockBookmarkDaoMockRecorder) Delete(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockBookmarkDao)(nil).Delete), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockBookmarkDao)(nil).Delete), arg0, arg1)
 }
 
 // GetByID mocks base method.
-func (m *MockBookmarkDao) GetByID(arg0 uint) (model.Bookmark, error) {
+func (m *MockBookmarkDao) GetByID(arg0 context.Context, arg1 uint) (model.Bookmark, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByID", arg0)
+	ret := m.ctrl.Call(m, "GetByID", arg0, arg1)
 	ret0, _ := ret[0].(model.Bookmark)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetByID indicates an expected call of GetByID.
-func (mr *MockBookmarkDaoMockRecorder) GetByID(arg0 interface{}) *gomock.Call {
+func (mr *MockBookmarkDaoMockRecorder) GetByID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockBookmarkDao)(nil).GetByID), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockBookmarkDao)(nil).GetByID), arg0, arg1)
 }
 
 // GetByStreamID mocks base method.
-func (m *MockBookmarkDao) GetByStreamID(arg0, arg1 uint) ([]model.Bookmark, error) {
+func (m *MockBookmarkDao) GetByStreamID(arg0 context.Context, arg1, arg2 uint) ([]model.Bookmark, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByStreamID", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetByStreamID", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]model.Bookmark)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetByStreamID indicates an expected call of GetByStreamID.
-func (mr *MockBookmarkDaoMockRecorder) GetByStreamID(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockBookmarkDaoMockRecorder) GetByStreamID(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByStreamID", reflect.TypeOf((*MockBookmarkDao)(nil).GetByStreamID), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByStreamID", reflect.TypeOf((*MockBookmarkDao)(nil).GetByStreamID), arg0, arg1, arg2)
 }
 
 // Update mocks base method.
-func (m *MockBookmarkDao) Update(arg0 *model.Bookmark) error {
+func (m *MockBookmarkDao) Update(arg0 context.Context, arg1 *model.Bookmark) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", arg0)
+	ret := m.ctrl.Call(m, "Update", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockBookmarkDaoMockRecorder) Update(arg0 interface{}) *gomock.Call {
+func (mr *MockBookmarkDaoMockRecorder) Update(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockBookmarkDao)(nil).Update), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockBookmarkDao)(nil).Update), arg0, arg1)
 }
