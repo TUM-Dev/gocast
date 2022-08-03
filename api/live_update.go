@@ -13,7 +13,6 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools/tum"
 	log "github.com/sirupsen/logrus"
 	"sync"
-	"time"
 )
 
 const (
@@ -109,9 +108,6 @@ func liveUpdateOnSubscribe(psc *pubsub.Context) {
 		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{[]*pubsub.Context{psc}, courses}
 	}
 	liveUpdateListenerMutex.Unlock()
-
-	time.Sleep(5 * time.Second)
-	NotifyLiveUpdateCourseWentLive(327)
 }
 
 func NotifyLiveUpdateCourseWentLive(courseId uint) {
