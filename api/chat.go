@@ -568,14 +568,6 @@ func chatOnSubscribe(psc *realtime.Context) {
 }
 
 func chatOnUnsubscribe(psc *realtime.Context) {
-	var c *gin.Context
-	if ctx, ok := psc.Client.Get("ctx"); ok {
-		c = ctx.(*gin.Context)
-	} else {
-		sentry.CaptureException(errors.New("gin context should exist but doesn't"))
-		return
-	}
-
 	var daoWrapper *dao.DaoWrapper
 	if ctx, ok := psc.Client.Get("dao"); ok {
 		daoWrapper = ctx.(*dao.DaoWrapper)
@@ -585,7 +577,7 @@ func chatOnUnsubscribe(psc *realtime.Context) {
 	}
 
 	var tumLiveContext tools.TUMLiveContext
-	if foundContext, exists := c.Get("TUMLiveContext"); exists {
+	if foundContext, exists := psc.Get("TUMLiveContext"); exists {
 		tumLiveContext = foundContext.(tools.TUMLiveContext)
 	} else {
 		sentry.CaptureException(errors.New("tumLiveContext should exist but doesn't"))
@@ -593,14 +585,14 @@ func chatOnUnsubscribe(psc *realtime.Context) {
 	}
 
 	var joinTime time.Time
-	if foundContext, exists := psc.Get("chat.joinTime"); exists {
-		joinTime = foundContext.(time.Time)
+	if result, exists := psc.Get("chat.joinTime"); exists {
+		joinTime = result.(time.Time)
 	} else {
-		sentry.CaptureException(errors.New("jointime should exist but doesn't"))
+		sentry.CaptureException(errors.New("joinTime should exist but doesn't"))
 		return
 	}
 
-	defer afterUnsubscribe(c.Param("streamID"), joinTime, tumLiveContext.Stream.Recording, daoWrapper)
+	defer afterUnsubscribe(psc.Param("streamID"), joinTime, tumLiveContext.Stream.Recording, daoWrapper)
 }
 
 func afterUnsubscribe(id string, joinTime time.Time, recording bool, daoWrapper *dao.DaoWrapper) {
