@@ -9,6 +9,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 	"time"
@@ -451,7 +452,7 @@ func (r chatRoutes) getActivePoll(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
+			Status:        http.StatusInternalServerError,
 			CustomMessage: "context should exist but doesn't",
 		})
 		return
@@ -460,14 +461,22 @@ func (r chatRoutes) getActivePoll(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	if tumLiveContext.User == nil {
 		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
+			Status:        http.StatusOK,
 			CustomMessage: "not logged in",
 		})
 		return
 	}
 	poll, err := r.ChatDao.GetActivePoll(tumLiveContext.Stream.ID)
-	if err != nil {
+	if err != nil && err == gorm.ErrRecordNotFound {
 		c.JSON(http.StatusOK, nil)
+		return
+	}
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Can't get active poll",
+			Err:           err,
+		})
 		return
 	}
 
