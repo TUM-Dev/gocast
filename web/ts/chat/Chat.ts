@@ -257,14 +257,6 @@ export class Chat {
      * @param playerTime time offset of current player time w.r.t. video start in seconds
      */
     grayOutMessagesAfterPlayerTime(playerTime: number): void {
-        // TODO replace following by an handleOrderByLikesChanged function
-        /*if (this.orderByLikes) {
-            if (this.messages.some((message) => message.isGrayedOut)) {
-                this.messages.forEach((message) => (message.isGrayedOut = false));
-                this.notifyMessagesUpdate(this.messages);
-            } else return;
-        }*/
-
         // TODO remove following line only for debugging
         this.startTime = new Date("Sun Jul 31 2022 10:55:00");
         const referenceTime = new Date(this.startTime);
@@ -298,7 +290,6 @@ export class Chat {
         const focusedMessageChanged = this.focusedMessageId !== focusedMessageId;
 
         if (focusedMessageChanged) {
-            console.log(focusedMessageId);
             this.notifyMessagesUpdate("chatupdatefocus", { ID: focusedMessageId });
         }
 
