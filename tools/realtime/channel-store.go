@@ -1,4 +1,4 @@
-package pubsub
+package realtime
 
 import (
 	log "github.com/sirupsen/logrus"
@@ -13,7 +13,7 @@ func (s *ChannelStore) init() {
 	s.channels = map[string]*Channel{}
 }
 
-func (s *ChannelStore) Register(path string, handlers MessageHandlers) {
+func (s *ChannelStore) Register(path string, handlers ChannelHandlers) {
 	channel := Channel{
 		path:        strings.Split(path, channelPathSep),
 		handlers:    handlers,
@@ -49,9 +49,10 @@ func (s *ChannelStore) OnMessage(client *Client, message *Message) {
 func (s *ChannelStore) Subscribe(client *Client, channelPath string) bool {
 	if found, channel, params := s.Get(channelPath); found {
 		channel.Subscribe(&Context{
-			Client:   client,
-			FullPath: channelPath,
-			params:   params,
+			Client:     client,
+			FullPath:   channelPath,
+			params:     params,
+			properties: map[string]interface{}{},
 		})
 		return true
 	}

@@ -1,8 +1,8 @@
-import { wsPubSubClient } from "./socket";
+import { realtime } from "./socket";
 
 export const liveUpdateListener = {
     async init() {
-        await wsPubSubClient.subscribeChannel("live-update", this.handle);
+        await realtime.subscribeChannel("live-update", this.handle);
     },
 
     handle(payload: object) {

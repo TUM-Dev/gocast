@@ -41,8 +41,8 @@ func GinServer() (err error) {
 	router.Use(tools.InitContext(dao.NewDaoWrapper()))
 
 	liveUpdates := router.Group("/api/pub-sub")
-	api.ConfigWSPubSubRouter(liveUpdates)
-	
+	api.ConfigRealtimeRouter(liveUpdates)
+
 	// event streams don't work with gzip, configure group without
 	chat := router.Group("/api/chat")
 	api.ConfigChatRouter(chat)

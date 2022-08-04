@@ -1,23 +1,27 @@
-package pubsub
+package realtime
 
 import (
+	"errors"
+	"github.com/getsentry/sentry-go"
 	"strings"
 )
 
 const channelPathSep = "/"
 
+type SubscriptionMiddleware func(s *Context) *Error
 type EventHandlerFunc func(s *Context)
 type MessageHandlerFunc func(s *Context, message *Message)
 
-type MessageHandlers struct {
-	OnSubscribe   EventHandlerFunc
-	OnUnsubscribe EventHandlerFunc
-	OnMessage     MessageHandlerFunc
+type ChannelHandlers struct {
+	OnSubscribe             EventHandlerFunc
+	OnUnsubscribe           EventHandlerFunc
+	OnMessage               MessageHandlerFunc
+	SubscriptionMiddlewares []SubscriptionMiddleware
 }
 
 type Channel struct {
 	path        []string
-	handlers    MessageHandlers
+	handlers    ChannelHandlers
 	subscribers ChannelSubscribers
 }
 
@@ -35,6 +39,7 @@ func (c *Channel) PathMatches(path string) (bool, map[string]string) {
 		}
 		if c.path[i][0] == ':' {
 			params[c.path[i][1:]] = s
+			continue
 		}
 		return false, nil
 	}
@@ -42,6 +47,16 @@ func (c *Channel) PathMatches(path string) (bool, map[string]string) {
 }
 
 func (c *Channel) Subscribe(context *Context) {
+	for _, middleware := range c.handlers.SubscriptionMiddlewares {
+		if err := middleware(context); err != nil {
+			sentry.CaptureException(errors.New(err.Description))
+			if err := context.SendError(err); err != nil {
+				sentry.CaptureException(err)
+			}
+			return
+		}
+	}
+
 	c.subscribers.Add(context)
 
 	if c.handlers.OnSubscribe != nil {

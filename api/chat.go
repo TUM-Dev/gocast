@@ -9,36 +9,34 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
-	"github.com/joschahenningsen/TUM-Live/tools/pubsub"
+	"github.com/joschahenningsen/TUM-Live/tools/realtime"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/gabstv/melody"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
 
 const (
-	ChatPubSubRoomName = "chat/:streamID"
+	ChatRoomName = "chat/:streamID"
 )
 
-//var m *melody.Melody
+var routes chatRoutes
 
+//var m *melody.Melody
 //const maxParticipants = 10000
 
-func RegisterChatPubSubChannel() {
-	PubSubInstance.RegisterPubSubChannel(ChatPubSubRoomName, pubsub.MessageHandlers{
-		OnSubscribe:   chatOnSubscribe,
-		OnUnsubscribe: chatOnUnsubscribe,
-		OnMessage: func(psc *pubsub.Context, message *pubsub.Message) {
-			ctx, _ := psc.Client.Get("ctx") // get gin context
-			daoWrapper, _ := psc.Client.Get("dao")
-			foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
+func RegisterRealtimeChatChannel() {
+	RealtimeInstance.RegisterChannel(ChatRoomName, realtime.ChannelHandlers{
+		SubscriptionMiddlewares: []realtime.SubscriptionMiddleware{tools.InitStreamRealtime()},
+		OnSubscribe:             chatOnSubscribe,
+		OnUnsubscribe:           chatOnUnsubscribe,
+		OnMessage: func(psc *realtime.Context, message *realtime.Message) {
+			foundContext, exists := psc.Get("TUMLiveContext")
 			if !exists {
 				sentry.CaptureException(errors.New("context should exist but doesn't"))
-				ctx.(*gin.Context).AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
 			tumLiveContext := foundContext.(tools.TUMLiveContext)
@@ -46,7 +44,6 @@ func RegisterChatPubSubChannel() {
 				return
 			}
 
-			routes := chatRoutes{daoWrapper.(dao.DaoWrapper)}
 			req, err := parseChatPayload(message)
 
 			if err != nil {
@@ -55,7 +52,7 @@ func RegisterChatPubSubChannel() {
 			}
 			switch req.Type {
 			case "message":
-				routes.handleMessage(tumLiveContext, psc.Client.Session, message.Payload)
+				routes.handleMessage(tumLiveContext, psc, message.Payload)
 			case "like":
 				routes.handleLike(tumLiveContext, message.Payload)
 			case "delete":
@@ -86,7 +83,7 @@ func RegisterChatPubSubChannel() {
 }
 
 func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
-	routes := chatRoutes{daoWrapper}
+	routes = chatRoutes{daoWrapper}
 
 	wsGroup := router.Group("/:streamID")
 	wsGroup.Use(tools.InitStream(daoWrapper))
@@ -330,7 +327,7 @@ func (r chatRoutes) handleLike(ctx tools.TUMLiveContext, msg []byte) {
 	broadcastStream(ctx.Stream.ID, broadcastBytes)
 }
 
-func (r chatRoutes) handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte) {
+func (r chatRoutes) handleMessage(ctx tools.TUMLiveContext, context *realtime.Context, msg []byte) {
 	var chat chatReq
 	if err := json.Unmarshal(msg, &chat); err != nil {
 		log.WithError(err).Error("error unmarshaling chat message")
@@ -373,14 +370,14 @@ func (r chatRoutes) handleMessage(ctx tools.TUMLiveContext, session *melody.Sess
 	err := r.ChatDao.AddMessage(&chatForDb)
 	if err != nil {
 		if errors.Is(err, model.ErrCooledDown) {
-			sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, session)
+			sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, context)
 		}
 		return
 	}
 
 	if msg, err := json.Marshal(chatForDb); err == nil {
 		if ctx.Course.ModeratedChatEnabled && !isAdmin {
-			_ = session.Write(msg)                      // send message back to sender
+			_ = context.Send(msg)                       // send message back to sender
 			broadcastStreamToAdmins(ctx.Stream.ID, msg) // send message to course admins
 		} else {
 			broadcastStream(ctx.Stream.ID, msg)
@@ -488,7 +485,7 @@ func (r chatRoutes) getActivePoll(c *gin.Context) {
 	})
 }
 
-func parseChatPayload(m *pubsub.Message) (res wsReq, err error) {
+func parseChatPayload(m *realtime.Message) (res wsReq, err error) {
 	dbByte, _ := json.Marshal(m.Payload)
 	err = json.Unmarshal(dbByte, &res)
 	return res, err
@@ -563,14 +560,14 @@ func NotifyViewersLiveState(streamId uint, live bool) {
 	broadcastStream(streamId, req)
 }
 
-func chatOnSubscribe(psc *pubsub.Context) {
+func chatOnSubscribe(psc *realtime.Context) {
 	joinTime := time.Now()
-	psc.Client.Set("chat.joinTime", joinTime)
+	psc.Set("chat.joinTime", joinTime)
 
-	connHandler(psc.Client.Session)
+	connHandler(psc)
 }
 
-func chatOnUnsubscribe(psc *pubsub.Context) {
+func chatOnUnsubscribe(psc *realtime.Context) {
 	var c *gin.Context
 	if ctx, ok := psc.Client.Get("ctx"); ok {
 		c = ctx.(*gin.Context)
@@ -596,7 +593,7 @@ func chatOnUnsubscribe(psc *pubsub.Context) {
 	}
 
 	var joinTime time.Time
-	if foundContext, exists := psc.Client.Get("chat.joinTime"); exists {
+	if foundContext, exists := psc.Get("chat.joinTime"); exists {
 		joinTime = foundContext.(time.Time)
 	} else {
 		sentry.CaptureException(errors.New("jointime should exist but doesn't"))

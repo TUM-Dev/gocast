@@ -3,13 +3,13 @@ const PAGE_LOADED = new Date();
 
 type MessageHandlerFn = (payload: object) => void;
 
-const WSPubSubMessageTypes = {
-    PubSubMessageTypeSubscribe: "subscribe",
-    PubSubMessageTypeUnsubscribe: "unsubscribe",
-    PubSubMessageTypeChannelMessage: "message",
+const RealtimeMessageTypes = {
+    RealtimeMessageTypeSubscribe: "subscribe",
+    RealtimeMessageTypeUnsubscribe: "unsubscribe",
+    RealtimeMessageTypeChannelMessage: "message",
 };
 
-export const wsPubSubClient = {
+export const realtime = {
     _debugging: true,
     _ws: null,
     _handler: {},
@@ -18,7 +18,7 @@ export const wsPubSubClient = {
         return this._connect(WS_INITIAL_RETRY_DELAY);
     },
 
-    async send(channel: string, { payload = {}, type = WSPubSubMessageTypes.PubSubMessageTypeChannelMessage }) {
+    async send(channel: string, { payload = {}, type = RealtimeMessageTypes.RealtimeMessageTypeChannelMessage }) {
         await this._lazyInit();
         this._ws.send(
             JSON.stringify({
@@ -32,7 +32,7 @@ export const wsPubSubClient = {
     async subscribeChannel(channel: string, handler?: MessageHandlerFn) {
         if (handler) this.registerHandler(channel, handler);
         await this.send(channel, {
-            type: WSPubSubMessageTypes.PubSubMessageTypeSubscribe,
+            type: RealtimeMessageTypes.RealtimeMessageTypeSubscribe,
         });
     },
 
@@ -41,7 +41,7 @@ export const wsPubSubClient = {
             delete this._handler[channel];
         }
         await this.send(channel, {
-            type: WSPubSubMessageTypes.PubSubMessageTypeUnsubscribe,
+            type: RealtimeMessageTypes.RealtimeMessageTypeUnsubscribe,
         });
     },
 
@@ -73,7 +73,7 @@ export const wsPubSubClient = {
 
     _debug(description: string, ...data) {
         if (!this._debugging) return;
-        console.info("[WS_PUB_SUB_DEBUG]", description, ...data);
+        console.info("[WS_REALTIME_DEBUG]", description, ...data);
     },
 
     _connect(retryDelay: number) {

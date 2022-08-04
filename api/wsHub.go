@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gabstv/melody"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/realtime"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
@@ -28,13 +28,12 @@ const (
 )
 
 type sessionWrapper struct {
-	session         *melody.Session
+	session         *realtime.Context
 	isAdminOfCourse bool
 }
 
-var connHandler = func(s *melody.Session) {
-	ctx, _ := s.Get("ctx") // get gin context
-	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
+var connHandler = func(context *realtime.Context) {
+	foundContext, exists := context.Get("TUMLiveContext") // get gin context
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
 		return
@@ -44,14 +43,14 @@ var connHandler = func(s *melody.Session) {
 	if tumLiveContext.User != nil {
 		isAdmin = tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course)
 	}
-	sessionData := sessionWrapper{s, isAdmin}
+	sessionData := sessionWrapper{context, isAdmin}
 
 	wsMapLock.Lock()
 	sessionsMap[tumLiveContext.Stream.ID] = append(sessionsMap[tumLiveContext.Stream.ID], &sessionData)
 	wsMapLock.Unlock()
 
 	msg, _ := json.Marshal(gin.H{"viewers": len(sessionsMap[tumLiveContext.Stream.ID])})
-	err := s.Write(msg)
+	err := context.Client.Session.Write(msg)
 	if err != nil {
 		log.WithError(err).Error("can't write initial stats to session")
 	}
@@ -60,15 +59,15 @@ var connHandler = func(s *melody.Session) {
 		uid = tumLiveContext.User.ID
 	}
 	if tumLiveContext.Course.ChatEnabled {
-		sendServerMessageWithBackoff(s, uid, tumLiveContext.Stream.ID, "Welcome to the chatroom! Please be nice to each other and stay on topic if you want this feature to stay active.", TypeServerInfo)
+		sendServerMessageWithBackoff(context, uid, tumLiveContext.Stream.ID, "Welcome to the chatroom! Please be nice to each other and stay on topic if you want this feature to stay active.", TypeServerInfo)
 	}
 	if !tumLiveContext.Course.AnonymousChatEnabled && tumLiveContext.Course.ChatEnabled {
-		sendServerMessageWithBackoff(s, uid, tumLiveContext.Stream.ID, "The broadcaster disabled anonymous messaging for this stream.", TypeServerWarn)
+		sendServerMessageWithBackoff(context, uid, tumLiveContext.Stream.ID, "The broadcaster disabled anonymous messaging for this stream.", TypeServerWarn)
 	}
 }
 
 // sendServerMessageWithBackoff sends a message to the client(if it didn't send a message to this user in the last 10 Minutes and the client is logged in)
-func sendServerMessageWithBackoff(session *melody.Session, userId uint, streamId uint, msg string, t string) {
+func sendServerMessageWithBackoff(session *realtime.Context, userId uint, streamId uint, msg string, t string) {
 	if userId == 0 {
 		return
 	}
@@ -79,7 +78,7 @@ func sendServerMessageWithBackoff(session *melody.Session, userId uint, streamId
 		return
 	}
 	msgBytes, _ := json.Marshal(gin.H{"server": msg, "type": t})
-	err := session.Write(msgBytes)
+	err := session.Send(msgBytes)
 	if err != nil {
 		log.WithError(err).Error("can't write server message to session")
 	}
@@ -88,10 +87,10 @@ func sendServerMessageWithBackoff(session *melody.Session, userId uint, streamId
 }
 
 //sendServerMessage sends a server message to the client(s)
-func sendServerMessage(msg string, t string, sessions ...*melody.Session) {
+func sendServerMessage(msg string, t string, sessions ...*realtime.Context) {
 	msgBytes, _ := json.Marshal(gin.H{"server": msg, "type": t})
 	for _, session := range sessions {
-		err := session.Write(msgBytes)
+		err := session.Send(msgBytes)
 		if err != nil {
 			log.WithError(err).Error("can't write server message to session")
 		}
@@ -115,11 +114,10 @@ func BroadcastStats(streamsDao dao.StreamsDao) {
 
 func cleanupSessions() {
 	for id, sessions := range sessionsMap {
-		roomName := strings.Replace(ChatPubSubRoomName, ":streamID", strconv.Itoa(int(id)), -1)
+		roomName := strings.Replace(ChatRoomName, ":streamID", strconv.Itoa(int(id)), -1)
 		var newSessions []*sessionWrapper
 		for i, session := range sessions {
-			clientId, _ := session.session.Get("id")
-			if !session.session.IsClosed() && PubSubInstance.IsSubscribed(roomName, clientId.(string)) {
+			if RealtimeInstance.IsSubscribed(roomName, session.session.Client.Id) {
 				newSessions = append(newSessions, sessions[i])
 			}
 		}
@@ -139,7 +137,7 @@ func broadcastStream(streamID uint, msg []byte) {
 	wsMapLock.Unlock()
 
 	for _, wrapper := range sessions {
-		_ = wrapper.session.Write(msg) // ignore "session closed" error, nothing we can do about it at this point
+		_ = wrapper.session.Send(msg) // ignore "session closed" error, nothing we can do about it at this point
 	}
 }
 
@@ -154,7 +152,7 @@ func broadcastStreamToAdmins(streamID uint, msg []byte) {
 
 	for _, wrapper := range sessions {
 		if wrapper.isAdminOfCourse {
-			_ = wrapper.session.Write(msg)
+			_ = wrapper.session.Send(msg)
 		}
 	}
 }
@@ -163,7 +161,7 @@ func broadcastStreamToAdmins(streamID uint, msg []byte) {
 func removeClosed(sessions []*sessionWrapper) []*sessionWrapper {
 	var newSessions []*sessionWrapper
 	for _, wrapper := range sessions {
-		if !wrapper.session.IsClosed() {
+		if !wrapper.session.Client.Session.IsClosed() {
 			newSessions = append(newSessions, wrapper)
 		}
 	}

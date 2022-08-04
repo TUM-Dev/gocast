@@ -1,4 +1,4 @@
-package pubsub
+package realtime
 
 import (
 	"github.com/gabstv/melody"
