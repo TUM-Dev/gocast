@@ -182,6 +182,7 @@ func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted
 		return nil, err
 	}
 	stream.LiveNow = true
+	stream.LiveNowTimestamp = time.Now()
 	switch request.GetSourceType() {
 	case "CAM":
 		stream.PlaylistUrlCAM = request.HlsUrl

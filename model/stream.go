@@ -30,7 +30,8 @@ type Stream struct {
 	PlaylistUrl           string
 	PlaylistUrlPRES       string
 	PlaylistUrlCAM        string
-	LiveNow               bool `gorm:"not null"`
+	LiveNow               bool      `gorm:"not null"`
+	LiveNowTimestamp      time.Time `gorm:"default:null"`
 	Recording             bool
 	Premiere              bool `gorm:"default:null"`
 	Ended                 bool `gorm:"default:null"`
