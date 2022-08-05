@@ -16,11 +16,11 @@ func (*{{.NameExported}}) TableName() string {
 }
 
 // BeforeCreate todo
-func (u *{{.NameExported}}) BeforeCreate(tx *gorm.DB) (err error) {
+func ({{.NameReceiver}} *{{.NameExported}}) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
 // AfterFind todo
-func (u *{{.NameExported}}) AfterFind(tx *gorm.DB) (err error) {
+func ({{.NameReceiver}} *{{.NameExported}}) AfterFind(tx *gorm.DB) (err error) {
 	return nil
 }

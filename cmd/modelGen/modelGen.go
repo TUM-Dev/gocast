@@ -24,6 +24,7 @@ func main() {
 	d := modelInfo{
 		NameExported: strings.ToUpper(modelName)[:1] + modelName[1:],
 		NamePrivate:  strings.ToLower(modelName)[:1] + modelName[1:],
+		NameReceiver: strings.ToLower(modelName)[:1],
 	}
 
 	fmt.Println("Generating model...")
@@ -79,4 +80,5 @@ func main() {
 type modelInfo struct {
 	NameExported string
 	NamePrivate  string
+	NameReceiver string
 }

@@ -9,11 +9,11 @@ import (
 //go:generate mockgen -source={{.NamePrivate}}.go -destination ../mock_dao/{{.NamePrivate}}.go
 
 type {{.NameExported}}Dao interface {
-	// Create a new {{.NameExported}} for the database
-	Create(context.Context, *model.{{.NameExported}}) error
-
 	// Get {{.NameExported}} by ID
 	Get(context.Context, uint) (model.{{.NameExported}}, error)
+
+	// Create a new {{.NameExported}} for the database
+	Create(context.Context, *model.{{.NameExported}}) error
 
 	// Delete a {{.NameExported}} by id.
 	Delete(context.Context, uint) error
