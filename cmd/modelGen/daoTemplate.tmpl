@@ -1,0 +1,43 @@
+package dao
+
+import (
+	"context"
+	"github.com/joschahenningsen/TUM-Live/model"
+	"gorm.io/gorm"
+)
+
+//go:generate mockgen -source={{.NamePrivate}}.go -destination ../mock_dao/{{.NamePrivate}}.go
+
+type {{.NameExported}}Dao interface {
+	// Create a new {{.NameExported}} for the database
+	Create(context.Context, *model.{{.NameExported}}) error
+
+	// Get {{.NameExported}} by ID
+	Get(context.Context, uint) (model.{{.NameExported}}, error)
+
+	// Delete a {{.NameExported}} by id.
+	Delete(context.Context, uint) error
+}
+
+type {{.NamePrivate}}Dao struct {
+	db *gorm.DB
+}
+
+func New{{.NameExported}}Dao() {{.NameExported}}Dao {
+	return {{.NamePrivate}}Dao{db: DB}
+}
+
+// Get a {{.NameExported}} by id.
+func (d {{.NamePrivate}}Dao) Get(c context.Context, id uint) (res model.{{.NameExported}}, err error) {
+	return res, d.db.WithContext(c).First(&res, id).Error
+}
+
+// Create a {{.NameExported}}.
+func (d {{.NamePrivate}}Dao) Create(c context.Context, it *model.{{.NameExported}}) error {
+	return d.db.WithContext(c).Create(it).Error
+}
+
+// Delete a {{.NameExported}} by id.
+func (d {{.NamePrivate}}Dao) Delete(c context.Context, id uint) error {
+	return d.db.WithContext(c).Delete(&model.{{.NameExported}}{}, id).Error
+}
