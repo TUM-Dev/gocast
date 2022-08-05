@@ -577,8 +577,8 @@ func extractKeywords(ctx *StreamContext) error {
 	}
 
 	// extract keywords
-	engExtractor := ocr.NewOcrExtractor(files, []string{"eng", "deu"})
-	engKeywords, err := engExtractor.Extract()
+	extractor := ocr.NewOcrExtractor(files, []string{"eng", "deu"})
+	keywords, err := extractor.Extract()
 	if err != nil {
 		return err
 	}
@@ -592,7 +592,7 @@ func extractKeywords(ctx *StreamContext) error {
 	status, err := fromWorkerClient.NewKeywords(context.Background(), &pb.NewKeywordsRequest{
 		WorkerID: cfg.WorkerID,
 		StreamID: ctx.streamId,
-		Keywords: engKeywords,
+		Keywords: keywords,
 	})
 
 	if err != nil {
