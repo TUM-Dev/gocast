@@ -222,5 +222,4 @@ message NewKeywordsRequest {
   string WorkerID = 1;
   uint32 StreamID = 2;
   repeated string Keywords = 3;
-  string Language = 4;
 }
