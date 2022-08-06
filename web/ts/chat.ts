@@ -4,10 +4,11 @@ export function initChat(
     isAdminOfCourse: boolean,
     streamId: number,
     streamStart: string,
+    liveNowTimestamp: string,
     userId: number,
     userName: string,
 ) {
-    return { c: new Chat(isAdminOfCourse, streamId, streamStart, userId, userName) };
+    return { c: new Chat(isAdminOfCourse, streamId, streamStart, liveNowTimestamp, userId, userName) };
 }
 
 /*

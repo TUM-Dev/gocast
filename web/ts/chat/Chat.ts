@@ -19,6 +19,7 @@ export class Chat {
     users: ChatUserList;
     emojis: EmojiList;
     startTime: Date;
+    liveNowTimestamp: Date;
     poll: Poll;
 
     preprocessors: ((m: ChatMessage) => ChatMessage)[] = [
@@ -41,7 +42,14 @@ export class Chat {
 
     private timeWatcherCallBackFunction: () => void;
 
-    constructor(isAdminOfCourse: boolean, streamId: number, startTime: string, userId: number, userName: string) {
+    constructor(
+        isAdminOfCourse: boolean,
+        streamId: number,
+        startTime: string,
+        liveNowTimestamp: string,
+        userId: number,
+        userName: string,
+    ) {
         this.orderByLikes = false;
         this.disconnected = false;
         this.current = new NewChatMessage();
@@ -53,7 +61,8 @@ export class Chat {
         this.userId = userId;
         this.userName = userName;
         this.poll = new Poll(streamId);
-        this.startTime = new Date(startTime);
+        this.startTime = Date.parse(startTime) ? new Date(startTime) : null;
+        this.liveNowTimestamp = Date.parse(liveNowTimestamp) ? new Date(liveNowTimestamp) : null;
         this.focusedMessageId = -1;
         this.popUpWindow = null;
         this.grayOutMessagesAfterPlayerTime = this.grayOutMessagesAfterPlayerTime.bind(this);
@@ -252,14 +261,30 @@ export class Chat {
         }
     }
 
+    activateChatReplay(): void {
+        this.messages.map((message) =>
+            this.notifyMessagesUpdate("chatupdategrayedout", { ID: message.ID, isGrayedOut: false }),
+        );
+        this.deregisterPlayerTimeWatcher();
+    }
+
+    deactivateChatReplay(): void {
+        this.messages.map((message) =>
+            this.notifyMessagesUpdate("chatupdategrayedout", { ID: message.ID, isGrayedOut: true }),
+        );
+        this.registerPlayerTimeWatcher();
+    }
+
     /**
      * Grays out all messages that were not sent at the same time in the livestream.
      * @param playerTime time offset of current player time w.r.t. video start in seconds
      */
     grayOutMessagesAfterPlayerTime(playerTime: number): void {
-        // TODO remove following line only for debugging
-        this.startTime = new Date("Sun Jul 31 2022 10:55:00");
-        const referenceTime = new Date(this.startTime);
+        // create new Date instance for a deep copy
+        const referenceTime = new Date(this.liveNowTimestamp ?? this.startTime);
+        if (!referenceTime) {
+            this.deactivateChatReplay();
+        }
         referenceTime.setSeconds(referenceTime.getSeconds() + playerTime);
 
         const grayOutCondition = (CreatedAt: string) => {
