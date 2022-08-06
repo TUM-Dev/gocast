@@ -2,7 +2,7 @@ import { NewChatMessage } from "./NewChatMessage";
 import { ChatUserList } from "./ChatUserList";
 import { EmojiList } from "./EmojiList";
 import { Poll } from "./Poll";
-import { registerTimeWatcher, deregisterTimeWatcher } from "../TUMLiveVjs";
+import { registerTimeWatcher, deregisterTimeWatcher, getPlayer } from "../TUMLiveVjs";
 
 export class Chat {
     readonly userId: number;
@@ -262,17 +262,18 @@ export class Chat {
     }
 
     activateChatReplay(): void {
-        this.messages.map((message) =>
-            this.notifyMessagesUpdate("chatupdategrayedout", { ID: message.ID, isGrayedOut: false }),
-        );
-        this.deregisterPlayerTimeWatcher();
+        const currentTime = getPlayer().currentTime();
+        //force update of message focus and grayedOut state
+        this.focusedMessageId = -1;
+        this.grayOutMessagesAfterPlayerTime(currentTime);
+        this.registerPlayerTimeWatcher();
     }
 
     deactivateChatReplay(): void {
         this.messages.map((message) =>
-            this.notifyMessagesUpdate("chatupdategrayedout", { ID: message.ID, isGrayedOut: true }),
+            this.notifyMessagesUpdate("chatupdategrayedout", { ID: message.ID, isGrayedOut: false }),
         );
-        this.registerPlayerTimeWatcher();
+        this.deregisterPlayerTimeWatcher();
     }
 
     /**

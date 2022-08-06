@@ -2,7 +2,7 @@
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.ChatData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     {{$startTime := $stream.ParsableStartTime}}
-    {{$liveNowTimestamp := $stream.LiveNowTimestamp}}
+    {{$liveNowTimestamp := $stream.ParsableLiveNowTimestamp}}
     {{$userName := ""}}
     {{$userId := 0}}
     {{if .IndexData.TUMLiveContext.User}}
@@ -50,10 +50,10 @@
                     watch.setOrder(c.orderByLikes);
                     $dispatch('reorder');
                     if(c.orderByLikes) {
-                        c.deregisterPlayerTimeWatcher();
+                        c.deactivateChatReplay()
                     }
                     else {
-                        c.registerPlayerTimeWatcher();
+                        c.activateChatReplay();
                     }
                     c.orderByLikes? watch.scrollToTop(): watch.scrollToBottom()
                 "
