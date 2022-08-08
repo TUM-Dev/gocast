@@ -535,6 +535,12 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		// interims solution; sometimes dvr doesn't work as expected.
 		// here we check if the url 404s and remove dvr from the stream in that case
 		stream.LiveNow = true
+
+		err = s.StreamsDao.SetStreamLiveNowTimestampById(uint(request.StreamID), time.Now())
+		if err != nil {
+			log.WithError(err).Error("Can't set StreamLiveNowTimestamp")
+		}
+
 		time.Sleep(time.Second * 5)
 		if !isHlsUrlOk(request.HlsUrl) {
 			sentry.WithScope(func(scope *sentry.Scope) {

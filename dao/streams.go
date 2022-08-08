@@ -40,6 +40,7 @@ type StreamsDao interface {
 	DeleteSilences(streamID string) error
 	UpdateStreamFullAssoc(vod *model.Stream) error
 	SetStreamNotLiveById(streamID uint) error
+	SetStreamLiveNowTimestampById(streamID uint, liveNowTimestamp time.Time) error
 	SavePauseState(streamID uint, paused bool) error
 	SaveEndedState(streamID uint, hasEnded bool) error
 	SaveCOMBURL(stream *model.Stream, url string)
@@ -319,9 +320,14 @@ func (d streamsDao) SetStreamNotLiveById(streamID uint) error {
 	return DB.Debug().Exec("UPDATE `streams` SET `live_now`='0' WHERE id = ?", streamID).Error
 }
 
+func (d streamsDao) SetStreamLiveNowTimestampById(streamID uint, liveNowTimestamp time.Time) error {
+	defer Cache.Clear()
+	return DB.Model(model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"LiveNowTimestamp": liveNowTimestamp}).Error
+}
+
 func (d streamsDao) SavePauseState(streamID uint, paused bool) error {
 	defer Cache.Clear()
-	return DB.Model(model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"Paused": paused}).Error
+	return DB.Model(model.Stream{}).Where("id = ?", streamID).Update("Paused", paused).Error
 }
 
 // SaveEndedState updates the boolean Ended field of a stream model to the value of hasEnded when a stream finishes.
