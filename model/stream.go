@@ -187,6 +187,9 @@ func (s Stream) FriendlyTime() string {
 
 // ParsableTimeFormat returns a JavaScript friendly formatted date string
 func ParsableTimeFormat(time time.Time) string {
+	if time.IsZero() {
+		return ""
+	}
 	return time.Format("2006-01-02 15:04:05")
 }
 
