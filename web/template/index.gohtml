@@ -180,6 +180,20 @@
 </div>
 {{template "semesterselection" .}}
 {{template "reloadpagebutton" .}}
+
+<script>
+    (async () => {
+        const catImages = document.getElementsByClassName("cat-img");
+        const response = await fetch(
+            "https://api.thecatapi.com/v1/images/search?limit=" + catImages.length,
+            { headers: { "x-api-key" : {{env "CAT_API_KEY"}} }});
+        const data = await response.json();
+        for (let i = 0; i < catImages.length; i++) {
+            catImages[i].src = data[i].url;
+        }
+    })();
+</script>
+
 </body>
 <!--       _
        .__(.)< (MEOW)

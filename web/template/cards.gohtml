@@ -20,14 +20,15 @@
     {{/* outer container: thumbnail on top, remaining content below */}}
     <div class="flex flex-col gap-2">
         {{with get . "thumbnail-url"}}
-            {{with get $args "title-url"}}<a href="{{.}}">{{end}}
+            {{with get $args "title-url"}}<a tabindex="-1" href="{{.}}">{{end}}
                 {{$watch_progress := get $args "watch-progress" | default (divf (randInt 0 101 | float64) 100.0)}}
                 <div class="rounded-lg overflow-hidden w-full [aspect-ratio:16/9] bg-gray-500 grid grid-cols-2 grid-rows-2"
                         {{with $watch_progress}}
                             style="grid-template-columns: {{. | mulf 100}}% auto; grid-template-rows: 1fr 0.25rem"
                         {{end}}>
                     <div class="row-start-1 col-start-1 row-span-2 col-span-2">
-                        <img class="w-full h-full object-contain" src="https://picsum.photos/1920{{if randInt 0 2 | eq 0}}/1080{{end}}/?random={{randNumeric 16}}" alt="" />
+{{/*                        <img class="w-full h-full object-contain" src="https://picsum.photos/1920{{if randInt 0 2 | eq 0}}/1080{{end}}/?random={{randNumeric 16}}" alt="" />*/}}
+                        <img class="w-full h-full object-contain cat-img" src="" alt="" />
                     </div>
                     {{if $watch_progress}}
                         <div class="row-start-2 col-start-2 col-span-1 row-span-1 bg-gray-50 opacity-50"></div>
@@ -222,16 +223,17 @@
         No upcoming lectures
     {{end}}
 
-    <div class="mt-2">
-{{end}}
-
-{{define "course-group-tail"}}
-    </div>
     {{template "item-card-tail" dict
     "actions" (list
         (dict "label" "Hide course" "icon" "eye-slash" "action" "hide()")
         (dict "label" (.Pinned | default false | ternary "Unpin course" "Pin course") "icon" "thumbtack" "action" "pinUnpin()")
         | compact)}}
+
+    <div class="mt-2">
+{{end}}
+
+{{define "course-group-tail"}}
+    </div>
 </div>
 {{end}}
 
