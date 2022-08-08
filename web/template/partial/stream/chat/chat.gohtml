@@ -3,6 +3,7 @@
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     {{$startTime := $stream.ParsableStartTime}}
     {{$liveNowTimestamp := $stream.ParsableLiveNowTimestamp}}
+    {{$liveNow := $stream.LiveNow}}
     {{$userName := ""}}
     {{$userId := 0}}
     {{if .IndexData.TUMLiveContext.User}}
@@ -10,7 +11,7 @@
         {{$userId := .IndexData.TUMLiveContext.User.ID}}
     {{end}}
     <div x-cloak
-         x-data="watch.initChat({{.IsAdminOfCourse}}, {{$stream.ID}}, '{{$startTime}}', '{{$liveNowTimestamp}}', {{$userId}}, '{{$userName}}');"
+         x-data="watch.initChat({{.IsAdminOfCourse}}, {{$stream.ID}}, '{{$startTime}}', '{{$liveNowTimestamp}}', {{$userId}}, '{{$userName}}', {{not $liveNow}});"
          x-init="await Promise.all([c.loadMessages(), c.poll.load()]); $nextTick(() => { watch.scrollToBottom(); window.dispatchEvent(new CustomEvent('chatinitialized')); })"
          x-on:chatmessage.window="e => c.onMessage(e);"
          x-on:chatreply.window="e => c.onReply(e);" ingest_servers
@@ -49,13 +50,18 @@
                     c.orderByLikes=!c.orderByLikes;
                     watch.setOrder(c.orderByLikes);
                     $dispatch('reorder');
+                    if({{$liveNow}}){
+                        c.orderByLikes? watch.scrollToTop(): watch.scrollToBottom();
+                        return;
+                    }
+
                     if(c.orderByLikes) {
                         c.deactivateChatReplay()
+                        watch.scrollToTop;
                     }
                     else {
                         c.activateChatReplay();
                     }
-                    c.orderByLikes? watch.scrollToTop(): watch.scrollToBottom()
                 "
                         class="bg-transparent border-0 font-semibold h-8 w-8 rounded
                                hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90"

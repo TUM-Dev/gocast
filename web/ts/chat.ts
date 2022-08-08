@@ -7,8 +7,11 @@ export function initChat(
     liveNowTimestamp: string,
     userId: number,
     userName: string,
+    activateChatReplay: boolean,
 ) {
-    return { c: new Chat(isAdminOfCourse, streamId, streamStart, liveNowTimestamp, userId, userName) };
+    return {
+        c: new Chat(isAdminOfCourse, streamId, streamStart, liveNowTimestamp, userId, userName, activateChatReplay),
+    };
 }
 
 /*

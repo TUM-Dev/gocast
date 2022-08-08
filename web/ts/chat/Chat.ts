@@ -11,6 +11,7 @@ export class Chat {
     readonly streamId: number;
 
     popUpWindow: Window;
+    chatReplayActive: boolean;
     orderByLikes: boolean;
     disconnected: boolean;
     current: NewChatMessage;
@@ -36,7 +37,7 @@ export class Chat {
             return m;
         },
         (m: ChatMessage) => {
-            return { ...m, isGrayedOut: !this.orderByLikes };
+            return { ...m, isGrayedOut: this.chatReplayActive && !this.orderByLikes };
         },
     ];
 
@@ -49,6 +50,7 @@ export class Chat {
         liveNowTimestamp: string,
         userId: number,
         userName: string,
+        activateChatReplay: boolean,
     ) {
         this.orderByLikes = false;
         this.disconnected = false;
@@ -68,7 +70,11 @@ export class Chat {
         this.grayOutMessagesAfterPlayerTime = this.grayOutMessagesAfterPlayerTime.bind(this);
         this.deregisterPlayerTimeWatcher = this.deregisterPlayerTimeWatcher.bind(this);
         this.registerPlayerTimeWatcher = this.registerPlayerTimeWatcher.bind(this);
-        this.registerPlayerTimeWatcher();
+        if (activateChatReplay) {
+            this.activateChatReplay();
+        } else {
+            this.deactivateChatReplay();
+        }
         window.addEventListener("beforeunload", () => {
             this.popUpWindow?.close();
         });
@@ -262,6 +268,7 @@ export class Chat {
     }
 
     activateChatReplay(): void {
+        this.chatReplayActive = true;
         const currentTime = getPlayer().currentTime();
         //force update of message focus and grayedOut state
         this.focusedMessageId = -1;
@@ -270,6 +277,7 @@ export class Chat {
     }
 
     deactivateChatReplay(): void {
+        this.chatReplayActive = false;
         this.messages.map((message) =>
             this.notifyMessagesUpdate("chatupdategrayedout", { ID: message.ID, isGrayedOut: false }),
         );
@@ -332,9 +340,9 @@ export class Chat {
     }
 
     private notifyMessagesUpdate(type: MessageUpdateType, payload: MessageUpdate) {
-        [window, this.popUpWindow].forEach((window: Window) =>
-            window?.dispatchEvent(new CustomEvent(type, { detail: payload })),
-        );
+        [window, this.popUpWindow].forEach((window: Window) => {
+            window?.dispatchEvent(new CustomEvent(type, { detail: payload }));
+        });
     }
 }
 
