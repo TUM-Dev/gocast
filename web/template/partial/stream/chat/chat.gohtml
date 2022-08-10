@@ -45,7 +45,7 @@
             {{end}}
             <div x-show="show" class="ml-auto my-auto">
                 <button class="font-semibold text-xs  pr-3"
-                        :class="c.chatReplayActive?'dark:text-gray-200':'dark:text-gray-500'"
+                        :class="c.chatReplayActive?'dark:text-gray-200':'dark:text-gray-500 text-gray-500'"
                         x-show="{{not $liveNow}}"
                         @click="c.chatReplayActive = !c.chatReplayActive;"
                         x-init="
@@ -74,7 +74,7 @@
                         $watch('c.orderByLikes', (value) => {
                             watch.setOrder(value);
                             $dispatch('reorder');
-                            if({{$liveNow}}) {
+                            if('{{$liveNow}}') {
                                 value? watch.scrollToTop(): watch.scrollToBottom();
                                 return;
                             }
