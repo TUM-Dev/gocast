@@ -44,7 +44,16 @@
                 </div>
             {{end}}
             <div x-show="show" class="ml-auto my-auto">
-                <button  class="font-semibold text-xs  pr-3" :class="c.chatReplayActive?'dark:text-gray-200':'dark:text-gray-500'"  x-show="{{not $liveNow}}">Chat Replay</button>
+                <button  class="font-semibold text-xs  pr-3" :class="c.chatReplayActive?'dark:text-gray-200':'dark:text-gray-500'"  x-show="{{not $liveNow}}"
+                    @click="
+                        if(c.chatReplayActive){
+                            c.deactivateChatReplay()
+                        }
+                        else{
+                            c.activateChatReplay();
+                        }
+                    "
+                >Chat Replay</button>
                     <span class="font-semibold text-gray-500 text-xs"
                           x-text="c.orderByLikes? 'Popular First': 'Live Chat'"></span>
                 <button @click="
