@@ -70,6 +70,8 @@ export class Chat {
         this.grayOutMessagesAfterPlayerTime = this.grayOutMessagesAfterPlayerTime.bind(this);
         this.deregisterPlayerTimeWatcher = this.deregisterPlayerTimeWatcher.bind(this);
         this.registerPlayerTimeWatcher = this.registerPlayerTimeWatcher.bind(this);
+        this.activateChatReplay = this.activateChatReplay.bind(this);
+        this.deactivateChatReplay = this.deactivateChatReplay.bind(this);
         if (activateChatReplay) {
             this.activateChatReplay();
         } else {
@@ -278,10 +280,10 @@ export class Chat {
 
     deactivateChatReplay(): void {
         this.chatReplayActive = false;
+        this.deregisterPlayerTimeWatcher();
         this.messages.map((message) =>
             this.notifyMessagesUpdate("chatupdategrayedout", { ID: message.ID, isGrayedOut: false }),
         );
-        this.deregisterPlayerTimeWatcher();
     }
 
     /**
