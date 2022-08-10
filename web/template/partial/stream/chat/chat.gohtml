@@ -44,6 +44,7 @@
                 </div>
             {{end}}
             <div x-show="show" class="ml-auto my-auto">
+                <button  x-data="{active:c.chatReplayActive}" x-init="$watch('c.chatReplayActive', value => active=value);" class="font-semibold text-xs active?'dark:text-gray-500':'dark:text-gray-200' pr-3">Chat Replay</button>
                     <span class="font-semibold text-gray-500 text-xs"
                           x-text="c.orderByLikes? 'Popular First': 'Live Chat'"></span>
                 <button @click="
