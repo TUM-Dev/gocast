@@ -7,7 +7,7 @@ export class CreateCourse {
     private courseNameInput: HTMLInputElement;
     private semesterInput: HTMLInputElement;
     private yearInput: HTMLInputElement;
-    private yearWWInput: HTMLInputElement; // for the '/21' part
+    private yearWInput: HTMLInputElement; // for the '/21' part
     private slugInput: HTMLInputElement;
     private tumOnlineInfo: HTMLSpanElement;
     private enrolledRadio: HTMLInputElement;
@@ -19,7 +19,7 @@ export class CreateCourse {
         this.courseNameInput = document.getElementById("name") as HTMLInputElement;
         this.semesterInput = document.getElementById("semester") as HTMLInputElement;
         this.yearInput = document.getElementById("year") as HTMLInputElement;
-        this.yearWWInput = document.getElementById("yearW") as HTMLInputElement;
+        this.yearWInput = document.getElementById("yearW") as HTMLInputElement;
         this.slugInput = document.getElementById("slug") as HTMLInputElement;
         this.tumOnlineInfo = document.getElementById("TUMOnlineInfo") as HTMLSpanElement;
         this.enrolledRadio = document.getElementById("enrolled") as HTMLInputElement;
@@ -43,9 +43,17 @@ export class CreateCourse {
                 data.text().then((data) => {
                     const json = JSON.parse(data);
                     const teachingTerm = json["teachingTerm"].Split(" ");
-                    this.courseNameInput.value = json["courseName"];
+
                     this.semesterInput.value = teachingTerm[0];
-                    this.yearInput.value = teachingTerm[1];
+                    if (teachingTerm[0] === "Wintersemester") {
+                        const yearPair = teachingTerm[1].Split("/"); // Wintersemester year format: 2022/23
+                        this.yearInput.value = yearPair[0];
+                        this.yearWInput.value = yearPair[1];
+                    } else {
+                        this.yearInput.value = teachingTerm[1];
+                    }
+
+                    this.courseNameInput.value = json["courseName"];
                     this.tumOnlineInfo.innerText =
                         "Currently there are " +
                         json["numberAttendees"] +
