@@ -1,4 +1,4 @@
-import { postData } from "./global";
+import { getQueryParam, postData } from "./global";
 import { VideoSections } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
@@ -210,23 +210,29 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
         let iOSReady = false;
         let intervalMillis = 10000;
 
-        // Fetch the user's video progress from the database and set the time in the player
-        player.on("loadedmetadata", () => {
-            duration = player.duration();
-            player.currentTime(lastProgress * duration);
-        });
-
-        // iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
-        // not sufficient here.
-        // See https://stackoverflow.com/questions/28823567/how-to-set-currenttime-in-video-js-in-safari-for-ios.
-        if (videojs.browser.IS_IOS) {
-            player.on("canplaythrough", () => {
-                // Can be executed multiple times during playback
-                if (!iOSReady) {
-                    player.currentTime(lastProgress * duration);
-                    iOSReady = true;
-                }
+        // check if query contains parameter 't' and set timestamp accordingly
+        const queryT = getQueryParam("t");
+        if (queryT !== undefined) {
+            player.currentTime(Number(queryT));
+        } else {
+            // Fetch the user's video progress from the database and set the time in the player
+            player.on("loadedmetadata", () => {
+                duration = player.duration();
+                player.currentTime(lastProgress * duration);
             });
+
+            // iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
+            // not sufficient here.
+            // See https://stackoverflow.com/questions/28823567/how-to-set-currenttime-in-video-js-in-safari-for-ios.
+            if (videojs.browser.IS_IOS) {
+                player.on("canplaythrough", () => {
+                    // Can be executed multiple times during playback
+                    if (!iOSReady) {
+                        player.currentTime(lastProgress * duration);
+                        iOSReady = true;
+                    }
+                });
+            }
         }
 
         const reportProgress = () => {
@@ -415,6 +421,7 @@ export function jumpTo(hours: number, minutes: number, seconds: number) {
 
 type SeekLoggerLogFunction = (position: number) => void;
 const SEEK_LOGGER_DEBOUNCE_TIMEOUT = 4000;
+
 export class SeekLogger {
     readonly streamID: number;
     log: SeekLoggerLogFunction;
