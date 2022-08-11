@@ -251,6 +251,18 @@ export type Section = {
     fileID?: number;
 };
 
+export function getQueryParam(name: string): string {
+    const query = window.location.search.substring(1); // remove '?'
+    const params = query.split("&");
+    for (let i = 0; i < params.length; i++) {
+        const pair = params[i].split("=");
+        if (pair[0] == name) {
+            return pair[1];
+        }
+    }
+    return undefined;
+}
+
 window.onload = function () {
     initHiddenCourses();
 };
