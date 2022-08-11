@@ -22,13 +22,13 @@
         {{with get . "thumbnail-url"}}
             {{with get $args "title-url"}}<a tabindex="-1" href="{{.}}">{{end}}
                 {{$watch_progress := get $args "watch-progress" | default (divf (randInt 0 101 | float64) 100.0)}}
-                <div class="rounded-lg overflow-hidden w-full [aspect-ratio:16/9] bg-gray-500 grid grid-cols-2 grid-rows-2"
+                <div class="rounded-sm overflow-hidden w-full [aspect-ratio:16/9] {{/*bg-gray-500*/}} grid grid-cols-2 grid-rows-2"
                         {{with $watch_progress}}
                             style="grid-template-columns: {{. | mulf 100}}% auto; grid-template-rows: 1fr 0.25rem"
                         {{end}}>
                     <div class="row-start-1 col-start-1 row-span-2 col-span-2">
 {{/*                        <img class="w-full h-full object-contain" src="https://picsum.photos/1920{{if randInt 0 2 | eq 0}}/1080{{end}}/?random={{randNumeric 16}}" alt="" />*/}}
-                        <img class="w-full h-full object-contain cat-img" src="" alt="" />
+                        <img class="w-full h-full object-cover cat-img" src="" alt="" />
                     </div>
                     {{if $watch_progress}}
                         <div class="row-start-2 col-start-2 col-span-1 row-span-1 bg-gray-50 opacity-50"></div>
@@ -250,16 +250,44 @@
 </div>
 {{end}}
 
-{{define "card-grid-head"}}
-<div class="flex flex-col gap-6 sm:gap-4 sm:flex-row sm:flex-wrap [align-items:stretch]">
+{{/*Reactive grid. Multiple rows on larger screens, single column on smaller screens.
+    Items must be card-grid-item-head/tail.*/}}
+{{define "card-grid-head"}} {{/*max-rows?, max-items? -> state*/}}
+{{if not (hasKey . "state")}}{{$_1 := set . "state" (dict)}}{{end}}
+{{$_2 := mergeOverwrite (get . "state") (pick . "max-rows" "max-items") (dict "index" 0) }}
+<div class="flex flex-col gap-6 sm:gap-2 sm:flex-row sm:flex-wrap [align-items:stretch]">
 {{end}}
 
 {{define "card-grid-tail"}}
 </div>
 {{end}}
 
+{{/*Grid item for card-grid-head/tail. Pass the 'state' value returned by card-grid-head (or pass the parameters manually).*/}}
 {{define "card-grid-item-head"}}
-<div class="sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-2rem)/3)] 2xl:w-[calc((100%-3rem)/4)]"> {{/*account for flex gap*/}}
+{{$args := .}}
+{{/*could be a parameter but maybe overkill*/}}
+{{/*{{$config := list*/}}
+{{/*    (dict "screen" "sm"  "columns" 2)*/}}
+{{/*    (dict "screen" "lg"  "columns" 3)*/}}
+{{/*    (dict "screen" "2xl" "columns" 4)}}*/}}
+<div
+        class="
+            block
+            {{if ge (get . "index") (get . "max-items")}}hidden{{end}}
+            sm:block {{if ge (get . "index") (get . "max-rows" | mul 2)}}sm:hidden{{end}}
+            lg:block {{if ge (get . "index") (get . "max-rows" | mul 3)}}lg:hidden{{end}}
+            2xl:block {{if ge (get . "index") (get . "max-rows" | mul 4)}}2xl:hidden{{end}}
+            sm:w-[calc((100%-0.5rem)/2)] lg:w-[calc((100%-1rem)/3)] 2xl:w-[calc((100%-1.5rem)/4)]
+{{/*            block*/}}
+{{/*            {{if ge (get . "index") (get . "max-items")}}hidden{{end}}*/}}
+{{/*            {{range $sc := $config}}*/}}
+{{/*                {{$cols := get $sc "columns"}}*/}}
+{{/*                {{get $sc "screen"}}:block*/}}
+{{/*                {{if ge (get $args "index") (get $args "max-rows" | mul $cols)}}{{get $sc "screen"}}:hidden{{end}}*/}}
+{{/*                {{get $sc "screen"}}:w-[calc((100%-{{sub $cols 1}}rem)/{{$cols}})]*/}}
+{{/*            {{end}}*/}}
+            ">
+{{$_ := set . "index" (get . "index" | add 1)}}
 {{end}}
 
 {{define "card-grid-item-tail"}}

@@ -68,11 +68,12 @@
         {{if $show_suggested}}
             <div style="grid-area: suggested">
                 {{template "highlight-box-head" dict "highlight-color" "dark:bg-green-400 bg-green-500" "title" "Suggested"}}
-                    {{template "card-grid-head"}}
+                    {{$card_grid_state := (dict)}}
+                    {{template "card-grid-head" dict "max-rows" 2 "max-items" 4 "state" $card_grid_state}}
                         {{$args := .}}
-                        {{range $i := list 1}}
+                        {{range $i := list 1 2 3}}
                         {{range $stream := $args.SuggestedStreams}}
-                            {{template "card-grid-item-head"}}
+                            {{template "card-grid-item-head" $card_grid_state}}
                                 {{template "stream-card" dict
                                     "stream" $stream.Stream
                                     "course" $stream.Course
@@ -104,13 +105,14 @@
                                             {{template "course-group-head" $course}}
                                                 {{/*TODO: dropdown button unnecessarily reduces width of container*/}}
                                                 {{template "card-container-head" "Latest"}}
-                                                    {{template "card-grid-head"}}
-                                                        {{range $_ := list 1}}
+                                                    {{$card_grid_state := (dict)}}
+                                                    {{template "card-grid-head" dict "max-rows" 1 "max-items" 3 "state" $card_grid_state}}
+                                                        {{range $_ := list 1 2 3}}
                                                         {{/*TODO: show only past streams*/}}
                                                         {{/*TODO: show the three most recent streams including a live stream if live now*/}}
                                                         {{range $i, $stream := $course.Streams}}
-                                                            {{if ge $i 3 | or (ge $i 1 | and (randInt 0 101 | ge 30))}}{{break}}{{end}}
-                                                            {{template "card-grid-item-head"}}
+{{/*                                                            {{if ge $i 3 | or (ge $i 1 | and (randInt 0 101 | ge 30))}}{{break}}{{end}}*/}}
+                                                            {{template "card-grid-item-head" $card_grid_state}}
                                                                 {{template "stream-card" dict
                                                                     "stream" $stream
                                                                     "course" $course
@@ -140,12 +142,13 @@
                                             {{if and (not $course.IsHidden) (not $course.Pinned)}}
                                                 {{template "course-group-head" $course}}
                                                     {{template "card-container-head" "Latest"}}
-                                                        {{template "card-grid-head"}}
-                                                            {{range $_ := list 1}}
+                                                        {{$card_grid_state := (dict)}}
+                                                        {{template "card-grid-head" dict "max-rows" 1 "max-items" 3 "state" $card_grid_state}}
+                                                            {{range $_ := list 1 2 3}}
                                                                 {{/*TODO: show only past streams*/}}
                                                                 {{range $i, $stream := $course.Streams}}
-                                                                    {{if ge $i 3 | or (ge $i 1 | and (randNumeric 1 | atoi | ge 5))}}{{break}}{{end}}
-                                                                    {{template "card-grid-item-head"}}
+{{/*                                                                    {{if ge $i 3 | or (ge $i 1 | and (randNumeric 1 | atoi | ge 5))}}{{break}}{{end}}*/}}
+                                                                    {{template "card-grid-item-head" $card_grid_state}}
                                                                     {{template "stream-card" dict
                                                                     "stream" $stream
                                                                     "course" $course
