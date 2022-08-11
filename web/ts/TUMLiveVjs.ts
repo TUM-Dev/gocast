@@ -276,8 +276,6 @@ export const watchProgress = function (streamID: number, lastProgress: number, l
     });
 };
 
-const registeredTimeWatchers: (() => void)[] = [];
-
 /**
  * Registers a time watcher that observes the time of the current player
  * @param callBack call back function responsible for handling player time updates
@@ -288,7 +286,6 @@ export const registerTimeWatcher = function (callBack: (currentPlayerTime: numbe
     const timeWatcherCallBack: () => void = () => {
         callBack(player.currentTime());
     };
-    registeredTimeWatchers.push(timeWatcherCallBack);
     player?.on("timeupdate", timeWatcherCallBack);
     return timeWatcherCallBack;
 };
