@@ -2,12 +2,12 @@
 {{template "header" .IndexData.TUMLiveContext}}
 {{define "create-course"}}
     <div class="text-1 container mx-auto" x-init="new admin.CreateCourse()"
-         x-data="{ semester: '', tumonlineid: '', slug: '', title: '' }">
+         x-data="{ tumonlineid: '', slug: '', title: '', year: '', yearW: '', semester: 'Wintersemester' }">
         <div class="min-w-screen flex items-center justify-center">
             <div class="w-full lg:w-5/6 p-3 bg-gray-100 dark:bg-secondary rounded dark:border dark:border-gray-500 shadow">
                 <h1>Create a new course:</h1>
-                <form id="createCourseForm" class="mt-3">
-                    <div class="flex mb-3 space-x-1">
+                <form id="createCourseForm" class="grid gap-3 mt-3">
+                    <div class="flex space-x-1">
                         <label class="hidden" for="courseID">TUM online id:</label>
                         <input class="w-4/5" id="courseID" name="courseID" type="text" autocomplete="off"
                                placeholder="TUMOnline ID" x-model="tumonlineid"/>
@@ -19,20 +19,28 @@
                         >Load Course
                         </button>
                     </div>
+                    <div class="px-2">
+                        <div class="bg-gray-50 border rounded-lg dark:bg-secondary-light dark:border-gray-800 px-2 py-1">
+                            <div x-show="tumonlineid === ''" id="TUMOnlineInfo"
+                                 class="grid gap-1 text-sm text-3 text-center">
+                                <span class="block">
+                                    <i class="fa fa-exclamation-triangle text-warn mr-2"></i>
+                                    Without a TUMOnline ID you won't be able to make this course public to participants only.
+                                </span>
+                                <a target="_blank" class="underline"
+                                   href="https://github.com/joschahenningsen/TUM-Live/wiki/How-do-I-find-the-right-TUMOnline-ID-for-my-course%3F">
+                                    How do I find the right TUMOnline ID for my course?
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                     <div class="flex space-x-1">
                         <label for="name" class="hidden">Course Title</label>
-                        <input class="w-2/5" id="name" name="name" type="text"
+                        <input class="w-4/5" id="name" name="name" type="text"
                                autocomplete="off"
                                placeholder="Einführung in die Informatik (IN0001)"
                                x-model="title"
                                :class="title === '' ? 'border-red-500 focus:border-red-500' : ''"/>
-                        <label for="teachingTerm" class="hidden">Teaching Term</label>
-                        <!--suppress XmlUnboundNsPrefix -->
-                        <input class="w-2/5" id="teachingTerm" name="teachingTerm" type="text"
-                               autocomplete="off"
-                               placeholder="Sommersemester 2021, Wintersemester 2020/21..."
-                               x-model="semester"
-                               :class="! /^(Sommersemester|Wintersemester) [0-9]{4}(\/[0-9]{2})?$/.test(semester) ? 'border-red-500 focus:border-red-500' : ''"/>
                         <label for="slug" class="hidden">Slug</label>
                         <input class="w-1/5" id="slug" name="slug" type="text"
                                autocomplete="off"
@@ -40,20 +48,50 @@
                                placeholder="eidi"
                                :class="slug === '' ? 'border-red-500 focus:border-red-500' : ''"/>
                     </div>
-                    <span x-show="tumonlineid === ''" id="TUMOnlineInfo" class="text-warn">Without a TUMOnline ID you won't be able to make this course public to participants only.
-                    <a target="_blank" class="underline"
-                       href="https://github.com/joschahenningsen/TUM-Live/wiki/How-do-I-find-the-right-TUMOnline-ID-for-my-course%3F">How do I find the right TUMOnline ID for my course?</a>
-                </span>
-                    <br>
-                    <span x-show="! /^(Sommersemester|Wintersemester) [0-9]{4}(\/[0-9]{2})?$/.test(semester)"
-                          class="text-warn">The semester needs to be formatted like this: Sommersemester 2021 or Wintersemester 2021/22</span>
-                    <div class="mt-3">
+                    <div class="flex space-x-1">
+                        <!--suppress XmlUnboundNsPrefix -->
+                        <label for="semester" class="hidden">teachingTermWS</label>
+                        <select id="semester"
+                                x-model="semester"
+                                name="semester"
+                                class="bg-gray-50 border text-3 text-sm
+                                rounded-lg block px-2 py-1 dark:bg-secondary-light dark:border-gray-800">
+                            <option value="Wintersemester" selected>Wintersemester</option>
+                            <option value="Sommersemester">Sommersemester</option>
+                        </select>
+                        <label for="year" class="hidden">teachingTermYear</label>
+                        <div class="flex">
+                            <input id="year"
+                                   x-model="year"
+                                   name="year"
+                                   class="w-32"
+                                   :class="year === '' ? 'border-red-500 focus:border-red-500' : ''"
+                                   placeholder="2022"
+                                   type="number">
+                            <template x-if="semester === 'Wintersemester'">
+                                <div class = "flex">
+                                    <span class="mx-2 my-auto">/</span>
+                                    <label for="yearW" class="hidden">teachingTermYearW</label>
+                                    <input id="yearW"
+                                           x-model="yearW"
+                                           name="yearW"
+                                           class="w-16"
+                                           :class="yearW === '' ? 'border-red-500 focus:border-red-500' : ''"
+                                           placeholder="24"
+                                           type="number">
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="px-3">
                         {{template "course_settings"}}
                     </div>
-                    <button onclick="" id="createCourseBtn" class="btn"
-                            x-bind:disabled="slug === '' || title === '' || (! /^(Sommersemester|Wintersemester) [0-9]{4}(\/[0-9]{2})?$/.test(semester))">
-                        Create Course
-                    </button>
+                </form>
+                <br>
+                <button onclick="" id="createCourseBtn" class="btn"
+                        x-bind:disabled="slug === '' || title === '' || year === ''">
+                    Create Course
+                </button>
                 </form>
             </div>
         </div>
