@@ -45,7 +45,7 @@
             {{end}}
             <div x-show="show" class="ml-auto my-auto">
                 <button class="font-semibold text-xs  pr-3"
-                        :class="c.chatReplayActive?'dark:text-gray-200':'dark:text-gray-500 text-gray-500'"
+                        :class="c.chatReplayActive ? 'dark:text-gray-200' : 'dark:text-gray-500 text-gray-500'"
                         x-show="{{not $liveNow}}"
                         @click="c.chatReplayActive = !c.chatReplayActive;"
                         x-init="
@@ -60,14 +60,14 @@
                     Chat Replay
                 </button>
                 <span class="font-semibold text-gray-500 text-xs"
-                      x-text="c.orderByLikes? 'Popular First': 'Live Chat'">
+                      x-text="c.orderByLikes ? 'Popular First' : 'Live Chat'">
                 </span>
                 <button
-                    x-data="{oldChatReplayActive:c.chatReplayActive}"
-                    @click="c.orderByLikes=!c.orderByLikes;"
+                    x-data="{oldChatReplayActive: c.chatReplayActive}"
+                    @click="c.orderByLikes = !c.orderByLikes;"
                     x-init="
                         $watch('c.chatReplayActive', (value) => {
-                            if(value) {
+                            if (value) {
                                 c.orderByLikes = false;
                             }});
 
@@ -78,16 +78,15 @@
                                 value ? watch.scrollToTop() : watch.scrollToBottom();
                                 return;
                             }
-
-                            if(value) {
+                            if (value) {
                                 oldChatReplayActive = c.chatReplayActive;
                                 c.chatReplayActive = false;
                                 watch.scrollToTop();
                             }
-                            else if(oldChatReplayActive) {
+                            else if (oldChatReplayActive) {
                                 c.chatReplayActive = true;
                             }
-                        })"
+                        });"
                     class="bg-transparent border-0 font-semibold h-8 w-8 rounded
                            hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90"
                     title="Change Order">
