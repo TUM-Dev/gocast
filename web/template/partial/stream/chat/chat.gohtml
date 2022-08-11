@@ -74,8 +74,8 @@
                         $watch('c.orderByLikes', (value) => {
                             watch.setOrder(value);
                             $dispatch('reorder');
-                            if('{{$liveNow}}') {
-                                value? watch.scrollToTop(): watch.scrollToBottom();
+                            if ({{$liveNow}}) {
+                                value ? watch.scrollToTop() : watch.scrollToBottom();
                                 return;
                             }
 
