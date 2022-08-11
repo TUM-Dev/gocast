@@ -129,7 +129,7 @@
             <div x-show="showChat"
                  :class="showChat ? 'lg:basis-1/4' : 'lg:basis-0'"
                  class="z-40 basis-full order-3 border rounded p-1 mx-2 bg-gray-100 lg:border-0 lg:shadow lg:order-none lg:mx-0 lg:p-0 lg:bg-transparent">
-                <div id="chat-box" class = "bg-white rounded lg:bg-transparent md:rounded-0">
+                <div id="chat-box" class="bg-white rounded lg:bg-transparent md:rounded-0">
                     {{template "chat" .ChatData}}
                 </div>
             </div>
@@ -177,12 +177,14 @@
                         {{template "actions" .}}
 
                         <!-- Desktop Open Chat -->
-                        <button @click="showChat = !showChat;"
-                                title="Open Chat"
-                                :class="showChat ? 'bg-gray-200 hover:bg-gray-100 dark:bg-gray-600 dark:hover:bg-secondary' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600'"
-                                class="rounded-lg px-3 py-2 w-fit">
-                            <i class="fa-solid fa-comments text-4"></i>
-                        </button>
+                        {{if $course.ChatEnabled}}
+                            <button @click="showChat = !showChat;"
+                                    title="Open Chat"
+                                    :class="showChat ? 'bg-gray-200 hover:bg-gray-100 dark:bg-gray-600 dark:hover:bg-secondary' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600'"
+                                    class="rounded-lg px-3 py-2 w-fit">
+                                <i class="fa-solid fa-comments text-4"></i>
+                            </button>
+                        {{end}}
                     </div>
 
                     <!-- Enable Beta Stream -->
@@ -209,13 +211,16 @@
                     {{template "watch-info" .}}
                 {{end}}
                 {{template "actions" .}}
-                <!-- Desktop Open Chat -->
-                <button @click="showChat = !showChat;"
-                        title="Open Chat"
-                        :class="showChat ? 'bg-gray-200 hover:bg-gray-100 dark:bg-secondary dark:hover:bg-secondary-light' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-secondary'"
-                        class="rounded-lg px-3 py-2 w-fit">
-                    <i class="fa-solid fa-comments text-4"></i>
-                </button>
+
+                {{if $course.ChatEnabled}}
+                    <!-- Desktop Open Chat -->
+                    <button @click="showChat = !showChat;"
+                            title="Open Chat"
+                            :class="showChat ? 'bg-gray-200 hover:bg-gray-100 dark:bg-secondary dark:hover:bg-secondary-light' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-secondary'"
+                            class="rounded-lg px-3 py-2 w-fit">
+                        <i class="fa-solid fa-comments text-4"></i>
+                    </button>
+                {{end}}
             </div>
         </div>
         {{if and .IsAdminOfCourse $stream.LiveNow}}
@@ -245,8 +250,8 @@
                     {{end}}
                     {{if .AlertsEnabled}}
                         <button @click="$dispatch('issue');location.href='#';location.href='#alertModal'"
-                                    title="Issues with the stream? Send a report to the RGB."
-                                    class="bg-amber-500 text-center md:w-28 md:inline-block block lg:w-32 {{if $stream.LectureHallID}}md:float-right{{end}} w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
+                                title="Issues with the stream? Send a report to the RGB."
+                                class="bg-amber-500 text-center md:w-28 md:inline-block block lg:w-32 {{if $stream.LectureHallID}}md:float-right{{end}} w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
                             <i class="fas fa-exclamation-triangle mr-1"></i>Problem
                         </button>
                     {{end}}
@@ -276,7 +281,7 @@
 
         <!-- Video Sections -->
         {{if $stream.VideoSections}}
-            <div class = "basis-full p-5 lg:order-none order-5">
+            <div class="basis-full p-5 lg:order-none order-5">
                 {{template "videosections" $stream}}
             </div>
         {{end}}
