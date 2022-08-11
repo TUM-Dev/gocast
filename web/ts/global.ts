@@ -1,5 +1,8 @@
+import { StatusCodes } from "http-status-codes";
+
 export * from "./notifications";
 export * from "./user-settings";
+export * from "./start-page";
 
 export async function putData(url = "", data = {}) {
     return await fetch(url, {
@@ -76,6 +79,24 @@ export function unhideCourse(id: string) {
     });
     localStorage.setItem("hiddenCourses", JSON.stringify(newHidden));
     document.location.reload();
+}
+
+export function pinCourse(id: number) {
+    postData(`/api/users/pinCourse`, { courseID: id }).then((response: Response) => {
+        if (response.status !== StatusCodes.OK) {
+            showMessage("There was an error pinning the course: " + response.body);
+        }
+        document.location.reload();
+    });
+}
+
+export function unpinCourse(id: number) {
+    postData(`/api/users/unpinCourse`, { courseID: id }).then((response: Response) => {
+        if (response.status !== StatusCodes.OK) {
+            showMessage("There was an error unpinning the course: " + response.body);
+        }
+        document.location.reload();
+    });
 }
 
 /**

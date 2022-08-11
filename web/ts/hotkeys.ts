@@ -117,14 +117,13 @@ export const defaultOptions = {
             handle: handleFullscreen,
         },
         mute: {
-            match: ["m", "M", "AudioVolumeMute", "VolumeMute"],
+            match: ["m", "M"],
             handle: handleWithClick("MuteToggle"),
             icon: volumeIcon(true),
         },
         // "Spacebar" is for IE+old Firefox
         playPause: {
-            // TODO: pause/play actions could depend on whether player is playing (e.g. "MediaPause" only pauses)
-            match: ["k", "K", " ", "Spacebar", "MediaPause", "Pause", "MediaPlay", "MediaPlayPause"],
+            match: ["k", "K", " ", "Spacebar"],
             handle: handleWithClick("PlayToggle"),
             icon: (player) => vjsIcon(player.paused() ? "pause" : "play"),
         },
@@ -140,22 +139,22 @@ export const defaultOptions = {
             icon: `${vjsIcon("replay")} -rotate-45`,
         },
         volumeUp: {
-            match: ["ArrowUp", "Up", "AudioVolumeUp", "VolumeUp"],
+            match: ["ArrowUp", "Up"],
             handle: handleVolume(true),
             icon: volumeIcon(true),
         },
         volumeDown: {
-            match: ["ArrowDown", "Down", "AudioVolumeDown", "VolumeDown"],
+            match: ["ArrowDown", "Down"],
             handle: handleVolume(false),
             icon: volumeIcon(false),
         },
         increasePlaybackRate: {
-            match: [">", "MediaFastForward", "PlaySpeedUp"],
+            match: [">"],
             handle: handlePlaybackRate(true),
             icon: fa("forward"),
         },
         decreasePlaybackRate: {
-            match: ["<", "MediaRewind", "PlaySpeedDown"],
+            match: ["<"],
             handle: handlePlaybackRate(false),
             icon: fa("backward"),
         },
@@ -191,6 +190,10 @@ export function handleHotkeys(extraOptions = {}) {
     const options = videojs.mergeOptions(defaultOptions, extraOptions) as typeof defaultOptions;
 
     return function (event: videojs.KeyboardEvent) {
+        // ignore events where Alt, Ctrl or Meta is pressed
+        // note: we are processing keydown events
+        if (event.altKey || event.ctrlKey || event.metaKey) return;
+
         // 'this' is the player instance
         for (const [action, { match, handle, icon }] of Object.entries(options.hotkeys)) {
             optional(matches(match, this, event)).map((data) => {

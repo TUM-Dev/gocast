@@ -34,8 +34,11 @@ func (r mainRoutes) MainPage(c *gin.Context) {
 	indexData.LoadCoursesForRole(c, spanMain, r.CoursesDao)
 	indexData.LoadLivestreams(c, r.DaoWrapper)
 	indexData.LoadPublicCourses(r.CoursesDao)
+	indexData.LoadPinnedCourses()
 
-	_ = templateExecutor.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
+	if err := templateExecutor.ExecuteTemplate(c.Writer, "index.gohtml", indexData); err != nil {
+		log.WithError(err).Errorf("Could not execute template: 'index.gohtml'")
+	}
 }
 
 func (r mainRoutes) AboutPage(c *gin.Context) {
@@ -89,6 +92,7 @@ type IndexData struct {
 	IsStudent           bool
 	LiveStreams         []CourseStream
 	Courses             []model.Course
+	PinnedCourses       []model.Course
 	PublicCourses       []model.Course
 	Semesters           []dao.Semester
 	CurrentYear         int
@@ -242,6 +246,21 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span, co
 	sortCourses(courses)
 
 	d.Courses = commons.Unique(courses, func(c model.Course) uint { return c.ID })
+}
+
+func (d *IndexData) LoadPinnedCourses() {
+	var pinnedCourses []model.Course
+
+	if d.TUMLiveContext.User != nil {
+		pinnedCourses = d.TUMLiveContext.User.PinnedCourses
+		for i := range pinnedCourses {
+			pinnedCourses[i].Pinned = true
+		}
+		sortCourses(pinnedCourses)
+		d.PinnedCourses = commons.Unique(pinnedCourses, func(c model.Course) uint { return c.ID })
+	} else {
+		d.PinnedCourses = []model.Course{}
+	}
 }
 
 // LoadPublicCourses Load public courses of user. Filter courses which are already in IndexData.Courses

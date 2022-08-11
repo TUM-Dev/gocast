@@ -13,10 +13,10 @@
     <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
     <link rel="stylesheet" href="/static/node_modules/@silvermine/videojs-airplay/dist/silvermine-videojs-airplay.css">
 </head>
-<body x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}, 'showChat': $persist(false).as('chatOpen')}"
+<body x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}, 'showChat': $persist(false).as('chatOpen'), seekLogger: new watch.SeekLogger('{{$stream.ID}}')}"
       x-on:pausestart.window="paused=true"
       x-on:pauseend.window="paused=false"
-      x-init="new watch.Watch(); watch.startWebsocket()">
+      x-init="new watch.Watch(); watch.startWebsocket(); seekLogger.attach();">
 {{template "header" .IndexData.TUMLiveContext}}
 <div id="watchPageMainWrapper" class="lg:px-5 lg:pb-1">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">

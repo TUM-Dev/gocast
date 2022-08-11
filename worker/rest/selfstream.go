@@ -44,7 +44,7 @@ func (s *safeStreams) onPublishDone(w http.ResponseWriter, r *http.Request) {
 	defer s.mutex.Unlock()
 	if streamCtx, ok := s.streams[streamKey]; ok {
 		go func() {
-			worker.HandleStreamEnd(streamCtx)
+			worker.HandleStreamEnd(streamCtx, false)
 			worker.NotifyStreamDone(streamCtx)
 			worker.HandleSelfStreamRecordEnd(streamCtx)
 		}()
@@ -89,6 +89,13 @@ func (s *safeStreams) onPublish(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Authentication failed for SendSelfStreamRequest", http.StatusForbidden)
 		return
 	}
+	s.mutex.Lock()
+	if streamCtx, ok := s.streams[streamKey]; ok {
+		log.Debug("SelfStream already exists, stopping it.")
+		worker.HandleStreamEnd(streamCtx, true)
+	}
+	s.mutex.Unlock()
+
 	// register stream in local map
 	streamContext := worker.HandleSelfStream(resp, slug)
 

@@ -1,6 +1,7 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
 import { getPlayer } from "./TUMLiveVjs";
+import { Get, postData } from "./global";
 
 export class Watch {
     private readonly player: HTMLElement;

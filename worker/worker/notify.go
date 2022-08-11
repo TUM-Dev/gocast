@@ -98,10 +98,11 @@ func notifyTranscodingDone(streamCtx *StreamContext) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	resp, err := client.NotifyTranscodingFinished(ctx, &pb.TranscodingFinished{
-		WorkerID: cfg.WorkerID,
-		StreamID: streamCtx.streamId,
-		FilePath: streamCtx.getTranscodingFileName(),
-		Duration: streamCtx.duration,
+		WorkerID:   cfg.WorkerID,
+		StreamID:   streamCtx.streamId,
+		FilePath:   streamCtx.getTranscodingFileName(),
+		Duration:   streamCtx.duration,
+		SourceType: streamCtx.streamVersion,
 	})
 	if err != nil || !resp.Ok {
 		log.WithError(err).Error("Could not notify stream finished")
