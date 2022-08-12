@@ -58,7 +58,7 @@ export const initElements = function () {
         console.log(JSON.stringify(data));
         postData("api/users/init", data)
             .then(() => {
-                location.reload();
+                window.location.reload();
             })
             .catch((error) => {
                 console.log(error);
