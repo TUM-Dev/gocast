@@ -4,7 +4,7 @@ export * from "./notifications";
 export * from "./user-settings";
 export * from "./start-page";
 
-import { DateTime } from "luxon";
+import { DateTime, Duration } from "luxon";
 export { DateTime };
 
 export async function putData(url = "", data = {}) {
@@ -222,6 +222,46 @@ export function timer(expiry: string, leadingZero: boolean) {
         },
     };
 }
+
+function nextRelativeTimeUpdate(base: DateTime, time: DateTime, options: Object,
+                                delta: Duration = Duration.fromMillis(1), d0: Duration = Duration.fromMillis(1000)) {
+    // avoid constructing a whole new o every time
+    let o = { ...options, base };
+    function strForBase(b) {
+        o.base = b;
+        return time.toRelative(o);
+    }
+
+    const str0 = strForBase(base);
+    let dMax = d0;
+    while (str0 === strForBase(base.plus(dMax))) {
+        dMax = dMax.plus(dMax); // double
+    }
+
+    let dMin = Duration.fromMillis(0);
+    while (dMax - dMin > delta) {
+        const d = Duration.fromMillis((dMax + dMin) / 2);
+        if (strForBase(base.plus(d)) == str0) dMin = d;
+        else dMax = d;
+    }
+
+    return dMax;
+}
+
+export const dynamicRelativeTime = (time: DateTime, options: Object) => ({
+    init() {
+        const helper = () => {
+            const now = DateTime.now();
+            this.isFuture = time >= now;
+            this.relativeTime = time.toRelative({ ...options, base: now });
+            const wait = nextRelativeTimeUpdate(now, time, options);
+            setTimeout(() => { helper(); }, wait.toMillis());
+        }
+        helper();
+    },
+    relativeTime: "",
+    isFuture: false,
+});
 
 // getLoginReferrer returns "/" if document.referrer === "http[s]://<hostname>:<port>/login" and document.referrer if not
 export function getLoginReferrer(): string {

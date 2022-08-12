@@ -1,15 +1,21 @@
 {{define "box-border"}}border dark:border-gray-800 rounded-lg{{end}}
 
-{{/*TODO: make dynamic*/}}
-{{/*TODO: is this done*/}}
-{{define "timestamp"}}
-    <div x-data="{ timestamp: global.DateTime.fromSeconds({{get . "date" | unixEpoch}}) }"
+{{define "timestamp"}} {{/*context?(always?, before?, after?)*/}}
+{{/*    <div x-data="{ timestamp: global.DateTime.fromSeconds({{get . "date" | unixEpoch}}) }"*/}}
+    <div x-data="{ timestamp: global.DateTime.fromSeconds({{now | unixEpoch | add (eq (randInt 0 2) 0 | ternary (randInt -90 91) (randInt -259200 259200))}}) }"
          :title="timestamp.toLocaleString(global.DateTime.DATETIME_MED_WITH_WEEKDAY)"
          class="inline-block">
-        <i class="pr-1 fas fa-clock"></i>
-        {{with get . "context"}}<span>{{.}}{{end}}
-        <span x-text="timestamp.toRelative()"></span>
-    {{if get . "context"}}</span>{{end}}
+        <div x-data="dynamicRelativeTime(timestamp, { unit: ['years', 'months', 'weeks', 'days', 'hours', 'minutes'] })">
+            <i class="pr-1 fas fa-clock"></i>
+            <span>
+            {{with get . "context"}}
+                    <span x-data="{{. | toJson}}"
+                          x-text="{{if get . "always"}}always{{else}}isFuture ? before : after{{end}}">
+                    </span>
+            {{end}}
+                <span x-text="relativeTime"></span>
+            </span>
+        </div>
     </div>
 {{end}}
 
@@ -135,8 +141,8 @@
         ($stream.LiveNow | ternary (dict "label" "Live" "color" "bg-danger text-white" "icon" "tower-cell") (dict))
         ($course.IsHidden | ternary (dict "label" "Hidden" "color" "bg-blue-800 text-white" "icon" "eye-slash") (dict))
         | compact)
-    "date" $stream.End
-    "date-context" ($stream.LiveNow | ternary "Ends " "Streamed ")
+    "date" ($stream.LiveNow | ternary $stream.End (ge (now | unixEpoch) ($stream.End | unixEpoch) | ternary $stream.End $stream.Start))
+    "date-context" (dict "before" ($stream.LiveNow | ternary "Ends" "Scheduled") "after" "Streamed")
     "location" $lectureHall
     "actions" ($standalone | ternary
         (list
@@ -145,6 +151,7 @@
             | compact)
         (list))}}
 
+    {{/*TODO: enhance dynamic dates to accept various ranges and replace "date" above*/}}
 {{/*    (randNumeric 1 | atoi | ge 5 | ternary (dict "label" "Live" "color" "bg-red-700 text-white" "icon" "tower-cell") (dict))*/}}
 {{/*    ((.Course.IsHidden | and false | or (randNumeric 1 | atoi | ge 5)) | ternary (dict "label" "Hidden" "color" "bg-blue-800 text-white" "icon" "eye-slash") (dict))*/}}
 </div>
@@ -218,7 +225,7 @@
     {{if .IsLive | and false}}
         Live now
     {{else if .HasNextLecture}}
-        {{template "timestamp" dict "date" .GetNextLecture.Start "context" "Scheduled "}}
+        {{template "timestamp" dict "date" .GetNextLecture.Start "context" (dict "always" "Scheduled ")}}
     {{else}}
         No upcoming lectures
     {{end}}
