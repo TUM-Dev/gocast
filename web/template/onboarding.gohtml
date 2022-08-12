@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Setup</title>
     {{template "headImports" .VersionTag}}
+    <script src="/static/assets/ts-dist/admin.bundle.js?v={{.VersionTag}}"></script>
 </head>
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
 <body class="bg-primary" x-init="admin.initElements()">
