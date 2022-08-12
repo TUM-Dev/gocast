@@ -106,7 +106,7 @@ func TestUsersCRUD(t *testing.T) {
 		response := createUserResponse{
 			Name:  userLecturer.Name,
 			Email: userLecturer.Email.String,
-			Role:  model.AdminType, // can only test with admin, since Mails aren't mocked yet
+			Role:  model.LecturerType, // can only test with admin, since Mails aren't mocked yet
 		}
 
 		gomino.TestCases{
@@ -143,7 +143,7 @@ func TestUsersCRUD(t *testing.T) {
 				Body:         bytes.NewBuffer([]byte{}),
 				ExpectedCode: http.StatusBadRequest,
 			},
-			"POST[CreateUser(lecturer) returns error]": {
+			"POST[getCreateUserHandlers(lecturer) returns error]": {
 				Router: func(r *gin.Engine) {
 					wrapper := dao.DaoWrapper{
 						UsersDao: func() dao.UsersDao {
@@ -161,31 +161,15 @@ func TestUsersCRUD(t *testing.T) {
 				Body:         request,
 				ExpectedCode: http.StatusInternalServerError,
 			},
-			"POST[CreateUser(admin) returns error]": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						UsersDao: func() dao.UsersDao {
-							usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
-							usersMock.EXPECT().AreUsersEmpty(gomock.Any()).Return(true, nil)
-							usersMock.EXPECT().CreateUser(gomock.Any(), gomock.Any()).Return(errors.New(""))
-							return usersMock
-						}(),
-					}
-					configGinUsersRouter(r, wrapper)
-				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
-				Body:         request,
-				ExpectedCode: http.StatusInternalServerError,
-			},
 			"POST[success]": {
 				Router: func(r *gin.Engine) {
 					wrapper := dao.DaoWrapper{
 						UsersDao: func() dao.UsersDao {
 							usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
-							usersMock.EXPECT().AreUsersEmpty(gomock.Any()).Return(true, nil)
+							usersMock.EXPECT().AreUsersEmpty(gomock.Any()).Return(false, nil)
 							usersMock.EXPECT().CreateUser(gomock.Any(), gomock.Any()).Return(nil)
+							usersMock.EXPECT().GetUserByEmail(gomock.Any(), request.Email).Return(testutils.Lecturer, nil)
+							usersMock.EXPECT().CreateRegisterLink(gomock.Any(), testutils.Lecturer).Return(model.RegisterLink{}, nil)
 							return usersMock
 						}(),
 					}
