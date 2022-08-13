@@ -194,7 +194,7 @@
                        autocomplete="off">
             </div>
             <div class="w-full mt-3">
-                <div class="w-full ml-5">
+                <div class="w-full ml-5" x-show="{{$course.ChatEnabled}}">
                     <input @change="lecture.updateIsDirty()" x-model="lecture.newIsChatEnabled"
                            class="w-auto mr-2" type="checkbox"/>
                     <span>Enable Live Chat</span>
