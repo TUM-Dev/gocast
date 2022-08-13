@@ -17,7 +17,7 @@
                            class="w-auto">
                     <span class="text-3">Recurring Event</span>
                 </label><br>
-                <label>
+                <label x-show="{{$course.ChatEnabled}}">
                     <input type="checkbox" x-model="formData.isChatEnabled" x-init="formData.isChatEnabled = {{$course.ChatEnabled}}"
                            class="w-auto">
                     <span class="text-3">Enable Live Chat</span>
