@@ -20,7 +20,7 @@ type Stream struct {
 	CourseID              uint
 	Start                 time.Time `gorm:"not null"`
 	End                   time.Time `gorm:"not null"`
-	ChatEnabled      bool      `gorm:"not null;default:false"`
+	ChatEnabled      bool      `gorm:"default:null"`
 	RoomName              string
 	RoomCode              string
 	EventTypeName         string
