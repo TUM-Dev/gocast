@@ -203,3 +203,88 @@ func TestUsers(t *testing.T) {
 			Run(t, testutils.Equal)
 	})
 }
+
+func TestChatAccessChecker(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	tests := []struct {
+		name              string
+		courseChatEnabled bool
+		streamChatEnabled bool
+		isAdmin           bool
+	}{
+		{"ChatEnabled=false stream", true, false, true},
+		{"ChatEnabled=false course", false, true, true},
+		{"ChatEnabled=false course stream", false, false, true},
+		{"ChatEnabled=false stream", true, false, false},
+		{"ChatEnabled=false course", false, true, false},
+		{"ChatEnabled=false course stream", false, false, false},
+	}
+
+	apiEndpoints := []string{"/messages", "/active-poll", "/users", "/ws"}
+
+	for _, test := range tests {
+		for _, apiEndpoint := range apiEndpoints {
+			t.Run(fmt.Sprintf("GET[apiEndpoint=%s CourseChatEnabled=%t StreamChatEnabled=%t isAdmin=%t]", apiEndpoint, test.courseChatEnabled, test.streamChatEnabled, test.isAdmin), func(t *testing.T) {
+				uid := uint(1)
+				streamId := uint(1234)
+				courseId := uint(1111)
+				chats := []model.Chat{
+					{Message: "1", IsVisible: false},
+					{Message: "2", IsVisible: true},
+					{Message: "3", IsVisible: true},
+				}
+
+				w := httptest.NewRecorder()
+				c, r := gin.CreateTestContext(w)
+
+				name := "Hansi"
+				role := model.StudentType
+				if test.isAdmin {
+					name = "Admin"
+					role = model.AdminType
+				}
+
+				r.Use(func(c *gin.Context) {
+					c.Set("TUMLiveContext", tools.TUMLiveContext{User: &model.User{
+						Model: gorm.Model{ID: uid},
+						Name:  name,
+						Role:  uint(role),
+					}})
+				})
+
+				// chat mock
+				chatMock := mock_dao.NewMockChatDao(gomock.NewController(t))
+				chatMock.EXPECT().GetAllChats(uid, streamId).Return(chats, nil).AnyTimes()
+
+				// streams mock
+				streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+				streamsMock.EXPECT().GetStreamByID(gomock.Any(), fmt.Sprintf("%d", streamId)).Return(model.Stream{
+					Model:       gorm.Model{ID: streamId},
+					CourseID:    courseId,
+					ChatEnabled: test.streamChatEnabled,
+				}, nil).AnyTimes()
+
+				// course mock
+				courseMock := mock_dao.NewMockCoursesDao(gomock.NewController(t))
+
+				course := model.Course{ChatEnabled: test.courseChatEnabled}
+
+				if !test.isAdmin {
+					course.Visibility = "public"
+				}
+
+				courseMock.EXPECT().GetCourseById(gomock.Any(), courseId).Return(course, nil).AnyTimes()
+
+				chat := r.Group("/api/chat")
+				configGinChatRouter(chat, dao.DaoWrapper{ChatDao: chatMock, StreamsDao: streamsMock, CoursesDao: courseMock})
+
+				endpoint := fmt.Sprintf("/api/chat/%d%s", streamId, apiEndpoint)
+				c.Request, _ = http.NewRequest(http.MethodGet, endpoint, nil)
+				r.ServeHTTP(w, c.Request)
+
+				assert.Equal(t, http.StatusForbidden, w.Code)
+				assert.Equal(t, "", w.Body.String())
+			})
+		}
+	}
+}
