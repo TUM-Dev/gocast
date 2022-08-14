@@ -21,7 +21,7 @@ func configGinRealtimeRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper)
 func (r realtimeRoutes) handleRealtimeConnect(c *gin.Context) {
 	properties := make(map[string]interface{}, 1)
 	properties["ctx"] = c
-	properties["dao"] = &r.DaoWrapper
+	properties["dao"] = r.DaoWrapper
 
 	if err := RealtimeInstance.HandleRequest(c.Writer, c.Request, properties); err != nil {
 		log.WithError(err).Warn("Something went wrong while handling Realtime-Socket request")
