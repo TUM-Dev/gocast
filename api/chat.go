@@ -568,9 +568,9 @@ func chatOnSubscribe(psc *realtime.Context) {
 }
 
 func chatOnUnsubscribe(psc *realtime.Context) {
-	var daoWrapper *dao.DaoWrapper
+	var daoWrapper dao.DaoWrapper
 	if ctx, ok := psc.Client.Get("dao"); ok {
-		daoWrapper = ctx.(*dao.DaoWrapper)
+		daoWrapper = ctx.(dao.DaoWrapper)
 	} else {
 		sentry.CaptureException(errors.New("daoWrapper should exist but doesn't"))
 		return
@@ -595,7 +595,7 @@ func chatOnUnsubscribe(psc *realtime.Context) {
 	defer afterUnsubscribe(psc.Param("streamID"), joinTime, tumLiveContext.Stream.Recording, daoWrapper)
 }
 
-func afterUnsubscribe(id string, joinTime time.Time, recording bool, daoWrapper *dao.DaoWrapper) {
+func afterUnsubscribe(id string, joinTime time.Time, recording bool, daoWrapper dao.DaoWrapper) {
 	// watched at least 5 minutes of the lecture and stream is VoD? Count as view.
 	if recording && joinTime.Before(time.Now().Add(time.Minute*-5)) {
 		err := daoWrapper.AddVodView(id)

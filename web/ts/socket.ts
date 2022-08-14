@@ -81,6 +81,11 @@ export const realtime = {
         console.info("[WS_REALTIME_DEBUG]", description, ...data);
     },
 
+    _triggerConnectionStatusEvent(status: boolean) {
+        const event = new CustomEvent("wsrealtimeconnectionchange", { detail: { status } });
+        window.dispatchEvent(event);
+    },
+
     async _afterConnect() {
         this._debug("connected");
 
@@ -100,6 +105,7 @@ export const realtime = {
             this._ws = new WebSocket(`${wsProto}${window.location.host}/api/pub-sub/ws`);
             this._ws.onopen = () => {
                 this._afterConnect();
+                this._triggerConnectionStatusEvent(true);
                 if (!promiseDone) {
                     promiseDone = true;
                     res();
@@ -112,6 +118,7 @@ export const realtime = {
             };
 
             this._ws.onclose = () => {
+                this._triggerConnectionStatusEvent(false);
                 this._debug("disconnected");
                 // connection closed, discard old websocket and create a new one after backoff
                 // don't recreate new connection if page has been loaded more than 12 hours ago
