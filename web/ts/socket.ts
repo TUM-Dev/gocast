@@ -10,7 +10,7 @@ const RealtimeMessageTypes = {
 };
 
 export const realtime = {
-    _debugging: true,
+    _debugging: false,
     _ws: null,
     _handler: {},
 
