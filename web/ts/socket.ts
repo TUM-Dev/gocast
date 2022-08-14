@@ -27,6 +27,7 @@ export const realtime = {
                 payload: payload,
             }),
         );
+        this._debug("🔵 Send", { type, channel, payload });
     },
 
     async subscribeChannel(channel: string, handler?: MessageHandlerFn) {
@@ -67,7 +68,7 @@ export const realtime = {
     },
 
     _handleMessage({ channel, payload }) {
-        this._debug("received message ", { channel, payload });
+        this._debug("⚪️️ Received", { channel, payload });
         if (this._handler[channel]) {
             for (const handler of this._handler[channel]) {
                 handler(payload);
