@@ -30,6 +30,7 @@ export const realtime = {
     },
 
     async subscribeChannel(channel: string, handler?: MessageHandlerFn) {
+        await this._lazyInit();
         if (handler) this.registerHandler(channel, handler);
         await this.send(channel, {
             type: RealtimeMessageTypes.RealtimeMessageTypeSubscribe,
@@ -38,6 +39,7 @@ export const realtime = {
     },
 
     async unsubscribeChannel(channel: string, { unregisterHandler = true }) {
+        await this._lazyInit();
         if (unregisterHandler) {
             delete this._handler[channel];
         }
