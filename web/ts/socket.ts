@@ -20,7 +20,7 @@ export const realtime = {
 
     async send(channel: string, { payload = {}, type = RealtimeMessageTypes.RealtimeMessageTypeChannelMessage }) {
         await this._lazyInit();
-        this._ws.send(
+        await this._ws.send(
             JSON.stringify({
                 type: type,
                 channel: channel,
@@ -34,6 +34,7 @@ export const realtime = {
         await this.send(channel, {
             type: RealtimeMessageTypes.RealtimeMessageTypeSubscribe,
         });
+        this._debug("Subscribed", channel);
     },
 
     async unsubscribeChannel(channel: string, { unregisterHandler = true }) {
@@ -43,6 +44,7 @@ export const realtime = {
         await this.send(channel, {
             type: RealtimeMessageTypes.RealtimeMessageTypeUnsubscribe,
         });
+        this._debug("Unsubscribed", channel);
     },
 
     registerHandler(channel: string, handler: MessageHandlerFn) {
@@ -76,13 +78,25 @@ export const realtime = {
         console.info("[WS_REALTIME_DEBUG]", description, ...data);
     },
 
+    async _afterConnect() {
+        this._debug("connected");
+
+        // Re-Subscribe to all channels
+        for (const channel of Object.keys(this._handler)) {
+            await this.send(channel, {
+                type: RealtimeMessageTypes.RealtimeMessageTypeSubscribe,
+            });
+            this._debug("Re-Subscribed", channel);
+        }
+    },
+
     _connect(retryDelay: number) {
         return new Promise<void>((res, rej) => {
             let promiseDone = false;
             const wsProto = window.location.protocol === "https:" ? `wss://` : `ws://`;
             this._ws = new WebSocket(`${wsProto}${window.location.host}/api/pub-sub/ws`);
-            this._ws.onopen = (e) => {
-                this._debug("connected", e);
+            this._ws.onopen = () => {
+                this._afterConnect();
                 if (!promiseDone) {
                     promiseDone = true;
                     res();

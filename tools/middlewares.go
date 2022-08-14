@@ -234,9 +234,9 @@ func InitStreamRealtime() realtime.SubscriptionMiddleware {
 			return realtime.NewError(http.StatusBadRequest, "daoWrapper should exist but doesn't")
 		}
 
-		var wrapper *dao.DaoWrapper
-		if ctx, ok := context.Client.Get("dao"); ok {
-			wrapper = ctx.(*dao.DaoWrapper)
+		var wrapper dao.DaoWrapper
+		if daoRes, ok := context.Client.Get("dao"); ok {
+			wrapper = daoRes.(dao.DaoWrapper)
 		} else {
 			return realtime.NewError(http.StatusBadRequest, "daoWrapper should exist but doesn't")
 		}
