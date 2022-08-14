@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -9,10 +8,16 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
 	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
+	"github.com/matthiasreumann/gomino"
 	"net/http"
 	"testing"
 )
+
+func SearchRouterWrapper(r *gin.Engine) {
+	configGinSearchRouter(r, dao.DaoWrapper{})
+}
 
 func TestSearch(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -34,55 +39,60 @@ func TestSearch(t *testing.T) {
 			},
 		}
 
-		testCases := testutils.TestCases{
+		gomino.TestCases{
 			"missing query": {
-				Method:       http.MethodGet,
 				Url:          baseUrl,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"missing courseId": {
-				Method:       http.MethodGet,
 				Url:          fmt.Sprintf("%s?q=abc", baseUrl),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"invalid courseId": {
-				Method:       http.MethodGet,
 				Url:          fmt.Sprintf("%s?q=%s&courseId=abc", baseUrl, queryString),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not perform search": {
-				Method: http.MethodGet,
-				Url:    fmt.Sprintf("%s?q=%s&courseId=%d", baseUrl, queryString, testutils.CourseFPV.ID),
-				DaoWrapper: dao.DaoWrapper{
-					SearchDao: func() dao.SearchDao {
-						searchMock := mock_dao.NewMockSearchDao(ctrl)
-						searchMock.
-							EXPECT().
-							Search(queryString, testutils.CourseFPV.ID).
-							Return([]model.Stream{}, errors.New(""))
-						return searchMock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						SearchDao: func() dao.SearchDao {
+							searchMock := mock_dao.NewMockSearchDao(ctrl)
+							searchMock.
+								EXPECT().
+								Search(queryString, testutils.CourseFPV.ID).
+								Return([]model.Stream{}, errors.New(""))
+							return searchMock
+						}(),
+					}
+					configGinSearchRouter(r, wrapper)
 				},
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
-				Method: http.MethodGet,
-				Url:    fmt.Sprintf("%s?q=%s&courseId=%d", baseUrl, queryString, testutils.CourseFPV.ID),
-				DaoWrapper: dao.DaoWrapper{
-					SearchDao: func() dao.SearchDao {
-						searchMock := mock_dao.NewMockSearchDao(ctrl)
-						searchMock.
-							EXPECT().
-							Search(queryString, testutils.CourseFPV.ID).
-							Return([]model.Stream{testutils.StreamFPVNotLive}, nil)
-						return searchMock
-					}(),
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						SearchDao: func() dao.SearchDao {
+							searchMock := mock_dao.NewMockSearchDao(ctrl)
+							searchMock.
+								EXPECT().
+								Search(queryString, testutils.CourseFPV.ID).
+								Return([]model.Stream{testutils.StreamFPVNotLive}, nil)
+							return searchMock
+						}(),
+					}
+					configGinSearchRouter(r, wrapper)
 				},
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: testutils.First(json.Marshal(response)).([]byte),
-			},
-		}
-
-		testCases.Run(t, configGinSearchRouter)
+				ExpectedResponse: response,
+			}}.
+			Router(SearchRouterWrapper).
+			Method(http.MethodGet).
+			Url(fmt.Sprintf("%s?q=%s&courseId=%d", baseUrl, queryString, testutils.CourseFPV.ID)).
+			Run(t, testutils.Equal)
 	})
 }

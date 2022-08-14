@@ -9,6 +9,7 @@ import (
 // ConfigChatRouter configure gin router for chat (without gzip)
 func ConfigChatRouter(router *gin.RouterGroup) {
 	daoWrapper := dao.NewDaoWrapper()
+	router.Use(tools.ErrorHandler)
 	configGinChatRouter(router, daoWrapper)
 }
 
@@ -26,6 +27,8 @@ func ConfigRealtimeRouter(router *gin.RouterGroup) {
 func ConfigGinRouter(router *gin.Engine) {
 	daoWrapper := dao.NewDaoWrapper()
 
+	router.Use(tools.ErrorHandler)
+
 	configGinStreamRestRouter(router, daoWrapper)
 	configGinUsersRouter(router, daoWrapper)
 	configGinCourseRouter(router, daoWrapper)
@@ -41,4 +44,5 @@ func ConfigGinRouter(router *gin.Engine) {
 	configInfoPageRouter(router, daoWrapper)
 	configGinSearchRouter(router, daoWrapper)
 	configAuditRouter(router, daoWrapper)
+	configGinBookmarksRouter(router, daoWrapper)
 }

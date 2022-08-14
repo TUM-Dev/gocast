@@ -7,7 +7,9 @@ import (
 	"github.com/joschahenningsen/TUM-Live/worker/pb"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials/insecure"
+	"time"
 )
 
 // interactively test your implementation here
@@ -30,7 +32,13 @@ func main() {
 
 func dialIn(host string) (*grpc.ClientConn, error) {
 	credentials := insecure.NewCredentials()
-	log.Info("Connecting to:" + fmt.Sprintf("%s:50051", host))
-	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", host), grpc.WithTransportCredentials(credentials))
+	conn, err := grpc.Dial(fmt.Sprintf("%s:50051", host), grpc.WithConnectParams(grpc.ConnectParams{
+		Backoff: backoff.Config{
+			BaseDelay:  1 * time.Second,
+			Multiplier: 1.6,
+			MaxDelay:   15 * time.Second,
+		},
+	}), grpc.WithTransportCredentials(credentials))
+
 	return conn, err
 }

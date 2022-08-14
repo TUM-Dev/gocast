@@ -198,11 +198,18 @@ func InitStream(wrapper dao.DaoWrapper) gin.HandlerFunc {
 		if c.IsAborted() {
 			return
 		}
-		course, err := wrapper.CoursesDao.GetCourseById(c, stream.CourseID)
-		if err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
-			return
+		var course model.Course
+		if tumLiveContext.Course != nil {
+			course = *tumLiveContext.Course
+		} else {
+			foundCourse, err := wrapper.CoursesDao.GetCourseById(c, stream.CourseID)
+			if err != nil {
+				c.AbortWithStatus(http.StatusBadRequest)
+				return
+			}
+			course = foundCourse
 		}
+
 		if stream.Private && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(course)) {
 			RenderErrorPage(c, http.StatusForbidden, ForbiddenStreamAccess)
 			c.Abort()

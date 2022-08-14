@@ -85,6 +85,14 @@ prettier. There is also a [guide](https://www.jetbrains.com/help/go/eslint.html)
 `prettier` and `eslint` should run everytime you save. Additionally, GoLands formatter will now respect the `prettier`
 style rules.
 
+### Add Database Models:
+
+To create database models and their corresponding daos there is a helper script that can be used to automate this task:
+
+```shell
+go run cmd/modelGen/modelGen.go <NameOfYourModel(UpperCamelCase)>
+```
+
 ## Credit & Licenses
 
 - [Check out our dependencies](https://github.com/joschahenningsen/TUM-Live/network/dependencies)

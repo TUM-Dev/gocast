@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/realtime"
-	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
@@ -388,7 +389,10 @@ func (r chatRoutes) handleMessage(ctx tools.TUMLiveContext, context *realtime.Co
 func (r chatRoutes) getMessages(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
@@ -408,7 +412,11 @@ func (r chatRoutes) getMessages(c *gin.Context) {
 		chats, err = r.ChatDao.GetVisibleChats(uid, tumLiveContext.Stream.ID)
 	}
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get chat messages",
+			Err:           err,
+		})
 		return
 	}
 	c.JSON(http.StatusOK, chats)
@@ -417,13 +425,20 @@ func (r chatRoutes) getMessages(c *gin.Context) {
 func (r chatRoutes) getUsers(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	users, err := r.ChatDao.GetChatUsers(tumLiveContext.Stream.ID)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get chat users",
+			Err:           err,
+		})
 		return
 	}
 	type chatUserSearchDto struct {
@@ -441,13 +456,19 @@ func (r chatRoutes) getUsers(c *gin.Context) {
 func (r chatRoutes) getActivePoll(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	if tumLiveContext.User == nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "not logged in",
+		})
 		return
 	}
 	poll, err := r.ChatDao.GetActivePoll(tumLiveContext.Stream.ID)
@@ -458,7 +479,11 @@ func (r chatRoutes) getActivePoll(c *gin.Context) {
 
 	submitted, err := r.ChatDao.GetPollUserVote(poll.ID, tumLiveContext.User.ID)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get poll user vote",
+			Err:           err,
+		})
 		return
 	}
 
