@@ -13,7 +13,7 @@ func ConfigChatRouter(router *gin.RouterGroup) {
 	configGinChatRouter(router, daoWrapper)
 }
 
-// ConfigWSPubSubRouter configure gin router for live-updates (without gzip)
+// ConfigRealtimeRouter configure gin router for live-updates (without gzip)
 func ConfigRealtimeRouter(router *gin.RouterGroup) {
 	daoWrapper := dao.NewDaoWrapper()
 	configGinRealtimeRouter(router, daoWrapper)
