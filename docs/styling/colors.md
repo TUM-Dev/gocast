@@ -4,13 +4,14 @@
 
 #### Primary
 
-<img src="https://singlecolorimage.com/get/33fd8f/84x84"></img>
+| Class       | Hex      | # In stock                                                 |
+|-------------|----------|------------------------------------------------------------|
+| bg-blue-500 | #3b83f6        | <img src ="https://singlecolorimage.com/get/3b83f6/64x16"> |
+| bg-blue-600 | #2564eb | <img src ="https://singlecolorimage.com/get/2564eb/64x16">                                                       |
 
 <div style="display: flex">
     <div>
-        <span style="position: relative; display: flex;height:84px;width:84px;background-color: rgb(59 130 246);margin-right:8px">
-            <span style="position: absolute; left:8px; bottom:4px; color:white">#3b83f6</span>
-        </span>
+        <img src ="https://singlecolorimage.com/get/3b83f6/84x84" style="position: relative;display:flex;margin-right:8px">
         <p style="margin:0">bg-blue-500</p>
     </div>
     <div>
