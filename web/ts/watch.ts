@@ -302,3 +302,22 @@ export const videoStatListener = {
         }
     },
 };
+
+export function onShift(e) {
+    switch (e.key) {
+        case "?": {
+            toggleShortcutsModal();
+        }
+    }
+}
+
+export function toggleShortcutsModal() {
+    const el = document.getElementById("shortcuts-help-modal");
+    if (el !== undefined) {
+        if (el.classList.contains("hidden")) {
+            el.classList.remove("hidden");
+        } else {
+            el.classList.add("hidden");
+        }
+    }
+}
