@@ -1,0 +1,108 @@
+# Colors 
+
+### Light Mode
+
+#### Primary
+
+<div style="display: flex">
+    <div>
+        <span style="position: relative; display: flex;height:84px;width:84px;background-color: rgb(59 130 246);margin-right:8px">
+            <span style="position: absolute; left:8px; bottom:4px; color:white">#3b83f6</span>
+        </span>
+        <p style="margin:0">bg-blue-500</p>
+    </div>
+    <div>
+        <span style="position: relative; display: flex;height:84px;width:84px;background-color: rgb(37 99 235);margin-right:8px">
+            <span style="position: absolute; right:8px; top:4px; color:white">:hover</span>
+            <span style="position: absolute; left:8px; bottom:4px; color:white">#2564eb</span>
+        </span>
+        <p style="margin:0">bg-blue-600</p>
+    </div>
+</div>
+
+#### Secondary
+
+<div style="display: flex">
+    <div>
+        <span style="position: relative; display: flex;height:84px;width:84px;background-color: rgb(249 250 251);margin-right:8px">
+            <span style="position: absolute; left:8px; bottom:4px;">#f9fafb</span>
+        </span>
+        <p style="margin:0">bg-gray-50</p>
+    </div>
+    <div>
+        <span style="position: relative; display: flex;height:84px;width:84px;background-color: rgb(243 244 246);margin-right:8px">
+            <span style="position: absolute; left:8px; bottom:4px">#f3f4f6</span>
+        </span>
+        <p style="margin:0">bg-gray-100</p>
+    </div>
+    <div>
+        <span style="position: relative; display: flex;height:84px;width:84px;background-color: rgb(229 231 235);margin-right:8px">
+            <span style="position: absolute; left:8px; bottom:4px;">#e5e7eb</span>
+        </span>
+        <p style="margin:0">bg-gray-200</p>
+    </div>
+</div>
+
+#### Accent
+
+<div style="display: flex">
+    <div>
+        <span style="position: relative; display: flex;height:84px;width:84px;background-color: rgb(59, 130, 246, 0.5);margin-right:8px;">
+            <span style="position: absolute; left:8px; bottom:4px; color:white">#3b83f6</span>
+        </span>
+        <p style="margin:0">bg-blue-500/50</p>
+    </div>
+</div>
+
+<hr>
+
+### Dark theme
+
+#### Primary
+<div style="display: flex">
+    <div>
+        <span style="position: relative; display: flex;height:84px;width:84px;background-color: rgb(79 70 229);margin-right:8px">
+            <span style="position: absolute; left:8px; bottom:4px; color:white">#4e46e5</span>
+        </span>
+        <p style="margin:0">bg-indigo-600</p>
+    </div>
+    <div>
+        <span style="position: relative; display: flex;height:84px;width:84px;background-color: rgb(67 56 202);margin-right:8px">
+            <span style="position: absolute; left:8px; bottom:4px; color:white">#4438ca</span>
+        </span>
+        <p style="margin:0">bg-indigo-600</p>
+    </div>
+</div>
+
+#### Secondary
+
+<div style="display: flex">
+    <div>
+        <span style="position: relative; display: flex;height:84px;width:84px;background-color:rgb(53 61 71);margin-right:8px">
+            <span style="position: absolute; left:8px; bottom:4px;color:white;">#353d47</span>
+        </span>
+        <p style="margin:0;word-break: break-all;width:84px">bg-secondary-light</p>
+    </div>
+    <div>
+        <span style="position: relative; display: flex;height:84px;width:84px;background-color: rgb(31 41 55);margin-right:8px">
+            <span style="position: absolute; left:8px; bottom:4px;color:white">#1f2937</span>
+        </span>
+        <p style="margin:0">bg-gray-800</p>
+    </div>
+    <div>
+        <span style="position: relative; display: flex;height:84px;width:84px;background-color: rgb(22 27 34);margin-right:8px">
+            <span style="position: absolute; left:8px; bottom:4px;color:white;">#161b22</span>
+        </span>
+        <p style="margin:0">bg-secondary</p>
+    </div>
+</div>
+
+#### Accent
+<div style="display: flex">
+    <div>
+        <span style="position: relative; display: flex;height:84px;width:84px;background-color: rgba(79, 70, 229,0.5);margin-right:8px">
+            <span style="position: absolute; left:8px; bottom:4px; color:white">#4e46e5</span>
+        </span>
+        <p style="margin:0">bg-indigo-600/50</p>
+    </div>
+</div>
