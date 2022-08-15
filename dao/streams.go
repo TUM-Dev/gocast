@@ -79,7 +79,7 @@ func (d streamsDao) SaveTranscodingProgress(progress model.TranscodingProgress) 
 	return DB.Clauses(clause.OnConflict{UpdateAll: true}).Create(&progress).Error
 }
 
-//AddVodView Adds a stat entry to the database or increases the one existing for this hour
+// AddVodView Adds a stat entry to the database or increases the one existing for this hour
 func (d streamsDao) AddVodView(id string) error {
 	intId, err := strconv.Atoi(id)
 	if err != nil {
@@ -176,7 +176,7 @@ func (d streamsDao) GetStreamByID(ctx context.Context, id string) (stream model.
 	return res, nil
 }
 
-//AddVodView Adds a stat entry to the database or increases the one existing for this hour
+// AddVodView Adds a stat entry to the database or increases the one existing for this hour
 func AddVodView(id string) error {
 	intId, err := strconv.Atoi(id)
 	if err != nil {
@@ -206,16 +206,6 @@ func AddVodView(id string) error {
 	return err
 }
 
-func UpdateStream(stream model.Stream) error {
-	defer Cache.Clear()
-	err := DB.Model(&stream).Updates(map[string]interface{}{
-		"name":        stream.Name,
-		"description": stream.Description,
-		"start":       stream.Start,
-		"end":         stream.End}).Error
-	return err
-}
-
 func (d streamsDao) UpdateLectureSeries(stream model.Stream) error {
 	defer Cache.Clear()
 	err := DB.Table("streams").Where(
@@ -241,7 +231,7 @@ func (d streamsDao) GetWorkersForStream(stream model.Stream) ([]model.Worker, er
 	return res, err
 }
 
-//GetAllStreams returns all streams of the tumlive
+// GetAllStreams returns all streams of the tumlive
 func (d streamsDao) GetAllStreams() ([]model.Stream, error) {
 	var res []model.Stream
 	err := DB.Find(&res).Error

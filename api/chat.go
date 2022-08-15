@@ -554,6 +554,9 @@ func CollectStats(daoWrapper dao.DaoWrapper) func() {
 	return func() {
 		BroadcastStats(daoWrapper.StreamsDao)
 		for sID, sessions := range sessionsMap {
+			if len(sessions) == 0 {
+				continue
+			}
 			stat := model.Stat{
 				Time:     time.Now(),
 				StreamID: sID,
