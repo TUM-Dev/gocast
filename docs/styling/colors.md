@@ -1,10 +1,11 @@
-<html>
-<body>
-<h1>Colors</h1>
+# Colors 
 
-<h3>Light Mode</h3>
+### Light Mode
 
-<h6>Primary</h6>
+#### Primary
+
+<img src="https://singlecolorimage.com/get/33fd8f/84x84"></img>
+
 <div style="display: flex">
     <div>
         <span style="position: relative; display: flex;height:84px;width:84px;background-color: rgb(59 130 246);margin-right:8px">
@@ -21,7 +22,8 @@
     </div>
 </div>
 
-<h6>Secondary</h6>
+#### Secondary
+
 <div style="display: flex">
     <div>
         <span style="position: relative; display: flex;height:84px;width:84px;background-color: rgb(249 250 251);margin-right:8px">
@@ -43,7 +45,8 @@
     </div>
 </div>
 
-<h6>Accent</h6>
+#### Accent
+
 <div style="display: flex">
     <div>
         <span style="position: relative; display: flex;height:84px;width:84px;background-color: rgb(59, 130, 246, 0.5);margin-right:8px;">
@@ -55,9 +58,9 @@
 
 <hr>
 
-<h3>Dark theme</h3>
+### Dark theme
 
-<h6>Primary</h6>
+#### Primary
 <div style="display: flex">
     <div>
         <span style="position: relative; display: flex;height:84px;width:84px;background-color: rgb(79 70 229);margin-right:8px">
@@ -73,7 +76,8 @@
     </div>
 </div>
 
-<h6>Secondary</h6>
+#### Secondary
+
 <div style="display: flex">
     <div>
         <span style="position: relative; display: flex;height:84px;width:84px;background-color:rgb(53 61 71);margin-right:8px">
@@ -95,7 +99,7 @@
     </div>
 </div>
 
-<h6>Accent</h6>
+#### Accent
 <div style="display: flex">
     <div>
         <span style="position: relative; display: flex;height:84px;width:84px;background-color: rgba(79, 70, 229,0.5);margin-right:8px">
@@ -104,5 +108,3 @@
         <p style="margin:0">bg-indigo-600/50</p>
     </div>
 </div>
-</body>
-</html>
