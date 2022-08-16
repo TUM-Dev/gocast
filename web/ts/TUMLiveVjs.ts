@@ -201,9 +201,9 @@ export const skipSilence = function (options) {
  * Saves and retrieves the watch progress of the user as a fraction of the total watch time
  * @param streamID The ID of the currently watched stream
  * @param lastProgress The last progress fetched from the database
- * @param user: .TUMLiveContext.User
+ * @param loggedIn: User logged in?
  */
-export const watchProgress = function (streamID: number, lastProgress: number, user: object) {
+export const watchProgress = function (streamID: number, lastProgress: number, loggedIn: boolean) {
     const player = videojs("my-video");
     player.ready(() => {
         let duration;
@@ -234,7 +234,7 @@ export const watchProgress = function (streamID: number, lastProgress: number, u
         };
 
         // check if user is logged-in, if so proceed
-        if (user !== null && user !== undefined) {
+        if (loggedIn !== null && loggedIn !== undefined && loggedIn) {
             if (isNaN(queryT)) {
                 // Fetch the user's video progress from the database and set the time in the player
                 player.on("loadedmetadata", () => {
