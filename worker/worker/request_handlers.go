@@ -46,7 +46,6 @@ func HandlePremiere(request *pb.PremiereRequest) {
 		startTime:     time.Now(),
 		streamVersion: "",
 		courseSlug:    "PREMIERE",
-		stream:        true,
 		ingestServer:  request.IngestServer,
 		outUrl:        request.OutUrl,
 	}
@@ -69,7 +68,6 @@ func HandleSelfStream(request *pb.SelfStreamResponse, slug string) *StreamContex
 		startTime:     request.GetStreamStart().AsTime().Local(),
 		endTime:       time.Now().Add(time.Hour * 7),
 		publishVoD:    request.GetUploadVoD(),
-		stream:        true,
 		streamVersion: "COMB",
 		isSelfStream:  false,
 		ingestServer:  request.IngestServer,
@@ -203,7 +201,6 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 		endTime:       request.GetEnd().AsTime().Local(),
 		streamVersion: request.GetSourceType(),
 		publishVoD:    request.GetPublishVoD(),
-		stream:        request.GetPublishStream(),
 		streamName:    request.GetStreamName(),
 		ingestServer:  request.GetIngestServer(),
 		isSelfStream:  false,
@@ -214,13 +211,8 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	regularStreams.addContext(streamCtx.streamId, streamCtx)
 
 	//only record
-	if !streamCtx.stream {
-		S.startRecording(streamCtx.getRecordingFileName())
-		record(streamCtx)
-		S.endRecording(streamCtx.getRecordingFileName())
-	} else {
-		stream(streamCtx)
-	}
+	stream(streamCtx)
+
 	NotifyStreamDone(streamCtx) // notify stream/recording done
 	if streamCtx.discardVoD {
 		log.Info("Skipping VoD creation")
@@ -430,7 +422,6 @@ type StreamContext struct {
 	endTime        time.Time //end of the stream (including +10 minute safety)
 	streamVersion  string    //version of the stream to be handled, e.g. PRES, COMB or CAM
 	publishVoD     bool      //whether file should be uploaded
-	stream         bool      //whether streaming is enabled
 	streamCmd      *exec.Cmd // command used for streaming
 	transcodingCmd *exec.Cmd // command used for transcoding
 	isSelfStream   bool      //deprecated
