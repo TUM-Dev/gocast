@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
@@ -49,7 +50,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			admins.GET("/end", routes.endStream)
 			admins.POST("/issue", routes.reportStreamIssue)
 			admins.PATCH("/visibility", routes.updateStreamVisibility)
-
+			admins.PATCH("/chat/enabled", routes.updateChatEnabled)
 			sections := admins.Group("/sections")
 			{
 				sections.POST("", routes.createVideoSectionBatch)
@@ -595,4 +596,29 @@ func (r streamRoutes) updateStreamVisibility(c *gin.Context) {
 		})
 		return
 	}
+}
+
+func (r streamRoutes) updateChatEnabled(c *gin.Context) {
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	var req struct {
+		ChatEnabled bool `json:"isChatEnabled"`
+	}
+	err = c.BindJSON(&req)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "could not parse request body")
+		return
+	}
+
+	stream.ChatEnabled = req.ChatEnabled
+	err = r.DaoWrapper.StreamsDao.UpdateStream(stream)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "could not update stream")
+		return
+	}
+
 }

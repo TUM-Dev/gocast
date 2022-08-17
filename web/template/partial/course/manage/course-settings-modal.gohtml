@@ -1,0 +1,42 @@
+{{define "course-settings-modal"}}
+    <div class="select-none" role="alertdialog"
+         :class="{ 'absolute inset-0 z-50 flex items-center justify-center': showCourseSettingsModal}">
+        <div @keydown.escape="showCourseSettingsModal = false" @keydown.tab="" x-show="showCourseSettingsModal" x-trap="showCourseSettingsModal"
+             class="dark:bg-secondary-light bg-gray-200 text-3 fixed top-50 left-50 sm:w-auto overflow-y-auto w-full md:max-w-md md:mx-auto rounded shadow-lg py-4 text-left px-6">
+            <h3><span x-text="isChatEnabledForCourse ? 'Enable' : 'Disable'"></span> chat for each stream? </h3>
+            <hr class="pb-2">
+            <div>
+                <p>
+                    In the individual stream settings for some streams the chat is enabled and for some not.<br><br>
+                    Do you want to <strong>overwrite</strong> these existing settings and
+                    <strong x-text="isChatEnabledForCourse ? 'enable' : 'disable'"></strong>
+                    the chat for all streams in this course?
+                </p>
+                <br>
+                <div class="grid grid-cols-3 gap-4">
+                <button @click="
+                   await admin.submitFormAndEnableAllIndividualChats({{.Model.ID}}, isChatEnabledForCourse);
+                   showCourseSettingsModal = false;
+                   window.location.reload();
+                " class="border  border-gray-300  shadow-sm text-gray-600
+                hover:border-black hover:text-black
+                bg-green-500 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
+                dark:hover:text-white">Overwrite
+                </button>
+                <button @click="
+                    admin.sendCourseSettingsForm({{.Model.ID}})
+                    showCourseSettingsModal = false;
+                    window.location.reload();
+                " class="border bg-orange-500 border-gray-300 shadow-sm text-gray-600
+                hover:border-black hover:text-black
+                dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
+                dark:hover:text-white"><span x-text="isChatEnabledForCourse ? 'Enable' : 'Disable'"></span> Without Overwriting</button>
+                <button @click="showCourseSettingsModal = false;" class="border border-gray-300 shadow-sm text-gray-600
+            hover:border-black hover:text-black
+            bg-red-500 dark:border-gray-800 dark:text-gray-200 dark:hover:border-gray-100
+            dark:hover:text-white">Abort</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{{end}}
