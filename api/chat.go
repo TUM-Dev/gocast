@@ -24,7 +24,7 @@ var m *melody.Melody
 
 const maxParticipants = 10000
 
-func ChatAccessChecker() gin.HandlerFunc {
+func chatAccessChecker() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		foundContext, exists := c.Get("TUMLiveContext")
 		if !exists {
@@ -45,7 +45,7 @@ func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 
 	wsGroup := router.Group("/:streamID")
 	wsGroup.Use(tools.InitStream(daoWrapper))
-	wsGroup.Use(ChatAccessChecker())
+	wsGroup.Use(chatAccessChecker())
 	wsGroup.GET("/messages", routes.getMessages)
 	wsGroup.GET("/active-poll", routes.getActivePoll)
 	wsGroup.GET("/users", routes.getUsers)
@@ -79,7 +79,7 @@ func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 			log.WithError(err).Warn("could not unmarshal request")
 			return
 		}
-		
+
 		if !(tumLiveContext.Course.ChatEnabled && tumLiveContext.Stream.ChatEnabled) {
 			ctx.(*gin.Context).AbortWithStatus(http.StatusForbidden)
 			return
