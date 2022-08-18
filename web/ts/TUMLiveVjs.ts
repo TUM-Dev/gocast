@@ -279,8 +279,7 @@ export const watchProgress = function (streamID: number, lastProgress: number, l
 /**
  * Registers a time watcher that observes the time of the current player
  * @param callBack call back function responsible for handling player time updates
- * @return callBack function that got registered for listening to player time updates
- * (can be used to deregister time watcher again in )
+ * @return callBack function that got registered for listening to player time updates (used to deregister)
  */
 export const registerTimeWatcher = function (callBack: (currentPlayerTime: number) => void): () => void {
     const timeWatcherCallBack: () => void = () => {
