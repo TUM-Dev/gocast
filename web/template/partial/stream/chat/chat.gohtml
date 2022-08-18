@@ -45,7 +45,7 @@
                 </div>
             {{end}}
             <div x-show="show" class="ml-auto my-auto">
-                <button class="font-semibold text-xs  pr-3"
+                <button class="font-semibold text-xs pr-3"
                         :class="c.chatReplayActive ? 'dark:text-gray-200' : 'dark:text-gray-500 text-gray-500'"
                         x-show="{{not $liveNow}}"
                         @click="c.chatReplayActive = !c.chatReplayActive;"
