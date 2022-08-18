@@ -320,6 +320,7 @@ func (d streamsDao) SetStreamNotLiveById(streamID uint) error {
 	return DB.Debug().Exec("UPDATE `streams` SET `live_now`='0' WHERE id = ?", streamID).Error
 }
 
+// SetStreamLiveNowTimestampById stores timestamp when stream is going live.
 func (d streamsDao) SetStreamLiveNowTimestampById(streamID uint, liveNowTimestamp time.Time) error {
 	defer Cache.Clear()
 	return DB.Model(model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"LiveNowTimestamp": liveNowTimestamp}).Error
