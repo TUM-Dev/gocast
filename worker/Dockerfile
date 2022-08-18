@@ -17,7 +17,7 @@ FROM alpine:3.16
 
 RUN apk add --no-cache \
   ffmpeg=5.0.1-r1 \
-  tzdata=2022a-r0
+  tzdata=2022c-r0
 
 # copy shared libraries for tesseract
 COPY --from=builder /usr/lib/liblept*.so.* /usr/lib/
