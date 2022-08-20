@@ -33,6 +33,7 @@ func TestChannelSubscribe(t *testing.T) {
 
 	t.Run("With Params", func(t *testing.T) {
 		var subContext *Context
+		var unsubContext *Context
 		path := "example/:testParam/test"
 		testParam := "foo-bar"
 		testPath := strings.Replace(path, ":testParam", testParam, 1)
@@ -44,6 +45,9 @@ func TestChannelSubscribe(t *testing.T) {
 			OnSubscribe: func(s *Context) {
 				subContext = s
 			},
+			OnUnsubscribe: func(s *Context) {
+				unsubContext = s
+			},
 		})
 
 		store.Subscribe(&Client{Id: clientId}, testPath)
@@ -54,6 +58,16 @@ func TestChannelSubscribe(t *testing.T) {
 
 		if subContext.params["testParam"] != testParam {
 			t.Errorf("subContext.params[\"testParam\"] = %s, want %s", subContext.params["testParam"], testParam)
+		}
+
+		store.Unsubscribe(clientId, testPath)
+
+		if result := channel.IsSubscribed(testPath, clientId); result {
+			t.Errorf("channel.IsSubscribed(%s, %s) = true, want false", testPath, clientId)
+		}
+
+		if unsubContext.params["testParam"] != testParam {
+			t.Errorf("unsubContext.params[\"testParam\"] = %s, want %s", unsubContext.params["testParam"], testParam)
 		}
 	})
 }
