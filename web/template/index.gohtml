@@ -61,6 +61,7 @@
             {{if $show_suggested}} [suggested-start] 'suggested suggested' auto [suggested-end] {{end}}
             {{if $show_preferred_courses}} [preferred-courses-start] 'preferred-courses preferred-courses' auto [preferred-courses-end] {{end}}
             {{if $show_other_courses}} [other-courses-start] 'other-courses other-courses' auto [other-courses-end] {{end}}
+            [hidden-courses-start] 'hidden-courses hidden-courses' auto [hidden-courses-end]
         }
     </style>
 
@@ -179,6 +180,14 @@
                 {{template "highlight-box-tail"}}
             </div>
         {{end}}
+        <div style="grid-area: hidden-courses">
+            {{template "highlight-box-head" dict "title" "Hidden Courses"}} {{/*"highlight-color" "dark:bg-purple-400 bg-purple-600" */}}
+            {{range $course := .HiddenCourses}}
+                {{template "course-group-head" $course}}
+                {{template "course-group-tail"}}
+            {{end}}
+            {{template "highlight-box-tail"}}
+        </div>
     </div>
 </div>
 {{template "semesterselection" .}}
@@ -192,7 +201,7 @@
             { headers: { "x-api-key" : {{env "CAT_API_KEY"}} }});
         const data = await response.json();
         for (let i = 0; i < catImages.length; i++) {
-            catImages[i].src = data[i].url;
+            catImages[i].src = data[i % data.length].url;
         }
     })();
 </script>

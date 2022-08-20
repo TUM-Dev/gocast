@@ -27,11 +27,8 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	router.POST("/api/users/settings/enableCast", routes.updateEnableCast)
 	router.POST("/api/users/settings/playbackSpeeds", routes.updatePlaybackSpeeds)
 
-	router.POST("/api/users/pinCourse", func(c *gin.Context) {
-		routes.pinCourse(c, true)
-	})
-	router.POST("/api/users/unpinCourse", func(c *gin.Context) {
-		routes.pinCourse(c, false)
+	router.POST("/api/users/updateCourseFlag", func(c *gin.Context) {
+		routes.updateCourseFlag(c)
 	})
 
 	router.GET("/api/users/exportData", routes.exportPersonalData)
@@ -295,9 +292,18 @@ func (r usersRoutes) addSingleUserToCourse(name string, email string, course mod
 	}
 }
 
-func (r usersRoutes) pinCourse(c *gin.Context, pin bool) {
+type UserCourseFlagType int
+
+const (
+	Pinned UserCourseFlagType = iota + 1
+	Hidden
+)
+
+func (r usersRoutes) updateCourseFlag(c *gin.Context) {
 	var request struct {
-		CourseID uint `json:"courseID"`
+		CourseID uint               `json:"courseID"`
+		Flag     UserCourseFlagType `json:"flag"`
+		Value    bool               `json:"value"`
 	}
 	err := c.BindJSON(&request)
 	if err != nil {
@@ -324,7 +330,12 @@ func (r usersRoutes) pinCourse(c *gin.Context, pin bool) {
 	}
 
 	// Update user in database
-	err = r.UsersDao.PinCourse(*tumLiveContext.User, course, pin)
+	switch request.Flag {
+	case Pinned:
+		err = r.UsersDao.PinCourse(*tumLiveContext.User, course, request.Value)
+	case Hidden:
+		err = r.UsersDao.HideCourse(*tumLiveContext.User, course, request.Value)
+	}
 	if err != nil {
 		log.WithError(err).Error("Can't update user")
 		return

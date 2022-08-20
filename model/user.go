@@ -35,6 +35,7 @@ type User struct {
 	Courses             []Course       `gorm:"many2many:course_users" json:"-"` // courses a lecturer invited this user to
 	AdministeredCourses []Course       `gorm:"many2many:course_admins"`         // courses this user is an admin of
 	PinnedCourses       []Course       `gorm:"many2many:pinned_courses"`
+	HiddenCourses       []Course       `gorm:"many2many:hidden_courses"`
 
 	Settings []UserSetting `gorm:"foreignkey:UserID"`
 }

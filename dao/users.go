@@ -26,6 +26,7 @@ type UsersDao interface {
 	DeleteResetKey(key string)
 	UpdateUser(user model.User) error
 	PinCourse(user model.User, course model.Course, pin bool) error
+	HideCourse(user model.User, course model.Course, hide bool) error
 	UpsertUser(user *model.User) error
 	AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error
 	AddUserSetting(userSetting *model.UserSetting) error
@@ -92,7 +93,13 @@ func (d usersDao) GetUserByID(ctx context.Context, id uint) (user model.User, er
 		return cached.(model.User), nil
 	}
 	var foundUser model.User
-	dbErr := DB.Preload("AdministeredCourses").Preload("PinnedCourses.Streams").Preload("Courses.Streams").Preload("Settings").Find(&foundUser, "id = ?", id).Error
+	dbErr := DB.
+		Preload("AdministeredCourses").
+		Preload("PinnedCourses.Streams").
+		Preload("HiddenCourses.Streams").
+		Preload("Courses.Streams").
+		Preload("Settings").
+		Find(&foundUser, "id = ?", id).Error
 	if dbErr == nil {
 		Cache.SetWithTTL(fmt.Sprintf("userById%d", id), foundUser, 1, time.Second*10)
 	}
@@ -131,10 +138,21 @@ func (d usersDao) UpdateUser(user model.User) error {
 
 func (d usersDao) PinCourse(user model.User, course model.Course, pin bool) error {
 	defer Cache.Clear()
+	var assoc = DB.Model(&user).Association("PinnedCourses")
 	if pin {
-		return DB.Model(&user).Association("PinnedCourses").Append(&course)
+		return assoc.Append(&course)
 	} else {
-		return DB.Model(&user).Association("PinnedCourses").Delete(&course)
+		return assoc.Delete(&course)
+	}
+}
+
+func (d usersDao) HideCourse(user model.User, course model.Course, pin bool) error {
+	defer Cache.Clear()
+	var assoc = DB.Model(&user).Association("HiddenCourses")
+	if pin {
+		return assoc.Append(&course)
+	} else {
+		return assoc.Delete(&course)
 	}
 }
 

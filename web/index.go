@@ -36,8 +36,10 @@ func (r mainRoutes) MainPage(c *gin.Context) {
 	indexData.LoadLivestreams(c, r.DaoWrapper)
 	indexData.LoadPublicCourses(r.CoursesDao)
 	indexData.LoadPinnedCourses()
+	indexData.LoadHiddenCourses()
 	indexData.LoadSuggestedStreams(c, r.DaoWrapper, 16)
 	indexData.PropagatePinnedCourses()
+	indexData.PropagateHiddenCourses()
 
 	if err := templateExecutor.ExecuteTemplate(c.Writer, "index.gohtml", indexData); err != nil {
 		log.WithError(err).Errorf("Could not execute template: 'index.gohtml'")
@@ -97,6 +99,7 @@ type IndexData struct {
 	SuggestedStreams    []CourseStream
 	Courses             []model.Course
 	PinnedCourses       []model.Course
+	HiddenCourses       []model.Course
 	PublicCourses       []model.Course
 	Semesters           []dao.Semester
 	CurrentYear         int
@@ -299,12 +302,6 @@ func (d *IndexData) LoadSuggestedStreams(c *gin.Context, daoWrapper dao.DaoWrapp
 	}
 }
 
-//LiveStreams         []CourseStream
-//SuggestedStreams    []CourseStream
-//Courses             []model.Course
-//PinnedCourses       []model.Course
-//PublicCourses
-
 // PropagatePinnedCourses
 // TODO replace with proper implementation
 func (d *IndexData) PropagatePinnedCourses() {
@@ -324,6 +321,31 @@ func (d *IndexData) PropagatePinnedCourses() {
 			for _, targetCourse := range targetCourses {
 				if pinnedCourse.ID == targetCourse.ID {
 					targetCourse.Pinned = true
+				}
+			}
+		}
+	}
+}
+
+// PropagateHiddenCourses
+// TODO replace with proper implementation
+func (d *IndexData) PropagateHiddenCourses() {
+	if d.TUMLiveContext.User != nil {
+		var targetCourses []*model.Course
+		for _, streamCourses := range []*[]CourseStream{&d.LiveStreams, &d.SuggestedStreams} {
+			for i := range *streamCourses {
+				targetCourses = append(targetCourses, &((*streamCourses)[i].Course))
+			}
+		}
+		for _, courses := range []*[]model.Course{&d.Courses, &d.HiddenCourses} {
+			for i := range *courses {
+				targetCourses = append(targetCourses, &((*courses)[i]))
+			}
+		}
+		for _, hiddenCourse := range d.TUMLiveContext.User.HiddenCourses {
+			for _, targetCourse := range targetCourses {
+				if hiddenCourse.ID == targetCourse.ID {
+					targetCourse.Hidden = true
 				}
 			}
 		}
@@ -369,6 +391,21 @@ func (d *IndexData) LoadPinnedCourses() {
 		d.PinnedCourses = commons.Unique(pinnedCourses, func(c model.Course) uint { return c.ID })
 	} else {
 		d.PinnedCourses = []model.Course{}
+	}
+}
+
+func (d *IndexData) LoadHiddenCourses() {
+	var hiddenCourses []model.Course
+
+	if d.TUMLiveContext.User != nil {
+		hiddenCourses = d.TUMLiveContext.User.HiddenCourses
+		for i := range hiddenCourses {
+			hiddenCourses[i].Hidden = true
+		}
+		sortCourses(hiddenCourses)
+		d.HiddenCourses = commons.Unique(hiddenCourses, func(c model.Course) uint { return c.ID })
+	} else {
+		d.HiddenCourses = []model.Course{}
 	}
 }
 

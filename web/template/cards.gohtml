@@ -118,19 +118,23 @@
 {{define "stream-card"}} {{/*stream, standalone?, course?, lectureHall?*/}}
 
 {{/*TODO: default title*/}}
-{{/*TODO: pinned courses*/}}
+{{/*TODO: signed-out pin/hide*/}}
 {{$stream := get . "stream"}}
 {{$course := get . "course"}}
 {{$standalone := get . "standalone" | default false}} {{/*default true doesn't work because false is empty too*/}}
 {{$lectureHall := get . "lectureHall"}}
 
-<div class="h-full"
-        data-course-name="{{$course.Name}}"
-        {{if $standalone}}
-            x-data="{
-                hide: function() { global.hideCourse({{$course.Model.ID}}, $el.dataset$courseName);{{if $course.Pinned}}global.unpinCourse({{$course.Model.ID}});{{end}} },
-                pinUnpin: function() { {{if $course.Pinned}}global.unpinCourse({{$course.Model.ID}}){{else}}global.pinCourse({{$course.Model.ID}}){{end}}; } }"
-        {{end}}>
+<div
+    class="h-full"
+    data-course-name="{{$course.Name}}"
+    x-data="{
+        pinUnpin: function() {
+            global.updateCourseFlag({{$course.Model.ID}}, global.CourseFlag.Pinned, {{not $course.Pinned}})
+        },
+        hideUnhide: function() {
+            global.updateCourseFlag({{$course.Model.ID}}, global.CourseFlag.Hidden, {{not $course.Hidden}})
+        }
+    }">
 {{template "item-card" dict
     "title" ($stream.Name | default (printf "%s: TODO (Unnamed) Live Stream" $course.Name))
     "title-url" (printf "/w/%s/%d" $course.Slug $stream.Model.ID)
@@ -146,9 +150,8 @@
     "location" $lectureHall
     "actions" ($standalone | ternary
         (list
-            (dict "label" "Hide course" "icon" "eye-slash" "action" "hide()")
-            (dict "label" ($course.Pinned | ternary "Unpin this course" "Pin course") "icon" "thumbtack" "action" "pinUnpin()")
-            | compact)
+            (dict "label" ($course.Hidden | ternary "Show course" "Hide course") "icon" ($course.Hidden | ternary "eye" "eye-slash") "action" "hideUnhide()")
+            (dict "label" ($course.Pinned | ternary "Unpin course" "Pin course") "icon" "thumbtack" "action" "pinUnpin()"))
         (list))}}
 
     {{/*TODO: enhance dynamic dates to accept various ranges and replace "date" above*/}}
@@ -167,29 +170,33 @@
 {{/*</div>*/}}
 
 
-{{define "course-card-2"}} {{/*course, user*/}}
+{{/*{{define "course-card-2"}} */}}{{/*course, user*/}}
 {{/*TODO: countdown*/}}
-{{/*TODO: proper labels for pin/unpin*/}}
-{{/*TODO: hiding courses*/}}
 {{/*TODO: why user?*/}}
-{{$course := get . "course"}}
-{{$user := get . "user"}}
-<div data-course-name="{{$course.Name}}" x-data="{
-    hide: function() { global.hideCourse({{$course.Model.ID}}, $el.dataset.courseName);{{if $course.Pinned}}global.unpinCourse({{$course.Model.ID}});{{end}} },
-    pinUnpin: function() { {{if $course.Pinned}}global.unpinCourse({{$course.Model.ID}}){{else}}global.pinCourse({{$course.Model.ID}}){{end}}; } }">
-{{template "item-card" dict
-    "title" $course.Name
-    "title-url" (printf "/course/%d/%s/%s" $course.Year $course.TeachingTerm $course.Slug)
-    "badges" (list
-        (randNumeric 1 | atoi | ge 5 | and false | ternary (dict "label" "New" "color" "bg-gray-700 text-white") (dict))
-        | compact)
-    "location" .LectureHall
-    "actions" (list
-        (dict "label" "Hide course" "icon" "eye-slash" "action" "hide()")
-        (dict "label" ($course.Pinned | ternary "Unpin this course" "Pin course") "icon" "thumbtack" "action" "pinUnpin()")
-        | compact)}}
-</div>
-{{end}}
+{{/*{{$course := get . "course"}}*/}}
+{{/*{{$user := get . "user"}}*/}}
+{{/*<div*/}}
+{{/*    data-course-name="{{$course.Name}}"*/}}
+{{/*    x-data="{*/}}
+{{/*        pinUnpin: function() {*/}}
+{{/*            global.updateCourseFlag({{$course.Model.ID}}, global.CourseFlag.Pinned, {{not $course.Pinned}})*/}}
+{{/*        },*/}}
+{{/*        hide: function() {*/}}
+{{/*            global.updateCourseFlag({{$course.Model.ID}}, global.CourseFlag.Hidden, true)*/}}
+{{/*        }*/}}
+{{/*    }">*/}}
+{{/*{{template "item-card" dict*/}}
+{{/*    "title" $course.Name*/}}
+{{/*    "title-url" (printf "/course/%d/%s/%s" $course.Year $course.TeachingTerm $course.Slug)*/}}
+{{/*    "badges" (list*/}}
+{{/*        (randNumeric 1 | atoi | ge 5 | and false | ternary (dict "label" "New" "color" "bg-gray-700 text-white") (dict))*/}}
+{{/*        | compact)*/}}
+{{/*    "location" .LectureHall*/}}
+{{/*    "actions" (list*/}}
+{{/*        (dict "label" "Hide course" "icon" "eye-slash" "action" "hide()")*/}}
+{{/*        (dict "label" ($course.Pinned | ternary "Unpin course" "Pin course") "icon" "thumbtack" "action" "pinUnpin()"))}}*/}}
+{{/*</div>*/}}
+{{/*{{end}}*/}}
 
 {{/*{{define "stream-card"}}*/}}
 {{/*{{$liveStream := .}}*/}}
@@ -211,30 +218,38 @@
 {{define "course-group-head"}}
 
 {{/*TODO duplication with course-card-2*/}}
-<div data-course-name="{{.Name}}" x-data="{
-        hide: function() { global.hideCourse({{.Model.ID}}, $el.dataset.courseName);{{if .Pinned}}global.unpinCourse({{.Model.ID}});{{end}} },
-        pinUnpin: function() { {{if .Pinned}}global.unpinCourse({{.Model.ID}}){{else}}global.pinCourse({{.Model.ID}}){{end}}; } }">
+{{$course := .}}
+<div
+    data-course-name="{{$course.Name}}"
+    x-data="{
+        pinUnpin: function() {
+            global.updateCourseFlag({{$course.Model.ID}}, global.CourseFlag.Pinned, {{not $course.Pinned}})
+        },
+        hideUnhide: function() {
+            global.updateCourseFlag({{$course.Model.ID}}, global.CourseFlag.Hidden, {{not $course.Hidden}})
+        }
+    }">
 
     {{template "item-card-head" dict
         "title" .Name
         "title-url" (printf "/course/%d/%s/%s" .Year .TeachingTerm .Slug)}}
 
-    {{$course := .}}
     {{/*Order of conditions is important*/}}
     {{/*TODO: restore the full logic*/}}
     {{if .IsLive | and false}}
         Live now
     {{else if .HasNextLecture}}
-        {{template "timestamp" dict "date" .GetNextLecture.Start "context" (dict "always" "Scheduled ")}}
+        {{template "timestamp" dict
+            "date" .GetNextLecture.Start
+            "context" (dict "always" "Scheduled ")}}
     {{else}}
         No upcoming lectures
     {{end}}
 
     {{template "item-card-tail" dict
     "actions" (list
-        (dict "label" "Hide course" "icon" "eye-slash" "action" "hide()")
-        (dict "label" (.Pinned | default false | ternary "Unpin course" "Pin course") "icon" "thumbtack" "action" "pinUnpin()")
-        | compact)}}
+        (dict "label" (.Hidden | ternary "Show course" "Hide course") "icon" (.Hidden | ternary "eye" "eye-slash") "action" "hideUnhide()")
+        (dict "label" (.Pinned | ternary "Unpin course" "Pin course") "icon" "thumbtack" "action" "pinUnpin()"))}}
 
     <div class="mt-2">
 {{end}}
@@ -272,7 +287,8 @@
 {{/*Grid item for card-grid-head/tail. Pass the 'state' value returned by card-grid-head (or pass the parameters manually).*/}}
 {{define "card-grid-item-head"}}
 {{$args := .}}
-{{/*could be a parameter but maybe overkill*/}}
+{{/*idea: could be a parameter but maybe overkill*/}}
+{{/*unfortunately, doesn't work with tailwind*/}}
 {{/*{{$config := list*/}}
 {{/*    (dict "screen" "sm"  "columns" 2)*/}}
 {{/*    (dict "screen" "lg"  "columns" 3)*/}}
