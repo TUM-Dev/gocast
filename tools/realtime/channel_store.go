@@ -13,7 +13,7 @@ func (s *ChannelStore) init() {
 	s.channels = map[string]*Channel{}
 }
 
-func (s *ChannelStore) Register(path string, handlers ChannelHandlers) {
+func (s *ChannelStore) Register(path string, handlers ChannelHandlers) *Channel {
 	channel := Channel{
 		path:        strings.Split(path, channelPathSep),
 		handlers:    handlers,
@@ -21,6 +21,7 @@ func (s *ChannelStore) Register(path string, handlers ChannelHandlers) {
 	}
 	channel.subscribers.init()
 	s.channels[path] = &channel
+	return &channel
 }
 
 func (s *ChannelStore) Get(path string) (bool, *Channel, map[string]string) {
