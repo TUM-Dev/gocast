@@ -7,7 +7,7 @@ type ChannelSubscribers struct {
 	mutex       sync.RWMutex
 }
 
-func createKey(path string, clientId string) string {
+func createKey(clientId string, path string) string {
 	return clientId + "__" + path
 }
 
@@ -15,24 +15,24 @@ func (subs *ChannelSubscribers) init() {
 	subs.subscribers = map[string]*Context{}
 }
 
-func (subs *ChannelSubscribers) IsSubscribed(path string, clientId string) bool {
+func (subs *ChannelSubscribers) IsSubscribed(clientId string, path string) bool {
 	subs.mutex.Lock()
 	defer subs.mutex.Unlock()
-	var _, exists = subs.subscribers[createKey(path, clientId)]
+	var _, exists = subs.subscribers[createKey(clientId, path)]
 	return exists
 }
 
-func (subs *ChannelSubscribers) GetContext(path string, clientId string) (*Context, bool) {
+func (subs *ChannelSubscribers) GetContext(clientId string, path string) (*Context, bool) {
 	subs.mutex.Lock()
 	defer subs.mutex.Unlock()
-	var context, exists = subs.subscribers[createKey(path, clientId)]
+	var context, exists = subs.subscribers[createKey(clientId, path)]
 	return context, exists
 }
 
 func (subs *ChannelSubscribers) Add(context *Context) {
 	subs.mutex.Lock()
 	defer subs.mutex.Unlock()
-	subs.subscribers[createKey(context.FullPath, context.Client.Id)] = context
+	subs.subscribers[createKey(context.Client.Id, context.FullPath)] = context
 }
 
 func (subs *ChannelSubscribers) RemoveAllPaths(clientId string) []*Context {
@@ -48,8 +48,8 @@ func (subs *ChannelSubscribers) RemoveAllPaths(clientId string) []*Context {
 	return removed
 }
 
-func (subs *ChannelSubscribers) Remove(path string, clientId string) {
+func (subs *ChannelSubscribers) Remove(clientId string, path string) {
 	subs.mutex.Lock()
 	defer subs.mutex.Unlock()
-	delete(subs.subscribers, createKey(path, clientId))
+	delete(subs.subscribers, createKey(clientId, path))
 }

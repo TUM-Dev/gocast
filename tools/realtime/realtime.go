@@ -48,7 +48,7 @@ func (r *Realtime) HandleRequest(writer http.ResponseWriter, request *http.Reque
 // IsSubscribed checks whether a client is subscribed to a certain channelPath or not
 func (r *Realtime) IsSubscribed(channelPath string, clientId string) bool {
 	if found, channel, _ := r.channels.Get(channelPath); found {
-		return channel.IsSubscribed(channelPath, clientId)
+		return channel.IsSubscribed(clientId, channelPath)
 	}
 	return false
 }

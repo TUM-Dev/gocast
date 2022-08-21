@@ -69,22 +69,22 @@ func (c *Channel) HandleMessage(client *Client, message *Message) {
 		return
 	}
 
-	if context, ok := c.subscribers.GetContext(message.Channel, client.Id); ok {
+	if context, ok := c.subscribers.GetContext(client.Id, message.Channel); ok {
 		c.handlers.OnMessage(context, message)
 	}
 }
 
-func (c *Channel) IsSubscribed(path string, clientId string) bool {
-	return c.subscribers.IsSubscribed(path, clientId)
+func (c *Channel) IsSubscribed(clientId string, path string) bool {
+	return c.subscribers.IsSubscribed(clientId, path)
 }
 
-func (c *Channel) Unsubscribe(path string, clientId string) bool {
-	context, isSubscriber := c.subscribers.GetContext(path, clientId)
+func (c *Channel) Unsubscribe(clientId string, path string) bool {
+	context, isSubscriber := c.subscribers.GetContext(clientId, path)
 	if !isSubscriber {
 		return false
 	}
 
-	c.subscribers.Remove(path, clientId)
+	c.subscribers.Remove(clientId, path)
 	if c.handlers.OnUnsubscribe != nil {
 		c.handlers.OnUnsubscribe(context)
 	}
