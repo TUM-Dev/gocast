@@ -101,7 +101,7 @@ func (r *Realtime) messageHandler(c *Client, msg []byte) {
 	case MessageTypeSubscribe:
 		r.channels.Subscribe(c, req.Channel)
 	case MessageTypeUnsubscribe:
-		r.channels.Unsubscribe(req.Channel, c.Id)
+		r.channels.Unsubscribe(c.Id, req.Channel)
 	case MessageTypeChannelMessage:
 		r.channels.OnMessage(c, &req)
 	default:

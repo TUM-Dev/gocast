@@ -24,7 +24,7 @@ func TestChannelSubscribe(t *testing.T) {
 			t.Errorf("channel.IsSubscribed(%s, %s) = false, want true", clientId, simplePath)
 		}
 
-		store.Unsubscribe(simplePath, clientId)
+		store.Unsubscribe(clientId, simplePath)
 
 		if result := channel.IsSubscribed(clientId, simplePath); result {
 			t.Errorf("channel.IsSubscribed(%s, %s) = true, want false", clientId, simplePath)
@@ -60,7 +60,7 @@ func TestChannelSubscribe(t *testing.T) {
 			t.Errorf("subContext.params[\"testParam\"] = %s, want %s", subContext.params["testParam"], testParam)
 		}
 
-		store.Unsubscribe(testPath, clientId)
+		store.Unsubscribe(clientId, testPath)
 
 		if result := channel.IsSubscribed(clientId, testPath); result {
 			t.Errorf("channel.IsSubscribed(%s, %s) = true, want false", testPath, clientId)

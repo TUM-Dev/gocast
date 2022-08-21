@@ -151,16 +151,16 @@ func TestRealtimeConnection(t *testing.T) {
 		fakeClient := fakeSocket.NewClientConnects()
 		fakeClient.Send(SubMessage(testChannelPath))
 
-		if !channel.IsSubscribed(testChannelPath, fakeClient.Id) {
-			t.Errorf("channel.IsSubscribed(testChannelPath, fakeClient.Id) = false, want true")
+		if !channel.IsSubscribed(fakeClient.Id, testChannelPath) {
+			t.Errorf("channel.IsSubscribed(fakeClient.Id, testChannelPath) = false, want true")
 			return
 		}
-		if channel.IsSubscribed(channelPath, fakeClient.Id) {
-			t.Errorf("channel.IsSubscribed(channelPath, fakeClient.Id) = true, want false")
+		if channel.IsSubscribed(fakeClient.Id, channelPath) {
+			t.Errorf("channel.IsSubscribed(fakeClient.Id, channelPath) = true, want false")
 			return
 		}
-		if channel.IsSubscribed(testChannelPath2, fakeClient.Id) {
-			t.Errorf("channel.IsSubscribed(testChannelPath2, fakeClient.Id) = true, want false")
+		if channel.IsSubscribed(fakeClient.Id, testChannelPath2) {
+			t.Errorf("channel.IsSubscribed(fakeClient.Id, testChannelPath2) = true, want false")
 			return
 		}
 		if subContext == nil {
@@ -174,8 +174,8 @@ func TestRealtimeConnection(t *testing.T) {
 
 		fakeClient.Send(UnsubMessage(testChannelPath))
 
-		if channel.IsSubscribed(testChannelPath, fakeClient.Id) {
-			t.Errorf("channel.IsSubscribed(testChannelPath, fakeClient.Id) = true, want false")
+		if channel.IsSubscribed(fakeClient.Id, testChannelPath) {
+			t.Errorf("channel.IsSubscribed(fakeClient.Id, testChannelPath) = true, want false")
 			return
 		}
 		if unsubContext == nil {

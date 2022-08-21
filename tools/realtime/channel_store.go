@@ -60,9 +60,9 @@ func (s *ChannelStore) Subscribe(client *Client, channelPath string) bool {
 	return false
 }
 
-func (s *ChannelStore) Unsubscribe(channelPath string, clientId string) bool {
+func (s *ChannelStore) Unsubscribe(clientId string, channelPath string) bool {
 	if found, channel, _ := s.Get(channelPath); found {
-		return channel.Unsubscribe(channelPath, clientId)
+		return channel.Unsubscribe(clientId, channelPath)
 	}
 	return false
 }
