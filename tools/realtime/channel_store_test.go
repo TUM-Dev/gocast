@@ -14,20 +14,20 @@ func TestChannelSubscribe(t *testing.T) {
 		store.init()
 		channel := store.Register(simplePath, ChannelHandlers{})
 
-		if result := channel.IsSubscribed(simplePath, clientId); result {
-			t.Errorf("channel.IsSubscribed(%s, %s) = true, want false", simplePath, clientId)
+		if result := channel.IsSubscribed(clientId, simplePath); result {
+			t.Errorf("channel.IsSubscribed(%s, %s) = true, want false", clientId, simplePath)
 		}
 
 		store.Subscribe(&Client{Id: clientId}, simplePath)
 
-		if result := channel.IsSubscribed(simplePath, clientId); result {
-			t.Errorf("channel.IsSubscribed(%s, %s) = false, want true", simplePath, clientId)
+		if result := channel.IsSubscribed(clientId, simplePath); !result {
+			t.Errorf("channel.IsSubscribed(%s, %s) = false, want true", clientId, simplePath)
 		}
 
 		store.Unsubscribe(simplePath, clientId)
 
-		if result := channel.IsSubscribed(simplePath, clientId); result {
-			t.Errorf("channel.IsSubscribed(%s, %s) = true, want false", simplePath, clientId)
+		if result := channel.IsSubscribed(clientId, simplePath); result {
+			t.Errorf("channel.IsSubscribed(%s, %s) = true, want false", clientId, simplePath)
 		}
 	})
 
@@ -52,7 +52,7 @@ func TestChannelSubscribe(t *testing.T) {
 
 		store.Subscribe(&Client{Id: clientId}, testPath)
 
-		if result := channel.IsSubscribed(path, clientId); result {
+		if result := channel.IsSubscribed(clientId, path); result {
 			t.Errorf("channel.IsSubscribed(%s, %s) = false, want true", path, clientId)
 		}
 
@@ -62,7 +62,7 @@ func TestChannelSubscribe(t *testing.T) {
 
 		store.Unsubscribe(testPath, clientId)
 
-		if result := channel.IsSubscribed(testPath, clientId); result {
+		if result := channel.IsSubscribed(clientId, testPath); result {
 			t.Errorf("channel.IsSubscribed(%s, %s) = true, want false", testPath, clientId)
 		}
 
