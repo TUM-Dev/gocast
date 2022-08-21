@@ -79,12 +79,12 @@ func (c *Channel) IsSubscribed(path string, clientId string) bool {
 }
 
 func (c *Channel) Unsubscribe(path string, clientId string) bool {
-	context, isSubscriber := c.subscribers.GetContext(path, clientId)
+	context, isSubscriber := c.subscribers.GetContext(clientId, path)
 	if !isSubscriber {
 		return false
 	}
 
-	c.subscribers.Remove(path, clientId)
+	c.subscribers.Remove(clientId, path)
 	if c.handlers.OnUnsubscribe != nil {
 		c.handlers.OnUnsubscribe(context)
 	}

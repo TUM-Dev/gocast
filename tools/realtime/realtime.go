@@ -20,29 +20,38 @@ type Message struct {
 }
 
 type Realtime struct {
-	melody   *melody.Melody
-	clients  ClientStore
-	channels ChannelStore
+	connector *Connector
+	clients   ClientStore
+	channels  ChannelStore
 }
 
 // New Creates a new Realtime instance
-func New() *Realtime {
-	instance := Realtime{}
-	instance.init()
-	return &instance
+func New(connector *Connector) *Realtime {
+	r := Realtime{}
+
+	r.connector = connector
+	r.clients.init()
+	r.channels.init()
+	r.connector.hook(&Hooks{
+		OnConnect:    r.connectHandler,
+		OnDisconnect: r.disconnectHandler,
+		OnMessage:    r.messageHandler,
+	})
+
+	return &r
 }
 
 type handlerFunc func(c *Client)
 type handlerDataFunc func(c *Client, data []byte)
 
 // RegisterChannel registers a new channel
-func (r *Realtime) RegisterChannel(channelName string, handlers ChannelHandlers) {
-	r.channels.Register(channelName, handlers)
+func (r *Realtime) RegisterChannel(channelName string, handlers ChannelHandlers) *Channel {
+	return r.channels.Register(channelName, handlers)
 }
 
 // HandleRequest handles a new websocket request, adds the properties to the new client
 func (r *Realtime) HandleRequest(writer http.ResponseWriter, request *http.Request, properties map[string]interface{}) error {
-	return r.melody.HandleRequestWithKeys(writer, request, properties)
+	return r.connector.requestHandler(writer, request, properties)
 }
 
 // IsSubscribed checks whether a client is subscribed to a certain channelPath or not
@@ -71,26 +80,12 @@ func (r *Realtime) mapDataEventToClient(handler handlerDataFunc) func(*melody.Se
 	}
 }
 
-// init Initializes a realtime instance
-func (r *Realtime) init() {
-	r.melody = melody.New()
-	r.clients.init()
-	r.channels.init()
-	r.melody.HandleConnect(r.connectHandler)
-	r.melody.HandleDisconnect(r.mapEventToClient(r.disconnectHandler))
-	r.melody.HandleMessage(r.mapDataEventToClient(r.messageHandler))
-}
-
 // connectHandler handles a new melody connection
-func (r *Realtime) connectHandler(s *melody.Session) {
-	client := r.clients.Join(s, s.Keys())
-	s.Set("id", client.Id)
-}
+func (r *Realtime) connectHandler(client *Client) {}
 
 // disconnectHandler handles a client disconnect
 func (r *Realtime) disconnectHandler(c *Client) {
 	r.channels.UnsubscribeAll(c.Id)
-	r.clients.Remove(c.Id)
 }
 
 // messageHandler handles a new client message

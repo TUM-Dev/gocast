@@ -11,7 +11,7 @@ type realtimeRoutes struct {
 	dao.DaoWrapper
 }
 
-var RealtimeInstance = realtime.New()
+var RealtimeInstance = realtime.New(realtime.NewMelodyConnector())
 
 func configGinRealtimeRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 	routes := realtimeRoutes{daoWrapper}

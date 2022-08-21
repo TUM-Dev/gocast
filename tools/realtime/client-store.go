@@ -1,7 +1,6 @@
 package realtime
 
 import (
-	"github.com/gabstv/melody"
 	"github.com/google/uuid"
 	"sync"
 )
@@ -24,16 +23,13 @@ func (c *ClientStore) NextId() string {
 	return uuidString
 }
 
-func (c *ClientStore) Join(session *melody.Session, props map[string]interface{}) *Client {
+func (c *ClientStore) Join(client *Client) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	client := Client{
-		Id:         c.NextId(),
-		Session:    session,
-		properties: props,
+	if client.Id == "" {
+		client.Id = c.NextId()
 	}
-	c.clients[client.Id] = &client
-	return &client
+	c.clients[client.Id] = client
 }
 
 func (c *ClientStore) Get(id string) *Client {

@@ -1,11 +1,15 @@
 package realtime
 
-import "github.com/gabstv/melody"
+type MessageSendFunc func(message []byte) error
 
 type Client struct {
-	Id         string
-	Session    *melody.Session
-	properties map[string]interface{}
+	Id          string
+	sendMessage MessageSendFunc
+	properties  map[string]interface{}
+}
+
+func (client *Client) Send(message []byte) error {
+	return client.sendMessage(message)
 }
 
 func (client *Client) Get(key string) (value interface{}, exists bool) {
