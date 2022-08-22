@@ -1,0 +1,13 @@
+favicon: "assets/favicon.ico"
+manifest:
+  name: "TUM-Live"
+  shortname: "TUM-Live"
+  icons:
+    - src: "/static/assets/img/icons-192.png"
+      imagetype: "image/png"
+      sizes: "192x192"
+    - src: "/static/assets/img/icons-512.png"
+      imagetype: "image/png"
+      sizes: "512x512"
+  description: "TUM-Live, the livestreaming and VoD service of the Rechnerbetriebsgruppe at the department of informatics and mathematics at the Technical University of Munich"
+  bgcolor: "#161c22"

@@ -1,0 +1,19 @@
+{
+  "name": "{{.Name}}",
+  "short_name": "{{.ShortName}}",
+  "icons": [{{$maxIndex := .MaxIconIndex}}{{range $i, $icon := .Icons}}
+    {
+      "src": "{{$icon.Src}}",
+      "type": "{{$icon.ImageType}}",
+      "sizes": "{{$icon.Sizes}}"
+    }{{if lt $i $maxIndex}},{{end}}{{end}}
+  ],
+  "start_url": "/?source=pwa",
+  "background_color": "{{.BgColor}}",
+  "display_override": ["window-control-overlay", "minimal-ui"],
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "{{.BgColor}}",
+  "description": "{{.Description}}",
+  "screenshots": []
+}
