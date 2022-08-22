@@ -6,6 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"html/template"
+	"os"
 )
 
 var Branding BrandingCfg
@@ -16,10 +17,14 @@ func init() {
 }
 
 func renderManifestJSON() {
-	var manifest bytes.Buffer
+	var m bytes.Buffer
 	templ, _ := template.ParseFiles("tools/template/manifest.gotemplate")
-	_ = templ.ExecuteTemplate(&manifest, "manifest.gotemplate", Branding.Manifest)
-	fmt.Println(manifest.String())
+	_ = templ.ExecuteTemplate(&m, "manifest.gotemplate", Branding.Manifest)
+	err := os.WriteFile("web/assets/manifest.json", m.Bytes(), 0666)
+	if err != nil {
+		log.WithError(err).Panicln("can not create manifest.json.")
+		return
+	}
 }
 
 type BrandingCfg struct {
@@ -55,9 +60,9 @@ func (b *BrandingCfg) Init() {
 	err := v.ReadInConfig()
 	if err != nil {
 		if err == err.(viper.ConfigFileNotFoundError) {
-			log.WithError(err).Warn("tools.config.init: can't find config file")
+			log.WithError(err).Warn("tools.branding.init: can't find branding file")
 		} else {
-			panic(fmt.Errorf("fatal error config file: %v", err))
+			panic(fmt.Errorf("fatal error branding file: %v", err))
 		}
 	}
 

@@ -1,7 +1,7 @@
 favicon: "assets/favicon.ico"
 manifest:
-  name: "TUM-Live"
-  shortname: "TUM-Live"
+  name: "TUM Live"
+  shortname: "TUM Live"
   icons:
     - src: "/static/assets/img/icons-192.png"
       imagetype: "image/png"
