@@ -9,133 +9,140 @@ const RealtimeMessageTypes = {
     RealtimeMessageTypeChannelMessage: "message",
 };
 
-export const realtime = {
-    _debugging: false,
-    _ws: null,
-    _handler: {},
+export class Realtime {
+    private debugging: boolean = false;
+    private ws: WebSocket;
+    private handler: object = {};
 
-    init() {
-        return this._connect(WS_INITIAL_RETRY_DELAY);
-    },
+    // Singleton
+    private static instance;
+    static get(): Realtime {
+        if (this.instance == null) this.instance = new Realtime();
+        return this.instance;
+    }
+
+    public init() {
+        return this.connect(WS_INITIAL_RETRY_DELAY);
+    }
 
     async send(channel: string, { payload = {}, type = RealtimeMessageTypes.RealtimeMessageTypeChannelMessage }) {
-        await this._lazyInit();
-        await this._ws.send(
+        await this.lazyInit();
+        await this.ws.send(
             JSON.stringify({
                 type: type,
                 channel: channel,
                 payload: payload,
             }),
         );
-        this._debug("🔵 Send", { type, channel, payload });
-    },
+        this.debug("🔵 Send", { type, channel, payload });
+    }
 
-    async subscribeChannel(channel: string, handler?: MessageHandlerFn) {
-        await this._lazyInit();
+    public async subscribeChannel(channel: string, handler?: MessageHandlerFn) {
+        await this.lazyInit();
         if (handler) this.registerHandler(channel, handler);
         await this.send(channel, {
             type: RealtimeMessageTypes.RealtimeMessageTypeSubscribe,
         });
-        this._debug("Subscribed", channel);
-    },
+        this.debug("Subscribed", channel);
+    }
 
-    async unsubscribeChannel(channel: string, { unregisterHandler = true }) {
-        await this._lazyInit();
+    public async unsubscribeChannel(channel: string, { unregisterHandler = true }) {
+        await this.lazyInit();
         if (unregisterHandler) {
-            delete this._handler[channel];
+            delete this.handler[channel];
         }
         await this.send(channel, {
             type: RealtimeMessageTypes.RealtimeMessageTypeUnsubscribe,
         });
-        this._debug("Unsubscribed", channel);
-    },
+        this.debug("Unsubscribed", channel);
+    }
 
-    registerHandler(channel: string, handler: MessageHandlerFn) {
-        if (!this._handler[channel]) this._handler[channel] = [];
-        this._handler[channel].push(handler);
-    },
+    public registerHandler(channel: string, handler: MessageHandlerFn) {
+        if (!this.handler[channel]) this.handler[channel] = [];
+        this.handler[channel].push(handler);
+    }
 
-    unregisterHandler(channel: string, handler: MessageHandlerFn) {
-        if (this._handler[channel]) {
-            this._handler[channel] = this._handler[channel].filter((fn) => fn === handler);
+    public unregisterHandler(channel: string, handler: MessageHandlerFn) {
+        if (this.handler[channel]) {
+            this.handler[channel] = this.handler[channel].filter((fn) => fn === handler);
         }
-    },
+    }
 
-    _lazyInit() {
-        if (this._ws) return;
-        this._debug("lazy init");
+    private lazyInit() {
+        if (this.ws) return;
+        this.debug("lazy init");
         return this.init();
-    },
+    }
 
-    _handleMessage({ channel, payload }) {
-        this._debug("⚪️️ Received", { channel, payload });
-        if (this._handler[channel]) {
-            for (const handler of this._handler[channel]) {
+    private handleMessage({ channel, payload }) {
+        this.debug("⚪️️ Received", { channel, payload });
+        if (this.handler[channel]) {
+            for (const handler of this.handler[channel]) {
                 handler(payload);
             }
         }
-    },
+    }
 
-    _debug(description: string, ...data) {
-        if (!this._debugging) return;
+    private debug(description: string, ...data) {
+        if (!this.debugging) return;
         console.info("[WS_REALTIME_DEBUG]", description, ...data);
-    },
+    }
 
-    _triggerConnectionStatusEvent(status: boolean) {
+    private triggerConnectionStatusEvent(status: boolean) {
         const event = new CustomEvent("wsrealtimeconnectionchange", { detail: { status } });
         window.dispatchEvent(event);
-    },
+    }
 
-    async _afterConnect() {
-        this._debug("connected");
+    private async afterConnect(): Promise<void> {
+        this.debug("connected");
 
         // Re-Subscribe to all channels
-        for (const channel of Object.keys(this._handler)) {
+        for (const channel of Object.keys(this.handler)) {
             await this.send(channel, {
                 type: RealtimeMessageTypes.RealtimeMessageTypeSubscribe,
             });
-            this._debug("Re-Subscribed", channel);
+            this.debug("Re-Subscribed", channel);
         }
-    },
+    }
 
-    _connect(retryDelay: number) {
+    private connect(retryDelay: number): Promise<void> {
         return new Promise<void>((res, rej) => {
             let promiseDone = false;
             const wsProto = window.location.protocol === "https:" ? `wss://` : `ws://`;
-            this._ws = new WebSocket(`${wsProto}${window.location.host}/api/pub-sub/ws`);
-            this._ws.onopen = () => {
-                this._afterConnect();
-                this._triggerConnectionStatusEvent(true);
+            this.ws = new WebSocket(`${wsProto}${window.location.host}/api/pub-sub/ws`);
+            this.ws.onopen = () => {
+                this.afterConnect();
+                this.triggerConnectionStatusEvent(true);
                 if (!promiseDone) {
                     promiseDone = true;
                     res();
                 }
             };
 
-            this._ws.onmessage = (m) => {
+            this.ws.onmessage = (m) => {
                 const data = JSON.parse(m.data);
-                this._handleMessage(data);
+                this.handleMessage(data);
             };
 
-            this._ws.onclose = () => {
-                this._triggerConnectionStatusEvent(false);
-                this._debug("disconnected");
+            this.ws.onclose = () => {
+                this.triggerConnectionStatusEvent(false);
+                this.debug("disconnected");
                 // connection closed, discard old websocket and create a new one after backoff
                 // don't recreate new connection if page has been loaded more than 12 hours ago
                 if (new Date().valueOf() - PAGE_LOADED.valueOf() > 1000 * 60 * 60 * 12) {
                     return;
                 }
 
-                this._ws = null;
+                this.ws = null;
                 setTimeout(
-                    () => this._connect(retryDelay * 2), // Exponential Backoff
+                    () => this.connect(retryDelay * 2), // Exponential Backoff
                     retryDelay,
                 );
             };
 
-            this._ws.onerror = (err) => {
-                this._debug("error", err);
+            this.ws.onerror = (err) => {
+                this.debug("error", err);
             };
         });
-    },
-};
+    }
+}

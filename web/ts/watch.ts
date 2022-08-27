@@ -2,7 +2,7 @@ import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
 import { getPlayer } from "./TUMLiveVjs";
 import { Get, postData } from "./global";
-import { realtime } from "./socket";
+import { Realtime } from "./socket";
 
 let chatInput: HTMLInputElement;
 
@@ -30,7 +30,7 @@ enum WSMessageType {
 }
 
 function sendIDMessage(id: number, type: WSMessageType) {
-    return realtime.send(currentChatChannel, {
+    return Realtime.get().send(currentChatChannel, {
         payload: {
             type: type,
             id: id,
@@ -141,7 +141,7 @@ export async function startWebsocket() {
     //window.dispatchEvent(new CustomEvent("connected"));
     //window.dispatchEvent(new CustomEvent("disconnected"));
 
-    await realtime.subscribeChannel(currentChatChannel, messageHandler);
+    await Realtime.get().subscribeChannel(currentChatChannel, messageHandler);
     window.dispatchEvent(new CustomEvent("connected"));
 }
 
@@ -164,7 +164,7 @@ export function createServerMessage(msg) {
 }
 
 export function sendMessage(current: NewChatMessage) {
-    return realtime.send(currentChatChannel, {
+    return Realtime.get().send(currentChatChannel, {
         payload: {
             type: WSMessageType.Message,
             msg: current.message,
@@ -184,7 +184,7 @@ export async function fetchMessages(id: number) {
 }
 
 export function startPoll(question: string, pollAnswers: string[]) {
-    return realtime.send(currentChatChannel, {
+    return Realtime.get().send(currentChatChannel, {
         payload: {
             type: WSMessageType.StartPoll,
             question,
@@ -194,7 +194,7 @@ export function startPoll(question: string, pollAnswers: string[]) {
 }
 
 export function submitPollOptionVote(pollOptionId: number) {
-    return realtime.send(currentChatChannel, {
+    return Realtime.get().send(currentChatChannel, {
         payload: {
             type: WSMessageType.SubmitPollOptionVote,
             pollOptionId,
@@ -203,7 +203,7 @@ export function submitPollOptionVote(pollOptionId: number) {
 }
 
 export function closeActivePoll() {
-    return realtime.send(currentChatChannel, {
+    return Realtime.get().send(currentChatChannel, {
         payload: {
             type: WSMessageType.CloseActivePoll,
         },
@@ -244,7 +244,7 @@ export const videoStatListener = {
     },
     update() {
         const player = getPlayer();
-        const vhs = player.tech().vhs;
+        const vhs = player.tech({ IWillNotUseThisInPlugins: true }).vhs;
         const notAvailable = vhs == null;
 
         const data = {

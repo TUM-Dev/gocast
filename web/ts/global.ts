@@ -24,10 +24,27 @@ export async function postData(url = "", data = {}) {
     });
 }
 
+export async function patchData(url = "", data = {}) {
+    return await fetch(url, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+    });
+}
+
 export async function Delete(url = "") {
     return await fetch(url, {
         method: "DELETE",
     });
+}
+
+export function sendFormData(url, formData: FormData) {
+    const HttpReq = new XMLHttpRequest();
+    HttpReq.open("POST", url, false);
+    HttpReq.send(formData);
+    return HttpReq.responseText;
 }
 
 export function Get(yourUrl) {
@@ -250,6 +267,10 @@ export type Section = {
     friendlyTimestamp?: string;
     fileID?: number;
 };
+
+export function getQueryParam(name: string): string {
+    return new URL(window.location.href).searchParams.get(name) ?? undefined;
+}
 
 window.onload = function () {
     initHiddenCourses();

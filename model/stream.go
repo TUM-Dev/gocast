@@ -20,6 +20,7 @@ type Stream struct {
 	CourseID              uint
 	Start                 time.Time `gorm:"not null"`
 	End                   time.Time `gorm:"not null"`
+	ChatEnabled           bool      `gorm:"default:null"`
 	RoomName              string
 	RoomCode              string
 	EventTypeName         string
@@ -245,6 +246,7 @@ func (s Stream) getJson(lhs []LectureHall, course Course) gin.H {
 		"color":                 s.Color(),
 		"start":                 s.Start,
 		"end":                   s.End,
+		"isChatEnabled":         s.ChatEnabled,
 		"courseSlug":            course.Slug,
 		"private":               s.Private,
 	}
