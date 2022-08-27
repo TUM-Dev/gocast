@@ -93,6 +93,16 @@ func SubMessage(path string) []byte {
 	return data
 }
 
+func ChannelMessage(path string, payload json.RawMessage) []byte {
+	message := Message{
+		Type:    MessageTypeChannelMessage,
+		Channel: path,
+		Payload: payload,
+	}
+	data, _ := json.Marshal(message)
+	return data
+}
+
 func UnsubMessage(path string) []byte {
 	message := Message{
 		Type:    MessageTypeUnsubscribe,
@@ -163,6 +173,7 @@ func TestRealtimeConnection(t *testing.T) {
 			t.Errorf("channel.IsSubscribed(fakeClient.Id, testChannelPath2) = true, want false")
 			return
 		}
+
 		if subContext == nil {
 			t.Errorf("subContext = nil, want *Context")
 			return
@@ -187,37 +198,33 @@ func TestRealtimeConnection(t *testing.T) {
 
 }
 
-/*
-
 func TestRealtimeMessaging(t *testing.T) {
 
-	t.Run("Simple Sub/Unsub", func(t *testing.T) {
-		simplePath := "example/path/test"
-		clientId := "123789"
+	t.Run("Client Sends Message", func(t *testing.T) {
+		testChannelPath := "example/path/blabla"
+		testPayload := map[string]interface{}{"name": "Jon Doe", "admin": false}
+		testPayloadJson, _ := json.Marshal(testPayload)
+		fakeConnector, fakeSocket := NewFakeConnector()
+		realtime := New(fakeConnector)
 
-		realtime := New()
+		var receivedMessage *Message
 
-	})
-
-	t.Run("Simple Case", func(t *testing.T) {
-		simplePath := "example/path/test"
-		clientId := "123789"
-
-		var resContext *Context
-		var resMessage *Message
-
-		store := ChannelStore{}
-		store.init()
-		channel := store.Register(simplePath, ChannelHandlers{
+		realtime.RegisterChannel(testChannelPath, ChannelHandlers{
 			OnMessage: func(s *Context, message *Message) {
-				resContext = s
-				resMessage = message
+				receivedMessage = message
 			},
 		})
-		store.Subscribe(&Client{Id: clientId}, simplePath)
-		channel.
+
+		fakeClient := fakeSocket.NewClientConnects()
+		fakeClient.Send(SubMessage(testChannelPath))
+		fakeClient.Send(ChannelMessage(testChannelPath, testPayloadJson))
+
+		var receivedPayload map[string]interface{}
+		_ = json.Unmarshal(receivedMessage.Payload, &receivedPayload)
+		if receivedPayload["name"] != testPayload["name"] || receivedPayload["admin"] != testPayload["admin"] {
+			t.Errorf(`equal({ "name": "%s", "admin": %b }, { "name": "%s", "admin": %b }) = false, want true`, receivedPayload["name"], receivedPayload["admin"], testPayload["name"], testPayload["admin"])
+			return
+		}
 	})
 
 }
-
-*/
