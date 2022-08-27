@@ -30,9 +30,12 @@ var routes chatRoutes
 
 func RegisterRealtimeChatChannel() {
 	RealtimeInstance.RegisterChannel(ChatRoomName, realtime.ChannelHandlers{
-		SubscriptionMiddlewares: []realtime.SubscriptionMiddleware{tools.InitStreamRealtime()},
-		OnSubscribe:             chatOnSubscribe,
-		OnUnsubscribe:           chatOnUnsubscribe,
+		SubscriptionMiddlewares: []realtime.SubscriptionMiddleware{
+			tools.InitStreamRealtime(),
+			checkAccessMiddleware(),
+		},
+		OnSubscribe:   chatOnSubscribe,
+		OnUnsubscribe: chatOnUnsubscribe,
 		OnMessage: func(psc *realtime.Context, message *realtime.Message) {
 			foundContext, exists := psc.Get("TUMLiveContext")
 			if !exists {
@@ -48,11 +51,6 @@ func RegisterRealtimeChatChannel() {
 
 			if err != nil {
 				log.WithError(err).Warn("could not unmarshal request")
-				return
-			}
-
-			if !(tumLiveContext.Course.ChatEnabled && tumLiveContext.Stream.ChatEnabled) {
-				log.WithError(err).Warn("chat is forbidden for user")
 				return
 			}
 
@@ -86,6 +84,21 @@ func RegisterRealtimeChatChannel() {
 			cleanupSessions()
 		}
 	}()
+}
+
+func checkAccessMiddleware() realtime.SubscriptionMiddleware {
+	return func(psc *realtime.Context) *realtime.Error {
+		foundContext, exists := psc.Get("TUMLiveContext")
+		if !exists {
+			return realtime.NewError(http.StatusInternalServerError, "context should exist but doesn't")
+		}
+		tumLiveContext := foundContext.(tools.TUMLiveContext)
+
+		if !(tumLiveContext.Course.ChatEnabled && tumLiveContext.Stream.ChatEnabled) {
+			return realtime.NewError(http.StatusForbidden, "chat is forbidden for user")
+		}
+		return nil
+	}
 }
 
 func chatAccessChecker() gin.HandlerFunc {
