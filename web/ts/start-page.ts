@@ -1,8 +1,8 @@
-import { realtime } from "./socket";
+import { Realtime } from "./socket";
 
 export const liveUpdateListener = {
     async init() {
-        await realtime.subscribeChannel("live-update", this.handle);
+        await Realtime.get().subscribeChannel("live-update", this.handle);
     },
 
     handle(payload: object) {
