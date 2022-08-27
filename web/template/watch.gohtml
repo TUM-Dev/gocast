@@ -297,7 +297,7 @@
             {{end}}
         </div>
     </div>
-    {{if $course.ChatEnabled}}
+    {{if and $course.ChatEnabled $stream.ChatEnabled}}
         <div x-data="{show: $persist(false).as('chatOpen')}"
              class="mt-5 md:mt-0"
              :class="show ? 'w-full md:w-2/6 2xl:w-1/5 h-96 md:h-auto shrink-0' : 'md:w-14  h-fit md:h-full'">
@@ -308,11 +308,9 @@
 <script>
     {{if $stream.Recording}}
     watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
     {{else}}
     watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
-    {{end}}
-    {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
-    watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
     {{end}}
     {{if $stream.Silences}}
     watch.skipSilence({{$stream.GetSilencesJson}});

@@ -1,5 +1,6 @@
 {{define "create-lecture-form"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
+    {{$course := .IndexData.TUMLiveContext.Course}}
     <form method="post" action="/api/createLecture"
           x-data="admin.createLectureForm()"
           @submit.prevent="submitData"
@@ -15,6 +16,11 @@
                     <input type="checkbox" :disabled="formData.premiere || formData.vodup" x-model="formData.recurring"
                            class="w-auto">
                     <span class="text-3">Recurring Event</span>
+                </label><br>
+                <label x-show="{{$course.ChatEnabled}}">
+                    <input type="checkbox" x-model="formData.isChatEnabled" x-init="formData.isChatEnabled = {{$course.ChatEnabled}}"
+                           class="w-auto">
+                    <span class="text-3">Enable Live Chat</span>
                 </label>
             </div>
             <div class="w-3/4">
