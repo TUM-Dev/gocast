@@ -26,9 +26,6 @@ const (
 
 var routes chatRoutes
 
-//var m *melody.Melody
-//const maxParticipants = 10000
-
 func RegisterRealtimeChatChannel() {
 	RealtimeInstance.RegisterChannel(ChatRoomName, realtime.ChannelHandlers{
 		SubscriptionMiddlewares: []realtime.SubscriptionMiddleware{tools.InitStreamRealtime()},
@@ -91,11 +88,6 @@ func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 	wsGroup.GET("/messages", routes.getMessages)
 	wsGroup.GET("/active-poll", routes.getActivePoll)
 	wsGroup.GET("/users", routes.getUsers)
-	/*wsGroup.GET("/ws", routes.ChatStream)
-	if m == nil {
-		log.Printf("creating melody")
-		m = melody.New()
-	}*/
 }
 
 type chatRoutes struct {
