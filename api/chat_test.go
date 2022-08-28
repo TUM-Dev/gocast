@@ -235,7 +235,7 @@ func TestChatAccessChecker(t *testing.T) {
 		return testutils.TUMLiveContext(ctx)
 	}
 
-	apiEndpoints := []string{"/messages", "/active-poll", "/users", "/ws"}
+	apiEndpoints := []string{"/messages", "/active-poll", "/users"}
 
 	for _, apiEndpoint := range apiEndpoints {
 		t.Run(fmt.Sprintf("GET/api/chat/:streamID%s", apiEndpoint), func(t *testing.T) {
