@@ -39,6 +39,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	adminOfCourseGroup.Use(tools.AdminOfCourse)
 	adminOfCourseGroup.DELETE("/", routes.deleteCourse)
 	adminOfCourseGroup.POST("/uploadVOD", routes.uploadVOD)
+	adminOfCourseGroup.POST("/copy", routes.copyCourse)
 	adminOfCourseGroup.POST("/createLecture", routes.createLecture)
 	adminOfCourseGroup.POST("/presets", routes.updatePresets)
 	adminOfCourseGroup.POST("/deleteLectures", routes.deleteLectures)
@@ -1076,6 +1077,60 @@ func (r coursesRoutes) getTranscodingProgress(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, p.Progress)
+}
+
+type copyCourseRequest struct {
+	Semester string
+	Year     string
+	YearW    string
+}
+
+func (r coursesRoutes) copyCourse(c *gin.Context) {
+	var request copyCourseRequest
+	err := c.BindJSON(&request)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	course := tlctx.Course
+	streams := course.Streams
+
+	course.Model = gorm.Model{}
+	course.Streams = nil
+	yearInt, err := strconv.Atoi(request.Year)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	course.Year = yearInt
+	switch request.Semester {
+	case "Sommersemester":
+		course.TeachingTerm = "S"
+	case "Wintersemester":
+		course.TeachingTerm = "W"
+	default:
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	err = r.CoursesDao.CreateCourse(c, course, true)
+	if err != nil {
+		log.WithError(err).Error("Can't create course")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	numErrors := 0
+	for _, stream := range streams {
+		stream.CourseID = course.ID
+		stream.Model = gorm.Model{}
+		err := r.StreamsDao.CreateStream(&stream)
+		if err != nil {
+			log.WithError(err).Error("Can't create stream")
+			numErrors++
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{"numErrs": numErrors})
 }
 
 type getCourseRequest struct {

@@ -657,3 +657,14 @@ export function deleteCourse(courseID: string) {
         });
     }
 }
+
+export function copyCourse(courseID: string,year:string,yearW:string,semester:string) {
+        const url = `/api/course/${courseID}/copy`;
+        fetch(url, { method: "POST",body:JSON.stringify({year,yearW,semester}) }).then((res) => {
+            if (!res.ok) {
+                alert("Couldn't copy course.");
+            } else {
+               // window.location.replace("/admin");
+            }
+        });
+}
