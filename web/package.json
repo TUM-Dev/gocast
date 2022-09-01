@@ -32,7 +32,7 @@
     "@silvermine/videojs-airplay": "^1.1.0",
     "@silvermine/videojs-quality-selector": "^1.2.5",
     "alpinejs": "^3.10.3",
-    "chart.js": "^3.8.2",
+    "chart.js": "^3.9.1",
     "extract-loader": "^5.1.0",
     "flatpickr": "^4.6.13",
     "fullcalendar": "^5.11.2",
