@@ -664,7 +664,7 @@ export function copyCourse(courseID: string, year: string, yearW: string, semest
         if (!res.ok) {
             alert("Couldn't copy course.");
         } else {
-            res.json().then(r => window.location.replace(`/admin/course/${r.newCourse}?copied`));
+            res.json().then((r) => window.location.replace(`/admin/course/${r.newCourse}?copied`));
         }
     });
 }
