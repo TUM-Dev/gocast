@@ -30,7 +30,7 @@ require (
 	github.com/spf13/viper v1.12.0
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
 	google.golang.org/genproto v0.0.0-20220801145646-83ce21fca29f // indirect
-	google.golang.org/grpc v1.48.0
+	google.golang.org/grpc v1.49.0
 	google.golang.org/protobuf v1.28.1
 	gorm.io/driver/mysql v1.3.5
 	gorm.io/gorm v1.23.8
