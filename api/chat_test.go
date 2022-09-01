@@ -19,16 +19,6 @@ func ChatRouterWrapper(r *gin.Engine) {
 	configGinChatRouter(r.Group("/api/chat"), dao.DaoWrapper{})
 }
 
-func chatDefaultRouter(t *testing.T) func(r *gin.Engine) {
-	return func(r *gin.Engine) {
-		wrapper := dao.DaoWrapper{
-			StreamsDao: testutils.GetStreamMock(t),
-			CoursesDao: testutils.GetCoursesMock(t),
-		}
-		configGinChatRouter(r.Group("/api/chat"), wrapper)
-	}
-}
-
 func TestMessages(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	t.Run("GET/api/chat/:streamID/messages", func(t *testing.T) {
