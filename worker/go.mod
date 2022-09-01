@@ -5,13 +5,13 @@ go 1.18
 // Direct dependencies
 require (
 	github.com/getsentry/sentry-go v0.13.0
-	github.com/golang/protobuf v1.5.2
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/icza/gox v0.0.0-20220321141217-e2d488ab2fbc
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/joschahenningsen/thumbgen v0.0.0-20220618164424-9fcc2beb0084
 	github.com/otiai10/gosseract/v2 v2.4.0
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/shirou/gopsutil/v3 v3.22.7
+	github.com/shirou/gopsutil/v3 v3.22.8
 	github.com/sirupsen/logrus v1.9.0
 	github.com/tidwall/gjson v1.14.1
 	github.com/u2takey/ffmpeg-go v0.4.1
