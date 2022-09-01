@@ -1089,7 +1089,7 @@ func (r coursesRoutes) copyCourse(c *gin.Context) {
 	var request copyCourseRequest
 	err := c.BindJSON(&request)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "Bad request", Err: err})
 		return
 	}
 	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
@@ -1100,7 +1100,7 @@ func (r coursesRoutes) copyCourse(c *gin.Context) {
 	course.Streams = nil
 	yearInt, err := strconv.Atoi(request.Year)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "Semester must be a number", Err: err})
 		return
 	}
 	course.Year = yearInt
@@ -1110,14 +1110,14 @@ func (r coursesRoutes) copyCourse(c *gin.Context) {
 	case "Wintersemester":
 		course.TeachingTerm = "W"
 	default:
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "Teaching must be a 'Sommmersemester' or 'Wintersemester'", Err: err})
 		return
 	}
 
 	err = r.CoursesDao.CreateCourse(c, course, true)
 	if err != nil {
 		log.WithError(err).Error("Can't create course")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{Status: http.StatusInternalServerError, CustomMessage: "Can't create course", Err: err})
 		return
 	}
 	numErrors := 0
@@ -1130,7 +1130,7 @@ func (r coursesRoutes) copyCourse(c *gin.Context) {
 			numErrors++
 		}
 	}
-	c.JSON(http.StatusOK, gin.H{"numErrs": numErrors})
+	c.JSON(http.StatusOK, gin.H{"numErrs": numErrors, "newCourse": course.ID})
 }
 
 type getCourseRequest struct {
