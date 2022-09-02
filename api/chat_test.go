@@ -19,16 +19,6 @@ func ChatRouterWrapper(r *gin.Engine) {
 	configGinChatRouter(r.Group("/api/chat"), dao.DaoWrapper{})
 }
 
-func chatDefaultRouter(t *testing.T) func(r *gin.Engine) {
-	return func(r *gin.Engine) {
-		wrapper := dao.DaoWrapper{
-			StreamsDao: testutils.GetStreamMock(t),
-			CoursesDao: testutils.GetCoursesMock(t),
-		}
-		configGinChatRouter(r.Group("/api/chat"), wrapper)
-	}
-}
-
 func TestMessages(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	t.Run("GET/api/chat/:streamID/messages", func(t *testing.T) {
@@ -212,48 +202,4 @@ func TestUsers(t *testing.T) {
 			Url(url).
 			Run(t, testutils.Equal)
 	})
-}
-
-func TestChatAccessChecker(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	tests := []struct {
-		name              string
-		courseChatEnabled bool
-		streamChatEnabled bool
-	}{
-		{"ChatEnabled=false stream", true, false},
-		{"ChatEnabled=false course", false, true},
-		{"ChatEnabled=false course stream", false, false},
-	}
-
-	transformContext := func(ctx tools.TUMLiveContext, streamChatEnabled bool, courseChatEnabled bool) func(c *gin.Context) {
-		ctx.Stream = &testutils.StreamFPVLive
-		ctx.Stream.ChatEnabled = streamChatEnabled
-		ctx.Course = &testutils.CourseFPV
-		ctx.Course.ChatEnabled = courseChatEnabled
-		return testutils.TUMLiveContext(ctx)
-	}
-
-	apiEndpoints := []string{"/messages", "/active-poll", "/users", "/ws"}
-
-	for _, apiEndpoint := range apiEndpoints {
-		t.Run(fmt.Sprintf("GET/api/chat/:streamID%s", apiEndpoint), func(t *testing.T) {
-			for _, test := range tests {
-				url := fmt.Sprintf("/api/chat/%d%s", testutils.StreamFPVLive.ID, apiEndpoint)
-
-				gomino.TestCases{
-					test.name: {
-						Middlewares: testutils.GetMiddlewares(tools.ErrorHandler,
-							transformContext(testutils.TUMLiveContextStudent, test.streamChatEnabled, test.courseChatEnabled)),
-						ExpectedCode: http.StatusForbidden,
-					},
-				}.
-					Method(http.MethodGet).
-					Router(chatDefaultRouter(t)).
-					Url(url).
-					Run(t, testutils.Equal)
-			}
-		})
-	}
 }

@@ -24,28 +24,11 @@ var m *melody.Melody
 
 const maxParticipants = 10000
 
-func chatAccessChecker() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		foundContext, exists := c.Get("TUMLiveContext")
-		if !exists {
-			sentry.CaptureException(errors.New("context should exist but doesn't"))
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-		tumLiveContext := foundContext.(tools.TUMLiveContext)
-		if tumLiveContext.Stream.ChatEnabled && tumLiveContext.Course.ChatEnabled {
-			return
-		}
-		c.AbortWithStatus(http.StatusForbidden)
-	}
-}
-
 func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 	routes := chatRoutes{daoWrapper}
 
 	wsGroup := router.Group("/:streamID")
 	wsGroup.Use(tools.InitStream(daoWrapper))
-	wsGroup.Use(chatAccessChecker())
 	wsGroup.GET("/messages", routes.getMessages)
 	wsGroup.GET("/active-poll", routes.getActivePoll)
 	wsGroup.GET("/users", routes.getUsers)
@@ -81,7 +64,7 @@ func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 		}
 
 		if !(tumLiveContext.Course.ChatEnabled && tumLiveContext.Stream.ChatEnabled) {
-			ctx.(*gin.Context).AbortWithStatus(http.StatusForbidden)
+			// silently ignore message but keep connection open.
 			return
 		}
 
