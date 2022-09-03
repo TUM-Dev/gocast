@@ -32,6 +32,13 @@ func (c *ClientStore) Join(client *Client) {
 	c.clients[client.Id] = client
 }
 
+func (c *ClientStore) Exists(id string) bool {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	_, exists := c.clients[id]
+	return exists
+}
+
 func (c *ClientStore) Get(id string) *Client {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()

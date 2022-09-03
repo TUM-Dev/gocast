@@ -51,6 +51,10 @@ func (r *Realtime) HandleRequest(writer http.ResponseWriter, request *http.Reque
 	return r.connector.requestHandler(writer, request, properties)
 }
 
+func (r *Realtime) IsConnected(clientId string) bool {
+	return r.clients.Exists(clientId)
+}
+
 // IsSubscribed checks whether a client is subscribed to a certain channelPath or not
 func (r *Realtime) IsSubscribed(channelPath string, clientId string) bool {
 	if found, channel, _ := r.channels.Get(channelPath); found {

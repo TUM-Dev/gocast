@@ -161,7 +161,7 @@ func broadcastStreamToAdmins(streamID uint, msg []byte) {
 func removeClosed(sessions []*sessionWrapper) []*sessionWrapper {
 	var newSessions []*sessionWrapper
 	for _, wrapper := range sessions {
-		if !wrapper.session.Client.Session.IsClosed() {
+		if RealtimeInstance.IsConnected(wrapper.session.Client.Id) {
 			newSessions = append(newSessions, wrapper)
 		}
 	}
