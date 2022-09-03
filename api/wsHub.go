@@ -50,7 +50,7 @@ var connHandler = func(context *realtime.Context) {
 	wsMapLock.Unlock()
 
 	msg, _ := json.Marshal(gin.H{"viewers": len(sessionsMap[tumLiveContext.Stream.ID])})
-	err := context.Client.Session.Write(msg)
+	err := context.Client.Send(msg)
 	if err != nil {
 		log.WithError(err).Error("can't write initial stats to session")
 	}

@@ -3,7 +3,6 @@ package realtime
 import (
 	"encoding/json"
 	"errors"
-	"github.com/gabstv/melody"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
@@ -42,9 +41,6 @@ func New(connector *Connector) *Realtime {
 	return &r
 }
 
-type handlerFunc func(c *Client)
-type handlerDataFunc func(c *Client, data []byte)
-
 // RegisterChannel registers a new channel
 func (r *Realtime) RegisterChannel(channelName string, handlers ChannelHandlers) *Channel {
 	return r.channels.Register(channelName, handlers)
@@ -73,24 +69,6 @@ func (r *Realtime) Send(channelPath string, clientId string, payload []byte) err
 		return errors.New("user not subscribed to channel")
 	}
 	return context.Send(payload)
-}
-
-// mapEventToClient maps a melody callback to a realtime callback with the according Client
-func (r *Realtime) mapEventToClient(handler handlerFunc) func(*melody.Session) {
-	return func(s *melody.Session) {
-		id, _ := s.Get("id")
-		client := r.clients.Get(id.(string))
-		handler(client)
-	}
-}
-
-// mapDataEventToClient maps a melody callback with data to a realtime callback with the according Client
-func (r *Realtime) mapDataEventToClient(handler handlerDataFunc) func(*melody.Session, []byte) {
-	return func(s *melody.Session, data []byte) {
-		id, _ := s.Get("id")
-		client := r.clients.Get(id.(string))
-		handler(client, data)
-	}
 }
 
 // connectHandler handles a new melody connection
