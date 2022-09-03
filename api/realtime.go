@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/tools/realtime"
+	"github.com/joschahenningsen/TUM-Live/tools/realtime/connector"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -11,7 +12,7 @@ type realtimeRoutes struct {
 	dao.DaoWrapper
 }
 
-var RealtimeInstance = realtime.New(realtime.NewMelodyConnector())
+var RealtimeInstance = realtime.New(connector.NewMelodyConnector())
 
 func configGinRealtimeRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 	routes := realtimeRoutes{daoWrapper}

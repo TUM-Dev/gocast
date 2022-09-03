@@ -8,6 +8,14 @@ type Client struct {
 	properties  map[string]interface{}
 }
 
+func NewClient(sendMessage MessageSendFunc, properties map[string]interface{}) *Client {
+	return &Client{
+		Id:          "",
+		sendMessage: sendMessage,
+		properties:  properties,
+	}
+}
+
 func (client *Client) Send(message []byte) error {
 	return client.sendMessage(message)
 }

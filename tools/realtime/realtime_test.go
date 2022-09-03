@@ -48,9 +48,7 @@ func (s *FakeSocketSession) Disconnect() {
 func NewFakeConnector() (*Connector, *FakeSocket) {
 	fakeSocket := &FakeSocket{}
 
-	connector := &Connector{
-		hooks: &Hooks{},
-	}
+	connector := NewConnector(nil)
 	connector.clients.init()
 
 	fakeSocket.handleConnect = func(s *FakeSocketSession) {
