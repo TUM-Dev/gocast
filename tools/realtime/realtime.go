@@ -2,6 +2,7 @@ package realtime
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/gabstv/melody"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -60,6 +61,18 @@ func (r *Realtime) IsSubscribed(channelPath string, clientId string) bool {
 		return channel.IsSubscribed(clientId, channelPath)
 	}
 	return false
+}
+
+func (r *Realtime) Send(channelPath string, clientId string, payload []byte) error {
+	channelExists, channel, _ := r.channels.Get(channelPath)
+	if !channelExists {
+		return errors.New("channel does not exists")
+	}
+	context, userSubscribed := channel.FindContext(clientId, channelPath)
+	if !userSubscribed {
+		return errors.New("user not subscribed to channel")
+	}
+	return context.Send(payload)
 }
 
 // mapEventToClient maps a melody callback to a realtime callback with the according Client

@@ -78,6 +78,10 @@ func (c *Channel) IsSubscribed(clientId string, path string) bool {
 	return c.subscribers.IsSubscribed(clientId, path)
 }
 
+func (c *Channel) FindContext(clientId string, path string) (*Context, bool) {
+	return c.subscribers.GetContext(clientId, path)
+}
+
 func (c *Channel) Unsubscribe(clientId string, path string) bool {
 	context, isSubscriber := c.subscribers.GetContext(clientId, path)
 	if !isSubscriber {

@@ -5,37 +5,42 @@ import (
 	"testing"
 )
 
-type FakeSocketWriteFunc func(msg []byte) error
 type FakeSocketHandleConnectFunc func(session *FakeSocketSession)
 type FakeSocketHandleDisconnectFunc func(session *FakeSocketSession)
 type FakeSocketHandleMessageFunc func(session *FakeSocketSession, msg []byte)
+type FakeSocketHandleOutgoingMessageFunc func(msg []byte)
 
 type FakeSocket struct {
-	OnWrite          FakeSocketWriteFunc
 	handleConnect    FakeSocketHandleConnectFunc
 	handleDisconnect FakeSocketHandleDisconnectFunc
 	handleMessage    FakeSocketHandleMessageFunc
 }
 
-func (f *FakeSocket) NewClientConnects() *FakeSocketSession {
+// NewClientConnects simulate a new client connects from the frontend.
+// Messages that would be received by the frontend are passed to outgoingMessageHandler.
+func (f *FakeSocket) NewClientConnects(outgoingMessageHandler FakeSocketHandleOutgoingMessageFunc) *FakeSocketSession {
 	s := &FakeSocketSession{
-		onDisconnect: f.handleDisconnect,
-		onMessage:    f.handleMessage,
+		onDisconnect:      f.handleDisconnect,
+		onMessage:         f.handleMessage,
+		onOutgoingMessage: outgoingMessageHandler,
 	}
 	f.handleConnect(s)
 	return s
 }
 
 type FakeSocketSession struct {
-	Id           string
-	onDisconnect FakeSocketHandleDisconnectFunc
-	onMessage    FakeSocketHandleMessageFunc
+	Id                string
+	onDisconnect      FakeSocketHandleDisconnectFunc
+	onMessage         FakeSocketHandleMessageFunc
+	onOutgoingMessage FakeSocketHandleOutgoingMessageFunc
 }
 
+/// Send emulate a data message from the frontend
 func (s *FakeSocketSession) Send(data []byte) {
 	s.onMessage(s, data)
 }
 
+// Disconnect emulate disconnecting initiated by the frontend
 func (s *FakeSocketSession) Disconnect() {
 	s.onDisconnect(s)
 }
@@ -51,8 +56,9 @@ func NewFakeConnector() (*Connector, *FakeSocket) {
 	fakeSocket.handleConnect = func(s *FakeSocketSession) {
 		client := Client{
 			Id: "",
-			sendMessage: func(message []byte) error {
-				return fakeSocket.OnWrite(message)
+			sendMessage: func(msg []byte) error {
+				s.onOutgoingMessage(msg)
+				return nil
 			},
 			properties: map[string]interface{}{},
 		}
@@ -118,7 +124,7 @@ func TestRealtimeConnection(t *testing.T) {
 	t.Run("Simple Connect Disconnect", func(t *testing.T) {
 		fakeConnector, fakeSocket := NewFakeConnector()
 
-		fakeClient := fakeSocket.NewClientConnects()
+		fakeClient := fakeSocket.NewClientConnects(func(_ []byte) {})
 
 		if len(fakeConnector.clients.clients) != 1 {
 			t.Errorf("len(fakeConnector.clients.clients) = %d, want %d", len(fakeConnector.clients.clients), 1)
@@ -158,7 +164,7 @@ func TestRealtimeConnection(t *testing.T) {
 			},
 		})
 
-		fakeClient := fakeSocket.NewClientConnects()
+		fakeClient := fakeSocket.NewClientConnects(func(_ []byte) {})
 		fakeClient.Send(SubMessage(testChannelPath))
 
 		if !channel.IsSubscribed(fakeClient.Id, testChannelPath) {
@@ -215,7 +221,7 @@ func TestRealtimeMessaging(t *testing.T) {
 			},
 		})
 
-		fakeClient := fakeSocket.NewClientConnects()
+		fakeClient := fakeSocket.NewClientConnects(func(_ []byte) {})
 		fakeClient.Send(SubMessage(testChannelPath))
 		fakeClient.Send(ChannelMessage(testChannelPath, testPayloadJson))
 
@@ -252,7 +258,9 @@ func TestRealtimeMessaging(t *testing.T) {
 			},
 		})
 
-		fakeClient := fakeSocket.NewClientConnects()
+		fakeClient := fakeSocket.NewClientConnects(func(msg []byte) {
+
+		})
 		fakeClient.Send(SubMessage(channelA))
 		fakeClient.Send(SubMessage(channelB))
 		fakeClient.Send(ChannelMessage(channelB, payloadJsonB))
@@ -268,6 +276,31 @@ func TestRealtimeMessaging(t *testing.T) {
 		_ = json.Unmarshal(recMessageChannelB.Payload, &receivedPayload)
 		if receivedPayload["name"] != payloadB["name"] || receivedPayload["admin"] != payloadB["admin"] {
 			t.Errorf(`equal({ "name": "%s", "admin": %b }, { "name": "%s", "admin": %b }) = false, want true`, receivedPayload["name"], receivedPayload["admin"], payloadB["name"], payloadB["admin"])
+			return
+		}
+	})
+
+	t.Run("Client Receives Message", func(t *testing.T) {
+		testChannelPath := "example/path/blabla"
+		testPayload := map[string]interface{}{"name": "Jon Doe", "admin": false}
+		testPayloadJson, _ := json.Marshal(testPayload)
+		fakeConnector, fakeSocket := NewFakeConnector()
+		realtime := New(fakeConnector)
+
+		var receivedMessage *Message
+
+		realtime.RegisterChannel(testChannelPath, ChannelHandlers{})
+
+		fakeClient := fakeSocket.NewClientConnects(func(msg []byte) {
+			json.Unmarshal(msg, &receivedMessage)
+		})
+		fakeClient.Send(SubMessage(testChannelPath))
+		realtime.Send(testChannelPath, fakeClient.Id, testPayloadJson)
+
+		var receivedPayload map[string]interface{}
+		_ = json.Unmarshal(receivedMessage.Payload, &receivedPayload)
+		if receivedPayload["name"] != testPayload["name"] || receivedPayload["admin"] != testPayload["admin"] {
+			t.Errorf(`equal({ "name": "%s", "admin": %b }, { "name": "%s", "admin": %b }) = false, want true`, receivedPayload["name"], receivedPayload["admin"], testPayload["name"], testPayload["admin"])
 			return
 		}
 	})
