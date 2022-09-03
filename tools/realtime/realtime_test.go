@@ -227,4 +227,49 @@ func TestRealtimeMessaging(t *testing.T) {
 		}
 	})
 
+	t.Run("Client sends Messages to different channels", func(t *testing.T) {
+		channelA := "example/path/a"
+		channelB := "example/path/b"
+		payloadA := map[string]interface{}{"name": "Jon Doe", "admin": false}
+		payloadB := map[string]interface{}{"name": "Tom Ford", "admin": true}
+		payloadJsonA, _ := json.Marshal(payloadA)
+		payloadJsonB, _ := json.Marshal(payloadB)
+		fakeConnector, fakeSocket := NewFakeConnector()
+		realtime := New(fakeConnector)
+
+		var recMessageChannelA *Message
+		var recMessageChannelB *Message
+
+		realtime.RegisterChannel(channelA, ChannelHandlers{
+			OnMessage: func(s *Context, message *Message) {
+				recMessageChannelA = message
+			},
+		})
+
+		realtime.RegisterChannel(channelB, ChannelHandlers{
+			OnMessage: func(s *Context, message *Message) {
+				recMessageChannelB = message
+			},
+		})
+
+		fakeClient := fakeSocket.NewClientConnects()
+		fakeClient.Send(SubMessage(channelA))
+		fakeClient.Send(SubMessage(channelB))
+		fakeClient.Send(ChannelMessage(channelB, payloadJsonB))
+		fakeClient.Send(ChannelMessage(channelA, payloadJsonA))
+
+		var receivedPayload map[string]interface{}
+		_ = json.Unmarshal(recMessageChannelA.Payload, &receivedPayload)
+		if receivedPayload["name"] != payloadA["name"] || receivedPayload["admin"] != payloadA["admin"] {
+			t.Errorf(`equal({ "name": "%s", "admin": %b }, { "name": "%s", "admin": %b }) = false, want true`, receivedPayload["name"], receivedPayload["admin"], payloadA["name"], payloadA["admin"])
+			return
+		}
+
+		_ = json.Unmarshal(recMessageChannelB.Payload, &receivedPayload)
+		if receivedPayload["name"] != payloadB["name"] || receivedPayload["admin"] != payloadB["admin"] {
+			t.Errorf(`equal({ "name": "%s", "admin": %b }, { "name": "%s", "admin": %b }) = false, want true`, receivedPayload["name"], receivedPayload["admin"], payloadB["name"], payloadB["admin"])
+			return
+		}
+	})
+
 }
