@@ -10,7 +10,7 @@ const RealtimeMessageTypes = {
 };
 
 export class Realtime {
-    private debugging: boolean = false;
+    private debugging = false;
     private ws: WebSocket;
     private handler: object = {};
 

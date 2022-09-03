@@ -30,9 +30,12 @@ var routes chatRoutes
 
 func RegisterRealtimeChatChannel() {
 	RealtimeInstance.RegisterChannel(ChatRoomName, realtime.ChannelHandlers{
-		SubscriptionMiddlewares: []realtime.SubscriptionMiddleware{tools.InitStreamRealtime()},
-		OnSubscribe:             chatOnSubscribe,
-		OnUnsubscribe:           chatOnUnsubscribe,
+		SubscriptionMiddlewares: []realtime.SubscriptionMiddleware{
+			tools.InitStreamRealtime(),
+			checkAccessMiddleware(),
+		},
+		OnSubscribe:   chatOnSubscribe,
+		OnUnsubscribe: chatOnUnsubscribe,
 		OnMessage: func(psc *realtime.Context, message *realtime.Message) {
 			foundContext, exists := psc.Get("TUMLiveContext")
 			if !exists {
@@ -48,11 +51,6 @@ func RegisterRealtimeChatChannel() {
 
 			if err != nil {
 				log.WithError(err).Warn("could not unmarshal request")
-				return
-			}
-
-			if !(tumLiveContext.Course.ChatEnabled && tumLiveContext.Stream.ChatEnabled) {
-				log.WithError(err).Warn("chat is forbidden for user")
 				return
 			}
 
@@ -88,19 +86,18 @@ func RegisterRealtimeChatChannel() {
 	}()
 }
 
-func chatAccessChecker() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		foundContext, exists := c.Get("TUMLiveContext")
+func checkAccessMiddleware() realtime.SubscriptionMiddleware {
+	return func(psc *realtime.Context) *realtime.Error {
+		foundContext, exists := psc.Get("TUMLiveContext")
 		if !exists {
-			sentry.CaptureException(errors.New("context should exist but doesn't"))
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
+			return realtime.NewError(http.StatusInternalServerError, "context should exist but doesn't")
 		}
 		tumLiveContext := foundContext.(tools.TUMLiveContext)
-		if tumLiveContext.Stream.ChatEnabled && tumLiveContext.Course.ChatEnabled {
-			return
+
+		if !(tumLiveContext.Course.ChatEnabled && tumLiveContext.Stream.ChatEnabled) {
+			return realtime.NewError(http.StatusForbidden, "chat is forbidden for user")
 		}
-		c.AbortWithStatus(http.StatusForbidden)
+		return nil
 	}
 }
 
@@ -109,7 +106,6 @@ func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 
 	wsGroup := router.Group("/:streamID")
 	wsGroup.Use(tools.InitStream(daoWrapper))
-	wsGroup.Use(chatAccessChecker())
 	wsGroup.GET("/messages", routes.getMessages)
 	wsGroup.GET("/active-poll", routes.getActivePoll)
 	wsGroup.GET("/users", routes.getUsers)
