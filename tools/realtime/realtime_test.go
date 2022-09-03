@@ -297,6 +297,11 @@ func TestRealtimeMessaging(t *testing.T) {
 		fakeClient.Send(SubMessage(testChannelPath))
 		realtime.Send(testChannelPath, fakeClient.Id, testPayloadJson)
 
+		if receivedMessage.Channel != testChannelPath {
+			t.Errorf("receivedMessage.Channel = %s, want %s", receivedMessage.Channel, testChannelPath)
+			return
+		}
+
 		var receivedPayload map[string]interface{}
 		_ = json.Unmarshal(receivedMessage.Payload, &receivedPayload)
 		if receivedPayload["name"] != testPayload["name"] || receivedPayload["admin"] != testPayload["admin"] {
