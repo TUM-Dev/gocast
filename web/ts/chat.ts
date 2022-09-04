@@ -1,7 +1,17 @@
 import { Chat } from "./chat/Chat";
 
-export function initChat(isAdminOfCourse: boolean, streamId: number, userId: number, userName: string) {
-    return { c: new Chat(isAdminOfCourse, streamId, userId, userName) };
+export function initChat(
+    isAdminOfCourse: boolean,
+    streamId: number,
+    streamStart: string,
+    liveNowTimestamp: string,
+    userId: number,
+    userName: string,
+    activateChatReplay: boolean,
+) {
+    return {
+        c: new Chat(isAdminOfCourse, streamId, streamStart, liveNowTimestamp, userId, userName, activateChatReplay),
+    };
 }
 
 /*
@@ -16,6 +26,11 @@ export function scrollToBottom() {
  */
 export function scrollToTop() {
     document.getElementById("chatBox").scrollTo({ top: 0, behavior: "smooth" });
+}
+
+export function scrollToElement(element: HTMLElement) {
+    const chatBox = document.getElementById("chatBox");
+    chatBox.scrollTop = element.offsetTop;
 }
 
 let orderByLikes = false; // sorting by likes or by time
@@ -51,15 +66,6 @@ export function scrollToLatestMessage() {
     const c = document.getElementById("chatBox");
     c.scrollTo({ top: c.scrollHeight, behavior: "smooth" });
     window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
-}
-
-export function openChatPopUp(courseSlug: string, streamID: number) {
-    const height = window.innerHeight * 0.8;
-    window.open(
-        `/w/${courseSlug}/${streamID}/chat/popup`,
-        "_blank",
-        `popup=yes,width=420,innerWidth=420,height=${height},innerHeight=${height}`,
-    );
 }
 
 export function messageDateToString(date: string) {

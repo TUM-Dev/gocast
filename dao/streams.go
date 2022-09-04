@@ -40,6 +40,7 @@ type StreamsDao interface {
 	DeleteSilences(streamID string) error
 	UpdateStreamFullAssoc(vod *model.Stream) error
 	SetStreamNotLiveById(streamID uint) error
+	SetStreamLiveNowTimestampById(streamID uint, liveNowTimestamp time.Time) error
 	SavePauseState(streamID uint, paused bool) error
 	SaveEndedState(streamID uint, hasEnded bool) error
 	SaveCOMBURL(stream *model.Stream, url string)
@@ -319,9 +320,15 @@ func (d streamsDao) SetStreamNotLiveById(streamID uint) error {
 	return DB.Debug().Exec("UPDATE `streams` SET `live_now`='0' WHERE id = ?", streamID).Error
 }
 
+// SetStreamLiveNowTimestampById stores timestamp when stream is going live.
+func (d streamsDao) SetStreamLiveNowTimestampById(streamID uint, liveNowTimestamp time.Time) error {
+	defer Cache.Clear()
+	return DB.Model(model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"LiveNowTimestamp": liveNowTimestamp}).Error
+}
+
 func (d streamsDao) SavePauseState(streamID uint, paused bool) error {
 	defer Cache.Clear()
-	return DB.Model(model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"Paused": paused}).Error
+	return DB.Model(model.Stream{}).Where("id = ?", streamID).Update("Paused", paused).Error
 }
 
 // SaveEndedState updates the boolean Ended field of a stream model to the value of hasEnded when a stream finishes.
@@ -356,30 +363,31 @@ func (d streamsDao) SaveStream(vod *model.Stream) error {
 	defer Cache.Clear()
 	// todo: what is this?
 	err := DB.Model(&vod).Updates(model.Stream{
-		Name:            vod.Name,
-		Description:     vod.Description,
-		CourseID:        vod.CourseID,
-		Start:           vod.Start,
-		End:             vod.End,
-		RoomName:        vod.RoomName,
-		RoomCode:        vod.RoomCode,
-		EventTypeName:   vod.EventTypeName,
-		PlaylistUrl:     vod.PlaylistUrl,
-		PlaylistUrlPRES: vod.PlaylistUrlPRES,
-		PlaylistUrlCAM:  vod.PlaylistUrlCAM,
-		LiveNow:         vod.LiveNow,
-		Recording:       vod.Recording,
-		Chats:           vod.Chats,
-		Stats:           vod.Stats,
-		Units:           vod.Units,
-		VodViews:        vod.VodViews,
-		StartOffset:     vod.StartOffset,
-		EndOffset:       vod.EndOffset,
-		Silences:        vod.Silences,
-		Files:           vod.Files,
-		Paused:          vod.Paused,
-		Duration:        vod.Duration,
-		ThumbInterval:   vod.ThumbInterval,
+		Name:             vod.Name,
+		Description:      vod.Description,
+		CourseID:         vod.CourseID,
+		LiveNowTimestamp: vod.LiveNowTimestamp,
+		Start:            vod.Start,
+		End:              vod.End,
+		RoomName:         vod.RoomName,
+		RoomCode:         vod.RoomCode,
+		EventTypeName:    vod.EventTypeName,
+		PlaylistUrl:      vod.PlaylistUrl,
+		PlaylistUrlPRES:  vod.PlaylistUrlPRES,
+		PlaylistUrlCAM:   vod.PlaylistUrlCAM,
+		LiveNow:          vod.LiveNow,
+		Recording:        vod.Recording,
+		Chats:            vod.Chats,
+		Stats:            vod.Stats,
+		Units:            vod.Units,
+		VodViews:         vod.VodViews,
+		StartOffset:      vod.StartOffset,
+		EndOffset:        vod.EndOffset,
+		Silences:         vod.Silences,
+		Files:            vod.Files,
+		Paused:           vod.Paused,
+		Duration:         vod.Duration,
+		ThumbInterval:    vod.ThumbInterval,
 	}).Error
 	return err
 }
