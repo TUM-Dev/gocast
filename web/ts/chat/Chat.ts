@@ -299,6 +299,10 @@ export class Chat {
         referenceTime.setSeconds(referenceTime.getSeconds() + playerTime);
 
         const grayOutCondition = (CreatedAt: string) => {
+            if (Math.trunc(playerTime) === Math.trunc(getPlayer().duration())) {
+                return false;
+            }
+
             const dateCreatedAt = new Date(CreatedAt);
             return dateCreatedAt > referenceTime;
         };

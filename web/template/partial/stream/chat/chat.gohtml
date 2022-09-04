@@ -15,7 +15,7 @@
          x-data="watch.initChat({{.IsAdminOfCourse}}, {{$stream.ID}}, '{{$startTime}}', '{{$liveNowTimestamp}}', {{$userId}}, '{{$userName}}', {{not (or $isComingUp $liveNow)}});"
          x-init="await Promise.all([c.loadMessages(), c.poll.load()]); $nextTick(() => { watch.scrollToBottom(); window.dispatchEvent(new CustomEvent('chatinitialized')); })"
          x-on:chatmessage.window="e => c.onMessage(e);"
-         x-on:chatreply.window="e => c.onReply(e);" ingest_servers
+         x-on:chatreply.window="e => c.onReply(e);"
          x-on:chatlike.window="e => {c.onLike(e); $dispatch('reorder')}"
          x-on:chatdelete.window="e => c.onDelete(e);"
          x-on:chatresolve.window="e => c.onResolve(e);"
@@ -45,20 +45,19 @@
                 </div>
             {{end}}
             <div x-show="show" class="ml-auto my-auto">
-                <button class="font-semibold text-xs pr-3"
-                        :class="c.chatReplayActive ? 'dark:text-gray-200' : 'dark:text-gray-500 text-gray-500'"
-                        x-show="{{not $liveNow}}"
+                <span class="font-semibold text-xs"
+                      :class="c.chatReplayActive ? 'dark:text-gray-200 text-black' : 'dark:text-gray-500 text-gray-500'">
+                      Chat Replay
+                </span>
+                <button class="bg-transparent border-0 font-semibold h-8 w-8 rounded
+                           hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90"
+                        x-show="{{not (or $isComingUp $liveNow)}}"
                         @click="c.chatReplayActive = !c.chatReplayActive;"
                         x-init="
                             $watch('c.chatReplayActive', (value) => {
-                                if(value) {
-                                    c.activateChatReplay();
-                                }
-                                else {
-                                    c.deactivateChatReplay();
-                                }
+                                value ? c.activateChatReplay() : c.deactivateChatReplay();
                             })">
-                    Chat Replay
+                    <i class="fa-solid fa-clock-rotate-left"></i>
                 </button>
                 <span class="font-semibold text-gray-500 text-xs"
                       x-text="c.orderByLikes ? 'Popular First' : 'Live Chat'">
