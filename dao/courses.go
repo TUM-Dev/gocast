@@ -75,7 +75,7 @@ func (d coursesDao) AddAdminToCourse(userID uint, courseID uint) error {
 	return DB.Exec("insert into course_admins (user_id, course_id) values (?, ?)", userID, courseID).Error
 }
 
-//GetCurrentOrNextLectureForCourse Gets the next lecture for a course or the lecture that is currently live. Error otherwise.
+// GetCurrentOrNextLectureForCourse Gets the next lecture for a course or the lecture that is currently live. Error otherwise.
 func (d coursesDao) GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model.Stream, error) {
 	var res model.Stream
 	err := DB.Model(&model.Stream{}).Preload("Chats").Order("start").First(&res, "course_id = ? AND (end > NOW() OR live_now)", courseID).Error
@@ -200,9 +200,11 @@ func (d coursesDao) GetCourseByToken(token string) (course model.Course, err err
 
 func (d coursesDao) GetCourseById(ctx context.Context, id uint) (course model.Course, err error) {
 	var foundCourse model.Course
-	dbErr := DB.Preload("Streams.TranscodingProgresses").Preload("Streams.Stats").Preload("Streams.Files").Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("streams.start desc")
-	}).Find(&foundCourse, "id = ?", id).Error
+	dbErr := DB.Preload("Streams.TranscodingProgresses").
+		Preload("Streams.Files").
+		Preload("Streams", func(db *gorm.DB) *gorm.DB {
+			return db.Order("streams.start desc")
+		}).Find(&foundCourse, "id = ?", id).Error
 	return foundCourse, dbErr
 }
 

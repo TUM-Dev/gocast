@@ -1,10 +1,12 @@
 {{define "messageTemplate"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.ChatData*/ -}}
     {{$moderatedChat := .IndexData.TUMLiveContext.Course.ModeratedChatEnabled}}
-    <template x-for="m in c.messages" :key="m.ID">
-        <div x-data="{ showReplies: false, m: m}"
+    <template x-for="(m, index) in c.messages" :key="m.ID">
+        <div x-ref="message" class="grid gap-y-1 text-4 text-sm $m.ID message"
+             x-data="{ showReplies: false}"
              x-show="!m.deleted && m.replyTo && !m.replyTo.Valid"
-             class="grid gap-y-1 text-4 text-sm">
+             :class="{'ring ring-blue-500/50' : c.current.replyTo === m.ID, 'opacity-60' : m.isGrayedOut}"
+             x-init="$watch('c.focusedMessageId', () => {if (c.isMessageToBeFocused(index)){watch.scrollToElement($refs.message)}} )">
             <!-- name and message -->
             <div class="text-xs">
                 <span x-show="m.admin" class="fa-video text-white bg-red-400 p-1 rounded fas"></span>
@@ -106,11 +108,13 @@
             </template>
 
             <!-- replies -->
-            <div x-cloak x-show="showReplies" class="grid gap-y-3 py-1 pl-2 mt-2 ml-4 border-l-2 dark:border-secondary-light">
+            <div x-cloak x-show="showReplies"
+                 class="grid gap-y-3 py-1 pl-2 mt-2 ml-4 border-l-2 dark:border-secondary-light">
                 <template x-for="reply in m.replies">
-                    <div class = "grid gap-y-1">
+                    <div class="grid gap-y-1">
                         <div>
-                            <span x-show="reply.admin" class="text-white bg-red-400 p-1 text-xs rounded fas fa-video"></span>
+                            <span x-show="reply.admin"
+                                  class="text-white bg-red-400 p-1 text-xs rounded fas fa-video"></span>
                             <span class="text-2 font-semibold" x-text="reply.name" :style="'color:'+reply.color"></span>
                         </div>
                         <div class="group p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">

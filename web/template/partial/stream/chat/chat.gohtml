@@ -1,7 +1,10 @@
 {{define "chat"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.ChatData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
-
+    {{$startTime := $stream.ParsableStartTime}}
+    {{$liveNowTimestamp := $stream.ParsableLiveNowTimestamp}}
+    {{$liveNow := $stream.LiveNow}}
+    {{$isComingUp := $stream.IsComingUp}}
     {{$userName := ""}}
     {{$userId := 0}}
     {{if .IndexData.TUMLiveContext.User}}
@@ -9,8 +12,8 @@
         {{$userId := .IndexData.TUMLiveContext.User.ID}}
     {{end}}
     <div x-cloak
-         x-data="watch.initChat({{.IsAdminOfCourse}},{{$stream.ID}}, {{$userId}},'{{$userName}}');"
-         x-init="await Promise.all([c.loadMessages(), c.poll.load()]); $nextTick(() => { watch.scrollToBottom() })"
+         x-data="watch.initChat({{.IsAdminOfCourse}}, {{$stream.ID}}, '{{$startTime}}', '{{$liveNowTimestamp}}', {{$userId}}, '{{$userName}}', {{not (or $isComingUp $liveNow)}});"
+         x-init="await Promise.all([c.loadMessages(), c.poll.load()]); $nextTick(() => { watch.scrollToBottom(); window.dispatchEvent(new CustomEvent('chatinitialized')); })"
          x-on:chatmessage.window="e => c.onMessage(e);"
          x-on:chatreply.window="e => c.onReply(e);"
          x-on:chatlike.window="e => {c.onLike(e); $dispatch('reorder')}"
@@ -20,6 +23,9 @@
          x-on:chatnewpoll.window="e => c.onNewPoll(e);"
          x-on:polloptionvotesupdate.window="e => c.onPollOptionVotesUpdate(e);"
          x-on:polloptionresult.window="e => c.onPollOptionResult(e);"
+         @chatpopupmessageupdate.window="e => initPromise.next(() => c.onPopUpMessagesUpdated(e));"
+         @chatupdategrayedout.window = "e => c.onGrayedOutUpdated(e);"
+         @chatupdatefocus.window = "e => c.onFocusUpdated(e);"
          @disconnected.window="c.disconnected = true;"
          @connected.window="c.disconnected = false;"
          @reorder="c.sortMessages()"
@@ -27,10 +33,47 @@
          id="chatWrapper"
          class="flex relative flex-col text-1 h-full">
         <!-- Chat header -->
-        <div class="flex sticky top-0 w-full px-3 max-h-12 h-12 border-b justify-between dark:border-0"
+        <div class="flex sticky top-0 align-middle justify-between w-full px-3 max-h-12 h-12 border-b justify-between dark:border-0"
              style="min-height: 3rem;"> <!-- since there is no min-h-12 class -->
-            <div class="ml-auto my-auto">
-                <button @click="c.orderByLikes=!c.orderByLikes; watch.setOrder(c.orderByLikes); $dispatch('reorder'); c.orderByLikes? watch.scrollToTop(): watch.scrollToBottom()"
+            <div class = "my-auto" x-show="c.chatReplayActive">
+                <span class = "text-5 text-xs uppercase font-semibold">Replaying chat</span>
+            </div>
+            <div class="my-auto space-x-2 ml-auto">
+                <button class="text-5 text-xs rounded font-semibold px-2 py-1 my-auto uppercase"
+                        :class="c.chatReplayActive ? 'bg-gray-300 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700'"
+                        x-show="{{not (or $isComingUp $liveNow)}}"
+                        title="(De-)Activate Chat Replay"
+                        @click="c.chatReplayActive = !c.chatReplayActive;"
+                        x-init="
+                            $watch('c.chatReplayActive', (value) => {
+                                value ? c.activateChatReplay() : c.deactivateChatReplay();
+                            })">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </button>
+                <button x-data="{oldChatReplayActive: c.chatReplayActive}"
+                        x-init="
+                        $watch('c.chatReplayActive', (value) => {
+                            if (value) {
+                                c.orderByLikes = false;
+                            }});
+
+                        $watch('c.orderByLikes', (value) => {
+                            watch.setOrder(value);
+                            $dispatch('reorder');
+                            if ({{$liveNow}}) {
+                                value ? watch.scrollToTop() : watch.scrollToBottom();
+                                return;
+                            }
+                            if (value) {
+                                oldChatReplayActive = c.chatReplayActive;
+                                c.chatReplayActive = false;
+                                watch.scrollToTop();
+                            }
+                            else if (oldChatReplayActive) {
+                                c.chatReplayActive = true;
+                            }
+                        });"
+                        @click="c.orderByLikes=!c.orderByLikes; watch.setOrder(c.orderByLikes);$dispatch('reorder'); c.orderByLikes? watch.scrollToTop(): watch.scrollToBottom()"
                         class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 text-5 text-xs rounded font-semibold px-2 py-1 my-auto uppercase"
                         title="Change Order">
                     <span x-text="c.orderByLikes? 'Popular First': 'Live Chat'"></span>
@@ -312,7 +355,7 @@
                         {{if not .IsPopUp}}
                             <button x-show="!{{.IsPopUp}}"
                                     class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded mr-auto hover:dark:bg-gray-600 hover:bg-gray-200"
-                                    @click="watch.openChatPopUp('{{.IndexData.TUMLiveContext.Course.Slug}}', {{.IndexData.TUMLiveContext.Stream.Model.ID}})"
+                                    @click="c.openChatPopUp('{{.IndexData.TUMLiveContext.Course.Slug}}', {{.IndexData.TUMLiveContext.Stream.Model.ID}})"
                                     title="Popout Chat"
                                     type="button">
                                 <i class="fas fa-external-link-alt text-3 m-auto"></i>

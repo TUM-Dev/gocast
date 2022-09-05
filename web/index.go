@@ -41,22 +41,6 @@ func (r mainRoutes) MainPage(c *gin.Context) {
 	}
 }
 
-func (r mainRoutes) AboutPage(c *gin.Context) {
-	var indexData IndexData
-	var tumLiveContext tools.TUMLiveContext
-	tumLiveContextQueried, found := c.Get("TUMLiveContext")
-	if found {
-		tumLiveContext = tumLiveContextQueried.(tools.TUMLiveContext)
-		indexData.TUMLiveContext = tumLiveContext
-	} else {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	indexData.VersionTag = VersionTag
-
-	_ = templateExecutor.ExecuteTemplate(c.Writer, "about.gohtml", indexData)
-}
-
 func (r mainRoutes) InfoPage(id uint) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var indexData IndexData
