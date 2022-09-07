@@ -106,7 +106,7 @@ func TestUsersCRUD(t *testing.T) {
 		response := createUserResponse{
 			Name:  userLecturer.Name,
 			Email: userLecturer.Email.String,
-			Role:  model.AdminType, // can only test with admin, since Mails aren't mocked yet
+			Role:  model.LecturerType, // can only test with admin, since Mails aren't mocked yet
 		}
 
 		gomino.TestCases{
@@ -126,6 +126,22 @@ func TestUsersCRUD(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
+			"POST[Users empty]": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						UsersDao: func() dao.UsersDao {
+							usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
+							usersMock.EXPECT().AreUsersEmpty(gomock.Any()).Return(false, nil)
+							return usersMock
+						}(),
+					}
+					configGinUsersRouter(r, wrapper)
+				},
+				Method:       http.MethodPost,
+				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode: http.StatusBadRequest,
+			},
 			"POST[Invalid Body]": {
 				Router: func(r *gin.Engine) {
 					wrapper := dao.DaoWrapper{
@@ -143,31 +159,15 @@ func TestUsersCRUD(t *testing.T) {
 				Body:         bytes.NewBuffer([]byte{}),
 				ExpectedCode: http.StatusBadRequest,
 			},
-			"POST[CreateUser(lecturer) returns error]": {
+			"POST[getCreateUserHandlers(lecturer) returns error]": {
 				Router: func(r *gin.Engine) {
 					wrapper := dao.DaoWrapper{
 						UsersDao: func() dao.UsersDao {
 							usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
 							usersMock.EXPECT().AreUsersEmpty(gomock.Any()).Return(false, nil)
-							usersMock.EXPECT().CreateUser(gomock.Any(), &userLecturer).Return(errors.New(""))
-							return usersMock
-						}(),
-					}
-					configGinUsersRouter(r, wrapper)
-				},
-				Method:       http.MethodPost,
-				Url:          url,
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
-				Body:         request,
-				ExpectedCode: http.StatusInternalServerError,
-			},
-			"POST[CreateUser(admin) returns error]": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						UsersDao: func() dao.UsersDao {
-							usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
-							usersMock.EXPECT().AreUsersEmpty(gomock.Any()).Return(true, nil)
 							usersMock.EXPECT().CreateUser(gomock.Any(), gomock.Any()).Return(errors.New(""))
+							usersMock.EXPECT().GetUserByEmail(gomock.Any(), request.Email).Return(testutils.Lecturer, nil).AnyTimes()
+							usersMock.EXPECT().CreateRegisterLink(gomock.Any(), testutils.Lecturer).Return(model.RegisterLink{}, nil).AnyTimes()
 							return usersMock
 						}(),
 					}
@@ -184,8 +184,10 @@ func TestUsersCRUD(t *testing.T) {
 					wrapper := dao.DaoWrapper{
 						UsersDao: func() dao.UsersDao {
 							usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
-							usersMock.EXPECT().AreUsersEmpty(gomock.Any()).Return(true, nil)
+							usersMock.EXPECT().AreUsersEmpty(gomock.Any()).Return(false, nil)
 							usersMock.EXPECT().CreateUser(gomock.Any(), gomock.Any()).Return(nil)
+							usersMock.EXPECT().GetUserByEmail(gomock.Any(), request.Email).Return(testutils.Lecturer, nil).AnyTimes()
+							usersMock.EXPECT().CreateRegisterLink(gomock.Any(), testutils.Lecturer).Return(model.RegisterLink{}, nil).AnyTimes()
 							return usersMock
 						}(),
 					}
@@ -198,6 +200,116 @@ func TestUsersCRUD(t *testing.T) {
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: response,
 			},
+		}.Run(t, testutils.Equal)
+	})
+
+	t.Run("/users/init", func(t *testing.T) {
+		url := "/api/users/init"
+		/*initialUser := model.User{
+			Name:  "Hansi",
+			Email: sql.NullString{String: "hansi@tum.de", Valid: true},
+			Role:  model.AdminType}
+		request := createUserRequest{
+			Name:     initialUser.Name,
+			Email:    initialUser.Email.String,
+			Password: "hansi123",
+		}
+
+		response := createUserResponse{
+			Name:  initialUser.Name,
+			Email: initialUser.Email.String,
+			Role:  model.AdminType, // can only test with admin, since Mails aren't mocked yet
+		}*/
+
+		gomino.TestCases{
+			"POST[AreUsersEmpty returns error]": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						UsersDao: func() dao.UsersDao {
+							usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
+							usersMock.EXPECT().AreUsersEmpty(gomock.Any()).Return(false, errors.New(""))
+							return usersMock
+						}(),
+					}
+					configGinUsersRouter(r, wrapper)
+				},
+				Method:       http.MethodPost,
+				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"POST[Users not empty]": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						UsersDao: func() dao.UsersDao {
+							usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
+							usersMock.EXPECT().AreUsersEmpty(gomock.Any()).Return(false, nil)
+							return usersMock
+						}(),
+					}
+					configGinUsersRouter(r, wrapper)
+				},
+				Method:       http.MethodPost,
+				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"POST[Invalid Body]": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						UsersDao: func() dao.UsersDao {
+							usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
+							usersMock.EXPECT().AreUsersEmpty(gomock.Any()).Return(true, nil)
+							return usersMock
+						}(),
+					}
+					configGinUsersRouter(r, wrapper)
+				},
+				Method:       http.MethodPost,
+				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				Body:         bytes.NewBuffer([]byte{}),
+				ExpectedCode: http.StatusBadRequest,
+			},
+			/*
+				FAILS BECAUSE OF CERTIFICATE CHECK
+				"POST[getCreateUserHandlers(admin) returns error]": {
+					Router: func(r *gin.Engine) {
+						wrapper := dao.DaoWrapper{
+							UsersDao: func() dao.UsersDao {
+								usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
+								usersMock.EXPECT().AreUsersEmpty(gomock.Any()).Return(true, nil)
+								usersMock.EXPECT().CreateUser(gomock.Any(), &initialUser).Return(errors.New(""))
+								return usersMock
+							}(),
+						}
+						configGinUsersRouter(r, wrapper)
+					},
+					Method:       http.MethodPost,
+					Url:          url,
+					Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+					Body:         request,
+					ExpectedCode: http.StatusInternalServerError,
+				},
+				"POST[success]": {
+					Router: func(r *gin.Engine) {
+						wrapper := dao.DaoWrapper{
+							UsersDao: func() dao.UsersDao {
+								usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
+								usersMock.EXPECT().AreUsersEmpty(gomock.Any()).Return(true, nil)
+								usersMock.EXPECT().CreateUser(gomock.Any(), gomock.Any()).Return(nil)
+								return usersMock
+							}(),
+						}
+						configGinUsersRouter(r, wrapper)
+					},
+					Method:           http.MethodPost,
+					Url:              url,
+					Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+					Body:             request,
+					ExpectedCode:     http.StatusOK,
+					ExpectedResponse: response,
+				},*/
 		}.Run(t, testutils.Equal)
 	})
 
