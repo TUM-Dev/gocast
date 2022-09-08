@@ -60,7 +60,7 @@ func HandlePremiere(request *pb.PremiereRequest) {
 	NotifyStreamDone(streamCtx)
 }
 
-func HandleSelfStream(request *pb.SelfStreamResponse, slug string) *StreamContext {
+func HandleSelfStream(request *pb.SelfStreamResponse, slug string, sourceIp string) *StreamContext {
 	streamCtx := &StreamContext{
 		streamId:      request.GetStreamID(),
 		courseSlug:    request.GetCourseSlug(),
@@ -73,7 +73,7 @@ func HandleSelfStream(request *pb.SelfStreamResponse, slug string) *StreamContex
 		streamVersion: "COMB",
 		isSelfStream:  false,
 		ingestServer:  request.IngestServer,
-		sourceUrl:     "rtmp://localhost/stream/" + slug,
+		sourceUrl:     "rtmp://" + sourceIp + "/stream/" + slug,
 		streamName:    request.StreamName,
 		outUrl:        request.OutUrl,
 	}

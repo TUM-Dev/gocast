@@ -123,7 +123,7 @@ func TestPublishing(t *testing.T) {
 
 	streams.streams[streamID] = worker.HandleSelfStream(&pb.SelfStreamResponse{
 		StreamID: 123,
-	}, testSlug)
+	}, testSlug, "")
 
 	// Setup POST request
 	form := url.Values{}
