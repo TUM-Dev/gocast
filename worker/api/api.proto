@@ -109,6 +109,7 @@ service FromWorker {
   // JoinWorkers is a request to the server to join the worker pool.
   rpc JoinWorkers (JoinWorkersRequest) returns (JoinWorkersResponse) {}
   rpc SendHeartBeat(HeartBeat) returns (Status) {}
+  rpc NotifyTranscodingProgress(stream NotifyTranscodingProgressRequest) returns (Status) {}
   rpc NotifyTranscodingFinished(TranscodingFinished) returns (Status) {}
   rpc NotifySilenceResults(SilenceResults) returns (Status) {}
   rpc NotifyStreamStarted(StreamStarted) returns (Status) {}
@@ -117,6 +118,14 @@ service FromWorker {
   rpc NotifyThumbnailsFinished(ThumbnailsFinished) returns (Status) {}
   rpc SendSelfStreamRequest(SelfStreamRequest) returns (SelfStreamResponse) {}
   rpc GetStreamInfoForUpload(GetStreamInfoForUploadRequest) returns (GetStreamInfoForUploadResponse) {}
+  rpc NewKeywords(NewKeywordsRequest) returns (Status) {}
+}
+
+message NotifyTranscodingProgressRequest {
+  string WorkerID = 1;
+  uint32 StreamId = 2;
+  string Version = 3;
+  int32 Progress = 4;
 }
 
 message JoinWorkersRequest {
@@ -175,6 +184,7 @@ message TranscodingFinished {
   uint32 StreamID = 2;
   string FilePath = 3;
   uint32 Duration = 4;
+  string SourceType = 5;
 }
 
 message UploadFinished {
@@ -211,4 +221,10 @@ message GetStreamInfoForUploadResponse {
   google.protobuf.Timestamp StreamStart = 4;
   google.protobuf.Timestamp StreamEnd = 5;
   uint32 StreamID = 6;
+}
+
+message NewKeywordsRequest {
+  string WorkerID = 1;
+  uint32 StreamID = 2;
+  repeated string Keywords = 3;
 }

@@ -1,5 +1,8 @@
+import { StatusCodes } from "http-status-codes";
+
 export * from "./notifications";
 export * from "./user-settings";
+export * from "./start-page";
 
 export async function putData(url = "", data = {}) {
     return await fetch(url, {
@@ -21,10 +24,27 @@ export async function postData(url = "", data = {}) {
     });
 }
 
+export async function patchData(url = "", data = {}) {
+    return await fetch(url, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+    });
+}
+
 export async function Delete(url = "") {
     return await fetch(url, {
         method: "DELETE",
     });
+}
+
+export function sendFormData(url, formData: FormData) {
+    const HttpReq = new XMLHttpRequest();
+    HttpReq.open("POST", url, false);
+    HttpReq.send(formData);
+    return HttpReq.responseText;
 }
 
 export function Get(yourUrl) {
@@ -41,13 +61,19 @@ export function showMessage(msg: string) {
     alertBox.classList.remove("hidden");
 }
 
-export function copyToClipboard(text: string) {
-    const dummy = document.createElement("input");
-    document.body.appendChild(dummy);
-    dummy.value = text;
-    dummy.select();
-    document.execCommand("copy");
-    document.body.removeChild(dummy);
+/**
+ * Copies a string to the clipboard using clipboard API.
+ * @param text the string that is copied to the clipboard.
+ */
+export async function copyToClipboard(text: string): Promise<boolean> {
+    return navigator.clipboard.writeText(text).then(
+        () => {
+            return true;
+        },
+        () => {
+            return false;
+        },
+    );
 }
 
 export function hideCourse(id: number, name: string) {
@@ -70,6 +96,24 @@ export function unhideCourse(id: string) {
     });
     localStorage.setItem("hiddenCourses", JSON.stringify(newHidden));
     document.location.reload();
+}
+
+export function pinCourse(id: number) {
+    postData(`/api/users/pinCourse`, { courseID: id }).then((response: Response) => {
+        if (response.status !== StatusCodes.OK) {
+            showMessage("There was an error pinning the course: " + response.body);
+        }
+        document.location.reload();
+    });
+}
+
+export function unpinCourse(id: number) {
+    postData(`/api/users/unpinCourse`, { courseID: id }).then((response: Response) => {
+        if (response.status !== StatusCodes.OK) {
+            showMessage("There was an error unpinning the course: " + response.body);
+        }
+        document.location.reload();
+    });
 }
 
 /**
@@ -212,6 +256,7 @@ export function getLoginReferrer(): string {
 
 // TypeScript Mapping of model.VideoSection
 export type Section = {
+    ID?: number;
     description: string;
 
     startHours: number;
@@ -222,6 +267,10 @@ export type Section = {
     friendlyTimestamp?: string;
     fileID?: number;
 };
+
+export function getQueryParam(name: string): string {
+    return new URL(window.location.href).searchParams.get(name) ?? undefined;
+}
 
 window.onload = function () {
     initHiddenCourses();

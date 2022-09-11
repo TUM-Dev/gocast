@@ -1,9 +1,10 @@
 package api
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
-	log "github.com/sirupsen/logrus"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"net/http"
 	"strconv"
 	"time"
@@ -21,13 +22,19 @@ type searchRoutes struct {
 func (r searchRoutes) searchStreams(c *gin.Context) {
 	q, courseIdS := c.Query("q"), c.Query("courseId")
 	if q == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "query parameter 'q' missing")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "query parameter 'q' missing",
+		})
 		return
 	}
 
 	courseId, err := strconv.Atoi(courseIdS)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "can not parse courseId")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid query parameter 'courseId'",
+		})
 		return
 	}
 
@@ -35,8 +42,11 @@ func (r searchRoutes) searchStreams(c *gin.Context) {
 	searchResults, err := r.SearchDao.Search(q, uint(courseId))
 	endTime := time.Now()
 	if err != nil {
-		log.WithError(err).Error("could not perform search")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: fmt.Sprintf("could not perform search: %s", err.Error()),
+			Err:           err,
+		})
 		return
 	}
 

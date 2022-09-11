@@ -25,7 +25,15 @@ func (r mainRoutes) MainPage(c *gin.Context) {
 	spanMain := sentry.StartSpan(c.Request.Context(), "MainPageHandler", tName)
 	defer spanMain.Finish()
 
-	IsFreshInstallation(c, r.UsersDao)
+	isFresh, err := IsFreshInstallation(c, r.UsersDao)
+	if err != nil {
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", nil)
+		return
+	}
+	if isFresh {
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData())
+		return
+	}
 
 	indexData := NewIndexDataWithContext(c)
 	indexData.LoadCurrentNotifications(r.ServerNotificationDao)
@@ -34,24 +42,11 @@ func (r mainRoutes) MainPage(c *gin.Context) {
 	indexData.LoadCoursesForRole(c, spanMain, r.CoursesDao)
 	indexData.LoadLivestreams(c, r.DaoWrapper)
 	indexData.LoadPublicCourses(r.CoursesDao)
+	indexData.LoadPinnedCourses()
 
-	_ = templateExecutor.ExecuteTemplate(c.Writer, "index.gohtml", indexData)
-}
-
-func (r mainRoutes) AboutPage(c *gin.Context) {
-	var indexData IndexData
-	var tumLiveContext tools.TUMLiveContext
-	tumLiveContextQueried, found := c.Get("TUMLiveContext")
-	if found {
-		tumLiveContext = tumLiveContextQueried.(tools.TUMLiveContext)
-		indexData.TUMLiveContext = tumLiveContext
-	} else {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
+	if err := templateExecutor.ExecuteTemplate(c.Writer, "index.gohtml", indexData); err != nil {
+		log.WithError(err).Errorf("Could not execute template: 'index.gohtml'")
 	}
-	indexData.VersionTag = VersionTag
-
-	_ = templateExecutor.ExecuteTemplate(c.Writer, "about.gohtml", indexData)
 }
 
 func (r mainRoutes) InfoPage(id uint) gin.HandlerFunc {
@@ -89,6 +84,7 @@ type IndexData struct {
 	IsStudent           bool
 	LiveStreams         []CourseStream
 	Courses             []model.Course
+	PinnedCourses       []model.Course
 	PublicCourses       []model.Course
 	Semesters           []dao.Semester
 	CurrentYear         int
@@ -121,16 +117,17 @@ func NewIndexDataWithContext(c *gin.Context) IndexData {
 	return indexData
 }
 
-// IsFreshInstallation Checks whether there are users in the database and executes the appropriate template for it
-func IsFreshInstallation(c *gin.Context, usersDao dao.UsersDao) {
+// IsFreshInstallation Checks whether there are users in the database and
+// returns true if so, false if not.
+func IsFreshInstallation(c *gin.Context, usersDao dao.UsersDao) (bool, error) {
 	res, err := usersDao.AreUsersEmpty(context.Background()) // fresh installation?
 	if err != nil {
-		_ = templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", nil)
-		return
+		return false, err
 	} else if res {
-		_ = templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData())
-		return
+		return true, nil
 	}
+
+	return false, nil
 }
 
 // LoadCurrentNotifications Loads notifications from the database into the IndexData object
@@ -242,6 +239,21 @@ func (d *IndexData) LoadCoursesForRole(c *gin.Context, spanMain *sentry.Span, co
 	sortCourses(courses)
 
 	d.Courses = commons.Unique(courses, func(c model.Course) uint { return c.ID })
+}
+
+func (d *IndexData) LoadPinnedCourses() {
+	var pinnedCourses []model.Course
+
+	if d.TUMLiveContext.User != nil {
+		pinnedCourses = d.TUMLiveContext.User.PinnedCourses
+		for i := range pinnedCourses {
+			pinnedCourses[i].Pinned = true
+		}
+		sortCourses(pinnedCourses)
+		d.PinnedCourses = commons.Unique(pinnedCourses, func(c model.Course) uint { return c.ID })
+	} else {
+		d.PinnedCourses = []model.Course{}
+	}
 }
 
 // LoadPublicCourses Load public courses of user. Filter courses which are already in IndexData.Courses

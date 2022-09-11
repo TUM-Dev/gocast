@@ -25,7 +25,12 @@ func (r workerRoutes) deleteWorker(c *gin.Context) {
 	id := c.Param("id")
 	err := r.dao.DeleteWorker(id)
 	if err != nil {
-		log.WithError(err).Error("Worker deletion failed")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("can not delete worker")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not delete worker",
+			Err:           err,
+		})
+		return
 	}
 }

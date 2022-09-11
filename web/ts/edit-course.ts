@@ -1,4 +1,4 @@
-import { Delete, postData, putData, showMessage } from "./global";
+import { Delete, patchData, postData, putData, sendFormData, showMessage } from "./global";
 import { StatusCodes } from "http-status-codes";
 
 export enum UIEditMode {
@@ -22,6 +22,13 @@ export class LectureList {
         LectureList.triggerUpdate();
     }
 
+    static hasIndividualChatEnabledSettings(): boolean {
+        const lectures = this.lectures;
+        if (lectures.length < 2) return false;
+        const first = lectures[0];
+        return lectures.slice(1).some((lecture) => lecture.isChatEnabled !== first.isChatEnabled);
+    }
+
     static triggerUpdate() {
         const event = new CustomEvent("newlectures", { detail: LectureList.lectures });
         window.dispatchEvent(event);
@@ -38,6 +45,11 @@ class LectureFile {
         this.fileType = fileType;
         this.friendlyName = friendlyName;
     }
+}
+
+class TranscodingProgress {
+    version: string;
+    progress: number;
 }
 
 export class Lecture {
@@ -61,7 +73,7 @@ export class Lecture {
     start: Date;
     end: Date;
     readonly isLiveNow: boolean;
-    readonly isConverting: boolean;
+    isConverting: boolean;
     readonly isRecording: boolean;
     readonly isPast: boolean;
     readonly hasStats: boolean;
@@ -70,14 +82,17 @@ export class Lecture {
     description: string;
     lectureHallId: string;
     lectureHallName: string;
+    isChatEnabled = false;
     uiEditMode: UIEditMode = UIEditMode.none;
     newName: string;
     newDescription: string;
     newLectureHallId: string;
+    newIsChatEnabled = false;
     isDirty = false;
     isSaving = false;
     isDeleted = false;
     lastErrors: string[] = [];
+    transcodingProgresses: TranscodingProgress[];
     files: LectureFile[];
     private: boolean;
 
@@ -105,13 +120,15 @@ export class Lecture {
         this.isDirty =
             this.newName !== this.name ||
             this.newDescription !== this.description ||
-            this.newLectureHallId !== this.lectureHallId;
+            this.newLectureHallId !== this.lectureHallId ||
+            this.newIsChatEnabled !== this.isChatEnabled;
     }
 
     resetNewFields() {
         this.newName = this.name;
         this.newDescription = this.description;
         this.newLectureHallId = this.lectureHallId;
+        this.newIsChatEnabled = this.isChatEnabled;
         this.isDirty = false;
         this.lastErrors = [];
     }
@@ -145,6 +162,31 @@ export class Lecture {
         });
     }
 
+    async keepProgressesUpdated() {
+        if (!this.isConverting) {
+            return;
+        }
+        setTimeout(() => {
+            for (let i = 0; i < this.transcodingProgresses.length; i++) {
+                fetch(
+                    `/api/course/${this.courseId}/stream/${this.lectureId}/transcodingProgress?v=${this.transcodingProgresses[i].version}`,
+                )
+                    .then((r) => {
+                        return r.json() as Promise<number>;
+                    })
+                    .then((r) => {
+                        if (r === 100) {
+                            this.transcodingProgresses.splice(i, 1);
+                        } else {
+                            this.transcodingProgresses[i].progress = r;
+                        }
+                    });
+            }
+            this.isConverting = this.transcodingProgresses.length > 0;
+            this.keepProgressesUpdated();
+        }, 5000);
+    }
+
     async saveEdit() {
         this.lastErrors = [];
         if (this.uiEditMode === UIEditMode.none) return;
@@ -154,6 +196,7 @@ export class Lecture {
         if (this.newName !== this.name) promises.push(this.saveNewLectureName());
         if (this.newDescription !== this.description) promises.push(this.saveNewLectureDescription());
         if (this.newLectureHallId !== this.lectureHallId) promises.push(this.saveNewLectureHall());
+        if (this.newIsChatEnabled !== this.isChatEnabled) promises.push(this.saveNewIsChatEnabled());
 
         const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
 
@@ -223,6 +266,17 @@ export class Lecture {
             this.lectureHallName = "";
         }
 
+        return res;
+    }
+
+    async saveNewIsChatEnabled() {
+        const res = await saveIsChatEnabled(this.lectureId, this.newIsChatEnabled);
+
+        if (res.status == StatusCodes.OK) {
+            this.isChatEnabled = this.newIsChatEnabled;
+        } else {
+            res.text().then((t) => showMessage(t));
+        }
         return res;
     }
 
@@ -371,6 +425,19 @@ export async function deleteLectures(cid: number, lids: number[]) {
     }
 }
 
+export function saveIsChatEnabled(streamId: number, isChatEnabled: boolean) {
+    return patchData("/api/stream/" + streamId + "/chat/enabled", { streamId, isChatEnabled });
+}
+
+export async function saveIsChatEnabledForAllLectures(isChatEnabled: boolean) {
+    const promises = [];
+    for (const lecture of LectureList.lectures) {
+        promises.push(saveIsChatEnabled(lecture.lectureId, isChatEnabled));
+    }
+    const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
+    return errors.length <= 0;
+}
+
 export function saveLectureHall(streamIds: number[], lectureHall: string) {
     return postData("/api/setLectureHall", { streamIds, lectureHall: parseInt(lectureHall) });
 }
@@ -436,6 +503,7 @@ export function createLectureForm() {
             lectureHallId: 0,
             start: "",
             end: "",
+            isChatEnabled: false,
             duration: 0, // Duration in Minutes
             formatedDuration: "", // Duration in Minutes
             premiere: false,
@@ -513,6 +581,7 @@ export function createLectureForm() {
                     vodup: this.formData.vodup,
                     start: this.formData.start,
                     duration: this.formData.duration,
+                    isChatEnabled: this.formData.isChatEnabled,
                     dateSeries: [],
                     // todo: file: undefined,
                 };
@@ -564,6 +633,18 @@ export function createLectureForm() {
     };
 }
 
+export function sendCourseSettingsForm(courseId: number) {
+    const form = document.getElementById("course-settings-form") as HTMLFormElement;
+    const formData = new FormData(form);
+    sendFormData(`/admin/course/${courseId}`, formData);
+}
+
+export async function submitFormAndEnableAllIndividualChats(courseId: number, isChatEnabled: boolean) {
+    const res = await saveIsChatEnabledForAllLectures(isChatEnabled);
+    sendCourseSettingsForm(courseId);
+    return res;
+}
+
 export function deleteCourse(courseID: string) {
     if (confirm("Do you really want to delete this course? This includes all associated lectures.")) {
         const url = `/api/course/${courseID}/`;
@@ -575,4 +656,15 @@ export function deleteCourse(courseID: string) {
             }
         });
     }
+}
+
+export function copyCourse(courseID: string, year: string, yearW: string, semester: string) {
+    const url = `/api/course/${courseID}/copy`;
+    fetch(url, { method: "POST", body: JSON.stringify({ year, yearW, semester }) }).then((res) => {
+        if (!res.ok) {
+            alert("Couldn't copy course.");
+        } else {
+            res.json().then((r) => window.location.replace(`/admin/course/${r.newCourse}?copied`));
+        }
+    });
 }

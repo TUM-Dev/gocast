@@ -72,6 +72,14 @@
                                 <i class="fas fa-comments"></i>
                             </a>
                         {{end}}
+                        {{/* Copy HLS Link for video */}}
+                        {{if $lecture.PlaylistUrl}}
+                            <i x-data="{ copied: false }" title="Copy HLS URL for combined stream"
+                               :class="copied ? 'fa-check' : 'fa-link'"
+                               class="flex text-lg cursor-pointer text-3 dark:hover:text-white hover:text-black hover:text-gray-600 fas fa-fw"
+                               @click="if (global.copyToClipboard('{{$lecture.PlaylistUrl}}{{if $lecture.StartOffset}}?wowzaplaystart={{$lecture.StartOffset}}&wowzaplayduration={{$lecture.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))) { copied=true; setTimeout(() => { copied=false }, 1000); }">
+                            </i>
+                        {{end}}
                     </div>
                 </div>
                 {{if $lecture.Units}}

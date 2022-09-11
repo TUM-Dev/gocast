@@ -1,6 +1,7 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
 import { getPlayer } from "./TUMLiveVjs";
+import { Get, postData } from "./global";
 
 let chatInput: HTMLInputElement;
 
@@ -257,7 +258,7 @@ export const videoStatListener = {
     },
     update() {
         const player = getPlayer();
-        const vhs = player.tech().vhs;
+        const vhs = player.tech({ IWillNotUseThisInPlugins: true }).vhs;
         const notAvailable = vhs == null;
 
         const data = {
@@ -278,3 +279,22 @@ export const videoStatListener = {
         }
     },
 };
+
+export function onShift(e) {
+    switch (e.key) {
+        case "?": {
+            toggleShortcutsModal();
+        }
+    }
+}
+
+export function toggleShortcutsModal() {
+    const el = document.getElementById("shortcuts-help-modal");
+    if (el !== undefined) {
+        if (el.classList.contains("hidden")) {
+            el.classList.remove("hidden");
+        } else {
+            el.classList.add("hidden");
+        }
+    }
+}

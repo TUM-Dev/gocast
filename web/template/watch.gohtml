@@ -12,17 +12,23 @@
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
     <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
     <link rel="stylesheet" href="/static/node_modules/@silvermine/videojs-airplay/dist/silvermine-videojs-airplay.css">
-    <link rel="stylesheet"
-          href="/static/node_modules/videojs-hls-quality-selector/dist/videojs-hls-quality-selector.css">
 </head>
-<body x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}}"
+<body x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}, seekLogger: new watch.SeekLogger('{{$stream.ID}}')}"
       x-on:pausestart.window="paused=true"
       x-on:pauseend.window="paused=false"
-      x-init="new watch.Watch(); watch.startWebsocket()">
+      @keypress.shift.window="(e) => watch.onShift(e)"
+      x-init="new watch.Watch(); watch.startWebsocket(); seekLogger.attach();">
 {{template "header" .IndexData.TUMLiveContext}}
+<!-- Keyboard shortcuts modal -->
+<div id="shortcuts-help-modal" class="hidden flex absolute top-0 h-screen w-screen z-50 backdrop-blur-sm">
+    <div class="m-auto" @click.outside="watch.toggleShortcutsModal();">
+        {{template "shortcuts"}}
+    </div>
+</div>
 <div id="watchPageMainWrapper" class="w-full md:flex md:flex-nowrap md:justify-between"
      style="height: calc(100vh - 5rem)">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
+
     <div id="watchWrapper"
          class="grow overflow-x-hidden h-fit md:h-full">
         <noscript><p class="vjs-no-js">
@@ -248,7 +254,7 @@
                 <div class="text-3 px-2"
                      x-html="less ? prev : full"
                      @descriptionupdate.window="full=$el.innerHTML=$event.detail.description.full;prev=
-                    $el.innerHTML=$event.detail.description.truncated;less=full.length>{{.CutOffLength}};">
+                     $el.innerHTML=$event.detail.description.truncated;less=full.length>{{.CutOffLength}};">
                 </div>
                 <button x-show="full.length>{{.CutOffLength}}"
                         class="text-xs text-gray-500 dark:text-gray-400 uppercase mt-2 px-2"
@@ -297,7 +303,7 @@
             {{end}}
         </div>
     </div>
-    {{if $course.ChatEnabled}}
+    {{if and $course.ChatEnabled $stream.ChatEnabled}}
         <div x-data="{show: $persist(false).as('chatOpen')}"
              class="mt-5 md:mt-0"
              :class="show ? 'w-full md:w-2/6 2xl:w-1/5 h-96 md:h-auto shrink-0' : 'md:w-14  h-fit md:h-full'">
@@ -308,11 +314,9 @@
 <script>
     {{if $stream.Recording}}
     watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
     {{else}}
     watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
-    {{end}}
-    {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
-    watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
     {{end}}
     {{if $stream.Silences}}
     watch.skipSilence({{$stream.GetSilencesJson}});

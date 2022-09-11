@@ -96,7 +96,7 @@ func (mr *MockUsersDaoMockRecorder) CreateRegisterLink(ctx, user interface{}) *g
 // CreateUser mocks base method.
 func (m *MockUsersDao) CreateUser(ctx context.Context, user *model.User) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateUser", ctx, user)
+	ret := m.ctrl.Call(m, "getCreateUserHandlers", ctx, user)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -104,7 +104,7 @@ func (m *MockUsersDao) CreateUser(ctx context.Context, user *model.User) error {
 // CreateUser indicates an expected call of CreateUser.
 func (mr *MockUsersDaoMockRecorder) CreateUser(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUsersDao)(nil).CreateUser), ctx, user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "getCreateUserHandlers", reflect.TypeOf((*MockUsersDao)(nil).CreateUser), ctx, user)
 }
 
 // DeleteResetKey mocks base method.
@@ -205,6 +205,20 @@ func (m *MockUsersDao) IsUserAdmin(ctx context.Context, uid uint) (bool, error) 
 func (mr *MockUsersDaoMockRecorder) IsUserAdmin(ctx, uid interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsUserAdmin", reflect.TypeOf((*MockUsersDao)(nil).IsUserAdmin), ctx, uid)
+}
+
+// PinCourse mocks base method.
+func (m *MockUsersDao) PinCourse(user model.User, course model.Course, pin bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PinCourse", user, course, pin)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PinCourse indicates an expected call of PinCourse.
+func (mr *MockUsersDaoMockRecorder) PinCourse(user, course, pin interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PinCourse", reflect.TypeOf((*MockUsersDao)(nil).PinCourse), user, course, pin)
 }
 
 // SearchUser mocks base method.

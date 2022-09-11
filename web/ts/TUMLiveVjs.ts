@@ -1,14 +1,14 @@
-import { postData, Section } from "./global";
+import { getQueryParam, postData } from "./global";
+import { VideoSections } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import airplay from "@silvermine/videojs-airplay";
-import dom = videojs.dom;
 
 import { handleHotkeys } from "./hotkeys";
+import dom = videojs.dom;
 
 require("videojs-sprite-thumbnails");
 require("videojs-seek-buttons");
-require("videojs-hls-quality-selector");
 require("videojs-contrib-quality-levels");
 
 const Button = videojs.getComponent("Button");
@@ -63,8 +63,6 @@ export const initPlayer = function (
             height: 90,
         });
     }
-
-    player.hlsQualitySelector();
     player.seekButtons({
         // TODO user preferences, e.g. change to 5s
         backIndex: 0,
@@ -203,8 +201,9 @@ export const skipSilence = function (options) {
  * Saves and retrieves the watch progress of the user as a fraction of the total watch time
  * @param streamID The ID of the currently watched stream
  * @param lastProgress The last progress fetched from the database
+ * @param loggedIn: User logged in?
  */
-export const watchProgress = function (streamID: number, lastProgress: number) {
+export const watchProgress = function (streamID: number, lastProgress: number, loggedIn: boolean) {
     const player = videojs("my-video");
     player.ready(() => {
         let duration;
@@ -212,23 +211,13 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
         let iOSReady = false;
         let intervalMillis = 10000;
 
-        // Fetch the user's video progress from the database and set the time in the player
-        player.on("loadedmetadata", () => {
-            duration = player.duration();
-            player.currentTime(lastProgress * duration);
-        });
-
-        // iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
-        // not sufficient here.
-        // See https://stackoverflow.com/questions/28823567/how-to-set-currenttime-in-video-js-in-safari-for-ios.
-        if (videojs.browser.IS_IOS) {
-            player.on("canplaythrough", () => {
-                // Can be executed multiple times during playback
-                if (!iOSReady) {
-                    player.currentTime(lastProgress * duration);
-                    iOSReady = true;
-                }
-            });
+        // check if query contains parameter 't' and set timestamp accordingly
+        const queryT = Number(getQueryParam("t"));
+        if (!isNaN(queryT)) {
+            player.currentTime(queryT);
+            if (videojs.browser.IS_IOS) {
+                iOSReady = setTimeOnIOS(iOSReady, queryT);
+            }
         }
 
         const reportProgress = () => {
@@ -244,32 +233,68 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
             });
         };
 
-        // Triggered when user presses play
-        player.on("play", () => {
-            // See https://developer.mozilla.org/en-US/docs/Web/API/setInterval#ensure_that_execution_duration_is_shorter_than_interval_frequency
-            (function reportNextProgress() {
-                timer = setTimeout(function () {
-                    reportProgress();
-                    reportNextProgress();
-                }, intervalMillis);
-            })();
-        });
+        // check if user is logged-in, if so proceed
+        if (loggedIn !== null && loggedIn !== undefined && loggedIn) {
+            if (isNaN(queryT)) {
+                // Fetch the user's video progress from the database and set the time in the player
+                player.on("loadedmetadata", () => {
+                    duration = player.duration();
+                    player.currentTime(lastProgress * duration);
+                });
 
-        // Triggered on pause and skipping the video
-        player.on("pause", () => {
-            clearInterval(timer);
-            // "Bug" on iOS: The video is automatically paused at the beginning
-            if (!iOSReady && videojs.browser.IS_IOS) {
-                return;
+                if (videojs.browser.IS_IOS) {
+                    iOSReady = setTimeOnIOS(iOSReady, lastProgress * duration);
+                }
             }
-            reportProgress();
-        });
 
-        // Triggered when the video has no time left
-        player.on("ended", () => {
-            clearInterval(timer);
-        });
+            // Triggered when user presses play
+            player.on("play", () => {
+                // See https://developer.mozilla.org/en-US/docs/Web/API/setInterval#ensure_that_execution_duration_is_shorter_than_interval_frequency
+                (function reportNextProgress() {
+                    timer = setTimeout(function () {
+                        reportProgress();
+                        reportNextProgress();
+                    }, intervalMillis);
+                })();
+            });
+
+            // Triggered on pause and skipping the video
+            player.on("pause", () => {
+                clearInterval(timer);
+                // "Bug" on iOS: The video is automatically paused at the beginning
+                if (!iOSReady && videojs.browser.IS_IOS) {
+                    return;
+                }
+                reportProgress();
+            });
+
+            // Triggered when the video has no time left
+            player.on("ended", () => {
+                clearInterval(timer);
+            });
+        }
     });
+};
+
+/**
+ * Registers a time watcher that observes the time of the current player
+ * @param callBack call back function responsible for handling player time updates
+ * @return callBack function that got registered for listening to player time updates (used to deregister)
+ */
+export const registerTimeWatcher = function (callBack: (currentPlayerTime: number) => void): () => void {
+    const timeWatcherCallBack: () => void = () => {
+        callBack(player.currentTime());
+    };
+    player?.on("timeupdate", timeWatcherCallBack);
+    return timeWatcherCallBack;
+};
+
+/**
+ * Deregisters a time watching obeserver from the current player
+ * @param callBackToDeregister regestered callBack function
+ */
+export const deregisterTimeWatcher = function (callBackToDeregister: () => void) {
+    player?.off("timeupdate", callBackToDeregister);
 };
 
 const Component = videojs.getComponent("Component");
@@ -415,72 +440,39 @@ export function jumpTo(hours: number, minutes: number, seconds: number) {
     });
 }
 
-export class VideoSections {
+type SeekLoggerLogFunction = (position: number) => void;
+const SEEK_LOGGER_DEBOUNCE_TIMEOUT = 4000;
+
+export class SeekLogger {
     readonly streamID: number;
-    readonly sectionsPerGroup: number;
+    log: SeekLoggerLogFunction;
 
-    private list: Section[];
-
-    currentHighlightIndex: number;
-    currentIndex: number;
+    initialSeekDone = false;
 
     constructor(streamID) {
-        this.streamID = streamID;
-        this.list = [];
-        this.currentHighlightIndex = -1;
-
-        this.currentIndex = 0;
-        this.sectionsPerGroup = 4;
-    }
-
-    isCurrent(i: number): boolean {
-        return this.currentHighlightIndex !== -1 && i === this.currentHighlightIndex;
-    }
-
-    async fetch() {
-        await fetch(`/api/stream/${this.streamID}/sections`)
-            .then((res: Response) => {
-                if (!res.ok) {
-                    throw new Error("Could not fetch sections");
-                }
-                return res.json();
-            })
-            .then((sections) => {
-                this.list = sections;
-                attachCurrentTimeEvent(this);
-            })
-            .catch((err) => {
-                console.log(err);
-                this.list = [];
-                this.currentHighlightIndex = 0;
-            });
-    }
-
-    showSection(i: number): boolean {
-        return (
-            i >= this.currentIndex * this.sectionsPerGroup &&
-            i < this.currentIndex * this.sectionsPerGroup + this.sectionsPerGroup
+        this.streamID = parseInt(streamID);
+        this.log = debounce(
+            (position) => postData(`/api/seekReport/${this.streamID}`, { position }),
+            SEEK_LOGGER_DEBOUNCE_TIMEOUT,
         );
     }
 
-    showNext(): boolean {
-        return this.currentIndex < this.list.length / this.sectionsPerGroup - 1;
-    }
+    attach() {
+        player.ready(() => {
+            player.on("seeked", () => {
+                if (this.initialSeekDone) {
+                    return this.log(player.currentTime());
+                }
+                this.initialSeekDone = true;
+            });
 
-    showPrev(): boolean {
-        return this.currentIndex > 0;
-    }
-
-    next() {
-        this.currentIndex = (this.currentIndex + 1) % this.list.length;
-    }
-
-    prev() {
-        this.currentIndex = (this.currentIndex - 1) % this.list.length;
+            // If there is no initial seek, reset after 3 second
+            setTimeout(() => (this.initialSeekDone = true), 3000);
+        });
     }
 }
 
-function attachCurrentTimeEvent(videoSection: VideoSections) {
+export function attachCurrentTimeEvent(videoSection: VideoSections) {
     player.ready(() => {
         let timer;
         (function checkTimestamp() {
@@ -507,6 +499,29 @@ function hightlight(player, videoSection) {
 
 function toSeconds(hours: number, minutes: number, seconds: number): number {
     return hours * 60 * 60 + minutes * 60 + seconds;
+}
+
+function debounce(func, timeout) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => func.apply(this, args), timeout);
+    };
+}
+
+// iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
+// not sufficient here.
+// See https://stackoverflow.com/questions/28823567/how-to-set-currenttime-in-video-js-in-safari-for-ios.
+// Returns updated iOSReady value
+function setTimeOnIOS(iOSReady: boolean, seconds: number): boolean {
+    player.on("canplaythrough", () => {
+        // Can be executed multiple times during playback
+        if (!iOSReady) {
+            player.currentTime(seconds);
+            return true;
+        }
+    });
+    return false;
 }
 
 // Register the plugin with video.js.

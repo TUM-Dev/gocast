@@ -3,6 +3,7 @@ package dao
 import (
 	"github.com/joschahenningsen/TUM-Live/model"
 	"gorm.io/gorm"
+	"time"
 )
 
 //go:generate mockgen -source=ingest_server.go -destination ../mock_dao/ingest_server.go
@@ -34,7 +35,7 @@ func (d ingestServerDao) SaveIngestServer(server model.IngestServer) {
 	DB.Save(&server)
 }
 
-// GetBestIngestServer returns the ingest-tumlive with the least streams assigned to it
+// GetBestIngestServer returns the IngestServer with the least streams assigned to it
 func (d ingestServerDao) GetBestIngestServer() (server model.IngestServer, err error) {
 	if err = DB.Raw("SELECT i.* FROM stream_names" +
 		" JOIN ingest_servers i ON i.id = stream_names.ingest_server_id" +
@@ -50,15 +51,21 @@ func (d ingestServerDao) GetBestIngestServer() (server model.IngestServer, err e
 }
 
 func (d ingestServerDao) GetTranscodedStreamSlot(ingestServerID uint) (sn model.StreamName, err error) {
-	err = DB.First(&sn, "is_transcoding AND ingest_server_id = ? AND stream_id IS null", ingestServerID).Error
+	err = DB.Order("freed_at asc").First(&sn, "is_transcoding AND ingest_server_id = ? AND stream_id IS null", ingestServerID).Error
 	return
 }
 
 func (d ingestServerDao) GetStreamSlot(ingestServerID uint) (sn model.StreamName, err error) {
-	err = DB.First(&sn, "is_transcoding = 0 AND ingest_server_id = ? AND stream_id IS null", ingestServerID).Error
+	err = DB.Order("freed_at asc").First(&sn, "is_transcoding = 0 AND ingest_server_id = ? AND stream_id IS null", ingestServerID).Error
 	return
 }
 
 func (d ingestServerDao) RemoveStreamFromSlot(streamID uint) error {
-	return DB.Model(&model.StreamName{}).Where("stream_id = ?", streamID).Update("stream_id", gorm.Expr("NULL")).Error
+	return DB.
+		Model(&model.StreamName{}).
+		Where("stream_id = ?", streamID).
+		Updates(map[string]interface{}{
+			"stream_id": gorm.Expr("NULL"),
+			"freed_at":  time.Now(),
+		}).Error
 }

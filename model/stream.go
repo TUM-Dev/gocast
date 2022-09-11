@@ -3,64 +3,56 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-	"time"
-
-	"github.com/russross/blackfriday/v2"
-
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/russross/blackfriday/v2"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-)
-
-// StreamStatus is the status of a stream (e.g. converting)
-type StreamStatus int
-
-const (
-	StatusUnknown    StreamStatus = iota + 1 // StatusUnknown is the default status of a stream
-	StatusConverting                         // StatusConverting indicates that a worker is currently converting the stream.
-	StatusConverted                          // StatusConverted indicates that the stream has been converted.
+	"time"
 )
 
 type Stream struct {
 	gorm.Model
 
-	Name             string `gorm:"index:,class:FULLTEXT"`
-	Description      string `gorm:"type:text;index:,class:FULLTEXT"`
-	CourseID         uint
-	Start            time.Time `gorm:"not null"`
-	End              time.Time `gorm:"not null"`
-	RoomName         string
-	RoomCode         string
-	EventTypeName    string
-	TUMOnlineEventID uint
-	SeriesIdentifier string `gorm:"default:null"`
-	StreamKey        string `gorm:"not null"`
-	PlaylistUrl      string
-	PlaylistUrlPRES  string
-	PlaylistUrlCAM   string
-	LiveNow          bool `gorm:"not null"`
-	Recording        bool
-	Premiere         bool `gorm:"default:null"`
-	Ended            bool `gorm:"default:null"`
-	Chats            []Chat
-	Stats            []Stat
-	Units            []StreamUnit
-	VodViews         uint `gorm:"default:0"` // todo: remove me before next semester
-	StartOffset      uint `gorm:"default:null"`
-	EndOffset        uint `gorm:"default:null"`
-	LectureHallID    uint `gorm:"default:null"`
-	Silences         []Silence
-	Files            []File `gorm:"foreignKey:StreamID"`
-	ThumbInterval    uint32 `gorm:"default:null"`
-	Paused           bool   `gorm:"default:false"`
-	StreamName       string
-	Duration         uint32           `gorm:"default:null"`
-	StreamWorkers    []Worker         `gorm:"many2many:stream_workers;"`
-	StreamProgresses []StreamProgress `gorm:"foreignKey:StreamID"`
-	VideoSections    []VideoSection
-	StreamStatus     StreamStatus `gorm:"not null;default:1"`
-	Private          bool         `gorm:"not null;default:false"`
+	Name                  string `gorm:"index:,class:FULLTEXT"`
+	Description           string `gorm:"type:text;index:,class:FULLTEXT"`
+	CourseID              uint
+	Start                 time.Time `gorm:"not null"`
+	End                   time.Time `gorm:"not null"`
+	ChatEnabled           bool      `gorm:"default:null"`
+	RoomName              string
+	RoomCode              string
+	EventTypeName         string
+	TUMOnlineEventID      uint
+	SeriesIdentifier      string `gorm:"default:null"`
+	StreamKey             string `gorm:"not null"`
+	PlaylistUrl           string
+	PlaylistUrlPRES       string
+	PlaylistUrlCAM        string
+	LiveNow               bool      `gorm:"not null"`
+	LiveNowTimestamp      time.Time `gorm:"default:null;column:live_now_timestamp"`
+	Recording             bool
+	Premiere              bool `gorm:"default:null"`
+	Ended                 bool `gorm:"default:null"`
+	Chats                 []Chat
+	Stats                 []Stat
+	Units                 []StreamUnit
+	VodViews              uint `gorm:"default:0"` // todo: remove me before next semester
+	StartOffset           uint `gorm:"default:null"`
+	EndOffset             uint `gorm:"default:null"`
+	LectureHallID         uint `gorm:"default:null"`
+	Silences              []Silence
+	Files                 []File `gorm:"foreignKey:StreamID"`
+	ThumbInterval         uint32 `gorm:"default:null"`
+	Paused                bool   `gorm:"default:false"`
+	StreamName            string
+	Duration              uint32           `gorm:"default:null"`
+	StreamWorkers         []Worker         `gorm:"many2many:stream_workers;"`
+	StreamProgresses      []StreamProgress `gorm:"foreignKey:StreamID"`
+	VideoSections         []VideoSection
+	TranscodingProgresses []TranscodingProgress `gorm:"foreignKey:StreamID"`
+	Private               bool                  `gorm:"not null;default:false"`
 
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }
@@ -92,6 +84,7 @@ func (s Stream) GetThumbIdForSource(source string) uint {
 			return file.ID
 		}
 	}
+	log.WithField("fileType", fileType).Error("Could not find thumbnail for file type")
 	return FILETYPE_INVALID
 }
 
@@ -111,7 +104,7 @@ func (s Stream) GetName() string {
 }
 
 func (s Stream) IsConverting() bool {
-	return s.StreamStatus == StatusConverting
+	return len(s.TranscodingProgresses) > 0
 }
 
 // IsDownloadable returns true if the stream is a recording and has at least one file associated with it.
@@ -192,6 +185,24 @@ func (s Stream) FriendlyTime() string {
 	return s.Start.Format("02.01.2006 15:04") + " - " + s.End.Format("15:04")
 }
 
+// ParsableTimeFormat returns a JavaScript friendly formatted date string
+func ParsableTimeFormat(time time.Time) string {
+	if time.IsZero() {
+		return ""
+	}
+	return time.Format("2006-01-02 15:04:05")
+}
+
+// ParsableStartTime returns a JavaScript friendly formatted date string
+func (s Stream) ParsableStartTime() string {
+	return ParsableTimeFormat(s.Start)
+}
+
+// ParsableLiveNowTimestamp returns a JavaScript friendly formatted date string
+func (s Stream) ParsableLiveNowTimestamp() string {
+	return ParsableTimeFormat(s.LiveNowTimestamp)
+}
+
 func (s Stream) FriendlyNextDate() string {
 	if now.With(s.Start).EndOfDay() == now.EndOfDay() {
 		return fmt.Sprintf("Today, %02d:%02d", s.Start.Hour(), s.Start.Minute())
@@ -236,25 +247,27 @@ func (s Stream) getJson(lhs []LectureHall, course Course) gin.H {
 	}
 
 	return gin.H{
-		"lectureId":        s.Model.ID,
-		"courseId":         s.CourseID,
-		"seriesIdentifier": s.SeriesIdentifier,
-		"name":             s.Name,
-		"description":      s.Description,
-		"lectureHallId":    s.LectureHallID,
-		"lectureHallName":  lhName,
-		"streamKey":        s.StreamKey,
-		"isLiveNow":        s.LiveNow,
-		"isRecording":      s.Recording,
-		"isConverting":     s.StreamStatus == StatusConverting,
-		"isPast":           s.IsPast(),
-		"hasStats":         s.Stats != nil,
-		"files":            files,
-		"color":            s.Color(),
-		"start":            s.Start,
-		"end":              s.End,
-		"courseSlug":       course.Slug,
-		"private":          s.Private,
+		"lectureId":             s.Model.ID,
+		"courseId":              s.CourseID,
+		"seriesIdentifier":      s.SeriesIdentifier,
+		"name":                  s.Name,
+		"description":           s.Description,
+		"lectureHallId":         s.LectureHallID,
+		"lectureHallName":       lhName,
+		"streamKey":             s.StreamKey,
+		"isLiveNow":             s.LiveNow,
+		"isRecording":           s.Recording,
+		"isConverting":          s.IsConverting(),
+		"transcodingProgresses": s.TranscodingProgresses,
+		"isPast":                s.IsPast(),
+		"hasStats":              s.Stats != nil,
+		"files":                 files,
+		"color":                 s.Color(),
+		"start":                 s.Start,
+		"end":                   s.End,
+		"isChatEnabled":         s.ChatEnabled,
+		"courseSlug":            course.Slug,
+		"private":               s.Private,
 	}
 }
 

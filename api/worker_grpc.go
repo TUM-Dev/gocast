@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -181,6 +182,7 @@ func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted
 		return nil, err
 	}
 	stream.LiveNow = true
+	stream.LiveNowTimestamp = time.Now()
 	switch request.GetSourceType() {
 	case "CAM":
 		stream.PlaylistUrlCAM = request.HlsUrl
@@ -217,23 +219,10 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 				}
 			}()
 		}
-		// wait 2 hours to clear the dvr cache
-		go func() {
-			time.Sleep(time.Hour * 2)
-			err := s.DaoWrapper.IngestServerDao.RemoveStreamFromSlot(stream.ID)
-			if err != nil {
-				log.WithError(err).Error("Can't remove stream from streamName")
-			}
-		}()
-
-		// wait 2 hours to clear the dvr cache
-		go func() {
-			time.Sleep(time.Hour * 2)
-			err := s.DaoWrapper.IngestServerDao.RemoveStreamFromSlot(stream.ID)
-			if err != nil {
-				log.WithError(err).Error("Can't remove stream from streamName")
-			}
-		}()
+		err = s.DaoWrapper.IngestServerDao.RemoveStreamFromSlot(stream.ID)
+		if err != nil {
+			log.WithError(err).Error("Can't remove stream from streamName")
+		}
 
 		err = s.StreamsDao.SetStreamNotLiveById(uint(request.StreamID))
 		if err != nil {
@@ -242,6 +231,27 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 		NotifyViewersLiveState(uint(request.StreamID), false)
 	}
 	return &pb.Status{Ok: true}, nil
+}
+
+func (s server) NewKeywords(ctx context.Context, request *pb.NewKeywordsRequest) (*pb.Status, error) {
+	if _, err := s.DaoWrapper.WorkerDao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
+		return nil, errors.New("authentication failed: invalid worker id")
+	} else {
+		keywords := make([]model.Keyword, len(request.Keywords))
+		for i, keyword := range request.Keywords {
+			keywords[i] = model.Keyword{
+				StreamID: uint(request.StreamID),
+				Text:     keyword,
+			}
+		}
+		err = s.DaoWrapper.KeywordDao.NewKeywords(keywords)
+		if err != nil {
+			log.WithError(err).Println("Couldn't insert keyword")
+			return &pb.Status{Ok: false}, err
+		}
+
+		return &pb.Status{Ok: true}, nil
+	}
 }
 
 func handleCameraPositionSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) error {
@@ -376,6 +386,12 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 	if err != nil {
 		return nil, err
 	}
+
+	err = s.StreamsDao.RemoveTranscodingProgress(model.StreamVersion(request.SourceType), stream.ID)
+	if err != nil {
+		log.WithError(err).Error("error removing transcoding progress")
+	}
+
 	// look for file to prevent duplication
 	shouldAddFile := true
 	for _, file := range stream.Files {
@@ -391,7 +407,6 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 	if request.Duration != 0 {
 		stream.Duration = request.Duration
 	}
-	stream.StreamStatus = model.StatusConverted
 	err = s.DaoWrapper.StreamsDao.SaveStream(&stream)
 	if err != nil {
 		log.WithError(err).Error("Can't save stream")
@@ -416,7 +431,6 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 		return nil, nil
 	}
 	stream.Recording = true
-	stream.StreamStatus = model.StatusUnknown
 	switch req.SourceType {
 	case "CAM":
 		stream.PlaylistUrlCAM = req.HLSUrl
@@ -521,6 +535,12 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		// interims solution; sometimes dvr doesn't work as expected.
 		// here we check if the url 404s and remove dvr from the stream in that case
 		stream.LiveNow = true
+
+		err = s.StreamsDao.SetStreamLiveNowTimestampById(uint(request.StreamID), time.Now())
+		if err != nil {
+			log.WithError(err).Error("Can't set StreamLiveNowTimestamp")
+		}
+
 		time.Sleep(time.Second * 5)
 		if !isHlsUrlOk(request.HlsUrl) {
 			sentry.WithScope(func(scope *sentry.Scope) {
@@ -543,9 +563,32 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 			s.StreamsDao.SaveCOMBURL(&stream, request.HlsUrl)
 		}
 		NotifyViewersLiveState(stream.Model.ID, true)
+		NotifyLiveUpdateCourseWentLive(stream.Model.ID)
 	}()
 
 	return &pb.Status{Ok: true}, nil
+}
+
+func (s server) NotifyTranscodingProgress(srv pb.FromWorker_NotifyTranscodingProgressServer) error {
+	for {
+		resp, err := srv.Recv()
+		if err == io.EOF || errors.Is(err, context.Canceled) {
+			return nil
+		}
+		if err != nil {
+			log.Warnf("cannot receive %v", err)
+			return nil
+		}
+		err = s.DaoWrapper.StreamsDao.SaveTranscodingProgress(model.TranscodingProgress{
+			StreamID: uint(resp.StreamId),
+			Version:  model.StreamVersion(resp.Version),
+			Progress: int(resp.Progress),
+		})
+		if err != nil {
+			return err
+		}
+
+	}
 }
 
 func isHlsUrlOk(url string) bool {
@@ -758,6 +801,9 @@ type generateVideoSectionImagesParameters struct {
 
 func DeleteVideoSectionImage(workerDao dao.WorkerDao, path string) error {
 	workers := workerDao.GetAliveWorkers()
+	if len(workers) == 0 {
+		return errors.New("no workers available")
+	}
 	workerIndex := getWorkerWithLeastWorkload(workers)
 	conn, err := dialIn(workers[workerIndex])
 	defer func() {
@@ -776,6 +822,9 @@ func DeleteVideoSectionImage(workerDao dao.WorkerDao, path string) error {
 
 func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *generateVideoSectionImagesParameters) error {
 	workers := daoWrapper.WorkerDao.GetAliveWorkers()
+	if len(workers) == 0 {
+		return errors.New("no workers available")
+	}
 	workerIndex := getWorkerWithLeastWorkload(workers)
 	conn, err := dialIn(workers[workerIndex])
 	defer func() {
@@ -888,7 +937,7 @@ func init() {
 	}
 	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
 		MaxConnectionIdle:     time.Minute,
-		MaxConnectionAge:      time.Minute,
+		MaxConnectionAge:      time.Minute * 5,
 		MaxConnectionAgeGrace: time.Second * 5,
 		Time:                  time.Minute * 10,
 		Timeout:               time.Second * 20,
