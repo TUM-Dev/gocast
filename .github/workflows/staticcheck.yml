@@ -15,7 +15,7 @@ jobs:
       matrix:
         os: [ "ubuntu-latest" ]
         go: [ "1.19.x" ]
-        dir: [ "." ]
+        dir: [ ".", "./worker", "./worker/edge" ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
