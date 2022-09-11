@@ -22,7 +22,7 @@ var (
 	inflghtLock = sync.Mutex{}
 	inflight    = make(map[string]*sync.Mutex)
 
-	allowedRe = regexp.MustCompile("^/[a-zA-Z0-9]+/([a-zA-Z0-9_]+/)*[a-zA-Z0-9_]+\\.(ts|m3u8)$") // e.g. /vm123/live/stream/1234.ts
+	allowedRe = regexp.MustCompile(`^/[a-zA-Z0-9]+/([a-zA-Z0-9_]+/)*[a-zA-Z0-9_]+\.(ts|m3u8)$`) // e.g. /vm123/live/stream/1234.ts
 	//allowedRe = regexp.MustCompile("^.*$") // e.g. /vm123/live/strean/1234.ts
 )
 
