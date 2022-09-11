@@ -1,4 +1,4 @@
-package mediaGen
+package main
 
 import (
 	"fmt"
