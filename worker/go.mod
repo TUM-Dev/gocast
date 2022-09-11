@@ -1,6 +1,6 @@
 module github.com/joschahenningsen/TUM-Live/worker
 
-go 1.18
+go 1.19
 
 // Direct dependencies
 require (
