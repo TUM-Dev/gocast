@@ -48,7 +48,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			admins.GET("", routes.getStream)
 			admins.GET("/pause", routes.pauseStream)
 			admins.GET("/end", routes.endStream)
-			admins.GET("/thumb", routes.regenerateThumbs)
+			admins.GET("/thumb", routes.RegenerateThumbs)
 			admins.POST("/issue", routes.reportStreamIssue)
 			admins.PATCH("/visibility", routes.updateStreamVisibility)
 			admins.PATCH("/chat/enabled", routes.updateChatEnabled)
@@ -336,45 +336,18 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-func (r streamRoutes) regenerateThumbs(c *gin.Context) {
+// RegenerateThumbs regenerates the thumbnails for a stream.
+func (r streamRoutes) RegenerateThumbs(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	stream := tumLiveContext.Stream
 	_ = stream
 	for _, file := range stream.Files {
 		if file.Type == model.FILETYPE_VOD {
 			// Request thumbnail for VoD
-			err := regenerateThumbs(r.DaoWrapper, file.Path)
+			err := RegenerateThumbs(r.DaoWrapper, file.Path)
 			if err != nil {
 				log.WithError(err).Errorf("Can't regenerate thumbnail for stream %d with file %s", stream.ID, file.Path)
 				continue
-			}
-		}
-	}
-}
-
-// TODO: We and when this should get triggered. Should be moved to courses
-//lint:file-ignore U1000 This will be used later
-func (r streamRoutes) regenerateAllThumbs(c *gin.Context) {
-	courses, err := r.CoursesDao.GetAllCourses()
-	if err != nil {
-		log.WithError(err).Error("Can't get courses")
-		c.AbortWithStatus(http.StatusInternalServerError)
-	}
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-	stream := tumLiveContext.Stream
-	_ = stream
-
-	for _, course := range courses {
-		for _, stream := range course.Streams {
-			for _, file := range stream.Files {
-				if file.Type == model.FILETYPE_VOD {
-					// Request thumbnail for VoD
-					err := regenerateThumbs(r.DaoWrapper, file.Path)
-					if err != nil {
-						log.WithError(err).Errorf("Can't regenerate thumbnail for stream %d with file %s", stream.ID, file.Path)
-						continue
-					}
-				}
 			}
 		}
 	}

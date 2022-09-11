@@ -89,7 +89,7 @@ func (s server) JoinWorkers(ctx context.Context, request *pb.JoinWorkersRequest)
 	}, nil
 }
 
-//NotifySilenceResults handles the results of silence detection sent by a worker
+// NotifySilenceResults handles the results of silence detection sent by a worker
 func (s server) NotifySilenceResults(ctx context.Context, request *pb.SilenceResults) (*pb.Status, error) {
 	if _, err := s.DaoWrapper.WorkerDao.GetWorkerByID(ctx, request.WorkerID); err != nil {
 		return nil, err
@@ -199,7 +199,7 @@ func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted
 	return nil, nil
 }
 
-//NotifyStreamFinished handles workers notification about streams being finished
+// NotifyStreamFinished handles workers notification about streams being finished
 func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFinished) (*pb.Status, error) {
 	if _, err := s.DaoWrapper.WorkerDao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, errors.New("authentication failed: invalid worker id")
@@ -356,7 +356,7 @@ func handleLightOffSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) error 
 	return nil
 }
 
-//SendHeartBeat receives heartbeat messages sent by workers
+// SendHeartBeat receives heartbeat messages sent by workers
 func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.Status, error) {
 	if worker, err := s.DaoWrapper.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, errors.New("authentication failed: invalid worker id")
@@ -377,7 +377,7 @@ func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.S
 	}
 }
 
-//NotifyTranscodingFinished receives and handles messages from workers about finished transcoding
+// NotifyTranscodingFinished receives and handles messages from workers about finished transcoding
 func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.TranscodingFinished) (*pb.Status, error) {
 	if _, err := s.DaoWrapper.WorkerDao.GetWorkerByID(ctx, request.WorkerID); err != nil {
 		return nil, err
@@ -415,7 +415,7 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 	return &pb.Status{Ok: true}, nil
 }
 
-//NotifyUploadFinished receives and handles messages from workers about finished uploads
+// NotifyUploadFinished receives and handles messages from workers about finished uploads
 func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished) (*pb.Status, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -504,7 +504,7 @@ func (s server) GetStreamInfoForUpload(ctx context.Context, request *pb.GetStrea
 	}, nil
 }
 
-//NotifyStreamStarted receives stream started events from workers
+// NotifyStreamStarted receives stream started events from workers
 func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -719,7 +719,7 @@ func NotifyWorkers(daoWrapper dao.DaoWrapper) func() {
 	}
 }
 
-//notifyWorkersPremieres looks for premieres that should be streamed and assigns them to workers.
+// notifyWorkersPremieres looks for premieres that should be streamed and assigns them to workers.
 func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 	streams := daoWrapper.StreamsDao.GetDuePremieresForWorkers()
 	workers := daoWrapper.WorkerDao.GetAliveWorkers()
@@ -770,7 +770,7 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 	}
 }
 
-func regenerateThumbs(daoWrapper dao.DaoWrapper, path string) error {
+func RegenerateThumbs(daoWrapper dao.DaoWrapper, path string) error {
 	workers := daoWrapper.WorkerDao.GetAliveWorkers()
 	workerIndex := getWorkerWithLeastWorkload(workers)
 	conn, err := dialIn(workers[workerIndex])
@@ -915,8 +915,8 @@ func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool, daoWrapper 
 	}
 }
 
-//getWorkerWithLeastWorkload Gets the index of the worker from workers with the least workload.
-//workers must not be empty!
+// getWorkerWithLeastWorkload Gets the index of the worker from workers with the least workload.
+// workers must not be empty!
 func getWorkerWithLeastWorkload(workers []model.Worker) int {
 	foundWorker := 0
 	for i := range workers {
