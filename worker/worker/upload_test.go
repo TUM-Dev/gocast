@@ -2,7 +2,6 @@ package worker
 
 import (
 	"github.com/joschahenningsen/TUM-Live/worker/cfg"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"sync"
@@ -68,7 +67,7 @@ func TestUpload(t *testing.T) {
 }
 
 func createDummyFile(filesize uint) (string, error) {
-	file, err := ioutil.TempFile("/tmp", "recording")
+	file, err := os.CreateTemp("/tmp", "recording")
 	if err != nil {
 		return "", err
 	}

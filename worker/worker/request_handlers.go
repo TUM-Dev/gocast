@@ -7,7 +7,6 @@ import (
 	"github.com/joschahenningsen/TUM-Live/worker/ocr"
 	"github.com/u2takey/go-utils/uuid"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -547,16 +546,16 @@ func extractKeywords(ctx *StreamContext) error {
 
 	// create temporary directory
 	outFileName := fmt.Sprintf("%s.jpeg", uuid.NewUUID())
-	dir, err := ioutil.TempDir("", "keyword-extraction")
+	dir, err := os.CreateTemp("", "keyword-extraction")
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(dir)
+	defer os.RemoveAll(dir.Name())
 	defer os.Remove(outFileName) // Remove thumbgen's out.jpeg
 
 	// generate images to process
 	g, err := thumbgen.New(ctx.getTranscodingFileName(), 768, 128,
-		outFileName, thumbgen.WithJpegCompression(70), thumbgen.WithStoreSingleFrames(dir))
+		outFileName, thumbgen.WithJpegCompression(70), thumbgen.WithStoreSingleFrames(dir.Name()))
 	if err != nil {
 		return err
 	}
@@ -565,15 +564,15 @@ func extractKeywords(ctx *StreamContext) error {
 		return err
 	}
 
-	fileInfoArray, err := ioutil.ReadDir(dir)
+	fileInfoArray, err := os.ReadDir(dir.Name())
 	if err != nil {
 		return err
 	}
 
 	// collect file-names
 	files := make([]string, len(fileInfoArray))
-	for i, _ := range fileInfoArray {
-		files[i] = path.Join(dir, fileInfoArray[i].Name())
+	for i := range fileInfoArray {
+		files[i] = path.Join(dir.Name(), fileInfoArray[i].Name())
 	}
 
 	// extract keywords
