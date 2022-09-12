@@ -1,0 +1,24 @@
+{
+  "name": "MUT-Live",
+  "short_name": "MUT-Live",
+  "icons": [
+    {
+      "src": "/static/assets/img/icons-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/static/assets/img/icons-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/?source=pwa",
+  "background_color": "#161c22",
+  "display_override": ["window-control-overlay", "minimal-ui"],
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#161c22",
+  "description": "MUT-Live, a non-existing livestreaming and VoD service",
+  "screenshots": []
+}

@@ -93,6 +93,13 @@ To create database models and their corresponding daos there is a helper script 
 go run cmd/modelGen/modelGen.go <NameOfYourModel(UpperCamelCase)>
 ```
 
+### Customization
+
+For customization create a folder `branding` in the project's
+root directory and build the application with docker.
+
+An exemplary configuration can be found in `/branding-example`.
+
 ## Credit & Licenses
 
 - [Check out our dependencies](https://github.com/joschahenningsen/TUM-Live/network/dependencies)
