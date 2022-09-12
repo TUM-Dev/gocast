@@ -56,6 +56,9 @@ func configGinStaticRouter(router gin.IRoutes) {
 	router.Static("/public", tools.Cfg.Paths.Static)
 	if VersionTag != "development" {
 		router.StaticFS("/static", http.FS(staticFS))
+		router.GET("/logo.svg", func(c *gin.Context) {
+			c.FileFromFS("assets/img/logo.svg", http.FS(staticFS))
+		})
 		router.GET("/favicon.ico", func(c *gin.Context) {
 			c.FileFromFS("assets/favicon.ico", http.FS(staticFS))
 		})
@@ -64,6 +67,9 @@ func configGinStaticRouter(router gin.IRoutes) {
 		})
 	} else {
 		router.Static("/static", "web/")
+		router.GET("/logo.svg", func(c *gin.Context) {
+			c.FileFromFS("assets/img/logo.svg", http.FS(staticFS))
+		})
 		router.GET("/favicon.ico", func(c *gin.Context) {
 			c.File("web/assets/favicon.ico")
 		})
