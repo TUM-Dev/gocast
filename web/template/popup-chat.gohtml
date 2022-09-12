@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     {{$course := .IndexData.TUMLiveContext.Course}}
-    <title>{{$course.Name}}: {{$stream.Name}} | TUM Live</title>
+    <title>{{.IndexData.Branding.Title}} | {{$course.Name}}: {{$stream.Name}}</title>
     {{template "headImports" .IndexData.VersionTag}}
     <script src="/static/assets/ts-dist/watch.bundle.js?v={{.IndexData.VersionTag}}"></script>
 </head>
-<body x-data="{show: true}" x-init="watch.startWebsocket()" class = "h-screen overflow-hidden">
+<body x-data="{show: true}" x-init="watch.startWebsocket()" class="h-screen overflow-hidden">
     <input type="hidden" id="streamID" value="{{.IndexData.TUMLiveContext.Stream.Model.ID}}">
     {{template "chat" .}}
 </body>

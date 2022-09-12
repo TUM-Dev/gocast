@@ -84,8 +84,9 @@ func LoggedIn(c *gin.Context) {
 // the gin context is always aborted after this function is called.
 func RenderErrorPage(c *gin.Context, status int, message string) {
 	err := templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", ErrorPageData{
-		Status:  status,
-		Message: message,
+		Status:   status,
+		Message:  message,
+		Branding: BrandingCfg,
 	})
 	if err != nil {
 		log.Error(err)
@@ -95,8 +96,9 @@ func RenderErrorPage(c *gin.Context, status int, message string) {
 
 //ErrorPageData is the required data for the error page
 type ErrorPageData struct {
-	Status  int
-	Message string
+	Status   int
+	Message  string
+	Branding Branding
 }
 
 const (
