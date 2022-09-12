@@ -22,7 +22,9 @@ func init() {
 	v := viper.New()
 	v.SetConfigName("branding")
 	v.SetConfigType("yaml")
-	v.AddConfigPath("./branding/")
+	v.AddConfigPath("/etc/TUM-Live/")
+	v.AddConfigPath("$HOME/.TUM-Live")
+	v.AddConfigPath(".")
 
 	branding := getDefault()
 
