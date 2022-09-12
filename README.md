@@ -98,6 +98,8 @@ go run cmd/modelGen/modelGen.go <NameOfYourModel(UpperCamelCase)>
 For customization create a folder `branding` in the project's
 root directory and build the application with docker.
 
+If intended, put a `branding.yaml` file at the same location as `config.yaml`.
+
 An exemplary configuration can be found in `/branding-example`.
 
 ## Credit & Licenses
