@@ -4,7 +4,8 @@ VERSION := $(shell git rev-parse --short origin/HEAD)
 
 protoGen:
 	cd api; \
-	protoc ./api.proto --go-grpc_out=../.. --go_out=../..
+	protoc ./api.proto --go-grpc_out=../.. --go_out=../.. && \
+	protoc ./subtitles.proto --go-grpc_out=../.. --go_out=../..
 
 build: deps
 	go build -o main -ldflags="-X 'main.VersionTag=$(VERSION)'" cmd/worker/worker.go;
