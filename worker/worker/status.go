@@ -194,3 +194,22 @@ func (s *Status) endKeywordExtraction(streamCtx *StreamContext) {
 	}
 	statusLock.Unlock()
 }
+
+func (s *Status) startSubtitleGeneration(streamCtx *StreamContext) {
+	defer s.SendHeartbeat()
+	statusLock.Lock()
+	defer statusLock.Unlock()
+	s.Jobs = append(s.Jobs, fmt.Sprintf("sending subtitle generation request for %s", streamCtx.getTranscodingFileName()))
+}
+
+func (s *Status) endSubtitleGeneration(streamCtx *StreamContext) {
+	defer s.SendHeartbeat()
+	statusLock.Lock()
+	for i := range s.Jobs {
+		if s.Jobs[i] == fmt.Sprintf("sending subtitle generation request for %s", streamCtx.getTranscodingFileName()) {
+			s.Jobs = append(s.Jobs[:i], s.Jobs[i+1:]...)
+			break
+		}
+	}
+	statusLock.Unlock()
+}

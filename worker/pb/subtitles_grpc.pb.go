@@ -35,7 +35,7 @@ func NewSubtitlesClient(cc grpc.ClientConnInterface) SubtitlesClient {
 
 func (c *subtitlesClient) Generate(ctx context.Context, in *GenerateRequest, opts ...grpc.CallOption) (*GenerateResponse, error) {
 	out := new(GenerateResponse)
-	err := c.cc.Invoke(ctx, "/api.Subtitles/Generate", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/voice.Subtitles/Generate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func _Subtitles_Generate_Handler(srv interface{}, ctx context.Context, dec func(
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.Subtitles/Generate",
+		FullMethod: "/voice.Subtitles/Generate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SubtitlesServer).Generate(ctx, req.(*GenerateRequest))
@@ -92,7 +92,7 @@ func _Subtitles_Generate_Handler(srv interface{}, ctx context.Context, dec func(
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Subtitles_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "api.Subtitles",
+	ServiceName: "voice.Subtitles",
 	HandlerType: (*SubtitlesServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/joschahenningsen/TUM-Live/worker/ocr"
 	"github.com/u2takey/go-utils/uuid"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"io"
 	"io/ioutil"
 	"os"
@@ -363,7 +365,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		}
 	}
 
-	S.startThumbnailGeneration(&c)
+	/*S.startThumbnailGeneration(&c)
 	defer S.endThumbnailGeneration(&c)
 	err = createThumbnailSprite(&c)
 	if err != nil {
@@ -386,7 +388,15 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 	err = extractKeywords(&c)
 	if err != nil {
 		log.WithField("File", c.getTranscodingFileName()).WithError(err).Error("Extracting keywords failed.")
+	}*/
+
+	S.startSubtitleGeneration(&c)
+	err = sendSubtitleGenerationRequest(&c)
+	if err != nil {
+		log.WithField("File", c.getTranscodingFileName()).
+			WithError(err).Error("Sending subtitle generation request failed.")
 	}
+	defer S.endSubtitleGeneration(&c)
 
 	upload(&c)
 	notifyUploadDone(&c)
@@ -474,48 +484,39 @@ func (s StreamContext) getRecordingTrashName() string {
 	return filepath.Join(filepath.Dir(fn), ".trash", filepath.Base(fn))
 }
 
-// getTranscodingFileName returns the filename a stream should be saved to after transcoding.
-// example: /srv/sharedMassStorage/2021/S/eidi/2021-09-23_10-00/eidi_2021-09-23_10-00_PRES.mp4
-func (s StreamContext) getTranscodingFileName() string {
-	if s.isSelfStream {
-		return fmt.Sprintf("%s/%d/%s/%s/%s/%s-%s.mp4",
-			cfg.StorageDir,
-			s.teachingYear,
-			s.teachingTerm,
-			s.courseSlug,
-			s.startTime.Format("2006-01-02_15-04"),
-			s.courseSlug,
-			s.startTime.Format("02012006"))
-	}
-	return fmt.Sprintf("%s/%d/%s/%s/%s/%s.mp4",
+// getTranscodingFolder returns the path of the folder a stream should be saved to after transcoding.
+// example /srv/sharedMassStorage/2021/S/eidi/2021-09-23_10-00/
+func (s StreamContext) getTranscodingFolder() string {
+	return fmt.Sprintf("%s/%d/%s/%s/%s/",
 		cfg.StorageDir,
 		s.teachingYear,
 		s.teachingTerm,
 		s.courseSlug,
-		s.startTime.Format("2006-01-02_15-04"),
-		s.getStreamName())
+		s.startTime.Format("2006-01-02_15-04"))
+}
+
+// getTranscodingFileName returns the filename a stream should be saved to after transcoding.
+// example: /srv/sharedMassStorage/2021/S/eidi/2021-09-23_10-00/eidi_2021-09-23_10-00_PRES.mp4
+func (s StreamContext) getTranscodingFileName() string {
+	if s.isSelfStream {
+		return fmt.Sprintf("%s/%s-%s.mp4",
+			s.getTranscodingFolder(),
+			s.courseSlug,
+			s.startTime.Format("02012006"))
+	}
+	return fmt.Sprintf("%s/%s.mp4", s.getTranscodingFolder(), s.getStreamName())
 }
 
 // getThumbnailSpriteFileName returns the path a thumbnail sprite should be saved to after transcoding.
 // example: /srv/sharedMassStorage/2021/S/eidi/2021-09-23_10-00/eidi_2021-09-23_10-00_PRES-thumb.jpg
 func (s StreamContext) getThumbnailSpriteFileName() string {
 	if s.isSelfStream {
-		return fmt.Sprintf("%s/%d/%s/%s/%s/%s-%s-thumb.jpg",
-			cfg.StorageDir,
-			s.teachingYear,
-			s.teachingTerm,
-			s.courseSlug,
-			s.startTime.Format("2006-01-02_15-04"),
+		return fmt.Sprintf("%s/%s-%s-thumb.jpg",
+			s.getTranscodingFolder(),
 			s.courseSlug,
 			s.startTime.Format("02012006"))
 	}
-	return fmt.Sprintf("%s/%d/%s/%s/%s/%s-thumb.jpg",
-		cfg.StorageDir,
-		s.teachingYear,
-		s.teachingTerm,
-		s.courseSlug,
-		s.startTime.Format("2006-01-02_15-04"),
-		s.getStreamName())
+	return fmt.Sprintf("%s/%s-thumb.jpg", s.getTranscodingFolder(), s.getStreamName())
 }
 
 // getStreamName returns the stream name, used for the worker status
@@ -555,6 +556,7 @@ func extractKeywords(ctx *StreamContext) error {
 	defer os.Remove(outFileName) // Remove thumbgen's out.jpeg
 
 	// generate images to process
+	ctx.getTranscodingFileName()
 	g, err := thumbgen.New(ctx.getTranscodingFileName(), 768, 128,
 		outFileName, thumbgen.WithJpegCompression(70), thumbgen.WithStoreSingleFrames(dir))
 	if err != nil {
@@ -601,6 +603,24 @@ func extractKeywords(ctx *StreamContext) error {
 
 	if !status.GetOk() {
 		return errors.New(status.String())
+	}
+
+	return nil
+}
+
+func sendSubtitleGenerationRequest(ctx *StreamContext) error {
+	conn, err := grpc.Dial(fmt.Sprintf("%s:50053", cfg.MainBase), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return err
+	}
+	client := pb.NewSubtitlesClient(conn)
+	res, err := client.Generate(context.Background(), &pb.GenerateRequest{
+		SourceFile:        ctx.getTranscodingFileName(),
+		DestinationFolder: ctx.getTranscodingFolder(), // Assumption: Store .srt at the same place as the video.
+	})
+	log.WithField("response", res).Info("voice.Subtitles.Generate")
+	if err != nil {
+		return err
 	}
 
 	return nil
