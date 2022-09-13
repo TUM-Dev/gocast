@@ -21,7 +21,6 @@ type Message struct {
 
 type Realtime struct {
 	connector *Connector
-	clients   ClientStore
 	channels  ChannelStore
 }
 
@@ -30,7 +29,6 @@ func New(connector *Connector) *Realtime {
 	r := Realtime{}
 
 	r.connector = connector
-	r.clients.init()
 	r.channels.init()
 	r.connector.hook(&Hooks{
 		OnConnect:    r.connectHandler,
@@ -52,7 +50,7 @@ func (r *Realtime) HandleRequest(writer http.ResponseWriter, request *http.Reque
 }
 
 func (r *Realtime) IsConnected(clientId string) bool {
-	return r.clients.Exists(clientId)
+	return r.connector.clients.Exists(clientId)
 }
 
 // IsSubscribed checks whether a client is subscribed to a certain channelPath or not
