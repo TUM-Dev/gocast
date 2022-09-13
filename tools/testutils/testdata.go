@@ -20,6 +20,7 @@ var (
 	TUMLiveContextStudent  = tools.TUMLiveContext{User: &Student}
 	TUMLiveContextLecturer = tools.TUMLiveContext{User: &Lecturer}
 	TUMLiveContextAdmin    = tools.TUMLiveContext{User: &Admin}
+	TUMLiveContextUserNil  = tools.TUMLiveContext{User: nil}
 	TUMLiveContextEmpty    = tools.TUMLiveContext{}
 )
 
@@ -53,13 +54,13 @@ var (
 		UserID:               1,
 		Name:                 "Funktionale Programmierung und Verifikation (IN0003)",
 		Slug:                 "fpv",
-		Year:                 0,
+		Year:                 2022,
 		TeachingTerm:         "W",
 		TUMOnlineIdentifier:  "2020",
 		LiveEnabled:          true,
 		VODEnabled:           false,
 		DownloadsEnabled:     false,
-		ChatEnabled:          false,
+		ChatEnabled:          true,
 		AnonymousChatEnabled: false,
 		ModeratedChatEnabled: false,
 		VodChatEnabled:       false,
@@ -91,6 +92,7 @@ var (
 		CourseID:         40,
 		Start:            StartTime,
 		End:              StartTime.Add(time.Hour),
+		ChatEnabled:      true,
 		RoomName:         "00.08.038, Seminarraum",
 		RoomCode:         "5608.EG.038",
 		EventTypeName:    "Abhaltung",
@@ -135,6 +137,7 @@ var (
 		CourseID:         40,
 		Start:            StartTime,
 		End:              StartTime.Add(time.Hour),
+		ChatEnabled:      true,
 		RoomName:         "00.08.038, Seminarraum",
 		RoomCode:         "5608.EG.038",
 		EventTypeName:    "Abhaltung",
@@ -154,6 +157,7 @@ var (
 		CourseID:         CourseGBS.ID,
 		Start:            StartTime,
 		End:              StartTime.Add(time.Hour),
+		ChatEnabled:      true,
 		TUMOnlineEventID: 888333337,
 		SeriesIdentifier: "",
 		StreamKey:        "0dc3d-1337-7331-4201-1337-7f16-bbe1-2222",
@@ -169,6 +173,7 @@ var (
 		CourseID:         40,
 		Start:            StartTime,
 		End:              StartTime.Add(time.Hour),
+		ChatEnabled:      true,
 		TUMOnlineEventID: 888261337,
 		SeriesIdentifier: "",
 		StreamKey:        "0dc3d-1337-1194-38f8-1337-7f16-bbe1-1111",
@@ -229,6 +234,26 @@ var (
 		ChunkIndex: 3,
 		StreamID:   StreamFPVNotLive.ID,
 		Hits:       788,
+	}
+	Bookmark = model.Bookmark{
+		Model:       gorm.Model{ID: 1},
+		Description: "Klausurrelevant",
+		Hours:       1,
+		Minutes:     33,
+		Seconds:     7,
+		UserID:      Student.ID,
+		StreamID:    StreamFPVLive.ID,
+	}
+	PollStreamFPVLive = model.Poll{
+		Model:    gorm.Model{ID: uint(3)},
+		StreamID: StreamFPVLive.ID,
+		Stream:   StreamFPVLive,
+		Question: "1+1=?",
+		Active:   true,
+		PollOptions: []model.PollOption{
+			{Model: gorm.Model{ID: 0}, Answer: "2", Votes: []model.User{Student}},
+			{Model: gorm.Model{ID: 1}, Answer: "3", Votes: []model.User{}},
+		},
 	}
 )
 

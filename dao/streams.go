@@ -40,11 +40,15 @@ type StreamsDao interface {
 	DeleteSilences(streamID string) error
 	UpdateStreamFullAssoc(vod *model.Stream) error
 	SetStreamNotLiveById(streamID uint) error
+	SetStreamLiveNowTimestampById(streamID uint, liveNowTimestamp time.Time) error
 	SavePauseState(streamID uint, paused bool) error
 	SaveEndedState(streamID uint, hasEnded bool) error
 	SaveCOMBURL(stream *model.Stream, url string)
 	SaveCAMURL(stream *model.Stream, url string)
 	SavePRESURL(stream *model.Stream, url string)
+	SaveTranscodingProgress(progress model.TranscodingProgress) error
+	RemoveTranscodingProgress(streamVersion model.StreamVersion, streamId uint) error
+	GetTranscodingProgressByVersion(streamVersion model.StreamVersion, streamId uint) (model.TranscodingProgress, error)
 	SaveStream(vod *model.Stream) error
 	ToggleVisibility(streamId uint, private bool) error
 
@@ -59,6 +63,11 @@ type streamsDao struct {
 	db *gorm.DB
 }
 
+func (d streamsDao) GetTranscodingProgressByVersion(v model.StreamVersion, streamId uint) (p model.TranscodingProgress, err error) {
+	err = DB.Where("version = ? AND stream_id = ?", v, streamId).First(&p).Error
+	return
+}
+
 func NewStreamsDao() StreamsDao {
 	return streamsDao{db: DB}
 }
@@ -67,7 +76,11 @@ func (d streamsDao) CreateStream(stream *model.Stream) error {
 	return DB.Create(stream).Error
 }
 
-//AddVodView Adds a stat entry to the database or increases the one existing for this hour
+func (d streamsDao) SaveTranscodingProgress(progress model.TranscodingProgress) error {
+	return DB.Clauses(clause.OnConflict{UpdateAll: true}).Create(&progress).Error
+}
+
+// AddVodView Adds a stat entry to the database or increases the one existing for this hour
 func (d streamsDao) AddVodView(id string) error {
 	intId, err := strconv.Atoi(id)
 	if err != nil {
@@ -164,46 +177,6 @@ func (d streamsDao) GetStreamByID(ctx context.Context, id string) (stream model.
 	return res, nil
 }
 
-//AddVodView Adds a stat entry to the database or increases the one existing for this hour
-func AddVodView(id string) error {
-	intId, err := strconv.Atoi(id)
-	if err != nil {
-		return err
-	}
-	err = DB.Transaction(func(tx *gorm.DB) error {
-		t := time.Now()
-		tFrom := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, time.Local)
-		tUntil := tFrom.Add(time.Hour)
-		var stat *model.Stat
-		err := DB.First(&stat, "live = 0 AND time BETWEEN ? and ?", tFrom, tUntil).Error
-		if err != nil { // first view this hour, create
-			stat := model.Stat{
-				Time:     tFrom,
-				StreamID: uint(intId),
-				Viewers:  1,
-				Live:     false,
-			}
-			err = tx.Create(&stat).Error
-			return err
-		} else {
-			stat.Viewers += 1
-			err = tx.Save(&stat).Error
-			return err
-		}
-	})
-	return err
-}
-
-func UpdateStream(stream model.Stream) error {
-	defer Cache.Clear()
-	err := DB.Model(&stream).Updates(map[string]interface{}{
-		"name":        stream.Name,
-		"description": stream.Description,
-		"start":       stream.Start,
-		"end":         stream.End}).Error
-	return err
-}
-
 func (d streamsDao) UpdateLectureSeries(stream model.Stream) error {
 	defer Cache.Clear()
 	err := DB.Table("streams").Where(
@@ -229,7 +202,7 @@ func (d streamsDao) GetWorkersForStream(stream model.Stream) ([]model.Worker, er
 	return res, err
 }
 
-//GetAllStreams returns all streams of the tumlive
+// GetAllStreams returns all streams of the tumlive
 func (d streamsDao) GetAllStreams() ([]model.Stream, error) {
 	var res []model.Stream
 	err := DB.Find(&res).Error
@@ -304,10 +277,11 @@ func (d streamsDao) UnsetLectureHall(streamIDs []uint) error {
 func (d streamsDao) UpdateStream(stream model.Stream) error {
 	defer Cache.Clear()
 	err := DB.Model(&stream).Updates(map[string]interface{}{
-		"name":        stream.Name,
-		"description": stream.Description,
-		"start":       stream.Start,
-		"end":         stream.End}).Error
+		"name":         stream.Name,
+		"description":  stream.Description,
+		"start":        stream.Start,
+		"end":          stream.End,
+		"chat_enabled": stream.ChatEnabled}).Error
 	return err
 }
 
@@ -346,9 +320,15 @@ func (d streamsDao) SetStreamNotLiveById(streamID uint) error {
 	return DB.Debug().Exec("UPDATE `streams` SET `live_now`='0' WHERE id = ?", streamID).Error
 }
 
+// SetStreamLiveNowTimestampById stores timestamp when stream is going live.
+func (d streamsDao) SetStreamLiveNowTimestampById(streamID uint, liveNowTimestamp time.Time) error {
+	defer Cache.Clear()
+	return DB.Model(model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"LiveNowTimestamp": liveNowTimestamp}).Error
+}
+
 func (d streamsDao) SavePauseState(streamID uint, paused bool) error {
 	defer Cache.Clear()
-	return DB.Model(model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"Paused": paused}).Error
+	return DB.Model(model.Stream{}).Where("id = ?", streamID).Update("Paused", paused).Error
 }
 
 // SaveEndedState updates the boolean Ended field of a stream model to the value of hasEnded when a stream finishes.
@@ -383,33 +363,37 @@ func (d streamsDao) SaveStream(vod *model.Stream) error {
 	defer Cache.Clear()
 	// todo: what is this?
 	err := DB.Model(&vod).Updates(model.Stream{
-		Name:            vod.Name,
-		Description:     vod.Description,
-		CourseID:        vod.CourseID,
-		Start:           vod.Start,
-		End:             vod.End,
-		RoomName:        vod.RoomName,
-		RoomCode:        vod.RoomCode,
-		EventTypeName:   vod.EventTypeName,
-		PlaylistUrl:     vod.PlaylistUrl,
-		PlaylistUrlPRES: vod.PlaylistUrlPRES,
-		PlaylistUrlCAM:  vod.PlaylistUrlCAM,
-		LiveNow:         vod.LiveNow,
-		Recording:       vod.Recording,
-		Chats:           vod.Chats,
-		Stats:           vod.Stats,
-		Units:           vod.Units,
-		VodViews:        vod.VodViews,
-		StartOffset:     vod.StartOffset,
-		EndOffset:       vod.EndOffset,
-		Silences:        vod.Silences,
-		Files:           vod.Files,
-		Paused:          vod.Paused,
-		Duration:        vod.Duration,
-		ThumbInterval:   vod.ThumbInterval,
-		StreamStatus:    vod.StreamStatus,
+		Name:             vod.Name,
+		Description:      vod.Description,
+		CourseID:         vod.CourseID,
+		LiveNowTimestamp: vod.LiveNowTimestamp,
+		Start:            vod.Start,
+		End:              vod.End,
+		RoomName:         vod.RoomName,
+		RoomCode:         vod.RoomCode,
+		EventTypeName:    vod.EventTypeName,
+		PlaylistUrl:      vod.PlaylistUrl,
+		PlaylistUrlPRES:  vod.PlaylistUrlPRES,
+		PlaylistUrlCAM:   vod.PlaylistUrlCAM,
+		LiveNow:          vod.LiveNow,
+		Recording:        vod.Recording,
+		Chats:            vod.Chats,
+		Stats:            vod.Stats,
+		Units:            vod.Units,
+		VodViews:         vod.VodViews,
+		StartOffset:      vod.StartOffset,
+		EndOffset:        vod.EndOffset,
+		Silences:         vod.Silences,
+		Files:            vod.Files,
+		Paused:           vod.Paused,
+		Duration:         vod.Duration,
+		ThumbInterval:    vod.ThumbInterval,
 	}).Error
 	return err
+}
+
+func (d streamsDao) RemoveTranscodingProgress(streamVersion model.StreamVersion, streamId uint) error {
+	return DB.Unscoped().Where("version = ? AND stream_id = ?", streamVersion, streamId).Delete(&model.TranscodingProgress{}).Error
 }
 
 func (d streamsDao) DeleteStream(streamID string) {

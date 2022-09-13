@@ -31,6 +31,7 @@ func newMigrator() *migrator {
 		migrationsBeforeAutoMigrate: []*gormigrate.Migration{},
 		migrationsAfterAutoMigrate: []*gormigrate.Migration{
 			migrations.Migrate202201280(),
+			migrations.Migrate202207240(),
 		},
 	}
 }

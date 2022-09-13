@@ -9,6 +9,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 	"time"
@@ -44,7 +45,11 @@ func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 		foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 		if !exists {
 			sentry.CaptureException(errors.New("context should exist but doesn't"))
-			ctx.(*gin.Context).AbortWithStatus(http.StatusInternalServerError)
+
+			_ = ctx.(*gin.Context).Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "context should exist but doesn't",
+			})
 			return
 		}
 		tumLiveContext := foundContext.(tools.TUMLiveContext)
@@ -57,6 +62,12 @@ func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 			log.WithError(err).Warn("could not unmarshal request")
 			return
 		}
+
+		if !(tumLiveContext.Course.ChatEnabled && tumLiveContext.Stream.ChatEnabled) {
+			// silently ignore message but keep connection open.
+			return
+		}
+
 		switch req.Type {
 		case "message":
 			routes.handleMessage(tumLiveContext, s, msg)
@@ -379,7 +390,10 @@ func (r chatRoutes) handleMessage(ctx tools.TUMLiveContext, session *melody.Sess
 func (r chatRoutes) getMessages(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
@@ -399,7 +413,11 @@ func (r chatRoutes) getMessages(c *gin.Context) {
 		chats, err = r.ChatDao.GetVisibleChats(uid, tumLiveContext.Stream.ID)
 	}
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get chat messages",
+			Err:           err,
+		})
 		return
 	}
 	c.JSON(http.StatusOK, chats)
@@ -408,13 +426,20 @@ func (r chatRoutes) getMessages(c *gin.Context) {
 func (r chatRoutes) getUsers(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	users, err := r.ChatDao.GetChatUsers(tumLiveContext.Stream.ID)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get chat users",
+			Err:           err,
+		})
 		return
 	}
 	type chatUserSearchDto struct {
@@ -432,24 +457,42 @@ func (r chatRoutes) getUsers(c *gin.Context) {
 func (r chatRoutes) getActivePoll(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	if tumLiveContext.User == nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusOK,
+			CustomMessage: "not logged in",
+		})
 		return
 	}
 	poll, err := r.ChatDao.GetActivePoll(tumLiveContext.Stream.ID)
-	if err != nil {
+	if err != nil && err == gorm.ErrRecordNotFound {
 		c.JSON(http.StatusOK, nil)
+		return
+	}
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Can't get active poll",
+			Err:           err,
+		})
 		return
 	}
 
 	submitted, err := r.ChatDao.GetPollUserVote(poll.ID, tumLiveContext.User.ID)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get poll user vote",
+			Err:           err,
+		})
 		return
 	}
 
@@ -517,6 +560,9 @@ func CollectStats(daoWrapper dao.DaoWrapper) func() {
 	return func() {
 		BroadcastStats(daoWrapper.StreamsDao)
 		for sID, sessions := range sessionsMap {
+			if len(sessions) == 0 {
+				continue
+			}
 			stat := model.Stat{
 				Time:     time.Now(),
 				StreamID: sID,
