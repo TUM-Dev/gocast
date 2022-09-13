@@ -9,12 +9,16 @@ import (
 var BrandingCfg Branding
 
 type Branding struct {
-	Title string `yaml:"title"`
+	Title       string `yaml:"title"`
+	Description string `yaml:"description"`
 }
 
 func getDefault() Branding {
 	return Branding{
 		Title: "TUM-Live",
+		Description: "TUM-Live, the livestreaming and VoD service of the " +
+			"Rechnerbetriebsgruppe at the department of informatics and " +
+			"mathematics at the Technical University of Munich",
 	}
 }
 
