@@ -142,6 +142,25 @@ func TestRealtimeConnection(t *testing.T) {
 
 	})
 
+	t.Run("IsConnected should return connection status", func(t *testing.T) {
+		fakeConnector, fakeSocket := NewFakeConnector()
+		realtime := New(fakeConnector)
+
+		fakeClient := fakeSocket.NewClientConnects(func(_ []byte) {})
+
+		if !realtime.IsConnected(fakeClient.Id) {
+			t.Errorf("realtime.IsConnected(fakeClient.Id) = false, want true")
+			return
+		}
+
+		fakeClient.Disconnect()
+
+		if !realtime.IsConnected(fakeClient.Id) {
+			t.Errorf("channel.IsConnected(fakeClient.Id, testChannelPath) = true, want false")
+			return
+		}
+	})
+
 	t.Run("Handle Sub/Unsub", func(t *testing.T) {
 		channelPath := "example/path/:var"
 		testVar := "test"
