@@ -155,7 +155,7 @@ func TestRealtimeConnection(t *testing.T) {
 
 		fakeClient.Disconnect()
 
-		if !realtime.IsConnected(fakeClient.Id) {
+		if realtime.IsConnected(fakeClient.Id) {
 			t.Errorf("channel.IsConnected(fakeClient.Id, testChannelPath) = true, want false")
 			return
 		}
@@ -165,7 +165,7 @@ func TestRealtimeConnection(t *testing.T) {
 		channelPath := "example/path/:var"
 		testVar := "test"
 		testChannelPath := "example/path/" + testVar
-		testChannelPath2 := "example/path/blabla"
+		testChannelPath2 := "example/path/foobar"
 		fakeConnector, fakeSocket := NewFakeConnector()
 		realtime := New(fakeConnector)
 
@@ -224,7 +224,7 @@ func TestRealtimeConnection(t *testing.T) {
 func TestRealtimeMessaging(t *testing.T) {
 
 	t.Run("Client Sends Message", func(t *testing.T) {
-		testChannelPath := "example/path/blabla"
+		testChannelPath := "example/path/foobar"
 		testPayload := map[string]interface{}{"name": "Jon Doe", "admin": false}
 		testPayloadJson, _ := json.Marshal(testPayload)
 		fakeConnector, fakeSocket := NewFakeConnector()
@@ -298,7 +298,7 @@ func TestRealtimeMessaging(t *testing.T) {
 	})
 
 	t.Run("Client Receives Message", func(t *testing.T) {
-		testChannelPath := "example/path/blabla"
+		testChannelPath := "example/path/foobar"
 		testPayload := map[string]interface{}{"name": "Jon Doe", "admin": false}
 		testPayloadJson, _ := json.Marshal(testPayload)
 		fakeConnector, fakeSocket := NewFakeConnector()
@@ -309,10 +309,15 @@ func TestRealtimeMessaging(t *testing.T) {
 		realtime.RegisterChannel(testChannelPath, ChannelHandlers{})
 
 		fakeClient := fakeSocket.NewClientConnects(func(msg []byte) {
-			json.Unmarshal(msg, &receivedMessage)
+			if err := json.Unmarshal(msg, &receivedMessage); err != nil {
+				t.Errorf("could not unmarshal message: %e", err)
+			}
 		})
 		fakeClient.Send(SubMessage(testChannelPath))
-		realtime.Send(testChannelPath, fakeClient.Id, testPayloadJson)
+		if err := realtime.Send(testChannelPath, fakeClient.Id, testPayloadJson); err != nil {
+			t.Errorf("realtime.Send(...) throws an error: %e", err)
+			return
+		}
 
 		if receivedMessage.Channel != testChannelPath {
 			t.Errorf("receivedMessage.Channel = %s, want %s", receivedMessage.Channel, testChannelPath)
