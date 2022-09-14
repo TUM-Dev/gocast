@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// ChannelStore stores pointers to all Channels
 type ChannelStore struct {
 	channels map[string]*Channel
 }

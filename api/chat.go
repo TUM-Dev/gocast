@@ -32,7 +32,6 @@ func RegisterRealtimeChatChannel() {
 	RealtimeInstance.RegisterChannel(ChatRoomName, realtime.ChannelHandlers{
 		SubscriptionMiddlewares: []realtime.SubscriptionMiddleware{
 			tools.InitStreamRealtime(),
-			checkAccessMiddleware(),
 		},
 		OnSubscribe:   chatOnSubscribe,
 		OnUnsubscribe: chatOnUnsubscribe,
@@ -84,21 +83,6 @@ func RegisterRealtimeChatChannel() {
 			cleanupSessions()
 		}
 	}()
-}
-
-func checkAccessMiddleware() realtime.SubscriptionMiddleware {
-	return func(psc *realtime.Context) *realtime.Error {
-		foundContext, exists := psc.Get("TUMLiveContext")
-		if !exists {
-			return realtime.NewError(http.StatusInternalServerError, "context should exist but doesn't")
-		}
-		tumLiveContext := foundContext.(tools.TUMLiveContext)
-
-		if !(tumLiveContext.Course.ChatEnabled && tumLiveContext.Stream.ChatEnabled) {
-			return realtime.NewError(http.StatusForbidden, "chat is forbidden for user")
-		}
-		return nil
-	}
 }
 
 func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
