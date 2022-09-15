@@ -36,6 +36,8 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 	router.GET("/api/users/exportData", routes.exportPersonalData)
 
+	router.POST("/api/users/init", routes.InitUser)
+
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
 	admins.POST("/createUser", routes.CreateUser)
@@ -331,13 +333,20 @@ func (r usersRoutes) pinCourse(c *gin.Context, pin bool) {
 	}
 }
 
-func (r usersRoutes) CreateUser(c *gin.Context) {
+func (r usersRoutes) InitUser(c *gin.Context) {
 	usersEmpty, err := r.UsersDao.AreUsersEmpty(context.Background())
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "can not find users",
 			Err:           err,
+		})
+		return
+	}
+	if !usersEmpty {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "There are already users in the database. Use /api/createUsers instead.",
 		})
 		return
 	}
@@ -351,12 +360,48 @@ func (r usersRoutes) CreateUser(c *gin.Context) {
 		})
 		return
 	}
-	var createdUser model.User
-	if usersEmpty {
-		createdUser, err = r.createUserHelper(request, model.AdminType)
-	} else {
-		createdUser, err = r.createUserHelper(request, model.LecturerType)
+
+	createdUser, err := r.createUserHelper(request, model.AdminType)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not create user",
+			Err:           err,
+		})
+		return
 	}
+	c.JSON(http.StatusOK, createUserResponse{Name: createdUser.Name, Email: createdUser.Email.String, Role: createdUser.Role})
+}
+
+func (r usersRoutes) CreateUser(c *gin.Context) {
+	usersEmpty, err := r.UsersDao.AreUsersEmpty(context.Background())
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not find users",
+			Err:           err,
+		})
+		return
+	}
+	if usersEmpty {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "No users in database. Use /api/users/init instead.",
+		})
+		return
+	}
+	var request createUserRequest
+	err = json.NewDecoder(c.Request.Body).Decode(&request)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
+	}
+
+	createdUser, err := r.createUserHelper(request, model.LecturerType)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
