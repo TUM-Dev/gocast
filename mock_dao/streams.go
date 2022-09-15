@@ -7,6 +7,7 @@ package mock_dao
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	gomock "github.com/golang/mock/gomock"
 	model "github.com/joschahenningsen/TUM-Live/model"
@@ -481,6 +482,20 @@ func (m *MockStreamsDao) SetLectureHall(streamIDs []uint, lectureHallID uint) er
 func (mr *MockStreamsDaoMockRecorder) SetLectureHall(streamIDs, lectureHallID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLectureHall", reflect.TypeOf((*MockStreamsDao)(nil).SetLectureHall), streamIDs, lectureHallID)
+}
+
+// SetStreamLiveNowTimestampById mocks base method.
+func (m *MockStreamsDao) SetStreamLiveNowTimestampById(streamID uint, liveNowTimestamp time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetStreamLiveNowTimestampById", streamID, liveNowTimestamp)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetStreamLiveNowTimestampById indicates an expected call of SetStreamLiveNowTimestampById.
+func (mr *MockStreamsDaoMockRecorder) SetStreamLiveNowTimestampById(streamID, liveNowTimestamp interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStreamLiveNowTimestampById", reflect.TypeOf((*MockStreamsDao)(nil).SetStreamLiveNowTimestampById), streamID, liveNowTimestamp)
 }
 
 // SetStreamNotLiveById mocks base method.

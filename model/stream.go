@@ -30,7 +30,8 @@ type Stream struct {
 	PlaylistUrl           string
 	PlaylistUrlPRES       string
 	PlaylistUrlCAM        string
-	LiveNow               bool `gorm:"not null"`
+	LiveNow               bool      `gorm:"not null"`
+	LiveNowTimestamp      time.Time `gorm:"default:null;column:live_now_timestamp"`
 	Recording             bool
 	Premiere              bool `gorm:"default:null"`
 	Ended                 bool `gorm:"default:null"`
@@ -182,6 +183,24 @@ func (s Stream) FriendlyDate() string {
 
 func (s Stream) FriendlyTime() string {
 	return s.Start.Format("02.01.2006 15:04") + " - " + s.End.Format("15:04")
+}
+
+// ParsableTimeFormat returns a JavaScript friendly formatted date string
+func ParsableTimeFormat(time time.Time) string {
+	if time.IsZero() {
+		return ""
+	}
+	return time.Format("2006-01-02 15:04:05")
+}
+
+// ParsableStartTime returns a JavaScript friendly formatted date string
+func (s Stream) ParsableStartTime() string {
+	return ParsableTimeFormat(s.Start)
+}
+
+// ParsableLiveNowTimestamp returns a JavaScript friendly formatted date string
+func (s Stream) ParsableLiveNowTimestamp() string {
+	return ParsableTimeFormat(s.LiveNowTimestamp)
 }
 
 func (s Stream) FriendlyNextDate() string {
