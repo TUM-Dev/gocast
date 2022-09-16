@@ -210,7 +210,6 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	// Register worker for stream
 	regularStreams.addContext(streamCtx.streamId, streamCtx)
 
-	//only record
 	stream(streamCtx)
 
 	NotifyStreamDone(streamCtx) // notify stream/recording done
