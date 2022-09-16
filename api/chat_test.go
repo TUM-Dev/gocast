@@ -2,6 +2,9 @@ package api
 
 import (
 	"fmt"
+	"net/http"
+	"testing"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/joschahenningsen/TUM-Live/dao"
@@ -11,8 +14,6 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
 	"github.com/matthiasreumann/gomino"
 	"gorm.io/gorm"
-	"net/http"
-	"testing"
 )
 
 func ChatRouterWrapper(r *gin.Engine) {

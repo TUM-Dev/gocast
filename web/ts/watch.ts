@@ -2,6 +2,7 @@ import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
 import { getPlayer } from "./TUMLiveVjs";
 import { Get, postData } from "./global";
+import { Realtime } from "./socket";
 
 let chatInput: HTMLInputElement;
 
@@ -11,8 +12,8 @@ export class Watch {
     }
 }
 
-let ws: WebSocket;
-let retryInt = 5000; //retry connecting to websocket after this timeout
+let currentChatChannel = "";
+const retryInt = 5000; //retry connecting to websocket after this timeout
 
 const scrollDelay = 100; // delay before scrolling to bottom to make sure chat is rendered
 const pageloaded = new Date();
@@ -29,12 +30,12 @@ enum WSMessageType {
 }
 
 function sendIDMessage(id: number, type: WSMessageType) {
-    ws.send(
-        JSON.stringify({
+    return Realtime.get().send(currentChatChannel, {
+        payload: {
             type: type,
             id: id,
-        }),
-    );
+        },
+    });
 }
 
 export const likeMessage = (id: number) => sendIDMessage(id, WSMessageType.Like);
@@ -57,17 +58,11 @@ export function initChatScrollListener() {
     });
 }
 
-export function startWebsocket() {
-    const wsProto = window.location.protocol === "https:" ? `wss://` : `ws://`;
-    const streamid = (document.getElementById("streamID") as HTMLInputElement).value;
-    ws = new WebSocket(`${wsProto}${window.location.host}/api/chat/${streamid}/ws`);
-    initChatScrollListener();
-    ws.onopen = function (e) {
-        window.dispatchEvent(new CustomEvent("connected"));
-    };
+export async function startWebsocket() {
+    const streamId = (document.getElementById("streamID") as HTMLInputElement).value;
+    currentChatChannel = `chat/${streamId}`;
 
-    ws.onmessage = function (m) {
-        const data = JSON.parse(m.data);
+    const messageHandler = function (data) {
         if ("viewers" in data) {
             window.dispatchEvent(new CustomEvent("viewers", { detail: { viewers: data["viewers"] } }));
         } else if ("live" in data) {
@@ -142,21 +137,12 @@ export function startWebsocket() {
         }
     };
 
-    ws.onclose = function () {
-        // connection closed, discard old websocket and create a new one after backoff
-        // don't recreate new connection if page has been loaded more than 12 hours ago
-        if (new Date().valueOf() - pageloaded.valueOf() > 1000 * 60 * 60 * 12) {
-            return;
-        }
-        window.dispatchEvent(new CustomEvent("disconnected"));
-        ws = null;
-        retryInt *= 2; // exponential backoff
-        setTimeout(startWebsocket, retryInt);
-    };
+    // TODO: check if connected and update
+    //window.dispatchEvent(new CustomEvent("connected"));
+    //window.dispatchEvent(new CustomEvent("disconnected"));
 
-    ws.onerror = function (err) {
-        window.dispatchEvent(new CustomEvent("disconnected"));
-    };
+    await Realtime.get().subscribeChannel(currentChatChannel, messageHandler);
+    window.dispatchEvent(new CustomEvent("connected"));
 }
 
 export function createServerMessage(msg) {
@@ -178,15 +164,15 @@ export function createServerMessage(msg) {
 }
 
 export function sendMessage(current: NewChatMessage) {
-    ws.send(
-        JSON.stringify({
+    return Realtime.get().send(currentChatChannel, {
+        payload: {
             type: WSMessageType.Message,
             msg: current.message,
             anonymous: current.anonymous,
             replyTo: current.replyTo,
             addressedTo: current.addressedTo.map((u) => u.id),
-        }),
-    );
+        },
+    });
 }
 
 export async function fetchMessages(id: number) {
@@ -198,30 +184,30 @@ export async function fetchMessages(id: number) {
 }
 
 export function startPoll(question: string, pollAnswers: string[]) {
-    ws.send(
-        JSON.stringify({
+    return Realtime.get().send(currentChatChannel, {
+        payload: {
             type: WSMessageType.StartPoll,
             question,
             pollAnswers,
-        }),
-    );
+        },
+    });
 }
 
 export function submitPollOptionVote(pollOptionId: number) {
-    ws.send(
-        JSON.stringify({
+    return Realtime.get().send(currentChatChannel, {
+        payload: {
             type: WSMessageType.SubmitPollOptionVote,
             pollOptionId,
-        }),
-    );
+        },
+    });
 }
 
 export function closeActivePoll() {
-    ws.send(
-        JSON.stringify({
+    return Realtime.get().send(currentChatChannel, {
+        payload: {
             type: WSMessageType.CloseActivePoll,
-        }),
-    );
+        },
+    });
 }
 
 export function getPollOptionWidth(pollOptions, pollOption) {

@@ -76,7 +76,6 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 			Year:                year,
 			TeachingTerm:        term,
 			TUMOnlineIdentifier: fmt.Sprintf("%d", courseReq.CourseID),
-			LiveEnabled:         false,
 			VODEnabled:          false,
 			DownloadsEnabled:    false,
 			ChatEnabled:         false,
