@@ -18,7 +18,6 @@ type Course struct {
 	Year                    int    `gorm:"not null"` // eg. 2021
 	TeachingTerm            string `gorm:"not null"` // eg. Summer/Winter
 	TUMOnlineIdentifier     string
-	LiveEnabled             bool `gorm:"default:true"`
 	VODEnabled              bool `gorm:"default:true"`
 	DownloadsEnabled        bool `gorm:"default:false"`
 	ChatEnabled             bool `gorm:"default:false"`
