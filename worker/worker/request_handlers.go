@@ -365,7 +365,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		}
 	}
 
-	/*S.startThumbnailGeneration(&c)
+	S.startThumbnailGeneration(&c)
 	defer S.endThumbnailGeneration(&c)
 	err = createThumbnailSprite(&c)
 	if err != nil {
@@ -388,7 +388,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 	err = extractKeywords(&c)
 	if err != nil {
 		log.WithField("File", c.getTranscodingFileName()).WithError(err).Error("Extracting keywords failed.")
-	}*/
+	}
 
 	S.startSubtitleGeneration(&c)
 	err = sendSubtitleGenerationRequest(&c)
