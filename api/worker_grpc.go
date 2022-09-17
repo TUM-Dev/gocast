@@ -182,6 +182,7 @@ func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted
 		return nil, err
 	}
 	stream.LiveNow = true
+	stream.LiveNowTimestamp = time.Now()
 	switch request.GetSourceType() {
 	case "CAM":
 		stream.PlaylistUrlCAM = request.HlsUrl
@@ -534,6 +535,12 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		// interims solution; sometimes dvr doesn't work as expected.
 		// here we check if the url 404s and remove dvr from the stream in that case
 		stream.LiveNow = true
+
+		err = s.StreamsDao.SetStreamLiveNowTimestampById(uint(request.StreamID), time.Now())
+		if err != nil {
+			log.WithError(err).Error("Can't set StreamLiveNowTimestamp")
+		}
+
 		time.Sleep(time.Second * 5)
 		if !isHlsUrlOk(request.HlsUrl) {
 			sentry.WithScope(func(scope *sentry.Scope) {
@@ -672,19 +679,18 @@ func NotifyWorkers(daoWrapper dao.DaoWrapper) func() {
 				slot.StreamID = streams[i].ID
 				daoWrapper.IngestServerDao.SaveSlot(slot)
 				req := pb.StreamRequest{
-					SourceType:    sourceType,
-					SourceUrl:     source,
-					CourseSlug:    courseForStream.Slug,
-					Start:         timestamppb.New(streams[i].Start),
-					End:           timestamppb.New(streams[i].End),
-					PublishStream: courseForStream.LiveEnabled,
-					PublishVoD:    courseForStream.VODEnabled,
-					StreamID:      uint32(streams[i].ID),
-					CourseTerm:    courseForStream.TeachingTerm,
-					CourseYear:    uint32(courseForStream.Year),
-					StreamName:    slot.StreamName,
-					IngestServer:  server.Url,
-					OutUrl:        server.OutUrl,
+					SourceType:   sourceType,
+					SourceUrl:    source,
+					CourseSlug:   courseForStream.Slug,
+					Start:        timestamppb.New(streams[i].Start),
+					End:          timestamppb.New(streams[i].End),
+					PublishVoD:   courseForStream.VODEnabled,
+					StreamID:     uint32(streams[i].ID),
+					CourseTerm:   courseForStream.TeachingTerm,
+					CourseYear:   uint32(courseForStream.Year),
+					StreamName:   slot.StreamName,
+					IngestServer: server.Url,
+					OutUrl:       server.OutUrl,
 				}
 				workerIndex := getWorkerWithLeastWorkload(workers)
 				workers[workerIndex].Workload += 3

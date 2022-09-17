@@ -56,9 +56,9 @@ export const initElements = function () {
             return false;
         }
         console.log(JSON.stringify(data));
-        postData("api/createUser", data)
+        postData("api/users/init", data)
             .then(() => {
-                location.reload();
+                window.location.reload();
             })
             .catch((error) => {
                 console.log(error);
