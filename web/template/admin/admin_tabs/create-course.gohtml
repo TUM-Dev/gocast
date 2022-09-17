@@ -52,12 +52,11 @@
                     <div class="px-3">
                         {{template "course_settings"}}
                     </div>
-                </form>
-                <br>
-                <button onclick="" id="createCourseBtn" class="btn"
-                        x-bind:disabled="slug === '' || title === '' || year === ''">
-                    Create Course
-                </button>
+                    <br>
+                    <button onclick="" id="createCourseBtn" class="btn"
+                            x-bind:disabled="slug === '' || title === '' || year === ''">
+                        Create Course
+                    </button>
                 </form>
             </div>
         </div>

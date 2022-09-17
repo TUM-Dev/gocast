@@ -65,7 +65,7 @@
                                     <div x-show="user.changing" x-cloak @click.outside="user.changing=false">
                                         <div x-data="{dropdownMenu: true}" class="relative">
                                             <div x-show="dropdownMenu"
-                                                 class="absolute left-0 py-2 mt-2 bg-white bg-gray-50 rounded-md shadow w-44">
+                                                 class="absolute left-0 py-2 mt-2 bg-gray-50 rounded-md shadow w-44">
                                                 <a href="#"
                                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
                                                    @click="admin.updateUser(user.id, 1).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
@@ -99,9 +99,9 @@
                             <td class="py-3 px-6 text-center">
                                 <div class="flex item-center justify-center">
                                     <template x-if="user.role !== 1">
-                                        <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110 cursor-pointer">
+                                        <button title="Delete User" class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110 cursor-pointer">
                                             <i @click="admin.deleteUser(user.id)" class="fas fa-trash"></i>
-                                        </div>
+                                        </button>
                                     </template>
                                 </div>
                             </td>
@@ -149,8 +149,8 @@
                     </div>
                     <div class="w-full mt-2">
                         <button id="createUser"
+                                title="Create User"
                                 class="w-full py-1 rounded-b-lg bg-gray-100 dark:bg-gray-600 hover:bg-transparent dark:hover:bg-transparent cursor-pointer"
-                                type="button"
                                 @click="admin.createUser()">
                             <span class="text-sm font-semibold m-auto text-3">
                                 <i class="fas fa-plus"></i>
