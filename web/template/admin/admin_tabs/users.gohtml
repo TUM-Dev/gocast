@@ -3,7 +3,7 @@
     <div class="dark:border-secondary bg-gray-100 rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter">
         <div class="grid gap-5 w-full p-3" x-data="{userlist: new admin.AdminUserList({{.}})}">
             <div>
-                <h2 class="font-bold pl-1 mb-2">Search</h2>
+                <h2 class="font-bold pl-1 mb-2 text-2">Search</h2>
                 <div class="bg-white dark:bg-secondary border rounded-lg dark:border-gray-800 shadow px-2 py-1">
                     <form class="flex flex-row">
                         <label class="w-full">
@@ -99,7 +99,7 @@
                             <td class="py-3 px-6 text-center">
                                 <div class="flex item-center justify-center">
                                     <template x-if="user.role !== 1">
-                                        <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
+                                        <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110 cursor-pointer">
                                             <i @click="admin.deleteUser(user.id)" class="fas fa-trash"></i>
                                         </div>
                                     </template>
@@ -131,7 +131,7 @@
                 </template>
             </div>
             <div class="">
-                <h2 class="font-bold pl-1 mb-2">New User</h2>
+                <h2 class="font-bold pl-1 mb-2 text-2">New User</h2>
                 <div class="w-full bg-white rounded-lg shadow border dark:bg-secondary dark:border-gray-600">
                     <div class="flex flex-wrap w-full py-3 px-6 ">
                         <div class="w-full md:w-1/2 p-1 text-left whitespace-nowrap">

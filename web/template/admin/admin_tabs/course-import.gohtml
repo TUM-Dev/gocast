@@ -9,68 +9,74 @@
             <i class="fas fa-circle-notch animate-spin animate"></i> Loading...
         </div>
         <div x-show="step===0">
-            <form>
-                <h3 class="font-bold">Semester</h3>
-                <div class="flex ">
-                    <div class="relative inline-block w-full text-gray-700 my-2 mx-4">
-                        <select x-model="year"
-                                class="w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 border rounded-sm appearance-none focus:shadow-outline">
-                            <option>2020</option>
-                            <option>2021</option>
-                            <option>2022</option>
-                            <option>2023</option>
-                            <option>2024</option>
-                            <option>2025</option>
-                            <option>2026</option>
-                        </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                      clip-rule="evenodd" fill-rule="evenodd"></path>
-                            </svg>
-                        </div>
+            <form class="grid grid-cols-2 gap-4">
+                <h3 class="font-bold col-span-2">Semester</h3>
+                <label class="relative text-gray-700">
+                    <span class="font-bold text-4">Year</span>
+                    <select x-model="year"
+                            class="cursor-pointer text-6 dark:bg-gray-900 w-full h-10 pl-3 pr-6 text-base rounded-sm appearance-none focus:shadow-outline">
+                        <option>2020</option>
+                        <option>2021</option>
+                        <option>2022</option>
+                        <option>2023</option>
+                        <option>2024</option>
+                        <option>2025</option>
+                        <option>2026</option>
+                    </select>
+                    <div class="absolute right-2 bottom-3">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                  clip-rule="evenodd" fill-rule="evenodd"></path>
+                        </svg>
                     </div>
-                    <div class="relative inline-block w-full text-gray-700 my-2  mx-4">
-                        <select x-model="semester"
-                                class="w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 border rounded-sm appearance-none focus:shadow-outline">
-                            <option>W</option>
-                            <option>S</option>
-                        </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                      clip-rule="evenodd" fill-rule="evenodd"></path>
-                            </svg>
-                        </div>
+                </label>
+                <label class="relative text-gray-700">
+                    <span class="font-bold text-4">Summer / Winter</span>
+                    <select x-model="semester"
+                            class="cursor-pointer text-6 dark:bg-gray-900 w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 rounded-sm appearance-none focus:shadow-outline">
+                        <option>W</option>
+                        <option>S</option>
+                    </select>
+                    <div class="absolute right-2 bottom-3">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                  clip-rule="evenodd" fill-rule="evenodd"></path>
+                        </svg>
                     </div>
-                </div>
-                <div class="flex mt-6">
-                    <label class="w-1/2 text-gray-700 py-2 mx-4">
-                        <span class="font-bold">Department:</span>
-                        <select x-model="department"
-                                class="w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 border rounded-sm appearance-none focus:shadow-outline">
-                            <option>In</option>
-                            <option>Ma</option>
-                            <option>Ph</option>
-                        </select>
-                    </label>
-                </div>
-                <div class="flex mt-6">
-                    <label class="w-1/2 text-gray-700 py-2 mx-4">
-                        <span class="font-bold"></span>
-                        <select x-model="optInOut"
-                                class="w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 border rounded-sm appearance-none focus:shadow-outline">
-                            <option>Opt In</option>
-                            <option>Opt Out</option>
-                        </select>
-                    </label>
-                </div>
-                <div class="flex mt-6">
-                    <label class="w-1/2" x-init="flatpickr($refs.range, {'mode': 'range'})">
-                        <span class="font-bold">Import events in this range</span>
-                        <input class="text-1" type="text" x-ref="range" x-model="range" placeholder="click me!">
-                    </label>
-                </div>
+                </label>
+                <label class="relative text-gray-700">
+                    <span class="font-bold text-4">Department</span>
+                    <select x-model="department"
+                            class="cursor-pointer text-6 dark:bg-gray-900 w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 rounded-sm appearance-none focus:shadow-outline">
+                        <option>In</option>
+                        <option>Ma</option>
+                        <option>Ph</option>
+                    </select>
+                    <div class="absolute right-2 bottom-3">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                  clip-rule="evenodd" fill-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                </label>
+                <label class="relative text-gray-700">
+                    <span class="font-bold text-4">Opt In / Opt Out</span>
+                    <select x-model="optInOut"
+                            class="cursor-pointer text-6 dark:bg-gray-900 w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 rounded-sm appearance-none focus:shadow-outline">
+                        <option>Opt In</option>
+                        <option>Opt Out</option>
+                    </select>
+                    <div class="absolute right-2 bottom-3">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                            <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                  clip-rule="evenodd" fill-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                </label>
+                <label class="col-span-2" x-init="flatpickr($refs.range, {'mode': 'range'})">
+                    <span class="font-bold text-4">Import events in this range</span>
+                    <input class="text-1" type="text" x-ref="range" x-model="range" placeholder="click me!">
+                </label>
             </form>
         </div>
 
@@ -116,7 +122,7 @@
                                         <span x-text="new Date(event.start).toISOString().slice(0, 16).replace('T',' ') + ' - ' + new Date(event.end).toISOString().slice(11, 16)"
                                               class="text-2"></span>
                                     </label>
-                                    <div class="w-2/6 whitespace-nowrap	overflow-x-hidden overflow-ellipsis"><i
+                                    <div class="w-2/6 whitespace-nowrap overflow-x-hidden overflow-ellipsis"><i
                                                 class="fas fa-location-arrow text-3 mr-2"></i><span class="text-5"
                                                                                                     x-text="event.room_name"
                                                                                                     :title="event.room_name"></span>
