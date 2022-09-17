@@ -1,17 +1,10 @@
 package connector
 
 import (
-	"errors"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/joschahenningsen/TUM-Live/tools/realtime"
 	"net/http"
-)
-
-package connector
-
-import (
-"github.com/joschahenningsen/TUM-Live/tools/realtime"
-"net/http"
 )
 
 func NewGorillaWebsocketConnector() *realtime.Connector {
@@ -23,47 +16,36 @@ func NewGorillaWebsocketConnector() *realtime.Connector {
 			if err != nil {
 				return err
 			}
-			defer (func () {
-				conn.Close()
-				connector.Leave(conn)
-			})()
 
-			// The event loop
-			for {
-				messageType, message, err := conn.ReadMessage()
-				if err != nil {
-					log.Println("Error during message reading:", err)
-					break
+			client := connector.Join(
+				func(message []byte) error {
+					return conn.WriteMessage(websocket.TextMessage, message)
+				},
+				properties,
+			)
+
+			go func() {
+				defer (func() {
+					err := conn.Close()
+					if err != nil {
+						fmt.Println("Error during closing connection:", err)
+					}
+					connector.Leave(client.Id)
+				})()
+
+				for {
+					_, message, err := conn.ReadMessage()
+					if err != nil {
+						fmt.Println("Error during message reading:", err)
+						break
+					}
+					connector.Message(client.Id, message)
 				}
-				log.Printf("Received: %s", message)
-				err = conn.WriteMessage(messageType, message)
-				if err != nil {
-					log.Println("Error during message writing:", err)
-					break
-				}
-			}
+			}()
+
+			return nil
 		},
 	)
-
-	melodyInstance.HandleConnect(func(s *melody.Session) {
-		client := connector.Join(
-			func(message []byte) error {
-				return s.Write(message)
-			},
-			s.Keys(),
-		)
-		s.Set("id", client.Id)
-	})
-
-	melodyInstance.HandleDisconnect(func(s *melody.Session) {
-		id, _ := s.Get("id")
-
-	})
-
-	melodyInstance.HandleMessage(func(s *melody.Session, data []byte) {
-		id, _ := s.Get("id")
-		connector.Message(id.(string), data)
-	})
 
 	return connector
 }

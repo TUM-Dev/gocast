@@ -12,7 +12,7 @@ type realtimeRoutes struct {
 	dao.DaoWrapper
 }
 
-var RealtimeInstance = realtime.New(connector.NewMelodyConnector())
+var RealtimeInstance = realtime.New(connector.NewGorillaWebsocketConnector())
 
 func configGinRealtimeRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 	routes := realtimeRoutes{daoWrapper}
