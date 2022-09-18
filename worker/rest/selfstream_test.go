@@ -69,7 +69,7 @@ func TestInitApi(t *testing.T) {
 		defer func() { log.StandardLogger().ExitFunc = nil }()
 		var fatal bool
 		log.StandardLogger().ExitFunc = func(int) { fatal = true } // Overwrite exit function of logger for log.Fatal
-		InitApi(testAddress)
+		InitInternalApi(testAddress)
 		if !fatal {
 			t.Error("Error")
 		}

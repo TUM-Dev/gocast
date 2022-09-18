@@ -77,7 +77,8 @@ func main() {
 
 	// setup apis
 	go api.InitApi(":50051")
-	go rest.InitApi(":8060")
+	go rest.InitInternalApi(":8060")
+	go rest.InitExternalApi(":8085")
 	worker.Setup()
 	OsSignal = make(chan os.Signal, 1)
 	awaitSignal()

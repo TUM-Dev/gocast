@@ -1,8 +1,9 @@
-//Package rest handles notifications for self streaming from nginx
+// Package rest handles notifications for self streaming from nginx
 package rest
 
 import (
 	"errors"
+	"github.com/joschahenningsen/TUM-Live/worker/cfg"
 	"net/http"
 	"regexp"
 	"strings"
@@ -20,8 +21,14 @@ type safeStreams struct {
 	streams map[string]*worker.StreamContext
 }
 
-// InitApi creates routes for the api consumed by nginx
-func InitApi(addr string) {
+// InitExternalApi creates routes for the hls api consumed by users or edge servers
+func InitExternalApi(addr string) {
+	http.HandleFunc("/hls/", http.FileServer(http.Dir(cfg.TempDir+"/hls/")).ServeHTTP)
+	log.Fatal(http.ListenAndServe(addr, nil))
+}
+
+// InitInternalApi creates routes for the api consumed by nginx
+func InitInternalApi(addr string) {
 	http.HandleFunc("/", defaultHandler)
 	http.HandleFunc("/on_publish", streams.onPublish)
 	http.HandleFunc("/on_publish_done", streams.onPublishDone)
