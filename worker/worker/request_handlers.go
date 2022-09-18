@@ -442,6 +442,11 @@ type StreamContext struct {
 	recordingPath       *string // recordingPath: path to the recording (overrides default path if set)
 }
 
+// getHlsDir returns the directory where the hls files are stored. E.g. /recordings/hls/1234/CAM/
+func (s StreamContext) getHlsDir() string {
+	return fmt.Sprintf("%s/hls/%d/%s", cfg.TempDir, s.streamId, s.streamVersion)
+}
+
 // getRecordingFileName returns the filename a stream should be saved to before transcoding.
 // example: /recordings/eidi_2021-09-23_10-00_COMB.ts
 func (s StreamContext) getRecordingFileName() string {

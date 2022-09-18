@@ -12,8 +12,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//stream records and streams a lecture hall to the lrz
+// stream records and streams a lecture hall to the lrz
 func stream(streamCtx *StreamContext) {
+	// prepare directory for hls files:
+	err := os.MkdirAll(streamCtx.getHlsDir(), 0755)
+	if err != nil {
+		log.WithError(err).Error("can't create hls dir")
+	}
+
 	// add 10 minutes padding to stream end in case lecturers do lecturer things
 	streamUntil := streamCtx.endTime.Add(time.Minute * 10)
 	log.WithFields(log.Fields{"source": streamCtx.sourceUrl, "end": streamUntil, "fileName": streamCtx.getRecordingFileName()}).
@@ -23,24 +29,19 @@ func stream(streamCtx *StreamContext) {
 	// in case ffmpeg dies retry until stream should be done.
 	lastErr := time.Now().Add(time.Minute * -1)
 	for time.Now().Before(streamUntil) && !streamCtx.stopped {
-		var cmd *exec.Cmd
-
-		// todo: too much duplication
+		streamCmd := "ffmpeg -hide_banner -nostats"
 		if strings.Contains(streamCtx.sourceUrl, "rtsp") {
-			cmd = exec.Command(
-				"sh", "-c",
-				`ffmpeg -hide_banner -nostats -rtsp_transport tcp -t `+fmt.Sprintf("%.0f", time.Until(streamUntil).Seconds())+ // timeout ffmpeg when stream is finished
-					" -i "+fmt.Sprintf(streamCtx.sourceUrl)+
-					` -map 0 -c copy -f mpegts - -c:v libx264 -preset veryfast -tune zerolatency -maxrate 2500k -bufsize 3000k -g 60 -r 30 -x264-params keyint=60:scenecut=0 -c:a aac -ar 44100 -b:a 128k `+
-					`-f flv `+fmt.Sprintf("%s/%s", streamCtx.ingestServer, streamCtx.streamName)+" >> "+streamCtx.getRecordingFileName())
-		} else {
-			cmd = exec.Command(
-				"sh", "-c",
-				`ffmpeg -hide_banner -nostats -t `+fmt.Sprintf("%.0f", time.Until(streamUntil).Seconds())+ // timeout ffmpeg when stream is finished
-					" -i "+fmt.Sprintf(streamCtx.sourceUrl)+
-					` -map 0 -c copy -f mpegts - -c:v libx264 -preset veryfast -tune zerolatency -maxrate 2500k -bufsize 3000k -g 60 -r 30 -x264-params keyint=60:scenecut=0 -c:a aac -ar 44100 -b:a 128k `+
-					`-f flv `+fmt.Sprintf("%s/%s", streamCtx.ingestServer, streamCtx.streamName)+" >> "+streamCtx.getRecordingFileName())
+			streamCmd += " -rtsp_transport tcp"
 		}
+		streamCmd += " -t " + fmt.Sprintf("%.0f", time.Until(streamUntil).Seconds()) // timeout ffmpeg when stream is finished
+		streamCmd += " -i " + streamCtx.sourceUrl
+		streamCmd += " -map 0 -c copy -f mpegts -" // output raw stream to stdout
+		streamCmd += " -c:v libx264 -preset veryfast -tune zerolatency -maxrate 2500k -bufsize 3000k -g 60 -r 30 -x264-params keyint=60:scenecut=0 -c:a aac -ar 44100 -b:a 128k"
+		streamCmd += " -f flv " + fmt.Sprintf("%s/%s", streamCtx.ingestServer, streamCtx.streamName) // output to lrz
+		streamCmd += " -f hls -hls_flags append_list -hls_time 2 -hls_playlist_type event -hls_flags independent_segments -hls_segment_type mpegts"
+		streamCmd += " -hls_segment_filename " + streamCtx.getHlsDir() + "/segment%05d.ts" + streamCtx.getHlsDir() + "/playlist.m3u8"
+
+		cmd := exec.Command("sh", "-c", streamCmd+" >> "+streamCtx.getRecordingFileName())
 		// persist stream command in context, so it can be killed later
 		streamCtx.streamCmd = cmd
 		log.WithField("cmd", cmd.String()).Info("Starting stream")
@@ -67,7 +68,7 @@ func stream(streamCtx *StreamContext) {
 	streamCtx.streamCmd = nil
 }
 
-//errorWithBackoff updates lastError and sleeps for a second if the last error was within this second
+// errorWithBackoff updates lastError and sleeps for a second if the last error was within this second
 func errorWithBackoff(lastError *time.Time, msg string, err error) {
 	log.WithFields(log.Fields{"lastErr": lastError}).WithError(err).Error(msg)
 	if time.Now().Add(time.Second * -1).Before(*lastError) {
