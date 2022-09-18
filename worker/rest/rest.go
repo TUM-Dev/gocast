@@ -23,7 +23,7 @@ type safeStreams struct {
 
 // InitExternalApi creates routes for the hls api consumed by users or edge servers
 func InitExternalApi(addr string) {
-	http.HandleFunc("/hls/", http.FileServer(http.Dir(cfg.TempDir+"/hls/")).ServeHTTP)
+	http.Handle("/hls/", http.FileServer(http.Dir(cfg.TempDir)))
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
