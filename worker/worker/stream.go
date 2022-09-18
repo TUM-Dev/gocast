@@ -39,7 +39,7 @@ func stream(streamCtx *StreamContext) {
 		streamCmd += " -c:v libx264 -preset veryfast -tune zerolatency -maxrate 2500k -bufsize 3000k -g 60 -r 30 -x264-params keyint=60:scenecut=0 -c:a aac -ar 44100 -b:a 128k"
 		streamCmd += " -f flv " + fmt.Sprintf("%s/%s", streamCtx.ingestServer, streamCtx.streamName) // output to lrz
 		streamCmd += " -f hls -hls_flags append_list -hls_time 2 -hls_playlist_type event -hls_flags independent_segments -hls_segment_type mpegts"
-		streamCmd += " -hls_segment_filename " + streamCtx.getHlsDir() + "/segment%05d.ts" + streamCtx.getHlsDir() + "/playlist.m3u8"
+		streamCmd += " -hls_segment_filename " + streamCtx.getHlsDir() + "/segment%05d.ts " + streamCtx.getHlsDir() + "/playlist.m3u8"
 
 		cmd := exec.Command("sh", "-c", streamCmd+" >> "+streamCtx.getRecordingFileName())
 		// persist stream command in context, so it can be killed later
