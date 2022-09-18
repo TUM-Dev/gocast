@@ -32,6 +32,7 @@ bin
 
 # Generated files
 .idea/**/contentModel.xml
+.idea/misc.xml
 
 # Sensitive or high-churn files
 .idea/**/dataSources/
@@ -107,3 +108,6 @@ variables-backend.env
 rebuild.sh
 
 tumlive.service
+
+# osx
+.DS_Store

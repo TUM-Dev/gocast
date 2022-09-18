@@ -1,51 +1,42 @@
-{{ define "semesterselection" }}
+{{define "semesterselection"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
-    {{ $currentYear := .CurrentYear }}
-    {{ $currentTerm := .CurrentTerm }}
+    {{$currentYear := .CurrentYear}}
+    {{$currentTerm := .CurrentTerm}}
     <div x-cloak x-data="{showSemesterSelect: false}">
-        <div
-            x-show="showSemesterSelect"
-            class="fixed bottom-0 right-0 z-50 flex
-                    h-screen w-full content-end justify-end backdrop-blur-sm lg:bottom-5 lg:right-5 lg:h-auto lg:w-1/5 lg:backdrop-blur-none"
-        >
-            <div
-                @click.outside="showSemesterSelect = false"
-                class="mt-auto h-fit w-full rounded-t-lg border bg-white dark:border-gray-800 dark:bg-secondary
-                        lg:rounded-lg lg:shadow-sm"
-            >
-                <div class="mb-1 flex h-12 justify-between border-b px-4 shadow dark:border-gray-800">
-                    <div class="my-auto flex">
+        <div x-show="showSemesterSelect"
+             class="lg:w-1/5 lg:bottom-10 lg:right-4 lg:backdrop-blur-none lg:h-auto
+                    flex content-end justify-end z-50 h-screen w-full fixed bottom-0 right-0 backdrop-blur-sm">
+            <div @click.outside="showSemesterSelect = false"
+                 class="lg:shadow-sm lg:rounded-lg h-fit bg-white border rounded-t-lg w-full mt-auto
+                        dark:bg-secondary dark:border-gray-800">
+                <div class="flex justify-between px-4 border-b h-12 dark:border-gray-800 shadow mb-1">
+                    <div class="flex my-auto">
                         <i class="far fa-calendar text-gray-400"></i>
                         <span class="ml-2 text-sm uppercase text-gray-400">Semester</span>
                     </div>
-                    <button class="flex w-full items-center justify-end" @click="showSemesterSelect = false;">
+                    <button class="flex justify-end w-full items-center" @click="showSemesterSelect = false;">
                         <span class="text-3 text-sm">&#9660;</span>
                     </button>
                 </div>
-                <div class="my-auto h-60 w-full overflow-y-scroll">
-                    {{ range $s := .Semesters }}
-                        <a href="/semester/{{ $s.Year }}/{{ $s.TeachingTerm }}">
-                            <div
-                                class="{{ if and (eq $s.Year $currentYear) (eq $s.TeachingTerm $currentTerm) }}
-                                    bg-gray-100 dark:bg-secondary-lighter
-                                {{ end }}
-                                        flex h-12 items-center justify-center border-b dark:border-gray-800"
-                            >
-                                <span class="text-3 text-sm font-semibold">{{ $s.Year }}-{{ $s.TeachingTerm }}</span>
+                <div class="my-auto w-full h-60 overflow-y-scroll">
+                    {{range $s := .Semesters}}
+                        <a href="/semester/{{$s.Year}}/{{$s.TeachingTerm}}">
+                            <div class="{{if and (eq $s.Year $currentYear) (eq $s.TeachingTerm $currentTerm)}}
+                                            bg-gray-100 dark:bg-secondary-lighter{{end}}
+                                        flex justify-center items-center h-12 border-b dark:border-gray-800">
+                                <span class="text-3 text-sm font-semibold">{{$s.Year}}-{{$s.TeachingTerm}}</span>
                             </div>
                         </a>
-                    {{ end }}
+                    {{end}}
                 </div>
             </div>
         </div>
-        <button
-            @click="showSemesterSelect = !showSemesterSelect"
-            class="fixed bottom-0 flex h-12
-                        w-full rounded-t-lg border bg-white px-4 shadow-sm dark:border-gray-800 dark:bg-secondary
-                        lg:right-5 lg:bottom-5 lg:w-1/5 lg:rounded-lg"
-        >
-            <span class="text-3 mx-auto my-auto text-sm font-semibold">{{ $currentYear }}-{{ $currentTerm }}</span>
-            <span class="text-3 absolute right-3 top-0 bottom-0 my-auto h-fit text-sm">&#9650;</span>
+        <button @click="showSemesterSelect = !showSemesterSelect"
+                class="lg:w-1/5 lg:right-4 lg:bottom-10 lg:rounded-lg
+                        flex w-full fixed bottom-0 bg-white border shadow-sm rounded-t-lg
+                        h-12 px-4 dark:bg-secondary dark:border-gray-800">
+            <span class="text-3 font-semibold text-sm mx-auto my-auto">{{$currentYear}}-{{$currentTerm}}</span>
+            <span class="absolute text-sm right-3 text-3 my-auto top-0 bottom-0 h-fit">&#9650;</span>
         </button>
     </div>
-{{ end }}
+{{end}}

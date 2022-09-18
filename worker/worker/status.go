@@ -19,9 +19,11 @@ var S *Status
 var VersionTag string
 
 const (
-	costStream           = 3
-	costTranscoding      = 2
-	costSilenceDetection = 1
+	costStream              = 3
+	costTranscoding         = 2
+	costSilenceDetection    = 1
+	costThumbnailGeneration = 1
+	costKeywordExtraction   = 1
 )
 
 type Status struct {
@@ -66,6 +68,14 @@ func (s *Status) startTranscoding(name string) {
 	s.Jobs = append(s.Jobs, fmt.Sprintf("transcoding %s", name))
 }
 
+func (s *Status) startThumbnailGeneration(streamCtx *StreamContext) {
+	defer s.SendHeartbeat()
+	statusLock.Lock()
+	defer statusLock.Unlock()
+	s.workload += costThumbnailGeneration
+	s.Jobs = append(s.Jobs, fmt.Sprintf("generating thumbnail for %s", streamCtx.getTranscodingFileName()))
+}
+
 func (s *Status) endStream(streamCtx *StreamContext) {
 	defer s.SendHeartbeat()
 	statusLock.Lock()
@@ -98,6 +108,19 @@ func (s *Status) endTranscoding(name string) {
 	s.workload -= costTranscoding
 	for i := range s.Jobs {
 		if s.Jobs[i] == fmt.Sprintf("transcoding %s", name) {
+			s.Jobs = append(s.Jobs[:i], s.Jobs[i+1:]...)
+			break
+		}
+	}
+	statusLock.Unlock()
+}
+
+func (s *Status) endThumbnailGeneration(streamContext *StreamContext) {
+	defer s.SendHeartbeat()
+	statusLock.Lock()
+	s.workload -= costThumbnailGeneration
+	for i := range s.Jobs {
+		if s.Jobs[i] == fmt.Sprintf("generating thumbnail for %s", streamContext.getTranscodingFileName()) {
 			s.Jobs = append(s.Jobs[:i], s.Jobs[i+1:]...)
 			break
 		}
@@ -149,4 +172,25 @@ func (s *Status) SendHeartbeat() {
 	if err != nil {
 		log.WithError(err).Error("Sending Heartbeat failed")
 	}
+}
+
+func (s *Status) startKeywordExtraction(streamCtx *StreamContext) {
+	defer s.SendHeartbeat()
+	statusLock.Lock()
+	defer statusLock.Unlock()
+	s.workload += costKeywordExtraction
+	s.Jobs = append(s.Jobs, fmt.Sprintf("extracting keywords for %s", streamCtx.getTranscodingFileName()))
+}
+
+func (s *Status) endKeywordExtraction(streamCtx *StreamContext) {
+	defer s.SendHeartbeat()
+	statusLock.Lock()
+	s.workload -= costKeywordExtraction
+	for i := range s.Jobs {
+		if s.Jobs[i] == fmt.Sprintf("extracting keywords for %s", streamCtx.getTranscodingFileName()) {
+			s.Jobs = append(s.Jobs[:i], s.Jobs[i+1:]...)
+			break
+		}
+	}
+	statusLock.Unlock()
 }

@@ -98,21 +98,20 @@
     }
 
     .video-description a {
-        @apply text-gray-500 hover:text-black hover:underline dark:hover:text-white;
+        @apply text-gray-500 dark:hover:text-white hover:text-black hover:underline;
     }
 
     .btn {
-        @apply w-full flex-1 cursor-pointer bg-white p-3 text-center text-sm shadow hover:bg-gray-100 dark:bg-gray-800 dark:text-white dark:hover:bg-primary;
+        @apply flex-1 dark:bg-gray-800 dark:hover:bg-primary dark:text-white w-full p-3 text-center text-sm cursor-pointer shadow bg-white hover:bg-gray-100;
     }
 
     .btn:disabled {
-        @apply bg-gray-200 text-gray-500 hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-400 dark:hover:bg-gray-600;
+        @apply dark:text-gray-400 dark:hover:bg-gray-600 dark:bg-gray-600 text-gray-500 hover:bg-gray-200 bg-gray-200;
     }
 }
 
-input,
-textarea {
-    @apply w-full border-b-2 border-gray-500 bg-transparent p-3 font-medium text-primary focus:border-gray-300 focus:outline-none dark:text-white;
+input, textarea {
+    @apply focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500 dark:text-white text-primary;
 }
 
 .container {
@@ -127,11 +126,17 @@ textarea {
 }
 
 .video-js .vjs-control-bar {
-    background: linear-gradient(0deg, rgba(0, 0, 0, 0.25) 20%, transparent) !important;
+    background: linear-gradient(0deg, rgba(0, 0, 0, .25) 20%, transparent) !important;
 }
 
 .video-js .vjs-play-progress {
     background-color: #3070b3 !important;
+}
+
+.video-js .vjs-time-tooltip {
+    border-radius: 2px !important;
+    border-width: 2px !important;
+    border-color: white !important;
 }
 
 /* slider for cutting videos: */
@@ -156,12 +161,11 @@ textarea {
 }
 
 /* Chat */
-input[type="checkbox"]:checked + label {
+input[type='checkbox']:checked + label {
     color: #3070b3;
 }
 
-.chat,
-.watchContent {
+.chat, .watchContent {
     /* Hide scrollbar for IE, Edge and Firefox */
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: 3px; /* Firefox */
@@ -204,8 +208,7 @@ input[type="checkbox"]:checked + label {
     scrollbar-color: #5b5b5b #0d1117;
 }
 
-.vjs-button,
-.vjs-control {
+.vjs-button, .vjs-control {
     color: #fff !important;
 }
 
@@ -227,11 +230,7 @@ input[type="checkbox"]:checked + label {
     color: #fff !important;
 }
 
-.dark #calendar table,
-.dark #calendar td,
-.dark .fc-theme-standard td,
-.dark .fc-theme-standard th,
-.dark .fc-col-header-cell {
+.dark #calendar table, .dark #calendar td, .dark .fc-theme-standard td, .dark .fc-theme-standard th, .dark .fc-col-header-cell {
     border-color: #474747 !important;
 }
 
@@ -262,10 +261,10 @@ button.vjs-skip-silence-control {
     bottom: 30px !important;
     right: 10px !important;
     cursor: pointer;
-    border: 0.06666em solid #fff !important;
+    border: .06666em solid #fff !important;
     background-color: #2b333f !important;
-    background-color: rgba(43, 51, 63, 0.7) !important;
-    border-radius: 0.3em !important;
+    background-color: rgba(43, 51, 63, .7) !important;
+    border-radius: .3em !important;
 }
 
 .vjs-skip-silence-control > span:before {
@@ -273,8 +272,74 @@ button.vjs-skip-silence-control {
     line-height: 1.5em !important;
 }
 
-a.fc-event,
-a.fc-event:hover {
+/* Overlay icons that show up when various hotkeys are activated */
+
+.video-js .vjs-overlay-icon-container {
+    width: 100%;
+    height: 100%;
+
+    position: absolute;
+    pointer-events: none;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    font-size: 2rem;
+}
+
+.video-js .vjs-overlay-icon-container .vjs-overlay-icon-wrapper {
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+
+    width: 2em;
+    height: 2em;
+    border-radius: 1000px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+}
+
+@keyframes vjs-overlay-icon-frames {
+    from {
+        opacity: 0;
+        transform: scale(1);
+    }
+    10% {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+        transform: scale(2);
+    }
+}
+
+@keyframes vjs-overlay-icon-frames-reduced-motion {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.video-js .vjs-overlay-icon-container.vjs-overlay-icon-animate .vjs-overlay-icon-wrapper {
+    animation: ease-in 0.6s vjs-overlay-icon-frames 0s /*infinite*/ 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .video-js .vjs-overlay-icon-container.vjs-overlay-icon-animate .vjs-overlay-icon-wrapper {
+        animation-name: vjs-overlay-icon-frames-reduced-motion;
+    }
+}
+
+.video-js .vjs-overlay-icon-container.vjs-overlay-icon-visible {
+    display: flex;
+}
+
+a.fc-event, a.fc-event:hover {
     cursor: pointer;
 }
 
@@ -295,4 +360,29 @@ a.fc-event:hover {
 
 .notificationBody a {
     @apply underline;
+}
+
+/* TUMLive-Markdown */
+
+.tum-live-markdown h1, .tum-live-markdown h2, .tum-live-markdown h3, .tum-live-markdown h4, .tum-live-markdown h5, .tum-live-markdown h6{
+    font-weight: bold;
+}
+
+.tum-live-markdown h1{
+    margin-bottom: 16px;
+}
+
+.tum-live-markdown h2, .tum-live-markdown h3, .tum-live-markdown h4, .tum-live-markdown h5, .tum-live-markdown h6{
+    margin-top: 16px;
+}
+
+.tum-live-markdown ul{
+    list-style-type: disc;
+    padding-left: 16px;
+    padding-bottom: 8px;
+    padding-top: 8px;
+}
+
+.tum-live-markdown a{
+    border-bottom: 1px solid black;
 }

@@ -1,140 +1,109 @@
-{{ define "course_settings" }}
+{{define "course_settings"}}
     {{- /* gotype:github.com/joschahenningsen/TUM-Live/model.Course */ -}}
-    <form method="post">
-        <h3 class="mt-2 text-lg font-light">Visibility of this course</h3>
-        <div class="text-4 mt-2 px-4">
-            <label class="inline-flex w-full items-center" for="public">
-                <input
-                    class="form-radio mr-3 w-auto"
-                    type="radio"
-                    id="public"
-                    name="access"
-                    value="public"
-                    {{ if . }}
-                        {{ if eq .Visibility "public" }}checked{{ end }}
-                    {{ else }}
-                        checked
-                    {{ end }}
-                />
+    <div x-data="{
+        showCourseSettingsModal:false, isChatEnabledForCourse: {{.ChatEnabled}}
+    }">
+    <form id="course-settings-form" method="post"
+        @submit.prevent="
+            async () => {
+                if(admin.LectureList.hasIndividualChatEnabledSettings()){
+                   showCourseSettingsModal = true;
+                }
+                else{
+                    await admin.submitFormAndEnableAllIndividualChats({{.Model.ID}}, isChatEnabledForCourse);
+                    window.location.reload();
+                }
+            }
+        "
+    >
+        <h3 class="text-lg font-light mt-2">Visibility of this course</h3>
+        <div class="px-4 text-4 mt-2">
+            <label class="inline-flex items-center w-full" for="public">
+                <input class="mr-3 w-auto form-radio" type="radio" id="public" name="access" value="public"
+                        {{if .}} {{if eq .Visibility "public"}}checked{{end}}{{else}}checked{{end}}>
                 <span>Public: Everyone can see this course</span>
             </label>
-            <label class="inline-flex w-full items-center" for="enrolled">
-                <input
-                    class="form-radio mr-3 w-auto"
-                    type="radio"
-                    id="enrolled"
-                    name="access"
-                    value="enrolled"
-                    {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Course*/ -}}
-                    {{ if not (and . .TUMOnlineIdentifier) }}disabled{{ end }}
-                    {{ if . }}{{ if eq .Visibility "enrolled" }}checked{{ end }}{{ end }}
-                />
+            <label class="inline-flex items-center w-full" for="enrolled">
+                <input class="mr-3 w-auto form-radio" type="radio" id="enrolled" name="access"
+                       value="enrolled" {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Course*/ -}}
+                        {{if not (and . .TUMOnlineIdentifier)}}disabled{{end}}
+                        {{if .}} {{if eq .Visibility "enrolled"}}checked{{end}}{{end}}>
                 <span>Enrolled: Only students enrolled in TUMOnline can see this course</span>
             </label>
-            <label class="inline-flex w-full items-center" for="loggedin">
-                <input
-                    class="form-radio mr-3 w-auto"
-                    type="radio"
-                    id="loggedin"
-                    name="access"
-                    value="loggedin"
-                    {{ if . }}{{ if eq .Visibility "loggedin" }}checked{{ end }}{{ end }}
-                />
+            <label class="inline-flex items-center w-full" for="loggedin">
+                <input class="mr-3 w-auto form-radio" type="radio" id="loggedin" name="access"
+                       value="loggedin"
+                        {{if .}} {{if eq .Visibility "loggedin"}}checked{{end}}{{end}}>
                 <span>Logged in: Only users with a TUM account can see this course</span>
             </label>
-            <label class="inline-flex w-full items-center" for="hidden">
-                <input
-                    class="form-radio mr-3 w-auto"
-                    type="radio"
-                    id="hidden"
-                    name="access"
-                    value="hidden"
-                    {{ if . }}{{ if eq .Visibility "hidden" }}checked{{ end }}{{ end }}
-                />
-                <span
-                    >Hidden: only visible for users with this link: <br />
-                    <a
-                        class="underline"
-                        href="https://live.rbg.tum.de/course/{{ .Year }}/{{ .TeachingTerm }}/{{ .Slug }}"
-                        >https://live.rbg.tum.de/course/{{ .Year }}/{{ .TeachingTerm }}/{{ .Slug }}</a
-                    >
-                </span>
+            <label class="inline-flex items-center w-full" for="hidden">
+                <input class="mr-3 w-auto form-radio" type="radio" id="hidden" name="access"
+                       value="hidden"
+                        {{if .}} {{if eq .Visibility "hidden"}}checked{{end}}{{end}}>
+                <span>Hidden: only visible for users with this link: <br>
+                    <a class="underline" href="https://live.rbg.tum.de/course/{{.Year}}/{{.TeachingTerm}}/{{.Slug}}">https://live.rbg.tum.de/course/{{.Year}}/{{.TeachingTerm}}/{{.Slug}}</a>
+            </span>
             </label>
         </div>
-        <h3 class="mt-2 text-lg font-light">Preferences</h3>
-        <div class="mt-2 px-4">
+        <h3 class="text-lg font-light mt-2">Preferences</h3>
+        <div class="px-4 mt-2">
             <div>
                 <label class="inline-flex items-center" for="enVOD">
-                    <input
-                        class="form-checkbox w-auto"
-                        id="enVOD"
-                        name="enVOD"
-                        type="checkbox"
-                        {{ if and . .VODEnabled }}checked{{ end }}
-                        {{ if not . }}checked{{ end }}
-                    />
+                    <input class="w-auto form-checkbox" id="enVOD" name="enVOD" type="checkbox"
+                           {{if and . .VODEnabled}}checked{{end}}
+                            {{if not .}}checked{{end}}>
                     <span class="ml-2">Enable VOD</span>
                 </label>
             </div>
             <div>
                 <label class="inline-flex items-center" for="enDL">
-                    <input
-                        class="form-checkbox w-auto"
-                        id="enDL"
-                        name="enDL"
-                        type="checkbox"
-                        {{ if and . .DownloadsEnabled }}checked{{ end }}
-                        {{ if not . }}checked{{ end }}
-                    />
+                    <input class="w-auto form-checkbox" id="enDL" name="enDL" type="checkbox"
+                           {{if and . .DownloadsEnabled}}checked{{end}}
+                            {{if not .}}checked{{end}}>
                     <span class="ml-2">Enable Downloads</span>
                 </label>
             </div>
-            <div x-data="{enChat: {{ .ChatEnabled }}}">
+            <div x-init="isChatEnabledForCourse={{.ChatEnabled}}">
                 <label class="inline-flex items-center" for="enChat">
-                    <input
-                        x-model="enChat"
-                        class="form-checkbox w-auto"
-                        id="enChat"
-                        name="enChat"
-                        type="checkbox"
-                        {{ if and . .ChatEnabled }}checked{{ end }}
-                        {{ if not . }}checked{{ end }}
-                    />
+                    <input x-model="isChatEnabledForCourse"
+                           class="w-auto form-checkbox"
+                           id="enChat" name="enChat"
+                           type="checkbox"
+                           {{if and . .ChatEnabled}}checked{{end}}
+                            {{if not .}}checked{{end}}>
                     <span class="ml-2">Enable Live Chat</span>
                 </label>
                 <label class="inline-flex items-center pl-2" for="enChatAnon">
-                    <input
-                        :disabled="!enChat"
-                        class="form-checkbox w-auto"
-                        id="enChatAnon"
-                        name="enChatAnon"
-                        type="checkbox"
-                        {{ if and . .AnonymousChatEnabled }}checked{{ end }}
-                        {{ if not . }}checked{{ end }}
-                    />
+                    <input :disabled="!isChatEnabledForCourse"
+                           class="w-auto form-checkbox"
+                           id="enChatAnon" name="enChatAnon"
+                           type="checkbox"
+                           {{if and . .AnonymousChatEnabled}}checked{{end}}
+                            {{if not .}}checked{{end}}>
                     <span class="ml-2">Allow Anonymous Messages</span>
                 </label>
                 <label class="inline-flex items-center pl-2" for="enChatMod">
-                    <input
-                        :disabled="!enChat"
-                        class="form-checkbox w-auto"
-                        id="enChatMod"
-                        name="enChatMod"
-                        type="checkbox"
-                        {{ if and . .ModeratedChatEnabled }}checked{{ end }}
-                        {{ if not . }}checked{{ end }}
-                    />
+                    <input :disabled="!isChatEnabledForCourse"
+                           class="w-auto form-checkbox"
+                           id="enChatMod" name="enChatMod"
+                           type="checkbox"
+                           {{if and . .ModeratedChatEnabled}}checked{{end}}
+                            {{if not .}}checked{{end}}>
                     <span class="ml-2">Enable Moderate Chat</span>
                 </label>
             </div>
         </div>
-        <div class="mt-2 flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
-            <input name="submit" class="btn border-0" type="submit" value="Save Settings" />
-            {{ if .TUMOnlineIdentifier }}
-                <input name="submit" class="btn border-0" type="submit" value="Reload Enrollments" />
-                <input name="submit" class="btn border-0" type="submit" value="Reload Lectures From TUMOnline" />
-            {{ end }}
-            <a class="btn border-0 font-semibold" href="{{ .Model.ID }}/stats">Statistics</a>
+        <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mt-2">
+            <input name="submit" class="btn border-0" type="submit" value="Save Settings">
+            {{if .TUMOnlineIdentifier}}
+                <input name="submit" class="btn border-0" type="submit"
+                       value="Reload Enrollments">
+                <input name="submit" class="btn border-0" type="submit"
+                       value="Reload Lectures From TUMOnline">
+            {{end}}
+            <a class="btn border-0 font-semibold" href="{{.Model.ID}}/stats">Statistics</a>
         </div>
     </form>
-{{ end }}
+    {{template "course-settings-modal" .}}
+    </div>
+{{end}}

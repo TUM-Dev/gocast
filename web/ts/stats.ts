@@ -1,6 +1,14 @@
 import { StatusCodes } from "http-status-codes";
 import Chart from "chart.js/auto";
 
+const statsToExport = ["week", "hour", "activity-live", "activity-vod", "allDays", "quickStats"];
+
+export function getStatsDownloadLink(format: string) {
+    return `/api/course/${
+        (document.getElementById("courseID") as HTMLInputElement).value
+    }/stats/export?interval[]=${statsToExport.join("&interval[]=")}&format=${format}`;
+}
+
 export function loadStats(endpoint: string, targetEl: string) {
     const canvas = <HTMLCanvasElement>document.getElementById(targetEl);
     const ctx = canvas.getContext("2d");

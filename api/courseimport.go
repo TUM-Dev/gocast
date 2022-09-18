@@ -7,7 +7,6 @@ import (
 	campusonline "github.com/RBG-TUM/CAMPUSOnline"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/tum"
@@ -21,12 +20,15 @@ import (
 	"unicode"
 )
 
-func postSchedule(c *gin.Context) {
+func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 	resp := ""
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
@@ -38,17 +40,28 @@ func postSchedule(c *gin.Context) {
 	err := c.BindJSON(&req)
 	if err != nil {
 		sentry.CaptureException(errors.New("could not bind JSON request"))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "could not bind JSON request",
+		})
 		return
 	}
 	yearStr := c.Param("year")
 	year, err := strconv.Atoi(yearStr)
 	term := c.Param("term")
-	if err != nil || !(term == "W" || term == "S") {
-		c.AbortWithStatus(http.StatusBadRequest)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid year",
+			Err:           err,
+		})
 		return
 	}
-	if err != nil {
+	if !(term == "W" || term == "S") {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid term",
+		})
 		return
 	}
 	for _, courseReq := range req.Courses {
@@ -63,7 +76,6 @@ func postSchedule(c *gin.Context) {
 			Year:                year,
 			TeachingTerm:        term,
 			TUMOnlineIdentifier: fmt.Sprintf("%d", courseReq.CourseID),
-			LiveEnabled:         false,
 			VODEnabled:          false,
 			DownloadsEnabled:    false,
 			ChatEnabled:         false,
@@ -75,7 +87,7 @@ func postSchedule(c *gin.Context) {
 
 		var streams []model.Stream
 		for _, event := range courseReq.Events {
-			lectureHall, err := dao.GetLectureHallByPartialName(event.RoomName)
+			lectureHall, err := r.LectureHallsDao.GetLectureHallByPartialName(event.RoomName)
 			if err != nil {
 				log.WithError(err).Error("No room found for request")
 				continue
@@ -89,7 +101,7 @@ func postSchedule(c *gin.Context) {
 			})
 		}
 		course.Streams = streams
-		err := dao.CreateCourse(c, &course, !req.OptIn)
+		err := r.CoursesDao.CreateCourse(c, &course, !req.OptIn)
 		if err != nil {
 			resp += err.Error()
 			continue
@@ -109,7 +121,7 @@ func postSchedule(c *gin.Context) {
 			time.Sleep(time.Millisecond * 200) // wait a bit, otherwise ldap locks us out
 			user.Name = name
 			user.Role = model.LecturerType
-			err = dao.UpsertUser(user)
+			err = r.UsersDao.UpsertUser(user)
 			if err != nil {
 				log.Error(err)
 			} else {
@@ -117,7 +129,7 @@ func postSchedule(c *gin.Context) {
 			}
 		}
 		for _, user := range users {
-			if err := dao.AddAdminToCourse(user.ID, course.ID); err != nil {
+			if err := r.CoursesDao.AddAdminToCourse(user.ID, course.ID); err != nil {
 				log.WithError(err).Error("can't add admin to course")
 			}
 			err := notifyCourseCreated(MailTmpl{
@@ -158,25 +170,38 @@ func notifyCourseCreated(d MailTmpl, mailAddr string, subject string) error {
 	return tools.SendMail(tools.Cfg.Mail.Server, tools.Cfg.Mail.Sender, subject, body.String(), []string{mailAddr})
 }
 
-func getSchedule(c *gin.Context) {
+func (r lectureHallRoutes) getSchedule(c *gin.Context) {
 	err := c.Request.ParseForm()
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not parse form",
+			Err:           err,
+		})
 		return
 	}
 	rng := strings.Split(c.Request.Form.Get("range"), " to ")
 	if len(rng) != 2 {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid range parameter",
+		})
 		return
 	}
 	from, err := time.Parse("2006-01-02", rng[0])
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid 'from'",
+		})
 		return
 	}
 	to, err := time.Parse("2006-01-02", rng[1])
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid 'to'",
+		})
 		return
 	}
 	//todo figure out right token
@@ -194,12 +219,19 @@ func getSchedule(c *gin.Context) {
 	case "Ph":
 		room, err = campus.GetXCalPh(from, to)
 	default:
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid department",
+		})
 		return
 	}
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		log.WithError(err).Error("Can't get room schedule")
+		log.WithError(err).Error("can not get room schedule")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get room schedule",
+			Err:           err,
+		})
 		return
 	}
 	ical := &room
@@ -208,7 +240,12 @@ func getSchedule(c *gin.Context) {
 	courses := ical.GroupByCourse()
 	courses, err = campus.LoadCourseContacts(courses)
 	if err != nil {
-		_ = c.AbortWithError(http.StatusInternalServerError, err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not load course contacts",
+			Err:           err,
+		})
+		return
 	}
 	for _, crs := range courses {
 		courseSlug := ""

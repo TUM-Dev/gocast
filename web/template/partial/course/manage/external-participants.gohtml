@@ -1,44 +1,34 @@
-{{ define "externalParticipants" }}
+{{define "externalParticipants"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Course*/ -}}
-    <ul class="mb-6 bg-gray-100 dark:bg-secondary" x-data="{expanded: false}">
+    <ul class="dark:bg-secondary bg-gray-100 mb-6" x-data="{expanded: false}">
         <li>
-            <p class="text-4 p-4">
-                Add participants. They'll get notified about your invitation to your lecture via mail.
-            </p>
-            <form method="post" action="/api/course/{{ .Model.ID }}/createUserForCourse" class="flex">
-                <input type="hidden" name="courseID" value="{{ .Model.ID }}" />
+            <p class="text-4 p-4">Add participants. They'll get notified about your invitation to
+                your lecture via mail.</p>
+            <form method="post" action="/api/course/{{.Model.ID}}/createUserForCourse"
+                  class="flex">
+                <input type="hidden" name="courseID" value="{{.Model.ID}}">
                 <label class="w-full">
                     <span class="hidden">First Name</span>
-                    <input
-                        class="mx-2 px-2"
-                        type="text"
-                        name="newUserFirstName"
-                        id="newUserFirstName"
-                        autocomplete="off"
-                        placeholder="Tim"
-                    />
+                    <input class="mx-2 px-2" type="text" name="newUserFirstName"
+                           id="newUserFirstName" autocomplete="off" placeholder="Tim">
                 </label>
                 <label class="w-full">
                     <span class="hidden">Email</span>
-                    <input
-                        class="mx-2 px-2"
-                        type="email"
-                        autocomplete="off"
-                        name="newUserEmail"
-                        id="newUserEmail"
-                        placeholder="tim@lmu.de"
-                    />
+                    <input class="mx-2 px-2" type="email" autocomplete="off" name="newUserEmail"
+                           id="newUserEmail" placeholder="tim@lmu.de">
                 </label>
                 <button type="submit" class="mx-4">
                     <i class="fas fa-check text-4 hover:text-purple-500"></i>
                 </button>
             </form>
             <p class="text-4 p-4">Batch insert (this takes about two seconds per user.)</p>
-            <form method="post" action="/api/course/{{ .Model.ID }}/createUserForCourse" class="flex">
-                <input type="hidden" name="courseID" value="{{ .Model.ID }}" />
+            <form method="post" action="/api/course/{{.Model.ID}}/createUserForCourse"
+                  class="flex">
+                <input type="hidden" name="courseID" value="{{.Model.ID}}">
                 <label class="w-full">
                     <span class="hidden">Batch insert users</span>
-                    <textarea name="batchUserInput" placeholder="Tim,tim69@hotmail.com&#10;Anja,anja@lmu.de"></textarea>
+                    <textarea name="batchUserInput"
+                              placeholder="Tim,tim69@hotmail.com&#10;Anja,anja@lmu.de"></textarea>
                 </label>
                 <button type="submit" class="mx-4">
                     <i class="fas fa-check text-4 hover:text-purple-500"></i>
@@ -46,33 +36,31 @@
             </form>
         </li>
         <li class="flex px-4">
-            <p
-                @click="expanded=!expanded"
-                class="text-4 cursor-pointer underline"
-                x-text="expanded?'Hide Invitations':'Show Invitations'"
-            ></p>
+            <p @click="expanded=!expanded"
+               class="underline text-4 cursor-pointer" x-text="expanded?'Hide Invitations':'Show Invitations'">
+            </p>
         </li>
         <li class="p-4" x-show="expanded">
             <table class="hidden w-full" id="usersTable">
                 <thead>
-                    <tr class="font-semibold">
-                        <td>Name</td>
-                        <td>Email</td>
-                        <td>Finished Acc. Setup</td>
-                    </tr>
+                <tr class="font-semibold">
+                    <td>Name</td>
+                    <td>Email</td>
+                    <td>Finished Acc. Setup</td>
+                </tr>
                 </thead>
                 <tbody>
-                    {{ range $user := .Users }}
-                        {{ if $user.Email }}
-                            <tr class="px-3 hover:bg-white dark:hover:bg-primary">
-                                <td>{{ $user.Name }}</td>
-                                <td class="px-2">{{ $user.Email.String }}</td>
-                                <td>{{ if eq $user.Password "" }}No{{ else }}Yes{{ end }}</td>
-                            </tr>
-                        {{ end }}
-                    {{ end }}
+                {{range $user := .Users }}
+                    {{if $user.Email}}
+                        <tr class="px-3 dark:hover:bg-primary hover:bg-white">
+                            <td>{{$user.GetPreferredName}}</td>
+                            <td class="px-2">{{$user.Email.String}}</td>
+                            <td>{{if eq $user.Password ""}}No{{else}}Yes{{end}}</td>
+                        </tr>
+                    {{end}}
+                {{end}}
                 </tbody>
             </table>
         </li>
     </ul>
-{{ end }}
+{{end}}

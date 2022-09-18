@@ -5,7 +5,9 @@ export class CreateCourse {
     private courseIDInput: HTMLInputElement;
     private loadFromTUMOnlineBtn: HTMLButtonElement;
     private courseNameInput: HTMLInputElement;
-    private teachingTermInput: HTMLInputElement;
+    private semesterInput: HTMLInputElement;
+    private yearInput: HTMLInputElement;
+    private yearWInput: HTMLInputElement; // for the '/21' part
     private slugInput: HTMLInputElement;
     private tumOnlineInfo: HTMLSpanElement;
     private enrolledRadio: HTMLInputElement;
@@ -15,7 +17,9 @@ export class CreateCourse {
         this.loadFromTUMOnlineBtn.addEventListener("click", () => this.loadCourseInfo());
         this.courseIDInput = document.getElementById("courseID") as HTMLInputElement;
         this.courseNameInput = document.getElementById("name") as HTMLInputElement;
-        this.teachingTermInput = document.getElementById("teachingTerm") as HTMLInputElement;
+        this.semesterInput = document.getElementById("semester") as HTMLInputElement;
+        this.yearInput = document.getElementById("year") as HTMLInputElement;
+        this.yearWInput = document.getElementById("yearW") as HTMLInputElement;
         this.slugInput = document.getElementById("slug") as HTMLInputElement;
         this.tumOnlineInfo = document.getElementById("TUMOnlineInfo") as HTMLSpanElement;
         this.enrolledRadio = document.getElementById("enrolled") as HTMLInputElement;
@@ -38,8 +42,18 @@ export class CreateCourse {
             } else {
                 data.text().then((data) => {
                     const json = JSON.parse(data);
+                    const teachingTerm = json["teachingTerm"].Split(" ");
+
+                    this.semesterInput.value = teachingTerm[0];
+                    if (teachingTerm[0] === "Wintersemester") {
+                        const yearPair = teachingTerm[1].Split("/"); // Wintersemester year format: 2022/23
+                        this.yearInput.value = yearPair[0];
+                        this.yearWInput.value = yearPair[1];
+                    } else {
+                        this.yearInput.value = teachingTerm[1];
+                    }
+
                     this.courseNameInput.value = json["courseName"];
-                    this.teachingTermInput.value = json["teachingTerm"];
                     this.tumOnlineInfo.innerText =
                         "Currently there are " +
                         json["numberAttendees"] +
@@ -52,10 +66,16 @@ export class CreateCourse {
 
     private createCourse(): void {
         const f = new FormData(document.getElementById("createCourseForm") as HTMLFormElement);
+        let teachingTerm;
+        if (f.get("semester") === "Wintersemester") {
+            teachingTerm = `${f.get("semester")} ${f.get("year")}/${f.get("yearW")}`;
+        } else {
+            teachingTerm = `${f.get("semester")} ${f.get("year")}`;
+        }
         postData("/api/createCourse", {
             courseID: f.get("courseID"),
             name: f.get("name"),
-            teachingTerm: f.get("teachingTerm"),
+            teachingTerm: teachingTerm,
             slug: f.get("slug"),
             access: f.get("access"),
             enVOD: f.get("enVOD") === "on",

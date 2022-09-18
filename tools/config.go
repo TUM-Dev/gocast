@@ -103,6 +103,8 @@ type Config struct {
 		User     string `yaml:"user"`
 		Password string `yaml:"password"`
 		Database string `yaml:"database"`
+		Host     string `yaml:"host"`
+		Port     uint   `yaml:"port"`
 	} `yaml:"db"`
 	Campus struct {
 		Base   string   `yaml:"base"`
@@ -137,10 +139,11 @@ type Config struct {
 	} `yaml:"auths"`
 	Alerts *struct {
 		Matrix *struct {
-			Username   string `yaml:"username"`
-			Password   string `yaml:"password"`
-			Homeserver string `yaml:"homeserver"`
-			RoomID     string `yaml:"roomId"`
+			Username    string `yaml:"username"`
+			Password    string `yaml:"password"`
+			Homeserver  string `yaml:"homeserver"`
+			LogRoomID   string `yaml:"logRoomID"`
+			AlertRoomID string `yaml:"alertRoomId"`
 		} `yaml:"matrix"`
 	} `yaml:"alerts"`
 	IngestBase  string  `yaml:"ingestBase"`

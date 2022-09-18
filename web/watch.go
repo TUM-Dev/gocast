@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/api"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
@@ -15,11 +16,11 @@ import (
 	"strings"
 )
 
-func WatchPage(c *gin.Context) {
+func (r mainRoutes) WatchPage(c *gin.Context) {
 	span := sentry.StartSpan(c, "GET /w", sentry.TransactionName("GET /w"))
 	defer span.Finish()
 	var data WatchPageData
-	err := data.Prepare(c)
+	err := data.Prepare(c, r.LectureHallsDao)
 	if err != nil {
 		log.WithError(err).Error("Can't prepare data for watch page")
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -41,7 +42,7 @@ func WatchPage(c *gin.Context) {
 	data.ChatData.IsPopUp = false
 
 	if data.IsAdminOfCourse && tumLiveContext.Stream.LectureHallID != 0 {
-		lectureHall, err := dao.GetLectureHallByID(tumLiveContext.Stream.LectureHallID)
+		lectureHall, err := r.LectureHallsDao.GetLectureHallByID(tumLiveContext.Stream.LectureHallID)
 		if err != nil {
 			sentry.CaptureException(err)
 		} else {
@@ -58,7 +59,7 @@ func WatchPage(c *gin.Context) {
 	}
 	// Check for fetching progress
 	if tumLiveContext.User != nil && tumLiveContext.Stream.Recording {
-		progress, err := dao.LoadProgress(tumLiveContext.User.ID, tumLiveContext.Stream.ID)
+		progress, err := dao.Progress.LoadProgress(tumLiveContext.User.ID, tumLiveContext.Stream.ID)
 		if err != nil {
 			data.Progress = model.StreamProgress{Progress: 0}
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -77,11 +78,13 @@ func WatchPage(c *gin.Context) {
 	} else {
 		data.DVR = ""
 	}
-
+	data.CutOffLength = api.CutOffLength
 	if strings.HasPrefix(data.Version, "unit-") {
-		data.Description = template.HTML(data.Unit.GetDescriptionHTML())
+		data.Description = data.Unit.GetDescriptionHTML()
+		data.TruncatedDescription = template.HTML(tools.Truncate(string(data.Unit.GetDescriptionHTML()), data.CutOffLength))
 	} else {
 		data.Description = template.HTML(data.IndexData.TUMLiveContext.Stream.GetDescriptionHTML())
+		data.TruncatedDescription = template.HTML(tools.Truncate(data.IndexData.TUMLiveContext.Stream.GetDescriptionHTML(), data.CutOffLength))
 	}
 	if c.Query("video_only") == "1" {
 		err := templateExecutor.ExecuteTemplate(c.Writer, "video_only.gohtml", data)
@@ -98,38 +101,40 @@ func WatchPage(c *gin.Context) {
 
 // WatchPageData contains all the metadata that is related to the watch page.
 type WatchPageData struct {
-	IsAdminOfCourse bool // is current user admin or lecturer who created this course
-	IsHighlightPage bool
-	AlertsEnabled   bool // whether the alert config is set
-	Version         string
-	Unit            *model.StreamUnit
-	Presets         []model.CameraPreset
-	Progress        model.StreamProgress
-	IndexData       IndexData
-	Description     template.HTML
-	DVR             string // ?dvr if dvr is enabled, empty string otherwise
-	LectureHallName string
-	ChatData        ChatData
+	IsAdminOfCourse      bool // is current user admin or lecturer who created this course
+	IsHighlightPage      bool
+	AlertsEnabled        bool // whether the alert config is set
+	Version              string
+	Unit                 *model.StreamUnit
+	Presets              []model.CameraPreset
+	Progress             model.StreamProgress
+	IndexData            IndexData
+	Description          template.HTML
+	TruncatedDescription template.HTML
+	CutOffLength         int    // The maximum length for the preview of a description.
+	DVR                  string // ?dvr if dvr is enabled, empty string otherwise
+	LectureHallName      string
+	ChatData             ChatData
 }
 
 // Prepare populates the data for the watch page.
-func (d *WatchPageData) Prepare(c *gin.Context) error {
+func (d *WatchPageData) Prepare(c *gin.Context, lectureHallsDao dao.LectureHallsDao) error {
 	// todo prepare rest of data here as well
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		return errors.New("context should exist but doesn't")
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	err := d.prepareLectureHall(tumLiveContext)
+	err := d.prepareLectureHall(tumLiveContext, lectureHallsDao)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (d *WatchPageData) prepareLectureHall(c tools.TUMLiveContext) error {
+func (d *WatchPageData) prepareLectureHall(c tools.TUMLiveContext, lectureHallsDao dao.LectureHallsDao) error {
 	if c.Stream.LectureHallID != 0 {
-		lectureHall, err := dao.GetLectureHallByID(c.Stream.LectureHallID)
+		lectureHall, err := lectureHallsDao.GetLectureHallByID(c.Stream.LectureHallID)
 		if err != nil {
 			return err
 		}

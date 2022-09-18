@@ -1,49 +1,52 @@
-{{ define "actions" }}
+{{define "actions"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.WatchPageData*/ -}}
-    {{ $stream := .IndexData.TUMLiveContext.Stream }}
-    {{ $course := .IndexData.TUMLiveContext.Course }}
-    {{ $user := .IndexData.TUMLiveContext.User }}
+    {{$stream := .IndexData.TUMLiveContext.Stream}}
+    {{$course := .IndexData.TUMLiveContext.Course}}
+    {{$user := .IndexData.TUMLiveContext.User}}
 
     {{/* Icons for different actions student can do for a stream */}}
-    <span class="flex content-center space-x-2">
-        {{/* Download button */}}
-        {{ if and (and $course.DownloadsEnabled $user) $stream.IsDownloadable }}
-            {{ template "downloadBtn" $stream.Files }}
-        {{ end }}
+    <div class="content-center space-x-1">
+        {{/* File Attachment button (slides, etc.) */}}
+        {{template "attachments" $stream}}
+        {{/* Feedback button */}}
+        {{if and .AlertsEnabled ((and $user (not ($user.IsAdminOfCourse $course))))}}
+            <button class="m-auto" title="Issues with the stream? Click to open a form to notify the RBG."
+                    @click="$dispatch('issue')">
+                <i class="fas fa-exclamation-triangle text-4 hover:text-1"></i>
+            </button>
+        {{end}}
+        {{/* VoD download button */}}
+        {{if and (and $course.DownloadsEnabled $user) $stream.IsDownloadable}}
+            {{template "downloadBtn" $stream.GetVodFiles}}
+        {{end}}
         {{/* Switch video to presentation */}}
-        {{ if $stream.PlaylistUrlPRES }}
-            <a class="m-auto" title="Presentation only" href="/w/{{ $course.Slug }}/{{ $stream.Model.ID }}/PRES">
-                <i class="fas fa-edit text-4 hover:text-1 text-lg"></i>
+        {{if $stream.PlaylistUrlPRES}}
+            <a class="m-auto" title="Presentation only"
+               href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/PRES">
+                <i class="text-lg fas fa-edit text-4 hover:text-1"></i>
             </a>
-        {{ end }}
+        {{end}}
         {{/* Switch video to camera */}}
-        {{ if $stream.PlaylistUrlCAM }}
-            <a class="m-auto" title="Camera only" href="/w/{{ $course.Slug }}/{{ $stream.Model.ID }}/CAM">
-                <i class="fas fa-camera text-4 hover:text-1 text-lg"></i>
+        {{if $stream.PlaylistUrlCAM}}
+            <a class="m-auto" title="Camera only"
+               href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/CAM">
+                <i class="text-lg fas fa-camera text-4 hover:text-1"></i>
             </a>
-        {{ end }}
+        {{end}}
         {{/* Switch video to camera and presentation */}}
-        {{ if $stream.PlaylistUrl }}
-            <a class="m-auto" title="Combined view" href="/w/{{ $course.Slug }}/{{ $stream.Model.ID }}">
-                <i class="fas fa-object-group text-4 hover:text-1 text-lg"></i>
+        {{if $stream.PlaylistUrl}}
+            <a class="m-auto" title="Combined view"
+               href="/w/{{$course.Slug}}/{{$stream.Model.ID}}">
+                <i class="text-lg fas fa-object-group text-4 hover:text-1"></i>
             </a>
-        {{ end }}
+        {{end}}
         {{/* Copy HLS Link for video */}}
-        <i
-            title="Copy HLS URL"
-            class="fas fa-link text-4 m-auto cursor-pointer text-lg hover:text-black dark:hover:text-white"
-            onclick="global.copyToClipboard('{{ if eq .Version "PRES" }}
-                {{ $stream.PlaylistUrlPRES }}
-            {{ else if eq .Version "CAM" }}
-                {{ $stream.PlaylistUrlCAM }}
-            {{ else }}
-                {{ $stream.PlaylistUrl }}
-            {{ end }}{{ if .Unit }}
-                ?wowzaplaystart={{ .Unit.UnitStart }}&wowzaplayduration={{ .Unit.GetUnitDurationMS }}
-            {{ else if $stream.StartOffset }}
-                ?wowzaplaystart={{ $stream.StartOffset }}&wowzaplayduration={{ $stream.EndOffset }}
-            {{ end }}'.replaceAll('\{\{quality\}\}', ''))"
-        >
-        </i>
-    </span>
-{{ end }}
+        {{if or $stream.PlaylistUrlPRES (or $stream.PlaylistUrlCAM $stream.PlaylistUrl)}}
+            <i x-data="{ copied: false }" title="Copy HLS URL"
+               :class="copied ? 'fa-check' : 'fa-link'"
+               class="m-auto text-lg cursor-pointer text-4 dark:hover:text-white hover:text-black fas fa-fw"
+               @click="if (global.copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))) {  copied=true; setTimeout(() => { copied=false }, 1000); }">
+            </i>
+        {{end}}
+    </div>
+{{end}}

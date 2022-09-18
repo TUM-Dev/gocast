@@ -1,84 +1,81 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-    <head>
-        <meta charset="UTF-8" />
-        <title>TUM Live</title>
-        {{ template "headImports" .VersionTag }}
-        <meta
-            name="description"
-            content="TUM-Live, the livestreaming and VoD service of the Rechnerbetriebsgruppe at the department of informatics and mathematics at the Technical University of Munich"
-        />
-    </head>
-    <body>
-        {{ template "header" .TUMLiveContext }}
+<head>
+    <meta charset="UTF-8">
+    <title>TUM Live</title>
+    {{template "headImports" .VersionTag}}
+    <meta name="description"
+          content="TUM-Live, the livestreaming and VoD service of the Rechnerbetriebsgruppe at the department of informatics and mathematics at the Technical University of Munich"/>
+</head>
+<body>
+{{template "header" .TUMLiveContext}}
 
-        {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
-        <div class="container flex flex-col pb-16">
-            {{ if .ServerNotifications }}
-                {{ range $notification := .ServerNotifications }}
-                    <p class="{{ if $notification.Warn }}text-red-400{{ else }}text-yellow-400{{ end }}">
-                        <i class="fas fa-exclamation-triangle mr-2"></i><span>{{ $notification.Text }}</span>
-                    </p>
-                {{ end }}
-            {{ end }}
-            {{ if not .TUMLiveContext.User }}
-                <p class="text-2"><a href="/login" class="underline">Log in</a> to see your courses</p>
-            {{ else if .TUMLiveContext.User.Name }}
-                <p class="text-2">Moin {{ .TUMLiveContext.User.Name }}, nice to see you!</p>
-            {{ end }}
-            {{ if .LiveStreams }}
-                <h2 class="text-1 text-2xl">Active Livestreams</h2>
-            {{ end }}
-            {{ range $liveStream := .LiveStreams }}
-                <div class="course{{ $liveStream.Course.Model.ID }} mb-2 px-4 pt-1">
-                    <a href="/w/{{ $liveStream.Course.Slug }}/{{ $liveStream.Stream.Model.ID }}">
-                        <h3 class="text-2 inline text-lg">
-                            {{ $liveStream.Course.Name }}{{ if $liveStream.Stream.Name }}
-                                :
-                                {{ $liveStream.Stream.Name }}
-                            {{ end }}
-                        </h3>
-                    </a>
-                    <p class="font-sans text-sm font-light">
-                        {{ if $liveStream.Course.IsHidden }}
-                            {{- /* only admins have hidden courses here */ -}}
-                            <span class="mr-1 rounded-full bg-blue-800 px-2 font-semibold capitalize text-blue-100"
-                                >Hidden</span
-                            >
-                        {{ end }}
-                        <span class="mr-1 rounded-full bg-red-800 px-2 font-semibold capitalize text-red-100"
-                            >Live</span
-                        >
-                        <span class="text-3 font-light"
-                            >{{ printf "until %2d:%02d" $liveStream.Stream.End.Hour $liveStream.Stream.End.Minute }}</span
-                        >
-                    </p>
-                </div>
-            {{ end }}
-            {{ if .Courses }}
-                <h2 class="text-1 text-2xl">My Courses</h2>
-            {{ end }}
-            {{ range $course := .Courses }}
-                {{ if not $course.IsHidden }}
-                    {{ template "course-card" $course }}
-                {{ end }}
-            {{ end }}
-            {{ if .PublicCourses }}
-                <h2 class="text-1 mt-2 text-2xl">Public Courses</h2>
-                {{ range $course := .PublicCourses }}
-                    {{ template "course-card" $course }}
-                {{ end }}
-            {{ end }}
-            <div>
-                <p class="text-4 hover:text-1 cursor-pointer" id="hiddenCoursesText"></p>
-                <div class="text-4 hidden">
-                    <ul id="hiddenCoursesRestoreList"></ul>
-                </div>
-            </div>
+{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
+{{$user := .TUMLiveContext.User}}
+<div x-init="global.liveUpdateListener.init()" class="container flex flex-col pb-16">
+    {{if .ServerNotifications}}
+        {{range $notification := .ServerNotifications}}
+            <p class="{{if $notification.Warn}} text-red-400{{else}} text-yellow-400{{end}}"><i
+                        class="fas fa-exclamation-triangle mr-2"></i><span>{{$notification.Text}}</span></p>
+        {{end}}
+    {{end}}
+    {{if not .TUMLiveContext.User}}
+        <p class="text-2"><a href="/login" class="underline">Log in</a> to see your courses</p>
+    {{else if .TUMLiveContext.User.Name}}
+        <p class="text-2">{{.TUMLiveContext.User.GetPreferredGreeting}} {{.TUMLiveContext.User.GetPreferredName}}, nice to see you!</p>
+    {{end}}
+    {{if .PinnedCourses}}
+        <h2 class="text-2xl text-1 mt-2">Pinned Courses</h2>
+        {{range $course := .PinnedCourses}}
+            {{if not $course.IsHidden}}
+                {{template "course-card" (dict "course" $course "user" $user)}}
+            {{end}}
+        {{end}}
+    {{end}}
+    {{if .LiveStreams}}
+        <h2 class="text-2xl text-1">Active Livestreams</h2>
+    {{end}}
+    {{range $liveStream := .LiveStreams}}
+        <div class="pt-1 px-4 mb-2 course{{$liveStream.Course.Model.ID}}">
+            <a href="/w/{{$liveStream.Course.Slug}}/{{$liveStream.Stream.Model.ID}}">
+                <h3 class="text-lg text-2 inline">{{$liveStream.Course.Name}}{{if $liveStream.Stream.Name}}: {{$liveStream.Stream.Name}}{{end}}</h3>
+            </a>
+            <p class="font-sans font-light text-sm">
+                {{if $liveStream.Course.IsHidden}} {{- /* only admins have hidden courses here */ -}}
+                <span class="bg-blue-800 text-blue-100 px-2 mr-1 capitalize rounded-full font-semibold">Hidden</span>
+                {{end}}
+                <span class="bg-red-800 text-red-100 px-2 mr-1 capitalize rounded-full font-semibold">Live</span>
+                <span class="font-light text-3">{{printf "until %2d:%02d" $liveStream.Stream.End.Hour $liveStream.Stream.End.Minute}}</span>
+                {{if and $liveStream.LectureHall}}<a href="/admin/lectureHalls#{{$liveStream.LectureHall.Model.ID}}" class="font-semibold text-3"> - <i class="fas fa-location-pin"></i> {{$liveStream.LectureHall.Name}}</a>{{end}}
+            </p>
         </div>
-        {{ template "semesterselection" . }}
-    </body>
-    <!--       _
+    {{end}}
+    {{if .Courses}}
+        <h2 class="text-2xl text-1">My Courses</h2>
+    {{end}}
+    {{range $course := .Courses }}
+        {{if not $course.IsHidden}}
+            {{template "course-card" (dict "course" $course "user" $user) }}
+        {{end}}
+    {{end}}
+    {{if .PublicCourses}}
+        <h2 class="text-2xl text-1 mt-2">Public Courses</h2>
+        {{range $course := .PublicCourses }}
+            {{template "course-card" (dict "course" $course "user" $user)}}
+        {{end}}
+    {{end}}
+    <div>
+        <p class="text-4 hover:text-1 cursor-pointer" id="hiddenCoursesText"></p>
+        <div class="hidden text-4">
+            <ul id="hiddenCoursesRestoreList">
+            </ul>
+        </div>
+    </div>
+</div>
+{{template "semesterselection" .}}
+{{template "reloadpagebutton" .}}
+</body>
+<!--       _
        .__(.)< (MEOW)
         \___)
  ~~~~~~~~~~~~~~~~~~-->

@@ -10,18 +10,28 @@ import (
 	"time"
 )
 
-func configServerNotificationsRoutes(engine *gin.Engine) {
+func configServerNotificationsRoutes(engine *gin.Engine, daoWrapper dao.DaoWrapper) {
+	routes := serverNotificationRoutes{daoWrapper}
 	adminGroup := engine.Group("/api/serverNotification")
 	adminGroup.Use(tools.Admin)
-	adminGroup.POST("/:notificationId", updateServerNotification)
-	adminGroup.POST("/create", createServerNotification)
+	adminGroup.POST("/:notificationId", routes.updateServerNotification)
+	adminGroup.POST("/create", routes.createServerNotification)
 }
 
-func updateServerNotification(c *gin.Context) {
+type serverNotificationRoutes struct {
+	dao.DaoWrapper
+}
+
+func (r serverNotificationRoutes) updateServerNotification(c *gin.Context) {
 	var req notificationReq
 	if err := c.ShouldBind(&req); err != nil {
 		log.Printf("%v", err)
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
 	}
 	notification := model.ServerNotification{
 		Text:    req.Text,
@@ -29,18 +39,28 @@ func updateServerNotification(c *gin.Context) {
 		Start:   req.From,
 		Expires: req.Expires,
 	}
-	err := dao.UpdateServerNotification(notification, req.Id)
+	err := r.ServerNotificationDao.UpdateServerNotification(notification, req.Id)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not update server notification",
+			Err:           err,
+		})
+		return
 	}
 	c.Redirect(http.StatusFound, "/admin/server-notifications")
 }
 
-func createServerNotification(c *gin.Context) {
+func (r serverNotificationRoutes) createServerNotification(c *gin.Context) {
 	var req notificationReq
 	if err := c.ShouldBind(&req); err != nil {
 		log.Printf("%v", err)
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
 	}
 	notification := model.ServerNotification{
 		Text:    req.Text,
@@ -48,9 +68,14 @@ func createServerNotification(c *gin.Context) {
 		Start:   req.From,
 		Expires: req.Expires,
 	}
-	err := dao.CreateServerNotification(notification)
+	err := r.ServerNotificationDao.CreateServerNotification(notification)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not create server notification",
+			Err:           err,
+		})
+		return
 	}
 	c.Redirect(http.StatusFound, "/admin/server-notifications")
 }

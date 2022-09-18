@@ -13,15 +13,77 @@ import (
 	"gorm.io/gorm"
 )
 
-//GetCurrentOrNextLectureForCourse Gets the next lecture for a course or the lecture that is currently live. Error otherwise.
-func GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model.Stream, error) {
+//go:generate mockgen -source=courses.go -destination ../mock_dao/courses.go
+
+type CoursesDao interface {
+	CreateCourse(ctx context.Context, course *model.Course, keep bool) error
+	AddAdminToCourse(userID uint, courseID uint) error
+
+	GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model.Stream, error)
+	GetAllCourses() ([]model.Course, error)
+	GetCourseForLecturerIdByYearAndTerm(c context.Context, year int, term string, userId uint) ([]model.Course, error)
+	GetAdministeredCoursesByUserId(ctx context.Context, userid uint) (courses []model.Course, err error)
+	GetAllCoursesForSemester(year int, term string, ctx context.Context) (courses []model.Course)
+	GetPublicCourses(year int, term string) (courses []model.Course, err error)
+	GetPublicAndLoggedInCourses(year int, term string) (courses []model.Course, err error)
+	GetCourseByToken(token string) (course model.Course, err error)
+	GetCourseById(ctx context.Context, id uint) (course model.Course, err error)
+	GetInvitedUsersForCourse(course *model.Course) error
+	GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int) (model.Course, error)
+	GetAllCoursesWithTUMIDForSemester(ctx context.Context, year int, term string) (courses []model.Course, err error)
+	GetAvailableSemesters(c context.Context) []Semester
+	GetCourseByShortLink(link string) (model.Course, error)
+	GetCourseAdmins(courseID uint) ([]model.User, error)
+
+	UpdateCourse(ctx context.Context, course model.Course) error
+	UpdateCourseMetadata(ctx context.Context, course model.Course)
+	UnDeleteCourse(ctx context.Context, course model.Course) error
+
+	RemoveAdminFromCourse(userID uint, courseID uint) error
+	DeleteCourse(course model.Course)
+}
+
+type coursesDao struct {
+	db       *gorm.DB
+	usersDao UsersDao
+}
+
+func NewCoursesDao() coursesDao {
+	return coursesDao{db: DB, usersDao: NewUsersDao()}
+}
+
+// CreateCourse creates a new course, if keep is false, deleted_at is set to NOW(),
+// letting the user manually create the course again (opt-in)
+func (d coursesDao) CreateCourse(ctx context.Context, course *model.Course, keep bool) error {
+	defer Cache.Clear()
+	err := DB.Create(&course).Error
+	if err != nil {
+		return err
+	}
+	if !keep {
+		err = DB.Model(&course).Updates(map[string]interface{}{"live_enabled": "0"}).Error
+		if err != nil {
+			log.WithError(err).Error("Can't update live enabled state")
+		}
+		return DB.Delete(&course).Error
+	}
+	return nil
+}
+
+func (d coursesDao) AddAdminToCourse(userID uint, courseID uint) error {
+	defer Cache.Clear()
+	return DB.Exec("insert into course_admins (user_id, course_id) values (?, ?)", userID, courseID).Error
+}
+
+// GetCurrentOrNextLectureForCourse Gets the next lecture for a course or the lecture that is currently live. Error otherwise.
+func (d coursesDao) GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model.Stream, error) {
 	var res model.Stream
 	err := DB.Model(&model.Stream{}).Preload("Chats").Order("start").First(&res, "course_id = ? AND (end > NOW() OR live_now)", courseID).Error
 	return res, err
 }
 
 // GetAllCourses retrieves all courses from the database
-func GetAllCourses() ([]model.Course, error) {
+func (d coursesDao) GetAllCourses() ([]model.Course, error) {
 	cachedCourses, found := Cache.Get("allCourses")
 	if found {
 		return cachedCourses.([]model.Course), nil
@@ -34,18 +96,18 @@ func GetAllCourses() ([]model.Course, error) {
 	return courses, err
 }
 
-func GetCourseForLecturerIdByYearAndTerm(c context.Context, year int, term string, userId uint) ([]model.Course, error) {
+func (d coursesDao) GetCourseForLecturerIdByYearAndTerm(c context.Context, year int, term string, userId uint) ([]model.Course, error) {
 	var res []model.Course
 	err := DB.Model(&model.Course{}).Find(&res, "user_id = ? AND year = ? AND teaching_term = ?", userId, year, term).Error
 	return res, err
 }
 
-func GetAdministeredCoursesByUserId(ctx context.Context, userid uint) (courses []model.Course, err error) {
+func (d coursesDao) GetAdministeredCoursesByUserId(ctx context.Context, userid uint) (courses []model.Course, err error) {
 	cachedCourses, found := Cache.Get(fmt.Sprintf("coursesByUserID%v", userid))
 	if found {
 		return cachedCourses.([]model.Course), nil
 	}
-	isAdmin, err := IsUserAdmin(ctx, userid)
+	isAdmin, err := d.usersDao.IsUserAdmin(ctx, userid)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +146,7 @@ func GetAdministeredCoursesByUserId(ctx context.Context, userid uint) (courses [
 	return foundCourses, dbErr
 }
 
-func GetAllCoursesForSemester(year int, term string, ctx context.Context) (courses []model.Course) {
+func (d coursesDao) GetAllCoursesForSemester(year int, term string, ctx context.Context) (courses []model.Course) {
 	span := sentry.StartSpan(ctx, "SQL: GetAllCoursesForSemester")
 	defer span.Finish()
 	var foundCourses []model.Course
@@ -94,7 +156,7 @@ func GetAllCoursesForSemester(year int, term string, ctx context.Context) (cours
 	return foundCourses
 }
 
-func GetPublicCourses(year int, term string) (courses []model.Course, err error) {
+func (d coursesDao) GetPublicCourses(year int, term string) (courses []model.Course, err error) {
 	cachedCourses, found := Cache.Get(fmt.Sprintf("publicCourses%d%v", year, term))
 	if found {
 		return cachedCourses.([]model.Course), err
@@ -112,7 +174,7 @@ func GetPublicCourses(year int, term string) (courses []model.Course, err error)
 	return publicCourses, err
 }
 
-func GetPublicAndLoggedInCourses(year int, term string) (courses []model.Course, err error) {
+func (d coursesDao) GetPublicAndLoggedInCourses(year int, term string) (courses []model.Course, err error) {
 	cachedCourses, found := Cache.Get(fmt.Sprintf("publicAndLoggedInCourses%d%v", year, term))
 	if found {
 		return cachedCourses.([]model.Course), err
@@ -129,43 +191,28 @@ func GetPublicAndLoggedInCourses(year int, term string) (courses []model.Course,
 	return publicCourses, err
 }
 
-func DeleteCourse(course model.Course) {
-	for _, stream := range course.Streams {
-		err := DB.Delete(&stream).Error
-		if err != nil {
-			log.WithError(err).Error("Can't delete stream")
-		}
-	}
-	err := DB.Model(&course).Updates(map[string]interface{}{"live_enabled": false, "vod_enabled": false}).Error
-	if err != nil {
-		log.WithError(err).Error("Can't update course settings when deleting")
-	}
-	err = DB.Delete(&course).Error
-	if err != nil {
-		log.WithError(err).Error("Can't delete course")
-	}
-}
-
-func GetCourseByToken(token string) (course model.Course, err error) {
+func (d coursesDao) GetCourseByToken(token string) (course model.Course, err error) {
 	err = DB.Unscoped().
 		Preload("Streams", func(db *gorm.DB) *gorm.DB { return db.Unscoped() }).
 		First(&course, "token = ?", token).Error
 	return
 }
 
-func GetCourseById(ctx context.Context, id uint) (course model.Course, err error) {
+func (d coursesDao) GetCourseById(ctx context.Context, id uint) (course model.Course, err error) {
 	var foundCourse model.Course
-	dbErr := DB.Preload("Streams.Stats").Preload("Streams.Files").Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("streams.start desc")
-	}).Find(&foundCourse, "id = ?", id).Error
+	dbErr := DB.Preload("Streams.TranscodingProgresses").
+		Preload("Streams.Files").
+		Preload("Streams", func(db *gorm.DB) *gorm.DB {
+			return db.Order("streams.start desc")
+		}).Find(&foundCourse, "id = ?", id).Error
 	return foundCourse, dbErr
 }
 
-func GetInvitedUsersForCourse(course *model.Course) error {
+func (d coursesDao) GetInvitedUsersForCourse(course *model.Course) error {
 	return DB.Preload("Users", "role = ?", model.GenericType).Find(course).Error
 }
 
-func GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int) (model.Course, error) {
+func (d coursesDao) GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int) (model.Course, error) {
 	cachedCourses, found := Cache.Get(fmt.Sprintf("courseBySlugYearAndTerm%v%v%v", slug, term, year))
 	if found {
 		return cachedCourses.(model.Course), nil
@@ -182,45 +229,13 @@ func GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, y
 	return course, err
 }
 
-func GetAllCoursesWithTUMIDForSemester(ctx context.Context, year int, term string) (courses []model.Course, err error) {
+func (d coursesDao) GetAllCoursesWithTUMIDForSemester(ctx context.Context, year int, term string) (courses []model.Course, err error) {
 	var foundCourses []model.Course
 	dbErr := DB.Where("tum_online_identifier <> '' AND year = ? AND teaching_term = ?", year, term).Find(&foundCourses).Error
 	return foundCourses, dbErr
 }
 
-func UpdateCourseMetadata(ctx context.Context, course model.Course) {
-	defer Cache.Clear()
-	DB.Save(&course)
-}
-
-func UnDeleteCourse(ctx context.Context, course model.Course) error {
-	return DB.Exec("UPDATE courses SET deleted_at = NULL WHERE id = ?", course.ID).Error
-}
-
-func UpdateCourse(ctx context.Context, course model.Course) error {
-	defer Cache.Clear()
-	return DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&course).Error
-}
-
-// CreateCourse creates a new course, if keep is false, deleted_at is set to NOW(),
-// letting the user manually create the course again (opt-in)
-func CreateCourse(ctx context.Context, course *model.Course, keep bool) error {
-	defer Cache.Clear()
-	err := DB.Create(&course).Error
-	if err != nil {
-		return err
-	}
-	if !keep {
-		err = DB.Model(&course).Updates(map[string]interface{}{"live_enabled": "0"}).Error
-		if err != nil {
-			log.WithError(err).Error("Can't update live enabled state")
-		}
-		return DB.Delete(&course).Error
-	}
-	return nil
-}
-
-func GetAvailableSemesters(c context.Context) []Semester {
+func (d coursesDao) GetAvailableSemesters(c context.Context) []Semester {
 	if cached, found := Cache.Get("getAllSemesters"); found {
 		return cached.([]Semester)
 	} else {
@@ -234,18 +249,18 @@ func GetAvailableSemesters(c context.Context) []Semester {
 }
 
 // GetCourseByShortLink returns the course associated with the given short link (e.g. EIDI2022)
-func GetCourseByShortLink(link string) (model.Course, error) {
+func (d coursesDao) GetCourseByShortLink(link string) (model.Course, error) {
 	var sl model.ShortLink
 	err := DB.First(&sl, "link = ?", link).Error
 	if err != nil {
 		return model.Course{}, err
 	}
-	course, err := GetCourseById(context.Background(), sl.CourseId)
+	course, err := d.GetCourseById(context.Background(), sl.CourseId)
 	return course, err
 }
 
 // GetCourseAdmins returns the admins of the given course excluding the creator (usually system) and the tumlive admins
-func GetCourseAdmins(courseID uint) ([]model.User, error) {
+func (d coursesDao) GetCourseAdmins(courseID uint) ([]model.User, error) {
 	var admins []model.User
 	err := DB.Raw("select u.* from courses "+
 		"join course_admins ca on courses.id = ca.course_id "+
@@ -258,14 +273,40 @@ func GetCourseAdmins(courseID uint) ([]model.User, error) {
 	return admins, err
 }
 
-func AddAdminToCourse(userID uint, courseID uint) error {
+func (d coursesDao) UpdateCourse(ctx context.Context, course model.Course) error {
 	defer Cache.Clear()
-	return DB.Exec("insert into course_admins (user_id, course_id) values (?, ?)", userID, courseID).Error
+	return DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&course).Error
 }
 
-func RemoveAdminFromCourse(userID uint, courseID uint) error {
+func (d coursesDao) UpdateCourseMetadata(ctx context.Context, course model.Course) {
+	defer Cache.Clear()
+	DB.Save(&course)
+}
+
+func (d coursesDao) UnDeleteCourse(ctx context.Context, course model.Course) error {
+	return DB.Exec("UPDATE courses SET deleted_at = NULL WHERE id = ?", course.ID).Error
+}
+
+func (d coursesDao) RemoveAdminFromCourse(userID uint, courseID uint) error {
 	defer Cache.Clear()
 	return DB.Exec("delete from course_admins where user_id = ? and course_id = ?", userID, courseID).Error
+}
+
+func (d coursesDao) DeleteCourse(course model.Course) {
+	for _, stream := range course.Streams {
+		err := DB.Delete(&stream).Error
+		if err != nil {
+			log.WithError(err).Error("Can't delete stream")
+		}
+	}
+	err := DB.Model(&course).Updates(map[string]interface{}{"live_enabled": false, "vod_enabled": false}).Error
+	if err != nil {
+		log.WithError(err).Error("Can't update course settings when deleting")
+	}
+	err = DB.Delete(&course).Error
+	if err != nil {
+		log.WithError(err).Error("Can't delete course")
+	}
 }
 
 type Semester struct {

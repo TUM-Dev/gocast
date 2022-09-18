@@ -1,5 +1,8 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
+import { getPlayer } from "./TUMLiveVjs";
+import { Get, postData } from "./global";
+import { Realtime } from "./socket";
 
 let chatInput: HTMLInputElement;
 
@@ -9,8 +12,8 @@ export class Watch {
     }
 }
 
-let ws: WebSocket;
-let retryInt = 5000; //retry connecting to websocket after this timeout
+let currentChatChannel = "";
+const retryInt = 5000; //retry connecting to websocket after this timeout
 
 const scrollDelay = 100; // delay before scrolling to bottom to make sure chat is rendered
 const pageloaded = new Date();
@@ -27,12 +30,12 @@ enum WSMessageType {
 }
 
 function sendIDMessage(id: number, type: WSMessageType) {
-    ws.send(
-        JSON.stringify({
+    return Realtime.get().send(currentChatChannel, {
+        payload: {
             type: type,
             id: id,
-        }),
-    );
+        },
+    });
 }
 
 export const likeMessage = (id: number) => sendIDMessage(id, WSMessageType.Like);
@@ -55,21 +58,21 @@ export function initChatScrollListener() {
     });
 }
 
-export function startWebsocket() {
-    const wsProto = window.location.protocol === "https:" ? `wss://` : `ws://`;
-    const streamid = (document.getElementById("streamID") as HTMLInputElement).value;
-    ws = new WebSocket(`${wsProto}${window.location.host}/api/chat/${streamid}/ws`);
-    initChatScrollListener();
-    ws.onopen = function (e) {
-        window.dispatchEvent(new CustomEvent("connected"));
-    };
+export async function startWebsocket() {
+    const streamId = (document.getElementById("streamID") as HTMLInputElement).value;
+    currentChatChannel = `chat/${streamId}`;
 
-    ws.onmessage = function (m) {
-        const data = JSON.parse(m.data);
-        if ("viewers" in data && document.getElementById("viewerCount") != null) {
-            document.getElementById("viewerCount").innerText = data["viewers"];
+    const messageHandler = function (data) {
+        if ("viewers" in data) {
+            window.dispatchEvent(new CustomEvent("viewers", { detail: { viewers: data["viewers"] } }));
         } else if ("live" in data) {
-            window.location.reload();
+            if (data["live"]) {
+                // stream start, refresh page
+                window.location.reload();
+            } else {
+                // stream end, show message
+                window.dispatchEvent(new CustomEvent("streamended"));
+            }
         } else if ("paused" in data) {
             const paused: boolean = data["paused"];
             if (paused) {
@@ -134,21 +137,12 @@ export function startWebsocket() {
         }
     };
 
-    ws.onclose = function () {
-        // connection closed, discard old websocket and create a new one after backoff
-        // don't recreate new connection if page has been loaded more than 12 hours ago
-        if (new Date().valueOf() - pageloaded.valueOf() > 1000 * 60 * 60 * 12) {
-            return;
-        }
-        window.dispatchEvent(new CustomEvent("disconnected"));
-        ws = null;
-        retryInt *= 2; // exponential backoff
-        setTimeout(startWebsocket, retryInt);
-    };
+    // TODO: check if connected and update
+    //window.dispatchEvent(new CustomEvent("connected"));
+    //window.dispatchEvent(new CustomEvent("disconnected"));
 
-    ws.onerror = function (err) {
-        window.dispatchEvent(new CustomEvent("disconnected"));
-    };
+    await Realtime.get().subscribeChannel(currentChatChannel, messageHandler);
+    window.dispatchEvent(new CustomEvent("connected"));
 }
 
 export function createServerMessage(msg) {
@@ -170,15 +164,15 @@ export function createServerMessage(msg) {
 }
 
 export function sendMessage(current: NewChatMessage) {
-    ws.send(
-        JSON.stringify({
+    return Realtime.get().send(currentChatChannel, {
+        payload: {
             type: WSMessageType.Message,
             msg: current.message,
             anonymous: current.anonymous,
             replyTo: current.replyTo,
             addressedTo: current.addressedTo.map((u) => u.id),
-        }),
-    );
+        },
+    });
 }
 
 export async function fetchMessages(id: number) {
@@ -190,30 +184,30 @@ export async function fetchMessages(id: number) {
 }
 
 export function startPoll(question: string, pollAnswers: string[]) {
-    ws.send(
-        JSON.stringify({
+    return Realtime.get().send(currentChatChannel, {
+        payload: {
             type: WSMessageType.StartPoll,
             question,
             pollAnswers,
-        }),
-    );
+        },
+    });
 }
 
 export function submitPollOptionVote(pollOptionId: number) {
-    ws.send(
-        JSON.stringify({
+    return Realtime.get().send(currentChatChannel, {
+        payload: {
             type: WSMessageType.SubmitPollOptionVote,
             pollOptionId,
-        }),
-    );
+        },
+    });
 }
 
 export function closeActivePoll() {
-    ws.send(
-        JSON.stringify({
+    return Realtime.get().send(currentChatChannel, {
+        payload: {
             type: WSMessageType.CloseActivePoll,
-        }),
-    );
+        },
+    });
 }
 
 export function getPollOptionWidth(pollOptions, pollOption) {
@@ -226,4 +220,67 @@ export function getPollOptionWidth(pollOptions, pollOption) {
     const fractionOfMax = pollOption.votes / maxVotes;
     const fractionWidth = minWidth + fractionOfMax * (maxWidth - minWidth);
     return `${Math.ceil(fractionWidth).toString()}%`;
+}
+
+export function contextMenuHandler(e, contextMenu) {
+    if (contextMenu.shown) return contextMenu;
+    e.preventDefault();
+    const videoElem = document.querySelector("#my-video");
+    return {
+        shown: true,
+        locX: e.clientX - videoElem.getBoundingClientRect().left,
+        locY: e.clientY - videoElem.getBoundingClientRect().top,
+    };
+}
+
+export const videoStatListener = {
+    videoStatIntervalId: null,
+    listen() {
+        if (this.videoStatIntervalId != null) {
+            return;
+        }
+        this.videoStatIntervalId = setInterval(this.update, 1000);
+        this.update();
+    },
+    update() {
+        const player = getPlayer();
+        const vhs = player.tech({ IWillNotUseThisInPlugins: true }).vhs;
+        const notAvailable = vhs == null;
+
+        const data = {
+            bufferSeconds: notAvailable ? 0 : player.bufferedEnd() - player.currentTime(),
+            videoHeight: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.height,
+            videoWidth: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.width,
+            bandwidth: notAvailable ? 0 : vhs.bandwidth, //player.tech().vhs.bandwidth(),
+            mediaRequests: notAvailable ? 0 : vhs.stats.mediaRequests,
+            mediaRequestsFailed: notAvailable ? 0 : vhs.stats.mediaRequestsErrored,
+        };
+        const event = new CustomEvent("newvideostats", { detail: data });
+        window.dispatchEvent(event);
+    },
+    clear() {
+        if (this.videoStatIntervalId != null) {
+            clearInterval(this.videoStatIntervalId);
+            this.videoStatIntervalId = null;
+        }
+    },
+};
+
+export function onShift(e) {
+    switch (e.key) {
+        case "?": {
+            toggleShortcutsModal();
+        }
+    }
+}
+
+export function toggleShortcutsModal() {
+    const el = document.getElementById("shortcuts-help-modal");
+    if (el !== undefined) {
+        if (el.classList.contains("hidden")) {
+            el.classList.remove("hidden");
+        } else {
+            el.classList.add("hidden");
+        }
+    }
 }

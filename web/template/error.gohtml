@@ -1,40 +1,43 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-    <head>
-        <meta charset="UTF-8" />
-        <title>TUM Live | {{ .Status }}</title>
-        {{ template "headImports" }}
-        <style>
-            .wrap h1 {
-                padding: 50px;
-                position: relative;
-                z-index: 2;
-            }
-            .wrap:before {
-                content: " ";
-                display: block;
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-                z-index: 1;
-                opacity: 0.4;
-                background-image: url("https://media2.giphy.com/media/3o7aTskHEUdgCQAXde/giphy.gif");
-                background-repeat: no-repeat;
-                background-position: 50% 0;
-                background-size: cover;
-            }
-        </style>
-    </head>
-    <body class="bg-primary" style="height: calc(100vh - 5rem)">
-        {{- /*gotype: github.com/joschahenningsen/TUM-Live/tools.ErrorPageData*/ -}}
-        {{ template "header" }}
-        <div class="wrap relative h-full overflow-hidden">
-            <div class="m-auto text-center text-white">
-                <h1 class="font-semibold">Error: {{ .Status }}</h1>
-                <p>{{ .Message }}</p>
-            </div>
-        </div>
-    </body>
+<head>
+    <meta charset="UTF-8">
+    <title>TUM Live | {{.Status}}</title>
+    {{template "headImports"}}
+
+    <style>
+        .wrap h1 {
+            padding: 50px;
+            position: relative;
+            z-index: 2;
+        }
+        .wrap:before {
+            content: ' ';
+            display: block;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0.4;
+            background-image: url('https://media2.giphy.com/media/3o7aTskHEUdgCQAXde/giphy.gif');
+            background-repeat: no-repeat;
+            background-position: 50% 0;
+            background-size: cover;
+        }
+    </style>
+</head>
+<body class="bg-primary" style="height: calc(100vh - 5rem)">
+{{- /*gotype: github.com/joschahenningsen/TUM-Live/tools.ErrorPageData*/ -}}
+{{template "header"}}
+
+<div class="wrap relative overflow-hidden h-full">
+    <div class="text-white text-center m-auto">
+        <h1 class="font-semibold">Error: {{.Status}}</h1>
+        <p>{{.Message}}</p>
+    </div>
+</div>
+
+</body>
 </html>

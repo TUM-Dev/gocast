@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
@@ -17,7 +18,7 @@ import (
 )
 
 // AdminPage serves all administration pages. todo: refactor into multiple methods
-func AdminPage(c *gin.Context) {
+func (r mainRoutes) AdminPage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -30,17 +31,17 @@ func AdminPage(c *gin.Context) {
 		return
 	}
 	var users []model.User
-	_ = dao.GetAllAdminsAndLecturers(&users)
-	courses, err := dao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID)
+	_ = r.UsersDao.GetAllAdminsAndLecturers(&users)
+	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID)
 	if err != nil {
 		log.WithError(err).Error("couldn't query courses for user.")
 		courses = []model.Course{}
 	}
-	workers, err := dao.GetAllWorkers()
+	workers, err := r.WorkerDao.GetAllWorkers()
 	if err != nil {
 		sentry.CaptureException(err)
 	}
-	lectureHalls := dao.GetAllLectureHalls()
+	lectureHalls := r.LectureHallsDao.GetAllLectureHalls()
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
 	page := "schedule"
@@ -62,10 +63,13 @@ func AdminPage(c *gin.Context) {
 	if c.Request.URL.Path == "/admin/course-import" {
 		page = "courseImport"
 	}
+	if c.Request.URL.Path == "/admin/audits" {
+		page = "audits"
+	}
 	var notifications []model.Notification
 	if c.Request.URL.Path == "/admin/notifications" {
 		page = "notifications"
-		found, err := dao.GetAllNotifications()
+		found, err := r.NotificationsDao.GetAllNotifications()
 		if err != nil {
 			log.WithError(err).Error("couldn't query notifications")
 		} else {
@@ -75,15 +79,24 @@ func AdminPage(c *gin.Context) {
 	var tokens []dao.AllTokensDto
 	if c.Request.URL.Path == "/admin/token" {
 		page = "token"
-		tokens, err = dao.GetAllTokens()
+		tokens, err = r.TokenDao.GetAllTokens()
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			log.WithError(err).Error("couldn't query tokens")
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 	}
+	var infopages []model.InfoPage
+	if c.Request.URL.Path == "/admin/infopages" {
+		page = "info-pages"
+		infopages, err = r.InfoPageDao.GetAll()
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			log.WithError(err).Error("couldn't query texts")
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
+	}
 	if c.Request.URL.Path == "/admin/server-stats" {
 		page = "serverStats"
-		streams, err := dao.GetAllStreams()
+		streams, err := r.StreamsDao.GetAllStreams()
 		if err != nil {
 			log.WithError(err).Error("Can't get all streams")
 			sentry.CaptureException(err)
@@ -97,13 +110,13 @@ func AdminPage(c *gin.Context) {
 	var serverNotifications []model.ServerNotification
 	if c.Request.URL.Path == "/admin/server-notifications" {
 		page = "serverNotifications"
-		if res, err := dao.GetAllServerNotifications(); err == nil {
+		if res, err := r.ServerNotificationDao.GetAllServerNotifications(); err == nil {
 			serverNotifications = res
 		} else {
 			log.WithError(err).Warn("could not get all server notifications")
 		}
 	}
-	semesters := dao.GetAvailableSemesters(c)
+	semesters := r.CoursesDao.GetAvailableSemesters(c)
 	y, t := tum.GetCurrentSemester()
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml",
 		AdminPageData{Users: users,
@@ -116,6 +129,7 @@ func AdminPage(c *gin.Context) {
 			CurY:                y,
 			CurT:                t,
 			Tokens:              tokens,
+			InfoPages:           infopages,
 			ServerNotifications: serverNotifications,
 			Notifications:       notifications,
 		})
@@ -129,7 +143,7 @@ type WorkersData struct {
 	Token   string
 }
 
-func LectureCutPage(c *gin.Context) {
+func (r mainRoutes) LectureCutPage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -142,7 +156,7 @@ func LectureCutPage(c *gin.Context) {
 	}
 }
 
-func LectureUnitsPage(c *gin.Context) {
+func (r mainRoutes) LectureUnitsPage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -161,7 +175,7 @@ func LectureUnitsPage(c *gin.Context) {
 	}
 }
 
-func CourseStatsPage(c *gin.Context) {
+func (r mainRoutes) CourseStatsPage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -171,12 +185,12 @@ func CourseStatsPage(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
-	courses, err := dao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID)
+	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID)
 	if err != nil {
 		log.Printf("couldn't query courses for user. %v\n", err)
 		courses = []model.Course{}
 	}
-	semesters := dao.GetAvailableSemesters(c)
+	semesters := r.CoursesDao.GetAvailableSemesters(c)
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
 		IndexData: indexData,
 		Courses:   courses,
@@ -190,7 +204,7 @@ func CourseStatsPage(c *gin.Context) {
 	}
 }
 
-func EditCoursePage(c *gin.Context) {
+func (r mainRoutes) EditCoursePage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -198,19 +212,19 @@ func EditCoursePage(c *gin.Context) {
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	lectureHalls := dao.GetAllLectureHalls()
-	err := dao.GetInvitedUsersForCourse(tumLiveContext.Course)
+	lectureHalls := r.LectureHallsDao.GetAllLectureHalls()
+	err := r.CoursesDao.GetInvitedUsersForCourse(tumLiveContext.Course)
 	if err != nil {
 		log.Printf("%v", err)
 	}
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
-	courses, err := dao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID)
+	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID)
 	if err != nil {
 		log.Printf("couldn't query courses for user. %v\n", err)
 		courses = []model.Course{}
 	}
-	semesters := dao.GetAvailableSemesters(c)
+	semesters := r.CoursesDao.GetAvailableSemesters(c)
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
 		IndexData:      indexData,
 		Courses:        courses,
@@ -225,7 +239,7 @@ func EditCoursePage(c *gin.Context) {
 	}
 }
 
-func UpdateCourse(c *gin.Context) {
+func (r mainRoutes) UpdateCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -234,11 +248,11 @@ func UpdateCourse(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	if c.PostForm("submit") == "Reload Students From TUMOnline" {
-		tum.FindStudentsForCourses([]model.Course{*tumLiveContext.Course})
+		tum.FindStudentsForCourses([]model.Course{*tumLiveContext.Course}, r.UsersDao)
 		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 		return
 	} else if c.PostForm("submit") == "Reload Lectures From TUMOnline" {
-		tum.GetEventsForCourses([]model.Course{*tumLiveContext.Course})
+		tum.GetEventsForCourses([]model.Course{*tumLiveContext.Course}, r.DaoWrapper)
 		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 		return
 	}
@@ -258,7 +272,7 @@ func UpdateCourse(c *gin.Context) {
 	tumLiveContext.Course.ChatEnabled = enChat
 	tumLiveContext.Course.AnonymousChatEnabled = enChatAnon
 	tumLiveContext.Course.ModeratedChatEnabled = enChatMod
-	dao.UpdateCourseMetadata(context.Background(), *tumLiveContext.Course)
+	r.CoursesDao.UpdateCourseMetadata(context.Background(), *tumLiveContext.Course)
 	c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 }
 
@@ -275,7 +289,29 @@ type AdminPageData struct {
 	EditCourseData      EditCourseData
 	ServerNotifications []model.ServerNotification
 	Tokens              []dao.AllTokensDto
+	InfoPages           []model.InfoPage
 	Notifications       []model.Notification
+}
+
+func (apd AdminPageData) UsersAsJson() string {
+	type relevantUserInfo struct {
+		ID    uint   `json:"id"`
+		Name  string `json:"name"`
+		Role  uint   `json:"role"`
+		Email string `json:"email"`
+	}
+
+	users := make([]relevantUserInfo, len(apd.Users))
+	for i, user := range apd.Users {
+		users[i] = relevantUserInfo{
+			ID:    user.ID,
+			Name:  user.GetPreferredName(),
+			Role:  user.Role,
+			Email: user.Email.String,
+		}
+	}
+	jsonStr, _ := json.Marshal(users)
+	return string(jsonStr)
 }
 
 type EditCourseData struct {

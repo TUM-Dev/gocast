@@ -1,47 +1,30 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Edit Course | TUM Live</title>
-        {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.editCourseByTokenPageData*/ -}}
-        {{ template "headImports" .IndexData.VersionTag }}
-    </head>
-    <body>
-        {{ template "header" .IndexData.TUMLiveContext }}
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Course | TUM Live</title>
+    {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.editCourseByTokenPageData*/ -}}
+    {{template "headImports" .IndexData.VersionTag}}
+</head>
+<body>
+{{template "header" .IndexData.TUMLiveContext}}
 
-
-        <div
-            x-data="{ token: '{{ .Token }}', done: false }"
-            class="text-3 container flex h-full flex-col rounded-lg border bg-white py-4 shadow-sm dark:border-gray-800 dark:bg-secondary"
-        >
-            <h1 class="text-1 my-auto mt-4 text-2xl font-medium">{{ .Course.Name }}</h1>
-            {{ if .Course.Model.DeletedAt.Valid }}
-                <div x-show="!done">
-                    <h2 class="text-2 my-auto mt-4 text-xl font-medium">Enable Livestreaming and Video On Demand</h2>
-                    <p class="mt-4">
-                        After enabling streaming, your course will appear in your admin tab on this website (provided
-                        you log in using the LRZ-Id we sent the notification email to).
-                    </p>
-                    <p>
-                        You'll then be able to further edit your courses properties there or leave everything as is if
-                        you are happy with the defaults.
-                    </p>
-                    <div class="flex justify-center pt-2">
-                        <button
-                            type="button"
-                            @click="fetch(`/api/course/activate/${token}`, {method: 'POST'}).then(r => {if (r.status===200) {done=true;}})"
-                            class="rounded bg-blue-600 px-4 py-2 font-semibold text-white"
-                        >
-                            Enable streaming 🎉
-                        </button>
-                    </div>
+    <div x-data="{ token: '{{.Token}}', done: false }" class="text-3 py-4 container bg-white h-full border dark:bg-secondary dark:border-gray-800 rounded-lg shadow-sm flex flex-col">
+        <h1 class="text-2xl text-1 my-auto mt-4 font-medium">{{.Course.Name}}</h1>
+        {{if .Course.Model.DeletedAt.Valid}}
+            <div x-show="!done">
+                <h2 class="text-xl text-2 my-auto mt-4 font-medium">Enable Livestreaming and Video On Demand</h2>
+                <p class="mt-4">After enabling streaming, your course will appear in your admin tab on this website (provided you log in using the LRZ-Id we sent the notification email to).</p>
+                <p>You'll then be able to further edit your courses properties there or leave everything as is if you are happy with the defaults.</p>
+                <div class="flex justify-center pt-2">
+                    <button type="button" @click="fetch(`/api/course/activate/${token}`, {method: 'POST'}).then(r => {if (r.status===200) {done=true;}})" class="bg-blue-600 font-semibold rounded text-white px-4 py-2">Enable streaming 🎉</button>
                 </div>
-            {{ else }}
-                <p>This course was already enabled. Head over to the admin tab to edit it.</p>
-            {{ end }}
-            <p x-cloak x-show="done" class="text-center font-semibold text-success">
-                Your course was successfully created, you can now head over to the admin page to edit it.
-            </p>
-        </div>
-    </body>
+            </div>
+        {{else}}
+            <p>This course was already enabled. Head over to the admin tab to edit it.</p>
+        {{end}}
+        <p x-cloak x-show="done" class="text-center font-semibold text-success">Your course was successfully created, you can now head over to the admin page to edit it.</p>
+    </div>
+
+</body>
 </html>

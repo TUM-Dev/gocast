@@ -1,184 +1,201 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-    <head>
-        <meta charset="UTF-8" />
-        <title>{{ .IndexData.TUMLiveContext.Course.Name }} | TUM Live</title>
+<head>
+    <meta charset="UTF-8">
+    <title>{{.IndexData.TUMLiveContext.Course.Name}} | TUM Live</title>
     <script src="/static/assets/ts-dist/global.bundle.js?v={{.IndexData.VersionTag}}"></script>
-        {{ template "headImports" .IndexData.VersionTag }}
-    </head>
-    <body class="md:overflow-hidden">
-        {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.CoursePageData*/ -}}
-        {{ template "header" .IndexData.TUMLiveContext }}
-        {{ $course := .IndexData.TUMLiveContext.Course }}
-        <!-- 6.5 = nav height + padding -->
-        <div class="m-auto w-full px-1 sm:px-3 lg:px-5 xl:w-2/3" style="height: calc(100vh - (6.5rem));">
-            <div class="my-8 pl-2 md:pl-0">
-                <h1 class="text-3 my-auto text-3xl font-bold">{{ $course.Name }}</h1>
+    {{template "headImports" .IndexData.VersionTag}}
+</head>
+<body class="md:overflow-hidden" x-data="{searchContext: new global.SearchContext()}">
+{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.CoursePageData*/ -}}
+{{$course := .IndexData.TUMLiveContext.Course}}
+{{template "header" .IndexData.TUMLiveContext}}
+<div x-cloak x-show="searchContext.show"
+     x-data="{streamSearch: new global.StreamSearch({{$course.ID}})}"
+     id="lecture-search-modal"
+     class="flex absolute w-full h-screen backdrop-blur-sm p-2 z-50">
+    <div class="w-full mt-5 md:mt-24 mx-auto md:w-2/4 bg-white border shadow rounded-lg h-fit dark:border-gray-600 dark:bg-secondary">
+        <div class="flex px-3 py-1 border-b dark:border-gray-600"
+             @click.outside="searchContext.hideModal(streamSearch)">
+            <div class="p-1 my-auto">
+                <i x-cloak x-show="!streamSearch.loading"
+                   class="fa-solid fa-search text-lg text-gray-500 dark:text-gray-600"></i>
+                <i x-cloak x-show="streamSearch.loading"
+                   class="fas fa-spinner animate-spin text-lg text-gray-500 dark:text-gray-600"></i>
             </div>
-            <div class="m-auto flex flex-wrap pb-3 md:grid md:h-5/6 md:grid-cols-5 md:grid-rows-6 md:gap-4 md:pb-0">
-                <!-- VoD -->
-                <div
-                    {{ if .IndexData.TUMLiveContext }}
-                        x-init="watchedTracker.init({{ .WatchedData }})" x-data="watchedTracker = new
-                        global.WatchedTracker"
-                    {{ end }}class="w-full md:row-span-6 md:col-span-3"
-                >
-                    <div
-                        x-data="{asc: false{{ if .IndexData.TUMLiveContext.User }}
-                            , filterWatched: true, watchedAll: watchedTracker.userWatchedAll()
-                        {{ end }}}"
-                        class="flex h-full flex-col rounded-lg border bg-white
-                    shadow-sm dark:border-gray-800 dark:bg-secondary"
-                    >
-                        <div class="flex h-16 justify-between border-b px-3 dark:border-gray-800">
-                            <span
-                                class="my-auto rounded-full bg-green-400 px-5 text-lg font-bold text-white dark:bg-green-500"
-                                >VoDs</span
-                            >
-                            <div class="my-auto">
-                                {{ if .Course.HasRecordings }}
-                                    <button
-                                        class="rounded px-2 hover:bg-gray-200 dark:hover:bg-gray-600"
-                                        x-init="global.reorderVodList()"
-                                        @click="asc = !asc; global.reorderVodList()"
-                                    >
-                                        <span
-                                            class="text-sm font-semibold uppercase dark:text-white"
-                                            x-text="asc ? '&#x25B2; asc' : '&#x25BC; desc'"
-                                            >desc &#x25BC;</span
-                                        >
-                                    </button>
-                                {{ end }}
-                                {{ if and .IndexData.TUMLiveContext.User .Course.HasRecordings }}
-                                    <button
-                                        class="rounded px-2 hover:bg-gray-200 dark:hover:bg-gray-600"
+            <input id="search-input"
+                   @keyup.esc="searchContext.hideModal(streamSearch)"
+                   @keyup.up="streamSearch.focusUp()"
+                   @keyup.down="streamSearch.focusDown()"
+                   @keyup="(e) => streamSearch.OnBackspace(e)"
+                   @keypress="streamSearch.performSearch()"
+                   x-model="streamSearch.currentQ"
+                   type="search"
+                   name="lecture-search-input"
+                   placeholder="Search for a lecture"
+                   class="bg-transparent border-0 outline-none w-full h-full font-light"
+                   autocomplete="off"
+            >
+            <button @click="searchContext.hideModal(streamSearch)"
+                    class="p-1 border dark:border-gray-600 rounded shadow-sm my-auto">
+                <span class="text-4 text-xs">ESC</span>
+            </button>
+        </div>
+        <div x-show="streamSearch.results.length > 0"
+             @showresults="(e) => e.target.focus()"
+             class="grid gap-2 p-4">
+            <template x-for="(stream, i) in streamSearch.results" :key="stream.ID">
+                <a :href="'/w/{{$course.Slug}}/' + stream.ID" target="_blank">
+                    <div :class="i === streamSearch.focusIndex && 'bg-gray-50 dark:bg-gray-600'"
+                         class="flex px-3 py-2 rounded-lg hover:cursor-pointer"
+                         @mouseleave="streamSearch.focusIndex = -1;"
+                         @mouseover="streamSearch.focusIndex = i;">
+                        <div class="grid my-auto">
+                            <span class="font-semibold text-3" x-text="stream.name"></span>
+                            <span class="font-light text-sm text-1" x-text="stream.friendlyTime"></span>
+                        </div>
+                        <span class="text-3 ml-auto my-auto fa-solid text-xs fa-chevron-right"></span>
+                    </div>
+                </a>
+            </template>
+        </div>
+    </div>
+</div>
+<!-- 6.5 = nav height + padding -->
+<div class="m-auto px-1 sm:px-3 lg:px-5 w-full xl:w-2/3" style="height: calc(100vh - (6.5rem));">
+    <div class="flex my-8 pl-2 md:pl-0">
+        <h1 class="font-bold text-3xl text-3 my-auto">{{$course.Name}}</h1>
+        {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
+            <a class="hover:bg-gray-200 dark:hover:bg-gray-600 w-fit mx-2 inline-block rounded px-2 my-auto"
+               href="/admin/course/{{$course.Model.ID}}"
+               :title="'Edit course settings'">
+               <span class="font-semibold text-lg dark:text-white">
+                   <i class="fa-solid w-5 py-2 fa-pen"></i>
+               </span>
+            </a>{{end}}
+    </div>
+    <div class="m-auto flex flex-wrap pb-3 md:h-5/6 md:grid md:grid-rows-6 md:grid-cols-5 md:gap-4 md:pb-0">
+        <!-- VoD -->
+        <div {{if .IndexData.TUMLiveContext}}x-init="watchedTracker.init({{.WatchedData}})"
+             x-data="watchedTracker = new global.WatchedTracker" {{end}}class="w-full md:row-span-6 md:col-span-3">
+            <div x-data="{asc: $persist(false), mirror: () => { global.mirror($el.querySelector('.vod-list'), ['.vod-list-month', '.vod-list-video']); }
+                    {{if .IndexData.TUMLiveContext.User}}, filterWatched: $persist(false), watchedAll: watchedTracker.userWatchedAll(), watchedCount: watchedTracker.countWatched(){{end}}}"
+                 class="bg-white h-full border dark:bg-secondary dark:border-gray-800 rounded-lg
+                    shadow-sm flex flex-col">
+                <div class="flex justify-between h-16 px-3 border-b dark:border-gray-800">
+                    <span class="dark:bg-green-500 bg-green-400 rounded-full text-lg font-bold text-white px-5 my-auto">VoDs</span>
+                    <div class="my-auto">
+                        {{if .Course.HasRecordings}}
+                            <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
+                                    x-init="if (asc) mirror();"
+                                    @click="asc = !asc; mirror();">
+                            <span class="text-sm font-semibold uppercase dark:text-white"
+                                  x-text="asc ? '&#x25B2; asc' : '&#x25BC; desc'">desc &#x25BC;</span>
+                            </button>
+                        {{end}}
+                        {{if and .IndexData.TUMLiveContext.User .Course.HasRecordings }}
+                            <template x-if="watchedCount > 0">
+                                <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
                                         @click="filterWatched=!filterWatched"
-                                        :title="filterWatched ? 'Show watched streams' : 'Hide watched streams'"
-                                    >
+                                        :title="filterWatched ? 'Show watched streams' : 'Hide watched streams'">
                                         <span class="text-sm font-semibold uppercase dark:text-white">
-                                            <i
-                                                class="fa-solid mr-1 w-5"
-                                                :class="filterWatched ? 'fa-eye' : 'fa-eye-slash'"
-                                            ></i
-                                            >watched
+                                            <i class="fa-solid w-5 mr-1"
+                                               :class="filterWatched ? 'fa-eye-slash' : 'fa-eye'"></i>watched
+                                           (<span class="tabular-nums" x-text="watchedCount"></span>)
                                         </span>
-                                    </button>
-                                {{ end }}
-                            </div>
-                        </div>
-                        <ul id="vod-list" class="flex flex-1 flex-col overflow-y-scroll px-5 py-3">
-                            {{ template "vod_course_list" . }}
-                        </ul>
-                    </div>
-                </div>
-                <!-- Next Lecture -->
-                {{ if or $course.HasNextLecture $course.IsLive }}
-                    <div
-                        class="relative order-first my-3 flex w-full rounded-lg border bg-white
-                    py-3 px-5 shadow-sm dark:border-gray-800 dark:bg-secondary md:order-none md:col-span-2 md:row-span-1 md:my-0 "
-                    >
-                        {{ $lecture := $course.GetNextLecture }}
-                        {{ if $course.IsLive }}
-                            {{ $liveLectures := $course.GetLiveStreams }}
-                            <span class="absolute -top-1 -right-1 flex h-5 w-5">
-                                <span
-                                    class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-700 opacity-75"
-                                ></span>
-                                <span class="relative inline-flex h-5 w-5 rounded-full bg-danger"></span>
-                            </span>
-                            <div class="my-auto">
-                                <h1 class="text-3 text-2xl font-bold">Live Now!</h1>
-                                {{ range $liveLectures }}
-                                    <a
-                                        class="block text-sm font-light dark:text-white"
-                                        href="/w/{{ $course.Slug }}/{{ .Model.ID }}"
-                                    >
-                                        <i class="fas fa-angle-right"></i>
-                                        <span class="hover:underline"
-                                            >Open
-                                            stream{{ if gt (len $liveLectures) 1 }}
-                                                <span class="font-semibold">{{ .GetName }}</span>
-                                            {{ end }}</span
-                                        >
-                                    </a>
-                                {{ end }}
-                            </div>
-                        {{ else if $lecture.IsComingUp }}
-                            <span class="absolute -top-1 -right-1 flex h-5 w-5">
-                                <span
-                                    class="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-500 opacity-75"
-                                ></span>
-                                <span class="relative inline-flex h-5 w-5 rounded-full bg-wait"></span>
-                            </span>
-                            <div class="my-auto">
-                                <h1 class="text-3 text-2xl font-bold">Live Soon!</h1>
-                                <a
-                                    class="text-sm font-light dark:text-white"
-                                    href="/w/{{ $course.Slug }}/{{ $lecture.Model.ID }}"
-                                >
-                                    <i class="fas fa-angle-right"></i>
-                                    <span>Join waiting room</span>
-                                </a>
-                            </div>
-                        {{ else }}
-                            <div class="my-auto">
-                                <h1 class="text-3 text-2xl font-bold">
-                                    {{ $next := $lecture.Start }}
-                                    {{ $lecture.FriendlyNextDate }}
-                                </h1>
-                                <span class="text-3 text-sm font-light">Next Livestream</span>
-                            </div>
-                        {{ end }}
-                    </div>
-                {{ end }}
-                <!-- Planned -->
-                <div
-                    class="{{ if $course.HasNextLecture }}
-                        md:row-span-5
-                    {{ else }}
-                        md:row-span-6
-                    {{ end }} w-full md:col-span-2"
-                >
-                    <div
-                        x-data="{showPlanned: true, lectures: {{ $course.HasStreams }}}"
-                        class="my-3 flex flex-col rounded-lg border bg-white shadow-sm dark:border-gray-800 dark:bg-secondary md:my-0"
-                        :class="showPlanned ? 'h-full' : 'h-fit'"
-                    >
-                        <div
-                            class="flex h-16 justify-between px-3"
-                            :class="showPlanned && 'border-b dark:border-gray-800'"
-                        >
-                            <span class="my-auto rounded-full bg-info px-5 text-lg font-bold text-white">Upcoming</span>
-                            <div class="my-auto">
-                                <button
-                                    class="my-auto rounded px-2 hover:bg-gray-200 dark:hover:bg-gray-600"
-                                    @click="showPlanned = !showPlanned;"
-                                >
-                                    <span
-                                        class="text-sm font-semibold uppercase dark:text-white"
-                                        x-text="showPlanned ? '&#x25B2; hide' : '&#x25BC; show'"
-                                        >&#x25B2; hide</span
-                                    >
                                 </button>
-                                <a
-                                    class="rounded px-2 hover:bg-gray-200 dark:hover:bg-gray-600"
-                                    href="/api/download_ics/{{ $course.Year }}/{{ $course.TeachingTerm }}/{{ $course.Slug }}/events.ics"
-                                    :title="'Export lecture dates'"
-                                    x-show="lectures"
-                                >
-                                    <span class="text-sm font-semibold uppercase dark:text-white">
-                                        <i class="fa-solid fa-calendar mr-1 w-5"></i>ics
-                                    </span>
-                                </a>
-                            </div>
-                        </div>
-
-                        <ul x-show="showPlanned" class="flex flex-1 flex-col overflow-y-scroll px-5 py-3">
-                            {{ template "planned_course_list" .IndexData.TUMLiveContext }}
-                        </ul>
+                            </template>
+                        {{end}}
+                        <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2"
+                                @click="searchContext.showModal();">
+                            <span class="text-sm dark:text-white">
+                                <i class="fa-solid fa-search"></i>
+                            </span>
+                        </button>
                     </div>
                 </div>
+                <ul class="vod-list flex flex-col flex-1 px-5 py-3 overflow-y-scroll">
+                    {{template "vod_course_list" . }}
+                </ul>
             </div>
         </div>
-    </body>
+        <!-- Next Lecture -->
+        {{if or $course.HasNextLecture $course.IsLive}}
+            <div class="flex w-full relative bg-white border dark:bg-secondary dark:border-gray-800 rounded-lg
+                    shadow-sm py-3 px-5 my-3 order-first md:my-0 md:row-span-1 md:col-span-2 md:order-none ">
+                {{$lecture := $course.GetNextLecture}}
+                {{if $course.IsLive}}
+                    {{$liveLectures := $course.GetLiveStreams}}
+                    <span class="absolute -top-1 -right-1 flex h-5 w-5">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-700 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-5 w-5 bg-danger"></span>
+                </span>
+                    <div class="my-auto">
+                        <h1 class="text-2xl font-bold text-3">Live Now!</h1>
+                        {{range $liveLectures}}
+                            <a class="font-light block text-sm dark:text-white"
+                               href="/w/{{$course.Slug}}/{{.Model.ID}}">
+                                <i class="fas fa-angle-right"></i>
+                                <span class="hover:underline">Open stream{{if gt (len $liveLectures) 1}} <span
+                                        class="font-semibold">{{.GetName}}</span>{{end}}</span>
+                            </a>
+                        {{end}}
+                    </div>
+                {{else if $lecture.IsComingUp}}
+                    <span class="absolute -top-1 -right-1 flex h-5 w-5">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-5 w-5 bg-wait"></span>
+                </span>
+                    <div class="my-auto">
+                        <h1 class="text-2xl font-bold text-3">Live Soon!</h1>
+                        <a class="font-light text-sm dark:text-white"
+                           href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}">
+                            <i class="fas fa-angle-right"></i>
+                            <span>Join waiting room</span>
+                        </a>
+                    </div>
+                {{else}}
+                    <div class="my-auto">
+                        <h1 class="text-2xl font-bold text-3">
+                            {{$next := $lecture.Start}}
+                            {{$lecture.FriendlyNextDate}}
+                        </h1>
+                        <span class="font-light text-sm text-3">Next Livestream</span>
+                    </div>
+                {{end}}
+            </div>
+        {{end}}
+        <!-- Planned -->
+        <div class="w-full {{if $course.HasNextLecture}}md:row-span-5{{else}}md:row-span-6{{end}} md:col-span-2">
+            <div x-data="{showPlanned: true, lectures: {{$course.HasStreams}}}"
+                 class="flex flex-col bg-white dark:bg-secondary border dark:border-gray-800 rounded-lg shadow-sm my-3 md:my-0"
+                 :class="showPlanned ? 'h-full' : 'h-fit'">
+                <div class="flex justify-between h-16 px-3"
+                     :class="showPlanned && 'border-b dark:border-gray-800'">
+                    <span class="bg-info rounded-full text-lg font-bold text-white px-5 my-auto">Upcoming</span>
+                    <div class="my-auto">
+                        <button class="hover:bg-gray-200 dark:hover:bg-gray-600 rounded px-2 my-auto"
+                                @click="showPlanned = !showPlanned;">
+                            <span class="text-sm font-semibold uppercase dark:text-white"
+                                  x-text="showPlanned ? '&#x25B2; hide' : '&#x25BC; show'">&#x25B2; hide</span>
+                        </button>
+                        <a class="hover:bg-gray-200 dark:hover:bg-gray-600 inline-block rounded px-2"
+                           href="/api/download_ics/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}/events.ics"
+                           :title="'Export lecture dates'"
+                           x-show="lectures">
+                                <span class="text-sm font-semibold uppercase dark:text-white">
+                                    <i class="fa-solid w-5 mr-1 fa-calendar"></i>ics
+                                </span>
+                        </a>
+                    </div>
+                </div>
+
+                <ul x-show="showPlanned" class="flex flex-col flex-1 px-5 py-3 overflow-y-scroll">
+                    {{template "planned_course_list" .IndexData.TUMLiveContext}}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
 </html>

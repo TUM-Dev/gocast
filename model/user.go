@@ -6,11 +6,13 @@ import (
 	"crypto/subtle"
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/argon2"
 	"gorm.io/gorm"
 	"strings"
+	"time"
 )
 
 const (
@@ -32,6 +34,113 @@ type User struct {
 	Password            string         `gorm:"default:null" json:"-"`
 	Courses             []Course       `gorm:"many2many:course_users" json:"-"` // courses a lecturer invited this user to
 	AdministeredCourses []Course       `gorm:"many2many:course_admins"`         // courses this user is an admin of
+	PinnedCourses       []Course       `gorm:"many2many:pinned_courses"`
+
+	Settings  []UserSetting `gorm:"foreignkey:UserID"`
+	Bookmarks []Bookmark    `gorm:"foreignkey:UserID" json:"-"`
+}
+
+type UserSettingType int
+
+const (
+	PreferredName UserSettingType = iota + 1
+	Greeting
+	EnableChromecast
+	CustomPlaybackSpeeds
+)
+
+type UserSetting struct {
+	gorm.Model
+
+	UserID uint            `gorm:"not null"`
+	Type   UserSettingType `gorm:"not null"`
+	Value  string          `gorm:"not null"` //json encoded setting
+}
+
+// GetPreferredName returns the preferred name of the user if set, otherwise the firstName from TUMOnline
+func (u User) GetPreferredName() string {
+	for _, setting := range u.Settings {
+		if setting.Type == PreferredName {
+			return setting.Value
+		}
+	}
+	return u.Name
+}
+
+type PlaybackSpeedSetting struct {
+	Speed   float32 `json:"speed"`
+	Enabled bool    `json:"enabled"`
+}
+
+type PlaybackSpeedSettings []PlaybackSpeedSetting
+
+func (s PlaybackSpeedSettings) GetEnabled() (res []float32) {
+	for _, setting := range s {
+		if setting.Enabled {
+			res = append(res, setting.Speed)
+		}
+	}
+	return res
+}
+
+var defaultPlaybackSpeeds = PlaybackSpeedSettings{
+	{0.25, false},
+	{0.5, true},
+	{0.75, true},
+	{1, true},
+	{1.25, true},
+	{1.5, true},
+	{1.75, true},
+	{2, true},
+	{2.5, false},
+	{3, false},
+	{3.5, false},
+}
+
+func (u *User) GetPlaybackSpeeds() (speeds PlaybackSpeedSettings) {
+	if u == nil {
+		return defaultPlaybackSpeeds
+	}
+	for _, setting := range u.Settings {
+		if setting.Type == CustomPlaybackSpeeds {
+			err := json.Unmarshal([]byte(setting.Value), &speeds)
+			if err != nil {
+				break
+			}
+			return speeds
+		}
+	}
+	return defaultPlaybackSpeeds
+}
+
+// GetPreferredGreeting returns the preferred greeting of the user if set, otherwise Moin
+func (u User) GetPreferredGreeting() string {
+	for _, setting := range u.Settings {
+		if setting.Type == Greeting {
+			return setting.Value
+		}
+	}
+	return "Moin"
+}
+
+func (u User) IsGoogleCastEnabled() (res bool) {
+	for _, setting := range u.Settings {
+		if setting.Type == EnableChromecast {
+			_ = json.Unmarshal([]byte(setting.Value), &res)
+			return res
+		}
+	}
+	return false
+}
+
+// PreferredNameChangeAllowed returns false if the user has set a preferred name within the last 3 months, otherwise true
+func (u User) PreferredNameChangeAllowed() bool {
+	for _, setting := range u.Settings {
+		if setting.Type == PreferredName && time.Since(setting.UpdatedAt) < time.Hour*24*30*3 {
+			return false
+		}
+	}
+	return true
 }
 
 type argonParams struct {
@@ -44,6 +153,9 @@ type argonParams struct {
 
 // IsAdminOfCourse checks if the user is an admin of the course
 func (u *User) IsAdminOfCourse(course Course) bool {
+	if u == nil {
+		return false
+	}
 	for _, c := range u.AdministeredCourses {
 		if c.ID == course.ID {
 			return true
@@ -84,9 +196,9 @@ func (u *User) CoursesForSemester(year int, term string, context context.Context
 }
 
 var (
-	ErrInvalidHash                     = errors.New("the encoded hash is not in the correct format")
-	ErrIncompatibleVersion             = errors.New("incompatible version of argon2")
-	p                      argonParams = argonParams{
+	ErrInvalidHash         = errors.New("the encoded hash is not in the correct format")
+	ErrIncompatibleVersion = errors.New("incompatible version of argon2")
+	p                      = argonParams{
 		memory:      64 * 1024,
 		iterations:  3,
 		parallelism: 2,
@@ -199,6 +311,9 @@ func generateRandomBytes(n uint32) ([]byte, error) {
 
 // GetLoginString returns the email if it is set, otherwise the lrzID
 func (u *User) GetLoginString() string {
+	if u == nil {
+		return "- System -"
+	}
 	if u.Email.String != "" {
 		return u.Email.String
 	}

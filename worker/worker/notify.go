@@ -98,10 +98,11 @@ func notifyTranscodingDone(streamCtx *StreamContext) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	resp, err := client.NotifyTranscodingFinished(ctx, &pb.TranscodingFinished{
-		WorkerID: cfg.WorkerID,
-		StreamID: streamCtx.streamId,
-		FilePath: streamCtx.getTranscodingFileName(),
-		Duration: streamCtx.duration,
+		WorkerID:   cfg.WorkerID,
+		StreamID:   streamCtx.streamId,
+		FilePath:   streamCtx.getTranscodingFileName(),
+		Duration:   streamCtx.duration,
+		SourceType: streamCtx.streamVersion,
 	})
 	if err != nil || !resp.Ok {
 		log.WithError(err).Error("Could not notify stream finished")
@@ -118,13 +119,35 @@ func notifyUploadDone(streamCtx *StreamContext) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	resp, err := client.NotifyUploadFinished(ctx, &pb.UploadFinished{
-		WorkerID:   cfg.WorkerID,
-		StreamID:   streamCtx.streamId,
-		HLSUrl:     fmt.Sprintf("https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s.mp4/playlist.m3u8", streamCtx.getStreamNameVoD()),
-		SourceType: streamCtx.streamVersion,
+		WorkerID:     cfg.WorkerID,
+		StreamID:     streamCtx.streamId,
+		HLSUrl:       fmt.Sprintf("https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s.mp4/playlist.m3u8", streamCtx.getStreamNameVoD()),
+		SourceType:   streamCtx.streamVersion,
+		ThumbnailUrl: streamCtx.thumbnailSpritePath,
 	})
 	if err != nil || !resp.Ok {
 		log.WithError(err).Error("Could not notify upload finished")
+	}
+}
+
+func notifyThumbnailDone(streamCtx *StreamContext) {
+	client, conn, err := GetClient()
+	if err != nil {
+		log.WithError(err).Error("Unable to dial tumlive")
+		return
+	}
+	defer closeConnection(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	resp, err := client.NotifyThumbnailsFinished(ctx, &pb.ThumbnailsFinished{
+		WorkerID:   cfg.WorkerID,
+		StreamID:   streamCtx.streamId,
+		FilePath:   streamCtx.getThumbnailSpriteFileName(),
+		Interval:   streamCtx.thumbInterval,
+		SourceType: streamCtx.streamVersion,
+	})
+	if err != nil || !resp.Ok {
+		log.WithError(err).Error("Could not notify thumbnail done")
 	}
 }
 

@@ -43,7 +43,7 @@ func (b *progressBuffer) flush() error {
 	if len(b.progresses) == 0 {
 		return nil
 	}
-	err := dao.SaveProgresses(b.progresses)
+	err := dao.Progress.SaveProgresses(b.progresses)
 	b.progresses = []model.StreamProgress{}
 	return err
 }
@@ -61,11 +61,17 @@ func (b *progressBuffer) run() {
 
 // configProgressRouter sets up the router and initializes a progress buffer
 // that is used to minimize writes to the database.
-func configProgressRouter(router *gin.Engine) {
+func configProgressRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
+	routes := progressRoutes{daoWrapper}
 	progressBuff = newProgressBuffer()
 	go progressBuff.run()
-	router.POST("/api/progressReport", saveProgress)
-	router.POST("/api/watched", markWatched)
+	router.POST("/api/progressReport", routes.saveProgress)
+	router.POST("/api/watched", routes.markWatched)
+}
+
+// progressRoutes contains a DaoWrapper object and all route functions dangle from it.
+type progressRoutes struct {
+	dao.DaoWrapper
 }
 
 // progressRequest corresponds the request that is sent by the video player when it reports its progress for VODs
@@ -76,22 +82,33 @@ type progressRequest struct {
 }
 
 // saveProgress saves progress to a buffer that is flushed at a fixed interval.
-func saveProgress(c *gin.Context) {
+func (r progressRoutes) saveProgress(c *gin.Context) {
 	var request progressRequest
 	err := c.BindJSON(&request)
 
 	if err != nil {
 		log.WithError(err).Warn("Could not bind JSON.")
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	if tumLiveContext.User == nil {
-		c.AbortWithStatus(http.StatusForbidden)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusForbidden,
+			CustomMessage: "not logged in",
+		})
 		return
 	}
 	progressBuff.add(model.StreamProgress{
@@ -108,32 +125,47 @@ type watchedRequest struct {
 }
 
 // markWatched marks a VoD as watched in the database.
-func markWatched(c *gin.Context) {
+func (r progressRoutes) markWatched(c *gin.Context) {
 	var request watchedRequest
 	err := c.BindJSON(&request)
 	if err != nil {
 		log.WithError(err).Error("Could not bind JSON.")
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	if tumLiveContext.User == nil {
-		c.AbortWithStatus(http.StatusForbidden)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusForbidden,
+			CustomMessage: "not logged in",
+		})
 		return
 	}
-	progress := model.StreamProgress{
+	prog := model.StreamProgress{
 		UserID:   tumLiveContext.User.ID,
 		StreamID: request.StreamID,
 		Watched:  request.Watched,
 	}
-	err = dao.SaveProgresses([]model.StreamProgress{progress})
+	err = r.ProgressDao.SaveWatchedState(&prog)
 	if err != nil {
-		log.WithError(err).Error("Could not mark VoD as watched.")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("can not mark VoD as watched.")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not mark VoD as watched.",
+			Err:           err,
+		})
 		return
 	}
 }

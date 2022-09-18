@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -38,6 +39,7 @@ var lightIndices = []int{0, 1, 2} // turn on all 3 outlets. TODO: make configura
 
 type server struct {
 	pb.UnimplementedFromWorkerServer
+	dao.DaoWrapper
 }
 
 func dialIn(targetWorker model.Worker) (*grpc.ClientConn, error) {
@@ -60,7 +62,7 @@ func (s server) JoinWorkers(ctx context.Context, request *pb.JoinWorkersRequest)
 		return nil, status.Error(codes.Unauthenticated, "Invalid token")
 	}
 
-	worker, err := dao.GetWorkerByHostname(ctx, request.Hostname)
+	worker, err := s.DaoWrapper.WorkerDao.GetWorkerByHostname(ctx, request.Hostname)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, status.Errorf(codes.Internal, "get worker by hostname: %v", err)
 	}
@@ -77,7 +79,7 @@ func (s server) JoinWorkers(ctx context.Context, request *pb.JoinWorkersRequest)
 		WorkerID: uuid.NewV4().String(),
 		LastSeen: time.Now(),
 	}
-	if err := dao.CreateWorker(&worker); err != nil {
+	if err := s.DaoWrapper.WorkerDao.CreateWorker(&worker); err != nil {
 		log.WithError(err).Error("Could not add worker to database")
 		return nil, status.Errorf(codes.Internal, "Could not add worker to database")
 	}
@@ -89,10 +91,10 @@ func (s server) JoinWorkers(ctx context.Context, request *pb.JoinWorkersRequest)
 
 //NotifySilenceResults handles the results of silence detection sent by a worker
 func (s server) NotifySilenceResults(ctx context.Context, request *pb.SilenceResults) (*pb.Status, error) {
-	if _, err := dao.GetWorkerByID(ctx, request.WorkerID); err != nil {
+	if _, err := s.DaoWrapper.WorkerDao.GetWorkerByID(ctx, request.WorkerID); err != nil {
 		return nil, err
 	}
-	if _, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.GetStreamID())); err != nil {
+	if _, err := s.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", request.GetStreamID())); err != nil {
 		return nil, err
 	}
 	var silences []model.Silence
@@ -106,7 +108,7 @@ func (s server) NotifySilenceResults(ctx context.Context, request *pb.SilenceRes
 	if len(silences) == 0 {
 		return &pb.Status{Ok: true}, nil
 	}
-	if err := dao.UpdateSilences(silences, fmt.Sprintf("%d", request.StreamID)); err != nil {
+	if err := s.StreamsDao.UpdateSilences(silences, fmt.Sprintf("%d", request.StreamID)); err != nil {
 		return nil, err
 	}
 	return &pb.Status{Ok: true}, nil
@@ -116,17 +118,17 @@ func (s server) NotifySilenceResults(ctx context.Context, request *pb.SilenceRes
 // SendSelfStreamRequest handles the request from a worker when a stream starts publishing via obs, etc.
 // returns an error if anything goes wrong OR the stream may not be published.
 func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStreamRequest) (*pb.SelfStreamResponse, error) {
-	if _, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
+	if _, err := s.DaoWrapper.WorkerDao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, err
 	}
 	if request.StreamKey == "" {
 		return nil, errors.New("stream key empty")
 	}
-	stream, err := dao.GetStreamByKey(ctx, request.StreamKey)
+	stream, err := s.StreamsDao.GetStreamByKey(ctx, request.StreamKey)
 	if err != nil {
 		return nil, err
 	}
-	course, err := dao.GetCourseById(ctx, stream.CourseID)
+	course, err := s.DaoWrapper.CoursesDao.GetCourseById(ctx, stream.CourseID)
 	if err != nil {
 		return nil, err
 	}
@@ -138,16 +140,16 @@ func (s server) SendSelfStreamRequest(ctx context.Context, request *pb.SelfStrea
 		log.WithFields(log.Fields{"streamId": stream.ID}).Warn("Stream rejected, time out of bounds")
 		return nil, errors.New("stream rejected")
 	}
-	ingestServer, err := dao.GetBestIngestServer()
+	ingestServer, err := s.DaoWrapper.IngestServerDao.GetBestIngestServer()
 	if err != nil {
 		return nil, err
 	}
-	slot, err := dao.GetStreamSlot(ingestServer.ID)
+	slot, err := s.DaoWrapper.IngestServerDao.GetStreamSlot(ingestServer.ID)
 	if err != nil {
 		return nil, err
 	}
 	slot.StreamID = stream.ID
-	dao.SaveSlot(slot)
+	s.DaoWrapper.IngestServerDao.SaveSlot(slot)
 
 	return &pb.SelfStreamResponse{
 		StreamID:     uint32(stream.ID),
@@ -169,17 +171,18 @@ var lightLock = sync.Mutex{}
 func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	_, err := dao.GetWorkerByID(ctx, request.GetWorkerID())
+	_, err := s.DaoWrapper.WorkerDao.GetWorkerByID(ctx, request.GetWorkerID())
 	if err != nil {
 		log.WithField("request", request).Warn("Got stream start with invalid WorkerID")
 		return nil, err
 	}
-	stream, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
+	stream, err := s.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
 	if err != nil {
 		log.WithError(err).Warn("Can't get stream by ID to set live")
 		return nil, err
 	}
 	stream.LiveNow = true
+	stream.LiveNowTimestamp = time.Now()
 	switch request.GetSourceType() {
 	case "CAM":
 		stream.PlaylistUrlCAM = request.HlsUrl
@@ -188,7 +191,7 @@ func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted
 	default:
 		stream.PlaylistUrl = request.HlsUrl
 	}
-	err = dao.SaveStream(&stream)
+	err = s.StreamsDao.SaveStream(&stream)
 	if err != nil {
 		log.WithError(err).Error("Can't save stream when setting live")
 		return nil, err
@@ -198,43 +201,30 @@ func (s server) NotifyStreamStart(ctx context.Context, request *pb.StreamStarted
 
 //NotifyStreamFinished handles workers notification about streams being finished
 func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFinished) (*pb.Status, error) {
-	if _, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
+	if _, err := s.DaoWrapper.WorkerDao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, errors.New("authentication failed: invalid worker id")
 	} else {
-		stream, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
+		stream, err := s.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
 		if err != nil {
 			log.WithError(err).Error("Can't find stream to set not live")
 		} else {
 			go func() {
-				err := handleLightOffSwitch(stream)
+				err := handleLightOffSwitch(stream, s.DaoWrapper)
 				if err != nil {
 					log.WithError(err).Error("Can't handle light off switch")
 				}
-				err = dao.SaveEndedState(stream.ID, true)
+				err = s.StreamsDao.SaveEndedState(stream.ID, true)
 				if err != nil {
 					log.WithError(err).Error("Can't set stream done")
 				}
 			}()
 		}
-		// wait 2 hours to clear the dvr cache
-		go func() {
-			time.Sleep(time.Hour * 2)
-			err := dao.RemoveStreamFromSlot(stream.ID)
-			if err != nil {
-				log.WithError(err).Error("Can't remove stream from streamName")
-			}
-		}()
+		err = s.DaoWrapper.IngestServerDao.RemoveStreamFromSlot(stream.ID)
+		if err != nil {
+			log.WithError(err).Error("Can't remove stream from streamName")
+		}
 
-		// wait 2 hours to clear the dvr cache
-		go func() {
-			time.Sleep(time.Hour * 2)
-			err := dao.RemoveStreamFromSlot(stream.ID)
-			if err != nil {
-				log.WithError(err).Error("Can't remove stream from streamName")
-			}
-		}()
-
-		err = dao.SetStreamNotLiveById(uint(request.StreamID))
+		err = s.StreamsDao.SetStreamNotLiveById(uint(request.StreamID))
 		if err != nil {
 			log.WithError(err).Error("Can't set stream not live")
 		}
@@ -243,15 +233,36 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 	return &pb.Status{Ok: true}, nil
 }
 
-func handleCameraPositionSwitch(stream model.Stream) error {
+func (s server) NewKeywords(ctx context.Context, request *pb.NewKeywordsRequest) (*pb.Status, error) {
+	if _, err := s.DaoWrapper.WorkerDao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
+		return nil, errors.New("authentication failed: invalid worker id")
+	} else {
+		keywords := make([]model.Keyword, len(request.Keywords))
+		for i, keyword := range request.Keywords {
+			keywords[i] = model.Keyword{
+				StreamID: uint(request.StreamID),
+				Text:     keyword,
+			}
+		}
+		err = s.DaoWrapper.KeywordDao.NewKeywords(keywords)
+		if err != nil {
+			log.WithError(err).Println("Couldn't insert keyword")
+			return &pb.Status{Ok: false}, err
+		}
+
+		return &pb.Status{Ok: true}, nil
+	}
+}
+
+func handleCameraPositionSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) error {
 	if stream.LectureHallID == 0 {
 		return nil
 	}
-	course, err := dao.GetCourseById(context.Background(), stream.CourseID)
+	course, err := daoWrapper.CoursesDao.GetCourseById(context.Background(), stream.CourseID)
 	if err != nil {
 		return err
 	}
-	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
+	lectureHall, err := daoWrapper.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
 		return err
 	}
@@ -266,22 +277,33 @@ func handleCameraPositionSwitch(stream model.Stream) error {
 	}
 	for _, preference := range preferences {
 		if preference.LectureHallID == stream.LectureHallID {
-			return camera.NewCamera(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(preference.PresetID)
+			switch lectureHall.CameraType {
+			case model.Axis:
+				return camera.NewAxisCam(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(preference.PresetID)
+			case model.Panasonic:
+				return camera.NewPanasonicCam(lectureHall.CameraIP, nil).SetPreset(preference.PresetID)
+			}
 		}
 	}
 	// no preset found for this lecture hall, use default
-	defaultPreset, err := dao.GetDefaultCameraPreset(lectureHall.ID)
+	defaultPreset, err := daoWrapper.CameraPresetDao.GetDefaultCameraPreset(lectureHall.ID)
 	if err != nil {
 		return err
 	}
-	return camera.NewCamera(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(defaultPreset.PresetID)
+	switch lectureHall.CameraType {
+	case model.Axis:
+		return camera.NewAxisCam(lectureHall.CameraIP, tools.Cfg.Auths.CamAuth).SetPreset(defaultPreset.PresetID)
+	case model.Panasonic:
+		return camera.NewPanasonicCam(lectureHall.CameraIP, nil).SetPreset(defaultPreset.PresetID)
+	}
+	return nil
 }
 
-func handleLightOnSwitch(stream model.Stream) error {
+func handleLightOnSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) error {
 	if stream.LectureHallID == 0 {
 		return nil // no light to switch
 	}
-	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
+	lectureHall, err := daoWrapper.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
 		return err
 	}
@@ -303,13 +325,13 @@ func handleLightOnSwitch(stream model.Stream) error {
 	return nil
 }
 
-func handleLightOffSwitch(stream model.Stream) error {
+func handleLightOffSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) error {
 	if stream.LectureHallID == 0 {
 		return nil // no light to switch
 	}
 	lightLock.Lock()
 	defer lightLock.Unlock()
-	liveStreamsInLectureHall, err := dao.GetLiveStreamsInLectureHall(stream.LectureHallID)
+	liveStreamsInLectureHall, err := daoWrapper.StreamsDao.GetLiveStreamsInLectureHall(stream.LectureHallID)
 	if err != nil {
 		return err
 	}
@@ -319,7 +341,7 @@ func handleLightOffSwitch(stream model.Stream) error {
 	if len(liveStreamsInLectureHall) == 1 && liveStreamsInLectureHall[0].ID != stream.ID {
 		return nil // the one different live stream is not this one, don't turn off the light
 	}
-	lectureHall, err := dao.GetLectureHallByID(stream.LectureHallID)
+	lectureHall, err := daoWrapper.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
 		return err
 	}
@@ -336,7 +358,7 @@ func handleLightOffSwitch(stream model.Stream) error {
 
 //SendHeartBeat receives heartbeat messages sent by workers
 func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.Status, error) {
-	if worker, err := dao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
+	if worker, err := s.DaoWrapper.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
 		return nil, errors.New("authentication failed: invalid worker id")
 	} else {
 		worker.Workload = uint(request.Workload)
@@ -347,7 +369,7 @@ func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.S
 		worker.Disk = request.Disk
 		worker.Uptime = request.Uptime
 		worker.Version = request.Version
-		err := dao.SaveWorker(worker)
+		err := s.DaoWrapper.SaveWorker(worker)
 		if err != nil {
 			return nil, err
 		}
@@ -357,13 +379,19 @@ func (s server) SendHeartBeat(ctx context.Context, request *pb.HeartBeat) (*pb.S
 
 //NotifyTranscodingFinished receives and handles messages from workers about finished transcoding
 func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.TranscodingFinished) (*pb.Status, error) {
-	if _, err := dao.GetWorkerByID(ctx, request.WorkerID); err != nil {
+	if _, err := s.DaoWrapper.WorkerDao.GetWorkerByID(ctx, request.WorkerID); err != nil {
 		return nil, err
 	}
-	stream, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
+	stream, err := s.DaoWrapper.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", request.StreamID))
 	if err != nil {
 		return nil, err
 	}
+
+	err = s.StreamsDao.RemoveTranscodingProgress(model.StreamVersion(request.SourceType), stream.ID)
+	if err != nil {
+		log.WithError(err).Error("error removing transcoding progress")
+	}
+
 	// look for file to prevent duplication
 	shouldAddFile := true
 	for _, file := range stream.Files {
@@ -379,8 +407,7 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 	if request.Duration != 0 {
 		stream.Duration = request.Duration
 	}
-	stream.StreamStatus = model.StatusConverted
-	err = dao.SaveStream(&stream)
+	err = s.DaoWrapper.StreamsDao.SaveStream(&stream)
 	if err != nil {
 		log.WithError(err).Error("Can't save stream")
 		return nil, err
@@ -392,10 +419,10 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished) (*pb.Status, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	if _, err := dao.GetWorkerByID(ctx, req.WorkerID); err != nil {
+	if _, err := s.WorkerDao.GetWorkerByID(ctx, req.WorkerID); err != nil {
 		return nil, err
 	}
-	stream, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", req.StreamID))
+	stream, err := s.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", req.StreamID))
 	if err != nil {
 		return nil, err
 	}
@@ -404,7 +431,6 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 		return nil, nil
 	}
 	stream.Recording = true
-	stream.StreamStatus = model.StatusUnknown
 	switch req.SourceType {
 	case "CAM":
 		stream.PlaylistUrlCAM = req.HLSUrl
@@ -413,7 +439,37 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 	default:
 		stream.PlaylistUrl = req.HLSUrl
 	}
-	if err = dao.SaveStream(&stream); err != nil {
+	if err = s.StreamsDao.SaveStream(&stream); err != nil {
+		return nil, err
+	}
+	return &pb.Status{Ok: true}, nil
+}
+
+// NotifyThumbnailsFinished receives and handles messages from workers about finished thumbnails.
+func (s server) NotifyThumbnailsFinished(ctx context.Context, req *pb.ThumbnailsFinished) (*pb.Status, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	if _, err := s.WorkerDao.GetWorkerByID(ctx, req.WorkerID); err != nil {
+		return nil, err
+	}
+	stream, err := s.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", req.StreamID))
+	if err != nil {
+		return nil, err
+	}
+	var thumbType model.FileType
+	switch req.SourceType {
+	case "COMB":
+		thumbType = model.FILETYPE_THUMB_COMB
+	case "CAM":
+		thumbType = model.FILETYPE_THUMB_CAM
+	case "PRES":
+		thumbType = model.FILETYPE_THUMB_PRES
+	default:
+		return nil, errors.New("unknown source type")
+	}
+	stream.Files = append(stream.Files, model.File{StreamID: stream.ID, Path: req.FilePath, Type: thumbType})
+	stream.ThumbInterval = req.Interval
+	if err = s.StreamsDao.SaveStream(&stream); err != nil {
 		return nil, err
 	}
 	return &pb.Status{Ok: true}, nil
@@ -422,7 +478,7 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 // GetStreamInfoForUpload returns the stream info for a stream identified by its upload token.
 // after calling, the token is deleted.
 func (s server) GetStreamInfoForUpload(ctx context.Context, request *pb.GetStreamInfoForUploadRequest) (*pb.GetStreamInfoForUploadResponse, error) {
-	_, err := dao.GetWorkerByID(ctx, request.WorkerID)
+	_, err := s.WorkerDao.GetWorkerByID(ctx, request.WorkerID)
 	if err != nil {
 		return nil, status.Errorf(codes.Unauthenticated, "invalid worker id")
 	}
@@ -430,7 +486,7 @@ func (s server) GetStreamInfoForUpload(ctx context.Context, request *pb.GetStrea
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "key not found")
 	}
-	course, err := dao.GetCourseById(ctx, key.Stream.CourseID)
+	course, err := s.CoursesDao.GetCourseById(ctx, key.Stream.CourseID)
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "course not found")
 	}
@@ -452,29 +508,39 @@ func (s server) GetStreamInfoForUpload(ctx context.Context, request *pb.GetStrea
 func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStarted) (*pb.Status, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	worker, err := dao.GetWorkerByID(ctx, request.WorkerID)
+	worker, err := s.WorkerDao.GetWorkerByID(ctx, request.WorkerID)
 	if err != nil {
 		return nil, err
 	}
-	stream, err := dao.GetStreamByID(ctx, fmt.Sprintf("%d", request.GetStreamID()))
+	stream, err := s.StreamsDao.GetStreamByID(ctx, fmt.Sprintf("%d", request.GetStreamID()))
 	if err != nil {
 		log.WithError(err).Println("Can't find stream")
 		return nil, err
 	}
 	go func() {
-		err := handleLightOnSwitch(stream)
+		err := handleLightOnSwitch(stream, s.DaoWrapper)
 		if err != nil {
 			log.WithError(err).Error("Can't handle light on switch")
 		}
-		err = handleCameraPositionSwitch(stream)
+		err = handleCameraPositionSwitch(stream, s.DaoWrapper)
 		if err != nil {
 			log.WithError(err).Error("Can't handle camera position switch")
+		}
+		err = s.DaoWrapper.DeleteSilences(fmt.Sprintf("%d", stream.ID))
+		if err != nil {
+			log.WithError(err).Error("Can't delete silences")
 		}
 	}()
 	go func() {
 		// interims solution; sometimes dvr doesn't work as expected.
 		// here we check if the url 404s and remove dvr from the stream in that case
 		stream.LiveNow = true
+
+		err = s.StreamsDao.SetStreamLiveNowTimestampById(uint(request.StreamID), time.Now())
+		if err != nil {
+			log.WithError(err).Error("Can't set StreamLiveNowTimestamp")
+		}
+
 		time.Sleep(time.Second * 5)
 		if !isHlsUrlOk(request.HlsUrl) {
 			sentry.WithScope(func(scope *sentry.Scope) {
@@ -490,16 +556,39 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 
 		switch request.GetSourceType() {
 		case "CAM":
-			dao.SaveCAMURL(&stream, request.HlsUrl)
+			s.StreamsDao.SaveCAMURL(&stream, request.HlsUrl)
 		case "PRES":
-			dao.SavePRESURL(&stream, request.HlsUrl)
+			s.StreamsDao.SavePRESURL(&stream, request.HlsUrl)
 		default:
-			dao.SaveCOMBURL(&stream, request.HlsUrl)
+			s.StreamsDao.SaveCOMBURL(&stream, request.HlsUrl)
 		}
 		NotifyViewersLiveState(stream.Model.ID, true)
+		NotifyLiveUpdateCourseWentLive(stream.Model.ID)
 	}()
 
 	return &pb.Status{Ok: true}, nil
+}
+
+func (s server) NotifyTranscodingProgress(srv pb.FromWorker_NotifyTranscodingProgressServer) error {
+	for {
+		resp, err := srv.Recv()
+		if err == io.EOF || errors.Is(err, context.Canceled) {
+			return nil
+		}
+		if err != nil {
+			log.Warnf("cannot receive %v", err)
+			return nil
+		}
+		err = s.DaoWrapper.StreamsDao.SaveTranscodingProgress(model.TranscodingProgress{
+			StreamID: uint(resp.StreamId),
+			Version:  model.StreamVersion(resp.Version),
+			Progress: int(resp.Progress),
+		})
+		if err != nil {
+			return err
+		}
+
+	}
 }
 
 func isHlsUrlOk(url string) bool {
@@ -530,115 +619,116 @@ func isHlsUrlOk(url string) bool {
 // NotifyWorkers collects all streams that are due to stream
 // (starts in the next 10 minutes from a lecture hall)
 // and invokes the corresponding calls at the workers with the least workload via gRPC
-func NotifyWorkers() {
-	notifyWorkersPremieres()
-	streams := dao.GetDueStreamsForWorkers()
-	workers := dao.GetAliveWorkers()
-	if len(workers) == 0 && len(streams) != 0 {
-		log.Error("not enough workers to handle streams")
-		return
-	}
-	for i := range streams {
-		err := dao.SaveEndedState(streams[i].ID, false)
-		if err != nil {
-			log.WithError(err).Warn("Can't set stream undone")
-			sentry.CaptureException(err)
-			continue
+func NotifyWorkers(daoWrapper dao.DaoWrapper) func() {
+	return func() {
+		notifyWorkersPremieres(daoWrapper)
+		streams := daoWrapper.StreamsDao.GetDueStreamsForWorkers()
+		workers := daoWrapper.WorkerDao.GetAliveWorkers()
+		if len(workers) == 0 && len(streams) != 0 {
+			log.Error("not enough workers to handle streams")
+			return
 		}
-		courseForStream, err := dao.GetCourseById(context.Background(), streams[i].CourseID)
-		if err != nil {
-			log.WithError(err).Warn("Can't get course for stream, skipping")
-			sentry.CaptureException(err)
-			continue
-		}
-		lectureHallForStream, err := dao.GetLectureHallByID(streams[i].LectureHallID)
-		if err != nil {
-			log.WithError(err).Error("Can't get lecture hall for stream, skipping")
-			sentry.CaptureException(err)
-			continue
-		}
-		sources := []string{lectureHallForStream.CombIP, lectureHallForStream.PresIP, lectureHallForStream.CamIP}
-		for sourceNum, source := range sources {
-			if source == "" {
-				continue
-			}
-			var sourceType string
-			if sourceNum == 1 {
-				sourceType = "PRES"
-			} else if sourceNum == 2 {
-				sourceType = "CAM"
-			} else {
-				sourceType = "COMB"
-			}
-			server, err := dao.GetBestIngestServer()
+		for i := range streams {
+			err := daoWrapper.StreamsDao.SaveEndedState(streams[i].ID, false)
 			if err != nil {
-				log.WithError(err).Error("Can't find ingest server")
+				log.WithError(err).Warn("Can't set stream undone")
+				sentry.CaptureException(err)
 				continue
 			}
-			var slot model.StreamName
-			if sourceType == "COMB" { //try to find a transcoding slot for comb view:
-				slot, err = dao.GetTranscodedStreamSlot(server.ID)
+			courseForStream, err := daoWrapper.CoursesDao.GetCourseById(context.Background(), streams[i].CourseID)
+			if err != nil {
+				log.WithError(err).Warn("Can't get course for stream, skipping")
+				sentry.CaptureException(err)
+				continue
 			}
-			if sourceType != "COMB" || err != nil {
-				slot, err = dao.GetStreamSlot(server.ID)
-				if err != nil {
-					log.WithError(err).Error("No free stream slot")
+			lectureHallForStream, err := daoWrapper.LectureHallsDao.GetLectureHallByID(streams[i].LectureHallID)
+			if err != nil {
+				log.WithError(err).Error("Can't get lecture hall for stream, skipping")
+				sentry.CaptureException(err)
+				continue
+			}
+			sources := []string{lectureHallForStream.CombIP, lectureHallForStream.PresIP, lectureHallForStream.CamIP}
+			for sourceNum, source := range sources {
+				if source == "" {
 					continue
 				}
+				var sourceType string
+				if sourceNum == 1 {
+					sourceType = "PRES"
+				} else if sourceNum == 2 {
+					sourceType = "CAM"
+				} else {
+					sourceType = "COMB"
+				}
+				server, err := daoWrapper.IngestServerDao.GetBestIngestServer()
+				if err != nil {
+					log.WithError(err).Error("Can't find ingest server")
+					continue
+				}
+				var slot model.StreamName
+				if sourceType == "COMB" { //try to find a transcoding slot for comb view:
+					slot, err = daoWrapper.IngestServerDao.GetTranscodedStreamSlot(server.ID)
+				}
+				if sourceType != "COMB" || err != nil {
+					slot, err = daoWrapper.IngestServerDao.GetStreamSlot(server.ID)
+					if err != nil {
+						log.WithError(err).Error("No free stream slot")
+						continue
+					}
+				}
+				slot.StreamID = streams[i].ID
+				daoWrapper.IngestServerDao.SaveSlot(slot)
+				req := pb.StreamRequest{
+					SourceType:   sourceType,
+					SourceUrl:    source,
+					CourseSlug:   courseForStream.Slug,
+					Start:        timestamppb.New(streams[i].Start),
+					End:          timestamppb.New(streams[i].End),
+					PublishVoD:   courseForStream.VODEnabled,
+					StreamID:     uint32(streams[i].ID),
+					CourseTerm:   courseForStream.TeachingTerm,
+					CourseYear:   uint32(courseForStream.Year),
+					StreamName:   slot.StreamName,
+					IngestServer: server.Url,
+					OutUrl:       server.OutUrl,
+				}
+				workerIndex := getWorkerWithLeastWorkload(workers)
+				workers[workerIndex].Workload += 3
+				err = daoWrapper.StreamsDao.SaveWorkerForStream(streams[i], workers[workerIndex])
+				if err != nil {
+					log.WithError(err).Error("Could not save worker for stream")
+					return
+				}
+				conn, err := dialIn(workers[workerIndex])
+				if err != nil {
+					log.WithError(err).Error("Unable to dial server")
+					workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
+					continue
+				}
+				client := pb.NewToWorkerClient(conn)
+				req.WorkerId = workers[workerIndex].WorkerID
+				resp, err := client.RequestStream(context.Background(), &req)
+				if err != nil || !resp.Ok {
+					log.WithError(err).Error("could not assign stream!")
+					workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
+				}
+				endConnection(conn)
 			}
-			slot.StreamID = streams[i].ID
-			dao.SaveSlot(slot)
-			req := pb.StreamRequest{
-				SourceType:    sourceType,
-				SourceUrl:     source,
-				CourseSlug:    courseForStream.Slug,
-				Start:         timestamppb.New(streams[i].Start),
-				End:           timestamppb.New(streams[i].End),
-				PublishStream: courseForStream.LiveEnabled,
-				PublishVoD:    courseForStream.VODEnabled,
-				StreamID:      uint32(streams[i].ID),
-				CourseTerm:    courseForStream.TeachingTerm,
-				CourseYear:    uint32(courseForStream.Year),
-				StreamName:    slot.StreamName,
-				IngestServer:  server.Url,
-				OutUrl:        server.OutUrl,
-			}
-			workerIndex := getWorkerWithLeastWorkload(workers)
-			workers[workerIndex].Workload += 3
-			err = dao.SaveWorkerForStream(streams[i], workers[workerIndex])
-			if err != nil {
-				log.WithError(err).Error("Could not save worker for stream")
-				return
-			}
-			conn, err := dialIn(workers[workerIndex])
-			if err != nil {
-				log.WithError(err).Error("Unable to dial server")
-				workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
-				continue
-			}
-			client := pb.NewToWorkerClient(conn)
-			req.WorkerId = workers[workerIndex].WorkerID
-			resp, err := client.RequestStream(context.Background(), &req)
-			if err != nil || !resp.Ok {
-				log.WithError(err).Error("could not assign stream!")
-				workers[workerIndex].Workload -= 1 // decrease workers load only by one (backoff)
-			}
-			endConnection(conn)
 		}
 	}
 }
 
 //notifyWorkersPremieres looks for premieres that should be streamed and assigns them to workers.
-func notifyWorkersPremieres() {
-	streams := dao.GetDuePremieresForWorkers()
-	workers := dao.GetAliveWorkers()
+func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
+	streams := daoWrapper.StreamsDao.GetDuePremieresForWorkers()
+	workers := daoWrapper.WorkerDao.GetAliveWorkers()
 
 	if len(workers) == 0 && len(streams) != 0 {
 		log.Error("Not enough alive workers for premiere")
 		return
 	}
 	for i := range streams {
-		err := dao.SaveEndedState(streams[i].ID, false)
+		err := daoWrapper.StreamsDao.SaveEndedState(streams[i].ID, false)
 		if err != nil {
 			log.WithError(err).Warn("Can't set stream undone")
 			sentry.CaptureException(err)
@@ -650,7 +740,7 @@ func notifyWorkersPremieres() {
 		}
 		workerIndex := getWorkerWithLeastWorkload(workers)
 		workers[workerIndex].Workload += 3
-		ingestServer, err := dao.GetBestIngestServer()
+		ingestServer, err := daoWrapper.IngestServerDao.GetBestIngestServer()
 		if err != nil {
 			log.WithError(err).Error("Can't find ingest server")
 			continue
@@ -679,9 +769,90 @@ func notifyWorkersPremieres() {
 	}
 }
 
+type generateVideoSectionImagesParameters struct {
+	sections                                    []model.VideoSection
+	playlistUrl, courseName, courseTeachingTerm string
+	courseYear                                  uint32
+}
+
+func DeleteVideoSectionImage(workerDao dao.WorkerDao, path string) error {
+	workers := workerDao.GetAliveWorkers()
+	if len(workers) == 0 {
+		return errors.New("no workers available")
+	}
+	workerIndex := getWorkerWithLeastWorkload(workers)
+	conn, err := dialIn(workers[workerIndex])
+	defer func() {
+		endConnection(conn)
+	}()
+	if err != nil {
+		log.WithError(err).Error("Unable to dial server")
+		return err
+	}
+
+	client := pb.NewToWorkerClient(conn)
+
+	_, err = client.DeleteSectionImage(context.Background(), &pb.DeleteSectionImageRequest{Path: path})
+	return err
+}
+
+func GenerateVideoSectionImages(daoWrapper dao.DaoWrapper, parameters *generateVideoSectionImagesParameters) error {
+	workers := daoWrapper.WorkerDao.GetAliveWorkers()
+	if len(workers) == 0 {
+		return errors.New("no workers available")
+	}
+	workerIndex := getWorkerWithLeastWorkload(workers)
+	conn, err := dialIn(workers[workerIndex])
+	defer func() {
+		endConnection(conn)
+	}()
+	if err != nil {
+		log.WithError(err).Error("Unable to dial server")
+		return err
+	}
+
+	client := pb.NewToWorkerClient(conn)
+
+	// collect timestamps
+	sectionTimestamps := make([]*pb.Section, len(parameters.sections))
+	for i, section := range parameters.sections {
+		sectionTimestamps[i] = &pb.Section{
+			Hours:   uint32(section.StartHours),
+			Minutes: uint32(section.StartMinutes),
+			Seconds: uint32(section.StartSeconds),
+		}
+	}
+
+	// make request
+	res, err := client.GenerateSectionImages(context.Background(), &pb.GenerateSectionImageRequest{
+		PlaylistURL:        parameters.playlistUrl,
+		CourseName:         parameters.courseName,
+		CourseYear:         parameters.courseYear,
+		CourseTeachingTerm: parameters.courseTeachingTerm,
+		Sections:           sectionTimestamps,
+	})
+	if err != nil {
+		return err
+	}
+
+	// update database
+	for i, section := range parameters.sections {
+		imageFile := model.File{StreamID: section.StreamID, Path: res.Paths[i], Type: model.FILETYPE_IMAGE_JPG}
+		if err := daoWrapper.FileDao.NewFile(&imageFile); err != nil {
+			return err
+		}
+
+		update := model.VideoSection{Model: gorm.Model{ID: section.ID}, FileID: imageFile.ID}
+		if err := daoWrapper.VideoSectionDao.Update(&update); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // NotifyWorkersToStopStream notifies all workers for a given stream to quit encoding
-func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool) {
-	workers, err := dao.GetWorkersForStream(stream)
+func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool, daoWrapper dao.DaoWrapper) {
+	workers, err := daoWrapper.StreamsDao.GetWorkersForStream(stream)
 	if err != nil {
 		log.WithError(err).Error("Could not get workers for stream")
 		return
@@ -713,7 +884,7 @@ func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool) {
 	}
 
 	// All workers for stream are assumed to be done
-	err = dao.ClearWorkersForStream(stream)
+	err = daoWrapper.StreamsDao.ClearWorkersForStream(stream)
 	if err != nil {
 		log.WithError(err).Error("Could not delete workers for stream")
 		return
@@ -742,12 +913,12 @@ func init() {
 	}
 	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
 		MaxConnectionIdle:     time.Minute,
-		MaxConnectionAge:      time.Minute,
+		MaxConnectionAge:      time.Minute * 5,
 		MaxConnectionAgeGrace: time.Second * 5,
 		Time:                  time.Minute * 10,
 		Timeout:               time.Second * 20,
 	}))
-	pb.RegisterFromWorkerServer(grpcServer, &server{})
+	pb.RegisterFromWorkerServer(grpcServer, &server{DaoWrapper: dao.NewDaoWrapper()})
 	reflection.Register(grpcServer)
 	go func() {
 		if err = grpcServer.Serve(lis); err != nil {

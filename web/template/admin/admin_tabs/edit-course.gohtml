@@ -1,65 +1,70 @@
-{{ define "edit-course" }}
-    <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css" />
+{{define "edit-course"}}
+    <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
     <script src="/static/node_modules/chart.js/dist/chart.min.js"></script>
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
-    {{ $course := .IndexData.TUMLiveContext.Course }}
-    {{ $lecture := .IndexData.TUMLiveContext.Stream }}
-    <div class="text-1 mt-4" x-data="{userId: {{ .IndexData.TUMLiveContext.User.Model.ID }} }">
+    {{$course := .IndexData.TUMLiveContext.Course}}
+    {{$lecture := .IndexData.TUMLiveContext.Stream}}
+    <div class="text-1 mt-4" x-data="{userId: {{.IndexData.TUMLiveContext.User.Model.ID}} }">
         <div class="min-w-screen items-center justify-center">
-            <div class="m-auto w-full lg:w-5/6">
-                <h1 class="mb-4">{{ $course.Name }}</h1>
-                <label class="hidden" for="courseID"
-                    >CourseID<input id="courseID" type="text" class="hidden" value="{{ $course.Model.ID }}"
-                /></label>
-                <div class="my-5 rounded bg-white p-4 shadow dark:bg-secondary">
+            <div class="w-full m-auto lg:w-5/6">
+                <div class="flex justify-between mb-4">
+                    <h1 class="self-center">{{$course.Name}}</h1>
+                    <div x-cloak x-show="(new URL(document.location)).searchParams.get('copied')!==null" class="p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800" role="alert">
+                        Course was copied successfully.
+                    </div>
+                </div>
+                <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
+                                                                    value="{{$course.Model.ID}}"></label>
+                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
                     <h2 class="text-2 text-2xl font-semibold">Settings</h2>
                     <div class="">
-                        {{ template "course_settings" $course }}
+                        {{template "course_settings" $course}}
                     </div>
                 </div>
 
-                <div class="my-5 rounded bg-white p-4 shadow dark:bg-secondary">
+                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
                     <h2 class="text-2 text-2xl font-semibold">Course Admins</h2>
                     <div class="">
-                        {{ template "course-admin-management" $course }}
+                        {{template "course-admin-management" $course}}
                     </div>
                 </div>
 
-                <div class="my-5 rounded bg-white p-4 shadow dark:bg-secondary">
+                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
                     <h2 class="text-2 text-2xl font-semibold">Camera Presets</h2>
                     <div class="">
-                        {{ template "camera-presets" }}
+                        {{template "camera-presets"}}
                     </div>
                 </div>
 
-                <div class="my-5 rounded bg-white p-4 shadow dark:bg-secondary">
+                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
                     <h2 class="text-2 text-2xl font-semibold">New Lecture</h2>
                     <div class="">
-                        {{ template "create-lecture-form" . }}
+                        {{template "create-lecture-form" .}}
                     </div>
                 </div>
 
-                <div class="my-5 rounded bg-white p-4 shadow dark:bg-secondary">
+                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
                     <h2 class="text-2 text-2xl font-semibold">Lectures</h2>
                     <div class="">
-                        {{ template "course-lecture-management" . }}
+                        {{template "course-lecture-management" .}}
                     </div>
                 </div>
 
-                <div class="my-5 rounded bg-white p-4 shadow dark:bg-secondary">
+                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
                     <h2 class="text-2 text-2xl font-semibold">External Participants</h2>
                     <div class="">
-                        {{ template "externalParticipants" $course }}
+                        {{template "externalParticipants" $course}}
                     </div>
                 </div>
 
-                <div class="my-5 rounded bg-white p-4 shadow dark:bg-secondary">
-                    <h2 class="text-2 text-2xl font-semibold">Dangerzone</h2>
-                    <div class="">
-                        {{ template "dangerzone" $course }}
+                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
+                    <h2 class="text-2 text-2xl font-semibold">Actions</h2>
+                    <div>
+                        {{template "dangerzone" $course}}
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
-{{ end }}
+{{end}}

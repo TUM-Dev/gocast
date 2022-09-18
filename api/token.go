@@ -12,23 +12,33 @@ import (
 	"time"
 )
 
-func configTokenRouter(r *gin.Engine) {
+func configTokenRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
+	routes := tokenRoutes{daoWrapper}
 	g := r.Group("/api/token")
 	g.Use(tools.Admin)
-	g.POST("/create", createToken)
-	g.DELETE("/:id", deleteToken)
+	g.POST("/create", routes.createToken)
+	g.DELETE("/:id", routes.deleteToken)
 }
 
-func deleteToken(c *gin.Context) {
+type tokenRoutes struct {
+	dao.DaoWrapper
+}
+
+func (r tokenRoutes) deleteToken(c *gin.Context) {
 	id := c.Param("id")
-	err := dao.DeleteToken(id)
+	err := r.TokenDao.DeleteToken(id)
 	if err != nil {
-		log.WithError(err).Error("delete token failed")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("can not delete token")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not delete token",
+			Err:           err,
+		})
+		return
 	}
 }
 
-func createToken(c *gin.Context) {
+func (r tokenRoutes) createToken(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		return
@@ -41,11 +51,18 @@ func createToken(c *gin.Context) {
 	}
 	err := c.BindJSON(&req)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 	if req.Scope != model.TokenScopeAdmin {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "not an admin",
+		})
 		return
 	}
 	tokenStr := uuid.NewV4().String()
@@ -59,10 +76,14 @@ func createToken(c *gin.Context) {
 		Expires: expires,
 		Scope:   req.Scope,
 	}
-	err = dao.AddToken(token)
+	err = r.TokenDao.AddToken(token)
 	if err != nil {
-		log.WithError(err).Error("Failed to create token")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("can not create token")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not create token",
+			Err:           err,
+		})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{

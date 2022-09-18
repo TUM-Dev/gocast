@@ -18,7 +18,6 @@ type Course struct {
 	Year                    int    `gorm:"not null"` // eg. 2021
 	TeachingTerm            string `gorm:"not null"` // eg. Summer/Winter
 	TUMOnlineIdentifier     string
-	LiveEnabled             bool `gorm:"default:true"`
 	VODEnabled              bool `gorm:"default:true"`
 	DownloadsEnabled        bool `gorm:"default:false"`
 	ChatEnabled             bool `gorm:"default:false"`
@@ -32,6 +31,8 @@ type Course struct {
 	Token                   string
 	UserCreatedByToken      bool   `gorm:"default:false"`
 	CameraPresetPreferences string // json encoded. e.g. [{lectureHallID:1, presetID:4}, ...]
+
+	Pinned bool `gorm:"-"` // Used to determine if the course is pinned when loaded for a specific user.
 }
 
 // GetUrl returns the URL of the course, e.g. /course/2022/S/MyCourse

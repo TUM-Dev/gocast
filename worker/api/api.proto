@@ -11,6 +11,30 @@ service ToWorker {
   rpc RequestStreamEnd (EndStreamRequest) returns (Status) {}
   rpc RequestWaveform (WaveformRequest) returns (WaveFormResponse) {}
   rpc RequestCut (CutRequest) returns (CutResponse) {}
+  rpc GenerateSectionImages (GenerateSectionImageRequest) returns (GenerateSectionImageResponse) {}
+  rpc DeleteSectionImage (DeleteSectionImageRequest) returns (Status) {}
+}
+
+message DeleteSectionImageRequest {
+  string Path = 1;
+}
+
+message GenerateSectionImageResponse {
+  repeated string Paths = 1;
+}
+
+message Section {
+  uint32 Hours = 1;
+  uint32 Minutes = 2;
+  uint32 Seconds = 3;
+}
+
+message GenerateSectionImageRequest {
+  string PlaylistURL = 1;
+  string CourseName = 2;
+  uint32 CourseYear = 3;
+  string CourseTeachingTerm = 4;
+  repeated Section Sections = 5;
 }
 
 message CutRequest {
@@ -46,7 +70,6 @@ message StreamRequest {
   string CourseSlug = 4;
   google.protobuf.Timestamp Start = 6;
   google.protobuf.Timestamp End = 7;
-  bool PublishStream = 8;
   bool PublishVoD = 9;
   uint32 StreamID = 10;
   string CourseTerm = 11;
@@ -80,13 +103,23 @@ service FromWorker {
   // JoinWorkers is a request to the server to join the worker pool.
   rpc JoinWorkers (JoinWorkersRequest) returns (JoinWorkersResponse) {}
   rpc SendHeartBeat(HeartBeat) returns (Status) {}
+  rpc NotifyTranscodingProgress(stream NotifyTranscodingProgressRequest) returns (Status) {}
   rpc NotifyTranscodingFinished(TranscodingFinished) returns (Status) {}
   rpc NotifySilenceResults(SilenceResults) returns (Status) {}
   rpc NotifyStreamStarted(StreamStarted) returns (Status) {}
   rpc NotifyStreamFinished(StreamFinished) returns (Status) {}
   rpc NotifyUploadFinished(UploadFinished) returns (Status) {}
+  rpc NotifyThumbnailsFinished(ThumbnailsFinished) returns (Status) {}
   rpc SendSelfStreamRequest(SelfStreamRequest) returns (SelfStreamResponse) {}
   rpc GetStreamInfoForUpload(GetStreamInfoForUploadRequest) returns (GetStreamInfoForUploadResponse) {}
+  rpc NewKeywords(NewKeywordsRequest) returns (Status) {}
+}
+
+message NotifyTranscodingProgressRequest {
+  string WorkerID = 1;
+  uint32 StreamId = 2;
+  string Version = 3;
+  int32 Progress = 4;
 }
 
 message JoinWorkersRequest {
@@ -132,11 +165,20 @@ message StreamFinished {
   uint32 StreamID = 2;
 }
 
+message ThumbnailsFinished {
+  string WorkerID = 1;
+  uint32 StreamID = 2;
+  string FilePath = 3;
+  uint32 Interval = 4;
+  string SourceType = 5;
+}
+
 message TranscodingFinished {
   string WorkerID = 1;
   uint32 StreamID = 2;
   string FilePath = 3;
   uint32 Duration = 4;
+  string SourceType = 5;
 }
 
 message UploadFinished {
@@ -144,6 +186,7 @@ message UploadFinished {
   uint32 StreamID = 2;
   string HLSUrl = 4;
   string SourceType = 5;
+  string ThumbnailUrl = 6;
 }
 
 message StreamStarted {
@@ -172,4 +215,10 @@ message GetStreamInfoForUploadResponse {
   google.protobuf.Timestamp StreamStart = 4;
   google.protobuf.Timestamp StreamEnd = 5;
   uint32 StreamID = 6;
+}
+
+message NewKeywordsRequest {
+  string WorkerID = 1;
+  uint32 StreamID = 2;
+  repeated string Keywords = 3;
 }

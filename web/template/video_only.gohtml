@@ -1,89 +1,81 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.WatchPageData*/ -}}
-        {{ $stream := .IndexData.TUMLiveContext.Stream }}
-        {{ $course := .IndexData.TUMLiveContext.Course }}
-        <title>{{ $course.Name }} | {{ $stream.Name }}</title>
-        <script>
-            window.HELP_IMPROVE_VIDEOJS = false;
-        </script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.WatchPageData*/ -}}
+    {{$stream := .IndexData.TUMLiveContext.Stream}}
+    {{$course := .IndexData.TUMLiveContext.Course}}
+    <title>{{$course.Name}} | {{$stream.Name}}</title>
+    <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
     <script src="/static/assets/ts-dist/watch.bundle.js?v={{.IndexData.VersionTag}}"></script>
-        <link rel="stylesheet" href="/static/assets/css-dist/main.css?v={{ .IndexData.VersionTag }}" />
-        <link rel="stylesheet" href="/static/assets/css/icons.css" />
-        <link href="/static/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet" />
-        <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css" />
-        <link
-            rel="stylesheet"
-            href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css"
-            class="p-14"
-        />
-        <style>
-            .video-js .vjs-start-in-overlay {
-                color: white;
+    <link rel="stylesheet" href="/static/assets/css-dist/main.css?v={{.IndexData.VersionTag}}">
+    <link rel="stylesheet" href="/static/assets/css/icons.css">
+    <link href="/static/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
+    <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css" class="p-14">
+    <style>
+        .video-js .vjs-start-in-overlay {
+            color: white;
 
-                display: block;
-                font-size: 2em;
-                padding: 0;
-                position: absolute;
-                bottom: 15px;
-                left: 10px;
-            }
-            .video-js .vjs-title-bar {
-                color: white;
+            display: block;
+            font-size: 2em;
+            padding: 0;
+            position: absolute;
+            bottom: 15px;
+            left: 10px;
+        }
 
-                /*
-              By default, do not show the title bar.
-            */
-                display: none;
-                font-size: 2em;
-                padding: 0;
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-            }
+        .video-js .vjs-title-bar {
+            color: white;
 
             /*
+              By default, do not show the title bar.
+            */
+            display: none;
+            font-size: 2em;
+            padding: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+        }
+
+        /*
           Only show the title bar after playback has begun (so as not to hide
           the big play button) and only when paused or when the user is
           interacting with the player.
         */
-            .video-js.vjs-paused.vjs-has-started .vjs-title-bar,
-            .video-js.vjs-user-active.vjs-has-started .vjs-title-bar {
-                display: block;
-            }
-            .vjs-has-started .vjs-start-in-overlay {
-                display: none;
-            }
-        </style>
-    </head>
-    <body class="overflow-hidden">
-        <input type="hidden" id="streamID" value="{{ $stream.Model.ID }}" />
-        <video id="my-video" class="video-js w-full" controls preload="auto" poster="/public/default_banner.jpg">
-            {{ if or $stream.LiveNow $stream.Recording }}
-                <source
-                    src="{{ if eq .Version "PRES" }}
-                        {{ $stream.PlaylistUrlPRES }}
-                    {{ else if eq .Version "CAM" }}
-                        {{ $stream.PlaylistUrlCAM }}
-                    {{ else }}
-                        {{ $stream.PlaylistUrl }}
-                    {{ end }}{{ if .Unit }}
-                        ?wowzaplaystart={{ .Unit.UnitStart }}&wowzaplayduration={{ .Unit.GetUnitDurationMS }}
-                    {{ else if $stream.StartOffset }}
-                        ?wowzaplaystart={{ $stream.StartOffset }}&wowzaplayduration={{ $stream.EndOffset }}
-                    {{ end }}"
-                    type="application/x-mpegURL"
-                />
-            {{ end }}
-            <p class="vjs-no-js">To view this video please enable JavaScript.</p>
-        </video>
-    </body>
+        .video-js.vjs-paused.vjs-has-started .vjs-title-bar,
+        .video-js.vjs-user-active.vjs-has-started .vjs-title-bar {
+            display: block;
+        }
+
+        .vjs-has-started .vjs-start-in-overlay {
+            display: none;
+        }
+    </style>
+</head>
+<body class="overflow-hidden">
+<input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
+<video-js
+        id="my-video"
+        class="video-js w-full"
+        controls
+        preload="auto"
+        poster="/public/default_banner.jpg">
+    {{if or $stream.LiveNow $stream.Recording}}
+        <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
+                type="application/x-mpegURL"/>
+    {{end}}
+    <p class="vjs-no-js">
+        To view this video please enable JavaScript.
+    </p>
+</video-js>
+</body>
 <script>
-    watch.initPlayer(false, true, true, {{$course.Name}}, {{$stream.GetName}}, {{$course.GetStreamUrl $stream}}, {{$course.GetUrl}}, {{$stream.GetStartInSeconds}});
+    watch.initPlayer(false, true, true, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}}, {{$course.Name}}, {{$stream.GetName}}, {{$course.GetStreamUrl $stream}}, {{$course.GetUrl}}, {{$stream.GetStartInSeconds}});
     watch.startWebsocket()
     {{if $stream.Silences}}
     watch.skipSilence({{$stream.GetSilencesJson}});

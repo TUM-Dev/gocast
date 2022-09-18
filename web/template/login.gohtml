@@ -1,71 +1,59 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-    <head>
-        <title>TUM Live | Login</title>
-        {{ template "headImports" .VersionTag }}
-    </head>
-    <body>
-        {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.LoginPageData*/ -}}
-        {{ template "header" }}
-        <div class="md:6/12 m-auto my-10 mt-24 w-10/12 bg-gray-50 shadow-md dark:bg-secondary lg:w-4/12">
-            <div
-                class="rounded border border-gray-300 py-8 px-8 dark:border-gray-500"
-                x-data="{ showInternalLogin: {{ not .UseSAML }} }"
-            >
-                <h1 class="sr-only">Login</h1>
-                {{ if .UseSAML }}
-                    <div class="flex flex-col text-center">
-                        <a
-                            href="/saml/out"
-                            class="w-full rounded p-2 font-semibold text-gray-300 hover:bg-blue-700 hover:text-white"
-                            style="background-color: {{ if .IDPColor }}
-                                {{ .IDPColor }}
-                            {{ else }}
-                                #3070B3
-                            {{ end }}"
-                        >
-                            {{ .IDPName }}
-                        </a>
-                        <div
-                            x-show="!showInternalLogin"
-                            class="text-2 mt-7 border-t border-gray-300 pt-4 dark:border-gray-500"
-                        >
-                            Or
-                            <button @click="showInternalLogin = true" class="font-semibold underline">
-                                use an internal account
-                            </button>
-                        </div>
-                    </div>
-                {{ end }}
-                <form
-                    x-data="{ref: document.referrer}"
-                    id="loginForm"
-                    method="post"
-                    class="mt-6"
-                    x-show="showInternalLogin"
-                >
-                    <input x-model="ref" type="hidden" name="ref" />
-                    <div class="my-5 text-sm">
-                        <label for="username" class="hidden">Username</label>
-                        <input
-                            type="text"
-                            name="username"
-                            id="username"
-                            placeholder="Username"
-                            autocomplete="off"
-                            {{ if not .UseSAML }}autofocus{{ end }}required
-                        />
-                    </div>
-                    <div class="my-5 text-sm">
-                        <label for="password" class="hidden">Password</label>
-                        <input type="password" name="password" id="password" placeholder="Password" required />
-                    </div>
-                    <button class="btn" type="submit">Login</button>
-                    {{ if .Error }}
-                        <p class="text-warn">Couldn't log in. Please double check your credentials.</p>
-                    {{ end }}
-                </form>
-            </div>
+<head>
+    <title>TUM Live | Login</title>
+    {{template "headImports" .VersionTag}}
+</head>
+<body>
+{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.LoginPageData*/ -}}
+{{template "header"}}
+<div class="bg-white border shadow-md shadow rounded-lg m-auto my-10
+             dark:bg-secondary-light dark:border-gray-800 dark:shadow-0 lg:w-4/12 md:6/12 w-10/12"
+     x-data="{ showInternalLogin: {{not .UseSAML}} }">
+    <div>
+        <div class="border-b py-2 px-5 dark:border-gray-800">
+            <h6 class="text-3 font-bold">Login</h6>
         </div>
-    </body>
+        {{if .UseSAML}}
+            <div class="text-center w-full border-b dark:border-gray-800 p-4">
+                <a href="/saml/out"
+                   class="block w-full px-3 py-1 rounded text-white hover:text-white font-semibold"
+                   style="background-color: {{if .IDPColor}}{{.IDPColor}}{{else}}#3070B3{{end}}">
+                    {{.IDPName}}
+                </a>
+                <div x-show="" class="p-2 text-sm text-5">
+                    or
+                    <button @click="showInternalLogin = true" class="text-3 underline">use an internal account
+                    </button>
+                </div>
+            </div>
+        {{end}}
+        <template x-if="showInternalLogin">
+            <form x-data="{ref: global.getLoginReferrer()}" id="loginForm" method="post" class="grid gap-3 py-4 px-5">
+                <input x-model="ref" type="hidden" name="ref">
+                <div class="text-sm">
+                    <label for="username" class="block text-5">Username</label>
+                    <input type="text" name="username" id="username" autocomplete="off"
+                           {{if not .UseSAML}}autofocus {{end}}
+                           required placeholder="Username"
+                           class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
+                </div>
+                <div class="text-sm">
+                    <label for="password" class="block text-5">Password</label>
+                    <input type="password" name="password" id="password" required
+                           class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"
+                           placeholder="Password"/>
+                </div>
+                <button type="submit"
+                        class="block bg-blue-500 text-center px-3 py-1 mt-3 rounded w-full dark:bg-indigo-600">
+                    <span class="text-white uppercase text-sm font-semibold">Login</span>
+                </button>
+                {{if .Error}}
+                    <p class="text-warn text-sm mt-2">Couldn't log in. Please double check your credentials.</p>
+                {{end}}
+            </form>
+        </template>
+    </div>
+</div>
+</body>
 </html>

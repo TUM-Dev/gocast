@@ -8,12 +8,13 @@ import (
 type VideoSection struct {
 	gorm.Model
 
-	Description  string `gorm:"not null" json:"description"`
+	Description  string `gorm:"not null;index:,class:FULLTEXT" json:"description"`
 	StartHours   uint   `gorm:"not null" json:"startHours"`
 	StartMinutes uint   `gorm:"not null" json:"startMinutes"`
 	StartSeconds uint   `gorm:"not null" json:"startSeconds"`
 
 	StreamID uint `gorm:"not null" json:"streamID"`
+	FileID   uint `gorm:"not null" json:"fileID"`
 }
 
 func (v VideoSection) TimestampAsString() string {

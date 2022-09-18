@@ -2,7 +2,6 @@ package api
 
 import (
 	"embed"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
@@ -11,33 +10,39 @@ import (
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"text/template"
 	"time"
 )
 
-func configGinLectureHallApiRouter(router *gin.Engine) {
+func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper, utility tools.PresetUtility) {
+	routes := lectureHallRoutes{daoWrapper, utility}
+
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
-	admins.PUT("/lectureHall/:id", updateLectureHall)
-	admins.POST("/lectureHall/:id/defaultPreset", updateLectureHallsDefaultPreset)
-	admins.DELETE("/lectureHall/:id", deleteLectureHall)
-	admins.POST("/createLectureHall", createLectureHall)
-	admins.POST("/takeSnapshot/:lectureHallID/:presetID", takeSnapshot)
-	admins.GET("/course-schedule", getSchedule)
-	admins.POST("/course-schedule/:year/:term", postSchedule)
-	admins.GET("/refreshLectureHallPresets/:lectureHallID", refreshLectureHallPresets)
-	admins.POST("/setLectureHall", setLectureHall)
+	admins.PUT("/lectureHall/:id", routes.updateLectureHall)
+	admins.POST("/lectureHall/:id/defaultPreset", routes.updateLectureHallsDefaultPreset)
+	admins.DELETE("/lectureHall/:id", routes.deleteLectureHall)
+	admins.POST("/createLectureHall", routes.createLectureHall)
+	admins.POST("/takeSnapshot/:lectureHallID/:presetID", routes.takeSnapshot)
+	admins.GET("/course-schedule", routes.getSchedule)
+	admins.POST("/course-schedule/:year/:term", routes.postSchedule)
+	admins.GET("/refreshLectureHallPresets/:lectureHallID", routes.refreshLectureHallPresets)
+	admins.POST("/setLectureHall", routes.setLectureHall)
 
 	adminsOfCourse := router.Group("/api/course/:courseID/")
-	adminsOfCourse.Use(tools.InitCourse)
-	adminsOfCourse.Use(tools.InitStream)
+	adminsOfCourse.Use(tools.InitCourse(daoWrapper))
+	adminsOfCourse.Use(tools.InitStream(daoWrapper))
 	adminsOfCourse.Use(tools.AdminOfCourse)
-	adminsOfCourse.POST("/switchPreset/:lectureHallID/:presetID/:streamID", switchPreset)
+	adminsOfCourse.POST("/switchPreset/:lectureHallID/:presetID/:streamID", routes.switchPreset)
 
-	router.GET("/api/hall/all.ics", lectureHallIcal)
+	router.GET("/api/hall/all.ics", routes.lectureHallIcal)
+}
+
+type lectureHallRoutes struct {
+	dao.DaoWrapper
+	presetUtility tools.PresetUtility
 }
 
 type updateLectureHallReq struct {
@@ -48,22 +53,34 @@ type updateLectureHallReq struct {
 	PwrCtrlIp string `json:"pwrCtrlIp"`
 }
 
-func updateLectureHall(c *gin.Context) {
+func (r lectureHallRoutes) updateLectureHall(c *gin.Context) {
 	var req updateLectureHallReq
 	err := c.BindJSON(&req)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 	id := c.Param("id")
 	idUint, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid param 'id'",
+			Err:           err,
+		})
 		return
 	}
-	lectureHall, err := dao.GetLectureHallByID(uint(idUint))
+	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(uint(idUint))
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find lecture hall",
+			Err:           err,
+		})
 		return
 	}
 	lectureHall.CamIP = req.CamIp
@@ -71,84 +88,125 @@ func updateLectureHall(c *gin.Context) {
 	lectureHall.PresIP = req.PresIP
 	lectureHall.CameraIP = req.CameraIp
 	lectureHall.PwrCtrlIp = req.PwrCtrlIp
-	err = dao.SaveLectureHall(lectureHall)
+	err = r.LectureHallsDao.SaveLectureHall(lectureHall)
 	if err != nil {
-		log.WithError(err).Error("Error while updating lecture hall")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("error while updating lecture hall")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "error while updating lecture hall",
+			Err:           err,
+		})
+		return
 	}
 }
 
-func updateLectureHallsDefaultPreset(c *gin.Context) {
+func (r lectureHallRoutes) updateLectureHallsDefaultPreset(c *gin.Context) {
 	var req struct {
 		PresetID uint `json:"presetID"`
 	}
 	err := c.BindJSON(&req)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
-	preset, err := dao.FindPreset(c.Param("id"), fmt.Sprintf("%d", req.PresetID))
+	preset, err := r.LectureHallsDao.FindPreset(c.Param("id"), fmt.Sprintf("%d", req.PresetID))
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find preset",
+			Err:           err,
+		})
 		return
 	}
 	preset.IsDefault = true
-	err = dao.UnsetDefaults(c.Param("id"))
+	err = r.LectureHallsDao.UnsetDefaults(c.Param("id"))
 	if err != nil {
-		log.WithError(err).Error("Error unsetting default presets")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("error unsetting default presets")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "error unsetting default presets",
+			Err:           err,
+		})
 		return
 	}
-	err = dao.SavePreset(preset)
+	err = r.LectureHallsDao.SavePreset(preset)
 	if err != nil {
-		log.WithError(err).Error("Error saving preset as default")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("error saving preset as default")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "error saving preset as default",
+			Err:           err,
+		})
 		return
 	}
 }
 
-func deleteLectureHall(c *gin.Context) {
+func (r lectureHallRoutes) deleteLectureHall(c *gin.Context) {
 	lhIDStr := c.Param("id")
 	lhID, err := strconv.Atoi(lhIDStr)
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid param 'id'",
+			Err:           err,
+		})
 		return
 	}
 
-	err = dao.DeleteLectureHall(uint(lhID))
+	err = r.LectureHallsDao.DeleteLectureHall(uint(lhID))
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not delete lecture hall",
+			Err:           err,
+		})
 		return
 	}
 }
 
-func refreshLectureHallPresets(c *gin.Context) {
+func (r lectureHallRoutes) refreshLectureHallPresets(c *gin.Context) {
 	lhIDStr := c.Param("lectureHallID")
 	lhID, err := strconv.Atoi(lhIDStr)
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid param 'id'",
+			Err:           err,
+		})
 		return
 	}
-	lh, err := dao.GetLectureHallByID(uint(lhID))
+	lh, err := r.LectureHallsDao.GetLectureHallByID(uint(lhID))
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find lecture hall",
+			Err:           err,
+		})
 		return
 	}
-	tools.FetchLHPresets(lh)
+	r.presetUtility.FetchLHPresets(lh)
 }
 
 //go:embed template
 var staticFS embed.FS
 
-func lectureHallIcal(c *gin.Context) {
+func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 	templ, err := template.ParseFS(staticFS, "template/*.gotemplate")
 	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
@@ -157,8 +215,9 @@ func lectureHallIcal(c *gin.Context) {
 	if tumLiveContext.User != nil && tumLiveContext.User.Role != model.AdminType {
 		queryUid = tumLiveContext.User.ID
 	}
-	icalData, err := dao.GetStreamsForLectureHallIcal(queryUid)
+	icalData, err := r.LectureHallsDao.GetStreamsForLectureHallIcal(queryUid)
 	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	c.Header("content-type", "text/calendar")
@@ -168,90 +227,123 @@ func lectureHallIcal(c *gin.Context) {
 	}
 }
 
-func switchPreset(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+func (r lectureHallRoutes) switchPreset(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	if tumLiveContext.Stream == nil || !tumLiveContext.Stream.LiveNow {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid stream or stream not live",
+		})
 		return
 	}
-	preset, err := dao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
+	preset, err := r.LectureHallsDao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find preset",
+			Err:           err,
+		})
 		return
 	}
-	tools.UsePreset(preset)
+	r.presetUtility.UsePreset(preset)
 	time.Sleep(time.Second * 10)
 }
 
-func takeSnapshot(c *gin.Context) {
-	preset, err := dao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
+func (r lectureHallRoutes) takeSnapshot(c *gin.Context) {
+	preset, err := r.LectureHallsDao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find preset",
+			Err:           err,
+		})
 		sentry.CaptureException(err)
+		return
 	}
-	tools.TakeSnapshot(preset)
-	preset, err = dao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
+	r.presetUtility.TakeSnapshot(preset)
+	preset, err = r.LectureHallsDao.FindPreset(c.Param("lectureHallID"), c.Param("presetID"))
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find preset",
+			Err:           err,
+		})
 		sentry.CaptureException(err)
+		return
 	}
 	c.JSONP(http.StatusOK, gin.H{"path": fmt.Sprintf("/public/%s", preset.Image)})
 }
 
-func setLectureHall(c *gin.Context) {
+func (r lectureHallRoutes) setLectureHall(c *gin.Context) {
 	var req setLectureHallRequest
 	err := c.BindJSON(&req)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 
-	streams, err := dao.GetStreamsByIds(req.StreamIDs)
+	streams, err := r.StreamsDao.GetStreamsByIds(req.StreamIDs)
 	if err != nil || len(streams) != len(req.StreamIDs) {
-		log.WithError(err).Error("Can't get all streams to update lecture hall")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("can not get all streams to update lecture hall")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get all streams to update lecture hall",
+			Err:           err,
+		})
 		return
 	}
 
 	if req.LectureHallID == 0 {
-		err = dao.UnsetLectureHall(req.StreamIDs)
+		err = r.StreamsDao.UnsetLectureHall(req.StreamIDs)
 		if err != nil {
-			log.WithError(err).Error("Can't update lecture hall for streams")
-			c.AbortWithStatus(http.StatusInternalServerError)
+			log.WithError(err).Error("can not update lecture hall for streams")
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not update lecture hall for streams",
+				Err:           err,
+			})
 		}
 		return
 	}
 
-	_, err = dao.GetLectureHallByID(req.LectureHallID)
+	_, err = r.LectureHallsDao.GetLectureHallByID(req.LectureHallID)
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not get lecture hall",
+			Err:           err,
+		})
 		return
 	}
-	err = dao.SetLectureHall(req.StreamIDs, req.LectureHallID)
+	err = r.StreamsDao.SetLectureHall(req.StreamIDs, req.LectureHallID)
 	if err != nil {
-		log.WithError(err).Error("can't update lecture hall")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("can not update lecture hall")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not update lecture hall",
+			Err:           err,
+		})
+		return
 	}
 }
 
-func createLectureHall(c *gin.Context) {
-	body, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
-		return
-	}
+func (r lectureHallRoutes) createLectureHall(c *gin.Context) {
 	var req createLectureHallRequest
-	if err = json.Unmarshal(body, &req); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Bad request"})
+	err := c.BindJSON(&req)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
-	dao.CreateLectureHall(model.LectureHall{
+	r.LectureHallsDao.CreateLectureHall(model.LectureHall{
 		Name:      req.Name,
 		CombIP:    req.CombIP,
 		PresIP:    req.PresIP,

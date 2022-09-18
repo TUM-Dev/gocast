@@ -1,34 +1,22 @@
-{{ define "downloadBtn" }}
+{{define "downloadBtn"}}
     <span class="relative m-auto" x-data="{expand:false}">
-        <button @click="expand=!expand" type="button" id="menu-button" aria-expanded="true" aria-haspopup="true">
-            <i class="fas fa-cloud-download-alt text-4 hover:text-1 text-lg"></i>
+        <button @click="expand=!expand" type="button"
+                id="menu-button" aria-expanded="true" aria-haspopup="true">
+            <i class="fas fa-cloud-download-alt text-4 text-lg hover:text-1"></i>
         </button>
-        <span
-            x-cloak
-            x-show="expand"
-            @click.outside="expand = false"
-            class="absolute top-full left-0 m-auto w-32 origin-top-left
-             ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-secondary"
-            role="menu"
-            aria-orientation="vertical"
-            aria-labelledby="menu-button"
-            tabindex="-1"
-        >
+        <span x-cloak x-show="expand" @click.outside="expand = false"
+             class="origin-top-left absolute top-full left-0 m-auto w-32
+             dark:bg-secondary ring-1 ring-black ring-opacity-5 focus:outline-none"
+             role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
             <span class="py-1" role="none">
                 <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
-                {{ range $file := . }}
-                    <a
-                        href="/api/download/{{ $file.ID }}"
-                        download
-                        class="text-3 block px-4
-                       py-2 text-sm first:rounded-t-md last:rounded-b-md hover:bg-gray-100 dark:hover:bg-gray-600"
-                        role="menuitem"
-                        tabindex="-1"
-                        id="menu-item-0"
-                        >{{ $file.GetFriendlyFileName }}</a
-                    >
-                {{ end }}
+                {{range $file := . }}
+                    <a href="/api/download/{{$file.ID}}" download
+                       class="hover:bg-gray-100 text-3 dark:hover:bg-gray-600
+                       block px-4 py-2 text-sm first:rounded-t-md last:rounded-b-md"
+                       role="menuitem" tabindex="-1" id="menu-item-0">{{$file.GetFriendlyFileName}}</a>
+                {{end}}
             </span>
         </span>
     </span>
-{{ end }}
+{{end}}

@@ -38,7 +38,10 @@ func GinServer() (err error) {
 		tools.CookieSecure = true
 	}
 
-	router.Use(tools.InitContext)
+	router.Use(tools.InitContext(dao.NewDaoWrapper()))
+
+	liveUpdates := router.Group("/api/pub-sub")
+	api.ConfigRealtimeRouter(liveUpdates)
 
 	// event streams don't work with gzip, configure group without
 	chat := router.Group("/api/chat")
@@ -93,9 +96,11 @@ func main() {
 		defer sentry.Recover()
 	}
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
-		"%v:%v@tcp(db:3306)/%v?parseTime=true&loc=Local",
+		"%s:%s@tcp(%s:%d)/%s?parseTime=true&loc=Local",
 		tools.Cfg.Db.User,
 		tools.Cfg.Db.Password,
+		tools.Cfg.Db.Host,
+		tools.Cfg.Db.Port,
 		tools.Cfg.Db.Database),
 	), &gorm.Config{
 		PrepareStmt: true,
@@ -136,8 +141,15 @@ func main() {
 		&model.Poll{},
 		&model.PollOption{},
 		&model.VideoSection{},
+		&model.VideoSeekChunk{},
 		&model.Notification{},
 		&model.UploadKey{},
+		&model.Keyword{},
+		&model.UserSetting{},
+		&model.Audit{},
+		&model.InfoPage{},
+		&model.Bookmark{},
+		&model.TranscodingProgress{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -177,15 +189,16 @@ func main() {
 }
 
 func initCron() {
+	daoWrapper := dao.NewDaoWrapper()
 	cronService := cron.New()
 	//Fetch students every 12 hours
-	_, _ = cronService.AddFunc("0 */12 * * *", tum.FetchCourses)
+	_, _ = cronService.AddFunc("0 */12 * * *", tum.FetchCourses(daoWrapper))
 	//Collect livestream stats (viewers) every minute
-	_, _ = cronService.AddFunc("0-59 * * * *", api.CollectStats)
+	_, _ = cronService.AddFunc("0-59 * * * *", api.CollectStats(daoWrapper))
 	//Flush stale sentry exceptions and transactions every 5 minutes
 	_, _ = cronService.AddFunc("0-59/5 * * * *", func() { sentry.Flush(time.Minute * 2) })
 	//Look for due streams and notify workers about them
-	_, _ = cronService.AddFunc("0-59 * * * *", api.NotifyWorkers)
+	_, _ = cronService.AddFunc("0-59 * * * *", api.NotifyWorkers(daoWrapper))
 	cronService.Start()
 }
 
