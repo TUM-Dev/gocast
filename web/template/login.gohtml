@@ -1,59 +1,86 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-<head>
-    <title>TUM Live | Login</title>
-    {{template "headImports" .VersionTag}}
-</head>
-<body>
-{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.LoginPageData*/ -}}
-{{template "header"}}
-<div class="bg-white border shadow-md shadow rounded-lg m-auto my-10
-             dark:bg-secondary-light dark:border-gray-800 dark:shadow-0 lg:w-4/12 md:6/12 w-10/12"
-     x-data="{ showInternalLogin: {{not .UseSAML}} }">
-    <div>
-        <div class="border-b py-2 px-5 dark:border-gray-800">
-            <h6 class="text-3 font-bold">Login</h6>
-        </div>
-        {{if .UseSAML}}
-            <div class="text-center w-full border-b dark:border-gray-800 p-4">
-                <a href="/saml/out"
-                   class="block w-full px-3 py-1 rounded text-white hover:text-white font-semibold"
-                   style="background-color: {{if .IDPColor}}{{.IDPColor}}{{else}}#3070B3{{end}}">
-                    {{.IDPName}}
-                </a>
-                <div x-show="" class="p-2 text-sm text-5">
-                    or
-                    <button @click="showInternalLogin = true" class="text-3 underline">use an internal account
-                    </button>
+    <head>
+        <title>TUM Live | Login</title>
+        {{ template "headImports" .VersionTag }}
+    </head>
+    <body>
+        {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.LoginPageData*/ -}}
+        {{ template "header" }}
+        <div
+            class="dark:shadow-0 md:6/12 m-auto my-10 w-10/12 rounded-lg border
+             bg-white shadow-md shadow dark:border-gray-800 dark:bg-secondary-light lg:w-4/12"
+            x-data="{ showInternalLogin: {{ not .UseSAML }} }"
+        >
+            <div>
+                <div class="border-b py-2 px-5 dark:border-gray-800">
+                    <h6 class="text-3 font-bold">Login</h6>
                 </div>
+                {{ if .UseSAML }}
+                    <div class="w-full border-b p-4 text-center dark:border-gray-800">
+                        <a
+                            href="/saml/out"
+                            class="block w-full rounded px-3 py-1 font-semibold text-white hover:text-white"
+                            style="background-color: {{ if .IDPColor }}
+                                {{ .IDPColor }}
+                            {{ else }}
+                                #3070B3
+                            {{ end }}"
+                        >
+                            {{ .IDPName }}
+                        </a>
+                        <div x-show="" class="text-5 p-2 text-sm">
+                            or
+                            <button @click="showInternalLogin = true" class="text-3 underline">
+                                use an internal account
+                            </button>
+                        </div>
+                    </div>
+                {{ end }}
+                <template x-if="showInternalLogin">
+                    <form
+                        x-data="{ref: global.getLoginReferrer()}"
+                        id="loginForm"
+                        method="post"
+                        class="grid gap-3 py-4 px-5"
+                    >
+                        <input x-model="ref" type="hidden" name="ref" />
+                        <div class="text-sm">
+                            <label for="username" class="text-5 block">Username</label>
+                            <input
+                                type="text"
+                                name="username"
+                                id="username"
+                                autocomplete="off"
+                                {{ if not .UseSAML }}autofocus{{ end }}
+                                required
+                                placeholder="Username"
+                                class="mt-3 w-full rounded border-0 bg-gray-50 px-4 py-3 focus:outline-none dark:bg-gray-600"
+                            />
+                        </div>
+                        <div class="text-sm">
+                            <label for="password" class="text-5 block">Password</label>
+                            <input
+                                type="password"
+                                name="password"
+                                id="password"
+                                required
+                                class="mt-3 w-full rounded border-0 bg-gray-50 px-4 py-3 focus:outline-none dark:bg-gray-600"
+                                placeholder="Password"
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            class="mt-3 block w-full rounded bg-blue-500 px-3 py-1 text-center dark:bg-indigo-600"
+                        >
+                            <span class="text-sm font-semibold uppercase text-white">Login</span>
+                        </button>
+                        {{ if .Error }}
+                            <p class="mt-2 text-sm text-warn">Couldn't log in. Please double check your credentials.</p>
+                        {{ end }}
+                    </form>
+                </template>
             </div>
-        {{end}}
-        <template x-if="showInternalLogin">
-            <form x-data="{ref: global.getLoginReferrer()}" id="loginForm" method="post" class="grid gap-3 py-4 px-5">
-                <input x-model="ref" type="hidden" name="ref">
-                <div class="text-sm">
-                    <label for="username" class="block text-5">Username</label>
-                    <input type="text" name="username" id="username" autocomplete="off"
-                           {{if not .UseSAML}}autofocus {{end}}
-                           required placeholder="Username"
-                           class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
-                </div>
-                <div class="text-sm">
-                    <label for="password" class="block text-5">Password</label>
-                    <input type="password" name="password" id="password" required
-                           class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"
-                           placeholder="Password"/>
-                </div>
-                <button type="submit"
-                        class="block bg-blue-500 text-center px-3 py-1 mt-3 rounded w-full dark:bg-indigo-600">
-                    <span class="text-white uppercase text-sm font-semibold">Login</span>
-                </button>
-                {{if .Error}}
-                    <p class="text-warn text-sm mt-2">Couldn't log in. Please double check your credentials.</p>
-                {{end}}
-            </form>
-        </template>
-    </div>
-</div>
-</body>
+        </div>
+    </body>
 </html>

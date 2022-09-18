@@ -1,26 +1,32 @@
-{{define "info-pages"}}
+{{ define "info-pages" }}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/[]model.Text*/ -}}
-    <div class="dark:bg-secondary bg-white p-4 shadow rounded my-6 overflow-x-auto">
-        <h2 class="text-2xl font-bold text-1 mb-3">Texts</h2>
+    <div class="my-6 overflow-x-auto rounded bg-white p-4 shadow dark:bg-secondary">
+        <h2 class="text-1 mb-3 text-2xl font-bold">Texts</h2>
         <div class="grid gap-2">
-            {{range $i, $text := .}}
+            {{ range $i, $text := . }}
                 {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Text*/ -}}
-                <div x-data="{editOpen: false, oldName: '{{$text.Name}}', name:'', oldContent: `{{$text.RawContent}}`, newContent: ''}"
-                     x-init="newContent=oldContent;name=oldName"
-                     class="border dark:border-gray-800 rounded-lg h-fit"
-                     :class="editOpen && 'shadow'">
-                    <div class="flex p-3 rounded-lg" :class="editOpen && 'outline outline-2 outline-blue-500/50'">
-                        <label for="content-{{$i}}" class="hidden">{{$text.Name}}</label>
-                        <input x-model="name"
-                               class="flex border-0 text-3 text-lg my-auto p-0 w-1/2 rounded-lg"
-                               :disabled="!editOpen">
-                        <div class="flex my-auto ml-auto space-x-3">
-                            <div x-show="oldContent !== newContent || oldName !== name"
-                                 class="flex my-auto px-2 py-1 border border-amber-200 bg-amber-200/50 rounded">
+                <div
+                    x-data="{editOpen: false, oldName: '{{ $text.Name }}', name:'', oldContent: `{{ $text.RawContent }}`, newContent: ''}"
+                    x-init="newContent=oldContent;name=oldName"
+                    class="h-fit rounded-lg border dark:border-gray-800"
+                    :class="editOpen && 'shadow'"
+                >
+                    <div class="flex rounded-lg p-3" :class="editOpen && 'outline outline-2 outline-blue-500/50'">
+                        <label for="content-{{ $i }}" class="hidden">{{ $text.Name }}</label>
+                        <input
+                            x-model="name"
+                            class="text-3 my-auto flex w-1/2 rounded-lg border-0 p-0 text-lg"
+                            :disabled="!editOpen"
+                        />
+                        <div class="my-auto ml-auto flex space-x-3">
+                            <div
+                                x-show="oldContent !== newContent || oldName !== name"
+                                class="my-auto flex rounded border border-amber-200 bg-amber-200/50 px-2 py-1"
+                            >
                                 <i class="fa fa-triangle-exclamation mr-1"></i>
-                                <span class="text-xs font-light text-3">Unsaved Changes</span>
+                                <span class="text-3 text-xs font-light">Unsaved Changes</span>
                             </div>
-                            <button type="button" class="text-4 text-lg my-auto" @click="editOpen = !editOpen">
+                            <button type="button" class="text-4 my-auto text-lg" @click="editOpen = !editOpen">
                                 <template x-if="editOpen">
                                     <i class="fa fa-chevron-up"></i>
                                 </template>
@@ -31,24 +37,30 @@
                         </div>
                     </div>
                     <div x-show="editOpen" class="border-b dark:border-gray-800">
-                        <textarea id="content-{{$i}}"
-                                  x-model="newContent"
-                                  rows="24"
-                                  class="border-0 px-3 py-2 resize-none font-normal">{{$text.RawContent}}</textarea>
+                        <textarea
+                            id="content-{{ $i }}"
+                            x-model="newContent"
+                            rows="24"
+                            class="resize-none border-0 px-3 py-2 font-normal"
+                        >
+{{ $text.RawContent }}</textarea
+                        >
                     </div>
                     <div x-show="editOpen" class="">
-                        <button id="save-{{$i}}"
-                                class="bg-gray-50 dark:bg-gray-600 rounded-b-lg text-center w-full py-2 hover:bg-transparent disabled:bg-transparent"
-                                :disabled="newContent === oldContent && name === oldName"
-                                @click="await admin.updateText({{$text.ID}}, name, newContent).then(() => {
+                        <button
+                            id="save-{{ $i }}"
+                            class="w-full rounded-b-lg bg-gray-50 py-2 text-center hover:bg-transparent disabled:bg-transparent dark:bg-gray-600"
+                            :disabled="newContent === oldContent && name === oldName"
+                            @click="await admin.updateText({{ $text.ID }}, name, newContent).then(() => {
                                     oldContent = newContent;
                                     oldName = name;
-                                })">
-                            <span class="font-semibold text-3 text-xs" x-text="`Save ${name}`"></span>
+                                })"
+                        >
+                            <span class="text-3 text-xs font-semibold" x-text="`Save ${name}`"></span>
                         </button>
                     </div>
                 </div>
-            {{end}}
+            {{ end }}
         </div>
     </div>
-{{end}}
+{{ end }}

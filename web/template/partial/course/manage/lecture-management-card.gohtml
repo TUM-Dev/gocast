@@ -1,114 +1,162 @@
-{{define "lecture-management-card"}}
+{{ define "lecture-management-card" }}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
 
-    {{$course := .IndexData.TUMLiveContext.Course}}
-    {{$user := .IndexData.TUMLiveContext.User}}
-    {{$ingestBase := .IngestBase}}
-    {{$lectureHalls := .LectureHalls}}
+    {{ $course := .IndexData.TUMLiveContext.Course }}
+    {{ $user := .IndexData.TUMLiveContext.User }}
+    {{ $ingestBase := .IngestBase }}
+    {{ $lectureHalls := .LectureHalls }}
 
-    <li :id="$id('lecture-li')"
+
+    <li
+        :id="$id('lecture-li')"
         x-show="!filterPast || !lecture.isPast"
         :key="lecture.lectureId"
-        class="w-full mb-4 pb-4 relative dark:bg-gray-800 bg-gray-50 rounded shadow">
-        <div class="border-t-2 flex justify-between mb-2" :class="'border-' + lecture.color">
-            <div class="pt-2 px-2 w-full">
+        class="relative mb-4 w-full rounded bg-gray-50 pb-4 shadow dark:bg-gray-800"
+    >
+        <div class="mb-2 flex justify-between border-t-2" :class="'border-' + lecture.color">
+            <div class="w-full px-2 pt-2">
                 <div class="text-3 font-semibold">
-                    <input @change="$event.target.checked ? selectedLectures.push({ id: lecture.lectureId, isPast: lecture.isPast }) : (selectedLectures = selectedLectures.filter(({id}) => id != lecture.lectureId))"
-                           class="w-auto mr-2" type="checkbox"/>
-                    <a :href="`/w/${lecture.courseSlug}/${lecture.lectureId}`"><span x-text="lecture.startDateFormatted()"></span> <i class="fas fa-external-link"></i></a>
+                    <input
+                        @change="$event.target.checked ? selectedLectures.push({ id: lecture.lectureId, isPast: lecture.isPast }) : (selectedLectures = selectedLectures.filter(({id}) => id != lecture.lectureId))"
+                        class="mr-2 w-auto"
+                        type="checkbox"
+                    />
+                    <a :href="`/w/${lecture.courseSlug}/${lecture.lectureId}`"
+                        ><span x-text="lecture.startDateFormatted()"></span> <i class="fas fa-external-link"></i
+                    ></a>
                 </div>
-                <div class="text-3 font-sans ml-6" x-data="{ showKeys: false }">
+                <div class="text-3 ml-6 font-sans" x-data="{ showKeys: false }">
                     <span x-text="lecture.startTimeFormatted()"></span>
                     -
                     <span x-text="lecture.endTimeFormatted()"></span>
-                    <i class="ml-2 fas fa-location-pin text-5"></i>
+                    <i class="fas fa-location-pin text-5 ml-2"></i>
                     <span x-text="lecture.lectureHallName" class="text-5"></span>
-                    <button @click="showKeys=!showKeys" x-show="lecture.lectureHallId===0 && !lecture.isPast"
-                            class="bg-indigo-500 rounded px-2 py-0 font-semibold">
-                        <i class="fas fa-key mr-2"></i><span x-text="showKeys?'Hide Keys':'Show Keys'"></span></button>
-                    <p x-show="showKeys" class="mt-1 ml-2 p-2 border dark:border-gray-600 rounded w-full">
+                    <button
+                        @click="showKeys=!showKeys"
+                        x-show="lecture.lectureHallId===0 && !lecture.isPast"
+                        class="rounded bg-indigo-500 px-2 py-0 font-semibold"
+                    >
+                        <i class="fas fa-key mr-2"></i><span x-text="showKeys?'Hide Keys':'Show Keys'"></span>
+                    </button>
+                    <p x-show="showKeys" class="mt-1 ml-2 w-full rounded border p-2 dark:border-gray-600">
                         <span class="font-semibold">Stream Server:</span>
-                        <span x-text="'{{$ingestBase}}stream?secret=' + lecture.streamKey"></span>
-                        <i class="fas fa-clipboard hover:text-purple-500"
-                           @click="() => global.copyToClipboard('{{$ingestBase}}stream?secret=' + lecture.streamKey)"></i>
-                        <br>
+                        <span x-text="'{{ $ingestBase }}stream?secret=' + lecture.streamKey"></span>
+                        <i
+                            class="fas fa-clipboard hover:text-purple-500"
+                            @click="() => global.copyToClipboard('{{ $ingestBase }}stream?secret=' + lecture.streamKey)"
+                        ></i>
+                        <br />
                         <span class="font-semibold">Stream Key:</span>
                         <span x-text="lecture.courseSlug + '-' + lecture.lectureId"></span>
-                        <i class="fas fa-clipboard hover:text-purple-500"
-                           @click="() => global.copyToClipboard(lecture.courseSlug + '-' + lecture.lectureId)"></i>
-                        <br>
-                        {{if ne $user.Role 1}}
+                        <i
+                            class="fas fa-clipboard hover:text-purple-500"
+                            @click="() => global.copyToClipboard(lecture.courseSlug + '-' + lecture.lectureId)"
+                        ></i>
+                        <br />
+                        {{ if ne $user.Role 1 }}
                             <span>Want to stream from a lecture hall instead? Please reach out to the RBG.</span>
-                        {{end}}
+                        {{ end }}
                     </p>
                 </div>
                 <div x-show="lecture.isConverting" class="p-4" x-init="lecture.keepProgressesUpdated()">
-                    <span class="text-1 font-semibold text-sm">Converting:</span>
+                    <span class="text-1 text-sm font-semibold">Converting:</span>
                     <template x-for="p in lecture.transcodingProgresses">
-                        <div class="w-full ml-2">
-                            <div class="font-semibold text-sm text-4" x-text="`${p.version} (${p.progress}%)`"></div>
-                            <div class="w-full bg-gray-200 rounded-full h-1.5 mb-1 dark:bg-gray-700">
-                                <div class="bg-blue-600 h-1.5 rounded-full dark:bg-blue-500" :style="`width: ${p.progress}%`"></div>
+                        <div class="ml-2 w-full">
+                            <div class="text-4 text-sm font-semibold" x-text="`${p.version} (${p.progress}%)`"></div>
+                            <div class="mb-1 h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+                                <div
+                                    class="h-1.5 rounded-full bg-blue-600 dark:bg-blue-500"
+                                    :style="`width: ${p.progress}%`"
+                                ></div>
                             </div>
                         </div>
                     </template>
                 </div>
-                <div x-show="lecture.uiEditMode == 0"
-                     class="text-2 font-sans ml-6 mt-2 pl-3 border-l-4 border-gray-500 dark:border-white">
-                    <span class="italic text-gray-400 dark:text-gray-600" x-show="lecture.name.length === 0">Unknown Name</span>
-                    <span class="text-gray-700 dark:text-white" x-show="lecture.name.length > 0"
-                          x-text="lecture.name"></span>
+                <div
+                    x-show="lecture.uiEditMode == 0"
+                    class="text-2 ml-6 mt-2 border-l-4 border-gray-500 pl-3 font-sans dark:border-white"
+                >
+                    <span class="italic text-gray-400 dark:text-gray-600" x-show="lecture.name.length === 0"
+                        >Unknown Name</span
+                    >
+                    <span
+                        class="text-gray-700 dark:text-white"
+                        x-show="lecture.name.length > 0"
+                        x-text="lecture.name"
+                    ></span>
                 </div>
             </div>
 
-            <div class="flex items-center justify-end h-8">
+            <div class="flex h-8 items-center justify-end">
                 <template x-if="lecture.files && lecture.files.length > 0">
                     <span class="relative mr-2" x-data="{expand:false}">
-                        <button @click="expand=!expand" type="button"
-                                id="menu-button" aria-expanded="true"
-                                aria-haspopup="true">
-                            <i class="fas fa-cloud-download-alt text-4 text-lg hover:text-1"></i>
+                        <button
+                            @click="expand=!expand"
+                            type="button"
+                            id="menu-button"
+                            aria-expanded="true"
+                            aria-haspopup="true"
+                        >
+                            <i class="fas fa-cloud-download-alt text-4 hover:text-1 text-lg"></i>
                         </button>
-                        <span x-cloak x-show="expand"
-                              @click.outside="expand = false"
-                              class="origin-top-left absolute top-full left-0 m-auto w-32
-                        dark:bg-secondary ring-1 ring-black ring-opacity-5 focus:outline-none"
-                              role="menu" aria-orientation="vertical"
-                              aria-labelledby="menu-button" tabindex="-1">
+                        <span
+                            x-cloak
+                            x-show="expand"
+                            @click.outside="expand = false"
+                            class="absolute top-full left-0 m-auto w-32 origin-top-left
+                        ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-secondary"
+                            role="menu"
+                            aria-orientation="vertical"
+                            aria-labelledby="menu-button"
+                            tabindex="-1"
+                        >
                             <span class="py-1" role="none">
-                            <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
-                                <template x-for="file in lecture.getDownloads()"
-                                          :key="file.id">
-                                    <a :href="'/api/download/' + file.id" download
-                                       class="hover:bg-gray-100 text-3 dark:hover:bg-gray-600
-                                    block px-4 py-2 text-sm first:rounded-t-md last:rounded-b-md"
-                                       x-text="file.friendlyName" role="menuitem"
-                                       tabindex="-1" id="menu-item-0"></a>
+                                <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
+                                <template x-for="file in lecture.getDownloads()" :key="file.id">
+                                    <a
+                                        :href="'/api/download/' + file.id"
+                                        download
+                                        class="text-3 block px-4
+                                    py-2 text-sm first:rounded-t-md last:rounded-b-md hover:bg-gray-100 dark:hover:bg-gray-600"
+                                        x-text="file.friendlyName"
+                                        role="menuitem"
+                                        tabindex="-1"
+                                        id="menu-item-0"
+                                    ></a>
                                 </template>
                             </span>
                         </span>
                     </span>
                 </template>
                 <div x-show="lecture.isRecording">
-                    <div class="font-semibold border-success w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black"
-                         :class="lecture.private?'bg-gray-500':'bg-success'">
+                    <div
+                        class="text-1 inline-block flex h-8 w-auto items-center rounded-b-lg border-success px-4 font-semibold text-white dark:text-black"
+                        :class="lecture.private?'bg-gray-500':'bg-success'"
+                    >
                         <i title="This lecture is hidden" x-show="lecture.private" class="fas fa-eye-slash"></i>
                         <span x-show="!lecture.isConverting">VoD</span>
                     </div>
                 </div>
-                <div x-show="lecture.isLiveNow"
-                     class="font-semibold bg-danger border-danger w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
+                <div
+                    x-show="lecture.isLiveNow"
+                    class="text-1 inline-block flex h-8 w-auto items-center rounded-b-lg border-danger bg-danger px-4 font-semibold text-white dark:text-black"
+                >
                     Live
                 </div>
-                <div x-show="!lecture.isRecording && lecture.isPast"
-                     class="font-semibold bg-warn border-warn w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
+                <div
+                    x-show="!lecture.isRecording && lecture.isPast"
+                    class="text-1 inline-block flex h-8 w-auto items-center rounded-b-lg border-warn bg-warn px-4 font-semibold text-white dark:text-black"
+                >
                     Past
                 </div>
-                <div x-show="!lecture.isPast && !lecture.isLiveNow && !lecture.isRecording"
-                     class="font-semibold bg-info border-info w-auto inline-block px-4 text-1 flex items-center rounded-b-lg h-8 text-white dark:text-black">
+                <div
+                    x-show="!lecture.isPast && !lecture.isLiveNow && !lecture.isRecording"
+                    class="text-1 inline-block flex h-8 w-auto items-center rounded-b-lg border-info bg-info px-4 font-semibold text-white dark:text-black"
+                >
                     Scheduled
                 </div>
-                <div x-data="{ moreDropdownOpen: false,
+                <div
+                    x-data="{ moreDropdownOpen: false,
                                toggleMoreDropdown() {
                                  if (this.moreDropdownOpen) {
                                    return this.closeMoreDropdown();
@@ -122,57 +170,67 @@
                                  focusAfter && focusAfter.focus();
                                 }
                               }"
-                     x-on:keydown.escape.prevent.stop="closeMoreDropdown($refs.button)"
-                     x-on:focusin.window="! $refs.panel.contains($event.target) && closeMoreDropdown()"
-                     x-id="['dropdown-button']"
-                     class="relative">
-
+                    x-on:keydown.escape.prevent.stop="closeMoreDropdown($refs.button)"
+                    x-on:focusin.window="! $refs.panel.contains($event.target) && closeMoreDropdown()"
+                    x-id="['dropdown-button']"
+                    class="relative"
+                >
                     <button
-                            x-ref="button"
-                            x-on:click="toggleMoreDropdown()"
-                            :aria-expanded="moreDropdownOpen"
-                            :aria-controls="$id('more-dropdown-button')"
-                            type="button"
-                            class="px-5 py-1 text-sm"
+                        x-ref="button"
+                        x-on:click="toggleMoreDropdown()"
+                        :aria-expanded="moreDropdownOpen"
+                        :aria-controls="$id('more-dropdown-button')"
+                        type="button"
+                        class="px-5 py-1 text-sm"
                     >
                         <i class="fas fa-chevron-down"></i>
                     </button>
 
                     <!-- Series Options -->
                     <div
-                            x-ref="panel"
-                            x-show="moreDropdownOpen"
-                            x-transition.origin.top.right
-                            x-on:click.outside="closeMoreDropdown($refs.button)"
-                            :id="$id('more-dropdown-button')"
-                            style="display: none;"
-                            class="absolute left-0 mt-2 w-36 bg-white dark:bg-gray-800 border border-black rounded shadow-md overflow-hidden"
+                        x-ref="panel"
+                        x-show="moreDropdownOpen"
+                        x-transition.origin.top.right
+                        x-on:click.outside="closeMoreDropdown($refs.button)"
+                        :id="$id('more-dropdown-button')"
+                        style="display: none;"
+                        class="absolute left-0 mt-2 w-36 overflow-hidden rounded border border-black bg-white shadow-md dark:bg-gray-800"
                     >
                         <div>
-                            <button @click="lecture.startSingleEdit(); closeMoreDropdown();"
-                                    class="block w-full px-4 py-2 text-left text-sm text-gray-400 dark:hover:text-gray-500 hover:text-gray-300">
+                            <button
+                                @click="lecture.startSingleEdit(); closeMoreDropdown();"
+                                class="block w-full px-4 py-2 text-left text-sm text-gray-400 hover:text-gray-300 dark:hover:text-gray-500"
+                            >
                                 Edit Lecture
                             </button>
-                            <button @click="lecture.deleteLecture(); closeMoreDropdown();"
-                                    class="block w-full px-4 py-2 text-left text-sm text-red-400 dark:hover:text-red-500 hover:text-red-300">
+                            <button
+                                @click="lecture.deleteLecture(); closeMoreDropdown();"
+                                class="block w-full px-4 py-2 text-left text-sm text-red-400 hover:text-red-300 dark:hover:text-red-500"
+                            >
                                 Delete Lecture
                             </button>
-                            <button x-text="lecture.private?'Make public': 'Make private'"
-                                    class="block w-full px-4 py-2 text-left text-sm"
-                                    @click="lecture.toggleVisibility(); closeMoreDropdown()"
-                                    x-show="lecture.isRecording"
-                                    :class="lecture.private?'text-gray-400 dark:hover:text-gray-500 hover:text-gray-300':'text-red-400 dark:hover:text-red-500 hover:text-red-300'">
+                            <button
+                                x-text="lecture.private?'Make public': 'Make private'"
+                                class="block w-full px-4 py-2 text-left text-sm"
+                                @click="lecture.toggleVisibility(); closeMoreDropdown()"
+                                x-show="lecture.isRecording"
+                                :class="lecture.private?'text-gray-400 dark:hover:text-gray-500 hover:text-gray-300':'text-red-400 dark:hover:text-red-500 hover:text-red-300'"
+                            >
                                 Make private
                             </button>
                         </div>
                         <template x-if="lecture.seriesIdentifier.length > 0">
                             <div class="border-t border-black">
-                                <button @click="lecture.startSeriesEdit(); closeMoreDropdown();"
-                                        class="block w-full px-4 py-2 text-left text-sm text-gray-400 dark:hover:text-gray-500 hover:text-gray-300">
+                                <button
+                                    @click="lecture.startSeriesEdit(); closeMoreDropdown();"
+                                    class="block w-full px-4 py-2 text-left text-sm text-gray-400 hover:text-gray-300 dark:hover:text-gray-500"
+                                >
                                     Edit Series
                                 </button>
-                                <button @click="lecture.deleteLectureSeries(); closeMoreDropdown();"
-                                        class="block w-full px-4 py-2 text-left text-sm text-red-400 dark:hover:text-red-500 hover:text-red-300">
+                                <button
+                                    @click="lecture.deleteLectureSeries(); closeMoreDropdown();"
+                                    class="block w-full px-4 py-2 text-left text-sm text-red-400 hover:text-red-300 dark:hover:text-red-500"
+                                >
                                     Delete Series
                                 </button>
                             </div>
@@ -182,49 +240,65 @@
             </div>
         </div>
 
-        <div x-show="lecture.uiEditMode > 0" class="px-4 pt-4 mt-4 border-t-2 border-gray-100/20">
-            <div x-data="{ id: $id('text-input') }"
-                 class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+        <div x-show="lecture.uiEditMode > 0" class="mt-4 border-t-2 border-gray-100/20 px-4 pt-4">
+            <div
+                x-data="{ id: $id('text-input') }"
+                class="flex w-full flex-row border-b-2 border-gray-500 focus-within:border-gray-300"
+            >
                 <label :for="id" class="hidden">Lecture title</label>
-                <input :id="id"
-                       class="grow border-none" type="text"
-                       x-model="lecture.newName"
-                       x-on:keyup="lecture.updateIsDirty()"
-                       placeholder="Lecture 2: Dark-Patterns I"
-                       autocomplete="off">
+                <input
+                    :id="id"
+                    class="grow border-none"
+                    type="text"
+                    x-model="lecture.newName"
+                    x-on:keyup="lecture.updateIsDirty()"
+                    placeholder="Lecture 2: Dark-Patterns I"
+                    autocomplete="off"
+                />
             </div>
-            <div class="w-full mt-3">
-                <div class="w-full ml-5" x-show="{{$course.ChatEnabled}}">
-                    <input @change="lecture.updateIsDirty()" x-model="lecture.newIsChatEnabled"
-                           class="w-auto mr-2" type="checkbox"/>
+            <div class="mt-3 w-full">
+                <div class="ml-5 w-full" x-show="{{ $course.ChatEnabled }}">
+                    <input
+                        @change="lecture.updateIsDirty()"
+                        x-model="lecture.newIsChatEnabled"
+                        class="mr-2 w-auto"
+                        type="checkbox"
+                    />
                     <span>Enable Live Chat</span>
                 </div>
-                <div x-data="{ id: $id('text-input'), fileDropHover: false }"
-                     class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                <div
+                    x-data="{ id: $id('text-input'), fileDropHover: false }"
+                    class="flex w-full flex-row border-b-2 border-gray-500 focus-within:border-gray-300"
+                >
                     <label :for="id" class="hidden">Lecture description</label>
-                    <textarea :id="id"
-                              @drop="(e) => lecture.onFileDrop(e); fileDropHover = false"
-                              @dragover="fileDropHover = true"
-                              @dragleave="fileDropHover = false"
-                              class="grow border-4 rounded"
-                              :class="fileDropHover ? 'shadow-sm border-blue-500/50' : 'border-transparent'"
-                              placeholder="Add a nice description, links, and more. You can use Markdown. Drop files here."
-                              autocomplete="off"
-                              x-model="lecture.newDescription"
-                              x-on:keyup="lecture.updateIsDirty()"></textarea>
+                    <textarea
+                        :id="id"
+                        @drop="(e) => lecture.onFileDrop(e); fileDropHover = false"
+                        @dragover="fileDropHover = true"
+                        @dragleave="fileDropHover = false"
+                        class="grow rounded border-4"
+                        :class="fileDropHover ? 'shadow-sm border-blue-500/50' : 'border-transparent'"
+                        placeholder="Add a nice description, links, and more. You can use Markdown. Drop files here."
+                        autocomplete="off"
+                        x-model="lecture.newDescription"
+                        x-on:keyup="lecture.updateIsDirty()"
+                    ></textarea>
                 </div>
                 <template x-if="lecture.hasAttachments()">
-                    <div class="border dark:border-gray-600 p-3">
-                        <h6 class="font-semibold text-3 mb-3">Attachments</h6>
+                    <div class="border p-3 dark:border-gray-600">
+                        <h6 class="text-3 mb-3 font-semibold">Attachments</h6>
                         <div class="grid gap-1">
                             <template x-for="file in lecture.files">
                                 <template x-if="file.fileType === 2">
-                                    <div class="flex border rounded dark:border-gray-600">
-                                        <span class="text-xs font-semibold text-3 my-auto ml-2"
-                                              x-text="file.friendlyName"></span>
-                                        <div class="my-auto ml-auto border-l dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600">
-                                            <button class="py-1 px-3"
-                                                    @click="lecture.deleteFile(file.id)">
+                                    <div class="flex rounded border dark:border-gray-600">
+                                        <span
+                                            class="text-3 my-auto ml-2 text-xs font-semibold"
+                                            x-text="file.friendlyName"
+                                        ></span>
+                                        <div
+                                            class="my-auto ml-auto border-l hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-600"
+                                        >
+                                            <button class="py-1 px-3" @click="lecture.deleteFile(file.id)">
                                                 <i class="fa fa-xmark"></i>
                                             </button>
                                         </div>
@@ -234,23 +308,25 @@
                         </div>
                     </div>
                 </template>
-                <div class="flex border rounded-b-lg py-1 px-2 bg-gray-100 dark:border-gray-600 dark:bg-gray-700">
-                    <span class="text-xs text-4 font-semibold my-auto">Attach files or URL to files by Drag & Drop in the description field.</span>
-                    <div x-data="{showInfo: false}"
-                         class="relative my-auto">
+                <div class="flex rounded-b-lg border bg-gray-100 py-1 px-2 dark:border-gray-600 dark:bg-gray-700">
+                    <span class="text-4 my-auto text-xs font-semibold"
+                        >Attach files or URL to files by Drag & Drop in the description field.</span
+                    >
+                    <div x-data="{showInfo: false}" class="relative my-auto">
                         <button @click="showInfo = !showInfo;">
                             <i class="fa fa-circle-info text-3 ml-2"></i>
                         </button>
-                        <div x-show="showInfo"
-                             class="absolute top-full z-50"
-                             @mouseleave="showInfo = false">
+                        <div x-show="showInfo" class="absolute top-full z-50" @mouseleave="showInfo = false">
                             <div>
                                 <div class="tooltip relative w-56">
-                                    <div class="w-0 h-0 border-x-8 border-x-transparent border-b-8 border-b-black dark:border-b-white ml-2 mr-auto"></div>
-                                    <div class="bg-black dark:bg-white rounded-md px-2 py-1">
-                                    <span class="text-white dark:text-black text-xs font-bold">
-                                        Attachments allow students to download (additional) material directly from this TUMLive-stream.
-                                    </span>
+                                    <div
+                                        class="ml-2 mr-auto h-0 w-0 border-x-8 border-b-8 border-x-transparent border-b-black dark:border-b-white"
+                                    ></div>
+                                    <div class="rounded-md bg-black px-2 py-1 dark:bg-white">
+                                        <span class="text-xs font-bold text-white dark:text-black">
+                                            Attachments allow students to download (additional) material directly from
+                                            this TUMLive-stream.
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -258,42 +334,51 @@
                     </div>
                 </div>
 
-                <div x-show="!lecture.isPast && !lecture.isRecording"
-                     class="p-3 border dark:border-gray-600 rounded mt-3">
-                    {{if eq $user.Role 1}}
+                <div
+                    x-show="!lecture.isPast && !lecture.isRecording"
+                    class="mt-3 rounded border p-3 dark:border-gray-600"
+                >
+                    {{ if eq $user.Role 1 }}
                         <div x-data="{ id: $id('select') }">
                             <label class="mx-2">
                                 <span>Select Lecture Hall</span>
-                                <select class="text-gray-700 dark:text-gray-300 dark:bg-secondary bg-gray-100 p-2"
-                                        :id="id"
-                                        x-on:change="lecture.updateIsDirty()"
-                                        x-model="lecture.newLectureHallId">
-                                    <option class="text-gray-700 dark:text-gray-300" value="0">
-                                        Self streaming
-                                    </option>
-                                    {{range $lectureHall := $lectureHalls}}
-                                        <option class="text-gray-700 dark:text-gray-300"
-                                                value="{{$lectureHall.Model.ID}}"
-                                                :selected="lecture.lectureHallId === '{{$lectureHall.Model.ID}}'">
-                                            {{$lectureHall.Name}}
+                                <select
+                                    class="bg-gray-100 p-2 text-gray-700 dark:bg-secondary dark:text-gray-300"
+                                    :id="id"
+                                    x-on:change="lecture.updateIsDirty()"
+                                    x-model="lecture.newLectureHallId"
+                                >
+                                    <option class="text-gray-700 dark:text-gray-300" value="0">Self streaming</option>
+                                    {{ range $lectureHall := $lectureHalls }}
+                                        <option
+                                            class="text-gray-700 dark:text-gray-300"
+                                            value="{{ $lectureHall.Model.ID }}"
+                                            :selected="lecture.lectureHallId === '{{ $lectureHall.Model.ID }}'"
+                                        >
+                                            {{ $lectureHall.Name }}
                                         </option>
-                                    {{end}}
+                                    {{ end }}
                                 </select>
                             </label>
                         </div>
-                    {{end}}
-                    {{if eq $user.Role 2}}
+                    {{ end }}
+                    {{ if eq $user.Role 2 }}
                         <div x-show="lecture.newLectureHallId !== '0'">
-                            This lecture will be streamed from <span
-                                    class="font-semibold text-white">{{range $lectureHall := $lectureHalls}}<span
-                                        x-show="lecture.lectureHallId === '{{$lectureHall.Model.ID}}'">{{$lectureHall.Name}}</span>{{end}}</span>.
-                            If you need this changed or want to stream from home (with obs, zoom etc.), please reach
+                            This lecture will be streamed from
+                            <span class="font-semibold text-white"
+                                >{{ range $lectureHall := $lectureHalls }}
+                                    <span x-show="lecture.lectureHallId === '{{ $lectureHall.Model.ID }}'"
+                                        >{{ $lectureHall.Name }}</span
+                                    >
+                                {{ end }}</span
+                            >. If you need this changed or want to stream from home (with obs, zoom etc.), please reach
                             out to the RBG.
                         </div>
-                    {{end}}
+                    {{ end }}
                 </div>
-                <template x-if="lecture.uiEditMode > 0"> <!-- only render if in edit mode to avoid network calls -->
-                    {{template "editvideosections"}}
+                <template x-if="lecture.uiEditMode > 0">
+                    <!-- only render if in edit mode to avoid network calls -->
+                    {{ template "editvideosections" }}
                 </template>
             </div>
 
@@ -301,7 +386,7 @@
                 <!-- buttons go here -->
             </span>
 
-            <div x-show="lecture.lastErrors.length > 0" class="px-6 py-3 bg-red-400 my-3 rounded">
+            <div x-show="lecture.lastErrors.length > 0" class="my-3 rounded bg-red-400 px-6 py-3">
                 <ul>
                     <template x-for="error in lecture.lastErrors">
                         <li x-text="error"></li>
@@ -310,17 +395,20 @@
             </div>
 
             <div class="mt-6 flex justify-end">
-                <button :disabled="lecture.isSaving" @click="lecture.discardEdit();"
-                        class="px-8 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4">
+                <button
+                    :disabled="lecture.isSaving"
+                    @click="lecture.discardEdit();"
+                    class="text-2 mr-4 rounded bg-indigo-500/70 px-8 py-3 text-white hover:bg-indigo-500/90 disabled:opacity-20 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20"
+                >
                     Discard Changes
                 </button>
                 <button
-                        @click="lecture.saveEdit();"
-                        :disabled="!lecture.isDirty || lecture.isSaving"
-                        class="px-8 py-3 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500"
-                        x-text="lecture.isSaving ? 'loading ...' : (lecture.uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
+                    @click="lecture.saveEdit();"
+                    :disabled="!lecture.isDirty || lecture.isSaving"
+                    class="text-2 rounded bg-indigo-500 px-8 py-3 text-white hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500"
+                    x-text="lecture.isSaving ? 'loading ...' : (lecture.uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
                 ></button>
             </div>
         </div>
     </li>
-{{end}}
+{{ end }}

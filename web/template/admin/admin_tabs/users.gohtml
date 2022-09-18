@@ -1,158 +1,221 @@
-{{define "users"}}
-    <h2 class="text-2xl text-1 my-auto mt-4 font-medium">User Management</h2>
-    <div class="dark:border-secondary bg-gray-100 rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter">
-        <div class="grid gap-5 w-full p-3" x-data="{userlist: new admin.AdminUserList({{.}})}">
+{{ define "users" }}
+    <h2 class="text-1 my-auto mt-4 text-2xl font-medium">User Management</h2>
+    <div
+        class="my-3 mb-6 overflow-x-auto rounded-md bg-gray-100 shadow-md dark:border-secondary dark:bg-secondary-lighter"
+    >
+        <div class="grid w-full gap-5 p-3" x-data="{userlist: new admin.AdminUserList({{ . }})}">
             <div>
-                <h2 class="font-bold pl-1 mb-2">Search</h2>
-                <div class="bg-white dark:bg-secondary border rounded-lg dark:border-gray-800 shadow px-2 py-1">
+                <h2 class="mb-2 pl-1 font-bold">Search</h2>
+                <div class="rounded-lg border bg-white px-2 py-1 shadow dark:border-gray-800 dark:bg-secondary">
                     <form class="flex flex-row">
                         <label class="w-full">
-                            <input class="border-0 outline-none bg-transparent"
-                                   placeholder="Search for users" type="text"
-                                   x-model="userlist.searchInput"
-                                   @keyup="userlist.search()">
+                            <input
+                                class="border-0 bg-transparent outline-none"
+                                placeholder="Search for users"
+                                type="text"
+                                x-model="userlist.searchInput"
+                                @keyup="userlist.search()"
+                            />
                         </label>
-                        <div class = "ml-auto flex space-x-3">
-                            <div class="w-4 m-auto">
-                                <i class="fas fa-circle-notch text-4 m-auto animate-spin" x-show="userlist.searchLoading"></i>
+                        <div class="ml-auto flex space-x-3">
+                            <div class="m-auto w-4">
+                                <i
+                                    class="fas fa-circle-notch text-4 m-auto animate-spin"
+                                    x-show="userlist.searchLoading"
+                                ></i>
                             </div>
-                            <div class = "flex my-auto">
-                                <button type="button"
-                                        class = "bg-transparent border dark:border-gray-800 shadow-sm rounded px-2 py-1 my-auto"
-                                        @click="userlist.clearSearch();">
-                                    <span class = "text-3 text-xs uppercase">clear</span>
+                            <div class="my-auto flex">
+                                <button
+                                    type="button"
+                                    class="my-auto rounded border bg-transparent px-2 py-1 shadow-sm dark:border-gray-800"
+                                    @click="userlist.clearSearch();"
+                                >
+                                    <span class="text-3 text-xs uppercase">clear</span>
                                 </button>
                             </div>
                         </div>
                     </form>
                 </div>
             </div>
-            <div class="border rounded-lg dark:border-gray-800 shadow">
-                <table class="table-auto w-full">
+            <div class="rounded-lg border shadow dark:border-gray-800">
+                <table class="w-full table-auto">
                     <thead>
-                    <tr class="dark:bg-gray-600 bg-gray-200 text-4 uppercase text-sm leading-normal rounded-t-lg">
-                        <th class="py-3 px-6 text-left">Name</th>
-                        <th class="py-3 px-6 text-left">Email</th>
-                        <th class="py-3 px-6 text-center">Role</th>
-                        <th class="py-3 px-6 text-center">Actions</th>
-                    </tr>
+                        <tr class="text-4 rounded-t-lg bg-gray-200 text-sm uppercase leading-normal dark:bg-gray-600">
+                            <th class="py-3 px-6 text-left">Name</th>
+                            <th class="py-3 px-6 text-left">Email</th>
+                            <th class="py-3 px-6 text-center">Role</th>
+                            <th class="py-3 px-6 text-center">Actions</th>
+                        </tr>
                     </thead>
                     <tbody id="admin-user-list" class="text-4 text-s m rounded-sm font-light">
-                    <template x-for="(user, i) in userlist.currentPage">
-                        <tr :id="`user-${i}`"
-                            class="border-gray-500 bg-white dark:bg-secondary dark:hover:bg-transparent hover:bg-transparent"
-                            :data-userlist-index="i">
-                            <td class="py-3 px-6 text-left whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <span class="font-medium p-3" x-text="user.name"></span>
-                                </div>
-                            </td>
-                            <td class="py-3 px-6 text-left">
-                                <div class="flex items-center">
-                                    <span class="font-medium p-3" x-text="user.email?user.email:user.lrz_id"></span>
-                                </div>
-                            </td>
-                            <template x-if="userlist.showSearchResults">
-                                <td class="py-3 px-6 text-center cursor-pointer" @click="user.changing=true">
-                                <span x-show="user.role===1"
-                                      class="bg-indigo-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Admin</span>
-                                    <span x-show="user.role===2"
-                                          class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Lecturer</span>
-                                    <span x-show="user.role===3"
-                                          class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Invited</span>
-                                    <span x-show="user.role===4"
-                                          class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Student</span>
-                                    <div x-show="user.changing" x-cloak @click.outside="user.changing=false">
-                                        <div x-data="{dropdownMenu: true}" class="relative">
-                                            <div x-show="dropdownMenu"
-                                                 class="absolute left-0 py-2 mt-2 bg-white bg-gray-50 rounded-md shadow w-44">
-                                                <a href="#"
-                                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
-                                                   @click="admin.updateUser(user.id, 1).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
-                                                    Admin
-                                                </a>
-                                                <a href="#"
-                                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
-                                                   @click="admin.updateUser(user.id, 2).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
-                                                    Lecturer
-                                                </a>
-                                                <a href="#"
-                                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
-                                                   @click="admin.updateUser(user.id, 4).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
-                                                    Student
-                                                </a>
-                                            </div>
-                                        </div>
+                        <template x-for="(user, i) in userlist.currentPage">
+                            <tr
+                                :id="`user-${i}`"
+                                class="border-gray-500 bg-white hover:bg-transparent dark:bg-secondary dark:hover:bg-transparent"
+                                :data-userlist-index="i"
+                            >
+                                <td class="whitespace-nowrap py-3 px-6 text-left">
+                                    <div class="flex items-center">
+                                        <span class="p-3 font-medium" x-text="user.name"></span>
                                     </div>
                                 </td>
-                            </template>
-                            <template x-if="!userlist.showSearchResults">
-                                <td class="py-3 px-6 text-center">
-                                <span x-show="user.role === 1"
-                                      class="bg-indigo-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Admin</span>
-                                    <span x-show="user.role === 2"
-                                          class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Lecturer</span>
-                                    <span x-show="user.role !== 1 && user.role !== 2"
-                                          class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Generic</span>
+                                <td class="py-3 px-6 text-left">
+                                    <div class="flex items-center">
+                                        <span class="p-3 font-medium" x-text="user.email?user.email:user.lrz_id"></span>
+                                    </div>
                                 </td>
-                            </template>
-                            <td class="py-3 px-6 text-center">
-                                <div class="flex item-center justify-center">
-                                    <template x-if="user.role !== 1">
-                                        <div class="w-4 mr-2 transform hover:text-purple-500 hover:scale-110">
-                                            <i @click="admin.deleteUser(user.id)" class="fas fa-trash"></i>
+                                <template x-if="userlist.showSearchResults">
+                                    <td class="cursor-pointer py-3 px-6 text-center" @click="user.changing=true">
+                                        <span
+                                            x-show="user.role===1"
+                                            class="inline-block w-20 rounded-full bg-indigo-700 py-1 px-2 text-sm font-bold text-gray-100"
+                                            >Admin</span
+                                        >
+                                        <span
+                                            x-show="user.role===2"
+                                            class="inline-block w-20 rounded-full bg-teal-700 py-1 px-2 text-sm font-bold text-gray-100"
+                                            >Lecturer</span
+                                        >
+                                        <span
+                                            x-show="user.role===3"
+                                            class="inline-block w-20 rounded-full bg-sky-700 py-1 px-2 text-sm font-bold text-gray-100"
+                                            >Invited</span
+                                        >
+                                        <span
+                                            x-show="user.role===4"
+                                            class="inline-block w-20 rounded-full bg-sky-700 py-1 px-2 text-sm font-bold text-gray-100"
+                                            >Student</span
+                                        >
+                                        <div x-show="user.changing" x-cloak @click.outside="user.changing=false">
+                                            <div x-data="{dropdownMenu: true}" class="relative">
+                                                <div
+                                                    x-show="dropdownMenu"
+                                                    class="absolute left-0 mt-2 w-44 rounded-md bg-white bg-gray-50 py-2 shadow"
+                                                >
+                                                    <a
+                                                        href="#"
+                                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
+                                                        @click="admin.updateUser(user.id, 1).then((r)=>{r!==-1?user.role=r:user.role=user.role})"
+                                                    >
+                                                        Admin
+                                                    </a>
+                                                    <a
+                                                        href="#"
+                                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
+                                                        @click="admin.updateUser(user.id, 2).then((r)=>{r!==-1?user.role=r:user.role=user.role})"
+                                                    >
+                                                        Lecturer
+                                                    </a>
+                                                    <a
+                                                        href="#"
+                                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
+                                                        @click="admin.updateUser(user.id, 4).then((r)=>{r!==-1?user.role=r:user.role=user.role})"
+                                                    >
+                                                        Student
+                                                    </a>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </template>
-                                </div>
-                            </td>
-                        </tr>
-                    </template>
+                                    </td>
+                                </template>
+                                <template x-if="!userlist.showSearchResults">
+                                    <td class="py-3 px-6 text-center">
+                                        <span
+                                            x-show="user.role === 1"
+                                            class="inline-block w-20 rounded-full bg-indigo-700 py-1 px-2 text-sm font-bold text-gray-100"
+                                            >Admin</span
+                                        >
+                                        <span
+                                            x-show="user.role === 2"
+                                            class="inline-block w-20 rounded-full bg-teal-700 py-1 px-2 text-sm font-bold text-gray-100"
+                                            >Lecturer</span
+                                        >
+                                        <span
+                                            x-show="user.role !== 1 && user.role !== 2"
+                                            class="inline-block w-20 rounded-full bg-sky-700 py-1 px-2 text-sm font-bold text-gray-100"
+                                            >Generic</span
+                                        >
+                                    </td>
+                                </template>
+                                <td class="py-3 px-6 text-center">
+                                    <div class="item-center flex justify-center">
+                                        <template x-if="user.role !== 1">
+                                            <div class="mr-2 w-4 transform hover:scale-110 hover:text-purple-500">
+                                                <i @click="admin.deleteUser(user.id)" class="fas fa-trash"></i>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
                     </tbody>
                 </table>
                 <template x-if="!userlist.showSearchResults">
-                    <div class="flex justify-center py-2 border-t dark:border-gray-800 bg-white dark:bg-secondary rounded-b-lg">
-                        <div class="flex rounded bg-transparent text-4">
-                            <button class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
-                                    :disabled="userlist.prevDisabled()"
-                                    @click="userlist.prev()">
-                                <i class="text-sm m-auto fa fa-chevron-left"></i>
+                    <div
+                        class="flex justify-center rounded-b-lg border-t bg-white py-2 dark:border-gray-800 dark:bg-secondary"
+                    >
+                        <div class="text-4 flex rounded bg-transparent">
+                            <button
+                                class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
+                                :disabled="userlist.prevDisabled()"
+                                @click="userlist.prev()"
+                            >
+                                <i class="fa fa-chevron-left m-auto text-sm"></i>
                             </button>
                             <div class="flex h-8 w-8 px-2">
-                                <span class="text-sm font-semibold m-auto"
-                                      x-text="userlist.currentIndexString()"></span>
+                                <span
+                                    class="m-auto text-sm font-semibold"
+                                    x-text="userlist.currentIndexString()"
+                                ></span>
                             </div>
-                            <button class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
-                                    :disabled="userlist.nextDisabled()"
-                                    @click="userlist.next()">
-                                <i class="text-sm m-auto fa fa-chevron-right"></i>
+                            <button
+                                class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
+                                :disabled="userlist.nextDisabled()"
+                                @click="userlist.next()"
+                            >
+                                <i class="fa fa-chevron-right m-auto text-sm"></i>
                             </button>
                         </div>
                     </div>
                 </template>
             </div>
             <div class="">
-                <h2 class="font-bold pl-1 mb-2">New User</h2>
-                <div class="w-full bg-white rounded-lg shadow border dark:bg-secondary dark:border-gray-600">
-                    <div class="flex flex-wrap w-full py-3 px-6 ">
-                        <div class="w-full md:w-1/2 p-1 text-left whitespace-nowrap">
+                <h2 class="mb-2 pl-1 font-bold">New User</h2>
+                <div class="w-full rounded-lg border bg-white shadow dark:border-gray-600 dark:bg-secondary">
+                    <div class="flex w-full flex-wrap py-3 px-6 ">
+                        <div class="w-full whitespace-nowrap p-1 text-left md:w-1/2">
                             <div class="flex items-center">
-                                <input id="name" name="name" placeholder="Name" type="text" autocomplete="off"
-                                       class="focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500"/>
+                                <input
+                                    id="name"
+                                    name="name"
+                                    placeholder="Name"
+                                    type="text"
+                                    autocomplete="off"
+                                    class="w-full border-b-2 border-gray-500 bg-transparent p-3 font-medium focus:border-gray-300 focus:outline-none"
+                                />
                             </div>
                         </div>
-                        <div class="w-full md:w-1/2 p-1 text-left">
+                        <div class="w-full p-1 text-left md:w-1/2">
                             <div class="flex items-center">
-                                <input id="email" name="email" type="email" placeholder="Email" autocomplete="off"
-                                       class="focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500"/>
+                                <input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    placeholder="Email"
+                                    autocomplete="off"
+                                    class="w-full border-b-2 border-gray-500 bg-transparent p-3 font-medium focus:border-gray-300 focus:outline-none"
+                                />
                             </div>
                         </div>
                     </div>
-                    <div class="w-full mt-2">
-                        <button id="createUser"
-                                class="w-full py-1 rounded-b-lg bg-gray-100 dark:bg-gray-600 hover:bg-transparent dark:hover:bg-transparent cursor-pointer"
-                                type="button"
-                                @click="admin.createUser()">
-                            <span class="text-sm font-semibold m-auto text-3">
+                    <div class="mt-2 w-full">
+                        <button
+                            id="createUser"
+                            class="w-full cursor-pointer rounded-b-lg bg-gray-100 py-1 hover:bg-transparent dark:bg-gray-600 dark:hover:bg-transparent"
+                            type="button"
+                            @click="admin.createUser()"
+                        >
+                            <span class="text-3 m-auto text-sm font-semibold">
                                 <i class="fas fa-plus"></i>
                             </span>
                         </button>
@@ -161,4 +224,4 @@
             </div>
         </div>
     </div>
-{{end}}
+{{ end }}

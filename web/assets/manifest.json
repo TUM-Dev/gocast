@@ -1,24 +1,24 @@
 {
-  "name": "TUM Live",
-  "short_name": "TUM Live",
-  "icons": [
-    {
-      "src": "/static/assets/img/icons-192.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "/static/assets/img/icons-512.png",
-      "type": "image/png",
-      "sizes": "512x512"
-    }
-  ],
-  "start_url": "/?source=pwa",
-  "background_color": "#161c22",
-  "display_override": ["window-control-overlay", "minimal-ui"],
-  "display": "standalone",
-  "scope": "/",
-  "theme_color": "#161c22",
-  "description": "TUM-Live, the livestreaming and VoD service of the Rechnerbetriebsgruppe at the department of informatics and mathematics at the Technical University of Munich",
-  "screenshots": []
+    "name": "TUM Live",
+    "short_name": "TUM Live",
+    "icons": [
+        {
+            "src": "/static/assets/img/icons-192.png",
+            "type": "image/png",
+            "sizes": "192x192"
+        },
+        {
+            "src": "/static/assets/img/icons-512.png",
+            "type": "image/png",
+            "sizes": "512x512"
+        }
+    ],
+    "start_url": "/?source=pwa",
+    "background_color": "#161c22",
+    "display_override": ["window-control-overlay", "minimal-ui"],
+    "display": "standalone",
+    "scope": "/",
+    "theme_color": "#161c22",
+    "description": "TUM-Live, the livestreaming and VoD service of the Rechnerbetriebsgruppe at the department of informatics and mathematics at the Technical University of Munich",
+    "screenshots": []
 }

@@ -1,77 +1,101 @@
-{{define "header"}} {{- /*gotype: github.com/joschahenningsen/TUM-Live/tools.TUMLiveContext*/ -}}
-<div x-data="{dark: false}" class="inline">
-    <nav class="flex z-40 lg:z-50 sticky top-0 w-full items-center justify-between dark:bg-secondary bg-white
-                    shadow border-b dark:border-0 p-3 h-20 z-40">
-        <a title="Start" href="/" class="flex items-center flex-no-shrink text-white mr-6">
-            <svg class="mr-2" width="100" height="54" viewBox="0 0 100 54" xmlns="http://www.w3.org/2000/svg">
-                <path fill="#3070B3"
-                      d="M49.986,7v31h8V7h37v38h-7V14h-8v31h-7V14h-8v31h-22V14h-7v31h-7V14h-7V7H49.986z"></path>
-            </svg>
-        </a>
-        <div class="md:flex grow items-center w-auto">
-            <div class="hidden md:flex text-sm grow">
-                <a href="/"
-                   class="block inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
-                    Start
-                </a>
-                {{if not .User}}
-                    <a href="/login"
-                       class="block inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
-                        Login
+{{ define "header" }}
+    {{- /*gotype: github.com/joschahenningsen/TUM-Live/tools.TUMLiveContext*/ -}}
+    <div x-data="{dark: false}" class="inline">
+        <nav
+            class="sticky top-0 z-40 z-40 flex h-20 w-full items-center justify-between border-b
+                    bg-white p-3 shadow dark:border-0 dark:bg-secondary lg:z-50"
+        >
+            <a title="Start" href="/" class="flex-no-shrink mr-6 flex items-center text-white">
+                <svg class="mr-2" width="100" height="54" viewBox="0 0 100 54" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        fill="#3070B3"
+                        d="M49.986,7v31h8V7h37v38h-7V14h-8v31h-7V14h-8v31h-22V14h-7v31h-7V14h-7V7H49.986z"
+                    ></path>
+                </svg>
+            </a>
+            <div class="w-auto grow items-center md:flex">
+                <div class="hidden grow text-sm md:flex">
+                    <a href="/" class="text-5 hover:text-1 mt-0 mr-4 block inline-block align-middle font-medium">
+                        Start
                     </a>
-                {{else}}
-                    <div class="inline-block align-middle mt-0 mr-4" x-data="{ show: false }"
-                         @click.outside="show=false">
-                        <a role="button" class="text-5 hover:text-1 font-medium" @click="show=!show">
-                            {{.User.GetPreferredName}}
-                            <i class="ml-1 fa-angle-down fas"></i>
+                    {{ if not .User }}
+                        <a
+                            href="/login"
+                            class="text-5 hover:text-1 mt-0 mr-4 block inline-block align-middle font-medium"
+                        >
+                            Login
                         </a>
-                        <div class="relative">
-                            <div x-cloak x-show="show"
-                                 @click.outside="show=false"
-                                 class="origin-top-right absolute left-0 mt-4 shadow-sm rounded-lg h-fit bg-white border w-36 dark:bg-secondary dark:border-gray-800 overflow-hidden">
-                                <a href="/logout"
-                                   class="w-full border-b dark:border-gray-800 relative transition-colors duration-200 text-5 hover:text-1">
-                                    <div class="flex items-center p-2">
-                                        <i class="fa-solid fa-sign-out mr-2"></i>
-                                        <p>Logout</p>
-                                    </div>
-                                </a>
-                                <a href="/settings"
-                                   class="w-full relative transition-colors duration-200 text-5 hover:text-1">
-                                    <div class="flex items-center p-2">
-                                        <i class="fa-solid fa-gear mr-2"></i>
-                                        <p>Settings</p>
-                                    </div>
-                                </a>
+                    {{ else }}
+                        <div
+                            class="mt-0 mr-4 inline-block align-middle"
+                            x-data="{ show: false }"
+                            @click.outside="show=false"
+                        >
+                            <a role="button" class="text-5 hover:text-1 font-medium" @click="show=!show">
+                                {{ .User.GetPreferredName }}
+                                <i class="fa-angle-down fas ml-1"></i>
+                            </a>
+                            <div class="relative">
+                                <div
+                                    x-cloak
+                                    x-show="show"
+                                    @click.outside="show=false"
+                                    class="absolute left-0 mt-4 h-fit w-36 origin-top-right overflow-hidden rounded-lg border bg-white shadow-sm dark:border-gray-800 dark:bg-secondary"
+                                >
+                                    <a
+                                        href="/logout"
+                                        class="text-5 hover:text-1 relative w-full border-b transition-colors duration-200 dark:border-gray-800"
+                                    >
+                                        <div class="flex items-center p-2">
+                                            <i class="fa-solid fa-sign-out mr-2"></i>
+                                            <p>Logout</p>
+                                        </div>
+                                    </a>
+                                    <a
+                                        href="/settings"
+                                        class="text-5 hover:text-1 relative w-full transition-colors duration-200"
+                                    >
+                                        <div class="flex items-center p-2">
+                                            <i class="fa-solid fa-gear mr-2"></i>
+                                            <p>Settings</p>
+                                        </div>
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {{if or (eq .User.Role 1) (eq .User.Role 2) }}
-                        <a href="/admin"
-                           class="inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
-                            Admin
-                        </a>
-                    {{end}}
-                {{end}}
-            </div>
-            <div class="md:flex">
-                <div class="hidden md:flex">
-                    {{template "theme-selector"}}
-                    {{template "notifications"}}
+                        {{ if or (eq .User.Role 1) (eq .User.Role 2) }}
+                            <a
+                                href="/admin"
+                                class="text-5 hover:text-1 mt-0 mr-4 inline-block align-middle font-medium"
+                            >
+                                Admin
+                            </a>
+                        {{ end }}
+                    {{ end }}
                 </div>
-                {{template "info-dropdown" .}}
+                <div class="md:flex">
+                    <div class="hidden md:flex">
+                        {{ template "theme-selector" }}
+                        {{ template "notifications" }}
+                    </div>
+                    {{ template "info-dropdown" . }}
+                </div>
             </div>
-        </div>
-    </nav>
-    <div id="alertBox" class="fixed top-24 z-50 left-0 right-0 hidden text-center">
-        <div class="p-2 bg-indigo-800 items-center text-indigo-100 leading-none lg:rounded-full flex lg:inline-flex"
-             role="alert">
-            <span id="alertText" class="font-semibold mx-2 text-left flex-auto"></span>
-            <span id="alertOk" onclick="document.getElementById('alertBox').classList.add('hidden')"
-                  class="cursor-pointer flex rounded-full bg-indigo-500 uppercase px-2 py-1 text-xs font-bold mr-3">Dismiss</span>
+        </nav>
+        <div id="alertBox" class="fixed top-24 left-0 right-0 z-50 hidden text-center">
+            <div
+                class="flex items-center bg-indigo-800 p-2 leading-none text-indigo-100 lg:inline-flex lg:rounded-full"
+                role="alert"
+            >
+                <span id="alertText" class="mx-2 flex-auto text-left font-semibold"></span>
+                <span
+                    id="alertOk"
+                    onclick="document.getElementById('alertBox').classList.add('hidden')"
+                    class="mr-3 flex cursor-pointer rounded-full bg-indigo-500 px-2 py-1 text-xs font-bold uppercase"
+                    >Dismiss</span
+                >
+            </div>
         </div>
     </div>
-</div>
-{{end}}
+{{ end }}

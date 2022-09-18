@@ -1,50 +1,63 @@
 <!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/html">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Setup</title>
-    {{template "headImports" .VersionTag}}
-    <script src="/static/assets/ts-dist/admin.bundle.js?v={{.VersionTag}}"></script>
-</head>
-{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
-<body x-init="admin.initElements()">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Setup</title>
+        {{ template "headImports" .VersionTag }}    <script src="/static/assets/ts-dist/admin.bundle.js?v={{.VersionTag}}"></script>
+    </head>
+    {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
+    <body x-init="admin.initElements()">
+        {{ template "header" }}
 
-{{template "header"}}
-
-<div class="bg-white border shadow-md shadow rounded-lg m-auto my-10
-            dark:bg-secondary-light dark:border-gray-800 dark:shadow-0 lg:w-4/12 md:6/12 w-10/12">
-    <div>
-        <div class = "border-b py-2 px-5 dark:border-gray-800">
-            <h6 class="text-3 font-bold">Create initial admin</h6>
+        <div
+            class="dark:shadow-0 md:6/12 m-auto my-10 w-10/12 rounded-lg border
+            bg-white shadow-md shadow dark:border-gray-800 dark:bg-secondary-light lg:w-4/12"
+        >
+            <div>
+                <div class="border-b py-2 px-5 dark:border-gray-800">
+                    <h6 class="text-3 font-bold">Create initial admin</h6>
+                </div>
+                <form id="onboardingForm" action="#" class="grid gap-3 py-4 px-5">
+                    <div class="text-sm">
+                        <label for="name" class="text-5 block">Name</label>
+                        <div id="nameError" class="text-sm text-danger"></div>
+                        <input
+                            type="text"
+                            autofocus
+                            name="name"
+                            id="name"
+                            class="mt-3 w-full rounded border-0 bg-gray-50 px-4 py-3 focus:outline-none dark:bg-gray-600"
+                            placeholder="Erika Mustermann"
+                        />
+                    </div>
+                    <div class="text-sm">
+                        <label for="email" class="text-5 block">Email</label>
+                        <div id="emailError" class="text-5 text-sm text-danger"></div>
+                        <input
+                            type="text"
+                            name="email"
+                            id="email"
+                            class="mt-3 w-full rounded border-0 bg-gray-50 px-4 py-3 focus:outline-none dark:bg-gray-600"
+                            placeholder="erika-muster69@hotmail.com"
+                        />
+                    </div>
+                    <div class="text-sm">
+                        <label for="password" class="text-5 block">Password</label>
+                        <div id="passwordError" class="text-sm text-danger"></div>
+                        <input
+                            type="password"
+                            name="password"
+                            id="password"
+                            class="mt-3 w-full rounded border-0 bg-gray-50 px-4 py-3 focus:outline-none dark:bg-gray-600"
+                            placeholder="Password"
+                        />
+                    </div>
+                    <button class="mt-3 block w-full rounded bg-blue-500 px-3 py-1 text-center dark:bg-indigo-600">
+                        <span class="text-sm font-semibold uppercase text-white">Finish Setup</span>
+                    </button>
+                </form>
+            </div>
         </div>
-        <form id="onboardingForm" action="#" class="grid gap-3 py-4 px-5">
-            <div class="text-sm">
-                <label for="name" class="block text-5">Name</label>
-                <div id="nameError" class="text-sm text-danger"></div>
-                <input type="text" autofocus name="name" id="name"
-                       class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"
-                       placeholder="Erika Mustermann"/>
-            </div>
-            <div class="text-sm">
-                <label for="email" class="block text-5">Email</label>
-                <div id="emailError" class="text-5 text-sm text-danger"></div>
-                <input type="text" name="email" id="email"
-                       class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"
-                       placeholder="erika-muster69@hotmail.com"/>
-            </div>
-            <div class="text-sm">
-                <label for="password" class="block text-5">Password</label>
-                <div id="passwordError" class="text-sm text-danger"></div>
-                <input type="password" name="password" id="password"
-                       class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"
-                       placeholder="Password"/>
-            </div>
-            <button class="block bg-blue-500 text-center px-3 py-1 mt-3 rounded w-full dark:bg-indigo-600">
-                <span class = "text-white uppercase text-sm font-semibold">Finish Setup</span>
-            </button>
-        </form>
-    </div>
-</div>
-</body>
+    </body>
 </html>
