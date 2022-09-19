@@ -3,11 +3,6 @@ FROM node:18 as node
 WORKDIR /app
 COPY web web
 
-# Copy branding (if exists)
-COPY 'brandin[g]/manifest.json' /app/web/assets/
-COPY 'brandin[g]/favicon.ico' /app/web/assets/
-COPY 'brandin[g]/logo.svg' /app/web/assets/img/
-
 ## remove generated files in case the developer build with npm before
 RUN rm -rf web/assets/ts-dist
 RUN rm -rf web/assets/css-dist
