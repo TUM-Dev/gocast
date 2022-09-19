@@ -1,10 +1,6 @@
 @import "tailwindcss/base";
 @import "tailwindcss/custom-forms";
 
-:root {
-    --text-color: white;
-}
-
 @layer base {
     h1 {
         @apply text-2xl;
