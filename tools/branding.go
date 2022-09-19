@@ -13,7 +13,8 @@ type Branding struct {
 	Description string `yaml:"description"`
 }
 
-func getDefault() Branding {
+// getDefaultBranding returns the struct branding with default values
+func getDefaultBranding() Branding {
 	return Branding{
 		Title: "TUM-Live",
 		Description: "TUM-Live, the livestreaming and VoD service of the " +
@@ -22,6 +23,8 @@ func getDefault() Branding {
 	}
 }
 
+// init initializes the global branding configuration variable `BrandingCfg`. If the config file doesn't exist
+// it will be set to the result of `getDefaultBranding()`.
 func init() {
 	v := viper.New()
 	v.SetConfigName("branding")
@@ -30,7 +33,7 @@ func init() {
 	v.AddConfigPath("$HOME/.TUM-Live")
 	v.AddConfigPath(".")
 
-	branding := getDefault()
+	branding := getDefaultBranding()
 
 	err := v.ReadInConfig()
 	if err == nil {
