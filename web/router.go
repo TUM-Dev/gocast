@@ -8,6 +8,8 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"html/template"
 	"net/http"
+	"os"
+	"path"
 )
 
 var templateExecutor tools.TemplateExecutor
@@ -54,29 +56,21 @@ func ConfigGinRouter(router *gin.Engine) {
 
 func configGinStaticRouter(router gin.IRoutes) {
 	router.Static("/public", tools.Cfg.Paths.Static)
+
 	if VersionTag != "development" {
 		router.StaticFS("/static", http.FS(staticFS))
-		router.GET("/logo.svg", func(c *gin.Context) {
-			c.FileFromFS("assets/img/logo.svg", http.FS(staticFS))
-		})
-		router.GET("/favicon.ico", func(c *gin.Context) {
-			c.FileFromFS("assets/favicon.ico", http.FS(staticFS))
-		})
-		router.GET("/service-worker.js", func(c *gin.Context) {
-			c.FileFromFS("assets/service-worker.js", http.FS(staticFS))
-		})
 	} else {
 		router.Static("/static", "web/")
-		router.GET("/logo.svg", func(c *gin.Context) {
-			c.FileFromFS("assets/img/logo.svg", http.FS(staticFS))
-		})
-		router.GET("/favicon.ico", func(c *gin.Context) {
-			c.File("web/assets/favicon.ico")
-		})
-		router.GET("/service-worker.js", func(c *gin.Context) {
-			c.FileFromFS("assets/service-worker.js", http.FS(staticFS))
-		})
 	}
+
+	defaults := getDefaultStaticBrandingFiles()
+	for _, file := range defaults {
+		router.GET("/"+file.Name, getFileHandler(file))
+	}
+
+	router.GET("/service-worker.js", func(c *gin.Context) {
+		c.FileFromFS("assets/service-worker.js", http.FS(staticFS))
+	})
 }
 
 //todo: un-export functions
@@ -183,4 +177,34 @@ type ChatData struct {
 	IsAdminOfCourse bool // is current user admin or lecturer who created the course associated with the chat
 	IndexData       IndexData
 	IsPopUp         bool
+}
+
+type staticFile struct {
+	Name string
+	Path string
+}
+
+func getDefaultStaticBrandingFiles() []staticFile {
+	return []staticFile{
+		{Name: "logo.svg", Path: "assets/img/logo.svg"},
+		{Name: "manifest.json", Path: "assets/manifest.json"},
+		{Name: "favicon.ico", Path: "assets/favicon.ico"},
+	}
+}
+
+func getFileHandler(file staticFile) gin.HandlerFunc {
+	pathToFile := path.Join(tools.Cfg.Paths.Branding, file.Name)
+	_, err := os.Stat(pathToFile)
+	if tools.Cfg.Paths.Branding != "" && err == nil {
+		// Use customized file without embedded FS
+		return func(c *gin.Context) {
+			c.File(pathToFile)
+		}
+	} else {
+		// Use Default with embedded FS
+		// p := file.Path // Copy bc. file is pointer
+		return func(c *gin.Context) {
+			c.FileFromFS(file.Path, http.FS(staticFS))
+		}
+	}
 }
