@@ -1,51 +1,47 @@
 {{define "server-notifications-admin-list"}}
-    <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
-    <script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
-    <script defer async src="/static/assets/ts-dist/server-notifications.js"></script>
-    <h2 class="text-2xl text-1 my-auto mt-4 font-medium">Notifications</h2>
-    {{range $notification := .}}
-        {{template "server-notification-edit" $notification}}
-    {{end}}
-    <h2 class="mt-6 text-3 font-medium">Create a new notification</h2>
-    {{template "server-notification-edit"}}
+<link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
+<script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
+<script defer async src="/static/assets/ts-dist/server-notifications.js"></script>
+<h2 class="text-2xl text-1 my-4">Notifications</h2>
+{{range $notification := .}}
+{{template "server-notification-edit" $notification}}
+{{end}}
+{{template "server-notification-edit"}}
 {{end}}
 
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.ServerNotification*/ -}}
 {{define "server-notification-edit"}}
-    <div class="dark:bg-secondary-lighter mt-4 bg-gray-100 rounded-md shadow-md min-w-min">
-        <form class="grid grid-cols-3 text-3 mb-2 p-5 gap-4"
-              action="/api/serverNotification/{{if .Model.ID}}{{.Model.ID}}{{else}}create{{end}}" method="post">
-            <input type="hidden" name="id" value="{{if .}}{{.Model.ID}}{{end}}">
-            <label class="col-start-1 col-span-3 uppercase">
-                <span class="text-4 uppercase text-sm font-semibold">Message</span>
-                <input type="text" name="text"{{if .}} value="{{.Text}}" {{end}}>
-            </label>
-            <label class="col-start-1 col-span-1 uppercase my-8 ">
-                <span class="text-4 uppercase text-sm font-semibold">From</span>
-                <input class="from" type="text" name="from" id="from{{if .}}{{.Model.ID}}{{end}}" placeholder="2021-07-06 12:00"{{if .}} value="{{.FormatFrom}}" {{end}}>
-            </label>
-            <label class="col-start-2 col-span-1 uppercase my-8">
-                <span class="text-4 uppercase text-sm font-semibold">Expires</span>
-                <input class="expires" type="text" name="expires" id="expires{{if .}}{{.Model.ID}}{{end}}" placeholder="2021-07-06 14:00"{{if .}} value="{{.FormatExpires}}" {{end}}>
-            </label>
-            <div class="col-start-3 col-span-1 uppercase ml-3 my-8">
-                <span class="text-4 text-sm font-semibold">Type</span>
-                <div>
-                    <input {{if .}}{{if not .Warn}}checked{{end}}{{else}}checked{{end}} class="w-auto" type="radio"
-                           id="info" name="type" value="info">
-                    <label class="capitalize" for="info">Info</label>
-                </div>
-                <div>
-                    <input {{if .}}{{if .Warn}}checked{{end}}{{end}} class="w-auto" type="radio" id="warning"
-                           name="type" value="warning">
-                    <label class="capitalize" for="warning">Warning</label>
-                </div>
-            </div>
-        </form>
-        <div class="flex m-auto justify-center">
-            <button class="bg-gray-500 shadow w-full text-white rounded-sm hover:bg-gray-600 dark:hover:bg-gray-600 rounded-sm dark:bg-gray-900 px-2 py-2 ml-6 mr-6 mb-6 font-semibold" title="Submit notification">
-                Submit notification
-            </button>
+<form class="dark:bg-secondary p-6 bg-gray-100 rounded-lg shadow-md grid grid-cols-3 gap-4"
+    action="/api/serverNotification/{{if .Model.ID}}{{.Model.ID}}{{else}}create{{end}}" method="post">
+    <h2 class="text-1 font-bold col-span-full">Create a new notification</h2>
+    <input type="hidden" name="id" value="{{if .}}{{.Model.ID}}{{end}}">
+    <label>
+        <span class="text-2 font-bold">Message</span>
+        <input type="text" name="text" {{if .}} value="{{.Text}}" {{end}}>
+    </label>
+    <label>
+        <span class="text-2 font-bold">From</span>
+        <input class="from" type="text" name="from" id="from{{if .}}{{.Model.ID}}{{end}}" placeholder="2021-07-06 12:00"
+            {{if .}} value="{{.FormatFrom}}" {{end}}>
+    </label>
+    <label>
+        <span class="text-2 font-bold">Expires</span>
+        <input class="expires" type="text" name="expires" id="expires{{if .}}{{.Model.ID}}{{end}}"
+            placeholder="2021-07-06 14:00" {{if .}} value="{{.FormatExpires}}" {{end}}>
+    </label>
+    <div>
+        <span class="text-2 font-bold">Type</span>
+        <div>
+            <input {{if .}}{{if not .Warn}}checked{{end}}{{else}}checked{{end}} class="w-auto" type="radio" id="info"
+                name="type" value="info">
+            <label class="text-3" for="info">Info</label>
+        </div>
+        <div>
+            <input {{if .}}{{if .Warn}}checked{{end}}{{end}} class="w-auto" type="radio" id="warning" name="type"
+                value="warning">
+            <label class="text-3" for="warning">Warning</label>
         </div>
     </div>
+    <button class="btn col-span-full">Submit notification</button>
+</form>
 {{end}}

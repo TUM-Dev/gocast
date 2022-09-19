@@ -1,6 +1,10 @@
 @import "tailwindcss/base";
 @import "tailwindcss/custom-forms";
 
+:root {
+    --text-color: white;
+}
+
 @layer base {
     h1 {
         @apply text-2xl;
@@ -102,11 +106,15 @@
     }
 
     .btn {
-        @apply flex-1 dark:bg-gray-800 dark:hover:bg-primary dark:text-white w-full p-3 text-center text-sm cursor-pointer shadow bg-white hover:bg-gray-100;
+        @apply text-center transition-colors bg-gray-500 text-white hover:text-white hover:bg-gray-600 dark:bg-gray-800 dark:hover:bg-primary dark:text-white w-full p-2 cursor-pointer rounded-sm shadow-sm font-bold;
     }
 
     .btn:disabled {
         @apply dark:text-gray-400 dark:hover:bg-gray-600 dark:bg-gray-600 text-gray-500 hover:bg-gray-200 bg-gray-200;
+    }
+
+    .select {
+        @apply cursor-pointer bg-gray-200 dark:bg-gray-800 w-full p-2 rounded-sm shadow-sm dark:text-white;
     }
 }
 
