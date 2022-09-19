@@ -23,6 +23,8 @@
          x-on:chatnewpoll.window="e => c.onNewPoll(e);"
          x-on:polloptionvotesupdate.window="e => c.onPollOptionVotesUpdate(e);"
          x-on:polloptionresult.window="e => c.onPollOptionResult(e);"
+         x-on:polloptionresult.window="e => c.onPollOptionResult(e);"
+         x-on:wsrealtimeconnectionchange.window="e => c.disconnected = !e.detail.status;"
          @chatpopupmessageupdate.window="e => initPromise.next(() => c.onPopUpMessagesUpdated(e));"
          @chatupdategrayedout.window = "e => c.onGrayedOutUpdated(e);"
          @chatupdatefocus.window = "e => c.onFocusUpdated(e);"

@@ -25,7 +25,15 @@ func (r mainRoutes) MainPage(c *gin.Context) {
 	spanMain := sentry.StartSpan(c.Request.Context(), "MainPageHandler", tName)
 	defer spanMain.Finish()
 
-	IsFreshInstallation(c, r.UsersDao)
+	isFresh, err := IsFreshInstallation(c, r.UsersDao)
+	if err != nil {
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", nil)
+		return
+	}
+	if isFresh {
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData())
+		return
+	}
 
 	indexData := NewIndexDataWithContext(c)
 	indexData.LoadCurrentNotifications(r.ServerNotificationDao)
@@ -109,16 +117,17 @@ func NewIndexDataWithContext(c *gin.Context) IndexData {
 	return indexData
 }
 
-// IsFreshInstallation Checks whether there are users in the database and executes the appropriate template for it
-func IsFreshInstallation(c *gin.Context, usersDao dao.UsersDao) {
+// IsFreshInstallation Checks whether there are users in the database and
+// returns true if so, false if not.
+func IsFreshInstallation(c *gin.Context, usersDao dao.UsersDao) (bool, error) {
 	res, err := usersDao.AreUsersEmpty(context.Background()) // fresh installation?
 	if err != nil {
-		_ = templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", nil)
-		return
+		return false, err
 	} else if res {
-		_ = templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData())
-		return
+		return true, nil
 	}
+
+	return false, nil
 }
 
 // LoadCurrentNotifications Loads notifications from the database into the IndexData object
