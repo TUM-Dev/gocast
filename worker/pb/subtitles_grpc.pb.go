@@ -18,86 +18,172 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// SubtitlesClient is the client API for Subtitles service.
+// SubtitleGeneratorClient is the client API for SubtitleGenerator service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type SubtitlesClient interface {
-	Generate(ctx context.Context, in *GenerateRequest, opts ...grpc.CallOption) (*GenerateResponse, error)
+type SubtitleGeneratorClient interface {
+	Generate(ctx context.Context, in *GenerateRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
-type subtitlesClient struct {
+type subtitleGeneratorClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewSubtitlesClient(cc grpc.ClientConnInterface) SubtitlesClient {
-	return &subtitlesClient{cc}
+func NewSubtitleGeneratorClient(cc grpc.ClientConnInterface) SubtitleGeneratorClient {
+	return &subtitleGeneratorClient{cc}
 }
 
-func (c *subtitlesClient) Generate(ctx context.Context, in *GenerateRequest, opts ...grpc.CallOption) (*GenerateResponse, error) {
-	out := new(GenerateResponse)
-	err := c.cc.Invoke(ctx, "/voice.Subtitles/Generate", in, out, opts...)
+func (c *subtitleGeneratorClient) Generate(ctx context.Context, in *GenerateRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/voice.SubtitleGenerator/Generate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// SubtitlesServer is the server API for Subtitles service.
-// All implementations must embed UnimplementedSubtitlesServer
+// SubtitleGeneratorServer is the server API for SubtitleGenerator service.
+// All implementations must embed UnimplementedSubtitleGeneratorServer
 // for forward compatibility
-type SubtitlesServer interface {
-	Generate(context.Context, *GenerateRequest) (*GenerateResponse, error)
-	mustEmbedUnimplementedSubtitlesServer()
+type SubtitleGeneratorServer interface {
+	Generate(context.Context, *GenerateRequest) (*Empty, error)
+	mustEmbedUnimplementedSubtitleGeneratorServer()
 }
 
-// UnimplementedSubtitlesServer must be embedded to have forward compatible implementations.
-type UnimplementedSubtitlesServer struct {
+// UnimplementedSubtitleGeneratorServer must be embedded to have forward compatible implementations.
+type UnimplementedSubtitleGeneratorServer struct {
 }
 
-func (UnimplementedSubtitlesServer) Generate(context.Context, *GenerateRequest) (*GenerateResponse, error) {
+func (UnimplementedSubtitleGeneratorServer) Generate(context.Context, *GenerateRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Generate not implemented")
 }
-func (UnimplementedSubtitlesServer) mustEmbedUnimplementedSubtitlesServer() {}
+func (UnimplementedSubtitleGeneratorServer) mustEmbedUnimplementedSubtitleGeneratorServer() {}
 
-// UnsafeSubtitlesServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to SubtitlesServer will
+// UnsafeSubtitleGeneratorServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SubtitleGeneratorServer will
 // result in compilation errors.
-type UnsafeSubtitlesServer interface {
-	mustEmbedUnimplementedSubtitlesServer()
+type UnsafeSubtitleGeneratorServer interface {
+	mustEmbedUnimplementedSubtitleGeneratorServer()
 }
 
-func RegisterSubtitlesServer(s grpc.ServiceRegistrar, srv SubtitlesServer) {
-	s.RegisterService(&Subtitles_ServiceDesc, srv)
+func RegisterSubtitleGeneratorServer(s grpc.ServiceRegistrar, srv SubtitleGeneratorServer) {
+	s.RegisterService(&SubtitleGenerator_ServiceDesc, srv)
 }
 
-func _Subtitles_Generate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SubtitleGenerator_Generate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GenerateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SubtitlesServer).Generate(ctx, in)
+		return srv.(SubtitleGeneratorServer).Generate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/voice.Subtitles/Generate",
+		FullMethod: "/voice.SubtitleGenerator/Generate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SubtitlesServer).Generate(ctx, req.(*GenerateRequest))
+		return srv.(SubtitleGeneratorServer).Generate(ctx, req.(*GenerateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// Subtitles_ServiceDesc is the grpc.ServiceDesc for Subtitles service.
+// SubtitleGenerator_ServiceDesc is the grpc.ServiceDesc for SubtitleGenerator service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Subtitles_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "voice.Subtitles",
-	HandlerType: (*SubtitlesServer)(nil),
+var SubtitleGenerator_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "voice.SubtitleGenerator",
+	HandlerType: (*SubtitleGeneratorServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Generate",
-			Handler:    _Subtitles_Generate_Handler,
+			Handler:    _SubtitleGenerator_Generate_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "subtitles.proto",
+}
+
+// SubtitleReceiverClient is the client API for SubtitleReceiver service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type SubtitleReceiverClient interface {
+	Receive(ctx context.Context, in *ReceiveRequest, opts ...grpc.CallOption) (*Empty, error)
+}
+
+type subtitleReceiverClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewSubtitleReceiverClient(cc grpc.ClientConnInterface) SubtitleReceiverClient {
+	return &subtitleReceiverClient{cc}
+}
+
+func (c *subtitleReceiverClient) Receive(ctx context.Context, in *ReceiveRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/voice.SubtitleReceiver/Receive", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// SubtitleReceiverServer is the server API for SubtitleReceiver service.
+// All implementations must embed UnimplementedSubtitleReceiverServer
+// for forward compatibility
+type SubtitleReceiverServer interface {
+	Receive(context.Context, *ReceiveRequest) (*Empty, error)
+	mustEmbedUnimplementedSubtitleReceiverServer()
+}
+
+// UnimplementedSubtitleReceiverServer must be embedded to have forward compatible implementations.
+type UnimplementedSubtitleReceiverServer struct {
+}
+
+func (UnimplementedSubtitleReceiverServer) Receive(context.Context, *ReceiveRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Receive not implemented")
+}
+func (UnimplementedSubtitleReceiverServer) mustEmbedUnimplementedSubtitleReceiverServer() {}
+
+// UnsafeSubtitleReceiverServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SubtitleReceiverServer will
+// result in compilation errors.
+type UnsafeSubtitleReceiverServer interface {
+	mustEmbedUnimplementedSubtitleReceiverServer()
+}
+
+func RegisterSubtitleReceiverServer(s grpc.ServiceRegistrar, srv SubtitleReceiverServer) {
+	s.RegisterService(&SubtitleReceiver_ServiceDesc, srv)
+}
+
+func _SubtitleReceiver_Receive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReceiveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SubtitleReceiverServer).Receive(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/voice.SubtitleReceiver/Receive",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SubtitleReceiverServer).Receive(ctx, req.(*ReceiveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// SubtitleReceiver_ServiceDesc is the grpc.ServiceDesc for SubtitleReceiver service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var SubtitleReceiver_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "voice.SubtitleReceiver",
+	HandlerType: (*SubtitleReceiverServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Receive",
+			Handler:    _SubtitleReceiver_Receive_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

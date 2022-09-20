@@ -609,11 +609,11 @@ func extractKeywords(ctx *StreamContext) error {
 }
 
 func sendSubtitleGenerationRequest(ctx *StreamContext) error {
-	conn, err := grpc.Dial(fmt.Sprintf("%s:50053", cfg.MainBase), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	_, err := grpc.Dial(fmt.Sprintf("%s:50053", cfg.MainBase), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return err
 	}
-	client := pb.NewSubtitlesClient(conn)
+	/*client := pb.NewSubtitlesClient(conn)
 	res, err := client.Generate(context.Background(), &pb.GenerateRequest{
 		SourceFile:        ctx.getTranscodingFileName(),
 		DestinationFolder: ctx.getTranscodingFolder(), // Assumption: Store .srt at the same place as the video.
@@ -621,7 +621,7 @@ func sendSubtitleGenerationRequest(ctx *StreamContext) error {
 	log.WithField("response", res).Info("voice.Subtitles.Generate")
 	if err != nil {
 		return err
-	}
+	}*/
 
 	return nil
 }

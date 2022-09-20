@@ -7,6 +7,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/worker/cfg"
 	"github.com/joschahenningsen/TUM-Live/worker/pb"
 	"github.com/joschahenningsen/TUM-Live/worker/rest"
+	voice_service "github.com/joschahenningsen/TUM-Live/worker/voice-service"
 	"github.com/joschahenningsen/TUM-Live/worker/worker"
 	"github.com/pkg/profile"
 	log "github.com/sirupsen/logrus"
@@ -78,6 +79,7 @@ func main() {
 	// setup apis
 	go api.InitApi(":50051")
 	go rest.InitApi(":8060")
+	go voice_service.InitVoiceService(":50054")
 	worker.Setup()
 	OsSignal = make(chan os.Signal, 1)
 	awaitSignal()

@@ -4,7 +4,10 @@ VERSION := $(shell git rev-parse --short origin/HEAD)
 
 protoGen:
 	cd api; \
-	protoc ./api.proto --go-grpc_out=../.. --go_out=../.. && \
+	protoc ./api.proto --go-grpc_out=../.. --go_out=../..
+
+protoVoice:
+	cd voice-service; \
 	protoc ./subtitles.proto --go-grpc_out=../.. --go_out=../..
 
 build: deps
