@@ -2,18 +2,18 @@
 <h1 class="text-2xl text-1 my-4">Course Import</h1>
 <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
 
-<section class="dark:bg-secondary bg-gray-100 rounded-lg shadow-md p-6" x-data="admin.pageData()"
-    x-on:loading-start.window="loading=true" x-on:loading-end.window="loading=false;courses=$event.detail.courses"
-    x-init="admin.addNotifyEventListeners()">
+<section class="form-container" x-data="admin.pageData()" x-on:loading-start.window="loading=true"
+    x-on:loading-end.window="loading=false;courses=$event.detail.courses" x-init="admin.addNotifyEventListeners()">
 
     <div x-show="loading" class="text-center">
         <i class="fas fa-circle-notch animate-spin animate"></i> Loading...
     </div>
 
-    <form x-show="step===0" class="grid grid-cols-2 gap-4">
-        <h2 class="font-bold col-span-full text-2">Semester</h2>
+    <h2 class="form-container-title">Semester</h2>
+
+    <form x-show="step===0" class="form-container-body grid grid-cols-2 gap-4">
         <label>
-            <span class="font-bold text-3">Year</span>
+            <h2>Year</h2>
             <select x-model="year" class="select">
                 <option>2020</option>
                 <option>2021</option>
@@ -25,14 +25,14 @@
             </select>
         </label>
         <label>
-            <span class="font-bold text-3">Summer / Winter</span>
+            <h2>Summer / Winter</h2>
             <select x-model="semester" class="select">
                 <option>W</option>
                 <option>S</option>
             </select>
         </label>
         <label>
-            <span class="font-bold text-3">Department</span>
+            <h2>Department</h2>
             <select x-model="department" class="select">
                 <option>In</option>
                 <option>Ma</option>
@@ -40,17 +40,17 @@
             </select>
         </label>
         <label>
-            <span class="font-bold text-3">Opt In / Opt Out</span>
+            <h2>Opt In / Opt Out</h2>
             <select x-model="optInOut" class="select">
                 <option>Opt In</option>
                 <option>Opt Out</option>
             </select>
         </label>
         <label class="col-span-full" x-init="flatpickr($refs.range, {'mode': 'range'})">
-            <span class="font-bold text-4">Import events in this range</span>
+            <h2>Import events in this range</h2>
             <input class="text-1" type="text" x-ref="range" x-model="range" placeholder="click me!">
         </label>
-        <button class="btn col-span-full" @click="step++; $dispatch(`notify${step}`)" :disabled="loading"
+        <button class="btn primary col-span-full" @click="step++; $dispatch(`notify${step}`)" :disabled="loading"
             x-text="step==0?'Start Import':(step==1?'Import':'Return to homepage')">
         </button>
     </form>

@@ -1,31 +1,16 @@
 {{define "users"}}
-<h1 class="text-2xl text-1 mt-4 font-medium">User Management</h1>
-<!-- <div class="dark:border-secondary bg-gray-100 rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter"> -->
-<div class="grid gap-4 p-6 bg-gray-100 dark:bg-secondary rounded-md shadow-md my-4"
-    x-data="{userlist: new admin.AdminUserList({{.}})}">
-    <h2 class="font-bold text-2">Search</h2>
-    <div class="bg-white dark:bg-secondary border rounded-lg dark:border-gray-800 shadow px-2 py-1">
-        <form class="flex flex-row">
-            <label class="w-full">
-                <input class="border-0 outline-none bg-transparent" placeholder="Search for users" type="text"
-                    x-model="userlist.searchInput" @keyup="userlist.search()">
-            </label>
-            <div class="ml-auto flex space-x-3">
-                <div class="w-4 m-auto">
-                    <i class="fas fa-circle-notch text-4 m-auto animate-spin" x-show="userlist.searchLoading"></i>
-                </div>
-                <div class="flex my-auto">
-                    <button type="button"
-                        class="bg-transparent border dark:border-gray-800 shadow-sm rounded px-2 py-1 my-auto"
-                        @click="userlist.clearSearch();">
-                        <span class="text-3 text-xs uppercase">clear</span>
-                    </button>
-                </div>
+<section class="form-container" x-data="{userlist: new admin.AdminUserList({{.}})}">
+    <h1 class="form-container-title">User Management</h1>
+
+    <div class="form-container-body">
+        <div>
+            <h2>Search</h2>
+            <input placeholder="Search for users" type="text" x-model="userlist.searchInput" @keyup="userlist.search()">
+            <div class="w-4 m-auto">
+                <i class="fas fa-circle-notch text-4 m-auto animate-spin" x-show="userlist.searchLoading"></i>
             </div>
-        </form>
-    </div>
-    <div class="rounded-lg border border-gray-200 dark:border-secondary-light shadow dark:text-gray-200">
-        <table class="w-full">
+        </div>
+        <table>
             <thead>
                 <tr class="p-4 bg-gray-200 dark:bg-secondary-light text-3 uppercase text-sm leading-normal">
                     <th class="rounded-tl-lg text-left pl-6 py-3">Name</th>
@@ -100,53 +85,27 @@
             </tbody>
         </table>
         <template x-if="!userlist.showSearchResults">
-            <div
-                class="flex justify-center py-2 border-t border-gray-200 dark:border-secondary-light bg-white dark:bg-secondary rounded-b-lg">
-                <div class="flex rounded bg-transparent text-4">
-                    <button title="Previous Page"
-                        class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
-                        :disabled="userlist.prevDisabled()" @click="userlist.prev()">
-                        <i class="text-sm m-auto fa fa-chevron-left"></i>
-                    </button>
-                    <div class="flex h-8 w-8 px-2">
-                        <span class="text-sm font-semibold m-auto" x-text="userlist.currentIndexString()"></span>
-                    </div>
-                    <button title="Next Page" class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
-                        :disabled="userlist.nextDisabled()" @click="userlist.next()">
-                        <i class="text-sm m-auto fa fa-chevron-right"></i>
-                    </button>
+            <div class="flex justify-center text-3">
+                <button title="Previous Page" class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
+                    :disabled="userlist.prevDisabled()" @click="userlist.prev()">
+                    <i class="text-sm m-auto fa fa-chevron-left"></i>
+                </button>
+                <div class="flex h-8 w-8 px-2">
+                    <span class="text-sm font-semibold m-auto" x-text="userlist.currentIndexString()"></span>
                 </div>
-            </div>
-        </template>
-    </div>
-    <div>
-        <h2 class="font-bold pl-1 mb-2 text-2">New User</h2>
-        <div class="w-full bg-white rounded-lg shadow border dark:bg-secondary dark:border-secondary-light">
-            <div class="flex flex-wrap w-full py-3 px-6 ">
-                <div class="w-full md:w-1/2 p-1 text-left whitespace-nowrap">
-                    <div class="flex items-center">
-                        <input id="name" name="name" placeholder="Name" type="text" autocomplete="off"
-                            class="focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500" />
-                    </div>
-                </div>
-                <div class="w-full md:w-1/2 p-1 text-left">
-                    <div class="flex items-center">
-                        <input id="email" name="email" type="email" placeholder="Email" autocomplete="off"
-                            class="focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500" />
-                    </div>
-                </div>
-            </div>
-            <div class="w-full mt-2">
-                <button id="createUser" title="Create User"
-                    class="w-full py-1 rounded-b-lg bg-gray-200 dark:bg-secondary-light hover:bg-transparent dark:hover:bg-transparent cursor-pointer"
-                    @click="admin.createUser()">
-                    <span class="text-sm font-semibold m-auto text-3">
-                        <i class="fas fa-plus"></i>
-                    </span>
+                <button title="Next Page" class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
+                    :disabled="userlist.nextDisabled()" @click="userlist.next()">
+                    <i class="text-sm m-auto fa fa-chevron-right"></i>
                 </button>
             </div>
-        </div>
+        </template>
+        <form>
+            <h2>New User</h2>
+            <input id="name" name="name" placeholder="Name" type="text" autocomplete="off" />
+            <input id="email" name="email" type="email" placeholder="Email" autocomplete="off" />
+            <button id="createUser" title="Create User" @click="admin.createUser()"
+                class="btn primary mt-3">Create</button>
+        </form>
     </div>
-</div>
-<!-- </div> -->
+</section>
 {{end}}
