@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"github.com/joschahenningsen/TUM-Live/worker/ocr"
 	"github.com/u2takey/go-utils/uuid"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"io"
 	"io/ioutil"
 	"os"
@@ -390,14 +388,6 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		log.WithField("File", c.getTranscodingFileName()).WithError(err).Error("Extracting keywords failed.")
 	}
 
-	S.startSubtitleGeneration(&c)
-	err = sendSubtitleGenerationRequest(&c)
-	if err != nil {
-		log.WithField("File", c.getTranscodingFileName()).
-			WithError(err).Error("Sending subtitle generation request failed.")
-	}
-	defer S.endSubtitleGeneration(&c)
-
 	upload(&c)
 	notifyUploadDone(&c)
 	_ = os.Remove(c.getRecordingFileName())
@@ -604,24 +594,6 @@ func extractKeywords(ctx *StreamContext) error {
 	if !status.GetOk() {
 		return errors.New(status.String())
 	}
-
-	return nil
-}
-
-func sendSubtitleGenerationRequest(ctx *StreamContext) error {
-	_, err := grpc.Dial(fmt.Sprintf("%s:50053", cfg.MainBase), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return err
-	}
-	/*client := pb.NewSubtitlesClient(conn)
-	res, err := client.Generate(context.Background(), &pb.GenerateRequest{
-		SourceFile:        ctx.getTranscodingFileName(),
-		DestinationFolder: ctx.getTranscodingFolder(), // Assumption: Store .srt at the same place as the video.
-	})
-	log.WithField("response", res).Info("voice.Subtitles.Generate")
-	if err != nil {
-		return err
-	}*/
 
 	return nil
 }

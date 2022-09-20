@@ -188,6 +188,7 @@ message UploadFinished {
   string HLSUrl = 4;
   string SourceType = 5;
   string ThumbnailUrl = 6;
+  string TranscodingFile = 7;
 }
 
 message StreamStarted {

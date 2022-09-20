@@ -4,9 +4,12 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/worker/pb"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 	"net"
@@ -15,10 +18,19 @@ import (
 
 type subtitleReceiverServer struct {
 	pb.UnimplementedSubtitleReceiverServer
+	dao.DaoWrapper
 }
 
 func (s subtitleReceiverServer) Receive(ctx context.Context, request *pb.ReceiveRequest) (*pb.Empty, error) {
-	fmt.Println(request.GetSubtitles())
+	subtitlesEntry := model.Subtitles{
+		StreamID: uint(request.StreamId),
+		Content:  request.Subtitles,
+		Language: request.Language,
+	}
+	err := s.SubtitlesDao.Create(context.Background(), &subtitlesEntry)
+	if err != nil {
+		return nil, err
+	}
 	return &pb.Empty{}, nil
 }
 
@@ -36,13 +48,33 @@ func init() {
 		Time:                  time.Minute * 10,
 		Timeout:               time.Second * 20,
 	}))
-	pb.RegisterSubtitleReceiverServer(grpcServer, &subtitleReceiverServer{})
+	pb.RegisterSubtitleReceiverServer(grpcServer, &subtitleReceiverServer{DaoWrapper: dao.NewDaoWrapper()})
 
 	reflection.Register(grpcServer)
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("failed to serve: %v", err)
 		}
-		log.Info("dead")
 	}()
+}
+
+type SubtitleGeneratorClient struct {
+	pb.SubtitleGeneratorClient
+	*grpc.ClientConn
+}
+
+func GetSubtitleGeneratorClient() (SubtitleGeneratorClient, error) {
+	// TODO: Add host to config
+	conn, err := grpc.Dial(fmt.Sprintf("%s:50055", "localhost"), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return SubtitleGeneratorClient{}, err
+	}
+	return SubtitleGeneratorClient{pb.NewSubtitleGeneratorClient(conn), conn}, nil
+}
+
+func (s SubtitleGeneratorClient) CloseConn() {
+	err := s.ClientConn.Close()
+	if err != nil {
+		log.WithError(err).Error("could not close voice-service connection")
+	}
 }
