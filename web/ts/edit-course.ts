@@ -11,6 +11,9 @@ export class LectureList {
     static lectures: Lecture[] = [];
 
     static init(initialState: Lecture[]) {
+        if (initialState === null) {
+            initialState = [];
+        }
         // load initial state into lecture objects
         initialState.forEach((lecture) => {
             let l = new Lecture();
