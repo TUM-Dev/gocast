@@ -50,7 +50,7 @@ var connHandler = func(context *realtime.Context) {
 	wsMapLock.Unlock()
 
 	msg, _ := json.Marshal(gin.H{"viewers": len(sessionsMap[tumLiveContext.Stream.ID])})
-	err := context.Client.Session.Write(msg)
+	err := context.Send(msg)
 	if err != nil {
 		log.WithError(err).Error("can't write initial stats to session")
 	}
@@ -86,7 +86,7 @@ func sendServerMessageWithBackoff(session *realtime.Context, userId uint, stream
 	tools.SetCacheItem(cacheKey, true, time.Minute*10)
 }
 
-//sendServerMessage sends a server message to the client(s)
+// sendServerMessage sends a server message to the client(s)
 func sendServerMessage(msg string, t string, sessions ...*realtime.Context) {
 	msgBytes, _ := json.Marshal(gin.H{"server": msg, "type": t})
 	for _, session := range sessions {
@@ -161,7 +161,7 @@ func broadcastStreamToAdmins(streamID uint, msg []byte) {
 func removeClosed(sessions []*sessionWrapper) []*sessionWrapper {
 	var newSessions []*sessionWrapper
 	for _, wrapper := range sessions {
-		if !wrapper.session.Client.Session.IsClosed() {
+		if RealtimeInstance.IsConnected(wrapper.session.Client.Id) {
 			newSessions = append(newSessions, wrapper)
 		}
 	}
