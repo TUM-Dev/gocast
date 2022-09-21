@@ -131,7 +131,7 @@
 }
 
 input[type="text"], input[type="email"], textarea {
-    @apply rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600 dark:text-white;
+    @apply box-border rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600 dark:text-white;
 }
 
 .container {
