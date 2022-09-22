@@ -678,19 +678,18 @@ func NotifyWorkers(daoWrapper dao.DaoWrapper) func() {
 				slot.StreamID = streams[i].ID
 				daoWrapper.IngestServerDao.SaveSlot(slot)
 				req := pb.StreamRequest{
-					SourceType:    sourceType,
-					SourceUrl:     source,
-					CourseSlug:    courseForStream.Slug,
-					Start:         timestamppb.New(streams[i].Start),
-					End:           timestamppb.New(streams[i].End),
-					PublishStream: courseForStream.LiveEnabled,
-					PublishVoD:    courseForStream.VODEnabled,
-					StreamID:      uint32(streams[i].ID),
-					CourseTerm:    courseForStream.TeachingTerm,
-					CourseYear:    uint32(courseForStream.Year),
-					StreamName:    slot.StreamName,
-					IngestServer:  server.Url,
-					OutUrl:        server.OutUrl,
+					SourceType:   sourceType,
+					SourceUrl:    source,
+					CourseSlug:   courseForStream.Slug,
+					Start:        timestamppb.New(streams[i].Start),
+					End:          timestamppb.New(streams[i].End),
+					PublishVoD:   courseForStream.VODEnabled,
+					StreamID:     uint32(streams[i].ID),
+					CourseTerm:   courseForStream.TeachingTerm,
+					CourseYear:   uint32(courseForStream.Year),
+					StreamName:   slot.StreamName,
+					IngestServer: server.Url,
+					OutUrl:       server.OutUrl,
 				}
 				workerIndex := getWorkerWithLeastWorkload(workers)
 				workers[workerIndex].Workload += 3

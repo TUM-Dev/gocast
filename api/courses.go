@@ -27,39 +27,58 @@ import (
 
 func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := coursesRoutes{daoWrapper}
+
 	router.POST("/api/course/activate/:token", routes.activateCourseByToken)
 	router.GET("/api/lecture-halls-by-id", routes.lectureHallsByID)
-	atLeastLecturerGroup := router.Group("/")
-	atLeastLecturerGroup.Use(tools.AtLeastLecturer)
-	atLeastLecturerGroup.POST("/api/courseInfo", routes.courseInfo)
-	atLeastLecturerGroup.POST("/api/createCourse", routes.createCourse)
 
-	adminOfCourseGroup := router.Group("/api/course/:courseID")
-	adminOfCourseGroup.Use(tools.InitCourse(daoWrapper))
-	adminOfCourseGroup.Use(tools.AdminOfCourse)
-	adminOfCourseGroup.DELETE("/", routes.deleteCourse)
-	adminOfCourseGroup.POST("/uploadVOD", routes.uploadVOD)
-	adminOfCourseGroup.POST("/copy", routes.copyCourse)
-	adminOfCourseGroup.POST("/createLecture", routes.createLecture)
-	adminOfCourseGroup.POST("/presets", routes.updatePresets)
-	adminOfCourseGroup.POST("/deleteLectures", routes.deleteLectures)
-	adminOfCourseGroup.POST("/renameLecture/:streamID", routes.renameLecture)
-	adminOfCourseGroup.POST("/updateLectureSeries/:streamID", routes.updateLectureSeries)
-	adminOfCourseGroup.PUT("/updateDescription/:streamID", routes.updateDescription)
-	adminOfCourseGroup.DELETE("/deleteLectureSeries/:streamID", routes.deleteLectureSeries)
-	adminOfCourseGroup.POST("/addUnit", routes.addUnit)
-	adminOfCourseGroup.POST("/submitCut", routes.submitCut)
-	adminOfCourseGroup.POST("/deleteUnit/:unitID", routes.deleteUnit)
-	adminOfCourseGroup.GET("/stats", routes.getStats)
-	adminOfCourseGroup.GET("/stats/export", routes.exportStats)
-	adminOfCourseGroup.GET("/admins", routes.getAdmins)
-	adminOfCourseGroup.PUT("/admins/:userID", routes.addAdminToCourse)
-	adminOfCourseGroup.DELETE("/admins/:userID", routes.removeAdminFromCourse)
+	api := router.Group("/api")
+	{
+		lecturers := api.Group("")
+		{
+			lecturers.Use(tools.AtLeastLecturer)
+			lecturers.POST("/courseInfo", routes.courseInfo)
+			lecturers.POST("/createCourse", routes.createCourse)
+		}
 
-	withStream := adminOfCourseGroup.Group("/stream/:streamID")
-	withStream.Use(tools.InitStream(daoWrapper))
-	withStream.GET("/transcodingProgress", routes.getTranscodingProgress)
+		courses := api.Group("/course/:courseID")
+		{
+			courses.Use(tools.InitCourse(daoWrapper))
+			courses.Use(tools.AdminOfCourse)
+			courses.DELETE("/", routes.deleteCourse)
+			courses.POST("/uploadVOD", routes.uploadVOD)
+			courses.POST("/copy", routes.copyCourse)
+			courses.POST("/createLecture", routes.createLecture)
+			courses.POST("/presets", routes.updatePresets)
+			courses.POST("/deleteLectures", routes.deleteLectures)
+			courses.POST("/renameLecture/:streamID", routes.renameLecture)
+			courses.POST("/updateLectureSeries/:streamID", routes.updateLectureSeries)
+			courses.PUT("/updateDescription/:streamID", routes.updateDescription)
+			courses.DELETE("/deleteLectureSeries/:streamID", routes.deleteLectureSeries)
+			courses.POST("/submitCut", routes.submitCut)
 
+			courses.POST("/addUnit", routes.addUnit)
+			courses.POST("/deleteUnit/:unitID", routes.deleteUnit)
+
+			stream := courses.Group("/stream/:streamID")
+			{
+				stream.Use(tools.InitStream(daoWrapper))
+				stream.GET("/transcodingProgress", routes.getTranscodingProgress)
+			}
+
+			stats := courses.Group("/stats")
+			{
+				stats.GET("", routes.getStats)
+				stats.GET("/export", routes.exportStats)
+			}
+
+			admins := courses.Group("admins")
+			{
+				admins.GET("", routes.getAdmins)
+				admins.PUT("/:userID", routes.addAdminToCourse)
+				admins.DELETE("/:userID", routes.removeAdminFromCourse)
+			}
+		}
+	}
 }
 
 type coursesRoutes struct {
