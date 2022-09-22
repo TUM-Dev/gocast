@@ -13,10 +13,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ "ghcr.io/joschahenningsen/tum-live/worker:latest" ]
+        os: [ "ubuntu-latest" ]
         go: [ "1.19.x" ]
         dir: [ ".", "./worker", "./worker/edge" ]
     runs-on: ${{ matrix.os }}
+    container:
+      image: ghcr.io/joschahenningsen/tum-live/worker:latest
     steps:
       - uses: actions/checkout@v3
         with:
