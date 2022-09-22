@@ -3,20 +3,23 @@ package worker
 import (
 	"context"
 	"fmt"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/joschahenningsen/TUM-Live/worker/cfg"
 	"github.com/joschahenningsen/TUM-Live/worker/pb"
 	"github.com/joschahenningsen/TUM-Live/worker/worker/vmstat"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"strings"
-	"sync"
-	"time"
 )
 
-var statusLock = sync.RWMutex{}
-var S *Status
-var VersionTag string
+var (
+	statusLock = sync.RWMutex{}
+	S          *Status
+	VersionTag string
+)
 
 const (
 	costStream              = 3
@@ -52,14 +55,6 @@ func (s *Status) startStream(streamCtx *StreamContext) {
 	s.Jobs = append(s.Jobs, fmt.Sprintf("streaming %s", streamCtx.getStreamName()))
 }
 
-func (s *Status) startRecording(name string) {
-	defer s.SendHeartbeat()
-	statusLock.Lock()
-	defer statusLock.Unlock()
-	s.workload += costStream
-	s.Jobs = append(s.Jobs, fmt.Sprintf("recording %s", name))
-}
-
 func (s *Status) startTranscoding(name string) {
 	defer s.SendHeartbeat()
 	statusLock.Lock()
@@ -82,19 +77,6 @@ func (s *Status) endStream(streamCtx *StreamContext) {
 	s.workload -= costStream
 	for i := range s.Jobs {
 		if s.Jobs[i] == fmt.Sprintf("streaming %s", streamCtx.getStreamName()) {
-			s.Jobs = append(s.Jobs[:i], s.Jobs[i+1:]...)
-			break
-		}
-	}
-	statusLock.Unlock()
-}
-
-func (s *Status) endRecording(name string) {
-	defer s.SendHeartbeat()
-	statusLock.Lock()
-	s.workload -= costStream
-	for i := range s.Jobs {
-		if s.Jobs[i] == fmt.Sprintf("recording %s", name) {
 			s.Jobs = append(s.Jobs[:i], s.Jobs[i+1:]...)
 			break
 		}

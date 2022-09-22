@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/joschahenningsen/TUM-Live/worker/ocr"
-	"github.com/u2takey/go-utils/uuid"
 	"io"
 	"os"
 	"os/exec"
@@ -16,6 +14,9 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/joschahenningsen/TUM-Live/worker/ocr"
+	"github.com/u2takey/go-utils/uuid"
 
 	"github.com/joschahenningsen/TUM-Live/worker/cfg"
 	"github.com/joschahenningsen/TUM-Live/worker/pb"
