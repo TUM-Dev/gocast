@@ -28,6 +28,7 @@ jobs:
       - run: |
              sudo apt-get update
              sudo apt-get install -y tesseract-ocr
+             sudo apt-get install -y tesseract-ocr-dev
       - uses: dominikh/staticcheck-action@v1.2.0
         with:
           version: "2022.1.3"
