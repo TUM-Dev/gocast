@@ -20,13 +20,10 @@ RUN apk add --no-cache \
   tzdata=2022c-r0
 
 # copy shared libraries for tesseract
-COPY --from=builder /usr/lib/liblept*.so.* /usr/lib/
-COPY --from=builder /usr/lib/libtesseract*.so.* /usr/lib/
-COPY --from=builder /usr/lib/libgif*.so.* /usr/lib/
-COPY --from=builder /usr/lib/libtiff*.so.* /usr/lib/
-COPY --from=builder /usr/lib/libzstd*.so.* /usr/lib/
-COPY --from=builder /usr/lib/liblzma*.so.* /usr/lib/
-
+COPY --from=builder \
+    /usr/lib/liblept*.so.* /usr/lib/libtesseract*.so.* \
+    /usr/lib/libgif*.so.*  /usr/lib/libtiff*.so.* \
+    /usr/lib/libzstd*.so.* /usr/lib/liblzma*.so.* /usr/lib/
 COPY --from=builder /worker /worker
 RUN chmod +x /worker
 
