@@ -11,6 +11,7 @@ WORKDIR /app/web
 RUN npm i --no-dev
 
 FROM golang:1.19.1-alpine3.16 as build-env
+
 RUN mkdir /gostuff
 WORKDIR /gostuff
 COPY go.mod go.sum ./

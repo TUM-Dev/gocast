@@ -47,7 +47,7 @@
                 </div>
             {{end}}
             <div x-show="show" class="ml-auto my-auto">
-                <span class="font-semibold text-xs"
+                <span x-show="{{not (or $isComingUp $liveNow)}}" class="font-semibold text-xs"
                       :class="c.chatReplayActive ? 'dark:text-gray-200 text-black' : 'dark:text-gray-500 text-gray-500'">
                       Chat Replay
                 </span>

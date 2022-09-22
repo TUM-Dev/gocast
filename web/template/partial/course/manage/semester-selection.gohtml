@@ -16,6 +16,8 @@
                x-model="year"
                name="year"
                class="w-32"
+               @change="if(year<2000)return; yearW = (year%1000) + 1"
+               @keyup="if(year<2000)return; yearW = (year%1000) + 1"
                :class="year === '' ? 'border-red-500 focus:border-red-500' : ''"
                placeholder="2022"
                type="number">
@@ -28,8 +30,8 @@
                        name="yearW"
                        class="w-16"
                        :class="yearW === '' ? 'border-red-500 focus:border-red-500' : ''"
-                       placeholder="24"
-                       type="number">
+                       type="text"
+                       readonly disabled>
             </div>
         </template>
     </div>

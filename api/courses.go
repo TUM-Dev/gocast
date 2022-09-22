@@ -1023,6 +1023,9 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 	go tum.GetEventsForCourses(courses, r.DaoWrapper)
 	go tum.FindStudentsForCourses(courses, r.DaoWrapper)
 	go tum.FetchCourses(r.DaoWrapper)
+
+	// send id to client for further requests
+	c.JSON(http.StatusCreated, gin.H{"id": courseWithID.ID})
 }
 
 func (r coursesRoutes) deleteCourse(c *gin.Context) {

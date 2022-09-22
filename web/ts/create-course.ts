@@ -1,92 +1,59 @@
 import { StatusCodes } from "http-status-codes";
 import { postData, showMessage } from "./global";
 
-export class CreateCourse {
-    private courseIDInput: HTMLInputElement;
-    private loadFromTUMOnlineBtn: HTMLButtonElement;
-    private courseNameInput: HTMLInputElement;
-    private semesterInput: HTMLInputElement;
-    private yearInput: HTMLInputElement;
-    private yearWInput: HTMLInputElement; // for the '/21' part
-    private slugInput: HTMLInputElement;
-    private tumOnlineInfo: HTMLSpanElement;
-    private enrolledRadio: HTMLInputElement;
-
-    constructor() {
-        this.loadFromTUMOnlineBtn = document.getElementById("loadCourseInfoBtn") as HTMLButtonElement;
-        this.loadFromTUMOnlineBtn.addEventListener("click", () => this.loadCourseInfo());
-        this.courseIDInput = document.getElementById("courseID") as HTMLInputElement;
-        this.courseNameInput = document.getElementById("name") as HTMLInputElement;
-        this.semesterInput = document.getElementById("semester") as HTMLInputElement;
-        this.yearInput = document.getElementById("year") as HTMLInputElement;
-        this.yearWInput = document.getElementById("yearW") as HTMLInputElement;
-        this.slugInput = document.getElementById("slug") as HTMLInputElement;
-        this.tumOnlineInfo = document.getElementById("TUMOnlineInfo") as HTMLSpanElement;
-        this.enrolledRadio = document.getElementById("enrolled") as HTMLInputElement;
-        document.getElementById("createCourseBtn")?.addEventListener("click", (e: Event) => {
-            e.preventDefault();
-            this.createCourse();
-            return false;
-        });
-    }
-
-    private loadCourseInfo(): void {
-        if (this.loadFromTUMOnlineBtn.disabled) {
-            return;
-        }
-        postData("/api/courseInfo", { courseID: this.courseIDInput.value }).then((data) => {
-            if (data.status != StatusCodes.OK) {
-                showMessage(
-                    "The course with this ID was not found in TUMOnline. Please verify the ID or reach out to us.",
-                );
-            } else {
-                data.text().then((data) => {
-                    const json = JSON.parse(data);
-                    const teachingTerm = json["teachingTerm"].Split(" ");
-
-                    this.semesterInput.value = teachingTerm[0];
-                    if (teachingTerm[0] === "Wintersemester") {
-                        const yearPair = teachingTerm[1].Split("/"); // Wintersemester year format: 2022/23
-                        this.yearInput.value = yearPair[0];
-                        this.yearWInput.value = yearPair[1];
-                    } else {
-                        this.yearInput.value = teachingTerm[1];
-                    }
-
-                    this.courseNameInput.value = json["courseName"];
-                    this.tumOnlineInfo.innerText =
-                        "Currently there are " +
-                        json["numberAttendees"] +
-                        " students enrolled in this course. Please verify that this looks right.";
-                    this.enrolledRadio.removeAttribute("disabled");
-                });
-            }
-        });
-    }
-
-    private createCourse(): void {
-        const f = new FormData(document.getElementById("createCourseForm") as HTMLFormElement);
-        let teachingTerm;
-        if (f.get("semester") === "Wintersemester") {
-            teachingTerm = `${f.get("semester")} ${f.get("year")}/${f.get("yearW")}`;
+export function loadCourseInfo(
+    id: string,
+): Promise<{ title: string; semester: string; year: number; yearW: number; numberAttendees: number } | any> {
+    return fetch("/api/courseInfo", { method: "POST", body: JSON.stringify({ courseID: id }) }).then((data) => {
+        if (data.status != StatusCodes.OK) {
+            showMessage("The course with this ID was not found in TUMOnline. Please verify the ID or reach out to us.");
+            return null;
         } else {
-            teachingTerm = `${f.get("semester")} ${f.get("year")}`;
+            return data.json().then((data) => {
+                const years = data["teachingTerm"].split(" ")[1].split("/");
+                return {
+                    title: data["courseName"],
+                    semester: data["teachingTerm"].split(" ")[0],
+                    year: parseInt(years[0]),
+                    yearW: parseInt(years[1]),
+                    numberAttendees: data["numberAttendees"],
+                };
+            });
         }
-        postData("/api/createCourse", {
-            courseID: f.get("courseID"),
-            name: f.get("name"),
-            teachingTerm: teachingTerm,
-            slug: f.get("slug"),
-            access: f.get("access"),
-            enVOD: f.get("enVOD") === "on",
-            enDL: f.get("enDL") === "on",
-            enChat: f.get("enChat") === "on",
-        }).then((data) => {
-            if (data.status != StatusCodes.OK) {
-                data.text().then((t) => showMessage(t));
-            } else {
-                window.location.href = "/admin";
-            }
-        });
+    });
+}
+
+export function createCourse(
+    id: string,
+    semester: string,
+    year: number,
+    yearW: number,
+    name: string,
+    slug: string,
+): void {
+    let teachingTerm;
+    if (semester === "Wintersemester") {
+        teachingTerm = `${semester} ${year}/${yearW}`;
+    } else {
+        teachingTerm = `${semester} ${year}`;
     }
+    postData("/api/createCourse", {
+        courseID: id,
+        name: name,
+        teachingTerm: teachingTerm,
+        slug: slug,
+        // defaults:
+        access: "loggedin",
+        enVOD: true,
+        enDL: false,
+        enChat: false,
+    }).then((data) => {
+        if (data.status !== StatusCodes.CREATED) {
+            data.text().then((t) => showMessage(t));
+        } else {
+            data.json().then((resp) => {
+                window.location.href = "/admin/course/" + resp["id"] + "?created";
+            });
+        }
+    });
 }
