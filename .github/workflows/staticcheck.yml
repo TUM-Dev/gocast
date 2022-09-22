@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ "ubuntu-latest" ]
+        os: [ "ghcr.io/joschahenningsen/tum-live/worker:latest" ]
         go: [ "1.19.x" ]
         dir: [ ".", "./worker", "./worker/edge" ]
     runs-on: ${{ matrix.os }}
