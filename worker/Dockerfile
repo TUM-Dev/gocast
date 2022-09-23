@@ -1,4 +1,4 @@
-FROM golang:1.19.1-alpine3.16 as builder
+FROM golang:1.19-alpine3.16 as builder
 
 WORKDIR /go/src/github.com/joschahenningsen/TUM-Live/worker
 COPY . .
@@ -13,7 +13,7 @@ RUN GO111MODULE=on go mod download && go mod verify
 ARG version=dev
 RUN GOOS=linux GOARCH=amd64 go build -a -ldflags "-w -X main.VersionTag=${version}" -o /worker cmd/worker/worker.go
 
-FROM alpine:3.16.2
+FROM alpine:3.16
 
 RUN apk add --no-cache \
   ffmpeg=5.0.1-r1 \

@@ -1,6 +1,6 @@
 module github.com/joschahenningsen/TUM-Live
 
-go 1.19
+go 1.18
 
 require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20220404002235-e6c4212c5f63
