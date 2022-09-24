@@ -46,7 +46,9 @@ func (e ocrExtractor) Extract() ([]string, error) {
 			return nil, err
 		}
 		text, err := e.client.Text()
-
+		if err != nil {
+			return nil, err
+		}
 		// Replace newlines, split text into words
 		words := strings.Split(strings.Replace(text, "\n", "", -1), " ")
 		for _, processor := range e.pipeline {

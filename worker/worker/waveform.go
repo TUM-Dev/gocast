@@ -5,7 +5,7 @@ import (
 	uuid "github.com/iris-contrib/go.uuid"
 	"github.com/joschahenningsen/TUM-Live/worker/pb"
 	log "github.com/sirupsen/logrus"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 )
@@ -39,7 +39,7 @@ func GetWaveform(request *pb.WaveformRequest) ([]byte, error) {
 		return nil, err
 	}
 	defer f.Close()
-	bytes, err := ioutil.ReadAll(f)
+	bytes, err := io.ReadAll(f)
 	if err != nil {
 		return nil, err
 	}
