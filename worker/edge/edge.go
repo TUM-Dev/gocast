@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -242,7 +243,7 @@ func prepare() {
 
 func keepAlive() {
 	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, os.Kill)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	s := <-sig
 	fmt.Println("Got signal:", s)
 	os.Exit(1)
