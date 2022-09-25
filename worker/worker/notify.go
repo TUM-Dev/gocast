@@ -88,6 +88,21 @@ func NotifyStreamDone(streamCtx *StreamContext) {
 	}
 }
 
+func notifyHlsReady(ctx *StreamContext) error {
+	client, conn, err := GetClient()
+	if err != nil {
+		return err
+	}
+	defer closeConnection(conn)
+	_, err = client.HlsReady(context.Background(), &pb.HlsReadyRequest{
+		WorkerID:      cfg.WorkerID,
+		StreamID:      ctx.streamId,
+		StreamVersion: ctx.streamVersion,
+		HlsDir:        ctx.GetHlsVodDir(),
+	})
+	return err
+}
+
 func notifyTranscodingDone(streamCtx *StreamContext) {
 	client, conn, err := GetClient()
 	if err != nil {

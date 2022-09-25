@@ -80,8 +80,12 @@ func HandleSelfStream(request *pb.SelfStreamResponse, slug string) *StreamContex
 }
 
 func HandleSelfStreamRecordEnd(ctx *StreamContext) {
+	err := moveHlsToVoD(ctx)
+	if err != nil {
+		log.WithError(err).Error("Error moving hls files to vod dir.")
+	}
 	S.startTranscoding(ctx.getStreamName())
-	err := transcode(ctx)
+	err = transcode(ctx)
 	if err != nil {
 		ctx.TranscodingSuccessful = false
 		log.Errorf("Error while transcoding: %v", err)
@@ -217,8 +221,17 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 		log.Info("Skipping VoD creation")
 		return
 	}
+	err := moveHlsToVoD(streamCtx)
+	if err != nil {
+		log.WithError(err).Error("Error moving HLS to VoD")
+	} else {
+		err = notifyHlsReady(streamCtx)
+		if err != nil {
+			log.WithError(err).Error("Error notifying HLS ready")
+		}
+	}
 	S.startTranscoding(streamCtx.getStreamName())
-	err := transcode(streamCtx)
+	err = transcode(streamCtx)
 	if err != nil {
 		streamCtx.TranscodingSuccessful = false
 		log.Errorf("Error while transcoding: %v", err)
@@ -266,6 +279,30 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 			log.WithField("stream", streamCtx.streamId).WithError(err).Error("Error marking for deletion")
 		}
 	}
+}
+
+func moveHlsToVoD(ctx *StreamContext) error {
+	log.Info("Moving HLS to VoD")
+	err := os.MkdirAll(ctx.GetHlsVodDir(), 0755)
+	if err != nil {
+		return err
+	}
+	srcDir := ctx.getHlsDir()
+	dir, err := os.ReadDir(srcDir)
+	if err != nil {
+		return err
+	}
+	errs := make([]error, 0)
+	for _, file := range dir {
+		err = moveFile(path.Join(srcDir, file.Name()), path.Join(ctx.GetHlsVodDir(), file.Name()))
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("errors while moving files: %v", errs)
+	}
+	return nil
 }
 
 func HandleUploadRestReq(uploadKey string, localFile string) {
@@ -402,7 +439,7 @@ func moveFile(sourcePath, destPath string) error {
 	if err != nil {
 		return fmt.Errorf("writing to output file: %s", err)
 	}
-	// The copy was successful, so now delete the original file
+	// The copy was successful, delete the original file
 	err = os.Remove(sourcePath)
 	if err != nil {
 		return fmt.Errorf("removing original file: %s", err)
@@ -489,6 +526,17 @@ func (s StreamContext) getTranscodingFileName() string {
 		s.courseSlug,
 		s.startTime.Format("2006-01-02_15-04"),
 		s.getStreamName())
+}
+
+// GetHlsVodDir returns the directory where the hls files are stored. E.g. /mass/2022/S/eidi/1234/CAM/
+func (s StreamContext) GetHlsVodDir() string {
+	return fmt.Sprintf("%s/%d/%s/%s/%d/%s",
+		cfg.StorageDir,
+		s.teachingYear,
+		s.teachingTerm,
+		s.courseSlug,
+		s.streamId,
+		s.streamVersion)
 }
 
 // getThumbnailSpriteFileName returns the path a thumbnail sprite should be saved to after transcoding.

@@ -6,8 +6,8 @@ import "gorm.io/gorm"
 type Hls struct {
 	gorm.Model
 
-	StreamVersion StreamVersion `gorm:"column:stream_version;type:text;not null;default:COMB"`
-	StreamID      uint
+	StreamVersion StreamVersion `gorm:"column:stream_version;type:text;not null;default:COMB;primaryKey"`
+	StreamID      uint          `gorm:"primaryKey;autoIncrement:false"`
 
 	Path string `gorm:"column:path;type:text;not null"` // the path containing playlist.m3u8 and segment0000x.ts
 }
