@@ -113,6 +113,7 @@ service FromWorker {
   rpc SendSelfStreamRequest(SelfStreamRequest) returns (SelfStreamResponse) {}
   rpc GetStreamInfoForUpload(GetStreamInfoForUploadRequest) returns (GetStreamInfoForUploadResponse) {}
   rpc NewKeywords(NewKeywordsRequest) returns (Status) {}
+  rpc HlsReady(HlsReadyRequest) returns (HlsReadyResponse) {}
 }
 
 message NotifyTranscodingProgressRequest {
@@ -221,4 +222,15 @@ message NewKeywordsRequest {
   string WorkerID = 1;
   uint32 StreamID = 2;
   repeated string Keywords = 3;
+}
+
+message HlsReadyRequest {
+  string WorkerID = 1;
+  uint32 StreamID = 2;
+  string StreamVersion = 3;
+  string HlsDir = 4;
+}
+
+message HlsReadyResponse {
+  // empty
 }

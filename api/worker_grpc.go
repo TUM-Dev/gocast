@@ -34,6 +34,8 @@ import (
 
 var mutex = sync.Mutex{}
 
+var _ server = (pb.FromWorkerServer)(nil)
+
 var lightIndices = []int{0, 1, 2} // turn on all 3 outlets. TODO: make configurable
 
 type server struct {
@@ -588,6 +590,11 @@ func (s server) NotifyTranscodingProgress(srv pb.FromWorker_NotifyTranscodingPro
 		}
 
 	}
+}
+
+func (s server) HlsReady(r *pb.HlsReadyRequest) (*pb.HlsReadyResponse, error) {
+
+	return &pb.HlsReadyResponse{}, nil
 }
 
 func isHlsUrlOk(url string) bool {
