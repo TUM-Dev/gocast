@@ -34,8 +34,6 @@ import (
 
 var mutex = sync.Mutex{}
 
-var _ server = (pb.FromWorkerServer)(nil)
-
 var lightIndices = []int{0, 1, 2} // turn on all 3 outlets. TODO: make configurable
 
 type server struct {
@@ -592,9 +590,14 @@ func (s server) NotifyTranscodingProgress(srv pb.FromWorker_NotifyTranscodingPro
 	}
 }
 
-func (s server) HlsReady(r *pb.HlsReadyRequest) (*pb.HlsReadyResponse, error) {
-
-	return &pb.HlsReadyResponse{}, nil
+func (s server) HlsReady(c context.Context, r *pb.HlsReadyRequest) (*pb.HlsReadyResponse, error) {
+	if _, err := s.WorkerDao.GetWorkerByID(c, r.WorkerID); err != nil {
+		return nil, status.Error(codes.Unauthenticated, "Invalid token")
+	}
+	
+	hlsUrl := model.Hls{StreamVersion: model.StreamVersion(r.StreamVersion), StreamID: uint(r.StreamID), Path: r.HlsDir}
+	err := s.HlsDao.Create(c, &hlsUrl)
+	return &pb.HlsReadyResponse{}, err
 }
 
 func isHlsUrlOk(url string) bool {
