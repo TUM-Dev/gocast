@@ -8,10 +8,13 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"os/signal"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -22,7 +25,7 @@ var (
 	inflghtLock = sync.Mutex{}
 	inflight    = make(map[string]*sync.Mutex)
 
-	allowedRe = regexp.MustCompile("^/[a-zA-Z0-9]+/([a-zA-Z0-9_]+/)*[a-zA-Z0-9_]+\\.(ts|m3u8)$") // e.g. /vm123/live/stream/1234.ts
+	allowedRe = regexp.MustCompile(`^/[a-zA-Z0-9]+/([a-zA-Z0-9_]+/)*[a-zA-Z0-9_]+\.(ts|m3u8)$`) // e.g. /vm123/live/stream/1234.ts
 	//allowedRe = regexp.MustCompile("^.*$") // e.g. /vm123/live/strean/1234.ts
 )
 
@@ -30,6 +33,8 @@ var originPort = "8085"
 var originProto = "http://"
 
 var VersionTag = "dev"
+
+const CertDirEnv = "CERT_DIR"
 
 func main() {
 	log.Println("Starting edge tumlive version " + VersionTag)
@@ -62,7 +67,42 @@ func ServeEdge(port string) {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", edgeHandler)
-	log.Fatal(http.ListenAndServe(port, mux))
+
+	go func() {
+		log.Fatal(http.ListenAndServe(port, mux))
+	}()
+	go handleTLS(mux)
+
+	keepAlive()
+}
+
+func handleTLS(mux *http.ServeMux) {
+	if os.Getenv(CertDirEnv) == "" {
+		return
+	}
+
+	dir, err := os.ReadDir(os.Getenv(CertDirEnv))
+	privkeyName := ""
+	fullchainName := ""
+	if err != nil {
+		log.Println("[HTTPS] Skipping, could not read cert directory: ", err)
+	} else {
+		for _, entry := range dir {
+			if strings.HasSuffix(entry.Name(), "privkey.pem") {
+				privkeyName = path.Join(os.Getenv(CertDirEnv), entry.Name())
+			}
+			if strings.HasSuffix(entry.Name(), "fullchain.pem") {
+				fullchainName = path.Join(os.Getenv(CertDirEnv), entry.Name())
+			}
+		}
+	}
+	if privkeyName != "" && fullchainName != "" {
+		go func() {
+			log.Fatal(http.ListenAndServeTLS(":8443", fullchainName, privkeyName, mux))
+		}()
+	} else {
+		log.Println("[HTTPS] Skipping, could not find privkey.pem or fullchain.pem in cert directory")
+	}
 }
 
 // edgeHandler proxies requests to TUM-Live-Worker (nginx) and caches immutable files.
@@ -72,10 +112,10 @@ func edgeHandler(writer http.ResponseWriter, request *http.Request) {
 		_, _ = writer.Write([]byte("404 - Not Found"))
 		return
 	}
-	urlParts := strings.SplitN(request.URL.Path, "/", 3)
+	urlParts := strings.SplitN(request.URL.Path, "/", 3) // -> ["", "vm123", "live/stream/1234.ts"]
 
 	// proxy m3u8 playlist
-	if strings.HasSuffix(request.URL.Path, ".m3u8") { // -> ["", "vm123", "live/stream/1234.ts"]
+	if strings.HasSuffix(request.URL.Path, ".m3u8") {
 		request.Host = urlParts[1]
 		request.URL.Path = "" // override by proxy
 		u, err := url.Parse(fmt.Sprintf("%s%s:%s/%s", originProto, urlParts[1], originPort, urlParts[2]))
@@ -199,4 +239,12 @@ func prepare() {
 	if err != nil {
 		log.Fatal("Could not create cache directory for edge requests: ", err)
 	}
+}
+
+func keepAlive() {
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+	s := <-sig
+	fmt.Println("Got signal:", s)
+	os.Exit(1)
 }

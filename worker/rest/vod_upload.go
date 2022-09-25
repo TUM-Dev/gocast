@@ -4,8 +4,8 @@ import (
 	"github.com/joschahenningsen/TUM-Live/worker/worker"
 	log "github.com/sirupsen/logrus"
 	"io"
-	"io/ioutil"
 	"net/http"
+	"os"
 )
 
 // handleUpload handles VOD upload requests proxied by TUM-Live.
@@ -23,7 +23,7 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
-	out, err := ioutil.TempFile("", "upload*"+f.Filename)
+	out, err := os.CreateTemp("", "upload*"+f.Filename)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(err.Error()))

@@ -91,6 +91,10 @@ func (c *Channel) IsSubscribed(clientId string, path string) bool {
 	return c.subscribers.IsSubscribed(clientId, path)
 }
 
+func (c *Channel) FindContext(clientId string, path string) (*Context, bool) {
+	return c.subscribers.GetContext(clientId, path)
+}
+
 // Unsubscribe removes the client from the channel and executes the OnUnsubscribe handler
 func (c *Channel) Unsubscribe(clientId string, path string) bool {
 	context, isSubscriber := c.subscribers.GetContext(clientId, path)
