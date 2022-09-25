@@ -131,9 +131,6 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 
 	var clientWatchState = make([]watchedStateData, 0)
 	for _, s := range streamsWithWatchState {
-		if !s.Recording {
-			continue
-		}
 		clientWatchState = append(clientWatchState, watchedStateData{
 			ID:      s.Model.ID,
 			Month:   s.Start.Month().String(),
