@@ -26,10 +26,10 @@ func NewHlsDao() HlsDao {
 
 // Create a Hls stream.
 func (d hlsDao) Create(c context.Context, it *model.Hls) error {
-	return d.db.WithContext(c).Create(it).Error
+	return DB.WithContext(c).Create(it).Error
 }
 
 // Delete a Hls stream by id.
 func (d hlsDao) Delete(c context.Context, id uint) error {
-	return d.db.WithContext(c).Delete(&model.Hls{}, id).Error
+	return DB.WithContext(c).Delete(&model.Hls{}, id).Error
 }
