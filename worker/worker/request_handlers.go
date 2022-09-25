@@ -302,7 +302,17 @@ func moveHlsToVoD(ctx *StreamContext) error {
 	if len(errs) > 0 {
 		return fmt.Errorf("errors while moving files: %v", errs)
 	}
-	return nil
+
+	// convert event to vod playlist:
+	f, err := os.ReadFile(path.Join(ctx.GetHlsVodDir(), "playlist.m3u8"))
+	if err != nil {
+		return err
+	}
+	playlistVod := strings.Replace(string(f), "#EXT-X-PLAYLIST-TYPE:EVENT", "#EXT-X-PLAYLIST-TYPE:VOD", 1)
+	if !strings.Contains(playlistVod, "#EXT-X-ENDLIST") {
+		playlistVod += "\n#EXT-X-ENDLIST"
+	}
+	return os.WriteFile(path.Join(ctx.GetHlsVodDir(), "playlist.m3u8"), []byte(playlistVod), 0755)
 }
 
 func HandleUploadRestReq(uploadKey string, localFile string) {
