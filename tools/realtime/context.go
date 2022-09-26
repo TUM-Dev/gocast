@@ -48,7 +48,7 @@ func (context *Context) SendError(error *Error) error {
 	if err != nil {
 		return err
 	}
-	return context.Client.Session.Write(data)
+	return context.Client.Send(data)
 }
 
 func (context *Context) Send(payload []byte) error {
@@ -61,7 +61,7 @@ func (context *Context) Send(payload []byte) error {
 	if err != nil {
 		return err
 	}
-	return context.Client.Session.Write(data)
+	return context.Client.Send(data)
 }
 
 func (context *Context) SetParams(params map[string]string) {

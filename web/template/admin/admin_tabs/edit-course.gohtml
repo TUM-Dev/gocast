@@ -12,6 +12,9 @@
                     <div x-cloak x-show="(new URL(document.location)).searchParams.get('copied')!==null" class="p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800" role="alert">
                         Course was copied successfully.
                     </div>
+                    <div x-cloak x-show="(new URL(document.location)).searchParams.get('created')!==null" class="p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800" role="alert">
+                        Course was created successfully.
+                    </div>
                 </div>
                 <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
                                                                     value="{{$course.Model.ID}}"></label>
