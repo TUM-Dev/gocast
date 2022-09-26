@@ -53,6 +53,7 @@ export const initPlayer = function (
             hotkeys: handleHotkeys(),
         },
         autoplay: autoplay,
+        tracks: [{ src: "/api/stream/17813/subtitles/en", kind: "captions", label: "English" }],
     });
     const isMobile = window.matchMedia && window.matchMedia("only screen and (max-width: 480px)").matches;
     if (spriteID && !isMobile) {

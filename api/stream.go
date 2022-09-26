@@ -140,7 +140,7 @@ func (r streamRoutes) getSubtitles(c *gin.Context) {
 		}
 		return
 	}
-	c.Data(http.StatusOK, "text/plain", []byte(subtitlesObj.Content))
+	c.Data(http.StatusOK, "text/vtt", []byte(subtitlesObj.Content))
 }
 
 // livestreams returns all streams that are live
