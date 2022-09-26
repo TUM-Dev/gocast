@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/worker/pb"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -64,8 +65,8 @@ type SubtitleGeneratorClient struct {
 }
 
 func GetSubtitleGeneratorClient() (SubtitleGeneratorClient, error) {
-	// TODO: Add host to config
-	conn, err := grpc.Dial(fmt.Sprintf("%s:50055", "localhost"), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	voiceAddr := fmt.Sprintf("%s:%s", tools.Cfg.VoiceService.Host, tools.Cfg.VoiceService.Port)
+	conn, err := grpc.Dial(voiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return SubtitleGeneratorClient{}, err
 	}
