@@ -11,6 +11,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
 	"github.com/matthiasreumann/gomino"
+	"gorm.io/gorm"
 	"net/http"
 	"os"
 	"testing"
@@ -952,4 +953,76 @@ func TestAttachments(t *testing.T) {
 			_ = os.Remove(testFile.Path) // Then cleanup
 		}
 	})
+}
+
+func TestSubtitles(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	endpoint := fmt.Sprintf("/api/stream/%d/subtitles/en", testutils.StreamFPVLive.ID)
+	gomino.TestCases{
+		"no context": {
+			ExpectedCode: http.StatusInternalServerError,
+		},
+		"subtitles not found": {
+			Router: func(r *gin.Engine) {
+				wrapper := dao.DaoWrapper{
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					SubtitlesDao: func() dao.SubtitlesDao {
+						subMock := mock_dao.NewMockSubtitlesDao(gomock.NewController(t))
+						subMock.
+							EXPECT().
+							GetByStreamIDandLang(gomock.Any(), testutils.StreamFPVLive.ID, "en").
+							Return(model.Subtitles{}, gorm.ErrRecordNotFound)
+						return subMock
+					}(),
+				}
+				configGinStreamRestRouter(r, wrapper)
+			},
+			Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextEmpty)),
+			ExpectedCode: http.StatusNotFound,
+		},
+		"internal error": {
+			Router: func(r *gin.Engine) {
+				wrapper := dao.DaoWrapper{
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					SubtitlesDao: func() dao.SubtitlesDao {
+						subMock := mock_dao.NewMockSubtitlesDao(gomock.NewController(t))
+						subMock.
+							EXPECT().
+							GetByStreamIDandLang(gomock.Any(), testutils.StreamFPVLive.ID, "en").
+							Return(model.Subtitles{}, errors.New(""))
+						return subMock
+					}(),
+				}
+				configGinStreamRestRouter(r, wrapper)
+			},
+			Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextEmpty)),
+			ExpectedCode: http.StatusInternalServerError,
+		},
+		"success": {
+			Router: func(r *gin.Engine) {
+				wrapper := dao.DaoWrapper{
+					StreamsDao: testutils.GetStreamMock(t),
+					CoursesDao: testutils.GetCoursesMock(t),
+					SubtitlesDao: func() dao.SubtitlesDao {
+						subMock := mock_dao.NewMockSubtitlesDao(gomock.NewController(t))
+						subMock.
+							EXPECT().
+							GetByStreamIDandLang(gomock.Any(), testutils.StreamFPVLive.ID, "en").
+							Return(testutils.SubtitlesFPVLive, nil)
+						return subMock
+					}(),
+				}
+				configGinStreamRestRouter(r, wrapper)
+			},
+			Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextEmpty)),
+			ExpectedCode:     http.StatusOK,
+			ExpectedResponse: testutils.SubtitlesFPVLive.Content,
+		}}.
+		Router(StreamDefaultRouter(t)).
+		Method(http.MethodGet).
+		Url(endpoint).
+		Run(t, testutils.Equal)
 }
