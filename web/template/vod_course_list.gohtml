@@ -106,7 +106,7 @@
     {{end}}
     {{if and $user $course.HasRecordings}}
         </div>
-        <p x-show="watchedAll && filterWatched"
+        <p {{if .IndexData.TUMLiveContext}} x-show="watchedAll && filterWatched" {{end}}
            class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">All VoDs watched</p>
     {{end}}
     {{if eq $lastMonth -1}}

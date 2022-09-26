@@ -14,7 +14,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -1023,6 +1023,9 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 	go tum.GetEventsForCourses(courses, r.DaoWrapper)
 	go tum.FindStudentsForCourses(courses, r.DaoWrapper)
 	go tum.FetchCourses(r.DaoWrapper)
+
+	// send id to client for further requests
+	c.JSON(http.StatusCreated, gin.H{"id": courseWithID.ID})
 }
 
 func (r coursesRoutes) deleteCourse(c *gin.Context) {
@@ -1057,7 +1060,7 @@ type createCourseRequest struct {
 }
 
 func (r coursesRoutes) courseInfo(c *gin.Context) {
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	jsonData, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
