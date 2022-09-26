@@ -29,15 +29,15 @@ func NewSubtitlesDao() SubtitlesDao {
 
 // Get a Subtitles by id.
 func (d subtitlesDao) Get(c context.Context, id uint) (res model.Subtitles, err error) {
-	return res, d.db.WithContext(c).First(&res, id).Error
+	return res, DB.WithContext(c).First(&res, id).Error
 }
 
 // Create a Subtitles.
 func (d subtitlesDao) Create(c context.Context, it *model.Subtitles) error {
-	return d.db.WithContext(c).Create(it).Error
+	return DB.WithContext(c).Create(it).Error
 }
 
 // Delete a Subtitles by id.
 func (d subtitlesDao) Delete(c context.Context, id uint) error {
-	return d.db.WithContext(c).Delete(&model.Subtitles{}, id).Error
+	return DB.WithContext(c).Delete(&model.Subtitles{}, id).Error
 }

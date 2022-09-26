@@ -457,7 +457,7 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 		SourceFile: req.TranscodingFile,
 	})
 	if err != nil {
-		log.WithError(err).Error("could not call generate")
+		log.WithError(err).Error("could not call voice_client.generate")
 		return nil, err
 	}
 
