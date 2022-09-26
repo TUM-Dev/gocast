@@ -3,8 +3,9 @@ package realtime
 import (
 	"encoding/json"
 	"errors"
-	log "github.com/sirupsen/logrus"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -73,7 +74,7 @@ func (r *Realtime) Send(channelPath string, clientId string, payload []byte) err
 	return context.Send(payload)
 }
 
-// connectHandler handles a new melody connection
+// connectHandler handles a new websocket connection
 func (r *Realtime) connectHandler(client *Client) {}
 
 // disconnectHandler handles a client disconnect
