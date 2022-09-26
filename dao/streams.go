@@ -247,7 +247,7 @@ func (d streamsDao) GetStreamsWithWatchState(courseID uint, userID uint) (stream
 		Watched bool
 	}
 	var watchedStates []watchedState
-	queriedStreams := DB.Table("streams").Where("course_id = ? and recording = true and private = false and deleted_at is NULL", courseID)
+	queriedStreams := DB.Table("streams").Where("course_id = ? and private = false and deleted_at is NULL", courseID)
 	result := queriedStreams.
 		Joins("left join (select watched, stream_id from stream_progresses where user_id = ?) as sp on sp.stream_id = streams.id", userID).
 		Order("start desc").     // order by descending start time, this is also the order that is used in the course page.
