@@ -310,7 +310,7 @@
     watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
     watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
     {{else}}
-    watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
+    watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, undefined, undefined, {{$stream.Model.ID}});
     {{end}}
     {{if $stream.Silences}}
     watch.skipSilence({{$stream.GetSilencesJson}});

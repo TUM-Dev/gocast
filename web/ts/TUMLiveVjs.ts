@@ -53,7 +53,10 @@ export const initPlayer = function (
             hotkeys: handleHotkeys(),
         },
         autoplay: autoplay,
-        tracks: [{ src: "/api/stream/17813/subtitles/en", kind: "captions", label: "English" }],
+        tracks: [
+            { src: `/api/stream/${streamID}/subtitles/en`, kind: "captions", label: "English" },
+            { src: `/api/stream/${streamID}/subtitles/de`, kind: "captions", label: "Deutsch" },
+        ],
     });
     const isMobile = window.matchMedia && window.matchMedia("only screen and (max-width: 480px)").matches;
     if (spriteID && !isMobile) {
@@ -79,6 +82,7 @@ export const initPlayer = function (
     player.on("ratechange", function () {
         window.localStorage.setItem("rate", player.playbackRate());
     });
+
     player.ready(function () {
         player.airPlay({
             addButtonToControlBar: true,
@@ -115,6 +119,12 @@ export const initPlayer = function (
                 startIn: streamStartIn,
             });
         }
+
+        const playerVideo = document.querySelector("#my-video video");
+        playerVideo.addEventListener("error", (e) => {
+            console.log(e);
+        });
+
         player.addChild("OverlayIcon", {});
     });
     // handle hotkeys from anywhere on the page
