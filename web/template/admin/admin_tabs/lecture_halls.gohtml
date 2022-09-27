@@ -65,16 +65,16 @@
                 <div class="w-full overflow-x-scroll scrollbarThin">
                     <div class="flex flex-row gap-x-2">
                         {{range $preset := $lectureHall.CameraPresets}}
-                        <div x-data="{defaultPreset: {{$preset.IsDefault}}, lectureHallID: {{$preset.LectureHallId}}}"
+                        <div x-data="{defaultPreset: {{$preset.IsDefault}}, lectureHallID: {{$preset.LectureHallID}}}"
                             @resetdefaults.window="e => {if(e.detail === lectureHallID){defaultPreset = false}}"
                             style="min-width: 150px" class="text-center relative group">
-                            <img id="presetImage{{$preset.LectureHallId}}-{{$preset.PresetID}}"
+                            <img id="presetImage{{$preset.LectureHallID}}-{{$preset.PresetID}}"
                                 src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
                                 alt="prev" width="150px">
-                            <i @click="admin.setDefaultPreset({{$preset.LectureHallId}}, {{$preset.PresetID}}).then((r) => {if(r){$dispatch('resetdefaults', lectureHallID);defaultPreset=true}})"
+                            <i @click="admin.setDefaultPreset({{$preset.LectureHallID}}, {{$preset.PresetID}}).then((r) => {if(r){$dispatch('resetdefaults', lectureHallID);defaultPreset=true}})"
                                 title="Set default" :class="!defaultPreset && 'opacity-0'"
                                 class="group-hover:opacity-100 absolute top-1 left-1 p-1 rounded text-white bg-amber-800 fas fa-check"></i>
-                            <i onclick="admin.takeSnapshot({{$preset.LectureHallId}}, {{$preset.PresetID}})"
+                            <i onclick="admin.takeSnapshot({{$preset.LectureHallID}}, {{$preset.PresetID}})"
                                 title="Take new snapshot"
                                 class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-sky-800 fas fa-sync"></i>
                             <span title="{{$preset.Name}}" class="truncate block my-2">{{$preset.Name}}</span>
