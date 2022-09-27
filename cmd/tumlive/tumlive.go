@@ -40,6 +40,9 @@ func GinServer() (err error) {
 
 	router.Use(tools.InitContext(dao.NewDaoWrapper()))
 
+	liveUpdates := router.Group("/api/pub-sub")
+	api.ConfigRealtimeRouter(liveUpdates)
+
 	// event streams don't work with gzip, configure group without
 	chat := router.Group("/api/chat")
 	api.ConfigChatRouter(chat)
@@ -93,10 +96,11 @@ func main() {
 		defer sentry.Recover()
 	}
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
-		"%s:%s@tcp(%s:3306)/%s?parseTime=true&loc=Local",
+		"%s:%s@tcp(%s:%d)/%s?parseTime=true&loc=Local",
 		tools.Cfg.Db.User,
 		tools.Cfg.Db.Password,
 		tools.Cfg.Db.Host,
+		tools.Cfg.Db.Port,
 		tools.Cfg.Db.Database),
 	), &gorm.Config{
 		PrepareStmt: true,
@@ -137,8 +141,15 @@ func main() {
 		&model.Poll{},
 		&model.PollOption{},
 		&model.VideoSection{},
+		&model.VideoSeekChunk{},
 		&model.Notification{},
 		&model.UploadKey{},
+		&model.Keyword{},
+		&model.UserSetting{},
+		&model.Audit{},
+		&model.InfoPage{},
+		&model.Bookmark{},
+		&model.TranscodingProgress{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)

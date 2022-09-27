@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
@@ -62,6 +63,9 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	if c.Request.URL.Path == "/admin/course-import" {
 		page = "courseImport"
 	}
+	if c.Request.URL.Path == "/admin/audits" {
+		page = "audits"
+	}
 	var notifications []model.Notification
 	if c.Request.URL.Path == "/admin/notifications" {
 		page = "notifications"
@@ -78,6 +82,15 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 		tokens, err = r.TokenDao.GetAllTokens()
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			log.WithError(err).Error("couldn't query tokens")
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
+	}
+	var infopages []model.InfoPage
+	if c.Request.URL.Path == "/admin/infopages" {
+		page = "info-pages"
+		infopages, err = r.InfoPageDao.GetAll()
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			log.WithError(err).Error("couldn't query texts")
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 	}
@@ -116,6 +129,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 			CurY:                y,
 			CurT:                t,
 			Tokens:              tokens,
+			InfoPages:           infopages,
 			ServerNotifications: serverNotifications,
 			Notifications:       notifications,
 		})
@@ -275,7 +289,29 @@ type AdminPageData struct {
 	EditCourseData      EditCourseData
 	ServerNotifications []model.ServerNotification
 	Tokens              []dao.AllTokensDto
+	InfoPages           []model.InfoPage
 	Notifications       []model.Notification
+}
+
+func (apd AdminPageData) UsersAsJson() string {
+	type relevantUserInfo struct {
+		ID    uint   `json:"id"`
+		Name  string `json:"name"`
+		Role  uint   `json:"role"`
+		Email string `json:"email"`
+	}
+
+	users := make([]relevantUserInfo, len(apd.Users))
+	for i, user := range apd.Users {
+		users[i] = relevantUserInfo{
+			ID:    user.ID,
+			Name:  user.GetPreferredName(),
+			Role:  user.Role,
+			Email: user.Email.String,
+		}
+	}
+	jsonStr, _ := json.Marshal(users)
+	return string(jsonStr)
 }
 
 type EditCourseData struct {

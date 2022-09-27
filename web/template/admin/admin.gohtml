@@ -68,6 +68,16 @@
                                href="/admin/token"><span
                                         class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                         class="relative">Token Management</span></a></li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "audits"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/audits"><span
+                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                        class="relative">Audits</span></a></li>
+                        <li>
+                            <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "info-pages"}}text-1{{else}}text-5{{end}} relative block"
+                               href="/admin/infopages"><span
+                                        class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                        class="relative">Info Pages</span></a></li>
                     </ul>
                 </li>
             {{end}}
@@ -112,7 +122,7 @@
 <div class="flex">
     <div style="min-height: calc(100vh - 5rem);"
          class="fixed z-40 inset-0 flex-none w-full lg:static lg:h-auto lg:overflow-y-visible lg:pt-0 lg:w-60 xl:w-72 lg:block hidden bg-gray-100 dark:bg-secondary-lighter dark:border-r dark:border-secondary">
-        <div class="overflow-y-auto scrolling-touch lg:h-auto lg:block lg:relative lg:sticky overflow-hidden lg:top-18 mr-24 lg:mr-0">
+        <div class="overflow-y-auto scrolling-touch lg:h-auto lg:block lg:sticky overflow-hidden lg:top-18 mr-24 lg:mr-0">
             <nav class="px-1 overflow-y-auto font-medium text-base sm:px-3 xl:px-5 lg:text-sm pb-10 lg:pb-14 sticky?lg:h-(screen-18)">
                 <ul>
                     {{if eq $curUser.Role 1}}
@@ -158,16 +168,26 @@
                                                 class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                                 class="relative">Course Import</span></a></li>
                                 <li>
-                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "serverStats"}}text-1{{else}}text-5{{end}} relative block"
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "token"}}text-1{{else}}text-5{{end}} relative block"
                                        href="/admin/token"><span
                                                 class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
                                                 class="relative">Token Management</span></a></li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "audits"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/audits"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Audits</span></a></li>
+                                <li>
+                                    <a class="px-3 py-2 transition-colors duration-200 {{if eq $page "info-pages"}}text-1{{else}}text-5{{end}} relative block"
+                                       href="/admin/infopages"><span
+                                                class="rounded-md absolute inset-0 bg-cyan-50 opacity-0"></span><span
+                                                class="relative">Info Pages</span></a></li>
                             </ul>
                         </li>
                     {{end}}
                     <li class="mt-8"><span
                                 class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2 flex">
-                            <span class="grow">Courses</span><a href="/admin/create-course"><i
+                            <span class="grow">Courses</span><a title="Create Course" href="/admin/create-course"><i
                                         class="fas fa-plus"></i></a></span>
                         <ul>
                             <li>
@@ -208,7 +228,7 @@
         <div class="px-4 sm:px-6 xl:px-8">
             <div class="w-full">
                 {{if and (eq $curUser.Role 1) (eq .Page "users")}}
-                    {{template "users" .Users}}
+                    {{template "users" .UsersAsJson}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "course")}}
                     {{template "edit-course" .EditCourseData}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "lectureHalls")}}
@@ -231,8 +251,12 @@
                     {{template "course-import" .}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "token")}}
                     {{template "token" .Tokens}}
+                {{else if and (eq $curUser.Role 1) (eq .Page "info-pages")}}
+                    {{template "info-pages" .InfoPages}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "notifications")}}
                     {{template "notification_management" .Notifications}}
+                {{else if and (eq $curUser.Role 1) (eq .Page "audits")}}
+                    {{template "audits"}}
                 {{end}}
             </div>
         </div>

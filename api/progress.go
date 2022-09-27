@@ -88,16 +88,27 @@ func (r progressRoutes) saveProgress(c *gin.Context) {
 
 	if err != nil {
 		log.WithError(err).Warn("Could not bind JSON.")
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	if tumLiveContext.User == nil {
-		c.AbortWithStatus(http.StatusForbidden)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusForbidden,
+			CustomMessage: "not logged in",
+		})
 		return
 	}
 	progressBuff.add(model.StreamProgress{
@@ -119,27 +130,42 @@ func (r progressRoutes) markWatched(c *gin.Context) {
 	err := c.BindJSON(&request)
 	if err != nil {
 		log.WithError(err).Error("Could not bind JSON.")
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	if tumLiveContext.User == nil {
-		c.AbortWithStatus(http.StatusForbidden)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusForbidden,
+			CustomMessage: "not logged in",
+		})
 		return
 	}
-	progress := model.StreamProgress{
+	prog := model.StreamProgress{
 		UserID:   tumLiveContext.User.ID,
 		StreamID: request.StreamID,
 		Watched:  request.Watched,
 	}
-	err = r.ProgressDao.SaveProgresses([]model.StreamProgress{progress})
+	err = r.ProgressDao.SaveWatchedState(&prog)
 	if err != nil {
-		log.WithError(err).Error("Could not mark VoD as watched.")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("can not mark VoD as watched.")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not mark VoD as watched.",
+			Err:           err,
+		})
 		return
 	}
 }

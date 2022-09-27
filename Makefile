@@ -17,3 +17,6 @@ clean:
 
 install:
 	mv main /bin/tum-live
+
+mocks:
+	go generate ./...

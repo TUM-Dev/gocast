@@ -5,6 +5,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	log "github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -12,31 +13,39 @@ import (
 )
 
 func configGinDownloadICSRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
-	routes := downloadICSRoutes{daoWrapper}
+	templates, err := template.ParseFS(staticFS, "template/*.gotemplate")
+	if err != nil {
+		log.WithError(err).Fatal("could not parse templates")
+		return
+	}
+	routes := downloadICSRoutes{daoWrapper, templates}
 	router.GET("/api/download_ics/:year/:term/:slug/events.ics", routes.downloadICS)
 }
 
 type downloadICSRoutes struct {
 	dao.DaoWrapper
+	templates *template.Template
 }
 
 func (r downloadICSRoutes) downloadICS(c *gin.Context) {
-	templates, err := template.ParseFS(staticFS, "template/*.gotemplate")
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-
 	slug, term := c.Param("slug"), c.Param("term")
 	year, err := strconv.Atoi(c.Param("year"))
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid year",
+			Err:           err,
+		})
 		return
 	}
 
 	course, err := r.CoursesDao.GetCourseBySlugYearAndTerm(c, slug, term, year)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not get course",
+			Err:           err,
+		})
 		return
 	}
 
@@ -48,9 +57,13 @@ func (r downloadICSRoutes) downloadICS(c *gin.Context) {
 	c.Header("content-type", "text/calendar")
 	c.Header("Content-Transfer-Encoding", "binary")
 	c.Header("Content-Disposition", "attachment; filename="+course.Slug+course.TeachingTerm+strconv.Itoa(course.Year)+".ics")
-	err = templates.ExecuteTemplate(c.Writer, "ics.gotemplate", acc)
+	err = r.templates.ExecuteTemplate(c.Writer, "ics.gotemplate", acc)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get generate .ics",
+			Err:           err,
+		})
 	}
 }
 

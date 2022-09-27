@@ -7,6 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools/realtime"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
@@ -69,6 +70,14 @@ func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
 			c.Set("TUMLiveContext", TUMLiveContext{User: &user, SamlSubjectID: token.Claims.(*JWTClaims).SamlSubjectID})
 			return
 		}
+	}
+}
+
+// LoggedIn is a middleware that checks if the user is logged in and redirects to the login page if not
+func LoggedIn(c *gin.Context) {
+	if c.MustGet("TUMLiveContext").(TUMLiveContext).User == nil {
+		c.Redirect(http.StatusFound, "/login")
+		c.Abort()
 	}
 }
 
@@ -189,9 +198,21 @@ func InitStream(wrapper dao.DaoWrapper) gin.HandlerFunc {
 		if c.IsAborted() {
 			return
 		}
-		course, err := wrapper.CoursesDao.GetCourseById(c, stream.CourseID)
-		if err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
+		var course model.Course
+		if tumLiveContext.Course != nil {
+			course = *tumLiveContext.Course
+		} else {
+			foundCourse, err := wrapper.CoursesDao.GetCourseById(c, stream.CourseID)
+			if err != nil {
+				c.AbortWithStatus(http.StatusBadRequest)
+				return
+			}
+			course = foundCourse
+		}
+
+		if stream.Private && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(course)) {
+			RenderErrorPage(c, http.StatusForbidden, ForbiddenStreamAccess)
+			c.Abort()
 			return
 		}
 		if course.Visibility != "public" && course.Visibility != "hidden" {
@@ -208,6 +229,63 @@ func InitStream(wrapper dao.DaoWrapper) gin.HandlerFunc {
 		tumLiveContext.Course = &course
 		tumLiveContext.Stream = &stream
 		c.Set("TUMLiveContext", tumLiveContext)
+	}
+}
+
+func InitStreamRealtime() realtime.SubscriptionMiddleware {
+	return func(context *realtime.Context) *realtime.Error {
+		var c *gin.Context
+		if ctx, ok := context.Client.Get("ctx"); ok {
+			c = ctx.(*gin.Context)
+		} else {
+			return realtime.NewError(http.StatusBadRequest, "daoWrapper should exist but doesn't")
+		}
+
+		var wrapper dao.DaoWrapper
+		if daoRes, ok := context.Client.Get("dao"); ok {
+			wrapper = daoRes.(dao.DaoWrapper)
+		} else {
+			return realtime.NewError(http.StatusBadRequest, "daoWrapper should exist but doesn't")
+		}
+
+		foundContext, exists := c.Get("TUMLiveContext")
+		if !exists {
+			return realtime.NewError(http.StatusBadRequest, "context should exist but doesn't")
+		}
+		tumLiveContext := foundContext.(TUMLiveContext)
+
+		// Get stream based on context:
+		var stream model.Stream
+		if context.Param("streamID") != "" {
+			foundStream, err := wrapper.StreamsDao.GetStreamByID(c, context.Param("streamID"))
+			if err != nil {
+				return realtime.NewError(http.StatusNotFound, "stream not found")
+			} else {
+				stream = foundStream
+			}
+		} else {
+			return realtime.NewError(http.StatusNotFound, "stream not found")
+		}
+
+		course, err := wrapper.CoursesDao.GetCourseById(c, stream.CourseID)
+		if err != nil {
+			sentry.CaptureException(err)
+			return realtime.NewError(http.StatusInternalServerError, "could not retrieve course")
+		}
+		if stream.Private && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(course)) {
+			return realtime.NewError(http.StatusForbidden, "forbidden to see course")
+		}
+		if course.Visibility != "public" && course.Visibility != "hidden" {
+			if tumLiveContext.User == nil {
+				return realtime.NewError(http.StatusForbidden, "course only visible for logged in users")
+			} else if tumLiveContext.User == nil || !tumLiveContext.User.IsEligibleToWatchCourse(course) {
+				return realtime.NewError(http.StatusForbidden, "forbidden to see course")
+			}
+		}
+		tumLiveContext.Course = &course
+		tumLiveContext.Stream = &stream
+		context.Set("TUMLiveContext", tumLiveContext)
+		return nil
 	}
 }
 

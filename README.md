@@ -48,7 +48,7 @@ docker run --detach \
 ### Installing go
 
 - Install **go >=1.18** by following the steps [here](https://go.dev/doc/install)
-- Preferably use [JetBrains GoLand](https://www.jetbrains.com/go/) and open this project as it simplifies this entire process
+- Preferably use [JetBrains GoLand](https://youtu.be/vetAfxQxyJE) and open this project as it simplifies this entire process
 - Go to File -> Settings -> Go -> Go Modules and enable go modules integration.
 - Run `npm i` in the `./web` directory to install the required node modules
 - Run `go get ./...` to install the required go modules
@@ -84,6 +84,14 @@ If you use GoLand, you can use follow this [guide](https://www.jetbrains.com/hel
 prettier. There is also a [guide](https://www.jetbrains.com/help/go/eslint.html) for integrating `eslint`. For both configs are provided that should be automatically detected. If you set everything up correctly,
 `prettier` and `eslint` should run everytime you save. Additionally, GoLands formatter will now respect the `prettier`
 style rules.
+
+### Add Database Models:
+
+To create database models and their corresponding daos there is a helper script that can be used to automate this task:
+
+```shell
+go run cmd/modelGen/modelGen.go <NameOfYourModel(UpperCamelCase)>
+```
 
 ## Credit & Licenses
 

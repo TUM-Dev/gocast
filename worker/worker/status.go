@@ -3,25 +3,30 @@ package worker
 import (
 	"context"
 	"fmt"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/joschahenningsen/TUM-Live/worker/cfg"
 	"github.com/joschahenningsen/TUM-Live/worker/pb"
 	"github.com/joschahenningsen/TUM-Live/worker/worker/vmstat"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"strings"
-	"sync"
-	"time"
 )
 
-var statusLock = sync.RWMutex{}
-var S *Status
-var VersionTag string
+var (
+	statusLock = sync.RWMutex{}
+	S          *Status
+	VersionTag string
+)
 
 const (
-	costStream           = 3
-	costTranscoding      = 2
-	costSilenceDetection = 1
+	costStream              = 3
+	costTranscoding         = 2
+	costSilenceDetection    = 1
+	costThumbnailGeneration = 1
+	costKeywordExtraction   = 1
 )
 
 type Status struct {
@@ -50,20 +55,20 @@ func (s *Status) startStream(streamCtx *StreamContext) {
 	s.Jobs = append(s.Jobs, fmt.Sprintf("streaming %s", streamCtx.getStreamName()))
 }
 
-func (s *Status) startRecording(name string) {
-	defer s.SendHeartbeat()
-	statusLock.Lock()
-	defer statusLock.Unlock()
-	s.workload += costStream
-	s.Jobs = append(s.Jobs, fmt.Sprintf("recording %s", name))
-}
-
 func (s *Status) startTranscoding(name string) {
 	defer s.SendHeartbeat()
 	statusLock.Lock()
 	defer statusLock.Unlock()
 	s.workload += costTranscoding
 	s.Jobs = append(s.Jobs, fmt.Sprintf("transcoding %s", name))
+}
+
+func (s *Status) startThumbnailGeneration(streamCtx *StreamContext) {
+	defer s.SendHeartbeat()
+	statusLock.Lock()
+	defer statusLock.Unlock()
+	s.workload += costThumbnailGeneration
+	s.Jobs = append(s.Jobs, fmt.Sprintf("generating thumbnail for %s", streamCtx.getTranscodingFileName()))
 }
 
 func (s *Status) endStream(streamCtx *StreamContext) {
@@ -79,12 +84,12 @@ func (s *Status) endStream(streamCtx *StreamContext) {
 	statusLock.Unlock()
 }
 
-func (s *Status) endRecording(name string) {
+func (s *Status) endTranscoding(name string) {
 	defer s.SendHeartbeat()
 	statusLock.Lock()
-	s.workload -= costStream
+	s.workload -= costTranscoding
 	for i := range s.Jobs {
-		if s.Jobs[i] == fmt.Sprintf("recording %s", name) {
+		if s.Jobs[i] == fmt.Sprintf("transcoding %s", name) {
 			s.Jobs = append(s.Jobs[:i], s.Jobs[i+1:]...)
 			break
 		}
@@ -92,12 +97,12 @@ func (s *Status) endRecording(name string) {
 	statusLock.Unlock()
 }
 
-func (s *Status) endTranscoding(name string) {
+func (s *Status) endThumbnailGeneration(streamContext *StreamContext) {
 	defer s.SendHeartbeat()
 	statusLock.Lock()
-	s.workload -= costTranscoding
+	s.workload -= costThumbnailGeneration
 	for i := range s.Jobs {
-		if s.Jobs[i] == fmt.Sprintf("transcoding %s", name) {
+		if s.Jobs[i] == fmt.Sprintf("generating thumbnail for %s", streamContext.getTranscodingFileName()) {
 			s.Jobs = append(s.Jobs[:i], s.Jobs[i+1:]...)
 			break
 		}
@@ -149,4 +154,25 @@ func (s *Status) SendHeartbeat() {
 	if err != nil {
 		log.WithError(err).Error("Sending Heartbeat failed")
 	}
+}
+
+func (s *Status) startKeywordExtraction(streamCtx *StreamContext) {
+	defer s.SendHeartbeat()
+	statusLock.Lock()
+	defer statusLock.Unlock()
+	s.workload += costKeywordExtraction
+	s.Jobs = append(s.Jobs, fmt.Sprintf("extracting keywords for %s", streamCtx.getTranscodingFileName()))
+}
+
+func (s *Status) endKeywordExtraction(streamCtx *StreamContext) {
+	defer s.SendHeartbeat()
+	statusLock.Lock()
+	s.workload -= costKeywordExtraction
+	for i := range s.Jobs {
+		if s.Jobs[i] == fmt.Sprintf("extracting keywords for %s", streamCtx.getTranscodingFileName()) {
+			s.Jobs = append(s.Jobs[:i], s.Jobs[i+1:]...)
+			break
+		}
+	}
+	statusLock.Unlock()
 }

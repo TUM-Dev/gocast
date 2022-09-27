@@ -131,9 +131,6 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 
 	var clientWatchState = make([]watchedStateData, 0)
 	for _, s := range streamsWithWatchState {
-		if !s.Recording {
-			continue
-		}
 		clientWatchState = append(clientWatchState, watchedStateData{
 			ID:      s.Model.ID,
 			Month:   s.Start.Month().String(),
@@ -156,7 +153,6 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 // CoursePageData is the data for the course page.
 type CoursePageData struct {
 	IndexData     IndexData
-	User          model.User
 	Course        model.Course
 	HighlightPage bool
 	WatchedData   string

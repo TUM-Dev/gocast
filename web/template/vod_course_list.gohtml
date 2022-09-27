@@ -4,7 +4,7 @@
     {{$lastMonth := -1}}
     {{$user := .IndexData.TUMLiveContext.User}}
     {{range $lecture := .Course.Streams}}
-        {{if $lecture.Recording}}
+        {{if and $lecture.Recording (not $lecture.Private)}}
             {{/* Do we have to create a new month?*/}}
             {{if ne $lecture.Start.Month $lastMonth}}
                 {{if ne $lastMonth -1}} </div> {{end}}
@@ -43,7 +43,7 @@
                         </div>
                     </div>
                     <div class="flex space-x-3 my-auto">
-                        {{if (and $course.DownloadsEnabled $lecture.FilePath) }}
+                        {{if and (and $course.DownloadsEnabled $user) $lecture.IsDownloadable}}
                             <a class="flex text-3 rounded-full hover:text-gray-600"
                                title="Download Lecture"
                                href="/api/download/{{$lecture.Model.ID}}/{{$course.Slug}}/{{$course.Slug}}-{{printf "%v-%02d-%04d" $lecture.Start.Month $lecture.Start.Day $lecture.Start.Year}}"
@@ -72,6 +72,14 @@
                                 <i class="fas fa-comments"></i>
                             </a>
                         {{end}}
+                        {{/* Copy HLS Link for video */}}
+                        {{if $lecture.PlaylistUrl}}
+                            <i x-data="{ copied: false }" title="Copy HLS URL for combined stream"
+                               :class="copied ? 'fa-check' : 'fa-link'"
+                               class="flex text-lg cursor-pointer text-3 dark:hover:text-white hover:text-black hover:text-gray-600 fas fa-fw"
+                               @click="if (global.copyToClipboard('{{$lecture.PlaylistUrl}}{{if $lecture.StartOffset}}?wowzaplaystart={{$lecture.StartOffset}}&wowzaplayduration={{$lecture.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))) { copied=true; setTimeout(() => { copied=false }, 1000); }">
+                            </i>
+                        {{end}}
                     </div>
                 </div>
                 {{if $lecture.Units}}
@@ -96,9 +104,9 @@
             </li>
         {{end}}
     {{end}}
-    {{if and .User $course.HasRecordings}}
+    {{if and $user $course.HasRecordings}}
         </div>
-        <p x-show="watchedAll && filterWatched"
+        <p {{if .IndexData.TUMLiveContext}} x-show="watchedAll && filterWatched" {{end}}
            class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">All VoDs watched</p>
     {{end}}
     {{if eq $lastMonth -1}}

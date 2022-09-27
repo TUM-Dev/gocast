@@ -5,16 +5,59 @@ class Admin {}
 
 export class AdminUserList {
     readonly rowsPerPage: number;
-    readonly numberOfPages: number;
 
+    numberOfPages: number;
     currentIndex: number;
 
-    constructor() {
-        this.rowsPerPage = 10;
-        this.currentIndex = 0;
-        this.updateVisibleRows();
+    list: object[]; // Pre-loaded users
+    currentPage: object[]; // Subset of list
 
-        this.numberOfPages = Math.ceil(document.getElementById("admin-user-list").children.length / this.rowsPerPage);
+    showSearchResults: boolean;
+    searchLoading: boolean;
+    searchInput: string;
+
+    constructor(usersAsJson: object[]) {
+        this.list = usersAsJson;
+        this.rowsPerPage = 10;
+        this.showSearchResults = false;
+        this.currentIndex = 0;
+        this.numberOfPages = Math.ceil(this.list.length / this.rowsPerPage);
+        this.updateVisibleRows();
+    }
+
+    async search() {
+        if (this.searchInput.length < 3) {
+            this.showSearchResults = false;
+            this.updateVisibleRows();
+            return;
+        }
+        if (this.searchInput.length > 2) {
+            this.searchLoading = true;
+            fetch("/api/searchUser?q=" + this.searchInput)
+                .then((response) => {
+                    this.searchLoading = false;
+                    if (!response.ok) {
+                        throw new Error(response.statusText);
+                    }
+                    return response.json();
+                })
+                .then((r) => {
+                    this.currentPage = r; // show all results on page one.
+                    this.showSearchResults = true;
+                })
+                .catch((err) => {
+                    console.error(err);
+                    this.showSearchResults = false;
+                    this.updateVisibleRows();
+                });
+        }
+    }
+
+    clearSearch() {
+        this.showSearchResults = false;
+        this.searchLoading = false;
+        this.updateVisibleRows();
+        this.searchInput = "";
     }
 
     currentIndexString(): string {
@@ -40,17 +83,10 @@ export class AdminUserList {
     }
 
     updateVisibleRows() {
-        const table = document.getElementById("admin-user-list");
-        const minIndex = this.currentIndex * this.rowsPerPage;
-        const maxIndex = this.currentIndex * this.rowsPerPage + this.rowsPerPage - 1;
-        Array.from(table.children).forEach((row: HTMLElement) => {
-            const idx = parseInt(row.dataset.userlistIndex);
-            if (idx < minIndex || idx > maxIndex) {
-                row.classList.add("hidden");
-            } else {
-                row.classList.remove("hidden");
-            }
-        });
+        this.currentPage = this.list.slice(
+            this.currentIndex * this.rowsPerPage,
+            this.currentIndex * this.rowsPerPage + this.rowsPerPage,
+        );
     }
 }
 
@@ -77,6 +113,7 @@ export async function deleteLectureHall(lectureHallID: number) {
         }
     }
 }
+
 export function createUser() {
     const userName: string = (document.getElementById("name") as HTMLInputElement).value;
     const email: string = (document.getElementById("email") as HTMLInputElement).value;
@@ -126,4 +163,29 @@ export async function updateUser(userID: number, role: number) {
             showMessage("There was an error updating the user: " + err);
         });
     return success ? role : -1;
+}
+
+export async function updateText(id: number, name: string, content: string) {
+    await fetch("/api/texts/" + id, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            name: name,
+            content: content,
+            type: 1, // model.TEXT_MARKDOWN
+        }),
+    })
+        .then((res) => {
+            if (res.status !== StatusCodes.OK) {
+                throw new Error(res.statusText);
+            }
+        })
+        .catch((err) => {
+            showMessage("There was an error updating the text: " + err);
+        })
+        .then(() => {
+            showMessage(`Successfully updated "${name}"`);
+        });
 }

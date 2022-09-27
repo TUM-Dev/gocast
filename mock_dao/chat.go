@@ -163,6 +163,21 @@ func (mr *MockChatDaoMockRecorder) GetChatUsers(streamid interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatUsers", reflect.TypeOf((*MockChatDao)(nil).GetChatUsers), streamid)
 }
 
+// GetChatsByUser mocks base method.
+func (m *MockChatDao) GetChatsByUser(userID uint) ([]model.Chat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatsByUser", userID)
+	ret0, _ := ret[0].([]model.Chat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatsByUser indicates an expected call of GetChatsByUser.
+func (mr *MockChatDaoMockRecorder) GetChatsByUser(userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatsByUser", reflect.TypeOf((*MockChatDao)(nil).GetChatsByUser), userID)
+}
+
 // GetNumLikes mocks base method.
 func (m *MockChatDao) GetNumLikes(chatID uint) (int64, error) {
 	m.ctrl.T.Helper()

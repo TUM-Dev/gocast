@@ -7,7 +7,15 @@
     <div class="text-1 mt-4" x-data="{userId: {{.IndexData.TUMLiveContext.User.Model.ID}} }">
         <div class="min-w-screen items-center justify-center">
             <div class="w-full m-auto lg:w-5/6">
-                <h1 class="mb-4">{{$course.Name}}</h1>
+                <div class="flex justify-between mb-4">
+                    <h1 class="self-center">{{$course.Name}}</h1>
+                    <div x-cloak x-show="(new URL(document.location)).searchParams.get('copied')!==null" class="p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800" role="alert">
+                        Course was copied successfully.
+                    </div>
+                    <div x-cloak x-show="(new URL(document.location)).searchParams.get('created')!==null" class="p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800" role="alert">
+                        Course was created successfully.
+                    </div>
+                </div>
                 <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
                                                                     value="{{$course.Model.ID}}"></label>
                 <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
@@ -53,14 +61,13 @@
                 </div>
 
                 <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
-                    <h2 class="text-2 text-2xl font-semibold">Dangerzone</h2>
-                    <div class="">
+                    <h2 class="text-2 text-2xl font-semibold">Actions</h2>
+                    <div>
                         {{template "dangerzone" $course}}
                     </div>
                 </div>
 
             </div>
-
         </div>
     </div>
 {{end}}

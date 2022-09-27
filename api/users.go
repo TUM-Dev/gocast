@@ -21,6 +21,23 @@ import (
 
 func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := usersRoutes{daoWrapper}
+
+	router.POST("/api/users/settings/name", routes.updatePreferredName)
+	router.POST("/api/users/settings/greeting", routes.updatePreferredGreeting)
+	router.POST("/api/users/settings/enableCast", routes.updateEnableCast)
+	router.POST("/api/users/settings/playbackSpeeds", routes.updatePlaybackSpeeds)
+
+	router.POST("/api/users/pinCourse", func(c *gin.Context) {
+		routes.pinCourse(c, true)
+	})
+	router.POST("/api/users/unpinCourse", func(c *gin.Context) {
+		routes.pinCourse(c, false)
+	})
+
+	router.GET("/api/users/exportData", routes.exportPersonalData)
+
+	router.POST("/api/users/init", routes.InitUser)
+
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
 	admins.POST("/createUser", routes.CreateUser)
@@ -48,19 +65,31 @@ func (r usersRoutes) updateUser(c *gin.Context) {
 		Role uint `json:"role"`
 	}{}
 	if err := c.BindJSON(&req); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 	user, err := r.UsersDao.GetUserByID(c, req.ID)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get user by id",
+			Err:           err,
+		})
 		return
 	}
 	user.Role = req.Role
 	err = r.UsersDao.UpdateUser(user)
 	if err != nil {
-		log.WithError(err).Error("Error while updating user")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("can not update user")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not update user",
+			Err:           err,
+		})
 		return
 	}
 }
@@ -70,12 +99,19 @@ func (r usersRoutes) prepareUserSearch(c *gin.Context) (users []model.User, err 
 	reg, _ := regexp.Compile("[^a-zA-Z0-9 ]+")
 	q = reg.ReplaceAllString(q, "")
 	if len(q) < 3 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "query too short"})
-		return nil, errors.New("query too short")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "query too short (minimum length is 3)",
+		})
+		return nil, errors.New("query too short (minimum length is 3)")
 	}
 	users, err = r.UsersDao.SearchUser(q)
 	if err != nil && err != gorm.ErrRecordNotFound {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not search user",
+			Err:           err,
+		})
 		return nil, err
 	}
 	return users, nil
@@ -91,7 +127,7 @@ func (r usersRoutes) SearchUserForCourse(c *gin.Context) {
 	for i, user := range users {
 		res[i] = userForLecturerDto{
 			ID:       user.ID,
-			Name:     user.Name,
+			Name:     user.GetPreferredName(),
 			LastName: user.LastName,
 			Login:    user.GetLoginString(),
 		}
@@ -115,7 +151,7 @@ func (r usersRoutes) SearchUser(c *gin.Context) {
 			ID:    user.ID,
 			LrzID: lrzID,
 			Email: email,
-			Name:  user.Name,
+			Name:  user.GetPreferredName(),
 			Role:  user.Role,
 		}
 	}
@@ -144,17 +180,28 @@ func (r usersRoutes) DeleteUser(c *gin.Context) {
 	var deleteRequest deleteUserRequest
 	err := json.NewDecoder(c.Request.Body).Decode(&deleteRequest)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 	// currently admins can not be deleted.
 	res, err := r.UsersDao.IsUserAdmin(context.Background(), deleteRequest.Id)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not find user",
+			Err:           err,
+		})
 		return
 	}
 	if res {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "user is admin (admins can not be deleted)",
+		})
 		return
 	}
 
@@ -162,7 +209,11 @@ func (r usersRoutes) DeleteUser(c *gin.Context) {
 	if err != nil {
 		sentry.CaptureException(err)
 		defer sentry.Flush(time.Second * 2)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not delete user",
+			Err:           err,
+		})
 		return
 	}
 	c.Status(http.StatusOK)
@@ -172,7 +223,10 @@ func (r usersRoutes) CreateUserForCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
@@ -189,7 +243,10 @@ func (r usersRoutes) CreateUserForCourse(c *gin.Context) {
 		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 		return
 	} else {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid form",
+		})
 		return
 	}
 
@@ -240,26 +297,117 @@ func (r usersRoutes) addSingleUserToCourse(name string, email string, course mod
 	}
 }
 
-func (r usersRoutes) CreateUser(c *gin.Context) {
+func (r usersRoutes) pinCourse(c *gin.Context, pin bool) {
+	var request struct {
+		CourseID uint `json:"courseID"`
+	}
+	err := c.BindJSON(&request)
+	if err != nil {
+		log.WithError(err).Error("Could not bind JSON.")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	foundContext, exists := c.Get("TUMLiveContext")
+	if !exists {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	if tumLiveContext.User == nil {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+
+	// Find course
+	course, err := r.CoursesDao.GetCourseById(context.Background(), request.CourseID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	// Update user in database
+	err = r.UsersDao.PinCourse(*tumLiveContext.User, course, pin)
+	if err != nil {
+		log.WithError(err).Error("Can't update user")
+		return
+	}
+}
+
+func (r usersRoutes) InitUser(c *gin.Context) {
 	usersEmpty, err := r.UsersDao.AreUsersEmpty(context.Background())
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not find users",
+			Err:           err,
+		})
+		return
+	}
+	if !usersEmpty {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "There are already users in the database. Use /api/createUsers instead.",
+		})
 		return
 	}
 	var request createUserRequest
 	err = json.NewDecoder(c.Request.Body).Decode(&request)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
-	var createdUser model.User
-	if usersEmpty {
-		createdUser, err = r.createUserHelper(request, model.AdminType)
-	} else {
-		createdUser, err = r.createUserHelper(request, model.LecturerType)
-	}
+
+	createdUser, err := r.createUserHelper(request, model.AdminType)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not create user",
+			Err:           err,
+		})
+		return
+	}
+	c.JSON(http.StatusOK, createUserResponse{Name: createdUser.Name, Email: createdUser.Email.String, Role: createdUser.Role})
+}
+
+func (r usersRoutes) CreateUser(c *gin.Context) {
+	usersEmpty, err := r.UsersDao.AreUsersEmpty(context.Background())
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not find users",
+			Err:           err,
+		})
+		return
+	}
+	if usersEmpty {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "No users in database. Use /api/users/init instead.",
+		})
+		return
+	}
+	var request createUserRequest
+	err = json.NewDecoder(c.Request.Body).Decode(&request)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
+	}
+
+	createdUser, err := r.createUserHelper(request, model.LecturerType)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not create user",
+			Err:           err,
+		})
 		return
 	}
 	c.JSON(http.StatusOK, createUserResponse{Name: createdUser.Name, Email: createdUser.Email.String, Role: createdUser.Role})
@@ -307,6 +455,245 @@ func (r usersRoutes) forgotPassword(email string) {
 	if err != nil {
 		log.Println("couldn't send password mail")
 	}
+}
+
+type userSettingsRequest struct {
+	Value string `json:"value"`
+}
+
+func (r usersRoutes) updatePreferredName(c *gin.Context) {
+	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+	if u == nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "login required",
+		})
+		return
+	}
+	var request userSettingsRequest
+	err := json.NewDecoder(c.Request.Body).Decode(&request)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
+	}
+	for _, s := range u.Settings {
+		if s.Type == model.PreferredName && time.Since(s.UpdatedAt) < time.Hour*24*30*3 {
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusUnauthorized,
+				CustomMessage: "preferred name already set within the last 3 months",
+			})
+			return
+		}
+	}
+	err = r.UsersDao.AddUserSetting(&model.UserSetting{
+		UserID: u.ID,
+		Type:   model.PreferredName,
+		Value:  request.Value,
+	})
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not add user setting",
+			Err:           err,
+		})
+		return
+	}
+}
+
+func (r usersRoutes) updatePreferredGreeting(c *gin.Context) {
+	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+	if u == nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "login required",
+		})
+		return
+	}
+	var request userSettingsRequest
+	err := json.NewDecoder(c.Request.Body).Decode(&request)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
+	}
+	err = r.UsersDao.AddUserSetting(&model.UserSetting{
+		UserID: u.ID,
+		Type:   model.Greeting,
+		Value:  request.Value,
+	})
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not add user setting",
+			Err:           err,
+		})
+		return
+	}
+}
+
+func (r usersRoutes) updatePlaybackSpeeds(c *gin.Context) {
+	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+	if u == nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "login required",
+		})
+		return
+	}
+	var req struct{ Value []model.PlaybackSpeedSetting }
+	if err := c.BindJSON(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
+	}
+	if len(req.Value) == 0 {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid value (value < 1)",
+		})
+		return
+	}
+	settingBytes, _ := json.Marshal(req.Value)
+	err := r.DaoWrapper.UsersDao.AddUserSetting(&model.UserSetting{UserID: u.ID, Type: model.CustomPlaybackSpeeds, Value: string(settingBytes)})
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not add user setting",
+			Err:           err,
+		})
+		return
+	}
+}
+
+func (r usersRoutes) updateEnableCast(c *gin.Context) {
+	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+	if u == nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "login required",
+		})
+		return
+	}
+	var req struct{ Value bool }
+	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
+	}
+	enabledBytes, _ := json.Marshal(req.Value)
+
+	err = r.UsersDao.AddUserSetting(&model.UserSetting{
+		UserID: u.ID,
+		Type:   model.EnableChromecast,
+		Value:  string(enabledBytes),
+	})
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not add user setting",
+			Err:           err,
+		})
+		return
+	}
+}
+
+func (r usersRoutes) exportPersonalData(c *gin.Context) {
+	var resp personalData
+	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
+	resp.UserData = struct {
+		Name      string    `json:"name,omitempty"`
+		LastName  *string   `json:"last_name,omitempty"`
+		Email     string    `json:"email,omitempty"`
+		LrzID     string    `json:"lrz_id,omitempty"`
+		MatrNr    string    `json:"matr_nr,omitempty"`
+		CreatedAt time.Time `json:"created_at"`
+	}{Name: u.Name, LastName: u.LastName, Email: u.Email.String, LrzID: u.LrzID, MatrNr: u.MatriculationNumber, CreatedAt: u.CreatedAt}
+	for _, course := range u.Courses {
+		resp.Enrollments = append(resp.Enrollments, struct {
+			Year   int    `json:"year,omitempty"`
+			Term   string `json:"term,omitempty"`
+			Course string `json:"course,omitempty"`
+		}{course.Year, course.TeachingTerm, course.Name})
+	}
+	progresses, err := r.ProgressDao.GetProgressesForUser(u.ID)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get progresses for user",
+			Err:           err,
+		})
+		return
+	}
+	for _, progress := range progresses {
+		resp.VideoViews = append(resp.VideoViews, struct {
+			StreamID       uint    `json:"stream_id"`
+			Progress       float64 `json:"progress"`
+			MarkedFinished bool    `json:"marked_finished,omitempty"`
+		}{StreamID: progress.StreamID, Progress: progress.Progress, MarkedFinished: progress.Watched})
+	}
+	chats, err := r.ChatDao.GetChatsByUser(u.ID)
+	if err != nil {
+		chats = []model.Chat{}
+	}
+	for _, chat := range chats {
+		resp.Chats = append(resp.Chats, struct {
+			StreamId  uint      `json:"stream_id,omitempty"`
+			Message   string    `json:"message,omitempty"`
+			CreatedAt time.Time `json:"created_at"`
+		}{chat.StreamID, chat.Message, chat.CreatedAt})
+	}
+	c.Header("Content-Disposition:", `attachment; filename="personal_data.json"`)
+	c.Header("Content-Type", "application/json;charset=utf-8")
+	marshal, err := json.MarshalIndent(resp, "", "    ")
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not marshal response",
+			Err:           err,
+		})
+		return
+	}
+	_, _ = c.Writer.Write(marshal)
+}
+
+type personalData struct {
+	UserData struct {
+		Name      string    `json:"name,omitempty"`
+		LastName  *string   `json:"last_name,omitempty"`
+		Email     string    `json:"email,omitempty"`
+		LrzID     string    `json:"lrz_id,omitempty"`
+		MatrNr    string    `json:"matr_nr,omitempty"`
+		CreatedAt time.Time `json:"created_at"`
+	} `json:"user_data"`
+	Enrollments []struct {
+		Year   int    `json:"year,omitempty"`
+		Term   string `json:"term,omitempty"`
+		Course string `json:"course,omitempty"`
+	} `json:"enrollments,omitempty"`
+	VideoViews []struct {
+		StreamID       uint    `json:"stream_id"`
+		Progress       float64 `json:"progress"`
+		MarkedFinished bool    `json:"marked_finished,omitempty"`
+	} `json:"video_views,omitempty"`
+	Chats []struct {
+		StreamId  uint      `json:"stream_id,omitempty"`
+		Message   string    `json:"message,omitempty"`
+		CreatedAt time.Time `json:"created_at"`
+	} `json:"chats,omitempty"`
 }
 
 type deleteUserRequest struct {
