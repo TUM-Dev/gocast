@@ -61,7 +61,6 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 
 	if tumLiveContext.Stream.LectureHallID != 0 {
 		switch data.IndexData.TUMLiveContext.Course.GetSourceModeForLectureHall(data.IndexData.TUMLiveContext.Stream.LectureHallID) {
-		// I'm not sure if this is the best solution, but it works.
 		// SourceMode == 1 -> Override Version to PRES
 		case 1:
 			data.Version = "PRES"
