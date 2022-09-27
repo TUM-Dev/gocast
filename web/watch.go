@@ -49,6 +49,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 			data.Presets = lectureHall.CameraPresets
 		}
 	}
+
 	if c.Param("version") != "" {
 		data.Version = c.Param("version")
 		if strings.HasPrefix(data.Version, "unit-") {
@@ -57,6 +58,22 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 			}
 		}
 	}
+
+	if tumLiveContext.Stream.LectureHallID != 0 {
+		switch data.IndexData.TUMLiveContext.Course.GetSourceModeForLectureHall(data.IndexData.TUMLiveContext.Stream.LectureHallID) {
+		// SourceMode == 1 -> Override Version to PRES
+		case 1:
+			data.Version = "PRES"
+			data.IndexData.TUMLiveContext.Stream.PlaylistUrlCAM = ""
+			data.IndexData.TUMLiveContext.Stream.PlaylistUrl = ""
+		// SourceMode == 2 -> Override Version to CAM
+		case 2:
+			data.Version = "CAM"
+			data.IndexData.TUMLiveContext.Stream.PlaylistUrlPRES = ""
+			data.IndexData.TUMLiveContext.Stream.PlaylistUrl = ""
+		}
+	}
+
 	// Check for fetching progress
 	if tumLiveContext.User != nil && tumLiveContext.Stream.Recording {
 		progress, err := dao.Progress.LoadProgress(tumLiveContext.User.ID, tumLiveContext.Stream.ID)
