@@ -89,10 +89,6 @@
         @apply text-gray-200 dark:text-gray-800;
     }
 
-    a {
-        @apply hover:text-black dark:hover:text-white;
-    }
-
     body {
         @apply bg-gray-50 dark:bg-primary;
     }
@@ -101,21 +97,45 @@
         @apply text-gray-500 dark:hover:text-white hover:text-black hover:underline;
     }
 
-    .btn {
-        @apply flex-1 dark:bg-gray-800 dark:hover:bg-primary dark:text-white w-full p-3 text-center text-sm cursor-pointer shadow bg-white hover:bg-gray-100;
-    }
-
     .btn:disabled {
         @apply dark:text-gray-400 dark:hover:bg-gray-600 dark:bg-gray-600 text-gray-500 hover:bg-gray-200 bg-gray-200;
     }
+
+    .form-container {
+        @apply mx-auto w-4/5 my-10 shadow rounded-lg border bg-white dark:border-gray-800 dark:bg-secondary-light;
+    }
+
+    .form-container-title {
+        @apply text-lg text-3 font-bold border-b py-2 px-5 dark:border-gray-800;
+    }
+
+    .form-container-body {
+        @apply py-2 px-5 grid gap-3;
+    }
+
+    .form-container-body h2 {
+        @apply text-sm text-5;
+    }
+
+    .form-container-body select {
+        @apply px-4 py-3 mt-3 cursor-pointer bg-gray-50 dark:bg-gray-600 w-full p-2 rounded-sm shadow-sm dark:text-white;
+    }
+
+    .btn {
+        @apply text-center transition-colors bg-gray-500 text-white hover:text-white hover:bg-gray-600 dark:bg-gray-800 dark:hover:bg-primary dark:text-white w-full p-2 cursor-pointer rounded-sm shadow-sm font-bold;
+    }
+
+    .primary {
+        @apply bg-blue-500 hover:bg-blue-600 dark:bg-indigo-600 dark:hover:bg-indigo-800;
+    }
 }
 
-input, textarea {
-    @apply focus:outline-none focus:border-gray-300 p-3 font-medium w-full bg-transparent border-b-2 border-gray-500 dark:text-white text-primary;
+input[type="text"], input[type="email"], textarea {
+    @apply box-border rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600 dark:text-white;
 }
 
 .container {
-    @apply mt-4;
+   @apply mt-4;
 }
 
 @import "tailwindcss/components";

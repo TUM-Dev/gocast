@@ -4,17 +4,17 @@ WORKDIR /app
 COPY web web
 
 ## remove generated files in case the developer build with npm before
-RUN rm -rf web/assets/ts-dist
-RUN rm -rf web/assets/css-dist
+RUN rm -rf web/assets/ts-dist &&\
+    rm -rf web/assets/css-dist
 
 WORKDIR /app/web
 RUN npm i --no-dev
 
-FROM golang:1.18-alpine as build-env
+FROM golang:1.19-alpine3.16 as build-env
+
 RUN mkdir /gostuff
 WORKDIR /gostuff
-COPY go.mod .
-COPY go.sum .
+COPY go.mod go.sum ./
 
 # Get dependencies - will also be cached if we won't change mod/sum
 RUN go mod download

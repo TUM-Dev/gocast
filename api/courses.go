@@ -14,7 +14,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -27,39 +27,58 @@ import (
 
 func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := coursesRoutes{daoWrapper}
+
 	router.POST("/api/course/activate/:token", routes.activateCourseByToken)
 	router.GET("/api/lecture-halls-by-id", routes.lectureHallsByID)
-	atLeastLecturerGroup := router.Group("/")
-	atLeastLecturerGroup.Use(tools.AtLeastLecturer)
-	atLeastLecturerGroup.POST("/api/courseInfo", routes.courseInfo)
-	atLeastLecturerGroup.POST("/api/createCourse", routes.createCourse)
 
-	adminOfCourseGroup := router.Group("/api/course/:courseID")
-	adminOfCourseGroup.Use(tools.InitCourse(daoWrapper))
-	adminOfCourseGroup.Use(tools.AdminOfCourse)
-	adminOfCourseGroup.DELETE("/", routes.deleteCourse)
-	adminOfCourseGroup.POST("/uploadVOD", routes.uploadVOD)
-	adminOfCourseGroup.POST("/copy", routes.copyCourse)
-	adminOfCourseGroup.POST("/createLecture", routes.createLecture)
-	adminOfCourseGroup.POST("/presets", routes.updatePresets)
-	adminOfCourseGroup.POST("/deleteLectures", routes.deleteLectures)
-	adminOfCourseGroup.POST("/renameLecture/:streamID", routes.renameLecture)
-	adminOfCourseGroup.POST("/updateLectureSeries/:streamID", routes.updateLectureSeries)
-	adminOfCourseGroup.PUT("/updateDescription/:streamID", routes.updateDescription)
-	adminOfCourseGroup.DELETE("/deleteLectureSeries/:streamID", routes.deleteLectureSeries)
-	adminOfCourseGroup.POST("/addUnit", routes.addUnit)
-	adminOfCourseGroup.POST("/submitCut", routes.submitCut)
-	adminOfCourseGroup.POST("/deleteUnit/:unitID", routes.deleteUnit)
-	adminOfCourseGroup.GET("/stats", routes.getStats)
-	adminOfCourseGroup.GET("/stats/export", routes.exportStats)
-	adminOfCourseGroup.GET("/admins", routes.getAdmins)
-	adminOfCourseGroup.PUT("/admins/:userID", routes.addAdminToCourse)
-	adminOfCourseGroup.DELETE("/admins/:userID", routes.removeAdminFromCourse)
+	api := router.Group("/api")
+	{
+		lecturers := api.Group("")
+		{
+			lecturers.Use(tools.AtLeastLecturer)
+			lecturers.POST("/courseInfo", routes.courseInfo)
+			lecturers.POST("/createCourse", routes.createCourse)
+		}
 
-	withStream := adminOfCourseGroup.Group("/stream/:streamID")
-	withStream.Use(tools.InitStream(daoWrapper))
-	withStream.GET("/transcodingProgress", routes.getTranscodingProgress)
+		courses := api.Group("/course/:courseID")
+		{
+			courses.Use(tools.InitCourse(daoWrapper))
+			courses.Use(tools.AdminOfCourse)
+			courses.DELETE("/", routes.deleteCourse)
+			courses.POST("/uploadVOD", routes.uploadVOD)
+			courses.POST("/copy", routes.copyCourse)
+			courses.POST("/createLecture", routes.createLecture)
+			courses.POST("/presets", routes.updateSourceSettings)
+			courses.POST("/deleteLectures", routes.deleteLectures)
+			courses.POST("/renameLecture/:streamID", routes.renameLecture)
+			courses.POST("/updateLectureSeries/:streamID", routes.updateLectureSeries)
+			courses.PUT("/updateDescription/:streamID", routes.updateDescription)
+			courses.DELETE("/deleteLectureSeries/:streamID", routes.deleteLectureSeries)
+			courses.POST("/submitCut", routes.submitCut)
 
+			courses.POST("/addUnit", routes.addUnit)
+			courses.POST("/deleteUnit/:unitID", routes.deleteUnit)
+
+			stream := courses.Group("/stream/:streamID")
+			{
+				stream.Use(tools.InitStream(daoWrapper))
+				stream.GET("/transcodingProgress", routes.getTranscodingProgress)
+			}
+
+			stats := courses.Group("/stats")
+			{
+				stats.GET("", routes.getStats)
+				stats.GET("/export", routes.exportStats)
+			}
+
+			admins := courses.Group("admins")
+			{
+				admins.GET("", routes.getAdmins)
+				admins.PUT("/:userID", routes.addAdminToCourse)
+				admins.DELETE("/:userID", routes.removeAdminFromCourse)
+			}
+		}
+	}
 }
 
 type coursesRoutes struct {
@@ -144,10 +163,9 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 	p.ServeHTTP(c.Writer, c.Request)
 }
 
-// updatePresets updates the CameraPresets of a course
-func (r coursesRoutes) updatePresets(c *gin.Context) {
+// updateSourceSettings updates the CameraPresets of a course
+func (r coursesRoutes) updateSourceSettings(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-
 	course := tumLiveContext.Course
 	if course == nil {
 		_ = c.Error(tools.RequestError{
@@ -167,12 +185,13 @@ func (r coursesRoutes) updatePresets(c *gin.Context) {
 		})
 		return
 	}
+
 	var presetSettings []model.CameraPresetPreference
 	for _, hall := range req {
-		if len(hall.Presets) != 0 && hall.SelectedIndex != 0 {
+		if len(hall.Presets) != 0 && hall.SelectedPresetID != 0 {
 			presetSettings = append(presetSettings, model.CameraPresetPreference{
-				LectureHallID: hall.Presets[hall.SelectedIndex-1].LectureHallId, // index count starts at 1
-				PresetID:      hall.SelectedIndex,
+				LectureHallID: hall.LectureHallID,
+				PresetID:      hall.SelectedPresetID,
 			})
 		}
 	}
@@ -186,6 +205,17 @@ func (r coursesRoutes) updatePresets(c *gin.Context) {
 	}
 
 	course.SetCameraPresetPreference(presetSettings)
+
+	var sourceModeSettings []model.SourcePreference
+	for _, hall := range req {
+		sourceModeSettings = append(sourceModeSettings, model.SourcePreference{
+			LectureHallID: hall.LectureHallID,
+			SourceMode:    hall.SourceMode,
+		})
+	}
+
+	course.SetSourcePreference(sourceModeSettings)
+
 	if err = r.CoursesDao.UpdateCourse(c, *course); err != nil {
 		log.WithError(err).Error("failed to update course")
 		_ = c.Error(tools.RequestError{
@@ -195,7 +225,6 @@ func (r coursesRoutes) updatePresets(c *gin.Context) {
 		})
 		return
 	}
-
 }
 
 func (r coursesRoutes) activateCourseByToken(c *gin.Context) {
@@ -379,9 +408,11 @@ func (r coursesRoutes) getAdmins(c *gin.Context) {
 }
 
 type lhResp struct {
-	LectureHallName string               `json:"lecture_hall_name"`
-	Presets         []model.CameraPreset `json:"presets"`
-	SelectedIndex   int                  `json:"selected_index"`
+	LectureHallName  string               `json:"lecture_hall_name"`
+	LectureHallID    uint                 `json:"lecture_hall_id"`
+	Presets          []model.CameraPreset `json:"presets"`
+	SourceMode       model.SourceMode     `json:"source_mode"`
+	SelectedPresetID int                  `json:"selected_preset_id"`
 }
 
 func (r coursesRoutes) lectureHallsByID(c *gin.Context) {
@@ -434,7 +465,7 @@ func (r coursesRoutes) lectureHallsByID(c *gin.Context) {
 }
 
 func (r coursesRoutes) lectureHalls(c *gin.Context, course model.Course) {
-	var res []lhResp
+	var lectureHallData []lhResp
 	lectureHallIDs := map[uint]bool{}
 	for _, s := range course.Streams {
 		if s.LectureHallID != 0 {
@@ -446,22 +477,28 @@ func (r coursesRoutes) lectureHalls(c *gin.Context, course model.Course) {
 		if err != nil {
 			log.WithError(err).Error("Can't fetch lecture hall for stream")
 		} else {
-			res = append(res, lhResp{
+			// Find if sourceMode is specified for this lecture hall
+			lectureHallData = append(lectureHallData, lhResp{
 				LectureHallName: lh.Name,
+				LectureHallID:   lh.ID,
 				Presets:         lh.CameraPresets,
+				SourceMode:      course.GetSourceModeForLectureHall(lh.ID),
 			})
 		}
 	}
-	for _, preference := range course.GetCameraPresetPreference() {
-		for i, re := range res {
-			if len(re.Presets) != 0 && re.Presets[0].LectureHallId == preference.LectureHallID {
-				res[i].SelectedIndex = preference.PresetID
-				break
+
+	for i, response := range lectureHallData {
+		if len(response.Presets) != 0 {
+			for _, coursePref := range course.GetCameraPresetPreference() {
+				if response.LectureHallID == coursePref.LectureHallID {
+					lectureHallData[i].SelectedPresetID = coursePref.PresetID
+					break
+				}
 			}
 		}
 	}
 
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, lectureHallData)
 }
 
 func (r coursesRoutes) submitCut(c *gin.Context) {
@@ -784,7 +821,7 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 	// try parse lectureHallId
 	lectureHallId, err := strconv.ParseInt(req.LectureHallId, 10, 32)
 	if err != nil {
-		log.WithError(err).Error("invalid LectureHallId format")
+		log.WithError(err).Error("invalid LectureHallID format")
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "invalid LectureHallId format",
@@ -1004,6 +1041,9 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 	go tum.GetEventsForCourses(courses, r.DaoWrapper)
 	go tum.FindStudentsForCourses(courses, r.DaoWrapper)
 	go tum.FetchCourses(r.DaoWrapper)
+
+	// send id to client for further requests
+	c.JSON(http.StatusCreated, gin.H{"id": courseWithID.ID})
 }
 
 func (r coursesRoutes) deleteCourse(c *gin.Context) {
@@ -1038,7 +1078,7 @@ type createCourseRequest struct {
 }
 
 func (r coursesRoutes) courseInfo(c *gin.Context) {
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	jsonData, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return

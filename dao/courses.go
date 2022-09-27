@@ -30,7 +30,8 @@ type CoursesDao interface {
 	GetCourseById(ctx context.Context, id uint) (course model.Course, err error)
 	GetInvitedUsersForCourse(course *model.Course) error
 	GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int) (model.Course, error)
-	GetAllCoursesWithTUMIDForSemester(ctx context.Context, year int, term string) (courses []model.Course, err error)
+	// GetAllCoursesWithTUMIDFromSemester returns all courses with a non-null tum_identifier from a given semester or later
+	GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year int, term string) (courses []model.Course, err error)
 	GetAvailableSemesters(c context.Context) []Semester
 	GetCourseByShortLink(link string) (model.Course, error)
 	GetCourseAdmins(courseID uint) ([]model.User, error)
@@ -229,10 +230,18 @@ func (d coursesDao) GetCourseBySlugYearAndTerm(ctx context.Context, slug string,
 	return course, err
 }
 
-func (d coursesDao) GetAllCoursesWithTUMIDForSemester(ctx context.Context, year int, term string) (courses []model.Course, err error) {
+func (d coursesDao) GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year int, term string) (courses []model.Course, err error) {
 	var foundCourses []model.Course
-	dbErr := DB.Where("tum_online_identifier <> '' AND year = ? AND teaching_term = ?", year, term).Find(&foundCourses).Error
-	return foundCourses, dbErr
+
+	switch term {
+	case "S":
+		// fetch all courses from this year regardless of term
+		err = DB.Where("tum_online_identifier <> '' AND year = ?", year).Find(&foundCourses).Error
+	default:
+		// fetch all courses from this year's winter term and next year's summer term
+		err = DB.Where("tum_online_identifier <> '' AND ((year = ? AND teaching_term = W) OR (year = ? AND teaching_term = S))", year, year+1).Find(&foundCourses).Error
+	}
+	return foundCourses, err
 }
 
 func (d coursesDao) GetAvailableSemesters(c context.Context) []Semester {
