@@ -27,9 +27,6 @@
     </h2>
 
     <div class="form-container-body grid grid-cols-3 gap-3 p-4">
-        <h2 class="text-sm text-5 col-span-full">Calendar</h2>
-        <a class="underline hover:no-underline"
-            href="/api/hall/{{$lectureHall.ID}}/export.ics">https://live.mm.rbg.tum.de/api/hall/{{$lectureHall.ID}}/export.ics</a>
         <h2 class="text-sm text-5 col-span-full">Sources</h2>
         <ul class="grid gap-4 md:grid-cols-3 lg:grid-cols-5 col-span-full">
             <li>
@@ -61,8 +58,8 @@
         {{if $lectureHall.CameraIP}}
         <h2 class="col-span-full">Presets</h2>
         <div class="flex flex-row col-span-full">
-            <div class="flex align-middle">
-                <div class="w-full overflow-x-scroll scrollbarThin">
+            <div class="flex align-middle overflow-x-scroll">
+                <div class="w-full scrollbarThin">
                     <div class="flex flex-row gap-x-2">
                         {{range $preset := $lectureHall.CameraPresets}}
                         <div x-data="{defaultPreset: {{$preset.IsDefault}}, lectureHallID: {{$preset.LectureHallID}}}"

@@ -1,7 +1,6 @@
 {{define "server-notifications-admin-list"}}
 <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
 <script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
-<script defer async src="/static/assets/ts-dist/server-notifications.js"></script>
 <h2 class="text-2xl text-1 my-4">Notifications</h2>
 {{range $notification := .}}
 {{template "server-notification-edit" $notification}}
@@ -18,16 +17,16 @@
         <input type="hidden" name="id" value="{{if .}}{{.Model.ID}}{{end}}">
         <label>
             <span class="text-sm text-5">Message</span>
-            <input type="text" name="text" placeholder="Enter Message" {{if .}} value="{{.Text}}" {{end}}>
+            <input type="text" required name="text" placeholder="Enter Message" {{if .}} value="{{.Text}}" {{end}}>
         </label>
         <label>
             <span class="text-sm text-5">From</span>
-            <input type="text" name="from" id="from{{if .}}{{.Model.ID}}{{end}}" placeholder="2021-07-06 12:00" {{if .}}
+            <input type="text" name="from" x-init="flatpickr($el, { enableTime: true, time_24hr: true })" id="from{{if .}}{{.Model.ID}}{{end}}" placeholder="2021-07-06 12:00" {{if .}}
                 value="{{.FormatFrom}}" {{end}}>
         </label>
         <label>
             <span class="text-sm text-5">Expires</span>
-            <input type="text" name="expires" id="expires{{if .}}{{.Model.ID}}{{end}}" placeholder="2021-07-06 14:00"
+            <input type="text" name="expires" x-init="flatpickr($el, { enableTime: true, time_24hr: true })" id="expires{{if .}}{{.Model.ID}}{{end}}" placeholder="2021-07-06 14:00"
                 {{if .}} value="{{.FormatExpires}}" {{end}}>
         </label>
         <div>

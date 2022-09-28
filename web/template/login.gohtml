@@ -21,7 +21,7 @@
                    style="background-color: {{if .IDPColor}}{{.IDPColor}}{{else}}#3070B3{{end}}">
                     {{.IDPName}}
                 </a>
-                <div x-show="" class="p-2 text-sm text-5">
+                <div x-show="!showInternalLogin" class="p-2 text-sm text-5">
                     or
                     <button @click="showInternalLogin = true" class="text-3 underline">use an internal account
                     </button>
