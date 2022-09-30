@@ -104,11 +104,16 @@ type Config struct {
 		Password string `yaml:"password"`
 		Database string `yaml:"database"`
 		Host     string `yaml:"host"`
-		Port	 uint `yaml:"port"`
+		Port     uint   `yaml:"port"`
 	} `yaml:"db"`
 	Campus struct {
-		Base   string   `yaml:"base"`
-		Tokens []string `yaml:"tokens"`
+		Base        string   `yaml:"base"`
+		Tokens      []string `yaml:"tokens"`
+		CampusProxy *struct {
+			Host   string `yaml:"host"`
+			Scheme string `yaml:"scheme"`
+		} `yaml:"campusProxy"`
+		RelevantOrgs *[]string `yaml:"relevantOrgs"`
 	} `yaml:"campus"`
 	Ldap struct {
 		URL         string `yaml:"url"`

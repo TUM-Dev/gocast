@@ -38,6 +38,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			lecturers.Use(tools.AtLeastLecturer)
 			lecturers.POST("/courseInfo", routes.courseInfo)
 			lecturers.POST("/createCourse", routes.createCourse)
+			lecturers.GET("/searchCourse", routes.searchCourse)
 		}
 
 		courses := api.Group("/course/:courseID")
@@ -1171,6 +1172,23 @@ func (r coursesRoutes) copyCourse(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{"numErrs": numErrors, "newCourse": course.ID})
+}
+
+func (r coursesRoutes) searchCourse(c *gin.Context) {
+	var request struct {
+		Q string `form:"q"`
+	}
+	err := c.BindQuery(&request)
+	if err != nil {
+		_ = c.Error(tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "Bad request", Err: err})
+		return
+	}
+	courses, err := r.PrefetchedCourseDao.Search(c, request.Q)
+	if err != nil {
+		_ = c.Error(tools.RequestError{Status: http.StatusInternalServerError, CustomMessage: "Can't search course", Err: err})
+		return
+	}
+	c.JSON(http.StatusOK, courses)
 }
 
 type getCourseRequest struct {

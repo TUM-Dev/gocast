@@ -51,6 +51,12 @@ require (
 require github.com/matthiasreumann/gomino v0.0.2
 
 require (
+	github.com/TUM-Dev/CampusProxy/client v0.0.0-20220928080722-4bd1259b2d06 // indirect
+	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
+	google.golang.org/appengine v1.6.7 // indirect
+)
+
+require (
 	// this version works - newer commits may have breaking changes
 	// github.com/Azure/go-ntlmssp v0.0.0-20211209120228-48547f28849e // indirect
 	github.com/Azure/go-ntlmssp v0.0.0-20220621081337-cb9428e4ac1e // indirect
