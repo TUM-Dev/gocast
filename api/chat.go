@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live/tools/stats"
 	"net/http"
 	"strconv"
 	"time"
@@ -573,8 +574,7 @@ func CollectStats(daoWrapper dao.DaoWrapper) func() {
 			}
 			if s, err := daoWrapper.GetStreamByID(context.Background(), fmt.Sprintf("%d", sID)); err == nil {
 				if s.LiveNow { // store stats for livestreams only
-					s.Stats = append(s.Stats, stat)
-					if err := daoWrapper.AddStat(stat); err != nil {
+					if err := stats.Client.AddStreamStat(fmt.Sprintf("%d", s.CourseID), stat); err != nil {
 						log.WithError(err).Error("Saving stat failed")
 					}
 				}

@@ -23,6 +23,9 @@ db:
   database: tumlive
   password: example
   user: root
+influxdb:
+  serverUrl: http://localhost:8086
+  authToken:
 ingestbase: rtmp://ingest.tum.live/
 jwtkey: # This is an example key, delete and restart to generate a proper one
   |

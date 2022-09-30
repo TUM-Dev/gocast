@@ -104,8 +104,12 @@ type Config struct {
 		Password string `yaml:"password"`
 		Database string `yaml:"database"`
 		Host     string `yaml:"host"`
-		Port	 uint `yaml:"port"`
+		Port     uint   `yaml:"port"`
 	} `yaml:"db"`
+	Influxdb struct {
+		ServerUrl string `yaml:"serverUrl"`
+		AuthToken string `yaml:"authToken"`
+	} `yaml:"influxdb"`
 	Campus struct {
 		Base   string   `yaml:"base"`
 		Tokens []string `yaml:"tokens"`

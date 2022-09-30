@@ -7,10 +7,12 @@ import (
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
+	influxdb2 "github.com/influxdata/influxdb-client-go"
 	"github.com/joschahenningsen/TUM-Live/api"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/stats"
 	"github.com/joschahenningsen/TUM-Live/tools/tum"
 	"github.com/joschahenningsen/TUM-Live/web"
 	"github.com/pkg/profile"
@@ -161,6 +163,9 @@ func main() {
 		log.Error(err)
 		return
 	}
+
+	influxDb := influxdb2.NewClient(tools.Cfg.Influxdb.ServerUrl, tools.Cfg.Influxdb.AuthToken)
+	stats.InitStats(influxDb)
 
 	// tools.SwitchPreset()
 
