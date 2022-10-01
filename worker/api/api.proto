@@ -75,7 +75,6 @@ message StreamRequest {
   string CourseSlug = 4;
   google.protobuf.Timestamp Start = 6;
   google.protobuf.Timestamp End = 7;
-  bool PublishStream = 8;
   bool PublishVoD = 9;
   uint32 StreamID = 10;
   string CourseTerm = 11;

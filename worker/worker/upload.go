@@ -4,7 +4,6 @@ import (
 	"github.com/joschahenningsen/TUM-Live/worker/cfg"
 	log "github.com/sirupsen/logrus"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -60,7 +59,7 @@ func post(file string) error {
 		log.Error("Request failed with response code: ", rsp.StatusCode)
 	}
 	if err == nil && rsp != nil {
-		all, err := ioutil.ReadAll(rsp.Body)
+		all, err := io.ReadAll(rsp.Body)
 		if err == nil {
 			log.WithField("fileUploaded", file).Debug(string(all))
 		}

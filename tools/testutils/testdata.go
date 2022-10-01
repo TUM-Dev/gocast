@@ -46,7 +46,7 @@ var (
 		Name:          "Home",
 		PresetID:      1,
 		Image:         "ccc47fae-847c-4a91-8a65-b26cbae6fbe2.jpg",
-		LectureHallId: LectureHall.ID,
+		LectureHallID: LectureHall.ID,
 		IsDefault:     false,
 	}
 	CourseFPV = model.Course{
@@ -57,7 +57,6 @@ var (
 		Year:                 2022,
 		TeachingTerm:         "W",
 		TUMOnlineIdentifier:  "2020",
-		LiveEnabled:          true,
 		VODEnabled:           false,
 		DownloadsEnabled:     false,
 		ChatEnabled:          true,
@@ -76,7 +75,6 @@ var (
 		Year:                 0,
 		TeachingTerm:         "W",
 		TUMOnlineIdentifier:  "2021",
-		LiveEnabled:          true,
 		VODEnabled:           false,
 		DownloadsEnabled:     false,
 		ChatEnabled:          true,

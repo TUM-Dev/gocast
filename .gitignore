@@ -108,3 +108,6 @@ variables-backend.env
 rebuild.sh
 
 tumlive.service
+
+# osx
+.DS_Store

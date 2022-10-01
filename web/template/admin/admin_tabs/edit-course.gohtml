@@ -1,5 +1,6 @@
 {{define "edit-course"}}
     <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
+    <script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
     <script src="/static/node_modules/chart.js/dist/chart.min.js"></script>
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
     {{$course := .IndexData.TUMLiveContext.Course}}
@@ -11,6 +12,9 @@
                     <h1 class="self-center">{{$course.Name}}</h1>
                     <div x-cloak x-show="(new URL(document.location)).searchParams.get('copied')!==null" class="p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800" role="alert">
                         Course was copied successfully.
+                    </div>
+                    <div x-cloak x-show="(new URL(document.location)).searchParams.get('created')!==null" class="p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800" role="alert">
+                        Course was created successfully.
                     </div>
                 </div>
                 <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
@@ -30,9 +34,9 @@
                 </div>
 
                 <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
-                    <h2 class="text-2 text-2xl font-semibold">Camera Presets</h2>
+                    <h2 class="text-2 text-2xl font-semibold">Lecture Hall Settings</h2>
                     <div class="">
-                        {{template "camera-presets"}}
+                        {{template "source-settings"}}
                     </div>
                 </div>
 
