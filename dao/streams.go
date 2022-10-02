@@ -378,7 +378,6 @@ func (d streamsDao) SaveStream(vod *model.Stream) error {
 		LiveNow:          vod.LiveNow,
 		Recording:        vod.Recording,
 		Chats:            vod.Chats,
-		Stats:            vod.Stats,
 		Units:            vod.Units,
 		VodViews:         vod.VodViews,
 		StartOffset:      vod.StartOffset,

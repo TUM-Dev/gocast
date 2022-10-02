@@ -259,7 +259,6 @@ func (s Stream) getJson(lhs []LectureHall, course Course) gin.H {
 		"isConverting":          s.IsConverting(),
 		"transcodingProgresses": s.TranscodingProgresses,
 		"isPast":                s.IsPast(),
-		"hasStats":              s.Stats != nil,
 		"files":                 files,
 		"color":                 s.Color(),
 		"start":                 s.Start,

@@ -79,7 +79,6 @@ export class Lecture {
     isConverting: boolean;
     readonly isRecording: boolean;
     readonly isPast: boolean;
-    readonly hasStats: boolean;
 
     name: string;
     description: string;
