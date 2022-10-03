@@ -33,20 +33,19 @@ func (r mainRoutes) settingsPage(c *gin.Context) {
 func (r mainRoutes) LoginHandler(c *gin.Context) {
 	username := c.Request.FormValue("username")
 	password := c.Request.FormValue("password")
+	c.Set("redirURL", getRedirectUrl(c))
 
 	var data *sessionData
 	var err error
 
 	if data = loginWithUserCredentials(username, password, r.UsersDao); data != nil {
-		startSession(c, data)
-		c.Redirect(http.StatusFound, getRedirectUrl(c))
+		HandleValidLogin(c, data)
 		return
 	}
 
 	if tools.Cfg.Ldap.UseForLogin {
 		if data, err = loginWithTumCredentials(username, password, r.UsersDao); err == nil {
-			startSession(c, data)
-			c.Redirect(http.StatusFound, getRedirectUrl(c))
+			HandleValidLogin(c, data)
 			return
 		} else if err != tum.ErrLdapBadAuth {
 			log.WithError(err).Error("Login error")
@@ -54,6 +53,15 @@ func (r mainRoutes) LoginHandler(c *gin.Context) {
 	}
 
 	_ = templateExecutor.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(true))
+}
+
+func HandleValidLogin(c *gin.Context, data *sessionData) {
+	startSession(c, data)
+	val, exists := c.Get("redirURL")
+	if !exists {
+		val = "/"
+	}
+	c.Redirect(http.StatusFound, val.(string))
 }
 
 func getRedirectUrl(c *gin.Context) string {
