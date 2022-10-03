@@ -33,8 +33,7 @@ func (r mainRoutes) settingsPage(c *gin.Context) {
 func (r mainRoutes) LoginHandler(c *gin.Context) {
 	username := c.Request.FormValue("username")
 	password := c.Request.FormValue("password")
-	c.Set("redirURL", getRedirectUrl(c))
-
+	c.SetCookie("redirURL", getRedirectUrl(c), 60, "/", "", tools.CookieSecure, true)
 	var data *sessionData
 	var err error
 
@@ -55,13 +54,16 @@ func (r mainRoutes) LoginHandler(c *gin.Context) {
 	_ = templateExecutor.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(true))
 }
 
+// HandleValidLogin starts a session and redirects the user to the page they were trying to access.
 func HandleValidLogin(c *gin.Context, data *sessionData) {
 	startSession(c, data)
-	val, exists := c.Get("redirURL")
+	redirURL, exists := c.Get("redirURL")
 	if !exists {
-		val = "/"
+		redirURL = "/"
 	}
-	c.Redirect(http.StatusFound, val.(string))
+	c.Redirect(http.StatusFound, redirURL.(string))
+	// Delete cookie that was used for saving the redirURL.
+	c.SetCookie("redirURL", "", -1, "/", "", tools.CookieSecure, true)
 }
 
 func getRedirectUrl(c *gin.Context) string {
