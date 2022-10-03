@@ -3,7 +3,7 @@
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     {{$course := .IndexData.TUMLiveContext.Course}}
     <div x-data="{ viewers: 0 }" @viewers.window="viewers = $event.detail.viewers"
-         class="inline-flex space-x-2">
+         class="text-5 text-xs mt-2 lg:text-sm">
         {{if not $stream.Recording}}
             {{if not $stream.LiveNow}}
                 {{if $stream.Ended }}

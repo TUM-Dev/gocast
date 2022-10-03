@@ -35,7 +35,7 @@
          id="chatWrapper"
          class="flex relative flex-col text-1 h-full">
         <!-- Chat header -->
-        <div class="flex sticky top-0 align-middle justify-between w-full px-3 max-h-12 h-12 border-b justify-between dark:border-gray-800"
+        <div class="flex align-middle justify-between sticky top-0 bg-white z-30 w-full px-3 max-h-12 h-12 border-b dark:bg-secondary dark:border-gray-800"
              style="min-height: 3rem;"> <!-- since there is no min-h-12 class -->
             <div class="my-auto space-x-2 ml-auto">
                 <button class="text-5 text-xs rounded font-semibold px-2 py-1 my-auto uppercase"
@@ -84,7 +84,7 @@
 
         <!-- Admin toolbox -->
         <template x-if="c.admin">
-            <div class="flex align-middle h-12 px-3 justify-between sticky top-12 border-b dark:border-gray-800"
+            <div class="flex align-middle justify-between bg-white dark:bg-secondary z-30 h-12 px-3 sticky top-12 border-b dark:border-gray-800"
                  style="min-height: 3rem;">
                 <div class="flex text-5 text-xs">
                     <span class="uppercase font-light my-auto">admin</span>
@@ -105,7 +105,7 @@
 
         <!-- Active Poll UI -->
         <template x-if="c.poll.activePoll && !c.admin">
-            <div x-data="{showPoll: false}" class="z-50 absolute w-full top-12 px-2 py-1">
+            <div x-data="{showPoll: false}" class="z-30 absolute w-full top-12 px-2 py-1">
                 <div class="shadow-lg border rounded-lg bg-white py-2 dark:bg-secondary dark:border-gray-600">
                     <div class="flex align-middle justify-between px-3 dark:border-gray-600"
                          :class="showPoll && 'border-b pb-2'">
@@ -139,7 +139,7 @@
             </div>
         </template>
         <template x-if="c.poll.activePoll && c.admin">
-            <div x-data="{showPoll: false}" class="z-50 absolute top-24 w-full px-2 py-1">
+            <div x-data="{showPoll: false}" class="z-30 absolute top-24 w-full px-2 py-1">
                 <div class="shadow-lg text-3 border rounded-lg bg-white py-2 dark:bg-secondary dark:border-secondary-light">
                     <div class="flex align-middle justify-between px-3 dark:border-secondary-light"
                          :class="showPoll && 'border-b pb-2'">
@@ -176,7 +176,7 @@
             </div>
         </template>
         <template x-if="c.poll.result">
-            <div class="z-50 absolute w-full px-2 py-1" :class="c.admin ? 'top-24' : 'top-12'">
+            <div class="z-30 absolute w-full px-2 py-1" :class="c.admin ? 'top-24' : 'top-12'">
                 <div class="shadow-lg border rounded-lg bg-white py-2 dark:bg-secondary dark:border-gray-600">
                     <div class="flex align-middle justify-between px-3 border-b pb-2 dark:border-gray-600"
                          :class="showPoll && 'border-b pb-2'">
@@ -206,7 +206,7 @@
 
         <!-- Messages -->
         <div id="chatBox"
-             class="grid gap-y-8 content-start h-full w-full overflow-y-scroll overflow-x-hidden px-4 py-2 z-40">
+             class="grid gap-y-8 content-start h-full w-full overflow-y-scroll overflow-x-hidden px-4 py-2 z-30">
             {{template "messageTemplate" .}}
         </div>
 

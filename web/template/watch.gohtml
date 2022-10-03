@@ -29,7 +29,7 @@
     <div class="flex flex-wrap shadow border bg-white dark:bg-secondary dark:shadow-0 dark:border-0">
         <div id="watchWrapper"
              :class="showChat ? 'lg:basis-3/4' : 'lg:basis-full'"
-             class="basis-full lg:order-none order-1">
+             class="basis-full lg:order-none order-1 sticky top-0 lg:relative z-40">
             <noscript><p class="vjs-no-js">
                     To view this video please enable JavaScript.
                 </p></noscript>
@@ -134,7 +134,7 @@
         {{if or $course.ChatEnabled $stream.ChatEnabled}}
             <div x-show="showChat"
                  :class="showChat ? 'lg:basis-1/4' : 'lg:basis-0'"
-                 class="z-40 basis-full order-3 border rounded p-1 mx-2 bg-gray-100 dark:bg-gray-800 dark:border-0 lg:border-0 lg:shadow lg:order-none lg:mx-0 lg:p-0 lg:bg-transparent">
+                 class="z-20 basis-full order-3 border rounded p-1 mx-5 bg-gray-100 dark:bg-gray-800 dark:border-0 lg:border-0 lg:shadow lg:order-none lg:mx-0 lg:p-0 lg:bg-transparent">
                 <div id="chat-box" class="bg-white rounded lg:bg-transparent md:rounded-0 dark:bg-secondary">
                     {{template "chat" .ChatData}}
                 </div>
@@ -144,10 +144,10 @@
         <!-- stream info container -->
         <!-- Title, course name, actions -->
         <div class="basis-full relative p-5 lg:order-none order-2">
-            <div class="flex justify-between align-middle">
+            <div class="flex justify-between align-middle border-b dark:border-gray-800 pb-2">
                 <!-- title and course-name -->
                 <div class="grid mb-auto shrink">
-                    <h1 class="font-bold text-4 text-2xl grow"
+                    <h1 class="font-bold text-4 text-lg grow lg:text-2xl"
                         @titleupdate.window="$el.innerText=$event.detail.title">
                         {{if $stream.Name}}
                             {{$stream.Name}}
@@ -155,21 +155,20 @@
                             Lecture: {{$stream.Start.Month}} {{printf "%02d." $stream.Start.Day}} {{$stream.Start.Year}}
                         {{end}}
                     </h1>
-                    <div class="flex justify-between flex-col sm:flex-row">
+                    <div class="flex justify-between flex-col sm:flex-row text-sm lg:text-base">
                         <div class="flex my-auto">
                             <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                                 <span class="text-5 hover:text-1 hover:underline">{{$course.Name}}</span></a>
                         </div>
                     </div>
+                    {{if not $stream.Recording}}
+                        {{template "watch-info" .}}
+                    {{end}}
                 </div>
 
                 <!-- Desktop stream info-->
                 <div class="grid gap-3 shrink-0">
                     <div class="space-x-2 text-lg text-4 hidden md:inline-flex shrink-0 my-auto">
-                        {{if not $stream.Recording}}
-                            {{template "watch-info" .}}
-                        {{end}}
-
                         {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
                             <a class="rounded-lg px-3 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
                                href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
@@ -182,7 +181,7 @@
                         {{template "actions" .}}
 
                         <!-- Desktop Open Chat -->
-                        {{if and $course.ChatEnabled $stream.ChatEnabled}}
+                        {{if or $course.ChatEnabled $stream.ChatEnabled}}
                             <button @click="showChat = !showChat;"
                                     title="Open Chat"
                                     :class="showChat ? 'bg-gray-200 hover:bg-gray-100 dark:bg-gray-600 dark:hover:bg-secondary' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600'"
@@ -195,22 +194,20 @@
             </div>
 
             <!-- Mobile stream info -->
-            <div class="md:hidden flex justify-between pt-3 text-3">
-                {{if not $stream.Recording}}
-                    {{template "watch-info" .}}
-                {{end}}
+            <div class="md:hidden flex justify-between mt-5 text-3">
+                <div class="flex">
+                    {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
+                        <a class="rounded-lg px-3 py-2 w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600 mr-2"
+                           href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
+                           :title="'Edit course settings'">
+                            <i class="fa-solid fa-pen text-4"></i>
+                        </a>
+                    {{end}}
 
-                {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
-                    <a class="rounded-lg px-3 py-2 w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
-                       href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
-                       :title="'Edit course settings'">
-                        <i class="fa-solid fa-pen text-4"></i>
-                    </a>
-                {{end}}
+                    {{template "actions" .}}
+                </div>
 
-                {{template "actions" .}}
-
-                {{if and $course.ChatEnabled $stream.ChatEnabled}}
+                {{if or $course.ChatEnabled $stream.ChatEnabled}}
                     <!-- Desktop Open Chat -->
                     <button @click="showChat = !showChat;"
                             title="Open Chat"
@@ -223,9 +220,9 @@
         </div>
         {{if and .IsAdminOfCourse $stream.LiveNow}}
             <!-- Admin control buttons -->
-            <div class="flex basis-full p-5 lg:order-none order-4">
-                <i class="fa-solid fa-wrench mr-1 text-3 mt-1"></i>
-                <div class="md:space-x-2 lg:space-y-0 space-y-2 px-2 w-full">
+            <div class="w-full p-5 lg:order-none order-4">
+                <h3 class="text-4 font-semibold border-b dark:border-gray-800 mb-3">Admin</h3>
+                <div class="md:space-x-2 lg:space-y-0 space-y-2 w-full">
                     {{/* Lecture hall is set, means no self-stream*/}}
                     {{if $stream.LectureHallID}}
                         <button @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)"
@@ -286,20 +283,21 @@
 
         <!-- Video description -->
         <div x-data="{ less: {{len .Description}}>{{.CutOffLength}}, full: `{{.Description}}`, prev: `{{.TruncatedDescription}}` }"
-             class="flex video-description flex-grow p-5 basis-full lg:order-none order-5"
+             class="video-description flex-grow p-5 basis-full lg:order-none order-5"
              x-show="full.length"
         >
-            <i class="fa-solid fa-circle-info mr-1 text-3 mt-1"></i>
-            <div class="px-2">
-                <div class="text-3"
-                     x-html="less ? prev : full"
-                     @descriptionupdate.window="full=$el.innerHTML=$event.detail.description.full;prev=
-                     $el.innerHTML=$event.detail.description.truncated;less=full.length>{{.CutOffLength}};">
-                </div>
+            <div class="flex justify-between border-b mb-3 dark:border-gray-800 lg:justify-start">
+                <h3 class="text-4 font-semibold">Description</h3>
                 <button x-show="full.length>{{.CutOffLength}}"
-                        class="hover:bg-gray-200 dark:hover:bg-gray-600 text-5 hover:text-1 text-xs rounded h-fit mt-1 font-semibold px-2 py-1 my-auto uppercase"
+                        class="text-5 text-xs rounded h-fit w-fit font-semibold px-2 py-1 my-auto uppercase lg:ml-2"
                         @click="less = !less" x-text="less ? 'show more' : 'show less'">
                 </button>
+            </div>
+
+            <div class="text-3 text-sm"
+                 x-html="less ? prev : full"
+                 @descriptionupdate.window="full=$el.innerHTML=$event.detail.description.full;prev=
+                     $el.innerHTML=$event.detail.description.truncated;less=full.length>{{.CutOffLength}};">
             </div>
         </div>
 
