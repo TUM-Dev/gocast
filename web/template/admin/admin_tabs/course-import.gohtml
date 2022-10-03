@@ -1,6 +1,7 @@
 {{define "course-import"}}
 <h1 class="text-2xl text-1 my-4">Course Import</h1>
 <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
+<script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
 
 <section class="form-container" x-data="admin.pageData()" x-on:loading-start.window="loading=true"
     x-on:loading-end.window="loading=false;courses=$event.detail.courses" x-init="admin.addNotifyEventListeners()">
@@ -90,7 +91,7 @@
                             </tbody>
                         </table>
                         <template x-for="event in course.events">
-                            <div class="flex py-1 px-2 border-t border-gray-500 hover:bg-secondary">
+                            <div class="flex py-1 px-2 border-t border-gray-500">
                                 <label class="w-2/6">
                                     <input class="w-auto" type="checkbox" checked x-model="event.import">
                                     <span

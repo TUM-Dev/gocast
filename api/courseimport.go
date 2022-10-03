@@ -205,7 +205,7 @@ func (r lectureHallRoutes) getSchedule(c *gin.Context) {
 		return
 	}
 	//todo figure out right token
-	campus, err := campusonline.New(tools.Cfg.Campus.Tokens[1], "")
+	campus, err := campusonline.New(tools.Cfg.Campus.Tokens[0], "")
 	if err != nil {
 		log.WithError(err).Error("Can't create campus client")
 		return
