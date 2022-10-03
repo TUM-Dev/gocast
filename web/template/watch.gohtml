@@ -131,11 +131,11 @@
             </div>
         </div>
         <!-- Chat -->
-        {{if and $course.ChatEnabled $stream.ChatEnabled}}
+        {{if or $course.ChatEnabled $stream.ChatEnabled}}
             <div x-show="showChat"
                  :class="showChat ? 'lg:basis-1/4' : 'lg:basis-0'"
-                 class="z-40 basis-full order-3 border rounded p-1 mx-2 bg-gray-100 lg:border-0 lg:shadow lg:order-none lg:mx-0 lg:p-0 lg:bg-transparent">
-                <div id="chat-box" class="bg-white rounded lg:bg-transparent md:rounded-0">
+                 class="z-40 basis-full order-3 border rounded p-1 mx-2 bg-gray-100 dark:bg-gray-800 dark:border-0 lg:border-0 lg:shadow lg:order-none lg:mx-0 lg:p-0 lg:bg-transparent">
+                <div id="chat-box" class="bg-white rounded lg:bg-transparent md:rounded-0 dark:bg-secondary">
                     {{template "chat" .ChatData}}
                 </div>
             </div>
@@ -146,7 +146,7 @@
         <div class="basis-full relative p-5 lg:order-none order-2">
             <div class="flex justify-between align-middle">
                 <!-- title and course-name -->
-                <div class="grid mb-auto">
+                <div class="grid mb-auto shrink">
                     <h1 class="font-bold text-4 text-2xl grow"
                         @titleupdate.window="$el.innerText=$event.detail.title">
                         {{if $stream.Name}}
@@ -159,24 +159,23 @@
                         <div class="flex my-auto">
                             <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                                 <span class="text-5 hover:text-1 hover:underline">{{$course.Name}}</span></a>
-                            {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
-                                <a class="hover:bg-gray-200 dark:hover:bg-gray-600 text-5 hover:text-1 w-fit m-2 px-2 inline-block rounded my-auto"
-                                   href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
-                                   :title="'Edit course settings'">
-                                        <span class="font-semibold text-sm">
-                                           <i class="fa-solid w-fit py-1 fa-pen"></i>
-                                        </span>
-                                </a>
-                            {{end}}
                         </div>
                     </div>
                 </div>
 
                 <!-- Desktop stream info-->
-                <div class="grid gap-3">
+                <div class="grid gap-3 shrink-0">
                     <div class="space-x-2 text-lg text-4 hidden md:inline-flex shrink-0 my-auto">
                         {{if not $stream.Recording}}
                             {{template "watch-info" .}}
+                        {{end}}
+
+                        {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
+                            <a class="rounded-lg px-3 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                               href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
+                               :title="'Edit course settings'">
+                                <i class="fa-solid fa-pen text-4"></i>
+                            </a>
                         {{end}}
 
                         <!-- Actions-->
@@ -187,7 +186,7 @@
                             <button @click="showChat = !showChat;"
                                     title="Open Chat"
                                     :class="showChat ? 'bg-gray-200 hover:bg-gray-100 dark:bg-gray-600 dark:hover:bg-secondary' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600'"
-                                    class="rounded-lg px-3 py-2 w-fit">
+                                    class="rounded-lg px-3 py-2 h-fit w-fit">
                                 <i class="fa-solid fa-comments text-4"></i>
                             </button>
                         {{end}}
@@ -216,6 +215,15 @@
                 {{if not $stream.Recording}}
                     {{template "watch-info" .}}
                 {{end}}
+
+                {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
+                    <a class="rounded-lg px-3 py-2 w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                       href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
+                       :title="'Edit course settings'">
+                        <i class="fa-solid fa-pen text-4"></i>
+                    </a>
+                {{end}}
+
                 {{template "actions" .}}
 
                 {{if and $course.ChatEnabled $stream.ChatEnabled}}
