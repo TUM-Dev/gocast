@@ -9,7 +9,7 @@
     <li :id="$id('lecture-li')"
         x-show="!filterPast || !lecture.isPast"
         :key="lecture.lectureId"
-        class="w-full mb-4 pb-4 relative dark:bg-gray-800 bg-gray-50 rounded shadow">
+        class="w-full mb-4 pb-4 relative bg-white dark:bg-gray-800 border dark:border-0 rounded shadow">
         <div class="border-t-2 flex justify-between mb-2" :class="'border-' + lecture.color">
             <div class="pt-2 px-2 w-full">
                 <div class="text-3 font-semibold">
