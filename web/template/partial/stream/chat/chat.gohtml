@@ -37,9 +37,6 @@
         <!-- Chat header -->
         <div class="flex sticky top-0 align-middle justify-between w-full px-3 max-h-12 h-12 border-b justify-between dark:border-0"
              style="min-height: 3rem;"> <!-- since there is no min-h-12 class -->
-            <div class = "my-auto" x-show="c.chatReplayActive">
-                <span class = "text-5 text-xs uppercase font-semibold">Replaying chat</span>
-            </div>
             <div class="my-auto space-x-2 ml-auto">
                 <button class="text-5 text-xs rounded font-semibold px-2 py-1 my-auto uppercase"
                         :class="c.chatReplayActive ? 'bg-gray-300 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700'"
