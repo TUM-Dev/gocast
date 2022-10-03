@@ -443,23 +443,6 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 		return nil, err
 	}
 
-	// request to voice-service for subtitles
-	client, err := GetSubtitleGeneratorClient()
-	if err != nil {
-		log.WithError(err).Error("could not connect to voice-service")
-		return nil, err
-	}
-	defer client.CloseConn()
-
-	_, err = client.Generate(ctx, &pb.GenerateRequest{
-		StreamId:   int32(req.GetStreamID()),
-		SourceFile: req.TranscodingFile,
-	})
-	if err != nil {
-		log.WithError(err).Error("could not call voice_client.generate")
-		return nil, err
-	}
-
 	return &pb.Status{Ok: true}, nil
 }
 

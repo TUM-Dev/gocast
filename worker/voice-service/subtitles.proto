@@ -7,7 +7,7 @@ service SubtitleGenerator {
   rpc Generate (GenerateRequest) returns (Empty) {}
 }
 
-// Implemented in worker and tum-live
+// Implemented in tum-live
 service SubtitleReceiver {
   rpc Receive (ReceiveRequest) returns (Empty) {}
 }

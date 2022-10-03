@@ -12,6 +12,8 @@ import (
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/bot"
+	"github.com/joschahenningsen/TUM-Live/worker/cfg"
+	"github.com/joschahenningsen/TUM-Live/worker/pb"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -63,6 +65,11 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			{
 				files.POST("", routes.newAttachment)
 				files.DELETE("/:fid", routes.deleteAttachment)
+			}
+
+			subtitles := admins.Group("subtitles")
+			{
+				subtitles.POST("", routes.requestSubtitles)
 			}
 		}
 	}
@@ -646,4 +653,67 @@ func (r streamRoutes) updateChatEnabled(c *gin.Context) {
 		return
 	}
 
+}
+
+func (r streamRoutes) requestSubtitles(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	stream := tumLiveContext.Stream
+	course := tumLiveContext.Course
+
+	type subtitleRequest struct {
+		Language string `json:"language"`
+	}
+
+	var request subtitleRequest
+	err := c.BindJSON(&request)
+	if err != nil {
+		sentry.CaptureException(err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+	}
+
+	// request to voice-service for subtitles
+	client, err := GetSubtitleGeneratorClient()
+	if err != nil {
+		sentry.CaptureException(err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "could not connect to voice-service",
+			Err:           err,
+		})
+	}
+	defer client.CloseConn()
+
+	folder := fmt.Sprintf("%s/%d/%s/%s/%s/",
+		cfg.StorageDir,
+		course.Year,
+		course.TeachingTerm,
+		course.Slug,
+		stream.Start.Format("2006-01-02_15-04"))
+
+	var file string
+	if stream.IsSelfStream() {
+		file = fmt.Sprintf("%s/%s-%s.mp4",
+			folder,
+			course.Slug,
+			stream.Start.Format("02012006"))
+	}
+	file = fmt.Sprintf("%s/%s.mp4", folder, stream.Name)
+
+	_, err = client.Generate(context.Background(), &pb.GenerateRequest{
+		StreamId:   int32(stream.ID),
+		SourceFile: file,
+	})
+	if err != nil {
+		sentry.CaptureException(err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "could not call generate on voice_client",
+			Err:           err,
+		})
+	}
 }

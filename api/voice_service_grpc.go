@@ -24,9 +24,9 @@ type subtitleReceiverServer struct {
 
 func (s subtitleReceiverServer) Receive(ctx context.Context, request *pb.ReceiveRequest) (*pb.Empty, error) {
 	subtitlesEntry := model.Subtitles{
-		StreamID: uint(request.StreamId),
-		Content:  request.Subtitles,
-		Language: request.Language,
+		StreamID: uint(request.GetStreamId()),
+		Content:  request.GetSubtitles(),
+		Language: request.GetLanguage(),
 	}
 	err := s.SubtitlesDao.Create(context.Background(), &subtitlesEntry)
 	if err != nil {
