@@ -28,7 +28,7 @@ export class Watch {
             if (window.innerWidth > 768) {
                 this.chat.style.height = `${this.player.getBoundingClientRect().height}px`;
             } else {
-                this.chat.style.height = "420px";
+                this.chat.style.height = "640px";
             }
         }
     }

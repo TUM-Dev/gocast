@@ -19,63 +19,78 @@
                 </span>
             </div>
 
-            <div class="relative group p-2 rounded
+            <div x-data="{ showMobileAction: false }"
+                    class="relative group p-2 rounded
                 {{if .IsPopUp}}
                     hover:bg-gray-100 dark:hover:bg-gray-700
                 {{else}}
-                    md:hover:bg-gray-100 md:dark:hover:bg-gray-700
+                    lg:hover:bg-gray-100 lg:dark:hover:bg-gray-700
                 {{end}}">
                 <div class="flex justify-between">
                     <span class="chatMsg w-5/6 my-auto" x-html="m.message"></span>
-                    <span class="hidden group-hover:inline text-xs text-5 font-light mt-auto"
-                          x-text="watch.messageDateToString(m.CreatedAt)"></span>
+                    <button @click="showMobileAction=!showMobileAction"
+                            @click.outside="showMobileAction = false;"
+                            class ="lg:hidden">
+                        <i class="text-3 fa-solid fa-ellipsis-vertical"></i>
+                    </button>
                 </div>
+
+                <!-- message-date -->
+                <span class="absolute right-2 bottom-2 hidden lg:group-hover:inline text-xs text-5 font-light"
+                      x-text="watch.messageDateToString(m.CreatedAt)"></span>
+
                 <!-- hover menu  -->
                 <div x-cloak
                      x-show="c.admin || m.visible"
-                     class="flex space-x-1 absolute text-3 bg-white dark:bg-secondary border rounded p-1 dark:border-0
+                     class="absolute text-4 bg-white dark:bg-secondary border rounded p-1 dark:border-0 lg:flex lg:space-x-1 z-40
                          {{if .IsPopUp}}
                             -top-7 right-2 bottom-auto group-hover:flex text-sm hidden
                          {{else}}
-                            md:-top-7 md:right-2 md:bottom-auto md:group-hover:flex md:hidden md:text-sm text-lg h-fit top-0 bottom-0 right-0 my-auto flex
-                         {{end}}">
+                            lg:-top-7 lg:right-2 lg:bottom-auto lg:group-hover:flex lg:flex lg:hidden text-sm h-fit top-full right-0 my-auto
+                         {{end}}"
+                         :class="showMobileAction ? 'grid' : 'hidden'">
                     <button x-cloak
                             x-show="m.visible"
                             @click="watch.likeMessage(m.ID); m.liked=!m.liked;"
                             :class="m.liked ? 'bg-gray-200 dark:bg-gray-600 hover:bg-transparent' : 'hover:bg-gray-200 dark:hover:bg-gray-600'"
-                            class="flex px-2 py-1 rounded"
+                            class="flex justify-between px-2 py-1 rounded"
                             :title="m.liked?'Unlike':'Like'">
-                        <i class="fas fa-thumbs-up m-auto"></i>
+                        <i class="fas fa-thumbs-up my-auto lg:mx-auto"></i>
+                        <span class = "lg:hidden">Like</span>
                     </button>
                     <button x-cloak
                             x-show="m.visible"
                             @click="c.current.replyTo === m.ID ? c.current.replyTo=0: c.current.replyTo=m.ID; $refs.chatInput.focus()"
                             title="Reply"
-                            class="flex px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                            class="flex justify-between px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
                             :class="c.current.replyTo === m.ID && 'hidden'">
-                        <i class="fa fas fa-reply m-auto"></i>
+                        <i class="fa fas fa-reply my-auto lg:mx-auto"></i>
+                        <span class = "lg:hidden">Reply</span>
                     </button>
 
                     <!-- admin stuff -->
                     <button x-show="c.admin"
                             @click="watch.deleteMessage(m.ID)"
                             title="Delete Message"
-                            class="flex px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
-                        <i class="fas fa-ban text-danger"></i>
+                            class="flex justify-between px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
+                        <i class="fas fa-ban text-danger my-auto lg:mx-auto"></i>
+                        <span class = "lg:hidden">Delete</span>
                     </button>
                     {{if $moderatedChat}}
                         <button x-show="c.admin && !m.visible"
                                 @click="watch.approveMessage(m.ID)"
                                 title="Approve Message"
-                                class="flex px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
-                            <i class="fa-solid fa-spell-check"></i>
+                                class="flex justify-between px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
+                            <i class="fa-solid fa-spell-check my-auto lg:mx-auto"></i>
+                            <span class = "lg:hidden">Approve</span>
                         </button>
                     {{end}}
                     <button x-show="c.admin && !m.resolved"
                             @click="watch.resolveMessage(m.ID)"
                             title="Resolve Message"
-                            class="flex px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
-                        <i class="fas fa-check text-success m-auto"></i>
+                            class="flex justify-between px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
+                        <i class="fas fa-check text-success my-auto lg:mx-auto"></i>
+                        <span class = "ml-2 lg:hidden">Resolve</span>
                     </button>
                 </div>
             </div>
