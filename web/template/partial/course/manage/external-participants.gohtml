@@ -1,7 +1,7 @@
 {{define "externalParticipants"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Course*/ -}}
     <ul class="dark:bg-secondary bg-gray-100 mb-6" x-data="{expanded: false}">
-        <li>
+        <li class = "pl-2">
             <p class="text-4 p-4">Add participants. They'll get notified about your invitation to
                 your lecture via mail.</p>
             <form method="post" action="/api/course/{{.Model.ID}}/createUserForCourse"
