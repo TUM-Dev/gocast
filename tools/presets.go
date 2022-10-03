@@ -71,7 +71,7 @@ func (p presetUtility) FetchLHPresets(lectureHall model.LectureHall) {
 }
 
 func (p presetUtility) UsePreset(preset model.CameraPreset) {
-	lectureHall, err := p.LectureHallDao.GetLectureHallByID(preset.LectureHallId)
+	lectureHall, err := p.LectureHallDao.GetLectureHallByID(preset.LectureHallID)
 	if err != nil {
 		sentry.CaptureException(err)
 		return
@@ -92,7 +92,7 @@ func (p presetUtility) UsePreset(preset model.CameraPreset) {
 func (p presetUtility) TakeSnapshot(preset model.CameraPreset) {
 	p.UsePreset(preset)
 	time.Sleep(time.Second * 10)
-	lectureHall, err := p.LectureHallDao.GetLectureHallByID(preset.LectureHallId)
+	lectureHall, err := p.LectureHallDao.GetLectureHallByID(preset.LectureHallID)
 	if err != nil {
 		sentry.CaptureException(err)
 		return

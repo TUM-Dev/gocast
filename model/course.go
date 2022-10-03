@@ -4,10 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"log"
 	"time"
 )
+
+// SourceMode 0 -> COMB, 1-> PRES, 2 -> CAM
+type SourceMode int
 
 type Course struct {
 	gorm.Model
@@ -31,8 +35,8 @@ type Course struct {
 	Token                   string
 	UserCreatedByToken      bool   `gorm:"default:false"`
 	CameraPresetPreferences string // json encoded. e.g. [{lectureHallID:1, presetID:4}, ...]
-
-	Pinned bool `gorm:"-"` // Used to determine if the course is pinned when loaded for a specific user.
+	SourcePreferences       string // json encoded. e.g. [{lectureHallID:1, sourceMode:0}, ...]
+	Pinned                  bool   `gorm:"-"` // Used to determine if the course is pinned when loaded for a specific user.
 }
 
 // GetUrl returns the URL of the course, e.g. /course/2022/S/MyCourse
@@ -67,6 +71,55 @@ func (c *Course) SetCameraPresetPreference(pref []CameraPresetPreference) {
 		log.Println(err)
 	}
 	c.CameraPresetPreferences = string(pBytes)
+}
+
+type SourcePreference struct {
+	LectureHallID uint       `json:"lecture_hall_id"`
+	SourceMode    SourceMode `json:"source_mode"`
+}
+
+// GetSourcePreference retrieves the source preferences
+func (c Course) GetSourcePreference() []SourcePreference {
+	var res []SourcePreference
+	err := json.Unmarshal([]byte(c.SourcePreferences), &res)
+	if err != nil {
+		return []SourcePreference{}
+	}
+	return res
+}
+
+// GetSourceModeForLectureHall retrieves the source preference for the given lecture hall, returns default SourcePreference if non-existing
+func (c Course) GetSourceModeForLectureHall(id uint) SourceMode {
+	for _, preference := range c.GetSourcePreference() {
+		if preference.LectureHallID == id {
+			return preference.SourceMode
+		}
+	}
+	return 0
+}
+
+// CanUseSource returns whether the specified source type is allowed for the lecture hall id given
+func (c Course) CanUseSource(lectureHallID uint, sourceType string) bool {
+	mode := c.GetSourceModeForLectureHall(lectureHallID)
+	switch sourceType {
+	case "PRES":
+		return mode != 2
+	case "CAM":
+		return mode != 1
+	case "COMB":
+		return mode != 1 && mode != 2
+	}
+	return true
+}
+
+// SetSourcePreference updates the source preferences
+func (c *Course) SetSourcePreference(pref []SourcePreference) {
+	pBytes, err := json.Marshal(pref)
+	if err != nil {
+		logrus.WithError(err).Error("Could not marshal source preference")
+		return
+	}
+	c.SourcePreferences = string(pBytes)
 }
 
 // CompareTo used for sorting. Falling back to old java habits...

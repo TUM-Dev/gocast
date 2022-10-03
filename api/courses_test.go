@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/Masterminds/sprig/v3"
@@ -1662,10 +1661,12 @@ func TestLectureHallsById(t *testing.T) {
 
 		ctrl := gomock.NewController(t)
 
+		var sourceMode model.SourceMode = 0
 		response := []lhResp{
-			{
-				LectureHallName: testutils.LectureHall.Name,
-				Presets:         testutils.LectureHall.CameraPresets},
+			{LectureHallName: testutils.LectureHall.Name,
+				LectureHallID: testutils.LectureHall.ID,
+				Presets:       testutils.LectureHall.CameraPresets,
+				SourceMode:    sourceMode},
 		}
 
 		gomino.TestCases{
@@ -1826,31 +1827,43 @@ func TestPresets(t *testing.T) {
 	t.Run("POST/api/course/:courseID/presets", func(t *testing.T) {
 		url := fmt.Sprintf("/api/course/%d/presets", testutils.CourseFPV.ID)
 
+		var sourceMode model.SourceMode = 1
+		selectedPreset := 1
 		request := []lhResp{
 			{
 				LectureHallName: "HS-4",
+				LectureHallID:   testutils.LectureHall.ID,
 				Presets: []model.CameraPreset{
 					{
 						Name:          "Preset 1",
 						PresetID:      1,
 						Image:         "375ed239-c37d-450e-9d4f-1fbdb5a2dec5.jpg",
-						LectureHallId: testutils.LectureHall.ID,
+						LectureHallID: testutils.LectureHall.ID,
 						IsDefault:     false,
 					},
 				},
-				SelectedIndex: 1,
+				SourceMode:       sourceMode,
+				SelectedPresetID: selectedPreset,
 			},
 		}
 
 		presetSettings := []model.CameraPresetPreference{
 			{
 				LectureHallID: testutils.LectureHall.ID,
-				PresetID:      1,
+				PresetID:      selectedPreset,
 			},
 		}
 
-		afterSetPresetPreference := testutils.CourseFPV
-		afterSetPresetPreference.CameraPresetPreferences = string(gomino.First(json.Marshal(presetSettings)).([]byte))
+		sourceSettings := []model.SourcePreference{
+			{
+				LectureHallID: testutils.LectureHall.ID,
+				SourceMode:    sourceMode,
+			},
+		}
+
+		afterChanges := testutils.CourseFPV
+		afterChanges.SetCameraPresetPreference(presetSettings)
+		afterChanges.SetSourcePreference(sourceSettings)
 
 		gomino.TestCases{
 			"no context": {
@@ -1892,7 +1905,7 @@ func TestPresets(t *testing.T) {
 
 							coursesMock.
 								EXPECT().
-								UpdateCourse(gomock.Any(), afterSetPresetPreference).
+								UpdateCourse(gomock.Any(), afterChanges).
 								Return(errors.New(""))
 							return coursesMock
 						}(),
@@ -1917,7 +1930,7 @@ func TestPresets(t *testing.T) {
 
 							coursesMock.
 								EXPECT().
-								UpdateCourse(gomock.Any(), afterSetPresetPreference).
+								UpdateCourse(gomock.Any(), afterChanges).
 								Return(nil)
 							return coursesMock
 						}(),

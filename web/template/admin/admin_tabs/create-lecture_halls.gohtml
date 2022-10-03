@@ -1,59 +1,57 @@
 {{define "createLectureHalls"}}
-    <div x-data="{showSuccess: false}" class="">
-        <div class="alerts fixed w-fit left-0 right-0 mx-auto top-3 z-50">
-            <div x-show="showSuccess"
-                 class="flex success bg-green-400 border border-green-600 pl-3 pr-3 pt-2 pb-2 rounded-lg shadow-md">
-                <span class="text-sm font-semibold text-slate-100 my-auto">
-                    &#10003; Added lecture hall successfully.
-                </span>
-            </div>
-        </div>
-        <div class="mx-auto w-4/5 my-10 shadow rounded-lg border bg-white dark:shadow-0 dark:border-gray-800 dark:bg-secondary-light">
-            <div class="border-b py-2 px-5 dark:border-gray-800">
-                <h6 class="text-3 font-bold">New Lecture-Hall</h6>
-            </div>
-            <form x-data="{name:'',combIP:'', presIP:'', camIP:'',cameraIp:'', pwrCtrlIp:''}"
-                  @submit.prevent="
-                    showSuccess = await admin.createLectureHall(name, combIP, presIP, camIP, cameraIp, pwrCtrlIp);
-                    setTimeout(() => {window.location = '/admin/lectureHalls';}, 2000);"
-                  class="grid gap-3 px-5 py-4 ">
-                <div class="text-sm">
-                    <label for="name" class="block text-5">Name</label>
-                    <input type="text" x-model="name" id="lh-form-name" placeholder="FMI_HS1" autofocus="" required
-                           class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
-                </div>
-                <div class="text-sm">
-                    <label for="name" class="block text-5">Presentation</label>
-                    <input type="text" x-model="presIP" id="lh-form-pres" placeholder="0.0.0.0" autofocus="" required
-                           class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
-                </div>
-                <div class="text-sm">
-                    <label for="name" class="block text-5">Camera</label>
-                    <input type="text" x-model="camIP" id="lh-form-cam-ip" placeholder="0.0.0.0" autofocus="" required
-                           class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
-                </div>
-                <div class="text-sm">
-                    <label for="name" class="block text-5">Combined</label>
-                    <input type="text" x-model="combIP" id="lh-form-comb-ip" placeholder="0.0.0.0" autofocus="" required
-                           class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
-                </div>
-                <div class="text-sm">
-                    <label for="name" class="block text-5">Axis Cam</label>
-                    <input type="text" x-model="cameraIp" id="lh-form-camera-ip" placeholder="0.0.0.0" autofocus=""
-                           required
-                           class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
-                </div>
-                <div class="text-sm">
-                    <label for="name" class="block text-5">Anel PWR-Ctrl</label>
-                    <input type="text" x-model="pwrCtrlIp" id="lh-form-pwrctrl-ip" placeholder="0.0.0.0" autofocus=""
-                           required
-                           class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
-                </div>
-                <button type="submit"
-                        class="block bg-blue-500 text-center px-3 py-1 mt-3 rounded w-full dark:bg-indigo-600">
-                    <span class="text-white uppercase text-sm font-semibold">Create</span>
-                </button>
-            </form>
+<div x-data="{showSuccess: false}" class="">
+    <div class="alerts fixed w-fit left-0 right-0 mx-auto top-3 z-50">
+        <div x-show="showSuccess"
+            class="flex success bg-green-400 border border-green-600 pl-3 pr-3 pt-2 pb-2 rounded-lg shadow-md">
+            <span class="text-sm font-semibold text-slate-100 my-auto">
+                &#10003; Added lecture hall successfully.
+            </span>
         </div>
     </div>
+    <div
+        class="mx-auto w-4/5 my-10 shadow rounded-lg border bg-white dark:shadow-0 dark:border-gray-800 dark:bg-secondary-light">
+        <div class="border-b py-2 px-5 dark:border-gray-800">
+            <h6 class="text-3 font-bold">New Lecture-Hall</h6>
+        </div>
+        <form x-data="{name:'',combIP:'', presIP:'', camIP:'',cameraIp:'', pwrCtrlIp:''}" @submit.prevent="
+                    showSuccess = await admin.createLectureHall(name, combIP, presIP, camIP, cameraIp, pwrCtrlIp);
+                    setTimeout(() => {window.location = '/admin/lectureHalls';}, 2000);" class="grid gap-3 px-5 py-4 ">
+            <div class="text-sm">
+                <label for="name" class="block text-5">Name</label>
+                <input type="text" x-model="name" id="lh-form-name" placeholder="FMI_HS1" autofocus="" required
+                    class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600" />
+            </div>
+            <div class="text-sm">
+                <label for="name" class="block text-5">Presentation</label>
+                <input type="text" x-model="presIP" id="lh-form-pres" placeholder="0.0.0.0" autofocus="" required
+                    class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600" />
+            </div>
+            <div class="text-sm">
+                <label for="name" class="block text-5">Camera</label>
+                <input type="text" x-model="camIP" id="lh-form-cam-ip" placeholder="0.0.0.0" autofocus="" required
+                    class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600" />
+            </div>
+            <div class="text-sm">
+                <label for="name" class="block text-5">Combined</label>
+                <input type="text" x-model="combIP" id="lh-form-comb-ip" placeholder="0.0.0.0" autofocus="" required
+                    class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600" />
+            </div>
+            <div class="text-sm">
+                <label for="name" class="block text-5">Axis Cam</label>
+                <input type="text" x-model="cameraIp" id="lh-form-camera-ip" placeholder="0.0.0.0" autofocus="" required
+                    class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600" />
+            </div>
+            <div class="text-sm">
+                <label for="name" class="block text-5">Anel PWR-Ctrl</label>
+                <input type="text" x-model="pwrCtrlIp" id="lh-form-pwrctrl-ip" placeholder="0.0.0.0" autofocus=""
+                    required
+                    class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600" />
+            </div>
+            <button type="submit"
+                class="block bg-blue-500 text-center px-3 py-1 mt-3 rounded w-full dark:bg-indigo-600">
+                <span class="text-white uppercase text-sm font-semibold">Create</span>
+            </button>
+        </form>
+    </div>
+</div>
 {{end}}
