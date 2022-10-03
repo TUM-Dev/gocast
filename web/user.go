@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -19,6 +20,8 @@ type userSettingsData struct {
 	IndexData IndexData
 }
 
+const redirCookieName = "redirURL"
+
 func (r mainRoutes) settingsPage(c *gin.Context) {
 	d := userSettingsData{IndexData: NewIndexData()}
 	d.IndexData.TUMLiveContext = c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
@@ -33,9 +36,20 @@ func (r mainRoutes) settingsPage(c *gin.Context) {
 func (r mainRoutes) LoginHandler(c *gin.Context) {
 	username := c.Request.FormValue("username")
 	password := c.Request.FormValue("password")
-	c.SetCookie("redirURL", getRedirectUrl(c), 60, "/", "", tools.CookieSecure, true)
-	var data *sessionData
-	var err error
+
+	redirURL := getRedirectUrl(c)
+
+	// Only set cookie if (potentially) needed.
+	if !strings.HasSuffix(redirURL, "/") && !strings.HasSuffix(redirURL, "/login") {
+		// We need to set the cookie here now as we don't know whether the user will choose an internal or external login.
+		// Use 10 minutes for expiry as the user may not login immediately. The cookie is deleted after login.
+		c.SetCookie(redirCookieName, redirURL, 600, "/", "", tools.CookieSecure, true)
+	}
+
+	var (
+		data *sessionData
+		err  error
+	)
 
 	if data = loginWithUserCredentials(username, password, r.UsersDao); data != nil {
 		HandleValidLogin(c, data)
@@ -57,20 +71,21 @@ func (r mainRoutes) LoginHandler(c *gin.Context) {
 // HandleValidLogin starts a session and redirects the user to the page they were trying to access.
 func HandleValidLogin(c *gin.Context, data *sessionData) {
 	startSession(c, data)
-	redirURL, exists := c.Get("redirURL")
-	if !exists {
-		redirURL = "/"
+	redirURL, err := c.Cookie(redirCookieName)
+	if err != nil {
+		redirURL = "/" // Fallback in case no cookie is present: Redirect to index page
+	} else {
+		// Delete cookie that was used for saving the redirURL.
+		c.SetCookie(redirCookieName, "", -1, "/", "", tools.CookieSecure, true)
 	}
-	c.Redirect(http.StatusFound, redirURL.(string))
-	// Delete cookie that was used for saving the redirURL.
-	c.SetCookie("redirURL", "", -1, "/", "", tools.CookieSecure, true)
+	c.Redirect(http.StatusFound, redirURL)
 }
 
 func getRedirectUrl(c *gin.Context) string {
 	ret := c.Request.FormValue("return")
 	ref := c.Request.FormValue("ref")
 	if ret != "" {
-		red, err := url.QueryUnescape(c.Request.FormValue("return"))
+		red, err := url.QueryUnescape(ret)
 		if err == nil {
 			return red
 		}
