@@ -1,7 +1,6 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
 import { getPlayer } from "./TUMLiveVjs";
-import { Get, postData } from "./global";
 import { Realtime } from "./socket";
 
 export class Watch {
@@ -290,9 +289,11 @@ export const videoStatListener = {
 };
 
 export function onShift(e) {
-    switch (e.key) {
-        case "?": {
-            toggleShortcutsModal();
+    if (document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA") {
+        switch (e.key) {
+            case "?": {
+                toggleShortcutsModal();
+            }
         }
     }
 }
