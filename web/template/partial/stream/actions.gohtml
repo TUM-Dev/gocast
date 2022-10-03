@@ -48,5 +48,19 @@
                @click="if (global.copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))) {  copied=true; setTimeout(() => { copied=false }, 1000); }">
             </i>
         {{end}}
+
+        {{/* Enable Beta stream */}}
+        {{if $stream.LiveNow}}
+            {{if .DVR}}
+                <a href="./{{$stream.Model.ID}}" class="m-auto text-1 hover:text-1" title="Turn beta stream off">
+                    <i class="fa-solid fa-clock text-lg"></i>
+                </a>
+            {{else}}
+                <a href="?dvr" class="m-auto text-4 hover:text-1" title="Turn beta stream on">
+                    <i class = "fa-solid fa-clock"></i>
+                    <span class="align-super text-xs">Beta</span>
+                </a>
+            {{end}}
+        {{end}}
     </div>
 {{end}}
