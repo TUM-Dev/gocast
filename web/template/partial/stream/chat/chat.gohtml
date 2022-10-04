@@ -323,7 +323,8 @@
                             {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
                                 <input type="checkbox" name="anonymous" id="anonymous" class="hidden"
                                        x-model="c.current.anonymous" :disabled="c.disconnected">
-                                <label for="anonymous" class="flex items-center cursor-pointer text-4 hover:text-1"
+                                <label for="anonymous" class="flex items-center cursor-pointer text-4 hover:text-3"
+                                       :class="c.current.anonymous && 'text-blue-500'"
                                        title="Don't show my name.">
                                     <i class="fas fa-ghost"></i>
                                 </label>
