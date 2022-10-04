@@ -27,8 +27,8 @@
 <div id="watchPageMainWrapper" class="lg:px-5 lg:pb-1">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
     <div class="flex flex-wrap shadow border bg-white dark:bg-secondary dark:shadow-0 dark:border-0">
-        <div id="watchWrapper"
-             :class="showChat ? 'lg:basis-3/4' : 'lg:basis-full'"
+        <div x-data="{ 'chatEnabled': {{and $course.ChatEnabled $stream.ChatEnabled}} }" id="watchWrapper"
+             :class="showChat && chatEnabled ? 'lg:basis-3/4' : 'lg:basis-full'"
              class="basis-full lg:order-none order-1 sticky top-0 lg:relative z-40">
             <noscript><p class="vjs-no-js">
                     To view this video please enable JavaScript.
@@ -131,7 +131,7 @@
             </div>
         </div>
         <!-- Chat -->
-        {{if or $course.ChatEnabled $stream.ChatEnabled}}
+        {{if and $course.ChatEnabled $stream.ChatEnabled}}
             <div x-show="showChat"
                  :class="showChat ? 'lg:basis-1/4' : 'lg:basis-0'"
                  class="z-20 basis-full order-3 border rounded p-1 mx-5 bg-gray-100 dark:bg-gray-800 dark:border-0 lg:border-0 lg:shadow lg:order-none lg:mx-0 lg:p-0 lg:bg-transparent">
@@ -181,7 +181,7 @@
                         {{template "actions" .}}
 
                         <!-- Desktop Open Chat -->
-                        {{if or $course.ChatEnabled $stream.ChatEnabled}}
+                        {{if and $course.ChatEnabled $stream.ChatEnabled}}
                             <button @click="showChat = !showChat;"
                                     title="Open Chat"
                                     :class="showChat ? 'bg-gray-200 hover:bg-gray-100 dark:bg-gray-600 dark:hover:bg-secondary' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600'"
@@ -207,8 +207,8 @@
                     {{template "actions" .}}
                 </div>
 
-                {{if or $course.ChatEnabled $stream.ChatEnabled}}
-                    <!-- Desktop Open Chat -->
+                {{if and $course.ChatEnabled $stream.ChatEnabled}}
+                    <!-- Mobile Open Chat -->
                     <button @click="showChat = !showChat;"
                             title="Open Chat"
                             :class="showChat ? 'bg-gray-200 hover:bg-gray-100 dark:bg-gray-600 dark:hover:bg-secondary' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600'"
