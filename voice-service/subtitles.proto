@@ -21,6 +21,7 @@ message ReceiveRequest {
 message GenerateRequest {
   int32 stream_id = 1;
   string source_file = 2;
+  string language = 3;
 }
 
 message Empty {}

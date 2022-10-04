@@ -379,7 +379,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		log.WithField("File", c.getTranscodingFileName()).WithError(err).Error("Extracting keywords failed.")
 	}
 
-	upload(&c)
+	// upload(&c)
 	notifyUploadDone(&c)
 	_ = os.Remove(c.getRecordingFileName())
 }

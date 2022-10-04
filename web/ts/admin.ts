@@ -189,3 +189,16 @@ export async function updateText(id: number, name: string, content: string) {
             showMessage(`Successfully updated "${name}"`);
         });
 }
+
+export async function requestSubtitles(streamID: number, language: string) {
+    await postData(`/api/stream/${streamID}/subtitles`, { language })
+        .then((res) => {
+            if (!res.ok) {
+                throw Error(res.statusText);
+            }
+            return;
+        })
+        .catch((err) => {
+            console.error(err);
+        });
+}

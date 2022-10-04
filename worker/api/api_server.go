@@ -101,11 +101,6 @@ func (s server) GenerateSectionImages(ctx context.Context, request *pb.GenerateS
 	return &pb.GenerateSectionImageResponse{Paths: paths}, nil
 }
 
-func (s server) Receive(ctx context.Context, request *pb.ReceiveRequest) (*pb.Empty, error) {
-	fmt.Println("hello world")
-	return &pb.Empty{}, nil
-}
-
 func (s server) DeleteSectionImage(ctx context.Context, request *pb.DeleteSectionImageRequest) (*pb.Status, error) {
 	err := os.RemoveAll(request.Path) // remove image file
 	if err != nil {

@@ -657,7 +657,6 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	stream := tumLiveContext.Stream
-	course := tumLiveContext.Course
 
 	type subtitleRequest struct {
 		Language string `json:"language"`
@@ -672,39 +671,43 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 			CustomMessage: "can not bind body",
 			Err:           err,
 		})
+		return
 	}
 
 	// request to voice-service for subtitles
 	client, err := GetSubtitleGeneratorClient()
 	if err != nil {
+		fmt.Println(err)
 		sentry.CaptureException(err)
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "could not connect to voice-service",
 			Err:           err,
 		})
+		return
 	}
 	defer client.CloseConn()
 
-	folder := fmt.Sprintf("%s/%d/%s/%s/%s/",
-		tools.Cfg.Paths.Mass,
-		course.Year,
-		course.TeachingTerm,
-		course.Slug,
-		stream.Start.Format("2006-01-02_15-04"))
-
-	var file string
-	if stream.IsSelfStream() {
-		file = fmt.Sprintf("%s/%s-%s.mp4",
-			folder,
-			course.Slug,
-			stream.Start.Format("02012006"))
+	var sourceFile string
+	files := stream.GetVodFiles()
+	for _, file := range files {
+		if file.Type == 1 {
+			sourceFile = file.Path
+		}
 	}
-	file = fmt.Sprintf("%s/%s.mp4", folder, stream.Name)
+
+	if len(sourceFile) == 0 {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not find vod file.",
+		})
+		return
+	}
 
 	_, err = client.Generate(context.Background(), &pb.GenerateRequest{
 		StreamId:   int32(stream.ID),
-		SourceFile: file,
+		SourceFile: sourceFile,
+		Language:   request.Language,
 	})
 	if err != nil {
 		sentry.CaptureException(err)
@@ -713,6 +716,7 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 			CustomMessage: "could not call generate on voice_client",
 			Err:           err,
 		})
+		return
 	}
 
 	c.Status(http.StatusCreated)

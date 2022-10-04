@@ -391,17 +391,7 @@ func (s server) NotifyTranscodingFinished(ctx context.Context, request *pb.Trans
 		log.WithError(err).Error("error removing transcoding progress")
 	}
 
-	// look for file to prevent duplication
-	shouldAddFile := true
-	for _, file := range stream.Files {
-		if file.Path == request.FilePath {
-			shouldAddFile = false
-			break
-		}
-	}
-	if shouldAddFile {
-		stream.Files = append(stream.Files, model.File{StreamID: stream.ID, Path: request.FilePath})
-	}
+	addToFiles(&stream, request.GetFilePath())
 
 	if request.Duration != 0 {
 		stream.Duration = request.Duration
@@ -439,6 +429,9 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 	default:
 		stream.PlaylistUrl = req.HLSUrl
 	}
+
+	addToFiles(&stream, req.GetTranscodingFile())
+
 	if err = s.StreamsDao.SaveStream(&stream); err != nil {
 		return nil, err
 	}
@@ -910,6 +903,19 @@ func getWorkerWithLeastWorkload(workers []model.Worker) int {
 		}
 	}
 	return foundWorker
+}
+
+func addToFiles(stream *model.Stream, filePath string) {
+	shouldAddFile := true
+	for _, file := range stream.Files {
+		if file.Path == filePath {
+			shouldAddFile = false
+			break
+		}
+	}
+	if shouldAddFile {
+		stream.Files = append(stream.Files, model.File{StreamID: stream.ID, Path: filePath})
+	}
 }
 
 // init initializes a gRPC server on port 50052
