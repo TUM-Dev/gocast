@@ -26,8 +26,15 @@ export class Poll {
     }
 
     async load() {
-        const res = await fetch("/api/chat/" + this.streamId + "/active-poll");
-        this.activePoll = await res.json();
+        this.activePoll = await fetch("/api/chat/" + this.streamId + "/active-poll")
+            .then((res) => {
+                if (!res.ok) {
+                    throw Error(res.statusText);
+                }
+                return res;
+            })
+            .then((res) => res.json())
+            .catch((err) => undefined); // return undefined if error
     }
 
     addEmptyOption() {

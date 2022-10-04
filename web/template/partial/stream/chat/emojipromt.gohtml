@@ -15,7 +15,8 @@
                     x-on:mouseenter="c.emojis.emojiIndex=i" {{/* Select emoji on hover */}}
                     :class="c.emojis.emojiIndex===i && 'bg-gray-100 dark:bg-gray-600'"
                     @click="$dispatch('emojiselectiontriggered')" {{/* notify chatpromts to insert emoji */}}
-                    class="cursor-pointer mr-1 p-1 text-2xl rounded"></button>
+                    class="cursor-pointer mr-1 h-8 w-8 rounded text-xl">
+            </button>
         </template>
     </div>
 {{end}}
