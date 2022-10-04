@@ -212,11 +212,13 @@ func (r lectureHallRoutes) getSchedule(c *gin.Context) {
 	}
 	var room campusonline.ICalendar
 	switch c.Request.Form.Get("department") {
-	case "In":
-		room, err = campus.GetXCalIn(from, to)
-	case "Ma":
+	case "Computer Science":
+		room, err = campus.GetXCalCs(from, to)
+	case "Computer Engineering":
+		room, err = campus.GetXCalCe(from, to)
+	case "Mathematics":
 		room, err = campus.GetXCalMa(from, to)
-	case "Ph":
+	case "Physics":
 		room, err = campus.GetXCalPh(from, to)
 	default:
 		_ = c.Error(tools.RequestError{

@@ -1,8 +1,8 @@
 const d = {
     step: 0,
-    year: 2021,
+    year: 2022,
     semester: "W",
-    department: "In",
+    department: "Computer Science",
     optInOut: "Opt In",
     loading: false,
     range: "",
