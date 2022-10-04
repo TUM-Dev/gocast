@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "worker/pb";
+option go_package = "voice-service/pb";
 package voice;
 
 // Implemented in voice-service

@@ -20,3 +20,7 @@ install:
 
 mocks:
 	go generate ./...
+
+protoVoice:
+	cd voice-service; \
+	protoc ./subtitles.proto --go-grpc_out=../. --go_out=../.

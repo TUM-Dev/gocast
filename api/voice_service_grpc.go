@@ -7,7 +7,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
-	"github.com/joschahenningsen/TUM-Live/worker/pb"
+	pb "github.com/joschahenningsen/TUM-Live/voice-service/pb"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -22,7 +22,7 @@ type subtitleReceiverServer struct {
 	dao.DaoWrapper
 }
 
-func (s subtitleReceiverServer) Receive(ctx context.Context, request *pb.ReceiveRequest) (*pb.Empty, error) {
+func (s subtitleReceiverServer) Receive(_ context.Context, request *pb.ReceiveRequest) (*pb.Empty, error) {
 	subtitlesEntry := model.Subtitles{
 		StreamID: uint(request.GetStreamId()),
 		Content:  request.GetSubtitles(),

@@ -12,8 +12,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/bot"
-	"github.com/joschahenningsen/TUM-Live/worker/cfg"
-	"github.com/joschahenningsen/TUM-Live/worker/pb"
+	"github.com/joschahenningsen/TUM-Live/voice-service/pb"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -362,7 +361,6 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 			"streamID":          section.StreamID,
 			"fileID":            section.FileID,
 		})
-
 	}
 	c.JSON(http.StatusOK, response)
 }
@@ -689,7 +687,7 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 	defer client.CloseConn()
 
 	folder := fmt.Sprintf("%s/%d/%s/%s/%s/",
-		cfg.StorageDir,
+		tools.Cfg.Paths.Mass,
 		course.Year,
 		course.TeachingTerm,
 		course.Slug,
@@ -716,4 +714,6 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 			Err:           err,
 		})
 	}
+
+	c.Status(http.StatusCreated)
 }
