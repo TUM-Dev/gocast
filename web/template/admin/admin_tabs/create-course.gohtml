@@ -6,19 +6,24 @@
         <div class="min-w-screen flex items-center justify-center">
             <div class="w-full lg:w-5/6 p-3 bg-gray-100 dark:bg-secondary rounded dark:border dark:border-gray-500 shadow">
                 <h2 class="mb-0">Find your course from TUMOnline</h2>
-                <form id="createCourseForm" class="grid gap-3 mt-3">
+                <form id="createCourseForm" aria-haspopup="listbox" class="grid gap-3 mt-3">
                     <div class="flex space-x-1">
-                        <input class="w-4/5" type="text" autocomplete="off" placeholder="Search" x-model="searchQuery"
+                        <input class="w-4/5 box-border rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600 dark:text-white"
+                               type="search" autocomplete="off" placeholder="Search" x-model="searchQuery"
                                @change="fetch('/api/searchCourse?q='+searchQuery).then(r=>r.json()).then(r => searchResults=r)"
                                @keyup="fetch('/api/searchCourse?q='+searchQuery).then(r=>r.json()).then(r => searchResults=r)"/>
                     </div>
                     <div class="px-2" x-show="searchResults.length!==0">
-                        <ul>
+                        <ul role="listbox">
                             <template x-for="searchResult in searchResults">
-                                <li role="menuitem" class="hover:bg-sky-500 dark:hover:bg-sky-600 dark:bg-gray-800 bg-gray-200 cursor-pointer rounded-md m-2 p-2"
+                                <li role="option" aria-selected="false"
+                                    class="hover:bg-sky-500 dark:hover:bg-sky-600 dark:bg-gray-800 bg-gray-200 cursor-pointer rounded-md m-2 p-2"
                                     @click="tumonlineid=searchResult.CourseID;title=searchResult.Name;year=searchResult.Year;semester=searchResult.Term==='W'?'Wintersemester':'Sommersemester';searchResults=[];searchQuery=''">
                                     <p x-text="searchResult.Name"></p>
-                                    <div class="font-semibold text-3"><span x-text="searchResult.Term==='W'?'Winter':'Summer'"></span> <span x-text="searchResult.Year"></span></div>
+                                    <div class="font-semibold text-3">
+                                        <span x-text="searchResult.Term==='W'?'Winter':'Summer'"></span>
+                                        <span x-text="searchResult.Year"></span>
+                                    </div>
                                 </li>
                             </template>
                         </ul>
