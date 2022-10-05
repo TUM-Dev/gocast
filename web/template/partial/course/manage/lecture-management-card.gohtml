@@ -72,15 +72,20 @@
                         <i class="fa-solid fa-closed-captioning"></i>
                     </button>
                     <div x-show="showLanguageSelect"
-                         class="absolute top-full p-1 space-y-2 z-40 rounded bg-white dark:bg-secondary border dark:border-gray-800 shadow dark:shadow-0">
-                        <button @click="await admin.requestSubtitles(lecture.lectureId, 'de')"
-                                class = "py-1 px-2 text-sm text-4 w-full rounded bg-gray-100 dark:bg-secondary-light hover:bg-gray-200 hover:dark:bg-gray-800">
-                            German
-                        </button>
-                        <button @click="await admin.requestSubtitles(lecture.lectureId, 'en')"
-                                class = "py-1 px-2 text-sm text-4 w-full rounded bg-gray-100 dark:bg-secondary-light hover:bg-gray-200 hover:dark:bg-gray-800">
-                            English
-                        </button>
+                         class="absolute w-36 top-full z-40 rounded bg-white dark:bg-secondary border dark:border-gray-800 shadow dark:shadow-0">
+                        <div class = "border-b dark:border-gray-800 p-1 text-center">
+                            <span class = "text-xs text-3 font-semibold">Generate subtitles</span>
+                        </div>
+                        <div class = "space-y-1 p-1">
+                            <button @click="await admin.requestSubtitles(lecture.lectureId, 'de')"
+                                    class = "py-1 px-2 text-sm text-4 w-full rounded bg-gray-100 dark:bg-secondary-light hover:bg-gray-200 hover:dark:bg-gray-800">
+                                German
+                            </button>
+                            <button @click="await admin.requestSubtitles(lecture.lectureId, 'en')"
+                                    class = "py-1 px-2 text-sm text-4 w-full rounded bg-gray-100 dark:bg-secondary-light hover:bg-gray-200 hover:dark:bg-gray-800">
+                                English
+                            </button>
+                        </div>
                     </div>
                 </div>
 
