@@ -17,27 +17,27 @@
         <input type="hidden" name="id" value="{{if .}}{{.Model.ID}}{{end}}">
         <label>
             <span class="text-sm text-5">Message</span>
-            <input type="text" required name="text" placeholder="Enter Message" {{if .}} value="{{.Text}}" {{end}}>
+            <input class = "tl-input" type="text" required name="text" placeholder="Enter Message" {{if .}} value="{{.Text}}" {{end}}>
         </label>
         <label>
             <span class="text-sm text-5">From</span>
-            <input type="text" name="from" x-init="flatpickr($el, { enableTime: true, time_24hr: true })" id="from{{if .}}{{.Model.ID}}{{end}}" placeholder="2021-07-06 12:00" {{if .}}
+            <input class = "tl-input" type="text" name="from" x-init="flatpickr($el, { enableTime: true, time_24hr: true })" id="from{{if .}}{{.Model.ID}}{{end}}" placeholder="2021-07-06 12:00" {{if .}}
                 value="{{.FormatFrom}}" {{end}}>
         </label>
         <label>
             <span class="text-sm text-5">Expires</span>
-            <input type="text" name="expires" x-init="flatpickr($el, { enableTime: true, time_24hr: true })" id="expires{{if .}}{{.Model.ID}}{{end}}" placeholder="2021-07-06 14:00"
+            <input class = "tl-input" type="text" name="expires" x-init="flatpickr($el, { enableTime: true, time_24hr: true })" id="expires{{if .}}{{.Model.ID}}{{end}}" placeholder="2021-07-06 14:00"
                 {{if .}} value="{{.FormatExpires}}" {{end}}>
         </label>
         <div>
             <span class="text-sm text-5">Type</span>
             <div>
-                <input {{if .}}{{if not .Warn}}checked{{end}}{{else}}checked{{end}} type="radio" id="info" name="type"
+                <input class = "tl-input" {{if .}}{{if not .Warn}}checked{{end}}{{else}}checked{{end}} type="radio" id="info" name="type"
                     value="info">
                 <label class="text-3" for="info">Info</label>
             </div>
             <div>
-                <input {{if .}}{{if .Warn}}checked{{end}}{{end}} class="w-auto" type="radio" id="warning" name="type"
+                <input class = "tl-input" {{if .}}{{if .Warn}}checked{{end}}{{end}} class="w-auto" type="radio" id="warning" name="type"
                     value="warning">
                 <label class="text-3" for="warning">Warning</label>
             </div>

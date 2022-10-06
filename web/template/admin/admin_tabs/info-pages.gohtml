@@ -12,7 +12,7 @@
                     <div class="flex p-3 rounded-lg" :class="editOpen && 'outline outline-2 outline-blue-500/50'">
                         <label for="content-{{$i}}" class="hidden">{{$text.Name}}</label>
                         <input x-model="name"
-                               class="flex border-0 text-3 text-lg my-auto p-0 w-1/2 rounded-lg"
+                               class="flex border-0 text-3 text-lg my-auto p-0 w-1/2 rounded-lg disabled:bg-transparent"
                                :disabled="!editOpen">
                         <div class="flex my-auto ml-auto space-x-3">
                             <div x-show="oldContent !== newContent || oldName !== name"

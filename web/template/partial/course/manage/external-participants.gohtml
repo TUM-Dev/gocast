@@ -1,20 +1,20 @@
 {{define "externalParticipants"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Course*/ -}}
     <ul class="dark:bg-secondary bg-gray-100 mb-6" x-data="{expanded: false}">
-        <li>
+        <li class = "pl-2">
             <p class="text-4 p-4">Add participants. They'll get notified about your invitation to
                 your lecture via mail.</p>
             <form method="post" action="/api/course/{{.Model.ID}}/createUserForCourse"
                   class="flex">
                 <input type="hidden" name="courseID" value="{{.Model.ID}}">
-                <label class="w-full">
+                <label class="w-full mr-2">
                     <span class="hidden">First Name</span>
-                    <input class="mx-2 px-2" type="text" name="newUserFirstName"
+                    <input class="tl-input" type="text" name="newUserFirstName"
                            id="newUserFirstName" autocomplete="off" placeholder="Tim">
                 </label>
                 <label class="w-full">
                     <span class="hidden">Email</span>
-                    <input class="mx-2 px-2" type="email" autocomplete="off" name="newUserEmail"
+                    <input class="tl-input" type="email" autocomplete="off" name="newUserEmail"
                            id="newUserEmail" placeholder="tim@lmu.de">
                 </label>
                 <button type="submit" class="mx-4">
@@ -27,7 +27,7 @@
                 <input type="hidden" name="courseID" value="{{.Model.ID}}">
                 <label class="w-full">
                     <span class="hidden">Batch insert users</span>
-                    <textarea name="batchUserInput"
+                    <textarea class = "tl-input" name="batchUserInput"
                               placeholder="Tim,tim69@hotmail.com&#10;Anja,anja@lmu.de"></textarea>
                 </label>
                 <button type="submit" class="mx-4">

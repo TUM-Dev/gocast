@@ -3,7 +3,7 @@
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     {{$course := .IndexData.TUMLiveContext.Course}}
     <div x-data="{ viewers: 0 }" @viewers.window="viewers = $event.detail.viewers"
-         class="inline-flex space-x-2">
+         class="text-5 text-xs mt-2 lg:text-sm">
         {{if not $stream.Recording}}
             {{if not $stream.LiveNow}}
                 {{if $stream.Ended }}
@@ -13,7 +13,6 @@
                 {{else}}
                     <span class="m-auto" x-text="viewers"></span>
                     <span class="m-auto ViewerDescText">Waiting</span>
-                    <span class="m-auto">&#183;</span>
                     {{/* Timer / Countdown */}}
                     <span class="flex text-lg text-4"
                           x-data="global.timer('{{$course.GetNextLectureDateFormatted}}', true)"
@@ -40,7 +39,6 @@
             {{else}}
                 <span class="m-auto" x-text="viewers"></span>
                 <span class="m-auto" id="ViewerDescText">Watching</span>
-                <span class="m-auto hidden sm:inline-flex">&#183;</span>
             {{end}}
         {{end}}
     </div>
