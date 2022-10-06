@@ -222,8 +222,8 @@ func (r lectureHallRoutes) getSchedule(c *gin.Context) {
 	case "Physics":
 		room, err = campus.GetXCalPh(from, to)
 	default:
-		depInt, err := strconv.Atoi(c.Request.Form.Get("departmentID"))
-		if err != nil {
+		depInt, convErr := strconv.Atoi(c.Request.Form.Get("departmentID"))
+		if convErr != nil {
 			_ = c.Error(tools.RequestError{
 				Status:        http.StatusBadRequest,
 				CustomMessage: "invalid department",
