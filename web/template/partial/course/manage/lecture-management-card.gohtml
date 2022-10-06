@@ -9,7 +9,7 @@
     <li :id="$id('lecture-li')"
         x-show="!filterPast || !lecture.isPast"
         :key="lecture.lectureId"
-        class="w-full mb-4 pb-4 relative dark:bg-gray-800 bg-gray-50 rounded shadow">
+        class="w-full mb-4 pb-4 relative bg-white dark:bg-gray-800 border dark:border-0 rounded shadow">
         <div class="border-t-2 flex justify-between mb-2" :class="'border-' + lecture.color">
             <div class="pt-2 px-2 w-full">
                 <div class="text-3 font-semibold">
@@ -184,10 +184,10 @@
 
         <div x-show="lecture.uiEditMode > 0" class="px-4 pt-4 mt-4 border-t-2 border-gray-100/20">
             <div x-data="{ id: $id('text-input') }"
-                 class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                 class="w-full flex flex-row">
                 <label :for="id" class="hidden">Lecture title</label>
                 <input :id="id"
-                       class="grow border-none" type="text"
+                       class="grow tl-input" type="text"
                        x-model="lecture.newName"
                        x-on:keyup="lecture.updateIsDirty()"
                        placeholder="Lecture 2: Dark-Patterns I"
@@ -200,13 +200,13 @@
                     <span>Enable Live Chat</span>
                 </div>
                 <div x-data="{ id: $id('text-input'), fileDropHover: false }"
-                     class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                     class="w-full flex flex-row">
                     <label :for="id" class="hidden">Lecture description</label>
                     <textarea :id="id"
                               @drop="(e) => lecture.onFileDrop(e); fileDropHover = false"
                               @dragover="fileDropHover = true"
                               @dragleave="fileDropHover = false"
-                              class="grow border-4 rounded"
+                              class="tl-input grow"
                               :class="fileDropHover ? 'shadow-sm border-blue-500/50' : 'border-transparent'"
                               placeholder="Add a nice description, links, and more. You can use Markdown. Drop files here."
                               autocomplete="off"
@@ -214,7 +214,7 @@
                               x-on:keyup="lecture.updateIsDirty()"></textarea>
                 </div>
                 <template x-if="lecture.hasAttachments()">
-                    <div class="border dark:border-gray-600 p-3">
+                    <div class="rounded-t-lg border dark:border-gray-600 p-3 mt-3">
                         <h6 class="font-semibold text-3 mb-3">Attachments</h6>
                         <div class="grid gap-1">
                             <template x-for="file in lecture.files">
@@ -234,7 +234,7 @@
                         </div>
                     </div>
                 </template>
-                <div class="flex border rounded-b-lg py-1 px-2 bg-gray-100 dark:border-gray-600 dark:bg-gray-700">
+                <div class="flex rounded-b-lg border py-1 px-2 bg-gray-100 dark:border-gray-600 dark:bg-gray-700">
                     <span class="text-xs text-4 font-semibold my-auto">Attach files or URL to files by Drag & Drop in the description field.</span>
                     <div x-data="{showInfo: false}"
                          class="relative my-auto">

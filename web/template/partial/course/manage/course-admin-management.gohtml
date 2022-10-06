@@ -43,7 +43,7 @@
             <tr class="bg-white dark:bg-secondary">
                 <td colspan="3" class="p-2 whitespace-nowrap">
                     <span class="block text-5">Add a new admin user:</span>
-                    <input type="text" placeholder="ga21tum" x-model="m.search" @keyup="m.searchUsers()">
+                    <input class="tl-input" type="text" placeholder="ga21tum" x-model="m.search" @keyup="m.searchUsers()">
                 </td>
             </tr>
             <template x-for="user in m.searchResult" :key="user.id">

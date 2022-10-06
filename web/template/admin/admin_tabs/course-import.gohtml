@@ -49,7 +49,7 @@
         </label>
         <label class="col-span-full" x-init="flatpickr($refs.range, {'mode': 'range'})">
             <h2>Import events in this range</h2>
-            <input class="text-1" type="text" x-ref="range" x-model="range" placeholder="click me!">
+            <input class = "tl-input mt-3" class="text-1" type="text" x-ref="range" x-model="range" placeholder="click me!">
         </label>
         <button class="btn primary col-span-full" @click="step++; $dispatch(`notify${step}`)" :disabled="loading"
             x-text="step==0?'Start Import':(step==1?'Import':'Return to homepage')">
