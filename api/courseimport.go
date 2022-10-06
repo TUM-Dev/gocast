@@ -211,7 +211,8 @@ func (r lectureHallRoutes) getSchedule(c *gin.Context) {
 		return
 	}
 	var room campusonline.ICalendar
-	switch c.Request.Form.Get("department") {
+	dep := c.Request.Form.Get("department")
+	switch dep {
 	case "Computer Science":
 		room, err = campus.GetXCalCs(from, to)
 	case "Computer Engineering":
@@ -221,11 +222,15 @@ func (r lectureHallRoutes) getSchedule(c *gin.Context) {
 	case "Physics":
 		room, err = campus.GetXCalPh(from, to)
 	default:
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "invalid department",
-		})
-		return
+		depInt, err := strconv.Atoi(c.Request.Form.Get("departmentID"))
+		if err != nil {
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusBadRequest,
+				CustomMessage: "invalid department",
+			})
+			return
+		}
+		room, err = campus.GetXCalOrg(from, to, depInt)
 	}
 	if err != nil {
 		log.WithError(err).Error("can not get room schedule")
