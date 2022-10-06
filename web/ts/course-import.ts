@@ -24,12 +24,14 @@ export function addNotifyEventListeners() {
             e.returnValue = "";
         });
         window.dispatchEvent(new CustomEvent("loading-start"));
-        fetch(`/api/course-schedule?range=${d.range}&department=${d.department}&departmentID=${d.departmentID}`).then((res) => {
-            res.text().then((text) => {
-                console.log(text);
-                window.dispatchEvent(new CustomEvent("loading-end", { detail: { courses: JSON.parse(text) } }));
-            });
-        });
+        fetch(`/api/course-schedule?range=${d.range}&department=${d.department}&departmentID=${d.departmentID}`).then(
+            (res) => {
+                res.text().then((text) => {
+                    console.log(text);
+                    window.dispatchEvent(new CustomEvent("loading-end", { detail: { courses: JSON.parse(text) } }));
+                });
+            },
+        );
     });
     window.addEventListener("notify2", () => {
         fetch(`/api/course-schedule/${d.year}/${d.semester}`, {
