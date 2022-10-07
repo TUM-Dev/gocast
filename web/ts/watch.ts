@@ -23,13 +23,14 @@ export class Watch {
     }
 
     private resizeChat() {
-        if (this.chat !== undefined && this.player !== undefined) {
-            /* :md breakpoint */
-            if (window.innerWidth > 768) {
-                this.chat.style.height = `${this.player.getBoundingClientRect().height}px`;
-            } else {
-                this.chat.style.height = "640px";
-            }
+        if (this.chat == null || this.player == null) {
+            return;
+        }
+        /* :md breakpoint */
+        if (window.innerWidth > 768) {
+            this.chat.style.height = `${this.player.getBoundingClientRect().height}px`;
+        } else {
+            this.chat.style.height = "640px";
         }
     }
 }
