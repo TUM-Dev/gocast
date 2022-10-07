@@ -23,7 +23,7 @@ func ConfigRealtimeRouter(router *gin.RouterGroup) {
 	RegisterRealtimeChatChannel()
 }
 
-//ConfigGinRouter for non ws endpoints
+// ConfigGinRouter for non ws endpoints
 func ConfigGinRouter(router *gin.Engine) {
 	daoWrapper := dao.NewDaoWrapper()
 

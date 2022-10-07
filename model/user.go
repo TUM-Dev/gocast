@@ -46,7 +46,6 @@ type UserSettingType int
 const (
 	PreferredName UserSettingType = iota + 1
 	Greeting
-	EnableChromecast
 	CustomPlaybackSpeeds
 )
 
