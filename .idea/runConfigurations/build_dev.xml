@@ -5,7 +5,8 @@
     <scripts>
       <script value="build-dev" />
     </scripts>
-    <node-interpreter value="project" />
+    <node-interpreter value="node" />
+    <package-manager value="yarn" />
     <envs />
     <method v="2" />
   </configuration>

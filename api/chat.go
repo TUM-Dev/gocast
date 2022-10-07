@@ -599,14 +599,6 @@ func chatOnSubscribe(psc *realtime.Context) {
 }
 
 func chatOnUnsubscribe(psc *realtime.Context) {
-	var daoWrapper dao.DaoWrapper
-	if ctx, ok := psc.Client.Get("dao"); ok {
-		daoWrapper = ctx.(dao.DaoWrapper)
-	} else {
-		sentry.CaptureException(errors.New("daoWrapper should exist but doesn't"))
-		return
-	}
-
 	var tumLiveContext tools.TUMLiveContext
 	if foundContext, exists := psc.Get("TUMLiveContext"); exists {
 		tumLiveContext = foundContext.(tools.TUMLiveContext)
@@ -623,15 +615,14 @@ func chatOnUnsubscribe(psc *realtime.Context) {
 		return
 	}
 
-	defer afterUnsubscribe(psc.Param("streamID"), joinTime, tumLiveContext.Stream.Recording, daoWrapper)
+	courseID := strconv.Itoa(int(tumLiveContext.Stream.CourseID))
+
+	defer afterUnsubscribe(courseID, psc.Param("streamID"), joinTime, tumLiveContext.Stream.Recording)
 }
 
-func afterUnsubscribe(id string, joinTime time.Time, recording bool, daoWrapper dao.DaoWrapper) {
+func afterUnsubscribe(courseID string, streamID string, joinTime time.Time, recording bool) {
 	// watched at least 5 minutes of the lecture and stream is VoD? Count as view.
 	if recording && joinTime.Before(time.Now().Add(time.Minute*-5)) {
-		err := daoWrapper.AddVodView(id)
-		if err != nil {
-			log.WithError(err).Error("Can't save vod view")
-		}
+		stats.Client.AddStreamVODStat(courseID, streamID)
 	}
 }

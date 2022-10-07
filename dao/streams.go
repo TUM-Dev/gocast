@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"gorm.io/gorm/clause"
-	"strconv"
 	"time"
 
 	"github.com/joschahenningsen/TUM-Live/model"
@@ -15,7 +14,6 @@ import (
 
 type StreamsDao interface {
 	CreateStream(stream *model.Stream) error
-	AddVodView(id string) error
 
 	GetDueStreamsForWorkers() []model.Stream
 	GetDuePremieresForWorkers() []model.Stream
@@ -78,36 +76,6 @@ func (d streamsDao) CreateStream(stream *model.Stream) error {
 
 func (d streamsDao) SaveTranscodingProgress(progress model.TranscodingProgress) error {
 	return DB.Clauses(clause.OnConflict{UpdateAll: true}).Create(&progress).Error
-}
-
-// AddVodView Adds a stat entry to the database or increases the one existing for this hour
-func (d streamsDao) AddVodView(id string) error {
-	intId, err := strconv.Atoi(id)
-	if err != nil {
-		return err
-	}
-	err = DB.Transaction(func(tx *gorm.DB) error {
-		t := time.Now()
-		tFrom := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, time.Local)
-		tUntil := tFrom.Add(time.Hour)
-		var stat *model.Stat
-		err := DB.First(&stat, "live = 0 AND time BETWEEN ? and ?", tFrom, tUntil).Error
-		if err != nil { // first view this hour, create
-			stat := model.Stat{
-				Time:     tFrom,
-				StreamID: uint(intId),
-				Viewers:  1,
-				Live:     false,
-			}
-			err = tx.Create(&stat).Error
-			return err
-		} else {
-			stat.Viewers += 1
-			err = tx.Save(&stat).Error
-			return err
-		}
-	})
-	return err
 }
 
 // GetDueStreamsForWorkers retrieves all streams that due to be streamed in a lecture hall.
