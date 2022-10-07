@@ -574,9 +574,7 @@ func CollectStats(daoWrapper dao.DaoWrapper) func() {
 			}
 			if s, err := daoWrapper.GetStreamByID(context.Background(), fmt.Sprintf("%d", sID)); err == nil {
 				if s.LiveNow { // store stats for livestreams only
-					if err := stats.Client.AddStreamStat(fmt.Sprintf("%d", s.CourseID), stat); err != nil {
-						log.WithError(err).Error("Saving stat failed")
-					}
+					stats.Client.AddStreamStat(fmt.Sprintf("%d", s.CourseID), stat)
 				}
 			}
 		}
