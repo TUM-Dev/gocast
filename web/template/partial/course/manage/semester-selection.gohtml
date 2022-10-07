@@ -5,8 +5,7 @@
     <select id="semester"
             x-model="semester"
             name="semester"
-            class="bg-gray-50 border text-3 text-sm
-                                rounded-lg block px-2 py-1 dark:bg-secondary-light dark:border-gray-800">
+            class="tl-select w-56">
         <option value="Wintersemester" selected>Wintersemester</option>
         <option value="Sommersemester">Sommersemester</option>
     </select>
@@ -15,7 +14,7 @@
         <input id="year"
                x-model="year"
                name="year"
-               class="w-32"
+               class="w-32 tl-input"
                @change="if(year<2000)return; yearW = (year%1000) + 1"
                @keyup="if(year<2000)return; yearW = (year%1000) + 1"
                :class="year === '' ? 'border-red-500 focus:border-red-500' : ''"
@@ -28,7 +27,7 @@
                 <input id="yearW"
                        x-model="yearW"
                        name="yearW"
-                       class="w-16"
+                       class="w-16 tl-input"
                        :class="yearW === '' ? 'border-red-500 focus:border-red-500' : ''"
                        type="text"
                        readonly disabled>
