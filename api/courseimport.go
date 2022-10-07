@@ -92,12 +92,18 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 				log.WithError(err).Error("No room found for request")
 				continue
 			}
+			var eventID uint
+			eventIDInt, err := strconv.Atoi(event.EventID)
+			if err == nil {
+				eventID = uint(eventIDInt)
+			}
 			streams = append(streams, model.Stream{
-				Start:         event.Start,
-				End:           event.End,
-				RoomName:      event.RoomName,
-				LectureHallID: lectureHall.ID,
-				StreamKey:     strings.ReplaceAll(uuid.NewV4().String(), "-", "")[:15],
+				Start:            event.Start,
+				End:              event.End,
+				RoomName:         event.RoomName,
+				LectureHallID:    lectureHall.ID,
+				StreamKey:        strings.ReplaceAll(uuid.NewV4().String(), "-", "")[:15],
+				TUMOnlineEventID: eventID,
 			})
 		}
 		course.Streams = streams
