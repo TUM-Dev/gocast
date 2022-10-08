@@ -776,9 +776,13 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 	}
 }
 
+// Regenerates preview for timeline and video sections.
 func RegenerateThumbs(daoWrapper dao.DaoWrapper, path string) error {
 	workers := daoWrapper.WorkerDao.GetAliveWorkers()
 	workerIndex := getWorkerWithLeastWorkload(workers)
+	if len(workers) == 0 {
+		return errors.New("no workers available")
+	}
 	conn, err := dialIn(workers[workerIndex])
 	defer func() {
 		endConnection(conn)
@@ -791,9 +795,6 @@ func RegenerateThumbs(daoWrapper dao.DaoWrapper, path string) error {
 	res, err := client.GenerateThumbnails(context.Background(), &pb.GenerateThumbnailRequest{Path: path})
 	if !res.Ok {
 		log.WithError(err).Error("did not get response from worker for thumbnail generation request")
-	}
-	if err != nil {
-		return err
 	}
 
 	return nil

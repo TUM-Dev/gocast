@@ -340,15 +340,36 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 func (r streamRoutes) RegenerateThumbs(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	stream := tumLiveContext.Stream
+	course := tumLiveContext.Course
 	_ = stream
 	for _, file := range stream.Files {
 		if file.Type == model.FILETYPE_VOD {
-			// Request thumbnail for VoD
+			// Unlike for generating video sections, we need a new method here, as there is no API in place.
+			// The thumbnails are generated automatically by the worker which then notifies the backend.
 			err := RegenerateThumbs(r.DaoWrapper, file.Path)
 			if err != nil {
 				log.WithError(err).Errorf("Can't regenerate thumbnail for stream %d with file %s", stream.ID, file.Path)
 				continue
 			}
+			sections, err := r.DaoWrapper.VideoSectionDao.GetByStreamId(stream.ID)
+			if err != nil {
+				log.WithError(err).Errorf("Can't get video sections for stream %d", stream.ID)
+				continue
+			}
+			// Completely redo the video section image generation. This also updates the database, if the naming scheme has changed.
+			go func() {
+				parameters := generateVideoSectionImagesParameters{
+					sections:           sections,
+					playlistUrl:        stream.PlaylistUrl,
+					courseName:         course.Name,
+					courseTeachingTerm: course.TeachingTerm,
+					courseYear:         uint32(tumLiveContext.Course.Year),
+				}
+				err := GenerateVideoSectionImages(r.DaoWrapper, &parameters)
+				if err != nil {
+					log.WithError(err).Error("failed to generate video section images")
+				}
+			}()
 		}
 	}
 }

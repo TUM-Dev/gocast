@@ -14,7 +14,6 @@ import (
 )
 
 // This simple program is used to populate TUM-Live with thumbnails for all VoDs.
-
 func main() {
 	// Establish database connection.
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
