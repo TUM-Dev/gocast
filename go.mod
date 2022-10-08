@@ -3,7 +3,7 @@ module github.com/joschahenningsen/TUM-Live
 go 1.18
 
 require (
-	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20220404002235-e6c4212c5f63
+	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20221007083857-e8fe85015e85
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
 	github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769
 	github.com/antchfx/xmlquery v1.3.12
@@ -28,12 +28,12 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/viper v1.13.0
-	golang.org/x/crypto v0.0.0-20220919173607-35f4265a4bc0
-	google.golang.org/genproto v0.0.0-20220921223823-23cae91e6737 // indirect
+	golang.org/x/crypto v0.0.0-20220926161630-eccd6366d1be
+	google.golang.org/genproto v0.0.0-20220930163606-c98284e70a91 // indirect
 	google.golang.org/grpc v1.49.0
 	google.golang.org/protobuf v1.28.1
 	gorm.io/driver/mysql v1.3.6
-	gorm.io/gorm v1.23.9
+	gorm.io/gorm v1.23.10
 	mvdan.cc/xurls/v2 v2.4.0
 )
 
@@ -43,7 +43,7 @@ require (
 	github.com/crewjam/saml v0.4.8
 	github.com/golang/mock v1.6.0
 	github.com/icholy/digest v0.1.15
-	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20220921144203-bb9860c71aa4
+	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20220930105547-bac0fcda9958
 	github.com/stretchr/testify v1.8.0
 	github.com/u2takey/go-utils v0.3.1
 )
@@ -102,8 +102,8 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
-	golang.org/x/net v0.0.0-20220921203646-d300de134e69 // indirect
-	golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8 // indirect
+	golang.org/x/net v0.0.0-20221002022538-bcab6841153b // indirect
+	golang.org/x/sys v0.0.0-20220928140112-f11e5e49a4ec // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

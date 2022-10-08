@@ -31,27 +31,27 @@
         <ul class="grid gap-4 md:grid-cols-3 lg:grid-cols-5 col-span-full">
             <li>
                 <span class="text-sm text-6">Presentation</span>
-                <input type="text" @keyup="changed=true " x-model="presIp"
+                <input class = "tl-input" type="text" @keyup="changed=true " x-model="presIp"
                     value="{{if $lectureHall.PresIP}}{{$lectureHall.PresIP}}{{end}}">
             </li>
             <li>
                 <span class="text-sm text-6">Camera</span>
-                <input type="text" @keyup="changed=true " x-model="camIp"
+                <input class = "tl-input" type="text" @keyup="changed=true " x-model="camIp"
                     value="{{if $lectureHall.CamIP}}{{$lectureHall.CamIP}}{{end}}">
             </li>
             <li>
                 <span class="text-sm text-6">Combined</span>
-                <input type="text" @keyup="changed=true " x-model="combIp"
+                <input class = "tl-input" type="text" @keyup="changed=true " x-model="combIp"
                     value="{{if $lectureHall.CombIP}}{{$lectureHall.CombIP}}{{end}}">
             </li>
             <li>
                 <span class="text-sm text-6">Axis Cam</span>
-                <input type="text" @keyup="changed=true" x-model="cameraIp"
+                <input class = "tl-input" type="text" @keyup="changed=true" x-model="cameraIp"
                     value="{{if $lectureHall.CameraIP}}{{$lectureHall.CameraIP}}{{end}}">
             </li>
             <li>
                 <span class="text-sm text-6">Anel PWR-Ctrl</span>
-                <input type="text" @keyup="changed=true" x-model="pwrCtrlIp"
+                <input class = "tl-input" type="text" @keyup="changed=true" x-model="pwrCtrlIp"
                     value="{{if $lectureHall.PwrCtrlIp}}{{$lectureHall.PwrCtrlIp}}{{end}}">
             </li>
         </ul>

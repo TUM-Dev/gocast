@@ -9,7 +9,7 @@
                 <form id="createCourseForm" class="grid gap-3 mt-3">
                     <div class="flex space-x-1">
                         <label class="hidden" for="courseID">TUM online id:</label>
-                        <input class="w-4/5" id="courseID" name="courseID" type="text" autocomplete="off"
+                        <input class="w-4/5 tl-input" id="courseID" name="courseID" type="text" autocomplete="off"
                                placeholder="TUMOnline ID" x-model="tumonlineid"/>
                         <button type="button"
                                 @click="admin.loadCourseInfo(tumonlineid).then(r => {title = r.title, semester = r.semester, year = r.year, yearW = r.yearW, numberAttendees = r.numberAttendees });"
@@ -36,13 +36,13 @@
                     </div>
                     <div class="flex space-x-1">
                         <label for="name" class="hidden">Course Title</label>
-                        <input class="w-4/5" id="name" name="name" type="text"
+                        <input class="w-4/5 tl-input" id="name" name="name" type="text"
                                autocomplete="off"
                                placeholder="Einführung in die Informatik (IN0001)"
                                x-model="title"
                                :class="title === '' ? 'border-red-500 focus:border-red-500' : ''"/>
                         <label for="slug" class="hidden">Slug</label>
-                        <input class="w-1/5" id="slug" name="slug" type="text"
+                        <input class="w-1/5 tl-input" id="slug" name="slug" type="text"
                                autocomplete="off"
                                x-model="slug"
                                placeholder="eidi"
