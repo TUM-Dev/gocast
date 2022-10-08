@@ -776,7 +776,8 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 	}
 }
 
-// Regenerates preview for timeline and video sections.
+// RegenerateThumbs regenerates the thumbnails for the timeline. This is useful for video with faulty thumbnails
+// and for VoDs that were created before the thumbnail feature.
 func RegenerateThumbs(daoWrapper dao.DaoWrapper, path string) error {
 	workers := daoWrapper.WorkerDao.GetAliveWorkers()
 	workerIndex := getWorkerWithLeastWorkload(workers)
