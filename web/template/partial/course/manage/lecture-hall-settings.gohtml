@@ -1,5 +1,5 @@
 {{define "source-settings"}}
-    <div x-cloak class="mt-2" x-data="{halls: [], changed: false}"
+    <div x-cloak class="form-container-body" x-data="{halls: [], changed: false}"
          x-init="fetch(`/api/lecture-halls-by-id?id=${document.getElementById('courseID').value}`).then(r=>r.json()).then(d=>halls=d)">
         <template x-if="halls !== null && halls.length > 0">
             <template x-for="hall in halls">

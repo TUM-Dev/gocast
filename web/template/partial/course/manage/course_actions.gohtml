@@ -1,6 +1,6 @@
 {{define "dangerzone"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Course*/ -}}
-    <div class="mt-7 mb-5" x-data="{ copying: false , year: '', yearW: '', semester: 'Wintersemester' }">
+    <div class="form-container-body" x-data="{ copying: false , year: '', yearW: '', semester: 'Wintersemester' }">
         <div x-show="copying">
         {{template "semester-selection"}}
             <button :disabled="year==''" class="btn" @click="admin.copyCourse('{{.Model.ID}}',year,yearW,semester)">
@@ -8,14 +8,14 @@
             </button>
         </div>
 
-        <button x-show="!copying" class="btn bg-sky-400 hover:bg-sky-500 dark:bg-sky-500 dark:hover:bg-sky-600 border-0 rounded mb-4"
+        <button x-show="!copying" class="btn"
                 @click="copying=true">
             <span class="font-semibold text-white"><i class="far fa-copy mr-2"></i>Copy course and all associated lectures</span>
         </button>
 
-        <button x-show="!copying" class="btn bg-red-400 hover:bg-red-500 dark:bg-red-500 dark:hover:bg-red-600 border-0 rounded"
+        <button x-show="!copying" class="btn bg-red-400 hover:bg-red-500 dark:bg-red-500 dark:hover:bg-red-600"
                 @click="admin.deleteCourse('{{.Model.ID}}')">
-            <span class="font-semibold text-white"><i class="far fa-trash-alt mr-2"></i>Delete course and all associated lectures</span>
+            <span class="text-white"><i class="far fa-trash-alt mr-2"></i>Delete course and all associated lectures</span>
         </button>
     </div>
 {{end}}
