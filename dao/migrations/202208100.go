@@ -9,7 +9,7 @@ import (
 // Migrate202210080 adjusts the user setting type to compensate for removal of 'enable_chromcast'.
 func Migrate202210080() *gormigrate.Migration {
 	return &gormigrate.Migration{
-		ID: "202210083",
+		ID: "202210080",
 		Migrate: func(tx *gorm.DB) error {
 			// Delete all chrome cast settings.
 			err := tx.Unscoped().Model(&model.UserSetting{}).Where("type = 3").Delete(&model.UserSetting{}).Error
