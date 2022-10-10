@@ -5,7 +5,7 @@ Hallo {{.Name}},
 Sie erhalten diese Nachricht, weil Sie als Verantwortliche/r in TUMOnline für den Kurs "{{.Course.Name}}" eingetragen sind, der in einem von uns mit Livestreaming-hardware ausgestatteten Raum statt findet. Sollten sie hierfür nicht verantwortlich sein können Sie diese Nachricht ignorieren.
 
 Wir haben Ihren Kurs automatisch in unser System TUM-Live (live.rbg.tum.de) eingetragen. {{if .OptIn}}Wenn Sie Livestreams oder Aufzeichnungen Ihrer Veranstaltung wünschen, nutzen Sie bitte diesen Link zur Aktivierung:
-  https://live.rbg.tum.de/edit-course/?token={{.Course.Token}}{{end}}
+  https://live.rbg.tum.de/edit-course/?token={{.Course.Token}}{{else}}Sollten Sie keine Übertragung und Aufzeichnung wünschen nutzen Sie bitte diesen Link um die Veranstaltung zu entfernen: https://live.rbg.tum.de/edit-course/opt-out?token={{.Course.Token}}{{end}}
 
 Abgesehen davon, dass ein Funkmikrofon verwendet werden muss, das Sie an der Pforte (00.01.010) erhalten ändert sich hierdurch am Ablauf der Veranstaltung nichts, sie wird zur gebuchten Zeit automatisch im Internet übertragen.
 {{if not .OptIn}}Sie können die unten genannten Einstellungen ändern indem Sie sich bei https://live.rbg.tum.de/ mit Ihrer LRZ-Kennung anmelden und über den Admin Bereich zu Ihrem Kurs navigieren.{{end}}
@@ -22,7 +22,7 @@ Dear {{.Name}},
 This message was sent to you because you are listed as responsible for the course "{{.Course.Name}}" in TUMOnline which will take place in a room equipped with our livestreaming hardware. If you are not responsible for this course feel free to ignore this message.
 
 We registered your lectures in TUM-Live (live.rbg.tum.de) automatically. {{if .OptIn}}If you want them to be streamed or recorded, please activate it using this link:
-  https://live.rbg.tum.de/edit-course/?token={{.Course.Token}}{{end}}
+  https://live.rbg.tum.de/edit-course/?token={{.Course.Token}}{{else}}If you don't want your lectures to be streamed and recorded please use this link to opt out: https://live.rbg.tum.de/edit-course/opt-out?token={{.Course.Token}}{{end}}
 
 Besides having to use a microphone which you can get at the reception (00.01.010), this doesn't affect your lecture. It will be streamed during the booked timeslot automatically.
 {{if not .OptIn}}You can change the settings below by logging into https://live.rbg.tum.de/ using your LRZ-Id and navigating to your course in the admin tab.{{end}}
