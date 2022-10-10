@@ -463,14 +463,14 @@ func (r chatRoutes) getActivePoll(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	if tumLiveContext.User == nil {
 		_ = c.Error(tools.RequestError{
-			Status:        http.StatusOK,
+			Status:        http.StatusBadRequest,
 			CustomMessage: "not logged in",
 		})
 		return
 	}
 	poll, err := r.ChatDao.GetActivePoll(tumLiveContext.Stream.ID)
 	if err != nil && err == gorm.ErrRecordNotFound {
-		c.JSON(http.StatusOK, nil)
+		c.JSON(http.StatusFound, nil)
 		return
 	}
 	if err != nil {
