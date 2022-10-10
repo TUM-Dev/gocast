@@ -9,7 +9,7 @@
 
 <body x-data>
 {{template "header" .IndexData.TUMLiveContext}}
-{{if .Course}}
+{{if and .Course (not .Course.Model.DeletedAt.Valid)}}
     <div class="text-1 container mx-auto w-full" x-data="{success: false}">
         <p x-show="!success">
             Please confirm deleting the course <span class="font-semibold">{{.Course.Name}}</span>.
@@ -17,7 +17,7 @@
             This will disable live-streaming and recordings of your lectures.
             <br>
             <button class="mt-4 w-auto m-auto bg-danger rounded px-5 py-2 font-semibold text-white"
-                    @click="fetch('/api/course/byToken', {method: 'DELETE', data: `{token: ${(new URLSearchParams(window.location.search)).get('token')}}`}).then(r=>console.log(r))">
+                    @click="fetch('/api/course/by-token/{{.Course.Model.ID}}?token='+(new URLSearchParams(window.location.search)).get('token'), {method: 'DELETE'}).then(r=>{if(r.status===200){success=true;}else{alert('Something went wrong, please reach out to us.')}})">
                 Confirm
             </button>
         </p>

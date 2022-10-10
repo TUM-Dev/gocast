@@ -308,7 +308,7 @@ func (d coursesDao) DeleteCourse(course model.Course) {
 	if err != nil {
 		log.WithError(err).Error("Can't update course settings when deleting")
 	}
-	err = DB.Delete(&course).Error
+	err = DB.Delete(&course, course.ID).Error
 	if err != nil {
 		log.WithError(err).Error("Can't delete course")
 	}
