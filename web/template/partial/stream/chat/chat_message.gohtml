@@ -56,7 +56,7 @@
                             class="flex justify-between px-2 py-1 rounded"
                             :title="m.liked?'Unlike':'Like'">
                         <i class="fas fa-thumbs-up my-auto lg:mx-auto"></i>
-                        <span class = "lg:hidden">Like</span>
+                        <span x-show="!{{.IsPopUp}}" class = "lg:hidden">Like</span>
                     </button>
                     <button x-cloak
                             x-show="m.visible"
@@ -65,7 +65,7 @@
                             class="flex justify-between px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
                             :class="c.current.replyTo === m.ID && 'hidden'">
                         <i class="fa fas fa-reply my-auto lg:mx-auto"></i>
-                        <span class = "lg:hidden">Reply</span>
+                        <span x-show="!{{.IsPopUp}}" class = "lg:hidden">Reply</span>
                     </button>
 
                     <!-- admin stuff -->
@@ -74,7 +74,7 @@
                             title="Delete Message"
                             class="flex justify-between px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
                         <i class="fas fa-ban text-danger my-auto lg:mx-auto"></i>
-                        <span class = "lg:hidden">Delete</span>
+                        <span x-show="!{{.IsPopUp}}" class = "lg:hidden">Delete</span>
                     </button>
                     {{if $moderatedChat}}
                         <button x-show="c.admin && !m.visible"
@@ -82,7 +82,7 @@
                                 title="Approve Message"
                                 class="flex justify-between px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
                             <i class="fa-solid fa-spell-check my-auto lg:mx-auto"></i>
-                            <span class = "lg:hidden">Approve</span>
+                            <span x-show="!{{.IsPopUp}}" class = "lg:hidden">Approve</span>
                         </button>
                     {{end}}
                     <button x-show="c.admin && !m.resolved"
@@ -90,7 +90,7 @@
                             title="Resolve Message"
                             class="flex justify-between px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
                         <i class="fas fa-check text-success my-auto lg:mx-auto"></i>
-                        <span class = "ml-2 lg:hidden">Resolve</span>
+                        <span x-show="!{{.IsPopUp}}" class = "ml-2 lg:hidden">Resolve</span>
                     </button>
                 </div>
             </div>
