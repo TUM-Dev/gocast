@@ -62,10 +62,6 @@ func (d coursesDao) CreateCourse(ctx context.Context, course *model.Course, keep
 		return err
 	}
 	if !keep {
-		err = DB.Model(&course).Updates(map[string]interface{}{"live_enabled": "0"}).Error
-		if err != nil {
-			log.WithError(err).Error("Can't update live enabled state")
-		}
 		return DB.Delete(&course).Error
 	}
 	return nil
@@ -308,7 +304,7 @@ func (d coursesDao) DeleteCourse(course model.Course) {
 			log.WithError(err).Error("Can't delete stream")
 		}
 	}
-	err := DB.Model(&course).Updates(map[string]interface{}{"live_enabled": false, "vod_enabled": false}).Error
+	err := DB.Model(&course).Updates(map[string]interface{}{"vod_enabled": false}).Error
 	if err != nil {
 		log.WithError(err).Error("Can't update course settings when deleting")
 	}
