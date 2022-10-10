@@ -470,7 +470,7 @@ func (r chatRoutes) getActivePoll(c *gin.Context) {
 	}
 	poll, err := r.ChatDao.GetActivePoll(tumLiveContext.Stream.ID)
 	if err != nil && err == gorm.ErrRecordNotFound {
-		c.JSON(http.StatusFound, nil)
+		c.JSON(http.StatusNotFound, nil)
 		return
 	}
 	if err != nil {
