@@ -49,7 +49,7 @@
             <div class="my-auto space-x-2 ml-auto">
                 <button class="text-5 text-xs rounded font-semibold px-2 py-1 my-auto uppercase"
                         :class="c.chatReplayActive ? 'bg-gray-300 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700'"
-                        x-show="{{not (or $isComingUp $liveNow)}}"
+                        x-show="{{not (or $isComingUp $liveNow .IsPopUp)}}"
                         title="(De-)Activate Chat Replay"
                         @click="c.chatReplayActive = !c.chatReplayActive;"
                         x-init="
