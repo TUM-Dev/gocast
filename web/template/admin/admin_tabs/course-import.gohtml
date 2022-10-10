@@ -1,96 +1,82 @@
 {{define "course-import"}}
-    <h2 class="text-2xl text-1 my-auto mt-4 font-medium">Course Import</h2>
-    <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
-    <div class="text-2 m-auto my-3 w-full dark:bg-secondary-lighter bg-gray-100 rounded my-3 shadow-md overflow-x-auto p-6"
-         x-data="admin.pageData()" x-on:loading-start.window="loading=true"
-         x-on:loading-end.window="loading=false;courses=$event.detail.courses"
-         x-init="admin.addNotifyEventListeners()">
-        <div x-show="loading" class="text-center">
-            <i class="fas fa-circle-notch animate-spin animate"></i> Loading...
-        </div>
-        <div x-show="step===0">
-            <form>
-                <h3 class="font-bold">Semester</h3>
-                <div class="flex ">
-                    <div class="relative inline-block w-full text-gray-700 my-2 mx-4">
-                        <select x-model="year"
-                                class="w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 border rounded-sm appearance-none focus:shadow-outline">
-                            <option>2020</option>
-                            <option>2021</option>
-                            <option>2022</option>
-                            <option>2023</option>
-                            <option>2024</option>
-                            <option>2025</option>
-                            <option>2026</option>
-                        </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                      clip-rule="evenodd" fill-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="relative inline-block w-full text-gray-700 my-2  mx-4">
-                        <select x-model="semester"
-                                class="w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 border rounded-sm appearance-none focus:shadow-outline">
-                            <option>W</option>
-                            <option>S</option>
-                        </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                      clip-rule="evenodd" fill-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                <div class="flex mt-6">
-                    <label class="w-1/2 text-gray-700 py-2 mx-4">
-                        <span class="font-bold">Department:</span>
-                        <select x-model="department"
-                                class="w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 border rounded-sm appearance-none focus:shadow-outline">
-                            <option>In</option>
-                            <option>Ma</option>
-                            <option>Ph</option>
-                        </select>
-                    </label>
-                </div>
-                <div class="flex mt-6">
-                    <label class="w-1/2 text-gray-700 py-2 mx-4">
-                        <span class="font-bold"></span>
-                        <select x-model="optInOut"
-                                class="w-full h-10 pl-3 pr-6 text-base placeholder-gray-600 border rounded-sm appearance-none focus:shadow-outline">
-                            <option>Opt In</option>
-                            <option>Opt Out</option>
-                        </select>
-                    </label>
-                </div>
-                <div class="flex mt-6">
-                    <label class="w-1/2" x-init="flatpickr($refs.range, {'mode': 'range'})">
-                        <span class="font-bold">Import events in this range</span>
-                        <input class="text-1" type="text" x-ref="range" x-model="range" placeholder="click me!">
-                    </label>
-                </div>
-            </form>
-        </div>
+<h1 class="text-2xl text-1 my-4">Course Import</h1>
+<link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
+<script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
 
-        <div x-show="!loading && step===1">
-            <div>
-                <template x-for="course in courses">
-                    <div class="mb-3 border-2 border-gray-500 rounded">
-                        <h3 x-text="course.title" class="mx-2 mt-2"></h3>
+<section class="form-container" x-data="admin.pageData()" x-on:loading-start.window="loading=true"
+    x-on:loading-end.window="loading=false;courses=$event.detail.courses" x-init="admin.addNotifyEventListeners()">
+
+    <div x-show="loading" class="text-center">
+        <i class="fas fa-circle-notch animate-spin animate"></i> Loading...
+    </div>
+
+    <h2 class="form-container-title">Semester</h2>
+
+    <form x-show="step===0" class="form-container-body grid grid-cols-2 gap-4">
+        <label>
+            <h2>Year</h2>
+            <select x-model="year" class="tl-select">
+                <option>2020</option>
+                <option>2021</option>
+                <option>2022</option>
+                <option>2023</option>
+                <option>2024</option>
+                <option>2025</option>
+                <option>2026</option>
+            </select>
+        </label>
+        <label>
+            <h2>Summer / Winter</h2>
+            <select x-model="semester" class="tl-select">
+                <option>W</option>
+                <option>S</option>
+            </select>
+        </label>
+        <label>
+            <h2>Department</h2>
+            <select x-model="department" class="tl-select">
+                <option>Computer Science</option>
+                <option>Computer Engineering</option>
+                <option>Mathematics</option>
+                <option>Physics</option>
+                <option>-- specify id --</option>
+            </select>
+            <h2 x-show="department==='-- specify id --'">ID:</h2>
+            <input x-show="department==='-- specify id --'" x-model="departmentID" type="text" class="tl-input">
+        </label>
+        <label>
+            <h2>Opt In / Opt Out</h2>
+            <select x-model="optInOut" class="tl-select">
+                <option>Opt In</option>
+                <option>Opt Out</option>
+            </select>
+        </label>
+        <label class="col-span-full" x-init="flatpickr($refs.range, {'mode': 'range'})">
+            <h2>Import events in this range</h2>
+            <input class="tl-input" type="text" x-ref="range" x-model="range" placeholder="click me!">
+        </label>
+        <button class="btn primary col-span-full" @click="step++; $dispatch(`notify${step}`)" :disabled="loading"
+            x-text="step==0?'Start Import':(step==1?'Import':'Return to homepage')">
+        </button>
+    </form>
+
+    <div x-show="!loading && step===1">
+        <div>
+            <template x-for="course in courses">
+                <div class="mb-3 border-2 border-gray-500 rounded">
+                    <h3 x-text="course.title" class="mx-2 mt-2"></h3>
+                    <label class="mx-2">
+                        <input type="checkbox" checked x-model="course.import" class="w-auto">
+                        <span class="text-3">Import this course</span>
+                    </label>
+                    <div x-show="course.import">
                         <label class="mx-2">
-                            <input type="checkbox" checked x-model="course.import" class="w-auto">
-                            <span class="text-3">Import this course</span>
+                            <span class="text-3">Slug:</span>
+                            <input type="text" checked x-model="course.slug" class="w-auto tl-input">
+                            <span class="text-warn" x-show="course.slug.length<3">short!</span>
                         </label>
-                        <div x-show="course.import">
-                            <label class="mx-2">
-                                <span class="text-3">Slug:</span>
-                                <input type="text" checked x-model="course.slug" class="w-auto">
-                                <span class="text-warn" x-show="course.slug.length<3">short!</span>
-                            </label>
-                            <table>
-                                <tbody>
+                        <table>
+                            <tbody>
                                 <template x-for="contact in course.contacts">
                                     <tr class="pl-3" :class="contact.main_contact?'text-green-400':'text-3'">
                                         <td class="px-2">
@@ -100,48 +86,43 @@
                                             </label>
                                         </td>
                                         <td class="px-2" x-text="contact.role + ':'"></td>
-                                        <td x-text="contact.first_name + ' ' + contact.last_name"
-                                            class="px-2"></td>
+                                        <td x-text="contact.first_name + ' ' + contact.last_name" class="px-2"></td>
                                         <td class="px-2">
                                             <a :href="'mailto:'+contact.email" x-text="contact.email"></a>
                                         </td>
                                     </tr>
                                 </template>
-                                </tbody>
-                            </table>
-                            <template x-for="event in course.events">
-                                <div class="flex py-1 px-2 border-t border-gray-500 hover:bg-secondary">
-                                    <label class="w-2/6">
-                                        <input class="w-auto" type="checkbox" checked x-model="event.import">
-                                        <span x-text="new Date(event.start).toISOString().slice(0, 16).replace('T',' ') + ' - ' + new Date(event.end).toISOString().slice(11, 16)"
-                                              class="text-2"></span>
-                                    </label>
-                                    <div class="w-2/6 whitespace-nowrap	overflow-x-hidden overflow-ellipsis"><i
-                                                class="fas fa-location-arrow text-3 mr-2"></i><span class="text-5"
-                                                                                                    x-text="event.room_name"
-                                                                                                    :title="event.room_name"></span>
-                                    </div>
-                                    <div class="w-2/6 whitespace-nowrap overflow-x-hidden overflow-ellipsis ml-2"
-                                         x-show="event.comment!==''">
-                                        <i class="fas fa-info-circle text-warn mr-2"></i><span class="text-5"
-                                                                                               x-text="event.comment"
-                                                                                               :title="event.comment"></span>
-                                    </div>
+                            </tbody>
+                        </table>
+                        <template x-for="event in course.events">
+                            <div class="flex py-1 px-2 border-t border-gray-500">
+                                <label class="w-2/6">
+                                    <input class="w-auto" type="checkbox" checked x-model="event.import">
+                                    <span
+                                        x-text="new Date(event.start).toISOString().slice(0, 16).replace('T',' ') + ' - ' + new Date(event.end).toISOString().slice(11, 16)"
+                                        class="text-2"></span>
+                                </label>
+                                <div class="w-2/6 whitespace-nowrap overflow-x-hidden overflow-ellipsis"><i
+                                        class="fas fa-location-arrow text-3 mr-2"></i><span class="text-5"
+                                        x-text="event.room_name" :title="event.room_name"></span>
                                 </div>
-                            </template>
-                        </div>
+                                <div class="w-2/6 whitespace-nowrap overflow-x-hidden overflow-ellipsis ml-2"
+                                    x-show="event.comment!==''">
+                                    <i class="fas fa-info-circle text-warn mr-2"></i><span class="text-5"
+                                        x-text="event.comment" :title="event.comment"></span>
+                                </div>
+                            </div>
+                        </template>
                     </div>
-                </template>
-            </div>
+                </div>
+            </template>
         </div>
-        <div x-show="status!=0" x-data="{status: 0}" x-on:imported.window="status = $event.detail">
-            <span x-show="status==200" class="text-green-400 text-center">Courses imported successfully.</span>
-            <span x-show="status!=200" class="text-danger text-center">There was an error importing the courses, code: <span x-text="status"></span></span>
-        </div>
-
-        <button class="h-10 px-5 ml-auto mr-6 m-2 float-right transition-colors text-white duration-150 bg-gray-500 dark:bg-gray-900 dark:hover:bg-gray-600 font-semibold rounded-sm shadow-lg focus:shadow-outline hover:bg-gray-600 disabled:bg-gray-300"
-                @click="step++; $dispatch(`notify${step}`)" :disabled="loading"><span
-                    x-text="step==0?'Start Import':(step==1?'Import':'Return to homepage')"></span>
-        </button>
     </div>
+
+    <div x-show="status!=0" x-data="{status: 0}" x-on:imported.window="status = $event.detail">
+        <span x-show="status==200" class="text-green-400 text-center">Courses imported successfully.</span>
+        <span x-show="status!=200" class="text-danger text-center">There was an error importing the courses, code: <span
+                x-text="status"></span></span>
+    </div>
+</section>
 {{end}}

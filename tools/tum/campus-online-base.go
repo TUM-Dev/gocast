@@ -28,10 +28,11 @@ func GetCourseInformation(courseID string, token string) (CourseInfo, error) {
 	return courseInfo, nil
 }
 
+// FetchCourses updates the enrollments of all relevant courses
 func FetchCourses(daoWrapper dao.DaoWrapper) func() {
 	return func() {
 		y, t := GetCurrentSemester()
-		courses, err := daoWrapper.CoursesDao.GetAllCoursesWithTUMIDForSemester(context.Background(), y, t)
+		courses, err := daoWrapper.CoursesDao.GetAllCoursesWithTUMIDFromSemester(context.Background(), y, t)
 		if err != nil {
 			log.WithError(err).Error("Could not get courses with TUM online identifier:", err)
 			return

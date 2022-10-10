@@ -20,3 +20,4 @@ The following configuration options are available via environment variables:
 - `PORT`: The port on which the edge node should listen for incoming connections (default: 8080).
 - `ORIGIN_PORT`: The port on which the workers hls files are available (default: 8085). 
 - `ORIGIN_PROTO`: The protocol of the origin server (default: http).
+- `CERT_DIR`: If specified, the edge node will use the files ending with `fullchain.pem` and `privkey.pem` in this directory to serve https connections on port `8443`.

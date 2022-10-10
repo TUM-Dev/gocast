@@ -1,12 +1,13 @@
 {{define "chatprompts"}}
-    <div x-cloak x-show="show"
+    <div x-cloak
          x-data="{showNewMsgIndicator:false}"
          x-on:messageindicator.window="e => {showNewMsgIndicator = e.detail.show}" {{/* show "new message" indicator */}}
-         class="relative -top-10 h-0 w-full text-center">
-        <span @click="watch.scrollToLatestMessage()"
+         class="relative -top-10 h-0 w-full text-center z-50">
+        <button @click="watch.scrollToLatestMessage()"
               x-show="showNewMsgIndicator"
-              class="bg-blue-600 rounded-full px-4 py-1 text-white shadow cursor-pointer hover:bg-blue-700 whitespace-nowrap">
-              <i class="fas fa-arrow-down"></i> New messages
-        </span>
+              class="text-xs bg-blue-500 border-blue-600 rounded px-2 py-1 text-white shadow hover:bg-blue-600 dark:bg-indigo-600 dark:border-indigo-700 hover:dark:bg-indigo-700">
+              <i class="fas fa-arrow-down mr-2"></i>
+            <span class = "uppercase font-semibold">New messages</span>
+        </button>
     </div>
 {{end}}

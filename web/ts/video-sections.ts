@@ -64,8 +64,13 @@ export abstract class VideoSections {
 export class VideoSectionsMobile extends VideoSections {
     minimize: boolean;
 
+    constructor() {
+        super();
+        this.minimize = true;
+    }
+
     getList(): Section[] {
-        return this.minimize ? [this.list.at(this.currentHighlightIndex)] : this.list;
+        return this.minimize && this.list.length > 0 ? [this.list.at(this.currentHighlightIndex)] : this.list;
     }
 
     isCurrent(i: number): boolean {

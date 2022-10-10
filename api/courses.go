@@ -14,7 +14,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -48,7 +48,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			courses.POST("/uploadVOD", routes.uploadVOD)
 			courses.POST("/copy", routes.copyCourse)
 			courses.POST("/createLecture", routes.createLecture)
-			courses.POST("/presets", routes.updatePresets)
+			courses.POST("/presets", routes.updateSourceSettings)
 			courses.POST("/deleteLectures", routes.deleteLectures)
 			courses.POST("/renameLecture/:streamID", routes.renameLecture)
 			courses.POST("/updateLectureSeries/:streamID", routes.updateLectureSeries)
@@ -163,10 +163,9 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 	p.ServeHTTP(c.Writer, c.Request)
 }
 
-// updatePresets updates the CameraPresets of a course
-func (r coursesRoutes) updatePresets(c *gin.Context) {
+// updateSourceSettings updates the CameraPresets of a course
+func (r coursesRoutes) updateSourceSettings(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-
 	course := tumLiveContext.Course
 	if course == nil {
 		_ = c.Error(tools.RequestError{
@@ -186,12 +185,13 @@ func (r coursesRoutes) updatePresets(c *gin.Context) {
 		})
 		return
 	}
+
 	var presetSettings []model.CameraPresetPreference
 	for _, hall := range req {
-		if len(hall.Presets) != 0 && hall.SelectedIndex != 0 {
+		if len(hall.Presets) != 0 && hall.SelectedPresetID != 0 {
 			presetSettings = append(presetSettings, model.CameraPresetPreference{
-				LectureHallID: hall.Presets[hall.SelectedIndex-1].LectureHallId, // index count starts at 1
-				PresetID:      hall.SelectedIndex,
+				LectureHallID: hall.LectureHallID,
+				PresetID:      hall.SelectedPresetID,
 			})
 		}
 	}
@@ -205,6 +205,17 @@ func (r coursesRoutes) updatePresets(c *gin.Context) {
 	}
 
 	course.SetCameraPresetPreference(presetSettings)
+
+	var sourceModeSettings []model.SourcePreference
+	for _, hall := range req {
+		sourceModeSettings = append(sourceModeSettings, model.SourcePreference{
+			LectureHallID: hall.LectureHallID,
+			SourceMode:    hall.SourceMode,
+		})
+	}
+
+	course.SetSourcePreference(sourceModeSettings)
+
 	if err = r.CoursesDao.UpdateCourse(c, *course); err != nil {
 		log.WithError(err).Error("failed to update course")
 		_ = c.Error(tools.RequestError{
@@ -214,7 +225,6 @@ func (r coursesRoutes) updatePresets(c *gin.Context) {
 		})
 		return
 	}
-
 }
 
 func (r coursesRoutes) activateCourseByToken(c *gin.Context) {
@@ -398,9 +408,11 @@ func (r coursesRoutes) getAdmins(c *gin.Context) {
 }
 
 type lhResp struct {
-	LectureHallName string               `json:"lecture_hall_name"`
-	Presets         []model.CameraPreset `json:"presets"`
-	SelectedIndex   int                  `json:"selected_index"`
+	LectureHallName  string               `json:"lecture_hall_name"`
+	LectureHallID    uint                 `json:"lecture_hall_id"`
+	Presets          []model.CameraPreset `json:"presets"`
+	SourceMode       model.SourceMode     `json:"source_mode"`
+	SelectedPresetID int                  `json:"selected_preset_id"`
 }
 
 func (r coursesRoutes) lectureHallsByID(c *gin.Context) {
@@ -453,7 +465,7 @@ func (r coursesRoutes) lectureHallsByID(c *gin.Context) {
 }
 
 func (r coursesRoutes) lectureHalls(c *gin.Context, course model.Course) {
-	var res []lhResp
+	var lectureHallData []lhResp
 	lectureHallIDs := map[uint]bool{}
 	for _, s := range course.Streams {
 		if s.LectureHallID != 0 {
@@ -465,22 +477,28 @@ func (r coursesRoutes) lectureHalls(c *gin.Context, course model.Course) {
 		if err != nil {
 			log.WithError(err).Error("Can't fetch lecture hall for stream")
 		} else {
-			res = append(res, lhResp{
+			// Find if sourceMode is specified for this lecture hall
+			lectureHallData = append(lectureHallData, lhResp{
 				LectureHallName: lh.Name,
+				LectureHallID:   lh.ID,
 				Presets:         lh.CameraPresets,
+				SourceMode:      course.GetSourceModeForLectureHall(lh.ID),
 			})
 		}
 	}
-	for _, preference := range course.GetCameraPresetPreference() {
-		for i, re := range res {
-			if len(re.Presets) != 0 && re.Presets[0].LectureHallId == preference.LectureHallID {
-				res[i].SelectedIndex = preference.PresetID
-				break
+
+	for i, response := range lectureHallData {
+		if len(response.Presets) != 0 {
+			for _, coursePref := range course.GetCameraPresetPreference() {
+				if response.LectureHallID == coursePref.LectureHallID {
+					lectureHallData[i].SelectedPresetID = coursePref.PresetID
+					break
+				}
 			}
 		}
 	}
 
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, lectureHallData)
 }
 
 func (r coursesRoutes) submitCut(c *gin.Context) {
@@ -803,7 +821,7 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 	// try parse lectureHallId
 	lectureHallId, err := strconv.ParseInt(req.LectureHallId, 10, 32)
 	if err != nil {
-		log.WithError(err).Error("invalid LectureHallId format")
+		log.WithError(err).Error("invalid LectureHallID format")
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "invalid LectureHallId format",
@@ -1023,6 +1041,9 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 	go tum.GetEventsForCourses(courses, r.DaoWrapper)
 	go tum.FindStudentsForCourses(courses, r.DaoWrapper)
 	go tum.FetchCourses(r.DaoWrapper)
+
+	// send id to client for further requests
+	c.JSON(http.StatusCreated, gin.H{"id": courseWithID.ID})
 }
 
 func (r coursesRoutes) deleteCourse(c *gin.Context) {
@@ -1057,7 +1078,7 @@ type createCourseRequest struct {
 }
 
 func (r coursesRoutes) courseInfo(c *gin.Context) {
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	jsonData, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
