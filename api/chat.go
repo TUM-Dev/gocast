@@ -622,7 +622,7 @@ func chatOnUnsubscribe(psc *realtime.Context) {
 
 func afterUnsubscribe(courseID string, streamID string, joinTime time.Time, recording bool) {
 	// watched at least 5 minutes of the lecture and stream is VoD? Count as view.
-	if recording && joinTime.Before(time.Now().Add(time.Minute*-5)) {
+	if recording && joinTime.Before(time.Now().Add(time.Minute*5)) {
 		stats.Client.AddStreamVODStat(courseID, streamID)
 	}
 }
