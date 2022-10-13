@@ -1,11 +1,8 @@
 {{define "semester-selection"}}
-<div class="flex space-x-1">
+<div class="grid gap-3">
     <!--suppress XmlUnboundNsPrefix -->
     <label for="semester" class="hidden">teachingTermWS</label>
-    <select id="semester"
-            x-model="semester"
-            name="semester"
-            class="tl-select w-56">
+    <select id="semester" x-model="semester" name="semester" class="tl-select">
         <option value="Wintersemester" selected>Wintersemester</option>
         <option value="Sommersemester">Sommersemester</option>
     </select>
