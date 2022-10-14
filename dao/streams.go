@@ -114,8 +114,9 @@ func (d streamsDao) AddVodView(id string) error {
 func (d streamsDao) GetDueStreamsForWorkers() []model.Stream {
 	var res []model.Stream
 	DB.Model(&model.Stream{}).
+		Joins("JOIN courses c ON c.id = streams.course_id").
 		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE)" +
-			"AND live_now = false AND recording = false AND (ended = false OR ended IS NULL)").
+			"AND live_now = false AND recording = false AND (ended = false OR ended IS NULL) AND c.deleted_at IS null").
 		Scan(&res)
 	return res
 }

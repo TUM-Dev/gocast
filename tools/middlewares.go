@@ -94,7 +94,7 @@ func RenderErrorPage(c *gin.Context, status int, message string) {
 	c.Abort()
 }
 
-//ErrorPageData is the required data for the error page
+// ErrorPageData is the required data for the error page
 type ErrorPageData struct {
 	Status  int
 	Message string

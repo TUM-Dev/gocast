@@ -55,19 +55,9 @@
             </div>
 
             <h2 class="text-sm text-5">Privacy & Data Protection</h2>
-
-            <div x-data="{ castEnabled: {{.IndexData.TUMLiveContext.User.IsGoogleCastEnabled}}, err:'' }">
-                <p x-cloak x-show="err!==''" x-text="err" class="text-danger"></p>
-                <input id="googleCast" type="checkbox" class="w-auto" x-model="castEnabled"
-                    @change="global.updatePreference(global.UserSetting.EnableCast, castEnabled).then((r) => {err=r})">
-                <label for="googleCast" class="cursor-pointer">Enable Google Cast integration (includes scripts loaded
-                    from Googles
-                    servers.)</label>
-
-                <a href="/api/users/exportData" download="personal_data.json" class="btn block mt-3">
-                    <i class="fas fa-download"></i> Export my personal data
-                </a>
-            </div>
+            <a href="/api/users/exportData" download="personal_data.json" class="btn block">
+                <i class="fas fa-download"></i> Export my personal data
+            </a>
 
             <div class="text-center p-3">
                 <i class="text-5">Not a lot going on here <b>yet</b>.
