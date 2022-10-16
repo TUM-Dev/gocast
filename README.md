@@ -3,8 +3,7 @@
 [![volkswagen status](https://auchenberg.github.io/volkswagen/volkswargen_ci.svg?v=1)](https://github.com/auchenberg/volkswagen) [![Better Uptime Badge](https://betteruptime.com/status-badges/v1/monitor/7hms.svg)](https://tum-live.betteruptime.com)
 
 
-TUMs lecture streaming service, in beta since summer semester 2021.
-Currently serving 12 courses with up to 1500 active students.
+TUMs lecture streaming service, currently serving up to 100 courses every semester with up to 2000 active students.
 
 Features include:
 - Automatic lecture scheduling and access management coupled with [CAMPUSOnline](https://www.tugraz.at/tu-graz/organisationsstruktur/serviceeinrichtungen-und-stabsstellen/campusonline/)
@@ -41,7 +40,7 @@ docker run --detach \
   - Or: Use [JetBrains DataGrip](https://www.jetbrains.com/datagrip/) to open the database and then run the script there to automatically set up a demo database.
 - The database contains the users `admin`, `prof1`, `prof2`, `studi1`, `studi2` and `studi3` with the password `password`.
 
-### Installing go
+### Install go
 
 - Install **go >=1.18** by following the steps [here](https://go.dev/doc/install)
 - Preferably use [JetBrains GoLand](https://youtu.be/vetAfxQxyJE) and open this project as it simplifies this entire process
