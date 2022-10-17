@@ -45,47 +45,49 @@
                      x-show="showliveended" @streamended.window="showliveended=true" x-cloak>
                     <i class="fas fa-info-circle"></i> This livestream has ended.
                 </div>
-                {{if not (or (eq .Version "PRES") (eq .Version "CAM"))}}
-                <video-js
-                        id="my-video-pres"
-                        class="video-js w-full vjs-theater-mode theater-mode"
-                        controls
-                        preload="auto"
-                        x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu)"
-                        {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
-                    {{else}}poster="/public/no_active_stream.jpg">{{end}}
-                    {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
-                        {{if not $stream.LiveNow}}
-                            <source src="{{$stream.PlaylistUrlPRES}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
-                                    type="application/x-mpegURL"/>
-                        {{else}}
-                            <source src="{{$stream.PlaylistUrlPRES}}{{.DVR}}" type="application/x-mpegURL"/>
-                        {{end}}
-                    {{end}}
-                    <p class="vjs-no-js">
-                        To view this video please enable JavaScript.
-                    </p>
-                </video-js>
-                <video-js
-                        id="my-video-cam"
-                        class="video-js w-full vjs-theater-mode theater-mode"
-                        controls
-                        preload="auto"
-                        x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu)"
-                        {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
-                    {{else}}poster="/public/no_active_stream.jpg">{{end}}
-                    {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
-                        {{if not $stream.LiveNow}}
-                            <source src="{{$stream.PlaylistUrlCAM}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
-                                    type="application/x-mpegURL"/>
-                        {{else}}
-                            <source src="{{$stream.PlaylistUrlCAM}}{{.DVR}}" type="application/x-mpegURL"/>
-                        {{end}}
-                    {{end}}
-                    <p class="vjs-no-js">
-                        To view this video please enable JavaScript.
-                    </p>
-                </video-js>
+                {{if (eq .Version "SPLIT")}}
+                    <div class = "flex">
+                        <video-js
+                                id="my-video-pres"
+                                class="w-4/6 video-js w-full vjs-theater-mode theater-mode"
+                                controls
+                                preload="auto"
+                                x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu)"
+                                {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
+                            {{else}}poster="/public/no_active_stream.jpg">{{end}}
+                            {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
+                                {{if not $stream.LiveNow}}
+                                    <source src="{{$stream.PlaylistUrlPRES}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
+                                            type="application/x-mpegURL"/>
+                                {{else}}
+                                    <source src="{{$stream.PlaylistUrlPRES}}{{.DVR}}" type="application/x-mpegURL"/>
+                                {{end}}
+                            {{end}}
+                            <p class="vjs-no-js">
+                                To view this video please enable JavaScript.
+                            </p>
+                        </video-js>
+                        <video-js
+                                id="my-video-cam"
+                                class="w-2/6 video-js w-full vjs-theater-mode theater-mode"
+                                controlBar="false"
+                                preload="auto"
+                                x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu)"
+                                {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
+                            {{else}}poster="/public/no_active_stream.jpg">{{end}}
+                            {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
+                                {{if not $stream.LiveNow}}
+                                    <source src="{{$stream.PlaylistUrlCAM}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
+                                            type="application/x-mpegURL"/>
+                                {{else}}
+                                    <source src="{{$stream.PlaylistUrlCAM}}{{.DVR}}" type="application/x-mpegURL"/>
+                                {{end}}
+                            {{end}}
+                            <p class="vjs-no-js">
+                                To view this video please enable JavaScript.
+                            </p>
+                        </video-js>
+                    </div>
             {{else}}
                 <video-js
                         id="my-video"
@@ -387,7 +389,7 @@
     </div>
 </div>
 <script>
-    {{if not (or (eq .Version "PRES") (eq .Version "CAM"))}}
+    {{if (eq .Version "SPLIT")}}
 
     {{if $stream.Recording}}
     watch.initPlayer("my-video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
