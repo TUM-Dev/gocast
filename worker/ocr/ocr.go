@@ -6,7 +6,10 @@ import (
 	"strings"
 )
 
-const ASCII_LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVXYZ "
+const (
+	ASCII_LETTERS   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVXYZ "
+	MIN_WORD_LENGTH = 4
+)
 
 type postprocess []func([]string) []string
 
@@ -43,7 +46,9 @@ func (e ocrExtractor) Extract() ([]string, error) {
 			return nil, err
 		}
 		text, err := e.client.Text()
-
+		if err != nil {
+			return nil, err
+		}
 		// Replace newlines, split text into words
 		words := strings.Split(strings.Replace(text, "\n", "", -1), " ")
 		for _, processor := range e.pipeline {
@@ -57,26 +62,30 @@ func (e ocrExtractor) Extract() ([]string, error) {
 }
 
 func removeStopwords(words []string) []string {
-	res := make([]string, len(words))
+	res := make([]string, 0, len(words))
+	cnt := 0
 	for _, word := range words {
 		clean := stopwords.CleanString(word, "en", false)
 		clean = stopwords.CleanString(clean, "de", false)
 
 		if len(clean) > 0 {
 			res = append(res, strings.TrimSpace(clean))
+			cnt++
 		}
 	}
-	return res
+	return res[:cnt]
 }
 
 func removeShortWords(words []string) []string {
-	res := make([]string, len(words))
+	res := make([]string, 0, len(words))
+	cnt := 0
 	for _, word := range words {
-		if len(word) > 2 {
+		if len(word) >= MIN_WORD_LENGTH {
 			res = append(res, word)
+			cnt++
 		}
 	}
-	return res
+	return res[:cnt]
 }
 
 func removeDuplicates(words []string) []string {

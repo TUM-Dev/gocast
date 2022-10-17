@@ -1,0 +1,26 @@
+package model
+
+import "gorm.io/gorm"
+
+// {{.NameExported}} represents todo...
+type {{.NameExported}} struct {
+	gorm.Model
+
+	// todo. Please specify column, type and not null (if required):
+	// Name string `gorm:"column:name;type:text;not null;default:'unnamed'"`
+}
+
+// TableName returns the name of the table for the {{.NameExported}} model in the database.
+func (*{{.NameExported}}) TableName() string {
+	return "{{.NamePrivate}}" // todo
+}
+
+// BeforeCreate todo
+func ({{.NameReceiver}} *{{.NameExported}}) BeforeCreate(tx *gorm.DB) (err error) {
+	return nil
+}
+
+// AfterFind todo
+func ({{.NameReceiver}} *{{.NameExported}}) AfterFind(tx *gorm.DB) (err error) {
+	return nil
+}

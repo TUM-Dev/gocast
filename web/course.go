@@ -28,9 +28,18 @@ func (r mainRoutes) editCourseByTokenPage(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+	token := c.Request.Form.Get("token")
+	if token == "" {
+		_ = c.AbortWithError(http.StatusForbidden, tools.RequestError{
+			Status:        http.StatusForbidden,
+			CustomMessage: "please provide a token",
+			Err:           fmt.Errorf("token is empty"),
+		})
+		return
+	}
 
 	indexData := NewIndexDataWithContext(c)
-	course, err := r.CoursesDao.GetCourseByToken(c.Request.Form.Get("token"))
+	course, err := r.CoursesDao.GetCourseByToken(token)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Course not found"})
 		return
@@ -44,6 +53,44 @@ func (r mainRoutes) editCourseByTokenPage(c *gin.Context) {
 	err = templateExecutor.ExecuteTemplate(c.Writer, "edit-course-by-token.gohtml", d)
 	if err != nil {
 		log.Println(err)
+	}
+}
+
+type OptOutPageData struct {
+	IndexData IndexData
+	Course    *model.Course
+}
+
+func (r mainRoutes) optOutPage(c *gin.Context) {
+	err := c.Request.ParseForm()
+	if err != nil {
+		_ = c.AbortWithError(http.StatusBadRequest, tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "Could not read your request.",
+			Err:           err,
+		})
+	}
+	token := c.Request.Form.Get("token")
+	if token == "" {
+		_ = c.AbortWithError(http.StatusForbidden, tools.RequestError{
+			Status:        http.StatusForbidden,
+			CustomMessage: "please provide a token",
+			Err:           fmt.Errorf("token is empty"),
+		})
+		return
+	}
+
+	var d OptOutPageData
+	d.IndexData = NewIndexData()
+	course, err := r.CoursesDao.GetCourseByToken(token)
+	if err != nil {
+		d.Course = nil
+	} else {
+		d.Course = &course
+	}
+	err = templateExecutor.ExecuteTemplate(c.Writer, "opt-out.gohtml", d)
+	if err != nil {
+		log.WithError(err).Error("can't render template")
 	}
 }
 
@@ -131,9 +178,6 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 
 	var clientWatchState = make([]watchedStateData, 0)
 	for _, s := range streamsWithWatchState {
-		if !s.Recording {
-			continue
-		}
 		clientWatchState = append(clientWatchState, watchedStateData{
 			ID:      s.Model.ID,
 			Month:   s.Start.Month().String(),

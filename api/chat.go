@@ -6,77 +6,74 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/gabstv/melody"
+	"gorm.io/gorm"
+
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/realtime"
+
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
 
-var m *melody.Melody
+const (
+	ChatRoomName = "chat/:streamID"
+)
 
-const maxParticipants = 10000
+var routes chatRoutes
 
-func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
-	routes := chatRoutes{daoWrapper}
+func RegisterRealtimeChatChannel() {
+	RealtimeInstance.RegisterChannel(ChatRoomName, realtime.ChannelHandlers{
+		SubscriptionMiddlewares: []realtime.SubscriptionMiddleware{
+			tools.InitStreamRealtime(),
+		},
+		OnSubscribe:   chatOnSubscribe,
+		OnUnsubscribe: chatOnUnsubscribe,
+		OnMessage: func(psc *realtime.Context, message *realtime.Message) {
+			foundContext, exists := psc.Get("TUMLiveContext")
+			if !exists {
+				sentry.CaptureException(errors.New("context should exist but doesn't"))
+				return
+			}
+			tumLiveContext := foundContext.(tools.TUMLiveContext)
+			if tumLiveContext.User == nil {
+				return
+			}
 
-	wsGroup := router.Group("/:streamID")
-	wsGroup.Use(tools.InitStream(daoWrapper))
-	wsGroup.GET("/messages", routes.getMessages)
-	wsGroup.GET("/active-poll", routes.getActivePoll)
-	wsGroup.GET("/users", routes.getUsers)
-	wsGroup.GET("/ws", routes.ChatStream)
-	if m == nil {
-		log.Printf("creating melody")
-		m = melody.New()
-	}
+			req, err := parseChatPayload(message)
 
-	m.HandleConnect(connHandler)
+			if err != nil {
+				log.WithError(err).Warn("could not unmarshal request")
+				return
+			}
 
-	m.HandleMessage(func(s *melody.Session, msg []byte) {
-		ctx, _ := s.Get("ctx") // get gin context
-		foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
-		if !exists {
-			sentry.CaptureException(errors.New("context should exist but doesn't"))
-			ctx.(*gin.Context).AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-		tumLiveContext := foundContext.(tools.TUMLiveContext)
-		if tumLiveContext.User == nil {
-			return
-		}
-		var req wsReq
-		err := json.Unmarshal(msg, &req)
-		if err != nil {
-			log.WithError(err).Warn("could not unmarshal request")
-			return
-		}
-		switch req.Type {
-		case "message":
-			routes.handleMessage(tumLiveContext, s, msg)
-		case "like":
-			routes.handleLike(tumLiveContext, msg)
-		case "delete":
-			routes.handleDelete(tumLiveContext, msg)
-		case "start_poll":
-			routes.handleStartPoll(tumLiveContext, msg)
-		case "submit_poll_option_vote":
-			routes.handleSubmitPollOptionVote(tumLiveContext, msg)
-		case "close_active_poll":
-			routes.handleCloseActivePoll(tumLiveContext)
-		case "resolve":
-			routes.handleResolve(tumLiveContext, msg)
-		case "approve":
-			routes.handleApprove(tumLiveContext, msg)
-		default:
-			log.WithField("type", req.Type).Warn("unknown websocket request type")
-		}
+			switch req.Type {
+			case "message":
+				routes.handleMessage(tumLiveContext, psc, message.Payload)
+			case "like":
+				routes.handleLike(tumLiveContext, message.Payload)
+			case "delete":
+				routes.handleDelete(tumLiveContext, message.Payload)
+			case "start_poll":
+				routes.handleStartPoll(tumLiveContext, message.Payload)
+			case "submit_poll_option_vote":
+				routes.handleSubmitPollOptionVote(tumLiveContext, message.Payload)
+			case "close_active_poll":
+				routes.handleCloseActivePoll(tumLiveContext)
+			case "resolve":
+				routes.handleResolve(tumLiveContext, message.Payload)
+			case "approve":
+				routes.handleApprove(tumLiveContext, message.Payload)
+			default:
+				log.WithField("type", req.Type).Warn("unknown websocket request type")
+			}
+		},
 	})
 
 	//delete closed sessions every second
@@ -86,6 +83,16 @@ func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 			cleanupSessions()
 		}
 	}()
+}
+
+func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
+	routes = chatRoutes{daoWrapper}
+
+	wsGroup := router.Group("/:streamID")
+	wsGroup.Use(tools.InitStream(daoWrapper))
+	wsGroup.GET("/messages", routes.getMessages)
+	wsGroup.GET("/active-poll", routes.getActivePoll)
+	wsGroup.GET("/users", routes.getUsers)
 }
 
 type chatRoutes struct {
@@ -318,7 +325,7 @@ func (r chatRoutes) handleLike(ctx tools.TUMLiveContext, msg []byte) {
 	broadcastStream(ctx.Stream.ID, broadcastBytes)
 }
 
-func (r chatRoutes) handleMessage(ctx tools.TUMLiveContext, session *melody.Session, msg []byte) {
+func (r chatRoutes) handleMessage(ctx tools.TUMLiveContext, context *realtime.Context, msg []byte) {
 	var chat chatReq
 	if err := json.Unmarshal(msg, &chat); err != nil {
 		log.WithError(err).Error("error unmarshaling chat message")
@@ -361,14 +368,14 @@ func (r chatRoutes) handleMessage(ctx tools.TUMLiveContext, session *melody.Sess
 	err := r.ChatDao.AddMessage(&chatForDb)
 	if err != nil {
 		if errors.Is(err, model.ErrCooledDown) {
-			sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, session)
+			sendServerMessage("You are sending messages too fast. Please wait a bit.", TypeServerErr, context)
 		}
 		return
 	}
 
 	if msg, err := json.Marshal(chatForDb); err == nil {
 		if ctx.Course.ModeratedChatEnabled && !isAdmin {
-			_ = session.Write(msg)                      // send message back to sender
+			_ = context.Send(msg)                       // send message back to sender
 			broadcastStreamToAdmins(ctx.Stream.ID, msg) // send message to course admins
 		} else {
 			broadcastStream(ctx.Stream.ID, msg)
@@ -379,7 +386,10 @@ func (r chatRoutes) handleMessage(ctx tools.TUMLiveContext, session *melody.Sess
 func (r chatRoutes) getMessages(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
@@ -399,7 +409,11 @@ func (r chatRoutes) getMessages(c *gin.Context) {
 		chats, err = r.ChatDao.GetVisibleChats(uid, tumLiveContext.Stream.ID)
 	}
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get chat messages",
+			Err:           err,
+		})
 		return
 	}
 	c.JSON(http.StatusOK, chats)
@@ -408,13 +422,20 @@ func (r chatRoutes) getMessages(c *gin.Context) {
 func (r chatRoutes) getUsers(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	users, err := r.ChatDao.GetChatUsers(tumLiveContext.Stream.ID)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get chat users",
+			Err:           err,
+		})
 		return
 	}
 	type chatUserSearchDto struct {
@@ -432,24 +453,42 @@ func (r chatRoutes) getUsers(c *gin.Context) {
 func (r chatRoutes) getActivePoll(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	if tumLiveContext.User == nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "not logged in",
+		})
 		return
 	}
 	poll, err := r.ChatDao.GetActivePoll(tumLiveContext.Stream.ID)
+	if err != nil && err == gorm.ErrRecordNotFound {
+		c.JSON(http.StatusNotFound, nil)
+		return
+	}
 	if err != nil {
-		c.JSON(http.StatusOK, nil)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Can't get active poll",
+			Err:           err,
+		})
 		return
 	}
 
 	submitted, err := r.ChatDao.GetPollUserVote(poll.ID, tumLiveContext.User.ID)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get poll user vote",
+			Err:           err,
+		})
 		return
 	}
 
@@ -474,6 +513,12 @@ func (r chatRoutes) getActivePoll(c *gin.Context) {
 		"pollOptions": pollOptions,
 		"submitted":   submitted,
 	})
+}
+
+func parseChatPayload(m *realtime.Message) (res wsReq, err error) {
+	dbByte, _ := json.Marshal(m.Payload)
+	err = json.Unmarshal(dbByte, &res)
+	return res, err
 }
 
 type wsReq struct {
@@ -517,6 +562,9 @@ func CollectStats(daoWrapper dao.DaoWrapper) func() {
 	return func() {
 		BroadcastStats(daoWrapper.StreamsDao)
 		for sID, sessions := range sessionsMap {
+			if len(sessions) == 0 {
+				continue
+			}
 			stat := model.Stat{
 				Time:     time.Now(),
 				StreamID: sID,
@@ -545,29 +593,44 @@ func NotifyViewersLiveState(streamId uint, live bool) {
 	broadcastStream(streamId, req)
 }
 
-func (r chatRoutes) ChatStream(c *gin.Context) {
-	// max participants in chat to prevent attacks
-	if m.Len() > maxParticipants {
-		return
-	}
+func chatOnSubscribe(psc *realtime.Context) {
 	joinTime := time.Now()
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	defer afterDisconnect(c.Param("streamID"), joinTime, tumLiveContext.Stream.Recording, r.DaoWrapper)
-	ctxMap := make(map[string]interface{}, 1)
-	ctxMap["ctx"] = c
+	psc.Set("chat.joinTime", joinTime)
 
-	_ = m.HandleRequestWithKeys(c.Writer, c.Request, ctxMap)
+	connHandler(psc)
 }
 
-func afterDisconnect(id string, jointime time.Time, recording bool, daoWrapper dao.DaoWrapper) {
+func chatOnUnsubscribe(psc *realtime.Context) {
+	var daoWrapper dao.DaoWrapper
+	if ctx, ok := psc.Client.Get("dao"); ok {
+		daoWrapper = ctx.(dao.DaoWrapper)
+	} else {
+		sentry.CaptureException(errors.New("daoWrapper should exist but doesn't"))
+		return
+	}
+
+	var tumLiveContext tools.TUMLiveContext
+	if foundContext, exists := psc.Get("TUMLiveContext"); exists {
+		tumLiveContext = foundContext.(tools.TUMLiveContext)
+	} else {
+		sentry.CaptureException(errors.New("tumLiveContext should exist but doesn't"))
+		return
+	}
+
+	var joinTime time.Time
+	if result, exists := psc.Get("chat.joinTime"); exists {
+		joinTime = result.(time.Time)
+	} else {
+		sentry.CaptureException(errors.New("joinTime should exist but doesn't"))
+		return
+	}
+
+	defer afterUnsubscribe(psc.Param("streamID"), joinTime, tumLiveContext.Stream.Recording, daoWrapper)
+}
+
+func afterUnsubscribe(id string, joinTime time.Time, recording bool, daoWrapper dao.DaoWrapper) {
 	// watched at least 5 minutes of the lecture and stream is VoD? Count as view.
-	if recording && jointime.Before(time.Now().Add(time.Minute*-5)) {
+	if recording && joinTime.Before(time.Now().Add(time.Minute*-5)) {
 		err := daoWrapper.AddVodView(id)
 		if err != nil {
 			log.WithError(err).Error("Can't save vod view")

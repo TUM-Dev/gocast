@@ -129,6 +129,7 @@ func configMainRoute(router *gin.Engine) {
 
 	router.GET("/:shortLink", routes.HighlightPage)
 	router.GET("/edit-course", routes.editCourseByTokenPage)
+	router.GET("/edit-course/opt-out", routes.optOutPage)
 
 	// redirect from old site:
 	router.GET("/cgi-bin/streams/*x", func(c *gin.Context) {

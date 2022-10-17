@@ -10,7 +10,7 @@
                     <span x-text="audit.type"></span>
                     <span>
                         <span class="mr-4" x-text="audit.createdAt"></span>
-                        <span x-if="audit.userID">
+                        <span x-show="audit.userID">
                             <i class="fas fa-user"></i> <span x-text="`${audit.userName}(${audit.userID})`"></span>
                         </span>
                 </span>

@@ -1,6 +1,21 @@
 {{define "course_settings"}}
     {{- /* gotype:github.com/joschahenningsen/TUM-Live/model.Course */ -}}
-    <form method="post">
+    <div x-data="{
+        showCourseSettingsModal:false, isChatEnabledForCourse: {{.ChatEnabled}}
+    }">
+    <form id="course-settings-form" method="post"
+        @submit.prevent="
+            async () => {
+                if(admin.LectureList.hasIndividualChatEnabledSettings()){
+                   showCourseSettingsModal = true;
+                }
+                else{
+                    await admin.submitFormAndEnableAllIndividualChats({{.Model.ID}}, isChatEnabledForCourse);
+                    window.location.reload();
+                }
+            }
+        "
+    >
         <h3 class="text-lg font-light mt-2">Visibility of this course</h3>
         <div class="px-4 text-4 mt-2">
             <label class="inline-flex items-center w-full" for="public">
@@ -48,9 +63,9 @@
                     <span class="ml-2">Enable Downloads</span>
                 </label>
             </div>
-            <div x-data="{enChat: {{.ChatEnabled}}}">
+            <div x-init="isChatEnabledForCourse={{.ChatEnabled}}">
                 <label class="inline-flex items-center" for="enChat">
-                    <input x-model="enChat"
+                    <input x-model="isChatEnabledForCourse"
                            class="w-auto form-checkbox"
                            id="enChat" name="enChat"
                            type="checkbox"
@@ -59,7 +74,7 @@
                     <span class="ml-2">Enable Live Chat</span>
                 </label>
                 <label class="inline-flex items-center pl-2" for="enChatAnon">
-                    <input :disabled="!enChat"
+                    <input :disabled="!isChatEnabledForCourse"
                            class="w-auto form-checkbox"
                            id="enChatAnon" name="enChatAnon"
                            type="checkbox"
@@ -68,7 +83,7 @@
                     <span class="ml-2">Allow Anonymous Messages</span>
                 </label>
                 <label class="inline-flex items-center pl-2" for="enChatMod">
-                    <input :disabled="!enChat"
+                    <input :disabled="!isChatEnabledForCourse"
                            class="w-auto form-checkbox"
                            id="enChatMod" name="enChatMod"
                            type="checkbox"
@@ -83,10 +98,12 @@
             {{if .TUMOnlineIdentifier}}
                 <input name="submit" class="btn border-0" type="submit"
                        value="Reload Enrollments">
-                <input name="submit" class="btn border-0" type="submit"
-                       value="Reload Lectures From TUMOnline">
+                <!--<input name="submit" class="btn border-0" type="submit"
+                       value="Reload Lectures From TUMOnline">-->
             {{end}}
             <a class="btn border-0 font-semibold" href="{{.Model.ID}}/stats">Statistics</a>
         </div>
     </form>
+    {{template "course-settings-modal" .}}
+    </div>
 {{end}}

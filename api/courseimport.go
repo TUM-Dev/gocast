@@ -25,7 +25,10 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
@@ -37,17 +40,28 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 	err := c.BindJSON(&req)
 	if err != nil {
 		sentry.CaptureException(errors.New("could not bind JSON request"))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "could not bind JSON request",
+		})
 		return
 	}
 	yearStr := c.Param("year")
 	year, err := strconv.Atoi(yearStr)
 	term := c.Param("term")
-	if err != nil || !(term == "W" || term == "S") {
-		c.AbortWithStatus(http.StatusBadRequest)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid year",
+			Err:           err,
+		})
 		return
 	}
-	if err != nil {
+	if !(term == "W" || term == "S") {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid term",
+		})
 		return
 	}
 	for _, courseReq := range req.Courses {
@@ -62,7 +76,6 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 			Year:                year,
 			TeachingTerm:        term,
 			TUMOnlineIdentifier: fmt.Sprintf("%d", courseReq.CourseID),
-			LiveEnabled:         false,
 			VODEnabled:          false,
 			DownloadsEnabled:    false,
 			ChatEnabled:         false,
@@ -79,12 +92,18 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 				log.WithError(err).Error("No room found for request")
 				continue
 			}
+			var eventID uint
+			eventIDInt, err := strconv.Atoi(event.EventID)
+			if err == nil {
+				eventID = uint(eventIDInt)
+			}
 			streams = append(streams, model.Stream{
-				Start:         event.Start,
-				End:           event.End,
-				RoomName:      event.RoomName,
-				LectureHallID: lectureHall.ID,
-				StreamKey:     strings.ReplaceAll(uuid.NewV4().String(), "-", "")[:15],
+				Start:            event.Start,
+				End:              event.End,
+				RoomName:         event.RoomName,
+				LectureHallID:    lectureHall.ID,
+				StreamKey:        strings.ReplaceAll(uuid.NewV4().String(), "-", "")[:15],
+				TUMOnlineEventID: eventID,
 			})
 		}
 		course.Streams = streams
@@ -160,45 +179,72 @@ func notifyCourseCreated(d MailTmpl, mailAddr string, subject string) error {
 func (r lectureHallRoutes) getSchedule(c *gin.Context) {
 	err := c.Request.ParseForm()
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not parse form",
+			Err:           err,
+		})
 		return
 	}
 	rng := strings.Split(c.Request.Form.Get("range"), " to ")
 	if len(rng) != 2 {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid range parameter",
+		})
 		return
 	}
 	from, err := time.Parse("2006-01-02", rng[0])
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid 'from'",
+		})
 		return
 	}
 	to, err := time.Parse("2006-01-02", rng[1])
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid 'to'",
+		})
 		return
 	}
 	//todo figure out right token
-	campus, err := campusonline.New(tools.Cfg.Campus.Tokens[1], "")
+	campus, err := campusonline.New(tools.Cfg.Campus.Tokens[0], "")
 	if err != nil {
 		log.WithError(err).Error("Can't create campus client")
 		return
 	}
 	var room campusonline.ICalendar
-	switch c.Request.Form.Get("department") {
-	case "In":
-		room, err = campus.GetXCalIn(from, to)
-	case "Ma":
+	dep := c.Request.Form.Get("department")
+	switch dep {
+	case "Computer Science":
+		room, err = campus.GetXCalCs(from, to)
+	case "Computer Engineering":
+		room, err = campus.GetXCalCe(from, to)
+	case "Mathematics":
 		room, err = campus.GetXCalMa(from, to)
-	case "Ph":
+	case "Physics":
 		room, err = campus.GetXCalPh(from, to)
 	default:
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
+		depInt, convErr := strconv.Atoi(c.Request.Form.Get("departmentID"))
+		if convErr != nil {
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusBadRequest,
+				CustomMessage: "invalid department",
+			})
+			return
+		}
+		room, err = campus.GetXCalOrg(from, to, depInt)
 	}
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		log.WithError(err).Error("Can't get room schedule")
+		log.WithError(err).Error("can not get room schedule")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get room schedule",
+			Err:           err,
+		})
 		return
 	}
 	ical := &room
@@ -207,7 +253,12 @@ func (r lectureHallRoutes) getSchedule(c *gin.Context) {
 	courses := ical.GroupByCourse()
 	courses, err = campus.LoadCourseContacts(courses)
 	if err != nil {
-		_ = c.AbortWithError(http.StatusInternalServerError, err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not load course contacts",
+			Err:           err,
+		})
+		return
 	}
 	for _, crs := range courses {
 		courseSlug := ""

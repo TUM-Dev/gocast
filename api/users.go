@@ -6,6 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"regexp"
+	"strings"
+	"time"
+
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
@@ -13,10 +18,6 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"net/http"
-	"regexp"
-	"strings"
-	"time"
 )
 
 func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -24,7 +25,6 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 	router.POST("/api/users/settings/name", routes.updatePreferredName)
 	router.POST("/api/users/settings/greeting", routes.updatePreferredGreeting)
-	router.POST("/api/users/settings/enableCast", routes.updateEnableCast)
 	router.POST("/api/users/settings/playbackSpeeds", routes.updatePlaybackSpeeds)
 
 	router.POST("/api/users/pinCourse", func(c *gin.Context) {
@@ -35,6 +35,8 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	})
 
 	router.GET("/api/users/exportData", routes.exportPersonalData)
+
+	router.POST("/api/users/init", routes.InitUser)
 
 	admins := router.Group("/api")
 	admins.Use(tools.Admin)
@@ -63,19 +65,31 @@ func (r usersRoutes) updateUser(c *gin.Context) {
 		Role uint `json:"role"`
 	}{}
 	if err := c.BindJSON(&req); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 	user, err := r.UsersDao.GetUserByID(c, req.ID)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get user by id",
+			Err:           err,
+		})
 		return
 	}
 	user.Role = req.Role
 	err = r.UsersDao.UpdateUser(user)
 	if err != nil {
-		log.WithError(err).Error("Error while updating user")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("can not update user")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not update user",
+			Err:           err,
+		})
 		return
 	}
 }
@@ -85,12 +99,19 @@ func (r usersRoutes) prepareUserSearch(c *gin.Context) (users []model.User, err 
 	reg, _ := regexp.Compile("[^a-zA-Z0-9 ]+")
 	q = reg.ReplaceAllString(q, "")
 	if len(q) < 3 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "query too short"})
-		return nil, errors.New("query too short")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "query too short (minimum length is 3)",
+		})
+		return nil, errors.New("query too short (minimum length is 3)")
 	}
 	users, err = r.UsersDao.SearchUser(q)
 	if err != nil && err != gorm.ErrRecordNotFound {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not search user",
+			Err:           err,
+		})
 		return nil, err
 	}
 	return users, nil
@@ -159,17 +180,28 @@ func (r usersRoutes) DeleteUser(c *gin.Context) {
 	var deleteRequest deleteUserRequest
 	err := json.NewDecoder(c.Request.Body).Decode(&deleteRequest)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 	// currently admins can not be deleted.
 	res, err := r.UsersDao.IsUserAdmin(context.Background(), deleteRequest.Id)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not find user",
+			Err:           err,
+		})
 		return
 	}
 	if res {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "user is admin (admins can not be deleted)",
+		})
 		return
 	}
 
@@ -177,7 +209,11 @@ func (r usersRoutes) DeleteUser(c *gin.Context) {
 	if err != nil {
 		sentry.CaptureException(err)
 		defer sentry.Flush(time.Second * 2)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not delete user",
+			Err:           err,
+		})
 		return
 	}
 	c.Status(http.StatusOK)
@@ -187,7 +223,10 @@ func (r usersRoutes) CreateUserForCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
@@ -204,7 +243,10 @@ func (r usersRoutes) CreateUserForCourse(c *gin.Context) {
 		c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 		return
 	} else {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid form",
+		})
 		return
 	}
 
@@ -291,26 +333,81 @@ func (r usersRoutes) pinCourse(c *gin.Context, pin bool) {
 	}
 }
 
-func (r usersRoutes) CreateUser(c *gin.Context) {
+func (r usersRoutes) InitUser(c *gin.Context) {
 	usersEmpty, err := r.UsersDao.AreUsersEmpty(context.Background())
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not find users",
+			Err:           err,
+		})
+		return
+	}
+	if !usersEmpty {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "There are already users in the database. Use /api/createUsers instead.",
+		})
 		return
 	}
 	var request createUserRequest
 	err = json.NewDecoder(c.Request.Body).Decode(&request)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
-	var createdUser model.User
-	if usersEmpty {
-		createdUser, err = r.createUserHelper(request, model.AdminType)
-	} else {
-		createdUser, err = r.createUserHelper(request, model.LecturerType)
-	}
+
+	createdUser, err := r.createUserHelper(request, model.AdminType)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not create user",
+			Err:           err,
+		})
+		return
+	}
+	c.JSON(http.StatusOK, createUserResponse{Name: createdUser.Name, Email: createdUser.Email.String, Role: createdUser.Role})
+}
+
+func (r usersRoutes) CreateUser(c *gin.Context) {
+	usersEmpty, err := r.UsersDao.AreUsersEmpty(context.Background())
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not find users",
+			Err:           err,
+		})
+		return
+	}
+	if usersEmpty {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "No users in database. Use /api/users/init instead.",
+		})
+		return
+	}
+	var request createUserRequest
+	err = json.NewDecoder(c.Request.Body).Decode(&request)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
+	}
+
+	createdUser, err := r.createUserHelper(request, model.LecturerType)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not create user",
+			Err:           err,
+		})
 		return
 	}
 	c.JSON(http.StatusOK, createUserResponse{Name: createdUser.Name, Email: createdUser.Email.String, Role: createdUser.Role})
@@ -367,18 +464,28 @@ type userSettingsRequest struct {
 func (r usersRoutes) updatePreferredName(c *gin.Context) {
 	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
 	if u == nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, "Login required")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "login required",
+		})
 		return
 	}
 	var request userSettingsRequest
 	err := json.NewDecoder(c.Request.Body).Decode(&request)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "can't decode request")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 	for _, s := range u.Settings {
 		if s.Type == model.PreferredName && time.Since(s.UpdatedAt) < time.Hour*24*30*3 {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, "Preferred name already set within the last 3 months")
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusUnauthorized,
+				CustomMessage: "preferred name already set within the last 3 months",
+			})
 			return
 		}
 	}
@@ -388,20 +495,32 @@ func (r usersRoutes) updatePreferredName(c *gin.Context) {
 		Value:  request.Value,
 	})
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, "an error occurred while writing to database")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not add user setting",
+			Err:           err,
+		})
+		return
 	}
 }
 
 func (r usersRoutes) updatePreferredGreeting(c *gin.Context) {
 	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
 	if u == nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, "Login required")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "login required",
+		})
 		return
 	}
 	var request userSettingsRequest
 	err := json.NewDecoder(c.Request.Body).Decode(&request)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "can't decode request")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 	err = r.UsersDao.AddUserSetting(&model.UserSetting{
@@ -410,53 +529,49 @@ func (r usersRoutes) updatePreferredGreeting(c *gin.Context) {
 		Value:  request.Value,
 	})
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, "an error occurred while writing to database")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not add user setting",
+			Err:           err,
+		})
+		return
 	}
 }
 
 func (r usersRoutes) updatePlaybackSpeeds(c *gin.Context) {
 	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
 	if u == nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, "Login required")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "login required",
+		})
 		return
 	}
 	var req struct{ Value []model.PlaybackSpeedSetting }
 	if err := c.BindJSON(&req); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 	if len(req.Value) == 0 {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "Select at least one speed.")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid value (value < 1)",
+		})
 		return
 	}
 	settingBytes, _ := json.Marshal(req.Value)
 	err := r.DaoWrapper.UsersDao.AddUserSetting(&model.UserSetting{UserID: u.ID, Type: model.CustomPlaybackSpeeds, Value: string(settingBytes)})
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
-	}
-}
-
-func (r usersRoutes) updateEnableCast(c *gin.Context) {
-	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
-	if u == nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, "Login required")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not add user setting",
+			Err:           err,
+		})
 		return
-	}
-	var req struct{ Value bool }
-	err := json.NewDecoder(c.Request.Body).Decode(&req)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "can't decode request")
-		return
-	}
-	enabledBytes, _ := json.Marshal(req.Value)
-
-	err = r.UsersDao.AddUserSetting(&model.UserSetting{
-		UserID: u.ID,
-		Type:   model.EnableChromecast,
-		Value:  string(enabledBytes),
-	})
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, "an error occurred while writing to database")
 	}
 }
 
@@ -480,7 +595,11 @@ func (r usersRoutes) exportPersonalData(c *gin.Context) {
 	}
 	progresses, err := r.ProgressDao.GetProgressesForUser(u.ID)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get progresses for user",
+			Err:           err,
+		})
 		return
 	}
 	for _, progress := range progresses {
@@ -505,7 +624,12 @@ func (r usersRoutes) exportPersonalData(c *gin.Context) {
 	c.Header("Content-Type", "application/json;charset=utf-8")
 	marshal, err := json.MarshalIndent(resp, "", "    ")
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not marshal response",
+			Err:           err,
+		})
+		return
 	}
 	_, _ = c.Writer.Write(marshal)
 }

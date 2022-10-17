@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
@@ -49,7 +50,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			admins.GET("/end", routes.endStream)
 			admins.POST("/issue", routes.reportStreamIssue)
 			admins.PATCH("/visibility", routes.updateStreamVisibility)
-
+			admins.PATCH("/chat/enabled", routes.updateChatEnabled)
 			sections := admins.Group("/sections")
 			{
 				sections.POST("", routes.createVideoSectionBatch)
@@ -85,20 +86,33 @@ func (r streamRoutes) getThumbs(c *gin.Context) {
 
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	file, err := r.GetFileById(c.Param("fid"))
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find file",
+			Err:           err,
+		})
 		return
 	}
 	if !file.IsThumb() {
-		c.AbortWithStatus(http.StatusForbidden)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusForbidden,
+			CustomMessage: "file is not a thumbnail",
+		})
 		return
 	}
 	if tumLiveContext.Stream.ID != file.StreamID {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "streamID of file doesn't match stream id of request url",
+		})
 		return
 	}
 	sendDownloadFile(c, file)
@@ -110,7 +124,11 @@ func (r streamRoutes) liveStreams(c *gin.Context) {
 	streams, err := r.StreamsDao.GetCurrentLive(c)
 	if err != nil {
 		log.Error(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get current live streams",
+			Err:           err,
+		})
 		return
 	}
 	for _, s := range streams {
@@ -155,7 +173,11 @@ func (r streamRoutes) pauseStream(c *gin.Context) {
 	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
 		log.WithError(err).Error("request to pause stream without lecture hall")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "request to pause stream without lecture hall",
+			Err:           err,
+		})
 		return
 	}
 	ge := goextron.New(fmt.Sprintf("http://%s", strings.ReplaceAll(lectureHall.CombIP, "extron3", "")), tools.Cfg.Auths.SmpUser, tools.Cfg.Auths.SmpUser) // todo
@@ -201,21 +223,35 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 	var alert alertMessage
 	if err := c.ShouldBindJSON(&alert); err != nil {
 		sentry.CaptureException(err)
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 	}
 
 	// Get lecture hall of the stream that has issues.
 	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
 	if err != nil {
 		sentry.CaptureException(err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get lecturehall by id",
+			Err:           err,
+		})
+		return
 	}
 
 	// Get course of the stream that has issues.
 	course, err := r.CoursesDao.GetCourseById(c, stream.CourseID)
 	if err != nil {
 		sentry.CaptureException(err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get course by id",
+			Err:           err,
+		})
+		return
 	}
 
 	// Build stream URL, e.g. https://live.rbg.tum.de/w/gbs/1234
@@ -248,7 +284,11 @@ func (r streamRoutes) reportStreamIssue(c *gin.Context) {
 	// Set messaging strategy as specified in strategy pattern
 	if err = alertBot.SendAlert(botInfo, r.StatisticsDao); err != nil {
 		sentry.CaptureException(err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not send bot alert",
+			Err:           err,
+		})
 	}
 }
 
@@ -300,21 +340,33 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 	var sections []model.VideoSection
 	if err := c.BindJSON(&sections); err != nil {
 		log.WithError(err).Error("failed to bind video section JSON")
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 
 	err := r.VideoSectionDao.Create(sections)
 	if err != nil {
 		log.WithError(err).Error("failed to create video sections")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "failed to create video sections",
+			Err:           err,
+		})
 		return
 	}
 
 	sections, err = r.VideoSectionDao.GetByStreamId(context.Stream.ID)
 	if err != nil {
-		log.WithError(err).Error("failed to create video sections")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("failed to get video sections")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "failed to get video sections",
+			Err:           err,
+		})
 		return
 	}
 
@@ -337,29 +389,45 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 	idAsString := c.Param("id")
 	id, err := strconv.Atoi(idAsString)
 	if err != nil {
-		log.WithError(err).Error("Can't parse video-section id in url")
-		c.AbortWithStatus(http.StatusBadRequest)
+		log.WithError(err).Error("can not parse video-section id in request url")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not parse video-section id in request url",
+			Err:           err,
+		})
 		return
 	}
 
 	old, err := r.VideoSectionDao.Get(uint(id))
 	if err != nil {
-		log.WithError(err).Error("Invalid ID")
-		c.AbortWithStatus(http.StatusBadRequest)
+		log.WithError(err).Error("invalid video-section id")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid video-section id",
+			Err:           err,
+		})
 		return
 	}
 
 	file, err := r.FileDao.GetFileById(fmt.Sprintf("%d", old.FileID))
 	if err != nil {
-		log.WithError(err).Error("Can't get file")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("can not find file")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find file",
+			Err:           err,
+		})
 		return
 	}
 
 	err = r.VideoSectionDao.Delete(uint(id))
 	if err != nil {
-		log.WithError(err).Error("Can't delete video-section")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("can not delete video-section")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not delete video-section",
+			Err:           err,
+		})
 		return
 	}
 
@@ -386,12 +454,19 @@ func (r streamRoutes) newAttachment(c *gin.Context) {
 	case "file":
 		file, err := c.FormFile("file")
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, "missing form parameter 'file'")
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusBadRequest,
+				CustomMessage: "missing form parameter 'file'",
+				Err:           err,
+			})
 			return
 		}
 
 		if file.Size > MAX_FILE_SIZE {
-			c.AbortWithStatusJSON(http.StatusBadRequest, "file too large (limit is 50mb)")
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusBadRequest,
+				CustomMessage: "file too large (limit is 50mb)",
+			})
 			return
 		}
 
@@ -406,30 +481,48 @@ func (r streamRoutes) newAttachment(c *gin.Context) {
 
 		err = os.MkdirAll(filesFolder, os.ModePerm)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't create folder: "+filesFolder)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "couldn't create folder: " + filesFolder,
+				Err:           err,
+			})
 			return
 		}
 
 		if err = c.SaveUploadedFile(file, path); err != nil {
 			log.WithError(err).Error("could not save file with path: " + path)
-			c.AbortWithStatusJSON(http.StatusInternalServerError, "could not save file with path: "+path)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "could not save file with path: " + path,
+				Err:           err,
+			})
 			return
 		}
 	case "url":
 		path = c.PostForm("file_url")
 		_, filename = filepath.Split(path)
 		if path == "" {
-			c.AbortWithStatusJSON(http.StatusBadRequest, "missing form parameter 'file_url'")
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusBadRequest,
+				CustomMessage: "missing form parameter 'file_url'",
+			})
 			return
 		}
 	default:
-		c.AbortWithStatusJSON(http.StatusBadRequest, "missing query parameter 'type'")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "missing or invalid query parameter 'type'",
+		})
 		return
 	}
 
 	file := model.File{StreamID: stream.ID, Path: path, Filename: filename, Type: model.FILETYPE_ATTACHMENT}
-	if r.FileDao.NewFile(&file) != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, "could not save file in database")
+	if err := r.FileDao.NewFile(&file); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not save file in database",
+			Err:           err,
+		})
 		return
 	}
 
@@ -439,21 +532,33 @@ func (r streamRoutes) newAttachment(c *gin.Context) {
 func (r streamRoutes) deleteAttachment(c *gin.Context) {
 	toDelete, err := r.FileDao.GetFileById(c.Param("fid"))
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not find file",
+			Err:           err,
+		})
 		return
 	}
 	if !toDelete.IsURL() {
 		err = os.Remove(toDelete.Path)
 		if err != nil {
-			log.WithError(err).Error("could not delete file with path: " + toDelete.Path)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			log.WithError(err).Error("can not delete file with path: " + toDelete.Path)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not delete file with path: " + toDelete.Path,
+				Err:           err,
+			})
 			return
 		}
 	}
 	err = r.FileDao.DeleteFile(toDelete.ID)
 	if err != nil {
-		log.WithError(err).Error("could not delete file from database")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("can not delete file from database")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not delete file from database",
+			Err:           err,
+		})
 		return
 	}
 }
@@ -465,7 +570,11 @@ func (r streamRoutes) updateStreamVisibility(c *gin.Context) {
 	}
 	err := c.BindJSON(&req)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "could not parse request body")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 
@@ -480,6 +589,36 @@ func (r streamRoutes) updateStreamVisibility(c *gin.Context) {
 
 	err = r.DaoWrapper.StreamsDao.ToggleVisibility(ctx.Stream.ID, req.Private)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, "could not update stream")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not update stream",
+			Err:           err,
+		})
+		return
 	}
+}
+
+func (r streamRoutes) updateChatEnabled(c *gin.Context) {
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	var req struct {
+		ChatEnabled bool `json:"isChatEnabled"`
+	}
+	err = c.BindJSON(&req)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "could not parse request body")
+		return
+	}
+
+	stream.ChatEnabled = req.ChatEnabled
+	err = r.DaoWrapper.StreamsDao.UpdateStream(stream)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, "could not update stream")
+		return
+	}
+
 }

@@ -17,8 +17,8 @@
         <div class="p-3">
             <label for="displayName">Preferred Name <span class="text-5 italic">You can change this once every three months.</span></label>
             <p x-cloak x-show="err!==''" class="text-red-500" x-text="err"></p>
-            <div class="pl-2 flex mb-4">
-                <input class="flex-grow w-auto mr-4" type="text" x-model="name" id="displayName" {{ if not .IndexData.TUMLiveContext.User.PreferredNameChangeAllowed }} readonly {{ end }}>
+            <div class="flex mb-4">
+                <input class="tl-input flex-grow w-auto mr-4" type="text" x-model="name" id="displayName" {{ if not .IndexData.TUMLiveContext.User.PreferredNameChangeAllowed }} readonly {{ end }}>
                 <button type="button" :disabled="name === initialName"
                         @click="global.updatePreference(global.UserSetting.Name, name).then((r) => {err=r; if(r==='') {initialName=name;}})"
                         class="px-4 py-2 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500">
@@ -53,15 +53,9 @@
     <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
         <h2 class="text-2 text-xl font-semibold">Privacy & Data Protection</h2>
         <div class="p-3">
-            <div class="pl-2" x-data="{ castEnabled: {{.IndexData.TUMLiveContext.User.IsGoogleCastEnabled}}, err:'' }   ">
-                <p x-cloak x-show="err!==''" x-text="err" class="text-danger"></p>
-                <input id="googleCast" type="checkbox" class="w-auto" x-model="castEnabled"
-                       @change="global.updatePreference(global.UserSetting.EnableCast, castEnabled).then((r) => {err=r})">
-                <label for="googleCast">Enable Google Cast integration (includes scripts loaded from Googles
-                    servers.)</label>
-
+            <div class="pl-2">
                 <a href="/api/users/exportData" download="personal_data.json" class="mt-1 block">
-                    <i class="fas fa-download"></i> Export my personal data
+                    <i class="fas fa-download mr-2"></i>Export my personal data
                 </a>
             </div>
         </div>

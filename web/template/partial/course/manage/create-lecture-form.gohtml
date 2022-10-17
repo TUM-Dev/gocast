@@ -1,5 +1,6 @@
 {{define "create-lecture-form"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
+    {{$course := .IndexData.TUMLiveContext.Course}}
     <form method="post" action="/api/createLecture"
           x-data="admin.createLectureForm()"
           @submit.prevent="submitData"
@@ -15,19 +16,24 @@
                     <input type="checkbox" :disabled="formData.premiere || formData.vodup" x-model="formData.recurring"
                            class="w-auto">
                     <span class="text-3">Recurring Event</span>
+                </label><br>
+                <label x-show="{{$course.ChatEnabled}}">
+                    <input type="checkbox" x-model="formData.isChatEnabled" x-init="formData.isChatEnabled = {{$course.ChatEnabled}}"
+                           class="w-auto">
+                    <span class="text-3">Enable Live Chat</span>
                 </label>
             </div>
             <div class="w-3/4">
                 <div>
                     <div class="flex flex-col md:flex-row">
-                        <label for="name" class="md:w-1/2 w-full" x-show="!loading">
+                        <label for="name" class="md:w-1/2 w-full mr-2" x-show="!loading">
                             <span class="font-semibold p-2">Lecture Name</span>
-                            <input name="name" id="name" type="text" x-model="formData.title"
+                            <input class="tl-input" name="name" id="name" type="text" x-model="formData.title"
                                    placeholder="L01: Binary Trees"/>
                         </label>
-                        <label for="start" class="md:w-1/4 w-full" x-show="!loading">
+                        <label for="start" class="md:w-1/4 w-full mr-2" x-show="!loading">
                             <span class="font-semibold p-2">Start</span>
-                            <input name="start" type="text" placeholder="2021-04-08 14:00"
+                            <input class="tl-input" name="start" type="text" placeholder="2021-04-08 14:00"
                                    id="start" x-model="formData.start" x-ref="start"
                                    @change="() => setTimeout(() => { regenerateRecurringDates(); recalculateDuration(); }, 100)"
                                    x-init="flatpickr($refs.start, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})"/>
@@ -38,7 +44,7 @@
                             <span x-show="formData.formatedDuration != ''" class="text-sm font-light opacity-75">
                                                         ( <span x-text="formData.formatedDuration"></span> )
                                                     </span>
-                            <input name="end" type="text" placeholder="16:00" id="end"
+                            <input class="tl-input" name="end" type="text" placeholder="16:00" id="end"
                                    x-model="formData.end"
                                    @change="() => setTimeout(() => recalculateDuration(), 100)"
                                    x-ref="end"

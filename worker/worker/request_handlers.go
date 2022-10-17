@@ -4,10 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/joschahenningsen/TUM-Live/worker/ocr"
-	"github.com/u2takey/go-utils/uuid"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -17,6 +14,9 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/joschahenningsen/TUM-Live/worker/ocr"
+	"github.com/u2takey/go-utils/uuid"
 
 	"github.com/joschahenningsen/TUM-Live/worker/cfg"
 	"github.com/joschahenningsen/TUM-Live/worker/pb"
@@ -46,7 +46,6 @@ func HandlePremiere(request *pb.PremiereRequest) {
 		startTime:     time.Now(),
 		streamVersion: "",
 		courseSlug:    "PREMIERE",
-		stream:        true,
 		ingestServer:  request.IngestServer,
 		outUrl:        request.OutUrl,
 	}
@@ -69,7 +68,6 @@ func HandleSelfStream(request *pb.SelfStreamResponse, slug string) *StreamContex
 		startTime:     request.GetStreamStart().AsTime().Local(),
 		endTime:       time.Now().Add(time.Hour * 7),
 		publishVoD:    request.GetUploadVoD(),
-		stream:        true,
 		streamVersion: "COMB",
 		isSelfStream:  false,
 		ingestServer:  request.IngestServer,
@@ -203,7 +201,6 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 		endTime:       request.GetEnd().AsTime().Local(),
 		streamVersion: request.GetSourceType(),
 		publishVoD:    request.GetPublishVoD(),
-		stream:        request.GetPublishStream(),
 		streamName:    request.GetStreamName(),
 		ingestServer:  request.GetIngestServer(),
 		isSelfStream:  false,
@@ -213,14 +210,8 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	// Register worker for stream
 	regularStreams.addContext(streamCtx.streamId, streamCtx)
 
-	//only record
-	if !streamCtx.stream {
-		S.startRecording(streamCtx.getRecordingFileName())
-		record(streamCtx)
-		S.endRecording(streamCtx.getRecordingFileName())
-	} else {
-		stream(streamCtx)
-	}
+	stream(streamCtx)
+
 	NotifyStreamDone(streamCtx) // notify stream/recording done
 	if streamCtx.discardVoD {
 		log.Info("Skipping VoD creation")
@@ -430,7 +421,6 @@ type StreamContext struct {
 	endTime        time.Time //end of the stream (including +10 minute safety)
 	streamVersion  string    //version of the stream to be handled, e.g. PRES, COMB or CAM
 	publishVoD     bool      //whether file should be uploaded
-	stream         bool      //whether streaming is enabled
 	streamCmd      *exec.Cmd // command used for streaming
 	transcodingCmd *exec.Cmd // command used for transcoding
 	isSelfStream   bool      //deprecated
@@ -547,16 +537,16 @@ func extractKeywords(ctx *StreamContext) error {
 
 	// create temporary directory
 	outFileName := fmt.Sprintf("%s.jpeg", uuid.NewUUID())
-	dir, err := ioutil.TempDir("", "keyword-extraction")
+	dir, err := os.CreateTemp("", "keyword-extraction")
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(dir)
+	defer os.RemoveAll(dir.Name())
 	defer os.Remove(outFileName) // Remove thumbgen's out.jpeg
 
 	// generate images to process
 	g, err := thumbgen.New(ctx.getTranscodingFileName(), 768, 128,
-		outFileName, thumbgen.WithJpegCompression(70), thumbgen.WithStoreSingleFrames(dir))
+		outFileName, thumbgen.WithJpegCompression(70), thumbgen.WithStoreSingleFrames(dir.Name()))
 	if err != nil {
 		return err
 	}
@@ -565,26 +555,20 @@ func extractKeywords(ctx *StreamContext) error {
 		return err
 	}
 
-	fileInfoArray, err := ioutil.ReadDir(dir)
+	fileInfoArray, err := os.ReadDir(dir.Name())
 	if err != nil {
 		return err
 	}
 
 	// collect file-names
 	files := make([]string, len(fileInfoArray))
-	for i, _ := range fileInfoArray {
-		files[i] = path.Join(dir, fileInfoArray[i].Name())
+	for i := range fileInfoArray {
+		files[i] = path.Join(dir.Name(), fileInfoArray[i].Name())
 	}
 
 	// extract keywords
-	engExtractor := ocr.NewOcrExtractor(files, []string{"eng"})
-	engKeywords, err := engExtractor.Extract()
-	if err != nil {
-		return err
-	}
-
-	deuExtractor := ocr.NewOcrExtractor(files, []string{"deu"})
-	deuKeywords, err := deuExtractor.Extract()
+	extractor := ocr.NewOcrExtractor(files, []string{"eng", "deu"})
+	keywords, err := extractor.Extract()
 	if err != nil {
 		return err
 	}
@@ -598,23 +582,7 @@ func extractKeywords(ctx *StreamContext) error {
 	status, err := fromWorkerClient.NewKeywords(context.Background(), &pb.NewKeywordsRequest{
 		WorkerID: cfg.WorkerID,
 		StreamID: ctx.streamId,
-		Keywords: engKeywords,
-		Language: "eng",
-	})
-
-	if err != nil {
-		return err
-	}
-
-	if !status.GetOk() {
-		return errors.New(status.String())
-	}
-
-	status, err = fromWorkerClient.NewKeywords(context.Background(), &pb.NewKeywordsRequest{
-		WorkerID: cfg.WorkerID,
-		StreamID: ctx.streamId,
-		Keywords: deuKeywords,
-		Language: "deu",
+		Keywords: keywords,
 	})
 
 	if err != nil {
