@@ -177,6 +177,38 @@
                             </a>
                         {{end}}
 
+                        {{if .IndexData.TUMLiveContext.User}}
+                            <div x-data="{showBookmarkDialog: false}" class="relative"
+                                 @click.outside="showBookmarkDialog = false">
+                                <button @click="showBookmarkDialog = !showBookmarkDialog"
+                                        class="rounded-lg px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                                        :title="'New Bookmark'">
+                                    <i class="fa-solid fa-bookmark text-4"></i>
+                                </button>
+                                <template x-if="showBookmarkDialog">
+                                    <form x-data="{request: {}}"
+                                          x-init="request = {StreamID: streamID, Description: '', Hours: 0, Minutes: 0, Seconds: 0}"
+                                          @submit="Bookmarks.add(request)"
+                                          class="absolute bottom-full right-0 w-96 z-40 bg-white border shadow rounded-lg dark:bg-secondary-light dark:border-gray-800">
+                                        <div class="border-b dark:border-gray-800 px-2 py-1 text-xs text-4 font-semibold">
+                                            New bookmark
+                                        </div>
+                                        <div class="text-sm px-2 py-3">
+                                            <label for="bookmark-description" class="block text-5">Description</label>
+                                            <input x-model="request.Description"
+                                                   type="text" name="bookmark-description" id="bookmark-description"
+                                                   placeholder="Interesting..." autofocus="" required
+                                                   class="rounded px-4 py-3 mt-1 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
+                                            <button type="submit"
+                                                    class="block bg-blue-500 text-center px-3 py-1 mt-3 rounded w-full dark:bg-indigo-600">
+                                                <span class="text-white uppercase text-sm font-semibold">Add</span>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </template>
+                            </div>
+                        {{end}}
+
                         <!-- Actions-->
                         {{template "actions" .}}
 
