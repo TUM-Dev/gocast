@@ -134,6 +134,10 @@
     @apply px-4 py-3 bg-gray-50 dark:bg-gray-600 dark:text-white w-full rounded shadow-sm;
 }
 
+.tl-choose-file::-webkit-file-upload-button {
+    @apply btn border-none w-auto;
+}
+
 .container {
    @apply mt-4;
 }
