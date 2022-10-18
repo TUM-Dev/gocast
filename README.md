@@ -19,10 +19,6 @@ Features include:
 - Self-service dashboard for lecturers 
   - schedule streams, manage access...
 
-## Architecture:
-
-![Architecture](https://raw.githubusercontent.com/joschahenningsen/TUM-Live/dev/target_architecture.png "Architecture")
-
 ## Getting Started
 
 To get TUM-Live running locally follow these steps:

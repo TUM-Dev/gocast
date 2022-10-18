@@ -40,6 +40,8 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			lecturers.POST("/createCourse", routes.createCourse)
 		}
 
+		api.DELETE("/course/by-token/:courseID", routes.deleteCourseByToken)
+
 		courses := api.Group("/course/:courseID")
 		{
 			courses.Use(tools.InitCourse(daoWrapper))
@@ -1044,6 +1046,37 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 
 	// send id to client for further requests
 	c.JSON(http.StatusCreated, gin.H{"id": courseWithID.ID})
+}
+
+func (r coursesRoutes) deleteCourseByToken(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	err := c.Request.ParseForm()
+	if err != nil {
+		_ = c.AbortWithError(http.StatusBadRequest, tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "invalid form", Err: err})
+		return
+	}
+	token := c.Request.Form.Get("token")
+	if token == "" {
+		_ = c.AbortWithError(http.StatusBadRequest, tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "token is missing"})
+		return
+	}
+	course, err := r.CoursesDao.GetCourseByToken(token)
+	if err != nil {
+		_ = c.AbortWithError(http.StatusNotFound, tools.RequestError{Status: http.StatusNotFound, CustomMessage: "course not found", Err: err})
+		return
+	}
+
+	if err := r.AuditDao.Create(&model.Audit{
+		User:    tumLiveContext.User,
+		Message: fmt.Sprintf("'%s' (%d, %s)[%d]. Token: %s", course.Name, course.Year, course.TeachingTerm, course.ID, token),
+		Type:    model.AuditCourseDelete,
+	}); err != nil {
+		log.Error("Create Audit:", err)
+	}
+
+	r.CoursesDao.DeleteCourse(course)
+	dao.Cache.Clear()
 }
 
 func (r coursesRoutes) deleteCourse(c *gin.Context) {
