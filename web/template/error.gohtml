@@ -2,7 +2,7 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <title>TUM Live | {{.Status}}</title>
+    <title>{{.Branding.Title}} | {{.Status}}</title>
     {{template "headImports"}}
 
     <style>
@@ -11,6 +11,7 @@
             position: relative;
             z-index: 2;
         }
+
         .wrap:before {
             content: ' ';
             display: block;

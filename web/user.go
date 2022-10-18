@@ -219,6 +219,7 @@ func NewLoginPageData(err bool) LoginPageData {
 	return LoginPageData{
 		VersionTag: VersionTag,
 		Error:      err,
+		Branding:   tools.BrandingCfg,
 	}
 }
 
@@ -230,4 +231,6 @@ type LoginPageData struct {
 	UseSAML  bool
 	IDPName  string
 	IDPColor string
+
+	Branding tools.Branding
 }
