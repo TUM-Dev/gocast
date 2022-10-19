@@ -138,6 +138,12 @@ func (r mainRoutes) HighlightPage(c *gin.Context) {
 	}
 }
 
+func reverse[S ~[]E, E any](s S) {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
+}
+
 func (r mainRoutes) CoursePage(c *gin.Context) {
 	indexData := NewIndexData()
 	var tumLiveContext tools.TUMLiveContext
@@ -168,6 +174,8 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 	}
 
 	tumLiveContext.Course.Streams = streamsWithWatchState // Update the course streams to contain the watch state.
+
+	reverse(tumLiveContext.Course.Streams)
 
 	// watchedStateData is used by the client to track the which VoDs are watched.
 	type watchedStateData struct {
