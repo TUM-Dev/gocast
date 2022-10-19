@@ -230,6 +230,7 @@ func (r coursesRoutes) updateSourceSettings(c *gin.Context) {
 }
 
 func (r coursesRoutes) activateCourseByToken(c *gin.Context) {
+	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	t := c.Param("token")
 	if t == "" {
 		_ = c.Error(tools.RequestError{
@@ -258,6 +259,10 @@ func (r coursesRoutes) activateCourseByToken(c *gin.Context) {
 			Err:           err,
 		})
 		return
+	}
+	err = r.AuditDao.Create(&model.Audit{User: tlctx.User, Type: model.AuditCourseCreate, Message: fmt.Sprintf("opted in by token, %s:'%s'", course.Name, course.Slug)})
+	if err != nil {
+		log.WithError(err).Error("create opt in audit failed")
 	}
 }
 
