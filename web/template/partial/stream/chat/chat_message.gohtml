@@ -27,7 +27,7 @@
                     lg:hover:bg-gray-100 lg:dark:hover:bg-gray-700
                 {{end}}">
                 <div class="flex justify-between">
-                    <span class="chatMsg w-5/6 my-auto" x-html="m.message"></span>
+                    <span class="chatMsg w-5/6 overflow-wrap-anywhere my-auto" x-html="m.message"></span>
                     <button @click="showMobileAction=!showMobileAction"
                             @click.outside="showMobileAction = false;"
                             class ="lg:hidden">
