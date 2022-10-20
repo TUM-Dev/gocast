@@ -6,10 +6,11 @@ import iCalendarPlugin from "@fullcalendar/icalendar";
 
 let calendar: Calendar;
 
-export function addScheduleListener() {
+export function addScheduleListener(lectureHalls: number[]) {
     document.addEventListener("DOMContentLoaded", function () {
         const calendarEl = document.getElementById("calendar");
         // Init fullcallendar
+        opts.events.url = "/api/schedule.ics?lecturehalls=" + lectureHalls.join(",");
         calendar = new Calendar(calendarEl, opts);
         calendar.render();
     });
@@ -17,7 +18,7 @@ export function addScheduleListener() {
 
 export function refetchCalendar(lecturehalls: number[]){
     opts.events.url = "/api/schedule.ics?lecturehalls=" + lecturehalls.join(",");
-    calendar.removeAllEvents();
+    calendar.removeAllEventSources();
     calendar.addEventSource(opts.events);
     calendar.refetchEvents();
 }

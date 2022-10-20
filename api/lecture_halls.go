@@ -12,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -209,13 +210,28 @@ func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 		})
 		return
 	}
+	err = c.Request.ParseForm()
+	if err != nil {
+		_ = c.Error(tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "Bad Request", Err: err})
+		return
+	}
+	lectureHallsStr := strings.Split(c.Request.Form.Get("lecturehalls"), ",")
+	lectureHalls := make([]uint, len(lectureHallsStr))
+	for i, l := range lectureHallsStr {
+		a, err := strconv.Atoi(l)
+		if err != nil {
+			_ = c.Error(tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "Lecture Hall ID must be a number.", Err: err})
+			return
+		}
+		lectureHalls[i] = uint(a)
+	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	// pass 0 to db query to get all lectures if user is not logged in or admin
 	queryUid := uint(0)
 	if tumLiveContext.User != nil && tumLiveContext.User.Role != model.AdminType {
 		queryUid = tumLiveContext.User.ID
 	}
-	icalData, err := r.LectureHallsDao.GetStreamsForLectureHallIcal(queryUid)
+	icalData, err := r.LectureHallsDao.GetStreamsForLectureHallIcal(queryUid, lectureHalls)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return

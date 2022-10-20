@@ -121,7 +121,7 @@ func (mr *MockLectureHallsDaoMockRecorder) GetLectureHallByPartialName(name inte
 }
 
 // GetStreamsForLectureHallIcal mocks base method.
-func (m *MockLectureHallsDao) GetStreamsForLectureHallIcal(userId uint) ([]dao.CalendarResult, error) {
+func (m *MockLectureHallsDao) GetStreamsForLectureHallIcal(userId uint, lectureHalls []string) ([]dao.CalendarResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStreamsForLectureHallIcal", userId)
 	ret0, _ := ret[0].([]dao.CalendarResult)
