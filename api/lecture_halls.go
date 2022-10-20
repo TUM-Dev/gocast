@@ -37,7 +37,7 @@ func configGinLectureHallApiRouter(router *gin.Engine, daoWrapper dao.DaoWrapper
 	adminsOfCourse.Use(tools.AdminOfCourse)
 	adminsOfCourse.POST("/switchPreset/:lectureHallID/:presetID/:streamID", routes.switchPreset)
 
-	router.GET("/api/hall/all.ics", routes.lectureHallIcal)
+	router.GET("/api/schedule.ics", routes.lectureHallIcal)
 }
 
 type lectureHallRoutes struct {
