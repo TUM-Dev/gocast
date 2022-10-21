@@ -1809,6 +1809,11 @@ func TestActivateToken(t *testing.T) {
 								Return(nil)
 							return coursesMock
 						}(),
+						AuditDao: func() dao.AuditDao {
+							auditDao := mock_dao.NewMockAuditDao(ctrl)
+							auditDao.EXPECT().Create(gomock.Any()).Return(nil)
+							return auditDao
+						}(),
 					}
 					configGinCourseRouter(r, wrapper)
 				},
