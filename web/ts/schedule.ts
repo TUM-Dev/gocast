@@ -58,32 +58,30 @@ const opts = {
                 <div class="text-2">
                     <div class="flex"><p>${new Date(streamInfo["start"]).toLocaleString()}</p></div>
                 </div>
-                <form onsubmit="admin.saveLectureName(event, ${streamInfo["courseID"]}, ${streamInfo["streamID"]})"
-                    class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                <form x-data="{showSubmit:false}" @submit="admin.saveLectureName(event, ${streamInfo["courseID"]}, ${streamInfo["streamID"]}).then((r)=>showSubmit=!r)"
+                    class="w-full flex flex-row mb-2 focus-within:border-gray-300 border-gray-500">
                     <label for="lectureNameInput${streamInfo["streamID"]}" class="hidden">Lecture title</label>
                     <input id="lectureNameInput${streamInfo["streamID"]}"
-                        onfocus="admin.focusNameInput(this, ${streamInfo["streamID"]})"
+                        @change="showSubmit=true" @keyup="showSubmit=true"
                         class="tl-input grow border-none" type="text" value="${streamInfo["name"]}"
                         placeholder="Lecture 2: Dark-Patterns I"
                         autocomplete="off">
-                    <button id="nameSubmitBtn${streamInfo["streamID"]}"
-                        class="fas fa-check ml-2 invisible text-gray-400 hover:text-purple-500"></button>
+                    <button x-show="showSubmit" id="nameSubmitBtn${streamInfo["streamID"]}"
+                        class="fas fa-check ml-2 text-gray-400 hover:text-purple-500"></button>
                 </form>
-                <form onsubmit="admin.saveLectureDescription(event, ${streamInfo["courseID"]}, ${
-            streamInfo["streamID"]
-        })"
-                    class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
+                <form x-data="{showSubmit:false}" @submit="admin.saveLectureDescription(event, ${streamInfo["courseID"]}, ${streamInfo["streamID"]}).then((r)=>showSubmit=!r)"
+                    class="w-full flex flex-row focus-within:border-gray-300 border-gray-500">
                     <label for="lectureDescriptionInput${
                         streamInfo["streamID"]
                     }" class="hidden">Lecture description</label>
                     <textarea id="lectureDescriptionInput${streamInfo["streamID"]}"
                         rows="3"
-                        onfocus="admin.focusDescriptionInput(this, ${streamInfo["streamID"]})"
+                        @change="showSubmit=true" @keyup="showSubmit=true"
                         class="tl-input grow border-none"
                         placeholder="Add a nice description, links, and more. You can use Markdown."
                         autocomplete="off">${streamInfo["description"]}</textarea>
-                    <button id="descriptionSubmitBtn${streamInfo["streamID"]}"
-                        class="fas fa-check ml-2 invisible text-4 hover:text-1"></button>
+                    <button x-show="showSubmit" id="descriptionSubmitBtn${streamInfo["streamID"]}"
+                        class="fas fa-check ml-2 text-4 hover:text-1"></button>
                 </form>
             <a class="text-3 hover:text-black dark:hover:text-white" href="/admin/course/${
                 streamInfo["courseID"]

@@ -5,14 +5,16 @@
         <div id="popoverContent"
              class="cursor-auto absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 p-4 bg-white dark:bg-secondary-lighter rounded z-10 border dark:border-gray-500 border-gray-300 hidden"></div>
     </div>
-    <div x-data="{ lectureHalls: [0, {{range .}}{{.Model.ID}}, {{end}}] }" x-init="$watch('lectureHalls', v=>admin.refetchCalendar(lectureHalls))">
-        <label>
+    <div x-data="{ lectureHalls: [0, {{range .}}{{.Model.ID}}, {{end}}] }"
+         x-init="$watch('lectureHalls', v=>admin.refetchCalendar(lectureHalls))"
+         class="text-3">
+        <label class="mr-4">
             <input type="checkbox" checked @change="e=>{if ($el.checked){lectureHalls.push(0)}else{lectureHalls=lectureHalls.filter(i=>i!==0)}}">
             Selfstreaming
         </label>
         {{range .}}
             {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.LectureHall*/ -}}
-            <label>
+            <label class="mr-4">
                 <input type="checkbox" checked @change="e=>{if ($el.checked){lectureHalls.push({{.Model.ID}})}else{lectureHalls=lectureHalls.filter(i=>i!=={{.Model.ID}})}}">
                 {{.Name}}
             </label>
