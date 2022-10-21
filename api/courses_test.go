@@ -1765,7 +1765,7 @@ func TestActivateToken(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextUserNil)),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not un-delete course": {
@@ -1786,7 +1786,7 @@ func TestActivateToken(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextUserNil)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success": {
@@ -1812,7 +1812,7 @@ func TestActivateToken(t *testing.T) {
 					}
 					configGinCourseRouter(r, wrapper)
 				},
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextUserNil)),
 				ExpectedCode: http.StatusOK,
 			}}.
 			Method(http.MethodPost).

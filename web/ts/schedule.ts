@@ -16,7 +16,7 @@ export function addScheduleListener(lectureHalls: number[]) {
     });
 }
 
-export function refetchCalendar(lecturehalls: number[]){
+export function refetchCalendar(lecturehalls: number[]) {
     opts.events.url = "/api/schedule.ics?lecturehalls=" + lecturehalls.join(",");
     calendar.removeAllEventSources();
     calendar.addEventSource(opts.events);
@@ -74,8 +74,8 @@ const opts = {
         })"
                     class="w-full flex flex-row border-b-2 focus-within:border-gray-300 border-gray-500">
                     <label for="lectureDescriptionInput${
-            streamInfo["streamID"]
-        }" class="hidden">Lecture description</label>
+                        streamInfo["streamID"]
+                    }" class="hidden">Lecture description</label>
                     <textarea id="lectureDescriptionInput${streamInfo["streamID"]}"
                         rows="3"
                         onfocus="admin.focusDescriptionInput(this, ${streamInfo["streamID"]})"
@@ -86,8 +86,8 @@ const opts = {
                         class="fas fa-check ml-2 invisible text-4 hover:text-1"></button>
                 </form>
             <a class="text-3 hover:text-black dark:hover:text-white" href="/admin/course/${
-            streamInfo["courseID"]
-        }#lecture-li-${streamInfo["streamID"]}">Edit <i class="fas fa-external-link-alt"></i></a>
+                streamInfo["courseID"]
+            }#lecture-li-${streamInfo["streamID"]}">Edit <i class="fas fa-external-link-alt"></i></a>
             `;
         document.getElementsByClassName("fc-timegrid").item(0)?.classList.add("filter", "blur-xxs");
         popover.classList.remove("hidden");
