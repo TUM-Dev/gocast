@@ -1,3 +1,4 @@
+.PHONY: all
 all: build
 
 VERSION := $(shell git rev-parse --short origin/HEAD)
@@ -29,4 +30,4 @@ test:
 
 .PHONY: run
 run:
-	go run cmd/worker/worker.go;
+	go run cmd/worker/worker.go

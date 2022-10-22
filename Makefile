@@ -1,3 +1,4 @@
+.PHONY: all
 all: npm_dependencies go_dependencies bundle
 
 VERSION := $(shell git rev-parse --short origin/HEAD)
@@ -9,7 +10,7 @@ npm_dependencies:
 
 .PHONY: go_dependencies
 go_dependencies:
-	go get ./...;
+	go get ./...
 
 .PHONY: bundle
 bundle:
@@ -34,7 +35,7 @@ run_web:
 
 .PHONY: run
 run:
-	go run cmd/tumlive/tumlive.go;
+	go run cmd/tumlive/tumlive.go
 
 .PHONY: test
 test:
