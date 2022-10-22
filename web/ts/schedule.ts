@@ -20,7 +20,6 @@ export function refetchCalendar(lecturehalls: number[]) {
     opts.events.url = "/api/schedule.ics?lecturehalls=" + lecturehalls.join(",");
     calendar.removeAllEventSources();
     calendar.addEventSource(opts.events);
-    calendar.refetchEvents();
 }
 
 const opts = {
