@@ -3,12 +3,11 @@
     <h1 class="form-container-title">User Management</h1>
 
     <div class="form-container-body">
-        <div>
-            <h2>Search</h2>
-            <input class = "tl-input" placeholder="Search for users" type="text" x-model="userlist.searchInput" @keyup="userlist.search()">
-            <div class="w-4 m-auto">
-                <i class="fas fa-circle-notch text-4 m-auto animate-spin" x-show="userlist.searchLoading"></i>
-            </div>
+        <h2>Search</h2>
+        <input class="tl-input" placeholder="Search for users" type="text" x-model="userlist.searchInput"
+            @keyup="userlist.search()">
+        <div class="w-4 m-auto">
+            <i class="fas fa-circle-notch text-4 m-auto animate-spin" x-show="userlist.searchLoading"></i>
         </div>
         <table>
             <thead>
@@ -101,8 +100,8 @@
         </template>
         <form>
             <h2>New User</h2>
-            <input class = "tl-input" id="name" name="name" placeholder="Name" type="text" autocomplete="off" />
-            <input class = "tl-input mt-3" id="email" name="email" type="email" placeholder="Email" autocomplete="off" />
+            <input class="tl-input" id="name" name="name" placeholder="Name" type="text" autocomplete="off" />
+            <input class="tl-input mt-3" id="email" name="email" type="email" placeholder="Email" autocomplete="off" />
             <button id="createUser" title="Create User" @click="admin.createUser()"
                 class="btn primary mt-3">Create</button>
         </form>

@@ -127,11 +127,11 @@
 }
 
 .tl-select {
-    @apply px-4 py-3 cursor-pointer bg-gray-50 dark:bg-gray-600 dark:text-white w-full rounded shadow-sm;
+    @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm cursor-pointer;
 }
 
 .tl-input {
-    @apply px-4 py-3 bg-gray-50 dark:bg-gray-600 dark:text-white w-full rounded shadow-sm;
+    @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm;
 }
 
 .tl-choose-file::-webkit-file-upload-button {

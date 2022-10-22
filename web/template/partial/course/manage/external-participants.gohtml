@@ -12,7 +12,7 @@
             <button type="submit" class="btn col-span-full">Submit</button>
         </form>
         <h2 class="text-sm text-5">Batch insert (this takes about two seconds per user.)</h2>
-        <form method="post" action="/api/course/{{.Model.ID}}/createUserForCourse">
+        <form class="grid gap-3" method="post" action="/api/course/{{.Model.ID}}/createUserForCourse">
             <input type="hidden" name="courseID" value="{{.Model.ID}}">
             <textarea class="tl-input" name="batchUserInput" placeholder="Tim,tim69@hotmail.com&#10;Anja,anja@lmu.de"></textarea>
             <button type="submit" class="btn">Submit</button>
