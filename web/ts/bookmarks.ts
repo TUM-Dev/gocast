@@ -1,8 +1,21 @@
-import { Delete, postData, putData } from "./global";
+import { Delete, getData, postData, putData } from "./global";
 
 export const Bookmarks = {
+    get: (streamId: number) => {
+        return getData("/api/bookmarks?streamID=" + streamId)
+            .then((resp) => {
+                if (!resp.ok) {
+                    throw Error(resp.statusText);
+                }
+                return resp.json();
+            })
+            .catch((err) => {
+                console.error(err);
+            })
+            .then((j) => j);
+    },
     add: (request: AddBookmarkRequest) => {
-        postData("/api/bookmarks", request)
+        return postData("/api/bookmarks", request)
             .then((resp) => {
                 if (!resp.ok) {
                     throw Error(resp.statusText);
@@ -14,7 +27,7 @@ export const Bookmarks = {
     },
 
     update: (bookmarkId: number, request: UpdateBookmarkRequest) => {
-        putData("/api/bookmarks/" + bookmarkId, request)
+        return putData("/api/bookmarks/" + bookmarkId, request)
             .then((resp) => {
                 if (!resp.ok) {
                     throw Error(resp.statusText);
@@ -26,7 +39,7 @@ export const Bookmarks = {
     },
 
     delete: (bookmarkId: number) => {
-        Delete("/api/bookmarks/" + bookmarkId)
+        return Delete("/api/bookmarks/" + bookmarkId)
             .then((resp) => {
                 if (!resp.ok) {
                     throw Error(resp.statusText);
