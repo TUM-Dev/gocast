@@ -216,14 +216,17 @@ func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 		return
 	}
 	lectureHallsStr := strings.Split(c.Request.Form.Get("lecturehalls"), ",")
-	lectureHalls := make([]uint, len(lectureHallsStr))
-	for i, l := range lectureHallsStr {
+	lectureHalls := make([]uint, 0, len(lectureHallsStr))
+	for _, l := range lectureHallsStr {
+		if l == "" {
+			continue
+		}
 		a, err := strconv.Atoi(l)
 		if err != nil {
 			_ = c.Error(tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "Lecture Hall ID must be a number.", Err: err})
 			return
 		}
-		lectureHalls[i] = uint(a)
+		lectureHalls = append(lectureHalls, uint(a))
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	// pass 0 to db query to get all lectures if user is not logged in or admin
