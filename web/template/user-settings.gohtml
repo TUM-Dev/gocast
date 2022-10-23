@@ -1,73 +1,73 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
+
 <head>
     <meta charset="UTF-8">
     <title>{{.IndexData.Branding.Title}}</title>
     {{template "headImports" .IndexData.VersionTag}}
 </head>
-<body>
-{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.userSettingsData*/ -}}
-{{template "header" .IndexData.TUMLiveContext}}
-<div class="w-full md:w-1/2 2xl:max-w-screen-xl mx-auto p-6 text-3">
-    <h1 class="text-2 text-3xl font-semibold">Settings</h1>
 
-    <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5"
-         x-data=" { initialName: '{{.IndexData.TUMLiveContext.User.GetPreferredName}}', name: '{{.IndexData.TUMLiveContext.User.GetPreferredName}}', err: '' } ">
-        <h2 class="text-2 text-xl font-semibold">Content</h2>
-        <div class="p-3">
-            <label for="displayName">Preferred Name <span class="text-5 italic">You can change this once every three months.</span></label>
+<body class="text-4">
+    {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.userSettingsData*/ -}}
+    {{template "header" .IndexData.TUMLiveContext}}
+    <div class="form-container">
+        <h1 class="form-container-title">Settings</h1>
+
+        <div class="form-container-body"
+            x-data=" { initialName: '{{.IndexData.TUMLiveContext.User.GetPreferredName}}', name: '{{.IndexData.TUMLiveContext.User.GetPreferredName}}', err: '' } ">
+            <h2 class="text-sm text-5">Content</h2>
+            <label class="text-sm text-5" for="displayName">Preferred Name <span class="italic font-bold">You can change
+                    this once every three months.</span></label>
             <p x-cloak x-show="err!==''" class="text-red-500" x-text="err"></p>
-            <div class="flex mb-4">
-                <input class="tl-input flex-grow w-auto mr-4" type="text" x-model="name" id="displayName" {{ if not .IndexData.TUMLiveContext.User.PreferredNameChangeAllowed }} readonly {{ end }}>
-                <button type="button" :disabled="name === initialName"
-                        @click="global.updatePreference(global.UserSetting.Name, name).then((r) => {err=r; if(r==='') {initialName=name;}})"
-                        class="px-4 py-2 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500">
+            <div class="flex gap-3">
+                <input class="tl-input" type="text" x-model="name" id="displayName" {{ if not
+                    .IndexData.TUMLiveContext.User.PreferredNameChangeAllowed }} readonly {{ end }}>
+                <button type="button" :disabled="name === initialName" class="btn w-auto whitespace-nowrap"
+                    @click="global.updatePreference(global.UserSetting.Name, name).then((r) => {err=r; if(r==='') {initialName=name;}})">
                     Update Name
                 </button>
             </div>
-            <p>Preferred greeting:</p>
-            <div class="pl-4 mb-4" x-data="{ currentGreeting: {{toJson .IndexData.TUMLiveContext.User.GetPreferredGreeting}}, err:'' }">
-                <input class="w-auto" type="radio" name="greet" value="Moin" id="greeting1" x-model="currentGreeting" :checked="currentGreeting==='Moin'"
-                       @change="global.updatePreference(global.UserSetting.Greeting, currentGreeting).then((r) => {err=r})">
+            <h2 class="text-sm text-5">Preferred greeting</h2>
+            <div x-data="{ currentGreeting: {{toJson .IndexData.TUMLiveContext.User.GetPreferredGreeting}}, err:'' }">
+                <input class="w-auto" type="radio" name="greet" value="Moin" id="greeting1" x-model="currentGreeting"
+                    :checked="currentGreeting==='Moin'"
+                    @change="global.updatePreference(global.UserSetting.Greeting, currentGreeting).then((r) => {err=r})">
                 <label for="greeting1">Moin</label><br>
-                <input class="w-auto" type="radio" name="greet" value="Servus" id="greeting2" x-model="currentGreeting" :checked="currentGreeting==='Servus'"
-                       @change="global.updatePreference(global.UserSetting.Greeting, currentGreeting).then((r) => {err=r;})">
+                <input class="w-auto" type="radio" name="greet" value="Servus" id="greeting2" x-model="currentGreeting"
+                    :checked="currentGreeting==='Servus'"
+                    @change="global.updatePreference(global.UserSetting.Greeting, currentGreeting).then((r) => {err=r;})">
                 <label for="greeting2">Servus</label>
                 <p class="text-danger" x-cloak x-show="err!==''" x-text="err"></p>
             </div>
-            <p>Playback Speeds:</p>
-            <div class="pl-2" x-data="{ playbackspeeds: {{toJson .IndexData.TUMLiveContext.User.GetPlaybackSpeeds}}, err:'' }">
+            <h2 class="text-sm text-5">Playback Speeds</h2>
+            <div class="pl-2"
+                x-data="{ playbackspeeds: {{toJson .IndexData.TUMLiveContext.User.GetPlaybackSpeeds}}, err:'' }">
                 <template x-for="ps in playbackspeeds">
                     <span class="mr-2">
                         <label>
-                            <input :disabled="ps.speed===1" type="checkbox" x-model="ps.enabled" class="w-auto" @change="global.updatePreference(global.UserSetting.PlaybackSpeeds, playbackspeeds)">
+                            <input :disabled="ps.speed===1" type="checkbox" x-model="ps.enabled" class="w-auto"
+                                @change="global.updatePreference(global.UserSetting.PlaybackSpeeds, playbackspeeds)">
                             <span x-text="ps.speed"></span>
                         </label>
                     </span>
                 </template>
                 <p class="text-danger" x-cloak x-show="err!==''" x-text="err"></p>
             </div>
-        </div>
-    </div>
 
-    <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
-        <h2 class="text-2 text-xl font-semibold">Privacy & Data Protection</h2>
-        <div class="p-3">
-            <div class="pl-2">
-                <a href="/api/users/exportData" download="personal_data.json" class="mt-1 block">
-                    <i class="fas fa-download mr-2"></i>Export my personal data
-                </a>
+            <h2 class="text-sm text-5">Privacy & Data Protection</h2>
+            <a href="/api/users/exportData" download="personal_data.json" class="btn block">
+                <i class="fas fa-download"></i> Export my personal data
+            </a>
+
+            <div class="text-center p-3">
+                <i class="text-5">Not a lot going on here <b>yet</b>.
+                    <a class="underline" target="_blank" rel="noopener"
+                        href="https://github.com/joschahenningsen/TUM-Live/issues/new">Open an issue</a>
+                    if you have any ideas what settings you miss :)
+                </i>
             </div>
         </div>
     </div>
-
-    <div class="text-center bg-white dark:bg-secondary rounded shadow p-4 my-5">
-        <i class="text-5">Not a lot going on here <b>yet</b>.
-            <a class="underline" target="_blank" rel="noopener"
-               href="https://github.com/joschahenningsen/TUM-Live/issues/new">Open an issue</a>
-            if you have any ideas what settings you miss :)
-        </i>
-    </div>
-</div>
 </body>
+
 </html>

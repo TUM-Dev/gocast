@@ -118,7 +118,7 @@
     }
 
     .btn {
-        @apply text-center transition-colors bg-gray-500 text-white hover:text-white hover:bg-gray-600 dark:bg-gray-800 dark:hover:bg-primary dark:text-white w-full p-2 cursor-pointer rounded-sm shadow-sm font-bold;
+        @apply text-center transition-colors bg-gray-500 text-white hover:text-white hover:bg-gray-600 dark:bg-gray-800 dark:hover:bg-primary dark:text-white w-full p-2 cursor-pointer rounded shadow-sm font-bold;
     }
 
     .primary {
@@ -126,12 +126,16 @@
     }
 }
 
- .tl-select {
-    @apply px-4 py-3 cursor-pointer bg-gray-50 dark:bg-gray-600 w-full p-2 rounded-sm shadow-sm dark:text-white;
+.tl-select {
+    @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm cursor-pointer;
 }
 
 .tl-input {
-    @apply box-border rounded px-4 py-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600 dark:text-white;
+    @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm;
+}
+
+.tl-choose-file::-webkit-file-upload-button {
+    @apply btn border-none w-auto;
 }
 
 .container {
@@ -405,4 +409,8 @@ a.fc-event, a.fc-event:hover {
 
 .tum-live-markdown a{
     border-bottom: 1px solid black;
+}
+
+.overflow-wrap-anywhere {
+    overflow-wrap: anywhere;
 }
