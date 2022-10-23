@@ -120,7 +120,7 @@ func (mr *MockCoursesDaoMockRecorder) GetAllCoursesForSemester(year, term, ctx i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCoursesForSemester", reflect.TypeOf((*MockCoursesDao)(nil).GetAllCoursesForSemester), year, term, ctx)
 }
 
-// GetAllCoursesWithTUMIDForSemester mocks base method.
+// GetAllCoursesWithTUMIDFromSemester mocks base method.
 func (m *MockCoursesDao) GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year int, term string) ([]model.Course, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllCoursesWithTUMIDFromSemester", ctx, year, term)
@@ -129,8 +129,8 @@ func (m *MockCoursesDao) GetAllCoursesWithTUMIDFromSemester(ctx context.Context,
 	return ret0, ret1
 }
 
-// GetAllCoursesWithTUMIDForSemester indicates an expected call of GetAllCoursesWithTUMIDForSemester.
-func (mr *MockCoursesDaoMockRecorder) GetAllCoursesWithTUMIDForSemester(ctx, year, term interface{}) *gomock.Call {
+// GetAllCoursesWithTUMIDFromSemester indicates an expected call of GetAllCoursesWithTUMIDFromSemester.
+func (mr *MockCoursesDaoMockRecorder) GetAllCoursesWithTUMIDFromSemester(ctx, year, term interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCoursesWithTUMIDFromSemester", reflect.TypeOf((*MockCoursesDao)(nil).GetAllCoursesWithTUMIDFromSemester), ctx, year, term)
 }
