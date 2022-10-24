@@ -1,12 +1,12 @@
 {{define "token"}}
 <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
-
+<script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
 
 <form class="form-container" x-data="{expires: '', scope: 'admin', generatedToken:null}"
     @submit.prevent="admin.createToken(expires, scope).then(r=>r.json()).then(r => generatedToken=r.token)">
 
     <h1 class="form-container-title">Token Management</h1>
-    <div class="form-container-body grid grid-cols-2 gap-4">
+    <div class="form-container-body grid grid-cols-2 gap-3">
         <table class="table-auto w-full col-span-full">
             <thead>
                 <tr class="text-2 uppercase text-left">
@@ -34,12 +34,11 @@
                 {{end}}
             </tbody>
         </table>
-
         <label>
             <span class="hidden">Expiration date (optional)</span>
-            <input class = "tl-input" placeholder="Expiration date (optional)" x-model="expires" x-init="flatpickr($el)">
+            <input class="tl-input" placeholder="Expiration date (optional)" x-model="expires" x-init="flatpickr($el)">
         </label>
-        <select x-model="scope" class = "tl-select">
+        <select x-model="scope" class="tl-select">
             <option value="admin" class="text-4">
                 Scope: admin
             </option>

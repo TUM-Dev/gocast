@@ -235,7 +235,7 @@ func (d coursesDao) GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year
 		err = DB.Where("tum_online_identifier <> '' AND year = ?", year).Find(&foundCourses).Error
 	default:
 		// fetch all courses from this year's winter term and next year's summer term
-		err = DB.Where("tum_online_identifier <> '' AND ((year = ? AND teaching_term = W) OR (year = ? AND teaching_term = S))", year, year+1).Find(&foundCourses).Error
+		err = DB.Where("tum_online_identifier <> '' AND ((year = ? AND teaching_term = 'W') OR (year = ? AND teaching_term = 'S'))", year, year+1).Find(&foundCourses).Error
 	}
 	return foundCourses, err
 }

@@ -2,7 +2,7 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <title>TUM Live | Administration</title>
+    <title>{{.IndexData.Branding.Title}} | Administration</title>
     {{template "headImports" .IndexData.VersionTag}}
     <script src="/static/assets/ts-dist/admin.bundle.js?v={{.IndexData.VersionTag}}"></script>
 </head>
@@ -242,7 +242,7 @@
                 {{else if and (eq $curUser.Role 1) (eq .Page "serverStats")}}
                     {{template "stats" .IndexData}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "schedule")}}
-                    {{template "schedule" .IndexData}}
+                    {{template "schedule" .LectureHalls}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "serverNotifications")}}
                     {{template "server-notifications-admin-list" .ServerNotifications}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "createCourse")}}

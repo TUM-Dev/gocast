@@ -1,61 +1,49 @@
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.CreateCourseData*/ -}}
 {{template "header" .IndexData.TUMLiveContext}}
 {{define "create-course"}}
-    <div class="text-1 container mx-auto"
-         x-data="{ tumonlineid: '', slug: '', title: '', year: '', yearW: '', semester: 'Wintersemester', numberAttendees: null }">
-        <div class="min-w-screen flex items-center justify-center">
-            <div class="w-full lg:w-5/6 p-3 bg-gray-100 dark:bg-secondary rounded dark:border dark:border-gray-500 shadow">
-                <h1>Create a new course:</h1>
-                <form id="createCourseForm" class="grid gap-3 mt-3">
-                    <div class="flex space-x-1">
-                        <label class="hidden" for="courseID">TUM online id:</label>
-                        <input class="w-4/5 tl-input" id="courseID" name="courseID" type="text" autocomplete="off"
-                               placeholder="TUMOnline ID" x-model="tumonlineid"/>
-                        <button type="button"
-                                @click="admin.loadCourseInfo(tumonlineid).then(r => {title = r.title, semester = r.semester, year = r.year, yearW = r.yearW, numberAttendees = r.numberAttendees });"
-                                class="w-1/5 btn"
-                                :disabled="tumonlineid===''">
-                            Load Course
-                        </button>
-                    </div>
-                    <div class="px-2" x-show="tumonlineid === '' || numberAttendees !== null">
-                        <div class="bg-gray-50 border rounded-lg dark:bg-secondary-light dark:border-gray-800 px-2 py-1">
-                            <div id="TUMOnlineInfo"
-                                 class="grid gap-1 text-sm text-3 text-center">
-                                <span class="block">
-                                    <i class="fa fa-exclamation-triangle text-warn mr-2"></i>
-                                    <span x-show="tumonlineid === ''">Without a TUMOnline ID you won't be able to make this course public to participants only.</span>
-                                    <span x-show="numberAttendees !== null">Currently there are <span x-text="numberAttendees"></span> students enrolled in this course, please verify that this looks right.</span>
-                                </span>
-                                <a x-show="tumonlineid === ''" target="_blank" class="underline"
-                                   href="https://github.com/joschahenningsen/TUM-Live/wiki/How-do-I-find-the-right-TUMOnline-ID-for-my-course%3F">
-                                    How do I find the right TUMOnline ID for my course?
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex space-x-1">
-                        <label for="name" class="hidden">Course Title</label>
-                        <input class="w-4/5 tl-input" id="name" name="name" type="text"
-                               autocomplete="off"
-                               placeholder="Einführung in die Informatik (IN0001)"
-                               x-model="title"
-                               :class="title === '' ? 'border-red-500 focus:border-red-500' : ''"/>
-                        <label for="slug" class="hidden">Slug</label>
-                        <input class="w-1/5 tl-input" id="slug" name="slug" type="text"
-                               autocomplete="off"
-                               x-model="slug"
-                               placeholder="eidi"
-                               :class="slug === '' ? 'border-red-500 focus:border-red-500' : ''"/>
-                    </div>
-                    {{template "semester-selection"}}
-                </form>
-                <br>
-                <button class="btn" @click="admin.createCourse(tumonlineid, semester, year, yearW, title, slug);"
-                        :disabled="slug === '' || title === '' || year === ''">
-                    Create Course
-                </button>
+<div class="form-container"
+    x-data="{ tumonlineid: '', slug: '', title: '', year: '', yearW: '', semester: 'Wintersemester', numberAttendees: null }">
+    <h2 class="form-container-title col-span-full">Create a new course</h2>
+
+    <form id="createCourseForm" class="form-container-body grid gap-3 grid-cols-2">
+        <label class="hidden" for="courseID">TUM online id:</label>
+        <input class="tl-input col-span-full" id="courseID" name="courseID" type="text" autocomplete="off"
+            placeholder="TUMOnline ID" x-model="tumonlineid" />
+        <button type="button"
+            @click="admin.loadCourseInfo(tumonlineid).then(r => {title = r.title, semester = r.semester, year = r.year, yearW = r.yearW, numberAttendees = r.numberAttendees });"
+            class="btn col-span-full" :disabled="tumonlineid===''">
+            Load Course
+        </button>
+        <div x-show="tumonlineid === '' || numberAttendees !== null" class="col-span-full">
+            <div id="TUMOnlineInfo" class="grid gap-1 text-sm text-3 text-center">
+                <span class="block">
+                    <i class="fa fa-exclamation-triangle text-warn mr-2"></i>
+                    <span x-show="tumonlineid === ''">Without a TUMOnline ID you won't be able to make this
+                        course public to participants only.</span>
+                    <span x-show="numberAttendees !== null">Currently there are <span x-text="numberAttendees"></span>
+                        students enrolled in this course, please verify
+                        that this looks right.</span>
+                </span>
+                <a x-show="tumonlineid === ''" target="_blank" class="underline"
+                    href="https://github.com/joschahenningsen/TUM-Live/wiki/How-do-I-find-the-right-TUMOnline-ID-for-my-course%3F">
+                    How do I find the right TUMOnline ID for my course?
+                </a>
             </div>
         </div>
-    </div>
+        <label for="name" class="hidden">Course Title</label>
+        <input class="tl-input" id="name" name="name" type="text" autocomplete="off"
+            placeholder="Einführung in die Informatik (IN0001)" x-model="title"
+            :class="title === '' ? 'border-red-500 focus:border-red-500' : ''" />
+        <div class="row-span-2">
+            {{template "semester-selection"}}
+        </div>
+        <label for="slug" class="hidden">Slug</label>
+        <input class="tl-input" id="slug" name="slug" type="text" autocomplete="off" x-model="slug" placeholder="eidi"
+            :class="slug === '' ? 'border-red-500 focus:border-red-500' : ''" />
+        <button class="btn col-span-full" @click="admin.createCourse(tumonlineid, semester, year, yearW, title, slug);"
+            :disabled="slug === '' || title === '' || year === ''">
+            Create Course
+        </button>
+    </form>
+</div>
 {{end}}

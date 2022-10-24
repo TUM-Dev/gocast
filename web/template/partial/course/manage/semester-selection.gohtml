@@ -1,36 +1,22 @@
 {{define "semester-selection"}}
-<div class="flex space-x-1">
+<div class="grid gap-3">
     <!--suppress XmlUnboundNsPrefix -->
     <label for="semester" class="hidden">teachingTermWS</label>
-    <select id="semester"
-            x-model="semester"
-            name="semester"
-            class="tl-select w-56">
+    <select id="semester" x-model="semester" name="semester" class="tl-select">
         <option value="Wintersemester" selected>Wintersemester</option>
         <option value="Sommersemester">Sommersemester</option>
     </select>
     <label for="year" class="hidden">teachingTermYear</label>
     <div class="flex">
-        <input id="year"
-               x-model="year"
-               name="year"
-               class="w-32 tl-input"
-               @change="if(year<2000)return; yearW = (year%1000) + 1"
-               @keyup="if(year<2000)return; yearW = (year%1000) + 1"
-               :class="year === '' ? 'border-red-500 focus:border-red-500' : ''"
-               placeholder="2022"
-               type="number">
+        <input id="year" x-model="year" name="year" class="w-32 tl-input"
+            @change="if(year<2000)return; yearW = (year%1000) + 1" @keyup="if(year<2000)return; yearW = (year%1000) + 1"
+            :class="year === '' ? 'border-red-500 focus:border-red-500' : ''" placeholder="2022" type="number">
         <template x-if="semester === 'Wintersemester'">
-            <div class = "flex">
-                <span class="mx-2 my-auto">/</span>
+            <div class="flex">
+                <span class="mx-2 my-auto text-3">/</span>
                 <label for="yearW" class="hidden">teachingTermYearW</label>
-                <input id="yearW"
-                       x-model="yearW"
-                       name="yearW"
-                       class="w-16 tl-input"
-                       :class="yearW === '' ? 'border-red-500 focus:border-red-500' : ''"
-                       type="text"
-                       readonly disabled>
+                <input id="yearW" x-model="yearW" name="yearW" class="w-16 tl-input"
+                    :class="yearW === '' ? 'border-red-500 focus:border-red-500' : ''" type="text" readonly disabled>
             </div>
         </template>
     </div>
