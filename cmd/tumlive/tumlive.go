@@ -66,7 +66,8 @@ var (
 func main() {
 	tools.LoadConfig()
 	api.ServeWorkerGRPC()
-	
+	tools.InitBranding()
+
 	defer profile.Start(profile.MemProfile).Stop()
 	go func() {
 		_ = http.ListenAndServe(":8082", nil) // debug endpoint
