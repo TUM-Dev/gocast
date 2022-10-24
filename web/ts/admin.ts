@@ -190,14 +190,14 @@ export async function updateText(id: number, name: string, content: string) {
         });
 }
 
-export function impersonate(userID: number) : Promise<boolean> {
+export function impersonate(userID: number): Promise<boolean> {
     return fetch("/api/users/impersonate", {
         method: "POST",
-        body: JSON.stringify({id: userID}),
+        body: JSON.stringify({ id: userID }),
         headers: {
             "Content-Type": "application/json",
         },
     }).then((r) => {
         return r.status === StatusCodes.OK;
-    })
+    });
 }
