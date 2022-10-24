@@ -7,6 +7,10 @@
     <link href="/static/assets/css/icons.css?v={{if .}}{{.}}{{else}}development{{end}}" rel="stylesheet">
     <script defer src="/static/node_modules/@alpinejs/persist/dist/cdn.min.js"></script>
     <script defer src="/static/node_modules/@alpinejs/focus/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.3/dist/katex.min.css" integrity="sha384-Juol1FqnotbkyZUT5Z7gUPjQ9gzlwCENvUZTpQBAPxtusdwFLRy382PSDx5UUJ4/" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.3/dist/katex.js" integrity="sha384-ZfxPSr1+NHNHrv9KI48JF/1RkvdoxKWJPuYyfxE+iexlsGw8tyQR4OuNVNUuzwLN" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.3/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
+    ></script>
     {{if and . (eq . "development")}}
         <script defer src="/static/node_modules/alpinejs/dist/cdn.js"></script>
     {{else}}
