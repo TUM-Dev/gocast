@@ -44,6 +44,7 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	admins.POST("/deleteUser", routes.DeleteUser)
 	admins.GET("/searchUser", routes.SearchUser)
 	admins.POST("/users/update", routes.updateUser)
+	admins.POST("/users/impersonate", routes.impersonateUser)
 
 	lecturers := router.Group("/api")
 	lecturers.Use(tools.AtLeastLecturer)
@@ -57,6 +58,32 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 type usersRoutes struct {
 	dao.DaoWrapper
+}
+
+func (r usersRoutes) impersonateUser(c *gin.Context) {
+	type req struct {
+		UserID uint `json:"id"`
+	}
+	var request req
+	err := c.Bind(&request)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "Bad Request",
+			Err:           err,
+		})
+		return
+	}
+	u, err := r.UsersDao.GetUserByID(c, request.UserID)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "User not found",
+			Err:           err,
+		})
+		return
+	}
+	tools.StartSession(c, &tools.SessionData{Userid: u.ID})
 }
 
 func (r usersRoutes) updateUser(c *gin.Context) {
