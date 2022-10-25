@@ -72,7 +72,8 @@
                     dark:border-gray-800 dark:bg-gray-800
                    lg:gap-3 lg:border-0 lg:bg-transparent lg:dark:bg-transparent">
             <template x-for="(b, i) in bookmarks.get()" :key="b.ID">
-                <div x-data="{bookmarkUpdater: new watch.BookmarkUpdater(b)}"
+                <div x-data="{bookmarkUpdater: {}}"
+                     x-init="bookmarkUpdater = new watch.BookmarkUpdater(b)"
                      class="flex">
                     <button class="relative flex flex-grow items-center shrink-0 justify-between align-middle
                                 rounded-lg border bg-white dark:bg-secondary
@@ -81,20 +82,25 @@
                             :class="bookmarks.showEdit && 'rounded-r-none'"
                             :disabled="bookmarks.showEdit"
                             @click="watch.jumpTo(b.hours, b.minutes, b.seconds);">
-                        <template x-if="!bookmarkUpdater.show">
+                        <template x-if="!bookmarkUpdater.show || !bookmarks.showEdit">
                             <span x-text="b.description"
                                   class="text-3 text-xs text-left overflow-wrap-anywhere max-w-xs lg:max-w-md pr-2 flex-grow"></span>
                         </template>
-                        <template x-if="bookmarkUpdater.show">
+                        <template x-if="!bookmarkUpdater.show || !bookmarks.showEdit">
+                            <span x-text="b.friendlyTimestamp"
+                                  class="text-sky-800 bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded">
+                        </span>
+                        </template>
+                        <template x-if="bookmarkUpdater.show && bookmarks.showEdit">
                             <form @submit="(e) => bookmarkUpdater.submit(e).then(() => $dispatch('reloadbookmarks'))"
-                                  class="flex flex-grow mr-2 bg-white text-xs dark:bg-secondary-light border dark:border-gray-800 w-96 p-2 shadow-sm rounded-lg">
+                                  class="flex flex-grow text-xs">
                                 <div class = "text-left flex-grow mr-2">
                                     <label for="bookmark-description"
                                            class="block text-5">Description</label>
                                     <input x-model="bookmarkUpdater.request.Description"
                                            type="text" name="bookmark-description" id="bookmark-description"
                                            placeholder="Interesting..." autofocus="" required
-                                           class="rounded px-4 py-3 mt-1 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
+                                           class="text-3 rounded px-4 py-3 mt-1 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
                                 </div>
                                 <button type="submit"
                                         title="Update"
@@ -103,9 +109,6 @@
                                 </button>
                             </form>
                         </template>
-                        <span x-text="b.friendlyTimestamp"
-                              class="text-sky-800 bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded">
-                        </span>
                     </button>
                     <template x-if="bookmarks.showEdit">
                         <button @click="bookmarkUpdater.show = !bookmarkUpdater.show"
@@ -118,7 +121,7 @@
                         <button type="button"
                                 @click="await bookmarks.delete(b.ID);"
                                 class="text-3 text-xs px-3 border border-l-0 rounded-r-lg bg-white dark:bg-secondary dark:border-gray-800 hover:bg-gray-200 dark:hover:bg-gray-600">
-                            <i class="fa-solid fa-xmark"></i>
+                            <i class="fa-solid fa-trash"></i>
                         </button>
                     </template>
                 </div>
