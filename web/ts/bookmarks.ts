@@ -19,7 +19,6 @@ export class BookmarkList {
     async delete(id: number) {
         await Bookmarks.delete(id).then(() => {
             const index = this.list.findIndex((b) => b.ID === id);
-            console.log(index);
             this.list.splice(index, 1);
         });
     }
@@ -43,7 +42,7 @@ export class BookmarkDialog {
         this.streamId = streamId;
     }
 
-    async submit(e) {
+    async submit(e: FormDataEvent) {
         e.preventDefault();
         await Bookmarks.add(this.request).then(() => (this.showSuccess = true));
     }
@@ -55,7 +54,35 @@ export class BookmarkDialog {
     }
 }
 
-export const Bookmarks = {
+export class BookmarkUpdater {
+    private readonly old: Bookmark;
+
+    request: UpdateBookmarkRequest;
+    success: boolean;
+    show: boolean;
+
+    constructor(old: Bookmark) {
+        this.old = old;
+        this.request = new UpdateBookmarkRequest();
+        this.request.Description = old.description;
+        this.success = false;
+        this.show = false;
+    }
+
+    async submit(e: FormDataEvent) {
+        e.preventDefault();
+        if (this.old.description !== this.request.Description) {
+            await Bookmarks.update(this.old.ID, this.request).then(() => {
+                this.success = true;
+                this.show = false;
+            });
+        } else {
+            this.show = false;
+        }
+    }
+}
+
+const Bookmarks = {
     get: async (streamId: number) => {
         return getData("/api/bookmarks?streamID=" + streamId)
             .then((resp) => {
@@ -114,7 +141,9 @@ class AddBookmarkRequest {
     Seconds: number;
 }
 
-class UpdateBookmarkRequest {}
+class UpdateBookmarkRequest {
+    Description: string;
+}
 
 type Bookmark = {
     ID: number;
