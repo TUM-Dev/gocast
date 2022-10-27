@@ -41,7 +41,6 @@ type StreamsDao interface {
 	UpdateStreamFullAssoc(vod *model.Stream) error
 	SetStreamNotLiveById(streamID uint) error
 	SetStreamLiveNowTimestampById(streamID uint, liveNowTimestamp time.Time) error
-	SavePauseState(streamID uint, paused bool) error
 	SaveEndedState(streamID uint, hasEnded bool) error
 	SaveCOMBURL(stream *model.Stream, url string)
 	SaveCAMURL(stream *model.Stream, url string)
@@ -327,11 +326,6 @@ func (d streamsDao) SetStreamLiveNowTimestampById(streamID uint, liveNowTimestam
 	return DB.Model(model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"LiveNowTimestamp": liveNowTimestamp}).Error
 }
 
-func (d streamsDao) SavePauseState(streamID uint, paused bool) error {
-	defer Cache.Clear()
-	return DB.Model(model.Stream{}).Where("id = ?", streamID).Update("Paused", paused).Error
-}
-
 // SaveEndedState updates the boolean Ended field of a stream model to the value of hasEnded when a stream finishes.
 func (d streamsDao) SaveEndedState(streamID uint, hasEnded bool) error {
 	defer Cache.Clear()
@@ -386,7 +380,6 @@ func (d streamsDao) SaveStream(vod *model.Stream) error {
 		EndOffset:        vod.EndOffset,
 		Silences:         vod.Silences,
 		Files:            vod.Files,
-		Paused:           vod.Paused,
 		Duration:         vod.Duration,
 		ThumbInterval:    vod.ThumbInterval,
 	}).Error

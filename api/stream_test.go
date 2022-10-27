@@ -166,34 +166,6 @@ func TestStream(t *testing.T) {
 			Url(url).
 			Run(t, testutils.Equal)
 	})
-	t.Run("GET/api/stream/:streamID/pause", func(t *testing.T) {
-		url := fmt.Sprintf("/api/stream/%d/pause", testutils.StreamFPVLive.ID)
-
-		gomino.TestCases{
-			"no context": {
-				ExpectedCode: http.StatusInternalServerError,
-			},
-			"not admin": {
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
-				ExpectedCode: http.StatusForbidden,
-			},
-			"GetLectureHallByID returns error": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao:      testutils.GetStreamMock(t),
-						CoursesDao:      testutils.GetCoursesMock(t),
-						LectureHallsDao: testutils.GetLectureHallMockError(t),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
-				ExpectedCode: http.StatusInternalServerError,
-			}}.
-			Router(StreamDefaultRouter(t)).
-			Method(http.MethodGet).
-			Url(url).
-			Run(t, testutils.Equal)
-	})
 	t.Run("GET/api/stream/:streamID/end", func(t *testing.T) {
 		url := fmt.Sprintf("/api/stream/%d/end", testutils.StreamFPVLive.ID)
 		gomino.TestCases{

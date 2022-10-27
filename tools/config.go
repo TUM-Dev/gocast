@@ -133,7 +133,7 @@ type Config struct {
 		Branding string `yaml:"branding"`
 	} `yaml:"paths"`
 	Auths struct {
-		SmpUser     string `yaml:"smpUser"`
+		SmpUser     string `yaml:"smpUser"` // todo, do we need this? Should this be in the lecture_halls table?
 		SmpPassword string `yaml:"smpPassword"`
 		PwrCrtlAuth string `yaml:"pwrCrtlAuth"`
 		CamAuth     string `yaml:"camAuth"`

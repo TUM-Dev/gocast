@@ -13,9 +13,7 @@
     <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
     <link rel="stylesheet" href="/static/node_modules/@silvermine/videojs-airplay/dist/silvermine-videojs-airplay.css">
 </head>
-<body x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}, 'showChat': $persist(false).as('chatOpen'), seekLogger: new watch.SeekLogger('{{$stream.ID}}')}"
-      x-on:pausestart.window="paused=true"
-      x-on:pauseend.window="paused=false"
+<body x-data="{'streamID': {{$stream.Model.ID}}, 'showChat': $persist(false).as('chatOpen'), seekLogger: new watch.SeekLogger('{{$stream.ID}}')}"
       @keypress.shift.window="(e) => watch.onShift(e)"
       x-init="new watch.Watch(); watch.startWebsocket(); seekLogger.attach();">
 {{template "header" .IndexData.TUMLiveContext}}
@@ -36,10 +34,6 @@
             <div id="watchContent"
                  x-data="{ contextMenu: { shown: false, locX: 0, locY: 0 }, videoStatsShown: false }"
                  class="grow w-full relative">
-                <div class="bg-indigo-700 bg-opacity-20 border-t-4 border-indigo-700 w-full font-semibold text-2 rounded-t display-none"
-                     x-show="paused" x-cloak>
-                    <i class="fas fa-info-circle"></i> This lecture is currently paused.
-                </div>
                 <div x-data="{ showliveended: false }"
                      class="bg-red-700 bg-opacity-20 p-2 w-full font-semibold text-2"
                      x-show="showliveended" @streamended.window="showliveended=true" x-cloak>
@@ -225,13 +219,6 @@
                 <div class="md:space-x-2 lg:space-y-0 space-y-2 w-full">
                     {{/* Lecture hall is set, means no self-stream*/}}
                     {{if $stream.LectureHallID}}
-                        <button @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)"
-                                href="#"
-                                :title="paused?'End Pause (turns on video and audio)':'Pause lecture (turns off video and audio)'"
-                                class="bg-green-500 text-center lg:w-32 md:w-24 md:inline-block block w-full text-white font-bold hover:bg-green-600 dark:hover:bg-green-600 rounded cursor-pointer p-2">
-                            <span x-show="!paused"><i class="fas fa-pause mr-1"></i>Pause</span>
-                            <span x-show="paused"><i class="fas fa-play mr-1"></i>Resume</span>
-                        </button>
                         <button @click="window.location.href='?restart=1'"
                                 title="Issues with the stream? Restart it."
                                 class="bg-indigo-500 text-center lg:w-32 md:w-24 md:inline-block block w-full text-white font-bold hover:bg-indigo-600 dark:hover:bg-indigo-600 rounded cursor-pointer p-2">
