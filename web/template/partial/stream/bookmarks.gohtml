@@ -1,7 +1,7 @@
 {{define "bookmark-dialog"}}
     <form x-data="{bookmark: new watch.BookmarkDialog({{.}})}"
           x-init="bookmark.reset()"
-          @submit="(e) => bookmark.submit(e).then(() => $dispatch('reloadbookmarks'))"
+          @submit.prevent="bookmark.submit().then(() => $dispatch('reloadbookmarks'))"
           class="bg-white border shadow rounded-lg dark:bg-secondary-light dark:border-gray-800">
         <div class="border-b dark:border-gray-800 px-2 py-1 text-xs text-4 font-semibold">
             New bookmark
@@ -54,7 +54,7 @@
 {{end}}
 
 {{define "bookmark-list"}}
-    <div x-cloak x-show="bookmarks !== undefined && bookmarks.length() > 0"
+    <div x-cloak x-show="bookmarks.length()"
          x-data="{ bookmarks: new watch.BookmarkList({{.}}) }"
          x-init="await bookmarks.fetch()"
          @reloadbookmarks.window="await bookmarks.fetch()"
@@ -92,9 +92,10 @@
                         </span>
                         </template>
                         <template x-if="bookmarkUpdater.show && bookmarks.showEdit">
-                            <form @submit="(e) => bookmarkUpdater.submit(e)"
+                            <form @submit.prevent="bookmarkUpdater.submit()"
+                                  @reset.prevent="bookmarkUpdater.reset();"
                                   class="flex flex-grow text-xs">
-                                <div class = "text-left flex-grow mr-2">
+                                <div class="text-left flex-grow mr-2">
                                     <label for="bookmark-description"
                                            class="block text-5">Description</label>
                                     <input x-model="bookmarkUpdater.request.Description"
@@ -107,9 +108,8 @@
                                         class="w-fit bg-blue-500 text-center px-3 rounded w-full dark:bg-indigo-600 mr-2">
                                     <i class="text-white text-sm fa-solid fa-square-check"></i>
                                 </button>
-                                <button type="button"
+                                <button type="reset"
                                         title="Undo changes"
-                                        @click="bookmarkUpdater.reset()"
                                         class="w-fit bg-gray-100 text-center px-3 rounded w-full dark:bg-secondary-light">
                                     <i class="dark:text-white text-sm fa-solid fa-rotate-left"></i>
                                 </button>

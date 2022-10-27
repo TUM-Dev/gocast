@@ -17,7 +17,7 @@ export class BookmarkList {
     }
 
     length(): number {
-        return this.list.length;
+        return this.list !== undefined ? this.list.length : 0;
     }
 
     async delete(id: number) {
@@ -43,13 +43,11 @@ export class BookmarkDialog {
         this.streamId = streamId;
     }
 
-    async submit(e: FormDataEvent) {
-        e.preventDefault();
+    async submit() {
         // convert strings to number
         this.request.Hours = +this.request.Hours;
         this.request.Minutes = +this.request.Minutes;
         this.request.Seconds = +this.request.Seconds;
-        console.log(this.request);
         await Bookmarks.add(this.request).then(() => (this.showSuccess = true));
     }
 
@@ -71,8 +69,7 @@ export class BookmarkUpdater {
         this.reset();
     }
 
-    async submit(e: FormDataEvent) {
-        e.preventDefault();
+    async submit() {
         await this.bookmark.update(this.request).then(() => (this.show = false));
     }
 

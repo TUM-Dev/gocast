@@ -179,7 +179,8 @@
 
                         {{if .IndexData.TUMLiveContext.User}}
                             <div x-data="{showBookmarkDialog: false}" class="relative"
-                                 @click.outside="showBookmarkDialog = false">
+                                 @click.outside="showBookmarkDialog = false"
+                                 @scroll.outside="showBookmarkDialog = false">
                                 <button @click="showBookmarkDialog = !showBookmarkDialog"
                                         class="rounded-lg px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
                                         :title="'New Bookmark'">
