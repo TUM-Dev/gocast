@@ -58,7 +58,7 @@
          x-data="{ bookmarks: new watch.BookmarkList({{.}}) }"
          x-init="await bookmarks.fetch()"
          @reloadbookmarks.window="await bookmarks.fetch()"
-         class="basis-full p-5 order-5 lg:order-none">
+         class="lg:basis-1/2 p-5 order-5 lg:order-none">
         <div class="flex border-b dark:border-gray-800 mb-3">
             <h3 class="text-4 font-semibold mr-auto">Bookmarks</h3>
             <button class="flex items-center text-xs hover:bg-gray-200 dark:hover:bg-gray-600 text-5 hover:text-1 rounded px-2 py-1 h-fit"
@@ -73,7 +73,7 @@
                    lg:gap-3 lg:border-0 lg:bg-transparent lg:dark:bg-transparent">
             <template x-for="(b, i) in bookmarks.get()" :key="b.ID">
                 <div x-data="{bookmarkUpdater: {}}"
-                     x-init="bookmarkUpdater = new watch.BookmarkUpdater(b)"
+                     x-init="bookmarkUpdater = new watch.BookmarkUpdater(b);"
                      class="flex">
                     <button class="relative flex flex-grow items-center shrink-0 justify-between align-middle
                                 rounded-lg border bg-white dark:bg-secondary
@@ -92,7 +92,7 @@
                         </span>
                         </template>
                         <template x-if="bookmarkUpdater.show && bookmarks.showEdit">
-                            <form @submit="(e) => bookmarkUpdater.submit(e).then(() => $dispatch('reloadbookmarks'))"
+                            <form @submit="(e) => bookmarkUpdater.submit(e)"
                                   class="flex flex-grow text-xs">
                                 <div class = "text-left flex-grow mr-2">
                                     <label for="bookmark-description"
@@ -104,8 +104,14 @@
                                 </div>
                                 <button type="submit"
                                         title="Update"
-                                        class="w-fit bg-blue-500 text-center px-3 rounded w-full dark:bg-indigo-600">
+                                        class="w-fit bg-blue-500 text-center px-3 rounded w-full dark:bg-indigo-600 mr-2">
                                     <i class="text-white text-sm fa-solid fa-square-check"></i>
+                                </button>
+                                <button type="button"
+                                        title="Undo changes"
+                                        @click="bookmarkUpdater.reset()"
+                                        class="w-fit bg-gray-100 text-center px-3 rounded w-full dark:bg-secondary-light">
+                                    <i class="dark:text-white text-sm fa-solid fa-rotate-left"></i>
                                 </button>
                             </form>
                         </template>

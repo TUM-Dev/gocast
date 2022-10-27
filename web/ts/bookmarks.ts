@@ -16,6 +16,10 @@ export class BookmarkList {
         return this.list;
     }
 
+    length(): number {
+        return this.list.length;
+    }
+
     async delete(id: number) {
         await Bookmarks.delete(id).then(() => {
             const index = this.list.findIndex((b) => b.ID === id);
@@ -23,12 +27,9 @@ export class BookmarkList {
         });
     }
 
-    length(): number {
-        return this.list.length;
-    }
-
     async fetch() {
         this.list = await Bookmarks.get(this.streamId);
+        this.list.forEach((b) => (b.update = updateBookmark));
     }
 }
 
@@ -44,6 +45,11 @@ export class BookmarkDialog {
 
     async submit(e: FormDataEvent) {
         e.preventDefault();
+        // convert strings to number
+        this.request.Hours = +this.request.Hours;
+        this.request.Minutes = +this.request.Minutes;
+        this.request.Seconds = +this.request.Seconds;
+        console.log(this.request);
         await Bookmarks.add(this.request).then(() => (this.showSuccess = true));
     }
 
@@ -55,35 +61,50 @@ export class BookmarkDialog {
 }
 
 export class BookmarkUpdater {
-    private readonly old: Bookmark;
+    private readonly bookmark: Bookmark;
 
     request: UpdateBookmarkRequest;
-    success: boolean;
     show: boolean;
 
-    constructor(old: Bookmark) {
-        this.old = old;
-        this.request = new UpdateBookmarkRequest();
-        this.request.Description = old.description;
-        this.success = false;
-        this.show = false;
+    constructor(b: Bookmark) {
+        this.bookmark = b;
+        this.reset();
     }
 
     async submit(e: FormDataEvent) {
         e.preventDefault();
-        if (this.old.description !== this.request.Description) {
-            await Bookmarks.update(this.old.ID, this.request).then(() => {
-                this.success = true;
-                this.show = false;
-            });
-        } else {
-            this.show = false;
-        }
+        await this.bookmark.update(this.request).then(() => (this.show = false));
+    }
+
+    reset() {
+        this.request = new UpdateBookmarkRequest();
+        this.request.Description = this.bookmark.description;
+        this.show = false;
+    }
+}
+
+type Bookmark = {
+    ID: number;
+    description: string;
+    hours: number;
+    minutes: number;
+    seconds: number;
+    friendlyTimestamp?: string;
+
+    update?: (UpdateBookmarkRequest) => Promise<void>;
+};
+
+async function updateBookmark(request: UpdateBookmarkRequest): Promise<void> {
+    // this = Bookmark object
+    if (this.description !== request.Description) {
+        return await Bookmarks.update(this.ID, request).then(() => {
+            this.description = request.Description;
+        });
     }
 }
 
 const Bookmarks = {
-    get: async (streamId: number) => {
+    get: async function (streamId: number): Promise<Bookmark[]> {
         return getData("/api/bookmarks?streamID=" + streamId)
             .then((resp) => {
                 if (!resp.ok) {
@@ -94,7 +115,7 @@ const Bookmarks = {
             .catch((err) => {
                 console.error(err);
             })
-            .then((j) => j);
+            .then((j: Promise<Bookmark[]>) => j);
     },
     add: (request: AddBookmarkRequest) => {
         return postData("/api/bookmarks", request)
@@ -144,12 +165,3 @@ class AddBookmarkRequest {
 class UpdateBookmarkRequest {
     Description: string;
 }
-
-type Bookmark = {
-    ID: number;
-    description: string;
-    hours: number;
-    minutes: number;
-    seconds: number;
-    friendlyTimestamp?: string;
-};
