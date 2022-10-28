@@ -17,6 +17,7 @@
         <link rel="stylesheet" href="/static/node_modules/katex/dist/katex.min.css">
         <script defer src="/static/node_modules/katex/dist/katex.js"></script>
         <script defer src="/static/node_modules/katex/dist/contrib/auto-render.min.js"></script>
+        <script defer src="/static/node_modules/katex/dist/contrib/copy-tex.min.js"></script>
     {{end}}
 </head>
 <body x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}, 'showChat': $persist(false).as('chatOpen'), seekLogger: new watch.SeekLogger('{{$stream.ID}}')}"
