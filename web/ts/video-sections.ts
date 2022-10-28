@@ -1,4 +1,4 @@
-import { Delete, postData, Section } from "./global";
+import { Delete, postData, putData, Section } from "./global";
 
 /**
  * Wrapper for REST-API calls @ /api/stream/:id/sections
@@ -23,6 +23,10 @@ export class VideoSectionClient {
 
     async post(data): Promise<Response> {
         return postData(`/api/stream/${this.streamID}/sections`, data);
+    }
+
+    async put(id: number, data) {
+        return putData(`/api/stream/${this.streamID}/sections/${id}`, data);
     }
 
     async delete(id: number): Promise<Response> {
@@ -232,4 +236,42 @@ export class VideoSectionsAdmin {
             streamID: this.streamID,
         };
     }
+}
+
+/**
+ * Admin Page VideoSection Updater
+ * @category admin-page
+ */
+export class VideoSectionUpdater {
+    private client: VideoSectionClient;
+    private section: Section;
+
+    request: UpdateVideoSectionRequest;
+    show: boolean;
+
+    constructor(client: VideoSectionClient, section: Section) {
+        this.client = client;
+        this.section = section;
+        this.reset();
+    }
+
+    async update() {
+        return this.client.put(this.section.ID, this.request);
+    }
+
+    reset() {
+        this.request = new UpdateVideoSectionRequest();
+        this.request.Description = this.section.description;
+        this.request.StartHours = this.section.startHours;
+        this.request.StartMinutes = this.section.startMinutes;
+        this.request.StartSeconds = this.section.startSeconds;
+        this.show = false;
+    }
+}
+
+class UpdateVideoSectionRequest {
+    Description: string;
+    StartHours: number;
+    StartMinutes: number;
+    StartSeconds: number;
 }
