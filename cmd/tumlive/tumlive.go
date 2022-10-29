@@ -150,6 +150,7 @@ func main() {
 		&model.InfoPage{},
 		&model.Bookmark{},
 		&model.TranscodingProgress{},
+		&model.PrefetchedCourse{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -199,6 +200,8 @@ func initCron() {
 	_, _ = cronService.AddFunc("0-59/5 * * * *", func() { sentry.Flush(time.Minute * 2) })
 	//Look for due streams and notify workers about them
 	_, _ = cronService.AddFunc("0-59 * * * *", api.NotifyWorkers(daoWrapper))
+	// update courses available every monday at 3am
+	_, _ = cronService.AddFunc("0 0 * * 3", tum.PrefetchCourses(daoWrapper))
 	cronService.Start()
 }
 

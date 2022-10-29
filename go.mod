@@ -48,7 +48,15 @@ require (
 	github.com/u2takey/go-utils v0.3.1
 )
 
-require github.com/matthiasreumann/gomino v0.0.2
+require (
+	github.com/TUM-Dev/CampusProxy/client v0.0.0-20220928080722-4bd1259b2d06
+	github.com/matthiasreumann/gomino v0.0.2
+)
+
+require (
+	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
+	google.golang.org/appengine v1.6.7 // indirect
+)
 
 require (
 	// this version works - newer commits may have breaking changes
