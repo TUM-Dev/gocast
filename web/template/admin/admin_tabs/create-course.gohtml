@@ -5,7 +5,7 @@
     x-data="{ tumonlineid: '', slug: '', title: '', year: '', yearW: '', semester: 'Wintersemester', numberAttendees: null }">
     <h2 class="form-container-title col-span-full">Create a new course</h2>
 
-    <form id="createCourseForm" class="form-container-body grid gap-3 grid-cols-2">
+    <form id="createCourseForm" class="form-container-body grid gap-3 grid-cols-2" @submit.prevent="admin.createCourse(tumonlineid, semester, year, yearW, title, slug);">
         <label class="hidden" for="courseID">TUM online id:</label>
         <input class="tl-input col-span-full" id="courseID" name="courseID" type="text" autocomplete="off"
             placeholder="TUMOnline ID" x-model="tumonlineid" />
@@ -40,7 +40,7 @@
         <label for="slug" class="hidden">Slug</label>
         <input class="tl-input" id="slug" name="slug" type="text" autocomplete="off" x-model="slug" placeholder="eidi"
             :class="slug === '' ? 'border-red-500 focus:border-red-500' : ''" />
-        <button class="btn col-span-full" @click="admin.createCourse(tumonlineid, semester, year, yearW, title, slug);"
+        <button class="btn col-span-full"
             :disabled="slug === '' || title === '' || year === ''">
             Create Course
         </button>
