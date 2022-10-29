@@ -3,7 +3,7 @@
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     {{$course := .IndexData.TUMLiveContext.Course}}
     <div x-data="{ viewers: 0 }" @viewers.window="viewers = $event.detail.viewers"
-         class="inline-flex space-x-2">
+         class="text-5 text-xs mt-2 lg:text-sm">
         {{if not $stream.Recording}}
             {{if not $stream.LiveNow}}
                 {{if $stream.Ended }}
@@ -13,9 +13,10 @@
                 {{else}}
                     <span class="m-auto" x-text="viewers"></span>
                     <span class="m-auto ViewerDescText">Waiting</span>
-                    <span class="m-auto">&#183;</span>
+                    <span>&bull;</span>
+
                     {{/* Timer / Countdown */}}
-                    <span class="flex text-lg text-4"
+                    <span class="inline-flex"
                           x-data="global.timer('{{$course.GetNextLectureDateFormatted}}', true)"
                           x-init="init();">
                     <template x-if="time().days !== '00'">
@@ -27,12 +28,10 @@
                     </template>
                     <template
                             x-if="time().days === '00' && !(time().minutes === '00' && time().hours === '00' && time().seconds === '00')">
-                        <span>
-                            <span class="tabular-nums flex m-auto">
-                                <span x-text="time().hours"></span>:
-                                <span x-text="time().minutes"></span>:
-                                <span x-text="time().seconds"></span>
-                            </span>
+                        <span class="tabular-nums flex m-auto">
+                            <span x-text="time().hours"></span>:
+                            <span x-text="time().minutes"></span>:
+                            <span x-text="time().seconds"></span>
                         </span>
                     </template>
                     </span>
@@ -40,7 +39,6 @@
             {{else}}
                 <span class="m-auto" x-text="viewers"></span>
                 <span class="m-auto" id="ViewerDescText">Watching</span>
-                <span class="m-auto hidden sm:inline-flex">&#183;</span>
             {{end}}
         {{end}}
     </div>

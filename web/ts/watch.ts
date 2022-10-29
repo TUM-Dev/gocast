@@ -1,14 +1,37 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
 import { getPlayer } from "./TUMLiveVjs";
-import { Get, postData } from "./global";
 import { Realtime } from "./socket";
 
-let chatInput: HTMLInputElement;
-
 export class Watch {
+    private readonly player: HTMLElement;
+    private chat: HTMLElement;
+
     constructor() {
-        // Empty
+        this.player = document.getElementById("watchContent");
+        this.chat = document.getElementById("chat-box");
+        this.attachListener();
+        this.resizeChat();
+    }
+
+    private attachListener() {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const that = this;
+        window.addEventListener("resize", function () {
+            that.resizeChat();
+        });
+    }
+
+    private resizeChat() {
+        if (this.chat == null || this.player == null) {
+            return;
+        }
+        /* :md breakpoint */
+        if (window.innerWidth > 768) {
+            this.chat.style.height = `${this.player.getBoundingClientRect().height}px`;
+        } else {
+            this.chat.style.height = "640px";
+        }
     }
 }
 
@@ -267,9 +290,11 @@ export const videoStatListener = {
 };
 
 export function onShift(e) {
-    switch (e.key) {
-        case "?": {
-            toggleShortcutsModal();
+    if (document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA") {
+        switch (e.key) {
+            case "?": {
+                toggleShortcutsModal();
+            }
         }
     }
 }

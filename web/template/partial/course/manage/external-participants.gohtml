@@ -1,40 +1,22 @@
 {{define "externalParticipants"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Course*/ -}}
-    <ul class="dark:bg-secondary bg-gray-100 mb-6" x-data="{expanded: false}">
-        <li>
-            <p class="text-4 p-4">Add participants. They'll get notified about your invitation to
-                your lecture via mail.</p>
-            <form method="post" action="/api/course/{{.Model.ID}}/createUserForCourse"
-                  class="flex">
-                <input type="hidden" name="courseID" value="{{.Model.ID}}">
-                <label class="w-full">
-                    <span class="hidden">First Name</span>
-                    <input class="mx-2 px-2" type="text" name="newUserFirstName"
-                           id="newUserFirstName" autocomplete="off" placeholder="Tim">
-                </label>
-                <label class="w-full">
-                    <span class="hidden">Email</span>
-                    <input class="mx-2 px-2" type="email" autocomplete="off" name="newUserEmail"
-                           id="newUserEmail" placeholder="tim@lmu.de">
-                </label>
-                <button type="submit" class="mx-4">
-                    <i class="fas fa-check text-4 hover:text-purple-500"></i>
-                </button>
-            </form>
-            <p class="text-4 p-4">Batch insert (this takes about two seconds per user.)</p>
-            <form method="post" action="/api/course/{{.Model.ID}}/createUserForCourse"
-                  class="flex">
-                <input type="hidden" name="courseID" value="{{.Model.ID}}">
-                <label class="w-full">
-                    <span class="hidden">Batch insert users</span>
-                    <textarea name="batchUserInput"
-                              placeholder="Tim,tim69@hotmail.com&#10;Anja,anja@lmu.de"></textarea>
-                </label>
-                <button type="submit" class="mx-4">
-                    <i class="fas fa-check text-4 hover:text-purple-500"></i>
-                </button>
-            </form>
-        </li>
+    <ul class="form-container-body" x-data="{expanded: false}">
+        <h2 class="text-sm text-5 col-span-full">Add participants. They'll get notified about your invitation to
+            your lecture via mail.</h2>
+        <form class="col-span-full grid grid-cols-2 gap-3" method="post" action="/api/course/{{.Model.ID}}/createUserForCourse">
+            <input type="hidden" name="courseID" value="{{.Model.ID}}">
+            <input class="tl-input" type="text" name="newUserFirstName"
+                   id="newUserFirstName" autocomplete="off" placeholder="Tim">
+            <input class="tl-input" type="email" autocomplete="off" name="newUserEmail"
+                   id="newUserEmail" placeholder="tim@lmu.de">
+            <button type="submit" class="btn col-span-full">Submit</button>
+        </form>
+        <h2 class="text-sm text-5">Batch insert (this takes about two seconds per user.)</h2>
+        <form class="grid gap-3" method="post" action="/api/course/{{.Model.ID}}/createUserForCourse">
+            <input type="hidden" name="courseID" value="{{.Model.ID}}">
+            <textarea class="tl-input" name="batchUserInput" placeholder="Tim,tim69@hotmail.com&#10;Anja,anja@lmu.de"></textarea>
+            <button type="submit" class="btn">Submit</button>
+        </form>
         <li class="flex px-4">
             <p @click="expanded=!expanded"
                class="underline text-4 cursor-pointer" x-text="expanded?'Hide Invitations':'Show Invitations'">

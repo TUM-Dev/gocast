@@ -15,7 +15,7 @@
     <form x-show="step===0" class="form-container-body grid grid-cols-2 gap-4">
         <label>
             <h2>Year</h2>
-            <select x-model="year" class="select">
+            <select x-model="year" class="tl-select">
                 <option>2020</option>
                 <option>2021</option>
                 <option>2022</option>
@@ -27,29 +27,33 @@
         </label>
         <label>
             <h2>Summer / Winter</h2>
-            <select x-model="semester" class="select">
+            <select x-model="semester" class="tl-select">
                 <option>W</option>
                 <option>S</option>
             </select>
         </label>
         <label>
             <h2>Department</h2>
-            <select x-model="department" class="select">
-                <option>In</option>
-                <option>Ma</option>
-                <option>Ph</option>
+            <select x-model="department" class="tl-select">
+                <option>Computer Science</option>
+                <option>Computer Engineering</option>
+                <option>Mathematics</option>
+                <option>Physics</option>
+                <option>-- specify id --</option>
             </select>
+            <h2 x-show="department==='-- specify id --'">ID:</h2>
+            <input x-show="department==='-- specify id --'" x-model="departmentID" type="text" class="tl-input">
         </label>
         <label>
             <h2>Opt In / Opt Out</h2>
-            <select x-model="optInOut" class="select">
+            <select x-model="optInOut" class="tl-select">
                 <option>Opt In</option>
                 <option>Opt Out</option>
             </select>
         </label>
         <label class="col-span-full" x-init="flatpickr($refs.range, {'mode': 'range'})">
             <h2>Import events in this range</h2>
-            <input class="text-1" type="text" x-ref="range" x-model="range" placeholder="click me!">
+            <input class="tl-input" type="text" x-ref="range" x-model="range" placeholder="click me!">
         </label>
         <button class="btn primary col-span-full" @click="step++; $dispatch(`notify${step}`)" :disabled="loading"
             x-text="step==0?'Start Import':(step==1?'Import':'Return to homepage')">
@@ -68,7 +72,7 @@
                     <div x-show="course.import">
                         <label class="mx-2">
                             <span class="text-3">Slug:</span>
-                            <input type="text" checked x-model="course.slug" class="w-auto">
+                            <input type="text" checked x-model="course.slug" class="w-auto tl-input">
                             <span class="text-warn" x-show="course.slug.length<3">short!</span>
                         </label>
                         <table>

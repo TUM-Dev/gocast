@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-    <title>TUM Live | Login</title>
+    <title>{{.Branding.Title}} | Login</title>
     {{template "headImports" .VersionTag}}
 </head>
 <body>
@@ -36,12 +36,12 @@
                     <input type="text" name="username" id="username" autocomplete="off"
                            {{if not .UseSAML}}autofocus {{end}}
                            required placeholder="Username"
-                           class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
+                           class="tl-input mt-3"/>
                 </div>
                 <div class="text-sm">
                     <label for="password" class="block text-5">Password</label>
                     <input type="password" name="password" id="password" required
-                           class="rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"
+                           class="tl-input mt-3"
                            placeholder="Password"/>
                 </div>
                 <button type="submit"

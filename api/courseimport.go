@@ -92,12 +92,18 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 				log.WithError(err).Error("No room found for request")
 				continue
 			}
+			var eventID uint
+			eventIDInt, err := strconv.Atoi(event.EventID)
+			if err == nil {
+				eventID = uint(eventIDInt)
+			}
 			streams = append(streams, model.Stream{
-				Start:         event.Start,
-				End:           event.End,
-				RoomName:      event.RoomName,
-				LectureHallID: lectureHall.ID,
-				StreamKey:     strings.ReplaceAll(uuid.NewV4().String(), "-", "")[:15],
+				Start:            event.Start,
+				End:              event.End,
+				RoomName:         event.RoomName,
+				LectureHallID:    lectureHall.ID,
+				StreamKey:        strings.ReplaceAll(uuid.NewV4().String(), "-", "")[:15],
+				TUMOnlineEventID: eventID,
 			})
 		}
 		course.Streams = streams
@@ -211,19 +217,26 @@ func (r lectureHallRoutes) getSchedule(c *gin.Context) {
 		return
 	}
 	var room campusonline.ICalendar
-	switch c.Request.Form.Get("department") {
-	case "In":
-		room, err = campus.GetXCalIn(from, to)
-	case "Ma":
+	dep := c.Request.Form.Get("department")
+	switch dep {
+	case "Computer Science":
+		room, err = campus.GetXCalCs(from, to)
+	case "Computer Engineering":
+		room, err = campus.GetXCalCe(from, to)
+	case "Mathematics":
 		room, err = campus.GetXCalMa(from, to)
-	case "Ph":
+	case "Physics":
 		room, err = campus.GetXCalPh(from, to)
 	default:
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "invalid department",
-		})
-		return
+		depInt, convErr := strconv.Atoi(c.Request.Form.Get("departmentID"))
+		if convErr != nil {
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusBadRequest,
+				CustomMessage: "invalid department",
+			})
+			return
+		}
+		room, err = campus.GetXCalOrg(from, to, depInt)
 	}
 	if err != nil {
 		log.WithError(err).Error("can not get room schedule")

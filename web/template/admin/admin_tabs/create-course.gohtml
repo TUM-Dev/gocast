@@ -2,7 +2,8 @@
 {{template "header" .IndexData.TUMLiveContext}}
 {{define "create-course"}}
     <div class="text-1 container mx-auto"
-         x-data="{ tumonlineid: '', slug: '', title: '', year: '', yearW: '', semester: 'Wintersemester', numberAttendees: null, searchQuery: '', searchResults: [] }">
+         x-data="{ tumonlineid: '', slug: '', title: '', year: '', yearW: '', semester: 'Wintersemester', numberAttendees: null, searchQuery: '', searchResults: [] }"
+        x-init="$watch('year',(value)=>{if(value<2000)return; yearW = (value%1000) + 1})">
         <div class="min-w-screen flex items-center justify-center">
             <div class="w-full lg:w-5/6 p-3 bg-gray-100 dark:bg-secondary rounded dark:border dark:border-gray-500 shadow">
                 <h2 class="mb-0">Find your course from TUMOnline</h2>
@@ -18,7 +19,7 @@
                             <template x-for="searchResult in searchResults">
                                 <li role="option" aria-selected="false"
                                     class="hover:bg-sky-500 dark:hover:bg-sky-600 dark:bg-gray-800 bg-gray-200 cursor-pointer rounded-md m-2 p-2"
-                                    @click="tumonlineid=searchResult.CourseID;title=searchResult.Name;year=searchResult.Year;semester=searchResult.Term==='W'?'Wintersemester':'Sommersemester';searchResults=[];searchQuery=''">
+                                    @click="tumonlineid=searchResult.CourseID;title=searchResult.Name;year=searchResult.Year;semester=searchResult.Term==='W'?'Wintersemester':'Sommersemester';searchResults=[];searchQuery='';$refs.slug.focus()">
                                     <p x-text="searchResult.Name"></p>
                                     <div class="font-semibold text-3">
                                         <span x-text="searchResult.Term==='W'?'Winter':'Summer'"></span>
@@ -32,15 +33,17 @@
                     <h2>Manually enter Infos:</h2>
                     <div class="flex space-x-1">
                         <label for="name" class="hidden">Course Title</label>
-                        <input class="w-4/5" id="name" name="name" type="text"
+                        <input class="w-4/5 tl-input !ml-0" id="name" name="name" type="text"
                                autocomplete="off"
                                placeholder="Einführung in die Informatik (IN0001)"
                                x-model="title"
+                               required
                                :class="title === '' ? 'border-red-500 focus:border-red-500' : ''"/>
                         <label for="slug" class="hidden">Slug</label>
-                        <input class="w-1/5" id="slug" name="slug" type="text"
+                        <input class="w-1/5 tl-input" id="slug" name="slug" type="text" x-ref="slug"
                                autocomplete="off"
                                x-model="slug"
+                               required
                                placeholder="eidi"
                                :class="slug === '' ? 'border-red-500 focus:border-red-500' : ''"/>
                     </div>
@@ -53,5 +56,5 @@
                 </button>
             </div>
         </div>
-    </div>
+</div>
 {{end}}

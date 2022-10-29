@@ -133,8 +133,9 @@ type Config struct {
 		IdpColor       string `yaml:"idpColor"`
 	} `yaml:"saml"`
 	Paths struct {
-		Static string `yaml:"static"`
-		Mass   string `yaml:"mass"`
+		Static   string `yaml:"static"`
+		Mass     string `yaml:"mass"`
+		Branding string `yaml:"branding"`
 	} `yaml:"paths"`
 	Auths struct {
 		SmpUser     string `yaml:"smpUser"`
