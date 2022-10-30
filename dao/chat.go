@@ -202,6 +202,16 @@ func (d chatDao) GetChatsByUser(userID uint) (chats []model.Chat, err error) {
 }
 
 // GetChat returns a chat message with the given id
-func (d chatDao) GetChat(id uint) (chat *model.Chat, err error) {
-	return chat, d.db.Find(&chat, "id = ?", id).Error
+func (d chatDao) GetChat(id uint) (*model.Chat, error) {
+	var chat *model.Chat
+
+	err := d.db.Find(&chat, "id = ?", id).Error
+	if err != nil {
+		return chat, err
+	}
+
+	if chat.AddressedToIds == nil {
+		chat.AddressedToIds = []uint{}
+	}
+	return chat, nil
 }

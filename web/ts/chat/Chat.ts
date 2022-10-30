@@ -3,6 +3,7 @@ import { ChatUserList } from "./ChatUserList";
 import { EmojiList } from "./EmojiList";
 import { Poll } from "./Poll";
 import { registerTimeWatcher, deregisterTimeWatcher, getPlayer } from "../TUMLiveVjs";
+import { create } from "nouislider";
 
 export class Chat {
     readonly userId: number;
@@ -339,6 +340,28 @@ export class Chat {
     }
 
     isMessageToBeFocused = (index: number) => this.messages[index].ID === this.focusedMessageId;
+
+    patchMessage(m: ChatMessage): void {
+        this.preprocessors.forEach((f) => (m = f(m)));
+
+        const newMessageCreatedAt = Date.parse(m.CreatedAt);
+
+        for (let i = 0; i <= this.messages.length; i++) {
+            if (i == this.messages.length) {
+                this.messages.push(m);
+                break;
+            }
+
+            const createdAt = Date.parse(this.messages[i].CreatedAt);
+            if (createdAt === newMessageCreatedAt) {
+                this.messages.splice(i, 1, m);
+                break;
+            } else if (createdAt > newMessageCreatedAt) {
+                this.messages.splice(i, 0, m);
+                break;
+            }
+        }
+    }
 
     private addMessage(m: ChatMessage) {
         this.preprocessors.forEach((f) => (m = f(m)));
