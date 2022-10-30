@@ -1,7 +1,7 @@
 {{define "messageTemplate"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.ChatData*/ -}}
     {{$moderatedChat := .IndexData.TUMLiveContext.Course.ModeratedChatEnabled}}
-    <template x-for="(m, index) in c.messages" :key="m.ID">
+    <template x-for="(m, index) in c.messages" :key="m.ID + m.renderVersion">
         <div x-ref="message" class="grid gap-y-1 text-4 text-sm $m.ID message"
              x-data="{ showReplies: false}"
              x-show="!m.deleted && m.replyTo && !m.replyTo.Valid"

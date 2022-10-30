@@ -40,6 +40,9 @@ export class Chat {
         (m: ChatMessage) => {
             return { ...m, isGrayedOut: this.chatReplayActive && !this.orderByLikes };
         },
+        (m: ChatMessage) => {
+            return { ...m, renderVersion: 0 };
+        },
     ];
 
     private timeWatcherCallBackFunction: () => void;
@@ -354,13 +357,15 @@ export class Chat {
 
             const createdAt = Date.parse(this.messages[i].CreatedAt);
             if (createdAt === newMessageCreatedAt) {
-                this.messages.splice(i, 1, m);
+                this.messages.splice(i, 1, { ...m, renderVersion: this.messages[i].renderVersion + 1 });
                 break;
             } else if (createdAt > newMessageCreatedAt) {
                 this.messages.splice(i, 0, m);
                 break;
             }
         }
+
+        this.messages = [...this.messages];
     }
 
     private addMessage(m: ChatMessage) {
@@ -402,6 +407,7 @@ type ChatMessage = {
     visible: true;
     deleted: boolean;
     isGrayedOut: boolean;
+    renderVersion: number;
 
     CreatedAt: string;
     DeletedAt: string;
