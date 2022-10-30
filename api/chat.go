@@ -280,12 +280,20 @@ func (r chatRoutes) handleApprove(ctx tools.TUMLiveContext, msg []byte) {
 	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
 		return
 	}
+
 	err = r.ChatDao.ApproveChat(req.Id)
 	if err != nil {
 		log.WithError(err).Error("could not approve chat")
+		return
+	}
+
+	chat, err := r.ChatDao.GetChat(req.Id)
+	if err != nil {
+		log.WithError(err).Error("could not get chat")
 	}
 	broadcast := gin.H{
 		"approve": req.Id,
+		"chat":    chat,
 	}
 	broadcastBytes, err := json.Marshal(broadcast)
 	if err != nil {

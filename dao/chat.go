@@ -30,6 +30,7 @@ type ChatDao interface {
 	CloseActivePoll(streamID uint) error
 
 	GetChatsByUser(userID uint) ([]model.Chat, error)
+	GetChat(id uint) (*model.Chat, error)
 }
 
 type chatDao struct {
@@ -198,4 +199,9 @@ func (d chatDao) CloseActivePoll(streamID uint) error {
 
 func (d chatDao) GetChatsByUser(userID uint) (chats []model.Chat, err error) {
 	return chats, d.db.Find(&chats, "user_id = ?", userID).Error
+}
+
+// GetChat returns a chat message with the given id
+func (d chatDao) GetChat(id uint) (chat *model.Chat, err error) {
+	return chat, d.db.Find(&chat, "id = ?", id).Error
 }
