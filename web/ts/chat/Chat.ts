@@ -357,15 +357,14 @@ export class Chat {
 
             const createdAt = Date.parse(this.messages[i].CreatedAt);
             if (createdAt === newMessageCreatedAt) {
-                this.messages.splice(i, 1, { ...m, renderVersion: this.messages[i].renderVersion + 1 });
+                const newRenderVersion = this.messages[i].renderVersion + 1;
+                this.messages.splice(i, 1, { ...m, renderVersion: newRenderVersion });
                 break;
             } else if (createdAt > newMessageCreatedAt) {
                 this.messages.splice(i, 0, m);
                 break;
             }
         }
-
-        this.messages = [...this.messages];
     }
 
     private addMessage(m: ChatMessage) {

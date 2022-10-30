@@ -30,7 +30,7 @@ type ChatDao interface {
 	CloseActivePoll(streamID uint) error
 
 	GetChatsByUser(userID uint) ([]model.Chat, error)
-	GetChat(id uint) (*model.Chat, error)
+	GetChat(id uint, userID uint) (*model.Chat, error)
 }
 
 type chatDao struct {
@@ -93,17 +93,7 @@ func (d chatDao) GetVisibleChats(userID uint, streamID uint) ([]model.Chat, erro
 		return nil, err
 	}
 	for i := range chats {
-		chats[i].Likes = len(chats[i].UserLikes)
-		for j := range chats[i].UserLikes {
-			if chats[i].UserLikes[j].ID == userID {
-				chats[i].Liked = true
-				break
-			}
-		}
-		chats[i].AddressedToIds = []uint{}
-		for _, user := range chats[i].AddressedToUsers {
-			chats[i].AddressedToIds = append(chats[i].AddressedToIds, user.ID)
-		}
+		normalizeChat(&chats[i], userID)
 	}
 	return chats, nil
 }
@@ -118,17 +108,7 @@ func (d chatDao) GetAllChats(userID uint, streamID uint) ([]model.Chat, error) {
 		return nil, err
 	}
 	for i := range chats {
-		chats[i].Likes = len(chats[i].UserLikes)
-		for j := range chats[i].UserLikes {
-			if chats[i].UserLikes[j].ID == userID {
-				chats[i].Liked = true
-				break
-			}
-		}
-		chats[i].AddressedToIds = []uint{}
-		for _, user := range chats[i].AddressedToUsers {
-			chats[i].AddressedToIds = append(chats[i].AddressedToIds, user.ID)
-		}
+		normalizeChat(&chats[i], userID)
 	}
 	return chats, nil
 }
@@ -202,16 +182,28 @@ func (d chatDao) GetChatsByUser(userID uint) (chats []model.Chat, err error) {
 }
 
 // GetChat returns a chat message with the given id
-func (d chatDao) GetChat(id uint) (*model.Chat, error) {
+func (d chatDao) GetChat(id uint, userID uint) (*model.Chat, error) {
 	var chat *model.Chat
 
-	err := d.db.Find(&chat, "id = ?", id).Error
+	err := d.db.Preload("Replies").Preload("UserLikes").Preload("AddressedToUsers").Find(&chat, "id = ?", id).Error
 	if err != nil {
 		return chat, err
 	}
 
-	if chat.AddressedToIds == nil {
-		chat.AddressedToIds = []uint{}
-	}
+	normalizeChat(chat, userID)
 	return chat, nil
+}
+
+func normalizeChat(chat *model.Chat, userID uint) {
+	chat.Likes = len(chat.UserLikes)
+	for j := range chat.UserLikes {
+		if chat.UserLikes[j].ID == userID {
+			chat.Liked = true
+			break
+		}
+	}
+	chat.AddressedToIds = []uint{}
+	for _, user := range chat.AddressedToUsers {
+		chat.AddressedToIds = append(chat.AddressedToIds, user.ID)
+	}
 }

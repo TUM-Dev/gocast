@@ -287,7 +287,7 @@ func (r chatRoutes) handleApprove(ctx tools.TUMLiveContext, msg []byte) {
 		return
 	}
 
-	chat, err := r.ChatDao.GetChat(req.Id)
+	chat, err := r.ChatDao.GetChat(req.Id, 0)
 	if err != nil {
 		log.WithError(err).Error("could not get chat")
 	}
