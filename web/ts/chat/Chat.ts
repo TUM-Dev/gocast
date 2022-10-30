@@ -365,6 +365,7 @@ export class Chat {
                 break;
             }
         }
+        console.log(this.messages);
     }
 
     private addMessage(m: ChatMessage) {
