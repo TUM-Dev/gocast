@@ -36,7 +36,7 @@
                             <i class="fa fa-chevron-right text-3"></i>
                         </button>
                     </template>
-                    <template x-for="(s, i) in vs.getList()" :key="s.fileID">
+                    <template x-for="(s, i) in vs.getList()" :key="s.ID">
                         <button x-cloak
                                 class="relative flex h-40 w-32 mb-1 mr-2 bg-transparent outline-none border-0 rounded-lg"
                                 x-data="{previewImgLoaded: false}"
@@ -90,7 +90,7 @@
         </div>
         <div class="p-1 border bg-gray-100 rounded dark:bg-gray-800 dark:border-gray-800">
             <div class="grid gap-1 overflow-y-scroll" :class="vs.minimize ? 'h-fit' : 'h-56'">
-                <template x-for="(s, i) in vs.getList()" :key="s.fileID">
+                <template x-for="(s, i) in vs.getList()" :key="s.ID">
                     <button x-cloak class="flex w-full bg-transparent outline-none border-0 rounded-lg"
                             x-data="{previewImgLoaded: false}"
                             @click="watch.jumpTo(s.startHours, s.startMinutes, s.startSeconds)">
