@@ -1,59 +1,22 @@
-import { Delete, postData, putData, Section } from "./global";
+import { Delete, getData, postData, putData, Section } from "./global";
 
-/**
- * Wrapper for REST-API calls @ /api/stream/:id/sections
- * @category watch-page
- * @category admin-page
- */
-export class VideoSectionClient {
-    readonly streamID: number;
+export abstract class VideoSectionList {
+    private streamId: number;
 
-    constructor(streamID: number) {
-        this.streamID = streamID;
-    }
-
-    async fetch(): Promise<Section[]> {
-        return await fetch(`/api/stream/${this.streamID}/sections`).then((res: Response) => {
-            if (!res.ok) {
-                throw new Error("Could not fetch sections");
-            }
-            return res.json();
-        });
-    }
-
-    async post(data): Promise<Response> {
-        return postData(`/api/stream/${this.streamID}/sections`, data);
-    }
-
-    async put(id: number, data) {
-        return putData(`/api/stream/${this.streamID}/sections/${id}`, data);
-    }
-
-    async delete(id: number): Promise<Response> {
-        return Delete(`/api/stream/${this.streamID}/sections/${id}`);
-    }
-}
-
-export abstract class VideoSections {
     protected list: Section[];
 
     currentHighlightIndex: number;
 
-    constructor() {
+    protected constructor(streamId: number) {
+        this.streamId = streamId;
         this.list = [];
         this.currentHighlightIndex = -1;
     }
 
-    async fetch(client: VideoSectionClient) {
-        client
-            .fetch()
-            .then((list) => {
-                this.list = list;
-            })
-            .catch((err) => {
-                console.log(err);
-                this.list = [];
-            });
+    async fetch() {
+        VideoSections.get(this.streamId).then((list) => {
+            this.list = list;
+        });
     }
 
     abstract getList(): Section[];
@@ -65,11 +28,11 @@ export abstract class VideoSections {
  * Mobile VideoSection Functionality
  * @category watch-page
  */
-export class VideoSectionsMobile extends VideoSections {
+export class VideoSectionsMobile extends VideoSectionList {
     minimize: boolean;
 
-    constructor() {
-        super();
+    constructor(streamId: number) {
+        super(streamId);
         this.minimize = true;
     }
 
@@ -86,14 +49,14 @@ export class VideoSectionsMobile extends VideoSections {
  * Desktop VideoSection Functionality
  * @category watch-page
  */
-export class VideoSectionsDesktop extends VideoSections {
+export class VideoSectionsDesktop extends VideoSectionList {
     readonly sectionsPerGroup: number;
 
     private followSections: boolean;
     private currentIndex: number;
 
-    constructor() {
-        super();
+    constructor(streamId: number) {
+        super(streamId);
         this.currentIndex = 0;
         this.followSections = false;
         this.sectionsPerGroup = 4;
@@ -149,18 +112,15 @@ export class VideoSectionsDesktop extends VideoSections {
  * @category admin-page
  */
 export class VideoSectionsAdmin {
-    private readonly streamID: number;
+    private readonly streamId: number;
 
     existingSections: Section[];
     newSections: Section[];
     current: Section;
     unsavedChanges: boolean;
 
-    client: VideoSectionClient;
-
-    constructor(client: VideoSectionClient, streamID: number) {
-        this.client = client;
-        this.streamID = streamID;
+    constructor(streamId: number) {
+        this.streamId = streamId;
 
         this.newSections = [];
         this.existingSections = [];
@@ -169,15 +129,9 @@ export class VideoSectionsAdmin {
     }
 
     async fetch() {
-        this.client
-            .fetch()
-            .then((list) => {
-                this.existingSections = list;
-            })
-            .catch((err) => {
-                console.log(err);
-                this.existingSections = [];
-            });
+        VideoSections.get(this.streamId).then((list) => {
+            this.existingSections = list;
+        });
     }
 
     pushNewSection() {
@@ -193,15 +147,15 @@ export class VideoSectionsAdmin {
     }
 
     publishNewSections() {
-        this.client.post(this.newSections).then(async () => {
-            await this.fetch(); // load sections again to avaid js-sorting
+        VideoSections.add(this.streamId, this.newSections).then(async () => {
+            await this.fetch(); // load sections again to avoid js-sorting
             this.newSections = [];
         });
         this.unsavedChanges = false;
     }
 
     removeExistingSection(id: number) {
-        this.client.delete(id).then(async () => {
+        VideoSections.delete(this.streamId, id).then(async () => {
             await this.fetch();
         });
     }
@@ -233,7 +187,7 @@ export class VideoSectionsAdmin {
             startHours: 0,
             startMinutes: 0,
             startSeconds: 0,
-            streamID: this.streamID,
+            streamID: this.streamId,
         };
     }
 }
@@ -243,20 +197,20 @@ export class VideoSectionsAdmin {
  * @category admin-page
  */
 export class VideoSectionUpdater {
-    private client: VideoSectionClient;
+    private readonly streamId: number;
     private section: Section;
 
     request: UpdateVideoSectionRequest;
     show: boolean;
 
-    constructor(client: VideoSectionClient, section: Section) {
-        this.client = client;
+    constructor(streamId: number, section: Section) {
+        this.streamId = streamId;
         this.section = section;
         this.reset();
     }
 
     async update() {
-        return this.client.put(this.section.ID, this.request);
+        return VideoSections.update(this.streamId, this.section.ID, this.request);
     }
 
     reset() {
@@ -275,3 +229,37 @@ class UpdateVideoSectionRequest {
     StartMinutes: number;
     StartSeconds: number;
 }
+
+/**
+ * Wrapper for REST-API calls @ /api/stream/:id/sections
+ * @category watch-page
+ * @category admin-page
+ */
+const VideoSections = {
+    get: async function (streamId: number): Promise<Section[]> {
+        return getData(`/api/stream/${streamId}/sections`)
+            .then((resp) => {
+                if (!resp.ok) {
+                    throw Error(resp.statusText);
+                }
+                return resp.json();
+            })
+            .catch((err) => {
+                console.error(err);
+                return [];
+            })
+            .then((l: Section[]) => l);
+    },
+
+    add: async function (streamId: number, request: object) {
+        return postData(`/api/stream/${streamId}/sections`, request);
+    },
+
+    update: function (streamId: number, id: number, request: object) {
+        return putData(`/api/stream/${streamId}/sections/${id}`, request);
+    },
+
+    delete: async function (streamId: number, id: number): Promise<Response> {
+        return Delete(`/api/stream/${streamId}/sections/${id}`);
+    },
+};

@@ -1,5 +1,5 @@
 import { getQueryParam, postData } from "./global";
-import { VideoSections } from "./video-sections";
+import { VideoSectionList } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import airplay from "@silvermine/videojs-airplay";
@@ -472,7 +472,7 @@ export class SeekLogger {
     }
 }
 
-export function attachCurrentTimeEvent(videoSection: VideoSections) {
+export function attachCurrentTimeEvent(videoSection: VideoSectionList) {
     player.ready(() => {
         let timer;
         (function checkTimestamp() {

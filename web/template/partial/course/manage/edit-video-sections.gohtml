@@ -1,7 +1,7 @@
 {{define "editvideosections"}}
-    <div x-data="{videoSection: new admin.VideoSectionsAdmin(new admin.VideoSectionClient(lecture.lectureId), lecture.lectureId)}"
+    <div x-data="{videoSection: new admin.VideoSectionsAdmin(lecture.lectureId)}"
          x-init="await videoSection.fetch()"
-         class="border shadow dark:border-gray-800 dark:bg-secondary-light rounded-lg">
+         class="border dark:border-gray-800 dark:bg-secondary-light rounded-lg">
         <template x-if="videoSection !== undefined">
             <div>
                 <div class="flex align-middle justify-between border-b py-1 px-3 dark:border-gray-600 text-sm">
@@ -41,7 +41,7 @@
                     <template x-if="videoSection.existingSections.length > 0">
                         <template x-for="section in videoSection.existingSections">
                             <div x-data="{updater: {}}"
-                                 x-init="updater = new admin.VideoSectionUpdater(videoSection.client, section);"
+                                 x-init="updater = new admin.VideoSectionUpdater(lecture.lectureId, section);"
                                  class="flex align-middle items-stretch w-full border dark:border-gray-600 rounded">
                                 <template x-if="!updater.show">
                                     <div class="p-1">

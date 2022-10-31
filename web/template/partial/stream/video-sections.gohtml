@@ -1,17 +1,17 @@
 {{define "videosections"}}
-    <div x-data="{client: new watch.VideoSectionClient('{{.ID}}')}">
+    <div>
         <div class="hidden md:block">
-            {{template "videosections-desktop" .}}
+            {{template "videosections-desktop" .ID}}
         </div>
         <div class="md:hidden">
-            {{template "videosections-mobile" .}}
+            {{template "videosections-mobile" .ID}}
         </div>
     </div>
 {{end}}
 
 {{define "videosections-desktop"}}
-    <div x-data="{vs: new watch.VideoSectionsDesktop()}"
-         x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs);">
+    <div x-data="{vs: new watch.VideoSectionsDesktop({{.}})}"
+         x-init="await vs.fetch(); watch.attachCurrentTimeEvent(vs);">
         <div class="group relative">
             <div class="grid gap-1 px-2">
                 <div class="flex justify-between items-center border-b mb-3 dark:border-gray-800 lg:justify-start">
@@ -71,8 +71,8 @@
 {{end}}
 
 {{define "videosections-mobile"}}
-    <div x-data="{vs: new watch.VideoSectionsMobile()}"
-         x-init="await vs.fetch(client); watch.attachCurrentTimeEvent(vs); " class="pt-3">
+    <div x-data="{vs: new watch.VideoSectionsMobile({{.}})}"
+         x-init="await vs.fetch(); watch.attachCurrentTimeEvent(vs); " class="pt-3">
         <div class="flex justify-between items-center border-b dark:border-gray-800 mb-3">
             <h3 class="text-4 font-semibold">Sections</h3>
             <template x-if="!vs.minimize">

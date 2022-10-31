@@ -12,4 +12,4 @@ export * from "../worker";
 export * from "../courseAdminManagement";
 export * from "../notification-management";
 export * from "../audits";
-export { VideoSectionClient, VideoSectionsAdmin, VideoSectionUpdater } from "../video-sections";
+export { VideoSectionsAdmin, VideoSectionUpdater } from "../video-sections";
