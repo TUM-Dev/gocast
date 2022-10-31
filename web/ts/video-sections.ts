@@ -135,7 +135,7 @@ export class VideoSectionsAdmin {
     }
 
     pushNewSection() {
-        this.current.friendlyTimestamp = VideoSectionsAdmin.timeStringAsString(this.current);
+        this.current.friendlyTimestamp = timeStringAsString(this.current);
         this.newSections.push({ ...this.current });
         this.resetCurrent();
         this.unsavedChanges = true;
@@ -160,27 +160,6 @@ export class VideoSectionsAdmin {
         });
     }
 
-    private static timeStringAsString(section: Section): string {
-        let s = "";
-
-        if (section.startHours > 0) {
-            s += section.startHours;
-            s += ":";
-        }
-        if (section.startMinutes < 10) {
-            s += `0${section.startMinutes}`;
-        } else {
-            s += section.startMinutes;
-        }
-        s += ":";
-        if (section.startSeconds < 10) {
-            s += `0${section.startSeconds}`;
-        } else {
-            s += section.startSeconds;
-        }
-        return s;
-    }
-
     private resetCurrent() {
         this.current = {
             description: "",
@@ -190,6 +169,28 @@ export class VideoSectionsAdmin {
             streamID: this.streamId,
         };
     }
+}
+
+function timeStringAsString(section: Section): string {
+    let s = "";
+
+    if (section.startHours > 0) {
+        s += section.startHours;
+        s += ":";
+    }
+    if (section.startMinutes < 10) {
+        s += `0${section.startMinutes}`;
+    } else {
+        s += section.startMinutes;
+    }
+    s += ":";
+    if (section.startSeconds < 10) {
+        s += `0${section.startSeconds}`;
+    } else {
+        s += section.startSeconds;
+    }
+
+    return s;
 }
 
 /**
@@ -210,7 +211,15 @@ export class VideoSectionUpdater {
     }
 
     async update() {
-        return VideoSections.update(this.streamId, this.section.ID, this.request);
+        return VideoSections.update(this.streamId, this.section.ID, this.request).then(() => {
+            // 1.) Update old
+            this.section.startHours = this.request.StartHours;
+            this.section.startMinutes = this.request.StartMinutes;
+            this.section.startSeconds = this.request.StartSeconds;
+            this.section.description = this.request.Description;
+            this.section.friendlyTimestamp = timeStringAsString(this.section);
+            this.show = false;
+        });
     }
 
     reset() {
