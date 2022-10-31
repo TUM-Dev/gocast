@@ -115,7 +115,7 @@ func (r streamRoutes) getThumbs(c *gin.Context) {
 		})
 		return
 	}
-	sendDownloadFile(c, file)
+	sendDownloadFile(c, file, tumLiveContext)
 }
 
 // livestreams returns all streams that are live
