@@ -115,7 +115,11 @@ func sendImageContent(c *gin.Context, file model.File) {
 }
 
 func sendDownloadFile(c *gin.Context, file model.File, tumLiveContext tools.TUMLiveContext) {
-	log.Info(fmt.Sprintf("Download request, user: %d, file: %d[%s]", tumLiveContext.User.ID, file.ID, file.Path))
+	var uid uint = 0
+	if tumLiveContext.User != nil {
+		uid = tumLiveContext.User.ID
+	}
+	log.Info(fmt.Sprintf("Download request, user: %d, file: %d[%s]", uid, file.ID, file.Path))
 	f, err := os.Open(file.Path)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
