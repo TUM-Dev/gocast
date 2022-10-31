@@ -37,7 +37,8 @@
                         <span class="font-light">Unsaved Changes</span>
                     </div>
                 </div>
-                <div class="space-y-2 p-3 border-b dark:border-gray-600">
+                <div class="space-y-2 border-b dark:border-gray-600"
+                    :class="videoSection.existingSections.length > 0 && 'p-3'">
                     <template x-if="videoSection.existingSections.length > 0">
                         <template x-for="section in videoSection.existingSections">
                             <div x-data="{updater: {}}"
@@ -93,7 +94,7 @@
                                         </button>
                                         <button type="reset"
                                                 title="Undo changes"
-                                                class="h-full w-fit ml-2 bg-gray-100 text-center px-3 rounded w-full dark:bg-secondary-light">
+                                                class="h-full w-fit ml-2 bg-gray-100 text-center px-3 rounded w-full dark:bg-secondary-lighter">
                                             <i class="fa fa-undo text-3"></i>
                                         </button>
                                     </form>
