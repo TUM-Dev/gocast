@@ -11,7 +11,6 @@ import (
 
 type markdownRoutes struct {
 	dao.DaoWrapper
-	renderHooks []func([]byte) []byte
 }
 
 func configGinMarkdownRouter(r *gin.Engine, daos dao.DaoWrapper) {
