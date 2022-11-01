@@ -22,7 +22,7 @@ require (
 	github.com/jinzhu/now v1.1.5
 	// todo: handle breaking changes in bluemomday.
 	github.com/microcosm-cc/bluemonday v1.0.18
-	github.com/pkg/profile v1.6.0
+	github.com/pkg/profile v1.7.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/satori/go.uuid v1.2.0
@@ -54,6 +54,8 @@ require (
 )
 
 require (
+	github.com/felixge/fgprof v0.9.3 // indirect
+	github.com/google/pprof v0.0.0-20211214055906-6f57359322fd // indirect
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 )
