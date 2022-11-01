@@ -291,7 +291,7 @@
                 <h3 class="text-4 font-semibold">Description</h3>
             </div>
             <div>
-                <div class="rounded-lg bg-gray-50 hover:bg-gray-100 text-3 text-sm">
+                <div class="rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 hover:dark:bg-secondary text-3 text-sm">
                     <button @click="toggleDesc = !toggleDesc;"
                          :disabled="!less"
                          class="hover:cursor-pointer p-2 w-full text-left">
@@ -305,7 +305,7 @@
                         </span>
                     </button>
                     <template x-if="less">
-                        <button class="font-semibold m-1 py-1 px-2 rounded-full hover:bg-gray-200"
+                        <button class="font-semibold m-1 py-1 px-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
                                 x-text="toggleDesc ? 'Show more' : 'Show less'"
                                 @click="toggleDesc = !toggleDesc;"></button>
                     </template>
