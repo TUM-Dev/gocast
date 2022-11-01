@@ -11,15 +11,16 @@ export function markdownEditor() {
                 .then((response) => response.json())
                 .then((data) => (this.html = data.html));
         },
-        action(target:HTMLTextAreaElement, pre:string, post:string) {
+        action(target: HTMLTextAreaElement, pre: string, post: string) {
             const start = target.selectionStart;
             const end = target.selectionEnd;
-            target.value = this.text.substring(0, start) + pre + this.text.substring(start, end) + post + this.text.substring(end);
+            target.value =
+                this.text.substring(0, start) + pre + this.text.substring(start, end) + post + this.text.substring(end);
             target.selectionStart = start + pre.length;
             target.selectionEnd = end + pre.length;
             target.focus();
             this.text = target.value;
             this.update();
-        }
+        },
     };
 }
