@@ -9,7 +9,7 @@ require (
 	github.com/antchfx/xmlquery v1.3.12
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/gabstv/melody v1.0.2
-	github.com/getsentry/sentry-go v0.13.0
+	github.com/getsentry/sentry-go v0.14.0
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
@@ -21,7 +21,7 @@ require (
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/jinzhu/now v1.1.5
 	// todo: handle breaking changes in bluemomday.
-	github.com/microcosm-cc/bluemonday v1.0.18
+	github.com/microcosm-cc/bluemonday v1.0.21
 	github.com/pkg/profile v1.6.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/russross/blackfriday/v2 v2.1.0
