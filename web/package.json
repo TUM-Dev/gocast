@@ -52,7 +52,7 @@
     "@types/video.js": "^7.3.48",
     "@typescript-eslint/eslint-plugin": "^5.38.1",
     "@typescript-eslint/parser": "^5.38.1",
-    "autoprefixer": "^10.4.12",
+    "autoprefixer": "^10.4.13",
     "css-loader": "^6.7.1",
     "eslint": "^8.24.0",
     "eslint-config-prettier": "^8.5.0",
