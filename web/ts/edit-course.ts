@@ -1,4 +1,5 @@
 import { Delete, patchData, postData, putData, sendFormData, showMessage } from "./global";
+import { Files } from "./files";
 import { StatusCodes } from "http-status-codes";
 
 export enum UIEditMode {
@@ -341,16 +342,6 @@ export class Lecture {
         return this.files.filter((f: LectureFile) => f.fileType === 1);
     }
 
-    async deleteFile(fileId: number) {
-        await fetch(`/api/stream/${this.lectureId}/files/${fileId}`, {
-            method: "DELETE",
-        })
-            .catch((err) => console.log(err))
-            .then(() => {
-                this.files = this.files.filter((f) => f.id !== fileId);
-            });
-    }
-
     onFileDrop(e) {
         e.preventDefault();
         if (e.dataTransfer.items) {
@@ -378,31 +369,27 @@ export class Lecture {
     private async postFile(file) {
         const formData = new FormData();
         formData.append("file", file);
-        await fetch(`/api/stream/${this.lectureId}/files?type=file`, {
-            method: "POST",
-            body: formData,
-        }).then((res) =>
-            res.json().then((id) => {
-                const friendlyName = file.name;
-                const fileType = 2;
-                this.files.push(new LectureFile({ id, fileType, friendlyName }));
-            }),
-        );
+        Files.add(formData, this.lectureId, Files.fileType.file).then((id) => {
+            const friendlyName = file.name;
+            const fileType = 2;
+            this.files.push(new LectureFile({ id, fileType, friendlyName }));
+        });
     }
 
     private async postFileAsURL(fileURL) {
         const formData = new FormData();
         formData.append("file_url", fileURL);
-        await fetch(`/api/stream/${this.lectureId}/files?type=url`, {
-            method: "POST",
-            body: formData,
-        }).then((res) =>
-            res.json().then((id) => {
-                const friendlyName = fileURL.substring(fileURL.lastIndexOf("/") + 1);
-                const fileType = 2;
-                this.files.push(new LectureFile({ id, fileType, friendlyName }));
-            }),
-        );
+        Files.add(formData, this.lectureId, Files.fileType.url).then((id) => {
+            const friendlyName = fileURL.substring(fileURL.lastIndexOf("/") + 1);
+            const fileType = 2;
+            this.files.push(new LectureFile({ id, fileType, friendlyName }));
+        });
+    }
+
+    async deleteFile(fileId: number) {
+        Files.delete(this.lectureId, fileId).then(() => {
+            this.files = this.files.filter((f) => f.id !== fileId);
+        });
     }
 }
 

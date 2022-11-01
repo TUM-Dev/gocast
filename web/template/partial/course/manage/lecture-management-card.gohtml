@@ -188,7 +188,7 @@
             <div class="grid gap-3 dark:bg-secondary-light border dark:border-gray-600 rounded-lg p-3">
                 <!-- title input -->
                 <div x-data="{ id: $id('text-input') }" class="text-sm">
-                    <label :for="id" class="block text-5">Lecture title</label>
+                    <label :for="id" class="block text-5">Title</label>
                     <input :id="id"
                            class="grow tl-input" type="text"
                            x-model="lecture.newName"
@@ -198,21 +198,21 @@
                 </div>
                 <!-- description -->
                 <div x-data="{ id: $id('text-input'), fileDropHover: false }" class="grid text-sm">
-                    <label :for="id" class="block text-5">Lecture description</label>
+                    <label :for="id" class="block text-5">Description</label>
                     <textarea :id="id"
                               @drop="(e) => lecture.onFileDrop(e); fileDropHover = false"
                               @dragover="fileDropHover = true"
                               @dragleave="fileDropHover = false"
-                              class="rounded-t-lg px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600 grow px-2 py-3 h-32"
+                              class="tl-input grow py-2 h-32"
                               :class="fileDropHover ? 'shadow-sm border-blue-500/50' : 'border-transparent'"
                               placeholder="Add a nice description, links, and more. You can use Markdown. Drop files here."
                               autocomplete="off"
                               x-model="lecture.newDescription"
                               x-on:keyup="lecture.updateIsDirty()"></textarea>
 
-                    <!-- info banner -->
-                    <div class="flex rounded-b-lg border py-1 px-2 bg-gray-100 dark:border-gray-600 dark:bg-secondary">
-                        <span class="text-xs text-4 font-semibold my-auto">Attach files or URL to files by Drag & Drop in the description field.</span>
+                    <!-- attachment info -->
+                    <div class="flex items-center justify-end">
+                        <span class="text-xs text-5">Attach files or URL to files by Drag & Drop in the description field.</span>
                         <div x-data="{showInfo: false}"
                              class="relative my-auto">
                             <button @click="showInfo = !showInfo;">
