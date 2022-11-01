@@ -41,6 +41,7 @@ func (r markdownRoutes) getMarkdown(c *gin.Context) {
 	html := bluemonday.
 		UGCPolicy().
 		AddTargetBlankToFullyQualifiedLinks(true).
+		AllowRelativeURLs(false).
 		SanitizeBytes(unsafe)
 	c.JSON(http.StatusOK, gin.H{"html": string(html)})
 }
