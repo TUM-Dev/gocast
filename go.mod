@@ -7,7 +7,7 @@ require (
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
 	github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769
 	github.com/antchfx/xmlquery v1.3.12
-	github.com/dgraph-io/ristretto v0.1.0
+	github.com/dgraph-io/ristretto v0.1.1
 	github.com/gabstv/melody v1.0.2
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/gin-contrib/gzip v0.0.6
@@ -111,7 +111,7 @@ require (
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	golang.org/x/net v0.0.0-20221002022538-bcab6841153b // indirect
-	golang.org/x/sys v0.0.0-20220928140112-f11e5e49a4ec // indirect
+	golang.org/x/sys v0.0.0-20221010170243-090e33056c14 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
