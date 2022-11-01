@@ -4,7 +4,7 @@ go 1.19
 
 // Direct dependencies
 require (
-	github.com/getsentry/sentry-go v0.13.0
+	github.com/getsentry/sentry-go v0.14.0
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/icza/gox v0.0.0-20220921190100-610a6663952b
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
@@ -41,12 +41,11 @@ require (
 	github.com/tklauser/numcpus v0.5.0 // indirect
 	github.com/u2takey/go-utils v0.3.1
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
-	golang.org/x/net v0.0.0-20220921203646-d300de134e69 // indirect
-	golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8 // indirect
+	golang.org/x/net v0.0.0-20221002022538-bcab6841153b // indirect
+	golang.org/x/sys v0.0.0-20220928140112-f11e5e49a4ec // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20220921223823-23cae91e6737 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 require github.com/google/uuid v1.3.0 // indirect
