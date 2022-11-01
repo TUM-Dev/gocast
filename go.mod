@@ -33,7 +33,7 @@ require (
 	google.golang.org/grpc v1.49.0
 	google.golang.org/protobuf v1.28.1
 	gorm.io/driver/mysql v1.3.6
-	gorm.io/gorm v1.23.10
+	gorm.io/gorm v1.24.0
 	mvdan.cc/xurls/v2 v2.4.0
 )
 
