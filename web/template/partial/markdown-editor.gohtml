@@ -1,0 +1,25 @@
+{{define "markdown-editor"}}
+    <div x-data="global.markdownEditor()" class="m-3 p-3 rounded bg-secondary">
+        <div class="flex justify-between font-light">
+            <div>
+                <a role="button" tabindex="0" class="mr-2 px-4 py-2 text-5 hover:text-1"
+                   :class="tab==='edit'&&'bg-gray-50 dark:bg-gray-600 dark:text-white rounded-t-lg border-b-0 bg-primary'"
+                   @click="tab='edit'">Edit</a>
+                <a role="button" tabindex="0" class="px-4 py-2 text-5 hover:text-1"
+                   :class="tab==='preview'&&'bg-gray-50 dark:bg-gray-600 dark:text-white rounded-t-lg border-b-0 bg-primary'"
+                   @click="tab='preview'">Preview</a>
+            </div>
+            <div>
+                <button title="bold" class="hover:text-1 text-5 fa fa-bold" @click="action($refs.textarea, '**', '**')"></button>
+                <button title="bold" class="hover:text-1 text-5 fa fa-italic" @click="action($refs.textarea, '_', '_')"></button>
+                <button title="bold" class="hover:text-1 text-5 fa fa-strikethrough" @click="action($refs.textarea, '~~', '~~')"></button>
+                <button title="bold" class="hover:text-1 text-5 fa fa-link" @click="action($refs.textarea, '[', ']()')"></button>
+            </div>
+        </div>
+        <textarea x-ref="textarea" x-show="tab==='edit'" class="tl-input py-3 rounded-t-none" x-model="text" @change="update()"
+                  @keyup="$el.style.height=Math.min($el.scrollHeight, 150)+'px'"></textarea>
+        <div x-show="tab==='preview'"
+             class="tum-live-markdown w-full min-h-12 p-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm"
+             x-html="html===''?'<p>&nbsp</p>':html"></div>
+    </div>
+{{end}}
