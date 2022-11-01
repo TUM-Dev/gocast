@@ -645,7 +645,7 @@ func (r coursesRoutes) updateDescription(c *gin.Context) {
 	wsMsg := gin.H{
 		"description": gin.H{
 			"full":      stream.GetDescriptionHTML(),
-			"truncated": tools.Truncate(stream.GetDescriptionHTML(), 150),
+			"truncated": tools.Truncate(stream.GetDescriptionHTML(), 100),
 		},
 	}
 	if msg, err := json.Marshal(wsMsg); err == nil {

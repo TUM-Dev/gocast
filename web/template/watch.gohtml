@@ -282,22 +282,34 @@
         {{end}}
 
         <!-- Video description -->
-        <div x-data="{ less: {{len .Description}}>{{.CutOffLength}}, full: `{{.Description}}`, prev: `{{.TruncatedDescription}}` }"
-             class="video-description flex-grow p-5 basis-full lg:order-none order-5"
-             x-show="full.length"
-        >
-            <div class="flex justify-between border-b mb-3 dark:border-gray-800 lg:justify-start">
+        {{$less := gt (len .Description) .CutOffLength}}
+        <div x-data="{ less: {{$less}}, toggleDesc: false }"
+             {{/* Update less on update */}}
+             @descriptionupdate.window="toggleDesc = less = $event.detail.description.full.length > {{.CutOffLength}};"
+             class="video-description flex-grow p-5 basis-full lg:order-none order-5">
+            <div class="flex justify-between border-b mb-1 dark:border-gray-800 lg:justify-start">
                 <h3 class="text-4 font-semibold">Description</h3>
-                <button x-show="full.length>{{.CutOffLength}}"
-                        class="text-5 text-xs rounded h-fit w-fit font-semibold px-2 py-1 my-auto uppercase lg:ml-2"
-                        @click="less = !less" x-text="less ? 'show more' : 'show less'">
-                </button>
             </div>
-
-            <div class="text-3 text-sm"
-                 x-html="less ? prev : full"
-                 @descriptionupdate.window="full=$el.innerHTML=$event.detail.description.full;prev=
-                     $el.innerHTML=$event.detail.description.truncated;less=full.length>{{.CutOffLength}};">
+            <div>
+                <div class="rounded-lg bg-gray-50 hover:bg-gray-100 text-3 text-sm">
+                    <button @click="toggleDesc = !toggleDesc;"
+                         :disabled="!less"
+                         class="hover:cursor-pointer p-2 w-full text-left">
+                        <span x-cloak x-show="toggleDesc"
+                              @descriptionupdate.window="$el.innerHTML=$event.detail.description.truncated">
+                            {{.TruncatedDescription}}
+                        </span>
+                        <span x-cloak x-show="!toggleDesc"
+                              @descriptionupdate.window="$el.innerHTML=$event.detail.description.full">
+                            {{.Description}}
+                        </span>
+                    </button>
+                    <template x-if="less">
+                        <button class="font-semibold m-1 py-1 px-2 rounded-full hover:bg-gray-200"
+                                x-text="toggleDesc ? 'Show more' : 'Show less'"
+                                @click="toggleDesc = !toggleDesc;"></button>
+                    </template>
+                </div>
             </div>
         </div>
 
