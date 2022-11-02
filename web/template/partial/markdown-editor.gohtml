@@ -3,13 +3,13 @@
         <div class="flex justify-between font-light">
             <div>
                 <a role="button" tabindex="0" class="mr-2 px-4 py-2 text-5 hover:text-1"
-                   :class="tab==='edit'&&'bg-white dark:bg-gray-600 dark:text-white rounded-t-lg border-b-0'"
+                   :class="tab==='edit'&&'bg-gray-50 dark:bg-gray-600 dark:text-white rounded-t-lg border-b-0'"
                    @click="tab='edit'">Edit</a>
                 <a role="button" tabindex="0" class="px-4 py-2 text-5 hover:text-1"
-                   :class="tab==='preview'&&'bg-white dark:bg-gray-600 dark:text-white rounded-t-lg border-b-0'"
+                   :class="tab==='preview'&&'bg-gray-50 dark:bg-gray-600 dark:text-white rounded-t-lg border-b-0'"
                    @click="tab='preview'">Preview</a>
             </div>
-            <div>
+            <div x-show="tab==='edit'">
                 <button title="bold" class="hover:text-1 text-5 fa fa-bold"
                         @click="action($refs.textarea, '**', '**')"></button>
                 <button title="italic" class="hover:text-1 text-5 fa fa-italic"

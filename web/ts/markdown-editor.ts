@@ -28,7 +28,7 @@ export function markdownEditor() {
             // enter hook inserts a list item (- symbol) if the previous line was a list item.
             const t = event.target as HTMLTextAreaElement;
             const linesUntilEnter = t.value.substring(0, t.selectionEnd).split("\n");
-            if (linesUntilEnter.length<2) {
+            if (linesUntilEnter.length < 2) {
                 return;
             }
             const lastLine = linesUntilEnter[linesUntilEnter.length - 2];
@@ -36,6 +36,6 @@ export function markdownEditor() {
                 const numIndent = lastLine.length - lastLine.trimStart().length;
                 this.action(t, " ".repeat(numIndent) + "- ", "");
             }
-        }
+        },
     };
 }

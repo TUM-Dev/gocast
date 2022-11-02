@@ -411,8 +411,12 @@ a.fc-event, a.fc-event:hover {
     border-bottom: 1px solid;
 }
 
-.tum-live-markdown code{
+.tum-live-markdown code {
     @apply rounded bg-gray-200 dark:bg-gray-800 px-1;
+}
+
+.tum-live-markdown pre code {
+    @apply block p-2;
 }
 
 .overflow-wrap-anywhere {
