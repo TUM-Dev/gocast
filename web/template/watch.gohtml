@@ -283,7 +283,7 @@
 
         <!-- Video description -->
         {{$less := gt (len .Description) .CutOffLength}}
-        <div x-data="{ less: {{$less}}, toggleDesc: false }"
+        <div x-data="{ less: {{$less}}, toggleDesc: true }"
              {{/* Update less on update */}}
              @descriptionupdate.window="toggleDesc = less = $event.detail.description.full.length > {{.CutOffLength}};"
              class="video-description flex-grow p-5 basis-full lg:order-none order-5">
@@ -294,12 +294,10 @@
                 <div class="rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 hover:dark:bg-secondary text-3 text-sm">
                     <button @click="toggleDesc = !toggleDesc;"
                          :disabled="!less"
-                         class="hover:cursor-pointer p-2 w-full text-left">
-                        <span x-cloak x-show="toggleDesc"
-                              @descriptionupdate.window="$el.innerHTML=$event.detail.description.truncated">
-                            {{.TruncatedDescription}}
-                        </span>
-                        <span x-cloak x-show="!toggleDesc"
+                         class="p-2 w-full text-left"
+                        :class="less && 'hover:cursor-pointer'">
+                        <span class="block overflow-y-clip"
+                                :class="(less && toggleDesc) ? 'h-8' : 'h-auto'"
                               @descriptionupdate.window="$el.innerHTML=$event.detail.description.full">
                             {{.Description}}
                         </span>

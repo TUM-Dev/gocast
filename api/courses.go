@@ -90,7 +90,7 @@ type coursesRoutes struct {
 
 const (
 	WorkerHTTPPort = "8060"
-	CutOffLength   = 100
+	CutOffLength   = 256
 )
 
 type uploadVodReq struct {
@@ -644,8 +644,7 @@ func (r coursesRoutes) updateDescription(c *gin.Context) {
 	}
 	wsMsg := gin.H{
 		"description": gin.H{
-			"full":      stream.GetDescriptionHTML(),
-			"truncated": tools.Truncate(stream.GetDescriptionHTML(), 100),
+			"full": stream.GetDescriptionHTML(),
 		},
 	}
 	if msg, err := json.Marshal(wsMsg); err == nil {
