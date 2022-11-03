@@ -268,10 +268,6 @@ export type Section = {
     fileID?: number;
 };
 
-export function getQueryParam(name: string): string {
-    return new URL(window.location.href).searchParams.get(name) ?? undefined;
-}
-
 window.onload = function () {
     initHiddenCourses();
 };

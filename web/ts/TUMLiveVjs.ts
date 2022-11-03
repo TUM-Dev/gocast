@@ -1,4 +1,4 @@
-import { getQueryParam, postData } from "./global";
+import { postData } from "./global";
 import { VideoSections } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
@@ -201,9 +201,8 @@ export const skipSilence = function (options) {
  * Saves and retrieves the watch progress of the user as a fraction of the total watch time
  * @param streamID The ID of the currently watched stream
  * @param lastProgress The last progress fetched from the database
- * @param loggedIn: User logged in?
  */
-export const watchProgress = function (streamID: number, lastProgress: number, loggedIn: boolean) {
+export const watchProgress = function (streamID: number, lastProgress: number) {
     const player = videojs("my-video");
     player.ready(() => {
         let duration;
@@ -211,13 +210,23 @@ export const watchProgress = function (streamID: number, lastProgress: number, l
         let iOSReady = false;
         let intervalMillis = 10000;
 
-        // check if query contains parameter 't' and set timestamp accordingly
-        const queryT = Number(getQueryParam("t"));
-        if (!isNaN(queryT)) {
-            player.currentTime(queryT);
-            if (videojs.browser.IS_IOS) {
-                iOSReady = setTimeOnIOS(iOSReady, queryT);
-            }
+        // Fetch the user's video progress from the database and set the time in the player
+        player.on("loadedmetadata", () => {
+            duration = player.duration();
+            player.currentTime(lastProgress * duration);
+        });
+
+        // iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
+        // not sufficient here.
+        // See https://stackoverflow.com/questions/28823567/how-to-set-currenttime-in-video-js-in-safari-for-ios.
+        if (videojs.browser.IS_IOS) {
+            player.on("canplaythrough", () => {
+                // Can be executed multiple times during playback
+                if (!iOSReady) {
+                    player.currentTime(lastProgress * duration);
+                    iOSReady = true;
+                }
+            });
         }
 
         const reportProgress = () => {
@@ -233,46 +242,31 @@ export const watchProgress = function (streamID: number, lastProgress: number, l
             });
         };
 
-        // check if user is logged-in, if so proceed
-        if (loggedIn !== null && loggedIn !== undefined && loggedIn) {
-            if (isNaN(queryT)) {
-                // Fetch the user's video progress from the database and set the time in the player
-                player.on("loadedmetadata", () => {
-                    duration = player.duration();
-                    player.currentTime(lastProgress * duration);
-                });
+        // Triggered when user presses play
+        player.on("play", () => {
+            // See https://developer.mozilla.org/en-US/docs/Web/API/setInterval#ensure_that_execution_duration_is_shorter_than_interval_frequency
+            (function reportNextProgress() {
+                timer = setTimeout(function () {
+                    reportProgress();
+                    reportNextProgress();
+                }, intervalMillis);
+            })();
+        });
 
-                if (videojs.browser.IS_IOS) {
-                    iOSReady = setTimeOnIOS(iOSReady, lastProgress * duration);
-                }
+        // Triggered on pause and skipping the video
+        player.on("pause", () => {
+            clearInterval(timer);
+            // "Bug" on iOS: The video is automatically paused at the beginning
+            if (!iOSReady && videojs.browser.IS_IOS) {
+                return;
             }
+            reportProgress();
+        });
 
-            // Triggered when user presses play
-            player.on("play", () => {
-                // See https://developer.mozilla.org/en-US/docs/Web/API/setInterval#ensure_that_execution_duration_is_shorter_than_interval_frequency
-                (function reportNextProgress() {
-                    timer = setTimeout(function () {
-                        reportProgress();
-                        reportNextProgress();
-                    }, intervalMillis);
-                })();
-            });
-
-            // Triggered on pause and skipping the video
-            player.on("pause", () => {
-                clearInterval(timer);
-                // "Bug" on iOS: The video is automatically paused at the beginning
-                if (!iOSReady && videojs.browser.IS_IOS) {
-                    return;
-                }
-                reportProgress();
-            });
-
-            // Triggered when the video has no time left
-            player.on("ended", () => {
-                clearInterval(timer);
-            });
-        }
+        // Triggered when the video has no time left
+        player.on("ended", () => {
+            clearInterval(timer);
+        });
     });
 };
 
@@ -442,7 +436,6 @@ export function jumpTo(hours: number, minutes: number, seconds: number) {
 
 type SeekLoggerLogFunction = (position: number) => void;
 const SEEK_LOGGER_DEBOUNCE_TIMEOUT = 4000;
-
 export class SeekLogger {
     readonly streamID: number;
     log: SeekLoggerLogFunction;
@@ -507,21 +500,6 @@ function debounce(func, timeout) {
         clearTimeout(timer);
         timer = setTimeout(() => func.apply(this, args), timeout);
     };
-}
-
-// iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
-// not sufficient here.
-// See https://stackoverflow.com/questions/28823567/how-to-set-currenttime-in-video-js-in-safari-for-ios.
-// Returns updated iOSReady value
-function setTimeOnIOS(iOSReady: boolean, seconds: number): boolean {
-    player.on("canplaythrough", () => {
-        // Can be executed multiple times during playback
-        if (!iOSReady) {
-            player.currentTime(seconds);
-            return true;
-        }
-    });
-    return false;
 }
 
 // Register the plugin with video.js.
