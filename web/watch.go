@@ -98,10 +98,8 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	data.CutOffLength = api.CutOffLength
 	if strings.HasPrefix(data.Version, "unit-") {
 		data.Description = data.Unit.GetDescriptionHTML()
-		data.TruncatedDescription = template.HTML(tools.Truncate(string(data.Unit.GetDescriptionHTML()), data.CutOffLength))
 	} else {
 		data.Description = template.HTML(data.IndexData.TUMLiveContext.Stream.GetDescriptionHTML())
-		data.TruncatedDescription = template.HTML(tools.Truncate(data.IndexData.TUMLiveContext.Stream.GetDescriptionHTML(), data.CutOffLength))
 	}
 	if c.Query("video_only") == "1" {
 		err := templateExecutor.ExecuteTemplate(c.Writer, "video_only.gohtml", data)
@@ -118,20 +116,19 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 
 // WatchPageData contains all the metadata that is related to the watch page.
 type WatchPageData struct {
-	IsAdminOfCourse      bool // is current user admin or lecturer who created this course
-	IsHighlightPage      bool
-	AlertsEnabled        bool // whether the alert config is set
-	Version              string
-	Unit                 *model.StreamUnit
-	Presets              []model.CameraPreset
-	Progress             model.StreamProgress
-	IndexData            IndexData
-	Description          template.HTML
-	TruncatedDescription template.HTML
-	CutOffLength         int    // The maximum length for the preview of a description.
-	DVR                  string // ?dvr if dvr is enabled, empty string otherwise
-	LectureHallName      string
-	ChatData             ChatData
+	IsAdminOfCourse bool // is current user admin or lecturer who created this course
+	IsHighlightPage bool
+	AlertsEnabled   bool // whether the alert config is set
+	Version         string
+	Unit            *model.StreamUnit
+	Presets         []model.CameraPreset
+	Progress        model.StreamProgress
+	IndexData       IndexData
+	Description     template.HTML
+	CutOffLength    int    // The maximum length for the preview of a description.
+	DVR             string // ?dvr if dvr is enabled, empty string otherwise
+	LectureHallName string
+	ChatData        ChatData
 }
 
 // Prepare populates the data for the watch page.

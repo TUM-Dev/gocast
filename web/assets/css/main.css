@@ -414,3 +414,8 @@ a.fc-event, a.fc-event:hover {
 .overflow-wrap-anywhere {
     overflow-wrap: anywhere;
 }
+
+.video-description ul {
+    list-style-type: disc;
+    margin-left: 16px;
+}
