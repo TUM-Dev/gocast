@@ -15,12 +15,12 @@ import (
 var Cfg Config
 var Loc *time.Location
 
-func init() {
+func LoadConfig() {
 	initCache()
 	var err error
 	Loc, err = time.LoadLocation("Europe/Berlin")
 	if err != nil {
-		log.WithError(err).Error("tools.config.init: can't get time.location")
+		log.WithError(err).Error("tools.config.LoadConfig: can't get time.location")
 	}
 	initConfig()
 }
@@ -36,7 +36,7 @@ func initConfig() {
 	err := viper.ReadInConfig()
 	if err != nil {
 		if err == err.(viper.ConfigFileNotFoundError) {
-			log.WithError(err).Warn("tools.config.init: can't find config file")
+			log.WithError(err).Warn("tools.config.LoadConfig: can't find config file")
 		} else {
 			panic(fmt.Errorf("fatal error config file: %v", err))
 		}

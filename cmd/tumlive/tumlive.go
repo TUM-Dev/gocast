@@ -28,6 +28,20 @@ import (
 
 var VersionTag = "development"
 
+type initializer func()
+
+var initializers = []initializer{
+	tools.LoadConfig,
+	api.ServeWorkerGRPC,
+	tools.InitBranding,
+}
+
+func initAll(initializers []initializer) {
+	for _, init := range initializers {
+		init()
+	}
+}
+
 // GinServer launches the gin server
 func GinServer() (err error) {
 	router := gin.Default()
@@ -64,6 +78,8 @@ var (
 )
 
 func main() {
+	initAll(initializers)
+
 	defer profile.Start(profile.MemProfile).Stop()
 	go func() {
 		_ = http.ListenAndServe(":8082", nil) // debug endpoint
