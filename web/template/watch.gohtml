@@ -19,7 +19,7 @@
       @keypress.shift.window="(e) => watch.onShift(e)"
       x-init="new watch.Watch(); watch.startWebsocket(); seekLogger.attach();">
 {{template "header" .IndexData.TUMLiveContext}}
-<div id="shortcuts-help-modal" class="hidden flex absolute top-0 h-screen w-screen z-50 backdrop-blur-sm">
+<div id="shortcuts-help-modal" class="hidden flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
     <div class="m-auto" @click.outside="watch.toggleShortcutsModal();">
         {{template "shortcuts"}}
     </div>
