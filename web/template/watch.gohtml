@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     {{$course := .IndexData.TUMLiveContext.Course}}
-    <title>{{$course.Name}}: {{$stream.Name}} | TUM Live</title>
+    <title>{{.IndexData.Branding.Title}} | {{$course.Name}}: {{$stream.Name}}</title>
     {{template "headImports" .IndexData.VersionTag}}
     <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
     <script src="/static/assets/ts-dist/watch.bundle.js?v={{.IndexData.VersionTag}}"></script>
@@ -356,22 +356,32 @@
         {{end}}
 
         <!-- Video description -->
-        <div x-data="{ less: {{len .Description}}>{{.CutOffLength}}, full: `{{.Description}}`, prev: `{{.TruncatedDescription}}` }"
-             class="video-description flex-grow p-5 basis-full lg:order-none order-5"
-             x-show="full.length"
-        >
-            <div class="flex justify-between border-b mb-3 dark:border-gray-800 lg:justify-start">
+        {{$less := gt (len .Description) .CutOffLength}}
+        <div x-data="{ less: {{$less}}, toggleDesc: true }"
+             {{/* Update less on update */}}
+             @descriptionupdate.window="toggleDesc = less = $event.detail.description.full.length > {{.CutOffLength}};"
+             class="video-description flex-grow p-5 basis-full lg:order-none order-5">
+            <div class="flex justify-between border-b mb-1 dark:border-gray-800 lg:justify-start">
                 <h3 class="text-4 font-semibold">Description</h3>
-                <button x-show="full.length>{{.CutOffLength}}"
-                        class="text-5 text-xs rounded h-fit w-fit font-semibold px-2 py-1 my-auto uppercase lg:ml-2"
-                        @click="less = !less" x-text="less ? 'show more' : 'show less'">
-                </button>
             </div>
-
-            <div class="text-3 text-sm"
-                 x-html="less ? prev : full"
-                 @descriptionupdate.window="full=$el.innerHTML=$event.detail.description.full;prev=
-                     $el.innerHTML=$event.detail.description.truncated;less=full.length>{{.CutOffLength}};">
+            <div>
+                <div class="rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 hover:dark:bg-secondary text-3 text-sm">
+                    <button @click="toggleDesc = !toggleDesc;"
+                         :disabled="!less"
+                         class="p-2 w-full text-left"
+                        :class="less && 'hover:cursor-pointer'">
+                        <span class="block overflow-y-clip"
+                                :class="(less && toggleDesc) ? 'h-8' : 'h-auto'"
+                              @descriptionupdate.window="$el.innerHTML=$event.detail.description.full">
+                            {{.Description}}
+                        </span>
+                    </button>
+                    <template x-if="less">
+                        <button class="font-semibold m-1 py-1 px-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
+                                x-text="toggleDesc ? 'Show more' : 'Show less'"
+                                @click="toggleDesc = !toggleDesc;"></button>
+                    </template>
+                </div>
             </div>
         </div>
 

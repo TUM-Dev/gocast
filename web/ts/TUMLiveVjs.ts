@@ -1,10 +1,10 @@
-import { getQueryParam, postData } from "./global";
-import { VideoSections } from "./video-sections";
-import { StatusCodes } from "http-status-codes";
+import {postData} from "./global";
+import {VideoSections} from "./video-sections";
+import {StatusCodes} from "http-status-codes";
 import videojs from "video.js";
 import airplay from "@silvermine/videojs-airplay";
 
-import { handleHotkeys } from "./hotkeys";
+import {handleHotkeys} from "./hotkeys";
 import dom = videojs.dom;
 
 require("videojs-sprite-thumbnails");
@@ -208,24 +208,14 @@ export const skipSilence = function (options) {
  * Saves and retrieves the watch progress of the user as a fraction of the total watch time
  * @param streamID The ID of the currently watched stream
  * @param lastProgress The last progress fetched from the database
- * @param loggedIn: User logged in?
  */
-export const watchProgress = function (streamID: number, lastProgress: number, loggedIn: boolean) {
+export const watchProgress = function (streamID: number, lastProgress: number) {
     for (let j = 0; j < players.length; j++) {
         players[j].ready(() => {
             let duration;
             let timer;
             let iOSReady = false;
             let intervalMillis = 10000;
-
-            // check if query contains parameter 't' and set timestamp accordingly
-            const queryT = Number(getQueryParam("t"));
-            if (!isNaN(queryT)) {
-                players[j].currentTime(queryT);
-                if (videojs.browser.IS_IOS) {
-                    iOSReady = setTimeOnIOS(players[j], iOSReady, queryT);
-                }
-            }
 
             // Fetch the user's video progress from the database and set the time in the player
             players[j].on("loadedmetadata", () => {
@@ -259,46 +249,31 @@ export const watchProgress = function (streamID: number, lastProgress: number, l
                 });
             };
 
-            // check if user is logged-in, if so proceed
-            if (loggedIn !== null && loggedIn !== undefined && loggedIn) {
-                if (isNaN(queryT)) {
-                    // Fetch the user's video progress from the database and set the time in the player
-                    players[j].on("loadedmetadata", () => {
-                        duration = players[j].duration();
-                        players[j].currentTime(lastProgress * duration);
-                    });
+            //Triggered when user presses play
+            players[j].on("play", () => {
+                // See https://developer.mozilla.org/en-US/docs/Web/API/setInterval#ensure_that_execution_duration_is_shorter_than_interval_frequency
+                (function reportNextProgress() {
+                    timer = setTimeout(function () {
+                        reportProgress();
+                        reportNextProgress();
+                    }, intervalMillis);
+                })();
+            });
 
-                    if (videojs.browser.IS_IOS) {
-                        iOSReady = setTimeOnIOS(players[j], iOSReady, lastProgress * duration);
-                    }
+            // Triggered on pause and skipping the video
+            players[j].on("pause", () => {
+                clearInterval(timer);
+                // "Bug" on iOS: The video is automatically paused at the beginning
+                if (!iOSReady && videojs.browser.IS_IOS) {
+                    return;
                 }
+                reportProgress();
+            });
 
-                //Triggered when user presses play
-                players[j].on("play", () => {
-                    // See https://developer.mozilla.org/en-US/docs/Web/API/setInterval#ensure_that_execution_duration_is_shorter_than_interval_frequency
-                    (function reportNextProgress() {
-                        timer = setTimeout(function () {
-                            reportProgress();
-                            reportNextProgress();
-                        }, intervalMillis);
-                    })();
-                });
-
-                // Triggered on pause and skipping the video
-                players[j].on("pause", () => {
-                    clearInterval(timer);
-                    // "Bug" on iOS: The video is automatically paused at the beginning
-                    if (!iOSReady && videojs.browser.IS_IOS) {
-                        return;
-                    }
-                    reportProgress();
-                });
-
-                // Triggered when the video has no time left
-                players[j].on("ended", () => {
-                    clearInterval(timer);
-                });
-            }
+            // Triggered when the video has no time left
+            players[j].on("ended", () => {
+                clearInterval(timer);
+            });
         });
     }
 };
@@ -457,19 +432,19 @@ export class Titlebar extends Component {
             <div class="flex-grow">
                 <h1>
                     <a target="_blank" class="text-gray-100 hover:text-white hover:underline" href="${
-                        window.location.origin + options.streamUrl
-                    }">${options.stream}</a>
+            window.location.origin + options.streamUrl
+        }">${options.stream}</a>
                 </h1>
                 <h2 class="font-semibold">
                     <a target="_blank" class="text-gray-100 hover:text-white hover:underline" href="${
-                        window.location.origin + options.courseUrl
-                    }">${options.course}</a>
+            window.location.origin + options.courseUrl
+        }">${options.course}</a>
                 </h2>
             </div>
             <div>
                 <a target="_blank" href="${
-                    window.location.origin + options.streamUrl
-                }" class="inline-block text-gray-200 hover:text-white hover:underline">
+            window.location.origin + options.streamUrl
+        }" class="inline-block text-gray-200 hover:text-white hover:underline">
                 TUM-Live <i class="fas fa-external-link-alt"></i>
                 </a>
             </div>
@@ -503,14 +478,14 @@ export class StartInOverlay extends Component {
         this.el().innerHTML = `
         <div class="p-4 rounded bg-gray-900/75">
             <p><a target="_blank" href="${
-                options.streamUrl
-            }" class="text-gray-300 hover:text-white font-semibold text-m hover:underline">${options.stream}</a></p>
+            options.streamUrl
+        }" class="text-gray-300 hover:text-white font-semibold text-m hover:underline">${options.stream}</a></p>
             <p><a target="_blank" href="${
-                options.courseUrl
-            }" class="text-gray-300 hover:text-white text-sm hover:underline">${options.course}</a></p>
+            options.courseUrl
+        }" class="text-gray-300 hover:text-white text-sm hover:underline">${options.course}</a></p>
             <p class="text-sm">Start in about <span class="font-semibold">${Math.floor(
-                options.startIn / 60,
-            )}</span> Minutes</p>
+            options.startIn / 60,
+        )}</span> Minutes</p>
         </div>
         `;
         setTimeout(() => {
@@ -532,7 +507,7 @@ export class OverlayIcon extends Component {
     }
 
     setupEl_() {
-        this.wrapper = dom.createEl("div", { className: "vjs-overlay-icon-wrapper" });
+        this.wrapper = dom.createEl("div", {className: "vjs-overlay-icon-wrapper"});
         dom.appendContent(this.el(), this.wrapper);
     }
 
@@ -549,7 +524,7 @@ export class OverlayIcon extends Component {
         this.el().classList.add("vjs-overlay-icon-animate");
         this.removeIconTimeout = setTimeout(() => this.removeIcon(), this.removeIconAfter);
 
-        dom.appendContent(this.wrapper, dom.createEl("i", { className }));
+        dom.appendContent(this.wrapper, dom.createEl("i", {className}));
     }
 
     removeIcon() {
@@ -579,7 +554,7 @@ export class SeekLogger {
     constructor(streamID) {
         this.streamID = parseInt(streamID);
         this.log = debounce(
-            (position) => postData(`/api/seekReport/${this.streamID}`, { position }),
+            (position) => postData(`/api/seekReport/${this.streamID}`, {position}),
             SEEK_LOGGER_DEBOUNCE_TIMEOUT,
         );
     }
@@ -622,7 +597,7 @@ function hightlight(player, videoSection) {
         return next === undefined || next === null // if last element and no next exists
             ? sectionSeconds <= currentTime
             : sectionSeconds <= currentTime &&
-                  currentTime <= toSeconds(next.startHours, next.startMinutes, next.startSeconds) - 1;
+            currentTime <= toSeconds(next.startHours, next.startMinutes, next.startSeconds) - 1;
     });
 }
 
@@ -636,21 +611,6 @@ function debounce(func, timeout) {
         clearTimeout(timer);
         timer = setTimeout(() => func.apply(this, args), timeout);
     };
-}
-
-// iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
-// not sufficient here.
-// See https://stackoverflow.com/questions/28823567/how-to-set-currenttime-in-video-js-in-safari-for-ios.
-// Returns updated iOSReady value
-function setTimeOnIOS(player, iOSReady: boolean, seconds: number): boolean {
-    player.on("canplaythrough", () => {
-        // Can be executed multiple times during playback
-        if (!iOSReady) {
-            player.currentTime(seconds);
-            return true;
-        }
-    });
-    return false;
 }
 
 // Register the plugin with video.js.

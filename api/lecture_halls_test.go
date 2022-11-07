@@ -672,8 +672,8 @@ func TestCourseImport(t *testing.T) {
 func TestLectureHallIcal(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	t.Run("GET/api/hall/all.ics", func(t *testing.T) {
-		url := "/api/hall/all.ics"
+	t.Run("GET/api/schedule.ics", func(t *testing.T) {
+		url := "/api/schedule.ics?lecturehalls=1,2"
 		calendarResultsAdmin := []dao.CalendarResult{
 			{
 				StreamID:        1,
@@ -722,15 +722,20 @@ func TestLectureHallIcal(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetStreamsForLectureHallIcal(gomock.Any()).
+								GetStreamsForLectureHallIcal(gomock.Any(), []uint{1, 2}).
 								Return(nil, errors.New("")).
 								AnyTimes()
 							return lectureHallMock
 						}(),
+						AuditDao: func() dao.AuditDao {
+							auditDao := mock_dao.NewMockAuditDao(gomock.NewController(t))
+							auditDao.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
+							return auditDao
+						}(),
 					}
 					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
 				},
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextUserNil)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
 			"success admin": {
@@ -740,7 +745,7 @@ func TestLectureHallIcal(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetStreamsForLectureHallIcal(testutils.TUMLiveContextAdmin.User.ID).
+								GetStreamsForLectureHallIcal(testutils.TUMLiveContextAdmin.User.ID, []uint{1, 2}).
 								Return(calendarResultsAdmin, nil).
 								AnyTimes()
 							return lectureHallMock
@@ -748,7 +753,7 @@ func TestLectureHallIcal(t *testing.T) {
 					}
 					configGinLectureHallApiRouter(r, wrapper, testutils.GetPresetUtilityMock(gomock.NewController(t)))
 				},
-				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextUserNil)),
 				ExpectedResponse: icalAdmin.Bytes(),
 				ExpectedCode:     http.StatusOK,
 			},
@@ -759,7 +764,7 @@ func TestLectureHallIcal(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetStreamsForLectureHallIcal(testutils.TUMLiveContextStudent.User.ID).
+								GetStreamsForLectureHallIcal(testutils.TUMLiveContextStudent.User.ID, []uint{1, 2}).
 								Return(calendarResultsLoggedIn, nil).
 								AnyTimes()
 							return lectureHallMock

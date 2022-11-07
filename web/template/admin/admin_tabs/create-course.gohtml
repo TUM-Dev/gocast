@@ -2,49 +2,48 @@
 {{template "header" .IndexData.TUMLiveContext}}
 {{define "create-course"}}
     <div class="text-1 container mx-auto"
-         x-data="{ tumonlineid: '', slug: '', title: '', year: '', yearW: '', semester: 'Wintersemester', numberAttendees: null }">
+         x-data="{ tumonlineid: '', slug: '', title: '', year: '', yearW: '', semester: 'Wintersemester', numberAttendees: null, searchQuery: '', searchResults: [] }"
+        x-init="$watch('year',(value)=>{if(value<2000)return; yearW = (value%1000) + 1})">
         <div class="min-w-screen flex items-center justify-center">
             <div class="w-full lg:w-5/6 p-3 bg-gray-100 dark:bg-secondary rounded dark:border dark:border-gray-500 shadow">
-                <h1>Create a new course:</h1>
-                <form id="createCourseForm" class="grid gap-3 mt-3">
+                <h2 class="mb-0">Find your course from TUMOnline</h2>
+                <form id="createCourseForm" aria-haspopup="listbox" class="grid gap-3 mt-3">
                     <div class="flex space-x-1">
-                        <label class="hidden" for="courseID">TUM online id:</label>
-                        <input class="w-4/5 tl-input" id="courseID" name="courseID" type="text" autocomplete="off"
-                               placeholder="TUMOnline ID" x-model="tumonlineid"/>
-                        <button type="button"
-                                @click="admin.loadCourseInfo(tumonlineid).then(r => {title = r.title, semester = r.semester, year = r.year, yearW = r.yearW, numberAttendees = r.numberAttendees });"
-                                class="w-1/5 btn"
-                                :disabled="tumonlineid===''">
-                            Load Course
-                        </button>
+                        <input class="w-4/5 box-border rounded px-4 py-3 mt-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600 dark:text-white"
+                               type="search" autocomplete="off" placeholder="Search" x-model="searchQuery"
+                               @change="fetch('/api/searchCourse?q='+searchQuery).then(r=>r.json()).then(r => searchResults=r)"
+                               @keyup="fetch('/api/searchCourse?q='+searchQuery).then(r=>r.json()).then(r => searchResults=r)"/>
                     </div>
-                    <div class="px-2" x-show="tumonlineid === '' || numberAttendees !== null">
-                        <div class="bg-gray-50 border rounded-lg dark:bg-secondary-light dark:border-gray-800 px-2 py-1">
-                            <div id="TUMOnlineInfo"
-                                 class="grid gap-1 text-sm text-3 text-center">
-                                <span class="block">
-                                    <i class="fa fa-exclamation-triangle text-warn mr-2"></i>
-                                    <span x-show="tumonlineid === ''">Without a TUMOnline ID you won't be able to make this course public to participants only.</span>
-                                    <span x-show="numberAttendees !== null">Currently there are <span x-text="numberAttendees"></span> students enrolled in this course, please verify that this looks right.</span>
-                                </span>
-                                <a x-show="tumonlineid === ''" target="_blank" class="underline"
-                                   href="https://github.com/joschahenningsen/TUM-Live/wiki/How-do-I-find-the-right-TUMOnline-ID-for-my-course%3F">
-                                    How do I find the right TUMOnline ID for my course?
-                                </a>
-                            </div>
-                        </div>
+                    <div class="px-2" x-show="searchResults.length!==0">
+                        <ul role="listbox">
+                            <template x-for="searchResult in searchResults">
+                                <li role="option" aria-selected="false"
+                                    class="hover:bg-sky-500 dark:hover:bg-sky-600 dark:bg-gray-800 bg-gray-200 cursor-pointer rounded-md m-2 p-2"
+                                    @click="tumonlineid=searchResult.CourseID;title=searchResult.Name;year=searchResult.Year;semester=searchResult.Term==='W'?'Wintersemester':'Sommersemester';searchResults=[];searchQuery='';$refs.slug.focus()">
+                                    <p x-text="searchResult.Name"></p>
+                                    <div class="font-semibold text-3">
+                                        <span x-text="searchResult.Term==='W'?'Winter':'Summer'"></span>
+                                        <span x-text="searchResult.Year"></span>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
                     </div>
+                    <p class="text-4 text-center font-semibold">or</p>
+                    <h2>Manually enter Infos:</h2>
                     <div class="flex space-x-1">
                         <label for="name" class="hidden">Course Title</label>
-                        <input class="w-4/5 tl-input" id="name" name="name" type="text"
+                        <input class="w-4/5 tl-input !ml-0" id="name" name="name" type="text"
                                autocomplete="off"
                                placeholder="Einführung in die Informatik (IN0001)"
                                x-model="title"
+                               required
                                :class="title === '' ? 'border-red-500 focus:border-red-500' : ''"/>
                         <label for="slug" class="hidden">Slug</label>
-                        <input class="w-1/5 tl-input" id="slug" name="slug" type="text"
+                        <input class="w-1/5 tl-input" id="slug" name="slug" type="text" x-ref="slug"
                                autocomplete="off"
                                x-model="slug"
+                               required
                                placeholder="eidi"
                                :class="slug === '' ? 'border-red-500 focus:border-red-500' : ''"/>
                     </div>
@@ -57,5 +56,5 @@
                 </button>
             </div>
         </div>
-    </div>
+</div>
 {{end}}

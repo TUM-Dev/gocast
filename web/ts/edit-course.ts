@@ -446,28 +446,26 @@ export function saveLectureHall(streamIds: number[], lectureHall: string) {
 }
 
 // Used by schedule.ts
-export function saveLectureDescription(e: Event, cID: number, lID: number) {
+export function saveLectureDescription(e: Event, cID: number, lID: number): Promise<boolean> {
     e.preventDefault();
     const input = (document.getElementById("lectureDescriptionInput" + lID) as HTMLInputElement).value;
-    postData("/api/course/" + cID + "/updateDescription/" + lID, { name: input }).then((res) => {
-        if (res.status == StatusCodes.OK) {
-            document.getElementById("descriptionSubmitBtn" + lID).classList.add("invisible");
-        } else {
-            res.text().then((t) => showMessage(t));
+    return putData("/api/course/" + cID + "/updateDescription/" + lID, { name: input }).then((res) => {
+        if (res.status !== StatusCodes.OK) {
+            return false;
         }
+        return true;
     });
 }
 
 // Used by schedule.ts
-export function saveLectureName(e: Event, cID: number, lID: number) {
+export function saveLectureName(e: Event, cID: number, lID: number): Promise<boolean> {
     e.preventDefault();
     const input = (document.getElementById("lectureNameInput" + lID) as HTMLInputElement).value;
-    postData("/api/course/" + cID + "/renameLecture/" + lID, { name: input }).then((res) => {
-        if (res.status == StatusCodes.OK) {
-            document.getElementById("nameSubmitBtn" + lID).classList.add("invisible");
-        } else {
-            res.text().then((t) => showMessage(t));
+    return postData("/api/course/" + cID + "/renameLecture/" + lID, { name: input }).then((res) => {
+        if (res.status !== StatusCodes.OK) {
+            return false;
         }
+        return true;
     });
 }
 
