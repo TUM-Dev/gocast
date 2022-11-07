@@ -46,14 +46,14 @@
                     <i class="fas fa-info-circle"></i> This livestream has ended.
                 </div>
                 {{if (eq .Version "SPLIT")}}
-                    <div x-data="{splitView: new watch.SplitView()}" @mouseleave="splitView.toggleMenu()" class="group relative flex">
+                    <div x-data="{splitView: new watch.SplitView()}" @mouseleave="splitView.hideMenu()" class="group relative flex">
                         <div class="hidden group-hover:flex absolute left-1 top-1 z-40">
-                            <button x-show="!splitView.showSplitMenu" @click="splitView.toggleMenu()"
+                            <button x-cloak x-show="!splitView.showSplitMenu" @click="splitView.toggleMenu()"
                                     class="flex items-center justify-center w-8 h-8 rounded-full"
                                     title="Adjust split ratio">
                                 <i class="text-lg text-white fa-solid fa-ellipsis-vertical"></i>
                             </button>
-                            <div x-show="splitView.showSplitMenu" @click.outside="splitView.toggleMenu()"
+                            <div x-cloak x-show="splitView.showSplitMenu" @click.outside="splitView.toggleMenu()"
                                  class="bg-white border rounded-lg shadow h-fit dark:bg-secondary-light dark:border-gray-600">
                                 <div class="py-2">
                                     <button @click="splitView.update(watch.SplitView.Options.FullPresentation)"
@@ -121,7 +121,7 @@
                             <video-js
                                     id="my-video-cam"
                                     class="video-js w-full vjs-theater-mode theater-mode"
-                                    controlBar="false"
+                                    controls
                                     preload="auto"
                                     x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu)"
                                     {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
