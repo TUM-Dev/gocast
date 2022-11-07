@@ -155,7 +155,6 @@ export class VideoSectionsAdmin {
     }
 
     removeExistingSection(id: number) {
-        console.log("delete: " + id);
         VideoSections.delete(this.streamId, id).then(() => {
             this.existingSections = this.existingSections.filter((s) => s.ID !== id);
         });
