@@ -5,73 +5,95 @@
     {{$user := .IndexData.TUMLiveContext.User}}
     {{$isNotWaitingRoom := or ($stream.Recording) ($stream.LiveNow)}}
     {{if $isNotWaitingRoom}} {{/* Don't show actions in Waiting Room.*/}}
-        {{/* Icons for different actions student can do for a stream */}}
-        <div class="content-center space-x-1 bg-gray-100 dark:bg-secondary-light rounded-lg px-3 py-2 w-fit h-fit">
-            {{/* File Attachment button (slides, etc.) */}}
-            {{template "attachments" $stream}}
-            {{/* Feedback button */}}
-            {{if and .AlertsEnabled ((and $user (not ($user.IsAdminOfCourse $course))))}}
-                <button class="m-auto" title="Issues with the stream? Click to open a form to notify the RBG."
-                        @click="$dispatch('issue')">
-                    <i class="fas fa-exclamation-triangle text-4 hover:text-1"></i>
+    {{/* Icons for different actions student can do for a stream */}}
+    <div class="content-center space-x-1 bg-gray-100 dark:bg-secondary-light rounded-lg px-3 py-2 w-fit h-fit">
+        {{/* File Attachment button (slides, etc.) */}}
+        {{template "attachments" $stream}}
+        {{/* Feedback button */}}
+        {{if and .AlertsEnabled ((and $user (not ($user.IsAdminOfCourse $course))))}}
+            <button class="m-auto" title="Issues with the stream? Click to open a form to notify the RBG."
+                    @click="$dispatch('issue')">
+                <i class="fas fa-exclamation-triangle text-4 hover:text-1"></i>
+            </button>
+        {{end}}
+        {{/* VoD download button */}}
+        {{if and (and $course.DownloadsEnabled $user) $stream.IsDownloadable}}
+            {{template "downloadBtn" $stream.GetVodFiles}}
+        {{end}}
+        {{if or $stream.PlaylistUrlCAM $stream.PlaylistUrl $stream.PlaylistUrlPRES}}
+            <div class="relative inline-block" x-data="{showSrcMenu: false}">
+                <button class="m-auto" type="button" @click="showSrcMenu = true;">
+                    <i class="fa-solid fa-camera-rotate text-lg text-4 hover:text-1"></i>
                 </button>
-            {{end}}
-            {{/* VoD download button */}}
-            {{if and (and $course.DownloadsEnabled $user) $stream.IsDownloadable}}
-                {{template "downloadBtn" $stream.GetVodFiles}}
-            {{end}}
-            {{/* Switch video to presentation */}}
-            {{if $stream.PlaylistUrlPRES}}
-                <a class="m-auto" title="Presentation only"
-                   href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/PRES">
-                    <i class="text-lg fas fa-edit text-4 hover:text-1"></i>
-                </a>
-            {{end}}
-            {{/* Switch video to camera */}}
-            {{if $stream.PlaylistUrlCAM}}
-                <a class="m-auto" title="Camera only"
-                   href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/CAM">
-                    <i class="text-lg fas fa-camera text-4 hover:text-1"></i>
-                </a>
-            {{end}}
-            {{/* Switch video to split view */}}
-            {{if and $stream.PlaylistUrlCAM $stream.PlaylistUrlPRES}}
-                <a class="relative m-auto" title="Split-view"
-                   href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/SPLIT">
-                    <i class="text-lg fa-solid fa-table-columns text-4 hover:text-1"></i>
-                </a>
-            {{end}}
-            {{/* Switch video to camera and presentation */}}
-            {{if $stream.PlaylistUrl}}
-                <a class="m-auto" title="Combined view"
-                   href="/w/{{$course.Slug}}/{{$stream.Model.ID}}">
-                    <i class="text-lg fas fa-object-group text-4 hover:text-1"></i>
-                </a>
-            {{end}}
-            {{/* Copy HLS Link for video */}}
-            {{if or $stream.PlaylistUrlPRES (or $stream.PlaylistUrlCAM $stream.PlaylistUrl)}}
-                <i x-data="{ copied: false }" title="Copy HLS URL"
-                   :class="copied ? 'fa-check' : 'fa-link'"
-                   class="m-auto text-lg cursor-pointer text-4 dark:hover:text-white hover:text-black fas fa-fw"
-                   @click="if (global.copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))) {  copied=true; setTimeout(() => { copied=false }, 1000); }">
-                </i>
-            {{end}}
+                <div x-cloak x-show="showSrcMenu"
+                     class="fixed flex h-full left-0 bottom-0 w-full lg:block lg:absolute lg:right-full lg:left-auto lg:w-56 lg:bottom-auto z-40"
+                    :class="showSrcMenu && 'backdrop-brightness-50 lg:backdrop-brightness-100'">
+                    <div @click.outside="showSrcMenu = false;"
+                         class="w-full my-auto mx-2 bg-white border rounded-lg shadow h-fit dark:bg-secondary-light dark:border-gray-600 py-3 lg:my-0">
+                        {{/* Switch video to presentation */}}
+                        {{if $stream.PlaylistUrlPRES}}
+                            <a class="text-left flex justify-start items-center w-full text-3 px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-600"
+                               title="Presentation only"
+                               href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/PRES">
+                                <i class="fas fa-edit text-4 hover:text-1 w-8"></i>
+                                <span class="font-light text-sm">Presentation only</span>
+                            </a>
+                        {{end}}
+                        {{/* Switch video to camera */}}
+                        {{if $stream.PlaylistUrlCAM}}
+                            <a class="text-left flex justify-start items-center w-full text-3 px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-600"
+                               title="Camera only"
+                               href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/CAM">
+                                <i class="text-lg fas fa-camera text-4 hover:text-1 w-8"></i>
+                                <span class="font-light text-sm">Camera only</span>
+                            </a>
+                        {{end}}
+                        {{/* Switch video to split view */}}
+                        {{if and $stream.PlaylistUrlCAM $stream.PlaylistUrlPRES}}
+                            <a class="text-left flex justify-start items-center w-full text-3 px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-600"
+                               title="Split-view"
+                               href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/SPLIT">
+                                <i class="text-lg fa-solid fa-table-columns text-4 hover:text-1 w-8"></i>
+                                <span class="font-light text-sm">Splitview</span>
+                            </a>
+                        {{end}}
+                        {{/* Switch video to camera and presentation */}}
+                        {{if $stream.PlaylistUrl}}
+                            <a class="text-left flex justify-start items-center w-full text-3 px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-600"
+                               title="Combined view"
+                               href="/w/{{$course.Slug}}/{{$stream.Model.ID}}">
+                                <i class="text-lg fas fa-object-group text-4 hover:text-1 w-8"></i>
+                                <span class="font-light text-sm">Combined view</span>
+                            </a>
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+        {{end}}
+        {{/* Copy HLS Link for video */}}
+        {{if or $stream.PlaylistUrlPRES (or $stream.PlaylistUrlCAM $stream.PlaylistUrl)}}
+            <i x-data="{ copied: false }" title="Copy HLS URL"
+               :class="copied ? 'fa-check' : 'fa-link'"
+               class="m-auto text-lg cursor-pointer text-4 dark:hover:text-white hover:text-black fas fa-fw"
+               @click="if (global.copyToClipboard('{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))) {  copied=true; setTimeout(() => { copied=false }, 1000); }">
+            </i>
+        {{end}}
 
-            {{/* Enable Beta stream */}}
-            {{if $stream.LiveNow}}
-                {{if .DVR}}
-                    <a href="./{{$stream.Model.ID}}" class="m-auto text-1 hover:text-1 group"
-                       title="Turn beta stream off">
-                        <i class="fa-solid fa-tower-broadcast"></i>
-                        <span class="align-super text-xs group-hover:line-through">Beta</span>
-                    </a>
-                {{else}}
-                    <a href="?dvr" class="relative m-auto text-4 hover:text-1" title="Turn beta stream on">
-                        <i class="fa-solid fa-tower-broadcast"></i>
-                        <span class="align-super text-xs">Beta</span>
-                    </a>
-                {{end}}
+        {{/* Enable Beta stream */}}
+        {{if $stream.LiveNow}}
+            {{if .DVR}}
+                <a href="./{{$stream.Model.ID}}" class="m-auto text-1 hover:text-1 group"
+                   title="Turn beta stream off">
+                    <i class="fa-solid fa-tower-broadcast"></i>
+                    <span class="align-super text-xs group-hover:line-through">Beta</span>
+                </a>
+            {{else}}
+                <a href="?dvr" class="relative m-auto text-4 hover:text-1" title="Turn beta stream on">
+                    <i class="fa-solid fa-tower-broadcast"></i>
+                    <span class="align-super text-xs">Beta</span>
+                </a>
             {{end}}
-        </div>
+        {{end}}
+    </div>
     {{end}}
 {{end}}
