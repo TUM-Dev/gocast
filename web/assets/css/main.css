@@ -419,3 +419,8 @@ a.fc-event, a.fc-event:hover {
     list-style-type: disc;
     margin-left: 16px;
 }
+
+.text-tiny{
+    font-size: 0.5rem;
+    line-height: 0.7rem;
+}

@@ -46,8 +46,54 @@
                     <i class="fas fa-info-circle"></i> This livestream has ended.
                 </div>
                 {{if (eq .Version "SPLIT")}}
-                    <div x-data="{perc: 25}" class="group relative flex">
-                        <div :style="`width: ${100 - perc}%;`">
+                    <div x-data="{splitView: new watch.SplitView()}" @mouseleave="splitView.toggleMenu()" class="group relative flex">
+                        <div class="hidden group-hover:flex absolute left-1 top-1 z-40">
+                            <button x-show="!splitView.showSplitMenu" @click="splitView.toggleMenu()"
+                                    class="flex items-center justify-center w-8 h-8 rounded-full"
+                                    title="Adjust split ratio">
+                                <i class="text-lg text-white fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            <div x-show="splitView.showSplitMenu" @click.outside="splitView.toggleMenu()"
+                                 class="bg-white border rounded-lg shadow h-fit dark:bg-secondary-light dark:border-gray-600">
+                                <div class="py-2">
+                                    <button @click="splitView.update(watch.SplitView.Options.FullPresentation)"
+                                            class="text-left flex justify-start items-center w-full text-3 px-4 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        <i class="fa-solid fa-person-chalkboard w-16"></i>
+                                        <span class="font-light text-sm">Full presentation</span>
+                                    </button>
+                                    <button @click="splitView.update(watch.SplitView.Options.FocusPresentation)"
+                                            class="text-left flex justify-start items-center w-full text-3 px-4 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                            <span class="flex items-center align-middle w-16">
+                                                <i class="fa-solid fa-person-chalkboard"></i>
+                                                <span class="px-1 text-5">/</span>
+                                                <i class="fa-solid fa-camera text-tiny"></i>
+                                            </span>
+                                        <span class="font-light text-sm">Focus presentation</span>
+                                    </button>
+                                    <button @click="splitView.update(watch.SplitView.Options.SplitEvenly)"
+                                            class="text-left flex justify-start items-center w-full text-3 px-4 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        <i class="fa-solid fa-table-columns w-16"></i>
+                                        <span class="font-light text-sm">Split evenly</span>
+                                    </button>
+                                    <button @click="splitView.update(watch.SplitView.Options.FocusCamera)"
+                                            class="text-left flex justify-start items-center w-full text-3 px-4 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                            <span class="flex items-center align-middle w-16">
+                                                <i class="fa-solid fa-person-chalkboard text-tiny"></i>
+                                                 <span class="px-1 text-5">/</span>
+                                                <i class="fa-solid fa-camera"></i>
+                                            </span>
+                                        <span class="font-light text-sm">Focus camera</span>
+                                    </button>
+                                    <button @click="splitView.update(watch.SplitView.Options.FullCamera)"
+                                            class="text-left flex justify-start items-center w-full text-3 px-4 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        <i class="fa-solid fa-camera w-16"></i>
+                                        <span class="font-light text-sm">Full camera</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {{/* presentation player */}}
+                        <div :style="`width: ${splitView.widthPres}%;`">
                             <video-js
                                     id="my-video-pres"
                                     class="video-js w-full vjs-theater-mode theater-mode"
@@ -69,32 +115,9 @@
                                 </p>
                             </video-js>
                         </div>
-                        <div x-data="{showMenu: false}" @mouseleave="showMenu = false" class="relative"
-                             :style="`width: ${perc}%;`">
-                            <div class="hidden group-hover:flex absolute bg-white dark:bg-secondary-light border dark:border-gray-800 shadow rounded-lg h-fit -left-1 top-0 bottom-0 my-auto z-40">
-                                <button @click="showMenu = !showMenu" class="py-4 px-1 my-auto">
-                                    <i class="text-lg text-4 fa-solid fa-ellipsis-vertical"></i>
-                                </button>
-                                <div x-show="showMenu" class="border-l dark:border-gray-800">
-                                    <div class="p-2 w-36">
-                                        <button @click="perc = 25;"
-                                                class="flex justify-between align-middle w-full text-sm text-3 font-semibold px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
-                                            <span>3:1</span>
-                                            <span>75/25</span>
-                                        </button>
-                                        <button @click="perc = 50;"
-                                                class="flex justify-between align-middle w-full text-sm text-3 font-semibold px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
-                                            <span>1:1</span>
-                                            <span>50/50</span>
-                                        </button>
-                                        <button @click="perc = 75;"
-                                                class="flex justify-between align-middle w-full text-sm text-3 font-semibold px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
-                                            <span>1:3</span>
-                                            <span>25/75</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+
+                        {{/* camera player */}}
+                        <div :style="`width: ${splitView.widthCam}%;`">
                             <video-js
                                     id="my-video-cam"
                                     class="video-js w-full vjs-theater-mode theater-mode"
@@ -358,7 +381,7 @@
         <!-- Video description -->
         {{$less := gt (len .Description) .CutOffLength}}
         <div x-data="{ less: {{$less}}, toggleDesc: true }"
-             {{/* Update less on update */}}
+                {{/* Update less on update */}}
              @descriptionupdate.window="toggleDesc = less = $event.detail.description.full.length > {{.CutOffLength}};"
              class="video-description flex-grow p-5 basis-full lg:order-none order-5">
             <div class="flex justify-between border-b mb-1 dark:border-gray-800 lg:justify-start">
@@ -367,11 +390,11 @@
             <div>
                 <div class="rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 hover:dark:bg-secondary text-3 text-sm">
                     <button @click="toggleDesc = !toggleDesc;"
-                         :disabled="!less"
-                         class="p-2 w-full text-left"
-                        :class="less && 'hover:cursor-pointer'">
+                            :disabled="!less"
+                            class="p-2 w-full text-left"
+                            :class="less && 'hover:cursor-pointer'">
                         <span class="block overflow-y-clip"
-                                :class="(less && toggleDesc) ? 'h-8' : 'h-auto'"
+                              :class="(less && toggleDesc) ? 'h-8' : 'h-auto'"
                               @descriptionupdate.window="$el.innerHTML=$event.detail.description.full">
                             {{.Description}}
                         </span>
