@@ -3,20 +3,12 @@
           x-init="bookmark.reset()"
           @submit.prevent="bookmark.submit().then(() => $dispatch('reloadbookmarks'))"
           class="bg-white border shadow rounded-lg dark:bg-secondary-light dark:border-gray-800">
-        <div class="flex items-center justify-between border-b dark:border-gray-800 px-3 py-3 md:px-2 md:py-1 md:text-xs text-4 font-semibold">
-            <span>New bookmark</span>
-            <button class = "md:hidden"
-                    @click = "showBookmarkDialog = false;"> <!-- showBookmarkDialog => watch.gohtml -->
-                <i class = "text-xl fa-solid fa-xmark"></i>
-            </button>
-        </div>
         <div class="relative grid gap-5 md:gap-2 text-sm px-2 py-3">
             <template x-if="bookmark.showSuccess">
                 <div class="flex absolute w-full h-full bg-white dark:bg-secondary-light rounded-lg">
                     <div class="grid gap-2 text-4 m-auto">
                         <span class="fa-regular fa-check-circle text-3xl mx-auto"></span>
                         <span>Added bookmark successfully</span>
-                        <button
                     </div>
                 </div>
             </template>

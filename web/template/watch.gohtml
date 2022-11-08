@@ -231,11 +231,11 @@
                                 <i class="fa-solid fa-bookmark text-4"></i>
                             </button>
                             <template x-if="showBookmarkDialog">
-                                <div class = "flex flex-col justify-end fixed lg:relative w-full h-full top-0 left-0 z-40"
-                                    :class="showBookmarkDialog && 'backdrop-blur lg:backdrop-blur-none'">
-                                <div class="w-full lg:absolute lg:bottom-full lg:right-0 lg:w-96">
-                                    {{template "bookmark-dialog" $stream.ID}}
-                                </div>
+                                <div class="flex flex-col justify-end fixed lg:relative w-full h-full top-0 left-0 z-40"
+                                     :class="showBookmarkDialog && 'backdrop-brightness-50 lg:backdrop-brightness-100'">
+                                    <div class="my-auto mx-2">
+                                        {{template "bookmark-dialog" $stream.ID}}
+                                    </div>
                                 </div>
                             </template>
                         </div>
