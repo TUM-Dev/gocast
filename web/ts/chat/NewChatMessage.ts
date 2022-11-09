@@ -1,17 +1,20 @@
 import { sendMessage } from "../watch";
 import { getCurrentWordPositions } from "./misc";
+import {markdownEditor, MarkdownEditor} from "../markdown-editor";
 
 export class NewChatMessage {
     message: string;
     replyTo: number;
     anonymous: boolean;
     addressedTo: ChatUser[];
+    markdownEditor: MarkdownEditor;
 
     constructor() {
         this.message = "";
         this.replyTo = 0;
         this.anonymous = false;
         this.addressedTo = [];
+        this.markdownEditor = markdownEditor({headings: false, images: false});
     }
 
     send(): void {
@@ -23,10 +26,6 @@ export class NewChatMessage {
         this.message = "";
         this.replyTo = 0;
         this.addressedTo = [];
-    }
-
-    isEmpty(): boolean {
-        return this.message === "";
     }
 
     parse(): void {

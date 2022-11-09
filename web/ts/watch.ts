@@ -190,7 +190,7 @@ export function sendMessage(current: NewChatMessage) {
     return Realtime.get().send(currentChatChannel, {
         payload: {
             type: WSMessageType.Message,
-            msg: current.message,
+            msg: current.markdownEditor.text,
             anonymous: current.anonymous,
             replyTo: current.replyTo,
             addressedTo: current.addressedTo.map((u) => u.id),

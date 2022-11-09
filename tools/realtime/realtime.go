@@ -74,7 +74,7 @@ func (r *Realtime) Send(channelPath string, clientId string, payload []byte) err
 }
 
 // connectHandler handles a new melody connection
-func (r *Realtime) connectHandler(client *Client) {}
+func (r *Realtime) connectHandler(*Client) {}
 
 // disconnectHandler handles a client disconnect
 func (r *Realtime) disconnectHandler(c *Client) {

@@ -6,8 +6,9 @@ import (
 	"net/http"
 )
 
-func NewMelodyConnector() *realtime.Connector {
+func NewMelodyConnector(maxSize int64) *realtime.Connector {
 	melodyInstance := melody.New()
+	melodyInstance.Config.MaxMessageSize = maxSize
 	connector := realtime.NewConnector(
 		func(writer http.ResponseWriter, request *http.Request, properties map[string]interface{}) error {
 			return melodyInstance.HandleRequestWithKeys(writer, request, properties)

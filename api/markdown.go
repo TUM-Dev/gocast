@@ -17,7 +17,12 @@ func configGinMarkdownRouter(r *gin.Engine, daos dao.DaoWrapper) {
 	routes := markdownRoutes{
 		DaoWrapper: daos,
 	}
-	r.POST("/api/markdown", routes.getMarkdown)
+	g := r.Group("/api/markdown")
+	g.Use(tools.LoggedIn)
+	{
+		g.POST("/preview", routes.getMarkdown)
+		g.POST("/filedrop", routes.fileDrop)
+	}
 }
 
 type markdownRequest struct {
@@ -43,4 +48,8 @@ func (r markdownRoutes) getMarkdown(c *gin.Context) {
 		AllowRelativeURLs(false).
 		SanitizeBytes(unsafe)
 	c.JSON(http.StatusOK, gin.H{"html": string(html)})
+}
+
+func (r markdownRoutes) fileDrop(c *gin.Context) {
+
 }

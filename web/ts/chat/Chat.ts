@@ -50,8 +50,7 @@ export class Chat {
         liveNowTimestamp: string,
         userId: number,
         userName: string,
-        activateChatReplay: boolean,
-    ) {
+        activateChatReplay: boolean) {
         this.orderByLikes = false;
         this.disconnected = false;
         this.current = new NewChatMessage();

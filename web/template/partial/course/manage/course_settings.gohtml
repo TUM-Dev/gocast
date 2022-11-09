@@ -1,6 +1,9 @@
 {{define "course_settings"}}
 {{- /* gotype:github.com/joschahenningsen/TUM-Live/model.Course */ -}}
+<div x-data="global.markdownEditor({images:false, headings:true})">
     {{template "markdown-editor"}}
+    <button @click="console.log(text)">some button</button>
+</div>
 <div x-data="{
         showCourseSettingsModal:false, isChatEnabledForCourse: {{.ChatEnabled}}
     }">

@@ -1,4 +1,5 @@
-import { Chat } from "./chat/Chat";
+import {Chat} from "./chat/Chat";
+import {markdownEditor, MarkdownEditor} from "./markdown-editor";
 
 export function initChat(
     isAdminOfCourse: boolean,
@@ -10,7 +11,13 @@ export function initChat(
     activateChatReplay: boolean,
 ) {
     return {
-        c: new Chat(isAdminOfCourse, streamId, streamStart, liveNowTimestamp, userId, userName, activateChatReplay),
+        c: new Chat(isAdminOfCourse,
+            streamId,
+            streamStart,
+            liveNowTimestamp,
+            userId,
+            userName,
+            activateChatReplay),
     };
 }
 
@@ -25,7 +32,7 @@ export function scrollToBottom() {
     Scroll to top of the 'chatBox'
  */
 export function scrollToTop() {
-    document.getElementById("chatBox").scrollTo({ top: 0, behavior: "smooth" });
+    document.getElementById("chatBox").scrollTo({top: 0, behavior: "smooth"});
 }
 
 export function scrollToElement(element: HTMLElement) {
@@ -51,7 +58,7 @@ export function shouldScroll(): boolean {
 }
 
 export function showNewMessageIndicator() {
-    window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: true } }));
+    window.dispatchEvent(new CustomEvent("messageindicator", {detail: {show: true}}));
 }
 
 export function scrollChat() {
@@ -63,9 +70,10 @@ export function scrollChat() {
 }
 
 export function scrollToLatestMessage() {
-    const c = document.getElementById("chatBox");
-    c.scrollTo({ top: c.scrollHeight, behavior: "smooth" });
-    window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
+    const c = document.getElementById(
+        "chatBox");
+    c.scrollTo({top: c.scrollHeight, behavior: "smooth"});
+    window.dispatchEvent(new CustomEvent("messageindicator", {detail: {show: false}}));
 }
 
 export function messageDateToString(date: string) {

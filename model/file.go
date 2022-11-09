@@ -16,6 +16,7 @@ const (
 	FILETYPE_THUMB_COMB
 	FILETYPE_THUMB_CAM
 	FILETYPE_THUMB_PRES
+	FILETYPE_GENERIC
 )
 
 type File struct {
@@ -25,6 +26,8 @@ type File struct {
 	Path     string `gorm:"not null"`
 	Filename string
 	Type     FileType `gorm:"not null; default: 1"`
+	// UUID can optionally be used to refer to the file. This ensures that some files urls can not be guessed or iterated.
+	UUID string `gorm:"default:null"`
 }
 
 func (f File) GetDownloadFileName() string {

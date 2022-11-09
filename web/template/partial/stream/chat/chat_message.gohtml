@@ -60,7 +60,7 @@
                     </button>
                     <button x-cloak
                             x-show="m.visible"
-                            @click="c.current.replyTo === m.ID ? c.current.replyTo=0: c.current.replyTo=m.ID; $refs.chatInput.focus()"
+                            @click="c.current.replyTo === m.ID ? c.current.replyTo=0: c.current.replyTo=m.ID; $refs.textarea.focus()"
                             title="Reply"
                             class="flex justify-between px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
                             :class="c.current.replyTo === m.ID && 'hidden'">

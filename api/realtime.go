@@ -12,7 +12,9 @@ type realtimeRoutes struct {
 	dao.DaoWrapper
 }
 
-var RealtimeInstance = realtime.New(connector.NewMelodyConnector())
+const maxMsgSize = 2048
+
+var RealtimeInstance = realtime.New(connector.NewMelodyConnector(maxMsgSize))
 
 func configGinRealtimeRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 	routes := realtimeRoutes{daoWrapper}

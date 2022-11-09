@@ -1,4 +1,23 @@
-export function markdownEditor() {
+export interface markdownEditorOptions {
+    images: boolean;
+    headings: boolean;
+}
+
+export interface MarkdownEditor {
+    text: string;
+    html: string;
+    tab: string;
+
+    update(target: HTMLTextAreaElement, pre: string, post: string);
+
+    action(target: HTMLTextAreaElement, pre: string, post: string);
+
+    enterHook(event: KeyboardEvent);
+
+    isEmpty(): boolean;
+}
+
+export function markdownEditor(options: markdownEditorOptions): MarkdownEditor {
     // reList matches lines that are valid Markdown list items
     const reList = / *-.*/;
     return {
@@ -6,9 +25,9 @@ export function markdownEditor() {
         html: "",
         tab: "edit",
         async update() {
-            fetch("/api/markdown", {
+            fetch("/api/markdown/preview", {
                 method: "POST",
-                body: JSON.stringify({ markdown: this.text }),
+                body: JSON.stringify({markdown: this.text, options: options}),
             })
                 .then((response) => response.json())
                 .then((data) => (this.html = data.html));
@@ -37,5 +56,8 @@ export function markdownEditor() {
                 this.action(t, " ".repeat(numIndent) + "- ", "");
             }
         },
+        isEmpty() {
+            return this.text === "";
+        }
     };
 }
