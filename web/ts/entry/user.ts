@@ -2,3 +2,4 @@
 export * from "../global";
 export * from "../course-overview";
 export * from "../stream-search";
+export * from "../markdown-editor";
