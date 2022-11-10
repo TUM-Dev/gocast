@@ -58,7 +58,7 @@ func (s *Stats) GetCourseNumVodViews(courseID uint, from time.Time, to time.Time
 	if res, err := s.query.Query(context.Background(), query); err != nil {
 		return 0, err
 	} else {
-		return res.Record().Value().(int), nil
+		return parseValue(res.Record().Value(), 0), nil
 	}
 }
 
@@ -75,6 +75,89 @@ func (s *Stats) GetCourseNumLiveViews(courseID uint, from time.Time, to time.Tim
 	if res, err := s.query.Query(context.Background(), query); err != nil {
 		return 0, err
 	} else {
-		return res.Record().Value().(int), nil
+		return parseValue(res.Record().Value(), 0), nil
+	}
+}
+
+type TimeValueEntry struct {
+	Time time.Time
+	Val  int
+}
+
+type TimeValues struct {
+	Entries []TimeValueEntry
+}
+
+func (t *TimeValues) GetChartJsData() []map[string]any {
+	var data = make([]map[string]any, 0)
+	for _, entry := range t.Entries {
+		data = append(data, map[string]any{
+			"x": entry.Time.Format("2006-01-02"),
+			"y": entry.Val,
+		})
+	}
+	return data
+}
+
+func (s *Stats) GetStudentLiveActivityCourseStats(courseID uint, from time.Time, to time.Time) (*TimeValues, error) {
+	query := fmt.Sprintf(`from(bucket: "live_stats")
+	|> range(start: %d, stop: %d)
+	|> filter(fn: (r) => r.course == "%d" and r.live == "true")
+	|> group(columns: ["stream"])
+	|> max()
+	|> group()
+	|> aggregateWindow(every: 1d, fn: median, createEmpty: false)
+	|> keep(columns: ["_time", "_value"])`, from.Unix(), to.Unix(), courseID)
+
+	res := TimeValues{}
+
+	queryResult, err := s.query.Query(context.Background(), query)
+	if err != nil {
+		return nil, err
+	}
+
+	for queryResult.Next() {
+		res.Entries = append(res.Entries, TimeValueEntry{
+			Time: queryResult.Record().Time(),
+			Val:  parseValue(queryResult.Record().Value(), 0),
+		})
+	}
+
+	return &res, nil
+}
+
+func (s *Stats) GetStudentVODActivityCourseStats(courseID uint, from time.Time, to time.Time) (*TimeValues, error) {
+	query := fmt.Sprintf(`from(bucket: "live_stats")
+	|> range(start: %d, stop: %d)
+	|> filter(fn: (r) => r.course == "%d" and r.live == "false")
+	|> group(columns: ["stream"])
+	|> max()
+	|> group()
+	|> aggregateWindow(every: 1d, fn: median, createEmpty: false)
+	|> keep(columns: ["_time", "_value"])`, from.Unix(), to.Unix(), courseID)
+
+	res := TimeValues{}
+
+	queryResult, err := s.query.Query(context.Background(), query)
+	if err != nil {
+		return nil, err
+	}
+
+	for queryResult.Next() {
+		res.Entries = append(res.Entries, TimeValueEntry{
+			Time: queryResult.Record().Time(),
+			Val:  parseValue(queryResult.Record().Value(), 0),
+		})
+	}
+
+	return &res, nil
+}
+
+func parseValue(value interface{}, defaultValue int) int {
+	switch v := value.(type) {
+	case float64:
+		return int(v)
+	default:
+		return defaultValue
 	}
 }

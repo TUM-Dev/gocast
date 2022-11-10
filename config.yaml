@@ -24,8 +24,8 @@ db:
   password: example
   user: root
 influxdb:
-  serverUrl: https://metrics.mm.rbg.tum.de:8086
-  authToken: _Wr5-WfXnZoTRoAK0A7zXlpGzeJdzQXDNUZyCQS3yKAa-EXWYHukMq4kDqdwWs_YuPv3NskQmbWaNBwkI6P9xQ==
+  serverUrl: http://localhost:8086
+  authToken: 04emVoLJWH1RWiHXfdE4gnDMFBvePmWJM2_-t_wYVlXVCC_yhrOSKRlY75JFfUSa0nxZ1hC_hEuJsGXTNK0tZw==
 ingestbase: rtmp://ingest.tum.live/
 jwtkey: # This is an example key, delete and restart to generate a proper one
   |

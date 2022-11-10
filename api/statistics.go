@@ -6,9 +6,11 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/stats"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type statReq struct {
@@ -22,6 +24,10 @@ type statExportReq struct {
 
 func (r coursesRoutes) getStats(c *gin.Context) {
 	ctx, _ := c.Get("TUMLiveContext")
+
+	from := time.Now().AddDate(-1, 0, 0)
+	to := time.Now()
+
 	var req statReq
 	if err := c.ShouldBindQuery(&req); err != nil {
 		_ = c.Error(tools.RequestError{
@@ -88,7 +94,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		resp.Data.Datasets[0].Data = res
 		c.JSON(http.StatusOK, resp)
 	case "activity-live":
-		resLive, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, true)
+		statsData, err := stats.Client.GetStudentLiveActivityCourseStats(cid, from, to)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsLive failed")
 			_ = c.Error(tools.RequestError{
@@ -104,13 +110,13 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 			Options:   newChartJsOptions(),
 		}
 		resp.Data.Datasets[0].Label = "Live"
-		resp.Data.Datasets[0].Data = resLive
+		resp.Data.Datasets[0].Data = statsData.GetChartJsData()
 		resp.Data.Datasets[0].BorderColor = "#d12a5c"
 		resp.Data.Datasets[0].BackgroundColor = ""
 
 		c.JSON(http.StatusOK, resp)
 	case "activity-vod":
-		resVod, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, false)
+		statsData, err := stats.Client.GetStudentVODActivityCourseStats(cid, from, to)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsVod failed")
 			_ = c.Error(tools.RequestError{
@@ -126,7 +132,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 			Options:   newChartJsOptions(),
 		}
 		resp.Data.Datasets[0].Label = "VoD"
-		resp.Data.Datasets[0].Data = resVod
+		resp.Data.Datasets[0].Data = statsData.GetChartJsData()
 		resp.Data.Datasets[0].BorderColor = "#2a7dd1"
 		resp.Data.Datasets[0].BackgroundColor = ""
 		c.JSON(http.StatusOK, resp)
@@ -144,7 +150,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"res": res})
 		}
 	case "vodViews":
-		res, err := r.StatisticsDao.GetCourseNumVodViews(cid)
+		res, err := stats.Client.GetCourseNumVodViews(cid, from, to)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumVodViews failed")
 			_ = c.Error(tools.RequestError{
@@ -157,7 +163,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"res": res})
 		}
 	case "liveViews":
-		res, err := r.StatisticsDao.GetCourseNumLiveViews(cid)
+		res, err := stats.Client.GetCourseNumLiveViews(cid, from, to)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
 			_ = c.Error(tools.RequestError{
@@ -399,7 +405,7 @@ func newChartJsOptions() chartJsOptions {
 	}
 }
 
-//chartJsDataset is a single dataset ready to be used in a Chart.js chart
+// chartJsDataset is a single dataset ready to be used in a Chart.js chart
 type chartJsDataset struct {
 	Label           string         `json:"label"`
 	Fill            bool           `json:"fill"`
@@ -409,7 +415,7 @@ type chartJsDataset struct {
 	Options         chartJsOptions `json:"options"`
 }
 
-//New creates a chartJsDataset with some defaults
+// New creates a chartJsDataset with some defaults
 func newChartJsDataset() chartJsDataset {
 	return chartJsDataset{
 		Fill:            false,
