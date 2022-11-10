@@ -4,6 +4,10 @@ export * from "./notifications";
 export * from "./user-settings";
 export * from "./start-page";
 
+export async function getData(url = "") {
+    return await fetch(url);
+}
+
 export async function putData(url = "", data = {}) {
     return await fetch(url, {
         method: "PUT",
