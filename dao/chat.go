@@ -181,17 +181,17 @@ func (d chatDao) GetChatsByUser(userID uint) (chats []model.Chat, err error) {
 	return chats, d.db.Find(&chats, "user_id = ?", userID).Error
 }
 
-// GetChat returns a chat message with the given id
+// GetChat returns a chat message with the given id, uses the userId to normalize the chat.
 func (d chatDao) GetChat(id uint, userID uint) (*model.Chat, error) {
-	var chat *model.Chat
+	var chat model.Chat
 
 	err := d.db.Preload("Replies").Preload("UserLikes").Preload("AddressedToUsers").Find(&chat, "id = ?", id).Error
 	if err != nil {
-		return chat, err
+		return &chat, err
 	}
 
-	normalizeChat(chat, userID)
-	return chat, nil
+	normalizeChat(&chat, userID)
+	return &chat, nil
 }
 
 func normalizeChat(chat *model.Chat, userID uint) {
