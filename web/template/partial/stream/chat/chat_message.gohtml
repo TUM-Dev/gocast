@@ -6,7 +6,7 @@
              x-data="{ showReplies: false}"
              x-show="!m.deleted && m.replyTo && !m.replyTo.Valid"
              :class="{'ring ring-blue-500/50' : c.current.replyTo === m.ID, 'opacity-60' : m.isGrayedOut}"
-             x-init="$watch('c.focusedMessageId', () => {if (c.isMessageToBeFocused(index)){watch.scrollToElement($refs.message)}} )">
+             x-init="$watch('c.focusedMessageId', () => {if (c.isMessageToBeFocused(index)){watch.scrollToElement($refs.message)}});">
             <!-- name and message -->
             <div class="text-xs">
                 <span x-show="m.admin" class="fa-video text-white bg-red-400 p-1 rounded fas"></span>
@@ -21,7 +21,16 @@
 
             <div class="relative group p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
                 <div class="flex justify-between">
-                    <span class="chatMsg w-5/6 overflow-wrap-anywhere my-auto" x-html="m.message"></span>
+                    <span class="chatMsg w-5/6 overflow-wrap-anywhere my-auto" x-html="m.message" x-init="$nextTick(() => { renderMathInElement($el, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\(', right: '\\)', display: false},
+                            {left: '\\[', right: '\\]', display: true}
+                        ],
+                        throwOnError: false,
+                        }); });"
+                    x-html="m.message"></span>
                 </div>
 
                 <!-- message-date -->
