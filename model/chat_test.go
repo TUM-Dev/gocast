@@ -23,7 +23,7 @@ func TestChat_SanitiseMessage(t *testing.T) {
 		},
 		{
 			`<a onblur="alert(secret)" href="http://www.google.com">Google</a>`,
-			"&lt;a onblur=&#34;alert(secret)&#34; href=&#34;<a href=\"http://www.google.com&amp;quot;&gt;Google&lt;/a%3E\" rel=\"nofollow noopener\" target=\"_blank\">http://www.google.com&amp;#34;&gt;Google&lt;/a&amp;gt</a>;",
+			"&lt;a onblur=&#34;alert(secret)&#34; href=&#34;<a href=\"http://www.google.com&#34;&gt;Google&lt;/a%3E\" rel=\"nofollow noopener\" target=\"_blank\">http://www.google.com&amp;#34;&gt;Google&lt;/a&amp;gt</a>;",
 		},
 		{
 			"kann man de l'hospital nicht nur anwenden wenn 0/0 bzw unendlich/unendlich",

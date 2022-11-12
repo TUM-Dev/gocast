@@ -14,6 +14,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools/bot"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -54,6 +55,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			sections := admins.Group("/sections")
 			{
 				sections.POST("", routes.createVideoSectionBatch)
+				sections.PUT("/:id", routes.updateVideoSection)
 				sections.DELETE("/:id", routes.deleteVideoSection)
 			}
 
@@ -115,7 +117,7 @@ func (r streamRoutes) getThumbs(c *gin.Context) {
 		})
 		return
 	}
-	sendDownloadFile(c, file)
+	sendDownloadFile(c, file, tumLiveContext)
 }
 
 // livestreams returns all streams that are live
@@ -383,6 +385,55 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 			log.WithError(err).Error("failed to generate video section images")
 		}
 	}()
+}
+
+type UpdateVideoSectionRequest struct {
+	Description  string `json:"description"`
+	StartHours   uint   `json:"startHours"`
+	StartMinutes uint   `json:"startMinutes"`
+	StartSeconds uint   `json:"startSeconds"`
+}
+
+func (r streamRoutes) updateVideoSection(c *gin.Context) {
+	idAsString := c.Param("id")
+	id, err := strconv.Atoi(idAsString)
+	if err != nil {
+		log.WithError(err).Error("can not parse video-section id in request url")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not parse video-section id in request url",
+			Err:           err,
+		})
+		return
+	}
+
+	var update UpdateVideoSectionRequest
+	err = c.BindJSON(&update)
+	if err != nil {
+		log.WithError(err).Error("failed to bind video section JSON")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
+	}
+
+	err = r.VideoSectionDao.Update(&model.VideoSection{
+		Model:        gorm.Model{ID: uint(id)},
+		Description:  update.Description,
+		StartHours:   update.StartHours,
+		StartMinutes: update.StartMinutes,
+		StartSeconds: update.StartSeconds})
+	if err != nil {
+		log.WithError(err).Error("failed to update video section")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not update video section",
+			Err:           err,
+		})
+		return
+	}
 }
 
 func (r streamRoutes) deleteVideoSection(c *gin.Context) {

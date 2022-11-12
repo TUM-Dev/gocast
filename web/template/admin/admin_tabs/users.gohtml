@@ -73,10 +73,13 @@
                             <div class="flex item-center justify-center">
                                 <template x-if="user.role !== 1">
                                     <button title="Delete User"
-                                        class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer">
+                                        class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
                                         <i @click="admin.deleteUser(user.id)" class="fas fa-trash"></i>
                                     </button>
                                 </template>
+                                <button title="Impersonate User" class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer">
+                                    <i @click="admin.impersonate(user.id).then((r) => {if(r){window.location.replace('/')}})" class="fas fa-user"></i>
+                                </button>
                             </div>
                         </td>
                     </tr>

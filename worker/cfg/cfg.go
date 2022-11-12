@@ -25,8 +25,9 @@ var (
 	LogLevel     = log.InfoLevel
 )
 
-// init stops the execution if any of the required config variables are unset.
-func init() {
+// SetConfig sets the values of the parameter config and stops the execution
+// if any of the required config variables are unset.
+func SetConfig() {
 	// JoinToken is required to join the main tumlive as a worker
 	Token = os.Getenv("Token")
 	if Token == "" {
