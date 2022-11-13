@@ -190,7 +190,7 @@ func (d chatDao) GetChat(id uint, userID uint) (*model.Chat, error) {
 		return &chat, err
 	}
 
-	normalizeChat(&chat, userID)
+	prepareChat(&chat, userID)
 	return &chat, nil
 }
 
