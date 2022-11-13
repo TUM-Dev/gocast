@@ -293,7 +293,9 @@
                     {{end}}
                 </div>
                 <template x-if="lecture.uiEditMode > 0"> <!-- only render if in edit mode to avoid network calls -->
-                    {{template "editvideosections"}}
+                    <div class = "mt-3">
+                        {{template "editvideosections"}}
+                    </div>
                 </template>
             </div>
 

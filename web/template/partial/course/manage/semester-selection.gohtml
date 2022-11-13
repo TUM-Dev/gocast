@@ -9,7 +9,6 @@
     <label for="year" class="hidden">teachingTermYear</label>
     <div class="flex">
         <input id="year" x-model="year" name="year" class="w-32 tl-input"
-            @change="if(year<2000)return; yearW = (year%1000) + 1" @keyup="if(year<2000)return; yearW = (year%1000) + 1"
             :class="year === '' ? 'border-red-500 focus:border-red-500' : ''" placeholder="2022" type="number">
         <template x-if="semester === 'Wintersemester'">
             <div class="flex">

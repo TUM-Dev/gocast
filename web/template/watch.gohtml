@@ -12,10 +12,17 @@
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
     <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
     <link rel="stylesheet" href="/static/node_modules/@silvermine/videojs-airplay/dist/silvermine-videojs-airplay.css">
+    {{/* Remove this when using KaTeX in other locations than the chat */}}
+    {{if $stream.ChatEnabled}}
+        <link rel="stylesheet" href="/static/node_modules/katex/dist/katex.min.css">
+        <script defer src="/static/node_modules/katex/dist/katex.js"></script>
+        <script defer src="/static/node_modules/katex/dist/contrib/auto-render.min.js"></script>
+        <script defer src="/static/node_modules/katex/dist/contrib/copy-tex.min.js"></script>
+    {{end}}
 </head>
 <body x-data="{'streamID': {{$stream.Model.ID}}, 'showChat': $persist(false).as('chatOpen'), seekLogger: new watch.SeekLogger('{{$stream.ID}}')}"
       @keypress.shift.window="(e) => watch.onShift(e)"
-      x-init="new watch.Watch(); watch.startWebsocket(); seekLogger.attach();">
+      x-init="watch.startWebsocket(); seekLogger.attach();">
 {{template "header" .IndexData.TUMLiveContext}}
 <div id="shortcuts-help-modal" class="hidden flex absolute top-0 h-screen w-screen z-50 backdrop-blur-sm">
     <div class="m-auto" @click.outside="watch.toggleShortcutsModal();">
@@ -25,23 +32,32 @@
 <div id="watchPageMainWrapper" class="lg:px-5 lg:pb-1">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
     <div class="flex flex-wrap shadow border bg-white dark:bg-secondary dark:shadow-0 dark:border-0">
-        <div x-data="{ 'chatEnabled': {{and $course.ChatEnabled $stream.ChatEnabled}} }" id="watchWrapper"
-             :class="showChat && chatEnabled ? 'lg:basis-3/4' : 'lg:basis-full'"
-             class="basis-full lg:order-none order-1 sticky top-0 lg:relative z-40">
-            <noscript><p class="vjs-no-js">
-                    To view this video please enable JavaScript.
-                </p></noscript>
+        <div id="watchWrapper"
+             x-data="{ 'chatEnabled': {{and $course.ChatEnabled $stream.ChatEnabled}} }"
+             class="relative basis-full lg:order-none order-1 sticky top-0 lg:relative z-40"
+             :class="showChat && chatEnabled ? 'lg:basis-3/4 lg:h-16/6 h-16/9' : 'lg:basis-full h-16/9'">
+            <noscript>
+                <p class="vjs-no-js">To view this video please enable JavaScript.</p>
+            </noscript>
             <div id="watchContent"
                  x-data="{ contextMenu: { shown: false, locX: 0, locY: 0 }, videoStatsShown: false }"
-                 class="grow w-full relative">
+                 class="grow w-full h-full">
+
+                <!-- info messages -->
+                <div class="bg-indigo-700 bg-opacity-20 border-t-4 border-indigo-700 w-full font-semibold text-2 rounded-t display-none"
+                     x-show="paused" x-cloak>
+                    <i class="fas fa-info-circle"></i> This lecture is currently paused.
+                </div>
                 <div x-data="{ showliveended: false }"
                      class="bg-red-700 bg-opacity-20 p-2 w-full font-semibold text-2"
                      x-show="showliveended" @streamended.window="showliveended=true" x-cloak>
                     <i class="fas fa-info-circle"></i> This livestream has ended.
                 </div>
+
+                <!-- player -->
                 <video-js
                         id="my-video"
-                        class="video-js w-full vjs-theater-mode theater-mode"
+                        class="video-js w-full h-full"
                         controls
                         preload="auto"
                         x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu)"
@@ -128,8 +144,9 @@
         {{if and $course.ChatEnabled $stream.ChatEnabled}}
             <div x-show="showChat"
                  :class="showChat ? 'lg:basis-1/4' : 'lg:basis-0'"
-                 class="z-20 basis-full order-3 border rounded p-1 mx-5 bg-gray-100 dark:bg-gray-800 dark:border-0 lg:border-0 lg:shadow lg:order-none lg:mx-0 lg:p-0 lg:bg-transparent">
-                <div id="chat-box" class="bg-white rounded lg:bg-transparent md:rounded-0 dark:bg-secondary">
+                 class="z-20 basis-full order-3 border rounded p-1 mx-5 bg-gray-100 dark:bg-gray-800 dark:border-0 lg:h-16/6 h-96
+                        lg:border-0 lg:shadow lg:order-none lg:mx-0 lg:p-0 lg:bg-transparent">
+                <div id="chat-box" class="bg-white rounded lg:bg-transparent md:rounded-0 dark:bg-secondary h-full">
                     {{template "chat" .ChatData}}
                 </div>
             </div>
@@ -137,7 +154,7 @@
 
         <!-- stream info container -->
         <!-- Title, course name, actions -->
-        <div class="basis-full relative p-5 lg:order-none order-2">
+        <div class="basis-full relative order-2 p-5 lg:order-none">
             <div class="flex justify-between align-middle border-b dark:border-gray-800 pb-2 lg:border-0">
                 <!-- title and course-name -->
                 <div class="grid mb-auto shrink">
@@ -269,24 +286,36 @@
         {{end}}
 
         <!-- Video description -->
-        <div x-data="{ less: {{len .Description}}>{{.CutOffLength}}, full: `{{.Description}}`, prev: `{{.TruncatedDescription}}` }"
-             class="video-description flex-grow p-5 basis-full lg:order-none order-5"
-             x-show="full.length"
-        >
-            <div class="flex justify-between border-b mb-3 dark:border-gray-800 lg:justify-start">
+        {{$less := gt (len .Description) .CutOffLength}}
+        {{if gt (len .Description) 0}}
+            <div x-data="{ less: {{$less}}, toggleDesc: true }"
+                {{/* Update less on update */}}
+             @descriptionupdate.window="toggleDesc = less = $event.detail.description.full.length > {{.CutOffLength}};"
+             class="video-description flex-grow p-5 basis-full lg:order-none order-5">
+            <div class="flex justify-between border-b mb-1 dark:border-gray-800 lg:justify-start">
                 <h3 class="text-4 font-semibold">Description</h3>
-                <button x-show="full.length>{{.CutOffLength}}"
-                        class="text-5 text-xs rounded h-fit w-fit font-semibold px-2 py-1 my-auto uppercase lg:ml-2"
-                        @click="less = !less" x-text="less ? 'show more' : 'show less'">
-                </button>
             </div>
-
-            <div class="text-3 text-sm"
-                 x-html="less ? prev : full"
-                 @descriptionupdate.window="full=$el.innerHTML=$event.detail.description.full;prev=
-                     $el.innerHTML=$event.detail.description.truncated;less=full.length>{{.CutOffLength}};">
+            <div>
+                <div class="rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 hover:dark:bg-secondary text-3 text-sm">
+                    <button @click="toggleDesc = !toggleDesc;"
+                            :disabled="!less"
+                            class="p-2 w-full text-left"
+                            :class="less && 'hover:cursor-pointer'">
+                        <span class="block overflow-y-clip"
+                              :class="(less && toggleDesc) ? 'h-8' : 'h-auto'"
+                              @descriptionupdate.window="$el.innerHTML=$event.detail.description.full">
+                            {{.Description}}
+                        </span>
+                    </button>
+                    <template x-if="less">
+                        <button class="font-semibold m-1 py-1 px-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
+                                x-text="toggleDesc ? 'Show more' : 'Show less'"
+                                @click="toggleDesc = !toggleDesc;"></button>
+                    </template>
+                </div>
             </div>
         </div>
+        {{end}}
 
         <!-- Modal when stopping a stream -->
         <div class="inline-block" x-data="{ 'showModal': false }"
@@ -333,9 +362,11 @@
 <script>
     {{if $stream.Recording}}
     watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
-    watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
     {{else}}
     watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
+    {{end}}
+    {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
+    watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
     {{end}}
     {{if $stream.Silences}}
     watch.skipSilence({{$stream.GetSilencesJson}});
