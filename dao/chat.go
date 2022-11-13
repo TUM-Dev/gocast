@@ -194,7 +194,8 @@ func (d chatDao) GetChat(id uint, userID uint) (*model.Chat, error) {
 	return &chat, nil
 }
 
-func normalizeChat(chat *model.Chat, userID uint) {
+// prepareChat sets Liked to true if the user with userID liked the message and and adds the ids of the addressed users to it for further usage in the fronted. 
+func prepareChat(chat *model.Chat, userID uint) {
 	chat.Likes = len(chat.UserLikes)
 	for j := range chat.UserLikes {
 		if chat.UserLikes[j].ID == userID {
