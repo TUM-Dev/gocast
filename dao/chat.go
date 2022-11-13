@@ -181,7 +181,7 @@ func (d chatDao) GetChatsByUser(userID uint) (chats []model.Chat, err error) {
 	return chats, d.db.Find(&chats, "user_id = ?", userID).Error
 }
 
-// GetChat returns a chat message with the given id, uses the userId to normalize the chat.
+// GetChat returns a chat message with the given id, uses the userId to add user specific status the chat like the liked status.
 func (d chatDao) GetChat(id uint, userID uint) (*model.Chat, error) {
 	var chat model.Chat
 
