@@ -344,6 +344,7 @@ export class Chat {
 
     isMessageToBeFocused = (index: number) => this.messages[index].ID === this.focusedMessageId;
 
+    // patchMessage adds the message to the list of messages at the position it should appear in based on the send time.
     patchMessage(m: ChatMessage): void {
         this.preprocessors.forEach((f) => (m = f(m)));
 
