@@ -280,12 +280,24 @@ func (r chatRoutes) handleApprove(ctx tools.TUMLiveContext, msg []byte) {
 	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
 		return
 	}
+
 	err = r.ChatDao.ApproveChat(req.Id)
 	if err != nil {
 		log.WithError(err).Error("could not approve chat")
+		return
+	}
+
+	/* UserId should be the user who gets the message, to add dynamic user specific flags (e.g. Liked)
+	 * to the message payload. In this case the Message is freshly approved so no users should have interacted
+	 * with that message so far, so we pass 0 instead of a userId.
+	 */
+	chat, err := r.ChatDao.GetChat(req.Id, 0)
+	if err != nil {
+		log.WithError(err).Error("could not get chat")
 	}
 	broadcast := gin.H{
 		"approve": req.Id,
+		"chat":    chat,
 	}
 	broadcastBytes, err := json.Marshal(broadcast)
 	if err != nil {
