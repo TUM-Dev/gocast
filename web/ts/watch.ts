@@ -64,13 +64,6 @@ export async function startWebsocket() {
                 // stream end, show message
                 window.dispatchEvent(new CustomEvent("streamended"));
             }
-        } else if ("paused" in data) {
-            const paused: boolean = data["paused"];
-            if (paused) {
-                //window.dispatchEvent(new CustomEvent("pausestart"))
-            } else {
-                window.dispatchEvent(new CustomEvent("pauseend"));
-            }
         } else if ("server" in data) {
             const scroll = shouldScroll();
             const serverElem = createServerMessage(data);

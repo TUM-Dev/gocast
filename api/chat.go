@@ -583,11 +583,6 @@ func CollectStats(daoWrapper dao.DaoWrapper) func() {
 	}
 }
 
-func notifyViewersPause(streamId uint, paused bool) {
-	req, _ := json.Marshal(gin.H{"paused": paused})
-	broadcastStream(streamId, req)
-}
-
 func NotifyViewersLiveState(streamId uint, live bool) {
 	req, _ := json.Marshal(gin.H{"live": live})
 	broadcastStream(streamId, req)

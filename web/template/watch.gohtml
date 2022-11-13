@@ -20,9 +20,7 @@
         <script defer src="/static/node_modules/katex/dist/contrib/copy-tex.min.js"></script>
     {{end}}
 </head>
-<body x-data="{'paused': {{$stream.Paused}}, 'streamID': {{$stream.Model.ID}}, 'showChat': $persist(false).as('chatOpen'), seekLogger: new watch.SeekLogger('{{$stream.ID}}')}"
-      x-on:pausestart.window="paused=true"
-      x-on:pauseend.window="paused=false"
+<body x-data="{'streamID': {{$stream.Model.ID}}, 'showChat': $persist(false).as('chatOpen'), seekLogger: new watch.SeekLogger('{{$stream.ID}}')}"
       @keypress.shift.window="(e) => watch.onShift(e)"
       x-init="watch.startWebsocket(); seekLogger.attach();">
 {{template "header" .IndexData.TUMLiveContext}}
@@ -238,13 +236,6 @@
                 <div class="md:space-x-2 lg:space-y-0 space-y-2 w-full">
                     {{/* Lecture hall is set, means no self-stream*/}}
                     {{if $stream.LectureHallID}}
-                        <button @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)"
-                                href="#"
-                                :title="paused?'End Pause (turns on video and audio)':'Pause lecture (turns off video and audio)'"
-                                class="bg-green-500 text-center lg:w-32 md:w-24 md:inline-block block w-full text-white font-bold hover:bg-green-600 dark:hover:bg-green-600 rounded cursor-pointer p-2">
-                            <span x-show="!paused"><i class="fas fa-pause mr-1"></i>Pause</span>
-                            <span x-show="paused"><i class="fas fa-play mr-1"></i>Resume</span>
-                        </button>
                         <button @click="window.location.href='?restart=1'"
                                 title="Issues with the stream? Restart it."
                                 class="bg-indigo-500 text-center lg:w-32 md:w-24 md:inline-block block w-full text-white font-bold hover:bg-indigo-600 dark:hover:bg-indigo-600 rounded cursor-pointer p-2">
