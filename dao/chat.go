@@ -93,7 +93,7 @@ func (d chatDao) GetVisibleChats(userID uint, streamID uint) ([]model.Chat, erro
 		return nil, err
 	}
 	for i := range chats {
-		normalizeChat(&chats[i], userID)
+		prepareChat(&chats[i], userID)
 	}
 	return chats, nil
 }
@@ -108,7 +108,7 @@ func (d chatDao) GetAllChats(userID uint, streamID uint) ([]model.Chat, error) {
 		return nil, err
 	}
 	for i := range chats {
-		normalizeChat(&chats[i], userID)
+		prepareChat(&chats[i], userID)
 	}
 	return chats, nil
 }
@@ -194,7 +194,7 @@ func (d chatDao) GetChat(id uint, userID uint) (*model.Chat, error) {
 	return &chat, nil
 }
 
-// prepareChat sets Liked to true if the user with userID liked the message and and adds the ids of the addressed users to it for further usage in the fronted. 
+// prepareChat sets Liked to true if the user with userID liked the message and and adds the ids of the addressed users to it for further usage in the fronted.
 func prepareChat(chat *model.Chat, userID uint) {
 	chat.Likes = len(chat.UserLikes)
 	for j := range chat.UserLikes {
