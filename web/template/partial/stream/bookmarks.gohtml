@@ -2,8 +2,8 @@
     <form x-data="{bookmark: new watch.BookmarkDialog({{.}})}"
           x-init="bookmark.reset()"
           @submit.prevent="bookmark.submit().then(() => $dispatch('reloadbookmarks'))"
-          class="bg-white border shadow rounded-lg dark:bg-secondary-light dark:border-gray-800">
-        <div class="relative grid gap-5 md:gap-2 text-sm px-2 py-3">
+          class="">
+        <div class="relative grid gap-5 md:gap-2 text-sm">
             <template x-if="bookmark.showSuccess">
                 <div class="flex absolute w-full h-full bg-white dark:bg-secondary-light rounded-lg">
                     <div class="grid gap-2 text-4 m-auto">
@@ -55,33 +55,28 @@
          x-data="{ bookmarks: new watch.BookmarkList({{.}}) }"
          x-init="await bookmarks.fetch()"
          @reloadbookmarks.window="await bookmarks.fetch()"
-         class="lg:basis-1/2 p-5 order-5 lg:order-none">
-        <div class="flex border-b dark:border-gray-800 mb-3">
-            <h3 class="text-4 font-semibold mr-auto">Bookmarks</h3>
-            <button class="flex items-center text-xs hover:bg-gray-200 dark:hover:bg-gray-600 text-5 hover:text-1 rounded px-2 py-1 h-fit"
+         class="">
+        <div class="flex justify-end items-center mb-3">
+            <button class="flex items-center justify-center text-4 rounded-full h-8 w-8 hover:bg-gray-200 dark:hover:bg-gray-600"
                     type="button" @click="bookmarks.showEdit = !bookmarks.showEdit">
                 <i class="fa-solid fa-pen"></i>
-                <span class="font-semibold uppercase ml-2"
-                      x-text="bookmarks.showEdit ? 'hide edit' : 'edit'">edit</span>
             </button>
         </div>
-        <div class="relative grid gap-1 overflow-y-scroll max-h-56 bg-gray-50 p-1 rounded border
-                    dark:border-gray-800 dark:bg-gray-800
-                   lg:gap-3 lg:border-0 lg:bg-transparent lg:dark:bg-transparent">
+        <div class="relative grid gap-1 overflow-y-scroll max-h-56 lg:max-h-full">
             <template x-for="(b, i) in bookmarks.get()" :key="b.ID">
                 <div x-data="{bookmarkUpdater: {}}"
                      x-init="bookmarkUpdater = new watch.BookmarkUpdater(b);"
                      class="flex">
-                    <button class="relative flex flex-grow items-center shrink-0 justify-between align-middle
-                                rounded-lg border bg-white dark:bg-secondary
-                                disabled:hover:bg-white disabled:dark:hover:bg-secondary
-                                dark:border-gray-800 p-2 hover:bg-gray-200 dark:hover:bg-gray-600"
+                    <button class="relative flex flex-grow items-center shrink-0 justify-between px-2 py-3
+                                rounded-lg
+                                disabled:hover:bg-white disabled:dark:hover:bg-secondary-light
+                                hover:bg-gray-100 dark:hover:bg-gray-600"
                             :class="bookmarks.showEdit && 'rounded-r-none'"
                             :disabled="bookmarks.showEdit"
                             @click="watch.jumpTo(b.hours, b.minutes, b.seconds);">
                         <template x-if="!bookmarkUpdater.show || !bookmarks.showEdit">
                             <span x-text="b.description"
-                                  class="text-3 text-xs text-left overflow-wrap-anywhere max-w-xs lg:max-w-md pr-2 flex-grow"></span>
+                                  class="text-3 font-semibold text-sm text-left overflow-wrap-anywhere max-w-xs lg:max-w-md pr-2 flex-grow"></span>
                         </template>
                         <template x-if="!bookmarkUpdater.show || !bookmarks.showEdit">
                             <span x-text="b.friendlyTimestamp"
@@ -91,8 +86,8 @@
                         <template x-if="bookmarkUpdater.show && bookmarks.showEdit">
                             <form @submit.prevent="bookmarkUpdater.submit()"
                                   @reset.prevent="bookmarkUpdater.reset();"
-                                  class="flex flex-grow text-xs">
-                                <div class="text-left flex-grow mr-2">
+                                  class="grid gap-1 flex-grow text-xs">
+                                <div class="text-left flex-grow">
                                     <label for="bookmark-description"
                                            class="block text-5">Description</label>
                                     <input x-model="bookmarkUpdater.request.Description"
@@ -100,30 +95,34 @@
                                            placeholder="Interesting..." autofocus="" required
                                            class="text-3 rounded px-4 py-3 mt-1 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
                                 </div>
-                                <button type="submit"
-                                        title="Update"
-                                        class="w-fit bg-blue-500 text-center px-3 rounded w-full dark:bg-indigo-600 mr-2">
-                                    <i class="text-white text-sm fa-solid fa-square-check"></i>
-                                </button>
-                                <button type="reset"
-                                        title="Undo changes"
-                                        class="w-fit bg-gray-100 text-center px-3 rounded w-full dark:bg-secondary-light">
-                                    <i class="dark:text-white text-sm fa-solid fa-rotate-left"></i>
-                                </button>
+                                <div class = "flex items-center">
+                                    <button type="submit"
+                                            title="Update"
+                                            class="text-white text-sm bg-blue-500 text-center py-1 rounded w-full dark:bg-indigo-600 mr-2">
+                                        <i class="fa-solid fa-square-check mr-2"></i>
+                                        <span>Update</span>
+                                    </button>
+                                    <button type="reset"
+                                            title="Undo changes"
+                                            class="dark:text-white text-sm bg-gray-100 text-center py-1 rounded w-full dark:bg-secondary-light">
+                                        <i class="fa-solid fa-rotate-left mr-2"></i>
+                                        <span>Undo</span>
+                                    </button>
+                                </div>
                             </form>
                         </template>
                     </button>
                     <template x-if="bookmarks.showEdit">
                         <button @click="bookmarkUpdater.show = !bookmarkUpdater.show"
                                 type="button"
-                                class="text-3 text-xs px-3 border border-l-0 bg-white dark:bg-secondary dark:border-gray-800 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                class="text-3 text-sm h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full my-auto">
                             <i class="fa-solid fa-edit"></i>
                         </button>
                     </template>
                     <template x-if="bookmarks.showEdit">
                         <button type="button"
                                 @click="await bookmarks.delete(b.ID);"
-                                class="text-3 text-xs px-3 border border-l-0 rounded-r-lg bg-white dark:bg-secondary dark:border-gray-800 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                class="text-3 text-sm h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full my-auto">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </template>

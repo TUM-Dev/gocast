@@ -19,9 +19,39 @@
       @keypress.shift.window="(e) => watch.onShift(e)"
       x-init="new watch.Watch(); watch.startWebsocket(); seekLogger.attach();">
 {{template "header" .IndexData.TUMLiveContext}}
-<div id="shortcuts-help-modal" class="hidden flex absolute top-0 h-screen w-screen z-50 backdrop-blur-sm">
+<div id="shortcuts-help-modal" class="hidden flex fixed top-0 h-screen w-screen z-50 backdrop-blur-sm">
     <div class="m-auto" @click.outside="watch.toggleShortcutsModal();">
         {{template "shortcuts"}}
+    </div>
+</div>
+<div id="bookmarks-modal" class="flex fixed top-0 h-screen w-screen z-50 backdrop-brightness-50">
+    <div x-data="{showAddMenu: false}"
+         class="m-auto w-fit h-fit p-3 bg-white border shadow rounded dark:bg-secondary-light dark:border-gray-800">
+        <template x-if="!showAddMenu">
+            <div class="grid gap-2">
+                {{template "bookmark-list" $stream.ID}}
+                <div class="flex items-center justify-end">
+                    <button type="button" title="Open bookmark dialog"
+                            class="text-3 text-sm font-semibold hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full px-2 py-1"
+                            @click="showAddMenu = !showAddMenu">
+                        Add bookmark
+                    </button>
+                </div>
+            </div>
+        </template>
+        <template x-if="showAddMenu">
+            <div>
+                <div class="flex items-center justify-start mb-2">
+                    <button type="button" title="Close bookmark dialog"
+                            class="text-3 text-sm font-semibold hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full px-2 py-1"
+                            @click="showAddMenu = !showAddMenu">
+                        <i class="fa-solid fa-undo mr-2"></i>
+                        <span>Go back</span>
+                    </button>
+                </div>
+                {{template "bookmark-dialog" $stream.ID}}
+            </div>
+        </template>
     </div>
 </div>
 <div id="watchPageMainWrapper" class="lg:px-5 lg:pb-1">
