@@ -154,8 +154,8 @@
 
         <!-- Bookmarks -->
         <div id="bookmarks-modal" x-cloak="" x-show="showBookmarks"
-             :class="showBookmarks ? 'lg:basis-1/4' : 'order-3 lg:basis-0'"
-             class="basis-full h-96 lg:h-16/6 px-2 pt-2">
+             :class="showBookmarks ? 'lg:basis-1/4' : 'lg:basis-0'"
+             class="basis-full h-96 lg:h-16/6 px-2 pt-2 order-3 lg:order-none">
             {{template "bookmarks-modal" $stream.ID}}
         </div>
 

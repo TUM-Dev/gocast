@@ -55,8 +55,8 @@
          x-data="{ bookmarks: new watch.BookmarkList({{.}}) }"
          x-init="await bookmarks.fetch()"
          @reloadbookmarks.window="await bookmarks.fetch()"
-         class="h-[90%]">
-        <div class="relative grid gap-1 overflow-y-scroll max-h-56 lg:max-h-full">
+         class="h-[85%]">
+        <div class="relative grid gap-1 overflow-y-scroll pr-3 max-h-full">
             <template x-for="(b, i) in bookmarks.get()" :key="b.ID">
                 <div x-data="{bookmarkUpdater: {}}"
                      x-init="bookmarkUpdater = new watch.BookmarkUpdater(b);"
