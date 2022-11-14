@@ -3,38 +3,6 @@ import { NewChatMessage } from "./chat/NewChatMessage";
 import { getPlayers } from "./TUMLiveVjs";
 import { Realtime } from "./socket";
 
-export class Watch {
-    private readonly player: HTMLElement;
-    private chat: HTMLElement;
-
-    constructor() {
-        this.player = document.getElementById("watchContent");
-        this.chat = document.getElementById("chat-box");
-        this.attachListener();
-        this.resizeChat();
-    }
-
-    private attachListener() {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        const that = this;
-        window.addEventListener("resize", function () {
-            that.resizeChat();
-        });
-    }
-
-    private resizeChat() {
-        if (this.chat == null || this.player == null) {
-            return;
-        }
-        /* :md breakpoint */
-        if (window.innerWidth > 768) {
-            this.chat.style.height = `${this.player.getBoundingClientRect().height}px`;
-        } else {
-            this.chat.style.height = "640px";
-        }
-    }
-}
-
 let currentChatChannel = "";
 const retryInt = 5000; //retry connecting to websocket after this timeout
 
@@ -95,13 +63,6 @@ export async function startWebsocket() {
             } else {
                 // stream end, show message
                 window.dispatchEvent(new CustomEvent("streamended"));
-            }
-        } else if ("paused" in data) {
-            const paused: boolean = data["paused"];
-            if (paused) {
-                //window.dispatchEvent(new CustomEvent("pausestart"))
-            } else {
-                window.dispatchEvent(new CustomEvent("pauseend"));
             }
         } else if ("server" in data) {
             const scroll = shouldScroll();

@@ -13,13 +13,13 @@
     {{end}}
     <div x-cloak
          x-data="watch.initChat({{.IsAdminOfCourse}}, {{$stream.ID}}, '{{$startTime}}', '{{$liveNowTimestamp}}', {{$userId}}, '{{$userName}}', {{not (or $isComingUp $liveNow .IsPopUp)}});"
-         x-init="await Promise.all([c.loadMessages(), c.poll.load()]); $nextTick(() => { watch.scrollToBottom(); window.dispatchEvent(new CustomEvent('chatinitialized')); })"
+         x-init="await Promise.all([c.loadMessages(), c.poll.load()]); $nextTick(() => { watch.scrollToBottom(); window.dispatchEvent(new CustomEvent('chatinitialized')); });"
          x-on:chatmessage.window="e => c.onMessage(e);"
          x-on:chatreply.window="e => c.onReply(e);"
          x-on:chatlike.window="e => {c.onLike(e); $dispatch('reorder')}"
          x-on:chatdelete.window="e => c.onDelete(e);"
          x-on:chatresolve.window="e => c.onResolve(e);"
-         x-on:chatapprove.window="await c.loadMessages(); $nextTick(() => { watch.scrollToBottom() })"
+         x-on:chatapprove.window="e => { c.patchMessage(e.detail.chat); $nextTick(() => { watch.scrollToBottom() }); }"
          x-on:chatnewpoll.window="e => c.onNewPoll(e);"
          x-on:polloptionvotesupdate.window="e => c.onPollOptionVotesUpdate(e);"
          x-on:polloptionresult.window="e => c.onPollOptionResult(e);"
@@ -215,7 +215,7 @@
 
         <!-- Messages -->
         <div id="chatBox"
-             class="grid gap-y-8 content-start h-full w-full overflow-y-scroll overflow-x-hidden px-4 py-2 z-30">
+             class="grid gap-y-8 content-start h-full w-full overflow-y-scroll overflow-x-hidden px-4 pt-2 pb-5 z-30">
             {{template "messageTemplate" .}}
         </div>
 
