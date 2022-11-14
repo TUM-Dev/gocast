@@ -23,6 +23,7 @@ type ChatDao interface {
 	GetPollOptionVoteCount(pollOptionId uint) (int64, error)
 
 	ApproveChat(id uint) error
+	RetractChat(id uint) error
 	DeleteChat(id uint) error
 	ResolveChat(id uint) error
 	ToggleLike(userID uint, chatID uint) error
@@ -147,6 +148,11 @@ func (d chatDao) GetPollOptionVoteCount(pollOptionId uint) (int64, error) {
 // ApproveChat sets the attribute 'visible' to true
 func (d chatDao) ApproveChat(id uint) error {
 	return DB.Model(&model.Chat{}).Where("id = ?", id).Updates(map[string]interface{}{"visible": true}).Error
+}
+
+// RetractChat sets the attribute 'visible' to false
+func (d chatDao) RetractChat(id uint) error {
+	return DB.Model(&model.Chat{}).Where("id = ?", id).Updates(map[string]interface{}{"visible": false}).Error
 }
 
 // DeleteChat removes a chat with the given id from the database.

@@ -87,11 +87,19 @@
                                 <span class="text-4 font-light">Delete</span>
                             </button>
                             {{if $moderatedChat}}
-                                <button @click="watch.approveMessage(m.ID)"
+                                <button x-cloak x-show="!m.visible"
+                                        @click="watch.approveMessage(m.ID)"
                                         title="Approve Message"
                                         class="flex items-center w-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
                                     <i class="fa-solid fa-spell-check mr-2"></i>
                                     <span class="text-4 font-light">Approve</span>
+                                </button>
+                                <button x-cloak x-show="m.visible"
+                                        @click="watch.retractMessage(m.ID)"
+                                        title="Retract Message"
+                                        class="flex items-center w-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                    <i class="fa-solid fa-rotate-left mr-2"></i>
+                                    <span class="text-4 font-light">Retract</span>
                                 </button>
                             {{end}}
                             <template x-if="!m.resolved">

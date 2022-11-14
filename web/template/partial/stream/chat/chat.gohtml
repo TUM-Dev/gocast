@@ -20,6 +20,7 @@
          x-on:chatdelete.window="e => c.onDelete(e);"
          x-on:chatresolve.window="e => c.onResolve(e);"
          x-on:chatapprove.window="e => { c.patchMessage(e.detail.chat); $nextTick(() => { watch.scrollToBottom() }); }"
+         x-on:chatretract.window="e => { c.patchMessage(e.detail.chat); $nextTick(() => { watch.scrollToBottom() }); }"
          x-on:chatnewpoll.window="e => c.onNewPoll(e);"
          x-on:polloptionvotesupdate.window="e => c.onPollOptionVotesUpdate(e);"
          x-on:polloptionresult.window="e => c.onPollOptionResult(e);"

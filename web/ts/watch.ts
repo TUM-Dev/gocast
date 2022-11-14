@@ -17,6 +17,7 @@ enum WSMessageType {
     SubmitPollOptionVote = "submit_poll_option_vote",
     CloseActivePoll = "close_active_poll",
     Approve = "approve",
+    Retract = "retract",
     Resolve = "resolve",
 }
 
@@ -36,6 +37,8 @@ export const deleteMessage = (id: number) => sendIDMessage(id, WSMessageType.Del
 export const resolveMessage = (id: number) => sendIDMessage(id, WSMessageType.Resolve);
 
 export const approveMessage = (id: number) => sendIDMessage(id, WSMessageType.Approve);
+
+export const retractMessage = (id: number) => sendIDMessage(id, WSMessageType.Retract);
 
 export function initChatScrollListener() {
     const chatBox = document.getElementById("chatBox") as HTMLDivElement;
@@ -111,6 +114,9 @@ export async function startWebsocket() {
             window.dispatchEvent(event);
         } else if ("approve" in data) {
             const event = new CustomEvent("chatapprove", { detail: data });
+            window.dispatchEvent(event);
+        } else if ("retract" in data) {
+            const event = new CustomEvent("chatretract", { detail: data });
             window.dispatchEvent(event);
         } else if ("title" in data) {
             const event = new CustomEvent("titleupdate", { detail: data });
