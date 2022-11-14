@@ -45,7 +45,6 @@ type Stream struct {
 	Silences              []Silence
 	Files                 []File `gorm:"foreignKey:StreamID"`
 	ThumbInterval         uint32 `gorm:"default:null"`
-	Paused                bool   `gorm:"default:false"`
 	StreamName            string
 	Duration              uint32           `gorm:"default:null"`
 	StreamWorkers         []Worker         `gorm:"many2many:stream_workers;"`

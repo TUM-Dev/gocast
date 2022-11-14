@@ -23,9 +23,9 @@ func getDefaultBranding() Branding {
 	}
 }
 
-// init initializes the global branding configuration variable `BrandingCfg`. If the config file doesn't exist
+// InitBranding initializes the global branding configuration variable `BrandingCfg`. If the config file doesn't exist
 // it will be set to the result of `getDefaultBranding()`.
-func init() {
+func InitBranding() {
 	v := viper.New()
 	v.SetConfigName("branding")
 	v.SetConfigType("yaml")

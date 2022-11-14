@@ -7,9 +7,9 @@ require (
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
 	github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769
 	github.com/antchfx/xmlquery v1.3.12
-	github.com/dgraph-io/ristretto v0.1.0
+	github.com/dgraph-io/ristretto v0.1.1
 	github.com/gabstv/melody v1.0.2
-	github.com/getsentry/sentry-go v0.13.0
+	github.com/getsentry/sentry-go v0.14.0
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
@@ -21,19 +21,19 @@ require (
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/jinzhu/now v1.1.5
 	// todo: handle breaking changes in bluemomday.
-	github.com/microcosm-cc/bluemonday v1.0.18
-	github.com/pkg/profile v1.6.0
+	github.com/microcosm-cc/bluemonday v1.0.21
+	github.com/pkg/profile v1.7.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/viper v1.13.0
-	golang.org/x/crypto v0.0.0-20220926161630-eccd6366d1be
-	google.golang.org/genproto v0.0.0-20220930163606-c98284e70a91 // indirect
-	google.golang.org/grpc v1.49.0
+	golang.org/x/crypto v0.1.0
+	google.golang.org/genproto v0.0.0-20221027153422-115e99e71e1c // indirect
+	google.golang.org/grpc v1.50.1
 	google.golang.org/protobuf v1.28.1
-	gorm.io/driver/mysql v1.3.6
-	gorm.io/gorm v1.23.10
+	gorm.io/driver/mysql v1.4.3
+	gorm.io/gorm v1.24.0
 	mvdan.cc/xurls/v2 v2.4.0
 )
 
@@ -43,12 +43,22 @@ require (
 	github.com/crewjam/saml v0.4.8
 	github.com/golang/mock v1.6.0
 	github.com/icholy/digest v0.1.15
-	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20220930105547-bac0fcda9958
-	github.com/stretchr/testify v1.8.0
+	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20221031074145-0e87c56626e8
+	github.com/stretchr/testify v1.8.1
 	github.com/u2takey/go-utils v0.3.1
 )
 
-require github.com/matthiasreumann/gomino v0.0.2
+require (
+	github.com/TUM-Dev/CampusProxy/client v0.0.0-20220928080722-4bd1259b2d06
+	github.com/matthiasreumann/gomino v0.0.2
+)
+
+require (
+	github.com/felixge/fgprof v0.9.3 // indirect
+	github.com/google/pprof v0.0.0-20221010195024-131d412537ea // indirect
+	golang.org/x/oauth2 v0.1.0 // indirect
+	google.golang.org/appengine v1.6.7 // indirect
+)
 
 require (
 	// this version works - newer commits may have breaking changes
@@ -63,7 +73,7 @@ require (
 	github.com/crewjam/httperr v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
-	github.com/fsnotify/fsnotify v1.5.4 // indirect
+	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
@@ -74,7 +84,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/huandu/xstrings v1.3.2 // indirect
+	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jonboulle/clockwork v0.3.0 // indirect
@@ -102,9 +112,9 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
-	golang.org/x/net v0.0.0-20221002022538-bcab6841153b // indirect
-	golang.org/x/sys v0.0.0-20220928140112-f11e5e49a4ec // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/net v0.1.0 // indirect
+	golang.org/x/sys v0.1.0 // indirect
+	golang.org/x/text v0.4.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
