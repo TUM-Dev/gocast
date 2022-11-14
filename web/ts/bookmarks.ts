@@ -5,11 +5,9 @@ export class BookmarkList {
     private readonly streamId: number;
 
     private list: Bookmark[];
-    showEdit: boolean;
 
     constructor(streamId: number) {
         this.streamId = streamId;
-        this.showEdit = false;
     }
 
     get(): Bookmark[] {
@@ -74,9 +72,9 @@ export class BookmarkUpdater {
     }
 
     reset() {
+        this.show = false;
         this.request = new UpdateBookmarkRequest();
         this.request.Description = this.bookmark.description;
-        this.show = false;
     }
 }
 

@@ -5,7 +5,7 @@
           class="">
         <div class="relative grid gap-5 md:gap-2 text-sm">
             <template x-if="bookmark.showSuccess">
-                <div class="flex absolute w-full h-full bg-white dark:bg-secondary-light rounded-lg">
+                <div class="flex absolute w-full h-full bg-white dark:bg-secondary-light">
                     <div class="grid gap-2 text-4 m-auto">
                         <span class="fa-regular fa-check-circle text-3xl mx-auto"></span>
                         <span>Added bookmark successfully</span>
@@ -55,35 +55,41 @@
          x-data="{ bookmarks: new watch.BookmarkList({{.}}) }"
          x-init="await bookmarks.fetch()"
          @reloadbookmarks.window="await bookmarks.fetch()"
-         class="">
-        <div class="flex justify-end items-center mb-3">
-            <button class="flex items-center justify-center text-4 rounded-full h-8 w-8 hover:bg-gray-200 dark:hover:bg-gray-600"
-                    type="button" @click="bookmarks.showEdit = !bookmarks.showEdit">
-                <i class="fa-solid fa-pen"></i>
-            </button>
-        </div>
+         class="h-[90%]">
         <div class="relative grid gap-1 overflow-y-scroll max-h-56 lg:max-h-full">
             <template x-for="(b, i) in bookmarks.get()" :key="b.ID">
                 <div x-data="{bookmarkUpdater: {}}"
                      x-init="bookmarkUpdater = new watch.BookmarkUpdater(b);"
                      class="flex">
-                    <button class="relative flex flex-grow items-center shrink-0 justify-between px-2 py-3
-                                rounded-lg
+                    <button class="relative group flex flex-grow items-center shrink-0 justify-between px-4 py-3
                                 disabled:hover:bg-white disabled:dark:hover:bg-secondary-light
                                 hover:bg-gray-100 dark:hover:bg-gray-600"
-                            :class="bookmarks.showEdit && 'rounded-r-none'"
-                            :disabled="bookmarks.showEdit"
+                            :class="bookmarkUpdater.show && 'rounded-r-none'"
+                            :disabled="bookmarkUpdater.show"
                             @click="watch.jumpTo(b.hours, b.minutes, b.seconds);">
-                        <template x-if="!bookmarkUpdater.show || !bookmarks.showEdit">
-                            <span x-text="b.description"
-                                  class="text-3 font-semibold text-sm text-left overflow-wrap-anywhere max-w-xs lg:max-w-md pr-2 flex-grow"></span>
+                        <template x-if="!bookmarkUpdater.show">
+                            <div class="flex items-center justify-between flex-grow">
+                                <div>
+                                    <p x-text="b.description"
+                                       class="text-3 font-semibold text-sm text-left overflow-wrap-anywhere mb-2"></p>
+                                    <p x-text="b.friendlyTimestamp"
+                                       class="text-xs w-fit text-sky-800 bg-sky-200 dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded"></p>
+                                </div>
+                                <div>
+                                    <button @click="bookmarkUpdater.show = !bookmarkUpdater.show"
+                                            type="button"
+                                            class="hidden group-hover:inline text-3 text-sm h-8 w-8 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <button type="button"
+                                            @click="await bookmarks.delete(b.ID);"
+                                            class="hidden group-hover:inline text-3 text-sm h-8 w-8 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </template>
-                        <template x-if="!bookmarkUpdater.show || !bookmarks.showEdit">
-                            <span x-text="b.friendlyTimestamp"
-                                  class="text-sky-800 bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded">
-                        </span>
-                        </template>
-                        <template x-if="bookmarkUpdater.show && bookmarks.showEdit">
+                        <template x-if="bookmarkUpdater.show">
                             <form @submit.prevent="bookmarkUpdater.submit()"
                                   @reset.prevent="bookmarkUpdater.reset();"
                                   class="grid gap-1 flex-grow text-xs">
@@ -95,7 +101,7 @@
                                            placeholder="Interesting..." autofocus="" required
                                            class="text-3 rounded px-4 py-3 mt-1 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
                                 </div>
-                                <div class = "flex items-center">
+                                <div class="flex items-center">
                                     <button type="submit"
                                             title="Update"
                                             class="text-white text-sm bg-blue-500 text-center py-1 rounded w-full dark:bg-indigo-600 mr-2">
@@ -112,20 +118,6 @@
                             </form>
                         </template>
                     </button>
-                    <template x-if="bookmarks.showEdit">
-                        <button @click="bookmarkUpdater.show = !bookmarkUpdater.show"
-                                type="button"
-                                class="text-3 text-sm h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full my-auto">
-                            <i class="fa-solid fa-edit"></i>
-                        </button>
-                    </template>
-                    <template x-if="bookmarks.showEdit">
-                        <button type="button"
-                                @click="await bookmarks.delete(b.ID);"
-                                class="text-3 text-sm h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full my-auto">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </template>
                 </div>
             </template>
         </div>
