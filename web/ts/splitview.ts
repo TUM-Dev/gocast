@@ -1,4 +1,5 @@
 import { getPlayers } from "./TUMLiveVjs";
+import Split from "split.js";
 
 export class SplitView {
     private camPercentage: number;
@@ -22,6 +23,11 @@ export class SplitView {
         this.showSplitMenu = false;
         this.players = getPlayers();
         this.updateState();
+
+        // Setup splitview
+        Split(["#video-pres-wrapper", "#video-cam-wrapper"], {
+            sizes: [100 - this.widthCam, this.widthCam],
+        });
     }
 
     updateState() {

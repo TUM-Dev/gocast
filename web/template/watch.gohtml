@@ -50,7 +50,7 @@
                     <i class="fas fa-info-circle"></i> This livestream has ended.
                 </div>
                 {{if (eq .Version "SPLIT")}}
-                    <div x-data="{splitView: new watch.SplitView()}" @mouseleave="splitView.hideMenu()" class="group relative flex">
+                    <div x-data="{splitView: new watch.SplitView()}" @mouseleave="splitView.hideMenu()" class="group relative flex w-full h-full">
                         <div class="hidden group-hover:flex absolute left-1 top-1 z-40">
                             <button x-cloak x-show="!splitView.showSplitMenu" @click="splitView.toggleMenu()"
                                     class="flex items-center justify-center w-8 h-8 rounded-full"
@@ -97,10 +97,10 @@
                             </div>
                         </div>
                         {{/* presentation player */}}
-                        <div :style="`width: ${splitView.widthPres}%;`">
+                        <div :style="`width: ${splitView.widthPres}%;`" id="video-pres-wrapper">
                             <video-js
-                                    id="my-video-pres"
-                                    class="video-js w-full vjs-theater-mode theater-mode"
+                                    id="video-pres"
+                                    class="video-js h-full w-full"
                                     controls
                                     preload="auto"
                                     x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu)"
@@ -121,10 +121,10 @@
                         </div>
 
                         {{/* camera player */}}
-                        <div :style="`width: ${splitView.widthCam}%;`">
+                        <div :style="`width: ${splitView.widthCam}%;`" id="video-cam-wrapper">
                             <video-js
-                                    id="my-video-cam"
-                                    class="video-js w-full vjs-theater-mode theater-mode"
+                                    id="video-cam"
+                                    class="video-js h-full w-full"
                                     controls
                                     preload="auto"
                                     x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu)"
@@ -146,8 +146,8 @@
                     </div>
                 {{else}}
                     <video-js
-                            id="my-video"
-                            class="video-js w-full vjs-theater-mode theater-mode"
+                            id="video-comb"
+                            class="video-js w-full h-full"
                             controls
                             preload="auto"
                             x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu)"
@@ -454,12 +454,12 @@
     {{if (eq .Version "SPLIT")}}
 
     {{if $stream.Recording}}
-    watch.initPlayer("my-video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
-    watch.initPlayer("my-video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
     watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
     {{else}}
-    watch.initPlayer("my-video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
-    watch.initPlayer("my-video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
+    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
+    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
     {{end}}
 
     watch.syncPlayers();
@@ -467,10 +467,10 @@
     {{else}}
 
     {{if $stream.Recording}}
-    watch.initPlayer("my-video", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
     watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
     {{else}}
-    watch.initPlayer("my-video", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
+    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
     {{end}}
 
     {{end}}

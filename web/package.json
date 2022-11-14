@@ -44,6 +44,7 @@
     "mini-css-extract-plugin": "^2.6.1",
     "moment": "^2.29.4",
     "nouislider": "^15.6.1",
+    "split.js": "^1.6.5",
     "video.js": "^7.20.3",
     "videojs-contrib-quality-levels": "^2.2.0",
     "videojs-seek-buttons": "^3.0.1",

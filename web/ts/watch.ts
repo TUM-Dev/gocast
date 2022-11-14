@@ -209,7 +209,7 @@ export function getPollOptionWidth(pollOptions, pollOption) {
 export function contextMenuHandler(e, contextMenu) {
     if (contextMenu.shown) return contextMenu;
     e.preventDefault();
-    const videoElem = document.querySelector("#my-video");
+    const videoElem = document.querySelector("#video-comb");
     return {
         shown: true,
         locX: e.clientX - videoElem.getBoundingClientRect().left,

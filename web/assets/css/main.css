@@ -167,6 +167,19 @@
     border-color: white !important;
 }
 
+/* split.js styling */
+.gutter {
+    background-color: #eee;
+
+    background-repeat: no-repeat;
+    background-position: 50%;
+    width: 2px!important;
+}
+
+.gutter.gutter-horizontal {
+    cursor: col-resize;
+}
+
 /* slider for cutting videos: */
 .noUi-target {
     background: #1f2937 !important;
