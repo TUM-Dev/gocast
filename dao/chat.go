@@ -27,6 +27,7 @@ type ChatDao interface {
 	DeleteChat(id uint) error
 	ResolveChat(id uint) error
 	ToggleLike(userID uint, chatID uint) error
+	RemoveLikes(chatID uint) error
 
 	CloseActivePoll(streamID uint) error
 
@@ -176,6 +177,10 @@ func (d chatDao) ToggleLike(userID uint, chatID uint) error {
 		return DB.Exec("DELETE FROM chat_user_likes WHERE user_id = ? AND chat_id = ?", userID, chatID).Error
 	}
 	return err // some other error
+}
+
+func (d chatDao) RemoveLikes(chatID uint) error {
+	return DB.Exec("DELETE FROM chat_user_likes WHERE chat_id = ?", chatID).Error
 }
 
 // CloseActivePoll closes poll for the stream with the given ID.
