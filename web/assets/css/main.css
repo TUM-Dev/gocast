@@ -169,7 +169,7 @@
 
 /* split.js styling */
 .gutter {
-    background-color: #eee;
+    @apply bg-gray-200 dark:bg-gray-600;
 
     background-repeat: no-repeat;
     background-position: 50%;

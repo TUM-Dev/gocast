@@ -4,11 +4,9 @@ import Split from "split.js";
 export class SplitView {
     private camPercentage: number;
     private players: any[];
+    private split: Split.Instance;
 
     showSplitMenu: boolean;
-
-    widthPres: number;
-    widthCam: number;
 
     static Options = {
         FullPresentation: 0,
@@ -22,33 +20,23 @@ export class SplitView {
         this.camPercentage = SplitView.Options.SplitEvenly;
         this.showSplitMenu = false;
         this.players = getPlayers();
-        this.updateState();
+        this.toggleControlBars(this.camPercentage);
 
         // Setup splitview
-        Split(["#video-pres-wrapper", "#video-cam-wrapper"], {
-            sizes: [100 - this.widthCam, this.widthCam],
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const that = this;
+        this.split = Split(["#video-pres-wrapper", "#video-cam-wrapper"], {
+            sizes: this.getSizes(),
+            onDragEnd: function (sizes: number[]) {
+                that.toggleControlBars(sizes[1]);
+            },
         });
-    }
-
-    updateState() {
-        this.widthCam = this.camPercentage;
-        this.widthPres = 100 - this.widthCam;
-
-        let i = 0,
-            j = 1;
-        if (
-            this.camPercentage === SplitView.Options.FullCamera ||
-            this.camPercentage === SplitView.Options.FocusCamera
-        ) {
-            (i = 1), (j = 0);
-        }
-        this.players[j].controlBar.hide();
-        this.players[i].controlBar.show();
     }
 
     update(percentage: number) {
         this.camPercentage = percentage;
-        this.updateState();
+        this.split.setSizes(this.getSizes());
+        this.toggleControlBars(this.camPercentage);
     }
 
     hideMenu() {
@@ -57,5 +45,19 @@ export class SplitView {
 
     toggleMenu() {
         this.showSplitMenu = !this.showSplitMenu;
+    }
+
+    private getSizes(): number[] {
+        return [100 - this.camPercentage, this.camPercentage];
+    }
+
+    private toggleControlBars(camPercentage: number) {
+        let i = 0,
+            j = 1;
+        if (camPercentage > 50) {
+            (i = 1), (j = 0);
+        }
+        this.players[j].controlBar.hide();
+        this.players[i].controlBar.show();
     }
 }

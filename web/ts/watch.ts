@@ -206,10 +206,9 @@ export function getPollOptionWidth(pollOptions, pollOption) {
     return `${Math.ceil(fractionWidth).toString()}%`;
 }
 
-export function contextMenuHandler(e, contextMenu) {
+export function contextMenuHandler(e, contextMenu, videoElem) {
     if (contextMenu.shown) return contextMenu;
     e.preventDefault();
-    const videoElem = document.querySelector("#video-comb");
     return {
         shown: true,
         locX: e.clientX - videoElem.getBoundingClientRect().left,
