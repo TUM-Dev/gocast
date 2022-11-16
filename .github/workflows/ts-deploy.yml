@@ -9,7 +9,7 @@ jobs:
       - name: test
         run: |
           echo A comment on PR $NUMBER
-          env:
+        env:
           NUMBER: ${{ github.event.issue.number }}
   build:
     if: ${{ github.event.type == 'PullRequest' }}
