@@ -94,7 +94,7 @@
                                     <i class="fa-solid fa-spell-check mr-2"></i>
                                     <span class="text-4 font-light">Approve</span>
                                 </button>
-                                <button x-cloak x-show="m.visible"
+                                <button x-cloak x-show="m.visible && !m.admin"
                                         @click="watch.retractMessage(m.ID)"
                                         title="Retract Message"
                                         class="flex items-center w-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
