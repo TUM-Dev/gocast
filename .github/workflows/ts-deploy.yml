@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: test
-        run: echo ${{ github.event_name }}
+        run: echo ${{ github.event.base_ref }}
   build:
     if: ${{ github.event.type == 'PullRequest' }}
     runs-on: ubuntu-latest
