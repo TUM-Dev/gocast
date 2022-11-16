@@ -1,12 +1,10 @@
 name: Deploy to Test Server
 
-on:
-  pull_request:
-    types: [ labeled ]
+on: [push, pull_request]
 
 jobs:
   build:
-    if: ${{ github.event.label.name == 'testserver' }}
+    if: ${{ github.event.type == 'PullRequest' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -70,7 +68,7 @@ jobs:
           labels: ${{ steps.metaWorker.outputs.labels }}
       - name: Pull new Container
         run: |
-          curl -H "Authorization: Bearer ${{ secrets.watchtowertoken }}" https://test.live.mm.rbg.tum.de/watchtower/v1/update
+          echo ${{ steps.meta.outputs.tags }} && echo ${{ github.event.number }}
       - name: remove label
         uses: actions-ecosystem/action-remove-labels@v1
         with:
