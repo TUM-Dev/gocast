@@ -1,18 +1,10 @@
 name: Deploy to Test Server
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: test
-        run: |
-          echo A comment on PR $NUMBER
-        env:
-          NUMBER: ${{ github.event.issue.number }}
   build:
-    if: ${{ github.event.type == 'PullRequest' }}
+    if: ${{ github.event.issue.pull_request }}
     runs-on: ubuntu-latest
 
     steps:
