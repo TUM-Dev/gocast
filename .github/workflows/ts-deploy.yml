@@ -74,8 +74,4 @@ jobs:
           labels: ${{ steps.metaWorker.outputs.labels }}
       - name: Pull new Container
         run: |
-          echo ${{ steps.meta.outputs.tags }} && echo ${{ github.event.number }}
-      - name: remove label
-        uses: actions-ecosystem/action-remove-labels@v1
-        with:
-          labels: testserver
+          echo "${{ steps.meta.outputs.tags }}" && echo "${{ github.event.number }}"
