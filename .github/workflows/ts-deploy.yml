@@ -3,6 +3,8 @@ name: Deploy to Test Server
 on: [push, pull_request]
 
 jobs:
+  test:
+    run: ${{ github.event.type }}
   build:
     if: ${{ github.event.type == 'PullRequest' }}
     runs-on: ubuntu-latest
