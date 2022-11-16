@@ -8,8 +8,9 @@ jobs:
 
     steps:
       - name: test
-        run: | 
-          echo "$GITHUB_CONTEXT"
+        env:
+          CONTEXT: ${{ toJson(github) }}
+        run: echo "$CONTEXT"
       - uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
