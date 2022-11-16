@@ -8,8 +8,8 @@
     {{$userName := ""}}
     {{$userId := 0}}
     {{if .IndexData.TUMLiveContext.User}}
-        {{$userName := .IndexData.TUMLiveContext.User.Name}}
-        {{$userId := .IndexData.TUMLiveContext.User.ID}}
+        {{$userName = .IndexData.TUMLiveContext.User.Name}}
+        {{$userId = .IndexData.TUMLiveContext.User.ID}}
     {{end}}
     <div x-cloak
          x-data="watch.initChat({{.IsAdminOfCourse}}, {{$stream.ID}}, '{{$startTime}}', '{{$liveNowTimestamp}}', {{$userId}}, '{{$userName}}', {{not (or $isComingUp $liveNow .IsPopUp)}});"
