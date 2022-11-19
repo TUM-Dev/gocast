@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/stats"
@@ -25,7 +24,7 @@ type statExportReq struct {
 func (r coursesRoutes) getStats(c *gin.Context) {
 	ctx, _ := c.Get("TUMLiveContext")
 
-	from := time.Now().AddDate(-5, 0, 0)
+	from := time.Now().AddDate(-1, 0, 0)
 	to := time.Now()
 
 	var req statReq
@@ -210,6 +209,9 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 func (r coursesRoutes) exportStats(c *gin.Context) {
 	ctx, _ := c.Get("TUMLiveContext")
 
+	from := time.Now().AddDate(-1, 0, 0)
+	to := time.Now()
+
 	var req statExportReq
 	if err := c.ShouldBindQuery(&req); err != nil {
 		_ = c.Error(tools.RequestError{
@@ -251,7 +253,7 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 		switch interval {
 		case "week":
 		case "day":
-			res, err := r.StatisticsDao.GetCourseStatsWeekdays(cid)
+			statsData, err := stats.Client.GetCourseStatsWeekday(cid, from, to)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsWeekdays failed")
 			}
@@ -259,11 +261,11 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 				Name:  interval,
 				XName: "Weekday",
 				YName: "Sum(viewers)",
-				Data:  res,
+				Data:  statsData.Entries,
 			})
 
 		case "hour":
-			res, err := r.StatisticsDao.GetCourseStatsHourly(cid)
+			statsData, err := stats.Client.GetCourseStatsHourly(cid, from, to)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsHourly failed")
 			}
@@ -271,11 +273,11 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 				Name:  interval,
 				XName: "Hour",
 				YName: "Sum(viewers)",
-				Data:  res,
+				Data:  statsData.Entries,
 			})
 
 		case "activity-live":
-			resLive, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, true)
+			statsData, err := stats.Client.GetStudentLiveActivityCourseStats(cid, from, to)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetStudentActivityCourseStats failed")
 			}
@@ -283,11 +285,11 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 				Name:  interval,
 				XName: "Week",
 				YName: "Live",
-				Data:  resLive,
+				Data:  statsData.Entries,
 			})
 
 		case "activity-vod":
-			resVod, err := r.StatisticsDao.GetStudentActivityCourseStats(cid, false)
+			statsData, err := stats.Client.GetStudentVODActivityCourseStats(cid, from, to)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetStudentActivityCourseStats failed")
 			}
@@ -295,11 +297,11 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 				Name:  interval,
 				XName: "Week",
 				YName: "VoD",
-				Data:  resVod,
+				Data:  statsData.Entries,
 			})
 
 		case "allDays":
-			res, err := r.StatisticsDao.GetCourseNumVodViewsPerDay(cid)
+			statsData, err := stats.Client.GetStudentVODPerDay(cid, from, to)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumVodViewsPerDay failed")
 			}
@@ -307,31 +309,31 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 				Name:  interval,
 				XName: "Week",
 				YName: "VoD",
-				Data:  res,
+				Data:  statsData.Entries,
 			})
 
 		case "quickStats":
-			var quickStats []dao.Stat
+			var quickStats []stats.ChartDataEntry
 
 			numStudents, err := r.StatisticsDao.GetCourseNumStudents(cid)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumStudents failed")
 			} else {
-				quickStats = append(quickStats, dao.Stat{X: "Enrolled Students", Y: int(numStudents)})
+				quickStats = append(quickStats, stats.ChartDataEntry{X: "Enrolled Students", Y: int(numStudents)})
 			}
 
-			vodViews, err := r.StatisticsDao.GetCourseNumVodViews(cid)
+			vodViews, err := stats.Client.GetCourseNumVodViews(cid, from, to)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumVodViews failed")
 			} else {
-				quickStats = append(quickStats, dao.Stat{X: "Vod Views", Y: int(vodViews)})
+				quickStats = append(quickStats, stats.ChartDataEntry{X: "Vod Views", Y: int(vodViews)})
 			}
 
-			liveViews, err := r.StatisticsDao.GetCourseNumLiveViews(cid)
+			liveViews, err := stats.Client.GetCourseNumLiveViews(cid, from, to)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
 			} else {
-				quickStats = append(quickStats, dao.Stat{X: "Live Views", Y: int(liveViews)})
+				quickStats = append(quickStats, stats.ChartDataEntry{X: "Live Views", Y: int(liveViews)})
 			}
 			result = result.AddDataEntry(&tools.ExportDataEntry{
 				Name:  interval,
