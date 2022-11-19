@@ -4,6 +4,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools/stats"
 	"github.com/microcosm-cc/bluemonday"
 	log "github.com/sirupsen/logrus"
 	"strings"
@@ -144,7 +145,7 @@ func hasPrio(streamID uint, statsDao dao.StatisticsDao) bool {
 		}
 	}
 
-	liveViewers, err := statsDao.GetStreamNumLiveViews(streamID)
+	liveViewers, err := stats.Client.GetStreamNumLiveViews(streamID, time.Now().Add(-12*time.Hour), time.Now())
 	if err != nil {
 		sentry.CaptureException(err)
 		log.WithError(err).Error("Failed to get current live viewers")

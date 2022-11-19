@@ -52,6 +52,24 @@ func (s *Stats) AddStreamVODStat(courseId string, streamId string) {
 	s.liveStats.Flush()
 }
 
+// GetStreamNumLiveViews returns the latest data of live viewers
+func (s *Stats) GetStreamNumLiveViews(streamId uint, from time.Time, to time.Time) (int, error) {
+	query := fmt.Sprintf(`from(bucket: "live_stats")
+	|> range(start: %d, stop: %d)
+	|> filter(fn: (r) => r.stream == "%d" and r.live == "true") 
+    |> group()
+	|> keep(columns: ["_value"])
+	|> last()`, from.Unix(), to.Unix(), streamId)
+
+	if res, err := s.query.Query(context.Background(), query); err != nil {
+		return 0, err
+	} else if hasRecord := res.Next(); !hasRecord {
+		return 0, nil
+	} else {
+		return parseValueInt(res.Record().Value(), 0), nil
+	}
+}
+
 // GetCourseNumVodViews returns the sum of vod views of a course
 func (s *Stats) GetCourseNumVodViews(courseID uint, from time.Time, to time.Time) (int, error) {
 	query := fmt.Sprintf(`from(bucket: "live_stats")

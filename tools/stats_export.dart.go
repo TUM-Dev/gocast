@@ -2,7 +2,7 @@ package tools
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/tools/stats"
 	"strconv"
 	"strings"
 )
@@ -11,7 +11,7 @@ type ExportDataEntry struct {
 	Name  string
 	XName string
 	YName string
-	Data  []dao.Stat
+	Data  []stats.ChartDataEntry
 }
 
 type ExportStatsContainer struct {
