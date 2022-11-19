@@ -5,7 +5,9 @@ import (
 	"fmt"
 	influxdb2 "github.com/influxdata/influxdb-client-go"
 	"github.com/influxdata/influxdb-client-go/api"
+	"github.com/influxdata/influxdb-client-go/api/query"
 	"github.com/joschahenningsen/TUM-Live/model"
+	"strconv"
 	"time"
 )
 
@@ -57,8 +59,10 @@ func (s *Stats) GetCourseNumVodViews(courseID uint, from time.Time, to time.Time
 
 	if res, err := s.query.Query(context.Background(), query); err != nil {
 		return 0, err
+	} else if hasRecord := res.Next(); !hasRecord {
+		return 0, nil
 	} else {
-		return parseValue(res.Record().Value(), 0), nil
+		return parseValueInt(res.Record(), 0), nil
 	}
 }
 
@@ -74,8 +78,10 @@ func (s *Stats) GetCourseNumLiveViews(courseID uint, from time.Time, to time.Tim
 
 	if res, err := s.query.Query(context.Background(), query); err != nil {
 		return 0, err
+	} else if hasRecord := res.Next(); !hasRecord {
+		return 0, nil
 	} else {
-		return parseValue(res.Record().Value(), 0), nil
+		return parseValueInt(res.Record(), 0), nil
 	}
 }
 
@@ -119,7 +125,7 @@ func (s *Stats) GetStudentLiveActivityCourseStats(courseID uint, from time.Time,
 	for queryResult.Next() {
 		res.Entries = append(res.Entries, TimeValueEntry{
 			Time: queryResult.Record().Time(),
-			Val:  parseValue(queryResult.Record().Value(), 0),
+			Val:  parseValueInt(queryResult.Record(), 0),
 		})
 	}
 
@@ -146,17 +152,30 @@ func (s *Stats) GetStudentVODActivityCourseStats(courseID uint, from time.Time, 
 	for queryResult.Next() {
 		res.Entries = append(res.Entries, TimeValueEntry{
 			Time: queryResult.Record().Time(),
-			Val:  parseValue(queryResult.Record().Value(), 0),
+			Val:  parseValueInt(queryResult.Record(), 0),
 		})
 	}
 
 	return &res, nil
 }
 
-func parseValue(value interface{}, defaultValue int) int {
-	switch v := value.(type) {
+// / parseValueInt takes a FluxRecord and a defaultValue, tries to parse an int from the record. If record is null or not a number the defaultValue will be returned.
+func parseValueInt(record *query.FluxRecord, defaultValue int) int {
+	if record == nil {
+		return defaultValue
+	}
+
+	switch v := record.Value().(type) {
 	case float64:
 		return int(v)
+	case int64:
+		return int(v)
+	case string:
+		if num, err := strconv.Atoi(v); err != nil {
+			return defaultValue
+		} else {
+			return num
+		}
 	default:
 		return defaultValue
 	}

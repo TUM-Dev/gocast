@@ -61,14 +61,15 @@ require (
 )
 
 require (
-	github.com/deepmap/oapi-codegen v1.3.6 // indirect
+	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
+	github.com/deepmap/oapi-codegen v1.12.2 // indirect
 	github.com/influxdata/influxdb-client-go v1.4.0 // indirect
 	github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 // indirect
-	github.com/labstack/echo/v4 v4.5.0 // indirect
-	github.com/labstack/gommon v0.3.0 // indirect
-	github.com/mattn/go-colorable v0.1.12 // indirect
+	github.com/labstack/echo/v4 v4.9.1 // indirect
+	github.com/labstack/gommon v0.4.0 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasttemplate v1.2.1 // indirect
+	github.com/valyala/fasttemplate v1.2.2 // indirect
 )
 
 require (
