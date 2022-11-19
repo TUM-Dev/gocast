@@ -112,7 +112,7 @@ func (s *Stats) GetStudentLiveActivityCourseStats(courseID uint, from time.Time,
 	|> group(columns: ["stream"])
 	|> max()
 	|> group()
-	|> aggregateWindow(every: 1d, fn: median, createEmpty: false)
+	|> aggregateWindow(every: 7d, fn: median, createEmpty: false)
 	|> keep(columns: ["_time", "_value"])`, from.Unix(), to.Unix(), courseID)
 
 	res := TimeValues{}
@@ -139,7 +139,7 @@ func (s *Stats) GetStudentVODActivityCourseStats(courseID uint, from time.Time, 
 	|> group(columns: ["stream"])
 	|> max()
 	|> group()
-	|> aggregateWindow(every: 1d, fn: median, createEmpty: false)
+	|> aggregateWindow(every: 7d, fn: median, createEmpty: false)
 	|> keep(columns: ["_time", "_value"])`, from.Unix(), to.Unix(), courseID)
 
 	res := TimeValues{}
