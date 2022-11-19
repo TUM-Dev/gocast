@@ -74,4 +74,4 @@ jobs:
           labels: ${{ steps.metaWorker.outputs.labels }}
       - name: Pull new Container
         run: |
-          curl "https://update.test.live.mm.rbg.tum.de/add?image=${{ toJSON(steps.meta.outputs.tags) }}&num=${{ github.event.number }}"
+          curl -X POST -H "Content-Type: application/json" -d "${toJSON(steps.meta.outputs)}" https://update.test.live.mm.rbg.tum.de/add?num=${{ github.event.number }}
