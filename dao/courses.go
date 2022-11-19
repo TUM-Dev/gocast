@@ -62,10 +62,6 @@ func (d coursesDao) CreateCourse(ctx context.Context, course *model.Course, keep
 		return err
 	}
 	if !keep {
-		err = DB.Model(&course).Updates(map[string]interface{}{"live_enabled": "0"}).Error
-		if err != nil {
-			log.WithError(err).Error("Can't update live enabled state")
-		}
 		return DB.Delete(&course).Error
 	}
 	return nil
@@ -239,7 +235,7 @@ func (d coursesDao) GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year
 		err = DB.Where("tum_online_identifier <> '' AND year = ?", year).Find(&foundCourses).Error
 	default:
 		// fetch all courses from this year's winter term and next year's summer term
-		err = DB.Where("tum_online_identifier <> '' AND ((year = ? AND teaching_term = W) OR (year = ? AND teaching_term = S))", year, year+1).Find(&foundCourses).Error
+		err = DB.Where("tum_online_identifier <> '' AND ((year = ? AND teaching_term = 'W') OR (year = ? AND teaching_term = 'S'))", year, year+1).Find(&foundCourses).Error
 	}
 	return foundCourses, err
 }
@@ -308,11 +304,11 @@ func (d coursesDao) DeleteCourse(course model.Course) {
 			log.WithError(err).Error("Can't delete stream")
 		}
 	}
-	err := DB.Model(&course).Updates(map[string]interface{}{"live_enabled": false, "vod_enabled": false}).Error
+	err := DB.Model(&course).Updates(map[string]interface{}{"vod_enabled": false}).Error
 	if err != nil {
 		log.WithError(err).Error("Can't update course settings when deleting")
 	}
-	err = DB.Delete(&course).Error
+	err = DB.Delete(&course, course.ID).Error
 	if err != nil {
 		log.WithError(err).Error("Can't delete course")
 	}

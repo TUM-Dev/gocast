@@ -22,6 +22,11 @@ type downloadRoutes struct {
 	dao.DaoWrapper
 }
 
+var dlErr = tools.RequestError{
+	Status:        http.StatusForbidden,
+	CustomMessage: "user not allowed to get file",
+}
+
 func (r downloadRoutes) download(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
@@ -74,18 +79,28 @@ func (r downloadRoutes) download(c *gin.Context) {
 	case "download":
 		fallthrough
 	default:
-		if !tumLiveContext.User.IsAdminOfCourse(course) {
-			if !course.DownloadsEnabled || !(course.Visibility == "hidden" || course.Visibility == "public") ||
-				!tumLiveContext.User.IsEligibleToWatchCourse(course) || !tumLiveContext.User.IsAdminOfCourse(course) {
-				_ = c.Error(tools.RequestError{
-					Status:        http.StatusForbidden,
-					CustomMessage: "user not allowed to get file",
-				})
+		if tumLiveContext.User.IsAdminOfCourse(course) {
+			sendDownloadFile(c, file, tumLiveContext)
+			return
+		}
+		if !course.DownloadsEnabled {
+			_ = c.Error(dlErr)
+			return
+		}
+		if course.Visibility == "loggedin" || course.Visibility == "enrolled" {
+			if tumLiveContext.User == nil {
+				_ = c.Error(dlErr)
 				return
 			}
+			if course.Visibility == "enrolled" {
+				if !tumLiveContext.User.IsEligibleToWatchCourse(course) {
+					_ = c.Error(dlErr)
+					return
+				}
+			}
 		}
-		log.Info(fmt.Sprintf("Download request, user: %d, file: %d[%s]", tumLiveContext.User.ID, file.ID, file.Path))
-		sendDownloadFile(c, file)
+
+		sendDownloadFile(c, file, tumLiveContext)
 	}
 }
 
@@ -99,7 +114,12 @@ func sendImageContent(c *gin.Context, file model.File) {
 	c.Data(http.StatusOK, "image/jpg", image)
 }
 
-func sendDownloadFile(c *gin.Context, file model.File) {
+func sendDownloadFile(c *gin.Context, file model.File, tumLiveContext tools.TUMLiveContext) {
+	var uid uint = 0
+	if tumLiveContext.User != nil {
+		uid = tumLiveContext.User.ID
+	}
+	log.Info(fmt.Sprintf("Download request, user: %d, file: %d[%s]", uid, file.ID, file.Path))
 	f, err := os.Open(file.Path)
 	if err != nil {
 		_ = c.Error(tools.RequestError{

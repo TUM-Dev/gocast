@@ -61,7 +61,8 @@ func (r mainRoutes) InfoPage(id uint) gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
-		indexData.VersionTag = VersionTag
+
+		indexData = NewIndexData()
 
 		text, err := r.InfoPageDao.GetById(id)
 		if err != nil {
@@ -91,18 +92,18 @@ type IndexData struct {
 	CurrentTerm         string
 	UserName            string
 	ServerNotifications []model.ServerNotification
+	Branding            tools.Branding
 }
 
 func NewIndexData() IndexData {
 	return IndexData{
 		VersionTag: VersionTag,
+		Branding:   tools.BrandingCfg,
 	}
 }
 
 func NewIndexDataWithContext(c *gin.Context) IndexData {
-	indexData := IndexData{
-		VersionTag: VersionTag,
-	}
+	indexData := NewIndexData()
 
 	var tumLiveContext tools.TUMLiveContext
 	tumLiveContextQueried, found := c.Get("TUMLiveContext")

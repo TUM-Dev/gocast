@@ -1,16 +1,7 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
 import { getPlayer } from "./TUMLiveVjs";
-import { Get, postData } from "./global";
 import { Realtime } from "./socket";
-
-let chatInput: HTMLInputElement;
-
-export class Watch {
-    constructor() {
-        // Empty
-    }
-}
 
 let currentChatChannel = "";
 const retryInt = 5000; //retry connecting to websocket after this timeout
@@ -72,13 +63,6 @@ export async function startWebsocket() {
             } else {
                 // stream end, show message
                 window.dispatchEvent(new CustomEvent("streamended"));
-            }
-        } else if ("paused" in data) {
-            const paused: boolean = data["paused"];
-            if (paused) {
-                //window.dispatchEvent(new CustomEvent("pausestart"))
-            } else {
-                window.dispatchEvent(new CustomEvent("pauseend"));
             }
         } else if ("server" in data) {
             const scroll = shouldScroll();
@@ -267,9 +251,11 @@ export const videoStatListener = {
 };
 
 export function onShift(e) {
-    switch (e.key) {
-        case "?": {
-            toggleShortcutsModal();
+    if (document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA") {
+        switch (e.key) {
+            case "?": {
+                toggleShortcutsModal();
+            }
         }
     }
 }

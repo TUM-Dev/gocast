@@ -6,6 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"regexp"
+	"strings"
+	"time"
+
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
@@ -13,10 +18,6 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"net/http"
-	"regexp"
-	"strings"
-	"time"
 )
 
 func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -24,7 +25,6 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 	router.POST("/api/users/settings/name", routes.updatePreferredName)
 	router.POST("/api/users/settings/greeting", routes.updatePreferredGreeting)
-	router.POST("/api/users/settings/enableCast", routes.updateEnableCast)
 	router.POST("/api/users/settings/playbackSpeeds", routes.updatePlaybackSpeeds)
 
 	router.POST("/api/users/pinCourse", func(c *gin.Context) {
@@ -44,6 +44,7 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	admins.POST("/deleteUser", routes.DeleteUser)
 	admins.GET("/searchUser", routes.SearchUser)
 	admins.POST("/users/update", routes.updateUser)
+	admins.POST("/users/impersonate", routes.impersonateUser)
 
 	lecturers := router.Group("/api")
 	lecturers.Use(tools.AtLeastLecturer)
@@ -57,6 +58,32 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 type usersRoutes struct {
 	dao.DaoWrapper
+}
+
+func (r usersRoutes) impersonateUser(c *gin.Context) {
+	type req struct {
+		UserID uint `json:"id"`
+	}
+	var request req
+	err := c.Bind(&request)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "Bad Request",
+			Err:           err,
+		})
+		return
+	}
+	u, err := r.UsersDao.GetUserByID(c, request.UserID)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "User not found",
+			Err:           err,
+		})
+		return
+	}
+	tools.StartSession(c, &tools.SessionData{Userid: u.ID})
 }
 
 func (r usersRoutes) updateUser(c *gin.Context) {
@@ -565,42 +592,6 @@ func (r usersRoutes) updatePlaybackSpeeds(c *gin.Context) {
 	}
 	settingBytes, _ := json.Marshal(req.Value)
 	err := r.DaoWrapper.UsersDao.AddUserSetting(&model.UserSetting{UserID: u.ID, Type: model.CustomPlaybackSpeeds, Value: string(settingBytes)})
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not add user setting",
-			Err:           err,
-		})
-		return
-	}
-}
-
-func (r usersRoutes) updateEnableCast(c *gin.Context) {
-	u := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).User
-	if u == nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusUnauthorized,
-			CustomMessage: "login required",
-		})
-		return
-	}
-	var req struct{ Value bool }
-	err := json.NewDecoder(c.Request.Body).Decode(&req)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "can not bind body",
-			Err:           err,
-		})
-		return
-	}
-	enabledBytes, _ := json.Marshal(req.Value)
-
-	err = r.UsersDao.AddUserSetting(&model.UserSetting{
-		UserID: u.ID,
-		Type:   model.EnableChromecast,
-		Value:  string(enabledBytes),
-	})
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

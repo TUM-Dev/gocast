@@ -414,20 +414,6 @@ func (mr *MockStreamsDaoMockRecorder) SavePRESURL(stream, url interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePRESURL", reflect.TypeOf((*MockStreamsDao)(nil).SavePRESURL), stream, url)
 }
 
-// SavePauseState mocks base method.
-func (m *MockStreamsDao) SavePauseState(streamID uint, paused bool) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SavePauseState", streamID, paused)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SavePauseState indicates an expected call of SavePauseState.
-func (mr *MockStreamsDaoMockRecorder) SavePauseState(streamID, paused interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePauseState", reflect.TypeOf((*MockStreamsDao)(nil).SavePauseState), streamID, paused)
-}
-
 // SaveStream mocks base method.
 func (m *MockStreamsDao) SaveStream(vod *model.Stream) error {
 	m.ctrl.T.Helper()
