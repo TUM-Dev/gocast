@@ -5,7 +5,6 @@ import (
 	"fmt"
 	influxdb2 "github.com/influxdata/influxdb-client-go"
 	"github.com/influxdata/influxdb-client-go/api"
-	"github.com/influxdata/influxdb-client-go/api/query"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"strconv"
 	"time"
@@ -62,7 +61,7 @@ func (s *Stats) GetCourseNumVodViews(courseID uint, from time.Time, to time.Time
 	} else if hasRecord := res.Next(); !hasRecord {
 		return 0, nil
 	} else {
-		return parseValueInt(res.Record(), 0), nil
+		return parseValueInt(res.Record().Value(), 0), nil
 	}
 }
 
@@ -81,31 +80,31 @@ func (s *Stats) GetCourseNumLiveViews(courseID uint, from time.Time, to time.Tim
 	} else if hasRecord := res.Next(); !hasRecord {
 		return 0, nil
 	} else {
-		return parseValueInt(res.Record(), 0), nil
+		return parseValueInt(res.Record().Value(), 0), nil
 	}
 }
 
-type TimeValueEntry struct {
-	Time time.Time
-	Val  int
+type ChartDataEntry struct {
+	X string
+	Y int
 }
 
-type TimeValues struct {
-	Entries []TimeValueEntry
+type ChartData struct {
+	Entries []ChartDataEntry
 }
 
-func (t *TimeValues) GetChartJsData() []map[string]any {
+func (t *ChartData) GetChartJsData() []map[string]any {
 	var data = make([]map[string]any, 0)
 	for _, entry := range t.Entries {
 		data = append(data, map[string]any{
-			"x": entry.Time.Format("2006-01-02"),
-			"y": entry.Val,
+			"x": entry.X,
+			"y": entry.Y,
 		})
 	}
 	return data
 }
 
-func (s *Stats) GetStudentLiveActivityCourseStats(courseID uint, from time.Time, to time.Time) (*TimeValues, error) {
+func (s *Stats) GetStudentLiveActivityCourseStats(courseID uint, from time.Time, to time.Time) (*ChartData, error) {
 	query := fmt.Sprintf(`from(bucket: "live_stats")
 	|> range(start: %d, stop: %d)
 	|> filter(fn: (r) => r.course == "%d" and r.live == "true")
@@ -115,7 +114,7 @@ func (s *Stats) GetStudentLiveActivityCourseStats(courseID uint, from time.Time,
 	|> aggregateWindow(every: 7d, fn: median, createEmpty: false)
 	|> keep(columns: ["_time", "_value"])`, from.Unix(), to.Unix(), courseID)
 
-	res := TimeValues{}
+	res := ChartData{}
 
 	queryResult, err := s.query.Query(context.Background(), query)
 	if err != nil {
@@ -123,16 +122,16 @@ func (s *Stats) GetStudentLiveActivityCourseStats(courseID uint, from time.Time,
 	}
 
 	for queryResult.Next() {
-		res.Entries = append(res.Entries, TimeValueEntry{
-			Time: queryResult.Record().Time(),
-			Val:  parseValueInt(queryResult.Record(), 0),
+		res.Entries = append(res.Entries, ChartDataEntry{
+			X: queryResult.Record().Time().Format("2006-01-02"),
+			Y: parseValueInt(queryResult.Record().Value(), 0),
 		})
 	}
 
 	return &res, nil
 }
 
-func (s *Stats) GetStudentVODActivityCourseStats(courseID uint, from time.Time, to time.Time) (*TimeValues, error) {
+func (s *Stats) GetStudentVODActivityCourseStats(courseID uint, from time.Time, to time.Time) (*ChartData, error) {
 	query := fmt.Sprintf(`from(bucket: "live_stats")
 	|> range(start: %d, stop: %d)
 	|> filter(fn: (r) => r.course == "%d" and r.live == "false")
@@ -142,7 +141,7 @@ func (s *Stats) GetStudentVODActivityCourseStats(courseID uint, from time.Time, 
 	|> aggregateWindow(every: 7d, fn: median, createEmpty: false)
 	|> keep(columns: ["_time", "_value"])`, from.Unix(), to.Unix(), courseID)
 
-	res := TimeValues{}
+	res := ChartData{}
 
 	queryResult, err := s.query.Query(context.Background(), query)
 	if err != nil {
@@ -150,22 +149,48 @@ func (s *Stats) GetStudentVODActivityCourseStats(courseID uint, from time.Time, 
 	}
 
 	for queryResult.Next() {
-		res.Entries = append(res.Entries, TimeValueEntry{
-			Time: queryResult.Record().Time(),
-			Val:  parseValueInt(queryResult.Record(), 0),
+		res.Entries = append(res.Entries, ChartDataEntry{
+			X: queryResult.Record().Time().Format("2006-01-02"),
+			Y: parseValueInt(queryResult.Record().Value(), 0),
 		})
 	}
 
 	return &res, nil
 }
 
-// / parseValueInt takes a FluxRecord and a defaultValue, tries to parse an int from the record. If record is null or not a number the defaultValue will be returned.
-func parseValueInt(record *query.FluxRecord, defaultValue int) int {
-	if record == nil {
-		return defaultValue
+func (s *Stats) GetCourseStatsHourly(courseID uint, from time.Time, to time.Time) (*ChartData, error) {
+	query := fmt.Sprintf(`import "date"
+	from(bucket: "live_stats")
+	|> range(start: %d, stop: %d)
+	|> filter(fn: (r) => r.course == "%d" and r.live == "false")
+    |> map(fn: (r) => ({ r with hour: date.hour(t: r._time) }))  
+    |> group(columns: ["hour"], mode:"by")
+    |> sum()
+    |> group()
+	`, from.Unix(), to.Unix(), courseID)
+
+	res := ChartData{}
+
+	queryResult, err := s.query.Query(context.Background(), query)
+	if err != nil {
+		return nil, err
 	}
 
-	switch v := record.Value().(type) {
+	for queryResult.Next() {
+		hour := strconv.Itoa(parseValueInt(queryResult.Record().ValueByKey("hour"), 0))
+
+		res.Entries = append(res.Entries, ChartDataEntry{
+			X: hour,
+			Y: parseValueInt(queryResult.Record().Value(), 0),
+		})
+	}
+
+	return &res, nil
+}
+
+// / parseValueInt parses a value to int, if not able to parse returns the defaultValue
+func parseValueInt(value interface{}, defaultValue int) int {
+	switch v := value.(type) {
 	case float64:
 		return int(v)
 	case int64:
