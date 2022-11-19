@@ -17,6 +17,10 @@ type Stats struct {
 	query     api.QueryAPI
 }
 
+var weekdays = []string{
+	"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+}
+
 var Client *Stats
 
 func InitStats(client influxdb2.Client) {
@@ -181,6 +185,62 @@ func (s *Stats) GetCourseStatsHourly(courseID uint, from time.Time, to time.Time
 
 		res.Entries = append(res.Entries, ChartDataEntry{
 			X: hour,
+			Y: parseValueInt(queryResult.Record().Value(), 0),
+		})
+	}
+
+	return &res, nil
+}
+
+func (s *Stats) GetCourseStatsWeekday(courseID uint, from time.Time, to time.Time) (*ChartData, error) {
+	query := fmt.Sprintf(`import "date"
+	from(bucket: "live_stats")
+	|> range(start: %d, stop: %d)
+	|> filter(fn: (r) => r.course == "%d" and r.live == "false")
+    |> map(fn: (r) => ({ r with day: date.weekDay(t: r._time) }))  
+    |> group(columns: ["day"], mode:"by")
+    |> sum()
+    |> group()
+	`, from.Unix(), to.Unix(), courseID)
+
+	res := ChartData{}
+
+	queryResult, err := s.query.Query(context.Background(), query)
+	if err != nil {
+		return nil, err
+	}
+
+	for queryResult.Next() {
+		hour := weekdays[parseValueInt(queryResult.Record().ValueByKey("day"), 0)]
+
+		res.Entries = append(res.Entries, ChartDataEntry{
+			X: hour,
+			Y: parseValueInt(queryResult.Record().Value(), 0),
+		})
+	}
+
+	return &res, nil
+}
+
+func (s *Stats) GetStudentVODPerDay(courseID uint, from time.Time, to time.Time) (*ChartData, error) {
+	query := fmt.Sprintf(`from(bucket: "live_stats")
+	|> range(start: %d, stop: %d)
+	|> filter(fn: (r) => r.course == "%d" and r.live == "false")
+    |> window(every: 1d)
+    |> sum()
+    |> group()
+	|> keep(columns: ["_start", "_value"])`, from.Unix(), to.Unix(), courseID)
+
+	res := ChartData{}
+
+	queryResult, err := s.query.Query(context.Background(), query)
+	if err != nil {
+		return nil, err
+	}
+
+	for queryResult.Next() {
+		res.Entries = append(res.Entries, ChartDataEntry{
+			X: queryResult.Record().Start().Format("2006-01-02"),
 			Y: parseValueInt(queryResult.Record().Value(), 0),
 		})
 	}

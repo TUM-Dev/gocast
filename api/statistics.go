@@ -25,7 +25,7 @@ type statExportReq struct {
 func (r coursesRoutes) getStats(c *gin.Context) {
 	ctx, _ := c.Get("TUMLiveContext")
 
-	from := time.Now().AddDate(-1, 0, 0)
+	from := time.Now().AddDate(-5, 0, 0)
 	to := time.Now()
 
 	var req statReq
@@ -56,7 +56,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 	case "week":
 		fallthrough
 	case "day":
-		res, err := r.StatisticsDao.GetCourseStatsWeekdays(cid)
+		statsData, err := stats.Client.GetCourseStatsWeekday(cid, from, to)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseStatsWeekdays failed")
 			_ = c.Error(tools.RequestError{
@@ -72,7 +72,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 			Options:   newChartJsOptions(),
 		}
 		resp.Data.Datasets[0].Label = "Sum(viewers)"
-		resp.Data.Datasets[0].Data = res
+		resp.Data.Datasets[0].Data = statsData.GetChartJsData()
 		c.JSON(http.StatusOK, resp)
 	case "hour":
 		statsData, err := stats.Client.GetCourseStatsHourly(cid, from, to)
@@ -177,7 +177,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		}
 	case "allDays":
 		{
-			res, err := r.StatisticsDao.GetCourseNumVodViewsPerDay(cid)
+			statsData, err := stats.Client.GetStudentVODPerDay(cid, from, to)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumLiveViews failed")
 				_ = c.Error(tools.RequestError{
@@ -193,7 +193,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 					Options:   newChartJsOptions(),
 				}
 				resp.Data.Datasets[0].Label = "views"
-				resp.Data.Datasets[0].Data = res
+				resp.Data.Datasets[0].Data = statsData.GetChartJsData()
 				resp.Data.Datasets[0].BackgroundColor = "#d12a5c"
 				c.JSON(http.StatusOK, resp)
 			}
