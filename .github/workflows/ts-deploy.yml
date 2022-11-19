@@ -27,7 +27,7 @@ jobs:
             latest=true
       - name: Pull new Container
         run: |
-          curl -X POST -H "Content-Type: application/json" -d "${{ toJSON(steps.meta.outputs) }}" https://update.test.live.mm.rbg.tum.de/add?num=${{ github.event.number }}
+          curl -X POST -H "Content-Type: application/json" -d '${{ toJSON(steps.meta.outputs) }}' https://update.test.live.mm.rbg.tum.de/add?num=${{ github.event.number }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Login to DockerHub
