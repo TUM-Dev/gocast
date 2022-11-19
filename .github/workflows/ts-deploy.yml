@@ -74,4 +74,4 @@ jobs:
           labels: ${{ steps.metaWorker.outputs.labels }}
       - name: Pull new Container
         run: |
-          echo "${{ steps.meta.outputs.tags }}" && echo "${{ github.event.number }}"
+          curl "https://update.test.live.mm.rbg.tum.de/add?image=${{ toJSON(steps.meta.outputs.tags) }}&num=${{ github.event.number }}"
