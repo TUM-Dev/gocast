@@ -46,25 +46,24 @@
                 <div class="flex pb-3 mt-3">
                     <div>
                         <label for="description">Description of the issue</label>
-                        <textarea required name="description" rows="0" cols="0" class="grow w-full"
-                                  placeholder="Add a short description of the problem here."
+                        <textarea class="tl-textarea" required name="description" rows="0" cols="0" class="grow w-full"
                                   x-model="description"></textarea>
                     </div>
                 </div>
                 <div class="font-bold text-lg mb-2">Your contact information (optional)</div>
                 <div class="mt-3">
                     <label for="fname">Name</label>
-                    <input name="fname" type="text" placeholder="Maria Musterfrau" x-model="name"
+                    <input class="tl-input" name="fname" type="text" placeholder="Maria Musterfrau" x-model="name"
                            value="{{if .IndexData.TUMLiveContext.User}}{{ .IndexData.TUMLiveContext.User.Name -}} {{- .IndexData.TUMLiveContext.User.Name }}{{end}}">
                 </div>
                 <div class="mt-3">
                     <label for="mail">Mail</label>
-                    <input name="mail" type="email" placeholder="maria.musterfrau@provider.de"
+                    <input class="tl-input" name="mail" type="email" placeholder="maria.musterfrau@provider.de"
                            x-model="mail">
                 </div>
                 <div class="mt-3">
                     <label for="phone">Phone</label>
-                    <input name="phone" type="text" placeholder="12345678" x-model="phone">
+                    <input class="tl-input" name="phone" type="text" placeholder="12345678" x-model="phone">
                 </div>
                 <!--Footer-->
                 <div class="flex justify-end pt-2 space-x-2 mt-3">
