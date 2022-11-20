@@ -134,6 +134,10 @@
     @apply w-full px-3 py-2 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm;
 }
 
+.tl-presetimage {
+    @apply border-1 dark:border-slate-400 border-slate-500 rounded-lg
+}
+
 .tl-input {
     @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm;
 }
