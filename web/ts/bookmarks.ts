@@ -35,7 +35,6 @@ export class BookmarkDialog {
     private readonly streamId: number;
 
     request: AddBookmarkRequest;
-    showSuccess: boolean;
 
     constructor(streamId: number) {
         this.streamId = streamId;
@@ -46,13 +45,12 @@ export class BookmarkDialog {
         this.request.Hours = +this.request.Hours;
         this.request.Minutes = +this.request.Minutes;
         this.request.Seconds = +this.request.Seconds;
-        await Bookmarks.add(this.request).then(() => (this.showSuccess = true));
+        await Bookmarks.add(this.request);
     }
 
     reset(): void {
         const time = currentTimeToHMS();
         this.request = { StreamID: this.streamId, Description: "", Hours: time.h, Minutes: time.m, Seconds: time.s };
-        this.showSuccess = false;
     }
 }
 

@@ -396,37 +396,3 @@
 </script>
 </body>
 </html>
-
-{{/* 1st parameter: 'streamID' */}}
-{{define "bookmarks-modal"}}
-    <div x-data="{showAddMenu: false}"
-         class="relative h-full border rounded-lg dark:border-gray-600">
-        <template x-if="!showAddMenu">
-            <div class="h-full">
-                <div class="flex justify-between items-end p-4">
-                    <h3 class="font-bold text-sm text-xl text-3">Bookmarks</h3>
-                    <button type="button" title="Open bookmark dialog"
-                            class="text-3 text-sm font-semibold hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full px-2 py-1"
-                            @click="showAddMenu = !showAddMenu">
-                        Add bookmark
-                    </button>
-                </div>
-                {{template "bookmark-list" .}}
-            </div>
-        </template>
-        <template x-if="showAddMenu">
-            <div class="p-4">
-                <div class="flex justify-between items-end mb-4">
-                    <h3 class="font-bold text-sm text-xl text-3">Bookmarks</h3>
-                    <button type="button" title="Close bookmark dialog"
-                            class="text-3 text-sm font-semibold hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full px-2 py-1"
-                            @click="showAddMenu = !showAddMenu">
-                        <i class="fa-solid fa-undo mr-2"></i>
-                        <span>Go back</span>
-                    </button>
-                </div>
-                {{template "bookmark-dialog" .}}
-            </div>
-        </template>
-    </div>
-{{end}}
