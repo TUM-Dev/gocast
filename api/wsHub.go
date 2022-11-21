@@ -57,6 +57,7 @@ var connHandler = func(context *realtime.Context) {
 }
 
 // sendServerMessageWithBackoff sends a message to the client(if it didn't send a message to this user in the last 10 Minutes and the client is logged in)
+//lint:ignore U1000 Ignore unused function
 func sendServerMessageWithBackoff(session *realtime.Context, userId uint, streamId uint, msg string, t string) {
 	if userId == 0 {
 		return
