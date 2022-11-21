@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 var wsMapLock sync.RWMutex
@@ -21,7 +22,9 @@ var wsMapLock sync.RWMutex
 var sessionsMap = map[uint][]*sessionWrapper{}
 
 const (
-	TypeServerErr = "error"
+	TypeServerInfo = "info"
+	TypeServerWarn = "warn"
+	TypeServerErr  = "error"
 )
 
 type sessionWrapper struct {
@@ -51,6 +54,26 @@ var connHandler = func(context *realtime.Context) {
 	if err != nil {
 		log.WithError(err).Error("can't write initial stats to session")
 	}
+}
+
+// sendServerMessageWithBackoff sends a message to the client(if it didn't send a message to this user in the last 10 Minutes and the client is logged in)
+func sendServerMessageWithBackoff(session *realtime.Context, userId uint, streamId uint, msg string, t string) {
+	if userId == 0 {
+		return
+	}
+	cacheKey := fmt.Sprintf("shouldSendServerMsg_%d_%d", userId, streamId)
+	// if the user has sent a message in the last 10 Minutes, don't send a message
+	_, shouldSkip := tools.GetCacheItem(cacheKey)
+	if shouldSkip {
+		return
+	}
+	msgBytes, _ := json.Marshal(gin.H{"server": msg, "type": t})
+	err := session.Send(msgBytes)
+	if err != nil {
+		log.WithError(err).Error("can't write server message to session")
+	}
+	// set cache item with ttl, so the user won't get a message for 10 Minutes
+	tools.SetCacheItem(cacheKey, true, time.Minute*10)
 }
 
 // sendServerMessage sends a server message to the client(s)
