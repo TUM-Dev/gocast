@@ -54,16 +54,6 @@ var connHandler = func(context *realtime.Context) {
 	if err != nil {
 		log.WithError(err).Error("can't write initial stats to session")
 	}
-	var uid uint = 0
-	if tumLiveContext.User != nil {
-		uid = tumLiveContext.User.ID
-	}
-	if tumLiveContext.Course.ChatEnabled {
-		sendServerMessageWithBackoff(context, uid, tumLiveContext.Stream.ID, "Welcome to the chatroom! Please be nice to each other and stay on topic if you want this feature to stay active.", TypeServerInfo)
-	}
-	if !tumLiveContext.Course.AnonymousChatEnabled && tumLiveContext.Course.ChatEnabled {
-		sendServerMessageWithBackoff(context, uid, tumLiveContext.Stream.ID, "The broadcaster disabled anonymous messaging for this stream.", TypeServerWarn)
-	}
 }
 
 // sendServerMessageWithBackoff sends a message to the client(if it didn't send a message to this user in the last 10 Minutes and the client is logged in)
