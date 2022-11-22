@@ -4,7 +4,7 @@ on:
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ dev ]
-    types: [ opened, edited ]
+    types: [ opened ]
 
 jobs:
   comment:
