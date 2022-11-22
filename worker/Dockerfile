@@ -16,8 +16,8 @@ RUN GOOS=linux GOARCH=amd64 go build -a -ldflags "-w -X main.VersionTag=${versio
 FROM alpine:3.16
 
 RUN apk add --no-cache \
-  ffmpeg=5.0.1-r1 \
-  tzdata=2022c-r0
+  ffmpeg \
+  tzdata
 
 # copy shared libraries for tesseract
 COPY --from=builder \

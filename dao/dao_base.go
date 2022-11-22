@@ -34,8 +34,9 @@ type DaoWrapper struct {
 	// AuditDao.Find(...) seems like a nice api, find can be used in other dao as well if type is not embedded
 	AuditDao AuditDao
 	InfoPageDao
-	BookmarkDao BookmarkDao
 	HlsDao      HlsDao
+	BookmarkDao         BookmarkDao
+	PrefetchedCourseDao PrefetchedCourseDao
 }
 
 func NewDaoWrapper() DaoWrapper {
@@ -63,5 +64,6 @@ func NewDaoWrapper() DaoWrapper {
 		AuditDao:              NewAuditDao(),
 		BookmarkDao:           NewBookmarkDao(),
 		HlsDao:                NewHlsDao(),
+		PrefetchedCourseDao:   NewPrefetchedCourseDao(),
 	}
 }

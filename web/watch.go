@@ -49,6 +49,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 			data.Presets = lectureHall.CameraPresets
 		}
 	}
+
 	if c.Param("version") != "" {
 		data.Version = c.Param("version")
 		if strings.HasPrefix(data.Version, "unit-") {
@@ -57,6 +58,22 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 			}
 		}
 	}
+
+	if tumLiveContext.Stream.LectureHallID != 0 {
+		switch data.IndexData.TUMLiveContext.Course.GetSourceModeForLectureHall(data.IndexData.TUMLiveContext.Stream.LectureHallID) {
+		// SourceMode == 1 -> Override Version to PRES
+		case 1:
+			data.Version = "PRES"
+			data.IndexData.TUMLiveContext.Stream.PlaylistUrlCAM = ""
+			data.IndexData.TUMLiveContext.Stream.PlaylistUrl = ""
+		// SourceMode == 2 -> Override Version to CAM
+		case 2:
+			data.Version = "CAM"
+			data.IndexData.TUMLiveContext.Stream.PlaylistUrlPRES = ""
+			data.IndexData.TUMLiveContext.Stream.PlaylistUrl = ""
+		}
+	}
+
 	// Check for fetching progress
 	if tumLiveContext.User != nil && tumLiveContext.Stream.Recording {
 		progress, err := dao.Progress.LoadProgress(tumLiveContext.User.ID, tumLiveContext.Stream.ID)
@@ -81,10 +98,8 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	data.CutOffLength = api.CutOffLength
 	if strings.HasPrefix(data.Version, "unit-") {
 		data.Description = data.Unit.GetDescriptionHTML()
-		data.TruncatedDescription = template.HTML(tools.Truncate(string(data.Unit.GetDescriptionHTML()), data.CutOffLength))
 	} else {
 		data.Description = template.HTML(data.IndexData.TUMLiveContext.Stream.GetDescriptionHTML())
-		data.TruncatedDescription = template.HTML(tools.Truncate(data.IndexData.TUMLiveContext.Stream.GetDescriptionHTML(), data.CutOffLength))
 	}
 	if c.Query("video_only") == "1" {
 		err := templateExecutor.ExecuteTemplate(c.Writer, "video_only.gohtml", data)
@@ -101,20 +116,19 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 
 // WatchPageData contains all the metadata that is related to the watch page.
 type WatchPageData struct {
-	IsAdminOfCourse      bool // is current user admin or lecturer who created this course
-	IsHighlightPage      bool
-	AlertsEnabled        bool // whether the alert config is set
-	Version              string
-	Unit                 *model.StreamUnit
-	Presets              []model.CameraPreset
-	Progress             model.StreamProgress
-	IndexData            IndexData
-	Description          template.HTML
-	TruncatedDescription template.HTML
-	CutOffLength         int    // The maximum length for the preview of a description.
-	DVR                  string // ?dvr if dvr is enabled, empty string otherwise
-	LectureHallName      string
-	ChatData             ChatData
+	IsAdminOfCourse bool // is current user admin or lecturer who created this course
+	IsHighlightPage bool
+	AlertsEnabled   bool // whether the alert config is set
+	Version         string
+	Unit            *model.StreamUnit
+	Presets         []model.CameraPreset
+	Progress        model.StreamProgress
+	IndexData       IndexData
+	Description     template.HTML
+	CutOffLength    int    // The maximum length for the preview of a description.
+	DVR             string // ?dvr if dvr is enabled, empty string otherwise
+	LectureHallName string
+	ChatData        ChatData
 }
 
 // Prepare populates the data for the watch page.

@@ -1,137 +1,90 @@
 {{define "stats"}}
-    {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
-    <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
-                                                        value="{{.TUMLiveContext.Course.Model.ID}}"></label>
-    <h2 class="text-2xl text-1 my-auto mt-4 font-medium">Server Statistics</h2>
-    <div class="grid grid-cols-4 gap-4 w-full pt-4 bg-gray-100 relative rounded-md my-3 shadow-md overflow-x-auto p-4 dark:bg-secondary-lighter">
-        <div class="absolute top-3 right-3">
-            <div
-                x-data="{
-                    open: false,
-                    toggle() {
-                        if (this.open) {
-                            return this.close()
-                        }
-                        this.$refs.button.focus()
-                        this.open = true
-                    },
-                    close(focusAfter) {
-                        if (! this.open) return
-                        this.open = false
-                        focusAfter && focusAfter.focus()
-                    }
-                }"
-                x-on:keydown.escape.prevent.stop="close($refs.button)"
-                x-on:focusin.window="! $refs.panel.contains($event.target) && close()"
-                x-id="['dropdown-button']"
-                class="relative "
-            >
-                <!-- Button -->
-                <button
-                    class="h-10 px-5 ml-auto text-white bg-gray-500 dark:bg-gray-900 dark:hover:bg-gray-600 font-semibold rounded-sm shadow-lg focus:shadow-outline hover:bg-gray-600"
-                    x-ref="button"
-                    x-on:click="toggle()"
-                    :aria-expanded="open"
-                    :aria-controls="$id('dropdown-button')"
-                    type="button"
-                >
-                    Export
-                </button>
+{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
+<label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
+        value="{{.TUMLiveContext.Course.Model.ID}}"></label>
 
-                <!-- Panel -->
-                <div
-                    x-ref="panel"
-                    x-show="open"
-                    x-transition.origin.top.left
-                    x-on:click.outside="close($refs.button)"
-                    :id="$id('dropdown-button')"
-                    style="display: none;"
-                    class="absolute right-0 mt-2 w-40 text-white bg-gray-500 dark:bg-gray-900 rounded shadow-md overflow-hidden"
-                >
-                    <div>
-                        <a :href="admin.getStatsDownloadLink('json')" x-on:click="close($refs.button);" class="block w-full px-4 py-2 text-left text-sm dark:hover:bg-gray-600 cursor-pointer" download>
-                            Export as JSON
-                        </a>
-                        <a :href="admin.getStatsDownloadLink('csv')" x-on:click="close($refs.button);"  class="block w-full px-4 py-2 text-left text-sm dark:hover:bg-gray-600 cursor-pointer">
-                            Export as CSV
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
+<h1 class="text-2xl text-1 my-4">Server Statistics</h1>
+<div class="form-container">
 
-        <div class="col-span-4">
-            <h2 class="text-2 font-medium">Quick stats</h2>
-            <table class="m-2 text-sm">
-                <tbody>
+    <h2 class="form-container-title">Quick stats</h2>
+
+    <div class="form-container-body grid grid-cols-1 md:grid-cols-2 gap-3">
+        <table class="m-2 text-sm text-3">
+            <tbody>
                 <tr>
-                    <td class="text-3 px-1 font-medium">Enrolled Students</td>
-                    <td class="text-2 px-1 font-semibold" id="numStudents">
+                    <td>Enrolled Students</td>
+                    <td id="numStudents">
                         <i class="fas fa-spinner animate-spin text-3"></i>
                     </td>
                 </tr>
                 <tr>
-                    <td class="text-3 p-1 font-medium">Lectures</td>
-                    <td class="text-2 px-1 font-semibold">{{.TUMLiveContext.Course.NumStreams}}</td>
+                    <td>Lectures</td>
+                    <td>{{.TUMLiveContext.Course.NumStreams}}</td>
                 </tr>
                 <tr>
-                    <td class="text-3 px-1 font-medium">Vod Views</td>
-                    <td class="text-2 font-semibold px-1" id="vodViews">
+                    <td>Vod Views</td>
+                    <td id="vodViews">
                         <i class="fas fa-spinner animate-spin text-3"></i>
                     </td>
                 </tr>
                 <tr>
-                    <td class="text-3 px-1 font-medium">Live Views</td>
-                    <td class="text-2 font-semibold px-1" id="liveViews">
+                    <td>Live Views</td>
+                    <td id="liveViews">
                         <i class="fas fa-spinner animate-spin text-3"></i>
                     </td>
                 </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="col-span-4 sm:col-span-2">
-            <h2 class="text-2 font-medium">Student Live activity per week</h2>
+            </tbody>
+        </table>
+
+        <div>
+            <h2>Student Live activity per week</h2>
             <div class="w-full m-auto" style="min-height: 200px">
                 <canvas id="courseGeneralStatsLive" width="400" height="100" aria-label="Viewer Live stats"
-                        role="img"></canvas>
+                    role="img"></canvas>
             </div>
         </div>
-        <div class="col-span-4 sm:col-span-2">
-            <h2 class="text-2 font-medium">Student VoD activity per week</h2>
+        <div>
+            <h2>Student VoD activity per week</h2>
             <div class="w-full m-auto" style="min-height: 200px">
                 <canvas id="courseGeneralStatsVod" width="400" height="100" aria-label="Viewer VoD stats"
-                        role="img"></canvas>
+                    role="img"></canvas>
             </div>
         </div>
-        <div class="col-span-4 md:col-span-2">
-            <h2 class="text-2 font-medium">VoD activity throughout the day</h2>
+        <div>
+            <h2>VoD activity throughout the day</h2>
             <div class="w-full m-auto" style="min-height: 200px">
-                <canvas id="hours" width="400" height="100" aria-label="Viewer stats"
-                        role="img"></canvas>
+                <canvas id="hours" width="400" height="100" aria-label="Viewer stats" role="img"></canvas>
             </div>
         </div>
-        <div class="col-span-4 md:col-span-2">
-            <h2 class="text-2 font-medium">VoD activity per day of week</h2>
+        <div>
+            <h2>VoD activity per day of week</h2>
             <div class="w-full m-auto" style="min-height: 200px">
-                <canvas id="weekdays" width="400" height="100" aria-label="Viewer stats"
-                        role="img"></canvas>
+                <canvas id="weekdays" width="400" height="100" aria-label="Viewer stats" role="img"></canvas>
             </div>
         </div>
-        <div class="col-span-4">
-            <h2 class="text-2 font-medium">VoD activity per day</h2>
+        <div>
+            <h2>VoD activity per day</h2>
             <div class="w-full m-auto" style="min-height: 200px">
-                <canvas id="allDays" width="400" height="100" aria-label="Viewer stats"
-                        role="img"></canvas>
+                <canvas id="allDays" width="400" height="100" aria-label="Viewer stats" role="img"></canvas>
             </div>
         </div>
+        <a :href="admin.getStatsDownloadLink('json')" x-on:click="close($refs.button);" class="btn block" download>
+            Export as JSON
+        </a>
+        <a :href="admin.getStatsDownloadLink('csv')" x-on:click="close($refs.button);" class="btn block">
+            Export as CSV
+        </a>
     </div>
-    <p class="text-5"><i class="fas fa-info-circle text-warn"></i> Some of this data is only captured from June 28th 2021 onwards.</p>
-    <script>
-        admin.loadStats("activity-live", "courseGeneralStatsLive");
-        admin.loadStats("activity-vod", "courseGeneralStatsVod");
-        admin.loadStats("hour", "hours");
-        admin.loadStats("day", "weekdays");
-        admin.loadStats("allDays", "allDays");
-        admin.initStatsPage();
-    </script>
+</div>
+<p class="text-5 mx-auto w-4/5 block"><i class="fas fa-info-circle text-warn"></i> Some of this data is only captured
+    from June 28th 2021
+    onwards.</p>
+<script>
+    admin.loadStats("activity-live", "courseGeneralStatsLive");
+    admin.loadStats("activity-vod", "courseGeneralStatsVod");
+    admin.loadStats("hour", "hours");
+    admin.loadStats("day", "weekdays");
+    admin.loadStats("allDays", "allDays");
+    admin.initStatsPage();
+</script>
 {{end}}

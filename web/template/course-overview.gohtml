@@ -2,7 +2,7 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <title>{{.IndexData.TUMLiveContext.Course.Name}} | TUM Live</title>
+    <title>{{.IndexData.Branding.Title}} | {{.IndexData.TUMLiveContext.Course.Name}}</title>
     <script src="/static/assets/ts-dist/global.bundle.js?v={{.IndexData.VersionTag}}"></script>
     {{template "headImports" .IndexData.VersionTag}}
 </head>
@@ -15,9 +15,9 @@
      id="lecture-search-modal"
      class="flex absolute w-full h-screen backdrop-blur-sm p-2 z-50">
     <div class="w-full mt-5 md:mt-24 mx-auto md:w-2/4 bg-white border shadow rounded-lg h-fit dark:border-gray-600 dark:bg-secondary">
-        <div class="flex px-3 py-1 border-b dark:border-gray-600"
+        <div class="flex items-center px-3 py-1 border-b dark:border-gray-600"
              @click.outside="searchContext.hideModal(streamSearch)">
-            <div class="p-1 my-auto">
+            <div class="p-1">
                 <i x-cloak x-show="!streamSearch.loading"
                    class="fa-solid fa-search text-lg text-gray-500 dark:text-gray-600"></i>
                 <i x-cloak x-show="streamSearch.loading"
@@ -33,11 +33,11 @@
                    type="search"
                    name="lecture-search-input"
                    placeholder="Search for a lecture"
-                   class="bg-transparent border-0 outline-none w-full h-full font-light"
+                   class="bg-transparent border-0 outline-none w-full px-2 font-light"
                    autocomplete="off"
             >
             <button @click="searchContext.hideModal(streamSearch)"
-                    class="p-1 border dark:border-gray-600 rounded shadow-sm my-auto">
+                    class="p-1 border dark:border-gray-600 rounded shadow-sm">
                 <span class="text-4 text-xs">ESC</span>
             </button>
         </div>

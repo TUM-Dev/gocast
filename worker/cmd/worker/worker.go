@@ -37,7 +37,9 @@ func prepare() {
 }
 
 func main() {
+	cfg.SetConfig()
 	prepare()
+
 	log.Infof("Trying to connect worker %s to %s:50052", cfg.WorkerID, cfg.MainBase)
 	conn, err := grpc.Dial(fmt.Sprintf("%s:50052", cfg.MainBase), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithConnectParams(grpc.ConnectParams{
 		Backoff: backoff.Config{

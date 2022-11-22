@@ -4,6 +4,10 @@ export * from "./notifications";
 export * from "./user-settings";
 export * from "./start-page";
 
+export async function getData(url = "") {
+    return await fetch(url);
+}
+
 export async function putData(url = "", data = {}) {
     return await fetch(url, {
         method: "PUT",
@@ -267,10 +271,6 @@ export type Section = {
     friendlyTimestamp?: string;
     fileID?: number;
 };
-
-export function getQueryParam(name: string): string {
-    return new URL(window.location.href).searchParams.get(name) ?? undefined;
-}
 
 window.onload = function () {
     initHiddenCourses();

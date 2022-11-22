@@ -280,12 +280,24 @@ func (r chatRoutes) handleApprove(ctx tools.TUMLiveContext, msg []byte) {
 	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
 		return
 	}
+
 	err = r.ChatDao.ApproveChat(req.Id)
 	if err != nil {
 		log.WithError(err).Error("could not approve chat")
+		return
+	}
+
+	/* UserId should be the user who gets the message, to add dynamic user specific flags (e.g. Liked)
+	 * to the message payload. In this case the Message is freshly approved so no users should have interacted
+	 * with that message so far, so we pass 0 instead of a userId.
+	 */
+	chat, err := r.ChatDao.GetChat(req.Id, 0)
+	if err != nil {
+		log.WithError(err).Error("could not get chat")
 	}
 	broadcast := gin.H{
 		"approve": req.Id,
+		"chat":    chat,
 	}
 	broadcastBytes, err := json.Marshal(broadcast)
 	if err != nil {
@@ -463,14 +475,14 @@ func (r chatRoutes) getActivePoll(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	if tumLiveContext.User == nil {
 		_ = c.Error(tools.RequestError{
-			Status:        http.StatusOK,
+			Status:        http.StatusBadRequest,
 			CustomMessage: "not logged in",
 		})
 		return
 	}
 	poll, err := r.ChatDao.GetActivePoll(tumLiveContext.Stream.ID)
 	if err != nil && err == gorm.ErrRecordNotFound {
-		c.JSON(http.StatusOK, nil)
+		c.JSON(http.StatusNotFound, nil)
 		return
 	}
 	if err != nil {
@@ -581,11 +593,6 @@ func CollectStats(daoWrapper dao.DaoWrapper) func() {
 			}
 		}
 	}
-}
-
-func notifyViewersPause(streamId uint, paused bool) {
-	req, _ := json.Marshal(gin.H{"paused": paused})
-	broadcastStream(streamId, req)
 }
 
 func NotifyViewersLiveState(streamId uint, live bool) {
