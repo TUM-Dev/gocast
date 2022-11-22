@@ -7,7 +7,7 @@ on:
     types: [ closed ]
 
 jobs:
-  comment:
+  remove-ts:
     runs-on: ubuntu-latest
 
     steps:
