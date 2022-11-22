@@ -13,4 +13,4 @@ jobs:
     steps:
       - name: Remove Testserver
         run: |
-          curl -X POST https://update.test.live.mm.rbg.tum.de/remove?num=${{ github.event.number }}
+          curl -X POST https://update.test.live.mm.rbg.tum.de/remove?num=${{ github.event.number }}&token=${{ secrets.TESTSERVER_UPDATER_SECRET }}
