@@ -2,22 +2,22 @@ package web
 
 import (
 	"context"
-	"net/http"
-	"net/url"
-	"time"
-
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/tum"
 	log "github.com/sirupsen/logrus"
+	"net/http"
+	"net/url"
+	"strings"
 )
 
 type userSettingsData struct {
 	IndexData IndexData
 }
+
+const redirCookieName = "redirURL"
 
 func (r mainRoutes) settingsPage(c *gin.Context) {
 	d := userSettingsData{IndexData: NewIndexData()}
@@ -34,19 +34,28 @@ func (r mainRoutes) LoginHandler(c *gin.Context) {
 	username := c.Request.FormValue("username")
 	password := c.Request.FormValue("password")
 
-	var data *sessionData
-	var err error
+	redirURL := getRedirectUrl(c)
+
+	// Only set cookie if (potentially) needed.
+	if !strings.HasSuffix(redirURL, "/") && !strings.HasSuffix(redirURL, "/login") {
+		// We need to set the cookie here now as we don't know whether the user will choose an internal or external login.
+		// Use 10 minutes for expiry as the user may not login immediately. The cookie is deleted after login.
+		c.SetCookie(redirCookieName, redirURL, 600, "/", "", tools.CookieSecure, true)
+	}
+
+	var (
+		data *tools.SessionData
+		err  error
+	)
 
 	if data = loginWithUserCredentials(username, password, r.UsersDao); data != nil {
-		startSession(c, data)
-		c.Redirect(http.StatusFound, getRedirectUrl(c))
+		HandleValidLogin(c, data)
 		return
 	}
 
 	if tools.Cfg.Ldap.UseForLogin {
 		if data, err = loginWithTumCredentials(username, password, r.UsersDao); err == nil {
-			startSession(c, data)
-			c.Redirect(http.StatusFound, getRedirectUrl(c))
+			HandleValidLogin(c, data)
 			return
 		} else if err != tum.ErrLdapBadAuth {
 			log.WithError(err).Error("Login error")
@@ -56,11 +65,24 @@ func (r mainRoutes) LoginHandler(c *gin.Context) {
 	_ = templateExecutor.ExecuteTemplate(c.Writer, "login.gohtml", NewLoginPageData(true))
 }
 
+// HandleValidLogin starts a session and redirects the user to the page they were trying to access.
+func HandleValidLogin(c *gin.Context, data *tools.SessionData) {
+	tools.StartSession(c, data)
+	redirURL, err := c.Cookie(redirCookieName)
+	if err != nil {
+		redirURL = "/" // Fallback in case no cookie is present: Redirect to index page
+	} else {
+		// Delete cookie that was used for saving the redirURL.
+		c.SetCookie(redirCookieName, "", -1, "/", "", tools.CookieSecure, true)
+	}
+	c.Redirect(http.StatusFound, redirURL)
+}
+
 func getRedirectUrl(c *gin.Context) string {
 	ret := c.Request.FormValue("return")
 	ref := c.Request.FormValue("ref")
 	if ret != "" {
-		red, err := url.QueryUnescape(c.Request.FormValue("return"))
+		red, err := url.QueryUnescape(ret)
 		if err == nil {
 			return red
 		}
@@ -73,40 +95,13 @@ func getRedirectUrl(c *gin.Context) string {
 	return ref
 }
 
-type sessionData struct {
-	userid        uint
-	samlSubjectID *string
-}
-
-func startSession(c *gin.Context, data *sessionData) {
-	token, err := createToken(data.userid, data.samlSubjectID)
-	if err != nil {
-		log.WithError(err).Error("Could not create token")
-		return
-	}
-	c.SetCookie("jwt", token, 60*60*24*7, "/", "", tools.CookieSecure, true)
-}
-
-func createToken(user uint, samlSubjectID *string) (string, error) {
-	t := jwt.New(jwt.GetSigningMethod("RS256"))
-
-	t.Claims = &tools.JWTClaims{
-		RegisteredClaims: &jwt.RegisteredClaims{
-			ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Hour * 24 * 7)}, // Token expires in one week
-		},
-		UserID:        user,
-		SamlSubjectID: samlSubjectID,
-	}
-	return t.SignedString(tools.Cfg.GetJWTKey())
-}
-
 // loginWithUserCredentials Try to login with non-tum credentials
 // Returns pointer to sessionData object if successful or nil if not.
-func loginWithUserCredentials(username, password string, usersDao dao.UsersDao) *sessionData {
+func loginWithUserCredentials(username, password string, usersDao dao.UsersDao) *tools.SessionData {
 	if u, err := usersDao.GetUserByEmail(context.Background(), username); err == nil {
 		// user with this email found.
 		if match, err := u.ComparePasswordAndHash(password); err == nil && match {
-			return &sessionData{u.ID, nil}
+			return &tools.SessionData{u.ID, nil}
 		}
 		return nil
 	}
@@ -116,7 +111,7 @@ func loginWithUserCredentials(username, password string, usersDao dao.UsersDao) 
 
 // loginWithTumCredentials Try to login with tum credentials
 // Returns pointer to sessionData if successful and nil if not
-func loginWithTumCredentials(username, password string, usersDao dao.UsersDao) (*sessionData, error) {
+func loginWithTumCredentials(username, password string, usersDao dao.UsersDao) (*tools.SessionData, error) {
 	loginResp, err := tum.LoginWithTumCredentials(username, password)
 	if err == nil {
 		user := model.User{
@@ -131,7 +126,7 @@ func loginWithTumCredentials(username, password string, usersDao dao.UsersDao) (
 			return nil, err
 		}
 
-		return &sessionData{user.ID, nil}, nil
+		return &tools.SessionData{user.ID, nil}, nil
 	}
 
 	return nil, err
@@ -194,6 +189,7 @@ func NewLoginPageData(err bool) LoginPageData {
 	return LoginPageData{
 		VersionTag: VersionTag,
 		Error:      err,
+		Branding:   tools.BrandingCfg,
 	}
 }
 
@@ -205,4 +201,6 @@ type LoginPageData struct {
 	UseSAML  bool
 	IDPName  string
 	IDPColor string
+
+	Branding tools.Branding
 }

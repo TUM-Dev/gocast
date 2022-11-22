@@ -184,10 +184,10 @@ message TranscodingFinished {
 message UploadFinished {
   string WorkerID = 1;
   uint32 StreamID = 2;
-  string HLSUrl = 4;
-  string SourceType = 5;
-  string ThumbnailUrl = 6;
-  string TranscodingFile = 7;
+  string HLSUrl = 3;
+  string SourceType = 4;
+  string ThumbnailUrl = 5;
+  string TranscodingFile = 6;
 }
 
 message StreamStarted {

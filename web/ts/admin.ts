@@ -202,3 +202,15 @@ export async function requestSubtitles(streamID: number, language: string) {
             console.error(err);
         });
 }
+
+export function impersonate(userID: number): Promise<boolean> {
+    return fetch("/api/users/impersonate", {
+        method: "POST",
+        body: JSON.stringify({ id: userID }),
+        headers: {
+            "Content-Type": "application/json",
+        },
+    }).then((r) => {
+        return r.status === StatusCodes.OK;
+    });
+}

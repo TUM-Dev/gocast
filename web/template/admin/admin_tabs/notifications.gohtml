@@ -25,7 +25,7 @@
     <div class="form-container-body">
         <label>
             <h2>Notification Target:</h2>
-            <select x-model="target" class="select">
+            <select x-model="target" class="tl-select">
                 <option value="1">All Users</option>
                 <option value="2">Loggedin Users</option>
                 <option value="3">Students</option>
@@ -35,11 +35,11 @@
         </label>
         <label>
             <h2>Title (Optional)</h2>
-            <input type="text" x-model="title" placeholder="Enter Title">
+            <input class="tl-input" type="text" x-model="title" placeholder="Enter Title">
         </label>
         <label>
             <h2>Body (You can use Markdown)</h2>
-            <textarea x-model="body" placeholder="Enter Body" required></textarea>
+            <textarea class="tl-input" x-model="body" placeholder="Enter Body" required></textarea>
         </label>
         <button class="btn primary" type="submit">Create</button>
     </div>

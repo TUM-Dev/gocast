@@ -167,34 +167,6 @@ func TestStream(t *testing.T) {
 			Url(url).
 			Run(t, testutils.Equal)
 	})
-	t.Run("GET/api/stream/:streamID/pause", func(t *testing.T) {
-		url := fmt.Sprintf("/api/stream/%d/pause", testutils.StreamFPVLive.ID)
-
-		gomino.TestCases{
-			"no context": {
-				ExpectedCode: http.StatusInternalServerError,
-			},
-			"not admin": {
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
-				ExpectedCode: http.StatusForbidden,
-			},
-			"GetLectureHallByID returns error": {
-				Router: func(r *gin.Engine) {
-					wrapper := dao.DaoWrapper{
-						StreamsDao:      testutils.GetStreamMock(t),
-						CoursesDao:      testutils.GetCoursesMock(t),
-						LectureHallsDao: testutils.GetLectureHallMockError(t),
-					}
-					configGinStreamRestRouter(r, wrapper)
-				},
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
-				ExpectedCode: http.StatusInternalServerError,
-			}}.
-			Router(StreamDefaultRouter(t)).
-			Method(http.MethodGet).
-			Url(url).
-			Run(t, testutils.Equal)
-	})
 	t.Run("GET/api/stream/:streamID/end", func(t *testing.T) {
 		url := fmt.Sprintf("/api/stream/%d/end", testutils.StreamFPVLive.ID)
 		gomino.TestCases{
@@ -462,7 +434,91 @@ func TestStreamVideoSections(t *testing.T) {
 			Url(url).
 			Run(t, testutils.Equal)
 	})
-	t.Run("DELETE/api/stream/:streamID/sections", func(t *testing.T) {
+	t.Run("PUT/api/stream/:streamID/sections/:id", func(t *testing.T) {
+		section := testutils.StreamFPVLive.VideoSections[0]
+		baseUrl := fmt.Sprintf("/api/stream/%d/sections", testutils.StreamFPVLive.ID)
+		url := fmt.Sprintf("%s/%d", baseUrl, section.ID)
+
+		request := UpdateVideoSectionRequest{
+			Description: "Graph algorithms",
+		}
+
+		update := model.VideoSection{
+			Model:       gorm.Model{ID: section.ID},
+			Description: request.Description,
+		}
+
+		gomino.TestCases{
+			"Not Admin": {
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
+				ExpectedCode: http.StatusForbidden,
+			},
+			"Invalid ID": {
+				Url:          fmt.Sprintf("%s/%s", baseUrl, "abc"),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"Invalid Body": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						StreamsDao: testutils.GetStreamMock(t),
+						CoursesDao: testutils.GetCoursesMock(t),
+					}
+					configGinStreamRestRouter(r, wrapper)
+				},
+				Body:         nil,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"Update fails": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						StreamsDao: testutils.GetStreamMock(t),
+						CoursesDao: testutils.GetCoursesMock(t),
+						VideoSectionDao: func() dao.VideoSectionDao {
+							sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
+							sectionMock.
+								EXPECT().
+								Update(&update).
+								Return(errors.New("")).
+								AnyTimes()
+							return sectionMock
+						}(),
+					}
+					configGinStreamRestRouter(r, wrapper)
+				},
+				Body:         request,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"success": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						StreamsDao: testutils.GetStreamMock(t),
+						CoursesDao: testutils.GetCoursesMock(t),
+						VideoSectionDao: func() dao.VideoSectionDao {
+							sectionMock := mock_dao.NewMockVideoSectionDao(gomock.NewController(t))
+							sectionMock.
+								EXPECT().
+								Update(&update).
+								Return(nil).
+								AnyTimes()
+							return sectionMock
+						}(),
+					}
+					configGinStreamRestRouter(r, wrapper)
+				},
+				Body:         request,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode: http.StatusOK,
+			},
+		}.
+			Router(StreamDefaultRouter(t)).
+			Method(http.MethodPut).
+			Url(url).
+			Run(t, testutils.Equal)
+	})
+	t.Run("DELETE/api/stream/:streamID/sections/:id", func(t *testing.T) {
 		section := testutils.StreamFPVLive.VideoSections[0]
 		baseUrl := fmt.Sprintf("/api/stream/%d/sections", testutils.StreamFPVLive.ID)
 		url := fmt.Sprintf("%s/%d", baseUrl, section.ID)

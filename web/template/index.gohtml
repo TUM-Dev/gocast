@@ -2,10 +2,9 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <title>TUM Live</title>
+    <title>{{.Branding.Title}}</title>
     {{template "headImports" .VersionTag}}
-    <meta name="description"
-          content="TUM-Live, the livestreaming and VoD service of the Rechnerbetriebsgruppe at the department of informatics and mathematics at the Technical University of Munich"/>
+    <meta name="description" content="{{.Branding.Description}}"/>
 </head>
 <body>
 {{template "header" .TUMLiveContext}}
@@ -22,7 +21,8 @@
     {{if not .TUMLiveContext.User}}
         <p class="text-2"><a href="/login" class="underline">Log in</a> to see your courses</p>
     {{else if .TUMLiveContext.User.Name}}
-        <p class="text-2">{{.TUMLiveContext.User.GetPreferredGreeting}} {{.TUMLiveContext.User.GetPreferredName}}, nice to see you!</p>
+        <p class="text-2">{{.TUMLiveContext.User.GetPreferredGreeting}} {{.TUMLiveContext.User.GetPreferredName}}, nice
+            to see you!</p>
     {{end}}
     {{if .PinnedCourses}}
         <h2 class="text-2xl text-1 mt-2">Pinned Courses</h2>
@@ -46,7 +46,9 @@
                 {{end}}
                 <span class="bg-red-800 text-red-100 px-2 mr-1 capitalize rounded-full font-semibold">Live</span>
                 <span class="font-light text-3">{{printf "until %2d:%02d" $liveStream.Stream.End.Hour $liveStream.Stream.End.Minute}}</span>
-                {{if and $liveStream.LectureHall}}<a href="/admin/lectureHalls#{{$liveStream.LectureHall.Model.ID}}" class="font-semibold text-3"> - <i class="fas fa-location-pin"></i> {{$liveStream.LectureHall.Name}}</a>{{end}}
+                {{if and $liveStream.LectureHall}}<a href="/admin/lectureHalls#{{$liveStream.LectureHall.Model.ID}}"
+                                                     class="font-semibold text-3"> - <i
+                            class="fas fa-location-pin"></i> {{$liveStream.LectureHall.Name}}</a>{{end}}
             </p>
         </div>
     {{end}}
