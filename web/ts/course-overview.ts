@@ -4,8 +4,8 @@ import { postData, showMessage } from "./global";
 type UserStream = {
     streamID: number;
     month: string;
-    progress: number;
     watched: boolean;
+    recording: boolean;
 };
 
 export function watchedTracker(): { m: WatchedTracker } {
@@ -22,7 +22,7 @@ export class WatchedTracker {
     }
 
     setWatched(streamId: number, watchStatus: boolean): void {
-        const stream = this.streams.find((s) => {
+        const stream = this.streams?.find((s) => {
             return s.streamID === streamId;
         });
 
@@ -35,15 +35,17 @@ export class WatchedTracker {
     }
 
     userWatchedMonth(month: string): boolean {
-        const unwatchedStreamIndex = this.streams.filter((s) => s.month === month).findIndex((s) => !s.watched);
+        const unwatchedStreamIndex = this.streams
+            ?.filter((s) => s.month === month && s.recording)
+            .findIndex((s) => !s.watched);
         return unwatchedStreamIndex === -1;
     }
 
     countWatched(): number {
-        return this.streams.filter((s) => s.watched).length;
+        return this.streams?.filter((s) => s.watched).length;
     }
 
     userWatchedAll(): boolean {
-        return this.streams.findIndex((s) => !s.watched) === -1;
+        return this.streams?.findIndex((s) => !s.watched && s.recording) === -1;
     }
 }

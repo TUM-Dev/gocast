@@ -1,5 +1,5 @@
 import { postData } from "./global";
-import { VideoSections } from "./video-sections";
+import { VideoSectionList } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import airplay from "@silvermine/videojs-airplay";
@@ -9,7 +9,6 @@ import dom = videojs.dom;
 
 require("videojs-sprite-thumbnails");
 require("videojs-seek-buttons");
-require("videojs-hls-quality-selector");
 require("videojs-contrib-quality-levels");
 
 const Button = videojs.getComponent("Button");
@@ -64,8 +63,6 @@ export const initPlayer = function (
             height: 90,
         });
     }
-
-    player.hlsQualitySelector();
     player.seekButtons({
         // TODO user preferences, e.g. change to 5s
         backIndex: 0,
@@ -273,6 +270,27 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
     });
 };
 
+/**
+ * Registers a time watcher that observes the time of the current player
+ * @param callBack call back function responsible for handling player time updates
+ * @return callBack function that got registered for listening to player time updates (used to deregister)
+ */
+export const registerTimeWatcher = function (callBack: (currentPlayerTime: number) => void): () => void {
+    const timeWatcherCallBack: () => void = () => {
+        callBack(player.currentTime());
+    };
+    player?.on("timeupdate", timeWatcherCallBack);
+    return timeWatcherCallBack;
+};
+
+/**
+ * Deregisters a time watching obeserver from the current player
+ * @param callBackToDeregister regestered callBack function
+ */
+export const deregisterTimeWatcher = function (callBackToDeregister: () => void) {
+    player?.off("timeupdate", callBackToDeregister);
+};
+
 const Component = videojs.getComponent("Component");
 
 export class Titlebar extends Component {
@@ -447,7 +465,7 @@ export class SeekLogger {
     }
 }
 
-export function attachCurrentTimeEvent(videoSection: VideoSections) {
+export function attachCurrentTimeEvent(videoSection: VideoSectionList) {
     player.ready(() => {
         let timer;
         (function checkTimestamp() {

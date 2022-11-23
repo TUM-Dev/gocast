@@ -1,65 +1,63 @@
 {{define "edit-course"}}
-    <link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
-    <script src="/static/node_modules/chart.js/dist/chart.min.js"></script>
-    {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
-    {{$course := .IndexData.TUMLiveContext.Course}}
-    {{$lecture := .IndexData.TUMLiveContext.Stream}}
-    <div class="text-1 mt-4" x-data="{userId: {{.IndexData.TUMLiveContext.User.Model.ID}} }">
-        <div class="min-w-screen items-center justify-center">
-            <div class="w-full m-auto lg:w-5/6">
-                <h1 class="mb-4">{{$course.Name}}</h1>
-                <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
-                                                                    value="{{$course.Model.ID}}"></label>
-                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
-                    <h2 class="text-2 text-2xl font-semibold">Settings</h2>
-                    <div class="">
-                        {{template "course_settings" $course}}
-                    </div>
-                </div>
+<link rel="stylesheet" href="/static/node_modules/flatpickr/dist/flatpickr.min.css">
+<script src="/static/node_modules/flatpickr/dist/flatpickr.min.js"></script>
+<script src="/static/node_modules/chart.js/dist/chart.min.js"></script>
+{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
+{{$course := .IndexData.TUMLiveContext.Course}}
+{{$lecture := .IndexData.TUMLiveContext.Stream}}
+<div class="text-1 mt-4" x-data="{userId: {{.IndexData.TUMLiveContext.User.Model.ID}} }">
+    <div class="min-w-screen items-center justify-center">
 
-                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
-                    <h2 class="text-2 text-2xl font-semibold">Course Admins</h2>
-                    <div class="">
-                        {{template "course-admin-management" $course}}
-                    </div>
-                </div>
-
-                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
-                    <h2 class="text-2 text-2xl font-semibold">Camera Presets</h2>
-                    <div class="">
-                        {{template "camera-presets"}}
-                    </div>
-                </div>
-
-                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
-                    <h2 class="text-2 text-2xl font-semibold">New Lecture</h2>
-                    <div class="">
-                        {{template "create-lecture-form" .}}
-                    </div>
-                </div>
-
-                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
-                    <h2 class="text-2 text-2xl font-semibold">Lectures</h2>
-                    <div class="">
-                        {{template "course-lecture-management" .}}
-                    </div>
-                </div>
-
-                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
-                    <h2 class="text-2 text-2xl font-semibold">External Participants</h2>
-                    <div class="">
-                        {{template "externalParticipants" $course}}
-                    </div>
-                </div>
-
-                <div class="bg-white dark:bg-secondary rounded shadow p-4 my-5">
-                    <h2 class="text-2 text-2xl font-semibold">Dangerzone</h2>
-                    <div class="">
-                        {{template "dangerzone" $course}}
-                    </div>
-                </div>
-
+        <div class="flex justify-between mb-4">
+            <h1 class="self-center">{{$course.Name}}</h1>
+            <div x-cloak x-show="(new URL(document.location)).searchParams.get('copied')!==null"
+                class="p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800"
+                role="alert">
+                Course was copied successfully.
+            </div>
+            <div x-cloak x-show="(new URL(document.location)).searchParams.get('created')!==null"
+                class="p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800"
+                role="alert">
+                Course was created successfully.
             </div>
         </div>
+
+        <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
+                value="{{$course.Model.ID}}"></label>
+        <div class="form-container">
+            <h2 class="form-container-title">Settings</h2>
+            {{template "course_settings" $course}}
+        </div>
+
+        <div class="form-container">
+            <h2 class="form-container-title">Course Admins</h2>
+            {{template "course-admin-management" $course}}
+        </div>
+
+        <div class="form-container">
+            <h2 class="form-container-title">Lecture Hall Settings</h2>
+            {{template "source-settings"}}
+        </div>
+
+        <div class="form-container">
+            <h2 class="form-container-title">New Lecture</h2>
+            {{template "create-lecture-form" .}}
+        </div>
+
+        <div class="form-container">
+            <h2 class="form-container-title">Lectures</h2>
+            {{template "course-lecture-management" .}}
+        </div>
+
+        <div class="form-container">
+            <h2 class="form-container-title">External Participants</h2>
+            {{template "externalParticipants" $course}}
+        </div>
+
+        <div class="form-container">
+            <h2 class="form-container-title">Actions</h2>
+            {{template "dangerzone" $course}}
+        </div>
     </div>
+</div>
 {{end}}

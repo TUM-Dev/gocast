@@ -23,7 +23,7 @@
 
 {{define "theme-selector"}}
     <div class="relative" x-data="{ show: false, mobile: false }">
-        <button class="transition-colors duration-200 hover:text-gray-600
+        <button title="Select Theme" class="transition-colors duration-200 hover:text-gray-600
                        dark:hover:text-white text-gray-400 mr-6 relative w-4"
                 type="button" @click="show=!show">
             {{template "theme-switcher-icon"}}

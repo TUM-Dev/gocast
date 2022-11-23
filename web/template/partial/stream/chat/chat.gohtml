@@ -1,233 +1,315 @@
 {{define "chat"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.ChatData*/ -}}
     {{$stream := .IndexData.TUMLiveContext.Stream}}
-
+    {{$startTime := $stream.ParsableStartTime}}
+    {{$liveNowTimestamp := $stream.ParsableLiveNowTimestamp}}
+    {{$liveNow := $stream.LiveNow}}
+    {{$isComingUp := $stream.IsComingUp}}
     {{$userName := ""}}
     {{$userId := 0}}
     {{if .IndexData.TUMLiveContext.User}}
-        {{$userName := .IndexData.TUMLiveContext.User.Name}}
-        {{$userId := .IndexData.TUMLiveContext.User.ID}}
+        {{$userName = .IndexData.TUMLiveContext.User.Name}}
+        {{$userId = .IndexData.TUMLiveContext.User.ID}}
     {{end}}
     <div x-cloak
-         x-data="watch.initChat({{.IsAdminOfCourse}},{{$stream.ID}}, {{$userId}},'{{$userName}}');"
-         x-init="await Promise.all([c.loadMessages(), c.poll.load()]); $nextTick(() => { watch.scrollToBottom() })"
+         x-data="watch.initChat({{.IsAdminOfCourse}}, {{$stream.ID}}, '{{$startTime}}', '{{$liveNowTimestamp}}', {{$userId}}, '{{$userName}}', {{not (or $isComingUp $liveNow .IsPopUp)}});"
+         x-init="await Promise.all([c.loadMessages(), c.poll.load()]); $nextTick(() => { watch.scrollToBottom(); window.dispatchEvent(new CustomEvent('chatinitialized')); });"
          x-on:chatmessage.window="e => c.onMessage(e);"
          x-on:chatreply.window="e => c.onReply(e);"
          x-on:chatlike.window="e => {c.onLike(e); $dispatch('reorder')}"
          x-on:chatdelete.window="e => c.onDelete(e);"
          x-on:chatresolve.window="e => c.onResolve(e);"
-         x-on:chatapprove.window="await c.loadMessages(); $nextTick(() => { watch.scrollToBottom() })"
+         x-on:chatapprove.window="e => { c.patchMessage(e.detail.chat); $nextTick(() => { watch.scrollToBottom() }); }"
+         x-on:chatretract.window="e => { c.patchMessage(e.detail.chat); $nextTick(() => { watch.scrollToBottom() }); }"
          x-on:chatnewpoll.window="e => c.onNewPoll(e);"
          x-on:polloptionvotesupdate.window="e => c.onPollOptionVotesUpdate(e);"
+         x-on:polloptionresult.window="e => c.onPollOptionResult(e);"
+         x-on:polloptionresult.window="e => c.onPollOptionResult(e);"
+         x-on:wsrealtimeconnectionchange.window="e => c.disconnected = !e.detail.status;"
+         @chatpopupmessageupdate.window="e => initPromise.next(() => c.onPopUpMessagesUpdated(e));"
+         @chatupdategrayedout.window="e => c.onGrayedOutUpdated(e);"
+         @chatupdatefocus.window="e => c.onFocusUpdated(e);"
          @disconnected.window="c.disconnected = true;"
          @connected.window="c.disconnected = false;"
          @reorder="c.sortMessages()"
          @keyup.escape="c.current.replyTo=0"
          id="chatWrapper"
-         class="flex relative flex-col text-1 bg-white dark:bg-secondary h-full border-l z-40 dark:border-gray-800">
+         class="flex relative flex-col text-1 h-full">
         <!-- Chat header -->
-        <div class="flex sticky top-0 w-full px-3 max-h-12 h-12 justify-between bg-white z-40 border-b dark:bg-secondary dark:border-gray-800
-                    {{if .IsPopUp}} xl:w-1/2 md:w-3/4 md:mx-auto md:border md:rounded-b-lg{{end}}"
-             :class="show ? 'border-b' : 'border-0'"
+        <div class="flex align-middle items-center justify-between sticky top-0 bg-white z-40 w-full px-3 max-h-12 h-12 border-b dark:bg-secondary dark:border-gray-800"
              style="min-height: 3rem;"> <!-- since there is no min-h-12 class -->
             {{if not .IsPopUp}}
-                <div class="relative my-auto">
-                    <button @click="show = !show;"
-                            class="peer bg-transparent border-0 font-semibold text-xl h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90 md:rotate-0"
-                            title="Toggle Chat">
-                        <span x-text="show ? '&#8614;' : '&#8612;'">&#8614;</span></button>
-                </div>
+                <button x-show="!{{.IsPopUp}}"
+                        class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded mr-auto hover:dark:bg-gray-600 hover:bg-gray-200"
+                        @click="c.openChatPopUp('{{.IndexData.TUMLiveContext.Course.Slug}}', {{.IndexData.TUMLiveContext.Stream.Model.ID}})"
+                        title="Popout Chat"
+                        type="button">
+                    <i class="fas fa-external-link-alt text-3 m-auto"></i>
+                </button>
             {{end}}
-            <div x-show="show" class="ml-auto my-auto">
-                    <span class="font-semibold text-gray-500 text-xs"
-                          x-text="c.orderByLikes? 'Popular First': 'Live Chat'"></span>
-                <button @click="c.orderByLikes=!c.orderByLikes; watch.setOrder(c.orderByLikes); $dispatch('reorder'); c.orderByLikes? watch.scrollToTop(): watch.scrollToBottom()"
-                        class="bg-transparent border-0 font-semibold h-8 w-8 rounded
-                               hover:dark:bg-gray-600 hover:bg-gray-200 -rotate-90"
+            <div class="my-auto space-x-2 ml-auto">
+                <button class="text-5 text-xs rounded font-semibold px-2 py-1 my-auto uppercase"
+                        :class="c.chatReplayActive ? 'bg-gray-300 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700'"
+                        x-show="{{not (or $isComingUp $liveNow .IsPopUp)}}"
+                        title="(De-)Activate Chat Replay"
+                        @click="c.chatReplayActive = !c.chatReplayActive;"
+                        x-init="
+                            $watch('c.chatReplayActive', (value) => {
+                                value ? c.activateChatReplay() : c.deactivateChatReplay();
+                            })">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </button>
+                <button x-data="{oldChatReplayActive: c.chatReplayActive}"
+                        x-init="
+                        $watch('c.chatReplayActive', (value) => {
+                            if (value) {
+                                c.orderByLikes = false;
+                            }});
+
+                        $watch('c.orderByLikes', (value) => {
+                            watch.setOrder(value);
+                            $dispatch('reorder');
+                            if ({{$liveNow}}) {
+                                value ? watch.scrollToTop() : watch.scrollToBottom();
+                                return;
+                            }
+                            if (value) {
+                                oldChatReplayActive = c.chatReplayActive;
+                                c.chatReplayActive = false;
+                                watch.scrollToTop();
+                            }
+                            else if (oldChatReplayActive) {
+                                c.chatReplayActive = true;
+                            }
+                        });"
+                        @click="c.orderByLikes=!c.orderByLikes; watch.setOrder(c.orderByLikes);$dispatch('reorder'); c.orderByLikes? watch.scrollToTop(): watch.scrollToBottom()"
+                        class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 text-5 text-xs rounded font-semibold px-2 py-1 my-auto uppercase"
                         title="Change Order">
-                    <i class="fas fa-exchange-alt"></i>
+                    <span x-text="c.orderByLikes? 'Popular First': 'Live Chat'"></span>
+                    <i x-show="c.orderByLikes" class="fa-solid fa-arrow-up-short-wide"></i>
+                    <i x-show="!c.orderByLikes" class="fa-solid fa-arrow-down-short-wide"></i>
                 </button>
             </div>
         </div>
-        <!-- Active Poll UI -->
-        <template x-if="show && c.poll.activePoll && !c.admin">
-            <div class="z-50 absolute w-full top-12">
-                <div class="text-white bg-sky-600 dark:bg-sky-700 text-center p-2">Active Poll</div>
-                <div class="shadow-lg p-4 bg-white dark:text-white dark:bg-secondary-lighter border-b dark:border-gray-800 rounded-b-lg">
-                    <p x-text="c.poll.activePoll.question" class="text-sm font-semibold mb-3"></p>
-                    <template x-for="pollOption in c.poll.activePoll.pollOptions" :key="pollOption.ID">
-                        <button class="flex items-center mb-1" @click="c.poll.activePoll.selected = pollOption.ID"
-                                :disabled="c.poll.activePoll.submitted !== 0">
-                            <i class=""
-                               :class="(pollOption.ID === c.poll.activePoll.selected || c.poll.activePoll.submitted === pollOption.ID) ? 'fas fa-check-circle' : 'far fa-circle'"></i>
-                            <span x-text="pollOption.answer" class="ml-2"></span>
-                        </button>
-                    </template>
-                    <div class="mt-4 text-center">
-                        <button
-                                class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800 disabled:bg-gray-400
-                                    disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400 rounded border-0
-                                    focus:outline-none px-4 text-white text-sm ml-auto"
-                                @click="c.poll.activePoll.submitted = c.poll.activePoll.selected; watch.submitPollOptionVote(c.poll.activePoll.selected); c.poll.activePoll.selected = null;"
-                                :disabled="c.poll.activePoll.selected === null || c.poll.activePoll.submitted !== 0"
-                                title="Send Answer">
-                        <span class="font-semibold"
-                              x-text="c.poll.activePoll.submitted !== 0 ? 'Answer submitted' : 'Send Answer'"></span>
-                        </button>
+
+        <div x-data="{showPoll: false}">
+            <!-- Admin toolbox -->
+            <template x-if="c.admin">
+                <div class="flex align-middle justify-between bg-white dark:bg-secondary z-40 h-12 px-3 sticky top-12 border-b dark:border-gray-800"
+                     style="min-height: 3rem;">
+                    <div class="flex text-5 text-xs">
+                        <span class="uppercase font-light my-auto">admin</span>
+                        <i class="fa-solid fa-toolbox my-auto ml-2"></i>
                     </div>
-                </div>
-            </div>
-        </template>
-        <template x-if="show && c.poll.activePoll && c.admin">
-            <div class="z-50 absolute top-12 w-full">
-                <div class="text-white bg-sky-600 dark:bg-sky-700 text-center p-2">Active Poll</div>
-                <div class="shadow-lg p-4 bg-white dark:text-white dark:bg-secondary-lighter border-b dark:border-gray-800 rounded-b-lg">
-                    <p x-text="c.poll.activePoll.question" class="text-sm font-semibold mb-3"></p>
-                    <template x-for="pollOption in c.poll.activePoll.pollOptions">
-                        <div class="mb-3 pl-3 pr-3">
-                            <div class="flex justify-between pr-2">
-                                <span class="text-sm flex items-end" x-text="pollOption.answer"></span>
-                                <span class="text-xs flex items-end" x-text="pollOption.votes + ' Votes'"></span>
-                            </div>
-                            <div :style="`width: ${watch.getPollOptionWidth(c.poll.activePoll.pollOptions, pollOption)};`"
-                                 class="rounded-full h-4 bg-sky-400"></div>
-                        </div>
-                    </template>
-                    <div class="mt-5 text-center">
-                        <button
-                                class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800 disabled:bg-gray-400
-                                disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400 rounded border-0
-                                focus:outline-none px-4 text-white text-sm ml-auto"
-                                @click="c.poll.activePoll = null; watch.closeActivePoll();"
-                                :disabled="!c.poll.activePoll.active"
-                                title="Send Answer">
-                        <span class="font-semibold"
-                              x-text="!c.poll.activePoll.active ? 'Poll closed' : 'Publish & Close'"></span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </template>
-        <template x-if="show && c.poll.result">
-            <div class="z-50 absolute top-12 w-full">
-                <div class="text-white bg-sky-600 dark:bg-sky-700 text-center p-2 relative">
-                    Poll Result
-                    <button
-                            class="dark:hover:bg-white/10 hover:bg-black/10 absolute top-0 right-0 bottom-0 w-12"
-                            @click="c.poll.result = null;"
-                            title="Close">
-                        <i class="fas fa-close place-self-center"></i>
+                    <button x-cloak x-show="!c.poll.activePoll && !c.disconnected"
+                            @click="c.poll.showCreateUI = !c.poll.showCreateUI; c.users.clear()"
+                            class="hover:bg-gray-200 dark:hover:bg-gray-600 text-5 text-xs rounded font-semibold px-2 py-1 my-auto uppercase"
+                            :class="c.poll.showCreateUI && 'bg-gray-200 dark:bg-gray-600'"
+                            title="Create Poll"
+                            tabindex="-1"
+                            :disabled="c.poll.activePoll || c.disconnected"
+                            type="button">
+                        <span>new poll</span>
+                        <i class="fa-solid fa-list ml-2"></i>
                     </button>
                 </div>
-                <div class="shadow-lg p-4 bg-white dark:text-white dark:bg-secondary-lighter border-b dark:border-gray-800 rounded-b-lg">
-                    <p x-text="c.poll.result.question" class="text-sm font-semibold mb-3"></p>
-                    <template x-for="pollOptionResult in c.poll.result.pollOptionResults" :key="pollOptionResult.ID">
-                        <div class="mb-3 pl-3 pr-3">
-                            <div class="flex justify-between pr-2">
-                                <span class="text-sm flex items-end" x-text="pollOptionResult.answer"></span>
-                                <span class="text-xs flex items-end" x-text="pollOptionResult.votes + ' Votes'"></span>
-                            </div>
-                            <div :style="`width: ${watch.getPollOptionWidth(c.poll.result.pollOptionResults, pollOptionResult)};`"
-                                 class="rounded-full h-4 bg-sky-400"></div>
+            </template>
+
+            <!-- Active Poll UI -->
+            <template x-if="c.poll.activePoll && !c.admin">
+                <div class="z-40 absolute w-full top-12 px-2 py-1">
+                    <div class="shadow-lg border rounded-lg bg-white py-2 dark:bg-secondary dark:border-gray-600">
+                        <div class="flex align-middle justify-between px-3 dark:border-gray-600"
+                             :class="showPoll && 'border-b pb-2'">
+                            <span class="text-xs uppercase font-semibold my-auto">Active Poll</span>
+                            <button @click="showPoll = !showPoll" class="text-xs">
+                                <i class="fa-solid" :class="showPoll ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                            </button>
                         </div>
-                    </template>
+                        <div x-show="showPoll" class="px-4 pt-3 pb-3">
+                            <p x-text="c.poll.activePoll.question" class="text-center text-base font-light mb-3"></p>
+                            <template x-for="pollOption in c.poll.activePoll.pollOptions" :key="pollOption.ID">
+                                <button class="flex items-center mb-1"
+                                        @click="c.poll.activePoll.selected = pollOption.ID"
+                                        :disabled="c.poll.activePoll.submitted !== 0">
+                                    <i class=""
+                                       :class="(pollOption.ID === c.poll.activePoll.selected || c.poll.activePoll.submitted === pollOption.ID) ? 'fas fa-check-circle' : 'far fa-circle'"></i>
+                                    <span x-text="pollOption.answer" class="ml-2 text-sm"></span>
+                                </button>
+                            </template>
+                        </div>
+                        <div x-show="showPoll" class="px-3 pt-2 border-t dark:border-secondary-light flex justify-end">
+                            <button class="bg-blue-500 hover:bg-blue-600 dark:bg-indigo-600 dark:hover:bg-indigo-700
+                                disabled:bg-gray-400 dark:disabled:bg-gray-400 rounded
+                                focus:outline-none px-2 py-1 text-white font-semibold uppercase text-xs"
+                                    x-text="c.poll.activePoll.submitted !== 0 ? 'Answer submitted' : 'Send Answer'"
+                                    @click="c.poll.activePoll.submitted = c.poll.activePoll.selected; watch.submitPollOptionVote(c.poll.activePoll.selected); c.poll.activePoll.selected = null;"
+                                    :disabled="c.poll.activePoll.selected === null || c.poll.activePoll.submitted !== 0"
+                                    title="Send Answer">
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </template>
+            </template>
+            <template x-if="c.poll.activePoll && c.admin">
+                <div x-data="{showPoll: false}" class="z-40 absolute top-24 w-full px-2 py-1">
+                    <div class="shadow-lg text-3 border rounded-lg bg-white py-2 dark:bg-secondary dark:border-secondary-light">
+                        <div class="flex align-middle justify-between px-3 dark:border-secondary-light"
+                             :class="showPoll && 'border-b pb-2'">
+                            <span class="relative text-xs uppercase font-semibold my-auto">Active Poll</span>
+                            <button @click="showPoll = !showPoll" class="text-xs">
+                                <i class="fa-solid" :class="showPoll ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                            </button>
+                        </div>
+                        <div x-show="showPoll" class="px-3 pt-3 pb-3">
+                            <p x-text="c.poll.activePoll.question" class="text-center text-base font-light mb-3"></p>
+                            <template x-for="pollOption in c.poll.activePoll.pollOptions">
+                                <div class="mb-3 pl-3 pr-3">
+                                    <div class="text-5 flex justify-between pr-2">
+                                        <span class="text-sm flex items-end" x-text="pollOption.answer"></span>
+                                        <span class="text-xs flex items-end"
+                                              x-text="pollOption.votes + ' Votes'"></span>
+                                    </div>
+                                    <div :style="`width: ${watch.getPollOptionWidth(c.poll.activePoll.pollOptions, pollOption)};`"
+                                         class="rounded-full h-4 bg-blue-500/50 dark:bg-indigo-600">
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <div x-show="showPoll" class="px-3 pt-2 flex justify-end border-t dark:border-secondary-light">
+                            <button class="bg-blue-500 hover:bg-blue-600 dark:bg-indigo-600 dark:hover:bg-indigo-700
+                                disabled:bg-gray-400 dark:disabled:bg-gray-400 rounded
+                                focus:outline-none px-2 py-1 text-white font-semibold uppercase text-xs"
+                                    x-text="!c.poll.activePoll.active ? 'Poll closed' : 'Publish & Close'"
+                                    @click="c.poll.activePoll = null; watch.closeActivePoll();"
+                                    :disabled="!c.poll.activePoll.active"
+                                    title="Close poll">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <template x-if="c.poll.result">
+                <div class="z-40 absolute w-full px-2 py-1" :class="c.admin ? 'top-24' : 'top-12'">
+                    <div class="shadow-lg border rounded-lg bg-white py-2 dark:bg-secondary dark:border-gray-600">
+                        <div class="flex align-middle justify-between px-3 border-b pb-2 dark:border-gray-600"
+                             :class="showPoll && 'border-b pb-2'">
+                            <span class="text-xs uppercase font-semibold my-auto">Poll Result</span>
+                            <button @click="c.poll.result = null;">
+                                <i class="fas fa-close"></i>
+                            </button>
+                        </div>
+                        <div class="px-3 pt-3 pb-3">
+                            <p x-text="c.poll.activePoll.question" class="text-center text-base font-light mb-3"></p>
+                            <template x-for="pollOptionResult in c.poll.result.pollOptionResults"
+                                      :key="pollOptionResult.ID">
+                                <div class="mb-3 pl-3 pr-3">
+                                    <div class="flex justify-between pr-2">
+                                        <span class="text-sm flex items-end" x-text="pollOptionResult.answer"></span>
+                                        <span class="text-xs flex items-end"
+                                              x-text="pollOptionResult.votes + ' Votes'"></span>
+                                    </div>
+                                    <div :style="`width: ${watch.getPollOptionWidth(c.poll.result.pollOptionResults, pollOptionResult)};`"
+                                         class="rounded-full h-4 bg-blue-500/50 dark:bg-indigo-600"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
 
         <!-- Messages -->
-        <div x-show="show"
-             id="chatBox"
-             class="h-full w-full overflow-y-scroll overflow-x-hidden px-1 z-40 {{if .IsPopUp}}xl:w-1/2 md:w-3/4 md:mx-auto{{end}}">
+        <div id="chatBox"
+             class="grid gap-y-8 content-start h-full w-full overflow-y-scroll overflow-x-hidden px-4 pt-2 pb-5 z-30">
             {{template "messageTemplate" .}}
         </div>
 
         <!-- Messages -->
-        <div class="z-50 bg-white w-full">
+        <div>
             {{template "chatprompts"}}
-            <form x-show="show" id="chatForm"
-                  class="z-50 sticky w-full bottom-0 inset-x-0 p-2 bg-white dark:bg-secondary 2xl:flex 2xl:justify-between
-              {{if .IsPopUp}} xl:w-1/2 md:w-3/4 md:mx-auto md:border md:rounded-t-lg {{end}}"
+            <form id="chatForm"
+                  class="sticky w-full bottom-0 inset-x-0"
                   x-on:sendmessage.window="c.current.send()"
                   @submit.prevent="c.onSubmit()">
                 <div class="w-full">
 
-                    <div class='p-1'
-                         :class="(c.users.isValid() || c.poll.showCreateUI || c.emojis.isValid()) && 'shadow rounded-lg border dark:border-gray-800'">
+                    <div :class="(c.users.isValid() || c.poll.showCreateUI || c.emojis.isValid()) && 'border-t dark:border-gray-800'">
                         <!-- create poll dialog -->
-                        <div x-show="c.poll.showCreateUI">
-                            <div class="flex justify-end p-1">
-                                <button class="flex bg-transparent border-0 font-semibold py-1 px-2 rounded hover:dark:bg-gray-600 hover:bg-gray-200 my-auto"
-                                        @click="c.poll.showCreateUI = !c.poll.showCreateUI; c.poll.reset();"
-                                        title="Cancel Poll"
-                                        :disabled="c.poll.activePoll"
-                                        tabindex="-1"
-                                        type="button">
-                                    <i class="fa-solid fa-xmark text-3 m-auto"></i>
-                                </button>
-                            </div>
-                            <div class="bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
-                                <label for="pollQuestion" class="hidden"></label>
-                                <textarea
-                                        id="pollQuestion"
-                                        class="h-40 resize-none border-none py-2 px-4 text-sm font-normal placeholder:text-sm"
-                                        maxlength="500"
-                                        x-model="c.poll.question"
-                                        autocomplete="off"
-                                        placeholder="Write a Poll-Question ..."
-                                ></textarea>
-                            </div>
-                            <div>
-                                <template x-for="(pollOption, index) in c.poll.options" :key="index">
-                                    <div class="flex-1 bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full lg:mr-2 my-2">
-                                        <input placeholder="Write a Poll-Answer ..." maxlength="240"
-                                               x-model="pollOption.answer"
-                                               class="py-2 px-4 border-0 text-sm font-normal placeholder:text-sm">
+                        <template x-if="c.poll.showCreateUI">
+                            <div class='px-2 pb-2'>
+                                <div class="flex justify-end p-1">
+                                    <button class="flex bg-transparent border-0 font-semibold py-1 px-2 rounded hover:dark:bg-gray-600 hover:bg-gray-200 my-auto"
+                                            @click="c.poll.showCreateUI = !c.poll.showCreateUI; c.poll.reset();"
+                                            title="Cancel Poll"
+                                            tabindex="-1"
+                                            type="button">
+                                        <i class="fa-solid fa-xmark text-3 m-auto"></i>
+                                    </button>
+                                </div>
+                                <div class="bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
+                                    <label for="pollQuestion" class="hidden"></label>
+                                    <textarea
+                                            id="pollQuestion"
+                                            class="bg-transparent w-full h-40 resize-none border-none py-2 px-4 text-sm font-normal placeholder:text-sm focus:outline-none"
+                                            maxlength="500"
+                                            x-model="c.poll.question"
+                                            autocomplete="off"
+                                            placeholder="Write a Poll-Question ..."
+                                    ></textarea>
+                                </div>
+                                <div>
+                                    <template x-for="(pollOption, index) in c.poll.options" :key="index">
+                                        <div class="flex-1 bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full lg:mr-2 my-2">
+                                            <input :id="$id('poll-answer')"
+                                                   placeholder="Write a Poll-Answer ..." maxlength="240"
+                                                   x-model="pollOption.answer"
+                                                   class="bg-transparent w-full py-2 px-4 border-0 text-sm font-normal placeholder:text-sm focus:outline-none">
 
-                                        <button class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded text-4 hover:text-1 disabled:opacity-20"
-                                                :disabled="c.poll.options.length === 1"
-                                                @click="c.poll.removeOption(pollOption);"
-                                                tabindex="-1"
-                                                type="button"
-                                                title="Remove Poll Option">
-                                            <i class="fas fa-trash text-3 m-auto text-xs"></i>
-                                        </button>
-                                    </div>
-                                </template>
-                            </div>
-                            <div class="flex">
-                                <button tabindex="-1"
-                                        class="w-4/5 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
-                                   disabled:bg-gray-400 disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400
-                                   rounded border-0 focus:outline-none py-1 text-white text-sm"
-                                        title="Start Poll"
-                                        type="button"
-                                        @click="c.poll.start();"
-                                        :disabled="c.poll.question.length === 0 || c.poll.options.some(({ answer }) => answer.length === 0)">
-                                    <span class="font-semibold text-xs">Start Poll</span>
-                                </button>
-                                <button tabindex="-1"
-                                        class="w-1/5 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
+                                            <button class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded text-4 hover:text-1 disabled:opacity-20"
+                                                    :disabled="c.poll.options.length === 1"
+                                                    @click="c.poll.removeOption(pollOption);"
+                                                    tabindex="-1"
+                                                    type="button"
+                                                    title="Remove Poll Option">
+                                                <i class="fas fa-trash text-3 m-auto text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+                                <div class="flex">
+                                    <button tabindex="-1"
+                                            class="w-4/5 bg-blue-500 hover:bg-blue-600 dark:bg-indigo-600 dark:hover:bg-indigo-700
+                                                   disabled:bg-gray-400 dark:disabled:bg-gray-400
+                                                   rounded border-0 focus:outline-none py-1 text-white text-sm"
+                                            title="Start Poll"
+                                            type="button"
+                                            @click="c.poll.showCreateUI = !c.poll.showCreateUI; c.poll.start();"
+                                            :disabled="c.poll.question.length === 0 || c.poll.options.some(({ answer }) => answer.length === 0)">
+                                        <span class="font-semibold text-xs">Start Poll</span>
+                                    </button>
+                                    <button tabindex="-1"
+                                            class="w-1/5 bg-blue-500 hover:bg-blue-600 dark:bg-indigo-600 dark:hover:bg-indigo-700
                                         rounded border-0 focus:outline-none px-4 text-white text-sm ml-2 py-1"
-                                        @click="c.poll.addEmptyOption()"
-                                        title="Add Poll Answer"
-                                        type="button"
-                                        x-show="c.poll.showCreateUI">
-                                    <i class="fas fa-plus m-auto"></i>
-                                </button>
+                                            @click="c.poll.addEmptyOption()"
+                                            title="Add Poll Answer"
+                                            type="button">
+                                        <i class="fas fa-plus m-auto"></i>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        </template>
 
                         <!-- emoji prompt -->
                         {{template "emojipromt"}}
 
                         <!-- @-userlist -->
                         <template x-if="c.users.isValid() && c.users.subset.length === 0">
-                            <p class="text-center py-1 font-semibold text-xs text-3">No users found.</p>
+                            <p class="text-center pb-1 pt-2 font-semibold text-xs text-3">No users found.</p>
                         </template>
                         <div id="userList" x-show="c.users.isValid()"
                              tabindex="0"
-                             class="max-h-56 overflow-y-hidden w-full bg-white dark:bg-secondary py-1 space-y-1 outline-none">
+                             class="max-h-56 overflow-y-hidden w-full bg-white dark:bg-secondary py-1 px-2 space-y-1 outline-none">
                             <template x-for="(user, i) in c.users.subset">
                                 <div @click="c.current.addAddressee(user); c.users.clear()"
                                      @mouseover="c.users.currIndex = i;"
@@ -242,14 +324,12 @@
 
                         <!-- input -->
                         <div x-show="!c.poll.showCreateUI"
-                             class="relative flex my-auto bg-gray-200 rounded-lg border-2 border-transparent dark:bg-gray-600
-                                    focus-within:border-sky-600
-                                    dark:focus-within:border-indigo-600"
-                             :class="c.users.isValid() && 'border-sky-600 dark:border-indigo-600'">
+                             class="relative flex my-auto px-3 border-t dark:border-gray-800 py-2">
                             {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
                                 <input type="checkbox" name="anonymous" id="anonymous" class="hidden"
                                        x-model="c.current.anonymous" :disabled="c.disconnected">
-                                <label for="anonymous" class="flex items-center cursor-pointer text-4 hover:text-1 ml-3"
+                                <label for="anonymous" class="flex items-center cursor-pointer text-4 hover:text-3"
+                                       :class="c.current.anonymous && 'text-blue-500'"
                                        title="Don't show my name.">
                                     <i class="fas fa-ghost"></i>
                                 </label>
@@ -261,13 +341,13 @@
                                    x-model="c.current.message"
                                    x-on:setmessage.window="e=>c.current.message=e.detail"
                                    @keyup="e => { c.current.parse(); c.onInputKeyUp(e); }"
-                                   class="py-2 px-4 border-0 text-sm font-normal placeholder:text-sm"
+                                   class="py-2 px-4 border-0 bg-transparent text-sm font-normal placeholder:text-sm focus:outline-none w-full"
                                    {{if not (.IndexData.TUMLiveContext.User)}}disabled
                                    placeholder="Log in to chat" {{else}}
                                    :placeholder="c.getInputPlaceHolder()"
                                    :disabled="c.disconnected"
                                    {{end}}autocomplete="off">
-                            <div x-show="show" class="absolute right-3 top-0 bottom-0 flex">
+                            <div class="absolute right-3 top-0 bottom-0 flex">
                                 <div x-show="c.disconnected"
                                      class="m-auto">
                                     <svg class="w-5 h-5 animate-spin text-sky-400 dark:text-indigo-400 fill-sky-600 dark:fill-indigo-600"
@@ -279,41 +359,19 @@
                                     </svg>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    <!-- popout and send button -->
-                    <div class="flex mt-2" :class="{{.IsPopUp}} ? 'justify-end' : 'justify-between'">
-                        {{if not .IsPopUp}}
-                            <button x-show="!{{.IsPopUp}}"
-                                    class="flex bg-transparent border-0 font-semibold h-8 w-8 rounded hover:dark:bg-gray-600 hover:bg-gray-200"
-                                    @click="watch.openChatPopUp('{{.IndexData.TUMLiveContext.Course.Slug}}', {{.IndexData.TUMLiveContext.Stream.Model.ID}})"
-                                    title="Popout Chat"
-                                    type="button">
-                                <i class="fas fa-external-link-alt text-3 m-auto"></i>
-                            </button>
-                        {{end}}
-                        <span>
-                            <button x-show="c.admin && !c.poll.showCreateUI"
-                                    class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800 disabled:bg-gray-400 disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400 rounded border-0 focus:outline-none px-4 text-white text-sm ml-auto"
-                                    @click="c.poll.showCreateUI = !c.poll.showCreateUI; c.users.clear()"
-                                    title="Create Poll"
-                                    tabindex="-1"
-                                    :disabled="c.poll.activePoll || c.disconnected"
-                                    type="button">
-                                <span class="font-semibold">Create Poll</span>
-                            </button>
                             <button tabindex="-1"
-                                    class="h-8 bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800
-                                   disabled:bg-gray-400 disabled:hover:bg-gray-400 dark:disabled:bg-gray-400 dark:disabled:hover:bg-gray-400
-                                   rounded border-0 focus:outline-none px-4 text-white text-sm ml-auto"
+                                    class="cursor-pointer"
                                     title="Send message"
                                     type="submit"
-                                {{if not (.IndexData.TUMLiveContext.User)}} disabled {{end}}
-                                :disabled="c.current.isEmpty() || c.disconnected">
-                            <span class="font-semibold">Send</span>
-                            <span class="fas fa-paper-plane ml-2"></span>
-                        </button>
-                        </span>
+                                    {{if not (.IndexData.TUMLiveContext.User)}} disabled {{end}}
+                                    :disabled="c.current.isEmpty() || c.disconnected">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill=""
+                                     class="bi bi-send-fill rotate-45 fill-blue-500 hover:fill-blue-600 dark:fill-indigo-600 hover:dark:fill-indigo-700"
+                                     viewBox="0 0 16 16">
+                                    <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083l6-15Zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471-.47 1.178Z"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </form>

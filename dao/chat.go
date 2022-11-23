@@ -23,13 +23,16 @@ type ChatDao interface {
 	GetPollOptionVoteCount(pollOptionId uint) (int64, error)
 
 	ApproveChat(id uint) error
+	RetractChat(id uint) error
 	DeleteChat(id uint) error
 	ResolveChat(id uint) error
 	ToggleLike(userID uint, chatID uint) error
+	RemoveLikes(chatID uint) error
 
 	CloseActivePoll(streamID uint) error
 
 	GetChatsByUser(userID uint) ([]model.Chat, error)
+	GetChat(id uint, userID uint) (*model.Chat, error)
 }
 
 type chatDao struct {
@@ -92,17 +95,7 @@ func (d chatDao) GetVisibleChats(userID uint, streamID uint) ([]model.Chat, erro
 		return nil, err
 	}
 	for i := range chats {
-		chats[i].Likes = len(chats[i].UserLikes)
-		for j := range chats[i].UserLikes {
-			if chats[i].UserLikes[j].ID == userID {
-				chats[i].Liked = true
-				break
-			}
-		}
-		chats[i].AddressedToIds = []uint{}
-		for _, user := range chats[i].AddressedToUsers {
-			chats[i].AddressedToIds = append(chats[i].AddressedToIds, user.ID)
-		}
+		prepareChat(&chats[i], userID)
 	}
 	return chats, nil
 }
@@ -117,17 +110,7 @@ func (d chatDao) GetAllChats(userID uint, streamID uint) ([]model.Chat, error) {
 		return nil, err
 	}
 	for i := range chats {
-		chats[i].Likes = len(chats[i].UserLikes)
-		for j := range chats[i].UserLikes {
-			if chats[i].UserLikes[j].ID == userID {
-				chats[i].Liked = true
-				break
-			}
-		}
-		chats[i].AddressedToIds = []uint{}
-		for _, user := range chats[i].AddressedToUsers {
-			chats[i].AddressedToIds = append(chats[i].AddressedToIds, user.ID)
-		}
+		prepareChat(&chats[i], userID)
 	}
 	return chats, nil
 }
@@ -168,6 +151,11 @@ func (d chatDao) ApproveChat(id uint) error {
 	return DB.Model(&model.Chat{}).Where("id = ?", id).Updates(map[string]interface{}{"visible": true}).Error
 }
 
+// RetractChat sets the attribute 'visible' to false
+func (d chatDao) RetractChat(id uint) error {
+	return DB.Model(&model.Chat{}).Where("id = ?", id).Updates(map[string]interface{}{"visible": false}).Error
+}
+
 // DeleteChat removes a chat with the given id from the database.
 func (d chatDao) DeleteChat(id uint) error {
 	return DB.Model(&model.Chat{}).Delete(&model.Chat{}, id).Error
@@ -191,6 +179,10 @@ func (d chatDao) ToggleLike(userID uint, chatID uint) error {
 	return err // some other error
 }
 
+func (d chatDao) RemoveLikes(chatID uint) error {
+	return DB.Exec("DELETE FROM chat_user_likes WHERE chat_id = ?", chatID).Error
+}
+
 // CloseActivePoll closes poll for the stream with the given ID.
 func (d chatDao) CloseActivePoll(streamID uint) error {
 	return DB.Table("polls").Where("stream_id = ? AND active", streamID).Update("active", false).Error
@@ -198,4 +190,32 @@ func (d chatDao) CloseActivePoll(streamID uint) error {
 
 func (d chatDao) GetChatsByUser(userID uint) (chats []model.Chat, err error) {
 	return chats, d.db.Find(&chats, "user_id = ?", userID).Error
+}
+
+// GetChat returns a chat message with the given id, uses the userId to add user specific status the chat like the liked status.
+func (d chatDao) GetChat(id uint, userID uint) (*model.Chat, error) {
+	var chat model.Chat
+
+	err := d.db.Preload("Replies").Preload("UserLikes").Preload("AddressedToUsers").Find(&chat, "id = ?", id).Error
+	if err != nil {
+		return &chat, err
+	}
+
+	prepareChat(&chat, userID)
+	return &chat, nil
+}
+
+// prepareChat sets Liked to true if the user with userID liked the message and and adds the ids of the addressed users to it for further usage in the fronted.
+func prepareChat(chat *model.Chat, userID uint) {
+	chat.Likes = len(chat.UserLikes)
+	for j := range chat.UserLikes {
+		if chat.UserLikes[j].ID == userID {
+			chat.Liked = true
+			break
+		}
+	}
+	chat.AddressedToIds = []uint{}
+	for _, user := range chat.AddressedToUsers {
+		chat.AddressedToIds = append(chat.AddressedToIds, user.ID)
+	}
 }

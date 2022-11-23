@@ -1,11 +1,12 @@
 package worker
 
 import (
-	"github.com/joschahenningsen/TUM-Live/worker/pb"
 	"os/exec"
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/joschahenningsen/TUM-Live/worker/pb"
 
 	"github.com/joschahenningsen/TUM-Live/worker/cfg"
 )
@@ -22,9 +23,7 @@ func setup() {
 		streamId:      1,
 		streamVersion: "COMB",
 		publishVoD:    true,
-		stream:        true,
 		endTime:       time.Now().Add(time.Hour),
-		commands:      nil,
 	}
 	cfg.TempDir = "/recordings"
 }

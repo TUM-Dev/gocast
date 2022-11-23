@@ -51,7 +51,7 @@ export class NewChatMessage {
     }
 }
 
-type ChatUser = {
+export type ChatUser = {
     id: number;
     name: string;
 };

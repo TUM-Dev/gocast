@@ -13,6 +13,10 @@ main
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+# Go workspace
+go.work
+go.work.sum
+
 # binary
 bin
 
@@ -108,3 +112,6 @@ variables-backend.env
 rebuild.sh
 
 tumlive.service
+
+# osx
+.DS_Store

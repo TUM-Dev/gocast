@@ -28,6 +28,20 @@ import (
 
 var VersionTag = "development"
 
+type initializer func()
+
+var initializers = []initializer{
+	tools.LoadConfig,
+	api.ServeWorkerGRPC,
+	tools.InitBranding,
+}
+
+func initAll(initializers []initializer) {
+	for _, init := range initializers {
+		init()
+	}
+}
+
 // GinServer launches the gin server
 func GinServer() (err error) {
 	router := gin.Default()
@@ -39,6 +53,9 @@ func GinServer() (err error) {
 	}
 
 	router.Use(tools.InitContext(dao.NewDaoWrapper()))
+
+	liveUpdates := router.Group("/api/pub-sub")
+	api.ConfigRealtimeRouter(liveUpdates)
 
 	// event streams don't work with gzip, configure group without
 	chat := router.Group("/api/chat")
@@ -61,6 +78,8 @@ var (
 )
 
 func main() {
+	initAll(initializers)
+
 	defer profile.Start(profile.MemProfile).Stop()
 	go func() {
 		_ = http.ListenAndServe(":8082", nil) // debug endpoint
@@ -141,9 +160,13 @@ func main() {
 		&model.VideoSeekChunk{},
 		&model.Notification{},
 		&model.UploadKey{},
+		&model.Keyword{},
 		&model.UserSetting{},
 		&model.Audit{},
 		&model.InfoPage{},
+		&model.Bookmark{},
+		&model.TranscodingProgress{},
+		&model.PrefetchedCourse{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -193,6 +216,8 @@ func initCron() {
 	_, _ = cronService.AddFunc("0-59/5 * * * *", func() { sentry.Flush(time.Minute * 2) })
 	//Look for due streams and notify workers about them
 	_, _ = cronService.AddFunc("0-59 * * * *", api.NotifyWorkers(daoWrapper))
+	// update courses available every monday at 3am
+	_, _ = cronService.AddFunc("0 0 * * 3", tum.PrefetchCourses(daoWrapper))
 	cronService.Start()
 }
 

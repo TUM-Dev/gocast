@@ -2,7 +2,7 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <title>TUM Live | Administration</title>
+    <title>{{.IndexData.Branding.Title}} | Administration</title>
     {{template "headImports" .IndexData.VersionTag}}
     <script src="/static/assets/ts-dist/admin.bundle.js?v={{.IndexData.VersionTag}}"></script>
 </head>
@@ -122,7 +122,7 @@
 <div class="flex">
     <div style="min-height: calc(100vh - 5rem);"
          class="fixed z-40 inset-0 flex-none w-full lg:static lg:h-auto lg:overflow-y-visible lg:pt-0 lg:w-60 xl:w-72 lg:block hidden bg-gray-100 dark:bg-secondary-lighter dark:border-r dark:border-secondary">
-        <div class="overflow-y-auto scrolling-touch lg:h-auto lg:block lg:relative lg:sticky overflow-hidden lg:top-18 mr-24 lg:mr-0">
+        <div class="overflow-y-auto scrolling-touch lg:h-auto lg:block lg:sticky overflow-hidden lg:top-18 mr-24 lg:mr-0">
             <nav class="px-1 overflow-y-auto font-medium text-base sm:px-3 xl:px-5 lg:text-sm pb-10 lg:pb-14 sticky?lg:h-(screen-18)">
                 <ul>
                     {{if eq $curUser.Role 1}}
@@ -187,7 +187,7 @@
                     {{end}}
                     <li class="mt-8"><span
                                 class="mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs text-2 flex">
-                            <span class="grow">Courses</span><a href="/admin/create-course"><i
+                            <span class="grow">Courses</span><a title="Create Course" href="/admin/create-course"><i
                                         class="fas fa-plus"></i></a></span>
                         <ul>
                             <li>
@@ -242,7 +242,7 @@
                 {{else if and (eq $curUser.Role 1) (eq .Page "serverStats")}}
                     {{template "stats" .IndexData}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "schedule")}}
-                    {{template "schedule" .IndexData}}
+                    {{template "schedule" .LectureHalls}}
                 {{else if and (eq $curUser.Role 1) (eq .Page "serverNotifications")}}
                     {{template "server-notifications-admin-list" .ServerNotifications}}
                 {{else if and (or (eq $curUser.Role 1) (eq $curUser.Role 2)) (eq .Page "createCourse")}}

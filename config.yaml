@@ -14,6 +14,13 @@ auths:
   smpuser: username
 campus:
   base: https://example.tum.de/api/v1/
+  campusProxy: # new services use this proxy from now on
+    host: campus-proxy.mm.rbg.tum.de
+    scheme: https
+  relevantOrgs: # 0 = all
+    - 14189 # institut für informatik
+    - 14178 # fakultät für mathematik
+    - 14179 # fakultät für physik
   tokens:
   - secret1
   - secret2
@@ -82,5 +89,6 @@ mail:
 paths:
   mass: /srv/ceph/live
   static: /var/www/static
+  branding: /srv/ceph/branding
 weburl: https://live.rbg.tum.de
 workertoken: 2657575f-40e4-4278-9ca1-f3a5ed667cff

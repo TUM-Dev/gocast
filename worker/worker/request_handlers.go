@@ -2,10 +2,12 @@ package worker
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -13,8 +15,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/joschahenningsen/TUM-Live/worker/ocr"
+	"github.com/u2takey/go-utils/uuid"
+
 	"github.com/joschahenningsen/TUM-Live/worker/cfg"
 	"github.com/joschahenningsen/TUM-Live/worker/pb"
+	"github.com/joschahenningsen/thumbgen"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -40,8 +46,6 @@ func HandlePremiere(request *pb.PremiereRequest) {
 		startTime:     time.Now(),
 		streamVersion: "",
 		courseSlug:    "PREMIERE",
-		stream:        true,
-		commands:      nil,
 		ingestServer:  request.IngestServer,
 		outUrl:        request.OutUrl,
 	}
@@ -64,7 +68,6 @@ func HandleSelfStream(request *pb.SelfStreamResponse, slug string) *StreamContex
 		startTime:     request.GetStreamStart().AsTime().Local(),
 		endTime:       time.Now().Add(time.Hour * 7),
 		publishVoD:    request.GetUploadVoD(),
-		stream:        true,
 		streamVersion: "COMB",
 		isSelfStream:  false,
 		ingestServer:  request.IngestServer,
@@ -86,6 +89,10 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 		ctx.TranscodingSuccessful = true
 	}
 	S.endTranscoding(ctx.getStreamName())
+	if ctx.canceled {
+		// self stream restarted while transcoding
+		return
+	}
 	notifyTranscodingDone(ctx)
 	if ctx.publishVoD {
 		upload(ctx)
@@ -118,6 +125,13 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 			log.WithField("stream", ctx.streamId).WithError(err).Error("Error marking for deletion")
 		}
 	}
+
+	S.startKeywordExtraction(ctx)
+	defer S.endKeywordExtraction(ctx)
+	err = extractKeywords(ctx)
+	if err != nil {
+		log.WithField("File", ctx.getTranscodingFileName()).WithError(err).Error("Extracting keywords failed.")
+	}
 }
 
 // HandleStreamEndRequest ends all streams for a given streamID contained in request
@@ -132,25 +146,42 @@ func (s *safeStreams) endStreams(request *pb.EndStreamRequest) {
 	stream := s.streams[request.StreamID]
 	for _, streamContext := range stream {
 		streamContext.discardVoD = request.DiscardVoD
-		HandleStreamEnd(streamContext)
+		HandleStreamEnd(streamContext, false)
 	}
 	// All streams should be ended right now, so we can delete them
 	delete(s.streams, request.StreamID)
 }
 
 // HandleStreamEnd stops the ffmpeg instance by sending a SIGINT to it and prevents the loop to restart it by marking the stream context as stopped.
-func HandleStreamEnd(ctx *StreamContext) {
+func HandleStreamEnd(ctx *StreamContext, cancelTranscoding bool) {
 	ctx.stopped = true
-	if ctx.streamCmd != nil && ctx.streamCmd.Process != nil {
-		pgid, err := syscall.Getpgid(ctx.streamCmd.Process.Pid)
+	cancelCmdGroup(ctx.streamCmd)
+	if cancelTranscoding {
+		ctx.publishVoD = false
+		ctx.canceled = true
+		cancelCmd(ctx.transcodingCmd)
+	}
+}
+
+func cancelCmdGroup(cmd *exec.Cmd) {
+	if cmd != nil && cmd.Process != nil {
+		log.Info("Sending SIGINT to pgid: ", -cmd.Process.Pid)
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true} // avoid suicide when killing group (assign new group id)
+		err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
 		if err != nil {
-			log.WithError(err).WithField("streamID", ctx.streamId).Warn("Can't find pgid for ffmpeg")
-		} else {
-			// We use the new pgid that we created in stream.go to actually interrupt the shell process with all its children
-			err := syscall.Kill(-pgid, syscall.SIGINT) // Note that the - is used to kill process groups
-			if err != nil {
-				log.WithError(err).WithField("streamID", ctx.streamId).Warn("Can't interrupt ffmpeg")
-			}
+			log.WithError(err).WithField("cmd", cmd.String()).Warn("can't kill command group")
+		}
+	} else {
+		log.Warn("context has no command or process to end")
+	}
+}
+
+func cancelCmd(cmd *exec.Cmd) {
+	if cmd != nil && cmd.Process != nil {
+		log.Info("Sending SIGINT to pid: ", cmd.Process.Pid)
+		err := cmd.Process.Signal(syscall.SIGINT)
+		if err != nil {
+			log.WithError(err).WithField("cmd", cmd.String()).Warn("Can't interrupt ffmpeg")
 		}
 	} else {
 		log.Warn("context has no command or process to end")
@@ -170,7 +201,6 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 		endTime:       request.GetEnd().AsTime().Local(),
 		streamVersion: request.GetSourceType(),
 		publishVoD:    request.GetPublishVoD(),
-		stream:        request.GetPublishStream(),
 		streamName:    request.GetStreamName(),
 		ingestServer:  request.GetIngestServer(),
 		isSelfStream:  false,
@@ -180,14 +210,8 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	// Register worker for stream
 	regularStreams.addContext(streamCtx.streamId, streamCtx)
 
-	//only record
-	if !streamCtx.stream {
-		S.startRecording(streamCtx.getRecordingFileName())
-		record(streamCtx)
-		S.endRecording(streamCtx.getRecordingFileName())
-	} else {
-		stream(streamCtx)
-	}
+	stream(streamCtx)
+
 	NotifyStreamDone(streamCtx) // notify stream/recording done
 	if streamCtx.discardVoD {
 		log.Info("Skipping VoD creation")
@@ -216,6 +240,13 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	if request.PublishVoD {
 		upload(streamCtx)
 		notifyUploadDone(streamCtx)
+	}
+
+	S.startKeywordExtraction(streamCtx)
+	defer S.endKeywordExtraction(streamCtx)
+	err = extractKeywords(streamCtx)
+	if err != nil {
+		log.WithField("File", streamCtx.getTranscodingFileName()).WithError(err).Error("Extracting keywords failed.")
 	}
 
 	if streamCtx.streamVersion == "COMB" {
@@ -322,6 +353,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 			log.WithField("stream", c.streamId).Debug("Successfully moved upload to target dir")
 		}
 	}
+
 	S.startThumbnailGeneration(&c)
 	defer S.endThumbnailGeneration(&c)
 	err = createThumbnailSprite(&c)
@@ -338,6 +370,13 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		log.WithField("File", c.getTranscodingFileName()).WithError(err).Error("Detecting silence failed.")
 	} else {
 		notifySilenceResults(sd.Silences, c.streamId)
+	}
+
+	S.startKeywordExtraction(&c)
+	defer S.endKeywordExtraction(&c)
+	err = extractKeywords(&c)
+	if err != nil {
+		log.WithField("File", c.getTranscodingFileName()).WithError(err).Error("Extracting keywords failed.")
 	}
 
 	upload(&c)
@@ -373,24 +412,25 @@ func moveFile(sourcePath, destPath string) error {
 
 // StreamContext contains all important information on a stream
 type StreamContext struct {
-	streamId      uint32         //id of the stream
-	sourceUrl     string         //url of the streams source, e.g. 10.0.0.4
-	courseSlug    string         //slug of the course, e.g. eidi
-	teachingTerm  string         //S or W depending on the courses teaching-term
-	teachingYear  uint32         //Year the course takes place in
-	startTime     time.Time      //time the stream should start
-	endTime       time.Time      //end of the stream (including +10 minute safety)
-	streamVersion string         //version of the stream to be handled, e.g. PRES, COMB or CAM
-	publishVoD    bool           //whether file should be uploaded
-	stream        bool           //whether streaming is enabled
-	commands      map[string]int //map command type to pid, e.g. "stream"->123
-	streamCmd     *exec.Cmd      // command used for streaming
-	isSelfStream  bool           //deprecated
-	streamName    string         // ingest target
-	ingestServer  string         // ingest tumlive e.g. rtmp://user:password@my.tumlive
-	stopped       bool           // whether the stream has been stopped
-	outUrl        string         // url the stream will be available at
-	discardVoD    bool           // whether the VoD should be discarded
+	streamId       uint32    //id of the stream
+	sourceUrl      string    //url of the streams source, e.g. 10.0.0.4
+	courseSlug     string    //slug of the course, e.g. eidi
+	teachingTerm   string    //S or W depending on the courses teaching-term
+	teachingYear   uint32    //Year the course takes place in
+	startTime      time.Time //time the stream should start
+	endTime        time.Time //end of the stream (including +10 minute safety)
+	streamVersion  string    //version of the stream to be handled, e.g. PRES, COMB or CAM
+	publishVoD     bool      //whether file should be uploaded
+	streamCmd      *exec.Cmd // command used for streaming
+	transcodingCmd *exec.Cmd // command used for transcoding
+	isSelfStream   bool      //deprecated
+	canceled       bool      // selfstreams are canceled when the same stream starts again.
+
+	streamName   string // ingest target
+	ingestServer string // ingest tumlive e.g. rtmp://user:password@my.tumlive
+	stopped      bool   // whether the stream has been stopped
+	outUrl       string // url the stream will be available at
+	discardVoD   bool   // whether the VoD should be discarded
 
 	// calculated after stream:
 	duration      uint32 //duration of the stream in seconds
@@ -488,4 +528,70 @@ func (s StreamContext) getStreamNameVoD() string {
 			s.streamVersion), "-", "_")
 	}
 	return s.courseSlug
+}
+
+// extractKeywords creates images of a given stream in a temporary folder, extracts keywords, sends the keywords to
+// TUM-Live, and deletes the temporary folder.
+func extractKeywords(ctx *StreamContext) error {
+	log.WithField("File", ctx.getTranscodingFileName()).Println("Start extracting keywords")
+
+	// create temporary directory
+	outFileName := fmt.Sprintf("%s.jpeg", uuid.NewUUID())
+	dir, err := os.CreateTemp("", "keyword-extraction")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir.Name())
+	defer os.Remove(outFileName) // Remove thumbgen's out.jpeg
+
+	// generate images to process
+	g, err := thumbgen.New(ctx.getTranscodingFileName(), 768, 128,
+		outFileName, thumbgen.WithJpegCompression(70), thumbgen.WithStoreSingleFrames(dir.Name()))
+	if err != nil {
+		return err
+	}
+	err = g.Generate()
+	if err != nil {
+		return err
+	}
+
+	fileInfoArray, err := os.ReadDir(dir.Name())
+	if err != nil {
+		return err
+	}
+
+	// collect file-names
+	files := make([]string, len(fileInfoArray))
+	for i := range fileInfoArray {
+		files[i] = path.Join(dir.Name(), fileInfoArray[i].Name())
+	}
+
+	// extract keywords
+	extractor := ocr.NewOcrExtractor(files, []string{"eng", "deu"})
+	keywords, err := extractor.Extract()
+	if err != nil {
+		return err
+	}
+
+	fromWorkerClient, _, err := GetClient()
+	if err != nil {
+		return err
+	}
+
+	// send keywords to TUM-Live
+	status, err := fromWorkerClient.NewKeywords(context.Background(), &pb.NewKeywordsRequest{
+		WorkerID: cfg.WorkerID,
+		StreamID: ctx.streamId,
+		Keywords: keywords,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if !status.GetOk() {
+		return errors.New(status.String())
+	}
+
+	return nil
 }

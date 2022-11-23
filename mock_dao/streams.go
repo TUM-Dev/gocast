@@ -7,6 +7,7 @@ package mock_dao
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	gomock "github.com/golang/mock/gomock"
 	model "github.com/joschahenningsen/TUM-Live/model"
@@ -75,6 +76,20 @@ func (m *MockStreamsDao) CreateStream(stream *model.Stream) error {
 func (mr *MockStreamsDaoMockRecorder) CreateStream(stream interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateStream", reflect.TypeOf((*MockStreamsDao)(nil).CreateStream), stream)
+}
+
+// DeleteLectureSeries mocks base method.
+func (m *MockStreamsDao) DeleteLectureSeries(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteLectureSeries", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteLectureSeries indicates an expected call of DeleteLectureSeries.
+func (mr *MockStreamsDaoMockRecorder) DeleteLectureSeries(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteLectureSeries", reflect.TypeOf((*MockStreamsDao)(nil).DeleteLectureSeries), arg0)
 }
 
 // DeleteSilences mocks base method.
@@ -290,6 +305,21 @@ func (mr *MockStreamsDaoMockRecorder) GetStreamsWithWatchState(courseID, userID 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStreamsWithWatchState", reflect.TypeOf((*MockStreamsDao)(nil).GetStreamsWithWatchState), courseID, userID)
 }
 
+// GetTranscodingProgressByVersion mocks base method.
+func (m *MockStreamsDao) GetTranscodingProgressByVersion(streamVersion model.StreamVersion, streamId uint) (model.TranscodingProgress, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTranscodingProgressByVersion", streamVersion, streamId)
+	ret0, _ := ret[0].(model.TranscodingProgress)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTranscodingProgressByVersion indicates an expected call of GetTranscodingProgressByVersion.
+func (mr *MockStreamsDaoMockRecorder) GetTranscodingProgressByVersion(streamVersion, streamId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTranscodingProgressByVersion", reflect.TypeOf((*MockStreamsDao)(nil).GetTranscodingProgressByVersion), streamVersion, streamId)
+}
+
 // GetUnitByID mocks base method.
 func (m *MockStreamsDao) GetUnitByID(id string) (model.StreamUnit, error) {
 	m.ctrl.T.Helper()
@@ -318,6 +348,20 @@ func (m *MockStreamsDao) GetWorkersForStream(stream model.Stream) ([]model.Worke
 func (mr *MockStreamsDaoMockRecorder) GetWorkersForStream(stream interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkersForStream", reflect.TypeOf((*MockStreamsDao)(nil).GetWorkersForStream), stream)
+}
+
+// RemoveTranscodingProgress mocks base method.
+func (m *MockStreamsDao) RemoveTranscodingProgress(streamVersion model.StreamVersion, streamId uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveTranscodingProgress", streamVersion, streamId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveTranscodingProgress indicates an expected call of RemoveTranscodingProgress.
+func (mr *MockStreamsDaoMockRecorder) RemoveTranscodingProgress(streamVersion, streamId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTranscodingProgress", reflect.TypeOf((*MockStreamsDao)(nil).RemoveTranscodingProgress), streamVersion, streamId)
 }
 
 // SaveCAMURL mocks base method.
@@ -370,20 +414,6 @@ func (mr *MockStreamsDaoMockRecorder) SavePRESURL(stream, url interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePRESURL", reflect.TypeOf((*MockStreamsDao)(nil).SavePRESURL), stream, url)
 }
 
-// SavePauseState mocks base method.
-func (m *MockStreamsDao) SavePauseState(streamID uint, paused bool) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SavePauseState", streamID, paused)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SavePauseState indicates an expected call of SavePauseState.
-func (mr *MockStreamsDaoMockRecorder) SavePauseState(streamID, paused interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePauseState", reflect.TypeOf((*MockStreamsDao)(nil).SavePauseState), streamID, paused)
-}
-
 // SaveStream mocks base method.
 func (m *MockStreamsDao) SaveStream(vod *model.Stream) error {
 	m.ctrl.T.Helper()
@@ -396,6 +426,20 @@ func (m *MockStreamsDao) SaveStream(vod *model.Stream) error {
 func (mr *MockStreamsDaoMockRecorder) SaveStream(vod interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveStream", reflect.TypeOf((*MockStreamsDao)(nil).SaveStream), vod)
+}
+
+// SaveTranscodingProgress mocks base method.
+func (m *MockStreamsDao) SaveTranscodingProgress(progress model.TranscodingProgress) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveTranscodingProgress", progress)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveTranscodingProgress indicates an expected call of SaveTranscodingProgress.
+func (mr *MockStreamsDaoMockRecorder) SaveTranscodingProgress(progress interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTranscodingProgress", reflect.TypeOf((*MockStreamsDao)(nil).SaveTranscodingProgress), progress)
 }
 
 // SaveWorkerForStream mocks base method.
@@ -424,6 +468,20 @@ func (m *MockStreamsDao) SetLectureHall(streamIDs []uint, lectureHallID uint) er
 func (mr *MockStreamsDaoMockRecorder) SetLectureHall(streamIDs, lectureHallID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLectureHall", reflect.TypeOf((*MockStreamsDao)(nil).SetLectureHall), streamIDs, lectureHallID)
+}
+
+// SetStreamLiveNowTimestampById mocks base method.
+func (m *MockStreamsDao) SetStreamLiveNowTimestampById(streamID uint, liveNowTimestamp time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetStreamLiveNowTimestampById", streamID, liveNowTimestamp)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetStreamLiveNowTimestampById indicates an expected call of SetStreamLiveNowTimestampById.
+func (mr *MockStreamsDaoMockRecorder) SetStreamLiveNowTimestampById(streamID, liveNowTimestamp interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStreamLiveNowTimestampById", reflect.TypeOf((*MockStreamsDao)(nil).SetStreamLiveNowTimestampById), streamID, liveNowTimestamp)
 }
 
 // SetStreamNotLiveById mocks base method.
@@ -466,6 +524,20 @@ func (m *MockStreamsDao) UnsetLectureHall(streamIDs []uint) error {
 func (mr *MockStreamsDaoMockRecorder) UnsetLectureHall(streamIDs interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnsetLectureHall", reflect.TypeOf((*MockStreamsDao)(nil).UnsetLectureHall), streamIDs)
+}
+
+// UpdateLectureSeries mocks base method.
+func (m *MockStreamsDao) UpdateLectureSeries(arg0 model.Stream) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateLectureSeries", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateLectureSeries indicates an expected call of UpdateLectureSeries.
+func (mr *MockStreamsDaoMockRecorder) UpdateLectureSeries(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLectureSeries", reflect.TypeOf((*MockStreamsDao)(nil).UpdateLectureSeries), arg0)
 }
 
 // UpdateSilences mocks base method.

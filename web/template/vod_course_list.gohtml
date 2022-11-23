@@ -51,14 +51,14 @@
                                 <i class="fas fa-download"></i>
                             </a>
                         {{end}}
-                        {{if $lecture.PlaylistUrlCAM}}
+                        {{if and ($course.CanUseSource $lecture.LectureHallID "CAM") $lecture.PlaylistUrlCAM}}
                             <a class="flex text-3 hover:text-gray-600"
                                title="Camera Only"
                                href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/CAM">
                                 <i class="fas fa-camera"></i>
                             </a>
                         {{end}}
-                        {{if $lecture.PlaylistUrlPRES}}
+                        {{if and ($course.CanUseSource $lecture.LectureHallID "PRES") $lecture.PlaylistUrlPRES}}
                             <a class="flex text-3 hover:text-gray-600"
                                title="Presentation Only"
                                href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/PRES">
@@ -71,6 +71,14 @@
                                href="/w/{{$course.Slug}}/{{$lecture.Model.ID}}/chat">
                                 <i class="fas fa-comments"></i>
                             </a>
+                        {{end}}
+                        {{/* Copy HLS Link for video */}}
+                        {{if $lecture.PlaylistUrl}}
+                            <i x-data="{ copied: false }" title="Copy HLS URL for combined stream"
+                               :class="copied ? 'fa-check' : 'fa-link'"
+                               class="flex text-lg cursor-pointer text-3 dark:hover:text-white hover:text-black hover:text-gray-600 fas fa-fw"
+                               @click="if (global.copyToClipboard('{{$lecture.PlaylistUrl}}{{if $lecture.StartOffset}}?wowzaplaystart={{$lecture.StartOffset}}&wowzaplayduration={{$lecture.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))) { copied=true; setTimeout(() => { copied=false }, 1000); }">
+                            </i>
                         {{end}}
                     </div>
                 </div>
@@ -98,7 +106,7 @@
     {{end}}
     {{if and $user $course.HasRecordings}}
         </div>
-        <p x-show="watchedAll && filterWatched"
+        <p {{if .IndexData.TUMLiveContext}} x-show="watchedAll && filterWatched" {{end}}
            class="font-semibold m-auto dark:text-white border-b-2 border-black dark:border-white">All VoDs watched</p>
     {{end}}
     {{if eq $lastMonth -1}}

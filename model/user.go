@@ -9,10 +9,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"golang.org/x/crypto/argon2"
-	"gorm.io/gorm"
 	"strings"
 	"time"
+
+	"golang.org/x/crypto/argon2"
+	"gorm.io/gorm"
 )
 
 const (
@@ -34,8 +35,10 @@ type User struct {
 	Password            string         `gorm:"default:null" json:"-"`
 	Courses             []Course       `gorm:"many2many:course_users" json:"-"` // courses a lecturer invited this user to
 	AdministeredCourses []Course       `gorm:"many2many:course_admins"`         // courses this user is an admin of
+	PinnedCourses       []Course       `gorm:"many2many:pinned_courses"`
 
-	Settings []UserSetting `gorm:"foreignkey:UserID"`
+	Settings  []UserSetting `gorm:"foreignkey:UserID"`
+	Bookmarks []Bookmark    `gorm:"foreignkey:UserID" json:"-"`
 }
 
 type UserSettingType int
@@ -43,7 +46,6 @@ type UserSettingType int
 const (
 	PreferredName UserSettingType = iota + 1
 	Greeting
-	EnableChromecast
 	CustomPlaybackSpeeds
 )
 
@@ -119,16 +121,6 @@ func (u User) GetPreferredGreeting() string {
 		}
 	}
 	return "Moin"
-}
-
-func (u User) IsGoogleCastEnabled() (res bool) {
-	for _, setting := range u.Settings {
-		if setting.Type == EnableChromecast {
-			_ = json.Unmarshal([]byte(setting.Value), &res)
-			return res
-		}
-	}
-	return false
 }
 
 // PreferredNameChangeAllowed returns false if the user has set a preferred name within the last 3 months, otherwise true

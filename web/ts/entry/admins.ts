@@ -1,7 +1,6 @@
 /* This bundle contains all functionality that is needed for admins, besides video.js dependencies */
 export * from "../course-import";
 export * from "../schedule";
-export * from "../server-notifications";
 export * from "../stats";
 export * from "../edit-course";
 export * from "../create-course";
@@ -13,4 +12,4 @@ export * from "../worker";
 export * from "../courseAdminManagement";
 export * from "../notification-management";
 export * from "../audits";
-export { VideoSectionClient, VideoSectionsAdmin } from "../video-sections";
+export { VideoSectionsAdmin, VideoSectionUpdater } from "../video-sections";

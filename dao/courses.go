@@ -30,7 +30,8 @@ type CoursesDao interface {
 	GetCourseById(ctx context.Context, id uint) (course model.Course, err error)
 	GetInvitedUsersForCourse(course *model.Course) error
 	GetCourseBySlugYearAndTerm(ctx context.Context, slug string, term string, year int) (model.Course, error)
-	GetAllCoursesWithTUMIDForSemester(ctx context.Context, year int, term string) (courses []model.Course, err error)
+	// GetAllCoursesWithTUMIDFromSemester returns all courses with a non-null tum_identifier from a given semester or later
+	GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year int, term string) (courses []model.Course, err error)
 	GetAvailableSemesters(c context.Context) []Semester
 	GetCourseByShortLink(link string) (model.Course, error)
 	GetCourseAdmins(courseID uint) ([]model.User, error)
@@ -61,10 +62,6 @@ func (d coursesDao) CreateCourse(ctx context.Context, course *model.Course, keep
 		return err
 	}
 	if !keep {
-		err = DB.Model(&course).Updates(map[string]interface{}{"live_enabled": "0"}).Error
-		if err != nil {
-			log.WithError(err).Error("Can't update live enabled state")
-		}
 		return DB.Delete(&course).Error
 	}
 	return nil
@@ -75,7 +72,7 @@ func (d coursesDao) AddAdminToCourse(userID uint, courseID uint) error {
 	return DB.Exec("insert into course_admins (user_id, course_id) values (?, ?)", userID, courseID).Error
 }
 
-//GetCurrentOrNextLectureForCourse Gets the next lecture for a course or the lecture that is currently live. Error otherwise.
+// GetCurrentOrNextLectureForCourse Gets the next lecture for a course or the lecture that is currently live. Error otherwise.
 func (d coursesDao) GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model.Stream, error) {
 	var res model.Stream
 	err := DB.Model(&model.Stream{}).Preload("Chats").Order("start").First(&res, "course_id = ? AND (end > NOW() OR live_now)", courseID).Error
@@ -200,9 +197,11 @@ func (d coursesDao) GetCourseByToken(token string) (course model.Course, err err
 
 func (d coursesDao) GetCourseById(ctx context.Context, id uint) (course model.Course, err error) {
 	var foundCourse model.Course
-	dbErr := DB.Preload("Streams.Stats").Preload("Streams.Files").Preload("Streams", func(db *gorm.DB) *gorm.DB {
-		return db.Order("streams.start desc")
-	}).Find(&foundCourse, "id = ?", id).Error
+	dbErr := DB.Preload("Streams.TranscodingProgresses").
+		Preload("Streams.Files").
+		Preload("Streams", func(db *gorm.DB) *gorm.DB {
+			return db.Order("streams.start desc")
+		}).Find(&foundCourse, "id = ?", id).Error
 	return foundCourse, dbErr
 }
 
@@ -227,10 +226,18 @@ func (d coursesDao) GetCourseBySlugYearAndTerm(ctx context.Context, slug string,
 	return course, err
 }
 
-func (d coursesDao) GetAllCoursesWithTUMIDForSemester(ctx context.Context, year int, term string) (courses []model.Course, err error) {
+func (d coursesDao) GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year int, term string) (courses []model.Course, err error) {
 	var foundCourses []model.Course
-	dbErr := DB.Where("tum_online_identifier <> '' AND year = ? AND teaching_term = ?", year, term).Find(&foundCourses).Error
-	return foundCourses, dbErr
+
+	switch term {
+	case "S":
+		// fetch all courses from this year regardless of term
+		err = DB.Where("tum_online_identifier <> '' AND year = ?", year).Find(&foundCourses).Error
+	default:
+		// fetch all courses from this year's winter term and next year's summer term
+		err = DB.Where("tum_online_identifier <> '' AND ((year = ? AND teaching_term = 'W') OR (year = ? AND teaching_term = 'S'))", year, year+1).Find(&foundCourses).Error
+	}
+	return foundCourses, err
 }
 
 func (d coursesDao) GetAvailableSemesters(c context.Context) []Semester {
@@ -297,11 +304,11 @@ func (d coursesDao) DeleteCourse(course model.Course) {
 			log.WithError(err).Error("Can't delete stream")
 		}
 	}
-	err := DB.Model(&course).Updates(map[string]interface{}{"live_enabled": false, "vod_enabled": false}).Error
+	err := DB.Model(&course).Updates(map[string]interface{}{"vod_enabled": false}).Error
 	if err != nil {
 		log.WithError(err).Error("Can't update course settings when deleting")
 	}
-	err = DB.Delete(&course).Error
+	err = DB.Delete(&course, course.ID).Error
 	if err != nil {
 		log.WithError(err).Error("Can't delete course")
 	}

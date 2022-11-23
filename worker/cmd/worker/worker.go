@@ -1,14 +1,18 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/getsentry/sentry-go"
 	"github.com/joschahenningsen/TUM-Live/worker/api"
+	"github.com/joschahenningsen/TUM-Live/worker/cfg"
+	"github.com/joschahenningsen/TUM-Live/worker/pb"
 	"github.com/joschahenningsen/TUM-Live/worker/rest"
 	"github.com/joschahenningsen/TUM-Live/worker/worker"
-	"github.com/makasim/sentryhook"
 	"github.com/pkg/profile"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/backoff"
+	"google.golang.org/grpc/credentials/insecure"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -23,7 +27,7 @@ import (
 var OsSignal chan os.Signal
 var VersionTag = "dev"
 
-//prepare checks if the required dependencies are installed
+// prepare checks if the required dependencies are installed
 func prepare() {
 	//check if ffmpeg is installed
 	_, err := exec.LookPath("ffmpeg")
@@ -33,39 +37,51 @@ func prepare() {
 }
 
 func main() {
+	cfg.SetConfig()
 	prepare()
 
+	log.Infof("Trying to connect worker %s to %s:50052", cfg.WorkerID, cfg.MainBase)
+	conn, err := grpc.Dial(fmt.Sprintf("%s:50052", cfg.MainBase), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithConnectParams(grpc.ConnectParams{
+		Backoff: backoff.Config{
+			BaseDelay:  1 * time.Second,
+			Multiplier: 1.6,
+			MaxDelay:   30 * time.Second,
+		}}), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("Could not connect to main base: %v", err)
+	}
+	defer conn.Close()
+	log.Info("Dial-in to tumlive backend was successful")
+
+	// Register worker with the backend.
+	client := pb.NewFromWorkerClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	resp, err := client.JoinWorkers(ctx, &pb.JoinWorkersRequest{
+		Token:    cfg.Token,
+		Hostname: cfg.Hostname,
+	})
+	if err != nil {
+		log.Warnf("Could not join main tumlive: %v\n", err)
+		return
+	}
+	cfg.WorkerID = resp.WorkerId
+	log.Infof("Joined main tumlive with worker id: %s\n", cfg.WorkerID)
 	worker.VersionTag = VersionTag
 	defer profile.Start(profile.MemProfile).Stop()
 	go func() {
 		_ = http.ListenAndServe(":8082", nil) // debug endpoint
 	}()
 
-	OsSignal = make(chan os.Signal, 1)
-
 	// log with time, fmt "23.09.2021 10:00:00"
 	log.SetFormatter(&log.TextFormatter{TimestampFormat: "02.01.2006 15:04:05", FullTimestamp: true})
 	log.SetLevel(log.DebugLevel)
-	if os.Getenv("SentryDSN") != "" {
-		err := sentry.Init(sentry.ClientOptions{
-			Dsn:              os.Getenv("SentryDSN"),
-			TracesSampleRate: 1,
-			Debug:            true,
-			AttachStacktrace: true,
-			Environment:      "Worker",
-		})
-		if err != nil {
-			log.Fatalf("sentry.Init: %s", err)
-		}
-		// Flush buffered events before the program terminates.
-		defer sentry.Flush(2 * time.Second)
-		defer sentry.Recover()
-		log.AddHook(sentryhook.New([]log.Level{log.PanicLevel, log.FatalLevel, log.ErrorLevel, log.WarnLevel}))
-	}
+
 	// setup apis
 	go api.InitApi(":50051")
 	go rest.InitApi(":8060")
 	worker.Setup()
+	OsSignal = make(chan os.Signal, 1)
 	awaitSignal()
 }
 

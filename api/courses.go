@@ -14,7 +14,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -30,31 +30,58 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 	router.POST("/api/course/activate/:token", routes.activateCourseByToken)
 	router.GET("/api/lecture-halls-by-id", routes.lectureHallsByID)
-	atLeastLecturerGroup := router.Group("/")
-	atLeastLecturerGroup.Use(tools.AtLeastLecturer)
-	atLeastLecturerGroup.POST("/api/courseInfo", routes.courseInfo)
-	atLeastLecturerGroup.POST("/api/createCourse", routes.createCourse)
 
-	adminOfCourseGroup := router.Group("/api/course/:courseID")
-	adminOfCourseGroup.Use(tools.InitCourse(daoWrapper))
-	adminOfCourseGroup.Use(tools.AdminOfCourse)
-	adminOfCourseGroup.DELETE("/", routes.deleteCourse)
-	adminOfCourseGroup.POST("/uploadVOD", routes.uploadVOD)
-	adminOfCourseGroup.POST("/createLecture", routes.createLecture)
-	adminOfCourseGroup.POST("/presets", routes.updatePresets)
-	adminOfCourseGroup.POST("/deleteLectures", routes.deleteLectures)
-	adminOfCourseGroup.POST("/renameLecture/:streamID", routes.renameLecture)
-	adminOfCourseGroup.POST("/updateLectureSeries/:streamID", routes.updateLectureSeries)
-	adminOfCourseGroup.PUT("/updateDescription/:streamID", routes.updateDescription)
-	adminOfCourseGroup.DELETE("/deleteLectureSeries/:streamID", routes.deleteLectureSeries)
-	adminOfCourseGroup.POST("/addUnit", routes.addUnit)
-	adminOfCourseGroup.POST("/submitCut", routes.submitCut)
-	adminOfCourseGroup.POST("/deleteUnit/:unitID", routes.deleteUnit)
-	adminOfCourseGroup.GET("/stats", routes.getStats)
-	adminOfCourseGroup.GET("/stats/export", routes.exportStats)
-	adminOfCourseGroup.GET("/admins", routes.getAdmins)
-	adminOfCourseGroup.PUT("/admins/:userID", routes.addAdminToCourse)
-	adminOfCourseGroup.DELETE("/admins/:userID", routes.removeAdminFromCourse)
+	api := router.Group("/api")
+	{
+		lecturers := api.Group("")
+		{
+			lecturers.Use(tools.AtLeastLecturer)
+			lecturers.POST("/courseInfo", routes.courseInfo)
+			lecturers.POST("/createCourse", routes.createCourse)
+			lecturers.GET("/searchCourse", routes.searchCourse)
+		}
+
+		api.DELETE("/course/by-token/:courseID", routes.deleteCourseByToken)
+
+		courses := api.Group("/course/:courseID")
+		{
+			courses.Use(tools.InitCourse(daoWrapper))
+			courses.Use(tools.AdminOfCourse)
+			courses.DELETE("/", routes.deleteCourse)
+			courses.POST("/uploadVOD", routes.uploadVOD)
+			courses.POST("/copy", routes.copyCourse)
+			courses.POST("/createLecture", routes.createLecture)
+			courses.POST("/presets", routes.updateSourceSettings)
+			courses.POST("/deleteLectures", routes.deleteLectures)
+			courses.POST("/renameLecture/:streamID", routes.renameLecture)
+			courses.POST("/updateLectureSeries/:streamID", routes.updateLectureSeries)
+			courses.PUT("/updateDescription/:streamID", routes.updateDescription)
+			courses.DELETE("/deleteLectureSeries/:streamID", routes.deleteLectureSeries)
+			courses.POST("/submitCut", routes.submitCut)
+
+			courses.POST("/addUnit", routes.addUnit)
+			courses.POST("/deleteUnit/:unitID", routes.deleteUnit)
+
+			stream := courses.Group("/stream/:streamID")
+			{
+				stream.Use(tools.InitStream(daoWrapper))
+				stream.GET("/transcodingProgress", routes.getTranscodingProgress)
+			}
+
+			stats := courses.Group("/stats")
+			{
+				stats.GET("", routes.getStats)
+				stats.GET("/export", routes.exportStats)
+			}
+
+			admins := courses.Group("admins")
+			{
+				admins.GET("", routes.getAdmins)
+				admins.PUT("/:userID", routes.addAdminToCourse)
+				admins.DELETE("/:userID", routes.removeAdminFromCourse)
+			}
+		}
+	}
 }
 
 type coursesRoutes struct {
@@ -63,7 +90,7 @@ type coursesRoutes struct {
 
 const (
 	WorkerHTTPPort = "8060"
-	CutOffLength   = 100
+	CutOffLength   = 256
 )
 
 type uploadVodReq struct {
@@ -76,37 +103,56 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 	var req uploadVodReq
 	err := c.BindQuery(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "bad request: " + err.Error()})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind query",
+			Err:           err,
+		})
 		return
 	}
 	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	stream := model.Stream{
-		Name:         req.Title,
-		Start:        req.Start,
-		End:          req.Start.Add(time.Hour),
-		CourseID:     tlctx.Course.ID,
-		StreamStatus: model.StatusConverting,
+		Name:     req.Title,
+		Start:    req.Start,
+		End:      req.Start.Add(time.Hour),
+		CourseID: tlctx.Course.ID,
 	}
 	err = r.StreamsDao.CreateStream(&stream)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "could not save stream: " + err.Error()})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not save stream",
+			Err:           err,
+		})
 		return
 	}
 	key := uuid.NewV4().String()
 	err = r.UploadKeyDao.CreateUploadKey(key, stream.ID)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "can't create upload key: " + err.Error()})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not create upload key",
+			Err:           err,
+		})
 		return
 	}
 	workers := r.WorkerDao.GetAliveWorkers()
 	if len(workers) == 0 {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "No workers available"})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "no workers available",
+			Err:           err,
+		})
 		return
 	}
 	w := workers[getWorkerWithLeastWorkload(workers)]
 	u, err := url.Parse("http://" + w.Host + ":" + WorkerHTTPPort + "/upload?" + c.Request.URL.Query().Encode() + "&key=" + key)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Errorf("parse proxy url: %v", err)})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: fmt.Sprintf("parse proxy url: %v", err),
+			Err:           err,
+		})
 		return
 	}
 	p := httputil.NewSingleHostReverseProxy(u)
@@ -120,33 +166,35 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 	p.ServeHTTP(c.Writer, c.Request)
 }
 
-// updatePresets updates the CameraPresets of a course
-func (r coursesRoutes) updatePresets(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+// updateSourceSettings updates the CameraPresets of a course
+func (r coursesRoutes) updateSourceSettings(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	course := tumLiveContext.Course
 	if course == nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "course not found",
+		})
 		return
 	}
 
 	var req []lhResp
 	err := c.BindJSON(&req)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid body",
+			Err:           err,
+		})
 		return
 	}
+
 	var presetSettings []model.CameraPresetPreference
 	for _, hall := range req {
-		if len(hall.Presets) != 0 && hall.SelectedIndex != 0 {
+		if len(hall.Presets) != 0 && hall.SelectedPresetID != 0 {
 			presetSettings = append(presetSettings, model.CameraPresetPreference{
-				LectureHallID: hall.Presets[hall.SelectedIndex-1].LectureHallId, // index count starts at 1
-				PresetID:      hall.SelectedIndex,
+				LectureHallID: hall.LectureHallID,
+				PresetID:      hall.SelectedPresetID,
 			})
 		}
 	}
@@ -160,23 +208,45 @@ func (r coursesRoutes) updatePresets(c *gin.Context) {
 	}
 
 	course.SetCameraPresetPreference(presetSettings)
-	if err := r.CoursesDao.UpdateCourse(c, *course); err != nil {
-		log.WithError(err).Error("failed to update course")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
+
+	var sourceModeSettings []model.SourcePreference
+	for _, hall := range req {
+		sourceModeSettings = append(sourceModeSettings, model.SourcePreference{
+			LectureHallID: hall.LectureHallID,
+			SourceMode:    hall.SourceMode,
+		})
 	}
 
+	course.SetSourcePreference(sourceModeSettings)
+
+	if err = r.CoursesDao.UpdateCourse(c, *course); err != nil {
+		log.WithError(err).Error("failed to update course")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "failed to update course",
+			Err:           err,
+		})
+		return
+	}
 }
 
 func (r coursesRoutes) activateCourseByToken(c *gin.Context) {
+	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	t := c.Param("token")
 	if t == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "token is missing"})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "token is missing",
+		})
 		return
 	}
 	course, err := r.CoursesDao.GetCourseByToken(t)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Course not found. Is the token correct?"})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "course not found. is the token correct?",
+			Err:           err,
+		})
 		return
 	}
 	course.DeletedAt = gorm.DeletedAt{Valid: false}
@@ -184,34 +254,46 @@ func (r coursesRoutes) activateCourseByToken(c *gin.Context) {
 	course.Visibility = "loggedin"
 	err = r.CoursesDao.UnDeleteCourse(c, course)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, "Could not update course settings")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not update course settings",
+			Err:           err,
+		})
 		return
+	}
+	err = r.AuditDao.Create(&model.Audit{User: tlctx.User, Type: model.AuditCourseCreate, Message: fmt.Sprintf("opted in by token, %s:'%s'", course.Name, course.Slug)})
+	if err != nil {
+		log.WithError(err).Error("create opt in audit failed")
 	}
 }
 
 func (r coursesRoutes) removeAdminFromCourse(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	userID, err := strconv.ParseUint(c.Param("userID"), 10, 32)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid userID",
+			Err:           err,
+		})
 		return
 	}
 
 	admins, err := r.CoursesDao.GetCourseAdmins(tumLiveContext.Course.ID)
 	if err != nil {
 		log.WithError(err).Error("could not get course admins")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "could not get course admins",
+			Err:           err,
+		})
 		return
 	}
 	if len(admins) == 1 {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not delete last admin",
+		})
 		return
 	}
 	var user *model.User
@@ -222,7 +304,10 @@ func (r coursesRoutes) removeAdminFromCourse(c *gin.Context) {
 		}
 	}
 	if user == nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find user",
+		})
 		return
 	}
 
@@ -237,7 +322,12 @@ func (r coursesRoutes) removeAdminFromCourse(c *gin.Context) {
 	err = r.CoursesDao.RemoveAdminFromCourse(user.ID, tumLiveContext.Course.ID)
 	if err != nil {
 		log.WithError(err).Error("could not remove admin from course")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "could not remove admin from course",
+			Err:           err,
+		})
+		return
 	}
 	c.JSON(http.StatusOK, userForLecturerDto{
 		ID:    user.ID,
@@ -247,22 +337,24 @@ func (r coursesRoutes) removeAdminFromCourse(c *gin.Context) {
 }
 
 func (r coursesRoutes) addAdminToCourse(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	id := c.Param("userID")
 	idUint, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid userID",
+			Err:           err,
+		})
 		return
 	}
 	user, err := r.UsersDao.GetUserByID(c, uint(idUint))
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find user",
+			Err:           err,
+		})
 		return
 	}
 
@@ -277,15 +369,24 @@ func (r coursesRoutes) addAdminToCourse(c *gin.Context) {
 	err = r.CoursesDao.AddAdminToCourse(user.ID, tumLiveContext.Course.ID)
 	if err != nil {
 		log.WithError(err).Error("could not add admin to course")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "could not add admin to course",
+			Err:           err,
+		})
 		return
 	}
 	if user.Role == model.GenericType || user.Role == model.StudentType {
 		user.Role = model.LecturerType
-		err := r.UsersDao.UpdateUser(user)
+		err = r.UsersDao.UpdateUser(user)
 		if err != nil {
 			log.WithError(err).Error("could not update user")
-			c.AbortWithStatus(http.StatusInternalServerError)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "could not update user",
+				Err:           err,
+			})
+			return
 		}
 	}
 	c.JSON(http.StatusOK, userForLecturerDto{
@@ -296,13 +397,7 @@ func (r coursesRoutes) addAdminToCourse(c *gin.Context) {
 }
 
 func (r coursesRoutes) getAdmins(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	admins, err := r.CoursesDao.GetCourseAdmins(tumLiveContext.Course.ID)
 	if err != nil {
 		log.WithError(err).Error("error getting course admins")
@@ -321,37 +416,56 @@ func (r coursesRoutes) getAdmins(c *gin.Context) {
 }
 
 type lhResp struct {
-	LectureHallName string               `json:"lecture_hall_name"`
-	Presets         []model.CameraPreset `json:"presets"`
-	SelectedIndex   int                  `json:"selected_index"`
+	LectureHallName  string               `json:"lecture_hall_name"`
+	LectureHallID    uint                 `json:"lecture_hall_id"`
+	Presets          []model.CameraPreset `json:"presets"`
+	SourceMode       model.SourceMode     `json:"source_mode"`
+	SelectedPresetID int                  `json:"selected_preset_id"`
 }
 
 func (r coursesRoutes) lectureHallsByID(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "context should exist but doesn't",
+		})
 		return
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	err := c.Request.ParseForm()
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not parse request form",
+		})
 		return
 	}
 	token := c.Request.Form.Get("id")
 	id, err := strconv.Atoi(token)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid id",
+		})
 		return
 	}
 	course, err := r.CoursesDao.GetCourseById(c, uint(id))
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find course",
+			Err:           err,
+		})
 		return
 	}
 	if !tumLiveContext.User.IsAdminOfCourse(course) {
-		c.AbortWithStatus(http.StatusForbidden)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusForbidden,
+			CustomMessage: "not a admin",
+			Err:           err,
+		})
 		return
 	}
 
@@ -359,7 +473,7 @@ func (r coursesRoutes) lectureHallsByID(c *gin.Context) {
 }
 
 func (r coursesRoutes) lectureHalls(c *gin.Context, course model.Course) {
-	var res []lhResp
+	var lectureHallData []lhResp
 	lectureHallIDs := map[uint]bool{}
 	for _, s := range course.Streams {
 		if s.LectureHallID != 0 {
@@ -371,44 +485,58 @@ func (r coursesRoutes) lectureHalls(c *gin.Context, course model.Course) {
 		if err != nil {
 			log.WithError(err).Error("Can't fetch lecture hall for stream")
 		} else {
-			res = append(res, lhResp{
+			// Find if sourceMode is specified for this lecture hall
+			lectureHallData = append(lectureHallData, lhResp{
 				LectureHallName: lh.Name,
+				LectureHallID:   lh.ID,
 				Presets:         lh.CameraPresets,
+				SourceMode:      course.GetSourceModeForLectureHall(lh.ID),
 			})
 		}
 	}
-	for _, preference := range course.GetCameraPresetPreference() {
-		for i, re := range res {
-			if len(re.Presets) != 0 && re.Presets[0].LectureHallId == preference.LectureHallID {
-				res[i].SelectedIndex = preference.PresetID
-				break
+
+	for i, response := range lectureHallData {
+		if len(response.Presets) != 0 {
+			for _, coursePref := range course.GetCameraPresetPreference() {
+				if response.LectureHallID == coursePref.LectureHallID {
+					lectureHallData[i].SelectedPresetID = coursePref.PresetID
+					break
+				}
 			}
 		}
 	}
 
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, lectureHallData)
 }
 
 func (r coursesRoutes) submitCut(c *gin.Context) {
-	body, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
-		return
-	}
 	var req submitCutRequest
-	if err = json.Unmarshal(body, &req); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
+	if err := c.BindJSON(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid body",
+			Err:           err,
+		})
 		return
 	}
 	stream, err := r.StreamsDao.GetStreamByID(context.Background(), strconv.Itoa(int(req.LectureID)))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "stream not found"})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "stream not found",
+			Err:           err,
+		})
 		return
 	}
 	stream.StartOffset = req.From
 	stream.EndOffset = req.To
 	if err = r.StreamsDao.SaveStream(&stream); err != nil {
-		panic(err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not save stream",
+			Err:           err,
+		})
+		return
 	}
 }
 
@@ -421,26 +549,34 @@ type submitCutRequest struct {
 func (r coursesRoutes) deleteUnit(c *gin.Context) {
 	unit, err := r.StreamsDao.GetUnitByID(c.Param("unitID"))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "not found"})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find unit",
+			Err:           err,
+		})
 		return
 	}
 	r.StreamsDao.DeleteUnit(unit.Model.ID)
 }
 
 func (r coursesRoutes) addUnit(c *gin.Context) {
-	body, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
-		return
-	}
 	var req addUnitRequest
-	if err = json.Unmarshal(body, &req); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "bad request"})
+	if err := c.BindJSON(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid body",
+			Err:           err,
+		})
 		return
 	}
+
 	stream, err := r.StreamsDao.GetStreamByID(context.Background(), strconv.Itoa(int(req.LectureID)))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"msg": "stream not found"})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "stream not found",
+			Err:           err,
+		})
 		return
 	}
 	stream.Units = append(stream.Units, model.StreamUnit{
@@ -451,7 +587,12 @@ func (r coursesRoutes) addUnit(c *gin.Context) {
 		StreamID:        stream.Model.ID,
 	})
 	if err = r.StreamsDao.UpdateStreamFullAssoc(&stream); err != nil {
-		panic(err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not update stream full assoc",
+			Err:           err,
+		})
+		return
 	}
 }
 
@@ -466,29 +607,44 @@ type addUnitRequest struct {
 func (r coursesRoutes) updateDescription(c *gin.Context) {
 	sIDInt, err := strconv.Atoi(c.Param("streamID"))
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid streamID",
+			Err:           err,
+		})
 		return
 	}
 	sID := uint(sIDInt)
 	var req renameLectureRequest
-	if err := c.Bind(&req); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+	if err = c.Bind(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid body",
+			Err:           err,
+		})
 		return
 	}
 	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find stream",
+			Err:           err,
+		})
 		return
 	}
 	stream.Description = req.Name
-	if err := r.StreamsDao.UpdateStream(stream); err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't update lecture Description")
+	if err = r.StreamsDao.UpdateStream(stream); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "couldn't update lecture Description",
+			Err:           err,
+		})
 		return
 	}
 	wsMsg := gin.H{
 		"description": gin.H{
-			"full":      stream.GetDescriptionHTML(),
-			"truncated": tools.Truncate(stream.GetDescriptionHTML(), 150),
+			"full": stream.GetDescriptionHTML(),
 		},
 	}
 	if msg, err := json.Marshal(wsMsg); err == nil {
@@ -501,23 +657,39 @@ func (r coursesRoutes) updateDescription(c *gin.Context) {
 func (r coursesRoutes) renameLecture(c *gin.Context) {
 	sIDInt, err := strconv.Atoi(c.Param("streamID"))
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid streamID",
+			Err:           err,
+		})
 		return
 	}
 	sID := uint(sIDInt)
 	var req renameLectureRequest
 	if err = c.Bind(&req); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid body",
+			Err:           err,
+		})
 		return
 	}
 	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find stream",
+			Err:           err,
+		})
 		return
 	}
 	stream.Name = req.Name
-	if err := r.StreamsDao.UpdateStream(stream); err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't update lecture name")
+	if err = r.StreamsDao.UpdateStream(stream); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "couldn't update lecture name",
+			Err:           err,
+		})
 		return
 	}
 	wsMsg := gin.H{
@@ -533,13 +705,21 @@ func (r coursesRoutes) renameLecture(c *gin.Context) {
 func (r coursesRoutes) updateLectureSeries(c *gin.Context) {
 	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find stream",
+			Err:           err,
+		})
 		return
 	}
 
-	if err := dao.UpdateLectureSeries(stream); err != nil {
+	if err = r.StreamsDao.UpdateLectureSeries(stream); err != nil {
 		log.WithError(err).Error("couldn't update lecture series")
-		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't update lecture series")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "couldn't update lecture series",
+			Err:           err,
+		})
 		return
 	}
 	// Series changes could be theoretically broadcasted here through the websocket to live listeners.
@@ -553,12 +733,19 @@ func (r coursesRoutes) deleteLectureSeries(c *gin.Context) {
 	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find stream",
+			Err:           err,
+		})
 		return
 	}
 
 	if stream.SeriesIdentifier == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "the stream is not in a lecture series")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "the stream is not in a lecture series",
+		})
 		return
 	}
 	if err := r.AuditDao.Create(&model.Audit{
@@ -568,7 +755,7 @@ func (r coursesRoutes) deleteLectureSeries(c *gin.Context) {
 	}); err != nil {
 		log.Error("Create Audit:", err)
 	}
-	if err := dao.DeleteLectureSeries(stream.SeriesIdentifier); err != nil {
+	if err := r.StreamsDao.DeleteLectureSeries(stream.SeriesIdentifier); err != nil {
 		log.WithError(err).Error("couldn't delete lecture series")
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "couldn't delete lecture series")
 		return
@@ -576,24 +763,15 @@ func (r coursesRoutes) deleteLectureSeries(c *gin.Context) {
 }
 
 func (r coursesRoutes) deleteLectures(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	var req deleteLecturesRequest
-	err = json.Unmarshal(jsonData, &req)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+	if err := c.Bind(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid body",
+			Err:           err,
+		})
 		return
 	}
 
@@ -601,7 +779,11 @@ func (r coursesRoutes) deleteLectures(c *gin.Context) {
 	for _, streamID := range req.StreamIDs {
 		stream, err := r.StreamsDao.GetStreamByID(context.Background(), streamID)
 		if err != nil || stream.CourseID != tumLiveContext.Course.ID {
-			c.AbortWithStatus(http.StatusForbidden)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusForbidden,
+				CustomMessage: "not allowed to delete stream",
+				Err:           err,
+			})
 			return
 		}
 		streams = append(streams, stream)
@@ -620,32 +802,38 @@ func (r coursesRoutes) deleteLectures(c *gin.Context) {
 }
 
 func (r coursesRoutes) createLecture(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	var req createLectureRequest
 	if err := c.ShouldBind(&req); err != nil {
 		log.WithError(err).Error("invalid form")
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid form",
+			Err:           err,
+		})
 		return
 	}
 
 	// Forbid setting lectureHall for vod or premiere
 	if (req.Premiere || req.Vodup) && req.LectureHallId != "0" {
-		log.Error("Cannot set lectureHallId on 'Premiere' or 'Vodup' Lecture.")
-		c.AbortWithStatus(http.StatusBadRequest)
+		log.Error("cannot set lectureHallId on 'Premiere' or 'Vodup' Lecture.")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "cannot set lectureHallId on 'Premiere' or 'Vodup' Lecture.",
+		})
 		return
 	}
 
 	// try parse lectureHallId
 	lectureHallId, err := strconv.ParseInt(req.LectureHallId, 10, 32)
 	if err != nil {
-		log.WithError(err).Error("invalid LectureHallId format")
-		c.AbortWithStatus(http.StatusBadRequest)
+		log.WithError(err).Error("invalid LectureHallID format")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid LectureHallId format",
+			Err:           err,
+		})
 		return
 	}
 
@@ -659,19 +847,27 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 		tumLiveContext.Course.Slug,
 		req.Start.Format("2006-01-02_15-04"))
 	if req.Premiere || req.Vodup {
-		err := os.MkdirAll(premiereFolder, os.ModePerm)
+		err = os.MkdirAll(premiereFolder, os.ModePerm)
 		if err != nil {
-			c.AbortWithStatus(http.StatusInternalServerError)
-			log.WithError(err).Error("Can't create folder for premiere")
+			log.WithError(err).Error("can not create folder for premiere")
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not create folder for premiere",
+				Err:           err,
+			})
 			return
 		}
 	}
 	playlist := ""
 	if req.Vodup {
-		err := tools.UploadLRZ(fmt.Sprintf("%s/%s", premiereFolder, premiereFileName))
+		err = tools.UploadLRZ(fmt.Sprintf("%s/%s", premiereFolder, premiereFileName))
 		if err != nil {
-			log.WithError(err).Error("Can't upload file for premiere")
-			c.AbortWithStatus(http.StatusInternalServerError)
+			log.WithError(err).Error("can not upload file for premiere")
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not upload file for premiere",
+				Err:           err,
+			})
 			return
 		}
 		playlist = fmt.Sprintf("https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s/playlist.m3u8", strings.ReplaceAll(premiereFileName, "-", "_"))
@@ -693,6 +889,7 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 			LectureHallID: uint(lectureHallId),
 			Start:         date,
 			End:           endTime,
+			ChatEnabled:   req.ChatEnabled,
 			StreamKey:     streamKey,
 			PlaylistUrl:   playlist,
 			LiveNow:       false,
@@ -723,7 +920,13 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 
 	err = r.CoursesDao.UpdateCourse(context.Background(), *tumLiveContext.Course)
 	if err != nil {
-		log.WithError(err).Warn("Can't update course")
+		log.WithError(err).Warn("can not update course")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not update course",
+			Err:           err,
+		})
+		return
 	}
 }
 
@@ -732,46 +935,53 @@ type createLectureRequest struct {
 	LectureHallId string      `json:"lectureHallId"`
 	Start         time.Time   `json:"start"`
 	Duration      int         `json:"duration"`
+	ChatEnabled   bool        `json:"isChatEnabled"`
 	Premiere      bool        `json:"premiere"`
 	Vodup         bool        `json:"vodup"`
 	DateSeries    []time.Time `json:"dateSeries"`
 }
 
 func (r coursesRoutes) createCourse(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
 	var req createCourseRequest
-	err = json.Unmarshal(jsonData, &req)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+	if err := c.BindJSON(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid body",
+			Err:           err,
+		})
 		return
 	}
+
 	match, err := regexp.MatchString("(enrolled|public|loggedin|hidden)", req.Access)
 	if err != nil || !match {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid access",
+			Err:           err,
+		})
 		return
 	}
 
 	//verify teaching term input, should either be Sommersemester 2020 or Wintersemester 2020/21
 	match, err = regexp.MatchString("(Sommersemester [0-9]{4}|Wintersemester [0-9]{4}/[0-9]{2})$", req.TeachingTerm)
 	if err != nil || !match {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "Semester is not in the correct format"})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid semester format",
+			Err:           err,
+		})
 		return
 	}
 	reYear := regexp.MustCompile("[0-9]{4}")
 	year, err := strconv.Atoi(reYear.FindStringSubmatch(req.TeachingTerm)[0])
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "Semester is not in the correct format"})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid semester format",
+			Err:           err,
+		})
 		return
 	}
 	var semester string
@@ -782,7 +992,10 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 	}
 	_, err = r.CoursesDao.GetCourseBySlugYearAndTerm(c, req.Slug, semester, year)
 	if err == nil {
-		c.AbortWithStatusJSON(http.StatusConflict, gin.H{"message": "Course with slug already exists"})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusConflict,
+			CustomMessage: "course with slug already exists",
+		})
 		return
 	}
 
@@ -813,12 +1026,21 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 
 	err = r.CoursesDao.CreateCourse(context.Background(), &course, true)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, "Couldn't save course. Please reach out to us.")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Couldn't save course. Please reach out to us.",
+			Err:           err,
+		})
 		return
 	}
 	courseWithID, err := r.CoursesDao.GetCourseBySlugYearAndTerm(context.Background(), req.Slug, semester, year)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, "Could not get course for slug and term. Please reach out to us.")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Could not get course for slug and term. Please reach out to us.",
+			Err:           err,
+		})
+		return
 	}
 	// refresh enrollments and lectures
 	courses := make([]model.Course, 1)
@@ -826,17 +1048,44 @@ func (r coursesRoutes) createCourse(c *gin.Context) {
 	go tum.GetEventsForCourses(courses, r.DaoWrapper)
 	go tum.FindStudentsForCourses(courses, r.DaoWrapper)
 	go tum.FetchCourses(r.DaoWrapper)
+
+	// send id to client for further requests
+	c.JSON(http.StatusCreated, gin.H{"id": courseWithID.ID})
 }
 
-func (r coursesRoutes) deleteCourse(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
+func (r coursesRoutes) deleteCourseByToken(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	err := c.Request.ParseForm()
+	if err != nil {
+		_ = c.AbortWithError(http.StatusBadRequest, tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "invalid form", Err: err})
+		return
+	}
+	token := c.Request.Form.Get("token")
+	if token == "" {
+		_ = c.AbortWithError(http.StatusBadRequest, tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "token is missing"})
+		return
+	}
+	course, err := r.CoursesDao.GetCourseByToken(token)
+	if err != nil {
+		_ = c.AbortWithError(http.StatusNotFound, tools.RequestError{Status: http.StatusNotFound, CustomMessage: "course not found", Err: err})
 		return
 	}
 
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	if err := r.AuditDao.Create(&model.Audit{
+		User:    tumLiveContext.User,
+		Message: fmt.Sprintf("'%s' (%d, %s)[%d]. Token: %s", course.Name, course.Year, course.TeachingTerm, course.ID, token),
+		Type:    model.AuditCourseDelete,
+	}); err != nil {
+		log.Error("Create Audit:", err)
+	}
+
+	r.CoursesDao.DeleteCourse(course)
+	dao.Cache.Clear()
+}
+
+func (r coursesRoutes) deleteCourse(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	log.WithFields(log.Fields{
 		"user":   tumLiveContext.User.ID,
@@ -867,7 +1116,7 @@ type createCourseRequest struct {
 }
 
 func (r coursesRoutes) courseInfo(c *gin.Context) {
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	jsonData, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
@@ -891,6 +1140,92 @@ func (r coursesRoutes) courseInfo(c *gin.Context) {
 		return
 	}
 	c.JSON(200, courseInfo)
+}
+
+func (r coursesRoutes) getTranscodingProgress(c *gin.Context) {
+	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	version := c.DefaultQuery("v", string(model.COMB))
+	p, err := r.StreamsDao.GetTranscodingProgressByVersion(model.StreamVersion(version), ctx.Stream.ID)
+	if err == gorm.ErrRecordNotFound {
+		c.JSON(http.StatusOK, 100)
+		return
+	}
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, p.Progress)
+}
+
+type copyCourseRequest struct {
+	Semester string
+	Year     string
+	YearW    string
+}
+
+func (r coursesRoutes) copyCourse(c *gin.Context) {
+	var request copyCourseRequest
+	err := c.BindJSON(&request)
+	if err != nil {
+		_ = c.Error(tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "Bad request", Err: err})
+		return
+	}
+	tlctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	course := tlctx.Course
+	streams := course.Streams
+
+	course.Model = gorm.Model{}
+	course.Streams = nil
+	yearInt, err := strconv.Atoi(request.Year)
+	if err != nil {
+		_ = c.Error(tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "Semester must be a number", Err: err})
+		return
+	}
+	course.Year = yearInt
+	switch request.Semester {
+	case "Sommersemester":
+		course.TeachingTerm = "S"
+	case "Wintersemester":
+		course.TeachingTerm = "W"
+	default:
+		_ = c.Error(tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "Teaching must be a 'Sommmersemester' or 'Wintersemester'", Err: err})
+		return
+	}
+
+	err = r.CoursesDao.CreateCourse(c, course, true)
+	if err != nil {
+		log.WithError(err).Error("Can't create course")
+		_ = c.Error(tools.RequestError{Status: http.StatusInternalServerError, CustomMessage: "Can't create course", Err: err})
+		return
+	}
+	numErrors := 0
+	for _, stream := range streams {
+		stream.CourseID = course.ID
+		stream.Model = gorm.Model{}
+		err := r.StreamsDao.CreateStream(&stream)
+		if err != nil {
+			log.WithError(err).Error("Can't create stream")
+			numErrors++
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{"numErrs": numErrors, "newCourse": course.ID})
+}
+
+func (r coursesRoutes) searchCourse(c *gin.Context) {
+	var request struct {
+		Q string `form:"q"`
+	}
+	err := c.BindQuery(&request)
+	if err != nil {
+		_ = c.Error(tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "Bad request", Err: err})
+		return
+	}
+	courses, err := r.PrefetchedCourseDao.Search(c, request.Q)
+	if err != nil {
+		_ = c.Error(tools.RequestError{Status: http.StatusInternalServerError, CustomMessage: "Can't search course", Err: err})
+		return
+	}
+	c.JSON(http.StatusOK, courses)
 }
 
 type getCourseRequest struct {

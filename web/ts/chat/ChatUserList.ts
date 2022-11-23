@@ -1,7 +1,8 @@
 import { getCurrentWordPositions } from "./misc";
+import { ChatUser } from "./NewChatMessage";
 
 export class ChatUserList {
-    subset: object[];
+    subset: ChatUser[];
     streamId: number;
     currIndex: number;
     valid: boolean;
@@ -14,7 +15,7 @@ export class ChatUserList {
         this.valid = false;
     }
 
-    async LoadAll(): Promise<object[]> {
+    async LoadAll(): Promise<ChatUser[]> {
         return fetch(`/api/chat/${this.streamId}/users`).then((res) => res.json());
     }
 

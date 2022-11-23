@@ -1,0 +1,35 @@
+{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.OptOutPageData*/ -}}
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Course | TUM Live</title>
+    {{template "headImports" .IndexData.VersionTag}}
+</head>
+
+<body x-data>
+{{template "header" .IndexData.TUMLiveContext}}
+{{if and .Course (not .Course.Model.DeletedAt.Valid)}}
+    <div class="text-1 container mx-auto w-full" x-data="{success: false}">
+        <p x-show="!success">
+            Please confirm deleting the course <span class="font-semibold">{{.Course.Name}}</span>.
+            <br>
+            This will disable live-streaming and recordings of your lectures.
+            <br>
+            <button class="mt-4 w-auto m-auto bg-danger rounded px-5 py-2 font-semibold text-white"
+                    @click="fetch('/api/course/by-token/{{.Course.Model.ID}}?token='+(new URLSearchParams(window.location.search)).get('token'), {method: 'DELETE'}).then(r=>{if(r.status===200){success=true;}else{alert('Something went wrong, please reach out to us.')}})">
+                Confirm
+            </button>
+        </p>
+        <p x-show="success" class="font-semibold">
+            Your course was deleted successfully.
+        </p>
+    </div>
+{{else}}
+    <p class="text-1 container mx-auto w-full">
+        There was an issue finding your course. Maybe you already opted out. If not please reach out to us.
+    </p>
+{{end}}
+</body>
+
+</html>

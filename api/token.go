@@ -28,8 +28,13 @@ func (r tokenRoutes) deleteToken(c *gin.Context) {
 	id := c.Param("id")
 	err := r.TokenDao.DeleteToken(id)
 	if err != nil {
-		log.WithError(err).Error("delete token failed")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("can not delete token")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not delete token",
+			Err:           err,
+		})
+		return
 	}
 }
 
@@ -46,11 +51,18 @@ func (r tokenRoutes) createToken(c *gin.Context) {
 	}
 	err := c.BindJSON(&req)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 		return
 	}
 	if req.Scope != model.TokenScopeAdmin {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "not an admin",
+		})
 		return
 	}
 	tokenStr := uuid.NewV4().String()
@@ -66,8 +78,12 @@ func (r tokenRoutes) createToken(c *gin.Context) {
 	}
 	err = r.TokenDao.AddToken(token)
 	if err != nil {
-		log.WithError(err).Error("Failed to create token")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		log.WithError(err).Error("can not create token")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not create token",
+			Err:           err,
+		})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{

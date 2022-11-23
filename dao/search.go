@@ -23,26 +23,38 @@ func NewSearchDao() SearchDao {
 func (d searchDao) Search(q string, courseId uint) ([]model.Stream, error) {
 	var response []model.Stream
 	partialQ := fmt.Sprintf("%s*", q)
-	err := DB.
-		Model(&model.Stream{}).
-		Select("streams.*, "+
-			"(match(streams.name) against(? in boolean mode)+"+
-			"match(streams.description) against(? in boolean mode)+"+
-			"match(c.message) against(? in boolean mode)+"+
-			"match(vs.description) against(? in boolean mode)"+
-			") as 'relevance'", partialQ, partialQ, partialQ, partialQ).
-		Joins("left join video_sections vs on vs.stream_id = streams.id").
-		Joins("left join chats c on c.stream_id = streams.id").
-		Where(
-			"(match(streams.name) against(? in boolean mode) "+
-				"OR match(streams.description) against(? in boolean mode) "+
-				"OR match(c.message) against(? in boolean mode)"+
-				"OR match(vs.description) against(? in boolean mode))"+
-				"AND streams.course_id = ? AND streams.recording = 1",
-			partialQ, partialQ, partialQ, partialQ, courseId).
-		Group("streams.id").
-		Order("relevance"). // Sort by 'relevance'
-		Find(&response).
-		Error
+	subQuery := DB.Raw(
+		"? UNION ? UNION ? UNION ? UNION ?",
+		d.db.
+			Select("DISTINCT streams.*, MATCH(keywords.text) AGAINST(?) 'relevance'", partialQ).
+			Model(&model.Stream{}).
+			Joins("JOIN keywords ON streams.id = keywords.stream_id").
+			Where("MATCH(keywords.text) AGAINST(?)", partialQ),
+		d.db.
+			Select("DISTINCT streams.*, MATCH(streams.name) AGAINST(?) 'relevance'", partialQ).
+			Model(&model.Stream{}).
+			Where("MATCH(streams.name) AGAINST(?)", partialQ),
+		d.db.
+			Select("DISTINCT streams.*, MATCH(streams.description) AGAINST(?) 'relevance'", partialQ).
+			Model(&model.Stream{}).
+			Joins("JOIN keywords ON streams.id = keywords.stream_id").
+			Where("MATCH(streams.description) AGAINST(?)", partialQ),
+		d.db.
+			Select("DISTINCT streams.*, MATCH(chats.message) AGAINST(?) 'relevance'", partialQ).
+			Model(&model.Stream{}).
+			Joins("JOIN chats ON streams.id = chats.stream_id").
+			Where("MATCH(chats.message) AGAINST(?)", partialQ),
+		d.db.
+			Select("DISTINCT streams.*, MATCH(vs.description) AGAINST(?) 'relevance'", partialQ).
+			Model(&model.Stream{}).
+			Joins("JOIN video_sections vs ON streams.id = vs.stream_id").
+			Where("MATCH(vs.description) AGAINST(?)", partialQ),
+	)
+	err := d.db.
+		Table("(?) as t", subQuery).
+		Where("t.course_id = ? AND t.recording = 1 AND t.deleted_at IS NULL", courseId).
+		Group("t.id").
+		Order("t.relevance").
+		Find(&response).Error
 	return response, err
 }

@@ -12,6 +12,7 @@ services:
       backend-network:
     volumes:
       - ./config.yaml:/etc/TUM-Live/config.yaml
+      - ./branding/branding.yaml:/etc/TUM-Live/branding.yaml
       - type: volume
         source: recordings
         target: /recordings

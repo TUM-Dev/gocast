@@ -329,6 +329,7 @@ type FromWorkerClient interface {
 	// JoinWorkers is a request to the server to join the worker pool.
 	JoinWorkers(ctx context.Context, in *JoinWorkersRequest, opts ...grpc.CallOption) (*JoinWorkersResponse, error)
 	SendHeartBeat(ctx context.Context, in *HeartBeat, opts ...grpc.CallOption) (*Status, error)
+	NotifyTranscodingProgress(ctx context.Context, opts ...grpc.CallOption) (FromWorker_NotifyTranscodingProgressClient, error)
 	NotifyTranscodingFinished(ctx context.Context, in *TranscodingFinished, opts ...grpc.CallOption) (*Status, error)
 	NotifySilenceResults(ctx context.Context, in *SilenceResults, opts ...grpc.CallOption) (*Status, error)
 	NotifyStreamStarted(ctx context.Context, in *StreamStarted, opts ...grpc.CallOption) (*Status, error)
@@ -337,6 +338,7 @@ type FromWorkerClient interface {
 	NotifyThumbnailsFinished(ctx context.Context, in *ThumbnailsFinished, opts ...grpc.CallOption) (*Status, error)
 	SendSelfStreamRequest(ctx context.Context, in *SelfStreamRequest, opts ...grpc.CallOption) (*SelfStreamResponse, error)
 	GetStreamInfoForUpload(ctx context.Context, in *GetStreamInfoForUploadRequest, opts ...grpc.CallOption) (*GetStreamInfoForUploadResponse, error)
+	NewKeywords(ctx context.Context, in *NewKeywordsRequest, opts ...grpc.CallOption) (*Status, error)
 }
 
 type fromWorkerClient struct {
@@ -363,6 +365,40 @@ func (c *fromWorkerClient) SendHeartBeat(ctx context.Context, in *HeartBeat, opt
 		return nil, err
 	}
 	return out, nil
+}
+
+func (c *fromWorkerClient) NotifyTranscodingProgress(ctx context.Context, opts ...grpc.CallOption) (FromWorker_NotifyTranscodingProgressClient, error) {
+	stream, err := c.cc.NewStream(ctx, &FromWorker_ServiceDesc.Streams[0], "/api.FromWorker/NotifyTranscodingProgress", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &fromWorkerNotifyTranscodingProgressClient{stream}
+	return x, nil
+}
+
+type FromWorker_NotifyTranscodingProgressClient interface {
+	Send(*NotifyTranscodingProgressRequest) error
+	CloseAndRecv() (*Status, error)
+	grpc.ClientStream
+}
+
+type fromWorkerNotifyTranscodingProgressClient struct {
+	grpc.ClientStream
+}
+
+func (x *fromWorkerNotifyTranscodingProgressClient) Send(m *NotifyTranscodingProgressRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *fromWorkerNotifyTranscodingProgressClient) CloseAndRecv() (*Status, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(Status)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *fromWorkerClient) NotifyTranscodingFinished(ctx context.Context, in *TranscodingFinished, opts ...grpc.CallOption) (*Status, error) {
@@ -437,6 +473,15 @@ func (c *fromWorkerClient) GetStreamInfoForUpload(ctx context.Context, in *GetSt
 	return out, nil
 }
 
+func (c *fromWorkerClient) NewKeywords(ctx context.Context, in *NewKeywordsRequest, opts ...grpc.CallOption) (*Status, error) {
+	out := new(Status)
+	err := c.cc.Invoke(ctx, "/api.FromWorker/NewKeywords", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FromWorkerServer is the server API for FromWorker service.
 // All implementations must embed UnimplementedFromWorkerServer
 // for forward compatibility
@@ -444,6 +489,7 @@ type FromWorkerServer interface {
 	// JoinWorkers is a request to the server to join the worker pool.
 	JoinWorkers(context.Context, *JoinWorkersRequest) (*JoinWorkersResponse, error)
 	SendHeartBeat(context.Context, *HeartBeat) (*Status, error)
+	NotifyTranscodingProgress(FromWorker_NotifyTranscodingProgressServer) error
 	NotifyTranscodingFinished(context.Context, *TranscodingFinished) (*Status, error)
 	NotifySilenceResults(context.Context, *SilenceResults) (*Status, error)
 	NotifyStreamStarted(context.Context, *StreamStarted) (*Status, error)
@@ -452,6 +498,7 @@ type FromWorkerServer interface {
 	NotifyThumbnailsFinished(context.Context, *ThumbnailsFinished) (*Status, error)
 	SendSelfStreamRequest(context.Context, *SelfStreamRequest) (*SelfStreamResponse, error)
 	GetStreamInfoForUpload(context.Context, *GetStreamInfoForUploadRequest) (*GetStreamInfoForUploadResponse, error)
+	NewKeywords(context.Context, *NewKeywordsRequest) (*Status, error)
 	mustEmbedUnimplementedFromWorkerServer()
 }
 
@@ -464,6 +511,9 @@ func (UnimplementedFromWorkerServer) JoinWorkers(context.Context, *JoinWorkersRe
 }
 func (UnimplementedFromWorkerServer) SendHeartBeat(context.Context, *HeartBeat) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendHeartBeat not implemented")
+}
+func (UnimplementedFromWorkerServer) NotifyTranscodingProgress(FromWorker_NotifyTranscodingProgressServer) error {
+	return status.Errorf(codes.Unimplemented, "method NotifyTranscodingProgress not implemented")
 }
 func (UnimplementedFromWorkerServer) NotifyTranscodingFinished(context.Context, *TranscodingFinished) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifyTranscodingFinished not implemented")
@@ -488,6 +538,9 @@ func (UnimplementedFromWorkerServer) SendSelfStreamRequest(context.Context, *Sel
 }
 func (UnimplementedFromWorkerServer) GetStreamInfoForUpload(context.Context, *GetStreamInfoForUploadRequest) (*GetStreamInfoForUploadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStreamInfoForUpload not implemented")
+}
+func (UnimplementedFromWorkerServer) NewKeywords(context.Context, *NewKeywordsRequest) (*Status, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewKeywords not implemented")
 }
 func (UnimplementedFromWorkerServer) mustEmbedUnimplementedFromWorkerServer() {}
 
@@ -536,6 +589,32 @@ func _FromWorker_SendHeartBeat_Handler(srv interface{}, ctx context.Context, dec
 		return srv.(FromWorkerServer).SendHeartBeat(ctx, req.(*HeartBeat))
 	}
 	return interceptor(ctx, in, info, handler)
+}
+
+func _FromWorker_NotifyTranscodingProgress_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(FromWorkerServer).NotifyTranscodingProgress(&fromWorkerNotifyTranscodingProgressServer{stream})
+}
+
+type FromWorker_NotifyTranscodingProgressServer interface {
+	SendAndClose(*Status) error
+	Recv() (*NotifyTranscodingProgressRequest, error)
+	grpc.ServerStream
+}
+
+type fromWorkerNotifyTranscodingProgressServer struct {
+	grpc.ServerStream
+}
+
+func (x *fromWorkerNotifyTranscodingProgressServer) SendAndClose(m *Status) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *fromWorkerNotifyTranscodingProgressServer) Recv() (*NotifyTranscodingProgressRequest, error) {
+	m := new(NotifyTranscodingProgressRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func _FromWorker_NotifyTranscodingFinished_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -682,6 +761,24 @@ func _FromWorker_GetStreamInfoForUpload_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FromWorker_NewKeywords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewKeywordsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FromWorkerServer).NewKeywords(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.FromWorker/NewKeywords",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FromWorkerServer).NewKeywords(ctx, req.(*NewKeywordsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FromWorker_ServiceDesc is the grpc.ServiceDesc for FromWorker service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -729,7 +826,17 @@ var FromWorker_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "GetStreamInfoForUpload",
 			Handler:    _FromWorker_GetStreamInfoForUpload_Handler,
 		},
+		{
+			MethodName: "NewKeywords",
+			Handler:    _FromWorker_NewKeywords_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "NotifyTranscodingProgress",
+			Handler:       _FromWorker_NotifyTranscodingProgress_Handler,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "api.proto",
 }

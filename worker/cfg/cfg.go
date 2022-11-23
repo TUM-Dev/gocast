@@ -1,12 +1,9 @@
 package cfg
 
 import (
-	"context"
-	"fmt"
-	"github.com/joschahenningsen/TUM-Live/worker/pb"
+	"github.com/getsentry/sentry-go"
+	"github.com/makasim/sentryhook"
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"os"
 	"time"
 )
@@ -28,8 +25,9 @@ var (
 	LogLevel     = log.InfoLevel
 )
 
-// init stops the execution if any of the required config variables are unset.
-func init() {
+// SetConfig sets the values of the parameter config and stops the execution
+// if any of the required config variables are unset.
+func SetConfig() {
 	// JoinToken is required to join the main tumlive as a worker
 	Token = os.Getenv("Token")
 	if Token == "" {
@@ -95,30 +93,21 @@ func init() {
 		}
 	}
 
-	// join main tumlive:
-	var conn *grpc.ClientConn
-	// retry connecting to tumlive every 5 seconds until successful
-	for {
-		conn, err = grpc.Dial(fmt.Sprintf("%s:50052", MainBase), grpc.WithTransportCredentials(insecure.NewCredentials()))
-		if err == nil {
-			break
-		} else {
-			log.Warnf("Could not connect to main tumlive: %v\n", err)
-			time.Sleep(time.Second * 5)
+	if os.Getenv("SentryDSN") != "" {
+		err := sentry.Init(sentry.ClientOptions{
+			Dsn:              os.Getenv("SentryDSN"),
+			TracesSampleRate: 1,
+			Debug:            true,
+			AttachStacktrace: true,
+			Environment:      "Worker",
+		})
+		if err != nil {
+			log.Fatalf("sentry.Init: %s", err)
 		}
+		// Flush buffered events before the program terminates.
+		defer sentry.Flush(2 * time.Second)
+		defer sentry.Recover()
+		log.AddHook(sentryhook.New([]log.Level{log.PanicLevel, log.FatalLevel, log.ErrorLevel, log.WarnLevel}))
 	}
 
-	client := pb.NewFromWorkerClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	resp, err := client.JoinWorkers(ctx, &pb.JoinWorkersRequest{
-		Token:    Token,
-		Hostname: Hostname,
-	})
-	if err != nil {
-		log.Warnf("Could not join main tumlive: %v\n", err)
-		return
-	}
-	WorkerID = resp.WorkerId
-	log.Infof("Joined main tumlive with worker id: %s\n", WorkerID)
 }
