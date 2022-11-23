@@ -258,6 +258,10 @@ export function getLoginReferrer(): string {
     return document.referrer;
 }
 
+export function getQueryParam(name: string): string {
+    return new URL(window.location.href).searchParams.get(name) ?? undefined;
+}
+
 // TypeScript Mapping of model.VideoSection
 export type Section = {
     ID?: number;

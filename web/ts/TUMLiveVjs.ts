@@ -1,4 +1,4 @@
-import { postData } from "./global";
+import { getQueryParam, postData } from "./global";
 import { VideoSectionList } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
@@ -210,10 +210,16 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
         let iOSReady = false;
         let intervalMillis = 10000;
 
+        const t: number = +getQueryParam("t");
+
         // Fetch the user's video progress from the database and set the time in the player
         player.on("loadedmetadata", () => {
             duration = player.duration();
-            player.currentTime(lastProgress * duration);
+            if (t !== undefined && !videojs.browser.IS_IOS) {
+                player.currentTime(t);
+            } else {
+                player.currentTime(lastProgress * duration);
+            }
         });
 
         // iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
