@@ -45,6 +45,10 @@ export class Chat {
         },
     ];
 
+    filterPredicate: (m: ChatMessage) => boolean = (m) => {
+        return !this.admin && !m.visible && m.userId != this.userId;
+    };
+
     private timeWatcherCallBackFunction: () => void;
 
     constructor(
@@ -346,6 +350,11 @@ export class Chat {
 
     // patchMessage adds the message to the list of messages at the position it should appear in based on the send time.
     patchMessage(m: ChatMessage): void {
+        if (this.filterPredicate(m)) {
+            this.messages = this.messages.filter((m2) => m2.ID !== m.ID);
+            return;
+        }
+
         this.preprocessors.forEach((f) => (m = f(m)));
 
         const newMessageCreatedAt = Date.parse(m.CreatedAt);
@@ -370,7 +379,10 @@ export class Chat {
 
     private addMessage(m: ChatMessage) {
         this.preprocessors.forEach((f) => (m = f(m)));
-        this.messages.push(m);
+
+        if (!this.filterPredicate(m)) {
+            this.messages.push(m);
+        }
     }
 
     private notifyMessagesUpdate(type: MessageUpdateType, payload: MessageUpdate) {
@@ -392,6 +404,7 @@ type ChatMessage = {
     ID: number;
     admin: boolean;
 
+    userId: number;
     message: string;
     name: string;
     color: string;
