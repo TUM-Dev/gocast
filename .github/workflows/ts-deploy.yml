@@ -70,4 +70,4 @@ jobs:
           labels: ${{ steps.metaWorker.outputs.labels }}
       - name: Pull new Container
         run: |
-          curl -X POST -H "Content-Type: application/json" -d '${{ toJSON(steps.meta.outputs) }}' https://update.test.live.mm.rbg.tum.de/add?num=${{ github.event.number }}&token=${{ secrets.TESTSERVER_UPDATER_SECRET }}
+          curl -X POST -H "Content-Type: application/json" -H "Authorization: Token ${{ secrets.TESTSERVER_UPDATER_SECRET }}" -d '${{ toJSON(steps.meta.outputs) }}' https://update.test.live.mm.rbg.tum.de/add?num=${{ github.event.number }}
