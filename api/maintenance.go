@@ -34,7 +34,7 @@ func (r maintenanceRoutes) generateThumbnails(c *gin.Context) {
 	for _, stream := range streams {
 		for _, file := range stream.Files {
 			if file.Type == model.FILETYPE_VOD {
-				// Request thumbnail for VoD
+				// Request thumbnail for VoD.
 				err := RegenerateThumbs(dao.DaoWrapper{}, file.Path)
 				if err != nil {
 					log.WithError(err).Errorf("Can't regenerate thumbnail for stream %d with file %s", stream.ID, file.Path)
