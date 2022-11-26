@@ -1,0 +1,11 @@
+{{define "maintenance"}}
+
+    <h2 class="text-2xl text-1 my-auto mt-4 font-medium">Maintenance</h2>
+    <div class="form-container" x-data="admin.maintenancePage()">
+        <div class="form-container-title">Thumbnails</div>
+        <div class="form-container-body">
+            <button @click="generateThumbnails()" class="btn" >Regenerate All Thumbnails</button>
+        </div>
+    </div>
+
+{{end}}
