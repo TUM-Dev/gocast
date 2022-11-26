@@ -41,7 +41,6 @@ type StreamsDao interface {
 	UpdateStreamFullAssoc(vod *model.Stream) error
 	SetStreamNotLiveById(streamID uint) error
 	SetStreamLiveNowTimestampById(streamID uint, liveNowTimestamp time.Time) error
-	SavePauseState(streamID uint, paused bool) error
 	SaveEndedState(streamID uint, hasEnded bool) error
 	SaveCOMBURL(stream *model.Stream, url string)
 	SaveCAMURL(stream *model.Stream, url string)
@@ -114,8 +113,9 @@ func (d streamsDao) AddVodView(id string) error {
 func (d streamsDao) GetDueStreamsForWorkers() []model.Stream {
 	var res []model.Stream
 	DB.Model(&model.Stream{}).
+		Joins("JOIN courses c ON c.id = streams.course_id").
 		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE)" +
-			"AND live_now = false AND recording = false AND (ended = false OR ended IS NULL)").
+			"AND live_now = false AND recording = false AND (ended = false OR ended IS NULL) AND c.deleted_at IS null").
 		Scan(&res)
 	return res
 }
@@ -250,7 +250,7 @@ func (d streamsDao) GetStreamsWithWatchState(courseID uint, userID uint) (stream
 	queriedStreams := DB.Table("streams").Where("course_id = ? and private = false and deleted_at is NULL", courseID)
 	result := queriedStreams.
 		Joins("left join (select watched, stream_id from stream_progresses where user_id = ?) as sp on sp.stream_id = streams.id", userID).
-		Order("start desc").     // order by descending start time, this is also the order that is used in the course page.
+		Order("start asc").      // order by ascending start time, this is also the order that is used in the course page.
 		Session(&gorm.Session{}) // Session is required to scan multiple times
 
 	if err = result.Scan(&streams).Error; err != nil {
@@ -326,11 +326,6 @@ func (d streamsDao) SetStreamLiveNowTimestampById(streamID uint, liveNowTimestam
 	return DB.Model(model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"LiveNowTimestamp": liveNowTimestamp}).Error
 }
 
-func (d streamsDao) SavePauseState(streamID uint, paused bool) error {
-	defer Cache.Clear()
-	return DB.Model(model.Stream{}).Where("id = ?", streamID).Update("Paused", paused).Error
-}
-
 // SaveEndedState updates the boolean Ended field of a stream model to the value of hasEnded when a stream finishes.
 func (d streamsDao) SaveEndedState(streamID uint, hasEnded bool) error {
 	defer Cache.Clear()
@@ -385,7 +380,6 @@ func (d streamsDao) SaveStream(vod *model.Stream) error {
 		EndOffset:        vod.EndOffset,
 		Silences:         vod.Silences,
 		Files:            vod.Files,
-		Paused:           vod.Paused,
 		Duration:         vod.Duration,
 		ThumbInterval:    vod.ThumbInterval,
 	}).Error

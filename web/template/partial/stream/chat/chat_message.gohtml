@@ -1,12 +1,12 @@
 {{define "messageTemplate"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.ChatData*/ -}}
     {{$moderatedChat := .IndexData.TUMLiveContext.Course.ModeratedChatEnabled}}
-    <template x-for="(m, index) in c.messages" :key="m.ID">
+    <template x-for="(m, index) in c.messages" :key="m.ID + 'v' + m.renderVersion">
         <div x-ref="message" class="grid gap-y-1 text-4 text-sm $m.ID message"
              x-data="{ showReplies: false}"
              x-show="!m.deleted && m.replyTo && !m.replyTo.Valid"
              :class="{'ring ring-blue-500/50' : c.current.replyTo === m.ID, 'opacity-60' : m.isGrayedOut}"
-             x-init="$watch('c.focusedMessageId', () => {if (c.isMessageToBeFocused(index)){watch.scrollToElement($refs.message)}} )">
+             x-init="$watch('c.focusedMessageId', () => {if (c.isMessageToBeFocused(index)){watch.scrollToElement($refs.message)}});">
             <!-- name and message -->
             <div class="text-xs">
                 <span x-show="m.admin" class="fa-video text-white bg-red-400 p-1 rounded fas"></span>
@@ -19,108 +19,101 @@
                 </span>
             </div>
 
-            <div x-data="{ showMobileAction: false }"
-                    class="relative group p-2 rounded
-                {{if .IsPopUp}}
-                    hover:bg-gray-100 dark:hover:bg-gray-700
-                {{else}}
-                    lg:hover:bg-gray-100 lg:dark:hover:bg-gray-700
-                {{end}}">
+            <div class="relative group p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
                 <div class="flex justify-between">
-                    <span class="chatMsg w-5/6 my-auto" x-html="m.message"></span>
-                    <button @click="showMobileAction=!showMobileAction"
-                            @click.outside="showMobileAction = false;"
-                            class ="lg:hidden">
-                        <i class="text-3 fa-solid fa-ellipsis-vertical"></i>
-                    </button>
+                    <span class="chatMsg w-5/6 overflow-wrap-anywhere my-auto" x-html="m.message" x-init="$nextTick(() => { renderMathInElement($el, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\(', right: '\\)', display: false},
+                            {left: '\\[', right: '\\]', display: true}
+                        ],
+                        throwOnError: false,
+                        }); });"
+                    x-html="m.message"></span>
                 </div>
 
                 <!-- message-date -->
                 <span class="absolute right-2 bottom-2 hidden lg:group-hover:inline text-xs text-5 font-light"
                       x-text="watch.messageDateToString(m.CreatedAt)"></span>
-
-                <!-- hover menu  -->
-                <div x-cloak
-                     x-show="c.admin || m.visible"
-                     class="absolute text-4 bg-white dark:bg-secondary border rounded p-1 dark:border-0 lg:flex lg:space-x-1 z-40
-                         {{if .IsPopUp}}
-                            -top-7 right-2 bottom-auto group-hover:flex text-sm hidden
-                         {{else}}
-                            lg:-top-7 lg:right-2 lg:bottom-auto lg:group-hover:flex lg:flex lg:hidden text-sm h-fit top-full right-0 my-auto
-                         {{end}}"
-                         :class="showMobileAction ? 'grid' : 'hidden'">
-                    <button x-cloak
-                            x-show="m.visible"
-                            @click="watch.likeMessage(m.ID); m.liked=!m.liked;"
-                            :class="m.liked ? 'bg-gray-200 dark:bg-gray-600 hover:bg-transparent' : 'hover:bg-gray-200 dark:hover:bg-gray-600'"
-                            class="flex justify-between px-2 py-1 rounded"
-                            :title="m.liked?'Unlike':'Like'">
-                        <i class="fas fa-thumbs-up my-auto lg:mx-auto"></i>
-                        <span class = "lg:hidden">Like</span>
-                    </button>
-                    <button x-cloak
-                            x-show="m.visible"
-                            @click="c.current.replyTo === m.ID ? c.current.replyTo=0: c.current.replyTo=m.ID; $refs.chatInput.focus()"
-                            title="Reply"
-                            class="flex justify-between px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                            :class="c.current.replyTo === m.ID && 'hidden'">
-                        <i class="fa fas fa-reply my-auto lg:mx-auto"></i>
-                        <span class = "lg:hidden">Reply</span>
-                    </button>
-
-                    <!-- admin stuff -->
-                    <button x-show="c.admin"
-                            @click="watch.deleteMessage(m.ID)"
-                            title="Delete Message"
-                            class="flex justify-between px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
-                        <i class="fas fa-ban text-danger my-auto lg:mx-auto"></i>
-                        <span class = "lg:hidden">Delete</span>
-                    </button>
-                    {{if $moderatedChat}}
-                        <button x-show="c.admin && !m.visible"
-                                @click="watch.approveMessage(m.ID)"
-                                title="Approve Message"
-                                class="flex justify-between px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
-                            <i class="fa-solid fa-spell-check my-auto lg:mx-auto"></i>
-                            <span class = "lg:hidden">Approve</span>
-                        </button>
-                    {{end}}
-                    <button x-show="c.admin && !m.resolved"
-                            @click="watch.resolveMessage(m.ID)"
-                            title="Resolve Message"
-                            class="flex justify-between px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
-                        <i class="fas fa-check text-success my-auto lg:mx-auto"></i>
-                        <span class = "ml-2 lg:hidden">Resolve</span>
-                    </button>
-                </div>
             </div>
 
             <!-- like count & open reply button -->
-            <template x-if="m.likes > 0 || m.replies.length > 0 || m.resolved">
-                <div class="flex space-x-2 align-middle">
+            <div class="flex justify-between items-center">
+                <div class="flex space-x-2 align-middle items-center">
+                    <div class="flex">
+                        <button type="button" title="Like message"
+                                @click="watch.likeMessage(m.ID); m.liked=!m.liked;"
+                                class="flex px-2 h-8 rounded-full text-5 hover:bg-gray-200 dark:hover:bg-gray-600">
+                            <i class="fas fa-thumbs-up m-auto"></i>
+                            <template x-if="m.likes > 0">
+                                <span class="m-auto ml-2" x-text="m.likes"></span>
+                            </template>
+                        </button>
+                    </div>
                     <template x-if="m.resolved">
-                        <div class="flex text-xs h-5 w-5 bg-green-100/50 rounded-full border border-success shadow-sm my-auto dark:bg-transparent dark:shadow-0">
-                            <i class="fa-solid fa-check text-success m-auto"></i>
-                        </div>
-                    </template>
-                    <template x-if="m.likes > 0">
-                        <div class="flex">
-                            <div class="flex text-xs border text-5 px-2 rounded-full h-5 shadow-sm dark:border-gray-600 dark:shadow-0">
-                                <i class="fas fa-thumbs-up m-auto"></i>
-                                <span class="m-auto ml-1" x-text="m.likes"></span>
-                            </div>
-                        </div>
+                        <i class="fa-solid fa-check-double text-success"></i>
                     </template>
                     <template x-if="m.replies.length > 0">
                         <button
-                                class="text-5 uppercase text-xs hover:bg-gray-200 dark:hover:bg-gray-600 px-2 rounded"
+                                class="text-5 uppercase text-xs hover:bg-gray-200 dark:hover:bg-gray-600 px-2 h-8 rounded-full"
                                 @click="showReplies=!showReplies">
                             <span>replies</span>
+                            <span x-text="`(${m.replies.length})`"></span>
                             <i class="fa-solid ml-1" :class="showReplies ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                         </button>
                     </template>
+                    <button @click="c.current.replyTo === m.ID ? c.current.replyTo=0: c.current.replyTo=m.ID; $refs.chatInput.focus()"
+                            title="Reply"
+                            :class="c.current.replyTo === m.ID && 'hidden'">
+                        <span class="font-semibold text-xs text-4">Reply</span>
+                    </button>
                 </div>
-            </template>
+                <template x-if="c.admin">
+                    <div x-data="{showAdminTools: false}" class="relative">
+                        <button type="button" title="Admin tools"
+                                @click="showAdminTools=true;"
+                                class="text-amber-400 uppercase text-sm hover:bg-gray-200 dark:hover:bg-gray-600 w-8 h-8 rounded-full">
+                            <i class="fa-solid fa-bolt"></i>
+                        </button>
+                        <div x-cloak x-show="showAdminTools"
+                             @click.outside="showAdminTools = false;"
+                             class="absolute right-0 bottom-full py-2 z-[60] w-32 bg-white dark:bg-secondary-light
+                                border dark:border-gray-600 shadow rounded-lg">
+                            <button @click="watch.deleteMessage(m.ID)"
+                                    title="Delete Message"
+                                    class="flex items-center w-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="fas fa-ban text-danger mr-2"></i>
+                                <span class="text-4 font-light">Delete</span>
+                            </button>
+                            {{if $moderatedChat}}
+                                <button x-cloak x-show="!m.visible"
+                                        @click="watch.approveMessage(m.ID)"
+                                        title="Approve Message"
+                                        class="flex items-center w-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                    <i class="fa-solid fa-spell-check mr-2"></i>
+                                    <span class="text-4 font-light">Approve</span>
+                                </button>
+                                <button x-cloak x-show="m.visible && !m.admin"
+                                        @click="watch.retractMessage(m.ID)"
+                                        title="Retract Message"
+                                        class="flex items-center w-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                    <i class="fa-solid fa-rotate-left mr-2"></i>
+                                    <span class="text-4 font-light">Retract</span>
+                                </button>
+                            {{end}}
+                            <template x-if="!m.resolved">
+                                <button @click="watch.resolveMessage(m.ID)"
+                                        title="Resolve Message"
+                                        class="flex items-center w-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                    <i class="fas fa-check text-success mr-2"></i>
+                                    <span class="text-4 font-light">Resolve</span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
 
             <!-- replies -->
             <div x-cloak x-show="showReplies"

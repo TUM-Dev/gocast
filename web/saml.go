@@ -147,7 +147,7 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 			log.WithError(err).Error("Could not upsert user")
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
-		HandleValidLogin(c, &sessionData{userid: user.ID, samlSubjectID: &subjectID})
+		HandleValidLogin(c, &tools.SessionData{Userid: user.ID, SamlSubjectID: &subjectID})
 	})
 }
 

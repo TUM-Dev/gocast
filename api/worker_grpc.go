@@ -935,8 +935,8 @@ func getWorkerWithLeastWorkload(workers []model.Worker) int {
 	return foundWorker
 }
 
-// init initializes a gRPC server on port 50052
-func init() {
+// ServeWorkerGRPC initializes a gRPC server on port 50052
+func ServeWorkerGRPC() {
 	log.Info("Serving heartbeat")
 	lis, err := net.Listen("tcp", ":50052")
 	if err != nil {

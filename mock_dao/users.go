@@ -96,7 +96,7 @@ func (mr *MockUsersDaoMockRecorder) CreateRegisterLink(ctx, user interface{}) *g
 // CreateUser mocks base method.
 func (m *MockUsersDao) CreateUser(ctx context.Context, user *model.User) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "getCreateUserHandlers", ctx, user)
+	ret := m.ctrl.Call(m, "CreateUser", ctx, user)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -104,7 +104,7 @@ func (m *MockUsersDao) CreateUser(ctx context.Context, user *model.User) error {
 // CreateUser indicates an expected call of CreateUser.
 func (mr *MockUsersDaoMockRecorder) CreateUser(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "getCreateUserHandlers", reflect.TypeOf((*MockUsersDao)(nil).CreateUser), ctx, user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUsersDao)(nil).CreateUser), ctx, user)
 }
 
 // DeleteResetKey mocks base method.

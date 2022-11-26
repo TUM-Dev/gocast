@@ -2,18 +2,15 @@ package web
 
 import (
 	"context"
-	"net/http"
-	"net/url"
-	"strings"
-	"time"
-
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/tum"
 	log "github.com/sirupsen/logrus"
+	"net/http"
+	"net/url"
+	"strings"
 )
 
 type userSettingsData struct {
@@ -47,7 +44,7 @@ func (r mainRoutes) LoginHandler(c *gin.Context) {
 	}
 
 	var (
-		data *sessionData
+		data *tools.SessionData
 		err  error
 	)
 
@@ -69,8 +66,8 @@ func (r mainRoutes) LoginHandler(c *gin.Context) {
 }
 
 // HandleValidLogin starts a session and redirects the user to the page they were trying to access.
-func HandleValidLogin(c *gin.Context, data *sessionData) {
-	startSession(c, data)
+func HandleValidLogin(c *gin.Context, data *tools.SessionData) {
+	tools.StartSession(c, data)
 	redirURL, err := c.Cookie(redirCookieName)
 	if err != nil {
 		redirURL = "/" // Fallback in case no cookie is present: Redirect to index page
@@ -98,40 +95,13 @@ func getRedirectUrl(c *gin.Context) string {
 	return ref
 }
 
-type sessionData struct {
-	userid        uint
-	samlSubjectID *string
-}
-
-func startSession(c *gin.Context, data *sessionData) {
-	token, err := createToken(data.userid, data.samlSubjectID)
-	if err != nil {
-		log.WithError(err).Error("Could not create token")
-		return
-	}
-	c.SetCookie("jwt", token, 60*60*24*7, "/", "", tools.CookieSecure, true)
-}
-
-func createToken(user uint, samlSubjectID *string) (string, error) {
-	t := jwt.New(jwt.GetSigningMethod("RS256"))
-
-	t.Claims = &tools.JWTClaims{
-		RegisteredClaims: &jwt.RegisteredClaims{
-			ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Hour * 24 * 7)}, // Token expires in one week
-		},
-		UserID:        user,
-		SamlSubjectID: samlSubjectID,
-	}
-	return t.SignedString(tools.Cfg.GetJWTKey())
-}
-
 // loginWithUserCredentials Try to login with non-tum credentials
 // Returns pointer to sessionData object if successful or nil if not.
-func loginWithUserCredentials(username, password string, usersDao dao.UsersDao) *sessionData {
+func loginWithUserCredentials(username, password string, usersDao dao.UsersDao) *tools.SessionData {
 	if u, err := usersDao.GetUserByEmail(context.Background(), username); err == nil {
 		// user with this email found.
 		if match, err := u.ComparePasswordAndHash(password); err == nil && match {
-			return &sessionData{u.ID, nil}
+			return &tools.SessionData{u.ID, nil}
 		}
 		return nil
 	}
@@ -141,7 +111,7 @@ func loginWithUserCredentials(username, password string, usersDao dao.UsersDao) 
 
 // loginWithTumCredentials Try to login with tum credentials
 // Returns pointer to sessionData if successful and nil if not
-func loginWithTumCredentials(username, password string, usersDao dao.UsersDao) (*sessionData, error) {
+func loginWithTumCredentials(username, password string, usersDao dao.UsersDao) (*tools.SessionData, error) {
 	loginResp, err := tum.LoginWithTumCredentials(username, password)
 	if err == nil {
 		user := model.User{
@@ -156,7 +126,7 @@ func loginWithTumCredentials(username, password string, usersDao dao.UsersDao) (
 			return nil, err
 		}
 
-		return &sessionData{user.ID, nil}, nil
+		return &tools.SessionData{user.ID, nil}, nil
 	}
 
 	return nil, err
@@ -219,6 +189,7 @@ func NewLoginPageData(err bool) LoginPageData {
 	return LoginPageData{
 		VersionTag: VersionTag,
 		Error:      err,
+		Branding:   tools.BrandingCfg,
 	}
 }
 
@@ -230,4 +201,6 @@ type LoginPageData struct {
 	UseSAML  bool
 	IDPName  string
 	IDPColor string
+
+	Branding tools.Branding
 }

@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
-	goextron "github.com/RBG-TUM/go-extron"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
@@ -14,6 +12,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools/bot"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -46,7 +45,6 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			admins := streamById.Group("")
 			admins.Use(tools.AdminOfCourse)
 			admins.GET("", routes.getStream)
-			admins.GET("/pause", routes.pauseStream)
 			admins.GET("/end", routes.endStream)
 			admins.GET("/thumb", routes.RegenerateThumbs)
 			admins.POST("/issue", routes.reportStreamIssue)
@@ -55,6 +53,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			sections := admins.Group("/sections")
 			{
 				sections.POST("", routes.createVideoSectionBatch)
+				sections.PUT("/:id", routes.updateVideoSection)
 				sections.DELETE("/:id", routes.deleteVideoSection)
 			}
 
@@ -116,7 +115,7 @@ func (r streamRoutes) getThumbs(c *gin.Context) {
 		})
 		return
 	}
-	sendDownloadFile(c, file)
+	sendDownloadFile(c, file, tumLiveContext)
 }
 
 // livestreams returns all streams that are live
@@ -164,47 +163,6 @@ func (r streamRoutes) endStream(c *gin.Context) {
 	discardVoD := c.Request.URL.Query().Get("discard") == "true"
 	log.Info(discardVoD)
 	NotifyWorkersToStopStream(*tumLiveContext.Stream, discardVoD, r.DaoWrapper)
-}
-
-func (r streamRoutes) pauseStream(c *gin.Context) {
-	pause := c.Request.URL.Query().Get("pause") == "true"
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-
-	stream := tumLiveContext.Stream
-	lectureHall, err := r.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
-	if err != nil {
-		log.WithError(err).Error("request to pause stream without lecture hall")
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "request to pause stream without lecture hall",
-			Err:           err,
-		})
-		return
-	}
-	ge := goextron.New(fmt.Sprintf("http://%s", strings.ReplaceAll(lectureHall.CombIP, "extron3", "")), tools.Cfg.Auths.SmpUser, tools.Cfg.Auths.SmpUser) // todo
-	err = ge.SetMute(pause)
-	client := go_anel_pwrctrl.New(lectureHall.PwrCtrlIp, tools.Cfg.Auths.PwrCrtlAuth)
-	if pause {
-		err := client.TurnOff(lectureHall.LiveLightIndex)
-		if err != nil {
-			log.WithError(err).Error("can't turn off light")
-		}
-	} else {
-		err := client.TurnOn(lectureHall.LiveLightIndex)
-		if err != nil {
-			log.WithError(err).Error("can't turn on light")
-		}
-	}
-	if err != nil {
-		log.WithError(err).Error("Can't mute/unmute")
-		return
-	}
-	err = r.StreamsDao.SavePauseState(stream.ID, pause)
-	if err != nil {
-		log.WithError(err).Error("Pause: Can't save stream")
-	} else {
-		notifyViewersPause(stream.ID, pause)
-	}
 }
 
 // reportStreamIssue sends a notification to a matrix room that can be used for debugging technical issues.
@@ -422,6 +380,55 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 			log.WithError(err).Error("failed to generate video section images")
 		}
 	}()
+}
+
+type UpdateVideoSectionRequest struct {
+	Description  string `json:"description"`
+	StartHours   uint   `json:"startHours"`
+	StartMinutes uint   `json:"startMinutes"`
+	StartSeconds uint   `json:"startSeconds"`
+}
+
+func (r streamRoutes) updateVideoSection(c *gin.Context) {
+	idAsString := c.Param("id")
+	id, err := strconv.Atoi(idAsString)
+	if err != nil {
+		log.WithError(err).Error("can not parse video-section id in request url")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not parse video-section id in request url",
+			Err:           err,
+		})
+		return
+	}
+
+	var update UpdateVideoSectionRequest
+	err = c.BindJSON(&update)
+	if err != nil {
+		log.WithError(err).Error("failed to bind video section JSON")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
+	}
+
+	err = r.VideoSectionDao.Update(&model.VideoSection{
+		Model:        gorm.Model{ID: uint(id)},
+		Description:  update.Description,
+		StartHours:   update.StartHours,
+		StartMinutes: update.StartMinutes,
+		StartSeconds: update.StartSeconds})
+	if err != nil {
+		log.WithError(err).Error("failed to update video section")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not update video section",
+			Err:           err,
+		})
+		return
+	}
 }
 
 func (r streamRoutes) deleteVideoSection(c *gin.Context) {
