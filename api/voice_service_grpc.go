@@ -28,7 +28,7 @@ func (s subtitleReceiverServer) Receive(_ context.Context, request *pb.ReceiveRe
 		Content:  request.GetSubtitles(),
 		Language: request.GetLanguage(),
 	}
-	err := s.SubtitlesDao.Create(context.Background(), &subtitlesEntry)
+	err := s.SubtitlesDao.CreateOrUpsert(context.Background(), &subtitlesEntry)
 	if err != nil {
 		return nil, err
 	}

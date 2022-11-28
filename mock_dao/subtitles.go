@@ -35,18 +35,18 @@ func (m *MockSubtitlesDao) EXPECT() *MockSubtitlesDaoMockRecorder {
 	return m.recorder
 }
 
-// Create mocks base method.
-func (m *MockSubtitlesDao) Create(arg0 context.Context, arg1 *model.Subtitles) error {
+// CreateOrUpsert mocks base method.
+func (m *MockSubtitlesDao) CreateOrUpsert(arg0 context.Context, arg1 *model.Subtitles) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", arg0, arg1)
+	ret := m.ctrl.Call(m, "CreateOrUpsert", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Create indicates an expected call of Create.
-func (mr *MockSubtitlesDaoMockRecorder) Create(arg0, arg1 interface{}) *gomock.Call {
+// CreateOrUpsert indicates an expected call of CreateOrUpsert.
+func (mr *MockSubtitlesDaoMockRecorder) CreateOrUpsert(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockSubtitlesDao)(nil).Create), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrUpsert", reflect.TypeOf((*MockSubtitlesDao)(nil).CreateOrUpsert), arg0, arg1)
 }
 
 // Delete mocks base method.
