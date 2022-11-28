@@ -516,6 +516,13 @@ func (r usersRoutes) updatePreferredName(c *gin.Context) {
 			return
 		}
 	}
+	if len(request.Value) > 40 {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusUnauthorized,
+			CustomMessage: "preferred name longer then 40 characters",
+		})
+		return
+	}
 	err = r.UsersDao.AddUserSetting(&model.UserSetting{
 		UserID: u.ID,
 		Type:   model.PreferredName,
