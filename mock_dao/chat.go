@@ -253,6 +253,20 @@ func (mr *MockChatDaoMockRecorder) GetVisibleChats(userID, streamID interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVisibleChats", reflect.TypeOf((*MockChatDao)(nil).GetVisibleChats), userID, streamID)
 }
 
+// RemoveLikes mocks base method.
+func (m *MockChatDao) RemoveLikes(chatID uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveLikes", chatID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveLikes indicates an expected call of RemoveLikes.
+func (mr *MockChatDaoMockRecorder) RemoveLikes(chatID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveLikes", reflect.TypeOf((*MockChatDao)(nil).RemoveLikes), chatID)
+}
+
 // ResolveChat mocks base method.
 func (m *MockChatDao) ResolveChat(id uint) error {
 	m.ctrl.T.Helper()
@@ -265,6 +279,20 @@ func (m *MockChatDao) ResolveChat(id uint) error {
 func (mr *MockChatDaoMockRecorder) ResolveChat(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveChat", reflect.TypeOf((*MockChatDao)(nil).ResolveChat), id)
+}
+
+// RetractChat mocks base method.
+func (m *MockChatDao) RetractChat(id uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RetractChat", id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RetractChat indicates an expected call of RetractChat.
+func (mr *MockChatDaoMockRecorder) RetractChat(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetractChat", reflect.TypeOf((*MockChatDao)(nil).RetractChat), id)
 }
 
 // ToggleLike mocks base method.

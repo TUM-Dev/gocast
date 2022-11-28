@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	log "github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
-
-	log "github.com/sirupsen/logrus"
 
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
@@ -171,17 +170,19 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 
 	// watchedStateData is used by the client to track the which VoDs are watched.
 	type watchedStateData struct {
-		ID      uint   `json:"streamID"`
-		Month   string `json:"month"`
-		Watched bool   `json:"watched"`
+		ID        uint   `json:"streamID"`
+		Month     string `json:"month"`
+		Watched   bool   `json:"watched"`
+		Recording bool   `json:"recording"`
 	}
 
 	var clientWatchState = make([]watchedStateData, 0)
 	for _, s := range streamsWithWatchState {
 		clientWatchState = append(clientWatchState, watchedStateData{
-			ID:      s.Model.ID,
-			Month:   s.Start.Month().String(),
-			Watched: s.Watched,
+			ID:        s.Model.ID,
+			Month:     s.Start.Month().String(),
+			Watched:   s.Watched,
+			Recording: s.Recording,
 		})
 	}
 	// Create JSON encoded info about which streamsWithWatchState are watched. Used by the client to track the watched status.
