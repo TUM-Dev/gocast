@@ -89,7 +89,7 @@
                 <div x-data="{bookmarkUpdater: {}}"
                      x-init="bookmarkUpdater = new watch.BookmarkUpdater(b);"
                      class="flex">
-                    <button class="relative group flex flex-grow items-center shrink-0 justify-between px-4 py-3
+                    <button class="w-full relative group flex flex-grow items-center shrink-0 justify-between px-4 py-3
                                 disabled:hover:bg-white disabled:dark:hover:bg-secondary-light
                                 hover:bg-gray-100 dark:hover:bg-gray-600"
                             :class="bookmarkUpdater.show && 'rounded-r-none'"
@@ -103,7 +103,7 @@
                                     <p x-text="b.friendlyTimestamp"
                                        class="text-xs w-fit text-sky-800 bg-sky-200 dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded"></p>
                                 </div>
-                                <div>
+                                <div class = "flex">
                                     <button @click="bookmarkUpdater.show = !bookmarkUpdater.show"
                                             type="button"
                                             class="hidden group-hover:inline text-3 text-sm h-8 w-8 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full">
