@@ -32,7 +32,7 @@ db:
   user: root
 influxdb:
   serverUrl: http://localhost:8086
-  authToken: 04emVoLJWH1RWiHXfdE4gnDMFBvePmWJM2_-t_wYVlXVCC_yhrOSKRlY75JFfUSa0nxZ1hC_hEuJsGXTNK0tZw==
+  authToken: example_token
 ingestbase: rtmp://ingest.tum.live/
 jwtkey: # This is an example key, delete and restart to generate a proper one
   |
