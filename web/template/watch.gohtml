@@ -20,13 +20,49 @@
         <script defer src="/static/node_modules/katex/dist/contrib/copy-tex.min.js"></script>
     {{end}}
 </head>
-<body x-data="{'streamID': {{$stream.Model.ID}}, 'showChat': $persist(false).as('chatOpen'), seekLogger: new watch.SeekLogger('{{$stream.ID}}')}"
+<body x-data="{'streamID': {{$stream.Model.ID}}, 'showChat': $persist(false).as('chatOpen'), seekLogger: new watch.SeekLogger('{{$stream.ID}}'), showShare: false}"
       @keypress.shift.window="(e) => watch.onShift(e)"
       x-init="watch.startWebsocket(); seekLogger.attach();">
 {{template "header" .IndexData.TUMLiveContext}}
-<div id="shortcuts-help-modal" class="hidden flex absolute top-0 h-screen w-screen z-50 backdrop-blur-sm">
+<div id="shortcuts-help-modal" class="hidden flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
     <div class="m-auto" @click.outside="watch.toggleShortcutsModal();">
         {{template "shortcuts"}}
+    </div>
+</div>
+<div x-cloak x-show="showShare"
+     id="share-modal" class="flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
+    <div class="m-auto lg:w-1/2 w-3/4" @click.outside="showShare = false;">
+        <div x-data="{share: new watch.ShareURL()}"
+             class="bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
+            <div class="flex justify-between items-center px-3 pt-3 pb-1">
+                <h3 class="text-3 text-sm font-semibold">Share</h3>
+                <button type="button" title="close share modal"
+                        @click="showShare=false;">
+                    <i class="fa-solid fa-x text-3"></i>
+                </button>
+            </div>
+            <div class="pt-1 pb-3 px-3 mt-3">
+                <span class="font-light text-xs mb-1 text-4">URL</span>
+                <div class = "flex items-center justify-between tl-input text-sm">
+                    <input id="share-url" type="text"
+                           class="bg-transparent outline-0 border-0 text-left text-5 grow" :value="share.url" disabled>
+                    <button type="button" @click="share.copyURL()"
+                            class="text-xs text-white rounded-full px-3 py-1 h-fit w-fit bg-blue-500 dark:bg-indigo-600 hover:bg-blue-600 dark:hover:bg-indigo-700">
+                        <i class="fa-solid fa-clipboard mr-2"></i>
+                        Copy
+                    </button>
+                </div>
+                {{if not $stream.LiveNow}}
+                    <div class="flex justify-start items-center pt-2">
+                        <input id="include-timestamp" type="checkbox" class="h-8 hover:cursor-pointer"
+                               x-model="share.includeTimestamp" @change="share.setTimestamp();share.setURL()">
+                        <label for="include-timestamp" class="font-light text-4 text-xs ml-2">Include Timestamp</label>
+                        <input x-cloak x-show="share.includeTimestamp" class="tl-input h-8 w-20 text-xs ml-2"
+                               type="text" x-model="share.timestamp" @input="share.setURL()">
+                    </div>
+                {{end}}
+            </div>
+        </div>
     </div>
 </div>
 <div id="watchPageMainWrapper" class="lg:px-5 lg:pb-1">
@@ -184,6 +220,12 @@
                             </a>
                         {{end}}
 
+                        <button @click="showShare = true;"
+                                class="rounded-lg px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                                :title="'Share'">
+                            <i class="fa-solid fa-share text-4"></i>
+                        </button>
+
                         <!-- Actions-->
                         {{template "actions" .}}
 
@@ -285,32 +327,32 @@
         {{$less := gt (len .Description) .CutOffLength}}
         {{if gt (len .Description) 0}}
             <div x-data="{ less: {{$less}}, toggleDesc: true }"
-                {{/* Update less on update */}}
-             @descriptionupdate.window="toggleDesc = less = $event.detail.description.full.length > {{.CutOffLength}};"
-             class="video-description flex-grow p-5 basis-full lg:order-none order-5">
-            <div class="flex justify-between border-b mb-1 dark:border-gray-800 lg:justify-start">
-                <h3 class="text-4 font-semibold">Description</h3>
-            </div>
-            <div>
-                <div class="rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 hover:dark:bg-secondary text-3 text-sm">
-                    <button @click="toggleDesc = !toggleDesc;"
-                            :disabled="!less"
-                            class="p-2 w-full text-left"
-                            :class="less && 'hover:cursor-pointer'">
+                    {{/* Update less on update */}}
+                 @descriptionupdate.window="toggleDesc = less = $event.detail.description.full.length > {{.CutOffLength}};"
+                 class="video-description flex-grow p-5 basis-full lg:order-none order-5">
+                <div class="flex justify-between border-b mb-1 dark:border-gray-800 lg:justify-start">
+                    <h3 class="text-4 font-semibold">Description</h3>
+                </div>
+                <div>
+                    <div class="rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 hover:dark:bg-secondary text-3 text-sm">
+                        <button @click="toggleDesc = !toggleDesc;"
+                                :disabled="!less"
+                                class="p-2 w-full text-left"
+                                :class="less && 'hover:cursor-pointer'">
                         <span class="block overflow-y-clip"
                               :class="(less && toggleDesc) ? 'h-8' : 'h-auto'"
                               @descriptionupdate.window="$el.innerHTML=$event.detail.description.full">
                             {{.Description}}
                         </span>
-                    </button>
-                    <template x-if="less">
-                        <button class="font-semibold m-1 py-1 px-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
-                                x-text="toggleDesc ? 'Show more' : 'Show less'"
-                                @click="toggleDesc = !toggleDesc;"></button>
-                    </template>
+                        </button>
+                        <template x-if="less">
+                            <button class="font-semibold m-1 py-1 px-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
+                                    x-text="toggleDesc ? 'Show more' : 'Show less'"
+                                    @click="toggleDesc = !toggleDesc;"></button>
+                        </template>
+                    </div>
                 </div>
             </div>
-        </div>
         {{end}}
 
         <!-- Modal when stopping a stream -->
