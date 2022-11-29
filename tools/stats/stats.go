@@ -54,12 +54,19 @@ func (s *Stats) AddStreamVODStat(courseId string, streamId string) {
 
 // GetStreamNumLiveViews returns the latest data of live viewers
 func (s *Stats) GetStreamNumLiveViews(streamId uint, from time.Time, to time.Time) (int, error) {
+	var filter string
+	if streamId != 0 {
+		filter = fmt.Sprintf(`|> filter(fn: (r) => r.stream == "%d" and r.live == "true")`, streamId)
+	} else {
+		filter = `|> filter(fn: (r) => r.live == "true")`
+	}
+
 	query := fmt.Sprintf(`from(bucket: "live_stats")
 	|> range(start: %d, stop: %d)
-	|> filter(fn: (r) => r.stream == "%d" and r.live == "true") 
+	%s
     |> group()
 	|> keep(columns: ["_value"])
-	|> last()`, from.Unix(), to.Unix(), streamId)
+	|> last()`, from.Unix(), to.Unix(), filter)
 
 	if res, err := s.query.Query(context.Background(), query); err != nil {
 		return 0, err
@@ -72,11 +79,18 @@ func (s *Stats) GetStreamNumLiveViews(streamId uint, from time.Time, to time.Tim
 
 // GetCourseNumVodViews returns the sum of vod views of a course
 func (s *Stats) GetCourseNumVodViews(courseID uint, from time.Time, to time.Time) (int, error) {
+	var filter string
+	if courseID != 0 {
+		filter = fmt.Sprintf(`|> filter(fn: (r) => r.course == "%d" and r.live == "false")`, courseID)
+	} else {
+		filter = `|> filter(fn: (r) => r.live == "false")`
+	}
+
 	query := fmt.Sprintf(`from(bucket: "live_stats")
 	|> range(start: %d, stop: %d)
-	|> filter(fn: (r) => r.course == "%d" and r.live == "false")
+	%s
 	|> keep(columns: ["_value"])
-	|> sum()`, from.Unix(), to.Unix(), courseID)
+	|> sum()`, from.Unix(), to.Unix(), filter)
 
 	if res, err := s.query.Query(context.Background(), query); err != nil {
 		return 0, err
@@ -89,13 +103,20 @@ func (s *Stats) GetCourseNumVodViews(courseID uint, from time.Time, to time.Time
 
 // GetCourseNumLiveViews returns the sum of live views of a course based on the maximum views per lecture
 func (s *Stats) GetCourseNumLiveViews(courseID uint, from time.Time, to time.Time) (int, error) {
+	var filter string
+	if courseID != 0 {
+		filter = fmt.Sprintf(`|> filter(fn: (r) => r.course == "%d" and r.live == "true")`, courseID)
+	} else {
+		filter = `|> filter(fn: (r) => r.live == "true")`
+	}
+
 	query := fmt.Sprintf(`from(bucket: "live_stats")
 	|> range(start: %d, stop: %d)
-	|> filter(fn: (r) => r.course == "%d" and r.live == "true") 
+	%s
 	|> group(columns: ["stream"])
 	|> sum(column: "_value")
 	|> keep(columns: ["_value"])
-	|> max()`, from.Unix(), to.Unix(), courseID)
+	|> max()`, from.Unix(), to.Unix(), filter)
 
 	if res, err := s.query.Query(context.Background(), query); err != nil {
 		return 0, err
@@ -127,14 +148,21 @@ func (t *ChartData) GetChartJsData() []map[string]any {
 }
 
 func (s *Stats) GetStudentLiveActivityCourseStats(courseID uint, from time.Time, to time.Time) (*ChartData, error) {
+	var filter string
+	if courseID != 0 {
+		filter = fmt.Sprintf(`|> filter(fn: (r) => r.course == "%d" and r.live == "true")`, courseID)
+	} else {
+		filter = `|> filter(fn: (r) => r.live == "true")`
+	}
+
 	query := fmt.Sprintf(`from(bucket: "live_stats")
 	|> range(start: %d, stop: %d)
-	|> filter(fn: (r) => r.course == "%d" and r.live == "true")
+	%s
 	|> group(columns: ["stream"])
 	|> max()
 	|> group()
 	|> aggregateWindow(every: 7d, fn: median, createEmpty: false)
-	|> keep(columns: ["_time", "_value"])`, from.Unix(), to.Unix(), courseID)
+	|> keep(columns: ["_time", "_value"])`, from.Unix(), to.Unix(), filter)
 
 	res := ChartData{}
 
@@ -154,14 +182,21 @@ func (s *Stats) GetStudentLiveActivityCourseStats(courseID uint, from time.Time,
 }
 
 func (s *Stats) GetStudentVODActivityCourseStats(courseID uint, from time.Time, to time.Time) (*ChartData, error) {
+	var filter string
+	if courseID != 0 {
+		filter = fmt.Sprintf(`|> filter(fn: (r) => r.course == "%d" and r.live == "false")`, courseID)
+	} else {
+		filter = `|> filter(fn: (r) => r.live == "false")`
+	}
+
 	query := fmt.Sprintf(`from(bucket: "live_stats")
 	|> range(start: %d, stop: %d)
-	|> filter(fn: (r) => r.course == "%d" and r.live == "false")
+	%s
 	|> group(columns: ["stream"])
 	|> max()
 	|> group()
 	|> aggregateWindow(every: 7d, fn: median, createEmpty: false)
-	|> keep(columns: ["_time", "_value"])`, from.Unix(), to.Unix(), courseID)
+	|> keep(columns: ["_time", "_value"])`, from.Unix(), to.Unix(), filter)
 
 	res := ChartData{}
 
@@ -181,15 +216,22 @@ func (s *Stats) GetStudentVODActivityCourseStats(courseID uint, from time.Time, 
 }
 
 func (s *Stats) GetCourseStatsHourly(courseID uint, from time.Time, to time.Time) (*ChartData, error) {
+	var filter string
+	if courseID != 0 {
+		filter = fmt.Sprintf(`|> filter(fn: (r) => r.course == "%d" and r.live == "false")`, courseID)
+	} else {
+		filter = `|> filter(fn: (r) => r.live == "false")`
+	}
+
 	query := fmt.Sprintf(`import "date"
 	from(bucket: "live_stats")
 	|> range(start: %d, stop: %d)
-	|> filter(fn: (r) => r.course == "%d" and r.live == "false")
+	%s
     |> map(fn: (r) => ({ r with hour: date.hour(t: r._time) }))  
     |> group(columns: ["hour"], mode:"by")
     |> sum()
     |> group()
-	`, from.Unix(), to.Unix(), courseID)
+	`, from.Unix(), to.Unix(), filter)
 
 	res := ChartData{}
 
@@ -211,15 +253,22 @@ func (s *Stats) GetCourseStatsHourly(courseID uint, from time.Time, to time.Time
 }
 
 func (s *Stats) GetCourseStatsWeekday(courseID uint, from time.Time, to time.Time) (*ChartData, error) {
+	var filter string
+	if courseID != 0 {
+		filter = fmt.Sprintf(`|> filter(fn: (r) => r.course == "%d" and r.live == "false")`, courseID)
+	} else {
+		filter = `|> filter(fn: (r) => r.live == "false")`
+	}
+
 	query := fmt.Sprintf(`import "date"
 	from(bucket: "live_stats")
 	|> range(start: %d, stop: %d)
-	|> filter(fn: (r) => r.course == "%d" and r.live == "false")
+	%s
     |> map(fn: (r) => ({ r with day: date.weekDay(t: r._time) }))  
     |> group(columns: ["day"], mode:"by")
     |> sum()
     |> group()
-	`, from.Unix(), to.Unix(), courseID)
+	`, from.Unix(), to.Unix(), filter)
 
 	res := ChartData{}
 
@@ -241,13 +290,20 @@ func (s *Stats) GetCourseStatsWeekday(courseID uint, from time.Time, to time.Tim
 }
 
 func (s *Stats) GetStudentVODPerDay(courseID uint, from time.Time, to time.Time) (*ChartData, error) {
+	var filter string
+	if courseID != 0 {
+		filter = fmt.Sprintf(`|> filter(fn: (r) => r.course == "%d" and r.live == "false")`, courseID)
+	} else {
+		filter = `|> filter(fn: (r) => r.live == "false")`
+	}
+
 	query := fmt.Sprintf(`from(bucket: "live_stats")
 	|> range(start: %d, stop: %d)
-	|> filter(fn: (r) => r.course == "%d" and r.live == "false")
+	%s
     |> window(every: 1d)
     |> sum()
     |> group()
-	|> keep(columns: ["_start", "_value"])`, from.Unix(), to.Unix(), courseID)
+	|> keep(columns: ["_start", "_value"])`, from.Unix(), to.Unix(), filter)
 
 	res := ChartData{}
 
