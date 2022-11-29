@@ -199,6 +199,7 @@ export const skipSilence = function (options) {
 /**
  * @function watchProgress
  * Saves and retrieves the watch progress of the user as a fraction of the total watch time
+ * If query parameter 't' is specified, the timestamp given by 't' will be used.
  * @param streamID The ID of the currently watched stream
  * @param lastProgress The last progress fetched from the database
  */
@@ -209,17 +210,13 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
         let timer;
         let iOSReady = false;
         let intervalMillis = 10000;
-
-        const t: number = +getQueryParam("t");
+        let jumpTo: number;
 
         // Fetch the user's video progress from the database and set the time in the player
         player.on("loadedmetadata", () => {
             duration = player.duration();
-            if (t !== undefined && !videojs.browser.IS_IOS) {
-                player.currentTime(t);
-            } else {
-                player.currentTime(lastProgress * duration);
-            }
+            jumpTo = +getQueryParam("t") || lastProgress * duration;
+            player.currentTime(jumpTo);
         });
 
         // iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
@@ -229,7 +226,7 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
             player.on("canplaythrough", () => {
                 // Can be executed multiple times during playback
                 if (!iOSReady) {
-                    player.currentTime(lastProgress * duration);
+                    player.currentTime(jumpTo);
                     iOSReady = true;
                 }
             });
