@@ -280,10 +280,13 @@ export class ShareURL {
     timestamp: string;
     openTime: number;
 
+    copied: boolean; // success indicator
+
     constructor() {
-        this.baseUrl = [location.protocol, "//", location.host, location.pathname].join("");
+        this.baseUrl = [location.protocol, "//", location.host, location.pathname].join(""); // get rid of query
         this.url = this.baseUrl;
         this.includeTimestamp = false;
+        this.copied = false;
 
         const player = getPlayer();
         player.ready(() => {
@@ -293,27 +296,31 @@ export class ShareURL {
         });
     }
 
-    show(b: boolean) {}
-
     copyURL() {
         copyToClipboard(this.url);
+        this.copied = true;
+        setTimeout(() => (this.copied = false), 3000);
     }
 
     setURL() {
-        const trim = this.timestamp.substring(0, 9);
-        const split = trim.split(":");
-        if (split.length != 3) {
-            this.url = this.baseUrl;
-        } else {
-            const h = +split[0];
-            const m = +split[1];
-            const s = +split[2];
-            if (isNaN(h) || isNaN(m) || isNaN(s) || h > 60 || m > 60 || s > 60 || h < 0 || m < 0 || s < 0) {
+        if (this.includeTimestamp) {
+            const trim = this.timestamp.substring(0, 9);
+            const split = trim.split(":");
+            if (split.length != 3) {
                 this.url = this.baseUrl;
             } else {
-                const inSeconds = s + 60 * m + 60 * 60 * h;
-                this.url = `${this.baseUrl}?t=${inSeconds}`;
+                const h = +split[0];
+                const m = +split[1];
+                const s = +split[2];
+                if (isNaN(h) || isNaN(m) || isNaN(s) || h > 60 || m > 60 || s > 60 || h < 0 || m < 0 || s < 0) {
+                    this.url = this.baseUrl;
+                } else {
+                    const inSeconds = s + 60 * m + 60 * 60 * h;
+                    this.url = `${this.baseUrl}?t=${inSeconds}`;
+                }
             }
+        } else {
+            this.url = this.baseUrl;
         }
     }
 

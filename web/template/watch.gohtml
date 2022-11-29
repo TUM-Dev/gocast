@@ -38,7 +38,7 @@
                 <h3 class="text-3 text-sm font-semibold">Share</h3>
                 <button type="button" title="close share modal"
                         @click="showShare=false;">
-                    <i class="fa-solid fa-x text-3"></i>
+                    <i class="fa-solid fa-xmark text-3"></i>
                 </button>
             </div>
             <div class="pt-1 pb-3 px-3 mt-3">
@@ -48,8 +48,8 @@
                            class="bg-transparent outline-0 border-0 text-left text-5 grow" :value="share.url" disabled>
                     <button type="button" @click="share.copyURL()"
                             class="text-xs text-white rounded-full px-3 py-1 h-fit w-fit bg-blue-500 dark:bg-indigo-600 hover:bg-blue-600 dark:hover:bg-indigo-700">
-                        <i class="fa-solid fa-clipboard mr-2"></i>
-                        Copy
+                        <i class="fa-solid mr-2" :class="share.copied ? 'fa-check' : 'fa-clipboard'"></i>
+                        <span x-text="share.copied ? 'Copied' : 'Copy'"></span>
                     </button>
                 </div>
                 {{if not $stream.LiveNow}}
