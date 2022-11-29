@@ -36,17 +36,22 @@ func (m *MockPrefetchedCourseDao) EXPECT() *MockPrefetchedCourseDaoMockRecorder 
 }
 
 // Create mocks base method.
-func (m *MockPrefetchedCourseDao) Create(arg0 context.Context, arg1 *model.PrefetchedCourse) error {
+func (m *MockPrefetchedCourseDao) Create(arg0 context.Context, arg1 ...*model.PrefetchedCourse) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", arg0, arg1)
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Create", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockPrefetchedCourseDaoMockRecorder) Create(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockPrefetchedCourseDaoMockRecorder) Create(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockPrefetchedCourseDao)(nil).Create), arg0, arg1)
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockPrefetchedCourseDao)(nil).Create), varargs...)
 }
 
 // Delete mocks base method.
@@ -76,4 +81,19 @@ func (m *MockPrefetchedCourseDao) Get(arg0 context.Context, arg1 uint) (model.Pr
 func (mr *MockPrefetchedCourseDaoMockRecorder) Get(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPrefetchedCourseDao)(nil).Get), arg0, arg1)
+}
+
+// Search mocks base method.
+func (m *MockPrefetchedCourseDao) Search(arg0 context.Context, arg1 string) ([]model.PrefetchedCourse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Search", arg0, arg1)
+	ret0, _ := ret[0].([]model.PrefetchedCourse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search.
+func (mr *MockPrefetchedCourseDaoMockRecorder) Search(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockPrefetchedCourseDao)(nil).Search), arg0, arg1)
 }
