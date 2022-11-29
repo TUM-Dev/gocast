@@ -102,7 +102,7 @@
     }
 
     .form-container {
-        @apply mx-auto w-4/5 my-10 shadow rounded-lg border bg-white dark:border-gray-800 dark:bg-secondary-light;
+        @apply mx-auto w-full md:w-4/5 my-2 md:my-10 shadow rounded-lg border bg-white dark:border-gray-800 dark:bg-secondary-light;
     }
 
     .form-container-title {

@@ -1,0 +1,19 @@
+name: PR opened
+
+on:
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ dev ]
+    types: [ opened ]
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create comment
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ github.event.number }}
+          body: |
+            Your Testserver will be ready at https://${{ github.event.number }}.test.live.mm.rbg.tum.de in a few minutes.

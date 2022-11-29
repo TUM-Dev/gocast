@@ -1,0 +1,16 @@
+name: PR closed
+
+on:
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ dev ]
+    types: [ closed ]
+
+jobs:
+  remove-ts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Remove Testserver
+        run: |
+          curl -X POST -H "Authorization: Token ${{ secrets.TESTSERVER_UPDATER_SECRET }}" https://update.test.live.mm.rbg.tum.de/remove?num=${{ github.event.number }}
