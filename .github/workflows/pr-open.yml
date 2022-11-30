@@ -4,7 +4,7 @@ on:
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ dev ]
-    types: [ opened ]
+    types: [ opened, reopened ]
 
 jobs:
   comment:
@@ -19,6 +19,7 @@ jobs:
             Your Testserver will be ready at https://${{ github.event.number }}.test.live.mm.rbg.tum.de in a few minutes.
             <details>
                 <summary>Logins</summary>
+                
                 | Kurs1                                    | Kurs2                     | Kurs3                     | Kurs4                     |
                 | ---------------------------------------- | ------------------------- | ------------------------- | ------------------------- |
                 | public                                   | public                    | loggedin                  | enrolled                  |
