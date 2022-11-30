@@ -518,7 +518,7 @@ func (r usersRoutes) updatePreferredName(c *gin.Context) {
 	}
 	if len(request.Value) > 40 {
 		_ = c.Error(tools.RequestError{
-			Status:        http.StatusUnauthorized,
+			Status:        http.StatusBadRequest,
 			CustomMessage: "preferred name longer than 40 characters",
 		})
 		return
