@@ -1,9 +1,6 @@
 {{define "lectureHalls"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/[]model.LectureHall*/ -}}
-
-    <h1 class="text-2xl text-1 my-4">Lecture Halls</h1>
-
-    <a href="/admin/lectureHalls/new" class="mx-auto w-4/5 btn primary block">
+    <a href="/admin/lectureHalls/new" class="mx-auto w-4/5 mt-8 btn primary block">
         &#43; New Lecture Hall
     </a>
 
@@ -27,30 +24,30 @@
             </h2>
 
             <div class="form-container-body grid grid-cols-3 gap-3 p-4">
-                <h2 class="text-sm text-5 col-span-full">Sources</h2>
+                <h2 class="text-sm text-4 col-span-full">Sources</h2>
                 <ul class="grid gap-4 md:grid-cols-3 lg:grid-cols-5 col-span-full">
                     <li>
-                        <span class="text-sm text-6">Presentation</span>
+                        <span class="text-sm text-5">Presentation</span>
                         <input class="tl-input" type="text" @keyup="changed=true " x-model="presIp"
                                value="{{if $lectureHall.PresIP}}{{$lectureHall.PresIP}}{{end}}">
                     </li>
                     <li>
-                        <span class="text-sm text-6">Camera</span>
+                        <span class="text-sm text-5">Camera</span>
                         <input class="tl-input" type="text" @keyup="changed=true " x-model="camIp"
                                value="{{if $lectureHall.CamIP}}{{$lectureHall.CamIP}}{{end}}">
                     </li>
                     <li>
-                        <span class="text-sm text-6">Combined</span>
+                        <span class="text-sm text-5">Combined</span>
                         <input class="tl-input" type="text" @keyup="changed=true " x-model="combIp"
                                value="{{if $lectureHall.CombIP}}{{$lectureHall.CombIP}}{{end}}">
                     </li>
                     <li>
-                        <span class="text-sm text-6">Axis Cam</span>
+                        <span class="text-sm text-5">Axis Cam</span>
                         <input class="tl-input" type="text" @keyup="changed=true" x-model="cameraIp"
                                value="{{if $lectureHall.CameraIP}}{{$lectureHall.CameraIP}}{{end}}">
                     </li>
                     <li>
-                        <span class="text-sm text-6">Anel PWR-Ctrl</span>
+                        <span class="text-sm text-5">Anel PWR-Ctrl</span>
                         <input class="tl-input" type="text" @keyup="changed=true" x-model="pwrCtrlIp"
                                value="{{if $lectureHall.PwrCtrlIp}}{{$lectureHall.PwrCtrlIp}}{{end}}">
                     </li>
