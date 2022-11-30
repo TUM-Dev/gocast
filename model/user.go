@@ -321,12 +321,12 @@ func (u *User) GetLoginString() string {
 // Users won't be saved if any of these apply:
 // - username is empty (after trimming)
 // - username is too long (>maxUsernameLength)
-func (c *User) BeforeCreate(tx *gorm.DB) (err error) {
-	c.Name = strings.TrimSpace(c.Name)
-	if len(c.Name) > maxUsernameLength {
+func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
+	u.Name = strings.TrimSpace(u.Name)
+	if len(u.Name) > maxUsernameLength {
 		return ErrUsernameTooLong
 	}
-	if len(c.Name) == 0 {
+	if len(u.Name) == 0 {
 		return ErrUsernameNoText
 	}
 	return nil;
