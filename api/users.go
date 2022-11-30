@@ -516,10 +516,10 @@ func (r usersRoutes) updatePreferredName(c *gin.Context) {
 			return
 		}
 	}
-	if len(request.Value) > 40 {
+	if len(request.Value) > 80 {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
-			CustomMessage: "preferred name longer than 40 characters",
+			CustomMessage: "preferred name too long",
 		})
 		return
 	}
