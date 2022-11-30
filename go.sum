@@ -52,8 +52,6 @@ github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b h1:87IltMZV7hN5jGC
 github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b/go.mod h1:Nw30dUekEb8ZrJwoGck0lILeVDCIX9dqJsEAPSOxBs0=
 github.com/RBG-TUM/go-anel-pwrctrl v1.0.0 h1:8V7MV6oyg+sQzSRWhEfgg9FcOaQMGBreOh3TIu9HS+w=
 github.com/RBG-TUM/go-anel-pwrctrl v1.0.0/go.mod h1:6c2j1rcryE6BWphhJtGb+yXFIGRzmIXi+31TjE9Cft4=
-github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769 h1:CXcHbGcaclWMbveemm6tDADXDTcBo2OWiB89lutvY/U=
-github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769/go.mod h1:Gk99WHh7DoWzb964JwKjNGeDPe2Ulw7Vl7FP5y68wmw=
 github.com/TUM-Dev/CampusProxy/client v0.0.0-20220928080722-4bd1259b2d06 h1:0tiyVB3cE4fy0sufENoYIz+NcWXF0PcfO06GLnHZ/98=
 github.com/TUM-Dev/CampusProxy/client v0.0.0-20220928080722-4bd1259b2d06/go.mod h1:UuXuuqgljQbgtLAw5NY+VcThXAwO6UISn6U3s4TJx8k=
 github.com/antchfx/xmlquery v1.3.12 h1:6TMGpdjpO/P8VhjnaYPXuqT3qyJ/VsqoyNTmJzNBTQ4=
@@ -78,8 +76,8 @@ github.com/cncf/udpa/go v0.0.0-20201120205902-5459f2c99403/go.mod h1:WmhPx2Nbnht
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/crewjam/httperr v0.2.0 h1:b2BfXR8U3AlIHwNeFFvZ+BV1LFvKLlzMjzaTnZMybNo=
 github.com/crewjam/httperr v0.2.0/go.mod h1:Jlz+Sg/XqBQhyMjdDiC+GNNRzZTD7x39Gu3pglZ5oH4=
-github.com/crewjam/saml v0.4.8 h1:XPrpg7DOIqh7AvMXPMRzHylzzb/ltgnfRRilwCgYb5A=
-github.com/crewjam/saml v0.4.8/go.mod h1:9Zh6dWPtB3MSzTRt8fIFH60Z351QQ+s7hCU3J/tTlA4=
+github.com/crewjam/saml v0.4.9 h1:X2jDv4dv3IvfT9t+RhADavzNFAcq3fVxzTCIH3G605U=
+github.com/crewjam/saml v0.4.9/go.mod h1:9Zh6dWPtB3MSzTRt8fIFH60Z351QQ+s7hCU3J/tTlA4=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

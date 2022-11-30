@@ -5,7 +5,6 @@ go 1.18
 require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20221007083857-e8fe85015e85
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
-	github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769
 	github.com/antchfx/xmlquery v1.3.12
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/gabstv/melody v1.0.2
@@ -40,7 +39,7 @@ require (
 require (
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
-	github.com/crewjam/saml v0.4.8
+	github.com/crewjam/saml v0.4.9
 	github.com/golang/mock v1.6.0
 	github.com/icholy/digest v0.1.15
 	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20221031074145-0e87c56626e8
