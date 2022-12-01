@@ -41,7 +41,7 @@ require (
 	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
 	github.com/crewjam/saml v0.4.9
 	github.com/golang/mock v1.6.0
-	github.com/icholy/digest v0.1.15
+	github.com/icholy/digest v0.1.19
 	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20221031074145-0e87c56626e8
 	github.com/stretchr/testify v1.8.1
 	github.com/u2takey/go-utils v0.3.1
