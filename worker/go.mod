@@ -13,7 +13,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil/v3 v3.22.10
 	github.com/sirupsen/logrus v1.9.0
-	github.com/tidwall/gjson v1.14.3
+	github.com/tidwall/gjson v1.14.4
 	github.com/u2takey/ffmpeg-go v0.4.1
 	golang.org/x/sync v0.1.0
 	google.golang.org/grpc v1.50.1
