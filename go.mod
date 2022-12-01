@@ -31,7 +31,7 @@ require (
 	google.golang.org/genproto v0.0.0-20221027153422-115e99e71e1c // indirect
 	google.golang.org/grpc v1.50.1
 	google.golang.org/protobuf v1.28.1
-	gorm.io/driver/mysql v1.4.3
+	gorm.io/driver/mysql v1.4.4
 	gorm.io/gorm v1.24.0
 	mvdan.cc/xurls/v2 v2.4.0
 )
