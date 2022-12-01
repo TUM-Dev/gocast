@@ -50,7 +50,7 @@
     "videojs-sprite-thumbnails": "^0.6.0"
   },
   "devDependencies": {
-    "@types/video.js": "^7.3.49",
+    "@types/video.js": "^7.3.50",
     "@typescript-eslint/eslint-plugin": "^5.42.0",
     "@typescript-eslint/parser": "^5.42.0",
     "autoprefixer": "^10.4.13",
