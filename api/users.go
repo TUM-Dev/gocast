@@ -516,6 +516,13 @@ func (r usersRoutes) updatePreferredName(c *gin.Context) {
 			return
 		}
 	}
+	if len(request.Value) > 80 {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "preferred name too long",
+		})
+		return
+	}
 	err = r.UsersDao.AddUserSetting(&model.UserSetting{
 		UserID: u.ID,
 		Type:   model.PreferredName,

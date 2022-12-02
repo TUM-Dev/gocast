@@ -35,6 +35,7 @@ func newMigrator() *migrator {
 			migrations.Migrate202207240(),
 			migrations.Migrate202208110(),
 			migrations.Migrate202210270(),
+			migrations.Migrate202212010(),
 			migrations.Migrate202212020(),
 		},
 	}
