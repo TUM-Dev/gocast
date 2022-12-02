@@ -11,6 +11,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/tum"
+	"github.com/meilisearch/meilisearch-go"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -1212,20 +1213,36 @@ func (r coursesRoutes) copyCourse(c *gin.Context) {
 }
 
 func (r coursesRoutes) searchCourse(c *gin.Context) {
+	client, err := tools.Cfg.GetMeiliClient()
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Can't create client for search backend",
+			Err:           err,
+		})
+		return
+	}
 	var request struct {
 		Q string `form:"q"`
 	}
-	err := c.BindQuery(&request)
+	err = c.BindQuery(&request)
 	if err != nil {
 		_ = c.Error(tools.RequestError{Status: http.StatusBadRequest, CustomMessage: "Bad request", Err: err})
 		return
 	}
-	courses, err := r.PrefetchedCourseDao.Search(c, request.Q)
+	index := client.Index("PREFETCHED_COURSES")
+	search, err := index.Search(request.Q, &meilisearch.SearchRequest{
+		Limit: 10,
+	})
 	if err != nil {
-		_ = c.Error(tools.RequestError{Status: http.StatusInternalServerError, CustomMessage: "Can't search course", Err: err})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Can't perform search",
+			Err:           err,
+		})
 		return
 	}
-	c.JSON(http.StatusOK, courses)
+	c.JSON(http.StatusOK, search.Hits)
 }
 
 type getCourseRequest struct {

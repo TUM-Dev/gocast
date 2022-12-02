@@ -5,7 +5,9 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
+	"github.com/meilisearch/meilisearch-go"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -156,10 +158,23 @@ type Config struct {
 	WebUrl      string  `yaml:"webUrl"`
 	WorkerToken string  `yaml:"workerToken"` // used for workers to join the worker pool
 	JWTKey      *string `yaml:"jwtKey"`
+	Meili       *struct {
+		Host   string `yaml:"host"`
+		ApiKey string `yaml:"apiKey"`
+	} `yaml:"meili"`
 }
 
 func (Config) GetJWTKey() *rsa.PrivateKey {
 	return jwtKey
+}
+
+var ErrMeiliNotConfigured = errors.New("meilisearch is not configured")
+
+func (c Config) GetMeiliClient() (*meilisearch.Client, error) {
+	if c.Meili == nil {
+		return nil, ErrMeiliNotConfigured
+	}
+	return meilisearch.NewClient(meilisearch.ClientConfig{Host: c.Meili.Host, APIKey: c.Meili.ApiKey}), nil
 }
 
 var jwtKey *rsa.PrivateKey
