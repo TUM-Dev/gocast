@@ -131,7 +131,11 @@
 }
 
 .tl-input {
-    @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm;
+    @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm outline-0 border-0;
+}
+
+.tl-input:focus{
+    @apply outline-2 outline-blue-500 dark:outline-indigo-600 border-0;
 }
 
 .tl-choose-file::-webkit-file-upload-button {
