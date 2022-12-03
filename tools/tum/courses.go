@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/TUM-Dev/CampusProxy/client"
 	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/model/search"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
 	"strconv"
@@ -15,10 +15,16 @@ import (
 // PrefetchCourses loads all courses from tumonline, so we can use them in the course creation from search
 func PrefetchCourses(dao dao.DaoWrapper) func() {
 	return func() {
+		client, err := tools.Cfg.GetMeiliClient()
+		if err != nil {
+			log.Info("Skipping course prefetching, reason: ", err)
+			return
+		}
+
 		if tools.Cfg.Campus.CampusProxy == nil || tools.Cfg.Campus.RelevantOrgs == nil {
 			return
 		}
-		var res []*model.PrefetchedCourse
+		var res []*search.PrefetchedCourse
 		for _, org := range *tools.Cfg.Campus.RelevantOrgs {
 			r, err := getCoursesForOrg(org)
 			if err != nil {
@@ -27,14 +33,16 @@ func PrefetchCourses(dao dao.DaoWrapper) func() {
 				res = append(res, r...)
 			}
 		}
-		err := dao.PrefetchedCourseDao.Create(context.Background(), res...)
+		index := client.Index("PREFETCHED_COURSES")
+		_, err = index.AddDocuments(&res, "courseID")
+		log.Info(len(res))
 		if err != nil {
-			log.Error(err)
+			log.WithError(err).Error("issue adding documents to meili")
 		}
 	}
 }
 
-func getCoursesForOrg(org string) ([]*model.PrefetchedCourse, error) {
+func getCoursesForOrg(org string) ([]*search.PrefetchedCourse, error) {
 	conf := client.NewConfiguration()
 	conf.Host = "campus-proxy.mm.rbg.tum.de"
 	conf.Scheme = "https"
@@ -47,7 +55,7 @@ func getCoursesForOrg(org string) ([]*model.PrefetchedCourse, error) {
 	if err.Error() != "" {
 		return nil, fmt.Errorf("load Course: %v", err.Error())
 	}
-	var res []*model.PrefetchedCourse
+	var res []*search.PrefetchedCourse
 	for _, c := range courses {
 		t := "W"
 		if strings.Contains(c.GetTeachingTerm(), "Sommer") {
@@ -60,7 +68,7 @@ func getCoursesForOrg(org string) ([]*model.PrefetchedCourse, error) {
 		if err != nil {
 			continue
 		}
-		res = append(res, &model.PrefetchedCourse{
+		res = append(res, &search.PrefetchedCourse{
 			Name:     c.CourseName.GetText(),
 			CourseID: c.GetCourseId(),
 			Term:     t,
