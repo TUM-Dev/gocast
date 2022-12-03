@@ -67,11 +67,11 @@ func (b *Bot) SendMessage(message Message) error {
 }
 
 // SendAlert sends an alert message to the bot e.g. via Matrix.
-func (b *Bot) SendAlert(alert AlertMessage, statsDao dao.StatisticsDao) error {
+func (b *Bot) SendAlert(alert AlertMessage, courseDao dao.CoursesDao) error {
 	issuesPerStream[alert.Stream.ID] = append(issuesPerStream[alert.Stream.ID], issueInfo{Time: time.Now(), UserID: alert.User.ID})
 	message := Message{
 		Text: getFormattedMessageText(GenerateInfoText(alert)),
-		Prio: hasPrio(alert.Stream.ID, statsDao) || alert.IsLecturer,
+		Prio: hasPrio(alert.Stream.ID, courseDao) || alert.IsLecturer,
 	}
 	return b.SendMessage(message)
 }
@@ -134,7 +134,7 @@ func getFormattedMessageText(message string) string {
 
 // hasPrio returns true if 1% of the current viewers of a stream with streamID reported an issue.
 // When there threshold for sending an alert is greater than 1, it is also checked whether these reports are consecutive.
-func hasPrio(streamID uint, statsDao dao.StatisticsDao) bool {
+func hasPrio(streamID uint, courseDao dao.CoursesDao) bool {
 	distinctReports := len(issuesPerStream[streamID])
 
 	for _, r1 := range issuesPerStream[streamID] {

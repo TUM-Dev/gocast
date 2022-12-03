@@ -42,6 +42,8 @@ type CoursesDao interface {
 
 	RemoveAdminFromCourse(userID uint, courseID uint) error
 	DeleteCourse(course model.Course)
+
+	GetCourseNumStudents(courseID uint) (int64, error)
 }
 
 type coursesDao struct {
@@ -312,6 +314,13 @@ func (d coursesDao) DeleteCourse(course model.Course) {
 	if err != nil {
 		log.WithError(err).Error("Can't delete course")
 	}
+}
+
+// GetCourseNumStudents returns the number of students enrolled in the course
+func (d coursesDao) GetCourseNumStudents(courseID uint) (int64, error) {
+	var res int64
+	err := DB.Table("course_users").Where("course_id = ? OR ? = 0", courseID, courseID).Count(&res).Error
+	return res, err
 }
 
 type Semester struct {

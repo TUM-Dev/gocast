@@ -136,7 +136,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 		resp.Data.Datasets[0].BackgroundColor = ""
 		c.JSON(http.StatusOK, resp)
 	case "numStudents":
-		res, err := r.StatisticsDao.GetCourseNumStudents(cid)
+		res, err := r.CoursesDao.GetCourseNumStudents(cid)
 		if err != nil {
 			log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumStudents failed")
 			_ = c.Error(tools.RequestError{
@@ -315,7 +315,7 @@ func (r coursesRoutes) exportStats(c *gin.Context) {
 		case "quickStats":
 			var quickStats []stats.ChartDataEntry
 
-			numStudents, err := r.StatisticsDao.GetCourseNumStudents(cid)
+			numStudents, err := r.CoursesDao.GetCourseNumStudents(cid)
 			if err != nil {
 				log.WithError(err).WithField("courseId", cid).Warn("GetCourseNumStudents failed")
 			} else {

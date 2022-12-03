@@ -21,7 +21,6 @@ type DaoWrapper struct {
 	LectureHallsDao
 	UsersDao
 	UploadKeyDao
-	StatisticsDao
 	ProgressDao
 	ServerNotificationDao
 	TokenDao
@@ -49,7 +48,6 @@ func NewDaoWrapper() DaoWrapper {
 		LectureHallsDao:       NewLectureHallsDao(),
 		UsersDao:              NewUsersDao(),
 		UploadKeyDao:          NewUploadKeyDao(),
-		StatisticsDao:         NewStatisticsDao(),
 		ProgressDao:           NewProgressDao(),
 		ServerNotificationDao: NewServerNotificationDao(),
 		TokenDao:              NewTokenDao(),
