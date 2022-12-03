@@ -11,7 +11,7 @@ interface maintenancePage {
 export function maintenancePage(): maintenancePage {
     return {
         generateThumbnails() {
-            return fetch("/api/maintenance/generateThumbnails", {method: "POST"}).then((r) => {
+            return fetch("/api/maintenance/generateThumbnails", { method: "POST" }).then((r) => {
                 return true;
             });
         },
@@ -25,17 +25,14 @@ export function maintenancePage(): maintenancePage {
             }, 5000);
         },
         update() {
-            fetch(
-                `/api/maintenance/generateThumbnails/status`,
-            )
+            fetch(`/api/maintenance/generateThumbnails/status`)
                 .then((r) => {
-                    return r.json() as Promise<{ process: number, running: boolean }>;
+                    return r.json() as Promise<{ process: number; running: boolean }>;
                 })
                 .then((r) => {
                     this.running = r.running;
                     this.process = r.process;
                 });
-        }
+        },
     };
 }
-
