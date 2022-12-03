@@ -304,9 +304,14 @@ export const repeatHeatMap = {
 
     updateHeatMap() {
         const values = JSON.parse(Get(`/api/seekReport/${this.streamID}`)).values;
+        if (values.length == 0) {
+            return;
+        }
+
         const event = new CustomEvent("updateheatmappath", {
             detail: { heatMapPath: this.genHeatMapPath(this.valuesToArray(values)) },
         });
+
         window.dispatchEvent(event);
     },
 

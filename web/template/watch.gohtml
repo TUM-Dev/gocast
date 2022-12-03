@@ -121,6 +121,7 @@
                     x-init="seekLogger.attach(); watch.repeatHeatMap.init('{{$stream.ID}}');"
                     class="heatmap-wrap absolute bottom-[18px] rounded bg-gradient-to-t from-gray-800/[.6] pt-4 pointer-events-none"
                     :style="{width: size.width, left: size.x}"
+                    x-show="heatMapPath != null"
             >
                 <svg x-if="heatMapPath" height="100%" preserveAspectRatio="none" viewBox="0 0 1000 100"
                      width="100%" style="height: 30px;">
