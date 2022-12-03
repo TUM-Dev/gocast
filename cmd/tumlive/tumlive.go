@@ -166,7 +166,6 @@ func main() {
 		&model.InfoPage{},
 		&model.Bookmark{},
 		&model.TranscodingProgress{},
-		&model.PrefetchedCourse{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
