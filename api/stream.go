@@ -304,7 +304,7 @@ func (r streamRoutes) RegenerateThumbs(c *gin.Context) {
 		if file.Type == model.FILETYPE_VOD {
 			// Unlike for generating video sections, we need a new method here, as there is no API in place.
 			// The thumbnails are generated automatically by the worker which then notifies the backend.
-			err := RegenerateThumbs(r.DaoWrapper, file.Path)
+			err := RegenerateThumbs(r.DaoWrapper, file, stream, course)
 			if err != nil {
 				log.WithError(err).Errorf("Can't regenerate thumbnail for stream %d with file %s", stream.ID, file.Path)
 				continue

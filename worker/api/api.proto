@@ -26,6 +26,12 @@ message GenerateSectionImageResponse {
 message GenerateThumbnailRequest {
   string Path = 1;
   string WorkerID = 2;
+  uint32 StreamID = 3;
+  string StreamVersion = 4;
+  string CourseSlug = 5;
+  uint32 CourseYear = 6;
+  string TeachingTerm = 7;
+  google.protobuf.Timestamp start = 8;
 }
 
 message Section {

@@ -137,6 +137,12 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 // HandleThumbnailRequest creates a thumbnail on demand.
 func HandleThumbnailRequest(request *pb.GenerateThumbnailRequest) {
 	streamCtx := &StreamContext{
+		streamId:      request.StreamID,
+		courseSlug:    request.CourseSlug,
+		teachingTerm:  request.TeachingTerm,
+		teachingYear:  request.CourseYear,
+		startTime:     request.Start.AsTime(),
+		streamVersion: request.StreamVersion,
 		recordingPath: &request.Path,
 	}
 	if streamCtx.recordingPath == nil {
