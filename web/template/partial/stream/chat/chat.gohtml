@@ -250,7 +250,7 @@
                                 <div class="bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
                                     <label for="pollQuestion" class="hidden"></label>
                                     <textarea
-                                            id="pollQuestion"
+                                            id="pollQuestion" spellcheck="true"
                                             class="bg-transparent w-full h-40 resize-none border-none py-2 px-4 text-sm font-normal placeholder:text-sm focus:outline-none"
                                             maxlength="500"
                                             x-model="c.poll.question"
@@ -262,7 +262,7 @@
                                     <template x-for="(pollOption, index) in c.poll.options" :key="index">
                                         <div class="flex-1 bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full lg:mr-2 my-2">
                                             <input :id="$id('poll-answer')"
-                                                   placeholder="Write a Poll-Answer ..." maxlength="240"
+                                                   placeholder="Write a Poll-Answer ..." maxlength="240" spellcheck="true"
                                                    x-model="pollOption.answer"
                                                    class="bg-transparent w-full py-2 px-4 border-0 text-sm font-normal placeholder:text-sm focus:outline-none">
 
@@ -335,7 +335,7 @@
                                 </label>
                             {{end}}
                             <label for="chatInput" class="hidden">Chat input</label>
-                            <input id="chatInput" type="text"
+                            <input id="chatInput" type="text" spellcheck="true"
                                    maxlength="200"
                                    x-ref="chatInput"
                                    x-model="c.current.message"
