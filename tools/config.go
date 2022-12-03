@@ -111,6 +111,7 @@ type Config struct {
 	Influxdb struct {
 		ServerUrl string `yaml:"serverUrl"`
 		AuthToken string `yaml:"authToken"`
+		Org       string `yaml:"org"`
 	} `yaml:"influxdb"`
 	Campus struct {
 		Base        string   `yaml:"base"`

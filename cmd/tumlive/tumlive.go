@@ -181,7 +181,7 @@ func main() {
 	}
 
 	influxDb := influxdb2.NewClient(tools.Cfg.Influxdb.ServerUrl, tools.Cfg.Influxdb.AuthToken)
-	stats.InitStats(influxDb)
+	stats.InitStats(influxDb, tools.Cfg.Influxdb.Org)
 
 	// tools.SwitchPreset()
 

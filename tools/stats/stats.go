@@ -23,13 +23,13 @@ var weekdays = []string{
 
 var Client *Stats
 
-func InitStats(client influxdb2.Client) {
+func InitStats(client influxdb2.Client, org string) {
 	bucket := "live_stats"
 	Client = &Stats{
 		bucket:    bucket,
 		client:    client,
-		liveStats: client.WriteAPI("rbg", bucket),
-		query:     client.QueryAPI("rbg"),
+		liveStats: client.WriteAPI(org, bucket),
+		query:     client.QueryAPI(org),
 	}
 }
 
