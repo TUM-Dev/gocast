@@ -5,7 +5,6 @@ go 1.18
 require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20221007083857-e8fe85015e85
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
-	github.com/RBG-TUM/go-extron v0.0.0-20210921110740-7a8f40430769
 	github.com/antchfx/xmlquery v1.3.12
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/gabstv/melody v1.0.2
@@ -50,6 +49,7 @@ require (
 
 require (
 	github.com/TUM-Dev/CampusProxy/client v0.0.0-20220928080722-4bd1259b2d06
+	github.com/influxdata/influxdb-client-go v1.4.0
 	github.com/matthiasreumann/gomino v0.0.2
 )
 
@@ -63,13 +63,7 @@ require (
 require (
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/deepmap/oapi-codegen v1.12.2 // indirect
-	github.com/influxdata/influxdb-client-go v1.4.0 // indirect
 	github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 // indirect
-	github.com/labstack/echo/v4 v4.9.1 // indirect
-	github.com/labstack/gommon v0.4.0 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasttemplate v1.2.2 // indirect
 )
 
 require (
