@@ -36,20 +36,6 @@ func (m *MockStreamsDao) EXPECT() *MockStreamsDaoMockRecorder {
 	return m.recorder
 }
 
-// AddVodView mocks base method.
-func (m *MockStreamsDao) AddVodView(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddVodView", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddVodView indicates an expected call of AddVodView.
-func (mr *MockStreamsDaoMockRecorder) AddVodView(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddVodView", reflect.TypeOf((*MockStreamsDao)(nil).AddVodView), id)
-}
-
 // ClearWorkersForStream mocks base method.
 func (m *MockStreamsDao) ClearWorkersForStream(stream model.Stream) error {
 	m.ctrl.T.Helper()

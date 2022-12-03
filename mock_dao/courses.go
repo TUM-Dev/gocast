@@ -239,6 +239,21 @@ func (mr *MockCoursesDaoMockRecorder) GetCourseForLecturerIdByYearAndTerm(c, yea
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCourseForLecturerIdByYearAndTerm", reflect.TypeOf((*MockCoursesDao)(nil).GetCourseForLecturerIdByYearAndTerm), c, year, term, userId)
 }
 
+// GetCourseNumStudents mocks base method.
+func (m *MockCoursesDao) GetCourseNumStudents(courseID uint) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCourseNumStudents", courseID)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCourseNumStudents indicates an expected call of GetCourseNumStudents.
+func (mr *MockCoursesDaoMockRecorder) GetCourseNumStudents(courseID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCourseNumStudents", reflect.TypeOf((*MockCoursesDao)(nil).GetCourseNumStudents), courseID)
+}
+
 // GetCurrentOrNextLectureForCourse mocks base method.
 func (m *MockCoursesDao) GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model.Stream, error) {
 	m.ctrl.T.Helper()
