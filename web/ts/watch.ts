@@ -290,7 +290,6 @@ export const repeatHeatMap = {
         const event = new CustomEvent("updateheatmapsize", {
             detail: this.getSeekbarInfo(),
         });
-        console.log(event);
         window.dispatchEvent(event);
     },
 
@@ -313,7 +312,7 @@ export const repeatHeatMap = {
 
     genHeatMapPath(values) {
         let res = "M 0.0,100.0";
-        console.log(values);
+
         for (let i = 0; i < 1000; i += 10) {
             const currX = i + 1;
             const lastVal = values[i / 10 - 1] ?? 0;
@@ -333,7 +332,6 @@ export const repeatHeatMap = {
 
         res += ` C 1001.0,${lastVal} 1000.0,${slope} 1000.0,100.0`;
 
-        console.log(res);
         return res;
     },
 
