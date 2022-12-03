@@ -92,6 +92,20 @@ func (mr *MockFileDaoMockRecorder) NewFile(f interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewFile", reflect.TypeOf((*MockFileDao)(nil).NewFile), f)
 }
 
+// SetThumbnail mocks base method.
+func (m *MockFileDao) SetThumbnail(streamId uint, thumb model.File) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetThumbnail", streamId, thumb)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetThumbnail indicates an expected call of SetThumbnail.
+func (mr *MockFileDaoMockRecorder) SetThumbnail(streamId, thumb interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetThumbnail", reflect.TypeOf((*MockFileDao)(nil).SetThumbnail), streamId, thumb)
+}
+
 // UpdateFile mocks base method.
 func (m *MockFileDao) UpdateFile(id string, f *model.File) error {
 	m.ctrl.T.Helper()
