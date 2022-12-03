@@ -115,13 +115,12 @@
             </video-js>
 
             <div
-                    x-data="{ visible: false, seekbar: { x: '0px', width: '0px' }, seekLogger: new watch.SeekLogger('{{$stream.ID}}'), heatMapPath: null }"
-                    x-show="visible"
-                    x-on:updateheatmappath.window="e => { console.log('testy2'); heatMapPath = e.detail.heatMapPath; }"
-                    x-on:updateheatmapvisibility.window="e => { console.log('testy1'); visible = e.detail.visible; seekbar = e.detail.seekbar; }"
+                    x-data="{ size: { x: '0px', width: '0px' }, seekLogger: new watch.SeekLogger('{{$stream.ID}}'), heatMapPath: null }"
+                    x-on:updateheatmappath.window="e => { heatMapPath = e.detail.heatMapPath; }"
+                    x-on:updateheatmapsize.window="e => { size = e.detail; }"
                     x-init="seekLogger.attach(); watch.repeatHeatMap.init('{{$stream.ID}}');"
-                    class="absolute bottom-[18px] rounded bg-gradient-to-t from-gray-800/[.6] pt-4 pointer-events-none"
-                    :style="{width: seekbar.width, left: seekbar.x}"
+                    class="heatmap-wrap absolute bottom-[18px] rounded bg-gradient-to-t from-gray-800/[.6] pt-4 pointer-events-none"
+                    :style="{width: size.width, left: size.x}"
             >
                 <svg x-if="heatMapPath" height="100%" preserveAspectRatio="none" viewBox="0 0 1000 100"
                      width="100%" style="height: 30px;">

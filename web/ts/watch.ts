@@ -265,18 +265,32 @@ export const videoStatListener = {
 const repeatMapScale = 90;
 
 export const repeatHeatMap = {
+    seekBar: null,
+
     init(streamID: number) {
         this.streamID = streamID;
-        const seekBar = document.querySelector(".vjs-progress-control.vjs-control");
-        seekBar.addEventListener("mouseenter", this.show.bind(this));
-        seekBar.addEventListener("mouseleave", this.hide.bind(this));
         setTimeout(() => this.updateHeatMap(), 0);
+
+        const player = getPlayer();
+        player.ready(() => {
+            this.seekBar = document.querySelector(".vjs-progress-control");
+            this.injectElementIntoVjs();
+
+            new ResizeObserver(this.updateSize.bind(this)).observe(this.seekBar);
+            this.updateSize();
+        });
     },
 
-    show() {
-        const event = new CustomEvent("updateheatmapvisibility", {
-            detail: { visible: true, seekbar: this.getSeekbarInfo() },
+    injectElementIntoVjs() {
+        const heatmap = document.querySelector(".heatmap-wrap");
+        this.seekBar.append(heatmap);
+    },
+
+    updateSize() {
+        const event = new CustomEvent("updateheatmapsize", {
+            detail: this.getSeekbarInfo(),
         });
+        console.log(event);
         window.dispatchEvent(event);
     },
 
@@ -323,23 +337,20 @@ export const repeatHeatMap = {
         return res;
     },
 
-    hide() {
-        const event = new CustomEvent("updateheatmap", {
-            detail: { visible: false, seekbar: { x: "0px", width: "0px" } },
-        });
-        window.dispatchEvent(event);
-    },
-
     data() {
         return "";
     },
 
     getSeekbarInfo() {
-        const seekBar = document.querySelector(".vjs-progress-control.vjs-control .vjs-progress-holder");
-        const left = seekBar.getBoundingClientRect().left;
+        const seekBar = document.querySelector(".vjs-progress-holder");
+        if (!seekBar) {
+            return { x: "0px", width: "0px" };
+        }
+
+        const marginLeft = window.getComputedStyle(seekBar).marginLeft;
         const width = seekBar.getBoundingClientRect().width;
         return {
-            x: left + "px",
+            x: marginLeft,
             width: width + "px",
         };
     },
