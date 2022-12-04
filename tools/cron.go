@@ -37,3 +37,12 @@ func (c *CronService) RunJob(name string) {
 		go job()
 	}
 }
+
+// ListCronJobs returns a []string with the names of all cronjobs
+func (c *CronService) ListCronJobs() []string {
+	var l []string
+	for job := range c.cronJobs {
+		l = append(l, job)
+	}
+	return l
+}
