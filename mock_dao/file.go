@@ -34,6 +34,21 @@ func (m *MockFileDao) EXPECT() *MockFileDaoMockRecorder {
 	return m.recorder
 }
 
+// CountVoDFiles mocks base method.
+func (m *MockFileDao) CountVoDFiles() (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountVoDFiles")
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountVoDFiles indicates an expected call of CountVoDFiles.
+func (mr *MockFileDaoMockRecorder) CountVoDFiles() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountVoDFiles", reflect.TypeOf((*MockFileDao)(nil).CountVoDFiles))
+}
+
 // DeleteFile mocks base method.
 func (m *MockFileDao) DeleteFile(id uint) error {
 	m.ctrl.T.Helper()
@@ -75,6 +90,20 @@ func (m *MockFileDao) NewFile(f *model.File) error {
 func (mr *MockFileDaoMockRecorder) NewFile(f interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewFile", reflect.TypeOf((*MockFileDao)(nil).NewFile), f)
+}
+
+// SetThumbnail mocks base method.
+func (m *MockFileDao) SetThumbnail(streamId uint, thumb model.File) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetThumbnail", streamId, thumb)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetThumbnail indicates an expected call of SetThumbnail.
+func (mr *MockFileDaoMockRecorder) SetThumbnail(streamId, thumb interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetThumbnail", reflect.TypeOf((*MockFileDao)(nil).SetThumbnail), streamId, thumb)
 }
 
 // UpdateFile mocks base method.

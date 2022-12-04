@@ -50,6 +50,17 @@ func (f File) GetFriendlyFileName() string {
 	return "Default view"
 }
 
+// GetVodTypeByName infers the type of a video file based on its name.
+func (f File) GetVodTypeByName() string {
+	if strings.HasSuffix(f.Path, "CAM.mp4") {
+		return "CAM"
+	}
+	if strings.HasSuffix(f.Path, "PRES.mp4") {
+		return "PRES"
+	}
+	return "COMB"
+}
+
 func (f File) IsThumb() bool {
 	return f.Type == FILETYPE_THUMB_CAM || f.Type == FILETYPE_THUMB_PRES || f.Type == FILETYPE_THUMB_COMB
 }
