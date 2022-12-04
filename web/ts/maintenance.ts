@@ -56,7 +56,9 @@ export function maintenancePage(): maintenancePage {
                 .catch((r) => false)
                 .then((ok) => {
                     // remove status text after 5 seconds
-                    setTimeout(()=>{ this.cronRunOk=null; }, 5000)
+                    setTimeout(() => {
+                        this.cronRunOk = null;
+                    }, 5000);
                     this.cronRunOk = ok;
                     if (ok) {
                         this.selectedCronJob = "---";
