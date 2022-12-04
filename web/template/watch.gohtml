@@ -300,13 +300,6 @@
                                 <i class="fas fa-exclamation-triangle mr-1"></i>Problem
                             </button>
                         {{end}}
-                    {{else}}
-                    <!-- Potentially move this to the course page at some point -->
-                    <button @click="fetch(`/api/stream/${streamID}/thumb`)"
-                            title="Regenerate thumbnails for the video and video sections. This can take up to 10 minutes."
-                            class="bg-indigo-500 text-center sm:w-64 md:inline-block block w-full text-white font-bold hover:bg-indigo-600 dark:hover:bg-indigo-600 rounded cursor-pointer p-2">
-                        <i class="fas fa-redo mr-1"></i>Regenerate assets
-                    </button>
                     {{end}}
                 </div>
             </div>
