@@ -64,6 +64,15 @@ func (s server) RequestStreamEnd(ctx context.Context, request *pb.EndStreamReque
 	return &pb.Status{Ok: true}, nil
 }
 
+func (s server) GenerateThumbnails(ctx context.Context, request *pb.GenerateThumbnailRequest) (*pb.Status, error) {
+	if request.WorkerID != cfg.WorkerID {
+		log.Info("Rejected request to generate thumbnails")
+		return &pb.Status{Ok: false}, errors.New("unauthenticated: wrong worker id")
+	}
+	worker.HandleThumbnailRequest(request)
+	return &pb.Status{Ok: true}, nil
+}
+
 func (s server) GenerateSectionImages(ctx context.Context, request *pb.GenerateSectionImageRequest) (*pb.GenerateSectionImageResponse, error) {
 	folder := fmt.Sprintf("%s/%s/%d.%s/sections",
 		cfg.StorageDir, request.CourseName, request.CourseYear, request.CourseTeachingTerm)
@@ -109,8 +118,8 @@ func (s server) DeleteSectionImage(ctx context.Context, request *pb.DeleteSectio
 	return &pb.Status{Ok: true}, err
 }
 
-//InitApi Initializes api endpoints
-//addr: port to run on, e.g. ":8080"
+// InitApi Initializes api endpoints
+// addr: port to run on, e.g. ":8080"
 func InitApi(addr string) {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {

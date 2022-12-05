@@ -17,3 +17,12 @@ jobs:
           issue-number: ${{ github.event.number }}
           body: |
             Your Testserver will be ready at https://${{ github.event.number }}.test.live.mm.rbg.tum.de in a few minutes.
+            <details>
+            <summary>Logins</summary>
+            
+            | Kurs1                                    | Kurs2                     | Kurs3                     | Kurs4                     |
+            | ---------------------------------------- | ------------------------- | ------------------------- | ------------------------- |
+            | public                                   | public                    | loggedin                  | enrolled                  |
+            | prof1                                    | prof1                     | prof2                     | prof1<br/>prof2           |
+            | student1<br/>student2<br/>student3       | student1<br/>student2     | student2<br/>student3     | student1<br/>student2     |
+            </details>
