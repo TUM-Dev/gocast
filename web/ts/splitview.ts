@@ -26,6 +26,7 @@ export class SplitView {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const that = this;
         this.split = Split(["#video-pres-wrapper", "#video-cam-wrapper"], {
+            minSize: [0, 0],
             sizes: this.getSizes(),
             onDragEnd: function (sizes: number[]) {
                 that.toggleControlBars(sizes[1]);
