@@ -1,4 +1,4 @@
-import { postData } from "./global";
+import { getQueryParam, postData } from "./global";
 import { VideoSectionList } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
@@ -206,6 +206,7 @@ export const skipSilence = function (options) {
 /**
  * @function watchProgress
  * Saves and retrieves the watch progress of the user as a fraction of the total watch time
+ * If query parameter 't' is specified, the timestamp given by 't' will be used.
  * @param streamID The ID of the currently watched stream
  * @param lastProgress The last progress fetched from the database
  */
@@ -216,11 +217,13 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
             let timer;
             let iOSReady = false;
             let intervalMillis = 10000;
+            let jumpTo: number;
 
             // Fetch the user's video progress from the database and set the time in the player
             players[j].on("loadedmetadata", () => {
-                duration = players[j].duration();
-                players[j].currentTime(lastProgress * duration);
+                duration = player.duration();
+                jumpTo = +getQueryParam("t") || lastProgress * duration;
+                player.currentTime(jumpTo);
             });
 
             // iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
@@ -230,7 +233,7 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
                 players[j].on("canplaythrough", () => {
                     // Can be executed multiple times during playback
                     if (!iOSReady) {
-                        players[j].currentTime(lastProgress * duration);
+                        players[j].currentTime(jumpTo);
                         iOSReady = true;
                     }
                 });

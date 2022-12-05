@@ -13,11 +13,11 @@ RUN GO111MODULE=on go mod download && go mod verify
 ARG version=dev
 RUN GOOS=linux GOARCH=amd64 go build -a -ldflags "-w -X main.VersionTag=${version}" -o /worker cmd/worker/worker.go
 
-FROM alpine:3.16
+FROM alpine:3.17
 
 RUN apk add --no-cache \
-  ffmpeg=5.0.1-r1 \
-  tzdata=2022c-r0
+  ffmpeg \
+  tzdata
 
 # copy shared libraries for tesseract
 COPY --from=builder \

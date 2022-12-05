@@ -102,7 +102,7 @@
     }
 
     .form-container {
-        @apply mx-auto w-4/5 my-10 shadow rounded-lg border bg-white dark:border-gray-800 dark:bg-secondary-light;
+        @apply mx-auto w-full md:w-4/5 my-2 md:my-10 shadow rounded-lg border bg-white dark:border-gray-800 dark:bg-secondary-light;
     }
 
     .form-container-title {
@@ -131,7 +131,11 @@
 }
 
 .tl-input {
-    @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm;
+    @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm outline-0 border-0;
+}
+
+.tl-input:focus{
+    @apply outline-2 outline-blue-500 dark:outline-indigo-600 border-0;
 }
 
 .tl-choose-file::-webkit-file-upload-button {

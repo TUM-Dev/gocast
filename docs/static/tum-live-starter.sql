@@ -862,7 +862,7 @@ CREATE TABLE `users` (
   `created_at` datetime(3) DEFAULT NULL,
   `updated_at` datetime(3) DEFAULT NULL,
   `deleted_at` datetime(3) DEFAULT NULL,
-  `name` longtext NOT NULL,
+  `name` varchar(80) NOT NULL,
   `email` varchar(256) DEFAULT NULL,
   `matriculation_number` varchar(256) DEFAULT NULL,
   `lrz_id` longtext DEFAULT NULL,
