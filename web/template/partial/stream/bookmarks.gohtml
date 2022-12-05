@@ -52,18 +52,21 @@
                 <div class="flex align-middle">
                     <input x-model="bookmark.request.Hours"
                            type="number" name="bookmark-timestamp-hour"
+                           min="0" max="60" step="1"
                            id="bookmark-timestamp-hour"
                            placeholder="" required
                            class="rounded px-4 py-3 mt-1 text-4 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
                     <span class="px-2 my-auto font-semibold text-5">:</span>
                     <input x-model="bookmark.request.Minutes"
                            type="number" name="bookmark-timestamp-minutes"
+                           min="0" max="60" step="1"
                            id="bookmark-timestamp-minutes"
                            placeholder="" required
                            class="rounded px-4 py-3 mt-1 text-4 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
                     <span class="px-2 my-auto font-semibold text-5">:</span>
                     <input x-model="bookmark.request.Seconds"
                            type="number" name="bookmark-timestamp-seconds"
+                           min="0" max="60" step="1"
                            id="bookmark-timestamp-seconds"
                            placeholder="" required
                            class="rounded px-4 py-3 mt-1 text-4 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
