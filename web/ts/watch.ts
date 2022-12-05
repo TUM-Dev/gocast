@@ -233,22 +233,20 @@ export const videoStatListener = {
         this.update();
     },
     update() {
-        const players = getPlayers();
-        for (let j = 0; j < 1; j++) {
-            const vhs = players[j].tech({ IWillNotUseThisInPlugins: true }).vhs;
-            const notAvailable = vhs == null;
+        const player = getPlayers()[0];
+        const vhs = player.tech({ IWillNotUseThisInPlugins: true }).vhs;
+        const notAvailable = vhs == null;
 
-            const data = {
-                bufferSeconds: notAvailable ? 0 : players[j].bufferedEnd() - players[j].currentTime(),
-                videoHeight: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.height,
-                videoWidth: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.width,
-                bandwidth: notAvailable ? 0 : vhs.bandwidth, //player.tech().vhs.bandwidth(),
-                mediaRequests: notAvailable ? 0 : vhs.stats.mediaRequests,
-                mediaRequestsFailed: notAvailable ? 0 : vhs.stats.mediaRequestsErrored,
-            };
-            const event = new CustomEvent("newvideostats", { detail: data });
-            window.dispatchEvent(event);
-        }
+        const data = {
+            bufferSeconds: notAvailable ? 0 : player.bufferedEnd() - player.currentTime(),
+            videoHeight: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.height,
+            videoWidth: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.width,
+            bandwidth: notAvailable ? 0 : vhs.bandwidth,
+            mediaRequests: notAvailable ? 0 : vhs.stats.mediaRequests,
+            mediaRequestsFailed: notAvailable ? 0 : vhs.stats.mediaRequestsErrored,
+        };
+        const event = new CustomEvent("newvideostats", { detail: data });
+        window.dispatchEvent(event);
     },
     clear() {
         if (this.videoStatIntervalId != null) {
@@ -295,7 +293,7 @@ export class ShareURL {
         this.includeTimestamp = false;
         this.copied = false;
 
-        const player = getPlayer();
+        const player = getPlayers()[0];
         player.ready(() => {
             player.on("loadedmetadata", () => {
                 this.openTime = player.currentTime();

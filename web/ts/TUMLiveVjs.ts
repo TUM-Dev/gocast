@@ -221,9 +221,9 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
 
             // Fetch the user's video progress from the database and set the time in the player
             players[j].on("loadedmetadata", () => {
-                duration = player.duration();
+                duration = players[j].duration();
                 jumpTo = +getQueryParam("t") || lastProgress * duration;
-                player.currentTime(jumpTo);
+                players[j].currentTime(jumpTo);
             });
 
             // iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is

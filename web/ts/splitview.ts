@@ -17,7 +17,7 @@ export class SplitView {
     };
 
     constructor() {
-        this.camPercentage = SplitView.Options.SplitEvenly;
+        this.camPercentage = SplitView.Options.FocusPresentation;
         this.showSplitMenu = false;
         this.players = getPlayers();
         this.toggleControlBars(this.camPercentage);
