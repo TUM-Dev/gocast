@@ -20,7 +20,7 @@
         <script defer src="/static/node_modules/katex/dist/contrib/copy-tex.min.js"></script>
     {{end}}
 </head>
-<body x-data="{'streamID': {{$stream.Model.ID}}, 'showChat': $persist(false).as('chatOpen'), seekLogger: new watch.SeekLogger('{{$stream.ID}}'), 'showBookmarks': false, showShare: false}"
+<body x-data="{'streamID': {{$stream.Model.ID}}, 'showChat': $persist(false).as('chatOpen'), seekLogger: new watch.SeekLogger('{{$stream.ID}}'), showBookmarks: false, showShare: false}"
       @keypress.shift.window="(e) => watch.onShift(e)"
       x-init="watch.startWebsocket(); seekLogger.attach();">
 {{template "header" .IndexData.TUMLiveContext}}
@@ -43,7 +43,7 @@
             </div>
             <div class="pt-1 pb-3 px-3 mt-3">
                 <span class="font-light text-xs mb-1 text-4">URL</span>
-                <div class = "flex items-center justify-between tl-input text-sm">
+                <div class="flex items-center justify-between tl-input text-sm">
                     <input id="share-url" type="text"
                            class="bg-transparent outline-0 border-0 text-left text-5 grow" :value="share.url" disabled>
                     <button type="button" @click="share.copyURL()"
@@ -63,6 +63,13 @@
                 {{end}}
             </div>
         </div>
+    </div>
+</div>
+<div id="bookmarks-mobile" x-cloak="" x-show="showBookmarks"
+     class="md:hidden flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
+    <div @click.outside="showBookmarks = false"
+         class="m-auto w-3/4 h-96 bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
+        {{template "bookmarks-modal" $stream.ID}}
     </div>
 </div>
 <div id="watchPageMainWrapper">
@@ -185,9 +192,9 @@
         {{end}}
 
         <!-- Bookmarks -->
-        <div id="bookmarks-modal" x-cloak="" x-show="showBookmarks"
+        <div id="bookmarks-desktop" x-cloak="" x-show="showBookmarks"
              :class="showBookmarks ? 'lg:basis-1/4' : 'lg:basis-0'"
-             class="basis-full h-96 lg:h-16/6 px-2 pt-2 order-3 lg:order-none">
+             class="hidden md:block basis-full h-96 lg:h-16/6 px-5 md:px-2 md:pt-2 lg:order-none order-5">
             {{template "bookmarks-modal" $stream.ID}}
         </div>
 
@@ -364,12 +371,12 @@
             <div x-data="{ less: {{$less}}, toggleDesc: true }"
                     {{/* Update less on update */}}
                  @descriptionupdate.window="toggleDesc = less = $event.detail.description.full.length > {{.CutOffLength}};"
-                 class="video-description flex-grow p-5 basis-full lg:order-none order-5">
+                 class="video-description flex-grow p-5 lg:mx-2 basis-full lg:order-none order-4">
                 <div class="flex justify-between border-b mb-1 dark:border-gray-800 lg:justify-start">
                     <h3 class="text-4 font-semibold">Description</h3>
                 </div>
                 <div>
-                    <div class="rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 hover:dark:bg-secondary text-3 text-sm">
+                    <div class="rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-secondary-light hover:dark:bg-gray-600 text-3 text-sm">
                         <button @click="toggleDesc = !toggleDesc;"
                                 :disabled="!less"
                                 class="p-2 w-full text-left"

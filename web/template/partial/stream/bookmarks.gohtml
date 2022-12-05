@@ -109,12 +109,12 @@
                                 <div class = "flex">
                                     <button @click="bookmarkUpdater.show = !bookmarkUpdater.show"
                                             type="button"
-                                            class="hidden group-hover:inline text-3 text-sm h-8 w-8 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full">
+                                            class="md:hidden md:group-hover:inline text-3 text-sm h-8 w-8 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full">
                                         <i class="fa-solid fa-pen"></i>
                                     </button>
                                     <button type="button"
                                             @click="await bookmarks.delete(b.ID);"
-                                            class="hidden group-hover:inline text-3 text-sm h-8 w-8 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full">
+                                            class="md:hidden md:group-hover:inline text-3 text-sm h-8 w-8 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
                                 </div>
