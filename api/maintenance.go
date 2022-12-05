@@ -83,8 +83,8 @@ func (r *maintenanceRoutes) generateThumbnails(c *gin.Context) {
 
 func (r *maintenanceRoutes) getThumbGenProgress(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"running": r.thumbGenRunning,
-		"process": r.thumbGenProgress,
+		"running":  r.thumbGenRunning,
+		"progress": r.thumbGenProgress,
 	})
 }
 

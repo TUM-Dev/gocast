@@ -9,10 +9,10 @@
                 <div class="p-4" x-show="running">
                     <span class="text-1 font-semibold text-sm">Progress:</span>
                     <div class="w-full ml-2">
-                        <div class="font-semibold text-sm text-4" x-text="`${Math.floor(process*100)}%`"></div>
+                        <div class="font-semibold text-sm text-4" x-text="`${Math.floor(progress*100)}%`"></div>
                         <div class="w-full bg-gray-200 rounded-full h-1.5 mb-1 dark:bg-gray-700">
                             <div class="bg-blue-600 h-1.5 rounded-full dark:bg-blue-500"
-                                 :style="`width: ${process*100}%`"></div>
+                                 :style="`width: ${progress*100}%`"></div>
                         </div>
                     </div>
                 </div>

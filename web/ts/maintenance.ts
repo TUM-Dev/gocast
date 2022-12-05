@@ -5,7 +5,7 @@ interface maintenancePage {
     generateThumbnails(): Promise<boolean>;
 
     running: boolean;
-    process: number;
+    progress: number;
 
     keepUpdated(): void;
     update(): void;
@@ -25,7 +25,7 @@ export function maintenancePage(): maintenancePage {
             });
         },
         running: false,
-        process: 0,
+        progress: 0,
         keepUpdated() {
             this.update();
             setTimeout(() => {
@@ -36,11 +36,11 @@ export function maintenancePage(): maintenancePage {
         update() {
             fetch(`/api/maintenance/generateThumbnails/status`)
                 .then((r) => {
-                    return r.json() as Promise<{ process: number; running: boolean }>;
+                    return r.json() as Promise<{ progress: number; running: boolean }>;
                 })
                 .then((r) => {
                     this.running = r.running;
-                    this.process = r.process;
+                    this.progress = r.progress;
                 });
         },
         cronJobs: [],
