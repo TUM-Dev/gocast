@@ -5,10 +5,8 @@ import { Realtime } from "./socket";
 import { copyToClipboard } from "./global";
 
 let currentChatChannel = "";
-const retryInt = 5000; //retry connecting to websocket after this timeout
 
 const scrollDelay = 100; // delay before scrolling to bottom to make sure chat is rendered
-const pageloaded = new Date();
 
 enum WSMessageType {
     Message = "message",
@@ -164,14 +162,6 @@ export function sendMessage(current: NewChatMessage) {
             addressedTo: current.addressedTo.map((u) => u.id),
         },
     });
-}
-
-export async function fetchMessages(id: number) {
-    return await fetch("/api/chat/" + id + "/messages")
-        .then((res) => res.json())
-        .then((d) => {
-            return d;
-        });
 }
 
 export function startPoll(question: string, pollAnswers: string[]) {
