@@ -5,4 +5,5 @@ export * from "../watch";
 export * from "../chat";
 export * from "../video-sections";
 export * from "../splitview";
+export * from "../bookmarks";
 // Lecture Units are currently not used, so we don't include them in the bundle at the moment

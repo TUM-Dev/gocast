@@ -18,6 +18,12 @@ func configMaintenanceRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 		g.POST("/generateThumbnails", routes.generateThumbnails)
 		g.GET("/generateThumbnails/status", routes.getThumbGenProgress)
 	}
+
+	cronGroup := g.Group("/cron")
+	{
+		cronGroup.GET("/available", routes.listCronJobs)
+		cronGroup.POST("/run", routes.runCronJob)
+	}
 }
 
 type maintenanceRoutes struct {
@@ -77,7 +83,26 @@ func (r *maintenanceRoutes) generateThumbnails(c *gin.Context) {
 
 func (r *maintenanceRoutes) getThumbGenProgress(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"running": r.thumbGenRunning,
-		"process": r.thumbGenProgress,
+		"running":  r.thumbGenRunning,
+		"progress": r.thumbGenProgress,
 	})
+}
+
+func (r *maintenanceRoutes) listCronJobs(c *gin.Context) {
+	c.JSON(http.StatusOK, tools.Cron.ListCronJobs())
+}
+
+func (r *maintenanceRoutes) runCronJob(c *gin.Context) {
+	err := c.Request.ParseForm()
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "Can't read request",
+			Err:           err,
+		})
+		return
+	}
+	jobName := c.Request.FormValue("job")
+	log.Info("request to run ", jobName)
+	tools.Cron.RunJob(jobName)
 }
