@@ -222,24 +222,3 @@ export const videoStatListener = {
         }
     },
 };
-
-export function onShift(e) {
-    if (document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA") {
-        switch (e.key) {
-            case "?": {
-                toggleShortcutsModal();
-            }
-        }
-    }
-}
-
-export function toggleShortcutsModal() {
-    const el = document.getElementById("shortcuts-help-modal");
-    if (el !== undefined) {
-        if (el.classList.contains("hidden")) {
-            el.classList.remove("hidden");
-        } else {
-            el.classList.add("hidden");
-        }
-    }
-}

@@ -20,17 +20,20 @@
         <script defer src="/static/node_modules/katex/dist/contrib/copy-tex.min.js"></script>
     {{end}}
 </head>
-<body x-data="{'streamID': {{$stream.Model.ID}}, 'showChat': $persist(false).as('chatOpen'), seekLogger: new watch.SeekLogger('{{$stream.ID}}'), showBookmarks: false, showShare: false}"
-      @keypress.shift.window="(e) => watch.onShift(e)"
-      x-init="watch.startWebsocket(); seekLogger.attach();">
+<body x-data="watch.watchpage({{$stream.ID}})"
+      @keypress.shift.window="(e) => onShift(e)">
 {{template "header" .IndexData.TUMLiveContext}}
-<div id="shortcuts-help-modal" class="hidden flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
-    <div class="m-auto" @click.outside="watch.toggleShortcutsModal();">
+<!-- shortcuts modal -->
+<div x-cloak x-show="showShortcuts" id="shortcuts-help-modal"
+     class="flex fixed top-0 h-screen w-screen z-50 backdrop-brightness-50">
+    <div class="m-auto" @click.outside="toggleShortcuts()">
         {{template "shortcuts"}}
     </div>
 </div>
-<div x-cloak x-show="showShare"
-     id="share-modal" class="flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
+
+<!-- share modal -->
+<div id="share-modal" x-cloak x-show="showShare"
+     class="flex fixed top-0 h-screen w-screen z-50 backdrop-brightness-50">
     <div class="m-auto lg:w-1/2 w-3/4" @click.outside="showShare = false;">
         <div x-data="{share: new watch.ShareURL()}"
              class="bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
@@ -65,13 +68,16 @@
         </div>
     </div>
 </div>
-<div id="bookmarks-mobile" x-cloak="" x-show="showBookmarks"
-     class="md:hidden flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
+
+<!-- mobile bookmarks modal -->
+<div id="bookmarks-mobile" x-cloak x-show="showBookmarks"
+     class="md:hidden flex fixed top-0 h-screen w-screen z-50 backdrop-brightness-50">
     <div @click.outside="showBookmarks = false"
          class="m-auto w-3/4 h-96 bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
         {{template "bookmarks-modal" $stream.ID}}
     </div>
 </div>
+
 <div id="watchPageMainWrapper">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
     <div class="flex flex-wrap shadow border bg-white dark:bg-secondary dark:shadow-0 dark:border-0">
