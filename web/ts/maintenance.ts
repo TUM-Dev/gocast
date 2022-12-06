@@ -1,5 +1,4 @@
 import { StatusCodes } from "http-status-codes";
-import { retractMessage } from "./watch";
 
 interface maintenancePage {
     generateThumbnails(): Promise<boolean>;

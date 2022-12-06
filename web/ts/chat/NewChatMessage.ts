@@ -1,4 +1,4 @@
-import { sendMessage } from "../watch";
+import { sendMessage } from "../chat-interactions";
 import { getCurrentWordPositions } from "./misc";
 
 export class NewChatMessage {

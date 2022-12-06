@@ -1,4 +1,4 @@
-import { startPoll } from "../watch";
+import { startPoll } from "../chat-interactions";
 
 export class Poll {
     readonly streamId: number;
