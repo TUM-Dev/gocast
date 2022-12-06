@@ -305,13 +305,6 @@
                     {{/* Lecture hall is set, means no self-stream*/}}
                     {{if $stream.LiveNow}}
                         {{if $stream.LectureHallID}}
-                            <button @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)"
-                                    href="#"
-                                    :title="paused?'End Pause (turns on video and audio)':'Pause lecture (turns off video and audio)'"
-                                    class="bg-green-500 text-center lg:w-32 md:w-24 md:inline-block block w-full text-white font-bold hover:bg-green-600 dark:hover:bg-green-600 rounded cursor-pointer p-2">
-                                <span x-show="!paused"><i class="fas fa-pause mr-1"></i>Pause</span>
-                                <span x-show="paused"><i class="fas fa-play mr-1"></i>Resume</span>
-                            </button>
                             <button @click="window.location.href='?restart=1'"
                                     title="Issues with the stream? Restart it."
                                     class="bg-indigo-500 text-center lg:w-32 md:w-24 md:inline-block block w-full text-white font-bold hover:bg-indigo-600 dark:hover:bg-indigo-600 rounded cursor-pointer p-2">

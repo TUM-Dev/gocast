@@ -127,7 +127,7 @@
                             </button>
                         </div>
                         <div x-show="showPoll" class="px-4 pt-3 pb-3">
-                            <p x-text="c.poll.activePoll.question" class="text-center text-base font-light mb-3"></p>
+                            <p x-text="c.poll.activePoll?.question" class="text-center text-base font-light mb-3"></p>
                             <template x-for="pollOption in c.poll.activePoll.pollOptions" :key="pollOption.ID">
                                 <button class="flex items-center mb-1"
                                         @click="c.poll.activePoll.selected = pollOption.ID"
@@ -162,7 +162,7 @@
                             </button>
                         </div>
                         <div x-show="showPoll" class="px-3 pt-3 pb-3">
-                            <p x-text="c.poll.activePoll.question" class="text-center text-base font-light mb-3"></p>
+                            <p x-text="c.poll.activePoll?.question" class="text-center text-base font-light mb-3"></p>
                             <template x-for="pollOption in c.poll.activePoll.pollOptions">
                                 <div class="mb-3 pl-3 pr-3">
                                     <div class="text-5 flex justify-between pr-2">
@@ -170,7 +170,7 @@
                                         <span class="text-xs flex items-end"
                                               x-text="pollOption.votes + ' Votes'"></span>
                                     </div>
-                                    <div :style="`width: ${watch.getPollOptionWidth(c.poll.activePoll.pollOptions, pollOption)};`"
+                                    <div :style="`width: ${watch.getPollOptionWidth(c.poll.activePoll?.pollOptions, pollOption)};`"
                                          class="rounded-full h-4 bg-blue-500/50 dark:bg-indigo-600">
                                     </div>
                                 </div>
@@ -200,7 +200,7 @@
                             </button>
                         </div>
                         <div class="px-3 pt-3 pb-3">
-                            <p x-text="c.poll.activePoll.question" class="text-center text-base font-light mb-3"></p>
+                            <p x-text="c.poll.activePoll?.question" class="text-center text-base font-light mb-3"></p>
                             <template x-for="pollOptionResult in c.poll.result.pollOptionResults"
                                       :key="pollOptionResult.ID">
                                 <div class="mb-3 pl-3 pr-3">
