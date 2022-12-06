@@ -19,24 +19,28 @@ enum WSMessageType {
     Resolve = "resolve",
 }
 
-function sendIDMessage(id: number, type: WSMessageType) {
-    return Realtime.get().send(currentChatChannel, {
-        payload: {
-            type: type,
-            id: id,
-        },
-    });
+function sendActionMessage(type: WSMessageType, payload: object = {}) {
+    payload["type"] = type;
+    return Realtime.get().send(currentChatChannel, { payload });
 }
 
-export const likeMessage = (id: number) => sendIDMessage(id, WSMessageType.Like);
+export const likeMessage = (id: number) => sendActionMessage(WSMessageType.Like, { id });
 
-export const deleteMessage = (id: number) => sendIDMessage(id, WSMessageType.Delete);
+export const deleteMessage = (id: number) => sendActionMessage(WSMessageType.Delete, { id });
 
-export const resolveMessage = (id: number) => sendIDMessage(id, WSMessageType.Resolve);
+export const resolveMessage = (id: number) => sendActionMessage(WSMessageType.Resolve, { id });
 
-export const approveMessage = (id: number) => sendIDMessage(id, WSMessageType.Approve);
+export const approveMessage = (id: number) => sendActionMessage(WSMessageType.Approve, { id });
 
-export const retractMessage = (id: number) => sendIDMessage(id, WSMessageType.Retract);
+export const retractMessage = (id: number) => sendActionMessage(WSMessageType.Retract, { id });
+
+export const closeActivePoll = () => sendActionMessage(WSMessageType.CloseActivePoll);
+
+export const submitPollOptionVote = (pollOptionId: number) =>
+    sendActionMessage(WSMessageType.SubmitPollOptionVote, { pollOptionId });
+
+export const startPoll = (question: string, pollAnswers: string[]) =>
+    sendActionMessage(WSMessageType.StartPoll, { question, pollAnswers });
 
 export function initChatScrollListener() {
     const chatBox = document.getElementById("chatBox") as HTMLDivElement;
@@ -159,33 +163,6 @@ export function sendMessage(current: NewChatMessage) {
             anonymous: current.anonymous,
             replyTo: current.replyTo,
             addressedTo: current.addressedTo.map((u) => u.id),
-        },
-    });
-}
-
-export function startPoll(question: string, pollAnswers: string[]) {
-    return Realtime.get().send(currentChatChannel, {
-        payload: {
-            type: WSMessageType.StartPoll,
-            question,
-            pollAnswers,
-        },
-    });
-}
-
-export function submitPollOptionVote(pollOptionId: number) {
-    return Realtime.get().send(currentChatChannel, {
-        payload: {
-            type: WSMessageType.SubmitPollOptionVote,
-            pollOptionId,
-        },
-    });
-}
-
-export function closeActivePoll() {
-    return Realtime.get().send(currentChatChannel, {
-        payload: {
-            type: WSMessageType.CloseActivePoll,
         },
     });
 }
