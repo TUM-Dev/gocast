@@ -1,5 +1,5 @@
 import { Delete, getData, postData, putData } from "./global";
-import { currentTimeToHMS } from "./TUMLiveVjs";
+import { currentTimeToHMS } from "./player";
 
 export class BookmarkList {
     private readonly streamId: number;

@@ -1,8 +1,9 @@
 /* This bundle contains everything regarding the watch page */
 export * from "../watch-admin";
-export * from "../TUMLiveVjs";
+export * from "../player";
 export * from "../watch";
 export * from "../chat";
 export * from "../video-sections";
 export * from "../bookmarks";
+export * from "../share-url";
 // Lecture Units are currently not used, so we don't include them in the bundle at the moment

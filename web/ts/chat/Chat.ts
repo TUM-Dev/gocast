@@ -2,8 +2,7 @@ import { NewChatMessage } from "./NewChatMessage";
 import { ChatUserList } from "./ChatUserList";
 import { EmojiList } from "./EmojiList";
 import { Poll } from "./Poll";
-import { registerTimeWatcher, deregisterTimeWatcher, getPlayer } from "../TUMLiveVjs";
-import { create } from "nouislider";
+import { registerTimeWatcher, deregisterTimeWatcher, getPlayer } from "../player";
 
 export class Chat {
     readonly userId: number;
