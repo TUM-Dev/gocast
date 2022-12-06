@@ -3,7 +3,8 @@
     <ul class="form-container-body" x-data="{expanded: false}">
         <h2 class="text-sm text-5 col-span-full">Add participants. They'll get notified about your invitation to
             your lecture via mail.</h2>
-        <form class="col-span-full grid grid-cols-2 gap-3" method="post" action="/api/course/{{.Model.ID}}/createUserForCourse">
+        <form class="col-span-full grid grid-cols-2 gap-3" method="post"
+              action="/api/course/{{.Model.ID}}/createUserForCourse">
             <input type="hidden" name="courseID" value="{{.Model.ID}}">
             <input class="tl-input" type="text" name="newUserFirstName"
                    id="newUserFirstName" autocomplete="off" placeholder="Tim">
@@ -11,38 +12,41 @@
                    id="newUserEmail" placeholder="tim@lmu.de">
             <button type="submit" class="btn col-span-full">Submit</button>
         </form>
-        <h2 class="text-sm text-5">Batch insert (this takes about two seconds per user.)</h2>
+        <h2 class="text-sm text-5">Batch insert (this takes about two seconds per user)</h2>
         <form class="grid gap-3" method="post" action="/api/course/{{.Model.ID}}/createUserForCourse">
             <input type="hidden" name="courseID" value="{{.Model.ID}}">
-            <textarea class="tl-input" name="batchUserInput" placeholder="Tim,tim69@hotmail.com&#10;Anja,anja@lmu.de"></textarea>
+            <textarea class="tl-textarea" name="batchUserInput"
+                      placeholder="Tim,tim69@hotmail.com&#10;Anja,anja@lmu.de"></textarea>
             <button type="submit" class="btn">Submit</button>
         </form>
-        <li class="flex px-4">
-            <p @click="expanded=!expanded"
-               class="underline text-4 cursor-pointer" x-text="expanded?'Hide Invitations':'Show Invitations'">
-            </p>
-        </li>
-        <li class="p-4" x-show="expanded">
-            <table class="hidden w-full" id="usersTable">
-                <thead>
-                <tr class="font-semibold">
-                    <td>Name</td>
-                    <td>Email</td>
-                    <td>Finished Acc. Setup</td>
-                </tr>
-                </thead>
-                <tbody>
-                {{range $user := .Users }}
-                    {{if $user.Email}}
-                        <tr class="px-3 dark:hover:bg-primary hover:bg-white">
-                            <td>{{$user.GetPreferredName}}</td>
-                            <td class="px-2">{{$user.Email.String}}</td>
-                            <td>{{if eq $user.Password ""}}No{{else}}Yes{{end}}</td>
-                        </tr>
+        {{if .Users}}
+            <li class="flex px-4">
+                <p @click="expanded=!expanded"
+                   class="underline text-4 cursor-pointer" x-text="expanded?'Hide Invitations':'Show Invitations'">
+                </p>
+            </li>
+            <li class="p-4" x-show="expanded">
+                <table class="hidden w-full" id="usersTable">
+                    <thead>
+                    <tr class="font-semibold">
+                        <td>Name</td>
+                        <td>Email</td>
+                        <td>Finished Acc. Setup</td>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{range $user := .Users }}
+                        {{if $user.Email}}
+                            <tr class="px-3 dark:hover:bg-primary hover:bg-white">
+                                <td>{{$user.GetPreferredName}}</td>
+                                <td class="px-2">{{$user.Email.String}}</td>
+                                <td>{{if eq $user.Password ""}}No{{else}}Yes{{end}}</td>
+                            </tr>
+                        {{end}}
                     {{end}}
-                {{end}}
-                </tbody>
-            </table>
-        </li>
+                    </tbody>
+                </table>
+            </li>
+        {{end}}
     </ul>
 {{end}}

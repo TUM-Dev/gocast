@@ -1,24 +1,24 @@
 {{define "users"}}
-<section class="form-container" x-data="{userlist: new admin.AdminUserList({{.}})}">
-    <h1 class="form-container-title">User Management</h1>
+    <section class="form-container" x-data="{userlist: new admin.AdminUserList({{.}})}">
+        <h1 class="form-container-title">User Management</h1>
 
-    <div class="form-container-body">
-        <h2>Search</h2>
-        <input class="tl-input" placeholder="Search for users" type="text" x-model="userlist.searchInput"
-            @keyup="userlist.search()">
-        <div class="w-4 m-auto">
-            <i class="fas fa-circle-notch text-4 m-auto animate-spin" x-show="userlist.searchLoading"></i>
-        </div>
-        <table>
-            <thead>
+        <div class="form-container-body">
+            <h2>Search</h2>
+            <input class="tl-input" placeholder="Search for users" type="text" x-model="userlist.searchInput"
+                   @keyup="userlist.search()">
+            <div class="w-4 m-auto">
+                <i class="fas fa-circle-notch text-4 m-auto animate-spin" x-show="userlist.searchLoading"></i>
+            </div>
+            <table>
+                <thead>
                 <tr class="p-4 bg-gray-200 dark:bg-secondary-light text-3 uppercase text-sm leading-normal">
                     <th class="rounded-tl-lg text-left pl-6 py-3">Name</th>
                     <th class="text-left pl-6 py-3">Email</th>
                     <th>Role</th>
                     <th class="rounded-tr-lg">Actions</th>
                 </tr>
-            </thead>
-            <tbody id="admin-user-list" class="w-full bg-transparent text-4">
+                </thead>
+                <tbody id="admin-user-list" class="w-full bg-transparent text-4">
                 <template x-for="(user, i) in userlist.currentPage">
                     <tr :id="`user-${i}`"
                         class="w-full bg-white dark:bg-transparent dark:hover:bg-transparent hover:bg-transparent"
@@ -28,30 +28,30 @@
                         <template x-if="userlist.showSearchResults">
                             <td class="text-center cursor-pointer" @click="user.changing=true">
                                 <span x-show="user.role===1"
-                                    class="bg-indigo-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Admin</span>
+                                      class="bg-indigo-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Admin</span>
                                 <span x-show="user.role===2"
-                                    class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Lecturer</span>
+                                      class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Lecturer</span>
                                 <span x-show="user.role===3"
-                                    class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Invited</span>
+                                      class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Invited</span>
                                 <span x-show="user.role===4"
-                                    class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Student</span>
+                                      class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Student</span>
                                 <div x-show="user.changing" x-cloak @click.outside="user.changing=false">
                                     <div x-data="{dropdownMenu: true}" class="relative">
                                         <div x-show="dropdownMenu"
-                                            class="absolute left-0 py-2 mt-2 bg-gray-50 rounded-md shadow w-44">
+                                             class="absolute left-0 py-2 mt-2 bg-gray-50 rounded-md shadow w-44">
                                             <a href="#"
-                                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
-                                                @click="admin.updateUser(user.id, 1).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
+                                               @click="admin.updateUser(user.id, 1).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
                                                 Admin
                                             </a>
                                             <a href="#"
-                                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
-                                                @click="admin.updateUser(user.id, 2).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
+                                               @click="admin.updateUser(user.id, 2).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
                                                 Lecturer
                                             </a>
                                             <a href="#"
-                                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
-                                                @click="admin.updateUser(user.id, 4).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-black"
+                                               @click="admin.updateUser(user.id, 4).then((r)=>{r!==-1?user.role=r:user.role=user.role})">
                                                 Student
                                             </a>
                                         </div>
@@ -62,52 +62,57 @@
                         <template x-if="!userlist.showSearchResults">
                             <td class="text-center">
                                 <span x-show="user.role === 1"
-                                    class="bg-indigo-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Admin</span>
+                                      class="bg-indigo-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Admin</span>
                                 <span x-show="user.role === 2"
-                                    class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Lecturer</span>
+                                      class="bg-teal-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Lecturer</span>
                                 <span x-show="user.role !== 1 && user.role !== 2"
-                                    class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Generic</span>
+                                      class="bg-sky-700 inline-block w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold">Generic</span>
                             </td>
                         </template>
                         <td class="py-3 px-6 text-center">
                             <div class="flex item-center justify-center">
                                 <template x-if="user.role !== 1">
                                     <button title="Delete User"
-                                        class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
+                                            class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer mr-4">
                                         <i @click="admin.deleteUser(user.id)" class="fas fa-trash"></i>
                                     </button>
                                 </template>
-                                <button title="Impersonate User" class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer">
-                                    <i @click="admin.impersonate(user.id).then((r) => {if(r){window.location.replace('/')}})" class="fas fa-user"></i>
+                                <button title="Impersonate User"
+                                        class="w-4 transform hover:text-purple-500 hover:scale-110 cursor-pointer">
+                                    <i @click="admin.impersonate(user.id).then((r) => {if(r){window.location.replace('/')}})"
+                                       class="fas fa-user"></i>
                                 </button>
                             </div>
                         </td>
                     </tr>
                 </template>
-            </tbody>
-        </table>
-        <template x-if="!userlist.showSearchResults">
-            <div class="flex justify-center text-3">
-                <button title="Previous Page" class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
-                    :disabled="userlist.prevDisabled()" @click="userlist.prev()">
-                    <i class="text-sm m-auto fa fa-chevron-left"></i>
-                </button>
-                <div class="flex h-8 w-8 px-2">
-                    <span class="text-sm font-semibold m-auto" x-text="userlist.currentIndexString()"></span>
+                </tbody>
+            </table>
+            <template x-if="!userlist.showSearchResults">
+                <div class="flex justify-center text-3">
+                    <button title="Previous Page"
+                            class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
+                            :disabled="userlist.prevDisabled()" @click="userlist.prev()">
+                        <i class="text-sm m-auto fa fa-chevron-left"></i>
+                    </button>
+                    <div class="flex h-8 w-8 px-2">
+                        <span class="text-sm font-semibold m-auto" x-text="userlist.currentIndexString()"></span>
+                    </div>
+                    <button title="Next Page" class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
+                            :disabled="userlist.nextDisabled()" @click="userlist.next()">
+                        <i class="text-sm m-auto fa fa-chevron-right"></i>
+                    </button>
                 </div>
-                <button title="Next Page" class="flex h-8 w-8 disabled:text-gray-300 dark:disabled:text-gray-600"
-                    :disabled="userlist.nextDisabled()" @click="userlist.next()">
-                    <i class="text-sm m-auto fa fa-chevron-right"></i>
+            </template>
+            <form>
+                <h2>New User</h2>
+                <input class="tl-input" id="name" name="name" placeholder="Name" type="text" autocomplete="off"/>
+                <input class="tl-input mt-3" id="email" name="email" type="email" placeholder="Email"
+                       autocomplete="off"/>
+                <button id="createUser" title="Create User" @click="admin.createUser()"
+                        class="btn primary mt-3 w-full">Create
                 </button>
-            </div>
-        </template>
-        <form>
-            <h2>New User</h2>
-            <input class="tl-input" id="name" name="name" placeholder="Name" type="text" autocomplete="off" />
-            <input class="tl-input mt-3" id="email" name="email" type="email" placeholder="Email" autocomplete="off" />
-            <button id="createUser" title="Create User" @click="admin.createUser()"
-                class="btn primary mt-3">Create</button>
-        </form>
-    </div>
-</section>
+            </form>
+        </div>
+    </section>
 {{end}}

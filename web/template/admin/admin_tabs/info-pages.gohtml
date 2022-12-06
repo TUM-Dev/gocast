@@ -1,8 +1,8 @@
 {{define "info-pages"}}
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/[]model.Text*/ -}}
-    <div class="dark:bg-secondary bg-white p-4 shadow rounded my-6 overflow-x-auto">
-        <h2 class="text-2xl font-bold text-1 mb-3">Texts</h2>
-        <div class="grid gap-2">
+    <div class="form-container">
+        <h2 class="text-2xl font-bold text-1 mb-3 form-container-title">Texts</h2>
+        <div class="grid gap-2 form-container-body">
             {{range $i, $text := .}}
                 {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Text*/ -}}
                 <div x-data="{editOpen: false, oldName: '{{$text.Name}}', name:'', oldContent: `{{$text.RawContent}}`, newContent: ''}"
@@ -12,7 +12,7 @@
                     <div class="flex p-3 rounded-lg" :class="editOpen && 'outline outline-2 outline-blue-500/50'">
                         <label for="content-{{$i}}" class="hidden">{{$text.Name}}</label>
                         <input x-model="name"
-                               class="flex border-0 text-3 text-lg my-auto p-0 w-1/2 rounded-lg disabled:bg-transparent"
+                               class="tl-input"
                                :disabled="!editOpen">
                         <div class="flex my-auto ml-auto space-x-3">
                             <div x-show="oldContent !== newContent || oldName !== name"
@@ -34,7 +34,7 @@
                         <textarea id="content-{{$i}}"
                                   x-model="newContent"
                                   rows="24"
-                                  class="border-0 px-3 py-2 resize-none font-normal">{{$text.RawContent}}</textarea>
+                                  class="tl-textarea">{{$text.RawContent}}</textarea>
                     </div>
                     <div x-show="editOpen" class="">
                         <button id="save-{{$i}}"

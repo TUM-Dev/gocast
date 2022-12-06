@@ -1,7 +1,6 @@
 {{define "workers"}}
-    <h2 class="text-2xl text-1 my-auto mt-4 font-medium">Worker Overview</h2>
-    <div class="dark:border-secondary bg-gray-100 rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter">
-        <table class="table-auto w-full rounded-sm">
+    <div class="form-container">
+        <table class="table-auto w-full form-container-title">
             <thead>
             <tr class="dark:bg-secondary bg-gray-200 text-4 uppercase text-sm leading-normal dark:bg-secondary rounded-md">
                 <th class="py-3 px-6 text-left">Name</th>
@@ -11,7 +10,7 @@
                 <th class="py-3 px-6 text-left">Actions</th>
             </tr>
             </thead>
-            <tbody class="text-4 text-s m rounded-sm font-light">
+            <tbody class="form-container-body">
             {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.WorkersData*/ -}}
             {{range $worker := .Workers}}
                 <tr class="border-gray-500 dark:hover:bg-primary hover:bg-white">

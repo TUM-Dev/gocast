@@ -15,7 +15,8 @@
                 <div class="text-3 font-semibold">
                     <input @change="$event.target.checked ? selectedLectures.push({ id: lecture.lectureId, isPast: lecture.isPast }) : (selectedLectures = selectedLectures.filter(({id}) => id != lecture.lectureId))"
                            class="w-auto mr-2" type="checkbox"/>
-                    <a :href="`/w/${lecture.courseSlug}/${lecture.lectureId}`"><span x-text="lecture.startDateFormatted()"></span> <i class="fas fa-external-link"></i></a>
+                    <a :href="`/w/${lecture.courseSlug}/${lecture.lectureId}`"><span
+                                x-text="lecture.startDateFormatted()"></span> <i class="fas fa-external-link"></i></a>
                 </div>
                 <div class="text-3 font-sans ml-6" x-data="{ showKeys: false }">
                     <span x-text="lecture.startTimeFormatted()"></span>
@@ -48,7 +49,8 @@
                         <div class="w-full ml-2">
                             <div class="font-semibold text-sm text-4" x-text="`${p.version} (${p.progress}%)`"></div>
                             <div class="w-full bg-gray-200 rounded-full h-1.5 mb-1 dark:bg-gray-700">
-                                <div class="bg-blue-600 h-1.5 rounded-full dark:bg-blue-500" :style="`width: ${p.progress}%`"></div>
+                                <div class="bg-blue-600 h-1.5 rounded-full dark:bg-blue-500"
+                                     :style="`width: ${p.progress}%`"></div>
                             </div>
                         </div>
                     </template>
@@ -206,7 +208,7 @@
                               @drop="(e) => lecture.onFileDrop(e); fileDropHover = false"
                               @dragover="fileDropHover = true"
                               @dragleave="fileDropHover = false"
-                              class="tl-input grow"
+                              class="tl-textarea grow"
                               :class="fileDropHover ? 'shadow-sm border-blue-500/50' : 'border-transparent'"
                               placeholder="Add a nice description, links, and more. You can use Markdown. Drop files here."
                               autocomplete="off"
@@ -293,7 +295,7 @@
                     {{end}}
                 </div>
                 <template x-if="lecture.uiEditMode > 0"> <!-- only render if in edit mode to avoid network calls -->
-                    <div class = "mt-3">
+                    <div class="mt-3">
                         {{template "editvideosections"}}
                     </div>
                 </template>
