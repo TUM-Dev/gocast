@@ -10,6 +10,8 @@ jobs:
   golangci:
     name: lint
     runs-on: ubuntu-latest
+    strategy:
+      matrix: { dir: ['./...', './worker', './worker/edge'] }
     steps:
       - uses: actions/setup-go@v3
         with:
