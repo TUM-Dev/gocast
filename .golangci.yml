@@ -1,22 +1,19 @@
 linters:
   enable:
     - gosimple
-    - deadcode
     - typecheck
     - govet
     - errcheck
     - staticcheck
     - unused
-    - structcheck
-    - varcheck
     - dupl
-    - gocyclo # The cyclomatic complexety of a lot of functions is too high, we should refactor those another time.
+    - gocyclo
     - gofmt
     - gocritic
     - bidichk
     - ineffassign
-    - revive
     - gofumpt
+    - revive
     - depguard
     - nakedret
     - unconvert
@@ -28,7 +25,7 @@ linters:
   fast: false
 
 run:
-  go: 1.19
+  go: '1.19'
   timeout: 10m
   skip-dirs:
     - node_modules
@@ -41,10 +38,6 @@ linters-settings:
     checks: [ "all", "-ST1000", "-ST1003" ]
   nakedret:
     max-func-lines: 0
-  gocritic:
-    disabled-checks:
-      - ifElseChain
-      - singleCaseSwitch # Every time this occurred in the code, there  was no other way.
   revive:
     ignore-generated-header: false
     severity: warning
@@ -62,7 +55,6 @@ linters-settings:
       - name: exported
       - name: if-return
       - name: increment-decrement
-      - name: var-naming
       - name: var-declaration
       - name: package-comments
       - name: range
@@ -74,7 +66,7 @@ linters-settings:
       - name: duplicated-imports
       - name: modifies-value-receiver
   gofumpt:
-    extra-rules: true
+    extra-rules: false
     lang-version: "1.19"
 
 issues:
@@ -86,6 +78,7 @@ issues:
       linters:
         - gocyclo
         - errcheck
+        - gofumpt
         - dupl
         - gosec
         - unparam
