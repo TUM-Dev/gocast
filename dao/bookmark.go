@@ -33,7 +33,7 @@ func (d bookmarkDao) GetByID(id uint) (bookmark model.Bookmark, err error) {
 }
 
 func (d bookmarkDao) GetByStreamID(streamID uint, userID uint) (bookmarks []model.Bookmark, err error) {
-	err = d.db.Where("stream_id = ? AND user_id = ?", streamID, userID).Find(&bookmarks).Error
+	err = d.db.Order("hours, minutes, seconds ASC").Where("stream_id = ? AND user_id = ?", streamID, userID).Find(&bookmarks).Error
 	return bookmarks, err
 }
 

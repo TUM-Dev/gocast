@@ -113,7 +113,20 @@ func (r bookmarkRoutes) GetByStreamID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, bookmarks)
+	response := []gin.H{}
+	for _, bookmark := range bookmarks {
+		response = append(response, gin.H{
+			"ID":                bookmark.ID,
+			"hours":             bookmark.Hours,
+			"minutes":           bookmark.Minutes,
+			"seconds":           bookmark.Seconds,
+			"description":       bookmark.Description,
+			"friendlyTimestamp": bookmark.TimestampAsString(),
+		})
+
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 type UpdateBookmarkRequest struct {

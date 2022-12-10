@@ -481,6 +481,14 @@ export function attachCurrentTimeEvent(videoSection: VideoSectionList) {
     });
 }
 
+export function currentTimeToHMS() {
+    const ct = player?.currentTime();
+    const h = Math.trunc(ct / (60 * 60));
+    const m = Math.trunc((ct % (60 * 60)) / 60);
+    const s = Math.trunc(ct - h * (60 * 60) - m * 60);
+    return { h, m, s };
+}
+
 function hightlight(player, videoSection) {
     const currentTime = player.currentTime();
     videoSection.currentHighlightIndex = videoSection.list.findIndex((section, i, list) => {
