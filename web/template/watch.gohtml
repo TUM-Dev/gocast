@@ -129,9 +129,21 @@
                         :style="{ top: contextMenu.locY + 'px', left: contextMenu.locX + 'px' }"
                         role="menu" aria-orientation="vertical" tabindex="-1">
                     <button @click="contextMenu = {...contextMenu, shown: false}; videoStatsShown = true; watch.videoStatListener.listen();"
-                            class="py-2 px-4 w-full text-left cursor-pointer hover:bg-white/10">
+                            class="tl-context-entry">
                         Show detailed stats
                     </button>
+                    <button x-data="{share: new watch.ShareURL()}"
+                            @click="contextMenu = {...contextMenu, shown: false}; share.copyURL()"
+                            class="tl-context-entry">
+                        Copy URL
+                    </button>
+                    {{if not $stream.LiveNow}}
+                        <button x-data="{share: new watch.ShareURL()}"
+                                @click="contextMenu = {...contextMenu, shown: false};share.appendTimestampToUrl();share.copyURL()"
+                                class="tl-context-entry">
+                            Copy URL at current time
+                        </button>
+                    {{end}}
                 </div>
 
                 <div
@@ -217,6 +229,7 @@
                             <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                                 <span class="text-5 hover:text-1 hover:underline">{{$course.Name}}</span></a>
                         </div>
+
                     </div>
                     {{if not $stream.Recording}}
                         {{template "watch-info" .}}

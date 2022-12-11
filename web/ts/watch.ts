@@ -280,6 +280,7 @@ export function toggleShortcutsModal() {
 
 export class ShareURL {
     private baseUrl: string;
+    private playerHasTime: Promise<boolean>;
 
     url: string;
     includeTimestamp: boolean;
@@ -293,12 +294,11 @@ export class ShareURL {
         this.url = this.baseUrl;
         this.includeTimestamp = false;
         this.copied = false;
-
         const player = getPlayer();
         player.ready(() => {
             player.on("loadedmetadata", () => {
-                this.openTime = player.currentTime();
-            });
+                this.playerHasTime = Promise.resolve(true);
+            })
         });
     }
 
@@ -310,27 +310,33 @@ export class ShareURL {
 
     setURL() {
         if (this.includeTimestamp) {
-            const trim = this.timestamp.substring(0, 9);
-            const split = trim.split(":");
-            if (split.length != 3) {
-                this.url = this.baseUrl;
-            } else {
-                const h = +split[0];
-                const m = +split[1];
-                const s = +split[2];
-                if (isNaN(h) || isNaN(m) || isNaN(s) || h > 60 || m > 60 || s > 60 || h < 0 || m < 0 || s < 0) {
-                    this.url = this.baseUrl;
-                } else {
-                    const inSeconds = s + 60 * m + 60 * 60 * h;
-                    this.url = `${this.baseUrl}?t=${inSeconds}`;
-                }
-            }
+            this.appendTimestampToUrl();
         } else {
             this.url = this.baseUrl;
         }
     }
 
+    appendTimestampToUrl() {
+        this.setTimestamp();
+        const trim = this.timestamp.substring(0, 9);
+        const split = trim.split(":");
+        if (split.length != 3) {
+            this.url = this.baseUrl;
+        } else {
+            const h = +split[0];
+            const m = +split[1];
+            const s = +split[2];
+            if (isNaN(h) || isNaN(m) || isNaN(s) || h > 60 || m > 60 || s > 60 || h < 0 || m < 0 || s < 0) {
+                this.url = this.baseUrl;
+            } else {
+                const inSeconds = s + 60 * m + 60 * 60 * h;
+                this.url = `${this.baseUrl}?t=${inSeconds}`;
+            }
+        }
+    }
+
     setTimestamp() {
+        this.loadPlayerTime()
         const d = new Date(this.openTime * 1000);
         const h = ShareURL.padZero(d.getUTCHours());
         const m = ShareURL.padZero(d.getUTCMinutes());
@@ -338,7 +344,12 @@ export class ShareURL {
         this.timestamp = `${h}:${m}:${s}`;
     }
 
-    private static padZero(i) {
+    private loadPlayerTime() {
+        const player = getPlayer();
+        player.playerHasTime.then(this.openTime = player.currentTime());
+    }
+
+    private static padZero(i: string | number) {
         if (i < 10) {
             i = "0" + i;
         }
