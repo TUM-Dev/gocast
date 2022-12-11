@@ -308,8 +308,8 @@ github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742/go.mod h1:bx2lN
 github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
 github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9Gz0M=
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
-github.com/mono424/go-pts v0.0.3 h1:QXlWTexW2Gp8RrQU3ZHFDRJjX6WG2Fxb8Wnv2DE/6GY=
-github.com/mono424/go-pts v0.0.3/go.mod h1:/eaOw0NMy2nLDY52NmET5AYl6pfPdN3u3CpxcOk/QEQ=
+github.com/mono424/go-pts v0.0.4-0.20221211124808-64c438758e1d h1:ShI2SC314KdAvY3+choaqtEy4BJ6hjCYzpE6Ore845o=
+github.com/mono424/go-pts v0.0.4-0.20221211124808-64c438758e1d/go.mod h1:/eaOw0NMy2nLDY52NmET5AYl6pfPdN3u3CpxcOk/QEQ=
 github.com/mono424/go-pts-gorilla-connector v0.0.4 h1:D1uPwCDAxlOq8CBd41CPCGqWoyWH8r+f0fqqsDvQZeA=
 github.com/mono424/go-pts-gorilla-connector v0.0.4/go.mod h1:tcwunMeLG4nLyj9XkaSiJ5EqUJIuS9radKgh+oJBnVA=
 github.com/panjf2000/ants/v2 v2.4.2/go.mod h1:f6F0NZVFsGCp5A7QW/Zj/m92atWwOkY0OIhFxRNFr4A=
