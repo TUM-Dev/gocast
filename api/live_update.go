@@ -55,6 +55,7 @@ func liveUpdateOnUnsubscribe(psc *pts.Context) {
 
 	var newSessions []*pts.Context
 	if liveUpdateListener[userId] == nil {
+		log.Info("skipping unsubscribe, sessions are nil.")
 		return
 	}
 	for _, session := range liveUpdateListener[userId].sessions {
