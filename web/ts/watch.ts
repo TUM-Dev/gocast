@@ -298,7 +298,7 @@ export class ShareURL {
         player.ready(() => {
             player.on("loadedmetadata", () => {
                 this.playerHasTime = Promise.resolve(true);
-            })
+            });
         });
     }
 
@@ -336,7 +336,7 @@ export class ShareURL {
     }
 
     setTimestamp() {
-        this.loadPlayerTime()
+        this.loadPlayerTime();
         const d = new Date(this.openTime * 1000);
         const h = ShareURL.padZero(d.getUTCHours());
         const m = ShareURL.padZero(d.getUTCMinutes());
@@ -346,7 +346,7 @@ export class ShareURL {
 
     private loadPlayerTime() {
         const player = getPlayer();
-        player.playerHasTime.then(this.openTime = player.currentTime());
+        this.playerHasTime.then((this.openTime = player.currentTime()));
     }
 
     private static padZero(i: string | number) {
