@@ -31,13 +31,12 @@
 </div>
 <div x-cloak x-show="showShare"
      id="share-modal" class="flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
-    <div class="m-auto lg:w-1/2 w-3/4" @click.outside="showShare = false;">
-        <div x-data="{share: new watch.ShareURL()}"
-             class="bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
+    <div x-data="{share: new watch.ShareURL()}" class="m-auto lg:w-1/2 w-3/4" @click.outside="showShare=false;share.reset()">
+        <div class="bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
             <div class="flex justify-between items-center px-3 pt-3 pb-1">
                 <h3 class="text-3 text-sm font-semibold">Share</h3>
-                <button type="button" title="close share modal"
-                        @click="showShare=false;">
+                <button type="button" title="Close share modal"
+                        @click="showShare=false;share.reset()">
                     <i class="fa-solid fa-xmark text-3"></i>
                 </button>
             </div>
