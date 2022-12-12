@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/tools"
-	"github.com/joschahenningsen/TUM-Live/tools/realtime"
+	"github.com/mono424/go-pts"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
@@ -28,11 +28,11 @@ const (
 )
 
 type sessionWrapper struct {
-	session         *realtime.Context
+	session         *pts.Context
 	isAdminOfCourse bool
 }
 
-var connHandler = func(context *realtime.Context) {
+var connHandler = func(context *pts.Context) {
 	foundContext, exists := context.Get("TUMLiveContext") // get gin context
 	if !exists {
 		sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -52,13 +52,14 @@ var connHandler = func(context *realtime.Context) {
 	msg, _ := json.Marshal(gin.H{"viewers": len(sessionsMap[tumLiveContext.Stream.ID])})
 	err := context.Send(msg)
 	if err != nil {
-		log.WithError(err).Error("can't write initial stats to session")
+		log.WithError(err.Raw).Error("can't write initial stats to session")
 	}
 }
 
 // sendServerMessageWithBackoff sends a message to the client(if it didn't send a message to this user in the last 10 Minutes and the client is logged in)
+//
 //lint:ignore U1000 Ignore unused function
-func sendServerMessageWithBackoff(session *realtime.Context, userId uint, streamId uint, msg string, t string) {
+func sendServerMessageWithBackoff(session *pts.Context, userId uint, streamId uint, msg string, t string) {
 	if userId == 0 {
 		return
 	}
@@ -71,19 +72,19 @@ func sendServerMessageWithBackoff(session *realtime.Context, userId uint, stream
 	msgBytes, _ := json.Marshal(gin.H{"server": msg, "type": t})
 	err := session.Send(msgBytes)
 	if err != nil {
-		log.WithError(err).Error("can't write server message to session")
+		log.WithError(err.Raw).Error("can't write server message to session")
 	}
 	// set cache item with ttl, so the user won't get a message for 10 Minutes
 	tools.SetCacheItem(cacheKey, true, time.Minute*10)
 }
 
 // sendServerMessage sends a server message to the client(s)
-func sendServerMessage(msg string, t string, sessions ...*realtime.Context) {
+func sendServerMessage(msg string, t string, sessions ...*pts.Context) {
 	msgBytes, _ := json.Marshal(gin.H{"server": msg, "type": t})
 	for _, session := range sessions {
 		err := session.Send(msgBytes)
 		if err != nil {
-			log.WithError(err).Error("can't write server message to session")
+			log.WithError(err.Raw).Error("can't write server message to session")
 		}
 	}
 
@@ -108,7 +109,7 @@ func cleanupSessions() {
 		roomName := strings.Replace(ChatRoomName, ":streamID", strconv.Itoa(int(id)), -1)
 		var newSessions []*sessionWrapper
 		for i, session := range sessions {
-			if RealtimeInstance.IsSubscribed(roomName, session.session.Client.Id) {
+			if PtsInstance.IsSubscribed(roomName, session.session.Client.Id) {
 				newSessions = append(newSessions, sessions[i])
 			}
 		}
@@ -152,7 +153,7 @@ func broadcastStreamToAdmins(streamID uint, msg []byte) {
 func removeClosed(sessions []*sessionWrapper) []*sessionWrapper {
 	var newSessions []*sessionWrapper
 	for _, wrapper := range sessions {
-		if RealtimeInstance.IsConnected(wrapper.session.Client.Id) {
+		if PtsInstance.IsConnected(wrapper.session.Client.Id) {
 			newSessions = append(newSessions, wrapper)
 		}
 	}
