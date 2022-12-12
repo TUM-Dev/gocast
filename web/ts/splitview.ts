@@ -60,5 +60,7 @@ export class SplitView {
         }
         this.players[j].controlBar.hide();
         this.players[i].controlBar.show();
+        this.players[j].muted(true);
+        this.players[i].muted(false);
     }
 }
