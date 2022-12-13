@@ -51,7 +51,12 @@ func liveUpdateOnUnsubscribe(psc *pts.Context) {
 	}
 
 	liveUpdateListenerMutex.Lock()
+	defer liveUpdateListenerMutex.Unlock()
+
 	var newSessions []*pts.Context
+	if liveUpdateListener[userId] == nil {
+		return
+	}
 	for _, session := range liveUpdateListener[userId].sessions {
 		if session != psc {
 			newSessions = append(newSessions, session)
@@ -62,7 +67,6 @@ func liveUpdateOnUnsubscribe(psc *pts.Context) {
 	} else {
 		liveUpdateListener[userId].sessions = newSessions
 	}
-	liveUpdateListenerMutex.Unlock()
 }
 
 func liveUpdateOnSubscribe(psc *pts.Context) {
