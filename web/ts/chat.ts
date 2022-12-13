@@ -72,3 +72,45 @@ export function messageDateToString(date: string) {
     const d = new Date(date);
     return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
 }
+
+export function initChatScrollListener() {
+    const chatBox = document.getElementById("chatBox") as HTMLDivElement;
+    if (!chatBox) {
+        return;
+    }
+    chatBox.addEventListener("scroll", function (e) {
+        if (chatBox.scrollHeight - chatBox.scrollTop === chatBox.offsetHeight) {
+            window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
+        }
+    });
+}
+
+export function createServerMessage(msg) {
+    const serverElem = document.createElement("div");
+    switch (msg["type"]) {
+        case "error":
+            serverElem.classList.add("text-danger", "font-semibold");
+            break;
+        case "info":
+            serverElem.classList.add("text-4");
+            break;
+        case "warn":
+            serverElem.classList.add("text-warn", "font-semibold");
+            break;
+    }
+    serverElem.classList.add("text-sm", "p-2");
+    serverElem.innerText = msg["server"];
+    return serverElem;
+}
+
+export function getPollOptionWidth(pollOptions, pollOption) {
+    const minWidth = 1;
+    const maxWidth = 100;
+    const maxVotes = Math.max(...pollOptions.map(({ votes: v }) => v));
+
+    if (pollOption.votes == 0) return `${minWidth.toString()}%`;
+
+    const fractionOfMax = pollOption.votes / maxVotes;
+    const fractionWidth = minWidth + fractionOfMax * (maxWidth - minWidth);
+    return `${Math.ceil(fractionWidth).toString()}%`;
+}

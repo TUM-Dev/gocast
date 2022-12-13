@@ -118,7 +118,10 @@ export class Chat {
     }
 
     onLike(e) {
-        this.messages.find((m) => m.ID === e.detail.likes).likes = e.detail.num;
+        const msg = this.messages.find((m) => m.ID === e.detail.likes);
+        if (msg !== undefined) {
+            msg.likes = e.detail.num;
+        }
     }
 
     onResolve(e) {

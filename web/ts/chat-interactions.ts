@@ -1,10 +1,10 @@
-import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
+import { createServerMessage, scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
 import { Realtime } from "./socket";
 
-let currentChatChannel = "";
+const SCROLL_DELAY = 100; // delay before scrolling to bottom to make sure chat is rendered
 
-const scrollDelay = 100; // delay before scrolling to bottom to make sure chat is rendered
+let currentChatChannel = "";
 
 enum WSMessageType {
     Message = "message",
@@ -16,6 +16,24 @@ enum WSMessageType {
     Approve = "approve",
     Retract = "retract",
     Resolve = "resolve",
+}
+
+export async function startWebsocket(streamId: number) {
+    const conn = new WebsocketConnection(streamId);
+    await conn.subscribe();
+    window.dispatchEvent(new CustomEvent("connected"));
+}
+
+export function sendMessage(current: NewChatMessage) {
+    return Realtime.get().send(currentChatChannel, {
+        payload: {
+            type: WSMessageType.Message,
+            msg: current.message,
+            anonymous: current.anonymous,
+            replyTo: current.replyTo,
+            addressedTo: current.addressedTo.map((u) => u.id),
+        },
+    });
 }
 
 function sendActionMessage(type: WSMessageType, payload: object = {}) {
@@ -41,138 +59,85 @@ export const submitPollOptionVote = (pollOptionId: number) =>
 export const startPoll = (question: string, pollAnswers: string[]) =>
     sendActionMessage(WSMessageType.StartPoll, { question, pollAnswers });
 
-export function initChatScrollListener() {
-    const chatBox = document.getElementById("chatBox") as HTMLDivElement;
-    if (!chatBox) {
-        return;
+// websocket initialization
+
+class WebsocketConnection {
+    private readonly chatChannel: string;
+    private events: Event[] = [
+        { name: "viewers", callback: (data) => triggerViewersEvent(data) },
+        { name: "live", callback: (data) => triggerStreamEnded(data) },
+        { name: "server", callback: (data) => handleServerMessage(data) },
+        { name: "message", callback: (data) => triggerOnMessage(data) },
+        { name: "pollOptions", callback: (data) => triggerDataEvent("chatnewpoll", data) },
+        { name: "pollOptionId", callback: (data) => triggerDataEvent("polloptionvotesupdate", data) },
+        { name: "pollOptionResults", callback: (data) => triggerDataEvent("polloptionresult", data) },
+        { name: "likes", callback: (data) => triggerDataEvent("chatlike", data) },
+        { name: "delete", callback: (data) => triggerDataEvent("chatdelete", data) },
+        { name: "resolve", callback: (data) => triggerDataEvent("chatresolve", data) },
+        { name: "approve", callback: (data) => triggerDataEvent("chatapprove", data) },
+        { name: "retract", callback: (data) => triggerDataEvent("chatretract", data) },
+        { name: "title", callback: (data) => triggerDataEvent("titleupdate", data) },
+        { name: "description", callback: (data) => triggerDataEvent("descriptionupdate", data) },
+    ];
+
+    constructor(streamId: number) {
+        this.chatChannel = `chat/${streamId}`;
+        currentChatChannel = this.chatChannel;
     }
-    chatBox.addEventListener("scroll", function (e) {
-        if (chatBox.scrollHeight - chatBox.scrollTop === chatBox.offsetHeight) {
-            window.dispatchEvent(new CustomEvent("messageindicator", { detail: { show: false } }));
-        }
-    });
-}
 
-export async function startWebsocket(streamId: number) {
-    currentChatChannel = `chat/${streamId}`;
+    async subscribe() {
+        await Realtime.get().subscribeChannel(this.chatChannel, this.getMessageHandler());
+    }
 
-    const messageHandler = function (data) {
-        if ("viewers" in data) {
-            window.dispatchEvent(new CustomEvent("viewers", { detail: { viewers: data["viewers"] } }));
-        } else if ("live" in data) {
-            if (data["live"]) {
-                // stream start, refresh page
-                window.location.reload();
-            } else {
-                // stream end, show message
-                window.dispatchEvent(new CustomEvent("streamended"));
-            }
-        } else if ("server" in data) {
-            const scroll = shouldScroll();
-            const serverElem = createServerMessage(data);
-            document.getElementById("chatBox").appendChild(serverElem);
-            if (scroll) {
-                setTimeout(scrollChat, scrollDelay);
-            } else {
-                showNewMessageIndicator();
-            }
-        } else if ("message" in data) {
-            data["replies"] = []; // go serializes this empty list as `null`
-            // reply
-            if (data["replyTo"].Valid) {
-                // reply
-                const event = new CustomEvent("chatreply", { detail: data });
-                window.dispatchEvent(event);
-            } else {
-                // message
-                const scroll = shouldScroll();
-                const event = new CustomEvent("chatmessage", { detail: data });
-                window.dispatchEvent(event);
-                if (scroll) {
-                    setTimeout(scrollChat, scrollDelay);
-                } else {
-                    showNewMessageIndicator();
+    private getMessageHandler(): (object) => void {
+        return (data: object) => {
+            this.events.forEach((e) => {
+                if (e.name in data) {
+                    e.callback(data);
                 }
-            }
-        } else if ("pollOptions" in data) {
-            const event = new CustomEvent("chatnewpoll", { detail: data });
-            window.dispatchEvent(event);
-        } else if ("pollOptionId" in data) {
-            const event = new CustomEvent("polloptionvotesupdate", { detail: data });
-            window.dispatchEvent(event);
-        } else if ("pollOptionResults" in data) {
-            const event = new CustomEvent("polloptionresult", { detail: data });
-            window.dispatchEvent(event);
-        } else if ("likes" in data) {
-            const event = new CustomEvent("chatlike", { detail: data });
-            window.dispatchEvent(event);
-        } else if ("delete" in data) {
-            const event = new CustomEvent("chatdelete", { detail: data });
-            window.dispatchEvent(event);
-        } else if ("resolve" in data) {
-            const event = new CustomEvent("chatresolve", { detail: data });
-            window.dispatchEvent(event);
-        } else if ("approve" in data) {
-            const event = new CustomEvent("chatapprove", { detail: data });
-            window.dispatchEvent(event);
-        } else if ("retract" in data) {
-            const event = new CustomEvent("chatretract", { detail: data });
-            window.dispatchEvent(event);
-        } else if ("title" in data) {
-            const event = new CustomEvent("titleupdate", { detail: data });
-            window.dispatchEvent(event);
-        } else if ("description" in data) {
-            const event = new CustomEvent("descriptionupdate", { detail: data });
-            window.dispatchEvent(event);
-        }
-    };
-
-    // TODO: check if connected and update
-    //window.dispatchEvent(new CustomEvent("connected"));
-    //window.dispatchEvent(new CustomEvent("disconnected"));
-
-    await Realtime.get().subscribeChannel(currentChatChannel, messageHandler);
-    window.dispatchEvent(new CustomEvent("connected"));
-}
-
-export function createServerMessage(msg) {
-    const serverElem = document.createElement("div");
-    switch (msg["type"]) {
-        case "error":
-            serverElem.classList.add("text-danger", "font-semibold");
-            break;
-        case "info":
-            serverElem.classList.add("text-4");
-            break;
-        case "warn":
-            serverElem.classList.add("text-warn", "font-semibold");
-            break;
+            });
+        };
     }
-    serverElem.classList.add("text-sm", "p-2");
-    serverElem.innerText = msg["server"];
-    return serverElem;
 }
 
-export function sendMessage(current: NewChatMessage) {
-    return Realtime.get().send(currentChatChannel, {
-        payload: {
-            type: WSMessageType.Message,
-            msg: current.message,
-            anonymous: current.anonymous,
-            replyTo: current.replyTo,
-            addressedTo: current.addressedTo.map((u) => u.id),
-        },
-    });
+type Event = {
+    name: string;
+    callback: (data: object) => void;
+};
+
+const triggerDataEvent = (type, data) => window.dispatchEvent(new CustomEvent(type, { detail: data }));
+
+const triggerViewersEvent = (data) =>
+    window.dispatchEvent(new CustomEvent("viewers", { detail: { viewers: data["viewers"] } }));
+
+const triggerStreamEnded = (data) =>
+    data["live"] ? window.location.reload() : window.dispatchEvent(new CustomEvent("streamended"));
+
+function triggerOnMessage(data) {
+    data["replies"] = []; // go serializes this empty list as `null`
+    // replies
+    if (data["replyTo"].Valid) {
+        // reply
+        window.dispatchEvent(new CustomEvent("chatreply", { detail: data }));
+    } else {
+        // message
+        const scroll = shouldScroll();
+        window.dispatchEvent(new CustomEvent("chatmessage", { detail: data }));
+        if (scroll) {
+            setTimeout(scrollChat, SCROLL_DELAY);
+        } else {
+            showNewMessageIndicator();
+        }
+    }
 }
 
-export function getPollOptionWidth(pollOptions, pollOption) {
-    const minWidth = 1;
-    const maxWidth = 100;
-    const maxVotes = Math.max(...pollOptions.map(({ votes: v }) => v));
-
-    if (pollOption.votes == 0) return `${minWidth.toString()}%`;
-
-    const fractionOfMax = pollOption.votes / maxVotes;
-    const fractionWidth = minWidth + fractionOfMax * (maxWidth - minWidth);
-    return `${Math.ceil(fractionWidth).toString()}%`;
+function handleServerMessage(data) {
+    const scroll = shouldScroll();
+    const serverElem = createServerMessage(data);
+    document.getElementById("chatBox").appendChild(serverElem);
+    if (scroll) {
+        setTimeout(scrollChat, SCROLL_DELAY);
+    } else {
+        showNewMessageIndicator();
+    }
 }

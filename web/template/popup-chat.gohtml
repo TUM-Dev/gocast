@@ -15,7 +15,7 @@
         <script defer src="/static/node_modules/katex/dist/contrib/copy-tex.min.js"></script>
     {{end}}
 </head>
-<body x-init="watch.startWebsocket()"
+<body x-init="watch.startWebsocket({{$stream.ID}})"
       class="bg-white dark:bg-secondary h-screen overflow-hidden">
 <input type="hidden" id="streamID" value="{{.IndexData.TUMLiveContext.Stream.Model.ID}}">
 {{template "chat" .}}
