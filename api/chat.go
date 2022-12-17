@@ -632,14 +632,6 @@ func chatOnSubscribe(psc *pts.Context) {
 }
 
 func chatOnUnsubscribe(psc *pts.Context) {
-	var daoWrapper dao.DaoWrapper
-	if ctx, ok := psc.Client.Get("dao"); ok {
-		daoWrapper = ctx.(dao.DaoWrapper)
-	} else {
-		sentry.CaptureException(errors.New("daoWrapper should exist but doesn't"))
-		return
-	}
-
 	var tumLiveContext tools.TUMLiveContext
 	if foundContext, exists := psc.Get("TUMLiveContext"); exists {
 		tumLiveContext = foundContext.(tools.TUMLiveContext)

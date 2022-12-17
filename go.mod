@@ -50,7 +50,7 @@ require (
 	github.com/influxdata/influxdb-client-go v1.4.0
 	github.com/matthiasreumann/gomino v0.0.2
 	github.com/meilisearch/meilisearch-go v0.21.1
-	github.com/mono424/go-pts v0.0.3
+	github.com/mono424/go-pts v0.0.4
 	github.com/mono424/go-pts-gorilla-connector v0.0.4
 )
 
