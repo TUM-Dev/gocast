@@ -73,7 +73,7 @@ func configGinStaticRouter(router gin.IRoutes) {
 	})
 }
 
-//todo: un-export functions
+// todo: un-export functions
 func configMainRoute(router *gin.Engine) {
 	daoWrapper := dao.NewDaoWrapper()
 	routes := mainRoutes{daoWrapper}
@@ -101,6 +101,7 @@ func configMainRoute(router *gin.Engine) {
 	adminGroup.GET("/admin/infopages", routes.AdminPage)
 	adminGroup.GET("/admin/notifications", routes.AdminPage)
 	adminGroup.GET("/admin/audits", routes.AdminPage)
+	adminGroup.GET("/admin/maintenance", routes.AdminPage)
 
 	courseAdminGroup := router.Group("/")
 	courseAdminGroup.Use(tools.InitCourse(daoWrapper))
@@ -190,6 +191,8 @@ func getDefaultStaticBrandingFiles() []staticFile {
 		{Name: "logo.svg", Path: "assets/img/logo.svg"},
 		{Name: "manifest.json", Path: "assets/manifest.json"},
 		{Name: "favicon.ico", Path: "assets/favicon.ico"},
+		{Name: "icons-512.png", Path: "assets/img/icons-192.png"},
+		{Name: "icons-512.png", Path: "assets/img/icons-512.png"},
 	}
 }
 

@@ -14,7 +14,7 @@
             <h6 class="text-3 font-bold">New Lecture-Hall</h6>
         </div>
         <form x-data="{name:'',combIP:'', presIP:'', camIP:'',cameraIp:'', pwrCtrlIp:''}" @submit.prevent="
-                    showSuccess = await admin.createLectureHall(name, combIP, presIP, camIP, cameraIp, pwrCtrlIp);
+                    success = await admin.createLectureHall(name, combIP, presIP, camIP, cameraIp, pwrCtrlIp);
                     setTimeout(() => {window.location = '/admin/lectureHalls';}, 2000);" class="grid gap-3 px-5 py-4 ">
             <div class="text-sm">
                 <label for="name" class="block text-5">Name</label>

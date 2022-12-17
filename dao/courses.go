@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/joschahenningsen/TUM-Live/model"
 	"time"
+
+	"github.com/joschahenningsen/TUM-Live/model"
 
 	"github.com/RBG-TUM/commons"
 	"github.com/getsentry/sentry-go"
@@ -81,14 +82,14 @@ func (d coursesDao) GetCurrentOrNextLectureForCourse(ctx context.Context, course
 	return res, err
 }
 
-// GetAllCourses retrieves all courses from the database
+// GetAllCourses retrieves all courses from the database.
 func (d coursesDao) GetAllCourses() ([]model.Course, error) {
 	cachedCourses, found := Cache.Get("allCourses")
 	if found {
 		return cachedCourses.([]model.Course), nil
 	}
 	var courses []model.Course
-	err := DB.Preload("Streams").Find(&courses).Error
+	err := DB.Preload("Streams.Files").Find(&courses).Error
 	if err == nil {
 		Cache.SetWithTTL("allCourses", courses, 1, time.Minute)
 	}

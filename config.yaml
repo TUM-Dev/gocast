@@ -95,7 +95,8 @@ paths:
   static: /var/www/static
   branding: /srv/ceph/branding
 weburl: https://live.rbg.tum.de
-workertoken: 2657575f-40e4-4278-9ca1-f3a5ed667cff
+workertoken: abc
 meili:
   host: http://localhost:7700
   apiKey: MASTER_KEY
+  
