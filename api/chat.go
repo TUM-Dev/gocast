@@ -71,6 +71,8 @@ func RegisterRealtimeChatChannel() {
 				routes.handleApprove(tumLiveContext, message.Payload)
 			case "retract":
 				routes.handleRetract(tumLiveContext, message.Payload)
+			case "react_to":
+				routes.handleReactTo(tumLiveContext, message.Payload)
 			default:
 				log.WithField("type", req.Type).Warn("unknown websocket request type")
 			}
@@ -303,6 +305,36 @@ func (r chatRoutes) handleApprove(ctx tools.TUMLiveContext, msg []byte) {
 	broadcastBytes, err := json.Marshal(broadcast)
 	if err != nil {
 		log.WithError(err).Error("could not marshal approve message")
+		return
+	}
+	broadcastStream(ctx.Stream.ID, broadcastBytes)
+}
+
+func (r chatRoutes) handleReactTo(ctx tools.TUMLiveContext, msg []byte) {
+	var req wsReactToReq
+	err := json.Unmarshal(msg, &req)
+	if err != nil {
+		log.WithError(err).Warn("could not unmarshal reactTo request")
+		return
+	}
+
+	err = r.ChatDao.ToggleReaction(ctx.User.ID, req.wsIdReq.Id, ctx.User.Name, req.Emoji)
+	if err != nil {
+		log.WithError(err).Error("error reacting to message")
+		return
+	}
+	reactions, err := r.ChatDao.GetReactions(req.Id)
+	if err != nil {
+		log.WithError(err).Error("error getting num of chat likes")
+		return
+	}
+	broadcast := gin.H{
+		"reactions": req.Id,
+		"payload":   reactions,
+	}
+	broadcastBytes, err := json.Marshal(broadcast)
+	if err != nil {
+		log.WithError(err).Error("Can't marshal reactions message")
 		return
 	}
 	broadcastStream(ctx.Stream.ID, broadcastBytes)
@@ -588,6 +620,11 @@ type chatReq struct {
 type wsIdReq struct {
 	wsReq
 	Id uint `json:"id"`
+}
+
+type wsReactToReq struct {
+	wsIdReq
+	Emoji string `json:"emoji"`
 }
 
 type submitPollOptionVote struct {

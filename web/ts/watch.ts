@@ -20,6 +20,7 @@ enum WSMessageType {
     Approve = "approve",
     Retract = "retract",
     Resolve = "resolve",
+    ReactTo = "react_to",
 }
 
 function sendIDMessage(id: number, type: WSMessageType) {
@@ -30,6 +31,18 @@ function sendIDMessage(id: number, type: WSMessageType) {
         },
     });
 }
+
+function sendCustomMessage(id: number, type: WSMessageType, optArgs: object = {}) {
+    return Realtime.get().send(currentChatChannel, {
+        payload: {
+            type: type,
+            id: id,
+            ...optArgs,
+        },
+    });
+}
+
+export const reactToMessage = (id: number, emoji: string) => sendCustomMessage(id, WSMessageType.ReactTo, { emoji });
 
 export const likeMessage = (id: number) => sendIDMessage(id, WSMessageType.Like);
 
@@ -124,6 +137,9 @@ export async function startWebsocket() {
             window.dispatchEvent(event);
         } else if ("description" in data) {
             const event = new CustomEvent("descriptionupdate", { detail: data });
+            window.dispatchEvent(event);
+        } else if ("reactions" in data) {
+            const event = new CustomEvent("chatreactions", { detail: data });
             window.dispatchEvent(event);
         }
     };

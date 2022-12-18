@@ -1,9 +1,5 @@
 import { Emoji, TopEmojis } from "top-twitter-emojis-map";
 
-interface OutsideClickHandler {
-    (e: MouseEvent): void;
-}
-
 export class EmojiPicker {
     suggestions: Emoji[];
     id: string;

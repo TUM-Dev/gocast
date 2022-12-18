@@ -16,6 +16,7 @@ type ChatDao interface {
 
 	GetChatUsers(streamid uint) ([]model.User, error)
 	GetNumLikes(chatID uint) (int64, error)
+	GetReactions(chatID uint) ([]model.ChatReaction, error)
 	GetVisibleChats(userID uint, streamID uint) ([]model.Chat, error)
 	GetAllChats(userID uint, streamID uint) ([]model.Chat, error)
 	GetActivePoll(streamID uint) (model.Poll, error)
@@ -27,6 +28,7 @@ type ChatDao interface {
 	DeleteChat(id uint) error
 	ResolveChat(id uint) error
 	ToggleLike(userID uint, chatID uint) error
+	ToggleReaction(userID uint, chatID uint, username string, emoji string) error
 	RemoveLikes(chatID uint) error
 
 	CloseActivePoll(streamID uint) error
@@ -83,6 +85,13 @@ func (d chatDao) GetNumLikes(chatID uint) (int64, error) {
 	return numLikes, err
 }
 
+// GetReactions returns all reactions for a message
+func (d chatDao) GetReactions(chatID uint) ([]model.ChatReaction, error) {
+	var reactions []model.ChatReaction
+	err := DB.Table("chat_reactions").Where("chat_id = ?", chatID).Find(&reactions).Error
+	return reactions, err
+}
+
 // GetVisibleChats returns all visible chats for the stream with the given ID
 // or sent by user with id 'userID'
 // Number of likes are inserted and the user's like status is determined
@@ -104,7 +113,7 @@ func (d chatDao) GetVisibleChats(userID uint, streamID uint) ([]model.Chat, erro
 // Number of likes are inserted and the user's like status is determined
 func (d chatDao) GetAllChats(userID uint, streamID uint) ([]model.Chat, error) {
 	var chats []model.Chat
-	query := DB.Preload("Replies").Preload("UserLikes").Preload("AddressedToUsers").Find(&chats, "stream_id = ?", streamID)
+	query := DB.Preload("Replies").Preload("UserLikes").Preload("Reactions").Preload("AddressedToUsers").Find(&chats, "stream_id = ?", streamID)
 	err := query.Error
 	if err != nil {
 		return nil, err
@@ -179,6 +188,18 @@ func (d chatDao) ToggleLike(userID uint, chatID uint) error {
 	return err // some other error
 }
 
+func (d chatDao) ToggleReaction(userID uint, chatID uint, username string, emoji string) error {
+	err := DB.Exec("INSERT INTO chat_reactions (user_id, chat_id, username, emoji) VALUES (?, ?, ?, ?)", userID, chatID, username, emoji).Error
+	if err == nil {
+		return nil // reaction was added successfully
+	}
+	var mysqlErr *mysql.MySQLError
+	if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 { // 1062: duplicate entry -> already reacted to message -> remove
+		return DB.Exec("DELETE FROM chat_reactions WHERE user_id = ? AND chat_id = ? AND emoji = ?", userID, chatID, emoji).Error
+	}
+	return err // some other error
+}
+
 func (d chatDao) RemoveLikes(chatID uint) error {
 	return DB.Exec("DELETE FROM chat_user_likes WHERE chat_id = ?", chatID).Error
 }
@@ -196,7 +217,7 @@ func (d chatDao) GetChatsByUser(userID uint) (chats []model.Chat, err error) {
 func (d chatDao) GetChat(id uint, userID uint) (*model.Chat, error) {
 	var chat model.Chat
 
-	err := d.db.Preload("Replies").Preload("UserLikes").Preload("AddressedToUsers").Find(&chat, "id = ?", id).Error
+	err := d.db.Preload("Replies").Preload("UserLikes").Preload("Reactions").Preload("AddressedToUsers").Find(&chat, "id = ?", id).Error
 	if err != nil {
 		return &chat, err
 	}

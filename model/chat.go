@@ -59,6 +59,8 @@ type Chat struct {
 	Liked     bool   `gorm:"-" json:"liked"`
 	UserLikes []User `gorm:"many2many:chat_user_likes" json:"-"`
 
+	Reactions []ChatReaction `gorm:"foreignKey:chat_id;" json:"reactions"`
+
 	AddressedToUsers []User `gorm:"many2many:chat_user_addressedto" json:"-"`
 	AddressedToIds   []uint `gorm:"-" json:"addressedTo"`
 

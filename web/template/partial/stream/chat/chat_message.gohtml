@@ -68,16 +68,22 @@
                             :class="c.current.replyTo === m.ID && 'hidden'">
                         <span class="font-semibold text-xs text-4">Reply</span>
                     </button>
-                    <div class="flex relative">
+                    <div @emojipickeronselect.window="e => { watch.reactToMessage(m.ID, e.detail); emojiPicker.close(); }" class="flex items-center relative">
                         <button type="button" title="React"
-                                @click="emojiPicker.open();"
+                                @click="emojiPicker.open()"
                                 class="flex px-2 h-8 rounded-full text-5 hover:bg-gray-200 dark:hover:bg-gray-600">
                             <i class="far fa-face-smile m-auto"></i>
-                            <template x-if="m.likes > 0">
-                                <span class="m-auto ml-2" x-text="m.likes"></span>
-                            </template>
                         </button>
                         {{template "emojipicker"}}
+                        <template x-for="(reactionGroup, i) in m.aggregatedReactions">
+                            <button type="button"
+                                    :title="`:${reactionGroup.emojiName}:`" {{/* e.g. ':eyes:' */}}
+                                    @click="$dispatch('emojipickeronselect', reactionGroup.emojiName)" {{/* notify emoji click */}}
+                                    class="cursor-pointer mx-1 px-2 h-6 border-[1px] border-gray-500 rounded-full border-solid text-xs flex justify-start items-center">
+                                <span x-text="reactionGroup.emoji"></span>
+                                <span x-text="reactionGroup.reactions.length" class="ml-2"></span>
+                            </button>
+                        </template>
                     </div>
                 </div>
                 <template x-if="c.admin">

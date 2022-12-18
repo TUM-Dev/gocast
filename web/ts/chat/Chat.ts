@@ -5,6 +5,7 @@ import { Poll } from "./Poll";
 import { registerTimeWatcher, deregisterTimeWatcher, getPlayer } from "../TUMLiveVjs";
 import { create } from "nouislider";
 import { EmojiPicker } from "./EmojiPicker";
+import { TopEmojis } from "top-twitter-emojis-map";
 
 export class Chat {
     readonly userId: number;
@@ -43,6 +44,22 @@ export class Chat {
         },
         (m: ChatMessage) => {
             return { ...m, renderVersion: 0 };
+        },
+        (m: ChatMessage) => {
+            m.aggregatedReactions = m.reactions.reduce((res: ChatReactionGroup[], reaction: ChatReaction) => {
+                let group: ChatReactionGroup = res.find((r) => r.emoji === reaction.emoji);
+                if (group === undefined) {
+                    group = {
+                        emoji: TopEmojis.find((e) => e.short_names.includes(reaction.emoji)).emoji,
+                        emojiName: reaction.emoji,
+                        reactions: [],
+                    };
+                    res.push(group);
+                }
+                group.reactions.push(reaction);
+                return res;
+            }, []);
+            return m;
         },
     ];
 
@@ -125,6 +142,17 @@ export class Chat {
 
     onLike(e) {
         this.messages.find((m) => m.ID === e.detail.likes).likes = e.detail.num;
+    }
+
+    onReaction(e) {
+        this.messages.map((m) => {
+            if (m.ID === e.detail.reactions) {
+                m.reactions = e.detail.payload;
+                this.preprocessors.forEach((f) => (m = f(m)));
+                console.log(m);
+            }
+            return m;
+        });
     }
 
     onResolve(e) {
@@ -416,6 +444,8 @@ type ChatMessage = {
 
     liked: false;
     likes: number;
+    reactions: ChatReaction[];
+    aggregatedReactions: ChatReactionGroup[]; // is generated in frontend
 
     replies: ChatMessage[];
     replyTo: Reply; // e.g.{Int64:0, Valid:false}
@@ -430,6 +460,18 @@ type ChatMessage = {
     CreatedAt: string;
     DeletedAt: string;
     UpdatedAt: string;
+};
+
+type ChatReaction = {
+    userID: string;
+    username: string;
+    emoji: string;
+};
+
+type ChatReactionGroup = {
+    emoji: string;
+    emojiName: string;
+    reactions: ChatReaction[];
 };
 
 type Reply = {
