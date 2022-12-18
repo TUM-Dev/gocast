@@ -25,6 +25,16 @@ const (
 	ChatRoomName = "chat/:streamID"
 )
 
+var allowedReactions = []string{
+	"+1",
+	"-1",
+	"smile",
+	"tada",
+	"confused",
+	"heart",
+	"eyes",
+}
+
 var routes chatRoutes
 
 func RegisterRealtimeChatChannel() {
@@ -315,6 +325,19 @@ func (r chatRoutes) handleReactTo(ctx tools.TUMLiveContext, msg []byte) {
 	err := json.Unmarshal(msg, &req)
 	if err != nil {
 		log.WithError(err).Warn("could not unmarshal reactTo request")
+		return
+	}
+
+	isAllowed := false
+	for _, reaction := range allowedReactions {
+		if reaction == req.Emoji {
+			isAllowed = true
+			break
+		}
+	}
+
+	if !isAllowed {
+		log.Warn("user tried to add illegal reaction")
 		return
 	}
 
