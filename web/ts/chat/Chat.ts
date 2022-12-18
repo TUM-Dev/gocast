@@ -53,12 +53,15 @@ export class Chat {
                         emoji: TopEmojis.find((e) => e.short_names.includes(reaction.emoji)).emoji,
                         emojiName: reaction.emoji,
                         reactions: [],
+                        names: [],
                         hasReacted: reaction.userID === this.userId,
                     };
                     res.push(group);
                 } else if (reaction.userID == this.userId) {
                     group.hasReacted = true;
                 }
+
+                group.names.push(reaction.username);
                 group.reactions.push(reaction);
                 return res;
             }, []);
@@ -470,6 +473,7 @@ type ChatReaction = {
 type ChatReactionGroup = {
     emoji: string;
     emojiName: string;
+    names: string[];
     reactions: ChatReaction[];
     hasReacted: boolean;
 };
