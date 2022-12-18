@@ -4,6 +4,7 @@ import { EmojiList } from "./EmojiList";
 import { Poll } from "./Poll";
 import { registerTimeWatcher, deregisterTimeWatcher, getPlayer } from "../TUMLiveVjs";
 import { create } from "nouislider";
+import { EmojiPicker } from "./EmojiPicker";
 
 export class Chat {
     readonly userId: number;
@@ -88,6 +89,10 @@ export class Chat {
         window.addEventListener("beforeunload", () => {
             this.popUpWindow?.close();
         });
+    }
+
+    initEmojiPicker(id: string): EmojiPicker {
+        return new EmojiPicker(id);
     }
 
     async loadMessages() {

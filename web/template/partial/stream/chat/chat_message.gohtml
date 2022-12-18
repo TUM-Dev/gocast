@@ -3,7 +3,7 @@
     {{$moderatedChat := .IndexData.TUMLiveContext.Course.ModeratedChatEnabled}}
     <template x-for="(m, index) in c.messages" :key="m.ID + 'v' + m.renderVersion">
         <div x-ref="message" class="grid gap-y-1 text-4 text-sm $m.ID message"
-             x-data="{ showReplies: false}"
+             x-data="{ showReplies: false, emojiPicker: c.initEmojiPicker(m.ID) }"
              x-show="!m.deleted && m.replyTo && !m.replyTo.Valid"
              :class="{'ring ring-blue-500/50' : c.current.replyTo === m.ID, 'opacity-60' : m.isGrayedOut}"
              x-init="$watch('c.focusedMessageId', () => {if (c.isMessageToBeFocused(index)){watch.scrollToElement($refs.message)}});">
@@ -68,6 +68,17 @@
                             :class="c.current.replyTo === m.ID && 'hidden'">
                         <span class="font-semibold text-xs text-4">Reply</span>
                     </button>
+                    <div class="flex relative">
+                        <button type="button" title="React"
+                                @click="emojiPicker.open();"
+                                class="flex px-2 h-8 rounded-full text-5 hover:bg-gray-200 dark:hover:bg-gray-600">
+                            <i class="far fa-face-smile m-auto"></i>
+                            <template x-if="m.likes > 0">
+                                <span class="m-auto ml-2" x-text="m.likes"></span>
+                            </template>
+                        </button>
+                        {{template "emojipicker"}}
+                    </div>
                 </div>
                 <template x-if="c.admin">
                     <div x-data="{showAdminTools: false}" class="relative">
