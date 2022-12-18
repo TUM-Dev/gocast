@@ -47,7 +47,7 @@ export class Chat {
         },
         (m: ChatMessage) => {
             m.aggregatedReactions = (m.reactions || []).reduce((res: ChatReactionGroup[], reaction: ChatReaction) => {
-                let group: ChatReactionGroup = res.find((r) => r.emoji === reaction.emoji);
+                let group: ChatReactionGroup = res.find((r) => r.emojiName === reaction.emoji);
                 if (group === undefined) {
                     group = {
                         emoji: TopEmojis.find((e) => e.short_names.includes(reaction.emoji)).emoji,
@@ -145,14 +145,9 @@ export class Chat {
     }
 
     onReaction(e) {
-        this.messages.map((m) => {
-            if (m.ID === e.detail.reactions) {
-                m.reactions = e.detail.payload;
-                this.preprocessors.forEach((f) => (m = f(m)));
-                console.log(m);
-            }
-            return m;
-        });
+        const m = this.messages.find((m) => m.ID === e.detail.reactions);
+        m.reactions = e.detail.payload;
+        this.patchMessage(m);
     }
 
     onResolve(e) {
