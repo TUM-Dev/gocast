@@ -78,7 +78,7 @@
                         <template x-for="(reactionGroup, i) in m.aggregatedReactions">
                             <button type="button"
                                     :title="`:${reactionGroup.emojiName}:`" {{/* e.g. ':eyes:' */}}
-                                    @click="$dispatch('emojipickeronselect', reactionGroup.emojiName)" {{/* notify emoji click */}}
+                                    @click="watch.reactToMessage(m.ID, reactionGroup.emojiName)" {{/* notify emoji click */}}
                                     class="cursor-pointer mx-1 px-2 h-6 border-[1px] border-gray-500 rounded-full border-solid text-xs flex justify-start items-center">
                                 <span x-text="reactionGroup.emoji"></span>
                                 <span x-text="reactionGroup.reactions.length" class="ml-2"></span>
