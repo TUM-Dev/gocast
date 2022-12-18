@@ -17,6 +17,12 @@ export class EmojiPicker {
         return e.detail.id == this.id;
     }
 
+    onSelect(emoji) {
+        window.dispatchEvent(
+            new CustomEvent("emojipickeronselect", { detail: { id: this.id, emoji: emoji.short_names[0] } }),
+        );
+    }
+
     open() {
         if (this.isOpen) {
             return;

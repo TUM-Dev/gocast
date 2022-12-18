@@ -13,7 +13,7 @@
                     x-text="emoji.emoji"
                     x-on:mouseenter="() => (hoveredIndex=i)" {{/* Select emoji on hover */}}
                     :class="hoveredIndex===i && 'bg-gray-100 dark:bg-gray-600'"
-                    @click="$dispatch('emojipickeronselect', emoji.short_names[0])" {{/* notify emoji click */}}
+                    @click="emojiPicker.onSelect(emoji)" {{/* notify emoji click */}}
                     class="cursor-pointer mr-1 ml-1 h-5 w-5 rounded text-xs">
             </button>
         </template>

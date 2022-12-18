@@ -68,7 +68,7 @@
                             :class="c.current.replyTo === m.ID && 'hidden'">
                         <span class="font-semibold text-xs text-4">Reply</span>
                     </button>
-                    <div @emojipickeronselect.window="e => { watch.reactToMessage(m.ID, e.detail); emojiPicker.close(); }" class="flex items-center relative">
+                    <div @emojipickeronselect.window="e => { if (emojiPicker.eventOwner(e)) { watch.reactToMessage(m.ID, e.detail.emoji); emojiPicker.close(); } }" class="flex items-center relative">
                         <button type="button" title="React"
                                 @click="emojiPicker.open()"
                                 class="flex px-2 h-8 rounded-full text-5 hover:bg-gray-200 dark:hover:bg-gray-600">

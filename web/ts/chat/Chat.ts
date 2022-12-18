@@ -46,7 +46,7 @@ export class Chat {
             return { ...m, renderVersion: 0 };
         },
         (m: ChatMessage) => {
-            m.aggregatedReactions = m.reactions.reduce((res: ChatReactionGroup[], reaction: ChatReaction) => {
+            m.aggregatedReactions = (m.reactions || []).reduce((res: ChatReactionGroup[], reaction: ChatReaction) => {
                 let group: ChatReactionGroup = res.find((r) => r.emoji === reaction.emoji);
                 if (group === undefined) {
                     group = {
