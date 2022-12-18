@@ -53,12 +53,16 @@ export class Chat {
                         emoji: TopEmojis.find((e) => e.short_names.includes(reaction.emoji)).emoji,
                         emojiName: reaction.emoji,
                         reactions: [],
+                        hasReacted: reaction.userID === this.userId,
                     };
                     res.push(group);
+                } else if (reaction.userID == this.userId) {
+                    group.hasReacted = true;
                 }
                 group.reactions.push(reaction);
                 return res;
             }, []);
+            m.aggregatedReactions.sort((a, b) => a.emojiName.localeCompare(b.emojiName));
             return m;
         },
     ];
@@ -458,7 +462,7 @@ type ChatMessage = {
 };
 
 type ChatReaction = {
-    userID: string;
+    userID: number;
     username: string;
     emoji: string;
 };
@@ -467,6 +471,7 @@ type ChatReactionGroup = {
     emoji: string;
     emojiName: string;
     reactions: ChatReaction[];
+    hasReacted: boolean;
 };
 
 type Reply = {
