@@ -32,3 +32,7 @@ test:
 run:
 	go run cmd/worker/worker.go
 
+
+.PHONY: lint
+lint:
+	golangci-lint run

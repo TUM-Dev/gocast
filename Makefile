@@ -41,6 +41,10 @@ run:
 test:
 	go test -race ./...
 
+.PHONY: lint
+lint:
+	golangci-lint run
+
 .PHONY: protoVoice
 protoVoice:
 	cd voice-service; \

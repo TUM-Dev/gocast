@@ -97,10 +97,6 @@
         @apply text-gray-500 dark:hover:text-white hover:text-black hover:underline;
     }
 
-    .btn:disabled {
-        @apply dark:text-gray-400 dark:hover:bg-gray-600 dark:bg-gray-600 text-gray-500 hover:bg-gray-200 bg-gray-200;
-    }
-
     .form-container {
         @apply mx-auto w-full md:w-4/5 my-2 md:my-10 shadow rounded-lg border bg-white dark:border-gray-800 dark:bg-secondary-light;
     }
@@ -113,12 +109,20 @@
         @apply py-2 px-5 grid gap-3;
     }
 
+    .form-container-footer {
+        @apply text-3 border-t py-2 px-5 dark:border-gray-800;
+    }
+
     .form-container-body h2 {
         @apply text-sm text-5;
     }
 
     .btn {
-        @apply text-center transition-colors bg-gray-500 text-white hover:text-white hover:bg-gray-600 dark:bg-gray-800 dark:hover:bg-primary dark:text-white w-full p-2 cursor-pointer rounded shadow-sm font-bold;
+        @apply p-2 cursor-pointer rounded shadow-sm text-center text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-bold rounded-lg text-sm px-5 py-2.5 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700;
+    }
+
+    .btn:disabled {
+        @apply text-center text-gray-900 bg-white border border-gray-300 focus:outline-none focus:ring-4 focus:ring-gray-200 font-bold rounded-lg px-5 py-2.5 dark:bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700
     }
 
     .primary {
@@ -131,7 +135,11 @@
 }
 
 .tl-input {
-    @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm;
+    @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm outline-0 border-0;
+}
+
+.tl-input:focus{
+    @apply outline-2 outline-blue-500 dark:outline-indigo-600 border-0;
 }
 
 .tl-choose-file::-webkit-file-upload-button {

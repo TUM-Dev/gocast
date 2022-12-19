@@ -101,7 +101,7 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 
 	S.startThumbnailGeneration(ctx)
 	defer S.endThumbnailGeneration(ctx)
-	err = createThumbnailSprite(ctx)
+	err = createThumbnailSprite(ctx, ctx.getTranscodingFileName())
 	if err != nil {
 		log.WithField("File", ctx.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
 	} else {
@@ -131,6 +131,30 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 	err = extractKeywords(ctx)
 	if err != nil {
 		log.WithField("File", ctx.getTranscodingFileName()).WithError(err).Error("Extracting keywords failed.")
+	}
+}
+
+// HandleThumbnailRequest creates a thumbnail on demand.
+func HandleThumbnailRequest(request *pb.GenerateThumbnailRequest) {
+	streamCtx := &StreamContext{
+		streamId:      request.StreamID,
+		courseSlug:    request.CourseSlug,
+		teachingTerm:  request.TeachingTerm,
+		teachingYear:  request.CourseYear,
+		startTime:     request.Start.AsTime(),
+		streamVersion: request.StreamVersion,
+		recordingPath: &request.Path,
+	}
+	if streamCtx.recordingPath == nil {
+		return
+	}
+	S.startThumbnailGeneration(streamCtx)
+	defer S.endThumbnailGeneration(streamCtx)
+	err := createThumbnailSprite(streamCtx, *streamCtx.recordingPath)
+	if err != nil {
+		log.WithField("File", streamCtx.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
+	} else {
+		notifyThumbnailDone(streamCtx)
 	}
 }
 
@@ -230,7 +254,7 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 
 	S.startThumbnailGeneration(streamCtx)
 	defer S.endThumbnailGeneration(streamCtx)
-	err = createThumbnailSprite(streamCtx)
+	err = createThumbnailSprite(streamCtx, streamCtx.getTranscodingFileName())
 	if err != nil {
 		log.WithField("File", streamCtx.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed")
 	} else {
@@ -356,7 +380,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 
 	S.startThumbnailGeneration(&c)
 	defer S.endThumbnailGeneration(&c)
-	err = createThumbnailSprite(&c)
+	err = createThumbnailSprite(&c, c.getTranscodingFileName())
 	if err != nil {
 		log.WithField("File", c.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed")
 	} else {

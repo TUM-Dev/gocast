@@ -21,12 +21,19 @@ const (
 	LecturerType = 2
 	GenericType  = 3
 	StudentType  = 4
+
+	maxUsernameLength = 80
+)
+
+var (
+	ErrUsernameTooLong = errors.New("username is too long")
+	ErrUsernameNoText  = errors.New("username has no text")
 )
 
 type User struct {
 	gorm.Model
 
-	Name                string         `gorm:"not null" json:"name"`
+	Name                string         `gorm:"type:varchar(80); not null" json:"name"`
 	LastName            *string        `json:"-"`
 	Email               sql.NullString `gorm:"type:varchar(256); uniqueIndex; default:null" json:"-"`
 	MatriculationNumber string         `gorm:"type:varchar(256); uniqueIndex; default:null" json:"-"`
@@ -308,4 +315,19 @@ func (u *User) GetLoginString() string {
 		return u.Email.String
 	}
 	return u.LrzID
+}
+
+// BeforeCreate is a GORM hook that is called before a new user is created.
+// Users won't be saved if any of these apply:
+// - username is empty (after trimming)
+// - username is too long (>maxUsernameLength)
+func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
+	u.Name = strings.TrimSpace(u.Name)
+	if len(u.Name) > maxUsernameLength {
+		return ErrUsernameTooLong
+	}
+	if len(u.Name) == 0 {
+		return ErrUsernameNoText
+	}
+	return nil;
 }

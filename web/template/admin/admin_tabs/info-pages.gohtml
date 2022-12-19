@@ -1,54 +1,53 @@
 {{define "info-pages"}}
+    <h2 class="text-2xl text-1 my-auto mt-4 font-medium">Info Pages</h2>
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/[]model.Text*/ -}}
-    <div class="dark:bg-secondary bg-white p-4 shadow rounded my-6 overflow-x-auto">
-        <h2 class="text-2xl font-bold text-1 mb-3">Texts</h2>
-        <div class="grid gap-2">
-            {{range $i, $text := .}}
-                {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Text*/ -}}
-                <div x-data="{editOpen: false, oldName: '{{$text.Name}}', name:'', oldContent: `{{$text.RawContent}}`, newContent: ''}"
-                     x-init="newContent=oldContent;name=oldName"
-                     class="border dark:border-gray-800 rounded-lg h-fit"
-                     :class="editOpen && 'shadow'">
-                    <div class="flex p-3 rounded-lg" :class="editOpen && 'outline outline-2 outline-blue-500/50'">
-                        <label for="content-{{$i}}" class="hidden">{{$text.Name}}</label>
-                        <input x-model="name"
-                               class="flex border-0 text-3 text-lg my-auto p-0 w-1/2 rounded-lg disabled:bg-transparent"
-                               :disabled="!editOpen">
-                        <div class="flex my-auto ml-auto space-x-3">
-                            <div x-show="oldContent !== newContent || oldName !== name"
-                                 class="flex my-auto px-2 py-1 border border-amber-200 bg-amber-200/50 rounded">
-                                <i class="fa fa-triangle-exclamation mr-1"></i>
-                                <span class="text-xs font-light text-3">Unsaved Changes</span>
+    <div class="grid gap-2 pt-5">
+        {{range $i, $text := .}}
+            {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Text*/ -}}
+            <div x-data="{editOpen: false, oldName: '{{$text.Name}}', name:'', oldContent: `{{$text.RawContent}}`, newContent: ''}"
+                 x-init="newContent=oldContent;name=oldName">
+                <form class="form-container my-0"
+                      @submit.prevent="await admin.updateText({{$text.ID}}, name, newContent).then(() => {
+                                    oldContent = newContent;
+                                    oldName = name;
+                                })"
+                      @reset.prevent="newContent = oldContent">
+                    <div class="form-container-title">
+                        <div class="flex items-center justify-between">
+                            <label for="content-{{$i}}">{{$text.Name}}</label>
+                            <div class="flex items-center">
+                                <div x-show="oldContent !== newContent || oldName !== name"
+                                     class="flex px-2 py-1 h-fit border border-amber-200 bg-amber-200/50 rounded-full">
+                                    <i class="fa fa-triangle-exclamation mr-1"></i>
+                                    <span class="text-xs font-light text-3">Unsaved Changes</span>
+                                </div>
+                                <button type="button" class="text-4 text-lg ml-2" @click="editOpen = !editOpen">
+                                    <i class="fa" :class="editOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                </button>
                             </div>
-                            <button type="button" class="text-4 text-lg my-auto" @click="editOpen = !editOpen">
-                                <template x-if="editOpen">
-                                    <i class="fa fa-chevron-up"></i>
-                                </template>
-                                <template x-if="!editOpen">
-                                    <i class="fa fa-chevron-down"></i>
-                                </template>
-                            </button>
                         </div>
                     </div>
-                    <div x-show="editOpen" class="border-b dark:border-gray-800">
+                    <div x-cloak="" x-show="editOpen" class="form-container-body">
                         <textarea id="content-{{$i}}"
                                   x-model="newContent"
                                   rows="24"
-                                  class="border-0 px-3 py-2 resize-none font-normal">{{$text.RawContent}}</textarea>
+                                  class="p-2 resize-none font-normal outline-0 border-0 bg-transparent text-3">{{$text.RawContent}}</textarea>
                     </div>
-                    <div x-show="editOpen" class="">
+                    <div x-cloak="" x-show="editOpen" class="flex items-center justify-end form-container-footer">
                         <button id="save-{{$i}}"
-                                class="bg-gray-50 dark:bg-gray-600 rounded-b-lg text-center w-full py-2 hover:bg-transparent disabled:bg-transparent"
-                                :disabled="newContent === oldContent && name === oldName"
-                                @click="await admin.updateText({{$text.ID}}, name, newContent).then(() => {
-                                    oldContent = newContent;
-                                    oldName = name;
-                                })">
-                            <span class="font-semibold text-3 text-xs" x-text="`Save ${name}`"></span>
+                                type="reset"
+                                class="btn h-fit mr-2"
+                                :disabled="newContent === oldContent">
+                            Reset
+                        </button>
+                        <button id="save-{{$i}}"
+                                type="submit"
+                                class="btn h-fit"
+                                :disabled="newContent === oldContent">
+                            Save
                         </button>
                     </div>
-                </div>
-            {{end}}
-        </div>
-    </div>
+                </form>
+            </div>
+        {{end}}
 {{end}}

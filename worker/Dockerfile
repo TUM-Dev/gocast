@@ -13,7 +13,7 @@ RUN GO111MODULE=on go mod download && go mod verify
 ARG version=dev
 RUN GOOS=linux GOARCH=amd64 go build -a -ldflags "-w -X main.VersionTag=${version}" -o /worker cmd/worker/worker.go
 
-FROM alpine:3.16
+FROM alpine:3.17
 
 RUN apk add --no-cache \
   ffmpeg \
