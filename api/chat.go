@@ -25,14 +25,14 @@ const (
 	ChatRoomName = "chat/:streamID"
 )
 
-var allowedReactions = []string{
-	"+1",
-	"-1",
-	"smile",
-	"tada",
-	"confused",
-	"heart",
-	"eyes",
+var allowedReactions = map[string]struct{}{
+	"+1":       {},
+	"-1":       {},
+	"smile":    {},
+	"tada":     {},
+	"confused": {},
+	"heart":    {},
+	"eyes":     {},
 }
 
 var routes chatRoutes
@@ -328,15 +328,7 @@ func (r chatRoutes) handleReactTo(ctx tools.TUMLiveContext, msg []byte) {
 		return
 	}
 
-	isAllowed := false
-	for _, reaction := range allowedReactions {
-		if reaction == req.Emoji {
-			isAllowed = true
-			break
-		}
-	}
-
-	if !isAllowed {
+	if _, isAllowed := allowedReactions[req.Emoji]; !isAllowed {
 		log.Warn("user tried to add illegal reaction")
 		return
 	}
