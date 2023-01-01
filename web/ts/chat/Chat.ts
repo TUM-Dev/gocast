@@ -131,10 +131,20 @@ export class Chat {
     sortMessages() {
         this.messages.sort((m1, m2) => {
             if (this.orderByLikes) {
-                if (m1.likes === m2.likes) {
+                const m1LikeReactionGroup = m1.aggregatedReactions.find(
+                    (r) => r.emojiName === EmojiPicker.LikeEmojiName,
+                );
+                const m1Likes = m1LikeReactionGroup ? m1LikeReactionGroup.reactions.length : 0;
+
+                const m2LikeReactionGroup = m2.aggregatedReactions.find(
+                    (r) => r.emojiName === EmojiPicker.LikeEmojiName,
+                );
+                const m2Likes = m2LikeReactionGroup ? m2LikeReactionGroup.reactions.length : 0;
+
+                if (m1Likes === m2Likes) {
                     return m2.ID - m1.ID; // same amount of likes -> newer messages up
                 }
-                return m2.likes - m1.likes; // more likes -> up
+                return m2Likes - m1Likes; // more likes -> up
             } else {
                 return m1.ID < m2.ID ? -1 : 1; // newest messages last
             }

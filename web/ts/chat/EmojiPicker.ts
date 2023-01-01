@@ -4,6 +4,8 @@ export class EmojiPicker {
     id: string;
     isOpen: boolean;
 
+    static LikeEmojiName = "+1";
+
     static suggestions: Emoji[] = ["👍", "👎", "😄", "🎉", "😕", "❤️", "👀"].map((e) =>
         TopEmojis.find(({ emoji }) => emoji === e),
     );
