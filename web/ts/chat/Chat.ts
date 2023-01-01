@@ -2,8 +2,7 @@ import { NewChatMessage } from "./NewChatMessage";
 import { ChatUserList } from "./ChatUserList";
 import { EmojiList } from "./EmojiList";
 import { Poll } from "./Poll";
-import { registerTimeWatcher, deregisterTimeWatcher, getPlayer } from "../TUMLiveVjs";
-import { create } from "nouislider";
+import { deregisterTimeWatcher, getPlayer, registerTimeWatcher } from "../TUMLiveVjs";
 import { EmojiPicker } from "./EmojiPicker";
 import { TopEmojis } from "top-twitter-emojis-map";
 
@@ -129,7 +128,8 @@ export class Chat {
     }
 
     sortMessages() {
-        this.messages.sort((m1, m2) => {
+        console.log("sort :)");
+        this.messages = [...this.messages].sort((m1, m2) => {
             if (this.orderByLikes) {
                 const m1LikeReactionGroup = m1.aggregatedReactions.find(
                     (r) => r.emojiName === EmojiPicker.LikeEmojiName,
@@ -417,11 +417,10 @@ export class Chat {
                 const newRenderVersion = this.messages[i].renderVersion + 1;
                 this.messages.splice(i, 1, { ...m, renderVersion: newRenderVersion });
                 break;
-            } else if (createdAt > newMessageCreatedAt) {
-                this.messages.splice(i, 0, m);
-                break;
             }
         }
+
+        window.dispatchEvent(new CustomEvent("reorder"));
     }
 
     private addMessage(m: ChatMessage) {

@@ -57,7 +57,9 @@
             <!-- like count & open reply button -->
             <div class="flex justify-between items-center">
                 <div class="flex space-x-2 align-middle items-center">
-                    <div class="relative" @emojipickeronselect.window="e => { if (emojiPicker.eventOwner(e)) { watch.reactToMessage(m.ID, e.detail.emoji); emojiPicker.close(); } }">
+                    <div class="relative"
+                         @emojipickeronselect.window="e => { if (emojiPicker.eventOwner(e)) { watch.reactToMessage(m.ID, e.detail.emoji); emojiPicker.close(); } }"
+                    >
                         <button type="button" title="React"
                                 @click="emojiPicker.open()"
                                 class="flex px-2 h-8 rounded-full text-5 hover:bg-gray-200 dark:hover:bg-gray-600">

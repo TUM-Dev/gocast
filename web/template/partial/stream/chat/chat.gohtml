@@ -16,7 +16,6 @@
          x-init="await Promise.all([c.loadMessages(), c.poll.load()]); $nextTick(() => { watch.scrollToBottom(); window.dispatchEvent(new CustomEvent('chatinitialized')); });"
          x-on:chatmessage.window="e => c.onMessage(e);"
          x-on:chatreply.window="e => c.onReply(e);"
-         x-on:chatlike.window="e => {c.onLike(e); $dispatch('reorder')}"
          x-on:chatdelete.window="e => c.onDelete(e);"
          x-on:chatresolve.window="e => c.onResolve(e);"
          x-on:chatreactions.window="e => c.onReaction(e);"
@@ -32,7 +31,7 @@
          @chatupdatefocus.window="e => c.onFocusUpdated(e);"
          @disconnected.window="c.disconnected = true;"
          @connected.window="c.disconnected = false;"
-         @reorder="c.sortMessages()"
+         @reorder.window="c.sortMessages()"
          @keyup.escape="c.current.replyTo=0"
          id="chatWrapper"
          class="flex relative flex-col text-1 h-full">
@@ -69,7 +68,7 @@
 
                         $watch('c.orderByLikes', (value) => {
                             watch.setOrder(value);
-                            $dispatch('reorder');
+                            window.dispatchEvent(new CustomEvent('reorder'));
                             if ({{$liveNow}}) {
                                 value ? watch.scrollToTop() : watch.scrollToBottom();
                                 return;
@@ -83,7 +82,7 @@
                                 c.chatReplayActive = true;
                             }
                         });"
-                        @click="c.orderByLikes=!c.orderByLikes; watch.setOrder(c.orderByLikes);$dispatch('reorder'); c.orderByLikes? watch.scrollToTop(): watch.scrollToBottom()"
+                        @click="c.orderByLikes=!c.orderByLikes; watch.setOrder(c.orderByLikes); window.dispatchEvent(new CustomEvent('reorder'));; c.orderByLikes? watch.scrollToTop(): watch.scrollToBottom()"
                         class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 text-5 text-xs rounded font-semibold px-2 py-1 my-auto uppercase"
                         title="Change Order">
                     <span x-text="c.orderByLikes? 'Popular First': 'Live Chat'"></span>
