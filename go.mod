@@ -48,7 +48,7 @@ require (
 require (
 	github.com/TUM-Dev/CampusProxy/client v0.0.0-20220928080722-4bd1259b2d06
 	github.com/matthiasreumann/gomino v0.0.2
-	github.com/meilisearch/meilisearch-go v0.21.1
+	github.com/meilisearch/meilisearch-go v0.22.0
 	github.com/mono424/go-pts v0.0.3
 	github.com/mono424/go-pts-gorilla-connector v0.0.4
 )
