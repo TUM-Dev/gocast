@@ -9,7 +9,7 @@ require (
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/getsentry/sentry-go v0.15.0
 	github.com/gin-contrib/gzip v0.0.6
-	github.com/gin-gonic/gin v1.8.1
+	github.com/gin-gonic/gin v1.8.2
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
 	github.com/go-gormigrate/gormigrate/v2 v2.0.2
 	github.com/go-ldap/ldap/v3 v3.4.4
@@ -118,9 +118,9 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
-	golang.org/x/net v0.2.0 // indirect
-	golang.org/x/sys v0.2.0 // indirect
-	golang.org/x/text v0.4.0 // indirect
+	golang.org/x/net v0.4.0 // indirect
+	golang.org/x/sys v0.3.0 // indirect
+	golang.org/x/text v0.5.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
