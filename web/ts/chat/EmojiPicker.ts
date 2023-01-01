@@ -1,16 +1,24 @@
 import { Emoji, TopEmojis } from "top-twitter-emojis-map";
 
 export class EmojiPicker {
-    suggestions: Emoji[];
     id: string;
     isOpen: boolean;
 
+    static suggestions: Emoji[] = ["👍", "👎", "😄", "🎉", "😕", "❤️", "👀"].map((e) =>
+        TopEmojis.find(({ emoji }) => emoji === e),
+    );
+
+    static getEmojiIndex(emojiName: string): number {
+        return this.suggestions.findIndex((e) => e.short_names[0] === emojiName);
+    }
+
     constructor(id: string) {
-        this.suggestions = ["👍", "👎", "😄", "🎉", "😕", "❤️", "👀"].map((e) =>
-            TopEmojis.find(({ emoji }) => emoji === e),
-        );
         this.id = id;
         this.isOpen = false;
+    }
+
+    getSuggestions(): Emoji[] {
+        return EmojiPicker.suggestions;
     }
 
     eventOwner(e: CustomEvent): boolean {

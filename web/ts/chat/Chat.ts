@@ -65,7 +65,9 @@ export class Chat {
                 group.reactions.push(reaction);
                 return res;
             }, []);
-            m.aggregatedReactions.sort((a, b) => a.emojiName.localeCompare(b.emojiName));
+            m.aggregatedReactions.sort(
+                (a, b) => EmojiPicker.getEmojiIndex(a.emojiName) - EmojiPicker.getEmojiIndex(b.emojiName),
+            );
             return m;
         },
     ];

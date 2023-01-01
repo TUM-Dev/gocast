@@ -2,12 +2,12 @@
     <div x-data="{ open: false, id: '{{.}}', hoveredIndex: 0 }"
          @click.outside="() => emojiPicker.close()"
          :data-id="emojiPicker.id"
-         class="absolute ease-out duration-100 bg-white dark:bg-secondary border-2 border-solid border-gray-200 dark:border-black rounded left-[-50px] top-[-36px] text-left overflow-hidden whitespace-nowrap p-2 flex flex-row"
+         class="absolute ease-out duration-100 bg-white dark:bg-secondary border-2 border-solid border-gray-200 dark:border-black rounded left-[-10px] top-[-36px] text-left overflow-hidden whitespace-nowrap p-2 flex flex-row"
          :class="open ? 'scale-100 opacity-1 translate-x-0 translate-y-0' : 'scale-0 opacity-0 translate-x-[-42px] translate-y-[42px]'"
          x-on:emojipickeropen.window="(e) => emojiPicker.eventOwner(e) && (open = true)" {{/* show emoji picker */}}
          x-on:emojipickerclose.window="(e) => emojiPicker.eventOwner(e) && (open = false)" {{/* hide emoji picker */}}
     >
-        <template x-for="(emoji, i) in emojiPicker.suggestions">
+        <template x-for="(emoji, i) in emojiPicker.getSuggestions()">
             <button type="button"
                     :title="`:${emoji.short_names[0]}:`" {{/* e.g. ':eyes:' */}}
                     x-text="emoji.emoji"
