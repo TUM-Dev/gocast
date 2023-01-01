@@ -7,7 +7,7 @@ require (
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
 	github.com/antchfx/xmlquery v1.3.13
 	github.com/dgraph-io/ristretto v0.1.1
-	github.com/getsentry/sentry-go v0.15.0
+	github.com/getsentry/sentry-go v0.16.0
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
