@@ -65,8 +65,6 @@ func RegisterRealtimeChatChannel() {
 			switch req.Type {
 			case "message":
 				routes.handleMessage(tumLiveContext, psc, message.Payload)
-			case "like":
-				routes.handleLike(tumLiveContext, message.Payload)
 			case "delete":
 				routes.handleDelete(tumLiveContext, message.Payload)
 			case "start_poll":
@@ -340,7 +338,7 @@ func (r chatRoutes) handleReactTo(ctx tools.TUMLiveContext, msg []byte) {
 	}
 	reactions, err := r.ChatDao.GetReactions(req.Id)
 	if err != nil {
-		log.WithError(err).Error("error getting num of chat likes")
+		log.WithError(err).Error("error getting num of chat reactions")
 		return
 	}
 	broadcast := gin.H{
@@ -372,9 +370,9 @@ func (r chatRoutes) handleRetract(ctx tools.TUMLiveContext, msg []byte) {
 		return
 	}
 
-	err = r.ChatDao.RemoveLikes(req.Id)
+	err = r.ChatDao.RemoveReactions(req.Id)
 	if err != nil {
-		log.WithError(err).Error("could not remove likes from chat")
+		log.WithError(err).Error("could not remove reactions from chat")
 		return
 	}
 
@@ -389,36 +387,6 @@ func (r chatRoutes) handleRetract(ctx tools.TUMLiveContext, msg []byte) {
 	broadcastBytes, err := json.Marshal(broadcast)
 	if err != nil {
 		log.WithError(err).Error("could not marshal retract message")
-		return
-	}
-	broadcastStream(ctx.Stream.ID, broadcastBytes)
-}
-
-func (r chatRoutes) handleLike(ctx tools.TUMLiveContext, msg []byte) {
-	var req wsIdReq
-	err := json.Unmarshal(msg, &req)
-	if err != nil {
-		log.WithError(err).Warn("could not unmarshal like request")
-		return
-	}
-
-	err = r.ChatDao.ToggleLike(ctx.User.ID, req.Id)
-	if err != nil {
-		log.WithError(err).Error("error liking/unliking message")
-		return
-	}
-	numLikes, err := r.ChatDao.GetNumLikes(req.Id)
-	if err != nil {
-		log.WithError(err).Error("error getting num of chat likes")
-		return
-	}
-	broadcast := gin.H{
-		"likes": req.Id,
-		"num":   numLikes,
-	}
-	broadcastBytes, err := json.Marshal(broadcast)
-	if err != nil {
-		log.WithError(err).Error("Can't marshal like message")
 		return
 	}
 	broadcastStream(ctx.Stream.ID, broadcastBytes)

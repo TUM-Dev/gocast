@@ -12,7 +12,6 @@ const pageloaded = new Date();
 
 enum WSMessageType {
     Message = "message",
-    Like = "like",
     Delete = "delete",
     StartPoll = "start_poll",
     SubmitPollOptionVote = "submit_poll_option_vote",
@@ -43,8 +42,6 @@ function sendCustomMessage(id: number, type: WSMessageType, optArgs: object = {}
 }
 
 export const reactToMessage = (id: number, emoji: string) => sendCustomMessage(id, WSMessageType.ReactTo, { emoji });
-
-export const likeMessage = (id: number) => sendIDMessage(id, WSMessageType.Like);
 
 export const deleteMessage = (id: number) => sendIDMessage(id, WSMessageType.Delete);
 
@@ -116,9 +113,6 @@ export async function startWebsocket() {
             window.dispatchEvent(event);
         } else if ("pollOptionResults" in data) {
             const event = new CustomEvent("polloptionresult", { detail: data });
-            window.dispatchEvent(event);
-        } else if ("likes" in data) {
-            const event = new CustomEvent("chatlike", { detail: data });
             window.dispatchEvent(event);
         } else if ("delete" in data) {
             const event = new CustomEvent("chatdelete", { detail: data });
