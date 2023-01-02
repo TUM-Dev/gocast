@@ -7,12 +7,13 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
-	pb "github.com/joschahenningsen/TUM-Live/voice-service/pb"
+	"github.com/joschahenningsen/TUM-Live/voice-service/pb"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"net"
 	"time"
 )
@@ -22,7 +23,7 @@ type subtitleReceiverServer struct {
 	dao.DaoWrapper
 }
 
-func (s subtitleReceiverServer) Receive(_ context.Context, request *pb.ReceiveRequest) (*pb.Empty, error) {
+func (s subtitleReceiverServer) Receive(_ context.Context, request *pb.ReceiveRequest) (*emptypb.Empty, error) {
 	subtitlesEntry := model.Subtitles{
 		StreamID: uint(request.GetStreamId()),
 		Content:  request.GetSubtitles(),
@@ -32,7 +33,7 @@ func (s subtitleReceiverServer) Receive(_ context.Context, request *pb.ReceiveRe
 	if err != nil {
 		return nil, err
 	}
-	return &pb.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 func init() {

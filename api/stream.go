@@ -719,24 +719,11 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 		return
 	}
 
-	// request to voice-service for subtitles
-	client, err := GetSubtitleGeneratorClient()
-	if err != nil {
-		fmt.Println(err)
-		sentry.CaptureException(err)
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "could not connect to voice-service",
-			Err:           err,
-		})
-		return
-	}
-	defer client.CloseConn()
-
+	// find vod file
 	var sourceFile string
 	files := stream.GetVodFiles()
 	for _, file := range files {
-		if file.Type == 1 {
+		if file.Type == model.FILETYPE_VOD {
 			sourceFile = file.Path
 		}
 	}
@@ -748,6 +735,19 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 		})
 		return
 	}
+
+	// request to voice-service for subtitles
+	client, err := GetSubtitleGeneratorClient()
+	if err != nil {
+		sentry.CaptureException(err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "could not connect to voice-service",
+			Err:           err,
+		})
+		return
+	}
+	defer client.CloseConn()
 
 	_, err = client.Generate(context.Background(), &pb.GenerateRequest{
 		StreamId:   int32(stream.ID),

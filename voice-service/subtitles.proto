@@ -1,15 +1,17 @@
 syntax = "proto3";
+package live.voice.v1;
 option go_package = "voice-service/pb";
-package voice;
+
+import "google/protobuf/empty.proto";
 
 // Implemented in voice-service
 service SubtitleGenerator {
-  rpc Generate (GenerateRequest) returns (Empty) {}
+  rpc Generate (GenerateRequest) returns (google.protobuf.Empty) {}
 }
 
 // Implemented in tum-live
 service SubtitleReceiver {
-  rpc Receive (ReceiveRequest) returns (Empty) {}
+  rpc Receive (ReceiveRequest) returns (google.protobuf.Empty) {}
 }
 
 message ReceiveRequest {
@@ -24,4 +26,3 @@ message GenerateRequest {
   string language = 3;
 }
 
-message Empty {}
