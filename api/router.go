@@ -46,4 +46,7 @@ func ConfigGinRouter(router *gin.Engine) {
 	configAuditRouter(router, daoWrapper)
 	configGinBookmarksRouter(router, daoWrapper)
 	configMaintenanceRouter(router, daoWrapper)
+
+	v2 := router.Group("/v2")
+	NewCoursesV2Router(v2, daoWrapper)
 }

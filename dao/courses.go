@@ -202,7 +202,7 @@ func (d coursesDao) GetCourseById(ctx context.Context, id uint) (course model.Co
 		Preload("Streams.Files").
 		Preload("Streams", func(db *gorm.DB) *gorm.DB {
 			return db.Order("streams.start desc")
-		}).Find(&foundCourse, "id = ?", id).Error
+		}).First(&foundCourse, "id = ?", id).Error
 	return foundCourse, dbErr
 }
 

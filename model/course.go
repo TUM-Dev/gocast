@@ -28,15 +28,15 @@ type Course struct {
 	AnonymousChatEnabled    bool `gorm:"not null;default:true"`
 	ModeratedChatEnabled    bool `gorm:"not null;default:false"`
 	VodChatEnabled          bool
-	Visibility              string `gorm:"default:loggedin"` // public, loggedin or enrolled
-	Streams                 []Stream
-	Users                   []User `gorm:"many2many:course_users;"`
-	Admins                  []User `gorm:"many2many:course_admins;"`
-	Token                   string
-	UserCreatedByToken      bool   `gorm:"default:false"`
-	CameraPresetPreferences string // json encoded. e.g. [{lectureHallID:1, presetID:4}, ...]
-	SourcePreferences       string // json encoded. e.g. [{lectureHallID:1, sourceMode:0}, ...]
-	Pinned                  bool   `gorm:"-"` // Used to determine if the course is pinned when loaded for a specific user.
+	Visibility              string   `gorm:"default:loggedin"` // public, loggedin or enrolled
+	Streams                 []Stream `json:",omitempty"`
+	Users                   []User   `gorm:"many2many:course_users;" json:",omitempty"`
+	Admins                  []User   `gorm:"many2many:course_admins;" json:",omitempty"`
+	Token                   string   `json:",omitempty"`
+	UserCreatedByToken      bool     `gorm:"default:false" json:"-"`
+	CameraPresetPreferences string   // json encoded. e.g. [{lectureHallID:1, presetID:4}, ...]
+	SourcePreferences       string   // json encoded. e.g. [{lectureHallID:1, sourceMode:0}, ...]
+	Pinned                  bool     `gorm:"-"` // Used to determine if the course is pinned when loaded for a specific user.
 }
 
 // GetUrl returns the URL of the course, e.g. /course/2022/S/MyCourse
