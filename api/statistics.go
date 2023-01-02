@@ -20,7 +20,7 @@ type statExportReq struct {
 	Interval []string `form:"interval[]"  binding:"required"`
 }
 
-func (r coursesRoutes) getStats(c *gin.Context) {
+func (r coursesAdminRoutes) getStats(c *gin.Context) {
 	ctx, _ := c.Get("TUMLiveContext")
 	var req statReq
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -201,7 +201,7 @@ func (r coursesRoutes) getStats(c *gin.Context) {
 	}
 }
 
-func (r coursesRoutes) exportStats(c *gin.Context) {
+func (r coursesAdminRoutes) exportStats(c *gin.Context) {
 	ctx, _ := c.Get("TUMLiveContext")
 
 	var req statExportReq
