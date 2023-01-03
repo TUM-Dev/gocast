@@ -186,40 +186,6 @@ func TestCoursesCRUD(t *testing.T) {
 				Body:         request,
 				ExpectedCode: http.StatusInternalServerError,
 			},
-			/*
-				TODO: Mock tum package functions
-				"success S": {
-					Method:         http.MethodPost,
-					Url:            url,
-					TumLiveContext: &testutils.TUMLiveContextLecturer,
-					DaoWrapper: dao.DaoWrapper{
-						AuditDao: testutils.GetAuditMock(t),
-						CoursesDao: func() dao.CoursesDao {
-							coursesMock := mock_dao.NewMockCoursesDao(ctrl)
-							first := coursesMock.
-								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), request.Slug, "S", 2020).
-								Return(model.Course{}, errors.New("")).Times(1)
-							second := coursesMock.
-								EXPECT().
-								GetCourseBySlugYearAndTerm(gomock.Any(), request.Slug, "S", 2020).
-								Return(newCourse, nil).Times(1)
-
-							gomock.InOrder(first, second)
-
-							coursesMock.
-								EXPECT().
-								CreateCourse(gomock.Any(), &newCourse, true).
-								Return(nil).
-								AnyTimes()
-							return coursesMock
-						}(),
-					},
-					Body: bytes.NewBuffer(
-						testutils.First(json.Marshal(request)).([]byte)),
-					ExpectedCode: http.StatusOK,
-				},
-			*/
 		}.Method(http.MethodPost).Url(url).Run(t, testutils.Equal)
 	})
 }

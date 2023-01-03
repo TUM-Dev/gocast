@@ -44,7 +44,7 @@ func TestStatistics(t *testing.T) {
 					wrapper := dao.DaoWrapper{
 						CoursesDao: testutils.GetCoursesMock(t),
 					}
-					configGinCourseRouter(r, wrapper)
+					configGinCourseAdminRouter(r, wrapper)
 				},
 				Url:          baseUrl,
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -63,7 +63,7 @@ func TestStatistics(t *testing.T) {
 							return coursesMock
 						}(),
 					}
-					configGinCourseRouter(r, wrapper)
+					configGinCourseAdminRouter(r, wrapper)
 				},
 				Url:          fmt.Sprintf("/api/course/%d/stats%s", 0, "?interval=week"),
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
@@ -74,7 +74,7 @@ func TestStatistics(t *testing.T) {
 					wrapper := dao.DaoWrapper{
 						CoursesDao: testutils.GetCoursesMock(t),
 					}
-					configGinCourseRouter(r, wrapper)
+					configGinCourseAdminRouter(r, wrapper)
 				},
 				Url:          fmt.Sprintf("%s?interval=%s", baseUrl, "century"),
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -94,7 +94,7 @@ func TestStatistics(t *testing.T) {
 							return statisticsMock
 						}(),
 					}
-					configGinCourseRouter(r, wrapper)
+					configGinCourseAdminRouter(r, wrapper)
 				},
 				Url:         fmt.Sprintf("%s?interval=week", baseUrl),
 				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -129,7 +129,7 @@ func TestStatistics(t *testing.T) {
 							return statisticsMock
 						}(),
 					}
-					configGinCourseRouter(r, wrapper)
+					configGinCourseAdminRouter(r, wrapper)
 				},
 				Url:         fmt.Sprintf("/api/course/%d/stats%s", 0, "?interval=week"),
 				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -156,7 +156,7 @@ func TestStatistics(t *testing.T) {
 							return statisticsMock
 						}(),
 					}
-					configGinCourseRouter(r, wrapper)
+					configGinCourseAdminRouter(r, wrapper)
 				},
 				Url:         fmt.Sprintf("%s?interval=hour", baseUrl),
 				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -183,7 +183,7 @@ func TestStatistics(t *testing.T) {
 							return statisticsMock
 						}(),
 					}
-					configGinCourseRouter(r, wrapper)
+					configGinCourseAdminRouter(r, wrapper)
 				},
 				Url:         fmt.Sprintf("%s?interval=activity-live", baseUrl),
 				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -212,7 +212,7 @@ func TestStatistics(t *testing.T) {
 							return statisticsMock
 						}(),
 					}
-					configGinCourseRouter(r, wrapper)
+					configGinCourseAdminRouter(r, wrapper)
 				},
 				Url:         fmt.Sprintf("%s?interval=activity-vod", baseUrl),
 				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -241,7 +241,7 @@ func TestStatistics(t *testing.T) {
 							return statisticsMock
 						}(),
 					}
-					configGinCourseRouter(r, wrapper)
+					configGinCourseAdminRouter(r, wrapper)
 				},
 				Url:              fmt.Sprintf("%s?interval=numStudents", baseUrl),
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -262,7 +262,7 @@ func TestStatistics(t *testing.T) {
 							return statisticsMock
 						}(),
 					}
-					configGinCourseRouter(r, wrapper)
+					configGinCourseAdminRouter(r, wrapper)
 				},
 				Url:              fmt.Sprintf("%s?interval=vodViews", baseUrl),
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -283,7 +283,7 @@ func TestStatistics(t *testing.T) {
 							return statisticsMock
 						}(),
 					}
-					configGinCourseRouter(r, wrapper)
+					configGinCourseAdminRouter(r, wrapper)
 				},
 				Url:              fmt.Sprintf("%s?interval=liveViews", baseUrl),
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -304,7 +304,7 @@ func TestStatistics(t *testing.T) {
 							return statisticsMock
 						}(),
 					}
-					configGinCourseRouter(r, wrapper)
+					configGinCourseAdminRouter(r, wrapper)
 				},
 				Url:         fmt.Sprintf("%s?interval=allDays", baseUrl),
 				Middlewares: testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
@@ -378,7 +378,7 @@ func TestStatistics(t *testing.T) {
 							return statisticsMock
 						}(),
 					}
-					configGinCourseRouter(r, wrapper)
+					configGinCourseAdminRouter(r, wrapper)
 				},
 				Url:          fmt.Sprintf("%s?interval=%s", baseUrl, interval),
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
