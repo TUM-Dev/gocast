@@ -285,6 +285,7 @@ export class ShareURL {
     url: string;
     includeTimestamp: boolean;
     timestamp: string;
+    encodedTimestamp: string;
     openTime: number;
 
     copied: boolean; // success indicator
@@ -302,22 +303,23 @@ export class ShareURL {
         });
     }
 
-    copyURL() {
-        copyToClipboard(this.url);
-        this.copied = true;
-        setTimeout(() => (this.copied = false), 3000);
-    }
-
-    setURL() {
+    async setURL() {
         if (this.includeTimestamp) {
-            this.appendTimestampToUrl();
+            await this.setURLs();
+            this.url = this.baseUrl + this.encodedTimestamp;
         } else {
-            this.url = this.baseUrl;
+            this.baseUrl;
         }
     }
 
-    appendTimestampToUrl() {
-        this.setTimestamp();
+    copyURL() {
+        copyToClipboard(this.url);
+        this.copied = true;
+        setTimeout(() => (this.copied = false), 1000);
+    }
+
+    async setURLs() {
+        await this.setTimestamp();
         const trim = this.timestamp.substring(0, 9);
         const split = trim.split(":");
         if (split.length != 3) {
@@ -330,23 +332,20 @@ export class ShareURL {
                 this.url = this.baseUrl;
             } else {
                 const inSeconds = s + 60 * m + 60 * 60 * h;
-                this.url = `${this.baseUrl}?t=${inSeconds}`;
+                this.encodedTimestamp = `?t=${inSeconds}`;
             }
         }
     }
 
-    setTimestamp() {
-        this.loadPlayerTime();
-        const d = new Date(this.openTime * 1000);
+    async setTimestamp() {
+        const player = getPlayer();
+        await this.playerHasTime;
+
+        const d = new Date(player.currentTime() * 1000);
         const h = ShareURL.padZero(d.getUTCHours());
         const m = ShareURL.padZero(d.getUTCMinutes());
         const s = ShareURL.padZero(d.getSeconds());
         this.timestamp = `${h}:${m}:${s}`;
-    }
-
-    private loadPlayerTime() {
-        const player = getPlayer();
-        this.playerHasTime.then((this.openTime = player.currentTime()));
     }
 
     private static padZero(i: string | number) {
