@@ -1,6 +1,6 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
-import { getPlayer } from "./TUMLiveVjs";
+import { getPlayers } from "./TUMLiveVjs";
 import { Realtime } from "./socket";
 import { copyToClipboard } from "./global";
 
@@ -213,10 +213,9 @@ export function getPollOptionWidth(pollOptions, pollOption) {
     return `${Math.ceil(fractionWidth).toString()}%`;
 }
 
-export function contextMenuHandler(e, contextMenu) {
+export function contextMenuHandler(e, contextMenu, videoElem) {
     if (contextMenu.shown) return contextMenu;
     e.preventDefault();
-    const videoElem = document.querySelector("#my-video");
     return {
         shown: true,
         locX: e.clientX - videoElem.getBoundingClientRect().left,
@@ -234,7 +233,7 @@ export const videoStatListener = {
         this.update();
     },
     update() {
-        const player = getPlayer();
+        const player = getPlayers()[0];
         const vhs = player.tech({ IWillNotUseThisInPlugins: true }).vhs;
         const notAvailable = vhs == null;
 
@@ -242,7 +241,7 @@ export const videoStatListener = {
             bufferSeconds: notAvailable ? 0 : player.bufferedEnd() - player.currentTime(),
             videoHeight: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.height,
             videoWidth: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.width,
-            bandwidth: notAvailable ? 0 : vhs.bandwidth, //player.tech().vhs.bandwidth(),
+            bandwidth: notAvailable ? 0 : vhs.bandwidth,
             mediaRequests: notAvailable ? 0 : vhs.stats.mediaRequests,
             mediaRequestsFailed: notAvailable ? 0 : vhs.stats.mediaRequestsErrored,
         };
@@ -294,7 +293,7 @@ export class ShareURL {
         this.includeTimestamp = false;
         this.copied = false;
 
-        const player = getPlayer();
+        const player = getPlayers()[0];
         player.ready(() => {
             player.on("loadedmetadata", () => {
                 this.openTime = player.currentTime();

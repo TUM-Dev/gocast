@@ -147,7 +147,7 @@
 }
 
 .container {
-   @apply mt-4;
+    @apply mt-4;
 }
 
 @import "tailwindcss/components";
@@ -165,10 +165,27 @@
     background-color: #3070b3 !important;
 }
 
+.video-js .vjs-big-play-button {
+    @apply absolute top-0 left-0 bottom-0 right-0 m-auto;
+}
+
 .video-js .vjs-time-tooltip {
     border-radius: 2px !important;
     border-width: 2px !important;
     border-color: white !important;
+}
+
+/* split.js styling */
+.gutter {
+    @apply bg-gray-200 dark:bg-gray-600;
+
+    background-repeat: no-repeat;
+    background-position: 50%;
+    width: 2px!important;
+}
+
+.gutter.gutter-horizontal {
+    cursor: col-resize;
 }
 
 /* slider for cutting videos: */
@@ -411,26 +428,26 @@ a.fc-event, a.fc-event:hover {
 
 /* TUMLive-Markdown */
 
-.tum-live-markdown h1, .tum-live-markdown h2, .tum-live-markdown h3, .tum-live-markdown h4, .tum-live-markdown h5, .tum-live-markdown h6{
+.tum-live-markdown h1, .tum-live-markdown h2, .tum-live-markdown h3, .tum-live-markdown h4, .tum-live-markdown h5, .tum-live-markdown h6 {
     font-weight: bold;
 }
 
-.tum-live-markdown h1{
+.tum-live-markdown h1 {
     margin-bottom: 16px;
 }
 
-.tum-live-markdown h2, .tum-live-markdown h3, .tum-live-markdown h4, .tum-live-markdown h5, .tum-live-markdown h6{
+.tum-live-markdown h2, .tum-live-markdown h3, .tum-live-markdown h4, .tum-live-markdown h5, .tum-live-markdown h6 {
     margin-top: 16px;
 }
 
-.tum-live-markdown ul{
+.tum-live-markdown ul {
     list-style-type: disc;
     padding-left: 16px;
     padding-bottom: 8px;
     padding-top: 8px;
 }
 
-.tum-live-markdown a{
+.tum-live-markdown a {
     border-bottom: 1px solid black;
 }
 
@@ -441,4 +458,9 @@ a.fc-event, a.fc-event:hover {
 .video-description ul {
     list-style-type: disc;
     margin-left: 16px;
+}
+
+.text-tiny {
+    font-size: 0.5rem;
+    line-height: 0.7rem;
 }

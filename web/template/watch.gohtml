@@ -92,34 +92,130 @@
                      x-show="showliveended" @streamended.window="showliveended=true" x-cloak>
                     <i class="fas fa-info-circle"></i> This livestream has ended.
                 </div>
+                {{if (eq .Version "SPLIT")}}
+                    <div x-data="{splitView: new watch.SplitView()}" @mouseleave="splitView.hideMenu()" class="group relative flex w-full h-full">
+                        <div class="hidden group-hover:flex absolute left-1 top-1 z-40">
+                            <button x-cloak x-show="!splitView.showSplitMenu" @click="splitView.toggleMenu()"
+                                    class="flex items-center justify-center w-8 h-8 rounded-full"
+                                    title="Adjust split ratio">
+                                <i class="text-lg text-white fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            <div x-cloak x-show="splitView.showSplitMenu" @click.outside="splitView.toggleMenu()"
+                                 class="bg-white border rounded-lg shadow h-fit dark:bg-secondary-light dark:border-gray-600">
+                                <div class="py-2">
+                                    <button @click="splitView.update(watch.SplitView.Options.FullPresentation)"
+                                            class="text-left flex justify-start items-center w-full text-3 px-4 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        <i class="fa-solid fa-person-chalkboard w-16"></i>
+                                        <span class="font-light text-sm">Full presentation</span>
+                                    </button>
+                                    <button @click="splitView.update(watch.SplitView.Options.FocusPresentation)"
+                                            class="text-left flex justify-start items-center w-full text-3 px-4 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                            <span class="flex items-center align-middle w-16">
+                                                <i class="fa-solid fa-person-chalkboard"></i>
+                                                <span class="px-1 text-5">/</span>
+                                                <i class="fa-solid fa-camera text-tiny"></i>
+                                            </span>
+                                        <span class="font-light text-sm">Focus presentation</span>
+                                    </button>
+                                    <button @click="splitView.update(watch.SplitView.Options.SplitEvenly)"
+                                            class="text-left flex justify-start items-center w-full text-3 px-4 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        <i class="fa-solid fa-table-columns w-16"></i>
+                                        <span class="font-light text-sm">Split evenly</span>
+                                    </button>
+                                    <button @click="splitView.update(watch.SplitView.Options.FocusCamera)"
+                                            class="text-left flex justify-start items-center w-full text-3 px-4 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                            <span class="flex items-center align-middle w-16">
+                                                <i class="fa-solid fa-person-chalkboard text-tiny"></i>
+                                                 <span class="px-1 text-5">/</span>
+                                                <i class="fa-solid fa-camera"></i>
+                                            </span>
+                                        <span class="font-light text-sm">Focus camera</span>
+                                    </button>
+                                    <button @click="splitView.update(watch.SplitView.Options.FullCamera)"
+                                            class="text-left flex justify-start items-center w-full text-3 px-4 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        <i class="fa-solid fa-camera w-16"></i>
+                                        <span class="font-light text-sm">Full camera</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {{/* presentation player */}}
+                        <div id="video-pres-wrapper">
+                            <video-js
+                                    id="video-pres"
+                                    class="video-js h-full w-full"
+                                    controls
+                                    preload="auto"
+                                    x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu, $el);"
+                                    {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
+                                {{else}}poster="/public/no_active_stream.jpg">{{end}}
+                                {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
+                                    {{if not $stream.LiveNow}}
+                                        <source src="{{$stream.PlaylistUrlPRES}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
+                                                type="application/x-mpegURL"/>
+                                    {{else}}
+                                        <source src="{{$stream.PlaylistUrlPRES}}{{.DVR}}" type="application/x-mpegURL"/>
+                                    {{end}}
+                                {{end}}
+                                <p class="vjs-no-js">
+                                    To view this video please enable JavaScript.
+                                </p>
+                            </video-js>
+                        </div>
 
-                <!-- player -->
-                <video-js
-                        id="my-video"
-                        class="video-js w-full h-full"
-                        controls
-                        preload="auto"
-                        x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu)"
-                        {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
-                    {{else}}poster="/public/no_active_stream.jpg">{{end}}
-                    {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
-                        {{if not $stream.LiveNow}}
-                            <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
-                                    type="application/x-mpegURL"/>
-                        {{else}}
-                            {{if eq .Version "CAM"}}
-                                <source src="{{$stream.PlaylistUrlCAM}}{{.DVR}}" type="application/x-mpegURL"/>
-                            {{else if eq .Version "PRES"}}
-                                <source src="{{$stream.PlaylistUrlPRES}}{{.DVR}}" type="application/x-mpegURL"/>
+                        {{/* camera player */}}
+                        <div id="video-cam-wrapper">
+                            <video-js
+                                    id="video-cam"
+                                    class="video-js h-full w-full"
+                                    controls
+                                    preload="auto"
+                                    x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu, $el);"
+                                    {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
+                                {{else}}poster="/public/no_active_stream.jpg">{{end}}
+                                {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
+                                    {{if not $stream.LiveNow}}
+                                        <source src="{{$stream.PlaylistUrlCAM}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
+                                                type="application/x-mpegURL"/>
+                                    {{else}}
+                                        <source src="{{$stream.PlaylistUrlCAM}}{{.DVR}}" type="application/x-mpegURL"/>
+                                    {{end}}
+                                {{end}}
+                                <p class="vjs-no-js">
+                                    To view this video please enable JavaScript.
+                                </p>
+                            </video-js>
+                        </div>
+                    </div>
+                {{else}}
+                    {{/*combined player*/}}
+                    <video-js
+                            id="video-comb"
+                            class="video-js w-full h-full"
+                            controls
+                            preload="auto"
+                            x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu, $el);"
+                            {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
+                        {{else}}poster="/public/no_active_stream.jpg">{{end}}
+                        {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
+                            {{if not $stream.LiveNow}}
+                                <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
+                                        type="application/x-mpegURL"/>
                             {{else}}
-                                <source src="{{$stream.PlaylistUrl}}{{.DVR}}" type="application/x-mpegURL"/>
+                                {{if eq .Version "CAM"}}
+                                    <source src="{{$stream.PlaylistUrlCAM}}{{.DVR}}" type="application/x-mpegURL"/>
+                                {{else if eq .Version "PRES"}}
+                                    <source src="{{$stream.PlaylistUrlPRES}}{{.DVR}}" type="application/x-mpegURL"/>
+                                {{else}}
+                                    <source src="{{$stream.PlaylistUrl}}{{.DVR}}" type="application/x-mpegURL"/>
+                                {{end}}
                             {{end}}
                         {{end}}
-                    {{end}}
-                    <p class="vjs-no-js">
-                        To view this video please enable JavaScript.
-                    </p>
-                </video-js>
+                        <p class="vjs-no-js">
+                            To view this video please enable JavaScript.
+                        </p>
+                    </video-js>
+                {{end}}
 
                 <div
                         x-cloak
@@ -334,7 +430,7 @@
                 </div>
             </div>
             {{if and .Presets $stream.LiveNow}}
-                <div class="w-full px-5 order-5">
+                <div class="w-full px-5 order-3">
                     <h3 class="text-4 font-semibold border-b dark:border-gray-800 mb-3">Presets</h3>
                     <div class="w-full overflow-x-scroll scrollbarThin">
                         <div class="flex flex-row gap-x-2 pb-4 pl-2">
@@ -440,14 +536,30 @@
     </div>
 </div>
 <script>
+    {{if (eq .Version "SPLIT")}}
+
     {{if $stream.Recording}}
-    watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
     {{else}}
-    watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
+    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
+    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
     {{end}}
-    {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
-    watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
+
+    watch.syncPlayers();
+
+    {{else}}
+
+    {{if $stream.Recording}}
+    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
+    {{else}}
+    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
     {{end}}
+
+    {{end}}
+
     {{if $stream.Silences}}
     watch.skipSilence({{$stream.GetSilencesJson}});
     {{end}}
