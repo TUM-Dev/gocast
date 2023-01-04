@@ -235,7 +235,7 @@
                         Copy URL
                     </button>
                     {{if not $stream.LiveNow}}
-                        <button @click="contextMenu = {...contextMenu, shown: false};share.includeTimestamp=true;await share.setURL();share.copyURL()"
+                        <button @click="contextMenu = {...contextMenu, shown: false};share.includeTimestamp=true;await share.setURL(true);share.copyURL()"
                                 class="tl-context-entry">
                             Copy URL at current time
                         </button>
