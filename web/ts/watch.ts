@@ -305,12 +305,12 @@ export class ShareURL {
 
     async setURL(shouldFetchPlayerTime?: boolean) {
         if (this.includeTimestamp) {
-            if (shouldFetchPlayerTime) {
-                await this.updateURLStateFromTimestamp();
-            } else {
+            if (shouldFetchPlayerTime || !this.timestamp) {
                 const player = getPlayer();
                 await this.playerHasTime;
                 await this.setTimestamp(player.currentTime());
+                await this.updateURLStateFromTimestamp();
+            } else {
                 await this.updateURLStateFromTimestamp();
             }
             this.url = this.baseUrl + this.timestampArgument;
