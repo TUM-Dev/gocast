@@ -295,7 +295,6 @@ export class ShareURL {
         this.copied = false;
 
         const player = getPlayers()[0];
-        
         player.ready(() => {
             player.on("loadedmetadata", () => {
                 this.playerHasTime = Promise.resolve(true);
@@ -306,7 +305,7 @@ export class ShareURL {
     async setURL(shouldFetchPlayerTime?: boolean) {
         if (this.includeTimestamp) {
             if (shouldFetchPlayerTime || !this.timestamp) {
-                const player = getPlayer();
+                const player = getPlayers()[0];
                 await this.playerHasTime;
                 await this.setTimestamp(player.currentTime());
                 await this.updateURLStateFromTimestamp();
