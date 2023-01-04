@@ -53,12 +53,13 @@
                 </div>
                 {{if not $stream.LiveNow}}
                         <!-- $nextTick does not work in watch. Therefore, @change.once has to be used. -->
-                        <div x-init="$watch('showShare', async value => { if (value) { await share.setURL(); }});" class="flex justify-start items-center pt-2">
+                        <div x-init="$watch('showShare', async value => { if (value) { await share.setURL(); }});"
+                             class="flex justify-start items-center pt-2">
                         <input id="include-timestamp" type="checkbox" class="h-8 hover:cursor-pointer"
-                                x-model="share.includeTimestamp" @change.once="await share.setURL()">
+                               x-model="share.includeTimestamp" @change.once="share.setURL()">
                         <label for="include-timestamp" class="font-light text-4 text-xs ml-2">Include Timestamp</label>
                         <input x-cloak x-show="share.includeTimestamp" class="tl-input h-8 w-20 text-xs ml-2"
-                               type="text" x-model="share.timestamp">
+                               type="text" x-model="share.timestamp" @input="share.setURL(true);">
                     </div>
                 {{end}}
             </div>

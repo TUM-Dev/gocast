@@ -279,16 +279,15 @@ export function toggleShortcutsModal() {
 }
 
 export class ShareURL {
-    private baseUrl: string;
-    private playerHasTime: Promise<boolean>;
-
     url: string;
     includeTimestamp: boolean;
     timestamp: string;
-    encodedTimestamp: string;
-    openTime: number;
 
     copied: boolean; // success indicator
+
+    private baseUrl: string;
+    private playerHasTime: Promise<boolean>;
+    private timestampArgument: string;
 
     constructor() {
         this.baseUrl = [location.protocol, "//", location.host, location.pathname].join(""); // get rid of query
@@ -303,12 +302,19 @@ export class ShareURL {
         });
     }
 
-    async setURL() {
+    async setURL(shouldFetchPlayerTime?: boolean) {
         if (this.includeTimestamp) {
-            await this.setURLs();
-            this.url = this.baseUrl + this.encodedTimestamp;
+            if (shouldFetchPlayerTime) {
+                await this.updateURLStateFromTimestamp();
+            } else {
+                const player = getPlayer();
+                await this.playerHasTime;
+                await this.setTimestamp(player.currentTime());
+                await this.updateURLStateFromTimestamp();
+            }
+            this.url = this.baseUrl + this.timestampArgument;
         } else {
-            this.baseUrl;
+            this.url = this.baseUrl;
         }
     }
 
@@ -318,8 +324,7 @@ export class ShareURL {
         setTimeout(() => (this.copied = false), 1000);
     }
 
-    async setURLs() {
-        await this.setTimestamp();
+    private async updateURLStateFromTimestamp() {
         const trim = this.timestamp.substring(0, 9);
         const split = trim.split(":");
         if (split.length != 3) {
@@ -332,16 +337,13 @@ export class ShareURL {
                 this.url = this.baseUrl;
             } else {
                 const inSeconds = s + 60 * m + 60 * 60 * h;
-                this.encodedTimestamp = `?t=${inSeconds}`;
+                this.timestampArgument = `?t=${inSeconds}`;
             }
         }
     }
 
-    async setTimestamp() {
-        const player = getPlayer();
-        await this.playerHasTime;
-
-        const d = new Date(player.currentTime() * 1000);
+    private async setTimestamp(time: number) {
+        const d = new Date(time * 1000);
         const h = ShareURL.padZero(d.getUTCHours());
         const m = ShareURL.padZero(d.getUTCMinutes());
         const s = ShareURL.padZero(d.getSeconds());
