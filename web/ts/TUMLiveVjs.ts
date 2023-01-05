@@ -6,6 +6,7 @@ import airplay from "@silvermine/videojs-airplay";
 
 import { handleHotkeys } from "./hotkeys";
 import dom = videojs.dom;
+import { loadAndSetSubtitles } from "./subtitles";
 
 require("videojs-sprite-thumbnails");
 require("videojs-seek-buttons");
@@ -55,10 +56,6 @@ export const initPlayer = function (
             hotkeys: handleHotkeys(),
         },
         autoplay: autoplay,
-        /*tracks: [
-            { src: `/api/stream/${streamID}/subtitles/en`, kind: "captions", label: "English" },
-            { src: `/api/stream/${streamID}/subtitles/de`, kind: "captions", label: "Deutsch" },
-        ],*/
     }) as any;
     const isMobile = window.matchMedia && window.matchMedia("only screen and (max-width: 480px)").matches;
     if (spriteID && !isMobile) {
@@ -86,8 +83,7 @@ export const initPlayer = function (
     });
 
     player.ready(function () {
-        loadAndSetSubtitles(streamID, "en");
-        loadAndSetSubtitles(streamID, "de");
+        loadAndSetSubtitles(player, streamID);
         player.airPlay({
             addButtonToControlBar: true,
             buttonPositionIndex: -2,
@@ -629,31 +625,6 @@ function debounce(func, timeout) {
         clearTimeout(timer);
         timer = setTimeout(() => func.apply(this, args), timeout);
     };
-}
-
-async function loadAndSetSubtitles(streamID: number, language: string) {
-    await fetch(`/api/stream/${streamID}/subtitles/${language}`, {
-        method: "GET",
-    }).then((res) => {
-        if (res.ok) {
-            let label = "";
-            switch (language) {
-                case "de":
-                    label = "Deutsch";
-                    break;
-                case "en":
-                    label = "English";
-            }
-            player.addRemoteTextTrack(
-                {
-                    src: `/api/stream/${streamID}/subtitles/${language}`, // should be in cache by now.
-                    kind: "captions",
-                    label: label,
-                },
-                false,
-            );
-        }
-    });
 }
 
 // Register the plugin with video.js.
