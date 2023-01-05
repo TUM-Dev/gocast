@@ -6,7 +6,7 @@ import airplay from "@silvermine/videojs-airplay";
 
 import { handleHotkeys } from "./hotkeys";
 import dom = videojs.dom;
-import { loadAndSetSubtitles } from "./subtitles";
+import { loadAndSetTrackbars } from "./track-bars";
 
 require("videojs-sprite-thumbnails");
 require("videojs-seek-buttons");
@@ -83,7 +83,7 @@ export const initPlayer = function (
     });
 
     player.ready(function () {
-        loadAndSetSubtitles(player, streamID);
+        loadAndSetTrackbars(player, streamID);
         player.airPlay({
             addButtonToControlBar: true,
             buttonPositionIndex: -2,
