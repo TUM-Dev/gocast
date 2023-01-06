@@ -13,7 +13,7 @@ if its codec or format is infeasible for browsers, so will the HLS stream be.
 docker build -t vod-service .
 docker run -p 8089:8089 -v /path/to/vod/packages:/out -e OUTPUT_DIR=/out vod-service
 
-curl -F 'file=@/path/to/Exiting_video.mp4' http://localhost:8089
+curl -F 'filename=@/path/to/Exiting_video.mp4' http://localhost:8089
 
 ls -lah /path/to/vod/packages/Exiting_video.mp4/
 > -r--r-- 1 root   root   3.9K Jan  6 19:11 playlist.m3u8
