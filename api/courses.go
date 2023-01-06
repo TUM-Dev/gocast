@@ -871,7 +871,7 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 			})
 			return
 		}
-		playlist = fmt.Sprintf("https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s/playlist.m3u8", strings.ReplaceAll(premiereFileName, "-", "_"))
+		playlist = fmt.Sprintf(tools.Cfg.VodURLTemplate, strings.ReplaceAll(premiereFileName, "-", "_"))
 	}
 
 	// Add start date as first event
