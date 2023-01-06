@@ -36,6 +36,8 @@ var VersionTag = "dev"
 
 const CertDirEnv = "CERT_DIR"
 
+var vodPath = "/vod"
+
 func main() {
 	log.Println("Starting edge tumlive version " + VersionTag)
 	port := os.Getenv("PORT")
@@ -53,6 +55,10 @@ func main() {
 	if originProtoEnv != "" {
 		originProto = originProtoEnv
 	}
+	vodPathEnv := os.Getenv("VOD_DIR")
+	if vodPathEnv != "" {
+		vodPath = vodPathEnv
+	}
 	ServeEdge(port)
 }
 
@@ -66,6 +72,8 @@ func ServeEdge(port string) {
 	}()
 
 	mux := http.NewServeMux()
+	fileServer := http.FileServer(http.Dir(vodPath))
+	mux.Handle("/vod/", http.StripPrefix("/vod", fileServer))
 	mux.HandleFunc("/", edgeHandler)
 
 	go func() {
