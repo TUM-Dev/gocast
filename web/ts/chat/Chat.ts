@@ -14,7 +14,7 @@ export class Chat {
     readonly admin: boolean;
     readonly streamId: number;
 
-    popUpWindow: Window;å
+    popUpWindow: Window;
     chatReplayActive: boolean;
     orderByLikes: boolean;
     disconnected: boolean;
