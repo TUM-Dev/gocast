@@ -192,8 +192,8 @@ func getDefaultStaticBrandingFiles() []staticFile {
 		{Name: "logo.svg", Path: "assets/img/logo.svg"},
 		{Name: "manifest.json", Path: "assets/manifest.json"},
 		{Name: "favicon.ico", Path: "assets/favicon.ico"},
-		/*{Name: "icons-512.png", Path: "assets/img/icons-192.png"},
-		{Name: "icons-512.png", Path: "assets/img/icons-512.png"},*/
+		{Name: "icons-512.png", Path: "assets/img/icons-192.png"},
+		{Name: "icons-512.png", Path: "assets/img/icons-512.png"},
 	}
 }
 
