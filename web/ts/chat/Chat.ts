@@ -6,6 +6,8 @@ import { deregisterTimeWatcher, getPlayer, registerTimeWatcher } from "../TUMLiv
 import { EmojiPicker } from "./EmojiPicker";
 import { TopEmojis } from "top-twitter-emojis-map";
 
+const MAX_NAMES_IN_REACTION_TITLE = 2;
+
 export class Chat {
     readonly userId: number;
     readonly userName: string;
@@ -45,25 +47,52 @@ export class Chat {
             return { ...m, renderVersion: 0 };
         },
         (m: ChatMessage) => {
-            m.aggregatedReactions = (m.reactions || []).reduce((res: ChatReactionGroup[], reaction: ChatReaction) => {
-                let group: ChatReactionGroup = res.find((r) => r.emojiName === reaction.emoji);
-                if (group === undefined) {
-                    group = {
-                        emoji: TopEmojis.find((e) => e.short_names.includes(reaction.emoji)).emoji,
-                        emojiName: reaction.emoji,
-                        reactions: [],
-                        names: [],
-                        hasReacted: reaction.userID === this.userId,
-                    };
-                    res.push(group);
-                } else if (reaction.userID == this.userId) {
-                    group.hasReacted = true;
-                }
+            m.aggregatedReactions = (m.reactions || [])
+                .reduce((res: ChatReactionGroup[], reaction: ChatReaction) => {
+                    let group: ChatReactionGroup = res.find((r) => r.emojiName === reaction.emoji);
+                    if (group === undefined) {
+                        group = {
+                            emoji: TopEmojis.find((e) => e.short_names.includes(reaction.emoji)).emoji,
+                            emojiName: reaction.emoji,
+                            reactions: [],
+                            names: [],
+                            namesPretty: "",
+                            hasReacted: reaction.userID === this.userId,
+                        };
+                        res.push(group);
+                    } else if (reaction.userID == this.userId) {
+                        group.hasReacted = true;
+                    }
 
-                group.names.push(reaction.username);
-                group.reactions.push(reaction);
-                return res;
-            }, []);
+                    group.names.push(reaction.username);
+                    group.reactions.push(reaction);
+                    return res;
+                }, [])
+                .map((group) => {
+                    if (group.names.length === 0) {
+                        // Nobody
+                        group.namesPretty = `Nobody reacted with ${group.emojiName}`;
+                    } else if (group.names.length == 1) {
+                        // One Person
+                        group.namesPretty = `${group.names[0]} reacted with ${group.emojiName}`;
+                    } else if (group.names.length == MAX_NAMES_IN_REACTION_TITLE + 1) {
+                        // 1 person more than max allowed
+                        group.namesPretty = `${group.names
+                            .slice(0, MAX_NAMES_IN_REACTION_TITLE)
+                            .join(", ")} and one other reacted with ${group.emojiName}`;
+                    } else if (group.names.length > MAX_NAMES_IN_REACTION_TITLE) {
+                        // at least 2 more than max allowed
+                        group.namesPretty = `${group.names.slice(0, MAX_NAMES_IN_REACTION_TITLE).join(", ")} and ${
+                            group.names.length - MAX_NAMES_IN_REACTION_TITLE
+                        } others reacted with ${group.emojiName}`;
+                    } else {
+                        // More than 1 Person but less than MAX_NAMES_IN_REACTION_TITLE
+                        group.namesPretty = `${group.names.slice(0, group.names.length - 1).join(", ")} and ${
+                            group.names[group.names.length - 1]
+                        } reacted with ${group.emojiName}`;
+                    }
+                    return group;
+                });
             m.aggregatedReactions.sort(
                 (a, b) => EmojiPicker.getEmojiIndex(a.emojiName) - EmojiPicker.getEmojiIndex(b.emojiName),
             );
@@ -485,6 +514,7 @@ type ChatReactionGroup = {
     emoji: string;
     emojiName: string;
     names: string[];
+    namesPretty: string;
     reactions: ChatReaction[];
     hasReacted: boolean;
 };

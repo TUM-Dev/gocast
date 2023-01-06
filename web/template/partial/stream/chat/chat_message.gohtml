@@ -43,7 +43,7 @@
                 <div class="flex items-center relative flex-wrap">
                     <template x-for="(reactionGroup, i) in m.aggregatedReactions">
                         <button type="button"
-                                :title="`${reactionGroup.names.join(', ')} reacted with :${reactionGroup.emojiName}:`" {{/* e.g. ':eyes:' */}}
+                                :title="reactionGroup.namesPretty" {{/* e.g. ':eyes:' */}}
                                 @click="watch.reactToMessage(m.ID, reactionGroup.emojiName)" {{/* notify emoji click */}}
                                 :class="reactionGroup.hasReacted ? 'border-blue-500/25 bg-blue-100/25 dark:border-indigo-600 dark:bg-indigo-900/25' : 'border-gray-500'"
                                 class="cursor-pointer m-1 px-2 h-6 border-[1px] border-gray-500 rounded-full border-solid text-xs flex justify-start items-center">
