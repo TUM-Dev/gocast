@@ -2,7 +2,7 @@ import { NewChatMessage } from "./NewChatMessage";
 import { ChatUserList } from "./ChatUserList";
 import { EmojiList } from "./EmojiList";
 import { Poll } from "./Poll";
-import { deregisterTimeWatcher, getPlayer, registerTimeWatcher } from "../TUMLiveVjs";
+import { registerTimeWatcher, deregisterTimeWatcher, getPlayers } from "../TUMLiveVjs";
 import { EmojiPicker } from "./EmojiPicker";
 import { TopEmojis } from "top-twitter-emojis-map";
 
@@ -14,7 +14,7 @@ export class Chat {
     readonly admin: boolean;
     readonly streamId: number;
 
-    popUpWindow: Window;
+    popUpWindow: Window;å
     chatReplayActive: boolean;
     orderByLikes: boolean;
     disconnected: boolean;
@@ -354,7 +354,7 @@ export class Chat {
 
     activateChatReplay(): void {
         this.chatReplayActive = true;
-        const currentTime = getPlayer().currentTime();
+        const currentTime = getPlayers()[0].currentTime();
         //force update of message focus and grayedOut state
         this.focusedMessageId = -1;
         this.grayOutMessagesAfterPlayerTime(currentTime);
@@ -382,7 +382,7 @@ export class Chat {
         referenceTime.setSeconds(referenceTime.getSeconds() + playerTime);
 
         const grayOutCondition = (CreatedAt: string) => {
-            if (Math.trunc(playerTime) === Math.trunc(getPlayer().duration())) {
+            if (Math.trunc(playerTime) === Math.trunc(getPlayers()[0].duration())) {
                 return false;
             }
 
