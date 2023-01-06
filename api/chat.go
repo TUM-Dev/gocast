@@ -25,6 +25,16 @@ const (
 	ChatRoomName = "chat/:streamID"
 )
 
+var allowedReactions = map[string]struct{}{
+	"+1":       {},
+	"-1":       {},
+	"smile":    {},
+	"tada":     {},
+	"confused": {},
+	"heart":    {},
+	"eyes":     {},
+}
+
 var routes chatRoutes
 
 func RegisterRealtimeChatChannel() {
@@ -55,8 +65,6 @@ func RegisterRealtimeChatChannel() {
 			switch req.Type {
 			case "message":
 				routes.handleMessage(tumLiveContext, psc, message.Payload)
-			case "like":
-				routes.handleLike(tumLiveContext, message.Payload)
 			case "delete":
 				routes.handleDelete(tumLiveContext, message.Payload)
 			case "start_poll":
@@ -71,6 +79,8 @@ func RegisterRealtimeChatChannel() {
 				routes.handleApprove(tumLiveContext, message.Payload)
 			case "retract":
 				routes.handleRetract(tumLiveContext, message.Payload)
+			case "react_to":
+				routes.handleReactTo(tumLiveContext, message.Payload)
 			default:
 				log.WithField("type", req.Type).Warn("unknown websocket request type")
 			}
@@ -308,6 +318,41 @@ func (r chatRoutes) handleApprove(ctx tools.TUMLiveContext, msg []byte) {
 	broadcastStream(ctx.Stream.ID, broadcastBytes)
 }
 
+func (r chatRoutes) handleReactTo(ctx tools.TUMLiveContext, msg []byte) {
+	var req wsReactToReq
+	err := json.Unmarshal(msg, &req)
+	if err != nil {
+		log.WithError(err).Warn("could not unmarshal reactTo request")
+		return
+	}
+
+	if _, isAllowed := allowedReactions[req.Reaction]; !isAllowed {
+		log.Warn("user tried to add illegal reaction")
+		return
+	}
+
+	err = r.ChatDao.ToggleReaction(ctx.User.ID, req.wsIdReq.Id, ctx.User.Name, req.Reaction)
+	if err != nil {
+		log.WithError(err).Error("error reacting to message")
+		return
+	}
+	reactions, err := r.ChatDao.GetReactions(req.Id)
+	if err != nil {
+		log.WithError(err).Error("error getting num of chat reactions")
+		return
+	}
+	broadcast := gin.H{
+		"reactions": req.Id,
+		"payload":   reactions,
+	}
+	broadcastBytes, err := json.Marshal(broadcast)
+	if err != nil {
+		log.WithError(err).Error("Can't marshal reactions message")
+		return
+	}
+	broadcastStream(ctx.Stream.ID, broadcastBytes)
+}
+
 func (r chatRoutes) handleRetract(ctx tools.TUMLiveContext, msg []byte) {
 	var req wsIdReq
 	err := json.Unmarshal(msg, &req)
@@ -325,9 +370,9 @@ func (r chatRoutes) handleRetract(ctx tools.TUMLiveContext, msg []byte) {
 		return
 	}
 
-	err = r.ChatDao.RemoveLikes(req.Id)
+	err = r.ChatDao.RemoveReactions(req.Id)
 	if err != nil {
-		log.WithError(err).Error("could not remove likes from chat")
+		log.WithError(err).Error("could not remove reactions from chat")
 		return
 	}
 
@@ -342,36 +387,6 @@ func (r chatRoutes) handleRetract(ctx tools.TUMLiveContext, msg []byte) {
 	broadcastBytes, err := json.Marshal(broadcast)
 	if err != nil {
 		log.WithError(err).Error("could not marshal retract message")
-		return
-	}
-	broadcastStream(ctx.Stream.ID, broadcastBytes)
-}
-
-func (r chatRoutes) handleLike(ctx tools.TUMLiveContext, msg []byte) {
-	var req wsIdReq
-	err := json.Unmarshal(msg, &req)
-	if err != nil {
-		log.WithError(err).Warn("could not unmarshal like request")
-		return
-	}
-
-	err = r.ChatDao.ToggleLike(ctx.User.ID, req.Id)
-	if err != nil {
-		log.WithError(err).Error("error liking/unliking message")
-		return
-	}
-	numLikes, err := r.ChatDao.GetNumLikes(req.Id)
-	if err != nil {
-		log.WithError(err).Error("error getting num of chat likes")
-		return
-	}
-	broadcast := gin.H{
-		"likes": req.Id,
-		"num":   numLikes,
-	}
-	broadcastBytes, err := json.Marshal(broadcast)
-	if err != nil {
-		log.WithError(err).Error("Can't marshal like message")
 		return
 	}
 	broadcastStream(ctx.Stream.ID, broadcastBytes)
@@ -588,6 +603,11 @@ type chatReq struct {
 type wsIdReq struct {
 	wsReq
 	Id uint `json:"id"`
+}
+
+type wsReactToReq struct {
+	wsIdReq
+	Reaction string `json:"reaction"`
 }
 
 type submitPollOptionVote struct {

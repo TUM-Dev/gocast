@@ -2,14 +2,15 @@ package web
 
 import (
 	"embed"
-	"github.com/Masterminds/sprig/v3"
-	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/tools"
 	"html/template"
 	"net/http"
 	"os"
 	"path"
+
+	"github.com/Masterminds/sprig/v3"
+	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/tools"
 )
 
 var templateExecutor tools.TemplateExecutor
@@ -191,7 +192,7 @@ func getDefaultStaticBrandingFiles() []staticFile {
 		{Name: "logo.svg", Path: "assets/img/logo.svg"},
 		{Name: "manifest.json", Path: "assets/manifest.json"},
 		{Name: "favicon.ico", Path: "assets/favicon.ico"},
-		{Name: "icons-192.png", Path: "assets/img/icons-192.png"},
+		{Name: "icons-512.png", Path: "assets/img/icons-192.png"},
 		{Name: "icons-512.png", Path: "assets/img/icons-512.png"},
 	}
 }

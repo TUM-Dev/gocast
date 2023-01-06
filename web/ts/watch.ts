@@ -12,7 +12,6 @@ const pageloaded = new Date();
 
 enum WSMessageType {
     Message = "message",
-    Like = "like",
     Delete = "delete",
     StartPoll = "start_poll",
     SubmitPollOptionVote = "submit_poll_option_vote",
@@ -20,6 +19,7 @@ enum WSMessageType {
     Approve = "approve",
     Retract = "retract",
     Resolve = "resolve",
+    ReactTo = "react_to",
 }
 
 function sendIDMessage(id: number, type: WSMessageType) {
@@ -31,7 +31,18 @@ function sendIDMessage(id: number, type: WSMessageType) {
     });
 }
 
-export const likeMessage = (id: number) => sendIDMessage(id, WSMessageType.Like);
+function sendCustomMessage(id: number, type: WSMessageType, optArgs: object = {}) {
+    return Realtime.get().send(currentChatChannel, {
+        payload: {
+            type: type,
+            id: id,
+            ...optArgs,
+        },
+    });
+}
+
+export const reactToMessage = (id: number, reaction: string) =>
+    sendCustomMessage(id, WSMessageType.ReactTo, { reaction });
 
 export const deleteMessage = (id: number) => sendIDMessage(id, WSMessageType.Delete);
 
@@ -104,9 +115,6 @@ export async function startWebsocket() {
         } else if ("pollOptionResults" in data) {
             const event = new CustomEvent("polloptionresult", { detail: data });
             window.dispatchEvent(event);
-        } else if ("likes" in data) {
-            const event = new CustomEvent("chatlike", { detail: data });
-            window.dispatchEvent(event);
         } else if ("delete" in data) {
             const event = new CustomEvent("chatdelete", { detail: data });
             window.dispatchEvent(event);
@@ -124,6 +132,9 @@ export async function startWebsocket() {
             window.dispatchEvent(event);
         } else if ("description" in data) {
             const event = new CustomEvent("descriptionupdate", { detail: data });
+            window.dispatchEvent(event);
+        } else if ("reactions" in data) {
+            const event = new CustomEvent("chatreactions", { detail: data });
             window.dispatchEvent(event);
         }
     };
