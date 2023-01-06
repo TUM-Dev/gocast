@@ -166,13 +166,13 @@ func (d chatDao) ResolveChat(id uint) error {
 }
 
 func (d chatDao) ToggleReaction(userID uint, chatID uint, username string, emoji string) error {
-	err := DB.Exec("INSERT INTO chat_reactions (user_id, chat_id, username, emoji) VALUES (?, ?, ?, ?)", userID, chatID, username, emoji).Error
+	err := DB.Create(&model.ChatReaction{UserID: userID, ChatID: chatID, Emoji: emoji, Username: username}).Error
 	if err == nil {
 		return nil // reaction was added successfully
 	}
 	var mysqlErr *mysql.MySQLError
 	if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 { // 1062: duplicate entry -> already reacted to message -> remove
-		return DB.Exec("DELETE FROM chat_reactions WHERE user_id = ? AND chat_id = ? AND emoji = ?", userID, chatID, emoji).Error
+		return DB.Delete(&model.ChatReaction{UserID: userID, ChatID: chatID, Emoji: emoji}).Error
 	}
 	return err // some other error
 }
