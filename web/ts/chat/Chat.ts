@@ -157,7 +157,6 @@ export class Chat {
     }
 
     sortMessages() {
-        console.log("sort :)");
         this.messages = [...this.messages].sort((m1, m2) => {
             if (this.orderByLikes) {
                 const m1LikeReactionGroup = m1.aggregatedReactions.find(
