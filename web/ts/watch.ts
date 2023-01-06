@@ -41,7 +41,8 @@ function sendCustomMessage(id: number, type: WSMessageType, optArgs: object = {}
     });
 }
 
-export const reactToMessage = (id: number, emoji: string) => sendCustomMessage(id, WSMessageType.ReactTo, { emoji });
+export const reactToMessage = (id: number, reaction: string) =>
+    sendCustomMessage(id, WSMessageType.ReactTo, { reaction });
 
 export const deleteMessage = (id: number) => sendIDMessage(id, WSMessageType.Delete);
 

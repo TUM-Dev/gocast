@@ -326,12 +326,12 @@ func (r chatRoutes) handleReactTo(ctx tools.TUMLiveContext, msg []byte) {
 		return
 	}
 
-	if _, isAllowed := allowedReactions[req.Emoji]; !isAllowed {
+	if _, isAllowed := allowedReactions[req.Reaction]; !isAllowed {
 		log.Warn("user tried to add illegal reaction")
 		return
 	}
 
-	err = r.ChatDao.ToggleReaction(ctx.User.ID, req.wsIdReq.Id, ctx.User.Name, req.Emoji)
+	err = r.ChatDao.ToggleReaction(ctx.User.ID, req.wsIdReq.Id, ctx.User.Name, req.Reaction)
 	if err != nil {
 		log.WithError(err).Error("error reacting to message")
 		return
@@ -607,7 +607,7 @@ type wsIdReq struct {
 
 type wsReactToReq struct {
 	wsIdReq
-	Emoji string `json:"emoji"`
+	Reaction string `json:"reaction"`
 }
 
 type submitPollOptionVote struct {
