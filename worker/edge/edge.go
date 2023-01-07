@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"mime"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -38,6 +39,9 @@ const CertDirEnv = "CERT_DIR"
 
 var vodPath = "/vod"
 
+// CORS header
+var allowedOrigin = "*"
+
 func main() {
 	log.Println("Starting edge tumlive version " + VersionTag)
 	port := os.Getenv("PORT")
@@ -59,6 +63,10 @@ func main() {
 	if vodPathEnv != "" {
 		vodPath = vodPathEnv
 	}
+	allowedOriginEnv := os.Getenv("ALLOWED_ORIGIN")
+	if allowedOriginEnv != "" {
+		allowedOrigin = allowedOriginEnv
+	}
 	ServeEdge(port)
 }
 
@@ -73,7 +81,10 @@ func ServeEdge(port string) {
 
 	mux := http.NewServeMux()
 	fileServer := http.FileServer(http.Dir(vodPath))
-	mux.Handle("/vod/", http.StripPrefix("/vod", fileServer))
+	mux.HandleFunc("/vod/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Access-Control-Allow-Origin", allowedOrigin)
+		http.StripPrefix("/vod", fileServer).ServeHTTP(w, r)
+	})
 	mux.HandleFunc("/", edgeHandler)
 
 	go func() {
@@ -246,6 +257,11 @@ func prepare() {
 	err = os.MkdirAll(cacheDir, os.ModePerm)
 	if err != nil {
 		log.Fatal("Could not create cache directory for edge requests: ", err)
+	}
+	// prevent defaulting to audio/x-mpegurl:
+	err = mime.AddExtensionType(".m3u8", "application/vnd.apple.mpegurl")
+	if err != nil {
+		log.Println("Error setting mimetype for m3u8:", err)
 	}
 }
 
