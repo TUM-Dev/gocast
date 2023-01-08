@@ -2,7 +2,11 @@
 package main
 
 import (
+	"crypto/rsa"
+	"encoding/json"
 	"fmt"
+	"github.com/golang-jwt/jwt/v4"
+	"io"
 	"log"
 	"mime"
 	"net/http"
@@ -23,8 +27,8 @@ var (
 	cacheLock   = sync.Mutex{}
 	cachedFiles = make(map[string]time.Time)
 
-	inflghtLock = sync.Mutex{}
-	inflight    = make(map[string]*sync.Mutex)
+	inflightLock = sync.Mutex{}
+	inflight     = make(map[string]*sync.Mutex)
 
 	allowedRe = regexp.MustCompile(`^/[a-zA-Z0-9]+/([a-zA-Z0-9_]+/)*[a-zA-Z0-9_]+\.(ts|m3u8)$`) // e.g. /vm123/live/stream/1234.ts
 	//allowedRe = regexp.MustCompile("^.*$") // e.g. /vm123/live/strean/1234.ts
@@ -41,6 +45,8 @@ var vodPath = "/vod"
 
 // CORS header
 var allowedOrigin = "*"
+
+var mainInstance = "http://localhost:8081"
 
 func main() {
 	log.Println("Starting edge tumlive version " + VersionTag)
@@ -67,8 +73,14 @@ func main() {
 	if allowedOriginEnv != "" {
 		allowedOrigin = allowedOriginEnv
 	}
+	mainInstanceEnv := os.Getenv("MAIN_INSTANCE")
+	if mainInstanceEnv != "" {
+		mainInstance = mainInstanceEnv
+	}
 	ServeEdge(port)
 }
+
+var vodFileServer http.Handler
 
 func ServeEdge(port string) {
 	prepare()
@@ -80,11 +92,8 @@ func ServeEdge(port string) {
 	}()
 
 	mux := http.NewServeMux()
-	fileServer := http.FileServer(http.Dir(vodPath))
-	mux.HandleFunc("/vod/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Access-Control-Allow-Origin", allowedOrigin)
-		http.StripPrefix("/vod", fileServer).ServeHTTP(w, r)
-	})
+	vodFileServer = http.FileServer(http.Dir(vodPath))
+	mux.HandleFunc("/vod/", vodHandler)
 	mux.HandleFunc("/", edgeHandler)
 
 	go func() {
@@ -93,6 +102,88 @@ func ServeEdge(port string) {
 	go handleTLS(mux)
 
 	keepAlive()
+}
+
+type JWTPlaylistClaims struct {
+	jwt.RegisteredClaims
+	UserID   uint
+	Playlist string
+}
+
+func vodHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Access-Control-Allow-Origin", allowedOrigin)
+	if jwtPubKey != nil {
+		// validate token; every page access requires a valid jwt.
+		token := r.URL.Query().Get("jwt")
+		if token == "" {
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte("Forbidden"))
+			return
+		}
+		parsedToken, err := jwt.ParseWithClaims(token, &JWTPlaylistClaims{}, func(token *jwt.Token) (interface{}, error) {
+			key := jwtPubKey
+			return key, nil
+		})
+		if err != nil { // e.g. some string that is not an actual jwt or signed with another key
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte("Forbidden"))
+			return
+		}
+		if !parsedToken.Valid { // e.g. an expired token
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte("Forbidden"))
+			return
+		}
+
+		// verify that the claimed path in the token matches the request path:
+		allowedPlaylist, err := url.Parse(parsedToken.Claims.(*JWTPlaylistClaims).Playlist)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("Bad Request. Parsing URL in jtw: " + err.Error()))
+			return
+		}
+		urlParts := strings.Split(allowedPlaylist.Path, "/")
+		allowedPath := vodPath + "/" + strings.Join(urlParts[2:len(urlParts)-1], "/")
+		if !strings.HasPrefix(r.URL.Path, allowedPath+"/") {
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte("Forbidden. URL doesn't match claim in jwt."))
+			return
+		}
+
+		// add the jwt to all .ts files in the playlist for subsequent verification
+		if strings.HasSuffix(r.URL.Path, ".m3u8") {
+			// map request path to path under `vod_path`
+			upath := r.URL.Path
+			if !strings.HasPrefix(upath, "/") {
+				upath = "/" + upath
+				r.URL.Path = upath
+			}
+			r.URL.Path = strings.TrimPrefix(r.URL.Path, vodPath)
+			f, err := os.Open(path.Join(vodPath, path.Clean(r.URL.Path)))
+
+			if err != nil {
+				w.WriteHeader(http.StatusNotFound)
+				_, _ = w.Write([]byte("Not Found"))
+				return
+			}
+			fileContents, err := io.ReadAll(f)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte("Internal server error. Can't read file: " + f.Name()))
+				return
+			}
+			lines := strings.Split(string(fileContents), "\n")
+			for i, line := range lines {
+				if strings.HasSuffix(line, ".ts") {
+					lines[i] = line + "?jwt=" + token
+				}
+			}
+			resp := strings.Join(lines, "\n")
+			_, _ = w.Write([]byte(resp))
+			return
+		}
+	}
+	http.StripPrefix("/vod", vodFileServer).ServeHTTP(w, r)
 }
 
 func handleTLS(mux *http.ServeMux) {
@@ -178,13 +269,13 @@ func fetchFile(host, file string) error {
 		return nil
 	}
 
-	inflghtLock.Lock()
+	inflightLock.Lock()
 	if _, ok = inflight[file]; !ok {
 		inflight[file] = &sync.Mutex{}
 	}
 	curLock := inflight[file]
 	curLock.Lock()
-	inflghtLock.Unlock()
+	inflightLock.Unlock()
 	defer curLock.Unlock()
 	defer delete(inflight, file)
 
@@ -247,6 +338,8 @@ func cleanup() {
 	log.Println("Removed ", removed, " files")
 }
 
+var jwtPubKey *rsa.PublicKey
+
 // prepare clears the cache and creates the cache directory
 func prepare() {
 	// Empty cache on startup:
@@ -262,6 +355,30 @@ func prepare() {
 	err = mime.AddExtensionType(".m3u8", "application/vnd.apple.mpegurl")
 	if err != nil {
 		log.Println("Error setting mimetype for m3u8:", err)
+	}
+	retries := 0
+	backoff := time.Second
+	for retries < 5 { // allow for 5 retries with backoff to reach main instance
+		log.Printf("Trying to get jwt key from main instance. Try #%d", +retries+1)
+		retries++
+		backoff *= 2
+		time.Sleep(backoff)
+		resp, err := http.Get(mainInstance + "/jwtPubKey")
+		if err != nil {
+			continue
+		}
+		if resp.StatusCode != http.StatusOK {
+			continue
+		}
+		decoder := json.NewDecoder(resp.Body)
+		jwtPubKeyTmp := rsa.PublicKey{}
+		err = decoder.Decode(&jwtPubKeyTmp)
+		if err != nil {
+			continue
+		}
+		jwtPubKey = &jwtPubKeyTmp
+		log.Println("successfully gathered public key:", jwtPubKey)
+		break
 	}
 }
 
