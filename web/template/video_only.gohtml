@@ -60,7 +60,7 @@
 <body class="overflow-hidden">
 <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
 <video-js
-        id="my-video"
+        id="video-embedded"
         class="video-js w-full"
         controls
         preload="auto"
@@ -75,7 +75,7 @@
 </video-js>
 </body>
 <script>
-    watch.initPlayer(false, true, true, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}}, {{$course.Name}}, {{$stream.GetName}}, {{$course.GetStreamUrl $stream}}, {{$course.GetUrl}}, {{$stream.GetStartInSeconds}});
+    watch.initPlayer("video-embedded", false, true, true, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}}, {{$course.Name}}, {{$stream.GetName}}, {{$course.GetStreamUrl $stream}}, {{$course.GetUrl}}, {{$stream.GetStartInSeconds}});
     watch.startWebsocket()
     {{if $stream.Silences}}
     watch.skipSilence({{$stream.GetSilencesJson}});

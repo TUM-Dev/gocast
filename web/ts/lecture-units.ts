@@ -7,7 +7,7 @@ let slider;
 let player;
 
 export const initLecturePlayer = function () {
-    player = videojs("my-video", {
+    player = videojs("video-comb", {
         html5: {
             hls: {
                 overrideNative: true,
