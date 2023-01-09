@@ -1,4 +1,4 @@
-import { startPoll } from "../watch";
+import { WebsocketConnection, WSMessageType } from "../WebsocketConnection";
 
 export class Poll {
     readonly streamId: number;
@@ -16,12 +16,13 @@ export class Poll {
         this.reset();
     }
 
-    start() {
-        startPoll(
-            this.question,
+    start(ws: WebsocketConnection) {
+        const args = {
+            question: this.question,
             // @ts-ignore
-            this.options.map(({ answer }) => answer),
-        );
+            pollAnswers: this.options.map(({ answer }) => answer),
+        };
+        ws.sendCustomMessage(WSMessageType.StartPoll, args);
         this.reset();
     }
 

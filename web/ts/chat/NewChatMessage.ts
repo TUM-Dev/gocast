@@ -1,5 +1,5 @@
-import { sendMessage } from "../watch";
 import { getCurrentWordPositions } from "./misc";
+import { WebsocketConnection } from "../WebsocketConnection";
 
 export class NewChatMessage {
     message: string;
@@ -14,8 +14,9 @@ export class NewChatMessage {
         this.addressedTo = [];
     }
 
-    send(): void {
-        sendMessage(this);
+    send(ws: WebsocketConnection): void {
+        console.log(ws);
+        ws.sendMessage(this);
         this.clear();
     }
 

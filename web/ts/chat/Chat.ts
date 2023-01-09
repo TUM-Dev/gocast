@@ -5,6 +5,7 @@ import { Poll } from "./Poll";
 import { registerTimeWatcher, deregisterTimeWatcher, getPlayers } from "../TUMLiveVjs";
 import { EmojiPicker } from "./EmojiPicker";
 import { TopEmojis } from "top-twitter-emojis-map";
+import { WebsocketConnection } from "../WebsocketConnection";
 
 const MAX_NAMES_IN_REACTION_TITLE = 2;
 
@@ -237,14 +238,14 @@ export class Chat {
         this.poll.result = e.detail;
     }
 
-    onSubmit() {
+    onSubmit(ws: WebsocketConnection) {
         if (this.emojis.isValid()) {
             window.dispatchEvent(new CustomEvent("chatenter"));
         } else if (this.users.isValid()) {
             this.current.addAddressee(this.users.getSelected());
             this.users.clear();
         } else {
-            this.current.send();
+            this.current.send(ws);
         }
     }
 

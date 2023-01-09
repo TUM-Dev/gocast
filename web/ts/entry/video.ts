@@ -6,4 +6,6 @@ export * from "../chat";
 export * from "../video-sections";
 export * from "../splitview";
 export * from "../bookmarks";
+export * from "../share-url";
+export * from "../video-stats";
 // Lecture Units are currently not used, so we don't include them in the bundle at the moment
