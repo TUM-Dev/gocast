@@ -505,7 +505,7 @@
              @keydown.escape="showModal = false" x-cloak x-show="showModal">
             <section class="flex flex-wrap h-full">
                 <div class="overflow-auto" x-show="showModal"
-                     :class="{ 'absolute inset-0 z-10 flex items-center justify-center': showModal }">
+                     :class="{ 'absolute inset-0 z-50 flex items-center justify-center': showModal }">
                     <div class="dark:bg-secondary-light bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 w-auto md:max-w-md mx-auto rounded shadow-lg py-4 text-left
                         px-6"
                          @click.away="showModal = false">
