@@ -34,7 +34,7 @@
                         {{if $stream.PlaylistUrlPRES}}
                             <a class="text-left flex justify-start items-center w-full text-3 px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-600"
                                title="Presentation only"
-                               href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/PRES">
+                               :href="global.keepQuery('/w/{{$course.Slug}}/{{$stream.Model.ID}}/PRES')">
                                 <i class="fas fa-edit text-4 hover:text-1 w-8"></i>
                                 <span class="font-light text-sm">Presentation only</span>
                             </a>
@@ -43,7 +43,7 @@
                         {{if $stream.PlaylistUrlCAM}}
                             <a class="text-left flex justify-start items-center w-full text-3 px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-600"
                                title="Camera only"
-                               href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/CAM">
+                               :href="global.keepQuery('/w/{{$course.Slug}}/{{$stream.Model.ID}}/CAM')">
                                 <i class="text-lg fas fa-camera text-4 hover:text-1 w-8"></i>
                                 <span class="font-light text-sm">Camera only</span>
                             </a>
@@ -52,7 +52,7 @@
                         {{if and $stream.PlaylistUrlCAM $stream.PlaylistUrlPRES}}
                             <a class="text-left flex justify-start items-center w-full text-3 px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-600"
                                title="Split-view"
-                               href="/w/{{$course.Slug}}/{{$stream.Model.ID}}/SPLIT">
+                               :href="global.keepQuery('/w/{{$course.Slug}}/{{$stream.Model.ID}}/SPLIT')">
                                 <i class="text-lg fa-solid fa-table-columns text-4 hover:text-1 w-8"></i>
                                 <span class="font-light text-sm">Splitview</span>
                             </a>
@@ -61,7 +61,7 @@
                         {{if $stream.PlaylistUrl}}
                             <a class="text-left flex justify-start items-center w-full text-3 px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-600"
                                title="Combined view"
-                               href="/w/{{$course.Slug}}/{{$stream.Model.ID}}">
+                               :href="global.keepQuery('/w/{{$course.Slug}}/{{$stream.Model.ID}}')">
                                 <i class="text-lg fas fa-object-group text-4 hover:text-1 w-8"></i>
                                 <span class="font-light text-sm">Combined view</span>
                             </a>
