@@ -582,11 +582,11 @@ export function attachCurrentTimeEvent(videoSection: VideoSectionList) {
             let timer;
             (function checkTimestamp() {
                 timer = setTimeout(() => {
-                    hightlight(players[j], videoSection);
+                    highlight(players[j], videoSection);
                     checkTimestamp();
                 }, 500);
             })();
-            players[j].on("seeked", () => hightlight(players[j], videoSection));
+            players[j].on("seeked", () => highlight(players[j], videoSection));
         });
     }
 }
@@ -599,7 +599,7 @@ export function currentTimeToHMS() {
     return { h, m, s };
 }
 
-function hightlight(player, videoSection) {
+function highlight(player, videoSection) {
     const currentTime = player.currentTime();
     videoSection.currentHighlightIndex = videoSection.list.findIndex((section, i, list) => {
         const next = list[i + 1];
