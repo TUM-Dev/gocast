@@ -55,9 +55,7 @@ type Chat struct {
 	Visible   sql.NullBool `gorm:"not null;default:true" json:"-"`
 	IsVisible bool         `gorm:"-" json:"visible"` // IsVisible is .Bool value of Visible for simplicity
 
-	Likes     int    `gorm:"-" json:"likes"`
-	Liked     bool   `gorm:"-" json:"liked"`
-	UserLikes []User `gorm:"many2many:chat_user_likes" json:"-"`
+	Reactions []ChatReaction `gorm:"foreignKey:chat_id;" json:"reactions"`
 
 	AddressedToUsers []User `gorm:"many2many:chat_user_addressedto" json:"-"`
 	AddressedToIds   []uint `gorm:"-" json:"addressedTo"`

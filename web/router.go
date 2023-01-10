@@ -2,14 +2,15 @@ package web
 
 import (
 	"embed"
-	"github.com/Masterminds/sprig/v3"
-	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/tools"
 	"html/template"
 	"net/http"
 	"os"
 	"path"
+
+	"github.com/Masterminds/sprig/v3"
+	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/tools"
 )
 
 var templateExecutor tools.TemplateExecutor

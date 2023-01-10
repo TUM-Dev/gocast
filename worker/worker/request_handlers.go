@@ -191,7 +191,7 @@ func cancelCmdGroup(cmd *exec.Cmd) {
 	if cmd != nil && cmd.Process != nil {
 		log.Info("Sending SIGINT to pgid: ", -cmd.Process.Pid)
 		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true} // avoid suicide when killing group (assign new group id)
-		err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		err := syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
 		if err != nil {
 			log.WithError(err).WithField("cmd", cmd.String()).Warn("can't kill command group")
 		}
@@ -203,7 +203,7 @@ func cancelCmdGroup(cmd *exec.Cmd) {
 func cancelCmd(cmd *exec.Cmd) {
 	if cmd != nil && cmd.Process != nil {
 		log.Info("Sending SIGINT to pid: ", cmd.Process.Pid)
-		err := cmd.Process.Signal(syscall.SIGINT)
+		err := cmd.Process.Signal(syscall.SIGTERM)
 		if err != nil {
 			log.WithError(err).WithField("cmd", cmd.String()).Warn("Can't interrupt ffmpeg")
 		}

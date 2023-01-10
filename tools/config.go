@@ -166,6 +166,7 @@ type Config struct {
 		Host   string `yaml:"host"`
 		ApiKey string `yaml:"apiKey"`
 	} `yaml:"meili"`
+	VodURLTemplate string `yaml:"vodURLTemplate"`
 }
 
 func (Config) GetJWTKey() *rsa.PrivateKey {

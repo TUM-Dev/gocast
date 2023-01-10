@@ -31,17 +31,16 @@
 </div>
 <div x-cloak x-show="showShare"
      id="share-modal" class="flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
-    <div class="m-auto lg:w-1/2 w-3/4" @click.outside="showShare = false;">
-        <div x-data="{share: new watch.ShareURL()}"
-             class="bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
+    <div class="m-auto lg:w-1/2 w-3/4" @click.outside="showShare=false">
+        <div class="bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
             <div class="flex justify-between items-center px-3 pt-3 pb-1">
                 <h3 class="text-3 text-sm font-semibold">Share</h3>
-                <button type="button" title="close share modal"
-                        @click="showShare=false;">
+                <button type="button" title="Close share modal"
+                        @click="showShare=false">
                     <i class="fa-solid fa-xmark text-3"></i>
                 </button>
             </div>
-            <div class="pt-1 pb-3 px-3 mt-3">
+            <div class="pt-1 pb-3 px-3 mt-3" x-data="{share: new watch.ShareURL()}">
                 <span class="font-light text-xs mb-1 text-4">URL</span>
                 <div class="flex items-center justify-between tl-input text-sm">
                     <input id="share-url" type="text"
@@ -53,12 +52,14 @@
                     </button>
                 </div>
                 {{if not $stream.LiveNow}}
-                    <div class="flex justify-start items-center pt-2">
+                        <!-- $nextTick does not work in watch. Therefore, @change.once has to be used. -->
+                        <div x-init="$watch('showShare', async value => { if (value) { await share.setURL(true); }});"
+                             class="flex justify-start items-center pt-2">
                         <input id="include-timestamp" type="checkbox" class="h-8 hover:cursor-pointer"
-                               x-model="share.includeTimestamp" @change="share.setTimestamp();share.setURL()">
+                               x-model="share.includeTimestamp" @change="share.setURL(false)">
                         <label for="include-timestamp" class="font-light text-4 text-xs ml-2">Include Timestamp</label>
                         <input x-cloak x-show="share.includeTimestamp" class="tl-input h-8 w-20 text-xs ml-2"
-                               type="text" x-model="share.timestamp" @input="share.setURL()">
+                               type="text" x-model="share.timestamp" @input="share.setURL(false);">
                     </div>
                 {{end}}
             </div>
@@ -220,14 +221,25 @@
                 <div
                         x-cloak
                         x-show="contextMenu.shown"
+                        x-data="{share: new watch.ShareURL()}"
                         @click.outside="contextMenu = {...contextMenu, shown: false}"
                         class="origin-top-left absolute w-72 py-2 bg-gray-800/[.9] border-gray-100 border-1 rounded text-white text-sm"
                         :style="{ top: contextMenu.locY + 'px', left: contextMenu.locX + 'px' }"
                         role="menu" aria-orientation="vertical" tabindex="-1">
                     <button @click="contextMenu = {...contextMenu, shown: false}; videoStatsShown = true; watch.videoStatListener.listen();"
-                            class="py-2 px-4 w-full text-left cursor-pointer hover:bg-white/10">
+                            class="tl-context-entry">
                         Show detailed stats
                     </button>
+                    <button @click="contextMenu = {...contextMenu, shown: false};share.includeTimestamp=false;await share.setURL();share.copyURL()"
+                            class="tl-context-entry">
+                        Copy URL
+                    </button>
+                    {{if not $stream.LiveNow}}
+                        <button @click="contextMenu = {...contextMenu, shown: false};share.includeTimestamp=true;await share.setURL(true);share.copyURL()"
+                                class="tl-context-entry">
+                            Copy URL at current time
+                        </button>
+                    {{end}}
                 </div>
 
                 <div
@@ -313,6 +325,7 @@
                             <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                                 <span class="text-5 hover:text-1 hover:underline">{{$course.Name}}</span></a>
                         </div>
+
                     </div>
                     {{if not $stream.Recording}}
                         {{template "watch-info" .}}
@@ -393,7 +406,7 @@
                 {{end}}
             </div>
         </div>
-        {{if and .IsAdminOfCourse}}
+        {{if and .IsAdminOfCourse $stream.LiveNow}}
             <!-- Admin control buttons -->
             <div class="w-full p-5 lg:order-none order-4">
                 <h3 class="text-4 font-semibold border-b dark:border-gray-800 mb-3">Admin</h3>
@@ -401,13 +414,6 @@
                     {{/* Lecture hall is set, means no self-stream*/}}
                     {{if $stream.LiveNow}}
                         {{if $stream.LectureHallID}}
-                            <button @click="fetch(`/api/stream/${streamID}/pause?pause=${!paused}`).then(paused=!paused)"
-                                    href="#"
-                                    :title="paused?'End Pause (turns on video and audio)':'Pause lecture (turns off video and audio)'"
-                                    class="bg-green-500 text-center lg:w-32 md:w-24 md:inline-block block w-full text-white font-bold hover:bg-green-600 dark:hover:bg-green-600 rounded cursor-pointer p-2">
-                                <span x-show="!paused"><i class="fas fa-pause mr-1"></i>Pause</span>
-                                <span x-show="paused"><i class="fas fa-play mr-1"></i>Resume</span>
-                            </button>
                             <button @click="window.location.href='?restart=1'"
                                     title="Issues with the stream? Restart it."
                                     class="bg-indigo-500 text-center lg:w-32 md:w-24 md:inline-block block w-full text-white font-bold hover:bg-indigo-600 dark:hover:bg-indigo-600 rounded cursor-pointer p-2">
@@ -499,7 +505,7 @@
              @keydown.escape="showModal = false" x-cloak x-show="showModal">
             <section class="flex flex-wrap h-full">
                 <div class="overflow-auto" x-show="showModal"
-                     :class="{ 'absolute inset-0 z-10 flex items-center justify-center': showModal }">
+                     :class="{ 'absolute inset-0 z-50 flex items-center justify-center': showModal }">
                     <div class="dark:bg-secondary-light bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 w-auto md:max-w-md mx-auto rounded shadow-lg py-4 text-left
                         px-6"
                          @click.away="showModal = false">

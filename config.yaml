@@ -98,4 +98,4 @@ workertoken: abc
 meili:
   host: http://localhost:7700
   apiKey: MASTER_KEY
-  
+vodURLTemplate: https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s.mp4/playlist.m3u8
