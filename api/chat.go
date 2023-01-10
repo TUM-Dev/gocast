@@ -6,18 +6,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mono424/go-pts"
 	"net/http"
 	"strconv"
 	"time"
 
 	"gorm.io/gorm"
 
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/realtime"
+
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -38,13 +39,13 @@ var allowedReactions = map[string]struct{}{
 var routes chatRoutes
 
 func RegisterRealtimeChatChannel() {
-	PtsInstance.RegisterChannel(ChatRoomName, pts.ChannelHandlers{
-		SubscriptionMiddlewares: []pts.SubscriptionMiddleware{
+	RealtimeInstance.RegisterChannel(ChatRoomName, realtime.ChannelHandlers{
+		SubscriptionMiddlewares: []realtime.SubscriptionMiddleware{
 			tools.InitStreamRealtime(),
 		},
 		OnSubscribe:   chatOnSubscribe,
 		OnUnsubscribe: chatOnUnsubscribe,
-		OnMessage: func(psc *pts.Context, message *pts.Message) {
+		OnMessage: func(psc *realtime.Context, message *realtime.Message) {
 			foundContext, exists := psc.Get("TUMLiveContext")
 			if !exists {
 				sentry.CaptureException(errors.New("context should exist but doesn't"))
@@ -392,7 +393,7 @@ func (r chatRoutes) handleRetract(ctx tools.TUMLiveContext, msg []byte) {
 	broadcastStream(ctx.Stream.ID, broadcastBytes)
 }
 
-func (r chatRoutes) handleMessage(ctx tools.TUMLiveContext, context *pts.Context, msg []byte) {
+func (r chatRoutes) handleMessage(ctx tools.TUMLiveContext, context *realtime.Context, msg []byte) {
 	var chat chatReq
 	if err := json.Unmarshal(msg, &chat); err != nil {
 		log.WithError(err).Error("error unmarshaling chat message")
@@ -582,7 +583,7 @@ func (r chatRoutes) getActivePoll(c *gin.Context) {
 	})
 }
 
-func parseChatPayload(m *pts.Message) (res wsReq, err error) {
+func parseChatPayload(m *realtime.Message) (res wsReq, err error) {
 	dbByte, _ := json.Marshal(m.Payload)
 	err = json.Unmarshal(dbByte, &res)
 	return res, err
@@ -645,14 +646,14 @@ func NotifyViewersLiveState(streamId uint, live bool) {
 	broadcastStream(streamId, req)
 }
 
-func chatOnSubscribe(psc *pts.Context) {
+func chatOnSubscribe(psc *realtime.Context) {
 	joinTime := time.Now()
 	psc.Set("chat.joinTime", joinTime)
 
 	connHandler(psc)
 }
 
-func chatOnUnsubscribe(psc *pts.Context) {
+func chatOnUnsubscribe(psc *realtime.Context) {
 	var daoWrapper dao.DaoWrapper
 	if ctx, ok := psc.Client.Get("dao"); ok {
 		daoWrapper = ctx.(dao.DaoWrapper)

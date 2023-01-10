@@ -9,8 +9,8 @@ import (
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/realtime"
 	"github.com/joschahenningsen/TUM-Live/tools/tum"
-	"github.com/mono424/go-pts"
 	log "github.com/sirupsen/logrus"
 	"sync"
 )
@@ -24,18 +24,18 @@ var liveUpdateListenerMutex sync.RWMutex
 var liveUpdateListener = map[uint]*liveUpdateUserSessionsWrapper{}
 
 type liveUpdateUserSessionsWrapper struct {
-	sessions []*pts.Context
+	sessions []*realtime.Context
 	courses  []uint
 }
 
 func RegisterLiveUpdateRealtimeChannel() {
-	PtsInstance.RegisterChannel(LiveUpdateRoomName, pts.ChannelHandlers{
+	RealtimeInstance.RegisterChannel(LiveUpdateRoomName, realtime.ChannelHandlers{
 		OnSubscribe:   liveUpdateOnSubscribe,
 		OnUnsubscribe: liveUpdateOnUnsubscribe,
 	})
 }
 
-func liveUpdateOnUnsubscribe(psc *pts.Context) {
+func liveUpdateOnUnsubscribe(psc *realtime.Context) {
 	ctx, _ := psc.Client.Get("ctx") // get gin context
 	foundContext, exists := ctx.(*gin.Context).Get("TUMLiveContext")
 	if !exists {
@@ -52,11 +52,7 @@ func liveUpdateOnUnsubscribe(psc *pts.Context) {
 
 	liveUpdateListenerMutex.Lock()
 	defer liveUpdateListenerMutex.Unlock()
-
-	var newSessions []*pts.Context
-	if liveUpdateListener[userId] == nil {
-		return
-	}
+	var newSessions []*realtime.Context
 	for _, session := range liveUpdateListener[userId].sessions {
 		if session != psc {
 			newSessions = append(newSessions, session)
@@ -69,7 +65,7 @@ func liveUpdateOnUnsubscribe(psc *pts.Context) {
 	}
 }
 
-func liveUpdateOnSubscribe(psc *pts.Context) {
+func liveUpdateOnSubscribe(psc *realtime.Context) {
 	ctx, _ := psc.Client.Get("ctx") // get gin context
 	daoWrapper, _ := psc.Client.Get("dao")
 
@@ -109,7 +105,7 @@ func liveUpdateOnSubscribe(psc *pts.Context) {
 	if liveUpdateListener[userId] != nil {
 		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{append(liveUpdateListener[userId].sessions, psc), courses}
 	} else {
-		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{[]*pts.Context{psc}, courses}
+		liveUpdateListener[userId] = &liveUpdateUserSessionsWrapper{[]*realtime.Context{psc}, courses}
 	}
 	liveUpdateListenerMutex.Unlock()
 }
