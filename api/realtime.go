@@ -2,10 +2,10 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/mono424/go-pts"
-	"github.com/mono424/go-pts-gorilla-connector"
+	ptsc_melody "github.com/mono424/go-pts-melody-connector"
+	"github.com/olahol/melody"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -13,8 +13,10 @@ type realtimeRoutes struct {
 	dao.DaoWrapper
 }
 
-var PtsInstance = pts.New(ptsc_gorilla.NewConnector(
-	websocket.Upgrader{},
+var melodyInstance = melody.New()
+
+var PtsInstance = pts.New(ptsc_melody.NewConnector(
+	melodyInstance,
 	func(err *pts.Error) {
 		log.Warn(err.Description)
 	},

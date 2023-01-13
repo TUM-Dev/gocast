@@ -313,8 +313,10 @@ github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9G
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
 github.com/mono424/go-pts v0.0.4 h1:MizKWsMlVroOwh592jGPtV+/sptmR/9XaGnbebHKHTA=
 github.com/mono424/go-pts v0.0.4/go.mod h1:/eaOw0NMy2nLDY52NmET5AYl6pfPdN3u3CpxcOk/QEQ=
-github.com/mono424/go-pts-gorilla-connector v0.0.5 h1:gllTXdSk5RtbwYchXHCUe7dbetU+dwkh3/kgAvw/6MQ=
-github.com/mono424/go-pts-gorilla-connector v0.0.5/go.mod h1:Y6u3HXcKGQstzoIwBSKNc+jV0WTt7naJdJoUyBpiNgQ=
+github.com/mono424/go-pts-melody-connector v0.0.4 h1:mIKAVJOxaEEki23IYU5l5R0gmWQSbwGsWC8ms8LmR6g=
+github.com/mono424/go-pts-melody-connector v0.0.4/go.mod h1:Gwud69R1Q657VegTfY555m86ACCQV7oiPhBHUnC0/Cc=
+github.com/olahol/melody v1.1.1 h1:amgBhR7pDY0rA0JHWprgLF0LnVztognAwEQgf/WYLVM=
+github.com/olahol/melody v1.1.1/go.mod h1:GgkTl6Y7yWj/HtfD48Q5vLKPVoZOH+Qqgfa7CvJgJM4=
 github.com/panjf2000/ants/v2 v2.4.2/go.mod h1:f6F0NZVFsGCp5A7QW/Zj/m92atWwOkY0OIhFxRNFr4A=
 github.com/pelletier/go-toml v1.9.5 h1:4yBQzkHv+7BHq2PQUZF3Mx0IYxG7LsP222s7Agd3ve8=
 github.com/pelletier/go-toml v1.9.5/go.mod h1:u1nR/EPcESfeI/szUZKdtJ0xRNbUoANCkoOuaOx1Y+c=

@@ -16,7 +16,7 @@ require (
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/golang-jwt/jwt/v4 v4.4.3
 	github.com/golang/glog v1.0.0 // indirect
-	github.com/gorilla/websocket v1.5.0
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/jinzhu/now v1.1.5
 	github.com/microcosm-cc/bluemonday v1.0.21
 	github.com/pkg/profile v1.7.0
@@ -50,7 +50,8 @@ require (
 	github.com/matthiasreumann/gomino v0.0.2
 	github.com/meilisearch/meilisearch-go v0.22.0
 	github.com/mono424/go-pts v0.0.4
-	github.com/mono424/go-pts-gorilla-connector v0.0.5
+	github.com/mono424/go-pts-melody-connector v0.0.4
+	github.com/olahol/melody v1.1.1
 )
 
 require (
