@@ -3,6 +3,7 @@ package tools
 import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/joschahenningsen/TUM-Live/model"
+	"strings"
 	"time"
 )
 
@@ -28,6 +29,9 @@ func SetSignedPlaylists(s *model.Stream, user *model.User) error {
 	}
 
 	for _, playlist := range playlists {
+		if strings.Contains(playlist.Playlist, "lrz.de") { // todo: remove after migration from lrz services
+			continue
+		}
 
 		t := jwt.New(jwt.GetSigningMethod("RS256"))
 
