@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>{{.IndexData.Branding.Title}} | Administration</title>
+    {{template "headImports" .IndexData.VersionTag}}
+    <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
+    <script src="/static/assets/ts-dist/admin.bundle.js?v={{.IndexData.VersionTag}}"></script>
+</head>
+<body>
+{{template "header" .IndexData.TUMLiveContext}}
+{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.editorPageData*/ -}}
+<div x-data="admin.editor()">
+    <div class="w-full md:w-10/12 2xl:max-w-screen-lg m-auto" style="max-height: 70vh">
+        <video x-init="initPlayer($el)" class="video-js vjs-default-skin">
+            <source src="{{.Stream.PlaylistUrl}}" type="application/x-mpegURL">
+        </video>
+    </div>
+    <div class="mt-4 flex justify-center w-full">
+        <button title="Play/Pause" class="btn mx-2" @click="player.paused()?player.play():player.pause()"><i
+                    class="fas fa-play"></i><i class="fas fa-pause"></i></button>
+        <button title="Cut at current time" class="btn mx-2" @click="addCut()"><i class="fas fa-scissors"></i></button>
+        <button title="Delete active segment" class="btn mx-2" @click="deleteCurrentSegment()"
+                :disabled="segments.length===1"><i class="fas fa-trash"></i></button>
+    </div>
+    <div class="p-4">
+        <div class="cursor-pointer relative w-full overflow-x-scroll h-40 bg-gray-400 dark:bg-secondary rounded-lg shadow-sm">
+            <div class="relative h-40 z-10"
+                 @mousemove="console.log($event.target);prevTimestamp = $event.layerX/$event.target.scrollWidth"
+                 @click="setPos($event.layerX/$event.target.width)"
+                 :style="'width:'+zoom+'%'">
+                <img id="waveform" style="height: 100%;width: 100%">
+                <template x-for="segment in segments">
+                    <div class="absolute top-0 h-40 p-[1px]"
+                         :style="'z-index:-1;left:'+segment.start*100+'%;width:'+(segment.end-segment.start)*100+'%'">
+                        <div class="w-full h-full rounded border"
+                             :class="segment.del?'bg-red-800/25 border-red-800':'border-gray-600 bg-gray-600/25'"></div>
+                    </div>
+                </template>
+            </div>
+            <span class="absolute top-0 text-3 h-40 border border-black dark:border-white w-[1px]"
+                  :style="'left:'+timestamp*100+'%'"></span>
+            <span class="absolute top-0 text-3 h-40 border border-gray-900 dark:border-gray-700 w-[1px]"
+                  :style="'left:'+prevTimestamp*100+'%'" @click="setPos(prevTimestamp)"></span>
+        </div>
+        <div class="flex justify-center mt-2">
+            <button title="Zoom Out" class="btn mx-2" @click="zoom-=10" :disabled="zoom<=100">-</button>
+            <button title="Reset Zoom" class="btn mx-2" @click="zoom=100" :disabled="zoom==100">100%</button>
+            <button title="Zoom In" class="btn mx-2" @click="zoom+=10" :disabled="zoom>=250">+</button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -113,8 +113,7 @@ func configMainRoute(router *gin.Engine) {
 
 	withStream := courseAdminGroup.Group("/")
 	withStream.Use(tools.InitStream(daoWrapper))
-	withStream.GET("/admin/units/:courseID/:streamID", routes.LectureUnitsPage)
-	withStream.GET("/admin/cut/:courseID/:streamID", routes.LectureCutPage)
+	withStream.GET("/admin/editor/:courseID/:streamID", routes.editorPage)
 
 	router.POST("/login", routes.LoginHandler)
 	router.GET("/login", routes.LoginPage)

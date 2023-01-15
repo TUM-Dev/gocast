@@ -18,6 +18,7 @@ const PREFETCH_CACHE_FILES = [
 ];
 const CACHE_REQUEST_METHOD_ALLOWLIST = ["GET"];
 const CACHE_REQUEST_HOST_ALLOWLIST = [self.location.host];
+const DONT_CACHE_URLS = ["/api/editor/waveform"];
 
 const shouldCacheReq = (req) => {
     // eslint-disable-next-line no-undef
@@ -58,7 +59,13 @@ self.addEventListener("fetch", (e) => {
 
     const fromNetwork = (request, timeout) =>
         new Promise((fulfill, reject) => {
-            const timeoutId = setTimeout(reject, timeout);
+            let curTimeout = timeout;
+            // set timout to infinity for DON'T CACHE URLS
+            if (DONT_CACHE_URLS.includes(request.url)) {
+                curTimeout = Infinity;
+            }
+            let timeoutId = setTimeout(reject, curTimeout);
+
             fetch(request).then((response) => {
                 clearTimeout(timeoutId);
                 fulfill(response.clone());

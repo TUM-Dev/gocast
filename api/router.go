@@ -46,4 +46,6 @@ func ConfigGinRouter(router *gin.Engine) {
 	configAuditRouter(router, daoWrapper)
 	configGinBookmarksRouter(router, daoWrapper)
 	configMaintenanceRouter(router, daoWrapper)
+
+	configEditorRouter(router, daoWrapper)
 }

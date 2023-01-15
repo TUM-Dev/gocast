@@ -146,38 +146,6 @@ type WorkersData struct {
 	Token   string
 }
 
-func (r mainRoutes) LectureCutPage(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	if err := templateExecutor.ExecuteTemplate(c.Writer, "lecture-cut.gohtml", tumLiveContext); err != nil {
-		log.Fatalln(err)
-	}
-}
-
-func (r mainRoutes) LectureUnitsPage(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	indexData := NewIndexData()
-	indexData.TUMLiveContext = tumLiveContext
-	if err := templateExecutor.ExecuteTemplate(c.Writer, "lecture-units.gohtml", LectureUnitsPageData{
-		IndexData: indexData,
-		Lecture:   *tumLiveContext.Stream,
-		Units:     tumLiveContext.Stream.Units,
-	}); err != nil {
-		sentry.CaptureException(err)
-	}
-}
-
 func (r mainRoutes) CourseStatsPage(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
