@@ -127,6 +127,7 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/", routes.MainPage)
 	router.GET("/semester/:year/:term", routes.MainPage)
 	router.GET("/healthcheck", routes.HealthCheck)
+	router.GET("/jwtPubKey", routes.JWTPubKey)
 
 	router.GET("/:shortLink", routes.HighlightPage)
 	router.GET("/edit-course", routes.editCourseByTokenPage)
@@ -165,10 +166,15 @@ func (r mainRoutes) HealthCheck(context *gin.Context) {
 	context.JSON(http.StatusOK, resp)
 }
 
+func (r mainRoutes) JWTPubKey(c *gin.Context) {
+	c.JSON(http.StatusOK, tools.Cfg.GetJWTKey().PublicKey)
+}
+
 type HealthCheckData struct {
 	Version      string       `json:"version"`
 	CacheMetrics CacheMetrics `json:"cacheMetrics"`
 }
+
 type CacheMetrics struct {
 	Hits      uint64 `json:"hits"`
 	Misses    uint64 `json:"misses"`
