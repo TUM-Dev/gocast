@@ -365,15 +365,18 @@ func prepare() {
 		time.Sleep(backoff)
 		resp, err := http.Get(mainInstance + "/jwtPubKey")
 		if err != nil {
+			log.Println("Could not get jwt key from main instance, http error: ", err)
 			continue
 		}
 		if resp.StatusCode != http.StatusOK {
+			log.Println("Could not get jwt key from main instance, http status: ", resp.StatusCode)
 			continue
 		}
 		decoder := json.NewDecoder(resp.Body)
 		jwtPubKeyTmp := rsa.PublicKey{}
 		err = decoder.Decode(&jwtPubKeyTmp)
 		if err != nil {
+			log.Println("Could not decode jwt key, error: ", err)
 			continue
 		}
 		jwtPubKey = &jwtPubKeyTmp
