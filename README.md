@@ -18,6 +18,40 @@ Features include:
 - Self-service dashboard for lecturers 
   - schedule streams, manage access...
 
+## Architecture
+
+```
+                                          ┌──────────────────────┐
+                              ┌───────────►   Campus Management  │
+                              │           │ System (CAMPUSOnline)│
+               ┌──────────┐   │Enrollments└──────────────────────┘
+               │Identity  │   │
+               │Management│   │                 - Users,
+               │  - SAML  ◄─┐ │                 - Courses,
+               │  - LDAP  │ │ │                 - Streams, ...                               ┌────────────────────┐
+               └──────────┘ │ │              ┌──────────┐                                    │Lecture Hall        │
+                      Users │ │  ┌──────────►│ Database │                                    │ - Streaming Device │
+                            │ │  │           └──────────┘                               ┌────┤ - Camera           │
+                            │ │  │                                                      │    │ - Slides (HDMI)    │
+                         ┌──┴─┴──┴────┐         Task Distribution (gRPC)            RTSP│    │ - Microphone       │
+            ┌────────────►  TUM-Live  │◄─────────────────────────────────────┐      pull│    └────────────────────┘
+            │Website     └────────────┘                                      │          │
+            │(HTTP)                                                          ▼          │
+            │                                                             ┌─────────────▼─────┬─┐
+            │                               ┌────────────────┐            │TUM-Live-Worker #1 │ │ Streaming,
+┌───────────┴──┐                            │ Shared Storage │            ├───────────────────┘ │ Converting,
+│Student/Viewer│                            │ S3, Ceph, etc. │            │  TUM-Live-Worker #n │ Transcribing, ...
+└───────────┬──┘                            └─▲────▲─────────┘            └──────┬──▲────▲──────┘
+            │                        Serve Vod│    │HLS Files            Push VoD│  │    │RTMP
+            │                          Content│    │         ┌───────────┐ (HTTP)│  │    │push
+            │                                 │    └─────────┤VoD Service◄───────┘  │    │       ┌──────────────┐
+            │Videos      ┌──────────────────┬─┴┐             └───────────┘          │    └───────┤Selfstreamer  │
+            │(HLS, HTTP) │ TUM-Live Edge #1 │  │                                    │            │  - OBS,      │
+            └────────────►──────────────────┘  ├────────────────────────────────────┘            │  - Zoom, ... │
+                         │   TUM-Live Edge #n  │       Proxy, Cache (HTTP)                       └──────────────┘
+                         └─────────────────────┘
+```
+
 ## Getting Started
 
 To get TUM-Live running locally follow these steps:
