@@ -262,7 +262,16 @@ export function getQueryParam(name: string): string {
     return new URL(window.location.href).searchParams.get(name) ?? undefined;
 }
 
-// TypeScript Mapping of model.VideoSection
+/**
+ * Append current query params to given URL
+ */
+export function keepQuery(url: string): string {
+    return window.location.search.length > 0 ? url + window.location.search : url;
+}
+
+/**
+ * TypeScript Mapping of model.VideoSection
+ */
 export type Section = {
     ID?: number;
     description: string;

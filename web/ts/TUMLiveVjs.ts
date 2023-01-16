@@ -1,4 +1,4 @@
-import { getQueryParam, postData } from "./global";
+import { getQueryParam, keepQuery, postData } from "./global";
 import { VideoSectionList } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
@@ -97,6 +97,24 @@ export const initPlayer = function (
             const persistedRate = window.localStorage.getItem("rate");
             if (persistedRate !== null) {
                 player.playbackRate(persistedRate);
+            }
+        } else {
+            // same procedure as with watch progress
+            let iOSReady;
+            const jumpTo: number | undefined = +getQueryParam("t");
+            player.on("loadedmetadata", () => {
+                if (jumpTo) {
+                    player.currentTime(jumpTo);
+                }
+            });
+            if (videojs.browser.IS_IOS) {
+                player.on("canplaythrough", () => {
+                    // Can be executed multiple times during playback
+                    if (!iOSReady && jumpTo) {
+                        player.currentTime(jumpTo);
+                        iOSReady = true;
+                    }
+                });
             }
         }
         if (isEmbedded) {
@@ -582,11 +600,11 @@ export function attachCurrentTimeEvent(videoSection: VideoSectionList) {
             let timer;
             (function checkTimestamp() {
                 timer = setTimeout(() => {
-                    hightlight(players[j], videoSection);
+                    highlight(players[j], videoSection);
                     checkTimestamp();
                 }, 500);
             })();
-            players[j].on("seeked", () => hightlight(players[j], videoSection));
+            players[j].on("seeked", () => highlight(players[j], videoSection));
         });
     }
 }
@@ -599,7 +617,20 @@ export function currentTimeToHMS() {
     return { h, m, s };
 }
 
-function hightlight(player, videoSection) {
+export function switchView(baseUrl: string) {
+    const isDVR = getQueryParam("dvr") === "";
+
+    let redirectUrl = keepQuery(baseUrl);
+    if (isDVR) {
+        const player = getPlayers()[0];
+        const url = new URL(window.location.origin + redirectUrl);
+        url.searchParams.set("t", String(Math.floor(player.currentTime())));
+        redirectUrl = url.toString();
+    }
+    window.location.assign(redirectUrl);
+}
+
+function highlight(player, videoSection) {
     const currentTime = player.currentTime();
     videoSection.currentHighlightIndex = videoSection.list.findIndex((section, i, list) => {
         const next = list[i + 1];
