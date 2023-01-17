@@ -297,6 +297,10 @@ export class Time {
         return s;
     }
 
+    public toStringWithLeadingZeros() {
+        return `${Time.padZero(this.hours)}:${Time.padZero(this.minutes)}:${Time.padZero(this.seconds)}`;
+    }
+
     public toSeconds(): number {
         return this.hours * 60 * 60 + this.minutes * 60 + this.seconds;
     }
