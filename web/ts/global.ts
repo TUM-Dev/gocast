@@ -269,6 +269,31 @@ export function keepQuery(url: string): string {
     return window.location.search.length > 0 ? url + window.location.search : url;
 }
 
+export class Time {
+    private readonly hours: number;
+    private readonly minutes: number;
+    private readonly seconds: number;
+
+    static FromSeconds(seconds: number): Time {
+        const date = new Date(seconds * 1000);
+        return new Time(date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds());
+    }
+
+    constructor(hours = 0, minutes = 0, seconds = 0) {
+        this.hours = hours;
+        this.minutes = minutes;
+        this.seconds = seconds;
+    }
+
+    public toSeconds(): number {
+        return this.hours * 60 * 60 + this.minutes * 60 + this.seconds;
+    }
+
+    public toObject() {
+        return { hours: this.hours, minutes: this.minutes, seconds: this.seconds };
+    }
+}
+
 /**
  * TypeScript Mapping of model.VideoSection
  */
