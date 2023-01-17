@@ -27,7 +27,10 @@ export class BookmarkList {
 
     async fetch() {
         this.list = (await Bookmarks.get(this.streamId)) ?? [];
-        this.list.forEach((b) => (b.update = updateBookmark));
+        this.list.forEach((b) => {
+            b.update = updateBookmark;
+            b.friendlyTimestamp = new Time(b.hours, b.minutes, b.seconds).toString();
+        });
     }
 }
 

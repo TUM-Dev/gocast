@@ -269,6 +269,10 @@ export function keepQuery(url: string): string {
     return window.location.search.length > 0 ? url + window.location.search : url;
 }
 
+/**
+ * Time Utility Class
+ * Conversion of seconds to (hours, minutes, seconds) and vice versa.
+ */
 export class Time {
     private readonly hours: number;
     private readonly minutes: number;
@@ -285,12 +289,23 @@ export class Time {
         this.seconds = seconds;
     }
 
+    public toString() {
+        return `${Time.padZero(this.hours)}:${Time.padZero(this.minutes)}:${Time.padZero(this.seconds)}`;
+    }
+
     public toSeconds(): number {
         return this.hours * 60 * 60 + this.minutes * 60 + this.seconds;
     }
 
     public toObject() {
         return { hours: this.hours, minutes: this.minutes, seconds: this.seconds };
+    }
+
+    private static padZero(i: string | number) {
+        if (i < 10) {
+            i = "0" + i;
+        }
+        return i;
     }
 }
 
