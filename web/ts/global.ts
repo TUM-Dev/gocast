@@ -290,7 +290,11 @@ export class Time {
     }
 
     public toString() {
-        return `${Time.padZero(this.hours)}:${Time.padZero(this.minutes)}:${Time.padZero(this.seconds)}`;
+        let s = `${Time.padZero(this.minutes)}:${Time.padZero(this.seconds)}`;
+        if (this.hours > 0) {
+            s = `${Time.padZero(this.hours)}:` + s;
+        }
+        return s;
     }
 
     public toSeconds(): number {
