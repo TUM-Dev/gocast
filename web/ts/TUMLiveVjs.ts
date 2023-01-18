@@ -125,6 +125,17 @@ export const initPlayer = function (
                 streamUrl: streamUrl,
             });
         }
+        const timeTooltip = player
+            .getChild('controlBar')
+            .getChild('progressControl')
+            .getChild('seekBar')
+            .getChild('mouseTimeDisplay')
+            .getChild('timeTooltip')
+
+        if (timeTooltip) {
+            timeTooltip.el().classList.add('thumb');
+        }
+
         if (streamStartIn > 0) {
             player.addChild("StartInOverlay", {
                 course: courseName,
