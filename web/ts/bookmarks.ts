@@ -1,5 +1,5 @@
-import { Delete, getData, postData, putData } from "./global";
-import { currentTimeToHMS } from "./TUMLiveVjs";
+import { Delete, getData, postData, putData, Time } from "./global";
+import { getPlayers } from "./TUMLiveVjs";
 
 export class BookmarkList {
     private readonly streamId: number;
@@ -27,7 +27,10 @@ export class BookmarkList {
 
     async fetch() {
         this.list = (await Bookmarks.get(this.streamId)) ?? [];
-        this.list.forEach((b) => (b.update = updateBookmark));
+        this.list.forEach((b) => {
+            b.update = updateBookmark;
+            b.friendlyTimestamp = new Time(b.hours, b.minutes, b.seconds).toString();
+        });
     }
 }
 
@@ -49,8 +52,15 @@ export class BookmarkDialog {
     }
 
     reset(): void {
-        const time = currentTimeToHMS();
-        this.request = { StreamID: this.streamId, Description: "", Hours: time.h, Minutes: time.m, Seconds: time.s };
+        const player = getPlayers()[0];
+        const time = Time.FromSeconds(player.currentTime()).toObject();
+        this.request = {
+            StreamID: this.streamId,
+            Description: "",
+            Hours: time.hours,
+            Minutes: time.minutes,
+            Seconds: time.seconds,
+        };
     }
 }
 
