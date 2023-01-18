@@ -127,7 +127,7 @@ export const initPlayer = function (
         }
 
         if (spriteID) {
-            const timeTooltip : = player
+            const timeTooltip = player
                 .getChild("controlBar")
                 .getChild("progressControl")
                 .getChild("seekBar")
