@@ -4,8 +4,10 @@ export class Segment {
     constructor(public start: number, public end: number, public del: boolean, focussed: boolean) {}
 }
 
-export function editor() {
+export function editor(courseID:number, streamID:number) {
     return {
+        courseID: courseID,
+        streamID: streamID,
         player: undefined,
         initPlayer(video: HTMLVideoElement) {
             this.player = videojs(video, {
@@ -51,9 +53,23 @@ export function editor() {
             });
             this.segments[index].del = true;
         },
+        submit() {
+            fetch(`/api/editor/${this.courseID}/${this.streamID}`, {method: "POST", body: JSON.stringify(this.segments)})
+                .then(response => response.json());
+        },
         zoom: 100,
         timestamp:0,
         prevTimestamp:0,
         segments: [new Segment(0,1,false, true)],
+        clickPos(e: MouseEvent) {
+            console.log(e.offsetX/(e.target as HTMLImageElement).width);
+            this.setPos(e.offsetX/(e.target as HTMLImageElement).width);
+        },
+        movePos(e: MouseEvent) {
+            const waveform = e.target as HTMLImageElement;
+            const percentage = (e.clientX - waveform.getBoundingClientRect().left) / waveform.clientWidth;
+            const zoomedPercentage = percentage * this.zoom / 100;
+            this.prevTimestamp = zoomedPercentage;
+        },
     }
 }

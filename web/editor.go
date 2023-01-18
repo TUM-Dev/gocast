@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	"net/http"
 )
 
 func (r mainRoutes) editorPage(c *gin.Context) {
@@ -13,7 +14,16 @@ func (r mainRoutes) editorPage(c *gin.Context) {
 	id.IsAdmin = true
 	id.UserName = tlctx.User.Name
 	id.TUMLiveContext = tlctx
-	err := templateExecutor.ExecuteTemplate(c.Writer, "editor.gohtml", editorPageData{
+	err := tools.SetSignedPlaylists(id.TUMLiveContext.Stream, id.TUMLiveContext.User)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Can't set signed playlists",
+			Err:           err,
+		})
+		return
+	}
+	err = templateExecutor.ExecuteTemplate(c.Writer, "editor.gohtml", editorPageData{
 		IndexData: id,
 		Course:    *tlctx.Course,
 		Stream:    *tlctx.Stream,
