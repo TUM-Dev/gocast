@@ -20,7 +20,9 @@ export class SplitView {
         this.camPercentage = SplitView.Options.FocusPresentation;
         this.showSplitMenu = false;
         this.players = getPlayers();
-        this.toggleControlBars(this.camPercentage);
+
+        this.players[1].ready(() => this.setupControlBars());
+        this.cloneEvents(this.players[0].el(), this.players[1].el(), ["mousemove", "mouseenter", "mouseleave"])
 
         // Setup splitview
         // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -28,16 +30,17 @@ export class SplitView {
         this.split = Split(["#video-pres-wrapper", "#video-cam-wrapper"], {
             minSize: [0, 0],
             sizes: this.getSizes(),
-            onDragEnd: function (sizes: number[]) {
-                that.toggleControlBars(sizes[1]);
-            },
+            onDrag(sizes: number[]) {
+                that.updateControlBarSize(sizes);
+            }
         });
     }
 
     update(percentage: number) {
         this.camPercentage = percentage;
-        this.split.setSizes(this.getSizes());
-        this.toggleControlBars(this.camPercentage);
+        const newSizes = this.getSizes();
+        this.split.setSizes(newSizes);
+        this.updateControlBarSize(newSizes);
     }
 
     hideMenu() {
@@ -52,15 +55,29 @@ export class SplitView {
         return [100 - this.camPercentage, this.camPercentage];
     }
 
-    private toggleControlBars(camPercentage: number) {
-        let i = 0,
-            j = 1;
-        if (camPercentage > 50) {
-            (i = 1), (j = 0);
+    private cloneEvents(srcElem: HTMLElement, destElem: HTMLElement, events: string[]) {
+        for (const event of events) {
+            srcElem.addEventListener(event, (e) => {
+                // @ts-ignore
+                const clonedEvent = new e.constructor(e.type, e);
+                destElem.dispatchEvent(clonedEvent);
+            });
         }
-        this.players[j].controlBar.hide();
-        this.players[i].controlBar.show();
-        this.players[j].muted(true);
-        this.players[i].muted(false);
+    }
+
+    private setupControlBars() {
+        this.players[0].controlBar.hide();
+        this.players[0].muted(true);
+
+        const mainControlBarElem = this.players[1].controlBar.el();
+        mainControlBarElem.style.position = "absolute";
+        mainControlBarElem.style.zIndex = "1";
+        mainControlBarElem.style.width = "100vw";
+
+        this.updateControlBarSize(this.getSizes());
+    }
+
+    private updateControlBarSize(sizes: number[]) {
+        this.players[1].controlBar.el_.style.marginLeft = `-${sizes[0]}vw`;
     }
 }
