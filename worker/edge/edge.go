@@ -131,21 +131,19 @@ func validateToken(w http.ResponseWriter, r *http.Request) bool {
 	})
 	if err != nil { // e.g. some string that is not an actual jwt or signed with another key
 		w.WriteHeader(http.StatusForbidden)
-		_, _ = w.Write([]byte("Forbidden"))
-		return false
-	}
-
-	if !parsedToken.Valid { // e.g. an expired token
-		w.WriteHeader(http.StatusForbidden)
-		_, _ = w.Write([]byte("Forbidden"))
+		if parsedToken != nil && !parsedToken.Valid {
+			_, _ = w.Write([]byte("Forbidden, invalid token"))
+		} else {
+			_, _ = w.Write([]byte("Forbidden"))
+		}
 		return false
 	}
 
 	// verify that the claimed path in the token matches the request path:
 	allowedPlaylist, err := url.Parse(parsedToken.Claims.(*JWTPlaylistClaims).Playlist)
-	if err != nil {
+	if err != nil || (allowedPlaylist.Scheme != "https" && allowedPlaylist.Scheme != "http") {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("Bad Request. Parsing URL in jtw: " + err.Error()))
+		_, _ = w.Write([]byte("Bad Request. Parsing URL in jtw failed."))
 		return false
 	}
 
