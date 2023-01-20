@@ -5,6 +5,7 @@ export class SplitView {
     private camPercentage: number;
     private players: any[];
     private split: Split.Instance;
+    private gutterWidth: number;
 
     showSplitMenu: boolean;
 
@@ -78,6 +79,15 @@ export class SplitView {
     }
 
     private updateControlBarSize(sizes: number[]) {
-        this.players[1].controlBar.el_.style.marginLeft = `-${sizes[0]}vw`;
+        let newSize;
+        if (sizes[0] === 100) {
+            newSize = `calc(${this.gutterWidth / 2}px - 100vw)`;
+        } else if (sizes[0] === 0) {
+            newSize = `-${this.gutterWidth / 2}px`;
+        } else {
+            newSize = `-${sizes[0]}vw`
+        }
+
+        this.players[1].controlBar.el_.style.marginLeft = newSize;
     }
 }
