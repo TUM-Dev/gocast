@@ -5,7 +5,7 @@ export class SplitView {
     private camPercentage: number;
     private players: any[];
     private split: Split.Instance;
-    private gutterWidth: number;
+    private gutterWidth: number = 10;
 
     showSplitMenu: boolean;
 
