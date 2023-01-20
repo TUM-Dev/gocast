@@ -5,7 +5,7 @@ export class SplitView {
     private camPercentage: number;
     private players: any[];
     private split: Split.Instance;
-    private gutterWidth: number = 10;
+    private gutterWidth = 10;
 
     showSplitMenu: boolean;
 
@@ -23,7 +23,7 @@ export class SplitView {
         this.players = getPlayers();
 
         this.players[1].ready(() => this.setupControlBars());
-        this.cloneEvents(this.players[0].el(), this.players[1].el(), ["mousemove", "mouseenter", "mouseleave"])
+        this.cloneEvents(this.players[0].el(), this.players[1].el(), ["mousemove", "mouseenter", "mouseleave"]);
 
         // Setup splitview
         // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -33,7 +33,7 @@ export class SplitView {
             sizes: this.getSizes(),
             onDrag(sizes: number[]) {
                 that.updateControlBarSize(sizes);
-            }
+            },
         });
     }
 
@@ -85,7 +85,7 @@ export class SplitView {
         } else if (sizes[0] === 0) {
             newSize = `-${this.gutterWidth / 2}px`;
         } else {
-            newSize = `-${sizes[0]}vw`
+            newSize = `-${sizes[0]}vw`;
         }
 
         this.players[1].controlBar.el_.style.marginLeft = newSize;
