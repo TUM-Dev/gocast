@@ -1,23 +1,59 @@
 version: "3.8"
 
 services:
-  backend:
-    container_name: backend_container
+  tum-live:
+    container_name: tum-live
     depends_on:
       - db
     build: .
     ports:
-      - 8081:8081
-    networks:
-      backend-network:
+      - "8081:8081"
     volumes:
       - ./config.yaml:/etc/TUM-Live/config.yaml
       - ./branding/branding.yaml:/etc/TUM-Live/branding.yaml
-      - type: volume
-        source: recordings
-        target: /recordings
+      - mass:/mass
     restart: always
-
+    environment:
+      - DBHOST=db
+      - TZ=Europe/Berlin
+  worker:
+    container_name: tum-live-worker
+    depends_on:
+      - tum-live
+      - vod-service
+    build: worker
+    environment:
+      - Token=abc
+      - Host=worker
+      - MainBase=tum-live
+      - VodURLTemplate=http://localhost:8089/vod/%s.mp4/playlist.m3u8
+      - LrzUploadUrl=http://vod-service:8089
+      - DEBUG-MODE=true
+    volumes:
+      - recordings:/recordings
+      - mass:/mass
+  edge:
+    container_name: tum-live-edge
+    depends_on:
+      - tum-live
+    build: worker/edge
+    environment:
+      - VOD_DIR=/vod
+      - MAIN_INSTANCE=http://tum-live:8081
+    ports:
+      - "8089:8089"
+    volumes:
+      - recordings:/recordings
+      - vod:/vod
+  vod-service:
+    container_name: tum-live-vod-service
+    depends_on:
+      - tum-live
+    build: vod-service
+    environment:
+      - OUTPUT_DIR=/vod
+    volumes:
+      - vod:/vod
   db:
     container_name: mariadb_container
     image: mariadb
@@ -29,16 +65,12 @@ services:
     volumes:
       - ./init.sql:/data/application/init.sql
       - mariadb-data:/var/lib/mysql
-    networks:
-      backend-network:
     ports:
       - 3306:3306
     restart: always
 
-networks:
-  backend-network:
-    driver: bridge
-
 volumes:
   recordings:
+  mass:
+  vod:
   mariadb-data:
