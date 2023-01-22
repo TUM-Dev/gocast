@@ -65,8 +65,6 @@ services:
     volumes:
       - ./init.sql:/data/application/init.sql
       - mariadb-data:/var/lib/mysql
-    ports:
-      - 3306:3306
     restart: always
 
 volumes:
