@@ -6,6 +6,8 @@ export class SplitView {
     private players: any[];
     private split: Split.Instance;
 
+    private splitParent: HTMLElement;
+
     showSplitMenu: boolean;
 
     static Options = {
@@ -20,7 +22,12 @@ export class SplitView {
         this.camPercentage = SplitView.Options.FocusPresentation;
         this.showSplitMenu = false;
         this.players = getPlayers();
+        this.splitParent = document.querySelector("#video-pres-wrapper").parentElement;
         this.toggleControlBars(this.camPercentage);
+
+        this.players[1].ready(() => {
+            this.overwriteFullscreenToggle();
+        });
 
         // Setup splitview
         // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -62,5 +69,18 @@ export class SplitView {
         this.players[i].controlBar.show();
         this.players[j].muted(true);
         this.players[i].muted(false);
+    }
+
+    private overwriteFullscreenToggle() {
+        const fullscreenToggle = this.players[1].controlBar.fullscreenToggle;
+        fullscreenToggle.off("click");
+
+        fullscreenToggle.on("click", async () => {
+            if (document.fullscreenElement === null) {
+                await this.splitParent.requestFullscreen();
+            } else {
+                await document.exitFullscreen();
+            }
+        });
     }
 }
