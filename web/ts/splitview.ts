@@ -7,6 +7,7 @@ export class SplitView {
     private players: any[];
     private split: Split.Instance;
     private gutterWidth = 10;
+    private isFullscreen = false;
 
     showSplitMenu: boolean;
 
@@ -34,7 +35,7 @@ export class SplitView {
             sizes: this.getSizes(),
             onDrag(sizes: number[]) {
                 that.updateControlBarSize(sizes);
-            },
+            }
         });
     }
 
@@ -61,6 +62,11 @@ export class SplitView {
         this.players[0].controlBar.hide();
         this.players[0].muted(true);
 
+        this.players[1].el().addEventListener('fullscreenchange', () => {
+            this.isFullscreen = document.fullscreenElement !== null;
+            this.updateControlBarSize(this.getSizes());
+        });
+
         const mainControlBarElem = this.players[1].controlBar.el();
         mainControlBarElem.style.position = "absolute";
         mainControlBarElem.style.zIndex = "1";
@@ -71,7 +77,9 @@ export class SplitView {
 
     private updateControlBarSize(sizes: number[]) {
         let newSize;
-        if (sizes[0] === 100) {
+        if (this.isFullscreen) {
+            newSize = "0";
+        } else if (sizes[0] === 100) {
             newSize = `calc(${this.gutterWidth / 2}px - 100vw)`;
         } else if (sizes[0] === 0) {
             newSize = `-${this.gutterWidth / 2}px`;
