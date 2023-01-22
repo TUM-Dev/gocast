@@ -35,7 +35,7 @@ export class SplitView {
             sizes: this.getSizes(),
             onDrag(sizes: number[]) {
                 that.updateControlBarSize(sizes);
-            }
+            },
         });
     }
 
@@ -62,7 +62,7 @@ export class SplitView {
         this.players[0].controlBar.hide();
         this.players[0].muted(true);
 
-        this.players[1].el().addEventListener('fullscreenchange', () => {
+        this.players[1].el().addEventListener("fullscreenchange", () => {
             this.isFullscreen = document.fullscreenElement !== null;
             this.updateControlBarSize(this.getSizes());
         });
