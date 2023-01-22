@@ -116,8 +116,7 @@ type JWTPlaylistClaims struct {
 func validateToken(w http.ResponseWriter, r *http.Request) bool {
 	token := r.URL.Query().Get("jwt")
 	if token == "" {
-		w.WriteHeader(http.StatusForbidden)
-		_, _ = w.Write([]byte("Forbidden"))
+		http.Error(w, "Missing JWT", http.StatusForbidden)
 		return false
 	}
 
