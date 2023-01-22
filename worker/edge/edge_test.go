@@ -18,7 +18,7 @@ func BenchmarkValidateToken(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	r, _ := http.NewRequest("GET", testURL+"?jwt="+str, nil)
+	r, _ := http.NewRequest(http.MethodGet, testURL+"?jwt="+str, nil)
 	r.URL.Query().Add("jwt", "abc")
 	w := httptest.NewRecorder()
 	b.ResetTimer()
