@@ -1,5 +1,6 @@
 import { getPlayers } from "./TUMLiveVjs";
 import Split from "split.js";
+import { cloneEvents } from "./global";
 
 export class SplitView {
     private camPercentage: number;
@@ -23,7 +24,7 @@ export class SplitView {
         this.players = getPlayers();
 
         this.players[1].ready(() => this.setupControlBars());
-        this.cloneEvents(this.players[0].el(), this.players[1].el(), ["mousemove", "mouseenter", "mouseleave"]);
+        cloneEvents(this.players[0].el(), this.players[1].el(), ["mousemove", "mouseenter", "mouseleave"]);
 
         // Setup splitview
         // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -54,16 +55,6 @@ export class SplitView {
 
     private getSizes(): number[] {
         return [100 - this.camPercentage, this.camPercentage];
-    }
-
-    private cloneEvents(srcElem: HTMLElement, destElem: HTMLElement, events: string[]) {
-        for (const event of events) {
-            srcElem.addEventListener(event, (e) => {
-                // @ts-ignore
-                const clonedEvent = new e.constructor(e.type, e);
-                destElem.dispatchEvent(clonedEvent);
-            });
-        }
     }
 
     private setupControlBars() {
