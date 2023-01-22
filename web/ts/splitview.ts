@@ -28,7 +28,7 @@ export class SplitView {
         this.splitParent = document.querySelector("#video-pres-wrapper").parentElement;
 
         this.players[1].ready(() => {
-            this.setupControlBars()
+            this.setupControlBars();
             this.overwriteFullscreenToggle();
         });
 
