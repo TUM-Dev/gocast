@@ -36,7 +36,7 @@ var templatePaths = []string{
 func ConfigGinRouter(router *gin.Engine) {
 	if VersionTag != "development" {
 		templateExecutor = tools.ReleaseTemplateExecutor{
-			Template: template.Must(template.New("base").Funcs(sprig.FuncMap()).ParseFS(templateFS, templatePaths...)),
+			Template: template.Must(template.New("base").Funcs(sprig.FuncMap()).Funcs(tools.TemplateExtraFuncs).ParseFS(templateFS, templatePaths...)),
 		}
 	} else {
 		prefixedTemplatePaths := make([]string, len(templatePaths))

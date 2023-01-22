@@ -6,24 +6,44 @@
     {{template "headImports" .IndexData.VersionTag}}
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
     <script src="/static/assets/ts-dist/admin.bundle.js?v={{.IndexData.VersionTag}}"></script>
+    <style>
+        .video-js {
+            border-radius: .5rem;
+            background-color: transparent;
+        }
+        .vjs-tech {
+            border-radius: .5rem;
+        }
+    </style>
 </head>
 <body>
 {{template "header" .IndexData.TUMLiveContext}}
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.editorPageData*/ -}}
-<div x-data="admin.editor({{.Stream.CourseID}}, {{.Stream.Model.ID}})">
-    <div class="w-full md:w-10/12 2xl:max-w-screen-lg m-auto" style="max-height: 70vh">
-        <video x-init="initPlayer($el)" class="video-js vjs-default-skin">
+<div
+        x-data="admin.editor({{.Stream.CourseID}}, {{.Stream.Model.ID}})">
+    <div class="my-4 w-full md:w-1/2 2xl:max-w-screen-lg m-auto" style="max-height: 70vh">
+        <video x-init="initPlayer($el)" class="video-js vjs-default-skin shadow-md">
             <source src="{{.Stream.PlaylistUrl}}" type="application/x-mpegURL">
         </video>
     </div>
-    <div class="mt-4 flex justify-center w-full">
-        <button title="Play/Pause" class="btn mx-2" @click="player.paused()?player.play():player.pause()"><i
-                    class="fas fa-play"></i><i class="fas fa-pause"></i></button>
-        <button title="Cut at current time" class="btn mx-2" @click="addCut()"><i class="fas fa-scissors"></i></button>
-        <button title="Delete active segment" class="btn mx-2" @click="deleteCurrentSegment()"
-                :disabled="segments.length===1"><i class="fas fa-trash"></i></button>
-        <button title="Sumbit" class="btn mx-2" @click="submit()"
-                :disabled="segments.length===1"><i class="fas fa-check"></i></button>
+    <div class="grid md:grid-cols-3 grid-rows-3 md:grid-rows-1 w-full px-3">
+        <div class="flex justify-center md:justify-start">
+            <button class="btn mx-2" @click="mergeLeft()"><i class="fas fa-backward-step mr-2"></i>Merge Left</button>
+            <button class="btn mx-2" @click="mergeRight()"><i class="fas fa-forward-step mr-2"></i>Merge Right</button>
+        </div>
+        <div class="flex justify-center">
+            <button title="Play/Pause" class="btn mx-2" @click="player.paused()?player.play():player.pause()"><i
+                        class="fas fa-play"></i><i class="fas fa-pause"></i></button>
+            <button title="Cut at current time" class="btn mx-2" @click="addCut()"><i class="fas fa-scissors"></i></button>
+            <button title="Delete/Restore Active Segment" class="btn mx-2" @click="toggleDeleteCurrentSegment()"
+                    :disabled="segments.length===1"><i class="fas fa-video-slash"></i></button>
+        </div>
+
+        <div class="flex justify-center md:justify-end">
+            <button title="Sumbit" class="btn mx-2" @click="submit()"
+                    :disabled="segments.length===1"><i class="fas fa-check"></i></button>
+        </div>
+
     </div>
     <div class="p-4">
         <div class="cursor-pointer relative w-full overflow-x-scroll overflow-y-hidden h-40 bg-gray-400 dark:bg-secondary rounded-lg shadow-sm">
@@ -36,22 +56,25 @@
                     <div class="absolute top-0 h-40 p-[1px]"
                          :style="'z-index:-1;left:'+segment.start*100+'%;width:'+(segment.end-segment.start)*100+'%'">
                         <div class="w-full h-full rounded border"
-                             :style="(timestamp>=segment.start && timestamp<segment.end) && 'border-width: 3px;border-color:white; border-style: solid'"
+                             :style="(timestamp>=segment.start && timestamp<segment.end) && 'border-width: 3px; border-style: solid'"
                              :class="segment.del?'bg-red-800/25 border-red-800':'border-gray-600 bg-gray-600/25'"></div>
                     </div>
                 </template>
                 <span class="absolute top-0 text-3 h-40 border border-black dark:border-white w-[1px]"
                       :style="'left:'+timestamp*100+'%'"></span>
+
+                <span class="absolute top-0 text-3 h-40 border border-gray-900 dark:border-gray-700 w-[1px]"
+                      :style="'left:'+prevTimestamp*100+'%'" @click="click(prevTimestamp)"></span>
             </div>
-            <span class="absolute top-0 text-3 h-40 border border-gray-900 dark:border-gray-700 w-[1px]"
-                  :style="'left:'+prevTimestamp*100+'%'" @click="clickPos(prevTimestamp)"></span>
         </div>
         <div class="flex justify-center mt-2" x-show="true" x-cloak> <!-- todo fix zoom-->
             <button title="Zoom Out" class="btn mx-2" @click="zoom-=10" :disabled="zoom<=100">-</button>
             <button title="Reset Zoom" class="btn mx-2" @click="zoom=100" :disabled="zoom==100">100%</button>
             <button title="Zoom In" class="btn mx-2" @click="zoom+=10" :disabled="zoom>=250">+</button>
         </div>
+        <button @click="showHelp=!showHelp" class="absolute bottom-2 right-5 btn" title="Show Help"><i class="fas fa-question-circle"></i></button>
     </div>
+    {{template "modal" (dict "showIf" "showHelp" "header" "Help" "body" `This is a help text<br> cool!`)}}
 </div>
 
 </body>

@@ -20,7 +20,7 @@ func (e DebugTemplateExecutor) ExecuteTemplate(w io.Writer, name string, data in
 		panic("Provide at least one pattern for the debug template executor.")
 	}
 
-	var t, err = template.New("base").Funcs(sprig.FuncMap()).ParseGlob(e.Patterns[0])
+	var t, err = template.New("base").Funcs(sprig.FuncMap()).Funcs(TemplateExtraFuncs).ParseGlob(e.Patterns[0])
 	if err != nil {
 		log.Print("Failed to load pattern: '" + e.Patterns[0] + "'. Error: " + err.Error())
 	}
@@ -42,4 +42,12 @@ type ReleaseTemplateExecutor struct {
 
 func (e ReleaseTemplateExecutor) ExecuteTemplate(w io.Writer, name string, data interface{}) error {
 	return e.Template.ExecuteTemplate(w, name, data)
+}
+
+// TemplateExtraFuncs are methods we can use in our templates for convenience.
+var TemplateExtraFuncs = map[string]any{
+	// toHTML converts a string that would be escaped by the template engine to an HTML element that is not escaped.
+	"toHTML": func(s string) template.HTML {
+		return template.HTML(s)
+	},
 }
