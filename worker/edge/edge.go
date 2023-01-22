@@ -48,6 +48,8 @@ var allowedOrigin = "*"
 
 var mainInstance = "http://localhost:8081"
 
+var adminToken = ""
+
 func main() {
 	log.Println("Starting edge tumlive version " + VersionTag)
 	port := os.Getenv("PORT")
@@ -77,6 +79,7 @@ func main() {
 	if mainInstanceEnv != "" {
 		mainInstance = mainInstanceEnv
 	}
+	adminToken = os.Getenv("ADMIN_TOKEN")
 	ServeEdge(port)
 }
 
@@ -110,43 +113,55 @@ type JWTPlaylistClaims struct {
 	Playlist string
 }
 
+func validateToken(w http.ResponseWriter, r *http.Request) bool {
+	token := r.URL.Query().Get("jwt")
+	if token == "" {
+		http.Error(w, "Missing JWT", http.StatusForbidden)
+		return false
+	}
+
+	if token == adminToken {
+		return true
+	}
+
+	parsedToken, err := jwt.ParseWithClaims(token, &JWTPlaylistClaims{}, func(token *jwt.Token) (interface{}, error) {
+		key := jwtPubKey
+		return key, nil
+	})
+	if err != nil { // e.g. some string that is not an actual jwt or signed with another key
+		w.WriteHeader(http.StatusForbidden)
+		if parsedToken != nil && !parsedToken.Valid {
+			_, _ = w.Write([]byte("Forbidden, invalid token"))
+		} else {
+			_, _ = w.Write([]byte("Forbidden"))
+		}
+		return false
+	}
+
+	// verify that the claimed path in the token matches the request path:
+	allowedPlaylist, err := url.Parse(parsedToken.Claims.(*JWTPlaylistClaims).Playlist)
+	if err != nil || (allowedPlaylist.Scheme != "https" && allowedPlaylist.Scheme != "http") {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("Bad Request. Parsing URL in jtw failed."))
+		return false
+	}
+
+	urlParts := strings.Split(allowedPlaylist.Path, "/")
+	allowedPath := vodPath + "/" + strings.Join(urlParts[2:len(urlParts)-1], "/")
+	if !strings.HasPrefix(r.URL.Path, allowedPath+"/") {
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte("Forbidden. URL doesn't match claim in jwt."))
+		return false
+	}
+
+	return true
+}
+
 func vodHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Origin", allowedOrigin)
 	if jwtPubKey != nil {
 		// validate token; every page access requires a valid jwt.
-		token := r.URL.Query().Get("jwt")
-		if token == "" {
-			w.WriteHeader(http.StatusForbidden)
-			_, _ = w.Write([]byte("Forbidden"))
-			return
-		}
-		parsedToken, err := jwt.ParseWithClaims(token, &JWTPlaylistClaims{}, func(token *jwt.Token) (interface{}, error) {
-			key := jwtPubKey
-			return key, nil
-		})
-		if err != nil { // e.g. some string that is not an actual jwt or signed with another key
-			w.WriteHeader(http.StatusForbidden)
-			_, _ = w.Write([]byte("Forbidden"))
-			return
-		}
-		if !parsedToken.Valid { // e.g. an expired token
-			w.WriteHeader(http.StatusForbidden)
-			_, _ = w.Write([]byte("Forbidden"))
-			return
-		}
-
-		// verify that the claimed path in the token matches the request path:
-		allowedPlaylist, err := url.Parse(parsedToken.Claims.(*JWTPlaylistClaims).Playlist)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte("Bad Request. Parsing URL in jtw: " + err.Error()))
-			return
-		}
-		urlParts := strings.Split(allowedPlaylist.Path, "/")
-		allowedPath := vodPath + "/" + strings.Join(urlParts[2:len(urlParts)-1], "/")
-		if !strings.HasPrefix(r.URL.Path, allowedPath+"/") {
-			w.WriteHeader(http.StatusForbidden)
-			_, _ = w.Write([]byte("Forbidden. URL doesn't match claim in jwt."))
+		if !validateToken(w, r) {
 			return
 		}
 
@@ -175,7 +190,7 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 			lines := strings.Split(string(fileContents), "\n")
 			for i, line := range lines {
 				if strings.HasSuffix(line, ".ts") {
-					lines[i] = line + "?jwt=" + token
+					lines[i] = line + "?jwt=" + r.URL.Query().Get("jwt")
 				}
 			}
 			resp := strings.Join(lines, "\n")

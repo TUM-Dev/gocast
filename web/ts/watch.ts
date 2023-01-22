@@ -2,7 +2,7 @@ import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
 import { getPlayers } from "./TUMLiveVjs";
 import { Realtime } from "./socket";
-import { copyToClipboard } from "./global";
+import { copyToClipboard, Time } from "./global";
 
 let currentChatChannel = "";
 const retryInt = 5000; //retry connecting to websocket after this timeout
@@ -318,7 +318,7 @@ export class ShareURL {
             if (shouldFetchPlayerTime || !this.timestamp) {
                 const player = getPlayers()[0];
                 await this.playerHasTime;
-                await this.setTimestamp(player.currentTime());
+                this.timestamp = Time.FromSeconds(player.currentTime()).toStringWithLeadingZeros();
                 await this.updateURLStateFromTimestamp();
             } else {
                 await this.updateURLStateFromTimestamp();
@@ -351,20 +351,5 @@ export class ShareURL {
                 this.timestampArgument = `?t=${inSeconds}`;
             }
         }
-    }
-
-    private async setTimestamp(time: number) {
-        const d = new Date(time * 1000);
-        const h = ShareURL.padZero(d.getUTCHours());
-        const m = ShareURL.padZero(d.getUTCMinutes());
-        const s = ShareURL.padZero(d.getSeconds());
-        this.timestamp = `${h}:${m}:${s}`;
-    }
-
-    private static padZero(i: string | number) {
-        if (i < 10) {
-            i = "0" + i;
-        }
-        return i;
     }
 }

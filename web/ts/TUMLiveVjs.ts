@@ -1,4 +1,4 @@
-import { getQueryParam, postData } from "./global";
+import { getQueryParam, keepQuery, postData, Time } from "./global";
 import { VideoSectionList } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
@@ -97,6 +97,24 @@ export const initPlayer = function (
             const persistedRate = window.localStorage.getItem("rate");
             if (persistedRate !== null) {
                 player.playbackRate(persistedRate);
+            }
+        } else {
+            // same procedure as with watch progress
+            let iOSReady;
+            const jumpTo: number | undefined = +getQueryParam("t");
+            player.on("loadedmetadata", () => {
+                if (jumpTo) {
+                    player.currentTime(jumpTo);
+                }
+            });
+            if (videojs.browser.IS_IOS) {
+                player.on("canplaythrough", () => {
+                    // Can be executed multiple times during playback
+                    if (!iOSReady && jumpTo) {
+                        player.currentTime(jumpTo);
+                        iOSReady = true;
+                    }
+                });
             }
         }
         if (isEmbedded) {
@@ -539,7 +557,7 @@ export class OverlayIcon extends Component {
 export function jumpTo(hours: number, minutes: number, seconds: number) {
     for (let j = 0; j < players.length; j++) {
         players[j].ready(() => {
-            players[j].currentTime(toSeconds(hours, minutes, seconds));
+            players[j].currentTime(new Time(hours, minutes, seconds).toSeconds());
         });
     }
 }
@@ -582,37 +600,38 @@ export function attachCurrentTimeEvent(videoSection: VideoSectionList) {
             let timer;
             (function checkTimestamp() {
                 timer = setTimeout(() => {
-                    hightlight(players[j], videoSection);
+                    highlight(players[j], videoSection);
                     checkTimestamp();
                 }, 500);
             })();
-            players[j].on("seeked", () => hightlight(players[j], videoSection));
+            players[j].on("seeked", () => highlight(players[j], videoSection));
         });
     }
 }
 
-export function currentTimeToHMS() {
-    const ct = players[0]?.currentTime();
-    const h = Math.trunc(ct / (60 * 60));
-    const m = Math.trunc((ct % (60 * 60)) / 60);
-    const s = Math.trunc(ct - h * (60 * 60) - m * 60);
-    return { h, m, s };
+export function switchView(baseUrl: string) {
+    const isDVR = getQueryParam("dvr") === "";
+
+    let redirectUrl = keepQuery(baseUrl);
+    if (isDVR) {
+        const player = getPlayers()[0];
+        const url = new URL(window.location.origin + redirectUrl);
+        url.searchParams.set("t", String(Math.floor(player.currentTime())));
+        redirectUrl = url.toString();
+    }
+    window.location.assign(redirectUrl);
 }
 
-function hightlight(player, videoSection) {
+function highlight(player, videoSection) {
     const currentTime = player.currentTime();
     videoSection.currentHighlightIndex = videoSection.list.findIndex((section, i, list) => {
         const next = list[i + 1];
-        const sectionSeconds = toSeconds(section.startHours, section.startMinutes, section.startSeconds);
+        const sectionSeconds = new Time(section.startHours, section.startMinutes, section.startSeconds).toSeconds();
         return next === undefined || next === null // if last element and no next exists
             ? sectionSeconds <= currentTime
             : sectionSeconds <= currentTime &&
-                  currentTime <= toSeconds(next.startHours, next.startMinutes, next.startSeconds) - 1;
+                  currentTime <= new Time(next.startHours, next.startMinutes, next.startSeconds).toSeconds() - 1;
     });
-}
-
-function toSeconds(hours: number, minutes: number, seconds: number): number {
-    return hours * 60 * 60 + minutes * 60 + seconds;
 }
 
 function debounce(func, timeout) {

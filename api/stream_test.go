@@ -276,19 +276,6 @@ func TestStreamVideoSections(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	t.Run("GET/api/stream/:streamID/sections", func(t *testing.T) {
 		// generate same response as in handler
-		response := []gin.H{}
-		for _, section := range testutils.StreamFPVLive.VideoSections {
-			response = append(response, gin.H{
-				"ID":                section.ID,
-				"startHours":        section.StartHours,
-				"startMinutes":      section.StartMinutes,
-				"startSeconds":      section.StartSeconds,
-				"description":       section.Description,
-				"friendlyTimestamp": section.TimestampAsString(),
-				"streamID":          section.StreamID,
-				"fileID":            section.FileID,
-			})
-		}
 
 		url := fmt.Sprintf("/api/stream/%d/sections", testutils.StreamFPVLive.ID)
 		gomino.TestCases{
@@ -330,7 +317,7 @@ func TestStreamVideoSections(t *testing.T) {
 				},
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: response,
+				ExpectedResponse: testutils.StreamFPVLive.VideoSections,
 			}}.
 			Method(http.MethodGet).
 			Url(url).

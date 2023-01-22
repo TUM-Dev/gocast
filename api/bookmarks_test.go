@@ -99,18 +99,7 @@ func TestBookmarks(t *testing.T) {
 	t.Run("GET/api/bookmarks", func(t *testing.T) {
 		baseUrl := "/api/bookmarks"
 
-		bookmark := testutils.Bookmark
 		bookmarks := []model.Bookmark{testutils.Bookmark}
-		response := []gin.H{
-			{
-				"ID":                bookmark.ID,
-				"hours":             bookmark.Hours,
-				"minutes":           bookmark.Minutes,
-				"seconds":           bookmark.Seconds,
-				"description":       bookmark.Description,
-				"friendlyTimestamp": bookmark.TimestampAsString(),
-			},
-		}
 
 		gomino.TestCases{
 			"not logged in": {
@@ -187,7 +176,7 @@ func TestBookmarks(t *testing.T) {
 				Url:              fmt.Sprintf("%s?streamID=%d", baseUrl, testutils.StreamFPVLive.ID),
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
 				ExpectedCode:     http.StatusOK,
-				ExpectedResponse: response,
+				ExpectedResponse: bookmarks,
 			},
 		}.Run(t, testutils.Equal)
 	})
