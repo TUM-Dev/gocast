@@ -1,10 +1,13 @@
 import { getPlayers } from "./TUMLiveVjs";
 import Split from "split.js";
+import { cloneEvents } from "./global";
 
 export class SplitView {
     private camPercentage: number;
     private players: any[];
     private split: Split.Instance;
+    private gutterWidth = 10;
+    private isFullscreen = false;
 
     private splitParent: HTMLElement;
 
@@ -23,11 +26,13 @@ export class SplitView {
         this.showSplitMenu = false;
         this.players = getPlayers();
         this.splitParent = document.querySelector("#video-pres-wrapper").parentElement;
-        this.toggleControlBars(this.camPercentage);
 
         this.players[1].ready(() => {
+            this.setupControlBars()
             this.overwriteFullscreenToggle();
         });
+
+        cloneEvents(this.players[0].el(), this.players[1].el(), ["mousemove", "mouseenter", "mouseleave"]);
 
         // Setup splitview
         // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -35,16 +40,17 @@ export class SplitView {
         this.split = Split(["#video-pres-wrapper", "#video-cam-wrapper"], {
             minSize: [0, 0],
             sizes: this.getSizes(),
-            onDragEnd: function (sizes: number[]) {
-                that.toggleControlBars(sizes[1]);
+            onDrag(sizes: number[]) {
+                that.updateControlBarSize(sizes);
             },
         });
     }
 
     update(percentage: number) {
         this.camPercentage = percentage;
-        this.split.setSizes(this.getSizes());
-        this.toggleControlBars(this.camPercentage);
+        const newSizes = this.getSizes();
+        this.split.setSizes(newSizes);
+        this.updateControlBarSize(newSizes);
     }
 
     hideMenu() {
@@ -59,16 +65,36 @@ export class SplitView {
         return [100 - this.camPercentage, this.camPercentage];
     }
 
-    private toggleControlBars(camPercentage: number) {
-        let i = 0,
-            j = 1;
-        if (camPercentage > 50) {
-            (i = 1), (j = 0);
+    private setupControlBars() {
+        this.players[0].controlBar.hide();
+        this.players[0].muted(true);
+
+        this.players[1].el().addEventListener("fullscreenchange", () => {
+            this.isFullscreen = document.fullscreenElement !== null;
+            this.updateControlBarSize(this.getSizes());
+        });
+
+        const mainControlBarElem = this.players[1].controlBar.el();
+        mainControlBarElem.style.position = "absolute";
+        mainControlBarElem.style.zIndex = "1";
+        mainControlBarElem.style.width = "100vw";
+
+        this.updateControlBarSize(this.getSizes());
+    }
+
+    private updateControlBarSize(sizes: number[]) {
+        let newSize;
+        if (this.isFullscreen) {
+            newSize = "0";
+        } else if (sizes[0] === 100) {
+            newSize = `calc(${this.gutterWidth / 2}px - 100vw)`;
+        } else if (sizes[0] === 0) {
+            newSize = `-${this.gutterWidth / 2}px`;
+        } else {
+            newSize = `-${sizes[0]}vw`;
         }
-        this.players[j].controlBar.hide();
-        this.players[i].controlBar.show();
-        this.players[j].muted(true);
-        this.players[i].muted(false);
+
+        this.players[1].controlBar.el_.style.marginLeft = newSize;
     }
 
     private overwriteFullscreenToggle() {

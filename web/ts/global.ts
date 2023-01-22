@@ -336,3 +336,13 @@ export type Section = {
 window.onload = function () {
     initHiddenCourses();
 };
+
+export function cloneEvents(srcElem: HTMLElement, destElem: HTMLElement, events: string[]) {
+    for (const event of events) {
+        srcElem.addEventListener(event, (e) => {
+            // @ts-ignore
+            const clonedEvent = new e.constructor(e.type, e);
+            destElem.dispatchEvent(clonedEvent);
+        });
+    }
+}
