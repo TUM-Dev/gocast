@@ -11,6 +11,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"os"
 	"time"
 )
 
@@ -84,6 +85,10 @@ func initConfig() {
 			return
 		}
 		jwtKey = key
+	}
+	// allow overwriting database host with env var, mainly for testing with docker-compose
+	if os.Getenv("DBHOST") != "" {
+		Cfg.Db.Host = os.Getenv("DBHOST")
 	}
 }
 

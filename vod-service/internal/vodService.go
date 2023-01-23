@@ -86,7 +86,7 @@ func (a *App) packageFile(file, name string) {
 		log.Println(err)
 		// try to continue anyway
 	}
-	err = os.Mkdir(a.config.outputDir+name, os.ModePerm)
+	err = os.MkdirAll(a.config.outputDir+name, os.ModePerm)
 	if err != nil {
 		log.Println(err)
 		return
