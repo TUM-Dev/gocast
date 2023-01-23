@@ -7,6 +7,7 @@ require (
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
 	github.com/antchfx/xmlquery v1.3.13
 	github.com/dgraph-io/ristretto v0.1.1
+	github.com/gabstv/melody v1.0.2
 	github.com/getsentry/sentry-go v0.16.0
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-gonic/gin v1.8.2
@@ -16,7 +17,7 @@ require (
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/golang-jwt/jwt/v4 v4.4.3
 	github.com/golang/glog v1.0.0 // indirect
-	github.com/gorilla/websocket v1.5.0
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/jinzhu/now v1.1.5
 	github.com/microcosm-cc/bluemonday v1.0.21
 	github.com/pkg/profile v1.7.0
@@ -49,8 +50,6 @@ require (
 	github.com/TUM-Dev/CampusProxy/client v0.0.0-20220928080722-4bd1259b2d06
 	github.com/matthiasreumann/gomino v0.0.2
 	github.com/meilisearch/meilisearch-go v0.22.0
-	github.com/mono424/go-pts v0.0.4
-	github.com/mono424/go-pts-gorilla-connector v0.0.5
 )
 
 replace github.com/joschahenningsen/TUM-Live/worker v0.0.0-20221121181736-be4063efd68c => ./worker
@@ -58,6 +57,7 @@ replace github.com/joschahenningsen/TUM-Live/worker v0.0.0-20221121181736-be4063
 require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/felixge/fgprof v0.9.3 // indirect
+	github.com/frankban/quicktest v1.14.4 // indirect
 	github.com/google/pprof v0.0.0-20221219190121-3cb0bae90811 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.15.13 // indirect
@@ -89,7 +89,7 @@ require (
 	github.com/goccy/go-json v0.10.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/uuid v1.3.0 // indirect
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
@@ -121,7 +121,7 @@ require (
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/ugorji/go/codec v1.2.8 // indirect
 	golang.org/x/net v0.4.0 // indirect
-	golang.org/x/sys v0.3.0 // indirect
+	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/text v0.5.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

@@ -24,13 +24,13 @@
       @keypress.shift.window="(e) => watch.onShift(e)"
       x-init="watch.startWebsocket(); seekLogger.attach();">
 {{template "header" .IndexData.TUMLiveContext}}
-<div id="shortcuts-help-modal" class="hidden flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
+<div id="shortcuts-help-modal" class="hidden flex fixed top-0 h-screen w-screen z-50 backdrop-brightness-50">
     <div class="m-auto" @click.outside="watch.toggleShortcutsModal();">
         {{template "shortcuts"}}
     </div>
 </div>
 <div x-cloak x-show="showShare"
-     id="share-modal" class="flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
+     id="share-modal" class="flex fixed top-0 h-screen w-screen z-50 backdrop-brightness-50">
     <div class="m-auto lg:w-1/2 w-3/4" @click.outside="showShare=false">
         <div class="bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
             <div class="flex justify-between items-center px-3 pt-3 pb-1">
@@ -66,6 +66,7 @@
         </div>
     </div>
 </div>
+{{if .IndexData.TUMLiveContext.User}}
 <div id="bookmarks-mobile" x-cloak="" x-show="showBookmarks"
      class="md:hidden flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
     <div @click.outside="showBookmarks = false"
@@ -73,6 +74,7 @@
         {{template "bookmarks-modal" $stream.ID}}
     </div>
 </div>
+{{end}}
 <div id="watchPageMainWrapper">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
     <div class="flex flex-wrap shadow border bg-white dark:bg-secondary dark:shadow-0 dark:border-0">
@@ -291,8 +293,8 @@
         {{if and $course.ChatEnabled $stream.ChatEnabled}}
             <div x-show="showChat"
                  :class="showChat ? 'lg:basis-1/4' : 'lg:basis-0'"
-                 class="z-20 basis-full order-3 border rounded p-1 mx-5 bg-gray-100 dark:bg-gray-800 dark:border-0 lg:h-16/6 h-96
-                        lg:border-0 lg:shadow lg:order-none lg:mx-0 lg:p-0 lg:bg-transparent">
+                 class="z-20 basis-full order-5 border rounded lg:h-16/6 h-96
+                        lg:border-0 lg:shadow lg:order-none">
                 <div id="chat-box" class="bg-white rounded lg:bg-transparent md:rounded-0 dark:bg-secondary h-full">
                     {{template "chat" .ChatData}}
                 </div>
@@ -300,18 +302,20 @@
         {{end}}
 
         <!-- Bookmarks -->
+        {{if .IndexData.TUMLiveContext.User}}
         <div id="bookmarks-desktop" x-cloak="" x-show="showBookmarks"
              :class="showBookmarks ? 'lg:basis-1/4' : 'lg:basis-0'"
-             class="hidden md:block basis-full h-96 lg:h-16/6 px-5 md:px-2 md:pt-2 lg:order-none order-5">
+             class="hidden md:block basis-full h-96 lg:h-16/6 px-5 md:px-2 md:pt-2 lg:order-none order-4">
             {{template "bookmarks-modal" $stream.ID}}
         </div>
+        {{end}}
 
         <!-- stream info container -->
         <!-- Title, course name, actions -->
         <div class="basis-full relative order-2 p-5 lg:order-none">
-            <div class="flex justify-between align-middle border-b dark:border-gray-800 pb-2 lg:border-0">
+            <div class="flex flex-col justify-between align-middle pb-2 md:flex-row">
                 <!-- title and course-name -->
-                <div class="grid mb-auto shrink">
+                <div class="pb-3 border-b dark:border-gray-600 grid shrink mb-auto lg:pb-0 lg:border-0">
                     <h1 class="font-bold text-4 text-lg grow lg:text-2xl"
                         @titleupdate.window="$el.innerText=$event.detail.title">
                         {{if $stream.Name}}
@@ -333,8 +337,8 @@
                 </div>
 
                 <!-- Desktop stream info-->
-                <div class="grid gap-3 shrink-0">
-                    <div class="space-x-2 text-lg text-4 hidden md:inline-flex shrink-0 my-auto">
+                <div class="grid pt-3 shrink-0 lg:pt-0">
+                    <div class="justify-center space-x-2 text-lg text-4 inline-flex shrink-0 my-auto">
                         {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
                             <a class="rounded-lg px-3 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
                                href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
@@ -372,43 +376,10 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Mobile stream info -->
-            <div class="md:hidden flex justify-between mt-5 text-3">
-                <div class="flex">
-                    {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
-                        <a class="rounded-lg px-3 py-2 w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600 mr-2"
-                           href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
-                           :title="'Edit course settings'">
-                            <i class="fa-solid fa-pen text-4"></i>
-                        </a>
-                    {{end}}
-
-                    {{if .IndexData.TUMLiveContext.User}}
-                        <button @click="showChat = false; showBookmarks = !showBookmarks"
-                                class="rounded-lg px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600 mr-2"
-                                :title="'New Bookmark'">
-                            <i class="fa-solid fa-bookmark text-4"></i>
-                        </button>
-                    {{end}}
-
-                    {{template "actions" .}}
-                </div>
-
-                {{if and $course.ChatEnabled $stream.ChatEnabled}}
-                    <!-- Mobile Open Chat -->
-                    <button @click="showBookmarks = false;showChat = !showChat;"
-                            title="Open Chat"
-                            :class="showChat ? 'bg-gray-200 hover:bg-gray-100 dark:bg-gray-600 dark:hover:bg-secondary' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600'"
-                            class="rounded-lg px-3 py-2 w-fit">
-                        <i class="fa-solid fa-comments text-4"></i>
-                    </button>
-                {{end}}
-            </div>
         </div>
         {{if and .IsAdminOfCourse $stream.LiveNow}}
             <!-- Admin control buttons -->
-            <div class="w-full p-5 lg:order-none order-4">
+            <div class="w-full p-3 lg:order-none order-2 lg:p-5">
                 <h3 class="text-4 font-semibold border-b dark:border-gray-800 mb-3">Admin</h3>
                 <div class="md:space-x-2 lg:space-y-0 space-y-2 w-full">
                     {{/* Lecture hall is set, means no self-stream*/}}
@@ -436,7 +407,7 @@
                 </div>
             </div>
             {{if and .Presets $stream.LiveNow}}
-                <div class="w-full px-5 order-3">
+                <div class="p-3 w-full order-2 lg:p-5">
                     <h3 class="text-4 font-semibold border-b dark:border-gray-800 mb-3">Presets</h3>
                     <div class="w-full overflow-x-scroll scrollbarThin">
                         <div class="flex flex-row gap-x-2 pb-4 pl-2">
@@ -457,10 +428,10 @@
             {{end}}
         {{end}}
 
-        <div class="flex flex-col lg:flex-row basis-full order-5">
+        <div class="flex flex-col lg:flex-row basis-full order-4">
             <!-- Video Sections -->
             {{if $stream.VideoSections}}
-                <div class="lg:basis-1/2 p-5 order-5 lg:order-none">
+                <div class="p-2 order-4 lg:basis-1/2 lg:p-5 lg:order-none">
                     {{template "videosections" $stream}}
                 </div>
             {{end}}
@@ -473,7 +444,7 @@
             <div x-data="{ less: {{$less}}, toggleDesc: true }"
                     {{/* Update less on update */}}
                  @descriptionupdate.window="toggleDesc = less = $event.detail.description.full.length > {{.CutOffLength}};"
-                 class="video-description flex-grow p-5 lg:mx-2 basis-full lg:order-none order-4">
+                 class="video-description flex-grow p-3 order-2 basis-full lg:order-none lg:p-5 lg:mx-2">
                 <div class="flex justify-between border-b mb-1 dark:border-gray-800 lg:justify-start">
                     <h3 class="text-4 font-semibold">Description</h3>
                 </div>
