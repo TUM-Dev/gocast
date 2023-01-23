@@ -80,6 +80,14 @@ export const initPlayer = function (
     player.on("ratechange", function () {
         window.localStorage.setItem("rate", player.playbackRate());
     });
+
+    // When catching up to live, resume at normal speed
+    player.liveTracker.on("liveedgechange", function (evt) {
+        if (player.liveTracker.atLiveEdge() && player.playbackRate() > 1) {
+            player.playbackRate(1);
+        }
+    });
+
     player.ready(function () {
         player.airPlay({
             addButtonToControlBar: true,
