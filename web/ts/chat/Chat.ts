@@ -2,11 +2,16 @@ import { NewChatMessage } from "./NewChatMessage";
 import { ChatUserList } from "./ChatUserList";
 import { EmojiList } from "./EmojiList";
 import { Poll } from "./Poll";
-import { registerTimeWatcher, deregisterTimeWatcher, getPlayers } from "../TUMLiveVjs";
+import { deregisterTimeWatcher, getPlayers, registerTimeWatcher } from "../TUMLiveVjs";
 import { EmojiPicker } from "./EmojiPicker";
 import { TopEmojis } from "top-twitter-emojis-map";
 
 const MAX_NAMES_IN_REACTION_TITLE = 2;
+
+enum ShowMode {
+    Messages,
+    Polls,
+}
 
 export class Chat {
     readonly userId: number;
@@ -26,6 +31,8 @@ export class Chat {
     startTime: Date;
     liveNowTimestamp: Date;
     poll: Poll;
+    pollHistory: Poll[];
+    showMode: ShowMode;
 
     preprocessors: ((m: ChatMessage) => ChatMessage)[] = [
         (m: ChatMessage) => {
@@ -130,6 +137,7 @@ export class Chat {
         this.liveNowTimestamp = Date.parse(liveNowTimestamp) ? new Date(liveNowTimestamp) : null;
         this.focusedMessageId = -1;
         this.popUpWindow = null;
+        this.showMode = ShowMode.Messages;
         this.grayOutMessagesAfterPlayerTime = this.grayOutMessagesAfterPlayerTime.bind(this);
         this.deregisterPlayerTimeWatcher = this.deregisterPlayerTimeWatcher.bind(this);
         this.registerPlayerTimeWatcher = this.registerPlayerTimeWatcher.bind(this);
@@ -154,6 +162,23 @@ export class Chat {
         fetchMessages(this.streamId).then((messages) => {
             messages.forEach((m) => this.addMessage(m));
         });
+    }
+
+    async loadPollHistory() {
+        this.pollHistory = [];
+        fetch(`/api/chat/${this.streamId}/polls`)
+            .then((r) => r.json())
+            .then((polls) => (this.pollHistory = polls));
+    }
+
+    showMessages(set = false): boolean {
+        this.showMode = set ? ShowMode.Messages : this.showMode;
+        return this.showMode == ShowMode.Messages;
+    }
+
+    showPolls(set = false): boolean {
+        this.showMode = set ? ShowMode.Polls : this.showMode;
+        return this.showMode == ShowMode.Polls;
     }
 
     sortMessages() {
