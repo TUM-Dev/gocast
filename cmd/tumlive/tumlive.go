@@ -166,6 +166,7 @@ func main() {
 		&model.Bookmark{},
 		&model.TranscodingProgress{},
 		&model.ChatReaction{},
+		&model.Subtitles{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
