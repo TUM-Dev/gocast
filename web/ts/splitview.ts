@@ -62,5 +62,13 @@ export class SplitView {
         this.players[i].controlBar.show();
         this.players[j].muted(true);
         this.players[i].muted(false);
+        this.setTrackBarModes(j, "disabled");
+    }
+
+    private setTrackBarModes(k: number, mode: string) {
+        const tracks = this.players[k].textTracks();
+        for (let i = 0; i < tracks.length; i++) {
+            tracks[i].mode = mode;
+        }
     }
 }

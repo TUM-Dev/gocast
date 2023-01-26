@@ -3,6 +3,7 @@ import { VideoSectionList } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import airplay from "@silvermine/videojs-airplay";
+import { loadAndSetTrackbars } from "./track-bars";
 
 import { handleHotkeys } from "./hotkeys";
 import dom = videojs.dom;
@@ -88,6 +89,7 @@ export const initPlayer = function (
         }
     });
 
+    loadAndSetTrackbars(player, streamID);
     player.ready(function () {
         player.airPlay({
             addButtonToControlBar: true,
