@@ -10,6 +10,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/bot"
+	"github.com/joschahenningsen/TUM-Live/voice-service/pb"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -62,6 +63,11 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			{
 				files.POST("", routes.newAttachment)
 				files.DELETE("/:fid", routes.deleteAttachment)
+			}
+
+			subtitles := admins.Group("subtitles")
+			{
+				subtitles.POST("", routes.requestSubtitles)
 			}
 		}
 	}
@@ -617,6 +623,75 @@ func (r streamRoutes) deleteAttachment(c *gin.Context) {
 		})
 		return
 	}
+}
+
+func (r streamRoutes) requestSubtitles(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	stream := tumLiveContext.Stream
+
+	type subtitleRequest struct {
+		Language string `json:"language"`
+	}
+
+	var request subtitleRequest
+	err := c.BindJSON(&request)
+	if err != nil {
+		sentry.CaptureException(err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
+	}
+
+	// find vod file
+	var sourceFile string
+	files := stream.GetVodFiles()
+	for _, file := range files {
+		if file.Type == model.FILETYPE_VOD {
+			sourceFile = file.Path
+		}
+	}
+
+	if len(sourceFile) == 0 {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not find vod file.",
+		})
+		return
+	}
+
+	// request to voice-service for subtitles
+	client, err := GetSubtitleGeneratorClient()
+	if err != nil {
+		sentry.CaptureException(err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "could not connect to voice-service",
+			Err:           err,
+		})
+		return
+	}
+	defer client.CloseConn()
+
+	_, err = client.Generate(context.Background(), &pb.GenerateRequest{
+		StreamId:   int32(stream.ID),
+		SourceFile: sourceFile,
+		Language:   request.Language,
+	})
+	if err != nil {
+		sentry.CaptureException(err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "could not call generate on voice_client",
+			Err:           err,
+		})
+		return
+	}
+
+	c.Status(http.StatusCreated)
 }
 
 func (r streamRoutes) updateStreamVisibility(c *gin.Context) {

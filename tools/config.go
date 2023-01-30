@@ -159,6 +159,10 @@ type Config struct {
 			AlertRoomID string `yaml:"alertRoomId"`
 		} `yaml:"matrix"`
 	} `yaml:"alerts"`
+	VoiceService *struct {
+		Host string `yaml:"host"`
+		Port string `yaml:"port"`
+	}
 	IngestBase  string  `yaml:"ingestBase"`
 	WebUrl      string  `yaml:"webUrl"`
 	WorkerToken string  `yaml:"workerToken"` // used for workers to join the worker pool

@@ -90,6 +90,9 @@ paths:
   mass: /mass
   static: /var/www/static
   branding: /branding
+voiceservice:
+  host: localhost
+  port: 50055
 weburl: https://live.rbg.tum.de
 workertoken: abc
 meili:
