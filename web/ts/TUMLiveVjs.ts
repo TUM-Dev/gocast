@@ -3,6 +3,7 @@ import { VideoSectionList } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import airplay from "@silvermine/videojs-airplay";
+import { loadAndSetTrackbars } from "./track-bars";
 
 import { handleHotkeys } from "./hotkeys";
 import dom = videojs.dom;
@@ -80,6 +81,15 @@ export const initPlayer = function (
     player.on("ratechange", function () {
         window.localStorage.setItem("rate", player.playbackRate());
     });
+
+    // When catching up to live, resume at normal speed
+    player.liveTracker.on("liveedgechange", function (evt) {
+        if (player.liveTracker.atLiveEdge() && player.playbackRate() > 1) {
+            player.playbackRate(1);
+        }
+    });
+
+    loadAndSetTrackbars(player, streamID);
     player.ready(function () {
         player.airPlay({
             addButtonToControlBar: true,
@@ -125,6 +135,19 @@ export const initPlayer = function (
                 streamUrl: streamUrl,
             });
         }
+
+        if (spriteID) {
+            const timeTooltip = player
+                .getChild("controlBar")
+                .getChild("progressControl")
+                .getChild("seekBar")
+                .getChild("mouseTimeDisplay")
+                .getChild("timeTooltip");
+            if (timeTooltip) {
+                timeTooltip.el().classList.add("thumb");
+            }
+        }
+
         if (streamStartIn > 0) {
             player.addChild("StartInOverlay", {
                 course: courseName,

@@ -27,6 +27,10 @@ export class SplitView {
         this.players = getPlayers();
         this.splitParent = document.querySelector("#video-pres-wrapper").parentElement;
 
+        this.players[0].ready(() => {
+            this.setTrackBarModes(0, "disabled");
+        });
+
         this.players[1].ready(() => {
             this.setupControlBars();
             this.overwriteFullscreenToggle();
@@ -108,5 +112,12 @@ export class SplitView {
                 await document.exitFullscreen();
             }
         });
+    }
+
+    private setTrackBarModes(k: number, mode: string) {
+        const tracks = this.players[k].textTracks();
+        for (let i = 0; i < tracks.length; i++) {
+            tracks[i].mode = mode;
+        }
     }
 }

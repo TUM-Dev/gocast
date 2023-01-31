@@ -253,6 +253,11 @@ var (
 			{Model: gorm.Model{ID: 1}, Answer: "3", Votes: []model.User{}},
 		},
 	}
+	SubtitlesFPVLive = model.Subtitles{
+		StreamID: StreamFPVLive.ID,
+		Content:  "wonderful",
+		Language: "en",
+	}
 )
 
 func GetStreamMock(t *testing.T) dao.StreamsDao {

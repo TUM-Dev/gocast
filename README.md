@@ -54,7 +54,14 @@ Features include:
 
 ## Getting Started
 
-To get TUM-Live running locally follow these steps:
+The easiest way of running and testing TUM-Live is by using the provided docker-compose file:
+
+```bash
+docker compose build && docker compose up
+```
+Be advised that the compose file is not indented for production use as it runs everything on one machine.
+
+If you want to get TUM-Live running natively follow these steps:
 
 ### Setup Database
 - Follow the steps [here](https://mariadb.com/kb/en/installing-and-using-mariadb-via-docker/) to install mariadb via docker.

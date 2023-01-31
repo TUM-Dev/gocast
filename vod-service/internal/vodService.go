@@ -79,6 +79,12 @@ func (a *App) uploadHandler(w http.ResponseWriter, r *http.Request) {
 var fileNameIllegal = regexp.MustCompile(`[^a-zA-Z0-9_\\.]+`)
 
 func (a *App) packageFile(file, name string) {
+	defer func() {
+		err := os.Remove(file)
+		if err != nil {
+			log.Printf("Error cleaning up file: %v", err)
+		}
+	}()
 	name = fileNameIllegal.ReplaceAllString(name, "_")
 	// override eventually existing files
 	err := os.RemoveAll(a.config.outputDir + name)
@@ -86,7 +92,7 @@ func (a *App) packageFile(file, name string) {
 		log.Println(err)
 		// try to continue anyway
 	}
-	err = os.Mkdir(a.config.outputDir+name, os.ModePerm)
+	err = os.MkdirAll(a.config.outputDir+name, os.ModePerm)
 	if err != nil {
 		log.Println(err)
 		return
