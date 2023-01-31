@@ -99,6 +99,11 @@ export class SplitView {
         }
 
         this.players[1].controlBar.el_.style.marginLeft = newSize;
+
+        const textTrackDisplay = this.players[1].el_.querySelector(".vjs-text-track-display");
+        if (textTrackDisplay) {
+            textTrackDisplay.style.left = newSize;
+        }
     }
 
     private overwriteFullscreenToggle() {
