@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/joschahenningsen/TUM-Live/tools/stats"
-	"github.com/mono424/go-pts"
-
 	"gorm.io/gorm"
 
 	"github.com/joschahenningsen/TUM-Live/dao"
@@ -653,7 +651,7 @@ func chatOnSubscribe(psc *realtime.Context) {
 	connHandler(psc)
 }
 
-func chatOnUnsubscribe(psc *pts.Context) {
+func chatOnUnsubscribe(psc *realtime.Context) {
 	var tumLiveContext tools.TUMLiveContext
 	if foundContext, exists := psc.Get("TUMLiveContext"); exists {
 		tumLiveContext = foundContext.(tools.TUMLiveContext)
