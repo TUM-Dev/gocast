@@ -1,8 +1,9 @@
-import { getQueryParam, postData } from "./global";
+import { getQueryParam, keepQuery, postData, Time } from "./global";
 import { VideoSectionList } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
 import videojs from "video.js";
 import airplay from "@silvermine/videojs-airplay";
+import { loadAndSetTrackbars } from "./track-bars";
 
 import { handleHotkeys } from "./hotkeys";
 import dom = videojs.dom;
@@ -12,16 +13,18 @@ require("videojs-seek-buttons");
 require("videojs-contrib-quality-levels");
 
 const Button = videojs.getComponent("Button");
-let player;
 
-export function getPlayer() {
-    return player;
+const players = [];
+
+export function getPlayers() {
+    return players;
 }
 
 /**
  * Initialize the player and bind it to a DOM object my-video
  */
 export const initPlayer = function (
+    id: string,
     autoplay: boolean,
     fluid: boolean,
     isEmbedded: boolean,
@@ -36,7 +39,7 @@ export const initPlayer = function (
     courseUrl?: string,
     streamStartIn?: number, // in seconds
 ) {
-    player = videojs("my-video", {
+    const player = videojs(id, {
         liveui: true,
         fluid: fluid,
         playbackRates: playbackSpeeds,
@@ -53,7 +56,7 @@ export const initPlayer = function (
             hotkeys: handleHotkeys(),
         },
         autoplay: autoplay,
-    });
+    }) as any;
     const isMobile = window.matchMedia && window.matchMedia("only screen and (max-width: 480px)").matches;
     if (spriteID && !isMobile) {
         player.spriteThumbnails({
@@ -78,6 +81,15 @@ export const initPlayer = function (
     player.on("ratechange", function () {
         window.localStorage.setItem("rate", player.playbackRate());
     });
+
+    // When catching up to live, resume at normal speed
+    player.liveTracker.on("liveedgechange", function (evt) {
+        if (player.liveTracker.atLiveEdge() && player.playbackRate() > 1) {
+            player.playbackRate(1);
+        }
+    });
+
+    loadAndSetTrackbars(player, streamID);
     player.ready(function () {
         player.airPlay({
             addButtonToControlBar: true,
@@ -96,6 +108,24 @@ export const initPlayer = function (
             if (persistedRate !== null) {
                 player.playbackRate(persistedRate);
             }
+        } else {
+            // same procedure as with watch progress
+            let iOSReady;
+            const jumpTo: number | undefined = +getQueryParam("t");
+            player.on("loadedmetadata", () => {
+                if (jumpTo) {
+                    player.currentTime(jumpTo);
+                }
+            });
+            if (videojs.browser.IS_IOS) {
+                player.on("canplaythrough", () => {
+                    // Can be executed multiple times during playback
+                    if (!iOSReady && jumpTo) {
+                        player.currentTime(jumpTo);
+                        iOSReady = true;
+                    }
+                });
+            }
         }
         if (isEmbedded) {
             player.addChild("Titlebar", {
@@ -105,6 +135,19 @@ export const initPlayer = function (
                 streamUrl: streamUrl,
             });
         }
+
+        if (spriteID) {
+            const timeTooltip = player
+                .getChild("controlBar")
+                .getChild("progressControl")
+                .getChild("seekBar")
+                .getChild("mouseTimeDisplay")
+                .getChild("timeTooltip");
+            if (timeTooltip) {
+                timeTooltip.el().classList.add("thumb");
+            }
+        }
+
         if (streamStartIn > 0) {
             player.addChild("StartInOverlay", {
                 course: courseName,
@@ -118,6 +161,7 @@ export const initPlayer = function (
     });
     // handle hotkeys from anywhere on the page
     document.addEventListener("keydown", (event) => player.handleKeyDown(event));
+    players.push(player);
 };
 
 let skipTo = 0;
@@ -132,7 +176,9 @@ export const SkipSilenceToggle = videojs.extend(Button, {
         (this.el().firstChild as HTMLElement).classList.add("icon-forward");
     },
     handleClick: function () {
-        videojs("my-video").currentTime(skipTo);
+        for (let i = 0; i < players.length; i++) {
+            players[i].currentTime(skipTo);
+        }
     },
     buildCSSClass: function () {
         return `vjs-skip-silence-control`;
@@ -142,58 +188,60 @@ export const SkipSilenceToggle = videojs.extend(Button, {
 videojs.registerComponent("SkipSilenceToggle", SkipSilenceToggle);
 
 export const skipSilence = function (options) {
-    player.ready(() => {
-        player.addClass("vjs-skip-silence");
-        const toggle = player.addChild("SkipSilenceToggle");
-        toggle.el().classList.add("invisible");
-        player.el().insertBefore(toggle.el(), player.bigPlayButton.el());
+    for (let j = 0; j < players.length; j++) {
+        players[j].ready(() => {
+            players[j].addClass("vjs-skip-silence");
+            const toggle = players[j].addChild("SkipSilenceToggle");
+            toggle.el().classList.add("invisible");
+            players[j].el().insertBefore(toggle.el(), players[j].bigPlayButton.el());
 
-        let isShowing = false;
-        const silences = JSON.parse(options);
-        const len = silences.length;
-        const intervalMillis = 100;
+            let isShowing = false;
+            const silences = JSON.parse(options);
+            const len = silences.length;
+            const intervalMillis = 100;
 
-        let i = 0;
-        let timer;
+            let i = 0;
+            let timer;
 
-        // Triggered when user presses play
-        player.on("play", () => {
-            timer = setInterval(() => {
-                toggleSkipSilence();
-            }, intervalMillis);
-        });
+            // Triggered when user presses play
+            players[j].on("play", () => {
+                timer = setInterval(() => {
+                    toggleSkipSilence();
+                }, intervalMillis);
+            });
 
-        const toggleSkipSilence = () => {
-            const ctime = player.currentTime();
-            let shouldShow = false;
-            for (i = 0; i < len; i++) {
-                if (ctime >= silences[i].start && ctime < silences[i].end) {
-                    shouldShow = true;
-                    skipTo = silences[i].end;
-                    break;
+            const toggleSkipSilence = () => {
+                const ctime = players[j].currentTime();
+                let shouldShow = false;
+                for (i = 0; i < len; i++) {
+                    if (ctime >= silences[i].start && ctime < silences[i].end) {
+                        shouldShow = true;
+                        skipTo = silences[i].end;
+                        break;
+                    }
                 }
-            }
-            if (isShowing && !shouldShow) {
-                console.log("Not showing.");
-                isShowing = false;
-                toggle.el().classList.add("invisible");
-            } else if (!isShowing && shouldShow) {
-                console.log("Showing.");
-                isShowing = true;
-                toggle.el().classList.remove("invisible");
-            }
-        };
+                if (isShowing && !shouldShow) {
+                    console.log("Not showing.");
+                    isShowing = false;
+                    toggle.el().classList.add("invisible");
+                } else if (!isShowing && shouldShow) {
+                    console.log("Showing.");
+                    isShowing = true;
+                    toggle.el().classList.remove("invisible");
+                }
+            };
 
-        // Triggered on pause and skipping the video
-        player.on("pause", () => {
-            clearInterval(timer);
-        });
+            // Triggered on pause and skipping the video
+            players[j].on("pause", () => {
+                clearInterval(timer);
+            });
 
-        // Triggered when the video has no time left
-        player.on("ended", () => {
-            clearInterval(timer);
+            // Triggered when the video has no time left
+            players[j].on("ended", () => {
+                clearInterval(timer);
+            });
         });
-    });
+    }
 };
 
 /**
@@ -204,8 +252,8 @@ export const skipSilence = function (options) {
  * @param lastProgress The last progress fetched from the database
  */
 export const watchProgress = function (streamID: number, lastProgress: number) {
-    const player = videojs("my-video");
-    player.ready(() => {
+    const j = 0;
+    players[j].ready(() => {
         let duration;
         let timer;
         let iOSReady = false;
@@ -213,27 +261,27 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
         let jumpTo: number;
 
         // Fetch the user's video progress from the database and set the time in the player
-        player.on("loadedmetadata", () => {
-            duration = player.duration();
+        players[j].on("loadedmetadata", () => {
+            duration = players[j].duration();
             jumpTo = +getQueryParam("t") || lastProgress * duration;
-            player.currentTime(jumpTo);
+            players[j].currentTime(jumpTo);
         });
 
         // iPhone/iPad need to set the progress again when they actually play the video. That's why loadedmetadata is
         // not sufficient here.
         // See https://stackoverflow.com/questions/28823567/how-to-set-currenttime-in-video-js-in-safari-for-ios.
         if (videojs.browser.IS_IOS) {
-            player.on("canplaythrough", () => {
+            players[j].on("canplaythrough", () => {
                 // Can be executed multiple times during playback
                 if (!iOSReady) {
-                    player.currentTime(jumpTo);
+                    players[j].currentTime(jumpTo);
                     iOSReady = true;
                 }
             });
         }
 
         const reportProgress = () => {
-            const progress = player.currentTime() / duration;
+            const progress = players[j].currentTime() / duration;
             postData("/api/progressReport", {
                 streamID: streamID,
                 progress: progress,
@@ -245,8 +293,8 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
             });
         };
 
-        // Triggered when user presses play
-        player.on("play", () => {
+        //Triggered when user presses play
+        players[j].on("play", () => {
             // See https://developer.mozilla.org/en-US/docs/Web/API/setInterval#ensure_that_execution_duration_is_shorter_than_interval_frequency
             (function reportNextProgress() {
                 timer = setTimeout(function () {
@@ -257,7 +305,7 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
         });
 
         // Triggered on pause and skipping the video
-        player.on("pause", () => {
+        players[j].on("pause", () => {
             clearInterval(timer);
             // "Bug" on iOS: The video is automatically paused at the beginning
             if (!iOSReady && videojs.browser.IS_IOS) {
@@ -267,9 +315,107 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
         });
 
         // Triggered when the video has no time left
-        player.on("ended", () => {
+        players[j].on("ended", () => {
             clearInterval(timer);
         });
+    });
+};
+
+/**
+ * @function syncTime
+ * Sets the currentTime of all players to the currentTime of the j-th player without triggering any events.
+ * @param j Player index
+ */
+function syncTime(j: number) {
+    const t = players[j].currentTime();
+
+    // Seek all players to timestamp t
+    for (let k = 0; k < players.length; k++) {
+        if (k == j) continue;
+        players[k].currentTime(t);
+    }
+}
+
+let lastSeek = 0;
+
+function throttle(func, timeFrame) {
+    return () => {
+        const now = Date.now();
+        if (now - lastSeek >= timeFrame) {
+            func();
+            lastSeek = now;
+        }
+    };
+}
+
+/**
+ * Adds the necessary event listeners for syncing the players.
+ * @param j Player index
+ */
+const addEventListenersForSyncing = function (j: number) {
+    players[j].on("play", () => {
+        for (let k = 0; k < players.length; k++) {
+            if (k == j) continue;
+
+            const playPromise = players[k].play();
+            if (playPromise !== undefined) {
+                playPromise
+                    .then((_) => {
+                        // Playback started
+                    })
+                    .catch((_) => {
+                        for (let k = 0; k < players.length; k++) {
+                            players[k].pause();
+                        }
+                    });
+            }
+        }
+    });
+
+    players[j].on("ratechange", () => {
+        for (let k = 0; k < players.length; k++) {
+            if (k == j) continue;
+            players[k].playbackRate(players[j].playbackRate());
+        }
+    });
+
+    players[j].on("pause", () => {
+        for (let k = 0; k < players.length; k++) {
+            if (k == j) continue;
+            players[k].pause();
+        }
+    });
+
+    players[j].on(
+        "seeked",
+        throttle(() => syncTime(j), 2000),
+    );
+
+    players[j].on("waiting", () => {
+        for (let k = 0; k < players.length; k++) {
+            if (k == j) continue;
+            players[k].pause();
+        }
+        players[j].one("canplay", () => players[j].play());
+    });
+
+    players[j].on("ended", () => {
+        for (let k = 0; k < players.length; k++) {
+            if (k == j) continue;
+            players[k].pause();
+        }
+    });
+};
+
+/**
+ * @function syncPlayers
+ * Adds event listeners to all players for syncing.
+ */
+export const syncPlayers = function () {
+    players[0].ready(() => {
+        for (let j = 0; j < players.length; j++) {
+            addEventListenersForSyncing(j);
+        }
     });
 };
 
@@ -280,9 +426,9 @@ export const watchProgress = function (streamID: number, lastProgress: number) {
  */
 export const registerTimeWatcher = function (callBack: (currentPlayerTime: number) => void): () => void {
     const timeWatcherCallBack: () => void = () => {
-        callBack(player.currentTime());
+        callBack(players[0].currentTime());
     };
-    player?.on("timeupdate", timeWatcherCallBack);
+    players[0]?.on("timeupdate", timeWatcherCallBack);
     return timeWatcherCallBack;
 };
 
@@ -291,7 +437,7 @@ export const registerTimeWatcher = function (callBack: (currentPlayerTime: numbe
  * @param callBackToDeregister regestered callBack function
  */
 export const deregisterTimeWatcher = function (callBackToDeregister: () => void) {
-    player?.off("timeupdate", callBackToDeregister);
+    players[0]?.off("timeupdate", callBackToDeregister);
 };
 
 const Component = videojs.getComponent("Component");
@@ -432,13 +578,16 @@ export class OverlayIcon extends Component {
 }
 
 export function jumpTo(hours: number, minutes: number, seconds: number) {
-    videojs("my-video").ready(() => {
-        player.currentTime(toSeconds(hours, minutes, seconds));
-    });
+    for (let j = 0; j < players.length; j++) {
+        players[j].ready(() => {
+            players[j].currentTime(new Time(hours, minutes, seconds).toSeconds());
+        });
+    }
 }
 
 type SeekLoggerLogFunction = (position: number) => void;
 const SEEK_LOGGER_DEBOUNCE_TIMEOUT = 4000;
+
 export class SeekLogger {
     readonly streamID: number;
     log: SeekLoggerLogFunction;
@@ -454,10 +603,10 @@ export class SeekLogger {
     }
 
     attach() {
-        player.ready(() => {
-            player.on("seeked", () => {
+        players[0].ready(() => {
+            players[0].on("seeked", () => {
                 if (this.initialSeekDone) {
-                    return this.log(player.currentTime());
+                    return this.log(players[0].currentTime());
                 }
                 this.initialSeekDone = true;
             });
@@ -469,40 +618,43 @@ export class SeekLogger {
 }
 
 export function attachCurrentTimeEvent(videoSection: VideoSectionList) {
-    player.ready(() => {
-        let timer;
-        (function checkTimestamp() {
-            timer = setTimeout(() => {
-                hightlight(player, videoSection);
-                checkTimestamp();
-            }, 500);
-        })();
-        player.on("seeked", () => hightlight(player, videoSection));
-    });
+    for (let j = 0; j < players.length; j++) {
+        players[j].ready(() => {
+            let timer;
+            (function checkTimestamp() {
+                timer = setTimeout(() => {
+                    highlight(players[j], videoSection);
+                    checkTimestamp();
+                }, 500);
+            })();
+            players[j].on("seeked", () => highlight(players[j], videoSection));
+        });
+    }
 }
 
-export function currentTimeToHMS() {
-    const ct = player?.currentTime();
-    const h = Math.trunc(ct / (60 * 60));
-    const m = Math.trunc((ct % (60 * 60)) / 60);
-    const s = Math.trunc(ct - h * (60 * 60) - m * 60);
-    return { h, m, s };
+export function switchView(baseUrl: string) {
+    const isDVR = getQueryParam("dvr") === "";
+
+    let redirectUrl = keepQuery(baseUrl);
+    if (isDVR) {
+        const player = getPlayers()[0];
+        const url = new URL(window.location.origin + redirectUrl);
+        url.searchParams.set("t", String(Math.floor(player.currentTime())));
+        redirectUrl = url.toString();
+    }
+    window.location.assign(redirectUrl);
 }
 
-function hightlight(player, videoSection) {
+function highlight(player, videoSection) {
     const currentTime = player.currentTime();
     videoSection.currentHighlightIndex = videoSection.list.findIndex((section, i, list) => {
         const next = list[i + 1];
-        const sectionSeconds = toSeconds(section.startHours, section.startMinutes, section.startSeconds);
+        const sectionSeconds = new Time(section.startHours, section.startMinutes, section.startSeconds).toSeconds();
         return next === undefined || next === null // if last element and no next exists
             ? sectionSeconds <= currentTime
             : sectionSeconds <= currentTime &&
-                  currentTime <= toSeconds(next.startHours, next.startMinutes, next.startSeconds) - 1;
+                  currentTime <= new Time(next.startHours, next.startMinutes, next.startSeconds).toSeconds() - 1;
     });
-}
-
-function toSeconds(hours: number, minutes: number, seconds: number): number {
-    return hours * 60 * 60 + minutes * 60 + seconds;
 }
 
 function debounce(func, timeout) {

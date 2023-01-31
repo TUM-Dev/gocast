@@ -2,8 +2,11 @@ import { NewChatMessage } from "./NewChatMessage";
 import { ChatUserList } from "./ChatUserList";
 import { EmojiList } from "./EmojiList";
 import { Poll } from "./Poll";
-import { registerTimeWatcher, deregisterTimeWatcher, getPlayer } from "../TUMLiveVjs";
-import { create } from "nouislider";
+import { registerTimeWatcher, deregisterTimeWatcher, getPlayers } from "../TUMLiveVjs";
+import { EmojiPicker } from "./EmojiPicker";
+import { TopEmojis } from "top-twitter-emojis-map";
+
+const MAX_NAMES_IN_REACTION_TITLE = 2;
 
 export class Chat {
     readonly userId: number;
@@ -42,6 +45,58 @@ export class Chat {
         },
         (m: ChatMessage) => {
             return { ...m, renderVersion: 0 };
+        },
+        (m: ChatMessage) => {
+            m.aggregatedReactions = (m.reactions || [])
+                .reduce((res: ChatReactionGroup[], reaction: ChatReaction) => {
+                    let group: ChatReactionGroup = res.find((r) => r.emojiName === reaction.emoji);
+                    if (group === undefined) {
+                        group = {
+                            emoji: TopEmojis.find((e) => e.short_names.includes(reaction.emoji)).emoji,
+                            emojiName: reaction.emoji,
+                            reactions: [],
+                            names: [],
+                            namesPretty: "",
+                            hasReacted: reaction.userID === this.userId,
+                        };
+                        res.push(group);
+                    } else if (reaction.userID == this.userId) {
+                        group.hasReacted = true;
+                    }
+
+                    group.names.push(reaction.username);
+                    group.reactions.push(reaction);
+                    return res;
+                }, [])
+                .map((group) => {
+                    if (group.names.length === 0) {
+                        // Nobody
+                        group.namesPretty = `Nobody reacted with ${group.emojiName}`;
+                    } else if (group.names.length == 1) {
+                        // One Person
+                        group.namesPretty = `${group.names[0]} reacted with ${group.emojiName}`;
+                    } else if (group.names.length == MAX_NAMES_IN_REACTION_TITLE + 1) {
+                        // 1 person more than max allowed
+                        group.namesPretty = `${group.names
+                            .slice(0, MAX_NAMES_IN_REACTION_TITLE)
+                            .join(", ")} and one other reacted with ${group.emojiName}`;
+                    } else if (group.names.length > MAX_NAMES_IN_REACTION_TITLE) {
+                        // at least 2 more than max allowed
+                        group.namesPretty = `${group.names.slice(0, MAX_NAMES_IN_REACTION_TITLE).join(", ")} and ${
+                            group.names.length - MAX_NAMES_IN_REACTION_TITLE
+                        } others reacted with ${group.emojiName}`;
+                    } else {
+                        // More than 1 Person but less than MAX_NAMES_IN_REACTION_TITLE
+                        group.namesPretty = `${group.names.slice(0, group.names.length - 1).join(", ")} and ${
+                            group.names[group.names.length - 1]
+                        } reacted with ${group.emojiName}`;
+                    }
+                    return group;
+                });
+            m.aggregatedReactions.sort(
+                (a, b) => EmojiPicker.getEmojiIndex(a.emojiName) - EmojiPicker.getEmojiIndex(b.emojiName),
+            );
+            return m;
         },
     ];
 
@@ -90,6 +145,10 @@ export class Chat {
         });
     }
 
+    initEmojiPicker(id: string): EmojiPicker {
+        return new EmojiPicker(id);
+    }
+
     async loadMessages() {
         this.messages = [];
         fetchMessages(this.streamId).then((messages) => {
@@ -98,12 +157,22 @@ export class Chat {
     }
 
     sortMessages() {
-        this.messages.sort((m1, m2) => {
+        this.messages = [...this.messages].sort((m1, m2) => {
             if (this.orderByLikes) {
-                if (m1.likes === m2.likes) {
+                const m1LikeReactionGroup = m1.aggregatedReactions.find(
+                    (r) => r.emojiName === EmojiPicker.LikeEmojiName,
+                );
+                const m1Likes = m1LikeReactionGroup ? m1LikeReactionGroup.reactions.length : 0;
+
+                const m2LikeReactionGroup = m2.aggregatedReactions.find(
+                    (r) => r.emojiName === EmojiPicker.LikeEmojiName,
+                );
+                const m2Likes = m2LikeReactionGroup ? m2LikeReactionGroup.reactions.length : 0;
+
+                if (m1Likes === m2Likes) {
                     return m2.ID - m1.ID; // same amount of likes -> newer messages up
                 }
-                return m2.likes - m1.likes; // more likes -> up
+                return m2Likes - m1Likes; // more likes -> up
             } else {
                 return m1.ID < m2.ID ? -1 : 1; // newest messages last
             }
@@ -120,6 +189,12 @@ export class Chat {
 
     onLike(e) {
         this.messages.find((m) => m.ID === e.detail.likes).likes = e.detail.num;
+    }
+
+    onReaction(e) {
+        const m = this.messages.find((m) => m.ID === e.detail.reactions);
+        m.reactions = e.detail.payload;
+        this.patchMessage(m);
     }
 
     onResolve(e) {
@@ -279,7 +354,7 @@ export class Chat {
 
     activateChatReplay(): void {
         this.chatReplayActive = true;
-        const currentTime = getPlayer().currentTime();
+        const currentTime = getPlayers()[0].currentTime();
         //force update of message focus and grayedOut state
         this.focusedMessageId = -1;
         this.grayOutMessagesAfterPlayerTime(currentTime);
@@ -307,7 +382,7 @@ export class Chat {
         referenceTime.setSeconds(referenceTime.getSeconds() + playerTime);
 
         const grayOutCondition = (CreatedAt: string) => {
-            if (Math.trunc(playerTime) === Math.trunc(getPlayer().duration())) {
+            if (Math.trunc(playerTime) === Math.trunc(getPlayers()[0].duration())) {
                 return false;
             }
 
@@ -370,11 +445,10 @@ export class Chat {
                 const newRenderVersion = this.messages[i].renderVersion + 1;
                 this.messages.splice(i, 1, { ...m, renderVersion: newRenderVersion });
                 break;
-            } else if (createdAt > newMessageCreatedAt) {
-                this.messages.splice(i, 0, m);
-                break;
             }
         }
+
+        window.dispatchEvent(new CustomEvent("reorder"));
     }
 
     private addMessage(m: ChatMessage) {
@@ -411,6 +485,8 @@ type ChatMessage = {
 
     liked: false;
     likes: number;
+    reactions: ChatReaction[];
+    aggregatedReactions: ChatReactionGroup[]; // is generated in frontend
 
     replies: ChatMessage[];
     replyTo: Reply; // e.g.{Int64:0, Valid:false}
@@ -425,6 +501,21 @@ type ChatMessage = {
     CreatedAt: string;
     DeletedAt: string;
     UpdatedAt: string;
+};
+
+type ChatReaction = {
+    userID: number;
+    username: string;
+    emoji: string;
+};
+
+type ChatReactionGroup = {
+    emoji: string;
+    emojiName: string;
+    names: string[];
+    namesPretty: string;
+    reactions: ChatReaction[];
+    hasReacted: boolean;
 };
 
 type Reply = {
