@@ -24,6 +24,7 @@ export class SplitView {
         this.showSplitMenu = false;
         this.players = getPlayers();
 
+        this.players[0].ready(() => this.setTrackBarModes(0, "disabled"));
         this.players[1].ready(() => this.setupControlBars());
         cloneEvents(this.players[0].el(), this.players[1].el(), ["mousemove", "mouseenter", "mouseleave"]);
 
@@ -88,5 +89,12 @@ export class SplitView {
         }
 
         this.players[1].controlBar.el_.style.marginLeft = newSize;
+    }
+
+    private setTrackBarModes(k: number, mode: string) {
+        const tracks = this.players[k].textTracks();
+        for (let i = 0; i < tracks.length; i++) {
+            tracks[i].mode = mode;
+        }
     }
 }

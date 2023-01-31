@@ -172,24 +172,26 @@
 .video-js .vjs-big-play-button {
     @apply absolute top-0 left-0 bottom-0 right-0 m-auto;
 }
-
 .video-js .vjs-time-tooltip {
     border-radius: 2px !important;
     border-width: 2px !important;
     border-color: white !important;
 }
 
-/* split.js styling */
-.gutter {
-    @apply bg-gray-200 dark:bg-gray-600;
-
-    background-repeat: no-repeat;
-    background-position: 50%;
-    width: 2px!important;
+.thumb {
+    padding: 70px 8px 8px 8px !important;
 }
 
-.gutter.gutter-horizontal {
-    cursor: col-resize;
+.noUi-tooltip input {
+    width: 200px;
+    text-align: center;
+    @apply focus:text-green-500;
+}
+
+.noUi-tooltip {
+    position: absolute;
+    bottom: 0;
+    left: 0;
 }
 
 /* slider for cutting videos: */
@@ -203,14 +205,17 @@
     background: #3070b3 !important;
 }
 
-.noUi-tooltip input {
-    width: 120px;
-    text-align: center;
-    @apply focus:text-white;
+/* split.js styling */
+.gutter {
+    @apply bg-gray-200 dark:bg-gray-600;
+
+    background-repeat: no-repeat;
+    background-position: 50%;
+    width: 2px!important;
 }
 
-.noUi-tooltip {
-    padding: 0 !important;
+.gutter.gutter-horizontal {
+    cursor: col-resize;
 }
 
 /* Chat */

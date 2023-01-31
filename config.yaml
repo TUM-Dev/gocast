@@ -87,9 +87,9 @@ mail:
   smimecert: /path/to/cert.pem
   smimekey: /path/to/key.pem
 paths:
-  mass: /srv/ceph/live
+  mass: /mass
   static: /var/www/static
-  branding: /srv/ceph/branding
+  branding: /branding
 weburl: https://live.rbg.tum.de
 workertoken: abc
 meili:
