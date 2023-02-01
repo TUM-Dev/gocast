@@ -38,7 +38,7 @@ require (
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
-	github.com/crewjam/saml v0.4.10
+	github.com/crewjam/saml v0.4.12
 	github.com/golang/mock v1.6.0
 	github.com/icholy/digest v0.1.22
 	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20230102084719-d94f9ad43fdd
@@ -110,7 +110,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	// This version works. Breaking changes, update with care:
 	// github.com/russellhaering/goxmldsig v1.1.1 // indirect
-	github.com/russellhaering/goxmldsig v1.1.1 // indirect
+	github.com/russellhaering/goxmldsig v1.2.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/spf13/afero v1.9.3 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
