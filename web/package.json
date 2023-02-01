@@ -27,7 +27,7 @@
     "@fullcalendar/core": "^6.0.2",
     "@fullcalendar/daygrid": "^6.0.2",
     "@fullcalendar/icalendar": "^6.0.2",
-    "@fullcalendar/list": "^6.0.2",
+    "@fullcalendar/list": "^6.1.1",
     "@fullcalendar/timegrid": "^6.0.2",
     "@silvermine/videojs-airplay": "^1.1.0",
     "@silvermine/videojs-quality-selector": "^1.2.5",
