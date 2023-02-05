@@ -8,7 +8,6 @@ export class SplitView {
     private split: Split.Instance;
     private gutterWidth = 10;
     private isFullscreen = false;
-
     private splitParent: HTMLElement;
 
     showSplitMenu: boolean;
@@ -99,7 +98,6 @@ export class SplitView {
         }
 
         this.players[1].controlBar.el_.style.marginLeft = newSize;
-
         const textTrackDisplay = this.players[1].el_.querySelector(".vjs-text-track-display");
         if (textTrackDisplay) {
             textTrackDisplay.style.left = newSize;
