@@ -8,6 +8,7 @@ export class SplitView {
     private split: Split.Instance;
     private gutterWidth = 10;
     private isFullscreen = false;
+    private splitParent: HTMLElement;
 
     showSplitMenu: boolean;
 
@@ -23,9 +24,17 @@ export class SplitView {
         this.camPercentage = SplitView.Options.FocusPresentation;
         this.showSplitMenu = false;
         this.players = getPlayers();
+        this.splitParent = document.querySelector("#video-pres-wrapper").parentElement;
 
-        this.players[0].ready(() => this.setTrackBarModes(0, "disabled"));
-        this.players[1].ready(() => this.setupControlBars());
+        this.players[0].ready(() => {
+            this.setTrackBarModes(0, "disabled");
+        });
+
+        this.players[1].ready(() => {
+            this.setupControlBars();
+            this.overwriteFullscreenToggle();
+        });
+
         cloneEvents(this.players[0].el(), this.players[1].el(), ["mousemove", "mouseenter", "mouseleave"]);
 
         // Setup splitview
@@ -93,6 +102,19 @@ export class SplitView {
         if (textTrackDisplay) {
             textTrackDisplay.style.left = newSize;
         }
+    }
+
+    private overwriteFullscreenToggle() {
+        const fullscreenToggle = this.players[1].controlBar.fullscreenToggle;
+        fullscreenToggle.off("click");
+
+        fullscreenToggle.on("click", async () => {
+            if (document.fullscreenElement === null) {
+                await this.splitParent.requestFullscreen();
+            } else {
+                await document.exitFullscreen();
+            }
+        });
     }
 
     private setTrackBarModes(k: number, mode: string) {
