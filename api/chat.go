@@ -613,9 +613,9 @@ func (r chatRoutes) getPolls(c *gin.Context) {
 			pollOptions = append(pollOptions, option.GetStatsMap(voteCount))
 		}
 		response = append(response, gin.H{
-			"ID":          poll.ID,
-			"question":    poll.Question,
-			"pollOptions": pollOptions,
+			"ID":       poll.ID,
+			"question": poll.Question,
+			"options":  pollOptions,
 		})
 	}
 

@@ -31,7 +31,7 @@ export class Chat {
     startTime: Date;
     liveNowTimestamp: Date;
     poll: Poll;
-    pollHistory: Poll[];
+    pollHistory: object[];
     showMode: ShowMode;
 
     preprocessors: ((m: ChatMessage) => ChatMessage)[] = [
@@ -260,6 +260,12 @@ export class Chat {
     onPollOptionResult(e) {
         this.poll.activePoll = null;
         this.poll.result = e.detail;
+        this.pollHistory.push({
+            ID: 1,
+            question: e.detail.question,
+            options: e.detail.pollOptionResults,
+        });
+        console.log(this.pollHistory);
     }
 
     onSubmit() {
