@@ -138,6 +138,7 @@ export class Chat {
         this.focusedMessageId = -1;
         this.popUpWindow = null;
         this.showMode = ShowMode.Messages;
+        this.pollHistory = [];
         this.grayOutMessagesAfterPlayerTime = this.grayOutMessagesAfterPlayerTime.bind(this);
         this.deregisterPlayerTimeWatcher = this.deregisterPlayerTimeWatcher.bind(this);
         this.registerPlayerTimeWatcher = this.registerPlayerTimeWatcher.bind(this);
@@ -260,12 +261,14 @@ export class Chat {
     onPollOptionResult(e) {
         this.poll.activePoll = null;
         this.poll.result = e.detail;
-        this.pollHistory.push({
-            ID: 1,
+        // @ts-ignore
+        const id = this.pollHistory.length > 0 ? this.pollHistory[0].ID + 1 : 1;
+        this.pollHistory.unshift({
+            // @ts-ignore
+            ID: id,
             question: e.detail.question,
             options: e.detail.pollOptionResults,
         });
-        console.log(this.pollHistory);
     }
 
     onSubmit() {

@@ -47,7 +47,8 @@
                         <i class="fas fa-external-link-alt text-3 m-auto"></i>
                     </button>
                 {{end}}
-                <template x-if="c.admin && c.showPolls() && !c.poll.activePoll  && !c.disconnected && !c.poll.showCreateUI">
+                <template
+                        x-if="c.admin && c.showPolls() && !c.poll.activePoll  && !c.disconnected && !c.poll.showCreateUI">
                     <button x-cloak
                             @click="c.poll.showCreateUI = !c.poll.showCreateUI; c.users.clear()"
                             class="text-white text-xs uppercase font-semibold rounded-full px-2 py-1 bg-blue-500 dark:bg-indigo-600
@@ -104,9 +105,15 @@
 
                 <!-- Toggle Chat and Polls -->
                 <button x-cloak x-show="c.showMessages()" type="button" @click="c.showPolls(true);"
-                        class="text-3 text-sm font-semibold rounded-full px-2 py-1 hover:bg-gray-100 hover:dark:bg-gray-600"
+                        class="relative text-3 text-sm font-semibold rounded-full px-2 py-1 hover:bg-gray-100 hover:dark:bg-gray-600"
                         title="Show Polls">
-                    <span>Polls</span>
+                    <template x-if="c.poll.activePoll && !c.admin && c.poll.activePoll.submitted === 0">
+                        <span class="absolute flex h-3 w-3 top-0 -right-1">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500/50 dark:bg-indigo-600/50"></span>
+                          <span class="relative inline-flex rounded-full h-3 w-3 bg-blue-500 dark:bg-indigo-600"></span>
+                        </span>
+                    </template>
+                    <span class="z-50">Polls</span>
                 </button>
                 <button x-cloak x-show="c.showPolls()" type="button" @click="c.showMessages(true);"
                         class="text-3 text-sm font-semibold rounded-full px-2 py-1 hover:bg-gray-100 hover:dark:bg-gray-600"
@@ -116,132 +123,88 @@
             </div>
         </div>
 
-        <!-- Active Poll UI -->
-        <template x-if="c.poll.activePoll && !c.admin">
-            <div x-data="{showPoll: false}" class="z-40 absolute w-full top-12">
-                <div class="shadow text-3 border-b rounded-b-lg bg-white py-2 dark:bg-secondary dark:border-secondary-light">
-                    <div class="flex align-middle justify-between px-3 dark:border-gray-600"
-                         :class="showPoll && 'border-b pb-2'">
-                        <span class="text-xs uppercase font-semibold my-auto">Active Poll</span>
-                        <button @click="showPoll = !showPoll" class="text-xs">
-                            <i class="fa-solid" :class="showPoll ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                        </button>
-                    </div>
-                    <div x-show="showPoll" class="px-4 pt-3 pb-3">
-                        <p x-text="c.poll.activePoll.question" class="text-center text-base font-light mb-3"></p>
-                        <template x-for="pollOption in c.poll.activePoll.pollOptions" :key="pollOption.ID">
-                            <button class="flex items-center mb-1"
-                                    @click="c.poll.activePoll.selected = pollOption.ID"
-                                    :disabled="c.poll.activePoll.submitted !== 0">
-                                <i class=""
-                                   :class="(pollOption.ID === c.poll.activePoll.selected || c.poll.activePoll.submitted === pollOption.ID) ? 'fas fa-check-circle' : 'far fa-circle'"></i>
-                                <span x-text="pollOption.answer" class="ml-2 text-sm"></span>
-                            </button>
-                        </template>
-                    </div>
-                    <div x-show="showPoll" class="px-3 pt-2 border-t dark:border-secondary-light flex justify-end">
-                        <button class="bg-blue-500 hover:bg-blue-600 dark:bg-indigo-600 dark:hover:bg-indigo-700
-                                disabled:bg-gray-400 dark:disabled:bg-gray-400 rounded
-                                focus:outline-none px-2 py-1 text-white font-semibold uppercase text-xs"
-                                x-text="c.poll.activePoll.submitted !== 0 ? 'Answer submitted' : 'Send Answer'"
-                                @click="c.poll.activePoll.submitted = c.poll.activePoll.selected; watch.submitPollOptionVote(c.poll.activePoll.selected); c.poll.activePoll.selected = null;"
-                                :disabled="c.poll.activePoll.selected === null || c.poll.activePoll.submitted !== 0"
-                                title="Send Answer">
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </template>
-        <template x-if="c.poll.activePoll && c.admin">
-            <div x-data="{showPoll: false}" class="z-40 absolute w-full top-12">
-                <div class="shadow text-3 border-b rounded-b-lg bg-white py-2 dark:bg-secondary dark:border-secondary-light">
-                    <div class="flex align-middle justify-between px-3 dark:border-secondary-light"
-                         :class="showPoll && 'border-b pb-2'">
-                        <span class="relative text-xs uppercase font-semibold my-auto">Active Poll</span>
-                        <button @click="showPoll = !showPoll" class="text-xs">
-                            <i class="fa-solid" :class="showPoll ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                        </button>
-                    </div>
-                    <div x-show="showPoll" class="px-3 pt-3 pb-3">
-                        <p x-text="c.poll.activePoll.question" class="text-center text-base font-light mb-3"></p>
-                        <template x-for="pollOption in c.poll.activePoll.pollOptions">
-                            <div class="mb-3 pl-3 pr-3">
-                                <div class="text-5 flex justify-between pr-2">
-                                    <span class="text-sm flex items-end" x-text="pollOption.answer"></span>
-                                    <span class="text-xs flex items-end"
-                                          x-text="pollOption.votes + ' Votes'"></span>
-                                </div>
-                                <div :style="`width: ${watch.getPollOptionWidth(c.poll.activePoll.pollOptions, pollOption)};`"
-                                     class="rounded-full h-4 bg-blue-500/50 dark:bg-indigo-600">
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                    <div x-show="showPoll" class="px-3 pt-2 flex justify-end border-t dark:border-secondary-light">
-                        <button class="bg-blue-500 hover:bg-blue-600 dark:bg-indigo-600 dark:hover:bg-indigo-700
-                                disabled:bg-gray-400 dark:disabled:bg-gray-400 rounded
-                                focus:outline-none px-2 py-1 text-white font-semibold uppercase text-xs"
-                                x-text="!c.poll.activePoll.active ? 'Poll closed' : 'Publish & Close'"
-                                @click="c.poll.activePoll = null; watch.closeActivePoll();"
-                                :disabled="!c.poll.activePoll.active"
-                                title="Close poll">
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </template>
-        <template x-if="c.poll.result">
-            <div  x-data="{showPoll: false}" class="z-40 absolute w-full top-12">
-                <div class="shadow text-3 border-b rounded-b-lg bg-white py-2 dark:bg-secondary dark:border-secondary-light">
-                    <div class="flex align-middle justify-between px-3 border-b pb-2 dark:border-gray-600"
-                         :class="showPoll && 'border-b pb-2'">
-                        <span class="text-xs uppercase font-semibold my-auto">Poll Result</span>
-                        <button @click="c.poll.result = null;">
-                            <i class="fas fa-close"></i>
-                        </button>
-                    </div>
-                    <div class="px-3 pt-3 pb-3">
-                        <p x-text="c.poll.activePoll.question" class="text-center text-base font-light mb-3"></p>
-                        <template x-for="pollOptionResult in c.poll.result.pollOptionResults"
-                                  :key="pollOptionResult.ID">
-                            <div class="mb-3 pl-3 pr-3">
-                                <div class="flex justify-between pr-2">
-                                    <span class="text-sm flex items-end" x-text="pollOptionResult.answer"></span>
-                                    <span class="text-xs flex items-end"
-                                          x-text="pollOptionResult.votes + ' Votes'"></span>
-                                </div>
-                                <div :style="`width: ${watch.getPollOptionWidth(c.poll.result.pollOptionResults, pollOptionResult)};`"
-                                     class="rounded-full h-4 bg-blue-500/50 dark:bg-indigo-600"></div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-        </template>
-
         <!-- Polls -->
         <div x-cloak x-show="c.showPolls()" id="pollBox"
-             class="relative h-full w-full overflow-y-scroll overflow-x-hidden px-4 py-2 z-30">
+             class="relative h-full w-full overflow-y-scroll overflow-x-hidden p-2 z-30">
             <div class="grid gap-y-8 content-start">
-                <template x-for="(poll, i) in c.pollHistory" :key="poll.ID">
-                    <div>
-                        <div class="flex items-center justify-center border-b dark:border-gray-800 py-1">
-                            <span class="text-sm font-bold my-auto" x-text="poll.question"></span>
+                <template x-if="c.poll.activePoll">
+                    <div class="rounded-lg border-2 border-blue-500/50 dark:border-indigo-600/50 p-2 space-y-2">
+                        <div class="flex items-center text-lg border-b dark:border-gray-800 py-1 px-2">
+                            <span class="font-bold" x-text="c.poll.activePoll.question"></span>
                         </div>
-                        <div class="pt-2">
-                            <template x-for="option in poll.options" :key="option.ID">
-                                <div class="mb-3 pl-3 pr-3">
-                                    <div class="flex justify-between pr-2">
-                                        <span class="text-sm flex items-end" x-text="option.answer"></span>
-                                        <span class="text-xs flex items-end"
-                                              x-text="option.votes + ' Votes'"></span>
-                                    </div>
-                                    <div :style="`width: ${watch.getPollOptionWidth(poll.options, option)};`"
-                                         class="rounded-full h-4 bg-blue-500/50 dark:bg-indigo-600"></div>
+                        <div>
+                            <template x-for="option in c.poll.activePoll.pollOptions" :key="option.ID">
+                                <div>
+                                    <template x-if="c.admin">
+                                        <div class="mb-3 pl-3 pr-3">
+                                            <div class="flex justify-between pr-2">
+                                                <span class="text-sm flex items-end" x-text="option.answer"></span>
+                                                <span class="text-xs flex items-end"
+                                                      x-text="option.votes + ' Votes'"></span>
+                                            </div>
+                                            <div :style="`width: ${watch.getPollOptionWidth(c.poll.activePoll.pollOptions, option)};`"
+                                                 class="rounded-full h-4 bg-blue-500/50 dark:bg-indigo-600"></div>
+                                        </div>
+                                    </template>
+                                    <template x-if="!c.admin">
+                                        <button class="flex items-center px-2 pb-1"
+                                                @click="c.poll.activePoll.selected = option.ID"
+                                                :disabled="c.poll.activePoll.submitted !== 0">
+                                            <i class=""
+                                               :class="(option.ID === c.poll.activePoll.selected || c.poll.activePoll.submitted === option.ID) ? 'fas fa-check-circle' : 'far fa-circle'"></i>
+                                            <span x-text="option.answer" class="ml-2 text-sm"></span>
+                                        </button>
+                                    </template>
                                 </div>
                             </template>
                         </div>
+                        <template x-if="c.admin">
+                            <div class="flex justify-end pt-2">
+                                <button class="bg-blue-500 hover:bg-blue-600 dark:bg-indigo-600 dark:hover:bg-indigo-700
+                                    disabled:bg-gray-400 dark:disabled:bg-gray-400 rounded-full
+                                    focus:outline-none px-2 py-1 text-white font-semibold uppercase text-xs"
+                                        x-text="!c.poll.activePoll.active ? 'Poll closed' : 'Publish & Close'"
+                                        @click="c.poll.activePoll = null; watch.closeActivePoll();"
+                                        :disabled="!c.poll.activePoll.active"
+                                        title="Close poll">
+                                </button>
+                            </div>
+                        </template>
+                        <template x-if="!c.admin">
+                            <div class="flex justify-end pt-2">
+                                <button class="bg-blue-500 hover:bg-blue-600 dark:bg-indigo-600 dark:hover:bg-indigo-700
+                                disabled:bg-gray-400 dark:disabled:bg-gray-400 rounded-full
+                                focus:outline-none px-2 py-1 text-white font-semibold uppercase text-xs"
+                                        x-text="c.poll.activePoll.submitted !== 0 ? 'Answer submitted' : 'Send Answer'"
+                                        @click="c.poll.activePoll.submitted = c.poll.activePoll.selected; watch.submitPollOptionVote(c.poll.activePoll.selected); c.poll.activePoll.selected = null;"
+                                        :disabled="c.poll.activePoll.selected === null || c.poll.activePoll.submitted !== 0"
+                                        title="Send Answer">
+                                </button>
+                            </div>
+                        </template>
                     </div>
+                </template>
+                <template x-if="c.pollHistory.length > 0">
+                    <template x-for="(poll,_) in c.pollHistory" :key="poll.ID">
+                        <div class="rounded-lg border dark:border-gray-800">
+                            <div class="flex items-center border-b dark:border-gray-800 py-1 px-2">
+                                <span class="text-sm font-bold my-auto" x-text="poll.question"></span>
+                            </div>
+                            <div class="pt-2">
+                                <template x-for="option in poll.options" :key="option.ID">
+                                    <div class="mb-3 pl-3 pr-3">
+                                        <div class="flex justify-between pr-2">
+                                            <span class="text-sm flex items-end" x-text="option.answer"></span>
+                                            <span class="text-xs flex items-end"
+                                                  x-text="option.votes + ' Votes'"></span>
+                                        </div>
+                                        <div :style="`width: ${watch.getPollOptionWidth(poll.options, option)};`"
+                                             class="rounded-full h-4 bg-blue-500/50 dark:bg-indigo-600"></div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
                 </template>
             </div>
         </div>
