@@ -55,11 +55,6 @@ export class Poll {
             );
     }
 
-    hasSubmitted() {
-        // @ts-ignore
-        return this.activePoll.submitted !== 0;
-    }
-
     private reset() {
         this.question = "";
         this.options = [{ answer: "Yes" }, { answer: "No" }];
