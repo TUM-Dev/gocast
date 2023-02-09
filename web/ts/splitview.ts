@@ -1,10 +1,14 @@
 import { getPlayers } from "./TUMLiveVjs";
 import Split from "split.js";
+import { cloneEvents } from "./global";
 
 export class SplitView {
     private camPercentage: number;
     private players: any[];
     private split: Split.Instance;
+    private gutterWidth = 10;
+    private isFullscreen = false;
+    private splitParent: HTMLElement;
 
     showSplitMenu: boolean;
 
@@ -20,7 +24,18 @@ export class SplitView {
         this.camPercentage = SplitView.Options.FocusPresentation;
         this.showSplitMenu = false;
         this.players = getPlayers();
-        this.toggleControlBars(this.camPercentage);
+        this.splitParent = document.querySelector("#video-pres-wrapper").parentElement;
+
+        this.players[0].ready(() => {
+            this.setTrackBarModes(0, "disabled");
+        });
+
+        this.players[1].ready(() => {
+            this.setupControlBars();
+            this.overwriteFullscreenToggle();
+        });
+
+        cloneEvents(this.players[0].el(), this.players[1].el(), ["mousemove", "mouseenter", "mouseleave"]);
 
         // Setup splitview
         // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -28,16 +43,17 @@ export class SplitView {
         this.split = Split(["#video-pres-wrapper", "#video-cam-wrapper"], {
             minSize: [0, 0],
             sizes: this.getSizes(),
-            onDragEnd: function (sizes: number[]) {
-                that.toggleControlBars(sizes[1]);
+            onDrag(sizes: number[]) {
+                that.updateControlBarSize(sizes);
             },
         });
     }
 
     update(percentage: number) {
         this.camPercentage = percentage;
-        this.split.setSizes(this.getSizes());
-        this.toggleControlBars(this.camPercentage);
+        const newSizes = this.getSizes();
+        this.split.setSizes(newSizes);
+        this.updateControlBarSize(newSizes);
     }
 
     hideMenu() {
@@ -52,15 +68,59 @@ export class SplitView {
         return [100 - this.camPercentage, this.camPercentage];
     }
 
-    private toggleControlBars(camPercentage: number) {
-        let i = 0,
-            j = 1;
-        if (camPercentage > 50) {
-            (i = 1), (j = 0);
+    private setupControlBars() {
+        this.players[0].controlBar.hide();
+        this.players[0].muted(true);
+
+        this.players[1].el().addEventListener("fullscreenchange", () => {
+            this.isFullscreen = document.fullscreenElement !== null;
+            this.updateControlBarSize(this.getSizes());
+        });
+
+        const mainControlBarElem = this.players[1].controlBar.el();
+        mainControlBarElem.style.position = "absolute";
+        mainControlBarElem.style.zIndex = "1";
+        mainControlBarElem.style.width = "100vw";
+
+        this.updateControlBarSize(this.getSizes());
+    }
+
+    private updateControlBarSize(sizes: number[]) {
+        let newSize;
+        if (this.isFullscreen) {
+            newSize = "0";
+        } else if (sizes[0] === 100) {
+            newSize = `calc(${this.gutterWidth / 2}px - 100vw)`;
+        } else if (sizes[0] === 0) {
+            newSize = `-${this.gutterWidth / 2}px`;
+        } else {
+            newSize = `-${sizes[0]}vw`;
         }
-        this.players[j].controlBar.hide();
-        this.players[i].controlBar.show();
-        this.players[j].muted(true);
-        this.players[i].muted(false);
+
+        this.players[1].controlBar.el_.style.marginLeft = newSize;
+        const textTrackDisplay = this.players[1].el_.querySelector(".vjs-text-track-display");
+        if (textTrackDisplay) {
+            textTrackDisplay.style.left = newSize;
+        }
+    }
+
+    private overwriteFullscreenToggle() {
+        const fullscreenToggle = this.players[1].controlBar.fullscreenToggle;
+        fullscreenToggle.off("click");
+
+        fullscreenToggle.on("click", async () => {
+            if (document.fullscreenElement === null) {
+                await this.splitParent.requestFullscreen();
+            } else {
+                await document.exitFullscreen();
+            }
+        });
+    }
+
+    private setTrackBarModes(k: number, mode: string) {
+        const tracks = this.players[k].textTracks();
+        for (let i = 0; i < tracks.length; i++) {
+            tracks[i].mode = mode;
+        }
     }
 }
