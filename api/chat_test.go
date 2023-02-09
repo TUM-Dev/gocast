@@ -30,7 +30,6 @@ func TestMessages(t *testing.T) {
 			{Message: "2", IsVisible: true},
 			{Message: "3", IsVisible: true},
 		}
-		//
 		gomino.TestCases{
 			"no context": {
 				Router:       ChatRouterWrapper,
