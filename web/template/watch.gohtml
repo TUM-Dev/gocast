@@ -229,17 +229,19 @@
                     :style="{width: size.width, left: size.x}"
                     x-show="heatMapPath != null"
             >
-                <svg x-if="heatMapPath" height="100%" preserveAspectRatio="none" viewBox="0 0 1000 100"
-                     width="100%" style="height: 30px;">
-                    <defs>
-                        <clipPath id="heatmap">
-                            <path class="tumlive-heat-map-path"
-                                  :d="heatMapPath"
-                                  fill="white" fill-opacity="0.6"></path>
-                        </clipPath>
-                    </defs>
-                    <rect clip-path="url(#heatmap)" fill="white" fill-opacity="0.4" height="100%" width="100%" x="0" y="0"></rect>
-                </svg>
+                <template x-if="heatMapPath">
+                    <svg height="100%" preserveAspectRatio="none" viewBox="0 0 1000 100"
+                         width="100%" style="height: 30px;">
+                        <defs>
+                            <clipPath id="heatmap">
+                                <path class="tumlive-heat-map-path"
+                                      :d="heatMapPath"
+                                      fill="white" fill-opacity="0.6"></path>
+                            </clipPath>
+                        </defs>
+                        <rect clip-path="url(#heatmap)" fill="white" fill-opacity="0.4" height="100%" width="100%" x="0" y="0"></rect>
+                    </svg>
+                </template>
             </div>
 
             <div
