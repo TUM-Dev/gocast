@@ -40,8 +40,10 @@ func (r seekStatsRoutes) reportSeek(c *gin.Context) {
 	}
 }
 
-const minTotalHits = 150
-const minNonZeroChunks = 50
+const (
+	minTotalHits     = 150
+	minNonZeroChunks = 50
+)
 
 // getSeek get seeks for a video
 func (r seekStatsRoutes) getSeek(c *gin.Context) {
