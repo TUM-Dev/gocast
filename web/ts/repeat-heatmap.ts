@@ -4,7 +4,7 @@ import { Get } from "./global";
 const repeatMapScale = 90;
 
 export const repeatHeatMap = {
-    seekBar: null,
+    seekBarWrap: null,
 
     init(streamID: number) {
         this.streamID = streamID;
@@ -12,17 +12,17 @@ export const repeatHeatMap = {
 
         const player = [...getPlayers()].pop();
         player.ready(() => {
-            this.seekBar = document.querySelector(".vjs-progress-control");
+            this.seekBarWrap = player.el().querySelector(".vjs-progress-control");
             this.injectElementIntoVjs();
 
-            new ResizeObserver(this.updateSize.bind(this)).observe(this.seekBar);
+            new ResizeObserver(this.updateSize.bind(this)).observe(this.seekBarWrap);
             this.updateSize();
         });
     },
 
     injectElementIntoVjs() {
         const heatmap = document.querySelector(".heatmap-wrap");
-        this.seekBar.append(heatmap);
+        this.seekBarWrap.append(heatmap);
     },
 
     updateSize() {
@@ -80,7 +80,7 @@ export const repeatHeatMap = {
     },
 
     getSeekbarInfo() {
-        const seekBar = document.querySelector(".vjs-progress-holder");
+        const seekBar = this.seekBarWrap.querySelector(".vjs-progress-holder");
         if (!seekBar) {
             return { x: "0px", width: "0px" };
         }
