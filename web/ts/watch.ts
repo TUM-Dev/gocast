@@ -23,6 +23,8 @@ enum WSMessageType {
     ReactTo = "react_to",
 }
 
+export { repeatHeatMap } from "./repeat-heatmap";
+
 function sendIDMessage(id: number, type: WSMessageType) {
     return Realtime.get().send(currentChatChannel, {
         payload: {

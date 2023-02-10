@@ -1,5 +1,5 @@
-import {getPlayer} from "./TUMLiveVjs";
-import {Get} from "./global";
+import { getPlayers } from "./TUMLiveVjs";
+import { Get } from "./global";
 
 const repeatMapScale = 90;
 
@@ -10,7 +10,7 @@ export const repeatHeatMap = {
         this.streamID = streamID;
         setTimeout(() => this.updateHeatMap(), 0);
 
-        const player = getPlayer();
+        const player = [...getPlayers()].pop();
         player.ready(() => {
             this.seekBar = document.querySelector(".vjs-progress-control");
             this.injectElementIntoVjs();
