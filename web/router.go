@@ -64,10 +64,10 @@ func configGinStaticRouter(router gin.IRoutes) {
 		router.Static("/static", "web/")
 	}
 
-	/*defaults := getDefaultStaticBrandingFiles()
+	defaults := getDefaultStaticBrandingFiles()
 	for _, file := range defaults {
 		router.GET("/"+file.Name, getFileHandler(file))
-	}*/
+	}
 
 	router.GET("/service-worker.js", func(c *gin.Context) {
 		c.FileFromFS("assets/service-worker.js", http.FS(staticFS))
