@@ -223,6 +223,21 @@ func (mr *MockChatDaoMockRecorder) GetPollUserVote(pollId, userId interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPollUserVote", reflect.TypeOf((*MockChatDao)(nil).GetPollUserVote), pollId, userId)
 }
 
+// GetPolls mocks base method.
+func (m *MockChatDao) GetPolls(streamID uint) ([]model.Poll, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPolls", streamID)
+	ret0, _ := ret[0].([]model.Poll)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPolls indicates an expected call of GetPolls.
+func (mr *MockChatDaoMockRecorder) GetPolls(streamID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolls", reflect.TypeOf((*MockChatDao)(nil).GetPolls), streamID)
+}
+
 // GetReactions mocks base method.
 func (m *MockChatDao) GetReactions(chatID uint) ([]model.ChatReaction, error) {
 	m.ctrl.T.Helper()

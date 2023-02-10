@@ -105,6 +105,7 @@ func configGinChatRouter(router *gin.RouterGroup, daoWrapper dao.DaoWrapper) {
 	wsGroup.GET("/messages", routes.getMessages)
 	wsGroup.GET("/active-poll", routes.getActivePoll)
 	wsGroup.GET("/users", routes.getUsers)
+	wsGroup.GET("/polls", routes.getPolls)
 }
 
 type chatRoutes struct {
@@ -581,6 +582,44 @@ func (r chatRoutes) getActivePoll(c *gin.Context) {
 		"pollOptions": pollOptions,
 		"submitted":   submitted,
 	})
+}
+
+func (r chatRoutes) getPolls(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	if tumLiveContext.User == nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "not logged in",
+		})
+		return
+	}
+
+	polls, err := r.ChatDao.GetPolls(tumLiveContext.Stream.ID)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not get past polls",
+			Err:           err,
+		})
+		return
+	}
+
+	var response []gin.H
+	for _, poll := range polls {
+		var pollOptions []gin.H
+		for _, option := range poll.PollOptions {
+			voteCount, _ := r.ChatDao.GetPollOptionVoteCount(option.ID)
+			pollOptions = append(pollOptions, option.GetStatsMap(voteCount))
+		}
+		response = append(response, gin.H{
+			"ID":       poll.ID,
+			"question": poll.Question,
+			"options":  pollOptions,
+		})
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func parseChatPayload(m *realtime.Message) (res wsReq, err error) {
