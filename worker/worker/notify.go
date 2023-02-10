@@ -121,7 +121,7 @@ func notifyUploadDone(streamCtx *StreamContext) {
 	resp, err := client.NotifyUploadFinished(ctx, &pb.UploadFinished{
 		WorkerID:     cfg.WorkerID,
 		StreamID:     streamCtx.streamId,
-		HLSUrl:       fmt.Sprintf("https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s.mp4/playlist.m3u8", streamCtx.getStreamNameVoD()),
+		HLSUrl:       fmt.Sprintf(cfg.VodURLTemplate, streamCtx.getStreamNameVoD()),
 		SourceType:   streamCtx.streamVersion,
 		ThumbnailUrl: streamCtx.thumbnailSpritePath,
 	})

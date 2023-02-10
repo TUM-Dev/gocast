@@ -39,6 +39,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			// All User Endpoints
 			streamById.GET("/sections", routes.getVideoSections)
 			streamById.GET("/thumbs/:fid", routes.getThumbs)
+			streamById.GET("/subtitles/:lang", routes.getSubtitles)
 		}
 		{
 			// Admin-Only Endpoints
@@ -116,6 +117,29 @@ func (r streamRoutes) getThumbs(c *gin.Context) {
 		return
 	}
 	sendDownloadFile(c, file, tumLiveContext)
+}
+
+func (r streamRoutes) getSubtitles(c *gin.Context) {
+	ctx := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	lang := c.Param("lang")
+
+	subtitlesObj, err := r.SubtitlesDao.GetByStreamIDandLang(context.Background(), ctx.Stream.ID, lang)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusNotFound,
+				CustomMessage: "invalid streamID or language",
+			})
+		} else {
+			_ = c.Error(tools.RequestError{
+				Err:           err,
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can not get by streamID and language",
+			})
+		}
+		return
+	}
+	c.Data(http.StatusOK, "text/vtt", []byte(subtitlesObj.Content))
 }
 
 // livestreams returns all streams that are live
@@ -277,21 +301,7 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 		log.WithError(err).Error("Can't get video sections")
 	}
 
-	response := []gin.H{}
-	for _, section := range sections {
-		response = append(response, gin.H{
-			"ID":                section.ID,
-			"startHours":        section.StartHours,
-			"startMinutes":      section.StartMinutes,
-			"startSeconds":      section.StartSeconds,
-			"description":       section.Description,
-			"friendlyTimestamp": section.TimestampAsString(),
-			"streamID":          section.StreamID,
-			"fileID":            section.FileID,
-		})
-
-	}
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, sections)
 }
 
 // RegenerateThumbs regenerates the thumbnails for a stream.

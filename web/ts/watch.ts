@@ -1,9 +1,9 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
-import { getPlayer } from "./TUMLiveVjs";
+import { getPlayers } from "./TUMLiveVjs";
 import { Get, postData } from "./global";
 import { Realtime } from "./socket";
-import { copyToClipboard } from "./global";
+import { copyToClipboard, Time } from "./global";
 
 let currentChatChannel = "";
 const retryInt = 5000; //retry connecting to websocket after this timeout
@@ -13,7 +13,6 @@ const pageloaded = new Date();
 
 enum WSMessageType {
     Message = "message",
-    Like = "like",
     Delete = "delete",
     StartPoll = "start_poll",
     SubmitPollOptionVote = "submit_poll_option_vote",
@@ -21,6 +20,7 @@ enum WSMessageType {
     Approve = "approve",
     Retract = "retract",
     Resolve = "resolve",
+    ReactTo = "react_to",
 }
 
 function sendIDMessage(id: number, type: WSMessageType) {
@@ -32,7 +32,18 @@ function sendIDMessage(id: number, type: WSMessageType) {
     });
 }
 
-export const likeMessage = (id: number) => sendIDMessage(id, WSMessageType.Like);
+function sendCustomMessage(id: number, type: WSMessageType, optArgs: object = {}) {
+    return Realtime.get().send(currentChatChannel, {
+        payload: {
+            type: type,
+            id: id,
+            ...optArgs,
+        },
+    });
+}
+
+export const reactToMessage = (id: number, reaction: string) =>
+    sendCustomMessage(id, WSMessageType.ReactTo, { reaction });
 
 export const deleteMessage = (id: number) => sendIDMessage(id, WSMessageType.Delete);
 
@@ -105,9 +116,6 @@ export async function startWebsocket() {
         } else if ("pollOptionResults" in data) {
             const event = new CustomEvent("polloptionresult", { detail: data });
             window.dispatchEvent(event);
-        } else if ("likes" in data) {
-            const event = new CustomEvent("chatlike", { detail: data });
-            window.dispatchEvent(event);
         } else if ("delete" in data) {
             const event = new CustomEvent("chatdelete", { detail: data });
             window.dispatchEvent(event);
@@ -125,6 +133,9 @@ export async function startWebsocket() {
             window.dispatchEvent(event);
         } else if ("description" in data) {
             const event = new CustomEvent("descriptionupdate", { detail: data });
+            window.dispatchEvent(event);
+        } else if ("reactions" in data) {
+            const event = new CustomEvent("chatreactions", { detail: data });
             window.dispatchEvent(event);
         }
     };
@@ -214,10 +225,9 @@ export function getPollOptionWidth(pollOptions, pollOption) {
     return `${Math.ceil(fractionWidth).toString()}%`;
 }
 
-export function contextMenuHandler(e, contextMenu) {
+export function contextMenuHandler(e, contextMenu, videoElem) {
     if (contextMenu.shown) return contextMenu;
     e.preventDefault();
-    const videoElem = document.querySelector("#my-video");
     return {
         shown: true,
         locX: e.clientX - videoElem.getBoundingClientRect().left,
@@ -235,7 +245,7 @@ export const videoStatListener = {
         this.update();
     },
     update() {
-        const player = getPlayer();
+        const player = getPlayers()[0];
         const vhs = player.tech({ IWillNotUseThisInPlugins: true }).vhs;
         const notAvailable = vhs == null;
 
@@ -243,7 +253,7 @@ export const videoStatListener = {
             bufferSeconds: notAvailable ? 0 : player.bufferedEnd() - player.currentTime(),
             videoHeight: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.height,
             videoWidth: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.width,
-            bandwidth: notAvailable ? 0 : vhs.bandwidth, //player.tech().vhs.bandwidth(),
+            bandwidth: notAvailable ? 0 : vhs.bandwidth,
             mediaRequests: notAvailable ? 0 : vhs.stats.mediaRequests,
             mediaRequestsFailed: notAvailable ? 0 : vhs.stats.mediaRequestsErrored,
         };
@@ -280,14 +290,15 @@ export function toggleShortcutsModal() {
 }
 
 export class ShareURL {
-    private baseUrl: string;
-
     url: string;
     includeTimestamp: boolean;
     timestamp: string;
-    openTime: number;
 
     copied: boolean; // success indicator
+
+    private baseUrl: string;
+    private playerHasTime: Promise<boolean>;
+    private timestampArgument: string;
 
     constructor() {
         this.baseUrl = [location.protocol, "//", location.host, location.pathname].join(""); // get rid of query
@@ -295,54 +306,51 @@ export class ShareURL {
         this.includeTimestamp = false;
         this.copied = false;
 
-        const player = getPlayer();
+        const player = getPlayers()[0];
         player.ready(() => {
             player.on("loadedmetadata", () => {
-                this.openTime = player.currentTime();
+                this.playerHasTime = Promise.resolve(true);
             });
         });
     }
 
-    copyURL() {
-        copyToClipboard(this.url);
-        this.copied = true;
-        setTimeout(() => (this.copied = false), 3000);
-    }
-
-    setURL() {
+    async setURL(shouldFetchPlayerTime?: boolean) {
         if (this.includeTimestamp) {
-            const trim = this.timestamp.substring(0, 9);
-            const split = trim.split(":");
-            if (split.length != 3) {
-                this.url = this.baseUrl;
+            if (shouldFetchPlayerTime || !this.timestamp) {
+                const player = getPlayers()[0];
+                await this.playerHasTime;
+                this.timestamp = Time.FromSeconds(player.currentTime()).toStringWithLeadingZeros();
+                await this.updateURLStateFromTimestamp();
             } else {
-                const h = +split[0];
-                const m = +split[1];
-                const s = +split[2];
-                if (isNaN(h) || isNaN(m) || isNaN(s) || h > 60 || m > 60 || s > 60 || h < 0 || m < 0 || s < 0) {
-                    this.url = this.baseUrl;
-                } else {
-                    const inSeconds = s + 60 * m + 60 * 60 * h;
-                    this.url = `${this.baseUrl}?t=${inSeconds}`;
-                }
+                await this.updateURLStateFromTimestamp();
             }
+            this.url = this.baseUrl + this.timestampArgument;
         } else {
             this.url = this.baseUrl;
         }
     }
 
-    setTimestamp() {
-        const d = new Date(this.openTime * 1000);
-        const h = ShareURL.padZero(d.getUTCHours());
-        const m = ShareURL.padZero(d.getUTCMinutes());
-        const s = ShareURL.padZero(d.getSeconds());
-        this.timestamp = `${h}:${m}:${s}`;
+    copyURL() {
+        copyToClipboard(this.url);
+        this.copied = true;
+        setTimeout(() => (this.copied = false), 1000);
     }
 
-    private static padZero(i) {
-        if (i < 10) {
-            i = "0" + i;
+    private async updateURLStateFromTimestamp() {
+        const trim = this.timestamp.substring(0, 9);
+        const split = trim.split(":");
+        if (split.length != 3) {
+            this.url = this.baseUrl;
+        } else {
+            const h = +split[0];
+            const m = +split[1];
+            const s = +split[2];
+            if (isNaN(h) || isNaN(m) || isNaN(s) || h > 60 || m > 60 || s > 60 || h < 0 || m < 0 || s < 0) {
+                this.url = this.baseUrl;
+            } else {
+                const inSeconds = s + 60 * m + 60 * 60 * h;
+                this.timestampArgument = `?t=${inSeconds}`;
+            }
         }
-        return i;
     }
 }

@@ -10,7 +10,7 @@ RUN rm -rf web/assets/ts-dist &&\
 WORKDIR /app/web
 RUN npm i --no-dev
 
-FROM golang:1.19-alpine3.16 as build-env
+FROM golang:1.20-alpine3.17 as build-env
 
 RUN mkdir /gostuff
 WORKDIR /gostuff

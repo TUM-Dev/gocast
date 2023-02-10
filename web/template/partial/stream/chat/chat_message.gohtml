@@ -3,7 +3,7 @@
     {{$moderatedChat := .IndexData.TUMLiveContext.Course.ModeratedChatEnabled}}
     <template x-for="(m, index) in c.messages" :key="m.ID + 'v' + m.renderVersion">
         <div x-ref="message" class="grid gap-y-1 text-4 text-sm $m.ID message"
-             x-data="{ showReplies: false}"
+             x-data="{ showReplies: false, emojiPicker: c.initEmojiPicker(m.ID) }"
              x-show="!m.deleted && m.replyTo && !m.replyTo.Valid"
              :class="{'ring ring-blue-500/50' : c.current.replyTo === m.ID, 'opacity-60' : m.isGrayedOut}"
              x-init="$watch('c.focusedMessageId', () => {if (c.isMessageToBeFocused(index)){watch.scrollToElement($refs.message)}});">
@@ -38,25 +38,41 @@
                       x-text="watch.messageDateToString(m.CreatedAt)"></span>
             </div>
 
+            <!-- reactions -->
+            <div class="flex justify-between items-center">
+                <div class="flex items-center relative flex-wrap">
+                    <template x-for="(reactionGroup, i) in m.aggregatedReactions">
+                        <button type="button"
+                                :title="reactionGroup.namesPretty" {{/* e.g. ':eyes:' */}}
+                                @click="watch.reactToMessage(m.ID, reactionGroup.emojiName)" {{/* notify emoji click */}}
+                                :class="reactionGroup.hasReacted ? 'border-blue-500/25 bg-blue-100/25 dark:border-indigo-600 dark:bg-indigo-900/25' : 'border-gray-500'"
+                                class="cursor-pointer m-1 px-2 h-6 border-[1px] border-gray-500 rounded-full border-solid text-xs flex justify-start items-center">
+                            <span x-text="reactionGroup.emoji"></span>
+                            <span x-text="reactionGroup.reactions.length" class="ml-2"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+
             <!-- like count & open reply button -->
             <div class="flex justify-between items-center">
                 <div class="flex space-x-2 align-middle items-center">
-                    <div class="flex">
-                        <button type="button" title="Like message"
-                                @click="watch.likeMessage(m.ID); m.liked=!m.liked;"
-                                class="flex px-2 h-8 rounded-full text-5 hover:bg-gray-200 dark:hover:bg-gray-600">
-                            <i class="fas fa-thumbs-up m-auto"></i>
-                            <template x-if="m.likes > 0">
-                                <span class="m-auto ml-2" x-text="m.likes"></span>
-                            </template>
+                    <div class="relative"
+                         @emojipickeronselect.window="e => { if (emojiPicker.eventOwner(e)) { watch.reactToMessage(m.ID, e.detail.emoji); emojiPicker.close(); } }"
+                    >
+                        <button type="button" title="React"
+                                @click="emojiPicker.open()"
+                                class="flex px-2 h-8 rounded-full text-5 hover:bg-gray-100 dark:hover:bg-gray-600">
+                            <i class="far fa-face-smile m-auto"></i>
                         </button>
+                        {{template "emojipicker"}}
                     </div>
                     <template x-if="m.resolved">
                         <i class="fa-solid fa-check-double text-success"></i>
                     </template>
                     <template x-if="m.replies.length > 0">
                         <button
-                                class="text-5 uppercase text-xs hover:bg-gray-200 dark:hover:bg-gray-600 px-2 h-8 rounded-full"
+                                class="text-5 uppercase text-xs hover:bg-gray-100 dark:hover:bg-gray-600 px-2 h-8 rounded-full"
                                 @click="showReplies=!showReplies">
                             <span>replies</span>
                             <span x-text="`(${m.replies.length})`"></span>
@@ -73,7 +89,7 @@
                     <div x-data="{showAdminTools: false}" class="relative">
                         <button type="button" title="Admin tools"
                                 @click="showAdminTools=true;"
-                                class="text-amber-400 uppercase text-sm hover:bg-gray-200 dark:hover:bg-gray-600 w-8 h-8 rounded-full">
+                                class="text-amber-400 uppercase text-sm hover:bg-gray-100 dark:hover:bg-gray-600 w-8 h-8 rounded-full">
                             <i class="fa-solid fa-bolt"></i>
                         </button>
                         <div x-cloak x-show="showAdminTools"
@@ -82,7 +98,7 @@
                                 border dark:border-gray-600 shadow rounded-lg">
                             <button @click="watch.deleteMessage(m.ID)"
                                     title="Delete Message"
-                                    class="flex items-center w-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                    class="flex items-center w-full px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-600">
                                 <i class="fas fa-ban text-danger mr-2"></i>
                                 <span class="text-4 font-light">Delete</span>
                             </button>
@@ -90,14 +106,14 @@
                                 <button x-cloak x-show="!m.visible"
                                         @click="watch.approveMessage(m.ID)"
                                         title="Approve Message"
-                                        class="flex items-center w-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        class="flex items-center w-full px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-600">
                                     <i class="fa-solid fa-spell-check mr-2"></i>
                                     <span class="text-4 font-light">Approve</span>
                                 </button>
                                 <button x-cloak x-show="m.visible && !m.admin"
                                         @click="watch.retractMessage(m.ID)"
                                         title="Retract Message"
-                                        class="flex items-center w-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        class="flex items-center w-full px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-600">
                                     <i class="fa-solid fa-rotate-left mr-2"></i>
                                     <span class="text-4 font-light">Retract</span>
                                 </button>
@@ -105,7 +121,7 @@
                             <template x-if="!m.resolved">
                                 <button @click="watch.resolveMessage(m.ID)"
                                         title="Resolve Message"
-                                        class="flex items-center w-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        class="flex items-center w-full px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-600">
                                     <i class="fas fa-check text-success mr-2"></i>
                                     <span class="text-4 font-light">Resolve</span>
                                 </button>

@@ -18,9 +18,50 @@ Features include:
 - Self-service dashboard for lecturers 
   - schedule streams, manage access...
 
+## Architecture
+
+```
+                                          ┌──────────────────────┐
+                              ┌───────────►   Campus Management  │
+                              │           │ System (CAMPUSOnline)│
+               ┌──────────┐   │Enrollments└──────────────────────┘
+               │Identity  │   │
+               │Management│   │                 - Users,
+               │  - SAML  ◄─┐ │                 - Courses,
+               │  - LDAP  │ │ │                 - Streams, ...                               ┌────────────────────┐
+               └──────────┘ │ │              ┌──────────┐                                    │Lecture Hall        │
+                      Users │ │  ┌──────────►│ Database │                                    │ - Streaming Device │
+                            │ │  │           └──────────┘                               ┌────┤ - Camera           │
+                            │ │  │                                                      │    │ - Slides (HDMI)    │
+                         ┌──┴─┴──┴────┐         Task Distribution (gRPC)            RTSP│    │ - Microphone       │
+            ┌────────────►  TUM-Live  │◄─────────────────────────────────────┐      pull│    └────────────────────┘
+            │Website     └────────────┘                                      │          │
+            │(HTTP)                                                          ▼          │
+            │                                                             ┌─────────────▼─────┬─┐
+            │                               ┌────────────────┐            │TUM-Live-Worker #1 │ │ Streaming,
+┌───────────┴──┐                            │ Shared Storage │            ├───────────────────┘ │ Converting,
+│Student/Viewer│                            │ S3, Ceph, etc. │            │  TUM-Live-Worker #n │ Transcribing, ...
+└───────────┬──┘                            └─▲────▲─────────┘            └──────┬──▲────▲──────┘
+            │                        Serve Vod│    │HLS Files            Push VoD│  │    │RTMP
+            │                          Content│    │         ┌───────────┐ (HTTP)│  │    │push
+            │                                 │    └─────────┤VoD Service◄───────┘  │    │       ┌──────────────┐
+            │Videos      ┌──────────────────┬─┴┐             └───────────┘          │    └───────┤Selfstreamer  │
+            │(HLS, HTTP) │ TUM-Live Edge #1 │  │                                    │            │  - OBS,      │
+            └────────────►──────────────────┘  ├────────────────────────────────────┘            │  - Zoom, ... │
+                         │   TUM-Live Edge #n  │       Proxy, Cache (HTTP)                       └──────────────┘
+                         └─────────────────────┘
+```
+
 ## Getting Started
 
-To get TUM-Live running locally follow these steps:
+The easiest way of running and testing TUM-Live is by using the provided docker-compose file:
+
+```bash
+docker compose build && docker compose up
+```
+Be advised that the compose file is not indented for production use as it runs everything on one machine.
+
+If you want to get TUM-Live running natively follow these steps:
 
 ### Setup Database
 - Follow the steps [here](https://mariadb.com/kb/en/installing-and-using-mariadb-via-docker/) to install mariadb via docker.
