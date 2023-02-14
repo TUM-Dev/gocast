@@ -75,6 +75,9 @@
     </div>
 </div>
 {{end}}
+{{if .AlertsEnabled}}
+    {{template "alert-modal" . }}
+{{end}}
 <div id="watchPageMainWrapper">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
     <div class="flex flex-wrap shadow border bg-white dark:bg-secondary dark:shadow-0 dark:border-0">
@@ -91,9 +94,9 @@
 
                 <!-- info messages -->
                 <div x-data="{ showliveended: false }"
-                     class="bg-red-700 bg-opacity-20 p-2 w-full font-semibold text-2"
+                     class="absolute rounded-full m-auto bg-red-700 z-50 px-4 py-2 m-3 font-semibold text-white"
                      x-show="showliveended" @streamended.window="showliveended=true" x-cloak>
-                    <i class="fas fa-info-circle"></i> This livestream has ended.
+                    <i class="fas fa-info-circle mr-3"></i> This livestream has ended.
                 </div>
                 {{if (eq .Version "SPLIT")}}
                     <div x-data="{splitView: new watch.SplitView()}" @mouseleave="splitView.hideMenu()" class="group relative flex w-full h-full">
@@ -540,9 +543,6 @@
                 </div>
             </section>
         </div>
-        {{if .AlertsEnabled}}
-            {{template "alert-modal" . }}
-        {{end}}
         {{if .IsHighlightPage}}
             <ul class="w-full m-auto mb-4">
                 {{template "course_list" .IndexData.TUMLiveContext}}
