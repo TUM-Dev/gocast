@@ -93,8 +93,8 @@
                  class="grow w-full h-full">
 
                 <!-- info messages -->
-                <div x-data="{ showliveended: false }"
-                     class="fixed rounded-full m-auto bg-red-700 z-50 px-4 py-2 m-3 font-semibold text-white"
+                <div x-data="{ showliveended: true }"
+                     class="absolute rounded-full m-auto bg-red-700 z-50 px-4 py-2 m-3 font-semibold text-white"
                      x-show="showliveended" @streamended.window="showliveended=true" x-cloak>
                     <i class="fas fa-info-circle mr-3"></i> This livestream has ended.
                 </div>
