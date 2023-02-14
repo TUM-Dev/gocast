@@ -3,6 +3,11 @@ package testutils
 import (
 	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"math"
+	"testing"
+	"time"
+
 	"github.com/golang/mock/gomock"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
@@ -10,8 +15,6 @@ import (
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"gorm.io/gorm"
-	"testing"
-	"time"
 )
 
 // Misc
@@ -259,6 +262,29 @@ var (
 		Language: "en",
 	}
 )
+
+// CreateVideoSeekData returns list of generated VideoSeekChunk and expected response object
+func CreateVideoSeekData(streamId uint, chunkCount int) ([]model.VideoSeekChunk, gin.H) {
+	var chunks []model.VideoSeekChunk
+	var responseChunks []gin.H
+
+	for i := 0; i < chunkCount; i++ {
+		chunk := model.VideoSeekChunk{
+			ChunkIndex: uint(i),
+			StreamID:   streamId,
+			Hits:       uint(chunkCount + i*int(math.Pow(-1.0, float64(i)))),
+		}
+
+		chunks = append(chunks, chunk)
+		responseChunks = append(responseChunks, gin.H{
+			"index": chunk.ChunkIndex,
+			"value": chunk.Hits,
+		})
+	}
+	return chunks, gin.H{
+		"values": responseChunks,
+	}
+}
 
 func GetStreamMock(t *testing.T) dao.StreamsDao {
 	streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
