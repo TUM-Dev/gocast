@@ -75,6 +75,9 @@
     </div>
 </div>
 {{end}}
+{{if .AlertsEnabled}}
+    {{template "alert-modal" . }}
+{{end}}
 <div id="watchPageMainWrapper">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
     <div class="flex flex-wrap shadow border bg-white dark:bg-secondary dark:shadow-0 dark:border-0">
@@ -91,9 +94,9 @@
 
                 <!-- info messages -->
                 <div x-data="{ showliveended: false }"
-                     class="bg-red-700 bg-opacity-20 p-2 w-full font-semibold text-2"
+                     class="absolute rounded-full m-auto bg-red-700 z-50 px-4 py-2 m-3 font-semibold text-white"
                      x-show="showliveended" @streamended.window="showliveended=true" x-cloak>
-                    <i class="fas fa-info-circle"></i> This livestream has ended.
+                    <i class="fas fa-info-circle mr-3"></i> This livestream has ended.
                 </div>
                 {{if (eq .Version "SPLIT")}}
                     <div x-data="{splitView: new watch.SplitView()}" @mouseleave="splitView.hideMenu()" class="group relative flex w-full h-full">
@@ -214,11 +217,48 @@
                                 {{end}}
                             {{end}}
                         {{end}}
-                        <p class="vjs-no-js">
-                            To view this video please enable JavaScript.
-                        </p>
-                    </video-js>
-                {{end}}
+                    <p class="vjs-no-js">
+                        To view this video please enable JavaScript.
+                    </p>
+                </video-js>
+            {{end}}
+
+            <div
+                    x-data="{ size: { x: '0px', width: '0px' }, seekLogger: new watch.SeekLogger('{{$stream.ID}}'), heatMapPath: null }"
+                    x-on:updateheatmappath.window="e => { heatMapPath = e.detail.heatMapPath; }"
+                    x-on:updateheatmapsize.window="e => { size = e.detail; }"
+                    x-init="seekLogger.attach(); watch.repeatHeatMap.init('{{$stream.ID}}');"
+                    class="heatmap-wrap absolute bottom-[18px] rounded bg-gradient-to-t from-gray-800/[.6] pt-4 pointer-events-none"
+                    :style="{width: size.width, left: size.x}"
+                    x-show="heatMapPath != null"
+            >
+                <template x-if="heatMapPath">
+                    <svg height="100%" preserveAspectRatio="none" viewBox="0 0 1000 100"
+                         width="100%" style="height: 30px;">
+                        <defs>
+                            <clipPath id="heatmap">
+                                <path class="tumlive-heat-map-path"
+                                      :d="heatMapPath"
+                                      fill="white" fill-opacity="0.6"></path>
+                            </clipPath>
+                        </defs>
+                        <rect clip-path="url(#heatmap)" fill="white" fill-opacity="0.4" height="100%" width="100%" x="0" y="0"></rect>
+                    </svg>
+                </template>
+            </div>
+
+            <div
+                    x-cloak
+                    x-show="contextMenu.shown"
+                    @click.outside="contextMenu = {...contextMenu, shown: false}"
+                    class="origin-top-left absolute w-72 py-2 bg-gray-800/[.9] border-gray-100 border-1 rounded text-white text-sm"
+                    :style="{ top: contextMenu.locY + 'px', left: contextMenu.locX + 'px' }"
+                    role="menu" aria-orientation="vertical" tabindex="-1">
+                <button @click="contextMenu = {...contextMenu, shown: false}; videoStatsShown = true; watch.videoStatListener.listen();"
+                        class="py-2 px-4 w-full text-left cursor-pointer hover:bg-white/10">
+                    Show detailed stats
+                </button>
+            </div>
 
                 <div
                         x-cloak
@@ -293,9 +333,10 @@
         {{if and $course.ChatEnabled $stream.ChatEnabled}}
             <div x-show="showChat"
                  :class="showChat ? 'lg:basis-1/4' : 'lg:basis-0'"
-                 class="z-20 basis-full order-5 border rounded lg:h-16/6 h-96
-                        lg:border-0 lg:shadow lg:order-none">
-                <div id="chat-box" class="bg-white rounded lg:bg-transparent md:rounded-0 dark:bg-secondary h-full">
+                 class="z-20 basis-full order-5
+                        md:px-2 md:pt-2
+                        lg:h-16/6 h-96 lg:order-none">
+                <div id="chat-box" class="bg-white rounded-lg h-full border dark:border-gray-800 lg:bg-transparent md:rounded-0 dark:bg-secondary">
                     {{template "chat" .ChatData}}
                 </div>
             </div>
@@ -502,9 +543,6 @@
                 </div>
             </section>
         </div>
-        {{if .AlertsEnabled}}
-            {{template "alert-modal" . }}
-        {{end}}
         {{if .IsHighlightPage}}
             <ul class="w-full m-auto mb-4">
                 {{template "course_list" .IndexData.TUMLiveContext}}
@@ -521,7 +559,7 @@
     watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
     {{else}}
     watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
-    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
+    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, undefined, undefined, {{$stream.Model.ID}});
     {{end}}
 
     watch.syncPlayers();
@@ -532,7 +570,7 @@
     watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
     watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
     {{else}}
-    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
+    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, undefined, undefined, {{$stream.Model.ID}});
     {{end}}
 
     {{end}}

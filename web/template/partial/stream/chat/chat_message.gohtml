@@ -62,7 +62,7 @@
                     >
                         <button type="button" title="React"
                                 @click="emojiPicker.open()"
-                                class="flex px-2 h-8 rounded-full text-5 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                class="flex px-2 h-8 rounded-full text-5 hover:bg-gray-100 dark:hover:bg-gray-600">
                             <i class="far fa-face-smile m-auto"></i>
                         </button>
                         {{template "emojipicker"}}
@@ -72,7 +72,7 @@
                     </template>
                     <template x-if="m.replies.length > 0">
                         <button
-                                class="text-5 uppercase text-xs hover:bg-gray-200 dark:hover:bg-gray-600 px-2 h-8 rounded-full"
+                                class="text-5 uppercase text-xs hover:bg-gray-100 dark:hover:bg-gray-600 px-2 h-8 rounded-full"
                                 @click="showReplies=!showReplies">
                             <span>replies</span>
                             <span x-text="`(${m.replies.length})`"></span>
@@ -89,7 +89,7 @@
                     <div x-data="{showAdminTools: false}" class="relative">
                         <button type="button" title="Admin tools"
                                 @click="showAdminTools=true;"
-                                class="text-amber-400 uppercase text-sm hover:bg-gray-200 dark:hover:bg-gray-600 w-8 h-8 rounded-full">
+                                class="text-amber-400 uppercase text-sm hover:bg-gray-100 dark:hover:bg-gray-600 w-8 h-8 rounded-full">
                             <i class="fa-solid fa-bolt"></i>
                         </button>
                         <div x-cloak x-show="showAdminTools"
@@ -98,7 +98,7 @@
                                 border dark:border-gray-600 shadow rounded-lg">
                             <button @click="watch.deleteMessage(m.ID)"
                                     title="Delete Message"
-                                    class="flex items-center w-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                    class="flex items-center w-full px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-600">
                                 <i class="fas fa-ban text-danger mr-2"></i>
                                 <span class="text-4 font-light">Delete</span>
                             </button>
@@ -106,14 +106,14 @@
                                 <button x-cloak x-show="!m.visible"
                                         @click="watch.approveMessage(m.ID)"
                                         title="Approve Message"
-                                        class="flex items-center w-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        class="flex items-center w-full px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-600">
                                     <i class="fa-solid fa-spell-check mr-2"></i>
                                     <span class="text-4 font-light">Approve</span>
                                 </button>
                                 <button x-cloak x-show="m.visible && !m.admin"
                                         @click="watch.retractMessage(m.ID)"
                                         title="Retract Message"
-                                        class="flex items-center w-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        class="flex items-center w-full px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-600">
                                     <i class="fa-solid fa-rotate-left mr-2"></i>
                                     <span class="text-4 font-light">Retract</span>
                                 </button>
@@ -121,7 +121,7 @@
                             <template x-if="!m.resolved">
                                 <button @click="watch.resolveMessage(m.ID)"
                                         title="Resolve Message"
-                                        class="flex items-center w-full px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        class="flex items-center w-full px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-600">
                                     <i class="fas fa-check text-success mr-2"></i>
                                     <span class="text-4 font-light">Resolve</span>
                                 </button>

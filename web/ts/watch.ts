@@ -1,6 +1,7 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
 import { getPlayers } from "./TUMLiveVjs";
+import { Get, postData } from "./global";
 import { Realtime } from "./socket";
 import { copyToClipboard, Time } from "./global";
 
@@ -21,6 +22,8 @@ enum WSMessageType {
     Resolve = "resolve",
     ReactTo = "react_to",
 }
+
+export { repeatHeatMap } from "./repeat-heatmap";
 
 function sendIDMessage(id: number, type: WSMessageType) {
     return Realtime.get().send(currentChatChannel, {

@@ -21,6 +21,7 @@ type ChatDao interface {
 	GetActivePoll(streamID uint) (model.Poll, error)
 	GetPollUserVote(pollId uint, userId uint) (uint, error)
 	GetPollOptionVoteCount(pollOptionId uint) (int64, error)
+	GetPolls(streamID uint) ([]model.Poll, error)
 
 	ApproveChat(id uint) error
 	RetractChat(id uint) error
@@ -143,6 +144,12 @@ func (d chatDao) GetPollOptionVoteCount(pollOptionId uint) (int64, error) {
 		return 0, err
 	}
 	return count, nil
+}
+
+// GetPolls returns all past (non-active) polls
+func (d chatDao) GetPolls(streamID uint) (polls []model.Poll, err error) {
+	err = DB.Preload("PollOptions").Order("created_at desc").Find(&polls, "stream_id = ? AND active = false", streamID).Error
+	return polls, err
 }
 
 // ApproveChat sets the attribute 'visible' to true

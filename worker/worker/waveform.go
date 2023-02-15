@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 const (
@@ -17,6 +18,10 @@ const (
 
 // GetWaveform returns the waveform of a given video as byte slice
 func GetWaveform(request *pb.WaveformRequest) ([]byte, error) {
+	if os.Getenv("DEBUG-MODE") == "true" {
+		// hack to get around docker networking when deploying locally with docker-compose
+		request.File = strings.ReplaceAll(request.File, "localhost", "edge")
+	}
 	log.Info("GetWaveform ", request.File)
 	v4, err := uuid.NewV4()
 	if err != nil {
