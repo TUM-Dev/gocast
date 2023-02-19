@@ -5,7 +5,7 @@
         <div x-ref="message" class="grid gap-y-1 text-4 text-sm $m.ID message"
              x-data="{ showReplies: false, emojiPicker: c.initEmojiPicker(m.ID) }"
              x-show="!m.deleted && m.replyTo && !m.replyTo.Valid"
-             :class="{'ring ring-blue-500/50' : c.current.replyTo === m.ID, 'opacity-60' : m.isGrayedOut}"
+             :class="{'opacity-60' : m.isGrayedOut}"
              x-init="$watch('c.focusedMessageId', () => {if (c.isMessageToBeFocused(index)){watch.scrollToElement($refs.message)}});">
             <!-- name and message -->
             <div class="text-xs">
@@ -79,9 +79,9 @@
                             <i class="fa-solid ml-1" :class="showReplies ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                         </button>
                     </template>
-                    <button @click="c.current.replyTo === m.ID ? c.current.replyTo=0: c.current.replyTo=m.ID; $refs.chatInput.focus()"
+                    <button @click="c.current.setReply(m); $refs.chatInput.focus()"
                             title="Reply"
-                            :class="c.current.replyTo === m.ID && 'hidden'">
+                            x-show="c.current.showReply(m.ID)">
                         <span class="font-semibold text-xs text-4">Reply</span>
                     </button>
                 </div>

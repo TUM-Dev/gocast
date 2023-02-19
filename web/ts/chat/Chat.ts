@@ -329,7 +329,7 @@ export class Chat {
         if (this.disconnected) {
             return "Reconnecting to chat...";
         }
-        if (this.current.replyTo === 0) {
+        if (this.current.reply === undefined) {
             return "Send a message";
         } else {
             return "Reply [escape to cancel]";
@@ -485,6 +485,10 @@ export class Chat {
         window.dispatchEvent(new CustomEvent("reorder"));
     }
 
+    findReplyMessage(id: number): ChatMessage {
+        return this.messages.find((m) => m.ID === id);
+    }
+
     private addMessage(m: ChatMessage) {
         this.preprocessors.forEach((f) => (m = f(m)));
 
@@ -508,7 +512,7 @@ export async function fetchMessages(streamId: number): Promise<ChatMessage[]> {
         });
 }
 
-type ChatMessage = {
+export type ChatMessage = {
     ID: number;
     admin: boolean;
 

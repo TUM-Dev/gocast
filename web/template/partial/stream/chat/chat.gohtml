@@ -31,7 +31,7 @@
          @disconnected.window="c.disconnected = true;"
          @connected.window="c.disconnected = false;"
          @reorder.window="c.sortMessages()"
-         @keyup.escape="c.current.replyTo=0"
+         @keyup.escape="c.current.cancelReply()"
          id="chatWrapper"
          class="flex relative flex-col text-1 h-full">
         <!-- Chat header -->
@@ -224,7 +224,41 @@
                   @submit.prevent="c.onSubmit()">
                 <div class="w-full">
 
-                    <div :class="(c.users.isValid() || c.poll.showCreateUI || c.emojis.isValid()) && 'border-t dark:border-gray-800'">
+                    <div :class="(c.users.isValid() || c.poll.showCreateUI || c.emojis.isValid() || c.current.reply) && 'border-t dark:border-gray-800 rounded-t-lg'">
+                        <template x-if="c.current.reply">
+                            <div x-data="{prepocessedMsg: c.findReplyMessage(c.current.reply.id)}"
+                                 x-init="$watch('c.current.reply', upd => prepocessedMsg = c.findReplyMessage(upd.id))"
+                                 class="text-3 grid gap-2 px-3 pt-2 pb-4 text-sm">
+                                <div class="flex justify-between items-center">
+                                    <div class="font-semibold">
+                                        <i class="fa-solid fa-reply mr-2"></i>
+                                        <span x-text="`Replying to @${prepocessedMsg.name}:`"></span>
+                                    </div>
+                                    <button type="button"
+                                            class="text-lg flex bg-transparent border-0 font-semibold rounded-full"
+                                            @click="c.current.cancelReply()">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                                <div class="flex">
+                                            <span x-show="prepocessedMsg.admin"
+                                                  class="fa-video text-xs text-white bg-red-400 p-1 rounded fas mr-1"></span>
+                                    <span class="text-2 font-semibold mr-2" x-text="`${prepocessedMsg.name}:`"
+                                          :style="'color:'+prepocessedMsg.color"></span>
+                                    <span class="" x-html="prepocessedMsg.message"
+                                          x-init="$nextTick(() => {
+                                                  renderMathInElement($el, {
+                                                    delimiters: [
+                                                        {left: '$$', right: '$$', display: true},
+                                                        {left: '$', right: '$', display: false},
+                                                        {left: '\\(', right: '\\)', display: false},
+                                                        {left: '\\[', right: '\\]', display: true}
+                                                    ],
+                                                    throwOnError: false}); });">
+                                            </span>
+                                </div>
+                            </div>
+                        </template>
                         <!-- create poll dialog -->
                         <template x-if="c.poll.showCreateUI">
                             <div class="px-2 pb-2">
