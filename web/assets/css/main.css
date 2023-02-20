@@ -210,8 +210,12 @@
     @apply bg-gray-200 dark:bg-gray-600;
 
     position: relative;
-    width: 2px!important;
     overflow: visible;
+}
+
+.gutter.gutter-horizontal {
+    width: 2px!important;
+    cursor: col-resize;
 }
 
 .gutter.gutter-horizontal::before {
@@ -229,15 +233,11 @@
     right: -6px;
     border-radius: 4px;
     opacity: 0;
-    transition: ease-in 0.3s;
+    transition: ease-in 0.1s;
 }
 
-.splitview-wrap:hover .gutter.gutter-horizontal::before {
+.splitview-wrap.mouse-moving .gutter.gutter-horizontal::before {
     opacity: 1;
-}
-
-.gutter.gutter-horizontal {
-    cursor: col-resize;
 }
 
 /* Chat */
