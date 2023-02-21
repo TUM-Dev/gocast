@@ -1,48 +1,46 @@
 {{define "notification_management"}}
-
-    <h1 class="text-2xl text-1 my-4">User Notifications</h1>
-
-    {{if . }}
-        {{ range . }}
-            {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Notification*/ -}}
-            <section x-data class="form-container">
-                <h2 class="form-container-title">
-                    <span class="mr-4">{{.Model.CreatedAt.Format "02.01.2006 15:04"}}</span>
-                    {{if .Title}}{{.Title}}{{else}}<i>No title</i>{{end}}
-                    <button class="btn primary align-right" type="button"
-                            @click="admin.deleteNotification({{.Model.ID}})">Delete
-                    </button>
-                </h2>
-                <div class="form-container-body">
-                    <div>{{.GetBodyForGoTemplate}}</div>
-                </div>
-            </section>
-        {{end}}
+<h1 class="text-2xl text-1 my-4">User Notifications</h1>
+{{if . }}
+    {{ range . }}
+        {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Notification*/ -}}
+        <section x-data class="form-container">
+            <h2 class="form-container-title">
+                <span class="mr-4">{{.Model.CreatedAt.Format "02.01.2006 15:04"}}</span>
+                {{if .Title}}{{.Title}}{{else}}<i>No title</i>{{end}}
+                <button class="btn primary align-right" type="button"
+                        @click="admin.deleteNotification({{.Model.ID}})">Delete
+                </button>
+            </h2>
+            <div class="form-container-body">
+                <div>{{.GetBodyForGoTemplate}}</div>
+            </div>
+        </section>
     {{end}}
+{{end}}
 
-    <form class="form-container" @submit.prevent="admin.createNotification(body, target, title)"
-          x-data="{ target:1, title:'', body: '' }">
-        <h2 class="form-container-title">Create Notification</h2>
-        <div class="form-container-body">
-            <label>
-                <h2>Notification Target</h2>
-                <select x-model="target" class="tl-select">
-                    <option value="1">All Users</option>
-                    <option value="2">Loggedin Users</option>
-                    <option value="3">Students</option>
-                    <option value="4">Lecturers</option>
-                    <option value="5">Admins</option>
-                </select>
-            </label>
-            <label>
-                <h2>Title (optional)</h2>
-                <input class="tl-input" type="text" x-model="title" placeholder="Enter Title">
-            </label>
-            <label>
-                <h2>Body (you can use Markdown)</h2>
-                <textarea class="tl-textarea" x-model="body" placeholder="Enter Body" required></textarea>
-            </label>
-            <button class="btn primary mb-2 mr-0" type="submit">Create</button>
-        </div>
-    </form>
+<form class="form-container" @submit.prevent="admin.createNotification(body, target, title)"
+      x-data="{ target:1, title:'', body: '' }">
+    <h2 class="form-container-title">Create Notification</h2>
+    <div class="form-container-body">
+        <label>
+            <h2>Notification Target</h2>
+            <select x-model="target" class="tl-select">
+                <option value="1">All Users</option>
+                <option value="2">Loggedin Users</option>
+                <option value="3">Students</option>
+                <option value="4">Lecturers</option>
+                <option value="5">Admins</option>
+            </select>
+        </label>
+        <label>
+            <h2>Title (optional)</h2>
+            <input class="tl-input" type="text" x-model="title" placeholder="Enter Title">
+        </label>
+        <label>
+            <h2>Body (you can use Markdown)</h2>
+            <textarea class="tl-textarea" x-model="body" placeholder="Enter Body" required></textarea>
+        </label>
+        <button class="btn primary mb-2 mr-0" type="submit">Create</button>
+    </div>
+</form>
 {{end}}
