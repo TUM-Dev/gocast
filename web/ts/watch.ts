@@ -174,7 +174,7 @@ export function sendMessage(current: NewChatMessage) {
             type: WSMessageType.Message,
             msg: current.message,
             anonymous: current.anonymous,
-            replyTo: current.reply.id,
+            replyTo: current.reply ? current.reply.id : 0,
             addressedTo: current.addressedTo.map((u) => u.id),
         },
     });

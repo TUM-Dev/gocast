@@ -223,8 +223,7 @@
                   x-on:sendmessage.window="c.current.send()"
                   @submit.prevent="c.onSubmit()">
                 <div class="w-full">
-
-                    <div :class="(c.users.isValid() || c.poll.showCreateUI || c.emojis.isValid() || c.current.reply) && 'border-t dark:border-gray-800 rounded-t-lg'">
+                    <div :class="(c.users.isValid() || c.poll.showCreateUI || c.emojis.isValid() || c.current.reply) && 'border-t dark:border-gray-800 rounded-lg shadow-lg'">
                         <template x-if="c.current.reply">
                             <div x-data="{prepocessedMsg: c.findReplyMessage(c.current.reply.id)}"
                                  x-init="$watch('c.current.reply', upd => prepocessedMsg = c.findReplyMessage(upd.id))"
@@ -241,21 +240,13 @@
                                     </button>
                                 </div>
                                 <div class="flex">
-                                            <span x-show="prepocessedMsg.admin"
-                                                  class="fa-video text-xs text-white bg-red-400 p-1 rounded fas mr-1"></span>
+                                    <span x-show="prepocessedMsg.admin"
+                                          class="fa-video text-xs text-white bg-red-400 p-1 rounded fas mr-1"></span>
                                     <span class="text-2 font-semibold mr-2" x-text="`${prepocessedMsg.name}:`"
                                           :style="'color:'+prepocessedMsg.color"></span>
                                     <span class="" x-html="prepocessedMsg.message"
-                                          x-init="$nextTick(() => {
-                                                  renderMathInElement($el, {
-                                                    delimiters: [
-                                                        {left: '$$', right: '$$', display: true},
-                                                        {left: '$', right: '$', display: false},
-                                                        {left: '\\(', right: '\\)', display: false},
-                                                        {left: '\\[', right: '\\]', display: true}
-                                                    ],
-                                                    throwOnError: false}); });">
-                                            </span>
+                                          x-init="$nextTick(() => renderMathInElement($el, global.getKatexOptions()))">
+                                    </span>
                                 </div>
                             </div>
                         </template>
@@ -334,7 +325,7 @@
                         </template>
                         <div id="userList" x-show="c.users.isValid()"
                              tabindex="0"
-                             class="max-h-56 overflow-y-hidden w-full bg-white dark:bg-secondary py-1 px-2 space-y-1 outline-none">
+                             class="max-h-56 overflow-y-hidden w-full py-1 px-2 space-y-1 outline-none">
                             <template x-for="(user, i) in c.users.subset">
                                 <div @click="c.current.addAddressee(user); c.users.clear()"
                                      @mouseover="c.users.currIndex = i;"

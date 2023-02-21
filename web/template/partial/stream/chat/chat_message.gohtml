@@ -21,16 +21,9 @@
 
             <div class="relative group p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
                 <div class="flex justify-between">
-                    <span class="chatMsg w-5/6 overflow-wrap-anywhere my-auto" x-html="m.message" x-init="$nextTick(() => { renderMathInElement($el, {
-                        delimiters: [
-                            {left: '$$', right: '$$', display: true},
-                            {left: '$', right: '$', display: false},
-                            {left: '\\(', right: '\\)', display: false},
-                            {left: '\\[', right: '\\]', display: true}
-                        ],
-                        throwOnError: false,
-                        }); });"
-                    x-html="m.message"></span>
+                    <span class="chatMsg w-5/6 overflow-wrap-anywhere my-auto" x-html="m.message"
+                          x-init="$nextTick(() => renderMathInElement($el, global.getKatexOptions()))">
+                    </span>
                 </div>
 
                 <!-- message-date -->
