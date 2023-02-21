@@ -2,6 +2,8 @@ import { getPlayers } from "./TUMLiveVjs";
 import Split from "split.js";
 import { cloneEvents } from "./global";
 
+const mouseMovingTimeout = 2200;
+
 export class SplitView {
     private camPercentage: number;
     private players: any[];
@@ -9,8 +11,10 @@ export class SplitView {
     private gutterWidth = 10;
     private isFullscreen = false;
     private splitParent: HTMLElement;
+    private videoWrapper: HTMLElement;
 
     showSplitMenu: boolean;
+    mouseMoving: boolean;
 
     static Options = {
         FullPresentation: 0,
@@ -23,8 +27,11 @@ export class SplitView {
     constructor() {
         this.camPercentage = SplitView.Options.FocusPresentation;
         this.showSplitMenu = false;
+        this.mouseMoving = false;
         this.players = getPlayers();
         this.splitParent = document.querySelector("#video-pres-wrapper").parentElement;
+        this.videoWrapper = document.querySelector(".splitview-wrap");
+        this.detectMouseNotMoving();
 
         this.players[0].ready(() => {
             this.setTrackBarModes(0, "disabled");
@@ -46,6 +53,29 @@ export class SplitView {
             onDrag(sizes: number[]) {
                 that.updateControlBarSize(sizes);
             },
+        });
+    }
+
+    updateMouseMoving(isMoving: boolean) {
+        if (isMoving != this.mouseMoving) {
+            this.mouseMoving = isMoving;
+            this.videoWrapper.dispatchEvent(new CustomEvent("updateMouseMoving", { detail: this.mouseMoving }));
+        }
+    }
+
+    detectMouseNotMoving() {
+        let mouseNotMovingTimeout;
+        this.videoWrapper.addEventListener("mousemove", (e) => {
+            this.updateMouseMoving(true);
+
+            clearTimeout(mouseNotMovingTimeout);
+            mouseNotMovingTimeout = setTimeout(() => {
+                this.updateMouseMoving(false);
+            }, mouseMovingTimeout);
+        });
+        this.videoWrapper.addEventListener("mouseleave", (e) => {
+            clearTimeout(mouseNotMovingTimeout);
+            this.updateMouseMoving(false);
         });
     }
 

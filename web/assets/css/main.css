@@ -209,13 +209,35 @@
 .gutter {
     @apply bg-gray-200 dark:bg-gray-600;
 
-    background-repeat: no-repeat;
-    background-position: 50%;
-    width: 2px!important;
+    position: relative;
+    overflow: visible;
 }
 
 .gutter.gutter-horizontal {
+    width: 2px!important;
     cursor: col-resize;
+}
+
+.gutter.gutter-horizontal::before {
+    @apply bg-gray-200 dark:bg-gray-600;
+    content: "";
+    position: absolute;
+    display: block;
+    background-repeat: no-repeat;
+    background-position: 50%;
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+    height: 120px;
+    top: calc(50% - 60px);
+    z-index: 2;
+    left: -6px;
+    right: -6px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: ease-in 0.1s;
+}
+
+.splitview-wrap.mouse-moving .gutter.gutter-horizontal::before {
+    opacity: 1;
 }
 
 /* Chat */
