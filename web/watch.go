@@ -33,6 +33,10 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	data.IndexData = NewIndexData()
+	err = tools.SetSignedPlaylists(tumLiveContext.Stream, tumLiveContext.User)
+	if err != nil {
+		log.WithError(err).Warn("Can't sign playlists")
+	}
 	data.IndexData.TUMLiveContext = tumLiveContext
 	data.IsAdminOfCourse = tumLiveContext.UserIsAdmin()
 	data.AlertsEnabled = tools.Cfg.Alerts != nil

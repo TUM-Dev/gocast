@@ -10,7 +10,7 @@ RUN rm -rf web/assets/ts-dist &&\
 WORKDIR /app/web
 RUN npm i --no-dev
 
-FROM golang:1.19-alpine3.16 as build-env
+FROM golang:1.20-alpine3.17 as build-env
 
 RUN mkdir /gostuff
 WORKDIR /gostuff
@@ -28,7 +28,7 @@ COPY --from=node /app/web/node_modules ./web/node_modules
 ARG version=dev
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-w -extldflags '-static' -X main.VersionTag=${version}" -o /go/bin/tumlive cmd/tumlive/tumlive.go
 
-FROM alpine:3.16
+FROM alpine:3.17
 RUN apk add --no-cache tzdata openssl
 WORKDIR /app
 COPY --from=build-env /go/bin/tumlive .

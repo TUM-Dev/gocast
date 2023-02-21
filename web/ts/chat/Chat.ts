@@ -2,8 +2,16 @@ import { NewChatMessage } from "./NewChatMessage";
 import { ChatUserList } from "./ChatUserList";
 import { EmojiList } from "./EmojiList";
 import { Poll } from "./Poll";
-import { registerTimeWatcher, deregisterTimeWatcher, getPlayer } from "../TUMLiveVjs";
-import { create } from "nouislider";
+import { deregisterTimeWatcher, getPlayers, registerTimeWatcher } from "../TUMLiveVjs";
+import { EmojiPicker } from "./EmojiPicker";
+import { TopEmojis } from "top-twitter-emojis-map";
+
+const MAX_NAMES_IN_REACTION_TITLE = 2;
+
+enum ShowMode {
+    Messages,
+    Polls,
+}
 
 export class Chat {
     readonly userId: number;
@@ -23,6 +31,8 @@ export class Chat {
     startTime: Date;
     liveNowTimestamp: Date;
     poll: Poll;
+    pollHistory: object[];
+    showMode: ShowMode;
 
     preprocessors: ((m: ChatMessage) => ChatMessage)[] = [
         (m: ChatMessage) => {
@@ -43,7 +53,63 @@ export class Chat {
         (m: ChatMessage) => {
             return { ...m, renderVersion: 0 };
         },
+        (m: ChatMessage) => {
+            m.aggregatedReactions = (m.reactions || [])
+                .reduce((res: ChatReactionGroup[], reaction: ChatReaction) => {
+                    let group: ChatReactionGroup = res.find((r) => r.emojiName === reaction.emoji);
+                    if (group === undefined) {
+                        group = {
+                            emoji: TopEmojis.find((e) => e.short_names.includes(reaction.emoji)).emoji,
+                            emojiName: reaction.emoji,
+                            reactions: [],
+                            names: [],
+                            namesPretty: "",
+                            hasReacted: reaction.userID === this.userId,
+                        };
+                        res.push(group);
+                    } else if (reaction.userID == this.userId) {
+                        group.hasReacted = true;
+                    }
+
+                    group.names.push(reaction.username);
+                    group.reactions.push(reaction);
+                    return res;
+                }, [])
+                .map((group) => {
+                    if (group.names.length === 0) {
+                        // Nobody
+                        group.namesPretty = `Nobody reacted with ${group.emojiName}`;
+                    } else if (group.names.length == 1) {
+                        // One Person
+                        group.namesPretty = `${group.names[0]} reacted with ${group.emojiName}`;
+                    } else if (group.names.length == MAX_NAMES_IN_REACTION_TITLE + 1) {
+                        // 1 person more than max allowed
+                        group.namesPretty = `${group.names
+                            .slice(0, MAX_NAMES_IN_REACTION_TITLE)
+                            .join(", ")} and one other reacted with ${group.emojiName}`;
+                    } else if (group.names.length > MAX_NAMES_IN_REACTION_TITLE) {
+                        // at least 2 more than max allowed
+                        group.namesPretty = `${group.names.slice(0, MAX_NAMES_IN_REACTION_TITLE).join(", ")} and ${
+                            group.names.length - MAX_NAMES_IN_REACTION_TITLE
+                        } others reacted with ${group.emojiName}`;
+                    } else {
+                        // More than 1 Person but less than MAX_NAMES_IN_REACTION_TITLE
+                        group.namesPretty = `${group.names.slice(0, group.names.length - 1).join(", ")} and ${
+                            group.names[group.names.length - 1]
+                        } reacted with ${group.emojiName}`;
+                    }
+                    return group;
+                });
+            m.aggregatedReactions.sort(
+                (a, b) => EmojiPicker.getEmojiIndex(a.emojiName) - EmojiPicker.getEmojiIndex(b.emojiName),
+            );
+            return m;
+        },
     ];
+
+    filterPredicate: (m: ChatMessage) => boolean = (m) => {
+        return !this.admin && !m.visible && m.userId != this.userId;
+    };
 
     private timeWatcherCallBackFunction: () => void;
 
@@ -71,6 +137,8 @@ export class Chat {
         this.liveNowTimestamp = Date.parse(liveNowTimestamp) ? new Date(liveNowTimestamp) : null;
         this.focusedMessageId = -1;
         this.popUpWindow = null;
+        this.showMode = ShowMode.Messages;
+        this.pollHistory = [];
         this.grayOutMessagesAfterPlayerTime = this.grayOutMessagesAfterPlayerTime.bind(this);
         this.deregisterPlayerTimeWatcher = this.deregisterPlayerTimeWatcher.bind(this);
         this.registerPlayerTimeWatcher = this.registerPlayerTimeWatcher.bind(this);
@@ -86,6 +154,10 @@ export class Chat {
         });
     }
 
+    initEmojiPicker(id: string): EmojiPicker {
+        return new EmojiPicker(id);
+    }
+
     async loadMessages() {
         this.messages = [];
         fetchMessages(this.streamId).then((messages) => {
@@ -93,13 +165,40 @@ export class Chat {
         });
     }
 
+    async loadPollHistory() {
+        this.pollHistory = [];
+        fetch(`/api/chat/${this.streamId}/polls`)
+            .then((r) => r.json())
+            .then((polls) => (this.pollHistory = polls));
+    }
+
+    showMessages(set = false): boolean {
+        this.showMode = set ? ShowMode.Messages : this.showMode;
+        return this.showMode == ShowMode.Messages;
+    }
+
+    showPolls(set = false): boolean {
+        this.showMode = set ? ShowMode.Polls : this.showMode;
+        return this.showMode == ShowMode.Polls;
+    }
+
     sortMessages() {
-        this.messages.sort((m1, m2) => {
+        this.messages = [...this.messages].sort((m1, m2) => {
             if (this.orderByLikes) {
-                if (m1.likes === m2.likes) {
+                const m1LikeReactionGroup = m1.aggregatedReactions.find(
+                    (r) => r.emojiName === EmojiPicker.LikeEmojiName,
+                );
+                const m1Likes = m1LikeReactionGroup ? m1LikeReactionGroup.reactions.length : 0;
+
+                const m2LikeReactionGroup = m2.aggregatedReactions.find(
+                    (r) => r.emojiName === EmojiPicker.LikeEmojiName,
+                );
+                const m2Likes = m2LikeReactionGroup ? m2LikeReactionGroup.reactions.length : 0;
+
+                if (m1Likes === m2Likes) {
                     return m2.ID - m1.ID; // same amount of likes -> newer messages up
                 }
-                return m2.likes - m1.likes; // more likes -> up
+                return m2Likes - m1Likes; // more likes -> up
             } else {
                 return m1.ID < m2.ID ? -1 : 1; // newest messages last
             }
@@ -116,6 +215,12 @@ export class Chat {
 
     onLike(e) {
         this.messages.find((m) => m.ID === e.detail.likes).likes = e.detail.num;
+    }
+
+    onReaction(e) {
+        const m = this.messages.find((m) => m.ID === e.detail.reactions);
+        m.reactions = e.detail.payload;
+        this.patchMessage(m);
     }
 
     onResolve(e) {
@@ -156,6 +261,14 @@ export class Chat {
     onPollOptionResult(e) {
         this.poll.activePoll = null;
         this.poll.result = e.detail;
+        // @ts-ignore
+        const id = this.pollHistory.length > 0 ? this.pollHistory[0].ID + 1 : 1;
+        this.pollHistory.unshift({
+            // @ts-ignore
+            ID: id,
+            question: e.detail.question,
+            options: e.detail.pollOptionResults,
+        });
     }
 
     onSubmit() {
@@ -275,7 +388,7 @@ export class Chat {
 
     activateChatReplay(): void {
         this.chatReplayActive = true;
-        const currentTime = getPlayer().currentTime();
+        const currentTime = getPlayers()[0].currentTime();
         //force update of message focus and grayedOut state
         this.focusedMessageId = -1;
         this.grayOutMessagesAfterPlayerTime(currentTime);
@@ -303,7 +416,7 @@ export class Chat {
         referenceTime.setSeconds(referenceTime.getSeconds() + playerTime);
 
         const grayOutCondition = (CreatedAt: string) => {
-            if (Math.trunc(playerTime) === Math.trunc(getPlayer().duration())) {
+            if (Math.trunc(playerTime) === Math.trunc(getPlayers()[0].duration())) {
                 return false;
             }
 
@@ -346,6 +459,11 @@ export class Chat {
 
     // patchMessage adds the message to the list of messages at the position it should appear in based on the send time.
     patchMessage(m: ChatMessage): void {
+        if (this.filterPredicate(m)) {
+            this.messages = this.messages.filter((m2) => m2.ID !== m.ID);
+            return;
+        }
+
         this.preprocessors.forEach((f) => (m = f(m)));
 
         const newMessageCreatedAt = Date.parse(m.CreatedAt);
@@ -361,16 +479,18 @@ export class Chat {
                 const newRenderVersion = this.messages[i].renderVersion + 1;
                 this.messages.splice(i, 1, { ...m, renderVersion: newRenderVersion });
                 break;
-            } else if (createdAt > newMessageCreatedAt) {
-                this.messages.splice(i, 0, m);
-                break;
             }
         }
+
+        window.dispatchEvent(new CustomEvent("reorder"));
     }
 
     private addMessage(m: ChatMessage) {
         this.preprocessors.forEach((f) => (m = f(m)));
-        this.messages.push(m);
+
+        if (!this.filterPredicate(m)) {
+            this.messages.push(m);
+        }
     }
 
     private notifyMessagesUpdate(type: MessageUpdateType, payload: MessageUpdate) {
@@ -392,12 +512,15 @@ type ChatMessage = {
     ID: number;
     admin: boolean;
 
+    userId: number;
     message: string;
     name: string;
     color: string;
 
     liked: false;
     likes: number;
+    reactions: ChatReaction[];
+    aggregatedReactions: ChatReactionGroup[]; // is generated in frontend
 
     replies: ChatMessage[];
     replyTo: Reply; // e.g.{Int64:0, Valid:false}
@@ -412,6 +535,21 @@ type ChatMessage = {
     CreatedAt: string;
     DeletedAt: string;
     UpdatedAt: string;
+};
+
+type ChatReaction = {
+    userID: number;
+    username: string;
+    emoji: string;
+};
+
+type ChatReactionGroup = {
+    emoji: string;
+    emojiName: string;
+    names: string[];
+    namesPretty: string;
+    reactions: ChatReaction[];
+    hasReacted: boolean;
 };
 
 type Reply = {

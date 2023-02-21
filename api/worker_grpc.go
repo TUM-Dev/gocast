@@ -466,7 +466,9 @@ func (s server) NotifyThumbnailsFinished(ctx context.Context, req *pb.Thumbnails
 	default:
 		return nil, errors.New("unknown source type")
 	}
-	stream.Files = append(stream.Files, model.File{StreamID: stream.ID, Path: req.FilePath, Type: thumbType})
+	if err := s.FileDao.SetThumbnail(stream.ID, model.File{StreamID: stream.ID, Path: req.FilePath, Type: thumbType}); err != nil {
+		return nil, err
+	}
 	stream.ThumbInterval = req.Interval
 	if err = s.StreamsDao.SaveStream(&stream); err != nil {
 		return nil, err
@@ -774,6 +776,41 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 		}
 		endConnection(conn)
 	}
+}
+
+// RegenerateThumbs regenerates the thumbnails for the timeline. This is useful for video with faulty thumbnails
+// and for VoDs that were created before the thumbnail feature.
+func RegenerateThumbs(daoWrapper dao.DaoWrapper, file model.File, stream *model.Stream, course *model.Course) error {
+	workers := daoWrapper.WorkerDao.GetAliveWorkers()
+	workerIndex := getWorkerWithLeastWorkload(workers)
+	if len(workers) == 0 {
+		return errors.New("no workers available")
+	}
+	conn, err := dialIn(workers[workerIndex])
+	defer func() {
+		endConnection(conn)
+	}()
+	if err != nil {
+		log.WithError(err).Error("Unable to dial server")
+		return err
+	}
+	client := pb.NewToWorkerClient(conn)
+	res, err := client.GenerateThumbnails(context.Background(),
+		&pb.GenerateThumbnailRequest{
+			Path:          file.Path,
+			WorkerID:      workers[workerIndex].WorkerID,
+			StreamID:      uint32(stream.ID),
+			StreamVersion: file.GetVodTypeByName(),
+			CourseSlug:    course.Slug,
+			CourseYear:    uint32(course.Year),
+			TeachingTerm:  course.TeachingTerm,
+			Start:         timestamppb.New(stream.Start),
+		})
+	if !res.Ok {
+		log.WithError(err).Error("did not get response from worker for thumbnail generation request")
+	}
+
+	return nil
 }
 
 type generateVideoSectionImagesParameters struct {

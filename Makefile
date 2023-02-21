@@ -31,7 +31,7 @@ mocks:
 .PHONY: run_web
 run_web:
 	cd web; \
-	npm i --dev
+	npm i --include=dev
 
 .PHONY: run
 run:
@@ -40,3 +40,8 @@ run:
 .PHONY: test
 test:
 	go test -race ./...
+
+.PHONY: lint
+lint:
+	golangci-lint run
+

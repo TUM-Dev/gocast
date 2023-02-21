@@ -40,6 +40,11 @@ func (r seekStatsRoutes) reportSeek(c *gin.Context) {
 	}
 }
 
+const (
+	minTotalHits     = 150
+	minNonZeroChunks = 50
+)
+
 // getSeek get seeks for a video
 func (r seekStatsRoutes) getSeek(c *gin.Context) {
 	chunks, err := r.VideoSeekDao.Get(c.Param("streamID"))
@@ -51,11 +56,26 @@ func (r seekStatsRoutes) getSeek(c *gin.Context) {
 	}
 
 	var values []gin.H
+
+	totalHits := 0
+	nonZeroChunks := 0
 	for _, chunk := range chunks {
 		values = append(values, gin.H{
 			"index": chunk.ChunkIndex,
 			"value": chunk.Hits,
 		})
+
+		if chunk.Hits > 0 {
+			totalHits += int(chunk.Hits)
+			nonZeroChunks += 1
+		}
+	}
+
+	if totalHits < minTotalHits || nonZeroChunks < minNonZeroChunks {
+		c.JSON(http.StatusOK, gin.H{
+			"values": []gin.H{},
+		})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{

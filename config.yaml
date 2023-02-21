@@ -87,8 +87,12 @@ mail:
   smimecert: /path/to/cert.pem
   smimekey: /path/to/key.pem
 paths:
-  mass: /srv/ceph/live
+  mass: /mass
   static: /var/www/static
-  branding: /srv/ceph/branding
+  branding: /branding
 weburl: https://live.rbg.tum.de
-workertoken: 2657575f-40e4-4278-9ca1-f3a5ed667cff
+workertoken: abc
+meili:
+  host: http://localhost:7700
+  apiKey: MASTER_KEY
+vodURLTemplate: https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s.mp4/playlist.m3u8

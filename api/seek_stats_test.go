@@ -3,6 +3,9 @@ package api
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"testing"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/joschahenningsen/TUM-Live/dao"
@@ -10,8 +13,6 @@ import (
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
 	"github.com/matthiasreumann/gomino"
-	"net/http"
-	"testing"
 )
 
 func ReportSeekRouterWrapper(r *gin.Engine) {
@@ -91,27 +92,16 @@ func TestReportSeek(t *testing.T) {
 			Run(t, testutils.Equal)
 	})
 
-	response := gin.H{
-		"values": []gin.H{
-			{
-				"index": testutils.FPVNotLiveVideoSeekChunk1.ChunkIndex,
-				"value": testutils.FPVNotLiveVideoSeekChunk1.Hits,
-			},
-			{
-				"index": testutils.FPVNotLiveVideoSeekChunk2.ChunkIndex,
-				"value": testutils.FPVNotLiveVideoSeekChunk2.Hits,
-			},
-			{
-				"index": testutils.FPVNotLiveVideoSeekChunk3.ChunkIndex,
-				"value": testutils.FPVNotLiveVideoSeekChunk3.Hits,
-			},
-		},
+	emptyResponse := gin.H{
+		"values": []gin.H{},
 	}
 
 	t.Run("GET/api/seekReport/:streamID", func(t *testing.T) {
 		baseUrl := "/api/seekReport"
 
 		ctrl := gomock.NewController(t)
+
+		testChunks, testResponse := testutils.CreateVideoSeekData(testutils.FPVNotLiveVideoSeekChunk1.StreamID, 50)
 
 		gomino.TestCases{
 			"failed to read video seek chunks": {
@@ -130,7 +120,7 @@ func TestReportSeek(t *testing.T) {
 				},
 				ExpectedCode: http.StatusInternalServerError,
 			},
-			"success": {
+			"empty because of not enough seek data": {
 				Router: func(r *gin.Engine) {
 					wrapper := dao.DaoWrapper{
 						VideoSeekDao: func() dao.VideoSeekDao {
@@ -144,7 +134,24 @@ func TestReportSeek(t *testing.T) {
 					}
 					configSeekStatsRouter(r, wrapper)
 				},
-				ExpectedResponse: response,
+				ExpectedResponse: emptyResponse,
+				ExpectedCode:     http.StatusOK,
+			},
+			"success": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						VideoSeekDao: func() dao.VideoSeekDao {
+							searchMock := mock_dao.NewMockVideoSeekDao(ctrl)
+							searchMock.
+								EXPECT().
+								Get(fmt.Sprintf("%d", testutils.StreamFPVNotLive.ID)).
+								Return(testChunks, nil)
+							return searchMock
+						}(),
+					}
+					configSeekStatsRouter(r, wrapper)
+				},
+				ExpectedResponse: testResponse,
 				ExpectedCode:     http.StatusOK,
 			}}.
 			Method(http.MethodGet).

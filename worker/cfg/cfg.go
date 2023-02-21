@@ -9,20 +9,21 @@ import (
 )
 
 var (
-	WorkerID     string // authentication token, unique for every worker, used to verify all calls
-	TempDir      string // recordings will end up here before they are converted
-	StorageDir   string // recordings will end up here after they are converted
-	LrzUser      string
-	LrzMail      string
-	LrzPhone     string
-	LrzSubDir    string
-	MainBase     string
-	LrzUploadUrl string
-	LogDir       string
-	Hostname     string
-	Token        string // setup token. Used to connect initially and to get a "WorkerID"
-	PersistDir   string // PersistDir is the directory, tum-live-worker will use to store persistent data
-	LogLevel     = log.InfoLevel
+	WorkerID       string // authentication token, unique for every worker, used to verify all calls
+	TempDir        string // recordings will end up here before they are converted
+	StorageDir     string // recordings will end up here after they are converted
+	LrzUser        string
+	LrzMail        string
+	LrzPhone       string
+	LrzSubDir      string
+	MainBase       string
+	LrzUploadUrl   string
+	VodURLTemplate string
+	LogDir         string
+	Hostname       string
+	Token          string // setup token. Used to connect initially and to get a "WorkerID"
+	PersistDir     string // PersistDir is the directory, tum-live-worker will use to store persistent data
+	LogLevel       = log.InfoLevel
 )
 
 // SetConfig sets the values of the parameter config and stops the execution
@@ -43,7 +44,8 @@ func SetConfig() {
 	LrzPhone = os.Getenv("LrzPhone")
 	LrzSubDir = os.Getenv("LrzSubDir")
 	LrzUploadUrl = os.Getenv("LrzUploadUrl")
-	MainBase = os.Getenv("MainBase") // eg. live.mm.rbg.tum.de
+	MainBase = os.Getenv("MainBase")             // eg. live.mm.rbg.tum.de
+	VodURLTemplate = os.Getenv("VodURLTemplate") // eg. https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s.mp4/playlist.m3u8
 
 	// logging
 	LogDir = os.Getenv("LogDir")

@@ -4,7 +4,7 @@ ARG NGINX_RTMP_VERSION=1.2.2
 
 ##############################
 # Build the NGINX-build image.
-FROM alpine:3.16.2 as build-nginx
+FROM alpine:3.17.0 as build-nginx
 ARG NGINX_VERSION
 ARG NGINX_RTMP_VERSION
 
@@ -57,7 +57,7 @@ RUN cd /tmp/nginx-${NGINX_VERSION} && \
 
 ##########################
 # Build the release image.
-FROM alpine:3.16
+FROM alpine:3.17
 
 # Set default ports.
 ENV RTMP_PORT 1935

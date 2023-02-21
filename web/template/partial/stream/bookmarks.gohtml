@@ -1,0 +1,156 @@
+{{/* 1st parameter: 'streamID' */}}
+{{define "bookmarks-modal"}}
+    <div x-data="{showAddMenu: false}"
+         class="relative h-full border rounded-lg dark:border-gray-800">
+        <template x-if="!showAddMenu">
+            <div class="h-full">
+                <div class="flex justify-between items-end p-4">
+                    <h3 class="font-bold text-sm text-xl text-3">Bookmarks</h3>
+                    <button type="button" title="Open bookmark dialog"
+                            class="text-3 text-sm font-semibold hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full px-2 py-1"
+                            @click="showAddMenu = !showAddMenu">
+                        Add bookmark
+                    </button>
+                </div>
+                {{template "bookmark-list" .}}
+            </div>
+        </template>
+        <template x-if="showAddMenu">
+            <div class="p-4">
+                <div class="flex justify-between items-end mb-4">
+                    <h3 class="font-bold text-sm text-xl text-3">Bookmarks</h3>
+                    <button type="button" title="Close bookmark dialog"
+                            class="text-3 text-sm font-semibold hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full px-2 py-1"
+                            @click="showAddMenu = !showAddMenu">
+                        <i class="fa-solid fa-undo mr-2"></i>
+                        <span>Go back</span>
+                    </button>
+                </div>
+                {{template "bookmark-dialog" .}}
+            </div>
+        </template>
+    </div>
+{{end}}
+
+{{/* 1st parameter: 'streamID' */}}
+{{define "bookmark-dialog"}}
+    <form x-data="{bookmark: new watch.BookmarkDialog({{.}})}"
+          x-init="bookmark.reset()"
+          @submit.prevent="bookmark.submit().then(() => {$dispatch('reloadbookmarks'); showAddMenu = false;})"
+          class="">
+        <div class="relative grid gap-5 md:gap-2 text-sm">
+            <div>
+                <label for="bookmark-description"
+                       class="block text-5">Description</label>
+                <input x-model="bookmark.request.Description"
+                       type="text" name="bookmark-description" id="bookmark-description"
+                       placeholder="Interesting..." autofocus="" required
+                       class="rounded px-4 py-3 mt-1 text-4 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
+            </div>
+            <div>
+                <label for="bookmark-timestamp" class="block text-5">Timestamp</label>
+                <div class="flex align-middle">
+                    <input x-model="bookmark.request.Hours"
+                           type="number" name="bookmark-timestamp-hour"
+                           min="0" max="60" step="1"
+                           id="bookmark-timestamp-hour"
+                           placeholder="" required
+                           class="rounded px-4 py-3 mt-1 text-4 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
+                    <span class="px-2 my-auto font-semibold text-5">:</span>
+                    <input x-model="bookmark.request.Minutes"
+                           type="number" name="bookmark-timestamp-minutes"
+                           min="0" max="60" step="1"
+                           id="bookmark-timestamp-minutes"
+                           placeholder="" required
+                           class="rounded px-4 py-3 mt-1 text-4 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
+                    <span class="px-2 my-auto font-semibold text-5">:</span>
+                    <input x-model="bookmark.request.Seconds"
+                           type="number" name="bookmark-timestamp-seconds"
+                           min="0" max="60" step="1"
+                           id="bookmark-timestamp-seconds"
+                           placeholder="" required
+                           class="rounded px-4 py-3 mt-1 text-4 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
+                </div>
+            </div>
+            <button type="submit"
+                    class="block bg-blue-500 text-center px-3 py-3 md:py-1 mt-3 rounded w-full dark:bg-indigo-600">
+                <span class="text-white uppercase text-sm font-semibold">Add</span>
+            </button>
+        </div>
+    </form>
+{{end}}
+
+{{/* 1st parameter: 'streamID' */}}
+{{define "bookmark-list"}}
+    <div x-cloak x-show="bookmarks.length()"
+         x-data="{ bookmarks: new watch.BookmarkList({{.}}) }"
+         x-init="await bookmarks.fetch()"
+         @reloadbookmarks.window="await bookmarks.fetch()"
+         class="h-[85%]">
+        <div class="relative grid gap-1 overflow-y-scroll pr-3 max-h-full">
+            <template x-for="(b, i) in bookmarks.get()" :key="b.ID">
+                <div x-data="{bookmarkUpdater: {}}"
+                     x-init="bookmarkUpdater = new watch.BookmarkUpdater(b);"
+                     class="flex">
+                    <button class="w-full relative group flex flex-grow items-center shrink-0 justify-between px-4 py-3
+                                disabled:hover:bg-white disabled:dark:hover:bg-secondary-light
+                                hover:bg-gray-100 dark:hover:bg-gray-600"
+                            :class="bookmarkUpdater.show && 'rounded-r-none'"
+                            :disabled="bookmarkUpdater.show"
+                            @click="watch.jumpTo(b.hours, b.minutes, b.seconds);">
+                        <template x-if="!bookmarkUpdater.show">
+                            <div class="flex items-center justify-between flex-grow">
+                                <div>
+                                    <p x-text="b.description"
+                                       class="text-3 font-semibold text-sm text-left overflow-wrap-anywhere mb-2"></p>
+                                    <p x-text="b.friendlyTimestamp"
+                                       class="text-xs w-fit text-sky-800 bg-sky-200 dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded"></p>
+                                </div>
+                                <div class = "flex">
+                                    <button @click="bookmarkUpdater.show = !bookmarkUpdater.show"
+                                            type="button"
+                                            class="md:hidden md:group-hover:inline text-3 text-sm h-8 w-8 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <button type="button"
+                                            @click="await bookmarks.delete(b.ID);"
+                                            class="md:hidden md:group-hover:inline text-3 text-sm h-8 w-8 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="bookmarkUpdater.show">
+                            <form @submit.prevent="bookmarkUpdater.submit()"
+                                  @reset.prevent="bookmarkUpdater.reset();"
+                                  class="grid gap-1 flex-grow text-xs">
+                                <div class="text-left flex-grow">
+                                    <label for="bookmark-description"
+                                           class="block text-5">Description</label>
+                                    <input x-model="bookmarkUpdater.request.Description"
+                                           type="text" name="bookmark-description" id="bookmark-description"
+                                           placeholder="Interesting..." autofocus="" required
+                                           class="text-3 rounded px-4 py-3 mt-1 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600"/>
+                                </div>
+                                <div class="flex items-center">
+                                    <button type="submit"
+                                            title="Update"
+                                            class="text-white text-sm bg-blue-500 text-center py-1 rounded w-full dark:bg-indigo-600 mr-2">
+                                        <i class="fa-solid fa-square-check mr-2"></i>
+                                        <span>Update</span>
+                                    </button>
+                                    <button type="reset"
+                                            title="Undo changes"
+                                            class="dark:text-white text-sm bg-gray-100 text-center py-1 rounded w-full dark:bg-secondary-light">
+                                        <i class="fa-solid fa-rotate-left mr-2"></i>
+                                        <span>Undo</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </template>
+                    </button>
+                </div>
+            </template>
+        </div>
+    </div>
+{{end}}

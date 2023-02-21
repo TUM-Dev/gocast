@@ -20,22 +20,71 @@
         <script defer src="/static/node_modules/katex/dist/contrib/copy-tex.min.js"></script>
     {{end}}
 </head>
-<body x-data="{'streamID': {{$stream.Model.ID}}, 'showChat': $persist(false).as('chatOpen'), seekLogger: new watch.SeekLogger('{{$stream.ID}}')}"
+<body x-data="{'streamID': {{$stream.Model.ID}}, 'showChat': $persist(false).as('chatOpen'), seekLogger: new watch.SeekLogger('{{$stream.ID}}'), showBookmarks: false, showShare: false}"
       @keypress.shift.window="(e) => watch.onShift(e)"
       x-init="watch.startWebsocket(); seekLogger.attach();">
 {{template "header" .IndexData.TUMLiveContext}}
-<div id="shortcuts-help-modal" class="hidden flex absolute top-0 h-screen w-screen z-50 backdrop-blur-sm">
+<div id="shortcuts-help-modal" class="hidden flex fixed top-0 h-screen w-screen z-50 backdrop-brightness-50">
     <div class="m-auto" @click.outside="watch.toggleShortcutsModal();">
         {{template "shortcuts"}}
     </div>
 </div>
-<div id="watchPageMainWrapper" class="lg:px-5 lg:pb-1">
+<div x-cloak x-show="showShare"
+     id="share-modal" class="flex fixed top-0 h-screen w-screen z-50 backdrop-brightness-50">
+    <div class="m-auto lg:w-1/2 w-3/4" @click.outside="showShare=false">
+        <div class="bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
+            <div class="flex justify-between items-center px-3 pt-3 pb-1">
+                <h3 class="text-3 text-sm font-semibold">Share</h3>
+                <button type="button" title="Close share modal"
+                        @click="showShare=false">
+                    <i class="fa-solid fa-xmark text-3"></i>
+                </button>
+            </div>
+            <div class="pt-1 pb-3 px-3 mt-3" x-data="{share: new watch.ShareURL()}">
+                <span class="font-light text-xs mb-1 text-4">URL</span>
+                <div class="flex items-center justify-between tl-input text-sm">
+                    <input id="share-url" type="text"
+                           class="bg-transparent outline-0 border-0 text-left text-5 grow" :value="share.url" disabled>
+                    <button type="button" @click="share.copyURL()"
+                            class="text-xs text-white rounded-full px-3 py-1 h-fit w-fit bg-blue-500 dark:bg-indigo-600 hover:bg-blue-600 dark:hover:bg-indigo-700">
+                        <i class="fa-solid mr-2" :class="share.copied ? 'fa-check' : 'fa-clipboard'"></i>
+                        <span x-text="share.copied ? 'Copied' : 'Copy'"></span>
+                    </button>
+                </div>
+                {{if not $stream.LiveNow}}
+                        <!-- $nextTick does not work in watch. Therefore, @change.once has to be used. -->
+                        <div x-init="$watch('showShare', async value => { if (value) { await share.setURL(true); }});"
+                             class="flex justify-start items-center pt-2">
+                        <input id="include-timestamp" type="checkbox" class="h-8 hover:cursor-pointer"
+                               x-model="share.includeTimestamp" @change="share.setURL(false)">
+                        <label for="include-timestamp" class="font-light text-4 text-xs ml-2">Include Timestamp</label>
+                        <input x-cloak x-show="share.includeTimestamp" class="tl-input h-8 w-20 text-xs ml-2"
+                               type="text" x-model="share.timestamp" @input="share.setURL(false);">
+                    </div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+</div>
+{{if .IndexData.TUMLiveContext.User}}
+<div id="bookmarks-mobile" x-cloak="" x-show="showBookmarks"
+     class="md:hidden flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
+    <div @click.outside="showBookmarks = false"
+         class="m-auto w-3/4 h-96 bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
+        {{template "bookmarks-modal" $stream.ID}}
+    </div>
+</div>
+{{end}}
+{{if .AlertsEnabled}}
+    {{template "alert-modal" . }}
+{{end}}
+<div id="watchPageMainWrapper">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
     <div class="flex flex-wrap shadow border bg-white dark:bg-secondary dark:shadow-0 dark:border-0">
         <div id="watchWrapper"
              x-data="{ 'chatEnabled': {{and $course.ChatEnabled $stream.ChatEnabled}} }"
              class="relative basis-full lg:order-none order-1 sticky top-0 lg:relative z-40"
-             :class="showChat && chatEnabled ? 'lg:basis-3/4 lg:h-16/6 h-16/9' : 'lg:basis-full h-16/9'">
+             :class="(showChat && chatEnabled) || showBookmarks ? 'lg:basis-3/4 lg:h-16/6 h-16/9' : 'lg:basis-full h-16/9'">
             <noscript>
                 <p class="vjs-no-js">To view this video please enable JavaScript.</p>
             </noscript>
@@ -45,50 +94,194 @@
 
                 <!-- info messages -->
                 <div x-data="{ showliveended: false }"
-                     class="bg-red-700 bg-opacity-20 p-2 w-full font-semibold text-2"
+                     class="absolute rounded-full m-auto bg-red-700 z-50 px-4 py-2 m-3 font-semibold text-white"
                      x-show="showliveended" @streamended.window="showliveended=true" x-cloak>
-                    <i class="fas fa-info-circle"></i> This livestream has ended.
+                    <i class="fas fa-info-circle mr-3"></i> This livestream has ended.
                 </div>
+                {{if (eq .Version "SPLIT")}}
+                    <div x-data="{splitView: new watch.SplitView()}" @mouseleave="splitView.hideMenu()" class="group relative flex w-full h-full">
+                        <div class="hidden group-hover:flex absolute left-1 top-1 z-40">
+                            <button x-cloak x-show="!splitView.showSplitMenu" @click="splitView.toggleMenu()"
+                                    class="flex items-center justify-center w-8 h-8 rounded-full"
+                                    title="Adjust split ratio">
+                                <i class="text-lg text-white fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            <div x-cloak x-show="splitView.showSplitMenu" @click.outside="splitView.toggleMenu()"
+                                 class="bg-white border rounded-lg shadow h-fit dark:bg-secondary-light dark:border-gray-600">
+                                <div class="py-2">
+                                    <button @click="splitView.update(watch.SplitView.Options.FullPresentation)"
+                                            class="text-left flex justify-start items-center w-full text-3 px-4 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        <i class="fa-solid fa-person-chalkboard w-16"></i>
+                                        <span class="font-light text-sm">Full presentation</span>
+                                    </button>
+                                    <button @click="splitView.update(watch.SplitView.Options.FocusPresentation)"
+                                            class="text-left flex justify-start items-center w-full text-3 px-4 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                            <span class="flex items-center align-middle w-16">
+                                                <i class="fa-solid fa-person-chalkboard"></i>
+                                                <span class="px-1 text-5">/</span>
+                                                <i class="fa-solid fa-camera text-tiny"></i>
+                                            </span>
+                                        <span class="font-light text-sm">Focus presentation</span>
+                                    </button>
+                                    <button @click="splitView.update(watch.SplitView.Options.SplitEvenly)"
+                                            class="text-left flex justify-start items-center w-full text-3 px-4 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        <i class="fa-solid fa-table-columns w-16"></i>
+                                        <span class="font-light text-sm">Split evenly</span>
+                                    </button>
+                                    <button @click="splitView.update(watch.SplitView.Options.FocusCamera)"
+                                            class="text-left flex justify-start items-center w-full text-3 px-4 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                            <span class="flex items-center align-middle w-16">
+                                                <i class="fa-solid fa-person-chalkboard text-tiny"></i>
+                                                 <span class="px-1 text-5">/</span>
+                                                <i class="fa-solid fa-camera"></i>
+                                            </span>
+                                        <span class="font-light text-sm">Focus camera</span>
+                                    </button>
+                                    <button @click="splitView.update(watch.SplitView.Options.FullCamera)"
+                                            class="text-left flex justify-start items-center w-full text-3 px-4 py-1 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                        <i class="fa-solid fa-camera w-16"></i>
+                                        <span class="font-light text-sm">Full camera</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {{/* presentation player */}}
+                        <div id="video-pres-wrapper">
+                            <video-js
+                                    id="video-pres"
+                                    class="video-js h-full w-full"
+                                    controls
+                                    preload="auto"
+                                    x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu, $el);"
+                                    {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
+                                {{else}}poster="/public/no_active_stream.jpg">{{end}}
+                                {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
+                                    {{if not $stream.LiveNow}}
+                                        <source src="{{$stream.PlaylistUrlPRES}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
+                                                type="application/x-mpegURL"/>
+                                    {{else}}
+                                        <source src="{{$stream.PlaylistUrlPRES}}{{.DVR}}" type="application/x-mpegURL"/>
+                                    {{end}}
+                                {{end}}
+                                <p class="vjs-no-js">
+                                    To view this video please enable JavaScript.
+                                </p>
+                            </video-js>
+                        </div>
 
-                <!-- player -->
-                <video-js
-                        id="my-video"
-                        class="video-js w-full h-full"
-                        controls
-                        preload="auto"
-                        x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu)"
-                        {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
-                    {{else}}poster="/public/no_active_stream.jpg">{{end}}
-                    {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
-                        {{if not $stream.LiveNow}}
-                            <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
-                                    type="application/x-mpegURL"/>
-                        {{else}}
-                            {{if eq .Version "CAM"}}
-                                <source src="{{$stream.PlaylistUrlCAM}}{{.DVR}}" type="application/x-mpegURL"/>
-                            {{else if eq .Version "PRES"}}
-                                <source src="{{$stream.PlaylistUrlPRES}}{{.DVR}}" type="application/x-mpegURL"/>
+                        {{/* camera player */}}
+                        <div id="video-cam-wrapper">
+                            <video-js
+                                    id="video-cam"
+                                    class="video-js h-full w-full"
+                                    controls
+                                    preload="auto"
+                                    x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu, $el);"
+                                    {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
+                                {{else}}poster="/public/no_active_stream.jpg">{{end}}
+                                {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
+                                    {{if not $stream.LiveNow}}
+                                        <source src="{{$stream.PlaylistUrlCAM}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
+                                                type="application/x-mpegURL"/>
+                                    {{else}}
+                                        <source src="{{$stream.PlaylistUrlCAM}}{{.DVR}}" type="application/x-mpegURL"/>
+                                    {{end}}
+                                {{end}}
+                                <p class="vjs-no-js">
+                                    To view this video please enable JavaScript.
+                                </p>
+                            </video-js>
+                        </div>
+                    </div>
+                {{else}}
+                    {{/*combined player*/}}
+                    <video-js
+                            id="video-comb"
+                            class="video-js w-full h-full"
+                            controls
+                            preload="auto"
+                            x-on:contextmenu="contextMenu = watch.contextMenuHandler($event, contextMenu, $el);"
+                            {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}poster="/public/default_banner.jpg">
+                        {{else}}poster="/public/no_active_stream.jpg">{{end}}
+                        {{if or .IndexData.TUMLiveContext.Stream.LiveNow .IndexData.TUMLiveContext.Stream.Recording}}
+                            {{if not $stream.LiveNow}}
+                                <source src="{{if eq .Version "PRES"}}{{$stream.PlaylistUrlPRES}}{{else if eq .Version "CAM"}}{{$stream.PlaylistUrlCAM}}{{else}}{{$stream.PlaylistUrl}}{{end}}{{if .Unit}}?wowzaplaystart={{.Unit.UnitStart}}&wowzaplayduration={{.Unit.GetUnitDurationMS}}{{else if $stream.StartOffset}}?wowzaplaystart={{$stream.StartOffset}}&wowzaplayduration={{$stream.EndOffset}}{{end}}"
+                                        type="application/x-mpegURL"/>
                             {{else}}
-                                <source src="{{$stream.PlaylistUrl}}{{.DVR}}" type="application/x-mpegURL"/>
+                                {{if eq .Version "CAM"}}
+                                    <source src="{{$stream.PlaylistUrlCAM}}{{.DVR}}" type="application/x-mpegURL"/>
+                                {{else if eq .Version "PRES"}}
+                                    <source src="{{$stream.PlaylistUrlPRES}}{{.DVR}}" type="application/x-mpegURL"/>
+                                {{else}}
+                                    <source src="{{$stream.PlaylistUrl}}{{.DVR}}" type="application/x-mpegURL"/>
+                                {{end}}
                             {{end}}
                         {{end}}
-                    {{end}}
                     <p class="vjs-no-js">
                         To view this video please enable JavaScript.
                     </p>
                 </video-js>
+            {{end}}
+
+            <div
+                    x-data="{ size: { x: '0px', width: '0px' }, seekLogger: new watch.SeekLogger('{{$stream.ID}}'), heatMapPath: null }"
+                    x-on:updateheatmappath.window="e => { heatMapPath = e.detail.heatMapPath; }"
+                    x-on:updateheatmapsize.window="e => { size = e.detail; }"
+                    x-init="seekLogger.attach(); watch.repeatHeatMap.init('{{$stream.ID}}');"
+                    class="heatmap-wrap absolute bottom-[18px] rounded bg-gradient-to-t from-gray-800/[.6] pt-4 pointer-events-none"
+                    :style="{width: size.width, left: size.x}"
+                    x-show="heatMapPath != null"
+            >
+                <template x-if="heatMapPath">
+                    <svg height="100%" preserveAspectRatio="none" viewBox="0 0 1000 100"
+                         width="100%" style="height: 30px;">
+                        <defs>
+                            <clipPath id="heatmap">
+                                <path class="tumlive-heat-map-path"
+                                      :d="heatMapPath"
+                                      fill="white" fill-opacity="0.6"></path>
+                            </clipPath>
+                        </defs>
+                        <rect clip-path="url(#heatmap)" fill="white" fill-opacity="0.4" height="100%" width="100%" x="0" y="0"></rect>
+                    </svg>
+                </template>
+            </div>
+
+            <div
+                    x-cloak
+                    x-show="contextMenu.shown"
+                    @click.outside="contextMenu = {...contextMenu, shown: false}"
+                    class="origin-top-left absolute w-72 py-2 bg-gray-800/[.9] border-gray-100 border-1 rounded text-white text-sm"
+                    :style="{ top: contextMenu.locY + 'px', left: contextMenu.locX + 'px' }"
+                    role="menu" aria-orientation="vertical" tabindex="-1">
+                <button @click="contextMenu = {...contextMenu, shown: false}; videoStatsShown = true; watch.videoStatListener.listen();"
+                        class="py-2 px-4 w-full text-left cursor-pointer hover:bg-white/10">
+                    Show detailed stats
+                </button>
+            </div>
 
                 <div
                         x-cloak
                         x-show="contextMenu.shown"
+                        x-data="{share: new watch.ShareURL()}"
                         @click.outside="contextMenu = {...contextMenu, shown: false}"
                         class="origin-top-left absolute w-72 py-2 bg-gray-800/[.9] border-gray-100 border-1 rounded text-white text-sm"
                         :style="{ top: contextMenu.locY + 'px', left: contextMenu.locX + 'px' }"
                         role="menu" aria-orientation="vertical" tabindex="-1">
                     <button @click="contextMenu = {...contextMenu, shown: false}; videoStatsShown = true; watch.videoStatListener.listen();"
-                            class="py-2 px-4 w-full text-left cursor-pointer hover:bg-white/10">
+                            class="tl-context-entry">
                         Show detailed stats
                     </button>
+                    <button @click="contextMenu = {...contextMenu, shown: false};share.includeTimestamp=false;await share.setURL();share.copyURL()"
+                            class="tl-context-entry">
+                        Copy URL
+                    </button>
+                    {{if not $stream.LiveNow}}
+                        <button @click="contextMenu = {...contextMenu, shown: false};share.includeTimestamp=true;await share.setURL(true);share.copyURL()"
+                                class="tl-context-entry">
+                            Copy URL at current time
+                        </button>
+                    {{end}}
                 </div>
 
                 <div
@@ -140,20 +333,30 @@
         {{if and $course.ChatEnabled $stream.ChatEnabled}}
             <div x-show="showChat"
                  :class="showChat ? 'lg:basis-1/4' : 'lg:basis-0'"
-                 class="z-20 basis-full order-3 border rounded p-1 mx-5 bg-gray-100 dark:bg-gray-800 dark:border-0 lg:h-16/6 h-96
-                        lg:border-0 lg:shadow lg:order-none lg:mx-0 lg:p-0 lg:bg-transparent">
-                <div id="chat-box" class="bg-white rounded lg:bg-transparent md:rounded-0 dark:bg-secondary h-full">
+                 class="z-20 basis-full order-5
+                        md:px-2 md:pt-2
+                        lg:h-16/6 h-96 lg:order-none">
+                <div id="chat-box" class="bg-white rounded-lg h-full border dark:border-gray-800 lg:bg-transparent md:rounded-0 dark:bg-secondary">
                     {{template "chat" .ChatData}}
                 </div>
             </div>
         {{end}}
 
+        <!-- Bookmarks -->
+        {{if .IndexData.TUMLiveContext.User}}
+        <div id="bookmarks-desktop" x-cloak="" x-show="showBookmarks"
+             :class="showBookmarks ? 'lg:basis-1/4' : 'lg:basis-0'"
+             class="hidden md:block basis-full h-96 lg:h-16/6 px-5 md:px-2 md:pt-2 lg:order-none order-4">
+            {{template "bookmarks-modal" $stream.ID}}
+        </div>
+        {{end}}
+
         <!-- stream info container -->
         <!-- Title, course name, actions -->
         <div class="basis-full relative order-2 p-5 lg:order-none">
-            <div class="flex justify-between align-middle border-b dark:border-gray-800 pb-2 lg:border-0">
+            <div class="flex flex-col justify-between align-middle pb-2 md:flex-row">
                 <!-- title and course-name -->
-                <div class="grid mb-auto shrink">
+                <div class="pb-3 border-b dark:border-gray-600 grid shrink mb-auto lg:pb-0 lg:border-0">
                     <h1 class="font-bold text-4 text-lg grow lg:text-2xl"
                         @titleupdate.window="$el.innerText=$event.detail.title">
                         {{if $stream.Name}}
@@ -167,6 +370,7 @@
                             <a href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
                                 <span class="text-5 hover:text-1 hover:underline">{{$course.Name}}</span></a>
                         </div>
+
                     </div>
                     {{if not $stream.Recording}}
                         {{template "watch-info" .}}
@@ -174,8 +378,8 @@
                 </div>
 
                 <!-- Desktop stream info-->
-                <div class="grid gap-3 shrink-0">
-                    <div class="space-x-2 text-lg text-4 hidden md:inline-flex shrink-0 my-auto">
+                <div class="grid pt-3 shrink-0 lg:pt-0">
+                    <div class="justify-center space-x-2 text-lg text-4 inline-flex shrink-0 my-auto">
                         {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
                             <a class="rounded-lg px-3 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
                                href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
@@ -184,12 +388,26 @@
                             </a>
                         {{end}}
 
+                        {{if .IndexData.TUMLiveContext.User}}
+                            <button @click="showChat = false; showBookmarks = !showBookmarks"
+                                    class="rounded-lg px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                                    :title="'New Bookmark'">
+                                <i class="fa-solid fa-bookmark text-4"></i>
+                            </button>
+                        {{end}}
+
+                        <button @click="showShare = true;"
+                                class="rounded-lg px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
+                                :title="'Share'">
+                            <i class="fa-solid fa-share text-4"></i>
+                        </button>
+
                         <!-- Actions-->
                         {{template "actions" .}}
 
                         <!-- Desktop Open Chat -->
                         {{if and $course.ChatEnabled $stream.ChatEnabled}}
-                            <button @click="showChat = !showChat;"
+                            <button @click="showBookmarks = false;showChat = !showChat;"
                                     title="Open Chat"
                                     :class="showChat ? 'bg-gray-200 hover:bg-gray-100 dark:bg-gray-600 dark:hover:bg-secondary' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600'"
                                     class="rounded-lg px-3 py-2 h-fit w-fit">
@@ -199,61 +417,38 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Mobile stream info -->
-            <div class="md:hidden flex justify-between mt-5 text-3">
-                <div class="flex">
-                    {{if or (.IndexData.TUMLiveContext.User.IsAdminOfCourse .IndexData.TUMLiveContext.Course) .IndexData.IsAdmin}}
-                        <a class="rounded-lg px-3 py-2 w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600 mr-2"
-                           href="/admin/course/{{$course.Model.ID}}#lecture-li-{{$stream.Model.ID}}"
-                           :title="'Edit course settings'">
-                            <i class="fa-solid fa-pen text-4"></i>
-                        </a>
-                    {{end}}
-
-                    {{template "actions" .}}
-                </div>
-
-                {{if and $course.ChatEnabled $stream.ChatEnabled}}
-                    <!-- Mobile Open Chat -->
-                    <button @click="showChat = !showChat;"
-                            title="Open Chat"
-                            :class="showChat ? 'bg-gray-200 hover:bg-gray-100 dark:bg-gray-600 dark:hover:bg-secondary' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600'"
-                            class="rounded-lg px-3 py-2 w-fit">
-                        <i class="fa-solid fa-comments text-4"></i>
-                    </button>
-                {{end}}
-            </div>
         </div>
         {{if and .IsAdminOfCourse $stream.LiveNow}}
             <!-- Admin control buttons -->
-            <div class="w-full p-5 lg:order-none order-4">
+            <div class="w-full p-3 lg:order-none order-2 lg:p-5">
                 <h3 class="text-4 font-semibold border-b dark:border-gray-800 mb-3">Admin</h3>
                 <div class="md:space-x-2 lg:space-y-0 space-y-2 w-full">
                     {{/* Lecture hall is set, means no self-stream*/}}
-                    {{if $stream.LectureHallID}}
-                        <button @click="window.location.href='?restart=1'"
-                                title="Issues with the stream? Restart it."
-                                class="bg-indigo-500 text-center lg:w-32 md:w-24 md:inline-block block w-full text-white font-bold hover:bg-indigo-600 dark:hover:bg-indigo-600 rounded cursor-pointer p-2">
-                            <i class="fas fa-redo mr-1"></i>Restart
-                        </button>
-                        <button @click="$dispatch('stop')"
-                                title="Already finished? End the stream early."
-                                class="bg-red-500 text-center lg:w-32 md:w-24 md:inline-block block w-full text-white hover:bg-red-600 font-bold dark:hover:bg-red-600 rounded cursor-pointer p-2">
-                            <i class="fas fa-power-off mr-1"></i>Stop
-                        </button>
-                    {{end}}
-                    {{if .AlertsEnabled}}
-                        <button @click="$dispatch('issue');location.href='#';location.href='#alertModal'"
-                                title="Issues with the stream? Send a report to the RGB."
-                                class="bg-amber-500 text-center md:w-28 md:inline-block block lg:w-32 {{if $stream.LectureHallID}}md:float-right{{end}} w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
-                            <i class="fas fa-exclamation-triangle mr-1"></i>Problem
-                        </button>
+                    {{if $stream.LiveNow}}
+                        {{if $stream.LectureHallID}}
+                            <button @click="window.location.href='?restart=1'"
+                                    title="Issues with the stream? Restart it."
+                                    class="bg-indigo-500 text-center lg:w-32 md:w-24 md:inline-block block w-full text-white font-bold hover:bg-indigo-600 dark:hover:bg-indigo-600 rounded cursor-pointer p-2">
+                                <i class="fas fa-redo mr-1"></i>Restart
+                            </button>
+                            <button @click="$dispatch('stop')"
+                                    title="Already finished? End the stream early."
+                                    class="bg-red-500 text-center lg:w-32 md:w-24 md:inline-block block w-full text-white hover:bg-red-600 font-bold dark:hover:bg-red-600 rounded cursor-pointer p-2">
+                                <i class="fas fa-power-off mr-1"></i>Stop
+                            </button>
+                        {{end}}
+                        {{if .AlertsEnabled}}
+                            <button @click="$dispatch('issue');location.href='#';location.href='#alertModal'"
+                                    title="Issues with the stream? Send a report to the RGB."
+                                    class="bg-amber-500 text-center md:w-28 md:inline-block block lg:w-32 {{if $stream.LectureHallID}}md:float-right{{end}} w-full text-white font-bold hover:bg-amber-700 dark:hover:bg-amber-700 rounded cursor-pointer p-2">
+                                <i class="fas fa-exclamation-triangle mr-1"></i>Problem
+                            </button>
+                        {{end}}
                     {{end}}
                 </div>
             </div>
-            {{if .Presets}}
-                <div class="w-full px-5">
+            {{if and .Presets $stream.LiveNow}}
+                <div class="p-3 w-full order-2 lg:p-5">
                     <h3 class="text-4 font-semibold border-b dark:border-gray-800 mb-3">Presets</h3>
                     <div class="w-full overflow-x-scroll scrollbarThin">
                         <div class="flex flex-row gap-x-2 pb-4 pl-2">
@@ -274,12 +469,15 @@
             {{end}}
         {{end}}
 
-        <!-- Video Sections -->
-        {{if $stream.VideoSections}}
-            <div class="basis-full p-5 lg:order-none order-5">
-                {{template "videosections" $stream}}
-            </div>
-        {{end}}
+        <div class="flex flex-col lg:flex-row basis-full order-4">
+            <!-- Video Sections -->
+            {{if $stream.VideoSections}}
+                <div class="p-2 order-4 lg:basis-1/2 lg:p-5 lg:order-none">
+                    {{template "videosections" $stream}}
+                </div>
+            {{end}}
+        </div>
+
 
         <!-- Video description -->
         {{$less := gt (len .Description) .CutOffLength}}
@@ -287,12 +485,12 @@
             <div x-data="{ less: {{$less}}, toggleDesc: true }"
                     {{/* Update less on update */}}
                  @descriptionupdate.window="toggleDesc = less = $event.detail.description.full.length > {{.CutOffLength}};"
-                 class="video-description flex-grow p-5 basis-full lg:order-none order-5">
+                 class="video-description flex-grow p-3 order-2 basis-full lg:order-none lg:p-5 lg:mx-2">
                 <div class="flex justify-between border-b mb-1 dark:border-gray-800 lg:justify-start">
                     <h3 class="text-4 font-semibold">Description</h3>
                 </div>
                 <div>
-                    <div class="rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 hover:dark:bg-secondary text-3 text-sm">
+                    <div class="rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-secondary-light hover:dark:bg-gray-600 text-3 text-sm">
                         <button @click="toggleDesc = !toggleDesc;"
                                 :disabled="!less"
                                 class="p-2 w-full text-left"
@@ -319,7 +517,7 @@
              @keydown.escape="showModal = false" x-cloak x-show="showModal">
             <section class="flex flex-wrap h-full">
                 <div class="overflow-auto" x-show="showModal"
-                     :class="{ 'absolute inset-0 z-10 flex items-center justify-center': showModal }">
+                     :class="{ 'absolute inset-0 z-50 flex items-center justify-center': showModal }">
                     <div class="dark:bg-secondary-light bg-gray-200 text-3 absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 w-auto md:max-w-md mx-auto rounded shadow-lg py-4 text-left
                         px-6"
                          @click.away="showModal = false">
@@ -345,9 +543,6 @@
                 </div>
             </section>
         </div>
-        {{if .AlertsEnabled}}
-            {{template "alert-modal" . }}
-        {{end}}
         {{if .IsHighlightPage}}
             <ul class="w-full m-auto mb-4">
                 {{template "course_list" .IndexData.TUMLiveContext}}
@@ -356,14 +551,30 @@
     </div>
 </div>
 <script>
+    {{if (eq .Version "SPLIT")}}
+
     {{if $stream.Recording}}
-    watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
     {{else}}
-    watch.initPlayer(true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
+    watch.initPlayer("video-pres", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}});
+    watch.initPlayer("video-cam", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, undefined, undefined, {{$stream.Model.ID}});
     {{end}}
-    {{if and $stream.Recording .IndexData.TUMLiveContext.User}}
-    watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }});
+
+    watch.syncPlayers();
+
+    {{else}}
+
+    {{if $stream.Recording}}
+    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, {{$stream.GetThumbIdForSource .Version}}, {{$stream.ThumbInterval}}, {{$stream.Model.ID}});
+    watch.watchProgress({{$stream.Model.ID}}, {{ .Progress.Progress }}, {{not (empty .IndexData.TUMLiveContext.User)}});
+    {{else}}
+    watch.initPlayer("video-comb", true, false, false, {{.IndexData.TUMLiveContext.User.GetPlaybackSpeeds.GetEnabled}}, {{$stream.LiveNow}}, undefined, undefined, {{$stream.Model.ID}});
     {{end}}
+
+    {{end}}
+
     {{if $stream.Silences}}
     watch.skipSilence({{$stream.GetSilencesJson}});
     {{end}}

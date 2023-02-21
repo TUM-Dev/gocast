@@ -12,6 +12,8 @@ type FileDao interface {
 	GetFileById(id string) (f model.File, err error)
 	UpdateFile(id string, f *model.File) error
 	DeleteFile(id uint) error
+	CountVoDFiles() (int64, error)
+	SetThumbnail(streamId uint, thumb model.File) error
 }
 
 type fileDao struct {
@@ -37,4 +39,18 @@ func (d fileDao) UpdateFile(id string, f *model.File) error {
 
 func (d fileDao) DeleteFile(id uint) error {
 	return DB.Model(&model.File{}).Delete(&model.File{}, id).Error
+}
+
+func (d fileDao) CountVoDFiles() (count int64, err error) {
+	err = DB.Model(&model.File{}).Where("type = ?", model.FILETYPE_VOD).Count(&count).Error
+	return
+}
+func (d fileDao) SetThumbnail(streamId uint, thumb model.File) error {
+	return DB.Transaction(func(tx *gorm.DB) error {
+		err := DB.Where("stream_id = ? AND type = ?", streamId, thumb.Type).Delete(&model.File{}).Error
+		if err != nil {
+			return err
+		}
+		return tx.Create(&thumb).Error
+	})
 }

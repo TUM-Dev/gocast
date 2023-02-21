@@ -97,8 +97,12 @@
         @apply text-gray-500 dark:hover:text-white hover:text-black hover:underline;
     }
 
+    .btn:disabled {
+        @apply dark:text-gray-400 dark:hover:bg-gray-600 dark:bg-gray-600 text-gray-500 hover:bg-gray-200 bg-gray-200;
+    }
+
     .form-container {
-        @apply mx-auto w-4/5 my-10 shadow rounded-lg border bg-white dark:border-gray-800 dark:bg-secondary-light;
+        @apply mx-auto w-full md:w-4/5 my-2 md:my-10 shadow rounded-lg border bg-white dark:border-gray-800 dark:bg-secondary-light;
     }
 
     .form-container-title {
@@ -107,6 +111,10 @@
 
     .form-container-body {
         @apply py-2 px-5 grid gap-3;
+    }
+
+    .form-container-footer {
+        @apply text-3 border-t py-2 px-5 dark:border-gray-800;
     }
 
     .form-container-body h2 {
@@ -118,7 +126,7 @@
     }
 
     .btn:disabled {
-        @apply text-center text-gray-900 bg-white border border-gray-300 focus:outline-none focus:ring-4 focus:ring-gray-200 font-bold rounded-lg px-5 py-2.5 mr-2 mb-2 dark:bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700
+        @apply text-center text-gray-900 bg-white border border-gray-300 focus:outline-none focus:ring-4 focus:ring-gray-200 font-bold rounded-lg px-5 py-2.5 dark:bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700
     }
 
     .primary {
@@ -139,7 +147,15 @@
 }
 
 .tl-input {
-    @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm;
+    @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm outline-0 border-0;
+}
+
+.tl-context-entry {
+    @apply py-2 px-4 w-full text-left cursor-pointer hover:bg-white/10
+}
+
+.tl-input:focus{
+    @apply outline-2 outline-blue-500 dark:outline-indigo-600 border-0;
 }
 
 .tl-choose-file::-webkit-file-upload-button {
@@ -147,7 +163,7 @@
 }
 
 .container {
-    @apply mt-4;
+   @apply mt-4;
 }
 
 @import "tailwindcss/components";
@@ -165,10 +181,29 @@
     background-color: #3070b3 !important;
 }
 
+.video-js .vjs-big-play-button {
+    @apply absolute top-0 left-0 bottom-0 right-0 m-auto;
+}
 .video-js .vjs-time-tooltip {
     border-radius: 2px !important;
     border-width: 2px !important;
     border-color: white !important;
+}
+
+.thumb {
+    padding: 70px 8px 8px 8px !important;
+}
+
+.noUi-tooltip input {
+    width: 200px;
+    text-align: center;
+    @apply focus:text-green-500;
+}
+
+.noUi-tooltip {
+    position: absolute;
+    bottom: 0;
+    left: 0;
 }
 
 /* slider for cutting videos: */
@@ -182,14 +217,17 @@
     background: #3070b3 !important;
 }
 
-.noUi-tooltip input {
-    width: 120px;
-    text-align: center;
-    @apply focus:text-white;
+/* split.js styling */
+.gutter {
+    @apply bg-gray-200 dark:bg-gray-600;
+
+    background-repeat: no-repeat;
+    background-position: 50%;
+    width: 2px!important;
 }
 
-.noUi-tooltip {
-    padding: 0 !important;
+.gutter.gutter-horizontal {
+    cursor: col-resize;
 }
 
 /* Chat */
@@ -293,7 +331,6 @@ input[type='checkbox']:checked + label {
         height: calc((9 / 16) * 100vw) !important;
         max-height: calc(100vh - 200px) !important;
     }
-
     .lg\:h-16\/6 {
         height: calc((6 / 16) * 100vw) !important;
     }
@@ -442,4 +479,9 @@ a.fc-event, a.fc-event:hover {
 .video-description ul {
     list-style-type: disc;
     margin-left: 16px;
+}
+
+.text-tiny {
+    font-size: 0.5rem;
+    line-height: 0.7rem;
 }

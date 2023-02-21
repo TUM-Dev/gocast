@@ -20,6 +20,7 @@ func (r mainRoutes) PopUpChat(c *gin.Context) {
 	var data ChatData
 
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
+	data.IndexData = NewIndexData()
 	data.IndexData.TUMLiveContext = foundContext.(tools.TUMLiveContext)
 	data.IsAdminOfCourse = tumLiveContext.UserIsAdmin()
 	data.IsPopUp = true

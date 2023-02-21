@@ -35,14 +35,14 @@ func (d statisticsDao) AddStat(stat model.Stat) error {
 	return DB.Create(&stat).Error
 }
 
-//GetCourseNumStudents returns the number of students enrolled in the course
+// GetCourseNumStudents returns the number of students enrolled in the course
 func (d statisticsDao) GetCourseNumStudents(courseID uint) (int64, error) {
 	var res int64
 	err := DB.Table("course_users").Where("course_id = ? OR ? = 0", courseID, courseID).Count(&res).Error
 	return res, err
 }
 
-//GetCourseNumVodViews returns the sum of vod views of a course
+// GetCourseNumVodViews returns the sum of vod views of a course
 func (d statisticsDao) GetCourseNumVodViews(courseID uint) (int, error) {
 	var res int
 	err := DB.Raw(`SELECT SUM(stats.viewers) FROM stats
@@ -51,7 +51,7 @@ func (d statisticsDao) GetCourseNumVodViews(courseID uint) (int, error) {
 	return res, err
 }
 
-//GetCourseNumLiveViews returns the sum of live views of a course based on the maximum views per lecture
+// GetCourseNumLiveViews returns the sum of live views of a course based on the maximum views per lecture
 func (d statisticsDao) GetCourseNumLiveViews(courseID uint) (int, error) {
 	var res int
 	err := DB.Raw(`WITH views_per_stream AS (SELECT MAX(stats.viewers) AS y
@@ -61,11 +61,11 @@ func (d statisticsDao) GetCourseNumLiveViews(courseID uint) (int, error) {
             AND stats.live = 1
         GROUP BY stats.stream_id)
 		SELECT SUM(y)
-			FROM views_per_stream`, courseID, courseID).Scan(&res).Error
+			FROM views_per_stream WHERE y IS NOT NULL`, courseID, courseID).Scan(&res).Error
 	return res, err
 }
 
-//GetCourseNumVodViewsPerDay returns the daily amount of vod views for each day
+// GetCourseNumVodViewsPerDay returns the daily amount of vod views for each day
 func (d statisticsDao) GetCourseNumVodViewsPerDay(courseID uint) ([]Stat, error) {
 	var res []Stat
 	err := DB.Raw(`SELECT DATE_FORMAT(stats.time, GET_FORMAT(DATE, 'EUR')) AS x, sum(viewers) AS y
@@ -77,7 +77,7 @@ func (d statisticsDao) GetCourseNumVodViewsPerDay(courseID uint) ([]Stat, error)
 	return res, err
 }
 
-//GetCourseStatsWeekdays returns the days and their sum of vod views of a course
+// GetCourseStatsWeekdays returns the days and their sum of vod views of a course
 func (d statisticsDao) GetCourseStatsWeekdays(courseID uint) ([]Stat, error) {
 	var res []Stat
 	err := DB.Raw(`SELECT DAYNAME(stats.time) AS x, SUM(stats.viewers) as y
@@ -89,7 +89,7 @@ func (d statisticsDao) GetCourseStatsWeekdays(courseID uint) ([]Stat, error) {
 	return res, err
 }
 
-//GetCourseStatsHourly returns the hours with most vod viewing activity of a course
+// GetCourseStatsHourly returns the hours with most vod viewing activity of a course
 func (d statisticsDao) GetCourseStatsHourly(courseID uint) ([]Stat, error) {
 	var res []Stat
 	err := DB.Raw(`SELECT HOUR(stats.time) AS x, SUM(stats.viewers) as y
@@ -154,8 +154,8 @@ func (d statisticsDao) GetStudentActivityCourseStats(courseID uint, live bool) (
 	return retVal, err
 }
 
-//Stat key value struct that is parsable by Chart.js without further modifications.
-//See https://www.chartjs.org/docs/master/general/data-structures.html
+// Stat key value struct that is parsable by Chart.js without further modifications.
+// See https://www.chartjs.org/docs/master/general/data-structures.html
 type Stat struct {
 	X string `json:"x"` // label for stat
 	Y int    `json:"y"` // value for stat

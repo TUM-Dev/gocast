@@ -14,7 +14,6 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools/tum"
 	"github.com/joschahenningsen/TUM-Live/web"
 	"github.com/pkg/profile"
-	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -166,7 +165,8 @@ func main() {
 		&model.InfoPage{},
 		&model.Bookmark{},
 		&model.TranscodingProgress{},
-		&model.PrefetchedCourse{},
+		&model.ChatReaction{},
+		&model.Subtitles{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -207,18 +207,18 @@ func main() {
 
 func initCron() {
 	daoWrapper := dao.NewDaoWrapper()
-	cronService := cron.New()
+	tools.InitCronService()
 	//Fetch students every 12 hours
-	_, _ = cronService.AddFunc("0 */12 * * *", tum.FetchCourses(daoWrapper))
+	_ = tools.Cron.AddFunc("fetchCourses", tum.FetchCourses(daoWrapper), "0 */12 * * *")
 	//Collect livestream stats (viewers) every minute
-	_, _ = cronService.AddFunc("0-59 * * * *", api.CollectStats(daoWrapper))
+	_ = tools.Cron.AddFunc("collectStats", api.CollectStats(daoWrapper), "0-59 * * * *")
 	//Flush stale sentry exceptions and transactions every 5 minutes
-	_, _ = cronService.AddFunc("0-59/5 * * * *", func() { sentry.Flush(time.Minute * 2) })
+	_ = tools.Cron.AddFunc("sentryFlush", func() { sentry.Flush(time.Minute * 2) }, "0-59/5 * * * *")
 	//Look for due streams and notify workers about them
-	_, _ = cronService.AddFunc("0-59 * * * *", api.NotifyWorkers(daoWrapper))
-	// update courses available every monday at 3am
-	_, _ = cronService.AddFunc("0 0 * * 3", tum.PrefetchCourses(daoWrapper))
-	cronService.Start()
+	_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyWorkers(daoWrapper), "0-59 * * * *")
+	// update courses available
+	_ = tools.Cron.AddFunc("prefetchCourses", tum.PrefetchCourses(daoWrapper), "30 3 * * *")
+	tools.Cron.Run()
 }
 
 func keepAlive() {

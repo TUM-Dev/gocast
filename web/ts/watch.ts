@@ -1,7 +1,9 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
-import { getPlayer } from "./TUMLiveVjs";
+import { getPlayers } from "./TUMLiveVjs";
+import { Get, postData } from "./global";
 import { Realtime } from "./socket";
+import { copyToClipboard, Time } from "./global";
 
 let currentChatChannel = "";
 const retryInt = 5000; //retry connecting to websocket after this timeout
@@ -11,14 +13,17 @@ const pageloaded = new Date();
 
 enum WSMessageType {
     Message = "message",
-    Like = "like",
     Delete = "delete",
     StartPoll = "start_poll",
     SubmitPollOptionVote = "submit_poll_option_vote",
     CloseActivePoll = "close_active_poll",
     Approve = "approve",
+    Retract = "retract",
     Resolve = "resolve",
+    ReactTo = "react_to",
 }
+
+export { repeatHeatMap } from "./repeat-heatmap";
 
 function sendIDMessage(id: number, type: WSMessageType) {
     return Realtime.get().send(currentChatChannel, {
@@ -29,13 +34,26 @@ function sendIDMessage(id: number, type: WSMessageType) {
     });
 }
 
-export const likeMessage = (id: number) => sendIDMessage(id, WSMessageType.Like);
+function sendCustomMessage(id: number, type: WSMessageType, optArgs: object = {}) {
+    return Realtime.get().send(currentChatChannel, {
+        payload: {
+            type: type,
+            id: id,
+            ...optArgs,
+        },
+    });
+}
+
+export const reactToMessage = (id: number, reaction: string) =>
+    sendCustomMessage(id, WSMessageType.ReactTo, { reaction });
 
 export const deleteMessage = (id: number) => sendIDMessage(id, WSMessageType.Delete);
 
 export const resolveMessage = (id: number) => sendIDMessage(id, WSMessageType.Resolve);
 
 export const approveMessage = (id: number) => sendIDMessage(id, WSMessageType.Approve);
+
+export const retractMessage = (id: number) => sendIDMessage(id, WSMessageType.Retract);
 
 export function initChatScrollListener() {
     const chatBox = document.getElementById("chatBox") as HTMLDivElement;
@@ -100,9 +118,6 @@ export async function startWebsocket() {
         } else if ("pollOptionResults" in data) {
             const event = new CustomEvent("polloptionresult", { detail: data });
             window.dispatchEvent(event);
-        } else if ("likes" in data) {
-            const event = new CustomEvent("chatlike", { detail: data });
-            window.dispatchEvent(event);
         } else if ("delete" in data) {
             const event = new CustomEvent("chatdelete", { detail: data });
             window.dispatchEvent(event);
@@ -112,11 +127,17 @@ export async function startWebsocket() {
         } else if ("approve" in data) {
             const event = new CustomEvent("chatapprove", { detail: data });
             window.dispatchEvent(event);
+        } else if ("retract" in data) {
+            const event = new CustomEvent("chatretract", { detail: data });
+            window.dispatchEvent(event);
         } else if ("title" in data) {
             const event = new CustomEvent("titleupdate", { detail: data });
             window.dispatchEvent(event);
         } else if ("description" in data) {
             const event = new CustomEvent("descriptionupdate", { detail: data });
+            window.dispatchEvent(event);
+        } else if ("reactions" in data) {
+            const event = new CustomEvent("chatreactions", { detail: data });
             window.dispatchEvent(event);
         }
     };
@@ -206,10 +227,9 @@ export function getPollOptionWidth(pollOptions, pollOption) {
     return `${Math.ceil(fractionWidth).toString()}%`;
 }
 
-export function contextMenuHandler(e, contextMenu) {
+export function contextMenuHandler(e, contextMenu, videoElem) {
     if (contextMenu.shown) return contextMenu;
     e.preventDefault();
-    const videoElem = document.querySelector("#my-video");
     return {
         shown: true,
         locX: e.clientX - videoElem.getBoundingClientRect().left,
@@ -227,7 +247,7 @@ export const videoStatListener = {
         this.update();
     },
     update() {
-        const player = getPlayer();
+        const player = getPlayers()[0];
         const vhs = player.tech({ IWillNotUseThisInPlugins: true }).vhs;
         const notAvailable = vhs == null;
 
@@ -235,7 +255,7 @@ export const videoStatListener = {
             bufferSeconds: notAvailable ? 0 : player.bufferedEnd() - player.currentTime(),
             videoHeight: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.height,
             videoWidth: notAvailable ? 0 : vhs.playlists.media().attributes.RESOLUTION.width,
-            bandwidth: notAvailable ? 0 : vhs.bandwidth, //player.tech().vhs.bandwidth(),
+            bandwidth: notAvailable ? 0 : vhs.bandwidth,
             mediaRequests: notAvailable ? 0 : vhs.stats.mediaRequests,
             mediaRequestsFailed: notAvailable ? 0 : vhs.stats.mediaRequestsErrored,
         };
@@ -267,6 +287,72 @@ export function toggleShortcutsModal() {
             el.classList.remove("hidden");
         } else {
             el.classList.add("hidden");
+        }
+    }
+}
+
+export class ShareURL {
+    url: string;
+    includeTimestamp: boolean;
+    timestamp: string;
+
+    copied: boolean; // success indicator
+
+    private baseUrl: string;
+    private playerHasTime: Promise<boolean>;
+    private timestampArgument: string;
+
+    constructor() {
+        this.baseUrl = [location.protocol, "//", location.host, location.pathname].join(""); // get rid of query
+        this.url = this.baseUrl;
+        this.includeTimestamp = false;
+        this.copied = false;
+
+        const player = getPlayers()[0];
+        player.ready(() => {
+            player.on("loadedmetadata", () => {
+                this.playerHasTime = Promise.resolve(true);
+            });
+        });
+    }
+
+    async setURL(shouldFetchPlayerTime?: boolean) {
+        if (this.includeTimestamp) {
+            if (shouldFetchPlayerTime || !this.timestamp) {
+                const player = getPlayers()[0];
+                await this.playerHasTime;
+                this.timestamp = Time.FromSeconds(player.currentTime()).toStringWithLeadingZeros();
+                await this.updateURLStateFromTimestamp();
+            } else {
+                await this.updateURLStateFromTimestamp();
+            }
+            this.url = this.baseUrl + this.timestampArgument;
+        } else {
+            this.url = this.baseUrl;
+        }
+    }
+
+    copyURL() {
+        copyToClipboard(this.url);
+        this.copied = true;
+        setTimeout(() => (this.copied = false), 1000);
+    }
+
+    private async updateURLStateFromTimestamp() {
+        const trim = this.timestamp.substring(0, 9);
+        const split = trim.split(":");
+        if (split.length != 3) {
+            this.url = this.baseUrl;
+        } else {
+            const h = +split[0];
+            const m = +split[1];
+            const s = +split[2];
+            if (isNaN(h) || isNaN(m) || isNaN(s) || h > 60 || m > 60 || s > 60 || h < 0 || m < 0 || s < 0) {
+                this.url = this.baseUrl;
+            } else {
+                const inSeconds = s + 60 * m + 60 * 60 * h;
+                this.timestampArgument = `?t=${inSeconds}`;
+            }
         }
     }
 }

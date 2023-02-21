@@ -35,13 +35,14 @@
                     <label for="username" class="block text-5">Username</label>
                     <input type="text" name="username" id="username" autocomplete="off"
                            {{if not .UseSAML}}autofocus {{end}}
+                           autocomplete="username"
                            required placeholder="Username"
                            class="tl-input mt-3"/>
                 </div>
                 <div class="text-sm">
                     <label for="password" class="block text-5">Password</label>
                     <input type="password" name="password" id="password" required
-                           class="tl-input mt-3"
+                           class="tl-input mt-3" autocomplete="current-password"
                            placeholder="Password"/>
                 </div>
                 <button type="submit"
