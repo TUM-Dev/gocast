@@ -495,11 +495,3 @@ a.fc-event, a.fc-event:hover {
     font-size: 0.5rem;
     line-height: 0.7rem;
 }
-
-
-.vjs-has-started.vjs-user-inactive.vjs-playing .vjs-skip-silence-control {
-    visibility: visible;
-    opacity: 0;
-    pointer-events: none;
-    transition: visibility 1s,opacity 1s;
-}
