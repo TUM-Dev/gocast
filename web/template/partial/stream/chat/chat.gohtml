@@ -31,11 +31,11 @@
          @disconnected.window="c.disconnected = true;"
          @connected.window="c.disconnected = false;"
          @reorder.window="c.sortMessages()"
-         @keyup.escape="c.current.replyTo=0"
+         @keyup.escape="c.current.cancelReply()"
          id="chatWrapper"
          class="flex relative flex-col text-1 h-full">
         <!-- Chat header -->
-        <div class="flex items-center justify-between sticky top-0 z-40 w-full px-3 max-h-12 h-12 border-b dark:border-gray-800"
+        <div class="flex items-center justify-between sticky top-0 z-40 w-full px-3 max-h-12 h-12 rounded-t-lg bg-white dark:bg-secondary border-b dark:border-gray-800"
              style="min-height: 3rem;"> <!-- since there is no min-h-12 class -->
             <div class="flex items-center">
                 {{if not .IsPopUp}}
@@ -223,8 +223,36 @@
                   x-on:sendmessage.window="c.current.send()"
                   @submit.prevent="c.onSubmit()">
                 <div class="w-full">
+                    <div :class="(c.users.isValid() || c.poll.showCreateUI || c.emojis.isValid() || c.current.showReplyMenu()) && 'border-t dark:border-gray-800 rounded-lg shadow-lg'">
+                        <!-- reply -->
+                        <template x-if="c.current.showReplyMenu() && !c.poll.showCreateUI">
+                            <div x-data="{replyMsg: c.findReplyMessage(c.current.reply)}"
+                                 x-init="$watch('c.current.reply', upd => replyMsg = c.findReplyMessage(upd))"
+                                 class="text-3 grid gap-2 px-3 pt-2 pb-4 text-sm dark:border-gray-800"
+                                 :class="{'border-b' : (c.users.isValid() || c.emojis.isValid())}">
+                                <div class="flex justify-between items-center">
+                                    <div class="font-semibold">
+                                        <i class="fa-solid fa-reply mr-2"></i>
+                                        <span x-text="`Replying to @${replyMsg.name}:`"></span>
+                                    </div>
+                                    <button type="button"
+                                            class="text-lg flex bg-transparent border-0 font-semibold rounded-full"
+                                            @click="c.current.cancelReply()">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                                <div class="flex">
+                                        <span x-show="replyMsg.admin"
+                                              class="h-fit fa-video text-xs text-white bg-red-400 p-1 rounded fas mr-1"></span>
+                                    <span class="text-2 font-semibold mr-2" x-text="`${replyMsg.name}:`"
+                                          :style="'color:'+replyMsg.color"></span>
+                                    <span class="" x-html="replyMsg.message"
+                                          x-init="$nextTick(() => renderMathInElement($el, global.getKatexOptions()))">
+                                        </span>
+                                </div>
+                            </div>
+                        </template>
 
-                    <div :class="(c.users.isValid() || c.poll.showCreateUI || c.emojis.isValid()) && 'border-t dark:border-gray-800'">
                         <!-- create poll dialog -->
                         <template x-if="c.poll.showCreateUI">
                             <div class="px-2 pb-2">
@@ -300,7 +328,7 @@
                         </template>
                         <div id="userList" x-show="c.users.isValid()"
                              tabindex="0"
-                             class="max-h-56 overflow-y-hidden w-full bg-white dark:bg-secondary py-1 px-2 space-y-1 outline-none">
+                             class="max-h-56 overflow-y-hidden w-full py-1 px-2 space-y-1 outline-none">
                             <template x-for="(user, i) in c.users.subset">
                                 <div @click="c.current.addAddressee(user); c.users.clear()"
                                      @mouseover="c.users.currIndex = i;"
