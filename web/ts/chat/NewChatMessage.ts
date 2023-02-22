@@ -1,10 +1,10 @@
 import { sendMessage } from "../watch";
 import { getCurrentWordPositions } from "./misc";
-import { ChatMessage } from "./Chat";
+import { Chat, ChatMessage } from "./Chat";
 
 export class NewChatMessage {
     message: string;
-    reply: Reply;
+    reply: NewReply;
     anonymous: boolean;
     addressedTo: ChatUser[];
 
@@ -20,23 +20,24 @@ export class NewChatMessage {
 
     clear(): void {
         this.message = "";
-        this.reply = undefined;
+        this.reply = NewReply.NoReply;
         this.addressedTo = [];
     }
 
     setReply(m: ChatMessage) {
-        this.reply = {
-            message: m,
-            id: m.ID,
-        };
+        this.reply = new NewReply(m);
     }
 
     cancelReply() {
-        this.reply = undefined;
+        this.reply = NewReply.NoReply;
     }
 
-    showReply(messageId: number): boolean {
-        return this.reply === undefined || this.reply.id !== messageId;
+    showReplyMenu() {
+        return !this.reply.isNoReply();
+    }
+
+    showReplyButton(messageId: number): boolean {
+        return this.reply.isNoReply() || this.reply.id !== messageId;
     }
 
     isEmpty(): boolean {
@@ -70,7 +71,18 @@ export type ChatUser = {
     name: string;
 };
 
-type Reply = {
+export class NewReply {
     message: ChatMessage;
     id: number;
-};
+
+    static NoReply = new NewReply({ ID: 0 } as ChatMessage);
+
+    constructor(message: ChatMessage) {
+        this.message = message;
+        this.id = message.ID;
+    }
+
+    isNoReply(): boolean {
+        return this.id === 0;
+    }
+}

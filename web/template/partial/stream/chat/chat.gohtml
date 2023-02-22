@@ -223,17 +223,17 @@
                   x-on:sendmessage.window="c.current.send()"
                   @submit.prevent="c.onSubmit()">
                 <div class="w-full">
-                    <div :class="(c.users.isValid() || c.poll.showCreateUI || c.emojis.isValid() || c.current.reply) && 'border-t dark:border-gray-800 rounded-lg shadow-lg'">
+                    <div :class="(c.users.isValid() || c.poll.showCreateUI || c.emojis.isValid() || c.current.showReplyMenu()) && 'border-t dark:border-gray-800 rounded-lg shadow-lg'">
                         <!-- reply -->
-                        <template x-if="c.current.reply && !c.poll.showCreateUI">
-                            <div x-data="{prepocessedMsg: c.findReplyMessage(c.current.reply.id)}"
-                                 x-init="$watch('c.current.reply', upd => prepocessedMsg = c.findReplyMessage(upd.id))"
+                        <template x-if="c.current.showReplyMenu() && !c.poll.showCreateUI">
+                            <div x-data="{replyMsg: c.findReplyMessage(c.current.reply)}"
+                                 x-init="$watch('c.current.reply', upd => replyMsg = c.findReplyMessage(upd))"
                                  class="text-3 grid gap-2 px-3 pt-2 pb-4 text-sm dark:border-gray-800"
-                                :class="{'border-b' : (c.users.isValid() || c.emojis.isValid())}">
+                                 :class="{'border-b' : (c.users.isValid() || c.emojis.isValid())}">
                                 <div class="flex justify-between items-center">
                                     <div class="font-semibold">
                                         <i class="fa-solid fa-reply mr-2"></i>
-                                        <span x-text="`Replying to @${prepocessedMsg.name}:`"></span>
+                                        <span x-text="`Replying to @${replyMsg.name}:`"></span>
                                     </div>
                                     <button type="button"
                                             class="text-lg flex bg-transparent border-0 font-semibold rounded-full"
@@ -242,13 +242,13 @@
                                     </button>
                                 </div>
                                 <div class="flex">
-                                    <span x-show="prepocessedMsg.admin"
-                                          class="h-fit fa-video text-xs text-white bg-red-400 p-1 rounded fas mr-1"></span>
-                                    <span class="text-2 font-semibold mr-2" x-text="`${prepocessedMsg.name}:`"
-                                          :style="'color:'+prepocessedMsg.color"></span>
-                                    <span class="" x-html="prepocessedMsg.message"
+                                        <span x-show="replyMsg.admin"
+                                              class="h-fit fa-video text-xs text-white bg-red-400 p-1 rounded fas mr-1"></span>
+                                    <span class="text-2 font-semibold mr-2" x-text="`${replyMsg.name}:`"
+                                          :style="'color:'+replyMsg.color"></span>
+                                    <span class="" x-html="replyMsg.message"
                                           x-init="$nextTick(() => renderMathInElement($el, global.getKatexOptions()))">
-                                    </span>
+                                        </span>
                                 </div>
                             </div>
                         </template>

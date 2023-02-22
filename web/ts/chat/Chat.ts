@@ -1,4 +1,4 @@
-import { NewChatMessage } from "./NewChatMessage";
+import { NewChatMessage, NewReply } from "./NewChatMessage";
 import { ChatUserList } from "./ChatUserList";
 import { EmojiList } from "./EmojiList";
 import { Poll } from "./Poll";
@@ -329,7 +329,7 @@ export class Chat {
         if (this.disconnected) {
             return "Reconnecting to chat...";
         }
-        if (this.current.reply === undefined) {
+        if (this.current.reply.id === 0) {
             return "Send a message";
         } else {
             return "Reply [escape to cancel]";
@@ -485,8 +485,8 @@ export class Chat {
         window.dispatchEvent(new CustomEvent("reorder"));
     }
 
-    findReplyMessage(id: number): ChatMessage {
-        return this.messages.find((m) => m.ID === id);
+    findReplyMessage(reply: NewReply): ChatMessage {
+        return reply.isNoReply() ? reply.message : this.messages.find((m) => m.ID === reply.id);
     }
 
     private addMessage(m: ChatMessage) {
