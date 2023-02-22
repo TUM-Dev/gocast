@@ -42,7 +42,7 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 		log.WithError(err).Error("Could not load Identity Provider metadata")
 	}
 
-	rootURL, err := url.Parse(tools.Cfg.Saml.RootURL)
+	rootURL, err := url.Parse(tools.Cfg.Saml.RootURLs[0])
 	if err != nil {
 		log.WithError(err).Fatal("Could not parse Root URL")
 	}
@@ -68,7 +68,18 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	// /saml/out is accessed to login with the IDP.
 	// It will redirect to http://login.idp.something/... which will redirect back to us on success.
 	r.GET("/saml/out", func(c *gin.Context) {
-		samlSP.HandleStartAuthFlow(c.Writer, c.Request)
+		copySP := *samlSP
+		usedACSUrl := samlSP.ServiceProvider.AcsURL
+		for _, l := range tools.Cfg.Saml.RootURLs {
+			if strings.Contains(l, strings.Split(c.Request.Host, ":")[0]) {
+				u, err := url.Parse(l)
+				if err == nil {
+					usedACSUrl = *u
+				}
+			}
+		}
+		copySP.ServiceProvider.AcsURL = usedACSUrl
+		copySP.HandleStartAuthFlow(c.Writer, c.Request)
 	})
 
 	// /saml/slo is accessed after the IDP logged out the user.
