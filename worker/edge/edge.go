@@ -13,6 +13,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path"
 	"path/filepath"
@@ -34,6 +35,8 @@ var (
 	//allowedRe = regexp.MustCompile("^.*$") // e.g. /vm123/live/strean/1234.ts
 )
 
+var port = ":8089"
+
 var originPort = "8085"
 var originProto = "http://"
 
@@ -52,12 +55,12 @@ var adminToken = ""
 
 func main() {
 	log.Println("Starting edge tumlive version " + VersionTag)
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = ":8089"
+	eport := os.Getenv("PORT")
+	if eport != "" {
+		port = eport
 	}
 	if !strings.HasPrefix(port, ":") {
-		port = ":" + originPort
+		port = ":" + port
 	}
 	originPEnv := os.Getenv("ORIGIN_PORT")
 	if originPEnv != "" {
@@ -111,9 +114,10 @@ type JWTPlaylistClaims struct {
 	jwt.RegisteredClaims
 	UserID   uint
 	Playlist string
+	Download bool
 }
 
-func validateToken(w http.ResponseWriter, r *http.Request) bool {
+func validateToken(w http.ResponseWriter, r *http.Request, download bool) bool {
 	token := r.URL.Query().Get("jwt")
 	if token == "" {
 		http.Error(w, "Missing JWT", http.StatusForbidden)
@@ -154,14 +158,25 @@ func validateToken(w http.ResponseWriter, r *http.Request) bool {
 		return false
 	}
 
+	if download && !parsedToken.Claims.(*JWTPlaylistClaims).Download {
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte("Forbidden, download not allowed."))
+		return false
+	}
+
 	return true
 }
 
 func vodHandler(w http.ResponseWriter, r *http.Request) {
+	d := r.URL.Query().Get("download")
+	if d != "" && d != "0" {
+		downloadHandler(w, r)
+		return
+	}
 	w.Header().Add("Access-Control-Allow-Origin", allowedOrigin)
 	if jwtPubKey != nil {
 		// validate token; every page access requires a valid jwt.
-		if !validateToken(w, r) {
+		if !validateToken(w, r, false) {
 			return
 		}
 
@@ -357,8 +372,13 @@ var jwtPubKey *rsa.PublicKey
 
 // prepare clears the cache and creates the cache directory
 func prepare() {
+	output, err := exec.Command("ffmpeg", "-version").CombinedOutput()
+	if err != nil {
+		panic(err)
+	}
+	log.Println("FFmpeg version: ", string(output))
 	// Empty cache on startup:
-	err := os.RemoveAll(cacheDir)
+	err = os.RemoveAll(cacheDir)
 	if err != nil {
 		log.Printf("Could not empty cache directory: %v", err)
 	}
