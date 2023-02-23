@@ -159,7 +159,6 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 func getSamlSpFromHost(samlSPs []*samlsp.Middleware, host string) *samlsp.Middleware {
 	for _, samlSP := range samlSPs {
 		if strings.Contains(samlSP.ServiceProvider.AcsURL.String(), strings.Split(host, ":")[0]) {
-			log.Info("Found saml sp for host ", host, " with acs url ", samlSP.ServiceProvider.AcsURL)
 			return samlSP
 		}
 	}
