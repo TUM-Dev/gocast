@@ -163,7 +163,7 @@ func getSamlSpFromHost(samlSPs []*samlsp.Middleware, host string) *samlsp.Middle
 			return samlSP
 		}
 	}
-	return nil
+	return samlSPs[0]
 }
 
 // extractSamlField gets the value of the given field from the SAML response or an empty string if the field is not present.
