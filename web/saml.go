@@ -5,6 +5,10 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"net/http"
+	"net/url"
+	"strings"
+
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
 	"github.com/gin-gonic/gin"
@@ -12,9 +16,6 @@ import (
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"net/url"
-	"strings"
 )
 
 func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -42,44 +43,37 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 		log.WithError(err).Error("Could not load Identity Provider metadata")
 	}
 
-	rootURL, err := url.Parse(tools.Cfg.Saml.RootURLs[0])
-	if err != nil {
-		log.WithError(err).Fatal("Could not parse Root URL")
+	var samlSPs []*samlsp.Middleware
+	for _, l := range tools.Cfg.Saml.RootURLs {
+		u, err := url.Parse(l)
+		if err != nil {
+			log.WithError(err).Error("Could not parse Root URL")
+			continue
+		}
+		samlSP, err := samlsp.New(samlsp.Options{
+			URL:               *u,
+			Key:               keyPair.PrivateKey.(*rsa.PrivateKey),
+			Certificate:       keyPair.Leaf,
+			IDPMetadata:       idpMetadata,
+			EntityID:          tools.Cfg.Saml.EntityID,
+			AllowIDPInitiated: true,
+		})
+		if err != nil {
+			log.WithError(err).Fatal("Could not create SAML Service Provider")
+		}
+		samlSP.ServiceProvider.AcsURL = *u
+		samlSPs = append(samlSPs, samlSP)
 	}
-
-	samlSP, err := samlsp.New(samlsp.Options{
-		URL:               *rootURL,
-		Key:               keyPair.PrivateKey.(*rsa.PrivateKey),
-		Certificate:       keyPair.Leaf,
-		IDPMetadata:       idpMetadata,
-		EntityID:          tools.Cfg.Saml.EntityID,
-		AllowIDPInitiated: true,
-	})
-	if err != nil {
-		log.WithError(err).Fatal("Could not create SAML Service Provider")
-	}
-	samlSP.ServiceProvider.AcsURL = *rootURL
 
 	// serve metadata. This can be fetched periodically by the IDP.
 	r.GET("/saml/metadata", func(c *gin.Context) {
-		samlSP.ServeMetadata(c.Writer, c.Request)
+		getSamlSpFromHost(samlSPs, c.Request.Host).ServeMetadata(c.Writer, c.Request)
 	})
 
 	// /saml/out is accessed to login with the IDP.
 	// It will redirect to http://login.idp.something/... which will redirect back to us on success.
 	r.GET("/saml/out", func(c *gin.Context) {
-		copySP := *samlSP
-		usedACSUrl := samlSP.ServiceProvider.AcsURL
-		for _, l := range tools.Cfg.Saml.RootURLs {
-			if strings.Contains(l, strings.Split(c.Request.Host, ":")[0]) {
-				u, err := url.Parse(l)
-				if err == nil {
-					usedACSUrl = *u
-				}
-			}
-		}
-		copySP.ServiceProvider.AcsURL = usedACSUrl
-		copySP.HandleStartAuthFlow(c.Writer, c.Request)
+		getSamlSpFromHost(samlSPs, c.Request.Host).HandleStartAuthFlow(c.Writer, c.Request)
 	})
 
 	// /saml/slo is accessed after the IDP logged out the user.
@@ -89,7 +83,7 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		err = samlSP.ServiceProvider.ValidateLogoutResponseForm(c.Request.PostFormValue("SAMLResponse"))
+		err = getSamlSpFromHost(samlSPs, c.Request.Host).ServiceProvider.ValidateLogoutResponseForm(c.Request.PostFormValue("SAMLResponse"))
 		if err != nil {
 			c.JSON(http.StatusForbidden, gin.H{"code": "403- Forbidden", "error": "Invalid logout data: " + err.Error()})
 			return
@@ -103,7 +97,7 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	r.GET("/saml/logout", func(c *gin.Context) {
 		foundContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 		if foundContext.SamlSubjectID != nil {
-			request, err := samlSP.ServiceProvider.MakeRedirectLogoutRequest(*foundContext.SamlSubjectID, "")
+			request, err := getSamlSpFromHost(samlSPs, c.Request.Host).ServiceProvider.MakeRedirectLogoutRequest(*foundContext.SamlSubjectID, "")
 			if err != nil {
 				return
 			}
@@ -118,7 +112,7 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"code": "400 - Bad Request", "error": err.Error()})
 		}
-		response, err := samlSP.ServiceProvider.ParseResponse(c.Request, []string{""})
+		response, err := getSamlSpFromHost(samlSPs, c.Request.Host).ServiceProvider.ParseResponse(c.Request, []string{""})
 		if err != nil {
 			c.JSON(http.StatusForbidden, gin.H{"code": "403- Forbidden", "error": err.Error()})
 			return
@@ -160,6 +154,16 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 		}
 		HandleValidLogin(c, &tools.SessionData{Userid: user.ID, SamlSubjectID: &subjectID})
 	})
+}
+
+func getSamlSpFromHost(samlSPs []*samlsp.Middleware, host string) *samlsp.Middleware {
+	for _, samlSP := range samlSPs {
+		if strings.Contains(samlSP.ServiceProvider.AcsURL.String(), strings.Split(host, ":")[0]) {
+			log.Info("Found saml sp for host ", host, " with acs url ", samlSP.ServiceProvider.AcsURL)
+			return samlSP
+		}
+	}
+	return nil
 }
 
 // extractSamlField gets the value of the given field from the SAML response or an empty string if the field is not present.
