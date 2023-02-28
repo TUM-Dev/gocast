@@ -98,6 +98,12 @@ func ServeEdge(port string) {
 			time.Sleep(time.Minute * 5)
 		}
 	}()
+	go func() {
+		for {
+			time.Sleep(time.Second * 2)
+			concurrentUsers.Set(float64(usersMap.Len()))
+		}
+	}()
 
 	mux := http.NewServeMux()
 	vodFileServer = http.FileServer(http.Dir(vodPath))
@@ -171,13 +177,16 @@ func validateToken(w http.ResponseWriter, r *http.Request) (claims *JWTPlaylistC
 
 func vodHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Origin", allowedOrigin)
+	var uid string
 	if jwtPubKey != nil {
 		// validate token; every page access requires a valid jwt.
 		claims, ok := validateToken(w, r)
 		if !ok {
 			return
 		}
-
+		if claims.UserID != 0 {
+			uid = fmt.Sprintf("%d", claims.UserID)
+		}
 		// add the jwt to all .ts files in the playlist for subsequent verification
 		if strings.HasSuffix(r.URL.Path, ".m3u8") {
 			playlistsRequested.WithLabelValues(claims.StreamID, claims.CourseID).Inc()
@@ -214,6 +223,10 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 			chunksRequested.WithLabelValues(claims.StreamID, claims.CourseID).Inc()
 		}
 	}
+	if uid == "" {
+		uid = r.RemoteAddr
+	}
+	usersMap.Put(uid, true)
 	http.StripPrefix("/vod", vodFileServer).ServeHTTP(w, r)
 }
 
