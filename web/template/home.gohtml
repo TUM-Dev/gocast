@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>{{.Branding.Title}}</title>
+    {{template "headImports" .VersionTag}}
+    <script src="/static/assets/ts-dist/home.bundle.js?v={{if .}}{{.}}{{else}}development{{end}}"></script>
+    <meta name="description" content="{{.Branding.Description}}"/>
+</head>
+{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
+{{$user := .TUMLiveContext.User}}
+<body x-data="home.pageData()">
+<header class="flex z-50 sticky w-full items-center justify-between bg-white dark:bg-secondary border-b dark:border-gray-800 px-4 h-16">
+    <a id="logo" title="Start" href="/">
+        <img src="/logo.svg" width="64" alt="TUM-Live Logo">
+    </a>
+    <div id="user-context" class="ms-auto">
+        {{if not $user}}
+            <a href="/login" class="rounded-full px-3 py-1 font-xs text-white bg-blue-500 dark:bg-indigo-600">Login</a>
+        {{else}}
+            <div>
+                <button type="button" @click="toggleUserContext()"
+                        class="flex items-center justify-center bg-blue-500 dark:bg-indigo-600 rounded-full h-8 w-8">
+                    <span class="text-white font-semibold uppercase">{{printf "%.1s" $user.GetPreferredName}}</span>
+                </button>
+                <div class="relative">
+                    <div x-cloak x-show="showUserContext"
+                         class="absolute top-full right-[50%] mt-2 shadow rounded-lg h-fit bg-white border w-56
+                         dark:bg-secondary dark:border-gray-800 overflow-hidden py-4">
+                        <nav class="d-grid gap-3 font-light text-sm">
+                            {{if or (eq $user.Role 1) (eq $user.Role 2) }}
+                                <a href="/admin" class="flex items-center p-2">
+                                    <i class="fa-solid fa-hammer mr-4"></i>
+                                    <p>Admin</p>
+                                </a>
+                                <div class="border-b dark:border-gray-800"></div>
+                            {{end}}
+                            <div class="border-b dark:border-gray-800"></div>
+                            <a href="/settings" class="flex items-center p-2">
+                                <i class="fa-solid fa-gear mr-4"></i>
+                                <p>Settings</p>
+                            </a>
+                            <div class="border-b dark:border-gray-800"></div>
+                            <a href="/logout" class="flex items-center p-2">
+                                <i class="fa-solid fa-sign-out mr-4"></i>
+                                <p>Logout</p>
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        {{end}}
+    </div>
+</header>
+</body>
+</html>
+
+{{define "user"}}
+{{end}}
