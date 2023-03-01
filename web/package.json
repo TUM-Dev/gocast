@@ -25,7 +25,7 @@
     "@alpinejs/persist": "^3.11.1",
     "@fortawesome/fontawesome-free": "^6.2.1",
     "@fullcalendar/core": "^6.1.1",
-    "@fullcalendar/daygrid": "^6.1.1",
+    "@fullcalendar/daygrid": "^6.1.4",
     "@fullcalendar/icalendar": "^6.1.1",
     "@fullcalendar/list": "^6.1.1",
     "@fullcalendar/timegrid": "^6.1.1",
