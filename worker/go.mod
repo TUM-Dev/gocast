@@ -4,7 +4,7 @@ go 1.19
 
 // Direct dependencies
 require (
-	github.com/getsentry/sentry-go v0.17.0
+	github.com/getsentry/sentry-go v0.18.0
 	github.com/golang/protobuf v1.5.2
 	github.com/icza/gox v0.0.0-20230117093757-93f961aa2755
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
@@ -31,7 +31,6 @@ require (
 	github.com/aws/aws-sdk-go v1.44.193 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	github.com/kr/pretty v0.3.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20230110061619-bbe2e5e100de // indirect
 	github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b // indirect
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
@@ -45,7 +44,6 @@ require (
 	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20230202175211-008b39050e57 // indirect
-	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )
 
 require (
