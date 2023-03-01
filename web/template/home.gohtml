@@ -14,8 +14,7 @@
     <a id="logo" title="Start" href="/">
         <img src="/logo.svg" width="64" alt="TUM-Live Logo">
     </a>
-    <div id="user-context" class="flex items-center space-x-2 ms-auto">
-        {{template "theme-selector"}}
+    <div id="user-context" class="flex items-center space-x-3 ms-auto">
         {{template "notifications"}}
         {{if not $user}}
             <a href="/login" class="rounded-full px-3 py-1 font-xs text-white bg-blue-500 dark:bg-indigo-600">Login</a>
@@ -28,25 +27,47 @@
                 <div class="relative">
                     <div x-cloak x-show="showUserContext"
                          class="absolute top-full right-[50%] mt-2 shadow rounded-lg h-fit bg-white border
-                         dark:bg-secondary dark:border-gray-800 overflow-hidden text-sm">
+                         dark:bg-secondary dark:border-gray-800 overflow-hidden text-sm w-56">
                         <div class = "p-2 border-b dark:border-gray-800">
                             <p class ="font-semibold">Signed in as</p>
                             <span>@{{$user.Name}}</span>
                         </div>
                         <nav class="d-grid gap-3 font-light">
                             {{if or (eq $user.Role 1) (eq $user.Role 2) }}
-                                <a href="/admin" class="flex items-center p-2">
+                                <a href="/admin" class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2">
                                     <i class="fa-solid fa-hammer mr-4"></i>
                                     <p>Admin</p>
                                 </a>
                                 <div class="border-b dark:border-gray-800"></div>
                             {{end}}
-                            <a href="/settings" class="flex items-center p-2">
+                            <div>
+                                <button type="button" class="flex items-center p-2 w-full hover:bg-gray-100 dark:hover:bg-gray-800 my-2"
+                                    @click="toggleThemePicker()">
+                                    <i class="fa-regular fa-moon mr-4"></i>
+                                    <span>Theme</span>
+                                    <i class = "fa-solid ml-auto" :class="showThemePicker ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                </button>
+                                {{template "theme-picker"}}
+                            </div>
+                            <a href="/settings" class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2">
                                 <i class="fa-solid fa-gear mr-4"></i>
                                 <p>Settings</p>
                             </a>
                             <div class="border-b dark:border-gray-800"></div>
-                            <a href="/logout" class="flex items-center p-2">
+                            <a href="https://github.com/joschahenningsen/TUM-Live"
+                               target="_blank"
+                               class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2">
+                                <i class="fa-regular fa-comment mr-4"></i>
+                                <p>Send Feedback</p>
+                            </a>
+                            <a href="https://github.com/joschahenningsen/TUM-Live/issues/new?assignees=&labels=&template=bug_report.md&title="
+                               class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2"
+                               target="_blank">
+                                <i class="fa-brands fa-github mr-4"></i>
+                                <p>Report problem</p>
+                            </a>
+                            <div class="border-b dark:border-gray-800"></div>
+                            <a href="/logout" class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2">
                                 <i class="fa-solid fa-sign-out mr-4"></i>
                                 <p>Logout</p>
                             </a>
@@ -64,7 +85,6 @@
 {{end}}
 
 {{define "notifications"}}
-    {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.User*/ -}}
     <div class="relative" x-init="notifications.fetchNotifications();"
          @keyup.escape="toggleNotifications();">
         <button title="Show Notifications" class="transition-colors duration-200 hover:text-gray-600 dark:hover:text-white text-gray-400 relative w-4"
@@ -73,7 +93,7 @@
                   class="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full absolute -top-1 -right-1 h-3 w-3 border-2 border-white dark:border-secondary"> </span>
             <i class="fa-solid fa-bell"></i>
         </button>
-        <div x-cloak x-show="showNotifications" @click.outside="toggleNotifications();"
+        <div x-cloak x-show="showNotifications"
              class="origin-top-right absolute right-0 mt-4 shadow-sm rounded-lg h-fit bg-white border w-96
                         dark:bg-secondary dark:border-gray-800 shadow">
             <div class="my-auto w-full min-h-30 max-h-60 overflow-y-scroll">
@@ -88,5 +108,18 @@
                 </template>
             </div>
         </div>
+    </div>
+{{end}}
+
+{{define "theme-picker"}}
+    <div x-cloak x-show="showThemePicker" class = "grid gap-1">
+        <template x-for="[modeId, mode] of Object.entries($store.theme.modes)" :key="modeId">
+            <button type="button" tabindex="0"
+                    class="text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-2 px-4"
+                    :class="{'bg-gray-100 dark:bg-gray-800': modeId === $store.theme.activeMode}"
+                    @click="$store.theme.setMode(modeId)"
+                    x-text="mode.name">
+            </button>
+        </template>
     </div>
 {{end}}

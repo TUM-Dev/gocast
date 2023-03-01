@@ -11,6 +11,11 @@ export function pageData(): Home {
             this.showNotifications = !this.showNotifications;
             this.notifications.writeToStorage(true);
         },
+
+        showThemePicker: false,
+        toggleThemePicker() {
+            this.showThemePicker = !this.showThemePicker;
+        },
     };
 }
 
@@ -21,6 +26,9 @@ interface Home {
     notifications: Notifications;
     showNotifications: boolean;
     toggleNotifications();
+
+    showThemePicker: boolean;
+    toggleThemePicker();
 }
 
 class Notifications {
