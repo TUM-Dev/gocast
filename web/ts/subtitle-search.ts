@@ -1,9 +1,9 @@
-export function subtitleSearch(streamID: number){
+export function subtitleSearch(streamID: number) {
     return {
-        hits:[],
+        hits: [],
         open: false,
         lastEventTimestamp: 0,
-        search: function(query: string) {
+        search: function (query: string) {
             if (query.length > 2) {
                 fetch(`/api/search/subtitles/${streamID}?q=${query}`).then((res) => {
                     if (res.ok) {
@@ -18,17 +18,17 @@ export function subtitleSearch(streamID: number){
                 this.open = false;
             }
         },
-        openRes: function() {
-            if(this.lastEventTimestamp + 1000 < Date.now()) {
+        openRes: function () {
+            if (this.lastEventTimestamp + 1000 < Date.now()) {
                 this.lastEventTimestamp = Date.now();
                 this.open = true;
             }
         },
-        closeRes: function() {
-            if(this.lastEventTimestamp + 1000 < Date.now()) {
+        closeRes: function () {
+            if (this.lastEventTimestamp + 1000 < Date.now()) {
                 this.lastEventTimestamp = Date.now();
                 this.open = false;
             }
-        }
-    }
+        },
+    };
 }

@@ -584,11 +584,10 @@ export function jumpTo(hours: number, minutes: number, seconds: number) {
     }
 }
 
-
 export function jumpToMs(ms: number) {
     for (let j = 0; j < players.length; j++) {
         players[j].ready(() => {
-            players[j].currentTime(ms/1000);
+            players[j].currentTime(ms / 1000);
         });
     }
 }
