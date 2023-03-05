@@ -584,6 +584,15 @@ export function jumpTo(hours: number, minutes: number, seconds: number) {
     }
 }
 
+
+export function jumpToMs(ms: number) {
+    for (let j = 0; j < players.length; j++) {
+        players[j].ready(() => {
+            players[j].currentTime(ms/1000);
+        });
+    }
+}
+
 type SeekLoggerLogFunction = (position: number) => void;
 const SEEK_LOGGER_DEBOUNCE_TIMEOUT = 4000;
 

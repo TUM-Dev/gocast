@@ -13,6 +13,9 @@ import (
 func configGinSearchRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := searchRoutes{daoWrapper}
 	router.GET("/api/search/streams", routes.searchStreams)
+	g := router.Group("/api/search/subtitles")
+	g.Use(tools.InitStream(daoWrapper))
+	g.GET("/:streamID", routes.searchSubtitles)
 }
 
 type searchRoutes struct {
@@ -64,4 +67,10 @@ func (r searchRoutes) searchStreams(c *gin.Context) {
 		"duration": endTime.Sub(startTime).Milliseconds(),
 		"results":  response,
 	})
+}
+
+func (r searchRoutes) searchSubtitles(c *gin.Context) {
+	s := c.MustGet("TUMLiveContext").(tools.TUMLiveContext).Stream
+	q := c.Query("q")
+	c.JSON(http.StatusOK, tools.SearchSubtitles(q, s.ID))
 }
