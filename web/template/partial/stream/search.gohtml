@@ -1,0 +1,32 @@
+{{define "search"}}
+    <div class="grow px-6 text-right hidden md:block"
+         x-data="{showSearch: false, searcher:undefined}"
+         x-show="showSearch"
+         @keyup.escape.window="searcher.closeRes(); $refs.searchInput.blur();"
+         @togglesearch.window="e => {showSearch=true; searcher=watch.subtitleSearch(e.detail.streamID)}" x-cloak>
+        <template x-if="searcher!=undefined">
+            <input type="search" x-ref="searchInput"
+                   @input="searcher.search($event.target.value)"
+                   @focus="searcher.hits.length > 0 && searcher.openRes()"
+                   class="max-w-xl p-2 bg-transparent rounded-lg border-gray-600 border w-full px-2 font-light text-2"
+                   placeholder="Search in lecture">
+        </template>
+        <template x-if="searcher!=undefined">
+            <div x-show="searcher.open" @click.outside="searcher.closeRes()" class="absolute top-24 right-5 z-50 px-4 overflow-x-hidden h-96 bg-gray-100 shadow dark:bg-gray-900/50 rounded-lg text-left text-gray-800 dark:text-gray-200">
+                <div class="w-2xl p-3 overflow-y-auto">
+                    <template x-for="res in searcher.hits">
+                        <div @click="watch.jumpToMs(res.timestamp);" class="dark:hover:bg-gray-700 hover:outline dark:bg-gray-800 bg-white rounded p-2 my-2 flex" role="button">
+                                    <span class="my-auto p-2 font-semibold"
+                                          x-text="global.Time.FromSeconds(res.timestamp/1000).toString()"></span>
+                            <div class="p-2">
+                                <span class="block text-xs" x-text="res.textPrev"></span>
+                                <span class="block text-sm font-bold" x-text="res.text"></span>
+                                <span class="block text-xs" x-text="res.textNext"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
+    </div>
+{{end}}

@@ -224,7 +224,7 @@ func (d streamsDao) ExecAllStreamsWithCoursesAndSubtitles(f func([]StreamWithCou
 	var numStreams int64
 	DB.Where("recording").Model(&model.Stream{}).Count(&numStreams)
 	for batchSize*batchNum < int(numStreams) {
-		err := DB.Debug().Raw(`WITH sws AS (
+		err := DB.Raw(`WITH sws AS (
 				SELECT streams.id,
                     streams.name,
                     streams.description,

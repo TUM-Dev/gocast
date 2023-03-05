@@ -211,7 +211,6 @@ func main() {
 
 func initCron() {
 	daoWrapper := dao.NewDaoWrapper()
-	// tools.NewMeiliExporter(daoWrapper).Export()
 	tools.InitCronService()
 	//Fetch students every 12 hours
 	_ = tools.Cron.AddFunc("fetchCourses", tum.FetchCourses(daoWrapper), "0 */12 * * *")
@@ -223,6 +222,7 @@ func initCron() {
 	_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyWorkers(daoWrapper), "0-59 * * * *")
 	// update courses available
 	_ = tools.Cron.AddFunc("prefetchCourses", tum.PrefetchCourses(daoWrapper), "30 3 * * *")
+	// export data to meili search
 	_ = tools.Cron.AddFunc("exportToMeili", tools.NewMeiliExporter(daoWrapper).Export, "30 4 * * *")
 	tools.Cron.Run()
 }
