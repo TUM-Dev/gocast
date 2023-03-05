@@ -88,9 +88,8 @@ export const initPlayer = function (
             player.playbackRate(1);
         }
     });
-
-    loadAndSetTrackbars(player, streamID);
     player.ready(function () {
+        loadAndSetTrackbars(player, streamID);
         player.airPlay({
             addButtonToControlBar: true,
             buttonPositionIndex: -2,

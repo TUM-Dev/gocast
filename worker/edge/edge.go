@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"io"
 	"log"
 	"mime"
@@ -83,6 +84,10 @@ func main() {
 		mainInstance = mainInstanceEnv
 	}
 	adminToken = os.Getenv("ADMIN_TOKEN")
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		http.ListenAndServe(":2112", nil)
+	}()
 	ServeEdge(port)
 }
 
@@ -94,6 +99,12 @@ func ServeEdge(port string) {
 		for {
 			cleanup()
 			time.Sleep(time.Minute * 5)
+		}
+	}()
+	go func() {
+		for {
+			time.Sleep(time.Second * 2)
+			concurrentUsers.Set(float64(usersMap.Len()))
 		}
 	}()
 
@@ -115,17 +126,24 @@ type JWTPlaylistClaims struct {
 	UserID   uint
 	Playlist string
 	Download bool
+	StreamID string
+	CourseID string
 }
 
-func validateToken(w http.ResponseWriter, r *http.Request, download bool) bool {
+func validateToken(w http.ResponseWriter, r *http.Request, download bool) (claims *JWTPlaylistClaims, ok bool) {
 	token := r.URL.Query().Get("jwt")
 	if token == "" {
 		http.Error(w, "Missing JWT", http.StatusForbidden)
-		return false
+		return nil, false
 	}
 
 	if token == adminToken {
-		return true
+		return &JWTPlaylistClaims{
+			RegisteredClaims: jwt.RegisteredClaims{},
+			UserID:           0,
+			Playlist:         "adminplayback",
+			StreamID:         "-1",
+		}, true
 	}
 
 	parsedToken, err := jwt.ParseWithClaims(token, &JWTPlaylistClaims{}, func(token *jwt.Token) (interface{}, error) {
@@ -139,7 +157,7 @@ func validateToken(w http.ResponseWriter, r *http.Request, download bool) bool {
 		} else {
 			_, _ = w.Write([]byte("Forbidden"))
 		}
-		return false
+		return nil, false
 	}
 
 	// verify that the claimed path in the token matches the request path:
@@ -147,7 +165,7 @@ func validateToken(w http.ResponseWriter, r *http.Request, download bool) bool {
 	if err != nil || (allowedPlaylist.Scheme != "https" && allowedPlaylist.Scheme != "http") {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte("Bad Request. Parsing URL in jtw failed."))
-		return false
+		return nil, false
 	}
 
 	urlParts := strings.Split(allowedPlaylist.Path, "/")
@@ -155,16 +173,16 @@ func validateToken(w http.ResponseWriter, r *http.Request, download bool) bool {
 	if !strings.HasPrefix(r.URL.Path, allowedPath+"/") {
 		w.WriteHeader(http.StatusForbidden)
 		_, _ = w.Write([]byte("Forbidden. URL doesn't match claim in jwt. " + allowedPath + " vs " + r.URL.Path))
-		return false
+		return nil, false
 	}
 
 	if download && !parsedToken.Claims.(*JWTPlaylistClaims).Download {
 		w.WriteHeader(http.StatusForbidden)
 		_, _ = w.Write([]byte("Forbidden, download not allowed."))
-		return false
+		return claims, false
 	}
 
-	return true
+	return parsedToken.Claims.(*JWTPlaylistClaims), true
 }
 
 func vodHandler(w http.ResponseWriter, r *http.Request) {
@@ -174,14 +192,19 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Add("Access-Control-Allow-Origin", allowedOrigin)
+	var uid string
 	if jwtPubKey != nil {
 		// validate token; every page access requires a valid jwt.
-		if !validateToken(w, r, false) {
+		claims, ok := validateToken(w, r, false)
+		if !ok {
 			return
 		}
-
+		if claims.UserID != 0 {
+			uid = fmt.Sprintf("%d", claims.UserID)
+		}
 		// add the jwt to all .ts files in the playlist for subsequent verification
 		if strings.HasSuffix(r.URL.Path, ".m3u8") {
+			playlistsRequested.WithLabelValues(claims.StreamID, claims.CourseID).Inc()
 			// map request path to path under `vod_path`
 			upath := r.URL.Path
 			if !strings.HasPrefix(upath, "/") {
@@ -211,8 +234,14 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 			resp := strings.Join(lines, "\n")
 			_, _ = w.Write([]byte(resp))
 			return
+		} else if strings.HasSuffix(r.URL.Path, ".ts") {
+			chunksRequested.WithLabelValues(claims.StreamID, claims.CourseID).Inc()
 		}
 	}
+	if uid == "" {
+		uid = r.RemoteAddr
+	}
+	usersMap.Put(uid, true)
 	http.StripPrefix("/vod", vodFileServer).ServeHTTP(w, r)
 }
 

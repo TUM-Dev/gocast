@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"strings"
@@ -12,6 +13,8 @@ type JWTPlaylistClaims struct {
 	UserID   uint
 	Playlist string
 	Download bool
+	StreamID string
+	CourseID string
 }
 
 // SetSignedPlaylists adds a signed jwt to all available playlist urls that indicates that the
@@ -48,6 +51,8 @@ func SetSignedPlaylists(s *model.Stream, user *model.User, allowDownloading bool
 			UserID:   userid,
 			Playlist: playlist.Playlist,
 			Download: allowDownloading,
+			StreamID: fmt.Sprintf("%d", s.ID),
+			CourseID: fmt.Sprintf("%d", s.CourseID),
 		}
 		str, err := t.SignedString(Cfg.GetJWTKey())
 		if err != nil {
