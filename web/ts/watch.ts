@@ -251,7 +251,7 @@ export const videoStatListener = {
     },
     update() {
         const player = getPlayers()[0];
-        const vhs = player.tech({ IWillNotUseThisInPlugins: true }).vhs;
+        const vhs = player.tech({ IWillNotUseThisInPlugins: true })["vhs"];
         const notAvailable = vhs == null;
 
         const data = {

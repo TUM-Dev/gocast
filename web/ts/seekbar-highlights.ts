@@ -42,7 +42,8 @@ class SeekbarHighlights {
 
     async update() {
         await this.updateSections();
-        this.triggerEvent();
+        this.triggerUpdateEvent();
+        this.triggerActiveSectionEvent();
     }
 
     async updateSections() {
@@ -74,14 +75,21 @@ class SeekbarHighlights {
         }
     }
 
-    triggerEvent() {
-        console.log(this, this.player);
+    triggerUpdateEvent() {
         const event = new CustomEvent("seekbarhighlightsupdate", {
             detail: {
                 sections: this.sections,
                 marker: this.marker,
             },
         });
+        window.dispatchEvent(event);
+    }
+
+    triggerActiveSectionEvent() {
+        const event = new CustomEvent("seekbarhighlightsactivesection", {
+            detail: this.sections[this.sections.length / 2]
+        });
+        console.log("test", event.detail);
         window.dispatchEvent(event);
     }
 
