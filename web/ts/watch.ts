@@ -4,6 +4,7 @@ import { getPlayers } from "./TUMLiveVjs";
 import { Get, postData } from "./global";
 import { Realtime } from "./socket";
 import { copyToClipboard, Time } from "./global";
+import {seekbarOverlay} from "./seekbar-overlay";
 
 let currentChatChannel = "";
 const retryInt = 5000; //retry connecting to websocket after this timeout
@@ -25,6 +26,7 @@ enum WSMessageType {
 
 export { repeatHeatMap } from "./repeat-heatmap";
 export { seekbarHighlights } from "./seekbar-highlights";
+export { seekbarOverlay } from "./seekbar-overlay";
 
 function sendIDMessage(id: number, type: WSMessageType) {
     return Realtime.get().send(currentChatChannel, {
