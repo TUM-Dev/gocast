@@ -230,8 +230,9 @@
             {{end}}
 
             <div
-                    x-data="{ size: { x: '0px', width: '0px' } }"
+                    x-data="{ size: { x: '0px', width: '0px' }, hoverPos: null }"
                     x-on:updateseekbarsize.window="e => { size = e.detail; }"
+                    x-on:seekbarhover.window="e => { hoverPos = e.detail; }"
                     x-init="watch.seekbarOverlay.init('{{$stream.ID}}');"
                     class="seekbar-overlay absolute bottom-[18px] bg-gradient-to-t from-gray-800/[.6] pt-4 pointer-events-none"
                     :style="{width: size.width, left: size.x}"
@@ -261,10 +262,9 @@
                 </div>
 
                 <div
-                        x-data="{ seekbarMarker: [], seekbarSections: [], activeSection: null }"
+                        x-data="{ seekbarMarker: [], seekbarSections: [] }"
                         class="absolute h-[30px] bottom-0 left-0 right-0"
                         x-on:seekbarhighlightsupdate.window="e => { seekbarMarker = e.detail.marker; seekbarSections = e.detail.sections; }"
-                        x-on:seekbarhighlightsactivesection.window="e => { activeSection = e.detail; }"
                         x-init="watch.seekbarHighlights.init('{{$stream.ID}}');"
                 >
                     <template x-for="marker in seekbarMarker">
@@ -274,7 +274,7 @@
                     <template x-for="section in seekbarSections">
                         <div
                             class="absolute bg-white/10 shadow-[0px_0px_10px_2px_rgb(0,252,252)] bottom-0 top-0 rounded-t"
-                            :style="{ left: `${section.from * 100}%`, right: `${(1 - section.to) * 100}%`, opacity: (activeSection === section) ? 1 : 0 }"
+                            :style="{ left: `${section.from * 100}%`, right: `${(1 - section.to) * 100}%`, opacity: (section.from >= hoverPos && section.to < hoverPos) ? 1 : 0 }"
                         ></div>
                     </template>
                 </div>

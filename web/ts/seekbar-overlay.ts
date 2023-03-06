@@ -1,5 +1,6 @@
 import { getPlayers } from "./TUMLiveVjs";
 import { Get } from "./global";
+import {MarkerType} from "./seekbar-highlights";
 
 export const seekbarOverlay = {
     streamID: null,
@@ -11,8 +12,26 @@ export const seekbarOverlay = {
             this.seekBarWrap = player.el().querySelector(".vjs-progress-control");
             this.injectElementIntoVjs();
             this.updateSize();
+            this.listenForHoverEvents();
             new ResizeObserver(this.updateSize.bind(this)).observe(this.seekBarWrap);
         });
+    },
+
+    listenForHoverEvents() {
+        this.seekBarWrap.addEventListener("mousemove", (e: MouseEvent) => {
+            if (e.target !== this.seekBarWrap) return;
+            this.triggerHoverEvent(e.offsetX / this.seekBarWrap.getBoundingClientRect().width);
+        });
+        this.seekBarWrap.addEventListener("mouseleave", (e: MouseEvent) => {
+            this.triggerHoverEvent(null);
+        });
+    },
+
+    triggerHoverEvent(pos?: number) {
+        const event = new CustomEvent("seekbarhover", {
+            detail: pos,
+        });
+        window.dispatchEvent(event);
     },
 
     injectElementIntoVjs() {
