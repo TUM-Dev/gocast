@@ -23,11 +23,12 @@ export const seekbarOverlay = {
             this.triggerHoverEvent(e.offsetX / this.seekBarWrap.getBoundingClientRect().width);
         });
         this.seekBarWrap.addEventListener("mouseleave", (e: MouseEvent) => {
-            this.triggerHoverEvent(null);
+            if (e.target !== this.seekBarWrap) return;
+            this.triggerHoverEvent(-1);
         });
     },
 
-    triggerHoverEvent(pos?: number) {
+    triggerHoverEvent(pos: number) {
         const event = new CustomEvent("seekbarhover", {
             detail: pos,
         });

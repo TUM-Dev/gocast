@@ -230,9 +230,9 @@
             {{end}}
 
             <div
-                    x-data="{ size: { x: '0px', width: '0px' }, hoverPos: null }"
+                    x-data="{ size: { x: '0px', width: '0px' }, hoverPos: -1 }"
                     x-on:updateseekbarsize.window="e => { size = e.detail; }"
-                    x-on:seekbarhover.window="e => { hoverPos = e.detail; }"
+                    x-on:seekbarhover.window.throttle.150ms="e => { hoverPos = e.detail; }"
                     x-init="watch.seekbarOverlay.init('{{$stream.ID}}');"
                     class="seekbar-overlay absolute bottom-[18px] bg-gradient-to-t from-gray-800/[.6] pt-4 pointer-events-none"
                     :style="{width: size.width, left: size.x}"
@@ -274,7 +274,7 @@
                     <template x-for="section in seekbarSections">
                         <div
                             class="absolute bg-white/10 shadow-[0px_0px_10px_2px_rgb(0,252,252)] bottom-0 top-0 rounded-t"
-                            :style="{ left: `${section.from * 100}%`, right: `${(1 - section.to) * 100}%`, opacity: (section.from >= hoverPos && section.to < hoverPos) ? 1 : 0 }"
+                            :style="{ left: `${section.from * 100}%`, right: `${(1 - section.to) * 100}%`, opacity: (section.from <= hoverPos && section.to > hoverPos) ? 1 : 0 }"
                         ></div>
                     </template>
                 </div>
