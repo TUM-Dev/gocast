@@ -9,47 +9,55 @@
 </head>
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
 {{$user := .TUMLiveContext.User}}
-<body x-data="home.pageData()">
-<header class="text-3 flex z-50 sticky w-full items-center justify-between bg-white dark:bg-secondary border-b dark:border-gray-800 px-4 h-16">
-    <a id="logo" title="Start" href="/">
-        <img src="/logo.svg" width="64" alt="TUM-Live Logo">
+{{$currentYear := .CurrentYear}}
+{{$currentTerm := .CurrentTerm}}
+<body class="h-screen flex flex-col items-stretch bg-white dark:bg-secondary">
+<header x-data="home.header()" class="text-3 flex z-50 sticky w-full items-center justify-between px-6 h-16">
+    <a id="logo" title="Start" href="/" class="mr-4">
+        <img src="/logo.svg" width="42" alt="TUM-Live Logo">
     </a>
+    {{template "search"}}
     <div id="user-context" class="flex items-center space-x-3 ms-auto">
         {{template "notifications"}}
         {{if not $user}}
             <a href="/login" class="rounded-full px-3 py-1 font-xs text-white bg-blue-500 dark:bg-indigo-600">Login</a>
         {{else}}
             <div>
-                <button type="button" @click="toggleUserContext()"
+                <button type="button" @click="toggleUserContext(true)"
                         class="flex items-center justify-center bg-blue-500 dark:bg-indigo-600 rounded-full h-[32px] w-[32px]">
                     <span class="text-white font-semibold uppercase">{{printf "%.1s" $user.GetPreferredName}}</span>
                 </button>
                 <div class="relative">
                     <div x-cloak x-show="showUserContext"
+                         @click.outside="toggleUserContext();"
                          class="absolute top-full right-[50%] mt-2 shadow rounded-lg h-fit bg-white border
                          dark:bg-secondary dark:border-gray-800 overflow-hidden text-sm w-56">
-                        <div class = "p-2 border-b dark:border-gray-800">
-                            <p class ="font-semibold">Signed in as</p>
+                        <div class="p-2 border-b dark:border-gray-800">
+                            <p class="font-semibold">Signed in as</p>
                             <span>@{{$user.Name}}</span>
                         </div>
                         <nav class="d-grid gap-3 font-light">
                             {{if or (eq $user.Role 1) (eq $user.Role 2) }}
-                                <a href="/admin" class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2">
+                                <a href="/admin"
+                                   class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2">
                                     <i class="fa-solid fa-hammer mr-4"></i>
                                     <p>Admin</p>
                                 </a>
                                 <div class="border-b dark:border-gray-800"></div>
                             {{end}}
                             <div>
-                                <button type="button" class="flex items-center p-2 w-full hover:bg-gray-100 dark:hover:bg-gray-800 my-2"
-                                    @click="toggleThemePicker()">
+                                <button type="button"
+                                        class="flex items-center p-2 w-full hover:bg-gray-100 dark:hover:bg-gray-800 my-2"
+                                        @click="toggleThemePicker()">
                                     <i class="fa-regular fa-moon mr-4"></i>
                                     <span>Theme</span>
-                                    <i class = "fa-solid ml-auto" :class="showThemePicker ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                    <i class="fa-solid ml-auto"
+                                       :class="showThemePicker ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                                 </button>
                                 {{template "theme-picker"}}
                             </div>
-                            <a href="/settings" class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2">
+                            <a href="/settings"
+                               class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2">
                                 <i class="fa-solid fa-gear mr-4"></i>
                                 <p>Settings</p>
                             </a>
@@ -67,7 +75,8 @@
                                 <p>Report problem</p>
                             </a>
                             <div class="border-b dark:border-gray-800"></div>
-                            <a href="/logout" class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2">
+                            <a href="/logout"
+                               class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2">
                                 <i class="fa-solid fa-sign-out mr-4"></i>
                                 <p>Logout</p>
                             </a>
@@ -78,41 +87,126 @@
         {{end}}
     </div>
 </header>
+<article class="flex grow">
+    <section x-data="home.sideNavigation()"
+             id="side-navigation" class="overflow-y-scroll font-light px-5 text-3">
+        <div class="grid py-4">
+            <p class="px-3 pb-2 font-semibold">
+                <i class="fa-solid fa-calendar mr-2"></i>
+                Semesters
+            </p>
+            {{template "semester-picker" .}}
+        </div>
+        <div class="border-b dark:border-gray-800"></div>
+        <div class="grid py-4">
+            <p class="px-3 pb-2 font-semibold">
+                <i class="fa-solid fa-chalkboard mr-2"></i>
+                Public Courses
+            </p>
+            {{range $course := .PublicCourses }}
+                <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2"
+                   href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
+                    {{$course.Name}}
+                </a>
+            {{end}}
+        </div>
+    </section>
+    <section id="main-content" class="text-3 p-4 grow">
+        {{if .TUMLiveContext.User.Name}}
+            <h1 id="greeting" class="font-bold mb-4 px-3">
+                {{.TUMLiveContext.User.GetPreferredGreeting}} {{.TUMLiveContext.User.GetPreferredName}}, nice to see
+                you! 👋
+            </h1>
+        {{end}}
+        {{if .LiveStreams}}
+            <div class="px-3 py-1 mx-3 bg-danger text-white text-sm w-fit font-semibold uppercase rounded animate-pulse">
+                Live
+            </div>
+            <div class="grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
+                {{range $liveStream := .LiveStreams}}
+                    <div class="p-3 lg:col-span-1 col-span-full" id="livestream-{{$liveStream.Stream.Name}}">
+                        <a class="block" href="/w/{{$liveStream.Course.Slug}}/{{$liveStream.Stream.Model.ID}}">
+                            <div class="bg-gray-100 dark:bg-gray-800 h-56 rounded-lg mb-2 border-4 border-transparent hover:border-blue-500 dark:hover:border-indigo-600 transition-all duration-500"></div>
+                        </a>
+                        <a class="block" href="/w/{{$liveStream.Course.Slug}}/{{$liveStream.Stream.Model.ID}}">
+                            <p class="text-sm text-5">{{$liveStream.Course.Name}}</p>
+                            <span class="font-medium block">
+                                {{if $liveStream.Stream.Name}}
+                                    {{$liveStream.Stream.Name}}
+                                {{else}}
+                                    Untitled Lecture <!-- force them to use titles... -->
+                                {{end}}
+                            </span>
+                        </a>
+                        <div class="flex items-center space-x-2 text-sm">
+                            {{if $liveStream.Course.IsHidden}} {{- /* only admins have hidden courses here */ -}}
+                            <span class="bg-blue-800 text-blue-100 px-2 mr-1 capitalize rounded-full font-semibold">Hidden</span>
+                            {{end}}
+                            {{if $liveStream.LectureHall}}
+                                <a class="block font-semibold">
+                                    <i class="fas fa-location-pin text-xs"></i> {{$liveStream.LectureHall.Name}}
+                                </a>
+                            {{end}}
+                            <span class="font-light">
+                                {{printf "Until %2d:%02d" $liveStream.Stream.End.Hour $liveStream.Stream.End.Minute}}
+                            </span>
+                        </div>
+                    </div>
+                {{end}}
+            </div>
+        {{end}}
+    </section>
+</article>
+<footer class="w-full flex justify-between space-x-3 py-4 px-8 items-center bg-gray-100 dark:bg-secondary-light">
+    <div class="flex space-x-3">
+        <a class="text-sm font-light text-5" href="/about">About</a>
+        <a class="text-sm font-light text-5" href="/privacy">Data Privacy</a>
+        <a class="text-sm font-light text-5" href="/imprint">Imprint</a>
+    </div>
+    <a class="text-sm font-light text-5" href="/public/licenses.txt">
+        We <i class="fas fa-heart text-blue-500 dark:text-indigo-600"></i> OpenSource</a>
+</footer>
 </body>
 </html>
 
-{{define "user"}}
-{{end}}
-
 {{define "notifications"}}
-    <div class="relative" x-init="notifications.fetchNotifications();"
+    <div id="notifications"
+         class="relative" x-init="notifications.fetchNotifications();"
          @keyup.escape="toggleNotifications();">
-        <button title="Show Notifications" class="transition-colors duration-200 hover:text-gray-600 dark:hover:text-white text-gray-400 relative w-4"
-                type="button" @click="toggleNotifications();">
+        <button title="Show Notifications"
+                class="transition-colors duration-200 hover:text-gray-600 dark:hover:text-white text-gray-400 relative w-4"
+                type="button" @click="toggleNotifications(true);">
             <span x-cloak x-show="notifications.hasNewNotifications()"
                   class="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full absolute -top-1 -right-1 h-3 w-3 border-2 border-white dark:border-secondary"> </span>
             <i class="fa-solid fa-bell"></i>
         </button>
         <div x-cloak x-show="showNotifications"
-             class="origin-top-right absolute right-0 mt-4 shadow-sm rounded-lg h-fit bg-white border w-96
+             @click.outside="toggleNotifications();"
+             class="text-3 text-sm origin-top-right absolute right-0 mt-4 shadow-sm rounded-lg h-fit bg-white border w-96
                         dark:bg-secondary dark:border-gray-800 shadow">
-            <div class="my-auto w-full min-h-30 max-h-60 overflow-y-scroll">
+            <div class="border-b dark:border-gray-800 py-2 px-4">
+                <p>Notifications</p>
+            </div>
+            <div class="w-full min-h-30 max-h-60 overflow-y-scroll py-2">
                 <div x-cloak x-show="notifications.empty()" class="py-4 relative text-3 text-center">
                     <span class="font-semibold">No notifications yet :)</span>
                 </div>
-                <template x-for="(notification, i) in notifications.getAll()">
-                    <div class="p-2 pb-4 last:pb-2 border-b dark:border-gray-800 relative last:border-0" :class="notification.read?'text-5':'text-3'">
-                        <p class="font-semibold" x-show="notification.title !== undefined" x-text="notification.title"></p>
-                        <div class="pl-1 notificationBody" x-html="notification.body"></div>
-                    </div>
-                </template>
+                <div class="grid">
+                    <template x-for="(notification, i) in notifications.getAll()">
+                        <div class="px-4 py-3 border-b dark:border-gray-800 last:border-0 relative">
+                            <p class="font-semibold mb-2" x-show="notification.title !== undefined"
+                               x-text="notification.title"></p>
+                            <div class="notificationBody" x-html="notification.body"></div>
+                        </div>
+                    </template>
+                </div>
             </div>
         </div>
     </div>
 {{end}}
 
 {{define "theme-picker"}}
-    <div x-cloak x-show="showThemePicker" class = "grid gap-1">
+    <div x-cloak x-show="showThemePicker" class="grid gap-1">
         <template x-for="[modeId, mode] of Object.entries($store.theme.modes)" :key="modeId">
             <button type="button" tabindex="0"
                     class="text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-2 px-4"
@@ -121,5 +215,47 @@
                     x-text="mode.name">
             </button>
         </template>
+    </div>
+{{end}}
+
+{{define "search"}}
+    <div id="search" class="h-10 w-96">
+        <div class="flex items-center rounded-full bg-gray-100 dark:bg-gray-800 text-sm py-1 h-full">
+            <i class="fa-solid fa-search pl-3 text-xs text-7"></i>
+            <input class="px-3 outline-none border-none bg-transparent h-full w-full grow" type="text"
+                   placeholder="Search in lectures">
+        </div>
+    </div>
+{{end}}
+
+{{define "semester-picker"}}
+    {{range $s := slice .Semesters 0 3}}
+        <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2"
+           href="/semester/{{$s.Year}}/{{$s.TeachingTerm}}">
+            {{if eq $s.TeachingTerm "W"}}
+                Winter {{$s.Year}}
+            {{else}}
+                Summer {{$s.Year}}
+            {{end}}
+        </a>
+    {{end}}
+    <div>
+        <div x-cloak x-show="showAllSemesters" class="grid">
+            {{range $s := slice .Semesters 3}}
+                <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2"
+                   href="/semester/{{$s.Year}}/{{$s.TeachingTerm}}">
+                    {{if eq $s.TeachingTerm "W"}}
+                        Winter {{$s.Year}}
+                    {{else}}
+                        Summer {{$s.Year}}
+                    {{end}}
+                </a>
+            {{end}}
+        </div>
+        <button @click="toggleAllSemesters()"
+                class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 w-full">
+            <i class="fa-solid text-xs mr-2" :class="showAllSemesters ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            <span x-text="showAllSemesters ? 'Show less' : 'Show all'"></span>
+        </button>
     </div>
 {{end}}

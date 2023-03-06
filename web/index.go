@@ -267,7 +267,6 @@ func (d *IndexData) LoadPublicCourses(coursesDao dao.CoursesDao) {
 	} else {
 		public, err = coursesDao.GetPublicCourses(d.CurrentYear, d.CurrentTerm)
 	}
-
 	if err != nil {
 		d.PublicCourses = []model.Course{}
 	} else {

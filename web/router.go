@@ -170,6 +170,10 @@ func (r mainRoutes) home(c *gin.Context) {
 	}
 
 	indexData := NewIndexDataWithContext(c)
+	indexData.SetYearAndTerm(c)
+	indexData.LoadSemesters(spanMain, r.CoursesDao)
+	indexData.LoadPublicCourses(r.CoursesDao)
+	indexData.LoadLivestreams(c, r.DaoWrapper)
 
 	if err := templateExecutor.ExecuteTemplate(c.Writer, "home.gohtml", indexData); err != nil {
 		log.WithError(err).Errorf("Could not execute template: 'home.gohtml'")

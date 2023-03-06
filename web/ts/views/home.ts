@@ -1,34 +1,52 @@
-export function pageData(): Home {
+export function header(): Header {
     return {
         showUserContext: false,
-        toggleUserContext() {
-            this.showUserContext = !this.showUserContext;
+        toggleUserContext(set?: boolean) {
+            this.showUserContext = set || !this.showUserContext;
         },
 
         notifications: new Notifications(),
         showNotifications: false,
-        toggleNotifications() {
-            this.showNotifications = !this.showNotifications;
+        toggleNotifications(set?: boolean) {
+            this.showNotifications = set || !this.showNotifications;
             this.notifications.writeToStorage(true);
         },
 
         showThemePicker: false,
-        toggleThemePicker() {
-            this.showThemePicker = !this.showThemePicker;
+        toggleThemePicker(set?: boolean) {
+            this.showThemePicker = set || !this.showThemePicker;
         },
     };
 }
 
-interface Home {
+interface Header {
     showUserContext: boolean;
-    toggleUserContext();
+
+    toggleUserContext(set?: boolean);
 
     notifications: Notifications;
     showNotifications: boolean;
-    toggleNotifications();
+
+    toggleNotifications(set?: boolean);
 
     showThemePicker: boolean;
-    toggleThemePicker();
+
+    toggleThemePicker(set?: boolean);
+}
+
+export function sideNavigation(): SideNavigation {
+    return {
+        showAllSemesters: false,
+        toggleAllSemesters(set?: boolean) {
+            this.showAllSemesters = set || !this.showAllSemesters;
+        },
+    };
+}
+
+interface SideNavigation {
+    showAllSemesters: boolean;
+
+    toggleAllSemesters(set?: boolean);
 }
 
 class Notifications {
