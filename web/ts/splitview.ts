@@ -110,27 +110,32 @@ export class SplitView {
         const mainControlBarElem = this.players[1].controlBar.el();
         mainControlBarElem.style.position = "absolute";
         mainControlBarElem.style.zIndex = "1";
-        mainControlBarElem.style.width = "100vw";
 
         this.updateControlBarSize(this.getSizes());
     }
 
     private updateControlBarSize(sizes: number[]) {
-        let newSize;
-        if (this.isFullscreen) {
-            newSize = "0";
-        } else if (sizes[0] === 100) {
-            newSize = `calc(${this.gutterWidth / 2}px - 100vw)`;
-        } else if (sizes[0] === 0) {
-            newSize = `-${this.gutterWidth / 2}px`;
-        } else {
-            newSize = `-${sizes[0]}vw`;
-        }
+        const wrapperSize = this.videoWrapper.getBoundingClientRect().width;
 
-        this.players[1].controlBar.el_.style.marginLeft = newSize;
+        let marginLeft;
+        if (this.isFullscreen) {
+            marginLeft = "0";
+        } else if (sizes[0] === 100) {
+            marginLeft = `${this.gutterWidth / 2 - wrapperSize}px`; //`calc(${this.gutterWidth / 2}px - 100vw)`;
+        } else if (sizes[0] === 0) {
+            marginLeft = `-${this.gutterWidth / 2}px`;
+        } else {
+            const leftContainerWidth = sizes[0] * wrapperSize / 100;
+            marginLeft = `-${leftContainerWidth}px`;
+        }
+        console.log(marginLeft);
+        const mainControlBarElem = this.players[1].controlBar.el();
+        mainControlBarElem.style.marginLeft = marginLeft;
+        mainControlBarElem.style.width = `${wrapperSize}px`;
+
         const textTrackDisplay = this.players[1].el_.querySelector(".vjs-text-track-display");
         if (textTrackDisplay) {
-            textTrackDisplay.style.left = newSize;
+            textTrackDisplay.style.left = marginLeft;
         }
     }
 
