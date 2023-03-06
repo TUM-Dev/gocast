@@ -232,7 +232,7 @@
             <div
                     x-data="{ size: { x: '0px', width: '0px' }, hoverPos: -1 }"
                     x-on:updateseekbarsize.window="e => { size = e.detail; }"
-                    x-on:seekbarhover.window.debounce.10ms="e => { hoverPos = e.detail; }"
+                    x-on:seekbarhover.window="e => { hoverPos = e.detail; }"
                     x-init="watch.seekbarOverlay.init('{{$stream.ID}}');"
                     class="seekbar-overlay absolute bottom-[18px] bg-gradient-to-t from-gray-800/[.6] pt-4 pointer-events-none"
                     :style="{width: size.width, left: size.x}"
