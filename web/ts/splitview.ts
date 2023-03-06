@@ -132,7 +132,7 @@ export class SplitView {
         } else if (sizes[0] === 0) {
             marginLeft = `-${this.gutterWidth / 2}px`;
         } else {
-            const leftContainerWidth = sizes[0] * wrapperSize / 100;
+            const leftContainerWidth = (sizes[0] * wrapperSize) / 100;
             marginLeft = `-${leftContainerWidth}px`;
         }
 
