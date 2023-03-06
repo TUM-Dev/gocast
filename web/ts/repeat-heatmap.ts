@@ -4,6 +4,7 @@ import { Get } from "./global";
 const repeatMapScale = 90;
 
 export const repeatHeatMap = {
+    streamID: null,
     seekBarWrap: null,
 
     init(streamID: number) {
@@ -26,7 +27,7 @@ export const repeatHeatMap = {
     },
 
     updateSize() {
-        const event = new CustomEvent("updateheatmapsize", {
+        const event = new CustomEvent("updateseekbarsize", {
             detail: this.getSeekbarInfo(),
         });
         window.dispatchEvent(event);
