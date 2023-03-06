@@ -97,7 +97,7 @@
                                 hover:bg-gray-100 dark:hover:bg-gray-600"
                             :class="bookmarkUpdater.show && 'rounded-r-none'"
                             :disabled="bookmarkUpdater.show"
-                            @click="watch.jumpTo(b.hours, b.minutes, b.seconds);">
+                            @click="watch.jumpTo({ timeParts:{hours: b.hours, minutes: b.minutes, seconds: b.seconds} });">
                         <template x-if="!bookmarkUpdater.show">
                             <div class="flex items-center justify-between flex-grow">
                                 <div>

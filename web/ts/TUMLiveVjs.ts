@@ -576,18 +576,24 @@ export class OverlayIcon extends Component {
     }
 }
 
-export function jumpTo(hours: number, minutes: number, seconds: number) {
-    for (let j = 0; j < players.length; j++) {
-        players[j].ready(() => {
-            players[j].currentTime(new Time(hours, minutes, seconds).toSeconds());
-        });
-    }
-}
+export type jumpToSettings = {
+    timeParts: { hours: number; minutes: number; seconds: number } | undefined;
+    time: Time | undefined;
+    Ms: number | undefined;
+    S: number | undefined;
+};
 
-export function jumpToMs(ms: number) {
+export function jumpTo(settings: jumpToSettings) {
+    if (settings.timeParts) {
+        settings.time = new Time(settings.timeParts.hours, settings.timeParts.minutes, settings.timeParts.seconds);
+    } else if (settings.Ms) {
+        settings.time = Time.FromSeconds(settings.Ms / 1000);
+    } else if (settings.S) {
+        settings.time = Time.FromSeconds(settings.S);
+    }
     for (let j = 0; j < players.length; j++) {
         players[j].ready(() => {
-            players[j].currentTime(ms / 1000);
+            players[j].currentTime(settings.time.toSeconds());
         });
     }
 }

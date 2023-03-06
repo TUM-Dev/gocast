@@ -15,7 +15,7 @@
             <div x-show="searcher.open" @click.outside="searcher.closeRes()" class="absolute top-24 right-5 z-50 px-4 overflow-x-hidden h-96 bg-gray-100 shadow dark:bg-gray-900/50 rounded-lg text-left text-gray-800 dark:text-gray-200">
                 <div class="w-2xl p-3 overflow-y-auto">
                     <template x-for="res in searcher.hits">
-                        <div @click="watch.jumpToMs(res.timestamp);" class="dark:hover:bg-gray-700 hover:outline dark:bg-gray-800 bg-white rounded p-2 my-2 flex" role="button">
+                        <div @click="watch.jumpTo({Ms: res.timestamp});" class="dark:hover:bg-gray-700 hover:outline dark:bg-gray-800 bg-white rounded p-2 my-2 flex" role="button">
                                     <span class="my-auto p-2 font-semibold"
                                           x-text="global.Time.FromSeconds(res.timestamp/1000).toString()"></span>
                             <div class="p-2">

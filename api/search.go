@@ -12,10 +12,13 @@ import (
 
 func configGinSearchRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := searchRoutes{daoWrapper}
-	router.GET("/api/search/streams", routes.searchStreams)
-	g := router.Group("/api/search/subtitles")
-	g.Use(tools.InitStream(daoWrapper))
-	g.GET("/:streamID", routes.searchSubtitles)
+
+	searchGroup := router.Group("/api/search")
+	searchGroup.GET("/streams", routes.searchStreams)
+
+	withStream := searchGroup.Group("/stream/:streamID")
+	withStream.Use(tools.InitStream(daoWrapper))
+	withStream.GET("/subtitles", routes.searchSubtitles)
 }
 
 type searchRoutes struct {

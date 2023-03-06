@@ -5,7 +5,7 @@ export function subtitleSearch(streamID: number) {
         lastEventTimestamp: 0,
         search: function (query: string) {
             if (query.length > 2) {
-                fetch(`/api/search/subtitles/${streamID}?q=${query}`).then((res) => {
+                fetch(`/api/search/stream/${streamID}/subtitles?q=${query}`).then((res) => {
                     if (res.ok) {
                         res.json().then((data) => {
                             this.hits = data.hits;
