@@ -273,7 +273,7 @@
 
                     <template x-for="section in seekbarSections">
                         <div
-                            class="absolute bg-white/10 shadow-[0px_0px_10px_2px_rgb(0,252,252)] bottom-0 top-0 rounded-t"
+                            class="absolute bg-white/10 shadow-[0px_0px_10px_2px_rgb(52,45,132)] bottom-0 top-0 rounded-t"
                             :style="{ left: `${section.from * 100}%`, right: `${(1 - section.to) * 100}%`, opacity: (section.from <= hoverPos && section.to > hoverPos) ? 1 : 0 }"
                         ></div>
                     </template>
