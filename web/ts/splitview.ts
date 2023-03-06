@@ -12,6 +12,7 @@ export class SplitView {
     private isFullscreen = false;
     private splitParent: HTMLElement;
     private videoWrapper: HTMLElement;
+    private videoWrapperResizeObs: ResizeObserver;
 
     showSplitMenu: boolean;
     mouseMoving: boolean;
@@ -31,6 +32,8 @@ export class SplitView {
         this.players = getPlayers();
         this.splitParent = document.querySelector("#video-pres-wrapper").parentElement;
         this.videoWrapper = document.querySelector(".splitview-wrap");
+        this.videoWrapperResizeObs = new ResizeObserver(() => this.onVideoWrapperResize());
+        this.videoWrapperResizeObs.observe(this.videoWrapper);
         this.detectMouseNotMoving();
 
         this.players[0].ready(() => {
@@ -54,6 +57,10 @@ export class SplitView {
                 that.updateControlBarSize(sizes);
             },
         });
+    }
+
+    onVideoWrapperResize() {
+        this.updateControlBarSize(this.getSizes());
     }
 
     updateMouseMoving(isMoving: boolean) {
@@ -128,7 +135,7 @@ export class SplitView {
             const leftContainerWidth = sizes[0] * wrapperSize / 100;
             marginLeft = `-${leftContainerWidth}px`;
         }
-        console.log(marginLeft);
+
         const mainControlBarElem = this.players[1].controlBar.el();
         mainControlBarElem.style.marginLeft = marginLeft;
         mainControlBarElem.style.width = `${wrapperSize}px`;
