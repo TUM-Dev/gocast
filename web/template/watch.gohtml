@@ -262,12 +262,12 @@
 
                 <div
                         x-data="{ seekbarMarker: [], seekbarSections: [] }"
-                        class="w-[100%] h-[30px] relative"
+                        class="absolute h-[30px] bottom-0 left-0 right-0"
                         x-on:seekbarhighlightsupdate.window="e => { seekbarMarker = e.detail.marker; seekbarSections = e.detail.sections; }"
                         x-init="watch.seekbarHighlights.init('{{$stream.ID}}');"
                 >
                     <template x-for="marker in seekbarMarker">
-                        <div class="absolute bg-white bottom-[18px] top-[0] w-[2px]" :style="{ left: marker.pos }"></div>
+                        <div class="absolute bg-gradient-to-t from-black bottom-0 top-0 w-[2px] rounded-t" :style="{ left: `${marker.position * 100}%` }"></div>
                     </template>
                 </div>
             </div>
