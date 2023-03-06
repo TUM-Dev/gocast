@@ -150,6 +150,19 @@ func (c Course) IsNextLectureStartingSoon() bool {
 	return false
 }
 
+// NextStreamToday returns true if there is a lecture today
+func (c Course) NextStreamToday() bool {
+	if c.HasNextLecture() {
+		log.Println("hello")
+		next := c.GetNextLecture()
+		if next.Start.YearDay() == time.Now().YearDay() {
+			return true
+		}
+	}
+
+	return false
+}
+
 // NumStreams returns the number of streams for the course that are VoDs or live
 func (c Course) NumStreams() int {
 	res := 0

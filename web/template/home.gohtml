@@ -20,7 +20,8 @@
     <div id="user-context" class="flex items-center space-x-3 ms-auto">
         {{template "notifications"}}
         {{if not $user}}
-            <a href="/login" class="rounded-full px-3 py-1 font-xs text-white bg-blue-500 dark:bg-indigo-600">Login</a>
+            <a href="/login"
+               class="rounded-full px-3 py-1 text-sm font-semibold text-white bg-blue-500 dark:bg-indigo-600">Login</a>
         {{else}}
             <div>
                 <button type="button" @click="toggleUserContext(true)"
@@ -89,13 +90,28 @@
 </header>
 <article class="flex grow">
     <section x-data="home.sideNavigation()"
-             id="side-navigation" class="overflow-y-scroll font-light px-5 text-3">
+             id="side-navigation" class="overflow-y-scroll font-light px-5 text-3 w-72">
         <div class="grid py-4">
             <p class="px-3 pb-2 font-semibold">
                 <i class="fa-solid fa-calendar mr-2"></i>
                 Semesters
             </p>
             {{template "semester-picker" .}}
+        </div>
+        <div class="border-b dark:border-gray-800"></div>
+        <div class="grid py-4">
+            {{if .Courses}}
+                <p class="px-3 pb-2 font-semibold">
+                    <i class="fa-solid fa-chalkboard mr-2"></i>
+                    My Courses
+                </p>
+                {{range $course := .Courses }}
+                    <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2"
+                       href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
+                        {{$course.Name}}
+                    </a>
+                {{end}}
+            {{end}}
         </div>
         <div class="border-b dark:border-gray-800"></div>
         <div class="grid py-4">
@@ -154,6 +170,14 @@
                     </div>
                 {{end}}
             </div>
+        {{end}}
+        {{if .Courses}}
+            <h2 class="font-bold">Today</h2>
+            {{range $course := .Courses }}
+                {{if and (not $course.IsHidden) $course.NextStreamToday}}
+                    {{template "course-card" (dict "course" $course "user" $user) }}
+                {{end}}
+            {{end}}
         {{end}}
     </section>
 </article>
@@ -232,11 +256,8 @@
     {{range $s := slice .Semesters 0 3}}
         <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2"
            href="/semester/{{$s.Year}}/{{$s.TeachingTerm}}">
-            {{if eq $s.TeachingTerm "W"}}
-                Winter {{$s.Year}}
-            {{else}}
-                Summer {{$s.Year}}
-            {{end}}
+            <span class = "inline-block w-16">{{if eq $s.TeachingTerm "W"}}Winter{{else}}Summer{{end}}</span>
+            {{$s.Year}}
         </a>
     {{end}}
     <div>
@@ -244,11 +265,8 @@
             {{range $s := slice .Semesters 3}}
                 <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2"
                    href="/semester/{{$s.Year}}/{{$s.TeachingTerm}}">
-                    {{if eq $s.TeachingTerm "W"}}
-                        Winter {{$s.Year}}
-                    {{else}}
-                        Summer {{$s.Year}}
-                    {{end}}
+                    <span class = "inline-block w-16">{{if eq $s.TeachingTerm "W"}}Winter{{else}}Summer{{end}}</span>
+                    {{$s.Year}}
                 </a>
             {{end}}
         </div>
