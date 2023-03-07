@@ -45,6 +45,26 @@ export function sideNavigation() {
     };
 }
 
+export function main() {
+    return {
+        livestreams: [],
+        async loadLivestreams() {
+            this.livestreams = await Courses.getLivestreams();
+            // force them to use titles...
+            this.livestreams.map((l) => {
+                l.Stream.Name = l.Stream.Name === "" ? "Untitled lecture" : l.Stream.Name;
+
+                const end = new Date(l.Stream.End);
+                const hours = end.getHours();
+                const minutes = end.getMinutes();
+                l.Stream.FriendlyDateString = `Until ${hours}:${minutes < 10 ? minutes + "0" : minutes}`;
+
+                return l;
+            });
+        },
+    };
+}
+
 class Notifications {
     notifications: Notification[] = [];
 
@@ -115,7 +135,7 @@ export class Notification {
 }
 
 const Semesters = {
-    get: async function (): Promise<Semester[]> {
+    async get(): Promise<Semester[]> {
         return fetch("/api/semesters")
             .then((res) => {
                 if (!res.ok) {
@@ -134,7 +154,7 @@ const Semesters = {
             });
     },
 
-    getCurrent(): Promise<Semester> {
+    async getCurrent(): Promise<Semester> {
         return fetch("/api/semesters/current")
             .then((res) => {
                 if (!res.ok) {
@@ -155,4 +175,22 @@ type Semester = {
     TeachingTerm: string;
     Year: number;
     FriendlyString?: string;
+};
+
+const Courses = {
+    async getLivestreams(): Promise<object> {
+        return fetch("/api/courses/live")
+            .then((res) => {
+                if (!res.ok) {
+                    throw Error(res.statusText);
+                }
+
+                return res.json();
+            })
+            .catch((err) => {
+                console.error(err);
+                return [];
+            })
+            .then((livestreams) => livestreams);
+    },
 };

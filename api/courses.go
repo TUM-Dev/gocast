@@ -34,6 +34,8 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 	api := router.Group("/api")
 	{
+		api.GET("/courses/live", routes.getLive)
+
 		lecturers := api.Group("")
 		{
 			lecturers.Use(tools.AtLeastLecturer)
@@ -97,6 +99,71 @@ const (
 type uploadVodReq struct {
 	Start time.Time `form:"start" binding:"required"`
 	Title string    `form:"title"`
+}
+
+func (r coursesRoutes) getLive(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	streams, err := r.GetCurrentLive(context.Background())
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.WithError(err).Error("could not get current live streams")
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
+	}
+
+	type CourseStream struct {
+		Course      model.Course
+		Stream      model.Stream
+		LectureHall *model.LectureHall
+	}
+
+	var livestreams []CourseStream
+
+	for _, stream := range streams {
+		courseForLiveStream, _ := r.GetCourseById(context.Background(), stream.CourseID)
+
+		// only show streams for logged in users if they are logged in
+		if courseForLiveStream.Visibility == "loggedin" && tumLiveContext.User == nil {
+			continue
+		}
+		// only show "enrolled" streams to users which are enrolled or admins
+		if courseForLiveStream.Visibility == "enrolled" {
+			if !isUserAllowedToWatchPrivateCourse(courseForLiveStream, tumLiveContext.User) {
+				continue
+			}
+		}
+		// Only show hidden streams to admins
+		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType) {
+			continue
+		}
+		var lectureHall *model.LectureHall
+		if tumLiveContext.User != nil && tumLiveContext.User.Role == model.AdminType && stream.LectureHallID != 0 {
+			lh, err := r.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
+			if err != nil {
+				log.WithError(err).Error(err)
+			} else {
+				lectureHall = &lh
+			}
+		}
+		livestreams = append(livestreams, CourseStream{
+			Course:      courseForLiveStream,
+			Stream:      stream,
+			LectureHall: lectureHall,
+		})
+	}
+
+	c.JSON(http.StatusOK, livestreams)
+}
+
+func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {
+	if user != nil {
+		for _, c := range user.Courses {
+			if c.ID == course.ID {
+				return true
+			}
+		}
+		return user.IsEligibleToWatchCourse(course)
+	}
+	return false
 }
 
 func (r coursesRoutes) uploadVOD(c *gin.Context) {

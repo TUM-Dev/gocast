@@ -127,7 +127,8 @@
             {{end}}
         </div>
     </section>
-    <section id="main-content" class="text-3 p-4 grow">
+    <section x-data="home.main()" x-init="Promise.all([loadLivestreams()])"
+             id="main-content" class="text-3 p-4 grow">
         {{if .TUMLiveContext}}
             {{if .TUMLiveContext.User.Name}}
                 <h1 id="greeting" class="font-bold mb-4 px-3">
@@ -136,43 +137,7 @@
                 </h1>
             {{end}}
         {{end}}
-        {{if .LiveStreams}}
-            <div class="px-3 py-1 mx-3 bg-danger text-white text-sm w-fit font-semibold uppercase rounded animate-pulse">
-                Live
-            </div>
-            <div class="grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
-                {{range $liveStream := .LiveStreams}}
-                    <div class="p-3 lg:col-span-1 col-span-full" id="livestream-{{$liveStream.Stream.Name}}">
-                        <a class="block" href="/w/{{$liveStream.Course.Slug}}/{{$liveStream.Stream.Model.ID}}">
-                            <div class="bg-gray-100 dark:bg-gray-800 h-56 rounded-lg mb-2 border-4 border-transparent hover:border-blue-500 dark:hover:border-indigo-600 transition-all duration-500"></div>
-                        </a>
-                        <a class="block" href="/w/{{$liveStream.Course.Slug}}/{{$liveStream.Stream.Model.ID}}">
-                            <p class="text-sm text-5">{{$liveStream.Course.Name}}</p>
-                            <span class="font-medium block">
-                                {{if $liveStream.Stream.Name}}
-                                    {{$liveStream.Stream.Name}}
-                                {{else}}
-                                    Untitled Lecture <!-- force them to use titles... -->
-                                {{end}}
-                            </span>
-                        </a>
-                        <div class="flex items-center space-x-2 text-sm">
-                            {{if $liveStream.Course.IsHidden}} {{- /* only admins have hidden courses here */ -}}
-                            <span class="bg-blue-800 text-blue-100 px-2 mr-1 capitalize rounded-full font-semibold">Hidden</span>
-                            {{end}}
-                            {{if $liveStream.LectureHall}}
-                                <a class="block font-semibold">
-                                    <i class="fas fa-location-pin text-xs"></i> {{$liveStream.LectureHall.Name}}
-                                </a>
-                            {{end}}
-                            <span class="font-light">
-                                {{printf "Until %2d:%02d" $liveStream.Stream.End.Hour $liveStream.Stream.End.Minute}}
-                            </span>
-                        </div>
-                    </div>
-                {{end}}
-            </div>
-        {{end}}
+        {{template "livestreams"}}
         {{if .Courses}}
             <h2 class="font-bold">Today</h2>
             {{range $course := .Courses }}
@@ -265,4 +230,40 @@
         <i class="fa-solid text-xs mr-2" :class="showAllSemesters ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
         <span x-text="showAllSemesters ? 'Show less' : 'Show all'"></span>
     </button>
+{{end}}
+
+{{define "livestreams"}}
+    <template x-if="livestreams.length > 0">
+        <div>
+            <div class="px-3 py-1 mx-3 bg-danger text-white text-sm w-fit font-semibold uppercase rounded animate-pulse">
+                Live
+            </div>
+            <div class="grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
+                <template x-for="(livestream, i) in livestreams">
+                    <div class="p-3 lg:col-span-1 col-span-full" :id="`livestream-${livestream.Stream.Name}`">
+                        <a class="block" :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`">
+                            <div class="bg-gray-100 dark:bg-gray-800 h-56 rounded-lg mb-2 border-4 border-transparent hover:border-blue-500 dark:hover:border-indigo-600 transition-all duration-500"></div>
+                        </a>
+                        <a class="block" :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`">
+                            <div class = "flex items-center">
+                                <span x-cloak x-show="livestream.Stream.Visibility === 'hidden'"
+                                      class="bg-blue-800 text-white text-tiny p-1 mr-2 rounded-lg font-semibold">Hidden</span>
+                                <p class="text-sm text-5" x-text="livestream.Course.Name"></p>
+                            </div>
+                            <span class="font-medium block" x-text="livestream.Stream.Name"></span>
+                        </a>
+                        <div class="flex items-center text-sm">
+                            <template x-if="livestream.LectureHall !== null">
+                                <a class="block font-semibold mr-2">
+                                    <i class="fas fa-location-pin text-xs"></i>
+                                    <span x-text="livestream.LectureHall.Name"></span>
+                                </a>
+                            </template>
+                            <span class="font-light" x-text="livestream.Stream.FriendlyDateString"></span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </template>
 {{end}}
