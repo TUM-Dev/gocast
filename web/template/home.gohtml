@@ -89,7 +89,7 @@
     </div>
 </header>
 <article class="flex grow">
-    <section x-data="home.sideNavigation()" x-init="getSemesters()"
+    <section x-data="home.sideNavigation()" x-init="Promise.all([loadSemesters(), loadCurrentSemester()])"
              id="side-navigation" class="overflow-y-scroll font-light px-5 text-3 w-72">
         <div class="grid py-4">
             <p class="px-3 pb-2 font-semibold">
@@ -218,7 +218,7 @@
                     <span class="font-semibold">No notifications yet :)</span>
                 </div>
                 <div class="grid">
-                    <template x-for="(notification, i) in notifications.getAll()">
+                    <template x-for="(notification, i) of notifications.getAll()">
                         <div class="px-4 py-3 border-b dark:border-gray-800 last:border-0 relative">
                             <p class="font-semibold mb-2" x-show="notification.title !== undefined"
                                x-text="notification.title"></p>
@@ -255,16 +255,11 @@
 {{end}}
 
 {{define "semester-picker"}}
-    <template x-for="s in semesters.slice(0, 3)">
+    <template x-for="(s, i) in getSlicedSemesters()">
         <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2"
+           :class="{'bg-gray-100 dark:bg-gray-800' : i === selectedSemesterIndex}"
            :href="`/semester/${s.Year}/${s.TeachingTerm}`" x-text="s.FriendlyString"></a>
     </template>
-    <div x-cloak x-show="showAllSemesters" class="grid">
-        <template x-for="s in semesters.slice(3)">
-            <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2"
-               :href="`/semester/${s.Year}/${s.TeachingTerm}`" x-text="s.FriendlyString"></a>
-        </template>
-    </div>
     <button @click="toggleAllSemesters()"
             class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 w-full">
         <i class="fa-solid text-xs mr-2" :class="showAllSemesters ? 'fa-chevron-up' : 'fa-chevron-down'"></i>

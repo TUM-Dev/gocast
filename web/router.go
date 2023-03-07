@@ -170,8 +170,6 @@ func (r mainRoutes) home(c *gin.Context) {
 	}
 
 	indexData := NewIndexDataWithContext(c)
-	indexData.SetYearAndTerm(c)
-	indexData.LoadSemesters(spanMain, r.CoursesDao)
 	indexData.LoadPublicCourses(r.CoursesDao)
 	indexData.LoadLivestreams(c, r.DaoWrapper)
 	indexData.LoadCoursesForRole(c, spanMain, r.CoursesDao)

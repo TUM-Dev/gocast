@@ -1,4 +1,4 @@
-export function header(): Header {
+export function header() {
     return {
         showUserContext: false,
         toggleUserContext(set?: boolean) {
@@ -19,22 +19,7 @@ export function header(): Header {
     };
 }
 
-interface Header {
-    showUserContext: boolean;
-
-    toggleUserContext(set?: boolean);
-
-    notifications: Notifications;
-    showNotifications: boolean;
-
-    toggleNotifications(set?: boolean);
-
-    showThemePicker: boolean;
-
-    toggleThemePicker(set?: boolean);
-}
-
-export function sideNavigation(): SideNavigation {
+export function sideNavigation() {
     return {
         showAllSemesters: false,
         toggleAllSemesters(set?: boolean) {
@@ -42,18 +27,22 @@ export function sideNavigation(): SideNavigation {
         },
 
         semesters: [],
-        async getSemesters() {
+        currentSemesterIndex: -1,
+        selectedSemesterIndex: -1,
+        async loadSemesters() {
             this.semesters = await Semesters.get();
         },
+        async loadCurrentSemester() {
+            this.currentSemester = await Semesters.getCurrent();
+            this.currentSemesterIndex = this.semesters.findIndex(
+                (s) => this.currentSemester.Year === s.Year && this.currentSemester.TeachingTerm === s.TeachingTerm,
+            );
+            this.selectedSemesterIndex = this.currentSemesterIndex;
+        },
+        getSlicedSemesters(): Semester[] {
+            return this.showAllSemesters ? this.semesters : this.semesters.slice(0, 3);
+        },
     };
-}
-
-interface SideNavigation {
-    showAllSemesters: boolean;
-    toggleAllSemesters(set?: boolean);
-
-    semesters: Semester[];
-    getSemesters();
 }
 
 class Notifications {
@@ -143,6 +132,22 @@ const Semesters = {
                 l.forEach((s) => (s.FriendlyString = `${s.TeachingTerm === "W" ? "Winter" : "Summer"} ${s.Year}`));
                 return l;
             });
+    },
+
+    getCurrent(): Promise<Semester> {
+        return fetch("/api/semesters/current")
+            .then((res) => {
+                if (!res.ok) {
+                    throw Error(res.statusText);
+                }
+
+                return res.json();
+            })
+            .catch((err) => {
+                console.error(err);
+                return [];
+            })
+            .then((s) => s);
     },
 };
 
