@@ -40,13 +40,20 @@ export function sideNavigation(): SideNavigation {
         toggleAllSemesters(set?: boolean) {
             this.showAllSemesters = set || !this.showAllSemesters;
         },
+
+        semesters: [],
+        async getSemesters() {
+            this.semesters = await Semesters.get();
+        },
     };
 }
 
 interface SideNavigation {
     showAllSemesters: boolean;
-
     toggleAllSemesters(set?: boolean);
+
+    semesters: Semester[];
+    getSemesters();
 }
 
 class Notifications {
@@ -117,3 +124,30 @@ export class Notification {
         this.target = target;
     }
 }
+
+const Semesters = {
+    get: async function (): Promise<Semester[]> {
+        return fetch("/api/semesters")
+            .then((res) => {
+                if (!res.ok) {
+                    throw Error(res.statusText);
+                }
+
+                return res.json();
+            })
+            .catch((err) => {
+                console.error(err);
+                return [];
+            })
+            .then((l: Semester[]) => {
+                l.forEach((s) => (s.FriendlyString = `${s.TeachingTerm === "W" ? "Winter" : "Summer"} ${s.Year}`));
+                return l;
+            });
+    },
+};
+
+type Semester = {
+    TeachingTerm: string;
+    Year: number;
+    FriendlyString?: string;
+};
