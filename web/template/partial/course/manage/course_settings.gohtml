@@ -52,7 +52,7 @@
                 <label class="block text-slate-900 dark:text-slate-200" for="enDL">
                     <input class="w-auto" id="enDL" name="enDL" type="checkbox"
                            {{if and . .DownloadsEnabled}}checked{{end}}
-                            {{if not .}}checked{{end}}>
+                           {{if not .}}checked{{end}}>
                     Enable Downloads
                 </label>
                 <div x-init="isChatEnabledForCourse={{.ChatEnabled}}">
