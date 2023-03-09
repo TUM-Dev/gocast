@@ -1,0 +1,27 @@
+syntax = "proto3";
+package live.voice.v1;
+option go_package = "voice-service/pb";
+
+import "google/protobuf/empty.proto";
+
+// Implemented in voice-service
+service SubtitleGenerator {
+  rpc Generate (GenerateRequest) returns (google.protobuf.Empty) {}
+}
+
+// Implemented in tum-live
+service SubtitleReceiver {
+  rpc Receive (ReceiveRequest) returns (google.protobuf.Empty) {}
+}
+
+message ReceiveRequest {
+  int32 stream_id = 1;
+  string subtitles = 2;
+  string language = 3;
+}
+
+message GenerateRequest {
+  int32 stream_id = 1;
+  string source_file = 2;
+  string language = 3;
+}

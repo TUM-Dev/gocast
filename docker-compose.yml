@@ -66,6 +66,16 @@ services:
       - ./init.sql:/data/application/init.sql
       - mariadb-data:/var/lib/mysql
     restart: always
+  voice-service:
+    container_name: tum-live-voice-service
+    image: ghcr.io/tum-dev/tum-live-voice-service:latest
+    environment:
+      - TRANSCRIBER=whisper
+      - WHISPER_MODEL=tiny
+      - MAX_WORKERS=10
+      - DEBUG=1
+    volumes:
+      - mass:/mass
 
 volumes:
   recordings:
