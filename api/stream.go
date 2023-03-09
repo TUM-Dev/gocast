@@ -646,19 +646,27 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 		return
 	}
 
-	// find vod file
-	var sourceFile string
-	files := stream.GetVodFiles()
-	for _, file := range files {
-		if file.Type == model.FILETYPE_VOD {
-			sourceFile = file.Path
-		}
-	}
-
-	if len(sourceFile) == 0 {
+	err = tools.SetSignedPlaylists(stream, tumLiveContext.User)
+	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not find vod file.",
+			CustomMessage: "can not create signed stream playlists",
+			Err:           err,
+		})
+		return
+	}
+
+	playlist := ""
+	if stream.PlaylistUrl != "" {
+		playlist = stream.PlaylistUrl
+	} else if stream.PlaylistUrlCAM != "" {
+		playlist = stream.PlaylistUrlCAM
+	} else if stream.PlaylistUrlPRES != "" {
+		playlist = stream.PlaylistUrlPRES
+	} else {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "no playlist found",
 		})
 		return
 	}
@@ -678,7 +686,7 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 
 	_, err = client.Generate(context.Background(), &pb.GenerateRequest{
 		StreamId:   int32(stream.ID),
-		SourceFile: sourceFile,
+		SourceFile: playlist,
 		Language:   request.Language,
 	})
 	if err != nil {
