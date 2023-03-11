@@ -273,17 +273,12 @@
 
                     <template x-for="section in seekbarSections">
                         <div
-                            class="absolute bg-white/10 border-x-2 border-t-2 bottom-0 border-white/[.02] top-0 rounded-t"
-                            :style="{ left: `${section.from * 100}%`, right: `${(1 - section.to) * 100}%`, opacity: (section.from <= hoverPos && section.to > hoverPos) ? 1 : 0 }"
+                            class="absolute border-x-2 border-t-2 bottom-0 top-0 rounded-t"
+                            :class="(section.from <= hoverPos && section.to > hoverPos) ? 'bg-white/10 border-white/[.02]' : 'bg-black/20 border-transparent'"
+                            :style="{ left: `${section.from * 100}%`, right: `${(1 - section.to) * 100}%` }"
                         ></div>
                     </template>
 
-                    <template x-for="section in seekbarSections">
-                        <div
-                                class="absolute bg-black/50 bottom-0 top-0 rounded-t"
-                                :style="{ left: `${section.from * 100}%`, right: `${(1 - section.to) * 100}%`, opacity: (section.from <= hoverPos && section.to > hoverPos) ? 0 : 1 }"
-                        ></div>
-                    </template>
                 </div>
             </div>
 
