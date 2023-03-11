@@ -5,7 +5,6 @@ import {VideoJsPlayer} from "video.js";
 
 export enum MarkerType {
     sectionSep,
-    bookmark,
 }
 
 export type SeekbarMarker = {
