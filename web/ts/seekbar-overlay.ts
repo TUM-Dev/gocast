@@ -1,6 +1,5 @@
 import { getPlayers } from "./TUMLiveVjs";
-import { Get } from "./global";
-import {MarkerType} from "./seekbar-highlights";
+import { cloneEvents } from "./global";
 
 export const seekbarOverlay = {
     streamID: null,
@@ -10,6 +9,7 @@ export const seekbarOverlay = {
         const player = [...getPlayers()].pop();
         player.ready(() => {
             this.seekBarWrap = player.el().querySelector(".vjs-progress-control");
+            cloneEvents(this.seekBarWrap.querySelector(".vjs-slider"), this.seekBarWrap, ["mousemove", "mouseleave"]);
             this.injectElementIntoVjs();
             this.updateSize();
             this.listenForHoverEvents();
