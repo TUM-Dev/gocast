@@ -16,7 +16,7 @@ export type SeekbarMarker = {
 };
 
 export type SeekbarSection = {
-    description: string,
+    title: string,
     from: number,
     to: number,
 };
@@ -59,7 +59,7 @@ class SeekbarHighlights {
             const to = nextSection ? this.getSectionTimestamp(nextSection) / duration : 1;
 
             this.sections.push({
-                description: section.description,
+                title: section.description,
                 from: from,
                 to: to,
             });
