@@ -9,6 +9,7 @@ export async function loadAndSetTrackbars(player: VideoJsPlayer, streamID: numbe
     for (const language of LANGUAGES) {
         await fetch(`/api/stream/${streamID}/subtitles/${language.id}`).then((res) => {
             if (res.ok) {
+                window.dispatchEvent(new CustomEvent("togglesearch", { detail: { streamID: streamID } }));
                 player.addRemoteTextTrack(
                     {
                         src: `/api/stream/${streamID}/subtitles/${language.id}`,

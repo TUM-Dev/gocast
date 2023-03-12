@@ -6,7 +6,7 @@
             <img src="/logo.svg" width="75" height="50" alt="TUM-Live Logo">
         </a>
         <div class="w-full mx-4 md:flex items-center justify-between">
-            <div class="hidden md:flex text-sm grow">
+            <div class="hidden md:flex text-sm">
                 <a href="/"
                    class="inline-block align-middle mt-0 mr-4 text-5 hover:text-1 font-medium">
                     Start
@@ -53,6 +53,9 @@
                     {{end}}
                 {{end}}
             </div>
+
+            {{template "search"}}
+
             <div class="md:flex">
                 <div class="hidden md:flex">
                     {{template "theme-selector"}}

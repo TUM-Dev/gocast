@@ -48,12 +48,15 @@ require (
 
 require (
 	github.com/TUM-Dev/CampusProxy/client v0.0.0-20230226120508-3e8bb2411921
+	github.com/asticode/go-astisub v0.23.0
 	github.com/matthiasreumann/gomino v0.0.2
 	github.com/meilisearch/meilisearch-go v0.23.0
 )
 
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
+	github.com/asticode/go-astikit v0.20.0 // indirect
+	github.com/asticode/go-astits v1.8.0 // indirect
 	github.com/bytedance/sonic v1.8.3 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/felixge/fgprof v0.9.3 // indirect
