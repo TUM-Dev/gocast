@@ -14,7 +14,7 @@ require("videojs-contrib-quality-levels");
 
 const Button = videojs.getComponent("Button");
 
-const players:VideoJsPlayer[] = [];
+const players: VideoJsPlayer[] = [];
 
 export function getPlayers(): VideoJsPlayer[] {
     return players;

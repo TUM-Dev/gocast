@@ -1,7 +1,7 @@
 import { VideoSections } from "./video-sections";
 import { Section } from "./global";
 import { getPlayers } from "./TUMLiveVjs";
-import {VideoJsPlayer} from "video.js";
+import { VideoJsPlayer } from "video.js";
 
 export enum MarkerType {
     sectionSep,
@@ -9,15 +9,15 @@ export enum MarkerType {
 
 export type SeekbarMarker = {
     type: MarkerType;
-    icon?: string,
-    description?: string,
-    position: number,
+    icon?: string;
+    description?: string;
+    position: number;
 };
 
 export type SeekbarSection = {
-    title: string,
-    from: number,
-    to: number,
+    title: string;
+    from: number;
+    to: number;
 };
 
 class SeekbarHighlights {
@@ -49,10 +49,10 @@ class SeekbarHighlights {
         this.sections = [];
         this.marker = this.marker.filter((m) => m.type != MarkerType.sectionSep);
 
-        const sections = await VideoSections.get(this.streamId)
+        const sections = await VideoSections.get(this.streamId);
         for (let i = 0; i < sections.length; i++) {
             const section = sections[i];
-            const nextSection = (i+1) < sections.length ? sections[i+1] : null;
+            const nextSection = i + 1 < sections.length ? sections[i + 1] : null;
 
             const from = this.getSectionTimestamp(section) / duration;
             const to = nextSection ? this.getSectionTimestamp(nextSection) / duration : 1;
@@ -67,7 +67,7 @@ class SeekbarHighlights {
                 this.marker.push({
                     type: MarkerType.sectionSep,
                     position: to,
-                })
+                });
             }
         }
     }
@@ -85,7 +85,6 @@ class SeekbarHighlights {
     getSectionTimestamp(section: Section): number {
         return (section.startHours * 60 + section.startMinutes) * 60 + section.startSeconds;
     }
-
 }
 
-export const seekbarHighlights = new SeekbarHighlights()
+export const seekbarHighlights = new SeekbarHighlights();

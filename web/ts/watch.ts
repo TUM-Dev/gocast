@@ -4,7 +4,7 @@ import { getPlayers } from "./TUMLiveVjs";
 import { Get, postData } from "./global";
 import { Realtime } from "./socket";
 import { copyToClipboard, Time } from "./global";
-import {seekbarOverlay} from "./seekbar-overlay";
+import { seekbarOverlay } from "./seekbar-overlay";
 
 let currentChatChannel = "";
 const retryInt = 5000; //retry connecting to websocket after this timeout
