@@ -78,17 +78,6 @@ export function main() {
         livestreams: [],
         async loadLivestreams() {
             this.livestreams = await Courses.getLivestreams();
-            // force them to use titles...
-            this.livestreams.map((l) => {
-                l.Stream.Name = l.Stream.Name === "" ? "Untitled lecture" : l.Stream.Name;
-
-                const end = new Date(l.Stream.End);
-                const hours = end.getHours();
-                const minutes = end.getMinutes();
-                l.Stream.FriendlyDateString = `Until ${hours}:${minutes < 10 ? minutes + "0" : minutes}`;
-
-                return l;
-            });
         },
     };
 }
@@ -164,38 +153,14 @@ export class Notification {
 
 const Semesters = {
     async get(): Promise<Semester[]> {
-        return fetch("/api/semesters")
-            .then((res) => {
-                if (!res.ok) {
-                    throw Error(res.statusText);
-                }
-
-                return res.json();
-            })
-            .catch((err) => {
-                console.error(err);
-                return [];
-            })
-            .then((l: Semester[]) => {
-                l.forEach((s) => (s.FriendlyString = `${s.TeachingTerm === "W" ? "Winter" : "Summer"} ${s.Year}`));
-                return l;
-            });
+        return get("/api/semesters").then((l: Semester[]) => {
+            l.forEach((s) => (s.FriendlyString = `${s.TeachingTerm === "W" ? "Winter" : "Summer"} ${s.Year}`));
+            return l;
+        });
     },
 
     async getCurrent(): Promise<Semester> {
-        return fetch("/api/semesters/current")
-            .then((res) => {
-                if (!res.ok) {
-                    throw Error(res.statusText);
-                }
-
-                return res.json();
-            })
-            .catch((err) => {
-                console.error(err);
-                return [];
-            })
-            .then((s) => s);
+        return get("/api/semesters/current");
     },
 };
 
@@ -206,53 +171,46 @@ type Semester = {
 };
 
 const Courses = {
-    async getLivestreams(): Promise<object> {
-        return fetch("/api/courses/live")
-            .then((res) => {
-                if (!res.ok) {
-                    throw Error(res.statusText);
-                }
+    async getLivestreams() {
+        return get("/api/courses/live").then((livestreams) => {
+            // force them to use titles...
+            livestreams.forEach((l) => {
+                l.Stream.Name = l.Stream.Name === "" ? "Untitled lecture" : l.Stream.Name;
 
-                return res.json();
-            })
-            .catch((err) => {
-                console.error(err);
-                return [];
-            })
-            .then((livestreams) => livestreams);
+                const end = new Date(l.Stream.End);
+                const hours = end.getHours();
+                const minutes = end.getMinutes();
+                l.Stream.FriendlyDateString = `Until ${hours}:${minutes < 10 ? minutes + "0" : minutes}`;
+
+                return l;
+            });
+            return livestreams;
+        });
     },
 
     async getPublic(year?: number, term?: string): Promise<object> {
         const query = year !== undefined && term !== undefined ? `?year=${year}&term=${term}` : "";
-        return fetch(`/api/courses/public${query}`)
-            .then((res) => {
-                if (!res.ok) {
-                    throw Error(res.statusText);
-                }
-
-                return res.json();
-            })
-            .catch((err) => {
-                console.error(err);
-                return [];
-            })
-            .then((courses) => courses);
+        return get(`/api/courses/public${query}`);
     },
 
     async getUsers(year?: number, term?: string): Promise<object> {
         const query = year !== undefined && term !== undefined ? `?year=${year}&term=${term}` : "";
-        return fetch(`/api/courses/users${query}`)
-            .then((res) => {
-                if (!res.ok) {
-                    throw Error(res.statusText);
-                }
-
-                return res.json();
-            })
-            .catch((err) => {
-                console.error(err);
-                return [];
-            })
-            .then((courses) => courses);
+        return get(`/api/courses/users${query}`);
     },
 };
+
+function get(url: string, default_resp: object = []) {
+    return fetch(url)
+        .then((res) => {
+            if (!res.ok) {
+                throw Error(res.statusText);
+            }
+
+            return res.json();
+        })
+        .catch((err) => {
+            console.error(err);
+            return default_resp;
+        })
+        .then((o) => o);
+}
