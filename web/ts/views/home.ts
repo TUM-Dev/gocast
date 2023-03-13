@@ -21,7 +21,8 @@ export function header() {
 
 export enum Views {
     Main,
-    MyCourses,
+    UserCourses,
+    PublicCourses,
 }
 
 export function body() {
@@ -31,8 +32,12 @@ export function body() {
             this.currentView = Views.Main;
         },
 
-        showMyCourses() {
-            this.currentView = Views.MyCourses;
+        showUserCourses() {
+            this.currentView = Views.UserCourses;
+        },
+
+        showPublicCourses() {
+            this.currentView = Views.PublicCourses;
         },
 
         showAllSemesters: false,

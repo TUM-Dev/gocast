@@ -105,6 +105,16 @@ type uploadVodReq struct {
 	Title string    `form:"title"`
 }
 
+type CourseDTO struct {
+	ID          uint         `json:"ID"`
+	Name        string       `json:"name"`
+	Slug        string       `json:"slug"`
+	Term        string       `json:"term"`
+	Year        int          `json:"year"`
+	NextLecture model.Stream `json:"nextLecture,omitempty"`
+	LastLecture model.Stream `json:"lastLecture,omitempty"`
+}
+
 func (r coursesRoutes) getLive(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
@@ -161,7 +171,7 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 func (r coursesRoutes) getPublic(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
-	var res, public []model.Course
+	var courses, public []model.Course
 	var err error
 	var year int
 	var term string
@@ -183,13 +193,26 @@ func (r coursesRoutes) getPublic(c *gin.Context) {
 		public, err = r.GetPublicCourses(year, term)
 	}
 	if err != nil {
-		res = []model.Course{}
+		courses = []model.Course{}
 	} else {
 		sortCourses(public)
-		res = commons.Unique(public, func(c model.Course) uint { return c.ID })
+		courses = commons.Unique(public, func(c model.Course) uint { return c.ID })
 	}
 
-	c.JSON(http.StatusOK, res)
+	resp := make([]CourseDTO, len(courses))
+	for i, course := range courses {
+		resp[i] = CourseDTO{
+			ID:          course.ID,
+			Name:        course.Name,
+			Slug:        course.Slug,
+			Term:        course.TeachingTerm,
+			Year:        course.Year,
+			NextLecture: course.GetNextLecture(),
+			LastLecture: course.GetLastLecture(),
+		}
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
 
 func sortCourses(courses []model.Course) {
@@ -199,17 +222,6 @@ func sortCourses(courses []model.Course) {
 }
 
 func (r coursesRoutes) getUsers(c *gin.Context) {
-	type DTO struct {
-		ID          uint         `json:"ID"`
-		Name        string       `json:"name"`
-		Slug        string       `json:"slug"`
-		Term        string       `json:"term"`
-		Year        int          `json:"year"`
-		NextLecture model.Stream `json:"nextLecture,omitempty"`
-		LastLecture model.Stream `json:"lastLecture,omitempty"`
-	}
-
-	var resp []DTO
 	var courses []model.Course
 	var year int
 	var term string
@@ -248,9 +260,9 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 
 	sortCourses(courses)
 	courses = commons.Unique(courses, func(c model.Course) uint { return c.ID })
-	resp = make([]DTO, len(courses))
+	resp := make([]CourseDTO, len(courses))
 	for i, course := range courses {
-		resp[i] = DTO{
+		resp[i] = CourseDTO{
 			ID:          course.ID,
 			Name:        course.Name,
 			Slug:        course.Slug,
