@@ -69,6 +69,22 @@ export function body() {
             this.userCourses = await Courses.getUsers();
         },
 
+        getLiveToday() {
+            return this.userCourses.filter((c) => {
+                if (c.nextLecture.ID !== 0) {
+                    const start = new Date(c.nextLecture.Start);
+                    const now = new Date();
+                    return (
+                        start.getDay() === now.getDay() &&
+                        start.getMonth() == now.getMonth() &&
+                        start.getFullYear() === now.getFullYear()
+                    );
+                }
+
+                return false;
+            });
+        },
+
         async switchSemester(year, term, semesterIndex) {
             this.publicCourses = await Courses.getPublic(year, term);
             this.userCourses = await Courses.getUsers(year, term);

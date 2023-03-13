@@ -106,7 +106,7 @@
                 <i class="text-xs fa-solid fa-graduation-cap mr-2"></i>
                 My Courses
             </p>
-            <template x-for="(course, i) in userCourses.slice(0, 5)" :id="course.ID">
+            <template x-for="(course, i) in userCourses.slice(0, 5)" :key="course.ID">
                 <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 hover:underline"
                    :href="`/course/${course.year}/${course.term}/${course.slug}`"
                    x-text="course.name">
@@ -126,7 +126,7 @@
                 <i class="text-xs fa-solid fa-chalkboard mr-2"></i>
                 Public Courses
             </p>
-            <template x-for="(course, i) in publicCourses.slice(0, 5)" :id="course.ID">
+            <template x-for="(course, i) in publicCourses.slice(0, 5)" :key="course.ID">
                 <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 hover:underline"
                    :href="`/course/${course.year}/${course.term}/${course.slug}`"
                    x-text="course.name">
@@ -161,6 +161,30 @@
                     {{end}}
                 {{end}}
                 {{template "livestreams"}}
+                <div class="grid px-3 py-4 lg:grid-cols-2 grid-cols-1">
+                    <div class="lg:col-span-1 lg:mr-4">
+                        <h3 class="font-bold mb-4">Today</h3>
+                        <div class="grid gap-3">
+                            <template x-for="(course, i) in getLiveToday()" :key="course.ID">
+                                <div class="border-b dark:border-gray-800 last:border-0 py-2 px-1">
+                                    <a class="block text-3 font-semibold hover:underline" x-text="course.name"
+                                       :href="`/course/${course.year}/${course.term}/${course.slug}`"></a>
+                                    <div class="flex items-center text-sm text-5 font-light">
+                                        <a :href="`/w/${course.slug}/${course.nextLecture.ID}`">
+                                            <i class="fa-solid fa-square-up-right"></i>
+                                            <span class="hover:underline"
+                                                  x-text="`Next lecture: ${new Date(course.nextLecture.Start).toLocaleString()}`"></span>
+                                        </a>
+                                    </div>
+
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-1">
+                        <h3 class="font-bold mb-4">Recent VODs</h3>
+                    </div>
+                </div>
             </div>
         </template>
     </section>
@@ -238,7 +262,7 @@
 
 {{define "semester-picker"}}
     <span class="text-sm bg-gray-100 dark:bg-gray-800 rounded-lg text-left px-3 py-2 mb-1"
-          x-text="semesters[selectedSemesterIndex].FriendlyString"></span>
+          x-text="semesters[selectedSemesterIndex]?.FriendlyString"></span>
     <template x-if="showAllSemesters">
         <template x-for="(s, i) in semesters">
             <button type="button" @click="switchSemester(s.Year, s.TeachingTerm, i)"
@@ -304,7 +328,7 @@
             </button>
         </div>
         <div class="grid gap-3 pb-4">
-            <template x-for="(course, i) in userCourses" :id="course.ID">
+            <template x-for="(course, i) in userCourses" :key="course.ID">
                 <div class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2">
                     <a class="block text-3 text-lg font-semibold hover:underline" x-text="course.name"
                        :href="`/course/${course.year}/${course.term}/${course.slug}`"></a>
@@ -345,7 +369,7 @@
             </button>
         </div>
         <div class="grid gap-3 pb-4">
-            <template x-for="(course, i) in publicCourses" :id="course.ID">
+            <template x-for="(course, i) in publicCourses" :key="course.ID">
                 <div class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2">
                     <a class="block text-3 text-lg font-semibold hover:underline" x-text="course.name"
                        :href="`/course/${course.year}/${course.term}/${course.slug}`"></a>
