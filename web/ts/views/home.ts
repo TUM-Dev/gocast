@@ -42,6 +42,22 @@ export function sideNavigation() {
         getSlicedSemesters(): Semester[] {
             return this.showAllSemesters ? this.semesters : this.semesters.slice(0, 3);
         },
+
+        publicCourses: [],
+        async loadPublicCourses() {
+            this.publicCourses = await Courses.getPublic();
+        },
+
+        userCourses: [],
+        async loadUserCourses() {
+            this.userCourses = await Courses.getUsers();
+        },
+
+        async switchSemester(year, term, semesterIndex) {
+            this.publicCourses = await Courses.getPublic(year, term);
+            this.userCourses = await Courses.getUsers(year, term);
+            this.selectedSemesterIndex = semesterIndex;
+        },
     };
 }
 
@@ -192,5 +208,39 @@ const Courses = {
                 return [];
             })
             .then((livestreams) => livestreams);
+    },
+
+    async getPublic(year?: number, term?: string): Promise<object> {
+        const query = year !== undefined && term !== undefined ? `?year=${year}&term=${term}` : "";
+        return fetch(`/api/courses/public${query}`)
+            .then((res) => {
+                if (!res.ok) {
+                    throw Error(res.statusText);
+                }
+
+                return res.json();
+            })
+            .catch((err) => {
+                console.error(err);
+                return [];
+            })
+            .then((courses) => courses);
+    },
+
+    async getUsers(year?: number, term?: string): Promise<object> {
+        const query = year !== undefined && term !== undefined ? `?year=${year}&term=${term}` : "";
+        return fetch(`/api/courses/users${query}`)
+            .then((res) => {
+                if (!res.ok) {
+                    throw Error(res.statusText);
+                }
+
+                return res.json();
+            })
+            .catch((err) => {
+                console.error(err);
+                return [];
+            })
+            .then((courses) => courses);
     },
 };

@@ -89,7 +89,8 @@
     </div>
 </header>
 <article class="flex grow">
-    <section x-data="home.sideNavigation()" x-init="Promise.all([loadSemesters(), loadCurrentSemester()])"
+    <section x-data="home.sideNavigation()"
+             x-init="Promise.all([loadSemesters(), loadCurrentSemester(), loadPublicCourses(), loadUserCourses()])"
              id="side-navigation" class="overflow-y-scroll font-light px-5 text-3 w-72">
         <div class="grid py-4">
             <p class="px-3 pb-2 font-semibold">
@@ -100,18 +101,16 @@
         </div>
         <div class="border-b dark:border-gray-800"></div>
         <div class="grid py-4">
-            {{if .Courses}}
-                <p class="px-3 pb-2 font-semibold">
-                    <i class="fa-solid fa-chalkboard mr-2"></i>
-                    My Courses
-                </p>
-                {{range $course := .Courses }}
-                    <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2"
-                       href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
-                        {{$course.Name}}
-                    </a>
-                {{end}}
-            {{end}}
+            <p class="px-3 pb-2 font-semibold">
+                <i class="fa-solid fa-chalkboard mr-2"></i>
+                My Courses
+            </p>
+            <template x-for="(course, i) in userCourses.slice(0, 3)" :id="course.ID">
+                <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2"
+                   :href="`/course/${course.Year}/${course.TeachingTerm}/${course.Slug}`"
+                   x-text="course.Name">
+                </a>
+            </template>
         </div>
         <div class="border-b dark:border-gray-800"></div>
         <div class="grid py-4">
@@ -119,12 +118,12 @@
                 <i class="fa-solid fa-chalkboard mr-2"></i>
                 Public Courses
             </p>
-            {{range $course := .PublicCourses }}
+            <template x-for="(course, i) in publicCourses.slice(0, 3)" :id="course.ID">
                 <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2"
-                   href="/course/{{$course.Year}}/{{$course.TeachingTerm}}/{{$course.Slug}}">
-                    {{$course.Name}}
+                   :href="`/course/${course.Year}/${course.TeachingTerm}/${course.Slug}`"
+                   x-text="course.Name">
                 </a>
-            {{end}}
+            </template>
         </div>
     </section>
     <section x-data="home.main()" x-init="Promise.all([loadLivestreams()])"
@@ -220,10 +219,12 @@
 {{end}}
 
 {{define "semester-picker"}}
+    <span class="text-sm bg-gray-100 dark:bg-gray-800 rounded-lg text-left px-3 py-2 mb-2"
+          x-text="semesters[selectedSemesterIndex].FriendlyString"></span>
     <template x-for="(s, i) in getSlicedSemesters()">
-        <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2"
-           :class="{'bg-gray-100 dark:bg-gray-800' : i === selectedSemesterIndex}"
-           :href="`/semester/${s.Year}/${s.TeachingTerm}`" x-text="s.FriendlyString"></a>
+        <button type="button" @click="switchSemester(s.Year, s.TeachingTerm, i)"
+                class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-left px-3 py-2"
+                x-text="s.FriendlyString"></button>
     </template>
     <button @click="toggleAllSemesters()"
             class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 w-full">
@@ -245,7 +246,7 @@
                             <div class="bg-gray-100 dark:bg-gray-800 h-56 rounded-lg mb-2 border-4 border-transparent hover:border-blue-500 dark:hover:border-indigo-600 transition-all duration-500"></div>
                         </a>
                         <a class="block" :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`">
-                            <div class = "flex items-center">
+                            <div class="flex items-center">
                                 <span x-cloak x-show="livestream.Stream.Visibility === 'hidden'"
                                       class="bg-blue-800 text-white text-tiny p-1 mr-2 rounded-lg font-semibold">Hidden</span>
                                 <p class="text-sm text-5" x-text="livestream.Course.Name"></p>

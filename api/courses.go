@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/RBG-TUM/commons"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
@@ -21,6 +22,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -35,6 +37,8 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	api := router.Group("/api")
 	{
 		api.GET("/courses/live", routes.getLive)
+		api.GET("/courses/public", routes.getPublic)
+		api.GET("/courses/users", routes.getUsers)
 
 		lecturers := api.Group("")
 		{
@@ -152,6 +156,90 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, livestreams)
+}
+
+func (r coursesRoutes) getPublic(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	var res, public []model.Course
+	var err error
+	var year int
+	var term string
+
+	year, term = tum.GetCurrentSemester()
+	year, err = strconv.Atoi(c.DefaultQuery("year", strconv.Itoa(year)))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid year",
+			Err:           err,
+		})
+	}
+	term = c.DefaultQuery("term", term)
+
+	if tumLiveContext.User != nil {
+		public, err = r.GetPublicAndLoggedInCourses(year, term)
+	} else {
+		public, err = r.GetPublicCourses(year, term)
+	}
+	if err != nil {
+		res = []model.Course{}
+	} else {
+		sortCourses(public)
+		res = commons.Unique(public, func(c model.Course) uint { return c.ID })
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
+func sortCourses(courses []model.Course) {
+	sort.Slice(courses, func(i, j int) bool {
+		return courses[i].CompareTo(courses[j])
+	})
+}
+
+func (r coursesRoutes) getUsers(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	var courses []model.Course
+	var year int
+	var term string
+	var err error
+
+	year, term = tum.GetCurrentSemester()
+	year, err = strconv.Atoi(c.DefaultQuery("year", strconv.Itoa(year)))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid year",
+			Err:           err,
+		})
+	}
+	term = c.DefaultQuery("term", term)
+
+	if tumLiveContext.User != nil {
+		switch tumLiveContext.User.Role {
+		case model.AdminType:
+			courses = routes.GetAllCoursesForSemester(year, term, context.Background())
+		case model.LecturerType:
+			{
+				courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
+				coursesForLecturer, err :=
+					routes.GetCourseForLecturerIdByYearAndTerm(c, year, term, tumLiveContext.User.ID)
+				if err == nil {
+					courses = append(courses, coursesForLecturer...)
+				}
+			}
+		default:
+			courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
+		}
+	}
+
+	sortCourses(courses)
+
+	courses = commons.Unique(courses, func(c model.Course) uint { return c.ID })
+
+	c.JSON(http.StatusOK, courses)
 }
 
 func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {
