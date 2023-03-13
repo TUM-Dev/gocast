@@ -19,8 +19,22 @@ export function header() {
     };
 }
 
+export enum Views {
+    Main,
+    MyCourses,
+}
+
 export function body() {
     return {
+        currentView: Views.Main,
+        showMain() {
+            this.currentView = Views.Main;
+        },
+
+        showMyCourses() {
+            this.currentView = Views.MyCourses;
+        },
+
         showAllSemesters: false,
         toggleAllSemesters(set?: boolean) {
             this.showAllSemesters = set || !this.showAllSemesters;
