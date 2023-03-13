@@ -11,8 +11,10 @@
 {{$user := .TUMLiveContext.User}}
 {{$currentYear := .CurrentYear}}
 {{$currentTerm := .CurrentTerm}}
-<body class="h-screen flex flex-col items-stretch bg-white dark:bg-secondary">
-<header x-data="home.header()" class="text-3 flex z-50 sticky w-full items-center justify-between px-6 h-16">
+<body x-data="home.body()"
+      x-init="Promise.all([loadSemesters(), loadCurrentSemester(), loadPublicCourses(), loadUserCourses()])"
+      class="h-screen flex flex-col items-stretch bg-white dark:bg-secondary">
+<header x-data="home.header()" class="text-3 flex z-50 sticky w-full items-center justify-between px-6 py-2 h-16">
     <a id="logo" title="Start" href="/" class="mr-4">
         <img src="/logo.svg" width="42" alt="TUM-Live Logo">
     </a>
@@ -89,62 +91,80 @@
     </div>
 </header>
 <article class="flex grow">
-    <section x-data="home.sideNavigation()"
-             x-init="Promise.all([loadSemesters(), loadCurrentSemester(), loadPublicCourses(), loadUserCourses()])"
-             id="side-navigation" class="overflow-y-scroll font-light px-5 text-3 w-72">
+    <section id="side-navigation" class="overflow-y-scroll font-light px-5 text-3 w-96">
         <div class="grid py-4">
-            <p class="px-3 pb-2 font-semibold">
-                <i class="fa-solid fa-calendar mr-2"></i>
+            <p class="flex items-center px-3 pb-2 font-semibold">
+                <i class="text-xs fa-solid fa-calendar mr-2"></i>
                 Semesters
             </p>
             {{template "semester-picker" .}}
         </div>
         <div class="border-b dark:border-gray-800"></div>
         <div class="grid py-4">
-            <p class="px-3 pb-2 font-semibold">
-                <i class="fa-solid fa-chalkboard mr-2"></i>
+            <p class="flex items-center px-3 pb-2 font-semibold">
+                <i class="text-xs fa-solid fa-graduation-cap mr-2"></i>
                 My Courses
             </p>
-            <template x-for="(course, i) in userCourses.slice(0, 3)" :id="course.ID">
-                <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2"
-                   :href="`/course/${course.Year}/${course.TeachingTerm}/${course.Slug}`"
-                   x-text="course.Name">
+            <template x-for="(course, i) in userCourses.slice(0, 5)" :id="course.ID">
+                <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 hover:underline"
+                   :href="`/course/${course.year}/${course.term}/${course.slug}`"
+                   x-text="course.name">
                 </a>
             </template>
         </div>
         <div class="border-b dark:border-gray-800"></div>
         <div class="grid py-4">
-            <p class="px-3 pb-2 font-semibold">
-                <i class="fa-solid fa-chalkboard mr-2"></i>
+            <p class="flex items-center px-3 pb-2 font-semibold">
+                <i class="text-xs fa-solid fa-chalkboard mr-2"></i>
                 Public Courses
             </p>
-            <template x-for="(course, i) in publicCourses.slice(0, 3)" :id="course.ID">
-                <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2"
+            <template x-for="(course, i) in publicCourses.slice(0, 5)" :id="course.ID">
+                <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 hover:underline"
                    :href="`/course/${course.Year}/${course.TeachingTerm}/${course.Slug}`"
                    x-text="course.Name">
                 </a>
             </template>
         </div>
     </section>
-    <section x-data="home.main()" x-init="Promise.all([loadLivestreams()])"
-             id="main-content" class="text-3 p-4 grow">
-        {{if .TUMLiveContext}}
-            {{if .TUMLiveContext.User.Name}}
-                <h1 id="greeting" class="font-bold mb-4 px-3">
-                    {{.TUMLiveContext.User.GetPreferredGreeting}} {{.TUMLiveContext.User.GetPreferredName}}, nice to see
-                    you! 👋
-                </h1>
-            {{end}}
-        {{end}}
-        {{template "livestreams"}}
-        {{if .Courses}}
-            <h2 class="font-bold">Today</h2>
-            {{range $course := .Courses }}
-                {{if and (not $course.IsHidden) $course.NextStreamToday}}
-                    {{template "course-card" (dict "course" $course "user" $user) }}
+    <section id="content-wrapper" class="text-3 p-4 grow">
+        <div x-cloak x-show="true">
+            <h1 id="my-courses-heading" class="flex items-center font-bold mb-4 px-3">
+                <i class="text-base fa-solid fa-graduation-cap mr-2"></i>
+                My Courses
+            </h1>
+
+            <div class="grid gap-3">
+                <template x-for="(course, i) in userCourses" :id="course.ID">
+                    <div class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2">
+                        <a class="block text-3 text-lg font-semibold hover:underline" x-text="course.name"
+                           :href="`/course/${course.year}/${course.term}/${course.slug}`"></a>
+                        <div class="flex items-center text-sm text-5 font-light">
+                             <span x-cloak x-show="course.nextLecture.ID !== 0"
+                                   x-text="`Next lecture: ${new Date(course.nextLecture.Start).toLocaleString()}`"></span>
+                            <span x-cloak x-show="course.nextLecture.ID === 0">No upcoming lecture.</span>
+                            <a x-cloak x-show="course.lastLecture.ID !== 0"
+                               :href="`/w/${course.slug}/${course.lastLecture.ID}`"
+                               class="text-5 text-sm px-3">
+                                <i class="fa-solid fa-square-up-right"></i>
+                                <span class="hover:underline">Most recent lecture</span>
+                            </a>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+        <div x-cloak x-show="false" x-data="home.main()" x-init="Promise.all([loadLivestreams()])">
+            {{if .TUMLiveContext}}
+                {{if .TUMLiveContext.User.Name}}
+                    <h1 id="greeting" class="font-bold mb-4 px-3">
+                        {{.TUMLiveContext.User.GetPreferredGreeting}} {{.TUMLiveContext.User.GetPreferredName}}, nice to
+                        see
+                        you! 👋
+                    </h1>
                 {{end}}
             {{end}}
-        {{end}}
+            {{template "livestreams"}}
+        </div>
     </section>
 </article>
 <footer class="w-full flex justify-between space-x-3 py-4 px-8 items-center bg-gray-100 dark:bg-secondary-light">
@@ -219,12 +239,14 @@
 {{end}}
 
 {{define "semester-picker"}}
-    <span class="text-sm bg-gray-100 dark:bg-gray-800 rounded-lg text-left px-3 py-2 mb-2"
+    <span class="text-sm bg-gray-100 dark:bg-gray-800 rounded-lg text-left px-3 py-2 mb-1"
           x-text="semesters[selectedSemesterIndex].FriendlyString"></span>
-    <template x-for="(s, i) in getSlicedSemesters()">
-        <button type="button" @click="switchSemester(s.Year, s.TeachingTerm, i)"
-                class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-left px-3 py-2"
-                x-text="s.FriendlyString"></button>
+    <template x-if="showAllSemesters">
+        <template x-for="(s, i) in semesters">
+            <button type="button" @click="switchSemester(s.Year, s.TeachingTerm, i)"
+                    class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-left px-3 py-2"
+                    x-text="s.FriendlyString"></button>
+        </template>
     </template>
     <button @click="toggleAllSemesters()"
             class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 w-full">

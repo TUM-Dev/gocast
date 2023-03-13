@@ -96,7 +96,9 @@ func (d coursesDao) GetAllCourses() ([]model.Course, error) {
 
 func (d coursesDao) GetCourseForLecturerIdByYearAndTerm(c context.Context, year int, term string, userId uint) ([]model.Course, error) {
 	var res []model.Course
-	err := DB.Model(&model.Course{}).Find(&res, "user_id = ? AND year = ? AND teaching_term = ?", userId, year, term).Error
+	err := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
+		return db.Order("start asc")
+	}).Model(&model.Course{}).Find(&res, "user_id = ? AND year = ? AND teaching_term = ?", userId, year, term).Error
 	return res, err
 }
 

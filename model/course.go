@@ -207,6 +207,19 @@ func (c Course) GetNextLecture() Stream {
 	return earliestLecture
 }
 
+// GetLastLecture returns the most recent lecture of the course
+func (c Course) GetLastLecture() Stream {
+	var lastLecture Stream
+	now := time.Now()
+	for _, s := range c.Streams {
+		if s.Start.After(now) {
+			return lastLecture
+		}
+		lastLecture = s
+	}
+	return lastLecture
+}
+
 // GetLiveStreams returns the current live streams of the course or an empty slice if none are live
 func (c Course) GetLiveStreams() []Stream {
 	var res []Stream

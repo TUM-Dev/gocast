@@ -199,12 +199,23 @@ func sortCourses(courses []model.Course) {
 }
 
 func (r coursesRoutes) getUsers(c *gin.Context) {
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	type DTO struct {
+		ID          uint         `json:"ID"`
+		Name        string       `json:"name"`
+		Slug        string       `json:"slug"`
+		Term        string       `json:"term"`
+		Year        int          `json:"year"`
+		NextLecture model.Stream `json:"nextLecture,omitempty"`
+		LastLecture model.Stream `json:"lastLecture,omitempty"`
+	}
 
+	var resp []DTO
 	var courses []model.Course
 	var year int
 	var term string
 	var err error
+
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	year, term = tum.GetCurrentSemester()
 	year, err = strconv.Atoi(c.DefaultQuery("year", strconv.Itoa(year)))
@@ -236,10 +247,21 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 	}
 
 	sortCourses(courses)
-
 	courses = commons.Unique(courses, func(c model.Course) uint { return c.ID })
+	resp = make([]DTO, len(courses))
+	for i, course := range courses {
+		resp[i] = DTO{
+			ID:          course.ID,
+			Name:        course.Name,
+			Slug:        course.Slug,
+			Term:        course.TeachingTerm,
+			Year:        course.Year,
+			NextLecture: course.GetNextLecture(),
+			LastLecture: course.GetLastLecture(),
+		}
+	}
 
-	c.JSON(http.StatusOK, courses)
+	c.JSON(http.StatusOK, resp)
 }
 
 func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {

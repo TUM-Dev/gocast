@@ -19,7 +19,7 @@ export function header() {
     };
 }
 
-export function sideNavigation() {
+export function body() {
     return {
         showAllSemesters: false,
         toggleAllSemesters(set?: boolean) {
@@ -39,9 +39,6 @@ export function sideNavigation() {
             );
             this.selectedSemesterIndex = this.currentSemesterIndex;
         },
-        getSlicedSemesters(): Semester[] {
-            return this.showAllSemesters ? this.semesters : this.semesters.slice(0, 3);
-        },
 
         publicCourses: [],
         async loadPublicCourses() {
@@ -57,6 +54,7 @@ export function sideNavigation() {
             this.publicCourses = await Courses.getPublic(year, term);
             this.userCourses = await Courses.getUsers(year, term);
             this.selectedSemesterIndex = semesterIndex;
+            this.showAllSemesters = false;
         },
     };
 }
