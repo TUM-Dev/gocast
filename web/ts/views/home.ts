@@ -67,8 +67,12 @@ export function body() {
         },
 
         userCourses: [],
+        liveToday: [],
+        recentVods: [],
         async loadUserCourses() {
             this.userCourses = await Courses.getUsers();
+            this.liveToday = this.getLiveToday();
+            this.recentVods = this.getRecentVods();
         },
 
         getLiveToday() {
@@ -98,6 +102,8 @@ export function body() {
         async switchSemester(year, term, semesterIndex) {
             this.publicCourses = await Courses.getPublic(year, term);
             this.userCourses = await Courses.getUsers(year, term);
+            this.liveToday = this.getLiveToday();
+            this.recentVods = this.getRecentVods();
             this.selectedSemesterIndex = semesterIndex;
             this.showAllSemesters = false;
         },
