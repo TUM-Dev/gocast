@@ -25,6 +25,8 @@ export enum Views {
     PublicCourses,
 }
 
+const DEFAULT_LECTURE_NAME = "Untitled lecture";
+
 export function body() {
     return {
         currentView: Views.Main,
@@ -83,6 +85,14 @@ export function body() {
 
                 return false;
             });
+        },
+
+        getRecentVods() {
+            const courses = this.userCourses.filter((c) => c.lastLecture.ID !== 0);
+            courses.forEach(
+                (c) => (c.lastLecture.Name = c.lastLecture.Name === "" ? DEFAULT_LECTURE_NAME : c.lastLecture.Name),
+            );
+            return courses;
         },
 
         async switchSemester(year, term, semesterIndex) {

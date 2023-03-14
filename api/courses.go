@@ -171,13 +171,8 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 func (r coursesRoutes) getPublic(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
-	var courses, public []model.Course
-	var err error
-	var year int
-	var term string
-
-	year, term = tum.GetCurrentSemester()
-	year, err = strconv.Atoi(c.DefaultQuery("year", strconv.Itoa(year)))
+	year, term := tum.GetCurrentSemester()
+	year, err := strconv.Atoi(c.DefaultQuery("year", strconv.Itoa(year)))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
@@ -187,6 +182,7 @@ func (r coursesRoutes) getPublic(c *gin.Context) {
 	}
 	term = c.DefaultQuery("term", term)
 
+	var courses, public []model.Course
 	if tumLiveContext.User != nil {
 		public, err = r.GetPublicAndLoggedInCourses(year, term)
 	} else {
@@ -215,22 +211,11 @@ func (r coursesRoutes) getPublic(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func sortCourses(courses []model.Course) {
-	sort.Slice(courses, func(i, j int) bool {
-		return courses[i].CompareTo(courses[j])
-	})
-}
-
 func (r coursesRoutes) getUsers(c *gin.Context) {
-	var courses []model.Course
-	var year int
-	var term string
-	var err error
-
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
-	year, term = tum.GetCurrentSemester()
-	year, err = strconv.Atoi(c.DefaultQuery("year", strconv.Itoa(year)))
+	year, term := tum.GetCurrentSemester()
+	year, err := strconv.Atoi(c.DefaultQuery("year", strconv.Itoa(year)))
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
@@ -240,6 +225,7 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 	}
 	term = c.DefaultQuery("term", term)
 
+	var courses []model.Course
 	if tumLiveContext.User != nil {
 		switch tumLiveContext.User.Role {
 		case model.AdminType:
@@ -274,6 +260,12 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, resp)
+}
+
+func sortCourses(courses []model.Course) {
+	sort.Slice(courses, func(i, j int) bool {
+		return courses[i].CompareTo(courses[j])
+	})
 }
 
 func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {

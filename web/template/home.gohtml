@@ -160,31 +160,29 @@
                         </h1>
                     {{end}}
                 {{end}}
-                {{template "livestreams"}}
-                <div class="grid px-3 py-4 lg:grid-cols-2 grid-cols-1">
-                    <div class="lg:col-span-1 lg:mr-4">
-                        <h3 class="font-bold mb-4">Today</h3>
-                        <div class="grid gap-3">
-                            <template x-for="(course, i) in getLiveToday()" :key="course.ID">
-                                <div class="border-b dark:border-gray-800 last:border-0 py-2 px-1">
-                                    <a class="block text-3 font-semibold hover:underline" x-text="course.name"
-                                       :href="`/course/${course.year}/${course.term}/${course.slug}`"></a>
-                                    <div class="flex items-center text-sm text-5 font-light">
-                                        <a :href="`/w/${course.slug}/${course.nextLecture.ID}`">
-                                            <i class="fa-solid fa-square-up-right"></i>
-                                            <span class="hover:underline"
-                                                  x-text="`Next lecture: ${new Date(course.nextLecture.Start).toLocaleString()}`"></span>
-                                        </a>
-                                    </div>
-
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-                    <div class="lg:col-span-1">
-                        <h3 class="font-bold mb-4">Recent VODs</h3>
-                    </div>
+                <div class="grid gap-4">
+                    {{template "livestreams"}}
+                    {{template "recent-vods"}}
                 </div>
+                <!--<div class="lg:col-span-1 lg:mr-4">
+                    <h3 class="font-bold mb-4">Today</h3>
+                    <div class="grid gap-3">
+                        <template x-for="(course, i) in getLiveToday()" :key="course.ID">
+                            <div class="border-b dark:border-gray-800 last:border-0 py-2 px-1">
+                                <a class="block text-3 font-semibold hover:underline" x-text="course.name"
+                                   :href="`/course/${course.year}/${course.term}/${course.slug}`"></a>
+                                <div class="flex items-center text-sm text-5 font-light">
+                                    <a :href="`/w/${course.slug}/${course.nextLecture.ID}`">
+                                        <i class="fa-solid fa-square-up-right"></i>
+                                        <span class="hover:underline"
+                                              x-text="`Next lecture: ${new Date(course.nextLecture.Start).toLocaleString()}`"></span>
+                                    </a>
+                                </div>
+
+                            </div>
+                        </template>
+                    </div>
+                </div>-->
             </div>
         </template>
     </section>
@@ -284,20 +282,25 @@
                 Live
             </div>
             <div class="grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
-                <template x-for="(livestream, i) in livestreams">
-                    <div class="p-3 lg:col-span-1 col-span-full" :id="`livestream-${livestream.Stream.Name}`">
+                <template x-for="(livestream, i) in livestreams" :key="livestream.Stream.ID">
+                    <div class="p-3 lg:col-span-1 col-span-full" :id="`livestream-${livestream.Stream.ID}`">
                         <a class="block" :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`">
-                            <div class="bg-gray-100 dark:bg-gray-800 h-56 rounded-lg mb-2 border-4 border-transparent hover:border-blue-500 dark:hover:border-indigo-600 transition-all duration-500"></div>
+                            <div :id="`livestream-thumb-placeholder-${livestream.Stream.ID}`"
+                                 class="bg-gray-100 dark:bg-gray-800 h-56 rounded-lg mb-2 border-4 border-transparent hover:border-blue-500 dark:hover:border-indigo-600 transition-all duration-500 animate-pulse "></div>
                         </a>
-                        <a class="block" :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`">
+                        <div>
                             <div class="flex items-center">
                                 <span x-cloak x-show="livestream.Stream.Visibility === 'hidden'"
                                       class="bg-blue-800 text-white text-tiny p-1 mr-2 rounded-lg font-semibold">Hidden</span>
-                                <p class="text-sm text-5" x-text="livestream.Course.Name"></p>
+                                <a class="block text-sm text-5 hover:bg-gray-50 dark:hover:bg-gray-800 px-2 rounded"
+                                   :href="`/course/${livestream.Course.Year}/${livestream.Course.TeachingTerm}/${livestream.Course.Slug}`"
+                                   x-text="livestream.Course.Name"></a>
                             </div>
-                            <span class="font-medium block" x-text="livestream.Stream.Name"></span>
-                        </a>
-                        <div class="flex items-center text-sm">
+                            <a class="font-medium block px-2 hover:underline"
+                               :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`"
+                               x-text="livestream.Stream.Name"></a>
+                        </div>
+                        <div class="flex items-center text-sm px-2">
                             <template x-if="livestream.LectureHall !== null">
                                 <a class="block font-semibold mr-2">
                                     <i class="fas fa-location-pin text-xs"></i>
@@ -313,8 +316,31 @@
     </template>
 {{end}}
 
+{{define "recent-vods"}}
+    <div id = "recent-vods">
+        <h3 class="font-bold px-3">Recent VODs</h3>
+        <div class="grid lg:grid-cols-4 grid-cols-1">
+            <template x-for="(course, i) in getRecentVods()" :key="course.ID">
+                <div class="lg:col-span-1 col-span-full p-3">
+                    <a :href="`/w/${course.slug}/${course.lastLecture.ID}`">
+                        <div :id="`livestream-thumb-placeholder-${livestream.Stream.ID}`"
+                             class="bg-gray-100 dark:bg-gray-800 h-40 rounded-lg mb-2 border-4 border-transparent hover:border-blue-500 dark:hover:border-indigo-600 transition-all duration-500 animate-pulse "></div>
+                    </a>
+                    <a class="block text-xs text-5 hover:bg-gray-50 dark:hover:bg-gray-800 px-1 rounded w-fit" x-text="course.name"
+                       :href="`/course/${course.year}/${course.term}/${course.slug}`"></a>
+                    <a class="font-semibold block hover:underline px-1"
+                       :href="`/w/${course.slug}/${course.lastLecture.ID}`"
+                       x-text="course.lastLecture.Name"></a>
+                    <span class="font-light text-xs text-5 px-1"
+                          x-text="new Date(course.lastLecture.Start).toLocaleString()"></span>
+                </div>
+            </template>
+        </div>
+    </div>
+{{end}}
+
 {{define "user-courses"}}
-    <div>
+    <div id = "user-courses">
         <div class="flex items-center justify-between mb-4">
             <h1 id="my-courses-heading" class="flex items-center font-bold px-3">
                 <i class="text-base fa-solid fa-graduation-cap mr-2"></i>
@@ -355,7 +381,7 @@
 {{end}}
 
 {{define "public-courses"}}
-    <div>
+    <div id = "public-courses">
         <div class="flex items-center justify-between mb-4">
             <h1 id="my-courses-heading" class="flex items-center font-bold px-3">
                 <i class="text-base fa-solid fa-chalkboard mr-2"></i>
