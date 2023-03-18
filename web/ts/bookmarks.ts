@@ -46,7 +46,7 @@ export class BookmarkDialog {
         this.request.Hours = +this.request.Hours;
         this.request.Minutes = +this.request.Minutes;
         this.request.Seconds = +this.request.Seconds;
-        await Bookmarks.add(this.request);
+        await DataStore.bookmarks.add(this.request);
     }
 
     reset(): void {
@@ -74,7 +74,9 @@ export class BookmarkUpdater {
     }
 
     async submit() {
-        await this.bookmark.update(this.request).then(() => (this.show = false));
+        const updated = await DataStore.bookmarks.update(this.bookmark, this.request);
+        this.bookmark.description = updated.description;
+        this.show = false
     }
 
     reset() {
