@@ -29,9 +29,9 @@ export class BookmarksProvider {
         return this.data[bookmark.streamId].find((e) => e.ID === bookmark.ID);
     }
 
-    async delete(bookmark: Bookmark): Promise<void> {
-        await Bookmarks.delete(bookmark.ID);
-        await this.fetch(bookmark.streamId);
+    async delete(streamId: number, bookmarkId: number): Promise<void> {
+        await Bookmarks.delete(bookmarkId);
+        this.data[streamId] = this.data[streamId].filter((b) => b.ID !== bookmarkId);
     }
 }
 

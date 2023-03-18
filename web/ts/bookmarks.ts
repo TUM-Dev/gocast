@@ -1,6 +1,6 @@
 import { Delete, getData, postData, putData, Time } from "./global";
 import { getPlayers } from "./TUMLiveVjs";
-import {AddBookmarkRequest, Bookmark, Bookmarks, UpdateBookmarkRequest} from "./data-store/bookmarks";
+import {AddBookmarkRequest, Bookmark, UpdateBookmarkRequest} from "./data-store/bookmarks";
 import {DataStore} from "./data-store/data-store";
 
 export class BookmarkList {
@@ -21,10 +21,8 @@ export class BookmarkList {
     }
 
     async delete(id: number) {
-        await Bookmarks.delete(id).then(() => {
-            const index = this.list.findIndex((b) => b.ID === id);
-            this.list.splice(index, 1);
-        });
+        await DataStore.bookmarks.delete(this.streamId, id);
+        await this.fetch();
     }
 
     async fetch() {
