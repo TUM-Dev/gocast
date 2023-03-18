@@ -1,7 +1,7 @@
-import { VideoSections } from "./video-sections";
 import { Section } from "./global";
 import { getPlayers } from "./TUMLiveVjs";
 import { VideoJsPlayer } from "video.js";
+import {DataStore} from "./data-store/data-store";
 
 export enum MarkerType {
     sectionSep,
@@ -49,7 +49,7 @@ class SeekbarHighlights {
         this.sections = [];
         this.marker = this.marker.filter((m) => m.type != MarkerType.sectionSep);
 
-        const sections = await VideoSections.get(this.streamId);
+        const sections = await DataStore.videoSections.getData(this.streamId);
         for (let i = 0; i < sections.length; i++) {
             const section = sections[i];
             const nextSection = i + 1 < sections.length ? sections[i + 1] : null;

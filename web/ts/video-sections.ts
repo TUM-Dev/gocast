@@ -1,4 +1,6 @@
 import { Delete, getData, postData, putData, Section, Time } from "./global";
+import {VideoSections} from "./data-store/video-sections";
+import {DataStore} from "./data-store/data-store";
 
 export abstract class VideoSectionList {
     private streamId: number;
@@ -14,12 +16,7 @@ export abstract class VideoSectionList {
     }
 
     async fetch() {
-        VideoSections.get(this.streamId).then((list) => {
-            this.list = list;
-            list.forEach(
-                (s) => (s.friendlyTimestamp = new Time(s.startHours, s.startMinutes, s.startSeconds).toString()),
-            );
-        });
+        this.list = await DataStore.videoSections.getData(this.streamId);
     }
 
     abstract getList(): Section[];
@@ -230,37 +227,3 @@ class UpdateVideoSectionRequest {
     StartMinutes: number;
     StartSeconds: number;
 }
-
-/**
- * Wrapper for REST-API calls @ /api/stream/:id/sections
- * @category watch-page
- * @category admin-page
- */
-export const VideoSections = {
-    get: async function (streamId: number): Promise<Section[]> {
-        return getData(`/api/stream/${streamId}/sections`)
-            .then((resp) => {
-                if (!resp.ok) {
-                    throw Error(resp.statusText);
-                }
-                return resp.json();
-            })
-            .catch((err) => {
-                console.error(err);
-                return [];
-            })
-            .then((l: Section[]) => l);
-    },
-
-    add: async function (streamId: number, request: object) {
-        return postData(`/api/stream/${streamId}/sections`, request);
-    },
-
-    update: function (streamId: number, id: number, request: object) {
-        return putData(`/api/stream/${streamId}/sections/${id}`, request);
-    },
-
-    delete: async function (streamId: number, id: number): Promise<Response> {
-        return Delete(`/api/stream/${streamId}/sections/${id}`);
-    },
-};
