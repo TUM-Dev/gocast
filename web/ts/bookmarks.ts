@@ -1,5 +1,7 @@
 import { Delete, getData, postData, putData, Time } from "./global";
 import { getPlayers } from "./TUMLiveVjs";
+import {AddBookmarkRequest, Bookmark, Bookmarks, UpdateBookmarkRequest} from "./data-store/bookmarks";
+import {DataStore} from "./data-store/data-store";
 
 export class BookmarkList {
     private readonly streamId: number;
@@ -26,11 +28,7 @@ export class BookmarkList {
     }
 
     async fetch() {
-        this.list = (await Bookmarks.get(this.streamId)) ?? [];
-        this.list.forEach((b) => {
-            b.update = updateBookmark;
-            b.friendlyTimestamp = new Time(b.hours, b.minutes, b.seconds).toString();
-        });
+        this.list = await DataStore.bookmarks.getData(this.streamId);
     }
 }
 
@@ -84,87 +82,4 @@ export class BookmarkUpdater {
         this.request = new UpdateBookmarkRequest();
         this.request.Description = this.bookmark.description;
     }
-}
-
-type Bookmark = {
-    ID: number;
-    description: string;
-    hours: number;
-    minutes: number;
-    seconds: number;
-    friendlyTimestamp?: string;
-
-    update?: (UpdateBookmarkRequest) => Promise<void>;
-};
-
-async function updateBookmark(request: UpdateBookmarkRequest): Promise<void> {
-    // this = Bookmark object
-    if (this.description !== request.Description) {
-        return await Bookmarks.update(this.ID, request).then(() => {
-            this.description = request.Description;
-        });
-    }
-}
-
-const Bookmarks = {
-    get: async function (streamId: number): Promise<Bookmark[]> {
-        return getData("/api/bookmarks?streamID=" + streamId)
-            .then((resp) => {
-                if (!resp.ok) {
-                    throw Error(resp.statusText);
-                }
-                return resp.json();
-            })
-            .catch((err) => {
-                console.error(err);
-            })
-            .then((j: Promise<Bookmark[]>) => j);
-    },
-    add: (request: AddBookmarkRequest) => {
-        return postData("/api/bookmarks", request)
-            .then((resp) => {
-                if (!resp.ok) {
-                    throw Error(resp.statusText);
-                }
-            })
-            .catch((err) => {
-                console.error(err);
-            });
-    },
-
-    update: (bookmarkId: number, request: UpdateBookmarkRequest) => {
-        return putData("/api/bookmarks/" + bookmarkId, request)
-            .then((resp) => {
-                if (!resp.ok) {
-                    throw Error(resp.statusText);
-                }
-            })
-            .catch((err) => {
-                console.error(err);
-            });
-    },
-
-    delete: (bookmarkId: number) => {
-        return Delete("/api/bookmarks/" + bookmarkId)
-            .then((resp) => {
-                if (!resp.ok) {
-                    throw Error(resp.statusText);
-                }
-            })
-            .catch((err) => {
-                console.error(err);
-            });
-    },
-};
-
-class AddBookmarkRequest {
-    StreamID: number;
-    Description: string;
-    Hours: number;
-    Minutes: number;
-    Seconds: number;
-}
-
-class UpdateBookmarkRequest {
-    Description: string;
 }
