@@ -64,7 +64,7 @@ export class UpdateBookmarkRequest {
     Description: string;
 }
 
-export const Bookmarks = {
+const Bookmarks = {
     get: async function (streamId: number): Promise<Bookmark[]> {
         return getData("/api/bookmarks?streamID=" + streamId)
             .then((resp) => {
