@@ -16,7 +16,9 @@ export abstract class VideoSectionList {
     }
 
     async fetch() {
-        this.list = await DataStore.videoSections.getData(this.streamId);
+        await DataStore.videoSections.subscribe(this.streamId, (data) => {
+            this.list = data;
+        });
     }
 
     abstract getList(): Section[];
