@@ -1,7 +1,7 @@
 import { Section } from "./global";
 import { getPlayers } from "./TUMLiveVjs";
 import { VideoJsPlayer } from "video.js";
-import {DataStore} from "./data-store/data-store";
+import { DataStore } from "./data-store/data-store";
 
 export enum MarkerType {
     sectionSep,

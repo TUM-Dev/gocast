@@ -1,4 +1,4 @@
-import {ValueListener, ValueStreamMap} from "../value-stream";
+import { ValueListener, ValueStreamMap } from "../value-stream";
 
 export abstract class StreamableMapProvider<K, T> {
     protected data: Map<string, T> = new Map<string, T>();

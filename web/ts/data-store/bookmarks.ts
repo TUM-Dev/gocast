@@ -1,8 +1,7 @@
-import {Delete, getData, postData, putData, Time} from "../global";
-import {StreamableMapProvider} from "./provider-base";
+import { Delete, getData, postData, putData, Time } from "../global";
+import { StreamableMapProvider } from "./provider-base";
 
 export class BookmarksProvider extends StreamableMapProvider<number, Bookmark[]> {
-
     protected async fetch(streamId: number): Promise<void> {
         this.data[streamId] = (await Bookmarks.get(streamId)).map((b) => {
             b.streamId = streamId;
@@ -11,7 +10,7 @@ export class BookmarksProvider extends StreamableMapProvider<number, Bookmark[]>
         });
     }
 
-    async getData(streamId: number, forceFetch: boolean = false): Promise<Bookmark[]> {
+    async getData(streamId: number, forceFetch = false): Promise<Bookmark[]> {
         if (this.data[streamId] == null || forceFetch) {
             await this.fetch(streamId);
             this.triggerUpdate(streamId);
@@ -28,7 +27,7 @@ export class BookmarksProvider extends StreamableMapProvider<number, Bookmark[]>
     async update(streamId: number, bookmarkId: number, request: UpdateBookmarkRequest): Promise<void> {
         await Bookmarks.update(bookmarkId, request);
         this.data[streamId] = (await this.getData(streamId)).map((b) => {
-            if (b.ID === bookmarkId) b = {...b, description: request.Description};
+            if (b.ID === bookmarkId) b = { ...b, description: request.Description };
             return b;
         });
         this.triggerUpdate(streamId);
@@ -39,7 +38,6 @@ export class BookmarksProvider extends StreamableMapProvider<number, Bookmark[]>
         this.data[streamId] = (await this.getData(streamId)).filter((b) => b.ID !== bookmarkId);
         this.triggerUpdate(streamId);
     }
-
 }
 
 export type Bookmark = {

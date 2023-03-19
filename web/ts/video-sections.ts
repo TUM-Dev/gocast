@@ -1,6 +1,6 @@
 import { Section, Time } from "./global";
-import {DataStore} from "./data-store/data-store";
-import {UpdateVideoSectionRequest} from "./data-store/video-sections";
+import { DataStore } from "./data-store/data-store";
+import { UpdateVideoSectionRequest } from "./data-store/video-sections";
 
 export abstract class VideoSectionList {
     private streamId: number;
@@ -133,7 +133,7 @@ export class VideoSectionsAdmin {
     async fetch() {
         await DataStore.videoSections.subscribe(this.streamId, (data) => {
             this.existingSections = data;
-        })
+        });
     }
 
     pushNewSection() {
@@ -204,5 +204,3 @@ export class VideoSectionUpdater {
         this.show = false;
     }
 }
-
-

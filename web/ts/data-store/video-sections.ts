@@ -1,17 +1,16 @@
-import {Delete, getData, postData, putData, Section, Time} from "../global";
-import {StreamableMapProvider} from "./provider-base";
-import {UpdateBookmarkRequest} from "./bookmarks";
+import { Delete, getData, postData, putData, Section, Time } from "../global";
+import { StreamableMapProvider } from "./provider-base";
+import { UpdateBookmarkRequest } from "./bookmarks";
 
 export class VideoSectionProvider extends StreamableMapProvider<number, Section[]> {
-
-    async getData(streamId: number, forceFetch: boolean = false) : Promise<Section[]> {
+    async getData(streamId: number, forceFetch = false): Promise<Section[]> {
         if (this.data[streamId] == null || forceFetch) {
             await this.fetch(streamId);
         }
         return this.data[streamId];
     }
 
-    async fetch(streamId: number) : Promise<void> {
+    async fetch(streamId: number): Promise<void> {
         this.data[streamId] = (await VideoSections.get(streamId)).map((s) => {
             s.friendlyTimestamp = new Time(s.startHours, s.startMinutes, s.startSeconds).toString();
             return s;

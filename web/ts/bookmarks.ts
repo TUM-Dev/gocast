@@ -1,7 +1,7 @@
 import { Delete, getData, postData, putData, Time } from "./global";
 import { getPlayers } from "./TUMLiveVjs";
-import {AddBookmarkRequest, Bookmark, UpdateBookmarkRequest} from "./data-store/bookmarks";
-import {DataStore} from "./data-store/data-store";
+import { AddBookmarkRequest, Bookmark, UpdateBookmarkRequest } from "./data-store/bookmarks";
+import { DataStore } from "./data-store/data-store";
 
 export class BookmarkList {
     private readonly streamId: number;
@@ -74,7 +74,7 @@ export class BookmarkUpdater {
 
     async submit() {
         await DataStore.bookmarks.update(this.bookmark.streamId, this.bookmark.ID, this.request);
-        this.show = false
+        this.show = false;
     }
 
     reset() {
