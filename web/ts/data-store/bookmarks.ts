@@ -1,16 +1,15 @@
-import {Delete, getData, postData, putData, Section, Time} from "../global";
+import {Delete, getData, postData, putData, Time} from "../global";
+import {ValueStreamMap} from "./stream";
 
 export class BookmarksProvider {
-    protected data: Map<string, Bookmark[]> = new Map<string, Bookmark[]>();
+    protected data: Map<number, Bookmark[]> = new Map<number, Bookmark[]>();
+    protected stream: ValueStreamMap<Bookmark[]> = new ValueStreamMap<Bookmark[]>();
 
-    async getData(streamId: number, forceFetch: boolean = false): Promise<Bookmark[]> {
-        if (this.data[streamId] == null || forceFetch) {
-            await this.fetch(streamId);
-        }
-        return this.data[streamId];
+    private triggerUpdate(streamId: number) {
+        this.stream.add(streamId.toString(), this.data[streamId]);
     }
 
-    async fetch(streamId: number): Promise<void> {
+    private async fetch(streamId: number): Promise<void> {
         this.data[streamId] = (await Bookmarks.get(streamId)).map((b) => {
             b.streamId = streamId;
             b.friendlyTimestamp = new Time(b.hours, b.minutes, b.seconds).toString();
@@ -18,22 +17,50 @@ export class BookmarksProvider {
         });
     }
 
+    async subscribe(streamId: number, callback: BookmarkValueListener): Promise<void> {
+        if (this.data[streamId] == null) {
+            await this.fetch(streamId);
+        }
+
+        this.stream.subscribe(streamId.toString(), callback);
+        this.triggerUpdate(streamId);
+    }
+
+    unsubscribe(streamId: number, callback: BookmarkValueListener): void {
+        this.stream.unsubscribe(streamId.toString(), callback);
+    }
+
+    async getData(streamId: number, forceFetch: boolean = false): Promise<Bookmark[]> {
+        if (this.data[streamId] == null || forceFetch) {
+            await this.fetch(streamId);
+            this.triggerUpdate(streamId);
+        }
+        return this.data[streamId];
+    }
+
     async add(request: AddBookmarkRequest): Promise<void> {
         await Bookmarks.add(request);
         await this.fetch(request.StreamID);
+        this.triggerUpdate(request.StreamID);
     }
 
-    async update(bookmark: Bookmark, request: UpdateBookmarkRequest): Promise<Bookmark> {
-        await Bookmarks.update(bookmark.ID, request);
-        await this.fetch(bookmark.streamId);
-        return this.data[bookmark.streamId].find((e) => e.ID === bookmark.ID);
+    async update(streamId: number, bookmarkId: number, request: UpdateBookmarkRequest): Promise<void> {
+        await Bookmarks.update(bookmarkId, request);
+        this.data[streamId] = (await this.getData(streamId)).map((b) => {
+            if (b.ID === bookmarkId) b.description = request.Description;
+            return b;
+        });
+        this.triggerUpdate(streamId);
     }
 
     async delete(streamId: number, bookmarkId: number): Promise<void> {
         await Bookmarks.delete(bookmarkId);
-        this.data[streamId] = this.data[streamId].filter((b) => b.ID !== bookmarkId);
+        this.data[streamId] = (await this.getData(streamId)).filter((b) => b.ID !== bookmarkId);
+        this.triggerUpdate(streamId);
     }
 }
+
+export type BookmarkValueListener = (value: Bookmark[]) => void;
 
 export type Bookmark = {
     ID: number;

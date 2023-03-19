@@ -22,11 +22,12 @@ export class BookmarkList {
 
     async delete(id: number) {
         await DataStore.bookmarks.delete(this.streamId, id);
-        await this.fetch();
     }
 
     async fetch() {
-        this.list = await DataStore.bookmarks.getData(this.streamId);
+        await DataStore.bookmarks.subscribe(this.streamId, (data) => {
+            this.list = data;
+        });
     }
 }
 
@@ -72,8 +73,7 @@ export class BookmarkUpdater {
     }
 
     async submit() {
-        const updated = await DataStore.bookmarks.update(this.bookmark, this.request);
-        this.bookmark.description = updated.description;
+        await DataStore.bookmarks.update(this.bookmark.streamId, this.bookmark.ID, this.request);
         this.show = false
     }
 
