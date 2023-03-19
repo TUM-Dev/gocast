@@ -1,6 +1,6 @@
-import { Delete, getData, postData, putData, Section, Time } from "./global";
-import {VideoSections} from "./data-store/video-sections";
+import { Section, Time } from "./global";
 import {DataStore} from "./data-store/data-store";
+import {UpdateVideoSectionRequest} from "./data-store/video-sections";
 
 export abstract class VideoSectionList {
     private streamId: number;
@@ -129,12 +129,9 @@ export class VideoSectionsAdmin {
     }
 
     async fetch() {
-        VideoSections.get(this.streamId).then((list) => {
-            this.existingSections = list;
-            list.forEach(
-                (s) => (s.friendlyTimestamp = new Time(s.startHours, s.startMinutes, s.startSeconds).toString()),
-            );
-        });
+        await DataStore.videoSections.subscribe(this.streamId, (data) => {
+            this.existingSections = data;
+        })
     }
 
     pushNewSection() {
@@ -153,18 +150,14 @@ export class VideoSectionsAdmin {
         this.unsavedChanges = true;
     }
 
-    publishNewSections() {
-        VideoSections.add(this.streamId, this.newSections).then(async () => {
-            await this.fetch(); // load sections again to avoid js-sorting
-            this.newSections = [];
-        });
+    async publishNewSections() {
+        await DataStore.videoSections.add(this.streamId, this.newSections);
+        this.newSections = [];
         this.unsavedChanges = false;
     }
 
-    removeExistingSection(id: number) {
-        VideoSections.delete(this.streamId, id).then(() => {
-            this.existingSections = this.existingSections.filter((s) => s.ID !== id);
-        });
+    async removeExistingSection(id: number) {
+        await DataStore.videoSections.delete(this.streamId, id);
     }
 
     private resetCurrent() {
@@ -196,19 +189,8 @@ export class VideoSectionUpdater {
     }
 
     async update() {
-        return VideoSections.update(this.streamId, this.section.ID, this.request).then(() => {
-            // 1.) Update old
-            this.section.startHours = this.request.StartHours;
-            this.section.startMinutes = this.request.StartMinutes;
-            this.section.startSeconds = this.request.StartSeconds;
-            this.section.description = this.request.Description;
-            this.section.friendlyTimestamp = new Time(
-                this.section.startHours,
-                this.section.startMinutes,
-                this.section.startSeconds,
-            ).toString();
-            this.show = false;
-        });
+        await DataStore.videoSections.update(this.streamId, this.section.ID, this.request);
+        this.show = false;
     }
 
     reset() {
@@ -221,9 +203,4 @@ export class VideoSectionUpdater {
     }
 }
 
-class UpdateVideoSectionRequest {
-    Description: string;
-    StartHours: number;
-    StartMinutes: number;
-    StartSeconds: number;
-}
+

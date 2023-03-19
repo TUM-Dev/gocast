@@ -1,7 +1,8 @@
 import {Delete, getData, postData, putData, Section, Time} from "../global";
+import {StreamableMapProvider} from "./provider-base";
+import {UpdateBookmarkRequest} from "./bookmarks";
 
-export class VideoSectionProvider {
-    protected data: Map<string, Section[]> = new Map<string, Section[]>();
+export class VideoSectionProvider extends StreamableMapProvider<number, Section[]> {
 
     async getData(streamId: number, forceFetch: boolean = false) : Promise<Section[]> {
         if (this.data[streamId] == null || forceFetch) {
@@ -16,6 +17,46 @@ export class VideoSectionProvider {
             return s;
         });
     }
+
+    async add(streamId: number, sections: Section[]): Promise<void> {
+        await VideoSections.add(streamId, sections);
+        await this.fetch(streamId);
+        this.triggerUpdate(streamId);
+    }
+
+    async delete(streamId: number, sectionId: number) {
+        await VideoSections.delete(streamId, sectionId);
+        this.data[streamId] = (await this.getData(streamId)).filter((s) => s.ID !== sectionId);
+    }
+
+    async update(streamId: number, sectionId: number, request: UpdateVideoSectionRequest) {
+        await VideoSections.update(streamId, sectionId, request);
+        this.data[streamId] = (await this.getData(streamId)).map((s) => {
+            if (s.ID === sectionId) {
+                s = {
+                    ...s,
+                    startHours: request.StartHours,
+                    startMinutes: request.StartMinutes,
+                    startSeconds: request.StartSeconds,
+                    description: request.Description,
+                    friendlyTimestamp: new Time(
+                        request.StartHours,
+                        request.StartMinutes,
+                        request.StartSeconds,
+                    ).toString(),
+                };
+            }
+            return s;
+        });
+        this.triggerUpdate(streamId);
+    }
+}
+
+export class UpdateVideoSectionRequest {
+    Description: string;
+    StartHours: number;
+    StartMinutes: number;
+    StartSeconds: number;
 }
 
 /**
@@ -43,7 +84,7 @@ export const VideoSections = {
         return postData(`/api/stream/${streamId}/sections`, request);
     },
 
-    update: function (streamId: number, id: number, request: object) {
+    update: function (streamId: number, id: number, request: UpdateVideoSectionRequest) {
         return putData(`/api/stream/${streamId}/sections/${id}`, request);
     },
 
