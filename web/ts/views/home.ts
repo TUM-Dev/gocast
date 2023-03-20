@@ -35,17 +35,40 @@ export function body() {
         view: url.searchParams.get("view"),
     };
     return {
+        init() {
+            // eslint-disable-next-line @typescript-eslint/no-this-alias
+            const that = this;
+            window.addEventListener("popstate", function (event) {
+                // @ts-ignore
+                const search = new URLSearchParams(event.currentTarget.location.search);
+                if (search.has("year") && search.has("term")) {
+                    that.switchSemester(+search.get("year"), search.get("term"));
+                } else {
+                    Promise.all([that.loadPublicCourses(), that.loadUserCourses()]);
+                }
+            });
+
+            Promise.all([
+                this.loadSemesters(),
+                this.loadCurrentSemester(),
+                this.loadPublicCourses(),
+                this.loadUserCourses(),
+            ]);
+        },
         currentView: Views.Main,
         showMain() {
             this.currentView = Views.Main;
+            this.showNavigation = false;
         },
 
         showUserCourses() {
             this.currentView = Views.UserCourses;
+            this.showNavigation = false;
         },
 
         showPublicCourses() {
             this.currentView = Views.PublicCourses;
+            this.showNavigation = false;
         },
 
         showNavigation: false,
@@ -128,12 +151,12 @@ export function body() {
             return courses;
         },
 
-        async switchSemester(year, term, semesterIndex) {
+        async switchSemester(year, term) {
             this.publicCourses = await Courses.getPublic(year, term);
             this.userCourses = await Courses.getUsers(year, term);
             this.liveToday = this.getLiveToday();
             this.recentVods = this.getRecentVods();
-            this.selectedSemesterIndex = semesterIndex;
+            this.selectedSemesterIndex = this.semesters.findIndex((s) => s.Year === year && s.TeachingTerm === term);
             this.showAllSemesters = false;
 
             url.searchParams.set("year", year);

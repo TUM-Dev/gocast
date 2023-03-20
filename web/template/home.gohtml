@@ -12,7 +12,7 @@
 {{$currentYear := .CurrentYear}}
 {{$currentTerm := .CurrentTerm}}
 <body x-data="home.body()"
-      x-init="Promise.all([loadSemesters(), loadCurrentSemester(), loadPublicCourses(), loadUserCourses()])"
+      x-init="init()"
       class="h-screen flex flex-col items-stretch bg-white dark:bg-secondary">
 <header x-data="home.header()"
         class="text-3 flex z-50 w-full items-center justify-between px-6 py-2 h-16 shrink-0 grow-0">
@@ -26,7 +26,7 @@
         </button>
     </div>
     {{/*template "search"*/}}
-    <div id="user-context" class="flex items-center space-x-3 ms-auto">
+    <div id="user-context" class="flex items-center space-x-6 ms-auto">
         {{template "notifications"}}
         {{if not $user}}
             <a href="/login"
@@ -107,26 +107,30 @@
             </p>
             {{template "semester-picker" .}}
         </div>
-        <div class="border-b dark:border-gray-800"></div>
-        <div class="grid py-4">
-            <p class="flex items-center px-3 pb-2 font-semibold">
-                <i class="text-xs fa-solid fa-graduation-cap mr-2"></i>
-                My Courses
-            </p>
-            <template x-for="(course, i) in userCourses.slice(0, 5)" :key="course.ID">
-                <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 hover:underline"
-                   :href="`/course/${course.year}/${course.term}/${course.slug}`"
-                   x-text="course.name">
-                </a>
-            </template>
-            <template x-if="userCourses.length > 5 && currentView !== home.Views.UserCourses">
-                <button @click="showUserCourses()"
-                        class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 w-full">
-                    <i class="fa-solid fa-chevron-right text-xs mr-2"></i>
-                    <span>Show all my courses</span>
-                </button>
-            </template>
-        </div>
+        <template x-if="userCourses.length > 0">
+            <div>
+            <div class="border-b dark:border-gray-800"></div>
+            <div class="grid py-4">
+                <p class="flex items-center px-3 pb-2 font-semibold">
+                    <i class="text-xs fa-solid fa-graduation-cap mr-2"></i>
+                    My Courses
+                </p>
+                <template x-for="(course, i) in userCourses.slice(0, 5)" :key="course.ID">
+                    <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 hover:underline"
+                       :href="`/course/${course.year}/${course.term}/${course.slug}`"
+                       x-text="course.name">
+                    </a>
+                </template>
+                <template x-if="userCourses.length > 5 && currentView !== home.Views.UserCourses">
+                    <button @click="showUserCourses()"
+                            class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 w-full">
+                        <i class="fa-solid fa-chevron-right text-xs mr-2"></i>
+                        <span>Show all my courses</span>
+                    </button>
+                </template>
+            </div>
+            </div>
+        </template>
         <div class="border-b dark:border-gray-800"></div>
         <div class="grid py-4">
             <p class="flex items-center px-3 pb-2 font-semibold">
@@ -252,7 +256,7 @@
           x-text="semesters[selectedSemesterIndex]?.FriendlyString"></span>
     <template x-if="showAllSemesters">
         <template x-for="(s, i) in semesters">
-            <button type="button" @click="switchSemester(s.Year, s.TeachingTerm, i)"
+            <button type="button" @click="switchSemester(s.Year, s.TeachingTerm)"
                     class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-left px-3 py-2"
                     x-text="s.FriendlyString"></button>
         </template>
@@ -276,14 +280,15 @@
                          :id="`livestream-${livestream.Stream.ID}`">
                         <div class="h-56 relative mb-2">
                             <template x-if="livestream.LectureHall !== null">
-                                <a class="absolute right-3 top-3 z-40 font-semibold text-xs rounded-full px-2 py-1 hover:bg-gray-200 hover:dark:bg-gray-700"
+                                <a class="absolute right-3 top-3 z-40 font-semibold text-xs text-4 rounded-full px-2 py-1 bg-white dark:bg-secondary"
                                    :href="`https://nav.tum.de/room/${livestream.LectureHall.Name}`">
                                     <i class="fas fa-location-pin mr-1"></i>
                                     <span x-text="livestream.LectureHall.Name"></span>
                                 </a>
                             </template>
                             <a :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`">
-                                <div class="bg-gray-100 dark:bg-gray-800 h-full rounded-lg mb-2 transition-all duration-500 hover:shadow-lg"></div>
+                                <div style="background-image:url('https://streams.tum.de/Mediasite/FileServer/Presentation/ec92304e4558492b91635053e1cfe1161d/1cbd7a07-44e9-45cf-8420-8f2964750278.jpg')"
+                                     class="bg-gray-100 dark:bg-gray-800 h-full rounded-lg mb-2 bg-cover transition-all duration-500 hover:shadow-xl"></div>
                             </a>
                         </div>
                         <div>
