@@ -28,6 +28,12 @@ export enum Views {
 const DEFAULT_LECTURE_NAME = "Untitled lecture";
 
 export function body() {
+    const url = new URL(window.location.href);
+    const init = {
+        term: url.searchParams.get("term"),
+        year: +url.searchParams.get("year"),
+        view: url.searchParams.get("view"),
+    };
     return {
         currentView: Views.Main,
         showMain() {
@@ -63,20 +69,37 @@ export function body() {
             this.currentSemesterIndex = this.semesters.findIndex(
                 (s) => this.currentSemester.Year === s.Year && this.currentSemester.TeachingTerm === s.TeachingTerm,
             );
-            this.selectedSemesterIndex = this.currentSemesterIndex;
+
+            if (init.year !== null && init.term != null) {
+                this.selectedSemesterIndex = this.semesters.findIndex(
+                    (s) => init.year === s.Year && init.term === s.TeachingTerm,
+                );
+            }
+
+            if (this.selectedSemesterIndex === -1) {
+                this.selectedSemesterIndex = this.currentSemesterIndex;
+            }
         },
 
         publicCourses: [],
         async loadPublicCourses() {
-            this.publicCourses = await Courses.getPublic();
+            if (init.year !== null && init.term != null) {
+                this.publicCourses = await Courses.getPublic(init.year, init.term);
+            } else {
+                this.publicCourses = await Courses.getPublic();
+            }
         },
 
         userCourses: [],
         liveToday: [],
         recentVods: [],
         async loadUserCourses() {
-            this.userCourses = await Courses.getUsers();
-            this.recentVods = await this.getRecentVods();
+            if (init.year !== null && init.term != null) {
+                this.userCourses = await Courses.getUsers(init.year, init.term);
+            } else {
+                this.userCourses = await Courses.getUsers();
+            }
+            this.recentVods = this.getRecentVods();
             this.liveToday = this.getLiveToday();
         },
 
@@ -112,6 +135,10 @@ export function body() {
             this.recentVods = this.getRecentVods();
             this.selectedSemesterIndex = semesterIndex;
             this.showAllSemesters = false;
+
+            url.searchParams.set("year", year);
+            url.searchParams.set("term", term);
+            window.history.pushState({}, "", url.toString());
         },
     };
 }
