@@ -1,9 +1,12 @@
 package api
 
 import (
+	"errors"
+	"github.com/getsentry/sentry-go"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
+	"gorm.io/gorm"
 	"net/http"
 	"sync"
 	"time"
@@ -67,6 +70,7 @@ func configProgressRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	go progressBuff.run()
 	router.POST("/api/progressReport", routes.saveProgress)
 	router.POST("/api/watched", routes.markWatched)
+	router.GET("/api/progress/streams/:id", routes.getProgressForStream)
 }
 
 // progressRoutes contains a DaoWrapper object and all route functions dangle from it.
@@ -168,4 +172,47 @@ func (r progressRoutes) markWatched(c *gin.Context) {
 		})
 		return
 	}
+}
+
+func (r progressRoutes) getProgressForStream(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	if tumLiveContext.User == nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusForbidden,
+			CustomMessage: "Not logged-in",
+		})
+		return
+	}
+
+	type Stream struct {
+		ID uint `uri:"id"`
+	}
+
+	stream := Stream{}
+
+	if err := c.ShouldBindUri(&stream); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid stream id",
+		})
+		return
+	}
+
+	progress, err := r.LoadProgress(tumLiveContext.User.ID, stream.ID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusOK, model.StreamProgress{StreamID: stream.ID})
+		} else {
+			sentry.CaptureException(err)
+			_ = c.Error(tools.RequestError{
+				Err:           err,
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can't retrieve progress for user",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, progress)
 }

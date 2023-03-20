@@ -42,6 +42,11 @@ export function body() {
             this.currentView = Views.PublicCourses;
         },
 
+        showNavigation: false,
+        toggleNavigation(set?: boolean) {
+            this.showNavigation = set || !this.showNavigation;
+        },
+
         showAllSemesters: false,
         toggleAllSemesters(set?: boolean) {
             this.showAllSemesters = set || !this.showAllSemesters;
@@ -71,8 +76,8 @@ export function body() {
         recentVods: [],
         async loadUserCourses() {
             this.userCourses = await Courses.getUsers();
+            this.recentVods = await this.getRecentVods();
             this.liveToday = this.getLiveToday();
-            this.recentVods = this.getRecentVods();
         },
 
         getLiveToday() {
@@ -93,9 +98,10 @@ export function body() {
 
         getRecentVods() {
             const courses = this.userCourses.filter((c) => c.lastLecture.ID !== 0);
-            courses.forEach(
-                (c) => (c.lastLecture.Name = c.lastLecture.Name === "" ? DEFAULT_LECTURE_NAME : c.lastLecture.Name),
-            );
+            courses.forEach(async (c) => {
+                c.lastLecture.Name = c.lastLecture.Name === "" ? DEFAULT_LECTURE_NAME : c.lastLecture.Name;
+                c.lastLecture.Progress = await Progress.get(c.lastLecture.ID);
+            });
             return courses;
         },
 
@@ -212,7 +218,7 @@ const Courses = {
         return get("/api/courses/live").then((livestreams) => {
             // force them to use titles...
             livestreams.forEach((l) => {
-                l.Stream.Name = l.Stream.Name === "" ? "Untitled lecture" : l.Stream.Name;
+                l.Stream.Name = l.Stream.Name === "" ? DEFAULT_LECTURE_NAME : l.Stream.Name;
 
                 const end = new Date(l.Stream.End);
                 const hours = end.getHours();
@@ -233,6 +239,22 @@ const Courses = {
     async getUsers(year?: number, term?: string): Promise<object> {
         const query = year !== undefined && term !== undefined ? `?year=${year}&term=${term}` : "";
         return get(`/api/courses/users${query}`);
+    },
+};
+
+type Progress = {
+    progress: number;
+    percentage?: number;
+    watched: boolean;
+    streamId: number;
+};
+
+const Progress = {
+    get(streamId: number) {
+        return get("/api/progress/streams/" + streamId).then((p: Progress) => {
+            p.percentage = Math.round(p.progress * 100);
+            return p;
+        });
     },
 };
 
