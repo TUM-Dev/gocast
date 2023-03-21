@@ -279,9 +279,9 @@
             <div class="px-3 py-1 mx-3 bg-danger text-white text-sm w-fit font-semibold uppercase rounded animate-pulse">
                 Live
             </div>
-            <section class="grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
+            <section class="grid xl:grid-cols-3 lg:grid-cols-2 grid-cols-1">
                 <template x-for="(livestream, i) in livestreams" :key="livestream.Stream.ID">
-                    <article class="p-3 lg:col-span-1 md:col-span-1 col-span-full"
+                    <article class="p-3 lg:col-span-1 col-span-full"
                          :id="`livestream-${livestream.Stream.ID}`">
                         <div class="h-56 relative mb-2">
                             <div class="absolute right-2 top-1 flex items-center space-x-2 text-xs font-semibold text-white z-40">
@@ -346,7 +346,7 @@
     <template x-if="recentVods.length > 0">
         <article id="recent-vods">
             <h3 class="font-bold px-3">Recent VODs</h3>
-            <section class="grid lg:grid-cols-4 grid-cols-1">
+            <section class="grid xl:grid-cols-4 lg:grid-cols-2 grid-cols-1">
                 <template x-for="(course, i) in recentVods" :key="course.ID">
                     <article class="lg:col-span-1 col-span-full p-3">
                         <a :href="`/w/${course.slug}/${course.lastLecture.ID}`" class="block mb-2">
@@ -361,7 +361,7 @@
                                 </div>
                             </div>
                         </a>
-                        <a class="block text-xs text-5 hover:bg-gray-50 dark:hover:bg-gray-800 px-1 rounded w-fit"
+                        <a class="inline-block text-xs text-5 hover:bg-gray-50 dark:hover:bg-gray-800 px-1 rounded w-fit"
                            x-text="course.name"
                            :href="`/course/${course.year}/${course.term}/${course.slug}`"></a>
                         <a class="font-semibold block hover:underline px-1"

@@ -32,7 +32,7 @@ export function body() {
     return {
         term: url.searchParams.get("term") ?? undefined,
         year: +url.searchParams.get("year"),
-        view: url.searchParams.get("view") ?? Views.Main,
+        view: +url.searchParams.get("view") ?? Views.Main,
 
         showNavigation: false,
         showAllSemesters: false,
@@ -68,12 +68,12 @@ export function body() {
         },
 
         onPopState(event: PopStateEvent) {
-            console.log(event.state);
-            /*if (event !== null && Object.keys(event.state).length === 0) {
-                Promise.all([this.loadPublicCourses(), this.loadUserCourses()]);
-            } else {
-                this.switchSemester(+event.state.year, event.state.term);
-            }*/
+            const proxy = new Proxy(event.state || {}, {
+                get(target, p, receiver) {
+                    return target[p] || undefined;
+                },
+            });
+            this.switchSemester(+proxy.year || 0, proxy.term);
         },
 
         showMain() {
@@ -154,22 +154,23 @@ export function body() {
             return courses;
         },
 
-        async switchSemester(year: number, term: string) {
-            if (this.year !== year || this.term !== term) {
-                this.year = year;
-                this.term = term;
+        async switchSemester(year?: number, term?: string) {
+            console.log({ year, term });
+            if (year !== undefined && term !== undefined) {
+                if (this.year !== year || this.term !== term) {
+                    this.year = year;
+                    this.term = term;
+                    this.selectedSemesterIndex = this.semesters.findIndex(
+                        (s) => s.Year === year && s.TeachingTerm === term,
+                    );
+                    this.showAllSemesters = false;
 
-                this.load([this.loadPublicCourses(), this.loadUserCourses()]);
-                this.selectedSemesterIndex = this.semesters.findIndex(
-                    (s) => s.Year === year && s.TeachingTerm === term,
-                );
-                this.showAllSemesters = false;
-
-                url.searchParams.set("year", String(year));
-                url.searchParams.set("term", term);
-                console.log({ year, term });
-                window.history.pushState({ year, term }, "", url.toString());
+                    url.searchParams.set("year", String(year));
+                    url.searchParams.set("term", term);
+                    window.history.pushState({ year, term }, "", url.toString());
+                }
             }
+            this.load([this.loadPublicCourses(), this.loadUserCourses()]);
         },
     };
 }
