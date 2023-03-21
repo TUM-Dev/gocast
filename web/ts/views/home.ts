@@ -29,61 +29,76 @@ const DEFAULT_LECTURE_NAME = "Untitled lecture";
 
 export function body() {
     const url = new URL(window.location.href);
-    const init = {
-        term: url.searchParams.get("term"),
-        year: +url.searchParams.get("year"),
-        view: url.searchParams.get("view"),
-    };
     return {
-        init() {
-            // eslint-disable-next-line @typescript-eslint/no-this-alias
-            const that = this;
-            window.addEventListener("popstate", function (event) {
-                // @ts-ignore
-                const search = new URLSearchParams(event.currentTarget.location.search);
-                if (search.has("year") && search.has("term")) {
-                    that.switchSemester(+search.get("year"), search.get("term"));
-                } else {
-                    Promise.all([that.loadPublicCourses(), that.loadUserCourses()]);
-                }
-            });
+        term: url.searchParams.get("term") ?? undefined,
+        year: +url.searchParams.get("year"),
+        view: url.searchParams.get("view") ?? Views.Main,
 
-            Promise.all([
+        showNavigation: false,
+        showAllSemesters: false,
+
+        semesters: [],
+        currentSemesterIndex: -1,
+        selectedSemesterIndex: -1,
+
+        publicCourses: [],
+        userCourses: [],
+        liveToday: [],
+        recentVods: [],
+
+        loadingIndicator: 0,
+
+        init() {
+            this.load([
                 this.loadSemesters(),
                 this.loadCurrentSemester(),
                 this.loadPublicCourses(),
                 this.loadUserCourses(),
             ]);
         },
-        currentView: Views.Main,
+
+        load(promises: Promise<object>[]) {
+            this.loadingIndicator = 0;
+            Promise.all(promises).then(() => {
+                this.loadingIndicator = 0;
+            });
+            promises.forEach((p) => {
+                Promise.resolve(p).then((r) => (this.loadingIndicator += 100 / promises.length));
+            });
+        },
+
+        onPopState(event: PopStateEvent) {
+            console.log(event.state);
+            /*if (event !== null && Object.keys(event.state).length === 0) {
+                Promise.all([this.loadPublicCourses(), this.loadUserCourses()]);
+            } else {
+                this.switchSemester(+event.state.year, event.state.term);
+            }*/
+        },
+
         showMain() {
-            this.currentView = Views.Main;
+            this.view = Views.Main;
             this.showNavigation = false;
         },
 
         showUserCourses() {
-            this.currentView = Views.UserCourses;
+            this.view = Views.UserCourses;
             this.showNavigation = false;
         },
 
         showPublicCourses() {
-            this.currentView = Views.PublicCourses;
+            this.view = Views.PublicCourses;
             this.showNavigation = false;
         },
 
-        showNavigation: false,
         toggleNavigation(set?: boolean) {
             this.showNavigation = set || !this.showNavigation;
         },
 
-        showAllSemesters: false,
         toggleAllSemesters(set?: boolean) {
             this.showAllSemesters = set || !this.showAllSemesters;
         },
 
-        semesters: [],
-        currentSemesterIndex: -1,
-        selectedSemesterIndex: -1,
         async loadSemesters() {
             this.semesters = await Semesters.get();
         },
@@ -93,9 +108,9 @@ export function body() {
                 (s) => this.currentSemester.Year === s.Year && this.currentSemester.TeachingTerm === s.TeachingTerm,
             );
 
-            if (init.year !== null && init.term != null) {
+            if (this.year !== null && this.term != null) {
                 this.selectedSemesterIndex = this.semesters.findIndex(
-                    (s) => init.year === s.Year && init.term === s.TeachingTerm,
+                    (s) => this.year === s.Year && this.term === s.TeachingTerm,
                 );
             }
 
@@ -104,24 +119,12 @@ export function body() {
             }
         },
 
-        publicCourses: [],
         async loadPublicCourses() {
-            if (init.year !== null && init.term != null) {
-                this.publicCourses = await Courses.getPublic(init.year, init.term);
-            } else {
-                this.publicCourses = await Courses.getPublic();
-            }
+            this.publicCourses = await Courses.getPublic(this.year, this.term);
         },
 
-        userCourses: [],
-        liveToday: [],
-        recentVods: [],
         async loadUserCourses() {
-            if (init.year !== null && init.term != null) {
-                this.userCourses = await Courses.getUsers(init.year, init.term);
-            } else {
-                this.userCourses = await Courses.getUsers();
-            }
+            this.userCourses = await Courses.getUsers(this.year, this.term);
             this.recentVods = this.getRecentVods();
             this.liveToday = this.getLiveToday();
         },
@@ -151,17 +154,22 @@ export function body() {
             return courses;
         },
 
-        async switchSemester(year, term) {
-            this.publicCourses = await Courses.getPublic(year, term);
-            this.userCourses = await Courses.getUsers(year, term);
-            this.liveToday = this.getLiveToday();
-            this.recentVods = this.getRecentVods();
-            this.selectedSemesterIndex = this.semesters.findIndex((s) => s.Year === year && s.TeachingTerm === term);
-            this.showAllSemesters = false;
+        async switchSemester(year: number, term: string) {
+            if (this.year !== year || this.term !== term) {
+                this.year = year;
+                this.term = term;
 
-            url.searchParams.set("year", year);
-            url.searchParams.set("term", term);
-            window.history.pushState({}, "", url.toString());
+                this.load([this.loadPublicCourses(), this.loadUserCourses()]);
+                this.selectedSemesterIndex = this.semesters.findIndex(
+                    (s) => s.Year === year && s.TeachingTerm === term,
+                );
+                this.showAllSemesters = false;
+
+                url.searchParams.set("year", String(year));
+                url.searchParams.set("term", term);
+                console.log({ year, term });
+                window.history.pushState({ year, term }, "", url.toString());
+            }
         },
     };
 }
@@ -282,12 +290,12 @@ const Courses = {
     },
 
     async getPublic(year?: number, term?: string): Promise<object> {
-        const query = year !== undefined && term !== undefined ? `?year=${year}&term=${term}` : "";
+        const query = year !== undefined && term !== undefined && year !== 0 ? `?year=${year}&term=${term}` : "";
         return get(`/api/courses/public${query}`);
     },
 
     async getUsers(year?: number, term?: string): Promise<object> {
-        const query = year !== undefined && term !== undefined ? `?year=${year}&term=${term}` : "";
+        const query = year !== undefined && term !== undefined && year !== 0 ? `?year=${year}&term=${term}` : "";
         return get(`/api/courses/users${query}`);
     },
 };
@@ -302,8 +310,7 @@ type Progress = {
 const Progress = {
     get(streamId: number) {
         return get("/api/progress/streams/" + streamId).then((p: Progress) => {
-            p.percentage = Math.round(p.progress * 100);
-            return p;
+            return { ...p, percentage: Math.round(p.progress * 100) };
         });
     },
 };

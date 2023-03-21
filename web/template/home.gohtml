@@ -12,8 +12,9 @@
 {{$currentYear := .CurrentYear}}
 {{$currentTerm := .CurrentTerm}}
 <body x-data="home.body()"
-      x-init="init()"
+      @popstate.window="onPopState"
       class="h-screen flex flex-col items-stretch bg-white dark:bg-secondary">
+<div :style="`width: ${loadingIndicator}%`" class = "bg-blue-500/50 h-px fixed top-0 transition-all duration-300"></div>
 <header x-data="home.header()"
         class="text-3 flex z-50 w-full items-center justify-between px-6 py-2 h-16 shrink-0 grow-0">
     <div class="flex items-center mr-4">
@@ -100,66 +101,69 @@
 <article class="flex grow h-full overflow-y-scroll">
     <section id="side-navigation" class="sticky top-0 overflow-y-scroll font-light px-5 text-3 shrink-0"
              :class="showNavigation ? 'w-full' : 'lg:w-80 md:w-56 md:block hidden'">
-        <div class="grid py-4">
-            <p class="flex items-center px-3 pb-2 font-semibold">
+        <article class="grid py-4">
+            <header class="flex items-center px-3 pb-2 font-semibold">
                 <i class="text-xs fa-solid fa-calendar mr-2"></i>
                 Semesters
-            </p>
+            </header>
             {{template "semester-picker" .}}
-        </div>
+        </article>
         <template x-if="userCourses.length > 0">
-            <div>
-            <div class="border-b dark:border-gray-800"></div>
-            <div class="grid py-4">
-                <p class="flex items-center px-3 pb-2 font-semibold">
+            <article class="grid py-4 border-t dark:border-gray-800">
+                <header class="flex items-center px-3 pb-2 font-semibold">
                     <i class="text-xs fa-solid fa-graduation-cap mr-2"></i>
                     My Courses
-                </p>
+                </header>
                 <template x-for="(course, i) in userCourses.slice(0, 5)" :key="course.ID">
                     <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 hover:underline"
                        :href="`/course/${course.year}/${course.term}/${course.slug}`"
                        x-text="course.name">
                     </a>
                 </template>
-                <template x-if="userCourses.length > 5 && currentView !== home.Views.UserCourses">
+                <template x-if="userCourses.length > 5 && view !== home.Views.UserCourses">
                     <button @click="showUserCourses()"
                             class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 w-full">
                         <i class="fa-solid fa-chevron-right text-xs mr-2"></i>
                         <span>Show all my courses</span>
                     </button>
                 </template>
-            </div>
-            </div>
+            </article>
         </template>
-        <div class="border-b dark:border-gray-800"></div>
-        <div class="grid py-4">
-            <p class="flex items-center px-3 pb-2 font-semibold">
+        <article class="grid py-4 border-t dark:border-gray-800">
+            <header class="flex items-center px-3 pb-2 font-semibold">
                 <i class="text-xs fa-solid fa-chalkboard mr-2"></i>
                 Public Courses
-            </p>
+            </header>
             <template x-for="(course, i) in publicCourses.slice(0, 5)" :key="course.ID">
                 <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 hover:underline"
                    :href="`/course/${course.year}/${course.term}/${course.slug}`"
                    x-text="course.name">
                 </a>
             </template>
-            <template x-if="userCourses.length > 5 && currentView !== home.Views.PublicCourses">
+            <template x-if="userCourses.length > 5 && view !== home.Views.PublicCourses">
                 <button @click="showPublicCourses()"
                         class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 w-full">
                     <i class="fa-solid fa-chevron-right text-xs mr-2"></i>
                     <span>Show all public courses</span>
                 </button>
             </template>
-        </div>
+        </article>
+        <footer class="grid gap-2 py-4 px-3 border-t dark:border-gray-800 md:hidden">
+            <a class="text-sm font-light text-5" href="/about">About</a>
+            <a class="text-sm font-light text-5" href="/privacy">Data Privacy</a>
+            <a class="text-sm font-light text-5" href="/imprint">Imprint</a>
+            <a class="text-sm font-light text-5" href="/public/licenses.txt">
+                We <i class="fas fa-heart text-blue-500 dark:text-indigo-600"></i> OpenSource</a>
+        </footer>
     </section>
-    <section id="content-wrapper" class="text-3 p-4 grow" :class="{'hidden' : showNavigation}">
-        <template x-if="currentView === home.Views.PublicCourses">
+    <article id="content-wrapper" class="text-3 p-4 grow" :class="{'hidden' : showNavigation}">
+        <template x-if="view === home.Views.PublicCourses">
             {{template "public-courses"}}
         </template>
-        <template x-if="currentView === home.Views.UserCourses">
+        <template x-if="view === home.Views.UserCourses">
             {{template "user-courses"}}
         </template>
-        <template x-if="currentView === home.Views.Main">
+        <template x-if="view === home.Views.Main">
             <div x-data="home.main()" x-init="Promise.all([loadLivestreams()])">
                 {{if .TUMLiveContext}}
                     {{if .TUMLiveContext.User.Name}}
@@ -178,9 +182,10 @@
                 </div>
             </div>
         </template>
-    </section>
+    </article>
 </article>
-<footer class="w-full flex justify-between space-x-3 py-4 px-8 items-center bg-gray-100 dark:bg-secondary-light">
+<footer id="desktop-footer"
+        class="w-full flex justify-between space-x-3 py-4 px-8 items-center bg-gray-100 dark:bg-secondary-light hidden md:flex">
     <div class="flex space-x-3">
         <a class="text-sm font-light text-5" href="/about">About</a>
         <a class="text-sm font-light text-5" href="/privacy">Data Privacy</a>
@@ -270,35 +275,36 @@
 
 {{define "livestreams"}}
     <template x-if="livestreams.length > 0">
-        <div>
+        <article id = "livestreams">
             <div class="px-3 py-1 mx-3 bg-danger text-white text-sm w-fit font-semibold uppercase rounded animate-pulse">
                 Live
             </div>
-            <div class="grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
+            <section class="grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
                 <template x-for="(livestream, i) in livestreams" :key="livestream.Stream.ID">
-                    <div class="p-3 lg:col-span-1 md:col-span-1 col-span-full"
+                    <article class="p-3 lg:col-span-1 md:col-span-1 col-span-full"
                          :id="`livestream-${livestream.Stream.ID}`">
                         <div class="h-56 relative mb-2">
-                            <template x-if="livestream.LectureHall !== null">
-                                <a class="absolute right-3 top-3 z-40 font-semibold text-xs text-4 rounded-full px-2 py-1 bg-white dark:bg-secondary"
-                                   :href="`https://nav.tum.de/room/${livestream.LectureHall.Name}`">
-                                    <i class="fas fa-location-pin mr-1"></i>
-                                    <span x-text="livestream.LectureHall.Name"></span>
-                                </a>
-                            </template>
+                            <div class="absolute right-2 top-1 flex items-center space-x-2 text-xs font-semibold text-white z-40">
+                                <template x-if="livestream.Course.Visibility === 'hidden'">
+                                    <span class="rounded-full px-2 py-1 bg-indigo-900">Hidden</span>
+                                </template>
+                                <template x-if="livestream.LectureHall !== null">
+                                    <a class="rounded-full px-2 py-1 bg-black"
+                                       :href="`https://nav.tum.de/room/${livestream.LectureHall.Name}`">
+                                        <i class="fas fa-location-pin mr-1"></i>
+                                        <span x-text="livestream.LectureHall.Name"></span>
+                                    </a>
+                                </template>
+                            </div>
                             <a :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`">
                                 <div style="background-image:url('https://streams.tum.de/Mediasite/FileServer/Presentation/ec92304e4558492b91635053e1cfe1161d/1cbd7a07-44e9-45cf-8420-8f2964750278.jpg')"
                                      class="bg-gray-100 dark:bg-gray-800 h-full rounded-lg mb-2 bg-cover transition-all duration-500 hover:shadow-xl"></div>
                             </a>
                         </div>
                         <div>
-                            <div class="flex items-center">
-                                <span x-cloak x-show="livestream.Stream.Visibility === 'hidden'"
-                                      class="bg-blue-800 text-white text-tiny p-1 mr-2 rounded-lg font-semibold">Hidden</span>
-                                <a class="block text-sm text-5 hover:bg-gray-50 dark:hover:bg-gray-800 px-2 rounded"
-                                   :href="`/course/${livestream.Course.Year}/${livestream.Course.TeachingTerm}/${livestream.Course.Slug}`"
-                                   x-text="livestream.Course.Name"></a>
-                            </div>
+                            <a class="block text-sm text-5 hover:bg-gray-50 dark:hover:bg-gray-800 px-2 rounded"
+                               :href="`/course/${livestream.Course.Year}/${livestream.Course.TeachingTerm}/${livestream.Course.Slug}`"
+                               x-text="livestream.Course.Name"></a>
                             <a class="font-medium block px-2 hover:underline"
                                :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`"
                                x-text="livestream.Stream.Name"></a>
@@ -306,20 +312,20 @@
                         <div class="flex items-center text-sm px-2">
                             <span class="font-light" x-text="livestream.Stream.FriendlyDateString"></span>
                         </div>
-                    </div>
+                    </article>
                 </template>
-            </div>
-        </div>
+            </section>
+        </article>
     </template>
 {{end}}
 
 {{define "live-today"}}
     <template x-if="liveToday.length > 0">
-        <div id="live-today" class="px-3">
+        <article id="live-today" class="px-3">
             <h3 class="font-bold">Today</h3>
-            <div class="grid gap-3 px-2">
+            <section class="grid gap-3 px-2">
                 <template x-for="(course, i) in liveToday" :key="course.ID">
-                    <div class="border-b dark:border-gray-800 last:border-0 py-2 px-1">
+                    <article class="border-b dark:border-gray-800 last:border-0 py-2 px-1">
                         <a class="block text-3 font-semibold hover:underline" x-text="course.name"
                            :href="`/course/${course.year}/${course.term}/${course.slug}`"></a>
                         <div class="flex items-center text-sm text-5 font-light">
@@ -329,27 +335,30 @@
                                       x-text="`Next lecture: ${new Date(course.nextLecture.Start).toLocaleString()}`"></span>
                             </a>
                         </div>
-
-                    </div>
+                    </article>
                 </template>
-            </div>
-        </div>
+            </section>
+        </article>
     </template>
 {{end}}
 
 {{define "recent-vods"}}
     <template x-if="recentVods.length > 0">
-        <div id="recent-vods">
+        <article id="recent-vods">
             <h3 class="font-bold px-3">Recent VODs</h3>
-            <div class="grid lg:grid-cols-4 grid-cols-1">
+            <section class="grid lg:grid-cols-4 grid-cols-1">
                 <template x-for="(course, i) in recentVods" :key="course.ID">
-                    <div class="lg:col-span-1 col-span-full p-3">
+                    <article class="lg:col-span-1 col-span-full p-3">
                         <a :href="`/w/${course.slug}/${course.lastLecture.ID}`" class="block mb-2">
-                            <div class="relative bg-gray-100 dark:bg-gray-800 h-40 rounded-lg transition-all duration-500 hover:shadow-lg">
-                                <i x-cloak x-show="course.lastLecture?.Progress?.watched"
-                                   class="absolute top-3 right-3 z-40 text-5 fa-solid fa-eye"></i>
-                                <div :style="`width: ${course.lastLecture?.Progress?.percentage}%`"
-                                     class="absolute bottom-0 bg-blue-500 dark:bg-indigo-600 h-1 rounded-b"></div>
+                            <div style="background-image:url('https://www.tum-universitaetsstiftung.de/fileadmin/_processed_/d/f/csm_20190712_9_9b38ba8a75.jpg')"
+                                 class="relative bg-gray-100 dark:bg-gray-800 h-40 rounded-lg transition-all duration-500 hover:shadow-lg bg-cover">
+                                <div :id="`vod-progress-${course.lastLecture.ID}`" class="absolute bottom-0 w-full">
+                                    <div class="relative w-full h-2 bg-gray-500/50 rounded-b-lg">
+                                        <span :style="`width: ${course.lastLecture?.Progress?.percentage}%`"
+                                              class="absolute left-0 bg-blue-500 dark:bg-indigo-600 h-2 rounded-bl-lg"
+                                              :class="{'rounded-br-lg': course.lastLecture?.Progress?.percentage === 100}"></span>
+                                    </div>
+                                </div>
                             </div>
                         </a>
                         <a class="block text-xs text-5 hover:bg-gray-50 dark:hover:bg-gray-800 px-1 rounded w-fit"
@@ -360,17 +369,17 @@
                            x-text="course.lastLecture.Name"></a>
                         <span class="font-light text-xs text-5 px-1"
                               x-text="new Date(course.lastLecture.Start).toLocaleString()"></span>
-                    </div>
+                    </article>
                 </template>
-            </div>
-        </div>
+            </section>
+        </article>
     </template>
 {{end}}
 
 {{define "user-courses"}}
-    <div id="user-courses">
-        <div class="flex items-center justify-between mb-4">
-            <h1 id="my-courses-heading" class="flex items-center font-bold px-3">
+    <article id="user-courses">
+        <header class="flex items-center justify-between mb-4">
+            <h1 id="my-courses-head" class="flex items-center font-bold px-3">
                 <i class="text-base fa-solid fa-graduation-cap mr-2"></i>
                 My Courses
             </h1>
@@ -380,10 +389,10 @@
                 <i class="fa-solid fa-undo mr-2"></i>
                 <span>Go back</span>
             </button>
-        </div>
-        <div class="grid gap-3 pb-4">
+        </header>
+        <section class="grid gap-3 pb-4">
             <template x-for="(course, i) in userCourses" :key="course.ID">
-                <div class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2">
+                <article class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2">
                     <a class="block text-3 text-lg font-semibold hover:underline" x-text="course.name"
                        :href="`/course/${course.year}/${course.term}/${course.slug}`"></a>
                     <div class="flex items-center text-sm text-5 font-light">
@@ -397,15 +406,15 @@
                             <span class="hover:underline">Most recent lecture</span>
                         </a>
                     </div>
-                </div>
+                </article>
             </template>
-            <a href="#my-courses-heading"
+            <a href="#my-courses-head"
                class="text-3 text-sm font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full px-2 py-1 mx-auto">
                 Go back up
                 <i class="fa-solid fa-chevron-up ml-2"></i>
             </a>
-        </div>
-    </div>
+        </section>
+    </article>
 {{end}}
 
 {{define "public-courses"}}
