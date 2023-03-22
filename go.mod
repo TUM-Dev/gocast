@@ -38,7 +38,7 @@ require (
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
-	github.com/crewjam/saml v0.4.12
+	github.com/crewjam/saml v0.4.13
 	github.com/golang/mock v1.6.0
 	github.com/icholy/digest v0.1.22
 	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20230309133407-bceb45ec90c7
