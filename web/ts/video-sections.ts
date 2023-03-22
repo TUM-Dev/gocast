@@ -236,7 +236,7 @@ class UpdateVideoSectionRequest {
  * @category watch-page
  * @category admin-page
  */
-const VideoSections = {
+export const VideoSections = {
     get: async function (streamId: number): Promise<Section[]> {
         return getData(`/api/stream/${streamId}/sections`)
             .then((resp) => {
