@@ -310,7 +310,7 @@ export class Time {
     }
 
     private static padZero(i: string | number) {
-        if(typeof i === "string") {
+        if (typeof i === "string") {
             i = parseInt(i);
         }
         if (i < 10) {
