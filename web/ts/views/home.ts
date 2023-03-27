@@ -122,7 +122,7 @@ export function body() {
 
         async loadProgresses(ids: number[]) {
             const progresses = await Progress.getBatch(ids);
-            this.recently.forEach((v, i) => (v.lastLecture.progress = progresses[i]));
+            this.recently.forEach((r, i) => (r.lastLecture.progress = progresses[i]));
         },
 
         getLiveToday() {
@@ -252,65 +252,133 @@ type SemesterResponse = {
     Semesters: SemesterItem[];
 };
 
-type SemesterItem = {
+class SemesterItem {
     TeachingTerm: string;
     Year: number;
-    FriendlyString?: string;
-};
+
+    constructor(obj: SemesterItem) {
+        this.TeachingTerm = obj.TeachingTerm;
+        this.Year = obj.Year;
+    }
+
+    public FriendlyString(): string {
+        return `${this.TeachingTerm === "W" ? "Winter" : "Summer"} ${this.Year}`;
+    }
+}
 
 const Semesters = {
     async get(): Promise<SemesterResponse> {
         return get("/api/semesters").then((l: SemesterResponse) => {
-            l.Semesters.forEach(
-                (s: SemesterItem) => (s.FriendlyString = `${s.TeachingTerm === "W" ? "Winter" : "Summer"} ${s.Year}`),
-            );
+            l.Semesters = l.Semesters.map((s) => new SemesterItem(s));
             return l;
         });
     },
 };
 
+class Stream {
+    readonly ID: number;
+    readonly Name: string;
+    readonly End: string;
+
+    constructor(obj: Stream) {
+        this.ID = obj.ID;
+        this.Name = obj.Name === "" ? DEFAULT_LECTURE_NAME : obj.Name;
+        this.End = obj.End;
+    }
+
+    public FriendlyDateString(): string {
+        const end = new Date(this.End);
+        const hours = end.getHours();
+        const minutes = end.getMinutes();
+        return `Until ${hours}:${minutes < 10 ? minutes + "0" : minutes}`;
+    }
+}
+
+class Course {
+    readonly Visibility: string;
+    readonly Slug: string;
+    readonly Year: number;
+    readonly TeachingTerm: string;
+    readonly Name: string;
+
+    constructor(obj: Course) {
+        this.Visibility = obj.Visibility;
+        this.Slug = obj.Slug;
+        this.Year = obj.Year;
+        this.TeachingTerm = obj.TeachingTerm;
+        this.Name = obj.Name;
+    }
+
+    public IsHidden(): boolean {
+        return this.Visibility === "hidden";
+    }
+}
+
+class LectureHall {
+    readonly Name: string;
+    constructor(obj: LectureHall) {
+        this.Name = obj.Name;
+    }
+}
+
+class Livestream {
+    readonly Stream: Stream;
+    readonly Course: Course;
+    readonly LectureHall?: LectureHall;
+
+    constructor(obj: Livestream) {
+        this.Stream = new Stream(obj.Stream);
+        this.Course = new Course(obj.Course);
+        this.LectureHall = obj.LectureHall ? new LectureHall(obj.LectureHall) : undefined;
+    }
+
+    public InLectureHall(): boolean {
+        return this.LectureHall !== undefined;
+    }
+}
+
 const Courses = {
     async getLivestreams() {
-        return get("/api/courses/live").then((livestreams) => {
-            // force them to use titles...
-            livestreams.forEach((l) => {
-                l.Stream.Name = l.Stream.Name === "" ? DEFAULT_LECTURE_NAME : l.Stream.Name;
-
-                const end = new Date(l.Stream.End);
-                const hours = end.getHours();
-                const minutes = end.getMinutes();
-                l.Stream.FriendlyDateString = `Until ${hours}:${minutes < 10 ? minutes + "0" : minutes}`;
-
-                return l;
-            });
-            return livestreams;
-        });
+        return get("/api/courses/live").then((livestreams) => livestreams.map((l) => new Livestream(l)));
     },
 
     async getPublic(year?: number, term?: string): Promise<object> {
-        const query = year !== undefined && term !== undefined && year !== 0 ? `?year=${year}&term=${term}` : "";
-        return get(`/api/courses/public${query}`);
+        return get(`/api/courses/public${this.query(year, term)}`);
     },
 
     async getUsers(year?: number, term?: string): Promise<object> {
-        const query = year !== undefined && term !== undefined && year !== 0 ? `?year=${year}&term=${term}` : "";
-        return get(`/api/courses/users${query}`);
+        return get(`/api/courses/users${this.query(year, term)}`);
     },
+
+    query: (year?: number, term?: number) =>
+        year !== undefined && term !== undefined && year !== 0 ? `?year=${year}&term=${term}` : "",
 };
 
-type Progress = {
-    progress: number;
-    percentage?: number;
-    watched: boolean;
-    streamId: number;
-};
+class ProgressItem {
+    private readonly progress: number;
+    private readonly watched: boolean;
+    private readonly streamId: number;
+
+    constructor(obj: ProgressItem) {
+        this.progress = obj.progress;
+        this.watched = obj.watched;
+        this.streamId = obj.streamId;
+    }
+
+    public Percentage(): number {
+        return Math.round(this.progress * 100);
+    }
+
+    public HasProgressOne(): boolean {
+        return this.progress === 1;
+    }
+}
 
 const Progress = {
     getBatch(ids: number[]) {
         const query = "[]ids=" + ids.join("&[]ids=");
-        return get("/api/progress/streams?" + query).then((p: Progress[]) => {
-            p.forEach((p) => (p.percentage = Math.round(p.progress * 100)));
-            return p;
+        return get("/api/progress/streams?" + query).then((progresses: ProgressItem[]) => {
+            return progresses.map((p) => new ProgressItem(p)); // Recreate for Percentage()
         });
     },
 };

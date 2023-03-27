@@ -258,12 +258,12 @@
 
 {{define "semester-picker"}}
     <span class="text-sm bg-gray-100 dark:bg-gray-800 rounded-lg text-left px-3 py-2 mb-1"
-          x-text="semesters[selectedSemesterIndex]?.FriendlyString"></span>
+          x-text="semesters[selectedSemesterIndex]?.FriendlyString()"></span>
     <template x-if="allSemesters.value">
         <template x-for="(s, i) in semesters">
             <button type="button" @click="switchSemester(s.Year, s.TeachingTerm)"
                     class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-left px-3 py-2"
-                    x-text="s.FriendlyString"></button>
+                    x-text="s.FriendlyString()"></button>
         </template>
     </template>
     <button @click="allSemesters.toggle()"
@@ -285,10 +285,10 @@
                              :id="`livestream-${livestream.Stream.ID}`">
                         <div class="h-56 relative mb-2">
                             <div class="absolute right-2 top-1 flex items-center space-x-2 text-xs font-semibold text-white z-40">
-                                <template x-if="livestream.Course.Visibility === 'hidden'">
+                                <template x-if="livestream.Course.IsHidden()">
                                     <span class="rounded-full px-2 py-1 bg-indigo-900">Hidden</span>
                                 </template>
-                                <template x-if="livestream.LectureHall !== null">
+                                <template x-if="livestream.InLectureHall()">
                                     <a class="rounded-full px-2 py-1 bg-black"
                                        :href="`https://nav.tum.de/room/${livestream.LectureHall.Name}`">
                                         <i class="fas fa-location-pin mr-1"></i>
@@ -310,7 +310,7 @@
                                x-text="livestream.Stream.Name"></a>
                         </div>
                         <div class="flex items-center text-sm px-2">
-                            <span class="font-light" x-text="livestream.Stream.FriendlyDateString"></span>
+                            <span class="font-light" x-text="livestream.Stream.FriendlyDateString()"></span>
                         </div>
                     </article>
                 </template>
@@ -355,9 +355,9 @@
                                 <div :id="`vod-progress-${course.lastLecture.ID}`" class="absolute bottom-0 w-full">
                                     <div class="relative w-full h-2 bg-gray-500/50 rounded-b-lg">
                                         <template x-if="course.lastLecture.progress !== undefined">
-                                            <span :style="`width: ${course.lastLecture.progress.percentage}%`"
+                                            <span :style="`width: ${course.lastLecture.progress.Percentage()}%`"
                                                   class="absolute left-0 bg-blue-500 dark:bg-indigo-600 h-2 rounded-bl-lg"
-                                                  :class="{'rounded-br-lg': course.lastLecture.progress.percentage === 100}"></span>
+                                                  :class="{'rounded-br-lg': course.lastLecture.progress.HasProgressOne()}"></span>
                                         </template>
                                     </div>
                                 </div>
