@@ -11,7 +11,6 @@ import (
 func configSemestersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	routes := semesterRoutes{daoWrapper}
 	router.GET("/api/semesters", routes.getSemesters)
-	router.GET("/api/semesters/current", routes.getCurrentSemester)
 }
 
 type semesterRoutes struct {
@@ -19,13 +18,13 @@ type semesterRoutes struct {
 }
 
 func (s semesterRoutes) getSemesters(c *gin.Context) {
-	c.JSON(http.StatusOK, s.GetAvailableSemesters(context.Background()))
-}
-
-func (s semesterRoutes) getCurrentSemester(c *gin.Context) {
+	semesters := s.GetAvailableSemesters(context.Background())
 	year, term := tum.GetCurrentSemester()
 	c.JSON(http.StatusOK, gin.H{
-		"Year":         year,
-		"TeachingTerm": term,
+		"Current": gin.H{
+			"Year":         year,
+			"TeachingTerm": term,
+		},
+		"Semesters": semesters,
 	})
 }

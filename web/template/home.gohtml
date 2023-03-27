@@ -18,7 +18,7 @@
 <header x-data="home.header()"
         class="text-3 flex z-50 w-full items-center justify-between px-6 py-2 h-16 shrink-0 grow-0">
     <div class="flex items-center mr-4">
-        <button type="button" id="open-sidenav" title="Open Sidenav" @click="toggleNavigation()"
+        <button type="button" id="open-sidenav" title="Open Sidenav" @click="toggleNotification()"
                 class="mr-4 text-lg md:hidden">
             <i class="fa-solid fa-bars"></i>
         </button>
@@ -34,13 +34,13 @@
                class="rounded-full px-3 py-1 text-sm font-semibold text-white bg-blue-500 dark:bg-indigo-600">Login</a>
         {{else}}
             <div>
-                <button type="button" @click="toggleUserContext(true)"
+                <button type="button" @click="userContext.toggle(true)"
                         class="flex items-center justify-center bg-blue-500 dark:bg-indigo-600 rounded-full h-[32px] w-[32px]">
                     <span class="text-white font-semibold uppercase">{{printf "%.1s" $user.GetPreferredName}}</span>
                 </button>
                 <div class="relative">
-                    <div x-cloak x-show="showUserContext"
-                         @click.outside="toggleUserContext();"
+                    <div x-cloak x-show="userContext.value"
+                         @click.outside="userContext.toggle();"
                          class="absolute top-full right-[50%] mt-2 shadow rounded-lg h-fit bg-white border
                          dark:bg-secondary dark:border-gray-800 overflow-hidden text-sm w-56">
                         <div class="p-2 border-b dark:border-gray-800">
@@ -59,11 +59,11 @@
                             <div>
                                 <button type="button"
                                         class="flex items-center p-2 w-full hover:bg-gray-100 dark:hover:bg-gray-800 my-2"
-                                        @click="toggleThemePicker()">
+                                        @click="themePicker.toggle()">
                                     <i class="fa-regular fa-moon mr-4"></i>
                                     <span>Theme</span>
                                     <i class="fa-solid ml-auto"
-                                       :class="showThemePicker ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                       :class="themePicker.value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                                 </button>
                                 {{template "theme-picker"}}
                             </div>
@@ -100,7 +100,7 @@
 </header>
 <article class="flex grow h-full overflow-y-scroll">
     <section id="side-navigation" class="sticky top-0 overflow-y-scroll font-light px-5 text-3 shrink-0"
-             :class="showNavigation ? 'w-full' : 'lg:w-80 md:w-56 md:block hidden'">
+             :class="navigation.value ? 'w-full' : 'lg:w-80 md:w-56 md:block hidden'">
         <article class="grid py-4">
             <header class="flex items-center px-3 pb-2 font-semibold">
                 <i class="text-xs fa-solid fa-calendar mr-2"></i>
@@ -156,7 +156,7 @@
                 We <i class="fas fa-heart text-blue-500 dark:text-indigo-600"></i> OpenSource</a>
         </footer>
     </section>
-    <article id="content-wrapper" class="text-3 p-4 grow" :class="{'hidden' : showNavigation}">
+    <article id="content-wrapper" class="text-3 p-4 grow" :class="{'hidden' : navigation.value}">
         <template x-if="view === home.Views.PublicCourses">
             {{template "public-courses"}}
         </template>
@@ -200,16 +200,16 @@
 {{define "notifications"}}
     <div id="notifications"
          class="relative" x-init="notifications.fetchNotifications();"
-         @keyup.escape="toggleNotifications();">
+         @keyup.escape="toggleNotification()">
         <button title="Show Notifications"
                 class="transition-colors duration-200 hover:text-gray-600 dark:hover:text-white text-gray-400 relative w-4"
-                type="button" @click="toggleNotifications(true);">
+                type="button" @click="toggleNotification(true);">
             <span x-cloak x-show="notifications.hasNewNotifications()"
                   class="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full absolute -top-1 -right-1 h-3 w-3 border-2 border-white dark:border-secondary"> </span>
             <i class="fa-solid fa-bell"></i>
         </button>
-        <div x-cloak x-show="showNotifications"
-             @click.outside="toggleNotifications();"
+        <div x-cloak x-show="notification.value"
+             @click.outside="toggleNotification();"
              class="text-3 text-sm origin-top-right absolute right-0 mt-4 shadow-sm rounded-lg h-fit bg-white border w-96
                         dark:bg-secondary dark:border-gray-800 shadow">
             <div class="border-b dark:border-gray-800 py-2 px-4">
@@ -234,7 +234,7 @@
 {{end}}
 
 {{define "theme-picker"}}
-    <div x-cloak x-show="showThemePicker" class="grid gap-1">
+    <div x-cloak x-show="themePicker.value" class="grid gap-1">
         <template x-for="[modeId, mode] of Object.entries($store.theme.modes)" :key="modeId">
             <button type="button" tabindex="0"
                     class="text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-2 px-4"
@@ -259,17 +259,17 @@
 {{define "semester-picker"}}
     <span class="text-sm bg-gray-100 dark:bg-gray-800 rounded-lg text-left px-3 py-2 mb-1"
           x-text="semesters[selectedSemesterIndex]?.FriendlyString"></span>
-    <template x-if="showAllSemesters">
+    <template x-if="allSemesters.value">
         <template x-for="(s, i) in semesters">
             <button type="button" @click="switchSemester(s.Year, s.TeachingTerm)"
                     class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-left px-3 py-2"
                     x-text="s.FriendlyString"></button>
         </template>
     </template>
-    <button @click="toggleAllSemesters()"
+    <button @click="allSemesters.toggle()"
             class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 w-full">
-        <i class="fa-solid text-xs mr-2" :class="showAllSemesters ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-        <span x-text="showAllSemesters ? 'Show less' : 'Show all'"></span>
+        <i class="fa-solid text-xs mr-2" :class="allSemesters.value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+        <span x-text="allSemesters.value ? 'Show less' : 'Show all'"></span>
     </button>
 {{end}}
 
