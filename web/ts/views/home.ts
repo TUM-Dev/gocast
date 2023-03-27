@@ -38,12 +38,18 @@ export function body() {
         publicCourses: [],
         userCourses: [],
         liveToday: [],
-        recentVods: [],
+        recently: [],
 
         loadingIndicator: 0,
 
         init() {
-            this.load([this.loadSemesters(), this.loadPublicCourses(), this.loadUserCourses()]);
+            const userPromise = this.loadUserCourses();
+            this.load([this.loadSemesters(), this.loadPublicCourses(), userPromise]);
+            userPromise.then(() => {
+                this.recently = this.getRecently();
+                this.liveToday = this.getLiveToday();
+                this.loadProgresses(this.userCourses.map((c) => c.lastLecture.ID));
+            });
         },
 
         load(promises: Promise<object>[]) {
@@ -67,17 +73,17 @@ export function body() {
 
         showMain() {
             this.view = Views.Main;
-            this.navigation.toggle(false);
+            // this.navigation.toggle(false);
         },
 
         showUserCourses() {
             this.view = Views.UserCourses;
-            this.navigation.toggle(false);
+            // this.navigation.toggle(false);
         },
 
         showPublicCourses() {
             this.view = Views.PublicCourses;
-            this.navigation.toggle(false);
+            // this.navigation.toggle(false);
         },
 
         async loadSemesters() {
@@ -105,8 +111,11 @@ export function body() {
 
         async loadUserCourses() {
             this.userCourses = await Courses.getUsers(this.year, this.term);
-            this.recentVods = this.getRecentVods();
-            this.liveToday = this.getLiveToday();
+        },
+
+        async loadProgresses(ids: number[]) {
+            const progresses = await Progress.getBatch(ids);
+            this.recently.forEach((v, i) => (v.lastLecture.progress = progresses[i]));
         },
 
         getLiveToday() {
@@ -125,11 +134,10 @@ export function body() {
             });
         },
 
-        getRecentVods() {
+        getRecently() {
             const courses = this.userCourses.filter((c) => c.lastLecture.ID !== 0);
-            courses.forEach(async (c) => {
+            courses.forEach((c) => {
                 c.lastLecture.Name = c.lastLecture.Name === "" ? DEFAULT_LECTURE_NAME : c.lastLecture.Name;
-                c.lastLecture.Progress = await Progress.get(c.lastLecture.ID);
             });
             return courses;
         },
@@ -158,6 +166,11 @@ export function body() {
 export function main() {
     return {
         livestreams: [],
+
+        init() {
+            Promise.all([this.loadLivestreams()]);
+        },
+
         async loadLivestreams() {
             this.livestreams = await Courses.getLivestreams();
         },
@@ -302,9 +315,11 @@ type Progress = {
 };
 
 const Progress = {
-    get(streamId: number) {
-        return get("/api/progress/streams/" + streamId).then((p: Progress) => {
-            return { ...p, percentage: Math.round(p.progress * 100) };
+    getBatch(ids: number[]) {
+        const query = "[]ids=" + ids.join("&[]ids=");
+        return get("/api/progress/streams?" + query).then((p: Progress[]) => {
+            p.forEach((p) => (p.percentage = Math.round(p.progress * 100)));
+            return p;
         });
     },
 };

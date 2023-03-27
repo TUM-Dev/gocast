@@ -14,11 +14,11 @@
 <body x-data="home.body()"
       @popstate.window="onPopState"
       class="h-screen flex flex-col items-stretch bg-white dark:bg-secondary">
-<div :style="`width: ${loadingIndicator}%`" class = "bg-blue-500/50 h-px fixed top-0 transition-all duration-300"></div>
+<div :style="`width: ${loadingIndicator}%`" class="bg-blue-500/50 h-px fixed top-0 transition-all duration-300"></div>
 <header x-data="home.header()"
         class="text-3 flex z-50 w-full items-center justify-between px-6 py-2 h-16 shrink-0 grow-0">
     <div class="flex items-center mr-4">
-        <button type="button" id="open-sidenav" title="Open Sidenav" @click="toggleNotification()"
+        <button type="button" id="open-sidenav" title="Open Sidenav" @click="navigation.toggle()"
                 class="mr-4 text-lg md:hidden">
             <i class="fa-solid fa-bars"></i>
         </button>
@@ -99,8 +99,8 @@
     </div>
 </header>
 <article class="flex grow h-full overflow-y-scroll">
-    <section id="side-navigation" class="sticky top-0 overflow-y-scroll font-light px-5 text-3 shrink-0"
-             :class="navigation.value ? 'w-full' : 'lg:w-80 md:w-56 md:block hidden'">
+    <section id="side-navigation" class="sticky top-0 overflow-y-scroll font-light px-5 text-3 shrink-0 lg:w-80 md:w-56 md:block"
+             :class="navigation.value ? 'w-full' : 'hidden'">
         <article class="grid py-4">
             <header class="flex items-center px-3 pb-2 font-semibold">
                 <i class="text-xs fa-solid fa-calendar mr-2"></i>
@@ -164,7 +164,7 @@
             {{template "user-courses"}}
         </template>
         <template x-if="view === home.Views.Main">
-            <div x-data="home.main()" x-init="Promise.all([loadLivestreams()])">
+            <div x-data="home.main()">
                 {{if .TUMLiveContext}}
                     {{if .TUMLiveContext.User.Name}}
                         <h1 id="greeting" class="font-bold mb-4 px-3">
@@ -275,14 +275,14 @@
 
 {{define "livestreams"}}
     <template x-if="livestreams.length > 0">
-        <article id = "livestreams">
+        <article id="livestreams">
             <div class="px-3 py-1 mx-3 bg-danger text-white text-sm w-fit font-semibold uppercase rounded animate-pulse">
                 Live
             </div>
             <section class="grid xl:grid-cols-3 lg:grid-cols-2 grid-cols-1">
                 <template x-for="(livestream, i) in livestreams" :key="livestream.Stream.ID">
                     <article class="p-3 lg:col-span-1 col-span-full"
-                         :id="`livestream-${livestream.Stream.ID}`">
+                             :id="`livestream-${livestream.Stream.ID}`">
                         <div class="h-56 relative mb-2">
                             <div class="absolute right-2 top-1 flex items-center space-x-2 text-xs font-semibold text-white z-40">
                                 <template x-if="livestream.Course.Visibility === 'hidden'">
@@ -343,20 +343,22 @@
 {{end}}
 
 {{define "recent-vods"}}
-    <template x-if="recentVods.length > 0">
+    <template x-if="recently.length > 0">
         <article id="recent-vods">
             <h3 class="font-bold px-3">Recent VODs</h3>
             <section class="grid xl:grid-cols-4 lg:grid-cols-2 grid-cols-1">
-                <template x-for="(course, i) in recentVods" :key="course.ID">
+                <template x-for="(course, i) in recently" :key="course.ID">
                     <article class="lg:col-span-1 col-span-full p-3">
                         <a :href="`/w/${course.slug}/${course.lastLecture.ID}`" class="block mb-2">
                             <div style="background-image:url('https://www.tum-universitaetsstiftung.de/fileadmin/_processed_/d/f/csm_20190712_9_9b38ba8a75.jpg')"
                                  class="relative bg-gray-100 dark:bg-gray-800 h-40 rounded-lg transition-all duration-500 hover:shadow-lg bg-cover">
                                 <div :id="`vod-progress-${course.lastLecture.ID}`" class="absolute bottom-0 w-full">
                                     <div class="relative w-full h-2 bg-gray-500/50 rounded-b-lg">
-                                        <span :style="`width: ${course.lastLecture?.Progress?.percentage}%`"
-                                              class="absolute left-0 bg-blue-500 dark:bg-indigo-600 h-2 rounded-bl-lg"
-                                              :class="{'rounded-br-lg': course.lastLecture?.Progress?.percentage === 100}"></span>
+                                        <template x-if="course.lastLecture.progress !== undefined">
+                                            <span :style="`width: ${course.lastLecture.progress.percentage}%`"
+                                                  class="absolute left-0 bg-blue-500 dark:bg-indigo-600 h-2 rounded-bl-lg"
+                                                  :class="{'rounded-br-lg': course.lastLecture.progress.percentage === 100}"></span>
+                                        </template>
                                     </div>
                                 </div>
                             </div>

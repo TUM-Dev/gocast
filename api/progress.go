@@ -8,6 +8,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"gorm.io/gorm"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -70,7 +71,7 @@ func configProgressRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	go progressBuff.run()
 	router.POST("/api/progressReport", routes.saveProgress)
 	router.POST("/api/watched", routes.markWatched)
-	router.GET("/api/progress/streams/:id", routes.getProgressForStream)
+	router.GET("/api/progress/streams", routes.getProgressBatch)
 }
 
 // progressRoutes contains a DaoWrapper object and all route functions dangle from it.
@@ -174,7 +175,7 @@ func (r progressRoutes) markWatched(c *gin.Context) {
 	}
 }
 
-func (r progressRoutes) getProgressForStream(c *gin.Context) {
+func (r progressRoutes) getProgressBatch(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	if tumLiveContext.User == nil {
@@ -185,34 +186,43 @@ func (r progressRoutes) getProgressForStream(c *gin.Context) {
 		return
 	}
 
-	type Stream struct {
-		ID uint `uri:"id"`
-	}
-
-	stream := Stream{}
-
-	if err := c.ShouldBindUri(&stream); err != nil {
+	var stringIds []string
+	var ok bool
+	if stringIds, ok = c.GetQueryArray("[]ids"); !ok {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
-			CustomMessage: "invalid stream id",
+			CustomMessage: "invalid query 'ids'",
 		})
 		return
 	}
 
-	progress, err := r.LoadProgress(tumLiveContext.User.ID, stream.ID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusOK, model.StreamProgress{StreamID: stream.ID})
-		} else {
-			sentry.CaptureException(err)
-			_ = c.Error(tools.RequestError{
-				Err:           err,
-				Status:        http.StatusInternalServerError,
-				CustomMessage: "can't retrieve progress for user",
-			})
+	ids := make([]uint, len(stringIds))
+	for i, stringId := range stringIds {
+		id, err := strconv.Atoi(stringId)
+		if err != nil {
+			continue
 		}
-		return
+		ids[i] = uint(id)
 	}
 
-	c.JSON(http.StatusOK, progress)
+	streamProgresses := make([]model.StreamProgress, len(ids))
+	for i, id := range ids {
+		p, err := r.LoadProgress(tumLiveContext.User.ID, id)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				streamProgresses[i] = model.StreamProgress{StreamID: id}
+			} else {
+				sentry.CaptureException(err)
+				_ = c.Error(tools.RequestError{
+					Err:           err,
+					Status:        http.StatusInternalServerError,
+					CustomMessage: "can't retrieve streamProgresses for user",
+				})
+			}
+		} else {
+			streamProgresses[i] = p
+		}
+	}
+
+	c.JSON(http.StatusOK, streamProgresses)
 }
