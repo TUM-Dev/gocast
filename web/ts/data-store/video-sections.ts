@@ -12,16 +12,18 @@ export class VideoSectionProvider extends StreamableMapProvider<number, Section[
     }
 
     async fetch(streamId: number): Promise<void> {
-        this.data[streamId] = (await VideoSections.get(streamId)).map((s) => {
-            s.friendlyTimestamp = new Time(s.startHours, s.startMinutes, s.startSeconds).toString();
-            return s;
+        this.data[streamId] = VideoSections.get(streamId).then((result) => {
+            return result.map((s) => {
+                s.friendlyTimestamp = new Time(s.startHours, s.startMinutes, s.startSeconds).toString();
+                return s;
+            })
         });
     }
 
     async add(streamId: number, sections: Section[]): Promise<void> {
         await VideoSections.add(streamId, sections);
         await this.fetch(streamId);
-        this.triggerUpdate(streamId);
+        await this.triggerUpdate(streamId);
     }
 
     async delete(streamId: number, sectionId: number) {
@@ -65,7 +67,7 @@ export class UpdateVideoSectionRequest {
  * @category admin-page
  */
 const VideoSections = {
-    cache: new Cache<Bookmark[]>({ validTime: 1000 }),
+    cache: new Cache<Bookmark[]>({ validTime: 0 }),
 
     get: async function (streamId: number, forceCacheRefresh: boolean = false): Promise<Section[]> {
         return this.cache.get(`get.${streamId}`, async () => {

@@ -17,6 +17,10 @@ export class Cache<T> {
     }
 
     public get(key: string, fn: () => Promise<T>, forceCacheRefresh: boolean = false) : Promise<T> {
+        if (this.options.validTime === 0) {
+            return fn();
+        }
+
         const entry = this.cache.get(key);
         if (!forceCacheRefresh && this.entryValid(entry)) {
             return entry.value;

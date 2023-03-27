@@ -4,17 +4,19 @@ import { Cache } from "./cache";
 
 export class BookmarksProvider extends StreamableMapProvider<number, Bookmark[]> {
     protected async fetch(streamId: number, force: boolean = false): Promise<void> {
-        this.data[streamId] = (await Bookmarks.get(streamId, force)).map((b) => {
-            b.streamId = streamId;
-            b.friendlyTimestamp = new Time(b.hours, b.minutes, b.seconds).toString();
-            return b;
-        });
+        this.data[streamId] = Bookmarks.get(streamId, force).then((result) => {
+            return result.map((b) => {
+                b.streamId = streamId;
+                b.friendlyTimestamp = new Time(b.hours, b.minutes, b.seconds).toString();
+                return b;
+            })
+        })
     }
 
     async getData(streamId: number, forceFetch = false): Promise<Bookmark[]> {
         if (this.data[streamId] == null || forceFetch) {
             await this.fetch(streamId, forceFetch);
-            this.triggerUpdate(streamId);
+            await this.triggerUpdate(streamId);
         }
         return this.data[streamId];
     }
@@ -22,7 +24,7 @@ export class BookmarksProvider extends StreamableMapProvider<number, Bookmark[]>
     async add(request: AddBookmarkRequest): Promise<void> {
         await Bookmarks.add(request);
         await this.fetch(request.StreamID);
-        this.triggerUpdate(request.StreamID);
+        await this.triggerUpdate(request.StreamID);
     }
 
     async update(streamId: number, bookmarkId: number, request: UpdateBookmarkRequest): Promise<void> {
@@ -31,13 +33,13 @@ export class BookmarksProvider extends StreamableMapProvider<number, Bookmark[]>
             if (b.ID === bookmarkId) b = { ...b, description: request.Description };
             return b;
         });
-        this.triggerUpdate(streamId);
+        await this.triggerUpdate(streamId);
     }
 
     async delete(streamId: number, bookmarkId: number): Promise<void> {
         await Bookmarks.delete(bookmarkId);
         this.data[streamId] = (await this.getData(streamId)).filter((b) => b.ID !== bookmarkId);
-        this.triggerUpdate(streamId);
+        await this.triggerUpdate(streamId);
     }
 }
 
@@ -64,7 +66,7 @@ export class UpdateBookmarkRequest {
 }
 
 const Bookmarks = {
-    cache: new Cache<Bookmark[]>({ validTime: 1000 }),
+    cache: new Cache<Bookmark[]>({ validTime: 0 }),
 
     get: async function (streamId: number, forceCacheRefresh: boolean = false): Promise<Bookmark[]> {
         return this.cache.get(`get.${streamId}`, async () => {
