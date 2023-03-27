@@ -31,10 +31,11 @@ export function body() {
         navigation: new Toggleable(),
         allSemesters: new Toggleable(),
 
-        semesters: [],
+        semesters: [] as SemesterItem[],
         currentSemesterIndex: -1,
         selectedSemesterIndex: -1,
 
+        livestreams: [],
         publicCourses: [],
         userCourses: [],
         liveToday: [],
@@ -43,8 +44,15 @@ export function body() {
         loadingIndicator: 0,
 
         init() {
+            this.reload(true);
+        },
+
+        reload(full = false) {
             const userPromise = this.loadUserCourses();
-            this.load([this.loadSemesters(), this.loadPublicCourses(), userPromise]);
+            const promises = full
+                ? [this.loadSemesters(), this.loadPublicCourses(), this.loadLivestreams(), userPromise]
+                : [this.loadPublicCourses(), userPromise];
+            this.load(promises);
             userPromise.then(() => {
                 this.recently = this.getRecently();
                 this.liveToday = this.getLiveToday();
@@ -54,21 +62,15 @@ export function body() {
 
         load(promises: Promise<object>[]) {
             this.loadingIndicator = 0;
-            Promise.all(promises).then(() => {
-                this.loadingIndicator = 0;
-            });
+            Promise.all(promises).then(() => (this.loadingIndicator = 0));
             promises.forEach((p) => {
-                Promise.resolve(p).then((r) => (this.loadingIndicator += 100 / promises.length));
+                Promise.resolve(p).then((_) => (this.loadingIndicator += 100 / promises.length));
             });
         },
 
         onPopState(event: PopStateEvent) {
-            const proxy = new Proxy(event.state || {}, {
-                get(target, p, receiver) {
-                    return target[p] || undefined;
-                },
-            });
-            this.switchSemester(+proxy.year || 0, proxy.term);
+            const state = event.state || {};
+            this.switchSemester(+state["year"] || 0, state["term"], false);
         },
 
         showMain() {
@@ -89,9 +91,8 @@ export function body() {
         async loadSemesters() {
             const res: SemesterResponse = await Semesters.get();
             this.semesters = res.Semesters;
-            this.currentSemester = res.Current;
             this.currentSemesterIndex = this.semesters.findIndex(
-                (s) => this.currentSemester.Year === s.Year && this.currentSemester.TeachingTerm === s.TeachingTerm,
+                (s) => res.Current.Year === s.Year && res.Current.TeachingTerm === s.TeachingTerm,
             );
 
             if (this.year !== null && this.term != null) {
@@ -102,7 +103,13 @@ export function body() {
 
             if (this.selectedSemesterIndex === -1) {
                 this.selectedSemesterIndex = this.currentSemesterIndex;
+                this.year = res.Current.Year;
+                this.term = res.Current.TeachingTerm;
             }
+        },
+
+        async loadLivestreams() {
+            this.livestreams = await Courses.getLivestreams();
         },
 
         async loadPublicCourses() {
@@ -142,46 +149,30 @@ export function body() {
             return courses;
         },
 
-        async switchSemester(year?: number, term?: string) {
-            console.log({ year, term });
-            if (year !== undefined && term !== undefined) {
-                if (this.year !== year || this.term !== term) {
-                    this.year = year;
-                    this.term = term;
-                    this.selectedSemesterIndex = this.semesters.findIndex(
-                        (s) => s.Year === year && s.TeachingTerm === term,
-                    );
-                    this.allSemesters.toggle(false);
+        async switchSemester(year?: number, term?: string, pushState = true) {
+            this.year = year || this.semesters[this.currentSemesterIndex].Year;
+            this.term = term || this.semesters[this.currentSemesterIndex].TeachingTerm;
+            this.selectedSemesterIndex = this.semesters.findIndex((s) => s.Year === year && s.TeachingTerm === term);
+            this.allSemesters.toggle(false);
 
-                    url.searchParams.set("year", String(year));
-                    url.searchParams.set("term", term);
-                    window.history.pushState({ year, term }, "", url.toString());
-                }
+            if (pushState) {
+                url.searchParams.set("year", String(year));
+                url.searchParams.set("term", term);
+                window.history.pushState({ year, term }, "", url.toString());
             }
-            this.load([this.loadPublicCourses(), this.loadUserCourses()]);
-        },
-    };
-}
 
-export function main() {
-    return {
-        livestreams: [],
-
-        init() {
-            Promise.all([this.loadLivestreams()]);
-        },
-
-        async loadLivestreams() {
-            this.livestreams = await Courses.getLivestreams();
+            this.reload();
         },
     };
 }
 
 class Toggleable {
     public value: boolean;
+
     constructor(value = false) {
         this.value = value;
     }
+
     toggle(set?: boolean) {
         this.value = set || !this.value;
     }

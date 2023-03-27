@@ -164,7 +164,7 @@
             {{template "user-courses"}}
         </template>
         <template x-if="view === home.Views.Main">
-            <div x-data="home.main()">
+            <article id = "main-view">
                 {{if .TUMLiveContext}}
                     {{if .TUMLiveContext.User.Name}}
                         <h1 id="greeting" class="font-bold mb-4 px-3">
@@ -180,7 +180,7 @@
                     {{template "live-today"}}
                     {{template "recent-vods"}}
                 </div>
-            </div>
+            </article>
         </template>
     </article>
 </article>
