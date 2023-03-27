@@ -1,9 +1,10 @@
 import { Delete, getData, postData, putData, Time } from "../global";
 import { StreamableMapProvider } from "./provider";
+import { Cache } from "./cache";
 
 export class BookmarksProvider extends StreamableMapProvider<number, Bookmark[]> {
-    protected async fetch(streamId: number): Promise<void> {
-        this.data[streamId] = (await Bookmarks.get(streamId)).map((b) => {
+    protected async fetch(streamId: number, force: boolean = false): Promise<void> {
+        this.data[streamId] = (await Bookmarks.get(streamId, force)).map((b) => {
             b.streamId = streamId;
             b.friendlyTimestamp = new Time(b.hours, b.minutes, b.seconds).toString();
             return b;
@@ -12,7 +13,7 @@ export class BookmarksProvider extends StreamableMapProvider<number, Bookmark[]>
 
     async getData(streamId: number, forceFetch = false): Promise<Bookmark[]> {
         if (this.data[streamId] == null || forceFetch) {
-            await this.fetch(streamId);
+            await this.fetch(streamId, forceFetch);
             this.triggerUpdate(streamId);
         }
         return this.data[streamId];
@@ -63,18 +64,16 @@ export class UpdateBookmarkRequest {
 }
 
 const Bookmarks = {
-    get: async function (streamId: number): Promise<Bookmark[]> {
-        return getData("/api/bookmarks?streamID=" + streamId)
-            .then((resp) => {
-                if (!resp.ok) {
-                    throw Error(resp.statusText);
-                }
-                return resp.json();
-            })
-            .catch((err) => {
-                console.error(err);
-            })
-            .then((j: Promise<Bookmark[]>) => j);
+    cache: new Cache<Bookmark[]>({ validTime: 1000 }),
+
+    get: async function (streamId: number, forceCacheRefresh: boolean = false): Promise<Bookmark[]> {
+        return this.cache.get(`get.${streamId}`, async () => {
+            const resp = await getData("/api/bookmarks?streamID=" + streamId);
+            if (!resp.ok) {
+                throw Error(resp.statusText);
+            }
+           return resp.json();
+        }, forceCacheRefresh);
     },
 
     add: (request: AddBookmarkRequest) => {

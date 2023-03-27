@@ -1,6 +1,7 @@
 import { Delete, getData, postData, putData, Section, Time } from "../global";
 import { StreamableMapProvider } from "./provider";
-import { UpdateBookmarkRequest } from "./bookmarks";
+import {Cache} from "./cache";
+import {Bookmark} from "./bookmarks";
 
 export class VideoSectionProvider extends StreamableMapProvider<number, Section[]> {
     async getData(streamId: number, forceFetch = false): Promise<Section[]> {
@@ -64,19 +65,16 @@ export class UpdateVideoSectionRequest {
  * @category admin-page
  */
 const VideoSections = {
-    get: async function (streamId: number): Promise<Section[]> {
-        return getData(`/api/stream/${streamId}/sections`)
-            .then((resp) => {
-                if (!resp.ok) {
-                    throw Error(resp.statusText);
-                }
-                return resp.json();
-            })
-            .catch((err) => {
-                console.error(err);
-                return [];
-            })
-            .then((l: Section[]) => l);
+    cache: new Cache<Bookmark[]>({ validTime: 1000 }),
+
+    get: async function (streamId: number, forceCacheRefresh: boolean = false): Promise<Section[]> {
+        return this.cache.get(`get.${streamId}`, async () => {
+            const resp = await getData(`/api/stream/${streamId}/sections`);
+            if (!resp.ok) {
+                throw Error(resp.statusText);
+            }
+            return resp.json();
+        }, forceCacheRefresh);
     },
 
     add: async function (streamId: number, request: object) {
