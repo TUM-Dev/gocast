@@ -1,10 +1,10 @@
 export type CacheOptions = {
-    validTime: number
+    validTime: number;
 };
 
 type CacheEntry<T> = {
-    createdAt: Date
-    value: Promise<T>
+    createdAt: Date;
+    value: Promise<T>;
 };
 
 export class Cache<T> {
@@ -16,7 +16,7 @@ export class Cache<T> {
         this.cache = new Map<string, CacheEntry<T>>();
     }
 
-    public get(key: string, fn: () => Promise<T>, forceCacheRefresh: boolean = false) : Promise<T> {
+    public get(key: string, fn: () => Promise<T>, forceCacheRefresh = false): Promise<T> {
         if (this.options.validTime === 0) {
             return fn();
         }
@@ -26,16 +26,16 @@ export class Cache<T> {
             return entry.value;
         }
 
-        const newEntry : CacheEntry<T> = {
+        const newEntry: CacheEntry<T> = {
             createdAt: new Date(),
             value: fn(),
-        }
+        };
         this.cache.set(key, newEntry);
 
         return newEntry.value;
     }
 
-    private entryValid(entry: CacheEntry<T>) : boolean {
+    private entryValid(entry: CacheEntry<T>): boolean {
         if (!entry) return false;
         const entryAge = Date.now() - entry.createdAt.getTime();
         return entryAge <= this.options.validTime;

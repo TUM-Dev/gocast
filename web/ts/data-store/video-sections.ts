@@ -1,7 +1,7 @@
 import { Delete, getData, postData, putData, Section, Time } from "../global";
 import { StreamableMapProvider } from "./provider";
-import {Cache} from "./cache";
-import {Bookmark} from "./bookmarks";
+import { Cache } from "./cache";
+import { Bookmark } from "./bookmarks";
 
 export class VideoSectionProvider extends StreamableMapProvider<number, Section[]> {
     async getData(streamId: number, forceFetch = false): Promise<Section[]> {
@@ -16,7 +16,7 @@ export class VideoSectionProvider extends StreamableMapProvider<number, Section[
             return result.map((s) => {
                 s.friendlyTimestamp = new Time(s.startHours, s.startMinutes, s.startSeconds).toString();
                 return s;
-            })
+            });
         });
     }
 
@@ -69,14 +69,18 @@ export class UpdateVideoSectionRequest {
 const VideoSections = {
     cache: new Cache<Bookmark[]>({ validTime: 0 }),
 
-    get: async function (streamId: number, forceCacheRefresh: boolean = false): Promise<Section[]> {
-        return this.cache.get(`get.${streamId}`, async () => {
-            const resp = await getData(`/api/stream/${streamId}/sections`);
-            if (!resp.ok) {
-                throw Error(resp.statusText);
-            }
-            return resp.json();
-        }, forceCacheRefresh);
+    get: async function (streamId: number, forceCacheRefresh = false): Promise<Section[]> {
+        return this.cache.get(
+            `get.${streamId}`,
+            async () => {
+                const resp = await getData(`/api/stream/${streamId}/sections`);
+                if (!resp.ok) {
+                    throw Error(resp.statusText);
+                }
+                return resp.json();
+            },
+            forceCacheRefresh,
+        );
     },
 
     add: async function (streamId: number, request: object) {

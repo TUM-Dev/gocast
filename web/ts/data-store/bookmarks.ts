@@ -3,14 +3,14 @@ import { StreamableMapProvider } from "./provider";
 import { Cache } from "./cache";
 
 export class BookmarksProvider extends StreamableMapProvider<number, Bookmark[]> {
-    protected async fetch(streamId: number, force: boolean = false): Promise<void> {
+    protected async fetch(streamId: number, force = false): Promise<void> {
         this.data[streamId] = Bookmarks.get(streamId, force).then((result) => {
             return result.map((b) => {
                 b.streamId = streamId;
                 b.friendlyTimestamp = new Time(b.hours, b.minutes, b.seconds).toString();
                 return b;
-            })
-        })
+            });
+        });
     }
 
     async getData(streamId: number, forceFetch = false): Promise<Bookmark[]> {
@@ -68,14 +68,18 @@ export class UpdateBookmarkRequest {
 const Bookmarks = {
     cache: new Cache<Bookmark[]>({ validTime: 0 }),
 
-    get: async function (streamId: number, forceCacheRefresh: boolean = false): Promise<Bookmark[]> {
-        return this.cache.get(`get.${streamId}`, async () => {
-            const resp = await getData("/api/bookmarks?streamID=" + streamId);
-            if (!resp.ok) {
-                throw Error(resp.statusText);
-            }
-           return resp.json();
-        }, forceCacheRefresh);
+    get: async function (streamId: number, forceCacheRefresh = false): Promise<Bookmark[]> {
+        return this.cache.get(
+            `get.${streamId}`,
+            async () => {
+                const resp = await getData("/api/bookmarks?streamID=" + streamId);
+                if (!resp.ok) {
+                    throw Error(resp.statusText);
+                }
+                return resp.json();
+            },
+            forceCacheRefresh,
+        );
     },
 
     add: (request: AddBookmarkRequest) => {
