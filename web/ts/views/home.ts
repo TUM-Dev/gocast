@@ -152,7 +152,9 @@ export function body() {
         async switchSemester(year?: number, term?: string, pushState = true) {
             this.year = year || this.semesters[this.currentSemesterIndex].Year;
             this.term = term || this.semesters[this.currentSemesterIndex].TeachingTerm;
-            this.selectedSemesterIndex = this.semesters.findIndex((s) => s.Year === year && s.TeachingTerm === term);
+            this.selectedSemesterIndex = this.semesters.findIndex(
+                (s) => s.Year === this.year && s.TeachingTerm === this.term,
+            );
             this.allSemesters.toggle(false);
 
             if (pushState) {
@@ -174,7 +176,7 @@ class Toggleable {
     }
 
     toggle(set?: boolean) {
-        this.value = set || !this.value;
+        this.value = set ?? !this.value;
     }
 }
 
