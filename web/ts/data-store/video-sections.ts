@@ -1,5 +1,5 @@
 import { Delete, getData, postData, putData, Section, Time } from "../global";
-import { StreamableMapProvider } from "./provider-base";
+import { StreamableMapProvider } from "./provider";
 import { UpdateBookmarkRequest } from "./bookmarks";
 
 export class VideoSectionProvider extends StreamableMapProvider<number, Section[]> {

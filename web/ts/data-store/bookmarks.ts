@@ -1,5 +1,5 @@
 import { Delete, getData, postData, putData, Time } from "../global";
-import { StreamableMapProvider } from "./provider-base";
+import { StreamableMapProvider } from "./provider";
 
 export class BookmarksProvider extends StreamableMapProvider<number, Bookmark[]> {
     protected async fetch(streamId: number): Promise<void> {
