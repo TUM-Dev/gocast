@@ -815,11 +815,11 @@ func FetchLiveThumbs(daoWrapper dao.DaoWrapper) func() {
 
 func getLivePreviewFromWorker(s *model.Stream, workerIndex int, client pb.ToWorkerClient) error {
 	req := pb.LiveThumbRequest{
-		WorkerID: string(workerIndex),
+		WorkerID: fmt.Sprint(workerIndex),
 		HLSUrl:   s.PlaylistUrl,
 	}
 	resp, err := client.GenerateLiveThumbs(context.Background(), &req)
-	file, err := os.Create(string(s.ID) + ".jpeg")
+	file, err := os.Create(fmt.Sprint(s.ID) + ".jpeg")
 	if err != nil {
 		log.WithError(err).Warn("Can't generate live preview")
 		sentry.CaptureException(err)
