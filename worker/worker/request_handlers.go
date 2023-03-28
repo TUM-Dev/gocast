@@ -134,18 +134,6 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 	}
 }
 
-// HandleLiveImageRequest ...
-func HandleLiveImageRequest(request *pb.LiveThumbRequest) ([]byte, error) {
-	url := request.HLSUrl + "?jwt=" + cfg.AdminToken
-	log.Info(url)
-	cmd := exec.Command(
-		"sh", "-c",
-		"ffmpeg -sseof -3 -i "+url+" -vframes 1 -update 1 -q:v 1 -c:v mjpeg -f mjpeg pipe:1")
-	out, err := cmd.Output()
-	log.Info(string(out))
-	return out, err
-}
-
 // HandleThumbnailRequest creates a thumbnail on demand.
 func HandleThumbnailRequest(request *pb.GenerateThumbnailRequest) {
 	streamCtx := &StreamContext{

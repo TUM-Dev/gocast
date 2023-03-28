@@ -779,14 +779,15 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 	}
 }
 
+// FetchLiveThumbs gets a live thumbnail from a worker.
 func FetchLiveThumbs(daoWrapper dao.DaoWrapper) func() {
 	return func() {
 		workers := daoWrapper.WorkerDao.GetAliveWorkers()
-		// TODO: Change back to live streams
-		liveStreams, err := daoWrapper.StreamsDao.GetAllStreams()
+		liveStreams, err := daoWrapper.StreamsDao.GetCurrentLive(context.Background())
 		if err != nil {
 			return
 		}
+
 		// In case of an error, the preview might be outdated.
 		// That's okay since the cron job is run in 10s again.
 		for _, s := range liveStreams {

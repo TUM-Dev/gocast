@@ -73,14 +73,23 @@ func (s server) GenerateThumbnails(ctx context.Context, request *pb.GenerateThum
 	return &pb.Status{Ok: true}, nil
 }
 
+// GenerateLiveThumbs generates a preview image of the most recent stream state.
 func (s server) GenerateLiveThumbs(ctx context.Context, request *pb.LiveThumbRequest) (*pb.LiveThumbResponse, error) {
 	if request.WorkerID != cfg.WorkerID {
 		log.Info("Rejected request to generate live thumbnails")
 		return nil, errors.New("unauthenticated: wrong worker id")
 	}
-	log.Info(request.HLSUrl)
-	img, err := worker.HandleLiveImageRequest(request)
-	return &pb.LiveThumbResponse{LiveThumb: img}, err
+	cmd := exec.Command("sh", "-c",
+		"ffmpeg",
+		"-sseof", "-3",
+		"-i", fmt.Sprintf("%s?jwt=%s", request.HLSUrl, cfg.AdminToken),
+		"-vframes", "1",
+		"-update", "1",
+		"-q:v", "1",
+		"-c:v", "mjpeg",
+		"-f", "mjpeg", "pipe:1")
+	liveThumb, err := cmd.Output()
+	return &pb.LiveThumbResponse{LiveThumb: liveThumb}, err
 }
 
 func (s server) GenerateSectionImages(ctx context.Context, request *pb.GenerateSectionImageRequest) (*pb.GenerateSectionImageResponse, error) {
@@ -104,7 +113,7 @@ func (s server) GenerateSectionImages(ctx context.Context, request *pb.GenerateS
 
 		cmd := exec.Command("ffmpeg", "-y",
 			"-ss", timestampStr,
-			"-i", request.PlaylistURL+"?jwt="+cfg.AdminToken,
+			"-i", fmt.Sprintf("%s?jwt=%s", request.PlaylistURL, cfg.AdminToken),
 			"-vf", "scale=156:-1",
 			"-frames:v", "1",
 			"-q:v", "2",
