@@ -780,8 +780,8 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 	}
 }
 
-// FetchLiveThumbs gets a live thumbnail from a worker.
-func FetchLiveThumbs(daoWrapper dao.DaoWrapper) func() {
+// FetchLivePreviews gets a live thumbnail from a worker.
+func FetchLivePreviews(daoWrapper dao.DaoWrapper) func() {
 	return func() {
 		workers := daoWrapper.WorkerDao.GetAliveWorkers()
 		liveStreams, err := daoWrapper.StreamsDao.GetCurrentLive(context.Background())
@@ -799,22 +799,21 @@ func FetchLiveThumbs(daoWrapper dao.DaoWrapper) func() {
 			if len(workers) == 0 {
 				return
 			}
-			workers[workerIndex].Workload += 1
 			conn, err := dialIn(workers[workerIndex])
 			if err != nil {
-				workers[workerIndex].Workload -= 1
 				log.WithError(err).Error("Could not connect to worker")
 				endConnection(conn)
 				continue
 			}
 			client := pb.NewToWorkerClient(conn)
+			workers[workerIndex].Workload += 1
 			if err := getLivePreviewFromWorker(&s, workers[workerIndex].WorkerID, client); err != nil {
 				workers[workerIndex].Workload -= 1
 				log.WithError(err).Error("Could not generate live preview")
 				endConnection(conn)
 				continue
 			}
-			log.Info("Successfully created live preview")
+			workers[workerIndex].Workload -= 1
 		}
 		return
 	}
