@@ -19,9 +19,15 @@ export enum Views {
     PublicCourses,
 }
 
+type History = {
+    year: number;
+    term: string;
+    view: Views;
+};
+
 const DEFAULT_LECTURE_NAME = "Untitled lecture";
 
-export function body() {
+export function context() {
     const url = new URL(window.location.href);
     return {
         term: url.searchParams.get("term") ?? undefined,
@@ -72,22 +78,26 @@ export function body() {
             const state = event.state || {};
             const year = +state["year"] || this.semesters[this.currentSemesterIndex].Year;
             const term = state["term"] || this.semesters[this.currentSemesterIndex].TeachingTerm;
+            this.view = state["view"] || Views.Main;
             this.switchSemester(year, term, false);
         },
 
         showMain() {
             this.view = Views.Main;
             this.navigation.toggle(false);
+            this.pushHistory(this.year, this.term, Views.Main);
         },
 
         showUserCourses() {
             this.view = Views.UserCourses;
             this.navigation.toggle(false);
+            this.pushHistory(this.year, this.term, Views.UserCourses);
         },
 
         showPublicCourses() {
             this.view = Views.PublicCourses;
             this.navigation.toggle(false);
+            this.pushHistory(this.year, this.term, Views.PublicCourses);
         },
 
         switchView(view: Views) {
@@ -164,9 +174,7 @@ export function body() {
             this.allSemesters.toggle(false);
 
             if (pushState) {
-                url.searchParams.set("year", String(year));
-                url.searchParams.set("term", term);
-                window.history.pushState({ year, term }, "", url.toString());
+                this.pushHistory(year, term);
             }
 
             this.reload();
@@ -174,6 +182,21 @@ export function body() {
 
         findSemesterIndex(year: number, term: string) {
             return this.semesters.findIndex((s) => s.Year === year && s.TeachingTerm === term);
+        },
+
+        pushHistory(year: number, term: string, view?: Views) {
+            url.searchParams.set("year", String(year));
+            url.searchParams.set("term", term);
+            let data = { year, term } as History;
+            if (view !== undefined) {
+                if (view !== Views.Main) {
+                    url.searchParams.set("view", view.toString());
+                    data = { ...data, view };
+                } else {
+                    url.searchParams.delete("view");
+                }
+            }
+            window.history.pushState(data, "", url.toString());
         },
     };
 }

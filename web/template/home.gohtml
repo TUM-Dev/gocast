@@ -12,7 +12,7 @@
 {{$user := .TUMLiveContext.User}}
 {{$currentYear := .CurrentYear}}
 {{$currentTerm := .CurrentTerm}}
-<body x-data="home.body()"
+<body x-data="home.context()"
       @popstate.window="onPopState"
       class="h-screen flex flex-col items-stretch tum-live-bg">
 <div :style="`width: ${loadingIndicator}%`" class="bg-blue-500/50 h-px fixed top-0 transition-all duration-300"></div>
