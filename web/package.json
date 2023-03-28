@@ -9,10 +9,11 @@
   "scripts": {
     "postinstall": "npm run build && npm run tailwind-compile",
     "tailwind-compile": "NODE_ENV=production npx tailwindcss build -i assets/css/main.css --minify -o ./assets/css-dist/main.css",
+    "tailwind-compile-home": "NODE_ENV=production npx tailwindcss build -i assets/css/home.css --minify -o ./assets/css-dist/home.css",
     "lint": "eslint . --ext .ts,.tsx",
     "lint-fix": "eslint . --ext .ts,.tsx --quiet --fix",
     "build": "webpack --config webpack.prod.js",
-    "build-dev": "webpack --config webpack.dev.js & npx tailwindcss build -i assets/css/main.css -o ./assets/css-dist/main.css --watch"
+    "build-dev": "webpack --config webpack.dev.js & npx tailwindcss build -i assets/css/main.css -o ./assets/css-dist/main.css --watch & npx tailwindcss build -i assets/css/home.css -o ./assets/css-dist/home.css --watch"
   },
   "author": "Joscha Henningsen",
   "license": "MIT",

@@ -1,0 +1,131 @@
+@import "tailwindcss/base";
+@import "tailwindcss/custom-forms";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@layer base {
+    h1 {
+        @apply text-2xl;
+    }
+
+    h2 {
+        @apply text-xl;
+    }
+
+    h3 {
+        @apply text-lg;
+    }
+
+    /*medium contrast text*/
+    .text-3 {
+        @apply text-gray-800 dark:text-gray-200;
+    }
+
+    /*full contrast text*/
+    .text-5 {
+        @apply text-gray-600 dark:text-gray-400;
+    }
+}
+
+/* Background colors */
+.tum-live-bg {
+    @apply bg-white dark:bg-secondary;
+}
+
+.tum-live-bg-primary {
+    @apply bg-blue-500 dark:bg-indigo-600
+}
+
+/* Elements */
+.tum-live-button {
+    @apply rounded-full px-3 py-1 text-sm font-semibold
+}
+
+.tum-live-button-primary {
+    @apply text-white tum-live-bg-primary
+}
+
+.tum-live-button-secondary {
+    @apply text-3 hover:bg-gray-100 dark:hover:bg-gray-800
+}
+
+.tum-live-icon-button {
+    @apply flex justify-center items-center rounded-full p-3 text-gray-400 hover:text-gray-600 dark:hover:text-white active:bg-gray-100/50 dark:active:bg-gray-700/50
+}
+
+.tum-live-badge {
+    @apply rounded-full px-2 py-1
+}
+
+.tum-live-badge > i{
+    @apply mr-1
+}
+
+.tum-live-side-navigation{
+    @apply sticky top-0 overflow-y-scroll font-light text-3 shrink-0 px-5 divide-y dark:divide-gray-800
+}
+
+.tum-live-side-navigation-group{
+    @apply grid py-4
+}
+
+.tum-live-side-navigation-group > header {
+    @apply flex items-center px-3 pb-2 font-semibold
+}
+
+.tum-live-side-navigation-group > header > i {
+    @apply text-xs mr-2
+}
+
+.tum-live-side-navigation-group-item {
+    @apply text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-left px-3 py-2
+}
+
+.tum-live-side-navigation-group-item > i {
+    @apply text-xs mr-2
+}
+
+.tum-live-thumbnail {
+    @apply relative bg-gray-100 dark:bg-gray-800 rounded-lg mb-2 bg-cover transition-all duration-500 hover:shadow-xl
+}
+
+.tum-live-thumbnail-progress {
+    @apply absolute bottom-0 w-full
+}
+
+.tum-live-thumbnail-progress > div {
+    @apply relative w-full h-2 bg-gray-500/50 rounded-b-lg
+}
+
+.tum-live-thumbnail-progress > div > span {
+    @apply absolute left-0 tum-live-bg-primary h-2 rounded-bl-lg
+}
+
+.tum-live-content-grid {
+    @apply grid gap-y-8 pb-4
+}
+
+.tum-live-content-grid-item > h3{
+    @apply font-bold px-3;
+}
+
+.tum-live-stream .course {
+    @apply block text-5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded
+}
+
+.tum-live-stream .title {
+    @apply block font-medium hover:underline
+}
+
+.tum-live-stream .date {
+    @apply flex items-center font-light;
+}
+
+
+.tum-live-footer {
+    @apply bg-gray-100 dark:bg-secondary-light py-4 px-8;
+}
+
+.tum-live-footer a {
+    @apply text-sm font-light text-5;
+}
