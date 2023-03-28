@@ -82,12 +82,13 @@ func (s server) GenerateLiveThumbs(ctx context.Context, request *pb.LiveThumbReq
 	cmd := exec.Command("sh", "-c",
 		"ffmpeg",
 		"-sseof", "-3",
-		"-i", fmt.Sprintf("%s?jwt=%s", request.HLSUrl, cfg.AdminToken),
+		"-i", fmt.Sprintf("%s?jwt=%s", "http://tum-live:8089/vod/aa_2023_03_28_10_00COMB.mp4/playlist.m3u8", cfg.AdminToken),
 		"-vframes", "1",
 		"-update", "1",
 		"-q:v", "1",
 		"-c:v", "mjpeg",
-		"-f", "mjpeg", "pipe:1")
+		"-f", "mjpeg",
+		"pipe:1")
 	liveThumb, err := cmd.Output()
 	return &pb.LiveThumbResponse{LiveThumb: liveThumb}, err
 }

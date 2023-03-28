@@ -225,7 +225,7 @@ func initCron() {
 	// export data to meili search
 	_ = tools.Cron.AddFunc("exportToMeili", tools.NewMeiliExporter(daoWrapper).Export, "30 4 * * *")
 	// fetch live stream previews
-	_ = tools.Cron.AddFunc("fetchLivePreviews", api.FetchLiveThumbs(daoWrapper), "*/10 * * * * *")
+	_ = tools.Cron.AddFunc("fetchLivePreviews", api.FetchLiveThumbs(daoWrapper), "*/1 * * * *")
 	tools.Cron.Run()
 }
 
