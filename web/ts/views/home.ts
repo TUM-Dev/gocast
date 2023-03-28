@@ -1,15 +1,15 @@
 export function header() {
     return {
-        userContext: new Toggleable(),
+        userContext: new ToggleableElement(),
 
         notifications: new Notifications(),
-        notification: new Toggleable(),
+        notification: new ToggleableElement(),
         toggleNotification(set?: boolean) {
             this.notification.toggle(set);
             this.notifications.writeToStorage(true);
         },
 
-        themePicker: new Toggleable(),
+        themePicker: new ToggleableElement(),
     };
 }
 
@@ -28,8 +28,8 @@ export function body() {
         year: +url.searchParams.get("year"),
         view: +url.searchParams.get("view") ?? Views.Main,
 
-        navigation: new Toggleable(),
-        allSemesters: new Toggleable(),
+        navigation: new ToggleableElement(),
+        allSemesters: new ToggleableElement(),
 
         semesters: [] as SemesterItem[],
         currentSemesterIndex: -1,
@@ -56,7 +56,7 @@ export function body() {
             userPromise.then(() => {
                 this.recently = this.getRecently();
                 this.liveToday = this.getLiveToday();
-                this.loadProgresses(this.userCourses.map((c) => c.lastLecture.ID));
+                this.loadProgresses(this.userCourses.map((c) => c.LastLecture.ID));
             });
         },
 
@@ -70,35 +70,38 @@ export function body() {
 
         onPopState(event: PopStateEvent) {
             const state = event.state || {};
-            this.switchSemester(+state["year"] || 0, state["term"], false);
+            const year = +state["year"] || this.semesters[this.currentSemesterIndex].Year;
+            const term = state["term"] || this.semesters[this.currentSemesterIndex].TeachingTerm;
+            this.switchSemester(year, term, false);
         },
 
         showMain() {
             this.view = Views.Main;
-            // this.navigation.toggle(false);
+            this.navigation.toggle(false);
         },
 
         showUserCourses() {
             this.view = Views.UserCourses;
-            // this.navigation.toggle(false);
+            this.navigation.toggle(false);
         },
 
         showPublicCourses() {
             this.view = Views.PublicCourses;
-            // this.navigation.toggle(false);
+            this.navigation.toggle(false);
+        },
+
+        switchView(view: Views) {
+            this.view = view;
+            this.navigation.toggle(false);
         },
 
         async loadSemesters() {
             const res: SemesterResponse = await Semesters.get();
             this.semesters = res.Semesters;
-            this.currentSemesterIndex = this.semesters.findIndex(
-                (s) => res.Current.Year === s.Year && res.Current.TeachingTerm === s.TeachingTerm,
-            );
+            this.currentSemesterIndex = this.findSemesterIndex(res.Current.Year, res.Current.TeachingTerm);
 
             if (this.year !== null && this.term != null) {
-                this.selectedSemesterIndex = this.semesters.findIndex(
-                    (s) => this.year === s.Year && this.term === s.TeachingTerm,
-                );
+                this.selectedSemesterIndex = this.findSemesterIndex(this.year, this.term);
             }
 
             if (this.selectedSemesterIndex === -1) {
@@ -122,13 +125,13 @@ export function body() {
 
         async loadProgresses(ids: number[]) {
             const progresses = await Progress.getBatch(ids);
-            this.recently.forEach((r, i) => (r.lastLecture.progress = progresses[i]));
+            this.recently.forEach((r, i) => (r.LastLecture.Progress = progresses[i]));
         },
 
         getLiveToday() {
             return this.userCourses.filter((c) => {
-                if (c.nextLecture.ID !== 0) {
-                    const start = new Date(c.nextLecture.Start);
+                if (c.NextLecture.ID !== 0) {
+                    const start = new Date(c.NextLecture.Start);
                     const now = new Date();
                     return (
                         start.getDay() === now.getDay() &&
@@ -141,20 +144,23 @@ export function body() {
             });
         },
 
+        /**
+         * Filter userCourses for recently streamed lectures
+         */
         getRecently() {
-            const courses = this.userCourses.filter((c) => c.lastLecture.ID !== 0);
-            courses.forEach((c) => {
-                c.lastLecture.Name = c.lastLecture.Name === "" ? DEFAULT_LECTURE_NAME : c.lastLecture.Name;
-            });
-            return courses;
+            return this.userCourses.filter((c) => c.LastLecture.ID !== 0);
         },
 
-        async switchSemester(year?: number, term?: string, pushState = true) {
-            this.year = year || this.semesters[this.currentSemesterIndex].Year;
-            this.term = term || this.semesters[this.currentSemesterIndex].TeachingTerm;
-            this.selectedSemesterIndex = this.semesters.findIndex(
-                (s) => s.Year === this.year && s.TeachingTerm === this.term,
-            );
+        /**
+         * Switch context to a different semester
+         * @param  {string} year The year to switch to
+         * @param  {object} term The teaching term to switch to
+         * @param  {object} pushState Push new state into the browser's history?
+         */
+        async switchSemester(year: number, term: string, pushState = true) {
+            this.year = year;
+            this.term = term;
+            this.selectedSemesterIndex = this.findSemesterIndex(this.year, this.term);
             this.allSemesters.toggle(false);
 
             if (pushState) {
@@ -165,10 +171,14 @@ export function body() {
 
             this.reload();
         },
+
+        findSemesterIndex(year: number, term: string) {
+            return this.semesters.findIndex((s) => s.Year === year && s.TeachingTerm === term);
+        },
     };
 }
 
-class Toggleable {
+class ToggleableElement {
     public value: boolean;
 
     constructor(value = false) {
@@ -268,6 +278,9 @@ class SemesterItem {
     }
 }
 
+/**
+ * REST API Wrapper for /api/semesters
+ */
 const Semesters = {
     async get(): Promise<SemesterResponse> {
         return get("/api/semesters").then((l: SemesterResponse) => {
@@ -281,14 +294,26 @@ class Stream {
     readonly ID: number;
     readonly Name: string;
     readonly End: string;
+    readonly Start: string;
+
+    Progress?: ProgressItem;
 
     constructor(obj: Stream) {
         this.ID = obj.ID;
         this.Name = obj.Name === "" ? DEFAULT_LECTURE_NAME : obj.Name;
         this.End = obj.End;
+        this.Start = obj.Start;
     }
 
-    public FriendlyDateString(): string {
+    public FriendlyDateStart(): string {
+        return new Date(this.Start).toLocaleString();
+    }
+
+    public FriendlyDateEnd(): string {
+        return new Date(this.End).toLocaleString();
+    }
+
+    public UntilString(): string {
         const end = new Date(this.End);
         const hours = end.getHours();
         const minutes = end.getMinutes();
@@ -297,18 +322,37 @@ class Stream {
 }
 
 class Course {
+    readonly ID: number;
     readonly Visibility: string;
     readonly Slug: string;
     readonly Year: number;
     readonly TeachingTerm: string;
     readonly Name: string;
 
+    readonly NextLecture?: Stream;
+    readonly LastLecture?: Stream;
+
     constructor(obj: Course) {
+        this.ID = obj.ID;
         this.Visibility = obj.Visibility;
         this.Slug = obj.Slug;
         this.Year = obj.Year;
         this.TeachingTerm = obj.TeachingTerm;
         this.Name = obj.Name;
+        this.NextLecture = obj.NextLecture ? new Stream(obj.NextLecture) : undefined;
+        this.LastLecture = obj.LastLecture ? new Stream(obj.LastLecture) : undefined;
+    }
+
+    public URL(): string {
+        return `/course/${this.Year}/${this.TeachingTerm}/${this.Slug}`;
+    }
+
+    public LastLectureURL(): string {
+        return `/w/${this.Slug}/${this.LastLecture.ID}`;
+    }
+
+    public NextLectureURL(): string {
+        return `/w/${this.Slug}/${this.NextLecture.ID}`;
     }
 
     public IsHidden(): boolean {
@@ -318,6 +362,7 @@ class Course {
 
 class LectureHall {
     readonly Name: string;
+
     constructor(obj: LectureHall) {
         this.Name = obj.Name;
     }
@@ -339,17 +384,20 @@ class Livestream {
     }
 }
 
+/**
+ * REST API Wrapper for /api/courses
+ */
 const Courses = {
     async getLivestreams() {
         return get("/api/courses/live").then((livestreams) => livestreams.map((l) => new Livestream(l)));
     },
 
     async getPublic(year?: number, term?: string): Promise<object> {
-        return get(`/api/courses/public${this.query(year, term)}`);
+        return get(`/api/courses/public${this.query(year, term)}`).then((courses) => courses.map((c) => new Course(c)));
     },
 
     async getUsers(year?: number, term?: string): Promise<object> {
-        return get(`/api/courses/users${this.query(year, term)}`);
+        return get(`/api/courses/users${this.query(year, term)}`).then((courses) => courses.map((c) => new Course(c)));
     },
 
     query: (year?: number, term?: number) =>
@@ -376,16 +424,25 @@ class ProgressItem {
     }
 }
 
+/**
+ * REST API Wrapper for /api/progress
+ */
 const Progress = {
     getBatch(ids: number[]) {
         const query = "[]ids=" + ids.join("&[]ids=");
         return get("/api/progress/streams?" + query).then((progresses: ProgressItem[]) => {
-            return progresses.map((p) => new ProgressItem(p)); // Recreate for Percentage()
+            return progresses.map((p) => new ProgressItem(p)); // Recreate for Percentage(),...
         });
     },
 };
 
-function get(url: string, default_resp: object = []) {
+/**
+ * Wrapper for Javascript's fetch function
+ * @param  {string} url URL to fetch
+ * @param  {object} default_resp Return value in case of error
+ * @return {Promise<Response>}
+ */
+async function get(url: string, default_resp: object = []) {
     return fetch(url)
         .then((res) => {
             if (!res.ok) {

@@ -111,13 +111,13 @@ type uploadVodReq struct {
 }
 
 type CourseDTO struct {
-	ID          uint         `json:"ID"`
-	Name        string       `json:"name"`
-	Slug        string       `json:"slug"`
-	Term        string       `json:"term"`
-	Year        int          `json:"year"`
-	NextLecture model.Stream `json:"nextLecture,omitempty"`
-	LastLecture model.Stream `json:"lastLecture,omitempty"`
+	ID           uint
+	Name         string
+	Slug         string
+	TeachingTerm string
+	Year         int
+	NextLecture  model.Stream
+	LastLecture  model.Stream
 }
 
 func (r coursesRoutes) getLive(c *gin.Context) {
@@ -203,13 +203,13 @@ func (r coursesRoutes) getPublic(c *gin.Context) {
 	resp := make([]CourseDTO, len(courses))
 	for i, course := range courses {
 		resp[i] = CourseDTO{
-			ID:          course.ID,
-			Name:        course.Name,
-			Slug:        course.Slug,
-			Term:        course.TeachingTerm,
-			Year:        course.Year,
-			NextLecture: course.GetNextLecture(),
-			LastLecture: course.GetLastLecture(),
+			ID:           course.ID,
+			Name:         course.Name,
+			Slug:         course.Slug,
+			TeachingTerm: course.TeachingTerm,
+			Year:         course.Year,
+			NextLecture:  course.GetNextLecture(),
+			LastLecture:  course.GetLastLecture(),
 		}
 	}
 
@@ -254,13 +254,13 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 	resp := make([]CourseDTO, len(courses))
 	for i, course := range courses {
 		resp[i] = CourseDTO{
-			ID:          course.ID,
-			Name:        course.Name,
-			Slug:        course.Slug,
-			Term:        course.TeachingTerm,
-			Year:        course.Year,
-			NextLecture: course.GetNextLecture(),
-			LastLecture: course.GetLastLecture(),
+			ID:           course.ID,
+			Name:         course.Name,
+			Slug:         course.Slug,
+			TeachingTerm: course.TeachingTerm,
+			Year:         course.Year,
+			NextLecture:  course.GetNextLecture(),
+			LastLecture:  course.GetLastLecture(),
 		}
 	}
 

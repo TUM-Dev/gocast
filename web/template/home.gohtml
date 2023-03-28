@@ -116,8 +116,8 @@
                 </header>
                 <template x-for="(course, i) in userCourses.slice(0, 5)" :key="course.ID">
                     <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 hover:underline"
-                       :href="`/course/${course.year}/${course.term}/${course.slug}`"
-                       x-text="course.name">
+                       :href="course.URL()"
+                       x-text="course.Name">
                     </a>
                 </template>
                 <template x-if="userCourses.length > 5 && view !== home.Views.UserCourses">
@@ -136,11 +136,11 @@
             </header>
             <template x-for="(course, i) in publicCourses.slice(0, 5)" :key="course.ID">
                 <a class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 hover:underline"
-                   :href="`/course/${course.year}/${course.term}/${course.slug}`"
-                   x-text="course.name">
+                   :href="course.URL()"
+                   x-text="course.Name">
                 </a>
             </template>
-            <template x-if="userCourses.length > 5 && view !== home.Views.PublicCourses">
+            <template x-if="publicCourses.length > 5 && view !== home.Views.PublicCourses">
                 <button @click="showPublicCourses()"
                         class="text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2 w-full">
                     <i class="fa-solid fa-chevron-right text-xs mr-2"></i>
@@ -310,7 +310,7 @@
                                x-text="livestream.Stream.Name"></a>
                         </div>
                         <div class="flex items-center text-sm px-2">
-                            <span class="font-light" x-text="livestream.Stream.FriendlyDateString()"></span>
+                            <span class="font-light" x-text="livestream.Stream.UntilString()"></span>
                         </div>
                     </article>
                 </template>
@@ -326,13 +326,13 @@
             <section class="grid gap-3 px-2">
                 <template x-for="(course, i) in liveToday" :key="course.ID">
                     <article class="border-b dark:border-gray-800 last:border-0 py-2 px-1">
-                        <a class="block text-3 font-semibold hover:underline" x-text="course.name"
-                           :href="`/course/${course.year}/${course.term}/${course.slug}`"></a>
+                        <a class="block text-3 font-semibold hover:underline" x-text="course.Name"
+                           :href="course.URL()"></a>
                         <div class="flex items-center text-sm text-5 font-light">
-                            <a :href="`/w/${course.slug}/${course.nextLecture.ID}`">
+                            <a :href="course.NextLectureURL()">
                                 <i class="fa-solid fa-square-up-right"></i>
                                 <span class="hover:underline"
-                                      x-text="`Next lecture: ${new Date(course.nextLecture.Start).toLocaleString()}`"></span>
+                                      x-text="`Next lecture: ${course.NextLecture.FriendlyDateStart()}`"></span>
                             </a>
                         </div>
                     </article>
@@ -349,28 +349,28 @@
             <section class="grid xl:grid-cols-4 lg:grid-cols-2 grid-cols-1">
                 <template x-for="(course, i) in recently" :key="course.ID">
                     <article class="lg:col-span-1 col-span-full p-3">
-                        <a :href="`/w/${course.slug}/${course.lastLecture.ID}`" class="block mb-2">
+                        <a :href="course.LastLectureURL()" class="block mb-2">
                             <div style="background-image:url('https://www.tum-universitaetsstiftung.de/fileadmin/_processed_/d/f/csm_20190712_9_9b38ba8a75.jpg')"
                                  class="relative bg-gray-100 dark:bg-gray-800 h-40 rounded-lg transition-all duration-500 hover:shadow-lg bg-cover">
-                                <div :id="`vod-progress-${course.lastLecture.ID}`" class="absolute bottom-0 w-full">
+                                <div :id="`vod-progress-${course.LastLecture.ID}`" class="absolute bottom-0 w-full">
                                     <div class="relative w-full h-2 bg-gray-500/50 rounded-b-lg">
-                                        <template x-if="course.lastLecture.progress !== undefined">
-                                            <span :style="`width: ${course.lastLecture.progress.Percentage()}%`"
+                                        <template x-if="course.LastLecture.Progress !== undefined">
+                                            <span :style="`width: ${course.LastLecture.Progress.Percentage()}%`"
                                                   class="absolute left-0 bg-blue-500 dark:bg-indigo-600 h-2 rounded-bl-lg"
-                                                  :class="{'rounded-br-lg': course.lastLecture.progress.HasProgressOne()}"></span>
+                                                  :class="{'rounded-br-lg': course.LastLecture.Progress.HasProgressOne()}"></span>
                                         </template>
                                     </div>
                                 </div>
                             </div>
                         </a>
                         <a class="inline-block text-xs text-5 hover:bg-gray-50 dark:hover:bg-gray-800 px-1 rounded w-fit"
-                           x-text="course.name"
-                           :href="`/course/${course.year}/${course.term}/${course.slug}`"></a>
+                           x-text="course.Name"
+                           :href="course.URL()"></a>
                         <a class="font-semibold block hover:underline px-1"
-                           :href="`/w/${course.slug}/${course.lastLecture.ID}`"
-                           x-text="course.lastLecture.Name"></a>
+                           :href="course.LastLectureURL()"
+                           x-text="course.LastLecture.Name"></a>
                         <span class="font-light text-xs text-5 px-1"
-                              x-text="new Date(course.lastLecture.Start).toLocaleString()"></span>
+                              x-text="course.LastLecture.FriendlyDateStart()"></span>
                     </article>
                 </template>
             </section>
@@ -395,14 +395,14 @@
         <section class="grid gap-3 pb-4">
             <template x-for="(course, i) in userCourses" :key="course.ID">
                 <article class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2">
-                    <a class="block text-3 text-lg font-semibold hover:underline" x-text="course.name"
-                       :href="`/course/${course.year}/${course.term}/${course.slug}`"></a>
+                    <a class="block text-3 text-lg font-semibold hover:underline" x-text="course.Name"
+                       :href="course.URL()"></a>
                     <div class="flex items-center text-sm text-5 font-light">
-                             <span x-cloak x-show="course.nextLecture.ID !== 0"
-                                   x-text="`Next lecture: ${new Date(course.nextLecture.Start).toLocaleString()}`"></span>
-                        <span x-cloak x-show="course.nextLecture.ID === 0">No upcoming lecture.</span>
-                        <a x-cloak x-show="course.lastLecture.ID !== 0"
-                           :href="`/w/${course.slug}/${course.lastLecture.ID}`"
+                             <span x-cloak x-show="course.NextLecture.ID !== 0"
+                                   x-text="`Next lecture: ${course.NextLecture.FriendlyDateStart()}`"></span>
+                        <span x-cloak x-show="course.NextLecture.ID === 0">No upcoming lecture.</span>
+                        <a x-cloak x-show="course.LastLecture.ID !== 0"
+                           :href="course.LastLectureURL()"
                            class="text-5 text-sm px-3">
                             <i class="fa-solid fa-square-up-right"></i>
                             <span class="hover:underline">Most recent lecture</span>
@@ -410,11 +410,6 @@
                     </div>
                 </article>
             </template>
-            <a href="#my-courses-head"
-               class="text-3 text-sm font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full px-2 py-1 mx-auto">
-                Go back up
-                <i class="fa-solid fa-chevron-up ml-2"></i>
-            </a>
         </section>
     </article>
 {{end}}
@@ -436,14 +431,14 @@
         <div class="grid gap-3 pb-4">
             <template x-for="(course, i) in publicCourses" :key="course.ID">
                 <div class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2">
-                    <a class="block text-3 text-lg font-semibold hover:underline" x-text="course.name"
-                       :href="`/course/${course.year}/${course.term}/${course.slug}`"></a>
+                    <a class="block text-3 text-lg font-semibold hover:underline" x-text="course.Name"
+                       :href="course.URL()"></a>
                     <div class="flex items-center text-sm text-5 font-light">
-                             <span x-cloak x-show="course.nextLecture.ID !== 0"
-                                   x-text="`Next lecture: ${new Date(course.nextLecture.Start).toLocaleString()}`"></span>
-                        <span x-cloak x-show="course.nextLecture.ID === 0">No upcoming lecture.</span>
-                        <a x-cloak x-show="course.lastLecture.ID !== 0"
-                           :href="`/w/${course.slug}/${course.lastLecture.ID}`"
+                             <span x-cloak x-show="course.NextLecture.ID !== 0"
+                                   x-text="`Next lecture: ${course.NextLecture.FriendlyDateStart()}`"></span>
+                        <span x-cloak x-show="course.NextLecture.ID === 0">No upcoming lecture.</span>
+                        <a x-cloak x-show="course.LastLecture.ID !== 0"
+                           :href="course.LastLectureURL()"
                            class="text-5 text-sm px-3">
                             <i class="fa-solid fa-square-up-right"></i>
                             <span class="hover:underline">Most recent lecture</span>
@@ -451,11 +446,6 @@
                     </div>
                 </div>
             </template>
-            <a href="#my-courses-heading"
-               class="text-3 text-sm font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full px-2 py-1 mx-auto">
-                Go back up
-                <i class="fa-solid fa-chevron-up ml-2"></i>
-            </a>
         </div>
     </div>
 {{end}}
