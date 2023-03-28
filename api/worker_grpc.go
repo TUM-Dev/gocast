@@ -27,6 +27,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -802,14 +803,14 @@ func FetchLiveThumbs(daoWrapper dao.DaoWrapper) func() {
 			conn, err := dialIn(workers[workerIndex])
 			if err != nil {
 				workers[workerIndex].Workload -= 1
-				log.WithError(err).Error("could not connect to worker!")
+				log.WithError(err).Error("Could not connect to worker")
 				endConnection(conn)
 				continue
 			}
 			client := pb.NewToWorkerClient(conn)
 			if err := getLivePreviewFromWorker(&s, workers[workerIndex].WorkerID, client); err != nil {
 				workers[workerIndex].Workload -= 1
-				log.WithError(err).Error("could not generate live preview!")
+				log.WithError(err).Error("Could not generate live preview")
 				endConnection(conn)
 				continue
 			}
@@ -824,20 +825,21 @@ func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWork
 		WorkerID: workerID,
 		HLSUrl:   s.PlaylistUrl,
 	}
-	log.Info(req)
 	resp, err := client.GenerateLiveThumbs(context.Background(), &req)
 	if err != nil {
 		log.WithError(err).Warn("Can't generate live preview")
 		sentry.CaptureException(err)
 		return err
 	}
-	file, err := os.Create(fmt.Sprint(s.ID) + ".jpeg")
+
+	file, err := os.Create(filepath.Join("tmp", fmt.Sprintf("%d.jpeg", s.ID)))
 	if err != nil {
 		log.WithError(err).Warn("Can't create file for live preview")
 		sentry.CaptureException(err)
 		return err
 	}
 	defer file.Close()
+
 	_, err = file.Write(resp.GetLiveThumb())
 	if err != nil {
 		log.WithError(err).Warn("Can't write to file for live preview")
