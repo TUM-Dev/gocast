@@ -826,23 +826,20 @@ func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWork
 	}
 	resp, err := client.GenerateLiveThumbs(context.Background(), &req)
 	if err != nil {
-		log.WithError(err).Warn("Can't generate live preview")
-		sentry.CaptureException(err)
+		log.WithError(err).Error("Can't retrieve raw live preview data from worker")
 		return err
 	}
 
-	file, err := os.Create(filepath.Join("tmp", fmt.Sprintf("%d.jpeg", s.ID)))
+	file, err := os.Create(filepath.Join(os.TempDir(), fmt.Sprintf("%d.jpeg", s.ID)))
 	if err != nil {
-		log.WithError(err).Warn("Can't create file for live preview")
-		sentry.CaptureException(err)
+		log.WithError(err).Error("Can't create file for live preview")
 		return err
 	}
 	defer file.Close()
 
 	_, err = file.Write(resp.GetLiveThumb())
 	if err != nil {
-		log.WithError(err).Warn("Can't write to file for live preview")
-		sentry.CaptureException(err)
+		log.WithError(err).Error("Can't write to file for live preview")
 	}
 	return err
 }
