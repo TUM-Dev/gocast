@@ -134,8 +134,10 @@ export function context() {
         },
 
         async loadProgresses(ids: number[]) {
-            const progresses = await Progress.getBatch(ids);
-            this.recently.forEach((r, i) => (r.LastLecture.Progress = progresses[i]));
+            if (ids.length > 0) {
+                const progresses = await Progress.getBatch(ids);
+                this.recently.forEach((r, i) => (r.LastLecture.Progress = progresses[i]));
+            }
         },
 
         getLiveToday() {
