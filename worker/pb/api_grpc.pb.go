@@ -29,6 +29,7 @@ type ToWorkerClient interface {
 	RequestWaveform(ctx context.Context, in *WaveformRequest, opts ...grpc.CallOption) (*WaveFormResponse, error)
 	RequestCut(ctx context.Context, in *CutRequest, opts ...grpc.CallOption) (*CutResponse, error)
 	GenerateThumbnails(ctx context.Context, in *GenerateThumbnailRequest, opts ...grpc.CallOption) (*Status, error)
+	GenerateLiveThumbs(ctx context.Context, in *LiveThumbRequest, opts ...grpc.CallOption) (*LiveThumbResponse, error)
 	GenerateSectionImages(ctx context.Context, in *GenerateSectionImageRequest, opts ...grpc.CallOption) (*GenerateSectionImageResponse, error)
 	DeleteSectionImage(ctx context.Context, in *DeleteSectionImageRequest, opts ...grpc.CallOption) (*Status, error)
 }
@@ -95,6 +96,15 @@ func (c *toWorkerClient) GenerateThumbnails(ctx context.Context, in *GenerateThu
 	return out, nil
 }
 
+func (c *toWorkerClient) GenerateLiveThumbs(ctx context.Context, in *LiveThumbRequest, opts ...grpc.CallOption) (*LiveThumbResponse, error) {
+	out := new(LiveThumbResponse)
+	err := c.cc.Invoke(ctx, "/api.ToWorker/GenerateLiveThumbs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *toWorkerClient) GenerateSectionImages(ctx context.Context, in *GenerateSectionImageRequest, opts ...grpc.CallOption) (*GenerateSectionImageResponse, error) {
 	out := new(GenerateSectionImageResponse)
 	err := c.cc.Invoke(ctx, "/api.ToWorker/GenerateSectionImages", in, out, opts...)
@@ -124,6 +134,7 @@ type ToWorkerServer interface {
 	RequestWaveform(context.Context, *WaveformRequest) (*WaveFormResponse, error)
 	RequestCut(context.Context, *CutRequest) (*CutResponse, error)
 	GenerateThumbnails(context.Context, *GenerateThumbnailRequest) (*Status, error)
+	GenerateLiveThumbs(context.Context, *LiveThumbRequest) (*LiveThumbResponse, error)
 	GenerateSectionImages(context.Context, *GenerateSectionImageRequest) (*GenerateSectionImageResponse, error)
 	DeleteSectionImage(context.Context, *DeleteSectionImageRequest) (*Status, error)
 	mustEmbedUnimplementedToWorkerServer()
@@ -150,6 +161,9 @@ func (UnimplementedToWorkerServer) RequestCut(context.Context, *CutRequest) (*Cu
 }
 func (UnimplementedToWorkerServer) GenerateThumbnails(context.Context, *GenerateThumbnailRequest) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateThumbnails not implemented")
+}
+func (UnimplementedToWorkerServer) GenerateLiveThumbs(context.Context, *LiveThumbRequest) (*LiveThumbResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateLiveThumbs not implemented")
 }
 func (UnimplementedToWorkerServer) GenerateSectionImages(context.Context, *GenerateSectionImageRequest) (*GenerateSectionImageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateSectionImages not implemented")
@@ -278,6 +292,24 @@ func _ToWorker_GenerateThumbnails_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ToWorker_GenerateLiveThumbs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LiveThumbRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ToWorkerServer).GenerateLiveThumbs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.ToWorker/GenerateLiveThumbs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ToWorkerServer).GenerateLiveThumbs(ctx, req.(*LiveThumbRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ToWorker_GenerateSectionImages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GenerateSectionImageRequest)
 	if err := dec(in); err != nil {
@@ -344,6 +376,10 @@ var ToWorker_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GenerateThumbnails",
 			Handler:    _ToWorker_GenerateThumbnails_Handler,
+		},
+		{
+			MethodName: "GenerateLiveThumbs",
+			Handler:    _ToWorker_GenerateLiveThumbs_Handler,
 		},
 		{
 			MethodName: "GenerateSectionImages",

@@ -26,6 +26,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -776,6 +777,63 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 		}
 		endConnection(conn)
 	}
+}
+
+func FetchLiveThumbs(daoWrapper dao.DaoWrapper) func() {
+	return func() {
+		workers := daoWrapper.WorkerDao.GetAliveWorkers()
+		liveStreams, err := daoWrapper.StreamsDao.GetCurrentLive(context.TODO())
+		if err != nil {
+			return
+		}
+		// In case of an error, the preview might be outdated.
+		// That's okay since the cron job is run in 10s again.
+		for _, s := range liveStreams {
+			workerIndex := getWorkerWithLeastWorkload(workers)
+			if len(workers) == 0 {
+				return
+			}
+			workers[workerIndex].Workload += 1
+			conn, err := dialIn(workers[workerIndex])
+			if err != nil {
+				workers[workerIndex].Workload -= 1
+				log.WithError(err).Error("could not connect to worker!")
+				endConnection(conn)
+				continue
+			}
+			client := pb.NewToWorkerClient(conn)
+			if err := getLivePreviewFromWorker(&s, workerIndex, client); err != nil {
+				workers[workerIndex].Workload -= 1
+				log.WithError(err).Error("could not generate live preview!")
+				endConnection(conn)
+				continue
+			}
+		}
+		return
+	}
+}
+
+func getLivePreviewFromWorker(s *model.Stream, workerIndex int, client pb.ToWorkerClient) error {
+	req := pb.LiveThumbRequest{
+		WorkerID: string(workerIndex),
+		HLSUrl:   s.PlaylistUrl,
+	}
+	resp, err := client.GenerateLiveThumbs(context.Background(), &req)
+	file, err := os.Create(string(s.ID) + ".jpeg")
+	if err != nil {
+		log.WithError(err).Warn("Can't generate live preview")
+		sentry.CaptureException(err)
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.Write(resp.GetLiveThumb())
+	if err != nil {
+		log.WithError(err).Warn("Can't generate live preview")
+		sentry.CaptureException(err)
+		return err
+	}
+	return nil
 }
 
 // RegenerateThumbs regenerates the thumbnails for the timeline. This is useful for video with faulty thumbnails

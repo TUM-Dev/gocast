@@ -73,6 +73,15 @@ func (s server) GenerateThumbnails(ctx context.Context, request *pb.GenerateThum
 	return &pb.Status{Ok: true}, nil
 }
 
+func (s server) GenerateLiveThumbs(ctx context.Context, request *pb.LiveThumbRequest) (*pb.LiveThumbResponse, error) {
+	if request.WorkerID != cfg.WorkerID {
+		log.Info("Rejected request to generate live thumbnails")
+		return nil, errors.New("unauthenticated: wrong worker id")
+	}
+	img, err := worker.HandleLiveImageRequest(request)
+	return &pb.LiveThumbResponse{LiveThumb: img}, err
+}
+
 func (s server) GenerateSectionImages(ctx context.Context, request *pb.GenerateSectionImageRequest) (*pb.GenerateSectionImageResponse, error) {
 	folder := fmt.Sprintf("%s/%s/%d.%s/sections",
 		cfg.StorageDir, request.CourseName, request.CourseYear, request.CourseTeachingTerm)
