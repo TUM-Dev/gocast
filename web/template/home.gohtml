@@ -29,39 +29,7 @@
     </div>
     {{/*template "search"*/}}
     <div id="user-context" class="flex items-center space-x-3 ms-auto">
-        <div id="notifications"
-             class="relative" x-init="notifications.fetchNotifications();"
-             @keyup.escape="toggleNotification()">
-            <button title="Show Notifications"
-                    class="tum-live-icon-button active:"
-                    type="button" @click="toggleNotification(true);">
-            <span x-cloak x-show="notifications.hasNewNotifications()"
-                  class="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full absolute -top-1 -right-1 h-3 w-3 border-2 border-white dark:border-secondary"> </span>
-                <i class="fa-solid fa-bell"></i>
-            </button>
-            <div x-cloak x-show="notification.value"
-                 @click.outside="toggleNotification();"
-                 class="text-3 text-sm origin-top-right absolute right-0 mt-4 shadow-sm rounded-lg h-fit bg-white border w-96
-                        dark:bg-secondary dark:border-gray-800 shadow">
-                <div class="border-b dark:border-gray-800 py-2 px-4">
-                    <p>Notifications</p>
-                </div>
-                <div class="w-full min-h-30 max-h-60 overflow-y-scroll py-2">
-                    <div x-cloak x-show="notifications.empty()" class="py-4 relative text-3 text-center">
-                        <span class="font-semibold">No notifications yet :)</span>
-                    </div>
-                    <div class="grid">
-                        <template x-for="(notification, i) of notifications.getAll()">
-                            <div class="px-4 py-3 border-b dark:border-gray-800 last:border-0 relative">
-                                <p class="font-semibold mb-2" x-show="notification.title !== undefined"
-                                   x-text="notification.title"></p>
-                                <div class="notificationBody" x-html="notification.body"></div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {{template "notifications"}}
         {{if not $user}}
             <a href="/login"
                class="tum-live-button tum-live-button-primary">Login</a>
@@ -72,14 +40,13 @@
                     <span class="text-white font-semibold uppercase">{{printf "%.1s" $user.GetPreferredName}}</span>
                 </button>
                 <div class="relative">
-                    <div x-cloak x-show="userContext.value"
-                         @click.outside="userContext.toggle();"
-                         class="absolute top-full right-[50%] mt-2 shadow rounded-lg h-fit bg-white border
-                         dark:bg-secondary dark:border-gray-800 overflow-hidden text-sm w-56">
-                        <div class="p-2 border-b dark:border-gray-800">
+                    <article x-cloak x-show="userContext.value"
+                             @click.outside="userContext.toggle();"
+                             class="tum-live-menu absolute top-full right-[50%] mt-2 h-fit overflow-hidden w-56">
+                        <header>
                             <p class="font-semibold">Signed in as</p>
                             <span>@{{$user.Name}}</span>
-                        </div>
+                        </header>
                         <nav class="d-grid gap-3 font-light">
                             {{if or (eq $user.Role 1) (eq $user.Role 2) }}
                                 <a href="/admin"
@@ -135,7 +102,7 @@
                                 <p>Logout</p>
                             </a>
                         </nav>
-                    </div>
+                    </article>
                 </div>
             </div>
         {{end}}
@@ -213,73 +180,63 @@
     </section>
     <article id="content-wrapper" class="text-3 p-4 grow" :class="{'hidden' : navigation.value}">
         <template x-if="view === home.Views.PublicCourses">
-            <div id="public-courses">
-                <div class="flex items-center justify-between mb-4">
-                    <h1 id="my-courses-heading" class="flex items-center font-bold px-3">
+            <article id="public-courses" class="tum-live-course-list">
+                <header>
+                    <h1>
                         <i class="text-base fa-solid fa-chalkboard mr-2"></i>
                         Public Courses
                     </h1>
-                    <button type="button" title="Navigate to start"
-                            class="text-3 text-sm font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full px-2 py-1"
-                            @click="showMain()">
+                    <button type="button" title="Navigate to start" @click="showMain()">
                         <i class="fa-solid fa-undo mr-2"></i>
-                        <span>Go back</span>
+                        Go back
                     </button>
-                </div>
-                <div class="grid gap-3 pb-4">
+                </header>
+                <article class="grid gap-3 pb-4">
                     <template x-for="(course, i) in publicCourses" :key="course.ID">
-                        <div class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2">
-                            <a class="block text-3 text-lg font-semibold hover:underline" x-text="course.Name"
-                               :href="course.URL()"></a>
-                            <div class="flex items-center text-sm text-5 font-light">
-                             <span x-cloak x-show="course.NextLecture.ID !== 0"
-                                   x-text="`Next lecture: ${course.NextLecture.FriendlyDateStart()}`"></span>
-                                <span x-cloak x-show="course.NextLecture.ID === 0">No upcoming lecture.</span>
-                                <a x-cloak x-show="course.LastLecture.ID !== 0"
-                                   :href="course.LastLectureURL()"
-                                   class="text-5 text-sm px-3">
+                        <section class="tum-live-course-list-item">
+                            <a class="title" x-text="course.Name" :href="course.URL()"></a>
+                            <div class="links">
+                                <span x-text="course.NextLecture.ID !== 0
+                                        ? `Next lecture: ${course.NextLecture.FriendlyDateStart()}`
+                                        : 'No upcoming lecture.'"></span>
+                                <a x-cloak x-show="course.LastLecture.ID !== 0" :href="course.LastLectureURL()">
                                     <i class="fa-solid fa-square-up-right"></i>
                                     <span class="hover:underline">Most recent lecture</span>
                                 </a>
                             </div>
-                        </div>
+                        </section>
                     </template>
-                </div>
-            </div>
+                </article>
+            </article>
         </template>
         <template x-if="view === home.Views.UserCourses">
-            <article id="user-courses">
+            <article id="user-courses" class="tum-live-course-list">
                 <header class="flex items-center justify-between mb-4">
-                    <h1 id="my-courses-head" class="flex items-center font-bold px-3">
+                    <h1>
                         <i class="text-base fa-solid fa-graduation-cap mr-2"></i>
                         My Courses
                     </h1>
-                    <button type="button" title="Navigate to start"
-                            class="tum-live-button tum-live-button-secondary"
-                            @click="showMain()">
+                    <button type="button" title="Navigate to start" @click="showMain()">
                         <i class="fa-solid fa-undo mr-2"></i>
-                        <span>Go back</span>
+                        Go back</span>
                     </button>
                 </header>
-                <section class="grid gap-3 pb-4">
+                <article class="grid gap-3 pb-4">
                     <template x-for="(course, i) in userCourses" :key="course.ID">
-                        <article class="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2">
-                            <a class="block text-3 text-lg font-semibold hover:underline" x-text="course.Name"
-                               :href="course.URL()"></a>
-                            <div class="flex items-center text-sm text-5 font-light">
-                             <span x-cloak x-show="course.NextLecture.ID !== 0"
-                                   x-text="`Next lecture: ${course.NextLecture.FriendlyDateStart()}`"></span>
-                                <span x-cloak x-show="course.NextLecture.ID === 0">No upcoming lecture.</span>
-                                <a x-cloak x-show="course.LastLecture.ID !== 0"
-                                   :href="course.LastLectureURL()"
-                                   class="text-5 text-sm px-3">
+                        <section class="tum-live-course-list-item">
+                            <a class="title" x-text="course.Name" :href="course.URL()"></a>
+                            <div class="links">
+                                <span x-text="course.LastLecture.ID !== 0
+                                        ? `Next lecture: ${course.LastLecture.FriendlyDateStart()}`
+                                        : 'No upcoming lecture.'"></span>
+                                <a x-cloak x-show="course.LastLecture.ID !== 0" :href="course.LastLectureURL()">
                                     <i class="fa-solid fa-square-up-right"></i>
                                     <span class="hover:underline">Most recent lecture</span>
                                 </a>
                             </div>
-                        </article>
+                        </section>
                     </template>
-                </section>
+                </article>
             </article>
         </template>
         <template x-if="view === home.Views.Main">
@@ -414,6 +371,38 @@
             <i class="fa-solid fa-search pl-3 text-xs text-7"></i>
             <input class="px-3 outline-none border-none bg-transparent h-full w-full grow" type="text"
                    placeholder="Search in lectures">
+        </div>
+    </div>
+{{end}}
+
+{{define "notifications"}}
+    <div id="notifications"
+         class="relative" x-init="notifications.fetchNotifications();"
+         @keyup.escape="toggleNotification()">
+        <button type="button" title="Show Notifications" class="tum-live-icon-button"
+                @click="toggleNotification(true);">
+            <span x-cloak x-show="notifications.hasNewNotifications()"
+                  class="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full absolute -top-1 -right-1 h-3 w-3 border-2 border-white dark:border-secondary"> </span>
+            <i class="fa-solid fa-bell"></i>
+        </button>
+        <div x-cloak x-show="notification.value"
+             @click.outside="toggleNotification();"
+             class="tum-live-menu origin-top-right absolute right-0 mt-2 w-96">
+            <header>Notifications</header>
+            <div class="w-full min-h-30 max-h-60 overflow-y-scroll py-2">
+                <div x-cloak x-show="notifications.empty()" class="py-4 relative text-3 text-center">
+                    <span class="font-semibold">No notifications yet :)</span>
+                </div>
+                <div class="grid">
+                    <template x-for="(notification, i) of notifications.getAll()">
+                        <div class="px-4 py-3 border-b dark:border-gray-800 last:border-0 relative">
+                            <p class="font-semibold mb-2" x-show="notification.title !== undefined"
+                               x-text="notification.title"></p>
+                            <div class="notificationBody" x-html="notification.body"></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
         </div>
     </div>
 {{end}}

@@ -86,7 +86,7 @@
 }
 
 .tum-live-thumbnail {
-    @apply relative bg-gray-100 dark:bg-gray-800 rounded-lg mb-2 bg-cover transition-all duration-500 hover:shadow-xl
+    @apply relative bg-gray-100 dark:bg-gray-800 rounded-lg mb-2 bg-cover transition-all duration-500 hover:shadow-xl dark:shadow-gray-900/75;
 }
 
 .tum-live-thumbnail-progress {
@@ -121,6 +121,41 @@
     @apply flex items-center font-light;
 }
 
+.tum-live-menu {
+    @apply tum-live-bg shadow-lg rounded-lg h-fit border dark:border-gray-800 text-sm text-3 dark:shadow-gray-900/75
+}
+
+.tum-live-menu > header {
+    @apply py-2 px-4 border-b dark:border-gray-800
+}
+
+.tum-live-course-list > header {
+    @apply flex items-center justify-between mb-4
+}
+
+.tum-live-course-list > header > h1 {
+    @apply flex items-center font-bold px-3
+}
+
+.tum-live-course-list > header > button {
+    @apply tum-live-button tum-live-button-secondary
+}
+
+.tum-live-course-list-item {
+    @apply hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg px-3 py-2
+}
+
+.tum-live-course-list-item .title {
+    @apply block text-3 text-lg font-semibold hover:underline
+}
+
+.tum-live-course-list-item .links {
+    @apply flex items-center text-sm text-5 font-light
+}
+
+.tum-live-course-list-item .links > *:not(:first-child){
+    @apply pl-2
+}
 
 .tum-live-footer {
     @apply bg-gray-100 dark:bg-secondary-light py-4 px-8;
