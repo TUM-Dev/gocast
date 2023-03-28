@@ -30,6 +30,7 @@ services:
       - VodURLTemplate=http://localhost:8089/vod/%s.mp4/playlist.m3u8
       - LrzUploadUrl=http://vod-service:8089
       - DEBUG-MODE=true
+      - ADMIN_TOKEN=123
     volumes:
       - recordings:/recordings
       - mass:/mass
@@ -41,6 +42,7 @@ services:
     environment:
       - VOD_DIR=/vod
       - MAIN_INSTANCE=http://tum-live:8081
+      - ADMIN_TOKEN=123
     ports:
       - "8089:8089"
     volumes:

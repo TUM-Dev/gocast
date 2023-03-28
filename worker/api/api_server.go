@@ -78,6 +78,7 @@ func (s server) GenerateLiveThumbs(ctx context.Context, request *pb.LiveThumbReq
 		log.Info("Rejected request to generate live thumbnails")
 		return nil, errors.New("unauthenticated: wrong worker id")
 	}
+	log.Info(request.HLSUrl)
 	img, err := worker.HandleLiveImageRequest(request)
 	return &pb.LiveThumbResponse{LiveThumb: img}, err
 }
@@ -103,10 +104,11 @@ func (s server) GenerateSectionImages(ctx context.Context, request *pb.GenerateS
 
 		cmd := exec.Command("ffmpeg", "-y",
 			"-ss", timestampStr,
-			"-i", request.PlaylistURL,
+			"-i", request.PlaylistURL+"?jwt="+cfg.AdminToken,
 			"-vf", "scale=156:-1",
 			"-frames:v", "1",
 			"-q:v", "2",
+
 			path)
 		_, err = cmd.CombinedOutput()
 		if err != nil {

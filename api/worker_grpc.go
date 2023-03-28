@@ -782,13 +782,17 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 func FetchLiveThumbs(daoWrapper dao.DaoWrapper) func() {
 	return func() {
 		workers := daoWrapper.WorkerDao.GetAliveWorkers()
-		liveStreams, err := daoWrapper.StreamsDao.GetCurrentLive(context.TODO())
+		// TODO: Change back to live streams
+		liveStreams, err := daoWrapper.StreamsDao.GetAllStreams()
 		if err != nil {
 			return
 		}
 		// In case of an error, the preview might be outdated.
 		// That's okay since the cron job is run in 10s again.
 		for _, s := range liveStreams {
+			if s.PlaylistUrl == "" {
+				continue
+			}
 			workerIndex := getWorkerWithLeastWorkload(workers)
 			if len(workers) == 0 {
 				return
@@ -802,38 +806,43 @@ func FetchLiveThumbs(daoWrapper dao.DaoWrapper) func() {
 				continue
 			}
 			client := pb.NewToWorkerClient(conn)
-			if err := getLivePreviewFromWorker(&s, workerIndex, client); err != nil {
+			if err := getLivePreviewFromWorker(&s, workers[workerIndex].WorkerID, client); err != nil {
 				workers[workerIndex].Workload -= 1
 				log.WithError(err).Error("could not generate live preview!")
 				endConnection(conn)
 				continue
 			}
+			log.Info("Successfully created live preview")
 		}
 		return
 	}
 }
 
-func getLivePreviewFromWorker(s *model.Stream, workerIndex int, client pb.ToWorkerClient) error {
+func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWorkerClient) error {
 	req := pb.LiveThumbRequest{
-		WorkerID: fmt.Sprint(workerIndex),
+		WorkerID: workerID,
 		HLSUrl:   s.PlaylistUrl,
 	}
+	log.Info(req)
 	resp, err := client.GenerateLiveThumbs(context.Background(), &req)
-	file, err := os.Create(fmt.Sprint(s.ID) + ".jpeg")
 	if err != nil {
 		log.WithError(err).Warn("Can't generate live preview")
+		sentry.CaptureException(err)
+		return err
+	}
+	file, err := os.Create(fmt.Sprint(s.ID) + ".jpeg")
+	if err != nil {
+		log.WithError(err).Warn("Can't create file for live preview")
 		sentry.CaptureException(err)
 		return err
 	}
 	defer file.Close()
-
 	_, err = file.Write(resp.GetLiveThumb())
 	if err != nil {
-		log.WithError(err).Warn("Can't generate live preview")
+		log.WithError(err).Warn("Can't write to file for live preview")
 		sentry.CaptureException(err)
-		return err
 	}
-	return nil
+	return err
 }
 
 // RegenerateThumbs regenerates the thumbnails for the timeline. This is useful for video with faulty thumbnails

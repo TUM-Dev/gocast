@@ -237,8 +237,7 @@ message NewKeywordsRequest {
 
 message LiveThumbRequest {
   string WorkerID = 1;
-  uint32 StreamID = 2;
-  string HLSUrl = 3;
+  string HLSUrl = 2;
 }
 
 message LiveThumbResponse {

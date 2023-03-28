@@ -22,6 +22,7 @@ var (
 	LogDir         string
 	Hostname       string
 	Token          string // setup token. Used to connect initially and to get a "WorkerID"
+	AdminToken     string
 	PersistDir     string // PersistDir is the directory, tum-live-worker will use to store persistent data
 	LogLevel       = log.InfoLevel
 )
@@ -46,6 +47,7 @@ func SetConfig() {
 	LrzUploadUrl = os.Getenv("LrzUploadUrl")
 	MainBase = os.Getenv("MainBase")             // eg. live.mm.rbg.tum.de
 	VodURLTemplate = os.Getenv("VodURLTemplate") // eg. https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s.mp4/playlist.m3u8
+	AdminToken = os.Getenv("AdminToken")
 
 	// logging
 	LogDir = os.Getenv("LogDir")
