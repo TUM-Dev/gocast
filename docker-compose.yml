@@ -22,6 +22,7 @@ services:
       - tum-live
       - vod-service
     build: worker
+    platform: linux/amd64
     environment:
       - Token=abc
       - Host=worker
