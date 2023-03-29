@@ -1,6 +1,5 @@
 import { ValueListener, ValueStreamMap } from "../value-stream";
-import {Cache} from "./cache";
-import {Bookmark} from "./bookmarks";
+import { Cache } from "./cache";
 
 /**
  An abstract class representing a provider for a streamable map.
@@ -78,5 +77,5 @@ export abstract class StreamableMapProvider<K, T> {
      @param key - The key for the data to be fetched.
      @returns A Promise that resolves with the fetched data.
      */
-    protected abstract fetcher(key: K) : Promise<T>;
+    protected abstract fetcher(key: K): Promise<T>;
 }

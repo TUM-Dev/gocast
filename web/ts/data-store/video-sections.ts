@@ -1,7 +1,5 @@
 import { Delete, getData, postData, putData, Section, Time } from "../global";
 import { StreamableMapProvider } from "./provider";
-import { Cache } from "./cache";
-import { Bookmark } from "./bookmarks";
 
 export class VideoSectionProvider extends StreamableMapProvider<number, Section[]> {
     protected async fetcher(streamId: number): Promise<Section[]> {
