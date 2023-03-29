@@ -1,24 +1,14 @@
 import { Delete, getData, postData, putData, Time } from "../global";
 import { StreamableMapProvider } from "./provider";
-import { Cache } from "./cache";
 
 export class BookmarksProvider extends StreamableMapProvider<number, Bookmark[]> {
-    protected async fetch(streamId: number, force = false): Promise<void> {
-        this.data[streamId] = Bookmarks.get(streamId, force).then((result) => {
-            return result.map((b) => {
-                b.streamId = streamId;
-                b.friendlyTimestamp = new Time(b.hours, b.minutes, b.seconds).toString();
-                return b;
-            });
+    protected async fetcher(streamId: number): Promise<Bookmark[]> {
+        const result = await Bookmarks.get(streamId);
+        return result.map((b) => {
+            b.streamId = streamId;
+            b.friendlyTimestamp = new Time(b.hours, b.minutes, b.seconds).toString();
+            return b;
         });
-    }
-
-    async getData(streamId: number, forceFetch = false): Promise<Bookmark[]> {
-        if (this.data[streamId] == null || forceFetch) {
-            await this.fetch(streamId, forceFetch);
-            await this.triggerUpdate(streamId);
-        }
-        return this.data[streamId];
     }
 
     async add(request: AddBookmarkRequest): Promise<void> {
@@ -66,20 +56,12 @@ export class UpdateBookmarkRequest {
 }
 
 const Bookmarks = {
-    cache: new Cache<Bookmark[]>({ validTime: 0 }),
-
-    get: async function (streamId: number, forceCacheRefresh = false): Promise<Bookmark[]> {
-        return this.cache.get(
-            `get.${streamId}`,
-            async () => {
-                const resp = await getData("/api/bookmarks?streamID=" + streamId);
-                if (!resp.ok) {
-                    throw Error(resp.statusText);
-                }
-                return resp.json();
-            },
-            forceCacheRefresh,
-        );
+    get: async function (streamId: number): Promise<Bookmark[]> {
+        const resp = await getData("/api/bookmarks?streamID=" + streamId);
+        if (!resp.ok) {
+            throw Error(resp.statusText);
+        }
+        return resp.json();
     },
 
     add: (request: AddBookmarkRequest) => {

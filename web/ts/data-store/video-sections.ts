@@ -4,19 +4,11 @@ import { Cache } from "./cache";
 import { Bookmark } from "./bookmarks";
 
 export class VideoSectionProvider extends StreamableMapProvider<number, Section[]> {
-    async getData(streamId: number, forceFetch = false): Promise<Section[]> {
-        if (this.data[streamId] == null || forceFetch) {
-            await this.fetch(streamId);
-        }
-        return this.data[streamId];
-    }
-
-    async fetch(streamId: number): Promise<void> {
-        this.data[streamId] = VideoSections.get(streamId).then((result) => {
-            return result.map((s) => {
-                s.friendlyTimestamp = new Time(s.startHours, s.startMinutes, s.startSeconds).toString();
-                return s;
-            });
+    protected async fetcher(streamId: number): Promise<Section[]> {
+        const result = await VideoSections.get(streamId);
+        return result.map((s) => {
+            s.friendlyTimestamp = new Time(s.startHours, s.startMinutes, s.startSeconds).toString();
+            return s;
         });
     }
 
@@ -50,7 +42,7 @@ export class VideoSectionProvider extends StreamableMapProvider<number, Section[
             }
             return s;
         });
-        this.triggerUpdate(streamId);
+        await this.triggerUpdate(streamId);
     }
 }
 
@@ -67,20 +59,12 @@ export class UpdateVideoSectionRequest {
  * @category admin-page
  */
 const VideoSections = {
-    cache: new Cache<Bookmark[]>({ validTime: 0 }),
-
-    get: async function (streamId: number, forceCacheRefresh = false): Promise<Section[]> {
-        return this.cache.get(
-            `get.${streamId}`,
-            async () => {
-                const resp = await getData(`/api/stream/${streamId}/sections`);
-                if (!resp.ok) {
-                    throw Error(resp.statusText);
-                }
-                return resp.json();
-            },
-            forceCacheRefresh,
-        );
+    get: async function (streamId: number): Promise<Section[]> {
+        const resp = await getData(`/api/stream/${streamId}/sections`);
+        if (!resp.ok) {
+            throw Error(resp.statusText);
+        }
+        return resp.json();
     },
 
     add: async function (streamId: number, request: object) {
