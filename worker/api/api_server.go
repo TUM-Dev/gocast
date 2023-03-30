@@ -115,7 +115,7 @@ func (s server) GenerateSectionImages(ctx context.Context, request *pb.GenerateS
 
 		cmd := exec.Command("ffmpeg", "-y",
 			"-ss", timestampStr,
-			"-i", fmt.Sprintf("%s?jwt=%s", request.PlaylistURL, cfg.AdminToken),
+			"-i", request.PlaylistURL,
 			"-vf", "scale=156:-1",
 			"-frames:v", "1",
 			"-q:v", "2",

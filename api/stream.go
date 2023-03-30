@@ -4,6 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
@@ -14,12 +21,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"net/http"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
@@ -330,6 +331,11 @@ func (r streamRoutes) RegenerateThumbs(c *gin.Context) {
 				log.WithError(err).Errorf("Can't get video sections for stream %d", stream.ID)
 				continue
 			}
+			err = tools.SetSignedPlaylists(stream, nil)
+			if err != nil {
+				log.WithError(err).Errorf("Can't set signed playlists for stream %d", stream.ID)
+				continue
+			}
 			// Completely redo the video section image generation. This also updates the database, if the naming scheme has changed.
 			go func() {
 				parameters := generateVideoSectionImagesParameters{
@@ -350,6 +356,7 @@ func (r streamRoutes) RegenerateThumbs(c *gin.Context) {
 
 func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 	context := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	stream := context.Stream
 	var sections []model.VideoSection
 	if err := c.BindJSON(&sections); err != nil {
 		log.WithError(err).Error("failed to bind video section JSON")
@@ -383,10 +390,20 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 		return
 	}
 
+	err = tools.SetSignedPlaylists(stream, nil)
+	if err != nil {
+		log.WithError(err).Error("failed to set signed playlists")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "failed to set signed playlists",
+			Err:           err,
+		})
+		return
+	}
 	go func() {
 		parameters := generateVideoSectionImagesParameters{
 			sections:           sections,
-			playlistUrl:        context.Stream.PlaylistUrl,
+			playlistUrl:        stream.PlaylistUrl,
 			courseName:         context.Course.Name,
 			courseTeachingTerm: context.Course.TeachingTerm,
 			courseYear:         uint32(context.Course.Year),
