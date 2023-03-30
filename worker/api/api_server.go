@@ -75,7 +75,7 @@ func (s server) GenerateThumbnails(ctx context.Context, request *pb.GenerateThum
 }
 
 // GenerateLiveThumbs generates a preview image of the most recent stream state.
-func (s server) GenerateLiveThumbs(ctx context.Context, request *pb.LiveThumbRequest) (*pb.LiveThumbResponse, error) {
+func (s server) GenerateLivePreview(ctx context.Context, request *pb.LivePreviewRequest) (*pb.LivePreviewResponse, error) {
 	if request.WorkerID != cfg.WorkerID {
 		log.Info("Rejected request to generate live thumbnails")
 		return nil, errors.New("unauthenticated: wrong worker id")
@@ -91,7 +91,7 @@ func (s server) GenerateLiveThumbs(ctx context.Context, request *pb.LiveThumbReq
 		"-f", "mjpeg",
 		"pipe:1")
 	liveThumb, err := cmd.Output()
-	return &pb.LiveThumbResponse{LiveThumb: liveThumb}, err
+	return &pb.LivePreviewResponse{LiveThumb: liveThumb}, err
 }
 
 func (s server) GenerateSectionImages(ctx context.Context, request *pb.GenerateSectionImageRequest) (*pb.GenerateSectionImageResponse, error) {

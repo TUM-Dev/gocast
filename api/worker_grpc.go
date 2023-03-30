@@ -824,11 +824,11 @@ func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWork
 	if err := tools.SetSignedPlaylists(s, nil); err != nil {
 		return err
 	}
-	req := pb.LiveThumbRequest{
+	req := pb.LivePreviewRequest{
 		WorkerID: workerID,
 		HLSUrl:   s.PlaylistUrl,
 	}
-	resp, err := client.GenerateLiveThumbs(context.Background(), &req)
+	resp, err := client.GenerateLivePreview(context.Background(), &req)
 	if err != nil {
 		return err
 	}
