@@ -6,6 +6,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"sync"
+	"time"
+
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
 	"github.com/getsentry/sentry-go"
 	"github.com/joschahenningsen/TUM-Live/dao"
@@ -23,15 +33,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
-	"io"
-	"net"
-	"net/http"
-	"os"
-	"path/filepath"
-	"regexp"
-	"strings"
-	"sync"
-	"time"
 )
 
 var mutex = sync.Mutex{}
@@ -820,27 +821,25 @@ func FetchLivePreviews(daoWrapper dao.DaoWrapper) func() {
 }
 
 func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWorkerClient) error {
+	if err := tools.SetSignedPlaylists(s, nil); err != nil {
+		return err
+	}
 	req := pb.LiveThumbRequest{
 		WorkerID: workerID,
 		HLSUrl:   s.PlaylistUrl,
 	}
 	resp, err := client.GenerateLiveThumbs(context.Background(), &req)
 	if err != nil {
-		log.WithError(err).Error("Can't retrieve raw live preview data from worker")
 		return err
 	}
 
 	file, err := os.Create(filepath.Join(os.TempDir(), fmt.Sprintf("%d.jpeg", s.ID)))
 	if err != nil {
-		log.WithError(err).Error("Can't create file for live preview")
 		return err
 	}
 	defer file.Close()
 
 	_, err = file.Write(resp.GetLiveThumb())
-	if err != nil {
-		log.WithError(err).Error("Can't write to file for live preview")
-	}
 	return err
 }
 

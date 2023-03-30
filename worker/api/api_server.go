@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/u2takey/go-utils/uuid"
 	"net"
 	"os"
 	"os/exec"
 	"time"
+
+	"github.com/u2takey/go-utils/uuid"
 
 	"github.com/joschahenningsen/TUM-Live/worker/cfg"
 	"github.com/joschahenningsen/TUM-Live/worker/pb"
@@ -82,7 +83,7 @@ func (s server) GenerateLiveThumbs(ctx context.Context, request *pb.LiveThumbReq
 	cmd := exec.Command("sh", "-c",
 		"ffmpeg",
 		"-sseof", "-3",
-		"-i", fmt.Sprintf("%s?jwt=%s", request.HLSUrl, cfg.AdminToken),
+		"-i", request.HLSUrl,
 		"-vframes", "1",
 		"-update", "1",
 		"-q:v", "1",
