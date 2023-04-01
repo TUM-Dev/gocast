@@ -11,7 +11,7 @@ require (
 	github.com/joschahenningsen/thumbgen v0.0.0-20220618164424-9fcc2beb0084
 	github.com/otiai10/gosseract/v2 v2.4.0
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/shirou/gopsutil/v3 v3.23.2
+	github.com/shirou/gopsutil/v3 v3.23.3
 	github.com/sirupsen/logrus v1.9.0
 	github.com/tidwall/gjson v1.14.4
 	github.com/u2takey/ffmpeg-go v0.4.1
@@ -50,4 +50,5 @@ require (
 	github.com/felixge/fgprof v0.9.3 // indirect
 	github.com/google/pprof v0.0.0-20230309165930-d61513b1440d // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/shoenig/go-m1cpu v0.1.4 // indirect
 )
