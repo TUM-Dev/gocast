@@ -4,7 +4,7 @@ go 1.19
 
 // Direct dependencies
 require (
-	github.com/getsentry/sentry-go v0.19.0
+	github.com/getsentry/sentry-go v0.20.0
 	github.com/golang/protobuf v1.5.3
 	github.com/icza/gox v0.0.0-20230117093757-93f961aa2755
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
