@@ -268,7 +268,10 @@
                         x-init="watch.seekbarHighlights.init('{{$stream.ID}}');"
                 >
                     <template x-for="marker in seekbarMarker">
-                        <div class="absolute bg-gradient-to-t from-black bottom-0 top-0 w-[2px] rounded-t" :style="{ left: `${marker.position * 100}%` }"></div>
+                        <div class="absolute bottom-0 top-0" :style="{ left: `${marker.position * 100}%` }">
+                            <div x-show="marker.type === watch.MarkerType.sectionSep" class="w-[2px] h-full bg-gradient-to-t from-black rounded-t"></div>
+                            <div x-show="marker.type === watch.MarkerType.bookmark" class="w-[6px] h-[6px] rounded bg-indigo-400 rounded-t"></div>
+                        </div>
                     </template>
 
                     <template x-for="section in seekbarSections">
