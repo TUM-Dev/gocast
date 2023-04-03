@@ -48,6 +48,7 @@ export function context() {
         recently: [],
 
         loadingIndicator: 0,
+        nothingToDo: false,
 
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
@@ -60,7 +61,10 @@ export function context() {
             const promises = full
                 ? [this.loadSemesters(), this.loadPublicCourses(), this.loadLivestreams(), this.loadUserCourses()]
                 : [this.loadPublicCourses(), this.loadUserCourses()];
-            this.load(promises);
+            this.load(promises).then(() => {
+                this.nothingToDo =
+                    this.livestreams.length === 0 && this.liveToday.length === 0 && this.recently.length === 0;
+            });
             promises[promises.length - 1].then(() => {
                 this.recently = this.getRecently();
                 this.liveToday = this.getLiveToday();
@@ -68,12 +72,12 @@ export function context() {
             });
         },
 
-        load(promises: Promise<object>[]) {
+        load(promises: Promise<object>[]): Promise<any> {
             this.loadingIndicator = 0;
-            Promise.all(promises).then(() => (this.loadingIndicator = 0));
             promises.forEach((p) => {
                 Promise.resolve(p).then((_) => (this.loadingIndicator += 100 / promises.length));
             });
+            return Promise.all(promises).then(() => (this.loadingIndicator = 0));
         },
 
         onPopState(event: PopStateEvent) {
