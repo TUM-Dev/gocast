@@ -2,11 +2,27 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <title>{{.Branding.Title}}</title>
-    {{template "headImports" .VersionTag}}
-    <script src="/static/assets/ts-dist/home.bundle.js?v={{if .}}{{.}}{{else}}development{{end}}"></script>
-    <link href="/static/assets/css-dist/home.css?v={{if .}}{{.}}{{else}}development{{end}}" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content="{{.Branding.Description}}"/>
+
+    <title>{{.Branding.Title}}</title>
+
+    {{if and .VersionTag (eq .VersionTag "development")}}
+        <script defer src="/static/node_modules/alpinejs/dist/cdn.js"></script>
+    {{else}}
+        <script defer src="/static/node_modules/alpinejs/dist/cdn.min.js"></script>
+    {{end}}
+    <script defer src="/static/node_modules/@alpinejs/persist/dist/cdn.min.js"></script>
+    <script defer src="/static/node_modules/@alpinejs/focus/dist/cdn.min.js"></script>
+
+    <script src = "static/assets/init.js"></script>
+    <script src="/static/assets/ts-dist/home.bundle.js?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"></script>
+
+    <link rel="manifest" href="/static/assets/manifest.json">
+    <link href="/static/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+    <link href="/static/assets/css/icons.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}" rel="stylesheet">
+    <link href="/static/assets/css-dist/home.css?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}" rel="stylesheet">
+    <style>[x-cloak] { display: none !important; }</style>
 </head>
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
 {{$user := .TUMLiveContext.User}}
@@ -171,7 +187,7 @@
                 </button>
             </template>
         </article>
-        <footer class="grid gap-2 tum-live-footer md:hidden">
+        <footer class="grid gap-2 tum-live-footer fixed bottom-0 left-0 w-full md:hidden">
             <a href="/about">About</a>
             <a href="/privacy">Data Privacy</a>
             <a href="/imprint">Imprint</a>
@@ -240,18 +256,24 @@
             </article>
         </template>
         <template x-if="view === home.Views.Main">
-            <article id="main-view">
+            <article id="main-view" class = "h-full">
                 {{if .TUMLiveContext.User}}
                     {{if .TUMLiveContext.User.Name}}
                         <h1 id="greeting" class="text-2xl font-bold mb-4 px-3">
                             {{.TUMLiveContext.User.GetPreferredGreeting}} {{.TUMLiveContext.User.GetPreferredName}},
-                            nice to
-                            see
-                            you! 👋
+                            nice to see you! 👋
                         </h1>
                     {{end}}
                 {{end}}
                 <div class="tum-live-content-grid">
+                    <template x-if="livestreams.length === 0 && liveToday.length === 0 && recently.length === 0">
+                        <section class = "m-auto">
+                            <article class = "text-3 flex flex-col items-center justify-center">
+                                <i class="fa-solid fa-umbrella-beach text-6xl mb-3"></i>
+                                <span class = "text-5">Seems like there is nothing to do.</span>
+                            </article>
+                        </section>
+                    </template>
                     <!-- Livestreams -->
                     <template x-if="livestreams.length > 0">
                         <article id="livestreams" class="tum-live-content-grid-item">

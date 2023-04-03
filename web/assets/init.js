@@ -1,0 +1,59 @@
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker
+            .register("/service-worker.js", { scope: "/" })
+            .catch((err) => console.error("Service Worker Failed to Register", err));
+    });
+}
+
+/* put this in document head to avoid FOUC */
+const mediaQueryPrefersDarkScheme = window.matchMedia("(prefers-color-scheme: dark)");
+function updateTheme() {
+    const shouldBeDark =
+        localStorage.themeMode === "dark" ||
+        (localStorage.themeMode === "system" && mediaQueryPrefersDarkScheme.matches);
+    if (document.documentElement.classList.contains("dark") !== shouldBeDark) {
+        document.documentElement.classList.toggle("dark");
+    }
+}
+const setThemeMode = (mode) => {
+    localStorage.themeMode = mode;
+};
+const getThemeMode = () => localStorage.themeMode;
+
+// transition from old dark theme system
+if ("darkTheme" in localStorage) {
+    /* TODO: send notification? */
+}
+localStorage.removeItem("darkTheme");
+// first visit or transition
+if (!("themeMode" in localStorage)) {
+    setThemeMode("system");
+}
+
+updateTheme();
+mediaQueryPrefersDarkScheme.addEventListener("change", () => updateTheme());
+
+document.addEventListener("alpine:init", () => {
+    Alpine.store("theme", {
+        init() {
+            this.activeMode = getThemeMode();
+            // show the currently active theme (light/dark) on the switcher when system theme mode is active
+            const updateSystemModeSwitcherIconId = () =>
+                (this.modes.system.faSwitcherIconId = mediaQueryPrefersDarkScheme.matches ? "moon" : "sun");
+            mediaQueryPrefersDarkScheme.addEventListener("change", () => updateSystemModeSwitcherIconId());
+            updateSystemModeSwitcherIconId();
+        },
+        setMode(mode) {
+            this.activeMode = mode;
+            setThemeMode(mode);
+            updateTheme();
+        },
+        modes: {
+            light: { name: "Light", faIconId: "sun" },
+            dark: { name: "Dark", faIconId: "moon" },
+            system: { name: "System", faIconId: "desktop", faSwitcherIconId: "" },
+        },
+        activeMode: "",
+    });
+});

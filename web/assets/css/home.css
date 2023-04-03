@@ -102,11 +102,11 @@
 }
 
 .tum-live-content-grid {
-    @apply grid gap-y-8 pb-4
+    @apply grid gap-y-8 pb-4 h-full
 }
 
 .tum-live-content-grid-item > h3{
-    @apply font-bold px-3;
+    @apply font-bold px-3
 }
 
 .tum-live-stream .course {

@@ -57,12 +57,11 @@ export function context() {
         },
 
         reload(full = false) {
-            const userPromise = this.loadUserCourses();
             const promises = full
-                ? [this.loadSemesters(), this.loadPublicCourses(), this.loadLivestreams(), userPromise]
-                : [this.loadPublicCourses(), userPromise];
+                ? [this.loadSemesters(), this.loadPublicCourses(), this.loadLivestreams(), this.loadUserCourses()]
+                : [this.loadPublicCourses(), this.loadUserCourses()];
             this.load(promises);
-            userPromise.then(() => {
+            promises[promises.length - 1].then(() => {
                 this.recently = this.getRecently();
                 this.liveToday = this.getLiveToday();
                 this.loadProgresses(this.userCourses.map((c) => c.LastLecture.ID));
@@ -111,8 +110,8 @@ export function context() {
         async loadSemesters() {
             const res: SemesterResponse = await Semesters.get();
             this.semesters = res.Semesters;
-            this.currentSemesterIndex = this.findSemesterIndex(res.Current.Year, res.Current.TeachingTerm);
 
+            this.currentSemesterIndex = this.findSemesterIndex(res.Current.Year, res.Current.TeachingTerm);
             if (this.year !== null && this.term != null) {
                 this.selectedSemesterIndex = this.findSemesterIndex(this.year, this.term);
             }
@@ -326,11 +325,10 @@ class Stream {
 
     Progress?: ProgressItem;
 
-    constructor(obj: Stream) {
-        this.ID = obj.ID;
-        this.Name = obj.Name === "" ? DEFAULT_LECTURE_NAME : obj.Name;
-        this.End = obj.End;
-        this.Start = obj.Start;
+    static New(obj): Stream {
+        const s = Object.assign(new Stream(), obj);
+        s.Name = s.Name === "" ? DEFAULT_LECTURE_NAME : s.Name;
+        return s;
     }
 
     public FriendlyDateStart(): string {
@@ -356,15 +354,11 @@ class Course {
     readonly NextLecture?: Stream;
     readonly LastLecture?: Stream;
 
-    constructor(obj: Course) {
-        this.ID = obj.ID;
-        this.Visibility = obj.Visibility;
-        this.Slug = obj.Slug;
-        this.Year = obj.Year;
-        this.TeachingTerm = obj.TeachingTerm;
-        this.Name = obj.Name;
-        this.NextLecture = obj.NextLecture ? new Stream(obj.NextLecture) : undefined;
-        this.LastLecture = obj.LastLecture ? new Stream(obj.LastLecture) : undefined;
+    static New(obj): Course {
+        const c = Object.assign(new Course(), obj);
+        c.NextLecture = c.NextLecture ? Stream.New(obj.NextLecture) : undefined;
+        c.LastLecture = c.LastLecture ? Stream.New(obj.LastLecture) : undefined;
+        return c;
     }
 
     public URL(): string {
@@ -398,8 +392,8 @@ class Livestream {
     readonly LectureHall?: LectureHall;
 
     constructor(obj: Livestream) {
-        this.Stream = new Stream(obj.Stream);
-        this.Course = new Course(obj.Course);
+        this.Stream = Stream.New(obj.Stream);
+        this.Course = Course.New(obj.Course);
         this.LectureHall = obj.LectureHall ? new LectureHall(obj.LectureHall) : undefined;
     }
 
@@ -417,11 +411,11 @@ const Courses = {
     },
 
     async getPublic(year?: number, term?: string): Promise<object> {
-        return get(`/api/courses/public${this.query(year, term)}`).then((courses) => courses.map((c) => new Course(c)));
+        return get(`/api/courses/public${this.query(year, term)}`).then((courses) => courses.map((c) => Course.New(c)));
     },
 
     async getUsers(year?: number, term?: string): Promise<object> {
-        return get(`/api/courses/users${this.query(year, term)}`).then((courses) => courses.map((c) => new Course(c)));
+        return get(`/api/courses/users${this.query(year, term)}`).then((courses) => courses.map((c) => Course.New(c)));
     },
 
     query: (year?: number, term?: number) =>
