@@ -138,7 +138,7 @@
 }
 
 .tum-live-course-list > header {
-    @apply flex items-center justify-between mb-4
+    @apply flex items-center justify-between mb-8
 }
 
 .tum-live-course-list > header > h1 {

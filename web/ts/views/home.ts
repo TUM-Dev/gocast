@@ -57,6 +57,10 @@ export function context() {
             this.reload(true);
         },
 
+        /**
+         * Load context
+         * @param  {boolean} full If true, load everything including semesters and livestreams
+         */
         reload(full = false) {
             const promises = full
                 ? [this.loadSemesters(), this.loadPublicCourses(), this.loadLivestreams(), this.loadUserCourses()]
@@ -72,6 +76,10 @@ export function context() {
             });
         },
 
+        /**
+         * Resolve given promises and increment loadingIndicator partially
+         * @param  {Promise<object>[]} promises Array of promises
+         */
         load(promises: Promise<object>[]): Promise<any> {
             this.loadingIndicator = 0;
             promises.forEach((p) => {
@@ -80,6 +88,9 @@ export function context() {
             return Promise.all(promises).then(() => (this.loadingIndicator = 0));
         },
 
+        /**
+         * Event triggered by clicking any browser's back or forward buttons
+         */
         onPopState(event: PopStateEvent) {
             const state = event.state || {};
             const year = +state["year"] || this.semesters[this.currentSemesterIndex].Year;
@@ -143,6 +154,9 @@ export function context() {
             }
         },
 
+        /**
+         * Filter userCourses for lectures streamed today
+         */
         getLiveToday() {
             return this.userCourses.filter((c) => {
                 if (c.NextLecture.ID !== 0) {
@@ -185,10 +199,16 @@ export function context() {
             this.reload();
         },
 
+        /**
+         * Return index of the given year and term values in the semesters array or -1 if not found.
+         */
         findSemesterIndex(year: number, term: string) {
             return this.semesters.findIndex((s) => s.Year === year && s.TeachingTerm === term);
         },
 
+        /**
+         * Update search parameters and push state into the browser's history
+         */
         pushHistory(year: number, term: string, view?: Views) {
             url.searchParams.set("year", String(year));
             url.searchParams.set("term", term);
