@@ -99,7 +99,6 @@ class SeekbarHighlights {
                 marker: this.marker,
             },
         });
-        console.log(event.detail);
         window.dispatchEvent(event);
     }
 
