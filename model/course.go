@@ -174,6 +174,16 @@ func (c Course) NumStreams() int {
 	return res
 }
 
+func (c Course) StreamTimes() []string {
+	streamTimes := make([]string, len(c.Streams))
+
+	for i, s := range c.Streams {
+		streamTimes[i] = s.Start.In(time.UTC).Format("2006-01-02T15:04:05") + ".000Z"
+	}
+
+	return streamTimes
+}
+
 // HasRecordings returns whether the course has any recordings.
 func (c Course) HasRecordings() bool {
 	for i := range c.Streams {

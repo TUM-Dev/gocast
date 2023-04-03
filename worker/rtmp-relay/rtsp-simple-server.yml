@@ -1,0 +1,226 @@
+###############################################
+# General parameters
+
+# Sets the verbosity of the program; available values are "error", "warn", "info", "debug".
+logLevel: info
+# Destinations of log messages; available values are "stdout", "file" and "syslog".
+logDestinations: [stdout]
+
+# Timeout of read operations.
+readTimeout: 10s
+# Timeout of write operations.
+writeTimeout: 10s
+# Number of read buffers.
+# A higher value allows a wider throughput, a lower value allows to save RAM.
+readBufferCount: 512
+
+# HTTP URL to perform external authentication.
+# Every time a user wants to authenticate, the server calls this URL
+# with the POST method and a body containing:
+# {
+#   "ip": "ip",
+#   "user": "user",
+#   "password": "password",
+#   "path": "path",
+#   "protocol": "rtsp|rtmp|hls|webrtc",
+#   "id": "id",
+#   "action": "read|publish",
+#   "query": "query"
+# }
+# If the response code is 20x, authentication is accepted, otherwise
+# it is discarded.
+externalAuthenticationURL: http://127.0.0.1:9999
+
+# Enable the HTTP API.
+api: no
+# Address of the API listener.
+apiAddress: 127.0.0.1:9997
+
+# Enable Prometheus-compatible metrics.
+metrics: no
+# Address of the metrics listener.
+metricsAddress: 127.0.0.1:9998
+
+# Enable pprof-compatible endpoint to monitor performances.
+pprof: no
+# Address of the pprof listener.
+pprofAddress: 127.0.0.1:9999
+
+# Command to run when a client connects to the server.
+# This is terminated with SIGINT when a client disconnects from the server.
+# The following environment variables are available:
+# * RTSP_PORT: server port
+runOnConnect:
+# Restart the command if it exits suddenly.
+runOnConnectRestart: no
+
+###############################################
+# RTSP parameters
+
+# Disable support for the RTSP protocol.
+rtspDisable: yes
+
+###############################################
+# RTMP parameters
+
+# Disable support for the RTMP protocol.
+rtmpDisable: no
+# Address of the RTMP listener. This is needed only when encryption is "no" or "optional".
+rtmpAddress: :1935
+# Encrypt connections with TLS (RTMPS).
+# Available values are "no", "strict", "optional".
+rtmpEncryption: "no"
+# Address of the RTMPS listener. This is needed only when encryption is "strict" or "optional".
+rtmpsAddress: :1936
+# Path to the server key. This is needed only when encryption is "strict" or "optional".
+# This can be generated with:
+# openssl genrsa -out server.key 2048
+# openssl req -new -x509 -sha256 -key server.key -out server.crt -days 3650
+rtmpServerKey: server.key
+# Path to the server certificate. This is needed only when encryption is "strict" or "optional".
+rtmpServerCert: server.crt
+
+###############################################
+# HLS parameters
+
+# Disable support for the HLS protocol.
+hlsDisable: yes
+
+###############################################
+# WebRTC parameters
+
+# Disable support for the WebRTC protocol.
+webrtcDisable: yes
+
+###############################################
+# Path parameters
+
+# These settings are path-dependent, and the map key is the name of the path.
+# It's possible to use regular expressions by using a tilde as prefix.
+# For example, "~^(test1|test2)$" will match both "test1" and "test2".
+# For example, "~^prefix" will match all paths that start with "prefix".
+# The settings under the path "all" are applied to all paths that do not match
+# another entry.
+paths:
+  all:
+    # Source of the stream. This can be:
+    # * publisher -> the stream is published by a RTSP or RTMP client
+    # * rtsp://existing-url -> the stream is pulled from another RTSP server / camera
+    # * rtsps://existing-url -> the stream is pulled from another RTSP server / camera with RTSPS
+    # * rtmp://existing-url -> the stream is pulled from another RTMP server / camera
+    # * rtmps://existing-url -> the stream is pulled from another RTMP server / camera with RTMPS
+    # * http://existing-url/stream.m3u8 -> the stream is pulled from another HLS server
+    # * https://existing-url/stream.m3u8 -> the stream is pulled from another HLS server with HTTPS
+    # * udp://ip:port -> the stream is pulled from UDP, by listening on the specified IP and port
+    # * redirect -> the stream is provided by another path or server
+    # * rpiCamera -> the stream is provided by a Raspberry Pi Camera
+    source: publisher
+
+    # If the source is an RTSP or RTSPS URL, this is the protocol that will be used to
+    # pull the stream. available values are "automatic", "udp", "multicast", "tcp".
+    sourceProtocol: automatic
+
+    # Tf the source is an RTSP or RTSPS URL, this allows to support sources that
+    # don't provide server ports or use random server ports. This is a security issue
+    # and must be used only when interacting with sources that require it.
+    sourceAnyPortEnable: no
+
+    # If the source is a RTSPS, RTMPS or HTTPS URL, and the source certificate is self-signed
+    # or invalid, you can provide the fingerprint of the certificate in order to
+    # validate it anyway. It can be obtained by running:
+    # openssl s_client -connect source_ip:source_port </dev/null 2>/dev/null | sed -n '/BEGIN/,/END/p' > server.crt
+    # openssl x509 -in server.crt -noout -fingerprint -sha256 | cut -d "=" -f2 | tr -d ':'
+    sourceFingerprint:
+
+    # If the source is an RTSP or RTMP URL, it will be pulled only when at least
+    # one reader is connected, saving bandwidth.
+    sourceOnDemand: no
+    # If sourceOnDemand is "yes", readers will be put on hold until the source is
+    # ready or until this amount of time has passed.
+    sourceOnDemandStartTimeout: 10s
+    # If sourceOnDemand is "yes", the source will be closed when there are no
+    # readers connected and this amount of time has passed.
+    sourceOnDemandCloseAfter: 10s
+
+    # If the source is "redirect", this is the RTSP URL which clients will be
+    # redirected to.
+    sourceRedirect:
+
+    # If the source is "publisher" and a client is publishing, do not allow another
+    # client to disconnect the former and publish in its place.
+    disablePublisherOverride: no
+
+    # If the source is "publisher" and no one is publishing, redirect readers to this
+    # path. It can be can be a relative path  (i.e. /otherstream) or an absolute RTSP URL.
+    fallback:
+
+    # Username required to publish.
+    # SHA256-hashed values can be inserted with the "sha256:" prefix.
+    publishUser:
+    # Password required to publish.
+    # SHA256-hashed values can be inserted with the "sha256:" prefix.
+    publishPass:
+    # IPs or networks (x.x.x.x/24) allowed to publish.
+    publishIPs: []
+
+    # Username required to read.
+    # SHA256-hashed values can be inserted with the "sha256:" prefix.
+    readUser:
+    # password required to read.
+    # SHA256-hashed values can be inserted with the "sha256:" prefix.
+    readPass:
+    # IPs or networks (x.x.x.x/24) allowed to read.
+    readIPs: []
+
+    # Command to run when this path is initialized.
+    # This can be used to publish a stream and keep it always opened.
+    # This is terminated with SIGINT when the program closes.
+    # The following environment variables are available:
+    # * RTSP_PATH: path name
+    # * RTSP_PORT: server port
+    # * G1, G2, ...: regular expression groups, if path name is
+    #   a regular expression.
+    runOnInit:
+    # Restart the command if it exits suddenly.
+    runOnInitRestart: no
+
+    # Command to run when this path is requested.
+    # This can be used to publish a stream on demand.
+    # This is terminated with SIGINT when the path is not requested anymore.
+    # The following environment variables are available:
+    # * RTSP_PATH: path name
+    # * RTSP_PORT: server port
+    # * G1, G2, ...: regular expression groups, if path name is
+    #   a regular expression.
+    runOnDemand:
+    # Restart the command if it exits suddenly.
+    runOnDemandRestart: no
+    # Readers will be put on hold until the runOnDemand command starts publishing
+    # or until this amount of time has passed.
+    runOnDemandStartTimeout: 10s
+    # The command will be closed when there are no
+    # readers connected and this amount of time has passed.
+    runOnDemandCloseAfter: 10s
+
+    # Command to run when the stream is ready to be read, whether it is
+    # published by a client or pulled from a server / camera.
+    # This is terminated with SIGINT when the stream is not ready anymore.
+    # The following environment variables are available:
+    # * RTSP_PATH: path name
+    # * RTSP_PORT: server port
+    # * G1, G2, ...: regular expression groups, if path name is
+    #   a regular expression.
+    runOnReady:
+    # Restart the command if it exits suddenly.
+    runOnReadyRestart: no
+
+    # Command to run when a clients starts reading.
+    # This is terminated with SIGINT when a client stops reading.
+    # The following environment variables are available:
+    # * RTSP_PATH: path name
+    # * RTSP_PORT: server port
+    # * G1, G2, ...: regular expression groups, if path name is
+    #   a regular expression.
+    runOnRead:
+    # Restart the command if it exits suddenly.
+    runOnReadRestart: no

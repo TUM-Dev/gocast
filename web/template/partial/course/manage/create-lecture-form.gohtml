@@ -2,7 +2,7 @@
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
 {{$course := .IndexData.TUMLiveContext.Course}}
 <form class="form-container-body grid grid-cols-2" method="post" action="/api/createLecture"
-	x-data="admin.createLectureForm()" @submit.prevent="submitData"
+	x-data="admin.createLectureForm({ s: {{toJson ($course.StreamTimes)}} })" @submit.prevent="submitData"
 	x-init="courseID = {{.IndexData.TUMLiveContext.Course.Model.ID}}; $el.reset()">
 	<div class="col-span-full flex gap-3">
 		<label>
@@ -25,9 +25,9 @@
 		<input class="tl-input" name="name" id="name" x-model="formData.title" placeholder="L01: Binary Trees" />
 	</label>
 	<label for="start" x-show="!loading">
-		<span class="text-sm text-5">Start</span>
-		<input class="tl-input" name="start" placeholder="2021-04-08 14:00" id="start" x-model="formData.start"
-			x-ref="start" @change="() => setTimeout(() => { regenerateRecurringDates(); recalculateDuration(); }, 100)"
+		<span class="text-sm text-5">Start (required)</span>
+		<input class="tl-input" name="start" placeholder="2021-04-08 14:00" id="start" x-model="formData.start" required
+			x-ref="start" @change="() => setTimeout(() => {validateForm(); regenerateRecurringDates(); recalculateDuration(); }, 100)"
 			x-init="flatpickr($refs.start, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})" />
 	</label>
 	<label x-show="!formData.premiere && !formData.vodup && !loading" for="end">
@@ -97,8 +97,9 @@
 			</template>
 		</ul>
 	</div>
-	<div class="mt-8">
-		<button class="btn" type="submit" id="createLectureBtn">
+	<div class="mt-4 col-span-full">
+		<div class="mb-4 w-full text-danger" x-show="invalidReason!==''" x-text="invalidReason"></div>
+		<button class="btn" type="submit" id="createLectureBtn" :disabled="invalidReason!==''">
 			<span x-show="!loading">
 				<span x-text="formData.recurring && formData.recurringDates.filter(({enabled}) => enabled).length > 0
                                                         ? `Create ${(formData.recurringDates.filter(({enabled}) => enabled).length + 1).toString()} Lectures`

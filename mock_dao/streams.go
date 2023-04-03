@@ -10,6 +10,7 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
+	dao "github.com/joschahenningsen/TUM-Live/dao"
 	model "github.com/joschahenningsen/TUM-Live/model"
 )
 
@@ -140,6 +141,18 @@ func (m *MockStreamsDao) DeleteUnit(id uint) {
 func (mr *MockStreamsDaoMockRecorder) DeleteUnit(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUnit", reflect.TypeOf((*MockStreamsDao)(nil).DeleteUnit), id)
+}
+
+// ExecAllStreamsWithCoursesAndSubtitles mocks base method.
+func (m *MockStreamsDao) ExecAllStreamsWithCoursesAndSubtitles(f func([]dao.StreamWithCourseAndSubtitles)) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ExecAllStreamsWithCoursesAndSubtitles", f)
+}
+
+// ExecAllStreamsWithCoursesAndSubtitles indicates an expected call of ExecAllStreamsWithCoursesAndSubtitles.
+func (mr *MockStreamsDaoMockRecorder) ExecAllStreamsWithCoursesAndSubtitles(f interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecAllStreamsWithCoursesAndSubtitles", reflect.TypeOf((*MockStreamsDao)(nil).ExecAllStreamsWithCoursesAndSubtitles), f)
 }
 
 // GetAllStreams mocks base method.
