@@ -135,12 +135,12 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 		LectureHall *model.LectureHall
 	}
 
-	var livestreams []CourseStream
+	livestreams := make([]CourseStream, 0)
 
 	for _, stream := range streams {
 		courseForLiveStream, _ := r.GetCourseById(context.Background(), stream.CourseID)
 
-		// only show streams for logged in users if they are logged in
+		// only show streams for logged-in users if they are logged in
 		if courseForLiveStream.Visibility == "loggedin" && tumLiveContext.User == nil {
 			continue
 		}

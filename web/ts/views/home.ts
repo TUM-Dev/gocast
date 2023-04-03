@@ -49,6 +49,9 @@ export function context() {
 
         loadingIndicator: 0,
 
+        /**
+         * AlpineJS init function which is called automatically in addition to 'x-init'
+         */
         init() {
             this.reload(true);
         },
@@ -334,10 +337,6 @@ class Stream {
         return new Date(this.Start).toLocaleString();
     }
 
-    public FriendlyDateEnd(): string {
-        return new Date(this.End).toLocaleString();
-    }
-
     public UntilString(): string {
         const end = new Date(this.End);
         const hours = end.getHours();
@@ -473,7 +472,6 @@ async function get(url: string, default_resp: object = []) {
             if (!res.ok) {
                 throw Error(res.statusText);
             }
-
             return res.json();
         })
         .catch((err) => {

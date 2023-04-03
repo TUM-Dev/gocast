@@ -241,7 +241,7 @@
         </template>
         <template x-if="view === home.Views.Main">
             <article id="main-view">
-                {{if .TUMLiveContext}}
+                {{if .TUMLiveContext.User}}
                     {{if .TUMLiveContext.User.Name}}
                         <h1 id="greeting" class="text-2xl font-bold mb-4 px-3">
                             {{.TUMLiveContext.User.GetPreferredGreeting}} {{.TUMLiveContext.User.GetPreferredName}},
@@ -382,7 +382,7 @@
         <button type="button" title="Show Notifications" class="tum-live-icon-button"
                 @click="toggleNotification(true);">
             <span x-cloak x-show="notifications.hasNewNotifications()"
-                  class="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full absolute -top-1 -right-1 h-3 w-3 border-2 border-white dark:border-secondary"> </span>
+                  class="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full absolute top-1 right-1 h-3 w-3 border-2 border-white dark:border-secondary"> </span>
             <i class="fa-solid fa-bell"></i>
         </button>
         <div x-cloak x-show="notification.value"
