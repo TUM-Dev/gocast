@@ -38,25 +38,25 @@
       class="h-screen flex flex-col items-stretch tum-live-bg">
 <div :style="`width: ${loadingIndicator}%`" class="bg-blue-500/50 h-px fixed top-0 transition-all duration-300"></div>
 <header x-data="home.header()"
-        class="text-3 flex z-50 w-full items-center justify-between px-6 py-2 h-16 shrink-0 grow-0">
-    <div class="flex items-center mr-4">
+        class="text-3 flex z-50 w-full items-center px-3 py-2 h-16 justify-between shrink-0 grow-0">
+    <div class="flex items-center">
         <button type="button" id="open-sidenav" title="Open Sidenav" @click="navigation.toggle()"
-                class="tum-live-icon-button mr-2 text-lg md:hidden">
-            <i class="fa-solid fa-bars"></i>
+                class="tum-live-icon-button p-3 text-lg md:hidden">
+            <i class="fa-solid fa-bars" :class="{'rotate-90': navigation.value}"></i>
         </button>
-        <button type="button" id="logo" title="Start" @click="showMain()">
+        <button class="mx-3" type="button" id="logo" title="Start" @click="showMain()">
             <img src="/logo.svg" width="42" alt="TUM-Live Logo">
         </button>
     </div>
     {{/*template "search"*/}}
-    <div id="user-context" class="flex items-center space-x-3 ms-auto">
+    <div id="user-context" class="flex items-center ms-auto">
         {{template "notifications"}}
         {{if not $user}}
             <a href="/login" class="tum-live-button tum-live-button-primary">Login</a>
         {{else}}
             <div>
                 <button type="button" @click="userContext.toggle(true)"
-                        class="flex items-center justify-center bg-blue-500 dark:bg-indigo-600 rounded-full h-[32px] w-[32px]">
+                        class="tum-live-button-primary mx-3 flex items-center justify-center rounded-full h-[32px] w-[32px]">
                     <span class="text-white font-semibold uppercase">{{printf "%.1s" $user.GetPreferredName}}</span>
                 </button>
                 <div class="relative">
@@ -136,12 +136,12 @@
                 <i class="fa-solid fa-calendar"></i>
                 Semesters
             </header>
-            <span class="tum-live-side-navigation-group-item mb-1"
+            <span class="tum-live-side-navigation-group-item mb-1 border-l-4 bg-blue-100/50 border-blue-500/50 dark:bg-indigo-500/25 dark:border-indigo-600/50"
                   x-text="semesters[selectedSemesterIndex]?.FriendlyString()"></span>
             <template x-if="allSemesters.value">
                 <template x-for="(s, i) in semesters">
                     <button type="button" @click="switchSemester(s.Year, s.TeachingTerm)"
-                            class="tum-live-side-navigation-group-item"
+                            class="tum-live-side-navigation-group-item hover"
                             x-text="s.FriendlyString()"></button>
                 </template>
             </template>
@@ -157,13 +157,13 @@
                     <i class="fa-solid fa-graduation-cap"></i>
                     My Courses
                 </header>
-                <template x-for="(course, i) in userCourses.slice(0, 5)" :key="course.ID">
+                <template x-for="(course, i) in userCourses.slice(0, 8)" :key="course.ID">
                     <a class="tum-live-side-navigation-group-item"
                        :href="course.URL()"
                        x-text="course.Name">
                     </a>
                 </template>
-                <template x-if="userCourses.length > 5 && view !== home.Views.UserCourses">
+                <template x-if="userCourses.length > 8 && view !== home.Views.UserCourses">
                     <button @click="showUserCourses()"
                             class="tum-live-side-navigation-group-item">
                         <i class="fa-solid fa-chevron-right"></i>
@@ -191,11 +191,15 @@
                 </button>
             </template>
         </article>
-        <footer class="grid gap-2 tum-live-footer fixed bottom-0 left-0 w-full md:hidden">
-            <a href="/about">About</a>
-            <a href="/privacy">Data Privacy</a>
-            <a href="/imprint">Imprint</a>
-            <a href="/public/licenses.txt">We <i class="fas fa-heart text-blue-500 dark:text-indigo-600"></i> OpenSource</a>
+        <footer class="tum-live-footer fixed bottom-0 left-0 w-full md:hidden">
+            <div class="grid divide-y dark:divide-gray-800">
+                <a href="/about">About</a>
+                <a href="/privacy">Data Privacy</a>
+                <a href="/imprint">Imprint</a>
+            </div>
+            <a href="/public/licenses.txt" class="block mt-2 text-center">
+                We <i class="fas fa-heart text-blue-500 dark:text-indigo-600"></i> OpenSource
+            </a>
         </footer>
     </section>
     <article id="content-wrapper" class="text-3 p-4 grow" :class="{'hidden' : navigation.value}">
@@ -263,7 +267,7 @@
             <article id="main-view" class="relative min-h-full">
                 {{if .TUMLiveContext.User}}
                     {{if .TUMLiveContext.User.Name}}
-                        <h1 id="greeting" class="text-2xl font-bold mb-4 px-3">
+                        <h1 id="greeting" class="md:text-2xl text-xl font-bold mb-4 px-3">
                             {{.TUMLiveContext.User.GetPreferredGreeting}} {{.TUMLiveContext.User.GetPreferredName}},
                             nice to see you! 👋
                         </h1>
@@ -405,28 +409,35 @@
     <div id="notifications"
          class="relative" x-init="notifications.fetchNotifications();"
          @keyup.escape="toggleNotification()">
-        <button type="button" title="Show Notifications" class="tum-live-icon-button"
+        <button type="button" title="Show Notifications" class="tum-live-icon-button p-3"
                 @click="toggleNotification(true);">
             <span x-cloak x-show="notifications.hasNewNotifications()"
                   class="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full absolute top-1 right-1 h-3 w-3 border-2 border-white dark:border-secondary"> </span>
             <i class="fa-solid fa-bell"></i>
         </button>
         <div x-cloak x-show="notification.value"
-             @click.outside="toggleNotification();"
-             class="tum-live-menu origin-top-right absolute right-0 mt-2 w-96">
-            <header>Notifications</header>
-            <div class="w-full min-h-30 max-h-60 overflow-y-scroll py-2">
-                <div x-cloak x-show="notifications.empty()" class="py-4 relative text-3 text-center">
-                    <span class="font-semibold">No notifications yet :)</span>
-                </div>
-                <div class="grid">
-                    <template x-for="(notification, i) of notifications.getAll()">
-                        <div class="px-4 py-3 border-b dark:border-gray-800 last:border-0 relative">
-                            <p class="font-semibold mb-2" x-show="notification.title !== undefined"
-                               x-text="notification.title"></p>
-                            <div class="notificationBody" x-html="notification.body"></div>
-                        </div>
-                    </template>
+             class="origin-top-right fixed bottom-0 left-0 top-0 w-full backdrop-brightness-50 px-2 py-8 md:absolute md:bottom-auto md:left-auto md:top-auto md:right-0 md:mt-2 md:w-96 md:backdrop-brightness-100 md:p-0">
+            <div class = "tum-live-menu" @click.outside="toggleNotification();">
+                <header>
+                    Notifications
+                    <button type="button" @click="notification.toggle(false)"
+                            class = "tum-live-icon-button close p-1 md:hidden">
+                        <i class = "fa-solid fa-xmark"></i>
+                    </button>
+                </header>
+                <div class="w-full min-h-30 max-h-60 overflow-y-scroll py-2">
+                    <div x-cloak x-show="notifications.empty()" class="py-4 relative text-3 text-center">
+                        <span class="font-semibold">No notifications yet :)</span>
+                    </div>
+                    <div class="grid">
+                        <template x-for="(notification, i) of notifications.getAll()">
+                            <div class="px-4 py-3 border-b dark:border-gray-800 last:border-0 relative">
+                                <p class="font-semibold mb-2" x-show="notification.title !== undefined"
+                                   x-text="notification.title"></p>
+                                <div class="notificationBody" x-html="notification.body"></div>
+                            </div>
+                        </template>
+                    </div>
                 </div>
             </div>
         </div>

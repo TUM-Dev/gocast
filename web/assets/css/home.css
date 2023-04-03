@@ -50,7 +50,7 @@
 }
 
 .tum-live-icon-button {
-    @apply flex justify-center items-center rounded-full p-3 text-gray-400 hover:text-gray-600 dark:hover:text-white active:bg-gray-100/50 dark:active:bg-gray-700/50
+    @apply flex justify-center items-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-white active:bg-gray-100/50 dark:active:bg-gray-700/50
 }
 
 .tum-live-badge {
@@ -78,7 +78,11 @@
 }
 
 .tum-live-side-navigation-group-item {
-    @apply text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-left px-3 py-2
+    @apply text-sm rounded-lg text-left px-3 py-2
+}
+
+.tum-live-side-navigation-group-item ~ .hover {
+    @apply hover:bg-gray-100 dark:hover:bg-gray-800
 }
 
 .tum-live-side-navigation-group-item > i {
@@ -126,7 +130,11 @@
 }
 
 .tum-live-menu > header {
-    @apply py-2 px-4 border-b dark:border-gray-800
+    @apply flex justify-between items-center py-2 px-4 border-b dark:border-gray-800
+}
+
+.tum-live-menu > header .close{
+    @apply ml-auto
 }
 
 .tum-live-course-list > header {
@@ -162,5 +170,5 @@
 }
 
 .tum-live-footer a {
-    @apply text-sm font-light text-5;
+    @apply text-sm font-light text-5 md:py-0 py-1
 }

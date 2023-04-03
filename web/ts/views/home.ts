@@ -89,20 +89,17 @@ export function context() {
         },
 
         showMain() {
-            this.view = Views.Main;
-            this.navigation.toggle(false);
+            this.switchView(Views.Main);
             this.pushHistory(this.year, this.term, Views.Main);
         },
 
         showUserCourses() {
-            this.view = Views.UserCourses;
-            this.navigation.toggle(false);
+            this.switchView(Views.UserCourses);
             this.pushHistory(this.year, this.term, Views.UserCourses);
         },
 
         showPublicCourses() {
-            this.view = Views.PublicCourses;
-            this.navigation.toggle(false);
+            this.switchView(Views.PublicCourses);
             this.pushHistory(this.year, this.term, Views.PublicCourses);
         },
 
