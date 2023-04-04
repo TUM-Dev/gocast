@@ -2,7 +2,7 @@ import { Section } from "./global";
 import { getPlayers } from "./TUMLiveVjs";
 import { VideoJsPlayer } from "video.js";
 import { DataStore } from "./data-store/data-store";
-import {Bookmark} from "./data-store/bookmarks";
+import { Bookmark } from "./data-store/bookmarks";
 
 export enum MarkerType {
     sectionSep,
