@@ -52,7 +52,7 @@
     <div id="user-context" class="flex items-center ms-auto">
         {{template "notifications"}}
         {{if not $user}}
-            <a href="/login" class="tum-live-button tum-live-button-primary">Login</a>
+            <a href="/login" class="tum-live-button tum-live-button-primary mx-3">Login</a>
         {{else}}
             <div>
                 <button type="button" @click="userContext.toggle(true)"
@@ -294,7 +294,7 @@
                                         <div class="h-56 relative mb-2">
                                             <div class="absolute right-2 top-1 flex items-center space-x-2 text-xs font-semibold text-white z-40">
                                                 <template x-if="livestream.Course.IsHidden()">
-                                                    <span class="tum-live-badge bg-indigo-900">Hidden</span>
+                                                    <span class="tum-live-badge bg-neutral-700">Hidden</span>
                                                 </template>
                                                 <template x-if="livestream.InLectureHall()">
                                                     <a class="tum-live-badge bg-black"

@@ -1,3 +1,5 @@
+import { Notifications } from "../notifications";
+
 export function header() {
     return {
         userContext: new ToggleableElement(new Map([["themePicker", new ToggleableElement()]])),
@@ -32,17 +34,17 @@ export function context() {
         year: +url.searchParams.get("year"),
         view: +url.searchParams.get("view") ?? Views.Main,
 
-        navigation: new ToggleableElement(new Map([["allSemesters", new ToggleableElement()]])),
-
         semesters: [] as SemesterItem[],
         currentSemesterIndex: -1,
         selectedSemesterIndex: -1,
 
-        livestreams: [],
-        publicCourses: [],
-        userCourses: [],
-        liveToday: [],
-        recently: [],
+        livestreams: [] as Livestream[],
+        publicCourses: [] as Course[],
+        userCourses: [] as Course[],
+        liveToday: [] as Course[],
+        recently: [] as Course[],
+
+        navigation: new ToggleableElement(new Map([["allSemesters", new ToggleableElement()]])),
 
         loadingIndicator: 0,
         nothingToDo: false,
@@ -77,7 +79,7 @@ export function context() {
          * Resolve given promises and increment loadingIndicator partially
          * @param  {Promise<object>[]} promises Array of promises
          */
-        load(promises: Promise<object>[]): Promise<any> {
+        load(promises: Promise<object>[]): Promise<number | void> {
             this.loadingIndicator = 0;
             promises.forEach((p) => {
                 Promise.resolve(p).then((_) => (this.loadingIndicator += 100 / promises.length));
@@ -155,19 +157,12 @@ export function context() {
          * Filter userCourses for lectures streamed today
          */
         getLiveToday() {
-            return this.userCourses.filter((c) => {
-                if (c.NextLecture.ID !== 0) {
-                    const start = new Date(c.NextLecture.Start);
-                    const now = new Date();
-                    return (
-                        start.getDay() === now.getDay() &&
-                        start.getMonth() == now.getMonth() &&
-                        start.getFullYear() === now.getFullYear()
-                    );
-                }
-
-                return false;
-            });
+            const today = new Date();
+            const eq = (a: Date, b: Date) =>
+                a.getDay() === b.getDay() && a.getMonth() == b.getMonth() && a.getFullYear() === b.getFullYear();
+            return this.userCourses
+                .filter((c) => c.NextLecture.ID !== 0)
+                .filter((c) => eq(today, new Date(c.NextLecture.Start)));
         },
 
         /**
@@ -187,7 +182,7 @@ export function context() {
             this.year = year;
             this.term = term;
             this.selectedSemesterIndex = this.findSemesterIndex(this.year, this.term);
-            this.allSemesters.toggle(false);
+            this.navigation.getChild("allSemesters").toggle(false);
 
             if (pushState) {
                 this.pushHistory(year, term);
@@ -242,75 +237,6 @@ class ToggleableElement {
         if (!this.value) {
             this.children.forEach((c) => c.toggle(false));
         }
-    }
-}
-
-class Notifications {
-    notifications: Notification[] = [];
-
-    constructor() {
-        this.notifications = [];
-    }
-
-    getAll(): Notification[] {
-        return this.notifications;
-    }
-
-    empty(): boolean {
-        return this.notifications.length === 0;
-    }
-
-    writeToStorage(markRead = false) {
-        if (markRead) {
-            this.notifications.forEach((notification) => {
-                notification.read = true;
-            });
-        }
-        localStorage.setItem("notifications", JSON.stringify(this.notifications));
-    }
-
-    hasNewNotifications(): boolean {
-        return this.notifications.some((notification) => !notification.read);
-    }
-
-    fetchNotifications(): void {
-        this.notifications = JSON.parse(localStorage.getItem("notifications") || "[]");
-
-        const lastNotificationFetch: Date = new Date(parseInt(localStorage.getItem("lastNotificationFetch") || "0"));
-        // fetch every 10 minutes at most:
-        if (new Date().getTime() - lastNotificationFetch.getTime() > 1000 * 60 * 10) {
-            fetch(`/api/notifications/`)
-                .then((response) => response.json() as Promise<Notification[]>)
-                .then((data) => {
-                    // merge new notifications read status with existing ones:
-                    for (let i = 0; i < this.notifications.length; i++) {
-                        for (let j = 0; j < data.length; j++) {
-                            if (data[j].id === this.notifications[i].id) {
-                                data[j].read = this.notifications[i].read;
-                                break;
-                            }
-                        }
-                    }
-                    this.notifications = data;
-                    this.writeToStorage();
-                    localStorage.setItem("lastNotificationFetch", new Date().getTime().toString());
-                });
-        }
-    }
-}
-
-export class Notification {
-    id: number;
-    createdAt: Date;
-    title: string | undefined;
-    body: string;
-    read: boolean;
-    target: number;
-
-    constructor(title: string | undefined, body: string, target: number) {
-        this.title = title;
-        this.body = body;
-        this.target = target;
     }
 }
 
@@ -446,7 +372,7 @@ const Courses = {
         return get(`/api/courses/users${this.query(year, term)}`).then((courses) => courses.map((c) => Course.New(c)));
     },
 
-    query: (year?: number, term?: number) =>
+    query: (year?: number, term?: string) =>
         year !== undefined && term !== undefined && year !== 0 ? `?year=${year}&term=${term}` : "",
 };
 
