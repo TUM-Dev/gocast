@@ -5,15 +5,15 @@
 
 @layer base {
     h1 {
-        @apply text-2xl;
+        @apply lg:text-2xl text-lg
     }
 
     h2 {
-        @apply text-xl;
+        @apply lg:text-xl text-base;
     }
 
     h3 {
-        @apply text-lg;
+        @apply lg:text-lg text-sm;
     }
 
     /*medium contrast text*/
@@ -150,7 +150,7 @@
 }
 
 .tum-live-course-list > header > h1 {
-    @apply flex items-center font-bold px-3 lg:text-2xl text-lg
+    @apply flex items-center font-bold px-3
 }
 
 .tum-live-course-list > header > button {

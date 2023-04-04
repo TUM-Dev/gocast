@@ -1,17 +1,4 @@
-import { Notifications } from "../notifications";
-
-export function header() {
-    return {
-        userContext: new ToggleableElement(new Map([["themePicker", new ToggleableElement()]])),
-
-        notifications: new Notifications(),
-        notification: new ToggleableElement(),
-        toggleNotification(set?: boolean) {
-            this.notification.toggle(set);
-            this.notifications.writeToStorage(true);
-        },
-    };
-}
+import { ToggleableElement } from "../utilities/ToggleableElement";
 
 export enum Views {
     Main,
@@ -216,28 +203,6 @@ export function context() {
             window.history.pushState(data, "", url.toString());
         },
     };
-}
-
-class ToggleableElement {
-    private readonly children: Map<string, ToggleableElement>;
-
-    public value: boolean;
-
-    constructor(children?: Map<string, ToggleableElement>, value = false) {
-        this.children = children || new Map<string, ToggleableElement>();
-        this.value = value;
-    }
-
-    getChild(name: string): ToggleableElement {
-        return this.children.get(name);
-    }
-
-    toggle(set?: boolean) {
-        this.value = set ?? !this.value;
-        if (!this.value) {
-            this.children.forEach((c) => c.toggle(false));
-        }
-    }
 }
 
 type SemesterResponse = {
