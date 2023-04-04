@@ -62,11 +62,15 @@
 }
 
 .tum-live-side-navigation{
-    @apply sticky top-0 overflow-y-scroll font-light text-3 shrink-0 px-5 divide-y dark:divide-gray-800
+    @apply flex-col sticky top-0 overflow-y-scroll font-light text-3 shrink-0 divide-y dark:divide-gray-800
+}
+
+.tum-live-side-navigation > .tum-live-side-navigation-group {
+    @apply px-5
 }
 
 .tum-live-side-navigation-group{
-    @apply grid py-4
+    @apply grid py-4 content-baseline
 }
 
 .tum-live-side-navigation-group > header {
@@ -146,7 +150,7 @@
 }
 
 .tum-live-course-list > header > h1 {
-    @apply flex items-center font-bold px-3
+    @apply flex items-center font-bold px-3 lg:text-2xl text-lg
 }
 
 .tum-live-course-list > header > button {
@@ -158,15 +162,15 @@
 }
 
 .tum-live-course-list-item .title {
-    @apply block text-3 text-lg font-semibold hover:underline
+    @apply block text-3 lg:text-base text-sm font-semibold hover:underline
 }
 
 .tum-live-course-list-item .links {
-    @apply flex items-center text-sm text-5 font-light
+    @apply flex flex-col text-sm text-5 font-light lg:flex-row lg:items-center
 }
 
 .tum-live-course-list-item .links > *:not(:first-child){
-    @apply pl-2
+    @apply pt-1 lg:pt-0 lg:pl-2
 }
 
 .tum-live-footer {

@@ -48,7 +48,16 @@
             <img src="/logo.svg" width="42" alt="TUM-Live Logo">
         </button>
     </div>
-    {{/*template "search"*/}}
+
+    <!--
+    <article id="search" class="h-10 w-96">
+        <label class="flex items-center rounded-full bg-gray-100 dark:bg-gray-800 text-sm py-1 h-full">
+            <i class="fa-solid fa-search pl-3 text-xs text-7"></i>
+            <input class="px-3 outline-none border-none bg-transparent h-full w-full grow" type="text"
+                   placeholder="Search in lectures">
+        </label>
+    </article>-->
+
     <div id="user-context" class="flex items-center ms-auto">
         {{template "notifications"}}
         {{if not $user}}
@@ -130,7 +139,7 @@
 </header>
 <article class="flex grow h-full overflow-y-scroll">
     <section id="side-navigation" class="tum-live-side-navigation lg:w-80 md:w-56 md:block"
-             :class="navigation.value ? 'w-full' : 'hidden'">
+             :class="navigation.value ? 'flex w-full' : 'hidden'">
         <article class="tum-live-side-navigation-group">
             <header>
                 <i class="fa-solid fa-calendar"></i>
@@ -172,7 +181,7 @@
                 </template>
             </article>
         </template>
-        <article class="tum-live-side-navigation-group">
+        <article class="tum-live-side-navigation-group grow">
             <header>
                 <i class="fa-solid fa-chalkboard"></i>
                 Public Courses
@@ -191,7 +200,7 @@
                 </button>
             </template>
         </article>
-        <footer class="tum-live-footer fixed bottom-0 left-0 w-full md:hidden">
+        <footer class="tum-live-footer w-full md:hidden">
             <div class="grid divide-y dark:divide-gray-800">
                 <a href="/about">About</a>
                 <a href="/privacy">Data Privacy</a>
@@ -394,16 +403,6 @@
 </footer>
 </body>
 </html>
-
-{{define "search"}}
-    <div id="search" class="h-10 w-96">
-        <label class="flex items-center rounded-full bg-gray-100 dark:bg-gray-800 text-sm py-1 h-full">
-            <i class="fa-solid fa-search pl-3 text-xs text-7"></i>
-            <input class="px-3 outline-none border-none bg-transparent h-full w-full grow" type="text"
-                   placeholder="Search in lectures">
-        </label>
-    </div>
-{{end}}
 
 {{define "notifications"}}
     <div id="notifications"
