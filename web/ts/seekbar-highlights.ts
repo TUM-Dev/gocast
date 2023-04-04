@@ -11,7 +11,6 @@ export enum MarkerType {
 
 export type SeekbarMarker = {
     type: MarkerType;
-    icon?: string;
     description?: string;
     position: number;
 };
@@ -87,6 +86,7 @@ class SeekbarHighlights {
             const bookmark = bookmarks[i];
             this.marker.push({
                 type: MarkerType.bookmark,
+                description: bookmark.description,
                 position: this.getBookmarkTimestamp(bookmark) / duration,
             });
         }
