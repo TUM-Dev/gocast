@@ -1,6 +1,7 @@
 import { Section, Time } from "./global";
 import { DataStore } from "./data-store/data-store";
 import { UpdateVideoSectionRequest } from "./data-store/video-sections";
+import {Bookmark} from "./data-store/bookmarks";
 
 export abstract class VideoSectionList {
     private streamId: number;
@@ -13,12 +14,16 @@ export abstract class VideoSectionList {
         this.streamId = streamId;
         this.list = [];
         this.currentHighlightIndex = -1;
+
+        DataStore.videoSections.subscribe(this.streamId, (data) => this.onUpdate(data));
     }
 
     async fetch() {
-        await DataStore.videoSections.subscribe(this.streamId, (data) => {
-            this.list = data;
-        });
+
+    }
+
+    private onUpdate(data: Section[]) {
+        this.list = data;
     }
 
     abstract getList(): Section[];
@@ -121,6 +126,8 @@ export class VideoSectionsAdmin {
     current: Section;
     unsavedChanges: boolean;
 
+    private listener;
+
     constructor(streamId: number) {
         this.streamId = streamId;
 
@@ -128,12 +135,16 @@ export class VideoSectionsAdmin {
         this.existingSections = [];
         this.unsavedChanges = false;
         this.resetCurrent();
+
+        DataStore.videoSections.subscribe(this.streamId, (data) => this.onUpdate(data));
     }
 
     async fetch() {
-        await DataStore.videoSections.subscribe(this.streamId, (data) => {
-            this.existingSections = data;
-        });
+
+    }
+
+    onUpdate(data: Section[]) {
+        this.existingSections = data;
     }
 
     pushNewSection() {

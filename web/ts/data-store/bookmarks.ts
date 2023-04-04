@@ -13,7 +13,7 @@ export class BookmarksProvider extends StreamableMapProvider<number, Bookmark[]>
 
     async add(request: AddBookmarkRequest): Promise<void> {
         await Bookmarks.add(request);
-        await this.fetch(request.StreamID);
+        await this.fetch(request.StreamID, true);
         await this.triggerUpdate(request.StreamID);
     }
 

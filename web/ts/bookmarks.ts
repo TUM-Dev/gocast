@@ -5,11 +5,11 @@ import { DataStore } from "./data-store/data-store";
 
 export class BookmarkList {
     private readonly streamId: number;
-
     private list: Bookmark[];
 
     constructor(streamId: number) {
         this.streamId = streamId;
+        DataStore.bookmarks.subscribe(this.streamId, (data) => this.onUpdate(data));
     }
 
     get(): Bookmark[] {
@@ -25,9 +25,13 @@ export class BookmarkList {
     }
 
     async fetch() {
-        await DataStore.bookmarks.subscribe(this.streamId, (data) => {
-            this.list = data;
-        });
+       /* not needed */
+    }
+
+    onUpdate(data: Bookmark[]) {
+        console.log("New bookmarks ...", data);
+        this.list = data;
+        window.dispatchEvent(new CustomEvent('newbookmarks'));
     }
 }
 

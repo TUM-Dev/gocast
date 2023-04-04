@@ -83,12 +83,11 @@
 {{/* 1st parameter: 'streamID' */}}
 {{define "bookmark-list"}}
     <div x-cloak x-show="bookmarks.length()"
-         x-data="{ bookmarks: new watch.BookmarkList({{.}}) }"
-         x-init="await bookmarks.fetch()"
-         @reloadbookmarks.window="await bookmarks.fetch()"
+         x-data="{ bookmarks: new watch.BookmarkList({{.}}), bookmarksList: [] }"
+         @newbookmarks.window="(e) => { bookmarksList = bookmarks.get(); }"
          class="h-[85%]">
         <div class="relative grid gap-1 overflow-y-scroll pr-3 max-h-full">
-            <template x-for="(b, i) in bookmarks.get()" :key="b.ID">
+            <template x-for="(b, i) in bookmarksList" :key="b.ID">
                 <div x-data="{bookmarkUpdater: {}}"
                      x-init="bookmarkUpdater = new watch.BookmarkUpdater(b);"
                      class="flex">
