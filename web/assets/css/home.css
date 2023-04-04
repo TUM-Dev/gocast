@@ -130,7 +130,11 @@
 }
 
 .tum-live-menu > header {
-    @apply flex justify-between items-center py-2 px-4 border-b dark:border-gray-800
+    @apply py-2 px-4 border-b dark:border-gray-800
+}
+
+.tum-live-menu > header:has(.close) {
+    @apply flex justify-between items-center
 }
 
 .tum-live-menu > header .close{

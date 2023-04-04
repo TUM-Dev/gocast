@@ -1,6 +1,6 @@
 export function header() {
     return {
-        userContext: new ToggleableElement(),
+        userContext: new ToggleableElement(new Map([["themePicker", new ToggleableElement()]])),
 
         notifications: new Notifications(),
         notification: new ToggleableElement(),
@@ -8,8 +8,6 @@ export function header() {
             this.notification.toggle(set);
             this.notifications.writeToStorage(true);
         },
-
-        themePicker: new ToggleableElement(),
     };
 }
 
@@ -34,8 +32,7 @@ export function context() {
         year: +url.searchParams.get("year"),
         view: +url.searchParams.get("view") ?? Views.Main,
 
-        navigation: new ToggleableElement(),
-        allSemesters: new ToggleableElement(),
+        navigation: new ToggleableElement(new Map([["allSemesters", new ToggleableElement()]])),
 
         semesters: [] as SemesterItem[],
         currentSemesterIndex: -1,
@@ -227,14 +224,24 @@ export function context() {
 }
 
 class ToggleableElement {
+    private readonly children: Map<string, ToggleableElement>;
+
     public value: boolean;
 
-    constructor(value = false) {
+    constructor(children?: Map<string, ToggleableElement>, value = false) {
+        this.children = children || new Map<string, ToggleableElement>();
         this.value = value;
+    }
+
+    getChild(name: string): ToggleableElement {
+        return this.children.get(name);
     }
 
     toggle(set?: boolean) {
         this.value = set ?? !this.value;
+        if (!this.value) {
+            this.children.forEach((c) => c.toggle(false));
+        }
     }
 }
 
