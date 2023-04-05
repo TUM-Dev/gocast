@@ -8,7 +8,7 @@ require (
 	github.com/antchfx/xmlquery v1.3.15
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/gabstv/melody v1.0.2
-	github.com/getsentry/sentry-go v0.19.0
+	github.com/getsentry/sentry-go v0.20.0
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-gonic/gin v1.9.0
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
@@ -16,7 +16,7 @@ require (
 	github.com/go-ldap/ldap/v3 v3.4.4
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
-	github.com/golang/glog v1.1.0 // indirect
+	github.com/golang/glog v1.1.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/jinzhu/now v1.1.5
 	github.com/microcosm-cc/bluemonday v1.0.23
@@ -27,7 +27,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/viper v1.15.0
 	golang.org/x/crypto v0.7.0
-	google.golang.org/genproto v0.0.0-20230320184635-7606e756e683 // indirect
+	google.golang.org/genproto v0.0.0-20230403163135-c38d8f061ccd // indirect
 	google.golang.org/grpc v1.54.0
 	google.golang.org/protobuf v1.30.0
 	gorm.io/driver/mysql v1.4.7
@@ -41,7 +41,7 @@ require (
 	github.com/crewjam/saml v0.4.13
 	github.com/golang/mock v1.6.0
 	github.com/icholy/digest v0.1.22
-	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20230309133407-bceb45ec90c7
+	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20230405111231-59aef3f11c9c
 	github.com/stretchr/testify v1.8.2
 	github.com/u2takey/go-utils v0.3.1
 )
@@ -50,20 +50,20 @@ require (
 	github.com/TUM-Dev/CampusProxy/client v0.0.0-20230226120508-3e8bb2411921
 	github.com/asticode/go-astisub v0.23.0
 	github.com/matthiasreumann/gomino v0.0.2
-	github.com/meilisearch/meilisearch-go v0.23.1
+	github.com/meilisearch/meilisearch-go v0.24.0
 )
 
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/asticode/go-astikit v0.38.0 // indirect
 	github.com/asticode/go-astits v1.11.0 // indirect
-	github.com/bytedance/sonic v1.8.5 // indirect
+	github.com/bytedance/sonic v1.8.7 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/felixge/fgprof v0.9.3 // indirect
 	github.com/frankban/quicktest v1.14.4 // indirect
-	github.com/google/pprof v0.0.0-20230309165930-d61513b1440d // indirect
+	github.com/google/pprof v0.0.0-20230323073829-e72429f035bd // indirect
 	github.com/josharian/intern v1.0.0 // indirect
-	github.com/klauspost/compress v1.16.3 // indirect
+	github.com/klauspost/compress v1.16.4 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
@@ -99,14 +99,14 @@ require (
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
-	github.com/imdario/mergo v0.3.14 // indirect
+	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jonboulle/clockwork v0.3.0 // indirect
+	github.com/jonboulle/clockwork v0.4.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/leodido/go-urn v1.2.2 // indirect
+	github.com/leodido/go-urn v1.2.3 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-isatty v0.0.18 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
@@ -124,7 +124,7 @@ require (
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
