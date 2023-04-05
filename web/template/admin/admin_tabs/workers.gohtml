@@ -1,86 +1,93 @@
 {{define "workers"}}
     <div class="form-container">
-        <table class="table-auto w-full form-container-title">
-            <thead>
-            <tr class="dark:bg-secondary bg-gray-200 text-4 uppercase text-sm leading-normal dark:bg-secondary rounded-md">
-                <th class="py-3 px-6 text-left">Name</th>
-                <th class="py-3 px-6 text-left">Status</th>
-                <th class="py-3 px-6 text-left">Workload</th>
-                <th class="py-3 px-6 text-left">Uptime</th>
-                <th class="py-3 px-6 text-left">Actions</th>
-            </tr>
-            </thead>
-            <tbody class="form-container-body">
-            {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.WorkersData*/ -}}
-            {{range $worker := .Workers}}
-                <tr class="border-gray-500 dark:hover:bg-primary hover:bg-white">
-                    <td class="pt-3 px-6">
-                        <div class="font-semibold text-1">{{$worker.Host}}<span
-                                    class="font-normal text-4">@{{$worker.Version}}</span></div>
-                        <div class="pl-2"><span class="mr-4">CPU: {{$worker.CPU}}</span><span
-                                    class="mr-4">Mem: {{$worker.Memory}}</span><span
-                                    class="mr-4">Disk: {{$worker.Disk}}</span></div>
-                    </td>
-                    <td class="px-6">{{if $worker.IsAlive}}
-                            <span class="bg-green-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Alive</span>{{else}}
-                            <span class="bg-red-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Dead</span>{{end}}{{$worker.Status}}
-                    </td>
-                    <td class="px-6 text-left whitespace-nowrap">
-                        {{$worker.Workload}}
-                    </td>
-                    <td class="px-6">{{$worker.Uptime}}</td>
-                    <td x-data class="px-6">
-                        <button @click="admin.deleteWorker('{{$worker.WorkerID}}').then(() => window.location.reload())"
-                                class="text-5 hover:text-1 items-center justify-center"
-                                type="button"
-                                title="Delete Worker">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            {{end}}
+            <h1 class="form-container-title">Workers</h1>
+            <div class="form-container-body grid grid-cols-2 gap-3">
+                <table class="table-auto w-full col-span-full">
+                    <thead>
+                    <tr class="text-2 uppercase text-left">
+                        <th class="py-3 px-6 text-left">Name</th>
+                        <th class="py-3 px-6 text-left">Status</th>
+                        <th class="py-3 px-6 text-left">Workload</th>
+                        <th class="py-3 px-6 text-left">Uptime</th>
+                        <th class="py-3 px-6 text-left">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody class="text-3">
+                        {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.WorkersData*/ -}}
+                        {{range $worker := .Workers}}
+                            <tr class="border-gray-500">
+                                <td class="pt-3 px-6">
+                                    <div class="font-semibold text-1">{{$worker.Host}}<span
+                                         class="font-normal text-4">@{{$worker.Version}}</span>
+                                    </div>
+                                    <div class="pl-1 text-2 italic font-light">
+                                        <span class="mr-4">CPU: {{$worker.CPU}}</span>
+                                        <span class="mr-4">Mem: {{$worker.Memory}}</span>
+                                        <span class="mr-4">Disk: {{$worker.Disk}}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6">{{if $worker.IsAlive}}
+                                    <span class="bg-green-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Alive</span>{{else}}
+                                    <span class="bg-red-500 w-20 text-gray-100 py-1 px-2 rounded-full text-sm font-bold text-center">Dead</span>{{end}}{{$worker.Status}}
+                                </td>
+                                <td class="px-6 text-left whitespace-nowrap">
+                                    {{$worker.Workload}}
+                                </td>
+                                <td class="px-6">{{$worker.Uptime}}</td>
+                                <td x-data class="px-6">
+                                    <button @click="admin.deleteWorker('{{$worker.WorkerID}}').then(() => window.location.reload())"
+                                           class="text-5 hover:text-1 items-center justify-center"
+                                           type="button"
+                                           title="Delete Worker">
+                                           <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        {{end}}
+                    </tbody>
             </tbody>
         </table>
     </div>
-    <h3 class="text-3">How to add a worker</h3>
+    </div>
 
-    <div class="dark:border-secondary bg-gray-100 rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter"
-         x-data="{show:'plain', token:'{{.Token}}'}">
-        <div class="w-full dark:bg-secondary bg-gray-200 text-4 uppercase text-sm font-semibold py-3 leading-normal dark:bg-secondary rounded-t-md">
-            <span class="hover:text-1 hover:font-bold px-6 cursor-pointer" :class="show==='plain'&&'font-bold text-1'"
-                  @click="show='plain'">Plain</span>
-            <span class="hover:text-1 hover:font-bold px-6 border-x-2 border-gray-500 cursor-pointer"
-                  :class="show==='docker'&&'font-bold text-1'" @click="show='docker'">Docker</span>
-            <span class="hover:text-1 hover:font-bold px-6 cursor-pointer" @click="show='swarm'"
-                  :class="show==='swarm'&&'font-bold text-1'">Docker Swarm</span>
-        </div>
-        <div class="p-5">
-            <p class="dark:bg-secondary-lighter text-white shadow rounded bg-secondary p-3" x-show="show==='plain'">
-                <span class="text-gray-500"># Run the TUM-Live-Worker executable with these environment variables:</span><br>
-                <span class="flex">
-                    {{template "terminalprompt"}}
-                    <span class="text-gray-300">export&nbsp;</span><span>Token</span><span
-                            class="text-gray-300">=</span><span class="text-cyan-500" x-text="token"></span>
-                </span>
-                <span class="flex">
-                    {{template "terminalprompt"}}
-                    <span class="text-gray-300">./</span><span>worker</span>
-                </span>
+    <div class="p-5">
+        <h3 class="text-3">How to add a worker</h3>
+        <div class="dark:border-secondary bg-gray-100 rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter"
+             x-data="{show:'plain', token:'{{.Token}}'}">
+            <div class="w-full dark:bg-secondary bg-gray-200 text-4 uppercase text-sm font-semibold py-3 leading-normal dark:bg-secondary rounded-t-md">
+                <span class="hover:text-1 hover:font-bold px-6 cursor-pointer" :class="show==='plain'&&'font-bold text-1'"
+                      @click="show='plain'">Plain</span>
+                <span class="hover:text-1 hover:font-bold px-6 border-x-2 border-gray-500 cursor-pointer"
+                      :class="show==='docker'&&'font-bold text-1'" @click="show='docker'">Docker</span>
+                <span class="hover:text-1 hover:font-bold px-6 cursor-pointer" @click="show='swarm'"
+                      :class="show==='swarm'&&'font-bold text-1'">Docker Swarm</span>
+            </div>
+            <p class="dark:border-secondary bg-gray-100 rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter p-3" x-show="show==='plain'">
+            <span class="text-gray-500"># Run the TUM-Live-Worker executable with these environment variables:</span><br>
+            <span class="flex">
+                {{template "terminalprompt"}}
+                <span class="text-gray-300">export&nbsp;</span><span>Token</span><span
+                      class="text-gray-300">=</span><span class="text-cyan-500" x-text="token"></span>
+            </span>
+            <span class="flex">
+                {{template "terminalprompt"}}
+                <span class="text-gray-300">./</span><span>worker</span>
+            </span>
             </p>
             <p class="dark:bg-secondary-lighter text-white shadow rounded bg-secondary p-3" x-show="show==='docker'">
-                <span class="text-gray-500"># Run the TUM-Live-Worker docker container the token, make sure to include its hostname:</span><br>
-                <span class="flex">
-                    {{template "terminalprompt"}}
-                    <span class="text-gray-300">docker run -p 50051:50051 -e "Host=vm1234" -e "Token=<span
-                                x-text="token"></span>" ghcr.io/joschahenningsen/tum-live/worker:latest</span>
-                </span>
+            <span class="text-gray-500"># Run the TUM-Live-Worker docker container the token, make sure to include its hostname:</span><br>
+            <span class="flex">
+                {{template "terminalprompt"}}
+                <span class="text-gray-300">docker run -p 50051:50051 -e "Host=vm1234" -e "Token=<span
+                      x-text="token"></span>" ghcr.io/joschahenningsen/tum-live/worker:latest</span>
+            </span>
             </p>
-            <p class="dark:bg-secondary-lighter text-white shadow rounded bg-secondary p-3" x-show="show==='swarm'">
-                <span class="text-gray-500"># Refer to your manager node on which token to use here:</span><br>
-                <span class="flex">
-                    {{template "terminalprompt"}}
-                    <span class="text-gray-300">docker swarm join --token ABC-1243-DEFG 1.2.3.4:2377</span>
-                </span>
+            <p class="dark:bg-secondary-lighter text-white shadow rounded bg-gray-400 p-3" x-show="show==='swarm'">
+            <span class="text-gray-500"># Refer to your manager node on which token to use here:</span><br>
+            <span class="flex">
+                {{template "terminalprompt"}}
+                <span class="text-gray-300">docker swarm join --token ABC-1243-DEFG 1.2.3.4:2377</span>
+            </span>
             </p>
         </div>
     </div>
