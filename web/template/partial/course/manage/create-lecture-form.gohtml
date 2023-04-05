@@ -2,7 +2,7 @@
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
 {{$course := .IndexData.TUMLiveContext.Course}}
 <form class="form-container-body grid grid-cols-2" method="post" action="/api/createLecture"
-      x-data="admin.createLectureForm()" @submit.prevent="submitData"
+      x-data="admin.createLectureForm({ s: {{toJson ($course.StreamTimes)}} })" @submit.prevent="submitData"
       x-init="courseID = {{.IndexData.TUMLiveContext.Course.Model.ID}}; $el.reset()">
     <div class="col-span-full flex gap-3">
         <label>
