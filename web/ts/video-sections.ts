@@ -14,12 +14,7 @@ export abstract class VideoSectionList {
         this.streamId = streamId;
         this.list = [];
         this.currentHighlightIndex = -1;
-
         DataStore.videoSections.subscribe(this.streamId, (data) => this.onUpdate(data));
-    }
-
-    async fetch() {
-
     }
 
     private onUpdate(data: Section[]) {
