@@ -12,7 +12,7 @@ export class BookmarkController {
     private readonly streamId: number;
     private list: Bookmark[];
     private elem: HTMLElement;
-    private unsub: Function;
+    private unsub: () => void;
 
     constructor(streamId: number) {
         this.streamId = streamId;
@@ -22,12 +22,13 @@ export class BookmarkController {
         if (BookmarkController.initiatedInstances[key]) {
             (await BookmarkController.initiatedInstances[key]).unsub();
         }
-        BookmarkController.initiatedInstances[key] = new Promise<BookmarkController>(async (resolve) => {
+        BookmarkController.initiatedInstances[key] = new Promise<BookmarkController>((resolve) => {
             this.elem = element;
             const callback = (data) => this.onUpdate(data);
-            await DataStore.bookmarks.subscribe(this.streamId, callback);
-            this.unsub = () => DataStore.bookmarks.unsubscribe(this.streamId, callback);
-            resolve(this);
+            DataStore.bookmarks.subscribe(this.streamId, callback).then(() => {
+                this.unsub = () => DataStore.bookmarks.unsubscribe(this.streamId, callback);
+                resolve(this);
+            });
         });
     }
 

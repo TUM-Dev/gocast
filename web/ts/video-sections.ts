@@ -127,7 +127,7 @@ export class VideoSectionsAdminController {
     unsavedChanges: boolean;
 
     private elem: HTMLElement;
-    private unsub: Function;
+    private unsub: () => void;
 
     constructor(streamId: number) {
         this.streamId = streamId;
@@ -143,12 +143,13 @@ export class VideoSectionsAdminController {
             (await VideoSectionsAdminController.initiatedInstances[key]).unsub();
         }
 
-        VideoSectionsAdminController.initiatedInstances[key] = new Promise<VideoSectionsAdminController>(async (resolve) => {
+        VideoSectionsAdminController.initiatedInstances[key] = new Promise<VideoSectionsAdminController>((resolve) => {
             this.elem = element;
             const callback = (data) => this.onUpdate(data);
-            await DataStore.videoSections.subscribe(this.streamId, callback);
-            this.unsub = () => DataStore.videoSections.unsubscribe(this.streamId, callback);
-            resolve(this);
+            DataStore.videoSections.subscribe(this.streamId, callback).then(() => {
+                this.unsub = () => DataStore.videoSections.unsubscribe(this.streamId, callback);
+                resolve(this);
+            });
         });
     }
 
