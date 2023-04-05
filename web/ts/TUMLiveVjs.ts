@@ -1,7 +1,7 @@
 import { getQueryParam, keepQuery, postData, Time } from "./global";
 import { VideoSectionList } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
-import videojs from "video.js";
+import videojs, { VideoJsPlayer } from "video.js";
 import airplay from "@silvermine/videojs-airplay";
 import { loadAndSetTrackbars } from "./track-bars";
 
@@ -14,9 +14,9 @@ require("videojs-contrib-quality-levels");
 
 const Button = videojs.getComponent("Button");
 
-const players = [];
+const players: VideoJsPlayer[] = [];
 
-export function getPlayers() {
+export function getPlayers(): VideoJsPlayer[] {
     return players;
 }
 
