@@ -497,7 +497,7 @@ export function showHideUnits(id: number) {
     }
 }
 
-export function createLectureForm() {
+export function createLectureForm(args: { s: [] }) {
     return {
         formData: {
             title: "",
@@ -515,9 +515,21 @@ export function createLectureForm() {
             recurringDates: [],
             file: null,
         },
+        streams: args.s,
         loading: false,
         error: false,
         courseID: -1,
+        invalidReason: "",
+        validateForm() {
+            this.invalidReason = "";
+            const hasDupes =
+                this.streams.filter((s) => {
+                    return s == this.formData.start;
+                }).length !== 0;
+            if (hasDupes) {
+                this.invalidReason = "A lecture on this date and time already exists.";
+            }
+        },
         regenerateRecurringDates() {
             const result = [];
             if (this.formData.start != "") {

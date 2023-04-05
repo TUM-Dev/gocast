@@ -64,6 +64,35 @@
             </div>
 
             <div class="flex items-center justify-end h-8">
+                <!-- generate subtitles button -->
+                <div class="relative mr-2" x-data="{'showLanguageSelect': false}">
+                    <button @click="showLanguageSelect = !showLanguageSelect"
+                            @click.outside="showLanguageSelect = false"
+                            class="text-4 hover:text-3 text-lg" title="Generate subtitles">
+                        <i class="fa-solid fa-closed-captioning"></i>
+                    </button>
+                    <div x-show="showLanguageSelect"
+                         class="absolute w-56 pb-3 top-full z-40 rounded-lg bg-white border shadow
+                         dark:bg-secondary-light dark:border-gray-600 dark:shadow-0">
+                        <div class="border-b dark:border-gray-600 px-2 py-1">
+                            <span class="text-xs text-3">Generate subtitles</span>
+                        </div>
+                        <div class="pt-3">
+                            <button @click="await admin.requestSubtitles(lecture.lectureId, 'de')"
+                                    class="flex items-center justify-start
+                                    py-1 px-2 text-3 w-full hover:bg-gray-200 hover:dark:bg-gray-600">
+                                <i class = "text-lg w-8">🇩🇪</i>
+                                <span class = "font-light text-sm ">German</span>
+                            </button>
+                            <button @click="await admin.requestSubtitles(lecture.lectureId, 'en')"
+                                    class="flex items-center justify-start
+                                    py-1 px-2 text-3 w-full hover:bg-gray-200 hover:dark:bg-gray-600">
+                                <i class = "text-lg w-8">🇬🇧</i>
+                                <span class = "font-light text-sm ">English</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <template x-if="lecture.files && lecture.files.length > 0">
                     <span class="relative mr-2" x-data="{expand:false}">
                         <button @click="expand=!expand" type="button"

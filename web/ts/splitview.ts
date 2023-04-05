@@ -2,6 +2,8 @@ import { getPlayers } from "./TUMLiveVjs";
 import Split from "split.js";
 import { cloneEvents } from "./global";
 
+const mouseMovingTimeout = 2200;
+
 export class SplitView {
     private camPercentage: number;
     private players: any[];
@@ -9,8 +11,11 @@ export class SplitView {
     private gutterWidth = 10;
     private isFullscreen = false;
     private splitParent: HTMLElement;
+    private videoWrapper: HTMLElement;
+    private videoWrapperResizeObs: ResizeObserver;
 
     showSplitMenu: boolean;
+    mouseMoving: boolean;
 
     static Options = {
         FullPresentation: 0,
@@ -23,8 +28,13 @@ export class SplitView {
     constructor() {
         this.camPercentage = SplitView.Options.FocusPresentation;
         this.showSplitMenu = false;
+        this.mouseMoving = false;
         this.players = getPlayers();
         this.splitParent = document.querySelector("#video-pres-wrapper").parentElement;
+        this.videoWrapper = document.querySelector(".splitview-wrap");
+        this.videoWrapperResizeObs = new ResizeObserver(() => this.onVideoWrapperResize());
+        this.videoWrapperResizeObs.observe(this.videoWrapper);
+        this.detectMouseNotMoving();
 
         this.players[0].ready(() => {
             this.setTrackBarModes(0, "disabled");
@@ -46,6 +56,33 @@ export class SplitView {
             onDrag(sizes: number[]) {
                 that.updateControlBarSize(sizes);
             },
+        });
+    }
+
+    onVideoWrapperResize() {
+        this.updateControlBarSize(this.getSizes());
+    }
+
+    updateMouseMoving(isMoving: boolean) {
+        if (isMoving != this.mouseMoving) {
+            this.mouseMoving = isMoving;
+            this.videoWrapper.dispatchEvent(new CustomEvent("updateMouseMoving", { detail: this.mouseMoving }));
+        }
+    }
+
+    detectMouseNotMoving() {
+        let mouseNotMovingTimeout;
+        this.videoWrapper.addEventListener("mousemove", (e) => {
+            this.updateMouseMoving(true);
+
+            clearTimeout(mouseNotMovingTimeout);
+            mouseNotMovingTimeout = setTimeout(() => {
+                this.updateMouseMoving(false);
+            }, mouseMovingTimeout);
+        });
+        this.videoWrapper.addEventListener("mouseleave", (e) => {
+            clearTimeout(mouseNotMovingTimeout);
+            this.updateMouseMoving(false);
         });
     }
 
@@ -80,27 +117,32 @@ export class SplitView {
         const mainControlBarElem = this.players[1].controlBar.el();
         mainControlBarElem.style.position = "absolute";
         mainControlBarElem.style.zIndex = "1";
-        mainControlBarElem.style.width = "100vw";
 
         this.updateControlBarSize(this.getSizes());
     }
 
     private updateControlBarSize(sizes: number[]) {
-        let newSize;
+        const wrapperSize = this.videoWrapper.getBoundingClientRect().width;
+
+        let marginLeft;
         if (this.isFullscreen) {
-            newSize = "0";
+            marginLeft = "0";
         } else if (sizes[0] === 100) {
-            newSize = `calc(${this.gutterWidth / 2}px - 100vw)`;
+            marginLeft = `${this.gutterWidth / 2 - wrapperSize}px`; //`calc(${this.gutterWidth / 2}px - 100vw)`;
         } else if (sizes[0] === 0) {
-            newSize = `-${this.gutterWidth / 2}px`;
+            marginLeft = `-${this.gutterWidth / 2}px`;
         } else {
-            newSize = `-${sizes[0]}vw`;
+            const leftContainerWidth = (sizes[0] * wrapperSize) / 100;
+            marginLeft = `-${leftContainerWidth}px`;
         }
 
-        this.players[1].controlBar.el_.style.marginLeft = newSize;
+        const mainControlBarElem = this.players[1].controlBar.el();
+        mainControlBarElem.style.marginLeft = marginLeft;
+        mainControlBarElem.style.width = `${wrapperSize}px`;
+
         const textTrackDisplay = this.players[1].el_.querySelector(".vjs-text-track-display");
         if (textTrackDisplay) {
-            textTrackDisplay.style.left = newSize;
+            textTrackDisplay.style.left = marginLeft;
         }
     }
 

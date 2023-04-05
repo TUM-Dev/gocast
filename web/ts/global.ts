@@ -310,6 +310,9 @@ export class Time {
     }
 
     private static padZero(i: string | number) {
+        if (typeof i === "string") {
+            i = parseInt(i);
+        }
         if (i < 10) {
             i = "0" + i;
         }
@@ -345,4 +348,16 @@ export function cloneEvents(srcElem: HTMLElement, destElem: HTMLElement, events:
             destElem.dispatchEvent(clonedEvent);
         });
     }
+}
+
+export function getKatexOptions() {
+    return {
+        delimiters: [
+            { left: "$$", right: "$$", display: true },
+            { left: "$", right: "$", display: false },
+            { left: "\\(", right: "\\)", display: false },
+            { left: "\\[", right: "\\]", display: true },
+        ],
+        throwOnError: false,
+    };
 }

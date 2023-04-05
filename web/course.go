@@ -3,11 +3,12 @@ package web
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
+	"net/http"
+
 	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
-	"html/template"
-	"net/http"
 
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
@@ -167,6 +168,13 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 	}
 
 	tumLiveContext.Course.Streams = streamsWithWatchState // Update the course streams to contain the watch state.
+
+	for i := range tumLiveContext.Course.Streams {
+		err = tools.SetSignedPlaylists(&tumLiveContext.Course.Streams[i], tumLiveContext.User)
+		if err != nil {
+			log.WithError(err).Warn("Can't sign playlists")
+		}
+	}
 
 	// watchedStateData is used by the client to track the which VoDs are watched.
 	type watchedStateData struct {

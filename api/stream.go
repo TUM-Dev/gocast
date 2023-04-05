@@ -4,21 +4,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/getsentry/sentry-go"
-	"github.com/gin-gonic/gin"
-	"github.com/joschahenningsen/TUM-Live/dao"
-	"github.com/joschahenningsen/TUM-Live/model"
-	"github.com/joschahenningsen/TUM-Live/tools"
-	"github.com/joschahenningsen/TUM-Live/tools/bot"
-	uuid "github.com/satori/go.uuid"
-	log "github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/getsentry/sentry-go"
+	"github.com/gin-gonic/gin"
+	"github.com/joschahenningsen/TUM-Live/dao"
+	"github.com/joschahenningsen/TUM-Live/model"
+	"github.com/joschahenningsen/TUM-Live/tools"
+	"github.com/joschahenningsen/TUM-Live/tools/bot"
+	"github.com/joschahenningsen/TUM-Live/voice-service/pb"
+	uuid "github.com/satori/go.uuid"
+	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 const (
@@ -62,6 +64,11 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			{
 				files.POST("", routes.newAttachment)
 				files.DELETE("/:fid", routes.deleteAttachment)
+			}
+
+			subtitles := admins.Group("subtitles")
+			{
+				subtitles.POST("", routes.requestSubtitles)
 			}
 		}
 	}
@@ -324,6 +331,11 @@ func (r streamRoutes) RegenerateThumbs(c *gin.Context) {
 				log.WithError(err).Errorf("Can't get video sections for stream %d", stream.ID)
 				continue
 			}
+			err = tools.SetSignedPlaylists(stream, nil)
+			if err != nil {
+				log.WithError(err).Errorf("Can't set signed playlists for stream %d", stream.ID)
+				continue
+			}
 			// Completely redo the video section image generation. This also updates the database, if the naming scheme has changed.
 			go func() {
 				parameters := generateVideoSectionImagesParameters{
@@ -344,6 +356,7 @@ func (r streamRoutes) RegenerateThumbs(c *gin.Context) {
 
 func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 	context := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	stream := context.Stream
 	var sections []model.VideoSection
 	if err := c.BindJSON(&sections); err != nil {
 		log.WithError(err).Error("failed to bind video section JSON")
@@ -377,10 +390,20 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 		return
 	}
 
+	err = tools.SetSignedPlaylists(stream, nil)
+	if err != nil {
+		log.WithError(err).Error("failed to set signed playlists")
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "failed to set signed playlists",
+			Err:           err,
+		})
+		return
+	}
 	go func() {
 		parameters := generateVideoSectionImagesParameters{
 			sections:           sections,
-			playlistUrl:        context.Stream.PlaylistUrl,
+			playlistUrl:        stream.PlaylistUrl,
 			courseName:         context.Course.Name,
 			courseTeachingTerm: context.Course.TeachingTerm,
 			courseYear:         uint32(context.Course.Year),
@@ -617,6 +640,83 @@ func (r streamRoutes) deleteAttachment(c *gin.Context) {
 		})
 		return
 	}
+}
+
+func (r streamRoutes) requestSubtitles(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	stream := tumLiveContext.Stream
+
+	type subtitleRequest struct {
+		Language string `json:"language"`
+	}
+
+	var request subtitleRequest
+	err := c.BindJSON(&request)
+	if err != nil {
+		sentry.CaptureException(err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
+		return
+	}
+
+	err = tools.SetSignedPlaylists(stream, tumLiveContext.User)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not create signed stream playlists",
+			Err:           err,
+		})
+		return
+	}
+
+	playlist := ""
+	if stream.PlaylistUrl != "" {
+		playlist = stream.PlaylistUrl
+	} else if stream.PlaylistUrlCAM != "" {
+		playlist = stream.PlaylistUrlCAM
+	} else if stream.PlaylistUrlPRES != "" {
+		playlist = stream.PlaylistUrlPRES
+	} else {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "no playlist found",
+		})
+		return
+	}
+
+	// request to voice-service for subtitles
+	client, err := GetSubtitleGeneratorClient()
+	if err != nil {
+		sentry.CaptureException(err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "could not connect to voice-service",
+			Err:           err,
+		})
+		return
+	}
+	defer client.CloseConn()
+
+	_, err = client.Generate(context.Background(), &pb.GenerateRequest{
+		StreamId:   int32(stream.ID),
+		SourceFile: playlist,
+		Language:   request.Language,
+	})
+	if err != nil {
+		sentry.CaptureException(err)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "could not call generate on voice_client",
+			Err:           err,
+		})
+		return
+	}
+
+	c.Status(http.StatusCreated)
 }
 
 func (r streamRoutes) updateStreamVisibility(c *gin.Context) {

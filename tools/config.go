@@ -131,13 +131,13 @@ type Config struct {
 		UseForLogin bool   `yaml:"useForLogin"`
 	} `yaml:"ldap"`
 	Saml *struct {
-		IdpMetadataURL string `yaml:"idpMetadataURL"`
-		Cert           string `yaml:"cert"`
-		Privkey        string `yaml:"privkey"`
-		EntityID       string `yaml:"entityID"`
-		RootURL        string `yaml:"rootURL"`
-		IdpName        string `yaml:"idpName"`
-		IdpColor       string `yaml:"idpColor"`
+		IdpMetadataURL string   `yaml:"idpMetadataURL"`
+		Cert           string   `yaml:"cert"`
+		Privkey        string   `yaml:"privkey"`
+		EntityID       string   `yaml:"entityID"`
+		RootURLs       []string `yaml:"rootURL"`
+		IdpName        string   `yaml:"idpName"`
+		IdpColor       string   `yaml:"idpColor"`
 	} `yaml:"saml"`
 	Paths struct {
 		Static   string `yaml:"static"`
@@ -159,6 +159,10 @@ type Config struct {
 			AlertRoomID string `yaml:"alertRoomId"`
 		} `yaml:"matrix"`
 	} `yaml:"alerts"`
+	VoiceService *struct {
+		Host string `yaml:"host"`
+		Port string `yaml:"port"`
+	}
 	IngestBase  string  `yaml:"ingestBase"`
 	WebUrl      string  `yaml:"webUrl"`
 	WorkerToken string  `yaml:"workerToken"` // used for workers to join the worker pool

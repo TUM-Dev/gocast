@@ -74,7 +74,9 @@ ldap:
 #  cert: fullchain.pem
 #  privkey: privkey.pem
 #  entityID: https://live.rbg.tum.de/shib
-#  rootURL: https://live.rbg.tum.de/shib
+#  rootURLs:
+#   - https://live.rbg.tum.de/shib
+#   - https://localhost/shib
 lrz:
   email: erika.mustermann@example.com
   name: Erika Mustermann
@@ -90,6 +92,9 @@ paths:
   mass: /mass
   static: /var/www/static
   branding: /branding
+voiceservice:
+  host: localhost
+  port: 50055
 weburl: https://live.rbg.tum.de
 workertoken: abc
 meili:

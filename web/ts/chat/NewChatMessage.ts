@@ -1,17 +1,16 @@
 import { sendMessage } from "../watch";
 import { getCurrentWordPositions } from "./misc";
+import { Chat, ChatMessage } from "./Chat";
 
 export class NewChatMessage {
     message: string;
-    replyTo: number;
+    reply: NewReply;
     anonymous: boolean;
     addressedTo: ChatUser[];
 
     constructor() {
-        this.message = "";
-        this.replyTo = 0;
         this.anonymous = false;
-        this.addressedTo = [];
+        this.clear();
     }
 
     send(): void {
@@ -21,8 +20,24 @@ export class NewChatMessage {
 
     clear(): void {
         this.message = "";
-        this.replyTo = 0;
+        this.reply = NewReply.NoReply;
         this.addressedTo = [];
+    }
+
+    setReply(m: ChatMessage) {
+        this.reply = new NewReply(m);
+    }
+
+    cancelReply() {
+        this.reply = NewReply.NoReply;
+    }
+
+    showReplyMenu() {
+        return !this.reply.isNoReply();
+    }
+
+    showReplyButton(messageId: number): boolean {
+        return this.reply.isNoReply() || this.reply.id !== messageId;
     }
 
     isEmpty(): boolean {
@@ -55,3 +70,19 @@ export type ChatUser = {
     id: number;
     name: string;
 };
+
+export class NewReply {
+    message: ChatMessage;
+    id: number;
+
+    static NoReply = new NewReply({ ID: 0 } as ChatMessage);
+
+    constructor(message: ChatMessage) {
+        this.message = message;
+        this.id = message.ID;
+    }
+
+    isNoReply(): boolean {
+        return this.id === 0;
+    }
+}

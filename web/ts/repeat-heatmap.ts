@@ -1,35 +1,13 @@
-import { getPlayers } from "./TUMLiveVjs";
 import { Get } from "./global";
 
 const repeatMapScale = 90;
 
 export const repeatHeatMap = {
-    seekBarWrap: null,
+    streamID: null,
 
     init(streamID: number) {
         this.streamID = streamID;
         setTimeout(() => this.updateHeatMap(), 0);
-
-        const player = [...getPlayers()].pop();
-        player.ready(() => {
-            this.seekBarWrap = player.el().querySelector(".vjs-progress-control");
-            this.injectElementIntoVjs();
-
-            new ResizeObserver(this.updateSize.bind(this)).observe(this.seekBarWrap);
-            this.updateSize();
-        });
-    },
-
-    injectElementIntoVjs() {
-        const heatmap = document.querySelector(".heatmap-wrap");
-        this.seekBarWrap.append(heatmap);
-    },
-
-    updateSize() {
-        const event = new CustomEvent("updateheatmapsize", {
-            detail: this.getSeekbarInfo(),
-        });
-        window.dispatchEvent(event);
     },
 
     valuesToArray(listOfChunkValues) {
@@ -77,19 +55,5 @@ export const repeatHeatMap = {
         res += ` C 1001.0,${lastVal} 1000.0,${slope} 1000.0,100.0`;
 
         return res;
-    },
-
-    getSeekbarInfo() {
-        const seekBar = this.seekBarWrap.querySelector(".vjs-progress-holder");
-        if (!seekBar) {
-            return { x: "0px", width: "0px" };
-        }
-
-        const marginLeft = window.getComputedStyle(seekBar).marginLeft;
-        const width = seekBar.getBoundingClientRect().width;
-        return {
-            x: marginLeft,
-            width: width + "px",
-        };
     },
 };

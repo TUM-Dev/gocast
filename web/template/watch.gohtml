@@ -99,7 +99,13 @@
                     <i class="fas fa-info-circle mr-3"></i> This livestream has ended.
                 </div>
                 {{if (eq .Version "SPLIT")}}
-                    <div x-data="{splitView: new watch.SplitView()}" @mouseleave="splitView.hideMenu()" class="group relative flex w-full h-full">
+                    <div
+                        x-data="{splitView: new watch.SplitView(), mouseMoving: false}"
+                        @mouseleave="splitView.hideMenu()"
+                        @update-mouse-moving.camel="(e) => mouseMoving = e.detail"
+                        :class="mouseMoving && 'mouse-moving'"
+                        class="splitview-wrap group relative flex w-full h-full"
+                    >
                         <div class="hidden group-hover:flex absolute left-1 top-1 z-40">
                             <button x-cloak x-show="!splitView.showSplitMenu" @click="splitView.toggleMenu()"
                                     class="flex items-center justify-center w-8 h-8 rounded-full"
@@ -224,27 +230,64 @@
             {{end}}
 
             <div
-                    x-data="{ size: { x: '0px', width: '0px' }, seekLogger: new watch.SeekLogger('{{$stream.ID}}'), heatMapPath: null }"
-                    x-on:updateheatmappath.window="e => { heatMapPath = e.detail.heatMapPath; }"
-                    x-on:updateheatmapsize.window="e => { size = e.detail; }"
-                    x-init="seekLogger.attach(); watch.repeatHeatMap.init('{{$stream.ID}}');"
-                    class="heatmap-wrap absolute bottom-[18px] rounded bg-gradient-to-t from-gray-800/[.6] pt-4 pointer-events-none"
+                    x-data="{ size: { x: '0px', width: '0px' }, hoverPos: -1 }"
+                    x-on:updateseekbarsize.window="e => { size = e.detail; }"
+                    x-on:seekbarhover.window="e => { hoverPos = e.detail; }"
+                    x-init="watch.seekbarOverlay.init('{{$stream.ID}}');"
+                    class="seekbar-overlay absolute bottom-[18px] bg-gradient-to-t from-gray-800/[.6] pt-4 pointer-events-none"
                     :style="{width: size.width, left: size.x}"
-                    x-show="heatMapPath != null"
             >
-                <template x-if="heatMapPath">
-                    <svg height="100%" preserveAspectRatio="none" viewBox="0 0 1000 100"
-                         width="100%" style="height: 30px;">
-                        <defs>
-                            <clipPath id="heatmap">
-                                <path class="tumlive-heat-map-path"
-                                      :d="heatMapPath"
-                                      fill="white" fill-opacity="0.6"></path>
-                            </clipPath>
-                        </defs>
-                        <rect clip-path="url(#heatmap)" fill="white" fill-opacity="0.4" height="100%" width="100%" x="0" y="0"></rect>
-                    </svg>
-                </template>
+
+                <div
+                        x-data="{ seekLogger: new watch.SeekLogger('{{$stream.ID}}'), heatMapPath: null }"
+                        x-on:updateheatmappath.window="e => { heatMapPath = e.detail.heatMapPath; }"
+                        x-on:updateseekbarsize.window="e => { size = e.detail; }"
+                        x-init="seekLogger.attach(); watch.repeatHeatMap.init('{{$stream.ID}}');"
+                        class="absolute h-[30px] bottom-0 left-0 right-0"
+                        x-show="heatMapPath != null"
+                >
+                    <template x-if="heatMapPath">
+                        <svg height="100%" preserveAspectRatio="none" viewBox="0 0 1000 100"
+                             width="100%" style="height: 30px;">
+                            <defs>
+                                <clipPath id="heatmap">
+                                    <path class="tumlive-heat-map-path"
+                                          :d="heatMapPath"
+                                          fill="white" fill-opacity="0.6"></path>
+                                </clipPath>
+                            </defs>
+                            <rect clip-path="url(#heatmap)" fill="white" fill-opacity="0.4" height="100%" width="100%" x="0" y="0"></rect>
+                        </svg>
+                    </template>
+                </div>
+
+                <div
+                        x-data="{ seekbarMarker: [], seekbarSections: [] }"
+                        class="absolute h-[30px] bottom-0 left-0 right-0"
+                        x-on:seekbarhighlightsupdate.window="e => { seekbarMarker = e.detail.marker; seekbarSections = e.detail.sections; }"
+                        x-init="watch.seekbarHighlights.init('{{$stream.ID}}');"
+                >
+                    <template x-for="marker in seekbarMarker">
+                        <div class="absolute bg-gradient-to-t from-black bottom-0 top-0 w-[2px] rounded-t" :style="{ left: `${marker.position * 100}%` }"></div>
+                    </template>
+
+                    <template x-for="section in seekbarSections">
+                        <div>
+                            <div
+                                class="absolute border-x-2 border-t-2 bottom-0 top-0 rounded-t"
+                                :class="(section.from <= hoverPos && section.to > hoverPos) ? 'bg-white/10 border-white/[.02]' : 'bg-black/20 border-transparent'"
+                                :style="{ left: `${section.from * 100}%`, right: `${(1 - section.to) * 100}%` }"
+                            ></div>
+                            <div
+                                    x-show="section.from <= hoverPos && section.to > hoverPos"
+                                    class="absolute top-[-45px] text-center w-[100px] bg-black/[0.9] ml-[-50px] px-[12px] py-2 rounded"
+                                    :style="{ left: `${(section.from + (section.to - section.from) / 2) * 100}%` }"
+                            >
+                                <span class="size1" x-text="section.title"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
             </div>
 
             <div

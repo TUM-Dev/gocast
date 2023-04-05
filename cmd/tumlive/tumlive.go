@@ -193,6 +193,10 @@ func main() {
 		log.Fatalf("%v", err)
 	}
 	dao.Cache = *cache
+
+	// init meili search index settings
+	go tools.NewMeiliExporter(dao.NewDaoWrapper()).SetIndexSettings()
+
 	initCron()
 	go func() {
 		err = GinServer()
@@ -218,6 +222,10 @@ func initCron() {
 	_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyWorkers(daoWrapper), "0-59 * * * *")
 	// update courses available
 	_ = tools.Cron.AddFunc("prefetchCourses", tum.PrefetchCourses(daoWrapper), "30 3 * * *")
+	// export data to meili search
+	_ = tools.Cron.AddFunc("exportToMeili", tools.NewMeiliExporter(daoWrapper).Export, "30 4 * * *")
+	// fetch live stream previews
+	_ = tools.Cron.AddFunc("fetchLivePreviews", api.FetchLivePreviews(daoWrapper), "*/1 * * * *")
 	tools.Cron.Run()
 }
 
