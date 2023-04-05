@@ -3,9 +3,11 @@ import { getPlayers } from "./TUMLiveVjs";
 import { AddBookmarkRequest, Bookmark, UpdateBookmarkRequest } from "./data-store/bookmarks";
 import { DataStore } from "./data-store/data-store";
 
-
 export class BookmarkController {
-    static initiatedInstances: Map<string, Promise<BookmarkController>> = new Map<string, Promise<BookmarkController>>();
+    static initiatedInstances: Map<string, Promise<BookmarkController>> = new Map<
+        string,
+        Promise<BookmarkController>
+    >();
 
     private readonly streamId: number;
     private list: Bookmark[];
@@ -42,9 +44,8 @@ export class BookmarkController {
     }
 
     onUpdate(data: Bookmark[]) {
-        console.log("New bookmarks ...", data);
         this.list = data;
-        this.elem.dispatchEvent(new CustomEvent('update', { detail: this.list }));
+        this.elem.dispatchEvent(new CustomEvent("update", { detail: this.list }));
     }
 }
 

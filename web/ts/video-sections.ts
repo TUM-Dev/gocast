@@ -1,7 +1,7 @@
 import { Section, Time } from "./global";
 import { DataStore } from "./data-store/data-store";
 import { UpdateVideoSectionRequest } from "./data-store/video-sections";
-import {Bookmark} from "./data-store/bookmarks";
+import { Bookmark } from "./data-store/bookmarks";
 
 export abstract class VideoSectionList {
     private streamId: number;
@@ -113,7 +113,12 @@ export class VideoSectionsDesktop extends VideoSectionList {
  * Admin Page VideoSection Management
  * @category admin-page
  */
-export class VideoSectionsAdmin {
+export class VideoSectionsAdminController {
+    static initiatedInstances: Map<string, Promise<VideoSectionsAdminController>> = new Map<
+        string,
+        Promise<VideoSectionsAdminController>
+    >();
+
     private readonly streamId: number;
 
     existingSections: Section[];
@@ -121,7 +126,8 @@ export class VideoSectionsAdmin {
     current: Section;
     unsavedChanges: boolean;
 
-    private listener;
+    private elem: HTMLElement;
+    private unsub: Function;
 
     constructor(streamId: number) {
         this.streamId = streamId;
@@ -130,16 +136,25 @@ export class VideoSectionsAdmin {
         this.existingSections = [];
         this.unsavedChanges = false;
         this.resetCurrent();
-
-        DataStore.videoSections.subscribe(this.streamId, (data) => this.onUpdate(data));
     }
 
-    async fetch() {
+    async init(key: string, element: HTMLElement) {
+        if (VideoSectionsAdminController.initiatedInstances[key]) {
+            (await VideoSectionsAdminController.initiatedInstances[key]).unsub();
+        }
 
+        VideoSectionsAdminController.initiatedInstances[key] = new Promise<VideoSectionsAdminController>(async (resolve) => {
+            this.elem = element;
+            const callback = (data) => this.onUpdate(data);
+            await DataStore.videoSections.subscribe(this.streamId, callback);
+            this.unsub = () => DataStore.videoSections.unsubscribe(this.streamId, callback);
+            resolve(this);
+        });
     }
 
     onUpdate(data: Section[]) {
         this.existingSections = data;
+        this.elem.dispatchEvent(new CustomEvent("update", { detail: this.existingSections }));
     }
 
     pushNewSection() {
