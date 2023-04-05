@@ -1,13 +1,14 @@
 {{define "source-settings"}}
-    <div x-cloak x-data="{halls: [], changed: false}"
+    <div x-cloak x-data="{halls: [], changed: false}" class="px-5 py-3"
          x-init="fetch(`/api/lecture-halls-by-id?id=${document.getElementById('courseID').value}`).then(r=>r.json()).then(d=>halls=d)">
         <template x-if="halls !== null && halls.length > 0">
             <template x-for="hall in halls">
                 <div x-data="{selected_preset: undefined, selected_preset_name: ''}" class="ml-2"
-                        x-init="selected_preset = hall.presets.find(e => e.PresetID==hall.selected_preset_id); selected_preset_name = selected_preset in window ? '' : selected_preset.Name"
-                        @reinit.window="selected_preset = hall.presets.find(e => e.PresetID==hall.selected_preset_id); selected_preset_name = selected_preset in window ? '' : selected_preset.Name">
+                     x-init="selected_preset = hall.presets.find(e => e.PresetID==hall.selected_preset_id); selected_preset_name = selected_preset in window ? '' : selected_preset.Name"
+                     @reinit.window="selected_preset = hall.presets.find(e => e.PresetID==hall.selected_preset_id); selected_preset_name = selected_preset in window ? '' : selected_preset.Name">
                     <div class="flex justify-between mt-2">
-                        <p class="font-semibold px-1 my-auto dark:text-white w-full" x-text="hall.lecture_hall_name"></p>
+                        <p class="font-semibold px-1 my-auto dark:text-white w-full"
+                           x-text="hall.lecture_hall_name"></p>
                         <select class="tl-select mx-2"
                                 id="sourceModeBulkSelect"
                                 @change="changed=true;"
@@ -47,8 +48,9 @@
             </template>
         </template>
         <button x-cloak x-show="changed" class="bg-secondary-lighter rounded px-4 py-2 font-semibold text-white"
-            @click="fetch(`/api/course/${document.getElementById('courseID').value}/presets`, {method:'POST',  body:JSON.stringify(halls)}).then();changed=false;$dispatch('reinit')">
-            Save Presets</button>
+                @click="fetch(`/api/course/${document.getElementById('courseID').value}/presets`, {method:'POST',  body:JSON.stringify(halls)}).then();changed=false;$dispatch('reinit')">
+            Save Presets
+        </button>
         <template x-if="halls === null || halls.length === 0">
             <i class="text-5">No lecture halls found for this course.</i>
         </template>

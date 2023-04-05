@@ -97,6 +97,10 @@
         @apply text-gray-500 dark:hover:text-white hover:text-black hover:underline;
     }
 
+    .btn:disabled {
+        @apply dark:text-gray-400 dark:hover:bg-gray-600 dark:bg-gray-600 text-gray-500 hover:bg-gray-200 bg-gray-200;
+    }
+
     .form-container {
         @apply mx-auto w-full md:w-4/5 my-2 md:my-10 shadow rounded-lg border bg-white dark:border-gray-800 dark:bg-secondary-light;
     }
@@ -126,12 +130,20 @@
     }
 
     .primary {
-        @apply bg-blue-500 hover:bg-blue-600 dark:bg-indigo-600 dark:hover:bg-indigo-800;
+        @apply bg-blue-500 text-white hover:bg-blue-600 dark:bg-indigo-600 dark:hover:bg-indigo-800;
     }
 }
 
 .tl-select {
     @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm cursor-pointer;
+}
+
+.tl-textarea {
+    @apply w-full px-3 py-2 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm;
+}
+
+.tl-presetimage {
+    @apply border dark:border-slate-400 border-slate-500 rounded-lg;
 }
 
 .tl-input {
@@ -151,7 +163,7 @@
 }
 
 .container {
-    @apply mt-4;
+   @apply mt-4;
 }
 
 @import "tailwindcss/components";

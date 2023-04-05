@@ -2,116 +2,120 @@
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
 {{$course := .IndexData.TUMLiveContext.Course}}
 <form class="form-container-body grid grid-cols-2" method="post" action="/api/createLecture"
-	x-data="admin.createLectureForm({ s: {{toJson ($course.StreamTimes)}} })" @submit.prevent="submitData"
-	x-init="courseID = {{.IndexData.TUMLiveContext.Course.Model.ID}}; $el.reset()">
-	<div class="col-span-full flex gap-3">
-		<label>
-			<input type="checkbox" x-model="formData.vodup" @change="(v) => v && (formData.recurring = false)" class="w-auto">
-			<span class="text-3">VoD Upload</span>
-		</label>
-		<label>
-			<input type="checkbox" :disabled="formData.premiere || formData.vodup" x-model="formData.recurring"
-				class="w-auto">
-			<span class="text-3">Recurring Event</span>
-		</label>
-		<label x-show="{{$course.ChatEnabled}}">
-			<input type="checkbox" x-model="formData.isChatEnabled" x-init="formData.isChatEnabled = {{$course.ChatEnabled}}"
-				class="w-auto">
-			<span class="text-3">Enable Live Chat</span>
-		</label>
-	</div>
-	<label for="name" x-show="!loading">
-		<span class="text-sm text-5">Lecture Name</span>
-		<input class="tl-input" name="name" id="name" x-model="formData.title" placeholder="L01: Binary Trees" />
-	</label>
-	<label for="start" x-show="!loading">
-		<span class="text-sm text-5">Start (required)</span>
-		<input class="tl-input" name="start" placeholder="2021-04-08 14:00" id="start" x-model="formData.start" required
-			x-ref="start" @change="() => setTimeout(() => {validateForm(); regenerateRecurringDates(); recalculateDuration(); }, 100)"
-			x-init="flatpickr($refs.start, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})" />
-	</label>
-	<label x-show="!formData.premiere && !formData.vodup && !loading" for="end">
-		<span class="text-sm text-5">End</span>
-		<span x-show="formData.formatedDuration != ''" class="text-sm font-light opacity-75">
-			( <span x-text="formData.formatedDuration"></span> )
-		</span>
-		<input class="tl-input" name="end" placeholder="16:00" id="end" x-model="formData.end"
-			@change="() => setTimeout(() => recalculateDuration(), 100)" x-ref="end"
-			x-init="flatpickr($refs.end, {enableTime: true, noCalendar: true, dateFormat: 'H:i', time_24hr: true })" />
-	</label>
-	<label x-show="formData.premiere || formData.vodup && !loading">
-		<span class="text-sm text-5">Video File (mp4, if possible h264)</span>
-		<input type="file" accept="video/mp4" class="btn tl-choose-file"
-			x-on:change="formData.file = Object.values($event.target.files)">
-	</label>
-	<label x-show="!formData.premiere && !formData.vodup && !loading">
-		<span class="text-sm text-5">Lecture Hall</span>
-		<select class="tl-select" id="lectureHallBulkSelect" x-model="formData.lectureHallId">
-			<option class="text-gray-300" value="0">Self streaming
-			</option>
-			{{range .LectureHalls}}
-			<option value="{{.Model.ID}}" class="text-gray-300">
-				{{.Name}}
-			</option>
-			{{end}}
-		</select>
-	</label>
-	<div x-show="formData.recurring && !loading">
-		<h2 class="text-sm text-5">Interval</h2>
-		<label class="block">
-			<input type="radio" value="daily" x-model="formData.recurringInterval" class="w-auto"
-				@change="regenerateRecurringDates">
-			<span class="text-3">Repeat Daily</span>
-		</label>
-		<label class="block">
-			<input type="radio" value="weekly" x-model="formData.recurringInterval" class="w-auto"
-				@change="regenerateRecurringDates">
-			<span class="text-3">Repeat Weekly</span>
-		</label>
-		<label class="block">
-			<input type="radio" value="monthly" x-model="formData.recurringInterval" class="w-auto"
-				@change="regenerateRecurringDates">
-			<span class="text-3">Repeat Monthly</span>
-		</label>
-		<label for="events-count" class="">
-			<h2 class="text-sm text-5">Count</h2>
-			<input name="events-count" class="tl-input" type="number" placeholder="14" id="end" min="1"
-				x-model="formData.eventsCount" @change="regenerateRecurringDates" @keyup="regenerateRecurringDates" />
-		</label>
-		<span class="text-sm text-5">Dates</span>
-		<span x-show="formData.start == ''" class="ml-2 opacity-75">- Please set "start" first -</span>
-		<ul class="ml-2" x-show="formData.start != ''">
-			<li x-bind:style="{ 'cursor': 'default' }">
-				<i class="far fa-check-square"></i>
-				<span
-					x-text="(new Date(formData.start)).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
-			</li>
-			<template x-for="date in formData.recurringDates">
-				<li x-bind:style="{ 'cursor': 'pointer', 'opacity': date.enabled ? '1' : '0.3' }"
-					@click="() => (date.enabled = !date.enabled)">
-					<i x-show="date.enabled" class="far fa-check-square"></i>
-					<i x-show="!date.enabled" class="far fa-square"></i>
-					<span
-						x-text="date.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
-				</li>
-			</template>
-		</ul>
-	</div>
-	<div class="mt-4 col-span-full">
-		<div class="mb-4 w-full text-danger" x-show="invalidReason!==''" x-text="invalidReason"></div>
-		<button class="btn" type="submit" id="createLectureBtn" :disabled="invalidReason!==''">
-			<span x-show="!loading">
-				<span x-text="formData.recurring && formData.recurringDates.filter(({enabled}) => enabled).length > 0
-                                                        ? `Create ${(formData.recurringDates.filter(({enabled}) => enabled).length + 1).toString()} Lectures`
-                                                        : 'Create Lecture'"></span>
-			</span>
-			<span x-show="loading">
-				<i class="fas fa-circle-notch text-4 animate-spin"></i> <span
-					@voduploadprogress.window="(e) => progress=e.detail" x-data="{ progress: undefined }"
-					x-text="progress?progress+'%':'0%'"></span>
-			</span>
-		</button>
-		<span class="text-danger" x-show="error">Something went wrong.</span>
-	</div>
+      x-data="admin.createLectureForm()" @submit.prevent="submitData"
+      x-init="courseID = {{.IndexData.TUMLiveContext.Course.Model.ID}}; $el.reset()">
+    <div class="col-span-full flex gap-3">
+        <label>
+            <input type="checkbox" x-model="formData.vodup" @change="(v) => v && (formData.recurring = false)"
+                   class="w-auto">
+            <span class="text-3">VoD Upload</span>
+        </label>
+        <label>
+            <input type="checkbox" :disabled="formData.premiere || formData.vodup" x-model="formData.recurring"
+                   class="w-auto">
+            <span class="text-3">Recurring Event</span>
+        </label>
+        <label x-show="{{$course.ChatEnabled}}">
+            <input type="checkbox" x-model="formData.isChatEnabled"
+                   x-init="formData.isChatEnabled = {{$course.ChatEnabled}}"
+                   class="w-auto">
+            <span class="text-3">Enable Live Chat</span>
+        </label>
+    </div>
+    <label for="name" x-show="!loading">
+        <span class="text-sm text-5">Lecture Name</span>
+        <input class="tl-input" name="name" id="name" x-model="formData.title" placeholder="L01: Binary Trees"/>
+    </label>
+    <label x-show="!formData.premiere && !formData.vodup && !loading">
+        <span class="text-sm text-5">Lecture Hall</span>
+        <select class="tl-select" id="lectureHallBulkSelect" x-model="formData.lectureHallId">
+            <option class="text-gray-300" value="0">Self streaming
+            </option>
+            {{range .LectureHalls}}
+                <option value="{{.Model.ID}}" class="text-gray-300">
+                    {{.Name}}
+                </option>
+            {{end}}
+        </select>
+    </label>
+    <label for="start" x-show="!loading">
+        <span class="text-sm text-5">Start</span>
+        <input class="tl-input" name="start" placeholder="2021-04-08 14:00" id="start" x-model="formData.start"
+               x-ref="start"
+               @change="() => setTimeout(() => { regenerateRecurringDates(); recalculateDuration(); }, 100)"
+               x-init="flatpickr($refs.start, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z'})"/>
+    </label>
+    <label x-show="!formData.premiere && !formData.vodup && !loading" for="end">
+        <span class="text-sm text-5">End</span>
+        <span x-show="formData.formatedDuration != ''" class="text-sm font-light opacity-75">
+        ( <span x-text="formData.formatedDuration"></span> )
+    </span>
+        <input class="tl-input" name="end" placeholder="16:00" id="end" x-model="formData.end"
+               @change="() => setTimeout(() => recalculateDuration(), 100)" x-ref="end"
+               x-init="flatpickr($refs.end, {enableTime: true, noCalendar: true, dateFormat: 'H:i', time_24hr: true })"/>
+    </label>
+    <label x-show="formData.premiere || formData.vodup && !loading">
+        <span class="text-sm text-5">Video File (mp4, if possible h264)</span>
+        <input type="file" accept="video/mp4" class="btn tl-choose-file"
+               x-on:change="formData.file = Object.values($event.target.files)">
+    </label>
+
+    <div x-show="formData.recurring && !loading">
+        <h2 class="text-sm text-5">Interval</h2>
+        <label class="block">
+            <input type="radio" value="daily" x-model="formData.recurringInterval" class="w-auto"
+                   @change="regenerateRecurringDates">
+            <span class="text-3">Repeat Daily</span>
+        </label>
+        <label class="block">
+            <input type="radio" value="weekly" x-model="formData.recurringInterval" class="w-auto"
+                   @change="regenerateRecurringDates">
+            <span class="text-3">Repeat Weekly</span>
+        </label>
+        <label class="block">
+            <input type="radio" value="monthly" x-model="formData.recurringInterval" class="w-auto"
+                   @change="regenerateRecurringDates">
+            <span class="text-3">Repeat Monthly</span>
+        </label>
+        <label for="events-count" class="">
+            <h2 class="text-sm text-5">Count</h2>
+            <input name="events-count" class="tl-input" type="number" placeholder="14" id="end" min="1"
+                   x-model="formData.eventsCount" @change="regenerateRecurringDates"
+                   @keyup="regenerateRecurringDates"/>
+        </label>
+        <span class="text-sm text-5">Dates</span>
+        <span x-show="formData.start == ''" class="ml-2 opacity-75">- Please set "start" first -</span>
+        <ul class="ml-2" x-show="formData.start != ''">
+            <li x-bind:style="{ 'cursor': 'default' }">
+                <i class="far fa-check-square"></i>
+                <span
+                        x-text="(new Date(formData.start)).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
+            </li>
+            <template x-for="date in formData.recurringDates">
+                <li x-bind:style="{ 'cursor': 'pointer', 'opacity': date.enabled ? '1' : '0.3' }"
+                    @click="() => (date.enabled = !date.enabled)">
+                    <i x-show="date.enabled" class="far fa-check-square"></i>
+                    <i x-show="!date.enabled" class="far fa-square"></i>
+                    <span
+                            x-text="date.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></span>
+                </li>
+            </template>
+        </ul>
+    </div>
+    <div class="mt-4">
+        <button class="btn" type="submit" id="createLectureBtn">
+        <span x-show="!loading">
+            <span x-text="formData.recurring && formData.recurringDates.filter(({enabled}) => enabled).length > 0
+                                                    ? `Create ${(formData.recurringDates.filter(({enabled}) => enabled).length + 1).toString()} Lectures`
+                                                    : 'Create Lecture'"></span>
+        </span>
+            <span x-show="loading">
+            <i class="fas fa-circle-notch text-4 animate-spin"></i> <span
+                        @voduploadprogress.window="(e) => progress=e.detail" x-data="{ progress: undefined }"
+                        x-text="progress?progress+'%':'0%'"></span>
+        </span>
+        </button>
+        <span class="text-danger" x-show="error">Something went wrong.</span>
+    </div>
 </form>
 {{end}}
