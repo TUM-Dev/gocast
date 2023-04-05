@@ -86,6 +86,7 @@ func (s server) GenerateLivePreview(ctx context.Context, request *pb.LivePreview
 		"-i", request.HLSUrl,
 		"-vframes", "1",
 		"-update", "1",
+		"-vf", "scale=720:-1",
 		"-q:v", "1",
 		"-c:v", "mjpeg",
 		"-f", "mjpeg",

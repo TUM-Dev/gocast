@@ -833,12 +833,15 @@ func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWork
 		return err
 	}
 
-	file, err := os.Create(filepath.Join(os.TempDir(), fmt.Sprintf("%d.jpeg", s.ID)))
+	if err := os.MkdirAll(filepath.Join(os.TempDir(), "TUM-Live"), 0750); err != nil {
+		return err
+	}
+
+	file, err := os.Create(filepath.Join(os.TempDir(), "TUM-Live", fmt.Sprintf("%d.jpeg", s.ID)))
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-
 	_, err = file.Write(resp.GetLiveThumb())
 	return err
 }
