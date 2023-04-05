@@ -80,8 +80,7 @@ func (s server) GenerateLivePreview(ctx context.Context, request *pb.LivePreview
 		log.Info("Rejected request to generate live thumbnails")
 		return nil, errors.New("unauthenticated: wrong worker id")
 	}
-	cmd := exec.Command("sh", "-c",
-		"ffmpeg",
+	cmd := exec.Command("ffmpeg",
 		"-sseof", "-3",
 		"-i", request.HLSUrl,
 		"-vframes", "1",
