@@ -303,6 +303,33 @@ class LectureHall {
     constructor(obj: LectureHall) {
         this.Name = obj.Name;
     }
+
+    public NavigatumURL(): string {
+        switch (this.Name) {
+            case "MW0001":
+                return "https://nav.tum.de/room/5510.EG.001";
+            case "MW2001":
+                return "https://nav.tum.de/room/5510.02.001";
+            case "FMI_HS1":
+                return "https://nav.tum.de/room/5602.EG.001";
+            case "FMI_HS2":
+                return "https://nav.tum.de/room/5604.EG.011";
+            case "FMI_HS3":
+                return "https://nav.tum.de/room/5606.EG.011";
+            case "00.13.009":
+                return "https://nav.tum.de/room/5613.EG.009A";
+            case "FMI 00.07.014":
+                return "https://nav.tum.de/room/5607.EG.014";
+            case "room_00_08_038":
+                return "https://nav.tum.de/room/5608.EG.038";
+            case "IRH101":
+                return "https://nav.tum.de/room/5620.01.101";
+            case "IRH102":
+                return "https://nav.tum.de/room/5620.01.102";
+            default:
+                return "#";
+        }
+    }
 }
 
 class Livestream {
