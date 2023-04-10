@@ -1,4 +1,7 @@
-import { Delete, getData, postData, putData, Section, Time } from "./global";
+import { Section, Time } from "./global";
+import { DataStore } from "./data-store/data-store";
+import { UpdateVideoSectionRequest } from "./data-store/video-sections";
+import { Bookmark } from "./data-store/bookmarks";
 
 export abstract class VideoSectionList {
     private streamId: number;
@@ -11,15 +14,11 @@ export abstract class VideoSectionList {
         this.streamId = streamId;
         this.list = [];
         this.currentHighlightIndex = -1;
+        DataStore.videoSections.subscribe(this.streamId, (data) => this.onUpdate(data));
     }
 
-    async fetch() {
-        VideoSections.get(this.streamId).then((list) => {
-            this.list = list;
-            list.forEach(
-                (s) => (s.friendlyTimestamp = new Time(s.startHours, s.startMinutes, s.startSeconds).toString()),
-            );
-        });
+    private onUpdate(data: Section[]) {
+        this.list = data;
     }
 
     abstract getList(): Section[];
@@ -114,13 +113,21 @@ export class VideoSectionsDesktop extends VideoSectionList {
  * Admin Page VideoSection Management
  * @category admin-page
  */
-export class VideoSectionsAdmin {
+export class VideoSectionsAdminController {
+    static initiatedInstances: Map<string, Promise<VideoSectionsAdminController>> = new Map<
+        string,
+        Promise<VideoSectionsAdminController>
+    >();
+
     private readonly streamId: number;
 
     existingSections: Section[];
     newSections: Section[];
     current: Section;
     unsavedChanges: boolean;
+
+    private elem: HTMLElement;
+    private unsub: () => void;
 
     constructor(streamId: number) {
         this.streamId = streamId;
@@ -131,13 +138,24 @@ export class VideoSectionsAdmin {
         this.resetCurrent();
     }
 
-    async fetch() {
-        VideoSections.get(this.streamId).then((list) => {
-            this.existingSections = list;
-            list.forEach(
-                (s) => (s.friendlyTimestamp = new Time(s.startHours, s.startMinutes, s.startSeconds).toString()),
-            );
+    async init(key: string, element: HTMLElement) {
+        if (VideoSectionsAdminController.initiatedInstances[key]) {
+            (await VideoSectionsAdminController.initiatedInstances[key]).unsub();
+        }
+
+        VideoSectionsAdminController.initiatedInstances[key] = new Promise<VideoSectionsAdminController>((resolve) => {
+            this.elem = element;
+            const callback = (data) => this.onUpdate(data);
+            DataStore.videoSections.subscribe(this.streamId, callback).then(() => {
+                this.unsub = () => DataStore.videoSections.unsubscribe(this.streamId, callback);
+                resolve(this);
+            });
         });
+    }
+
+    onUpdate(data: Section[]) {
+        this.existingSections = data;
+        this.elem.dispatchEvent(new CustomEvent("update", { detail: this.existingSections }));
     }
 
     pushNewSection() {
@@ -156,18 +174,14 @@ export class VideoSectionsAdmin {
         this.unsavedChanges = true;
     }
 
-    publishNewSections() {
-        VideoSections.add(this.streamId, this.newSections).then(async () => {
-            await this.fetch(); // load sections again to avoid js-sorting
-            this.newSections = [];
-        });
+    async publishNewSections() {
+        await DataStore.videoSections.add(this.streamId, this.newSections);
+        this.newSections = [];
         this.unsavedChanges = false;
     }
 
-    removeExistingSection(id: number) {
-        VideoSections.delete(this.streamId, id).then(() => {
-            this.existingSections = this.existingSections.filter((s) => s.ID !== id);
-        });
+    async removeExistingSection(id: number) {
+        await DataStore.videoSections.delete(this.streamId, id);
     }
 
     private resetCurrent() {
@@ -199,19 +213,8 @@ export class VideoSectionUpdater {
     }
 
     async update() {
-        return VideoSections.update(this.streamId, this.section.ID, this.request).then(() => {
-            // 1.) Update old
-            this.section.startHours = this.request.StartHours;
-            this.section.startMinutes = this.request.StartMinutes;
-            this.section.startSeconds = this.request.StartSeconds;
-            this.section.description = this.request.Description;
-            this.section.friendlyTimestamp = new Time(
-                this.section.startHours,
-                this.section.startMinutes,
-                this.section.startSeconds,
-            ).toString();
-            this.show = false;
-        });
+        await DataStore.videoSections.update(this.streamId, this.section.ID, this.request);
+        this.show = false;
     }
 
     reset() {
@@ -223,44 +226,3 @@ export class VideoSectionUpdater {
         this.show = false;
     }
 }
-
-class UpdateVideoSectionRequest {
-    Description: string;
-    StartHours: number;
-    StartMinutes: number;
-    StartSeconds: number;
-}
-
-/**
- * Wrapper for REST-API calls @ /api/stream/:id/sections
- * @category watch-page
- * @category admin-page
- */
-export const VideoSections = {
-    get: async function (streamId: number): Promise<Section[]> {
-        return getData(`/api/stream/${streamId}/sections`)
-            .then((resp) => {
-                if (!resp.ok) {
-                    throw Error(resp.statusText);
-                }
-                return resp.json();
-            })
-            .catch((err) => {
-                console.error(err);
-                return [];
-            })
-            .then((l: Section[]) => l);
-    },
-
-    add: async function (streamId: number, request: object) {
-        return postData(`/api/stream/${streamId}/sections`, request);
-    },
-
-    update: function (streamId: number, id: number, request: object) {
-        return putData(`/api/stream/${streamId}/sections/${id}`, request);
-    },
-
-    delete: async function (streamId: number, id: number): Promise<Response> {
-        return Delete(`/api/stream/${streamId}/sections/${id}`);
-    },
-};
