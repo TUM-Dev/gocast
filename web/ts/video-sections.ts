@@ -13,12 +13,11 @@ export abstract class VideoSectionList {
         this.streamId = streamId;
         this.list = [];
         this.currentHighlightIndex = -1;
+        DataStore.videoSections.subscribe(this.streamId, (data) => this.onUpdate(data));
     }
 
-    async fetch() {
-        await DataStore.videoSections.subscribe(this.streamId, (data) => {
-            this.list = data;
-        });
+    private onUpdate(data: Section[]) {
+        this.list = data;
     }
 
     abstract getList(): Section[];
@@ -113,13 +112,21 @@ export class VideoSectionsDesktop extends VideoSectionList {
  * Admin Page VideoSection Management
  * @category admin-page
  */
-export class VideoSectionsAdmin {
+export class VideoSectionsAdminController {
+    static initiatedInstances: Map<string, Promise<VideoSectionsAdminController>> = new Map<
+        string,
+        Promise<VideoSectionsAdminController>
+    >();
+
     private readonly streamId: number;
 
     existingSections: Section[];
     newSections: Section[];
     current: Section;
     unsavedChanges: boolean;
+
+    private elem: HTMLElement;
+    private unsub: () => void;
 
     constructor(streamId: number) {
         this.streamId = streamId;
@@ -130,10 +137,24 @@ export class VideoSectionsAdmin {
         this.resetCurrent();
     }
 
-    async fetch() {
-        await DataStore.videoSections.subscribe(this.streamId, (data) => {
-            this.existingSections = data;
+    async init(key: string, element: HTMLElement) {
+        if (VideoSectionsAdminController.initiatedInstances[key]) {
+            (await VideoSectionsAdminController.initiatedInstances[key]).unsub();
+        }
+
+        VideoSectionsAdminController.initiatedInstances[key] = new Promise<VideoSectionsAdminController>((resolve) => {
+            this.elem = element;
+            const callback = (data) => this.onUpdate(data);
+            DataStore.videoSections.subscribe(this.streamId, callback).then(() => {
+                this.unsub = () => DataStore.videoSections.unsubscribe(this.streamId, callback);
+                resolve(this);
+            });
         });
+    }
+
+    onUpdate(data: Section[]) {
+        this.existingSections = data;
+        this.elem.dispatchEvent(new CustomEvent("update", { detail: this.existingSections }));
     }
 
     pushNewSection() {

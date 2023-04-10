@@ -6,6 +6,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"sync"
+	"time"
+
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
 	"github.com/getsentry/sentry-go"
 	"github.com/joschahenningsen/TUM-Live/dao"
@@ -23,13 +33,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
-	"io"
-	"net"
-	"net/http"
-	"regexp"
-	"strings"
-	"sync"
-	"time"
 )
 
 var mutex = sync.Mutex{}
@@ -776,6 +779,71 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 		}
 		endConnection(conn)
 	}
+}
+
+// FetchLivePreviews gets a live thumbnail from a worker.
+func FetchLivePreviews(daoWrapper dao.DaoWrapper) func() {
+	return func() {
+		workers := daoWrapper.WorkerDao.GetAliveWorkers()
+		liveStreams, err := daoWrapper.StreamsDao.GetCurrentLive(context.Background())
+		if err != nil {
+			return
+		}
+
+		// In case of an error, the preview might be outdated.
+		// That's okay since the cron job is run in 10s again.
+		for _, s := range liveStreams {
+			if s.PlaylistUrl == "" {
+				continue
+			}
+			workerIndex := getWorkerWithLeastWorkload(workers)
+			if len(workers) == 0 {
+				return
+			}
+			conn, err := dialIn(workers[workerIndex])
+			if err != nil {
+				log.WithError(err).Error("Could not connect to worker")
+				endConnection(conn)
+				continue
+			}
+			client := pb.NewToWorkerClient(conn)
+			workers[workerIndex].Workload += 1
+			if err := getLivePreviewFromWorker(&s, workers[workerIndex].WorkerID, client); err != nil {
+				workers[workerIndex].Workload -= 1
+				log.WithError(err).Error("Could not generate live preview")
+				endConnection(conn)
+				continue
+			}
+			workers[workerIndex].Workload -= 1
+		}
+		return
+	}
+}
+
+func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWorkerClient) error {
+	if err := tools.SetSignedPlaylists(s, nil); err != nil {
+		return err
+	}
+	req := pb.LivePreviewRequest{
+		WorkerID: workerID,
+		HLSUrl:   s.PlaylistUrl,
+	}
+	resp, err := client.GenerateLivePreview(context.Background(), &req)
+	if err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(filepath.Join(os.TempDir(), "TUM-Live"), 0750); err != nil {
+		return err
+	}
+
+	file, err := os.Create(filepath.Join(os.TempDir(), "TUM-Live", fmt.Sprintf("%d.jpeg", s.ID)))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	_, err = file.Write(resp.GetLiveThumb())
+	return err
 }
 
 // RegenerateThumbs regenerates the thumbnails for the timeline. This is useful for video with faulty thumbnails

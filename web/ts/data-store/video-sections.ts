@@ -12,7 +12,7 @@ export class VideoSectionProvider extends StreamableMapProvider<number, Section[
 
     async add(streamId: number, sections: Section[]): Promise<void> {
         await VideoSections.add(streamId, sections);
-        await this.fetch(streamId);
+        await this.fetch(streamId, true);
         await this.triggerUpdate(streamId);
     }
 

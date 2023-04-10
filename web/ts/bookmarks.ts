@@ -3,13 +3,33 @@ import { getPlayers } from "./TUMLiveVjs";
 import { AddBookmarkRequest, Bookmark, UpdateBookmarkRequest } from "./data-store/bookmarks";
 import { DataStore } from "./data-store/data-store";
 
-export class BookmarkList {
-    private readonly streamId: number;
+export class BookmarkController {
+    static initiatedInstances: Map<string, Promise<BookmarkController>> = new Map<
+        string,
+        Promise<BookmarkController>
+    >();
 
+    private readonly streamId: number;
     private list: Bookmark[];
+    private elem: HTMLElement;
+    private unsub: () => void;
 
     constructor(streamId: number) {
         this.streamId = streamId;
+    }
+
+    async init(key: string, element: HTMLElement) {
+        if (BookmarkController.initiatedInstances[key]) {
+            (await BookmarkController.initiatedInstances[key]).unsub();
+        }
+        BookmarkController.initiatedInstances[key] = new Promise<BookmarkController>((resolve) => {
+            this.elem = element;
+            const callback = (data) => this.onUpdate(data);
+            DataStore.bookmarks.subscribe(this.streamId, callback).then(() => {
+                this.unsub = () => DataStore.bookmarks.unsubscribe(this.streamId, callback);
+                resolve(this);
+            });
+        });
     }
 
     get(): Bookmark[] {
@@ -24,10 +44,9 @@ export class BookmarkList {
         await DataStore.bookmarks.delete(this.streamId, id);
     }
 
-    async fetch() {
-        await DataStore.bookmarks.subscribe(this.streamId, (data) => {
-            this.list = data;
-        });
+    onUpdate(data: Bookmark[]) {
+        this.list = data;
+        this.elem.dispatchEvent(new CustomEvent("update", { detail: this.list }));
     }
 }
 
