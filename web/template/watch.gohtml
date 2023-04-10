@@ -230,7 +230,7 @@
             {{end}}
 
             <div
-                    x-data="{ size: { x: '0px', width: '0px' }, hoverPos: -1 }"
+                    x-data="{ size: { x: '0px', width: '0px' }, hoverPos: watch.SeekbarHoverPosition.empty }"
                     x-on:updateseekbarsize.window="e => { size = e.detail; }"
                     x-on:seekbarhover.window="e => { hoverPos = e.detail; }"
                     x-init="watch.seekbarOverlay.init('{{$stream.ID}}');"
@@ -275,7 +275,7 @@
                             <!-- Bookmark Marker -->
                             <div x-show="marker.type === watch.MarkerType.bookmark" class="w-[6px] h-[6px] ml-[-3px] rounded bg-indigo-400 rounded-t"></div>
                             <div
-                                x-show="marker.type === watch.MarkerType.bookmark && hoverPos >= (marker.position - 0.01) && hoverPos <= (marker.position + 0.01)"
+                                x-show="marker.type === watch.MarkerType.bookmark && hoverPos.onTarget(marker.position, 7)"
                                 class="absolute z-10 top-[-45px] text-center w-[100px] bg-indigo-400 ml-[-50px] px-[12px] py-2 rounded"
                                 :style="{ left: `${marker.position * 100}%` }"
                             >
@@ -288,11 +288,11 @@
                         <div>
                             <div
                                 class="absolute border-x-2 border-t-2 bottom-0 top-0 rounded-t"
-                                :class="(section.from <= hoverPos && section.to > hoverPos) ? 'bg-white/10 border-white/[.02]' : 'bg-black/20 border-transparent'"
+                                :class="hoverPos.inRange(section.from, section.to) ? 'bg-white/10 border-white/[.02]' : 'bg-black/20 border-transparent'"
                                 :style="{ left: `${section.from * 100}%`, right: `${(1 - section.to) * 100}%` }"
                             ></div>
                             <div
-                                    x-show="section.from <= hoverPos && section.to > hoverPos"
+                                    x-show="hoverPos.inRange(section.from, section.to)"
                                     class="absolute top-[-45px] text-center w-[100px] bg-black/[0.9] ml-[-50px] px-[12px] py-2 rounded"
                                     :style="{ left: `${(section.from + (section.to - section.from) / 2) * 100}%` }"
                             >
