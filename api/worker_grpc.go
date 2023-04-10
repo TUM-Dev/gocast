@@ -235,27 +235,6 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 	return &pb.Status{Ok: true}, nil
 }
 
-func (s server) NewKeywords(ctx context.Context, request *pb.NewKeywordsRequest) (*pb.Status, error) {
-	if _, err := s.DaoWrapper.WorkerDao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
-		return nil, errors.New("authentication failed: invalid worker id")
-	} else {
-		keywords := make([]model.Keyword, len(request.Keywords))
-		for i, keyword := range request.Keywords {
-			keywords[i] = model.Keyword{
-				StreamID: uint(request.StreamID),
-				Text:     keyword,
-			}
-		}
-		err = s.DaoWrapper.KeywordDao.NewKeywords(keywords)
-		if err != nil {
-			log.WithError(err).Println("Couldn't insert keyword")
-			return &pb.Status{Ok: false}, err
-		}
-
-		return &pb.Status{Ok: true}, nil
-	}
-}
-
 func handleCameraPositionSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) error {
 	if stream.LectureHallID == 0 {
 		return nil
