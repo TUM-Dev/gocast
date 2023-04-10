@@ -1,4 +1,7 @@
 import { ToggleableElement } from "../utilities/ToggleableElement";
+import { Semester, SemesterDTO, SemestersAPI } from "../api/semesters";
+import { ProgressAPI } from "../api/progress";
+import { Course, CoursesAPI, Livestream } from "../api/courses";
 
 export enum Views {
     Main,
@@ -12,8 +15,6 @@ type History = {
     view: Views;
 };
 
-const DEFAULT_LECTURE_NAME = "Untitled lecture";
-
 export function context() {
     const url = new URL(window.location.href);
     return {
@@ -21,7 +22,7 @@ export function context() {
         year: +url.searchParams.get("year"),
         view: +url.searchParams.get("view") ?? Views.Main,
 
-        semesters: [] as SemesterItem[],
+        semesters: [] as Semester[],
         currentSemesterIndex: -1,
         selectedSemesterIndex: -1,
 
@@ -106,7 +107,7 @@ export function context() {
         },
 
         async loadSemesters() {
-            const res: SemesterResponse = await Semesters.get();
+            const res: SemesterDTO = await SemestersAPI.get();
             this.semesters = res.Semesters;
 
             this.currentSemesterIndex = this.findSemesterIndex(res.Current.Year, res.Current.TeachingTerm);
@@ -122,20 +123,20 @@ export function context() {
         },
 
         async loadLivestreams() {
-            this.livestreams = await Courses.getLivestreams();
+            this.livestreams = await CoursesAPI.getLivestreams();
         },
 
         async loadPublicCourses() {
-            this.publicCourses = await Courses.getPublic(this.year, this.term);
+            this.publicCourses = await CoursesAPI.getPublic(this.year, this.term);
         },
 
         async loadUserCourses() {
-            this.userCourses = await Courses.getUsers(this.year, this.term);
+            this.userCourses = await CoursesAPI.getUsers(this.year, this.term);
         },
 
         async loadProgresses(ids: number[]) {
             if (ids.length > 0) {
-                const progresses = await Progress.getBatch(ids);
+                const progresses = await ProgressAPI.getBatch(ids);
                 this.recently.forEach((r, i) => (r.LastLecture.Progress = progresses[i]));
             }
         },
@@ -203,220 +204,4 @@ export function context() {
             window.history.pushState(data, "", url.toString());
         },
     };
-}
-
-type SemesterResponse = {
-    Current: SemesterItem;
-    Semesters: SemesterItem[];
-};
-
-class SemesterItem {
-    TeachingTerm: string;
-    Year: number;
-
-    constructor(obj: SemesterItem) {
-        this.TeachingTerm = obj.TeachingTerm;
-        this.Year = obj.Year;
-    }
-
-    public FriendlyString(): string {
-        return `${this.TeachingTerm === "W" ? "Winter" : "Summer"} ${this.Year}`;
-    }
-}
-
-/**
- * REST API Wrapper for /api/semesters
- */
-const Semesters = {
-    async get(): Promise<SemesterResponse> {
-        return get("/api/semesters").then((l: SemesterResponse) => {
-            l.Semesters = l.Semesters.map((s) => new SemesterItem(s));
-            return l;
-        });
-    },
-};
-
-class Stream {
-    readonly ID: number;
-    readonly Name: string;
-    readonly End: string;
-    readonly Start: string;
-
-    Progress?: ProgressItem;
-
-    static New(obj): Stream {
-        const s = Object.assign(new Stream(), obj);
-        s.Name = s.Name === "" ? DEFAULT_LECTURE_NAME : s.Name;
-        return s;
-    }
-
-    public FriendlyDateStart(): string {
-        return new Date(this.Start).toLocaleString();
-    }
-
-    public UntilString(): string {
-        const end = new Date(this.End);
-        const hours = end.getHours();
-        const minutes = end.getMinutes();
-        return `Until ${hours}:${minutes < 10 ? minutes + "0" : minutes}`;
-    }
-}
-
-class Course {
-    readonly ID: number;
-    readonly Visibility: string;
-    readonly Slug: string;
-    readonly Year: number;
-    readonly TeachingTerm: string;
-    readonly Name: string;
-
-    readonly NextLecture?: Stream;
-    readonly LastLecture?: Stream;
-
-    static New(obj): Course {
-        const c = Object.assign(new Course(), obj);
-        c.NextLecture = c.NextLecture ? Stream.New(obj.NextLecture) : undefined;
-        c.LastLecture = c.LastLecture ? Stream.New(obj.LastLecture) : undefined;
-        return c;
-    }
-
-    public URL(): string {
-        return `/course/${this.Year}/${this.TeachingTerm}/${this.Slug}`;
-    }
-
-    public LastLectureURL(): string {
-        return `/w/${this.Slug}/${this.LastLecture.ID}`;
-    }
-
-    public NextLectureURL(): string {
-        return `/w/${this.Slug}/${this.NextLecture.ID}`;
-    }
-
-    public IsHidden(): boolean {
-        return this.Visibility === "hidden";
-    }
-}
-
-class LectureHall {
-    readonly Name: string;
-
-    constructor(obj: LectureHall) {
-        this.Name = obj.Name;
-    }
-
-    public NavigatumURL(): string {
-        switch (this.Name) {
-            case "MW0001":
-                return "https://nav.tum.de/room/5510.EG.001";
-            case "MW2001":
-                return "https://nav.tum.de/room/5510.02.001";
-            case "FMI_HS1":
-                return "https://nav.tum.de/room/5602.EG.001";
-            case "FMI_HS2":
-                return "https://nav.tum.de/room/5604.EG.011";
-            case "FMI_HS3":
-                return "https://nav.tum.de/room/5606.EG.011";
-            case "00.13.009":
-                return "https://nav.tum.de/room/5613.EG.009A";
-            case "FMI 00.07.014":
-                return "https://nav.tum.de/room/5607.EG.014";
-            case "room_00_08_038":
-                return "https://nav.tum.de/room/5608.EG.038";
-            case "IRH101":
-                return "https://nav.tum.de/room/5620.01.101";
-            case "IRH102":
-                return "https://nav.tum.de/room/5620.01.102";
-            default:
-                return "#";
-        }
-    }
-}
-
-class Livestream {
-    readonly Stream: Stream;
-    readonly Course: Course;
-    readonly LectureHall?: LectureHall;
-
-    constructor(obj: Livestream) {
-        this.Stream = Stream.New(obj.Stream);
-        this.Course = Course.New(obj.Course);
-        this.LectureHall = obj.LectureHall ? new LectureHall(obj.LectureHall) : undefined;
-    }
-
-    public InLectureHall(): boolean {
-        return this.LectureHall !== undefined;
-    }
-}
-
-/**
- * REST API Wrapper for /api/courses
- */
-const Courses = {
-    async getLivestreams() {
-        return get("/api/courses/live").then((livestreams) => livestreams.map((l) => new Livestream(l)));
-    },
-
-    async getPublic(year?: number, term?: string): Promise<object> {
-        return get(`/api/courses/public${this.query(year, term)}`).then((courses) => courses.map((c) => Course.New(c)));
-    },
-
-    async getUsers(year?: number, term?: string): Promise<object> {
-        return get(`/api/courses/users${this.query(year, term)}`).then((courses) => courses.map((c) => Course.New(c)));
-    },
-
-    query: (year?: number, term?: string) =>
-        year !== undefined && term !== undefined && year !== 0 ? `?year=${year}&term=${term}` : "",
-};
-
-class ProgressItem {
-    private readonly progress: number;
-    private readonly watched: boolean;
-    private readonly streamId: number;
-
-    constructor(obj: ProgressItem) {
-        this.progress = obj.progress;
-        this.watched = obj.watched;
-        this.streamId = obj.streamId;
-    }
-
-    public Percentage(): number {
-        return Math.round(this.progress * 100);
-    }
-
-    public HasProgressOne(): boolean {
-        return this.progress === 1;
-    }
-}
-
-/**
- * REST API Wrapper for /api/progress
- */
-const Progress = {
-    getBatch(ids: number[]) {
-        const query = "[]ids=" + ids.join("&[]ids=");
-        return get("/api/progress/streams?" + query).then((progresses: ProgressItem[]) => {
-            return progresses.map((p) => new ProgressItem(p)); // Recreate for Percentage(),...
-        });
-    },
-};
-
-/**
- * Wrapper for Javascript's fetch function
- * @param  {string} url URL to fetch
- * @param  {object} default_resp Return value in case of error
- * @return {Promise<Response>}
- */
-async function get(url: string, default_resp: object = []) {
-    return fetch(url)
-        .then((res) => {
-            if (!res.ok) {
-                throw Error(res.statusText);
-            }
-            return res.json();
-        })
-        .catch((err) => {
-            console.error(err);
-            return default_resp;
-        })
-        .then((o) => o);
 }
