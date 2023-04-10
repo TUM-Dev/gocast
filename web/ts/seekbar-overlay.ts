@@ -2,7 +2,7 @@ import { getPlayers } from "./TUMLiveVjs";
 import { cloneEvents } from "./global";
 
 export class SeekbarHoverPosition {
-    static empty: SeekbarHoverPosition = new SeekbarHoverPosition(0,0);
+    static empty: SeekbarHoverPosition = new SeekbarHoverPosition(0, 0);
 
     private readonly seekBarWidth: number;
     public position: number;
@@ -14,10 +14,10 @@ export class SeekbarHoverPosition {
         this.position = offset / seekBarWidth;
     }
 
-    public onTarget(target: number, maxDeltaPixels: number) : boolean {
+    public onTarget(target: number, maxDeltaPixels: number): boolean {
         if (this.offset === -1) return false;
         const deltaPercentage = maxDeltaPixels / this.seekBarWidth;
-        return this.position >= (target - deltaPercentage) && this.position <= (target + deltaPercentage);
+        return this.position >= target - deltaPercentage && this.position <= target + deltaPercentage;
     }
 
     public inRange(from: number, to: number) {
