@@ -233,8 +233,8 @@
                     x-data="{ size: { x: '0px', width: '0px' }, hoverPos: watch.SeekbarHoverPosition.empty }"
                     x-on:updateseekbarsize.window="e => { size = e.detail; }"
                     x-on:seekbarhover.window="e => { hoverPos = e.detail; }"
-                    x-init="watch.seekbarOverlay.init('{{$stream.ID}}');"
-                    class="seekbar-overlay absolute bottom-[18px] bg-gradient-to-t from-gray-800/[.6] pt-4 pointer-events-none"
+                    x-init="watch.seekbarOverlay.init($el);"
+                    class="seekbar-overlay absolute bottom-[18px] bg-gradient-to-t from-gray-800/[.6] h-full"
                     :style="{width: size.width, left: size.x}"
             >
 
@@ -273,7 +273,7 @@
                             <div x-show="marker.type === watch.MarkerType.sectionSep" class="w-[2px] h-full bg-gradient-to-t from-black rounded-t"></div>
 
                             <!-- Bookmark Marker -->
-                            <div x-show="marker.type === watch.MarkerType.bookmark" class="w-[6px] h-[6px] ml-[-3px] rounded bg-indigo-400 rounded-t"></div>
+                            <div x-show="marker.type === watch.MarkerType.bookmark" class="block w-[6px] h-[6px] ml-[-3px] rounded bg-indigo-400 rounded-t"></div>
                             <div
                                 x-show="marker.type === watch.MarkerType.bookmark && hoverPos.onTarget(marker.position, 7)"
                                 class="absolute z-10 top-[-45px] text-center w-[100px] bg-indigo-400 ml-[-50px] px-[12px] py-2 rounded"

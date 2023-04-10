@@ -28,12 +28,15 @@ export class SeekbarHoverPosition {
 
 export const seekbarOverlay = {
     streamID: null,
+    outerWrap: null,
     seekBarWrap: null,
 
-    init() {
+    init(wrap: HTMLElement) {
+        this.outerWrap = wrap;
         const player = [...getPlayers()].pop();
         player.ready(() => {
             this.seekBarWrap = player.el().querySelector(".vjs-progress-control");
+            cloneEvents(this.outerWrap, this.seekBarWrap, ["mousemove", "mouseleave"]);
             cloneEvents(this.seekBarWrap.querySelector(".vjs-slider"), this.seekBarWrap, ["mousemove", "mouseleave"]);
             this.injectElementIntoVjs();
             this.updateSize();
