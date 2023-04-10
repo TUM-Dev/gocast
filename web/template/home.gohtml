@@ -156,7 +156,8 @@
             </template>
             <button @click="navigation.getChild('allSemesters').toggle()"
                     class="tum-live-side-navigation-group-item">
-                <i class="fa-solid" :class="navigation.getChild('allSemesters').value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                <i class="fa-solid"
+                   :class="navigation.getChild('allSemesters').value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                 <span x-text="navigation.getChild('allSemesters').value ? 'Show less' : 'Show all'"></span>
             </button>
         </article>
@@ -301,7 +302,7 @@
                                     <article class="tum-live-stream p-3 lg:col-span-1 col-span-full"
                                              :id="`livestream-${livestream.Stream.ID}`">
                                         <div class="h-56 relative mb-2">
-                                            <div class="absolute right-2 top-1 flex items-center space-x-2 text-xs font-semibold text-white z-40">
+                                            <div class="absolute right-2 top-2 flex items-center space-x-2 text-xs font-semibold text-white z-40">
                                                 <template x-if="livestream.Course.IsHidden()">
                                                     <span class="tum-live-badge bg-neutral-700">Hidden</span>
                                                 </template>
@@ -314,7 +315,7 @@
                                                 </template>
                                             </div>
                                             <a :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`">
-                                                <div style="background-image:url('https://streams.tum.de/Mediasite/FileServer/Presentation/ec92304e4558492b91635053e1cfe1161d/1cbd7a07-44e9-45cf-8420-8f2964750278.jpg')"
+                                                <div :style="`background-image:url('/thumbnails/live/${livestream.Stream.ID}.jpeg')`"
                                                      class="h-full tum-live-thumbnail"></div>
                                             </a>
                                         </div>
@@ -362,7 +363,7 @@
                                 <template x-for="(course, i) in recently" :key="course.ID">
                                     <article class="tum-live-stream lg:col-span-1 col-span-full p-3">
                                         <a :href="course.LastLectureURL()" class="block mb-2">
-                                            <div style="background-image:url('https://www.tum-universitaetsstiftung.de/fileadmin/_processed_/d/f/csm_20190712_9_9b38ba8a75.jpg')"
+                                            <div style=""
                                                  class="h-40 tum-live-thumbnail">
                                                 <div :id="`vod-progress-${course.LastLecture.ID}`"
                                                      class="tum-live-thumbnail-progress">
@@ -416,12 +417,12 @@
         </button>
         <div x-cloak x-show="notification.value"
              class="origin-top-right fixed bottom-0 left-0 top-0 w-full backdrop-brightness-50 px-2 py-8 md:absolute md:bottom-auto md:left-auto md:top-auto md:right-0 md:mt-2 md:w-96 md:backdrop-brightness-100 md:p-0">
-            <div class = "tum-live-menu" @click.outside="toggleNotification();">
+            <div class="tum-live-menu" @click.outside="toggleNotification();">
                 <header>
                     Notifications
                     <button type="button" @click="notification.toggle(false)"
-                            class = "tum-live-icon-button close p-1 md:hidden">
-                        <i class = "fa-solid fa-xmark"></i>
+                            class="tum-live-icon-button close p-1 md:hidden">
+                        <i class="fa-solid fa-xmark"></i>
                     </button>
                 </header>
                 <div class="w-full min-h-30 max-h-60 overflow-y-scroll py-2">

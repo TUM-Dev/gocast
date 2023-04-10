@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live/tools/pathprovider"
 	"io"
 	"net"
 	"net/http"
@@ -833,11 +834,11 @@ func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWork
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Join(os.TempDir(), "TUM-Live"), 0750); err != nil {
+	if err := os.MkdirAll(pathprovider.TUMLiveTemporary, 0750); err != nil {
 		return err
 	}
 
-	file, err := os.Create(filepath.Join(os.TempDir(), "TUM-Live", fmt.Sprintf("%d.jpeg", s.ID)))
+	file, err := os.Create(filepath.Join(pathprovider.TUMLiveTemporary, fmt.Sprintf("%d.jpeg", s.ID)))
 	if err != nil {
 		return err
 	}
