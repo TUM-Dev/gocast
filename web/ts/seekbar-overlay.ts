@@ -36,8 +36,11 @@ export const seekbarOverlay = {
         const player = [...getPlayers()].pop();
         player.ready(() => {
             this.seekBarWrap = player.el().querySelector(".vjs-progress-control");
+            const slider = this.seekBarWrap.querySelector(".vjs-slider");
+            slider.style.marginLeft = 0;
+            slider.style.marginRight = 0;
+            cloneEvents(slider, this.seekBarWrap, ["mousemove", "mouseleave"]);
             cloneEvents(this.outerWrap, this.seekBarWrap, ["mousemove", "mouseleave"]);
-            cloneEvents(this.seekBarWrap.querySelector(".vjs-slider"), this.seekBarWrap, ["mousemove", "mouseleave"]);
             this.injectElementIntoVjs();
             this.updateSize();
             this.listenForHoverEvents();
