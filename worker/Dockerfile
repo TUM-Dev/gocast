@@ -1,4 +1,4 @@
-FROM golang:1.20-alpine3.17 as builder
+FROM amd64/golang:1.20-alpine3.17 as builder
 
 WORKDIR /go/src/github.com/joschahenningsen/TUM-Live/worker
 COPY . .

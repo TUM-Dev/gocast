@@ -22,6 +22,7 @@ services:
       - tum-live
       - vod-service
     build: worker
+    platform: linux/amd64
     environment:
       - Token=abc
       - Host=worker
@@ -40,6 +41,7 @@ services:
     environment:
       - VOD_DIR=/vod
       - MAIN_INSTANCE=http://tum-live:8081
+      - ADMIN_TOKEN=123
     ports:
       - "8089:8089"
     volumes:

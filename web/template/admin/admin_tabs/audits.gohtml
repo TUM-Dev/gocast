@@ -1,31 +1,30 @@
 {{define "audits"}}
-
-    <h2 class="text-2xl text-1 my-auto mt-4 font-medium">Audits</h2>
-    <div x-data="{ audits: [], offset:0, limit:10}" x-init="admin.audits(offset, limit).then(r=>audits=r)"
-         class="dark:border-gray-700 border rounded-md overflow-x-auto mb-6 my-3 shadow-md dark:bg-secondary-lighter">
-
-        <template x-for="audit in audits" :key="audit.id">
-            <div class="p-5 text-3 border-gray-700 border-b last:border-0">
-                <p class="font-semibold flex justify-between">
-                    <span x-text="audit.type"></span>
-                    <span>
-                        <span class="mr-4" x-text="audit.createdAt"></span>
-                        <span x-show="audit.userID">
-                            <i class="fas fa-user"></i> <span x-text="`${audit.userName}(${audit.userID})`"></span>
+    <div class="form-container">
+        <h2 class="form-container-title">Audits</h2>
+        <div x-data="{ audits: [], offset:0, limit:10}" x-init="admin.audits(offset, limit).then(r=>audits=r)"
+             class="form-container-body">
+            <template x-for="audit in audits" :key="audit.id">
+                <div class="p-5 text-3 border-gray-700 border-b last:border-0 dark:border-gray-500 border rounded">
+                    <p class="font-semibold flex justify-between">
+                        <span x-text="audit.type"></span>
+                        <span>
+                            <span class="mr-4" x-text="audit.createdAt"></span>
+                            <span x-show="audit.userID">
+                                <i class="fas fa-user"></i> <span x-text="`${audit.userName}(${audit.userID})`"></span>
+                            </span>
                         </span>
-                </span>
-                </p>
-                <p x-text="audit.message"></p>
+                    </p>
+                    <p class="text-sm" x-text="audit.message"></p>
+                </div>
+            </template>
+            <div class="p-5 text-3 border-gray-700 border-b last:border-0 justify-between flex">
+                <button @click="offset-=limit;admin.audits(offset, limit).then(r=>audits=r)"
+                        class="font-semibold" :disabled="offset==0" :class="offset==0&&'text-6'"><i
+                            class="fa-solid fa-angles-left mr-2"></i>Previous
+                </button>
+                <button @click="offset+=limit;admin.audits(offset, limit).then(r=>audits=r)"
+                        class="font-semibold">Next<i class="fa-solid fa-angles-right ml-2"></i></button>
             </div>
-        </template>
-        <div class="p-5 text-3 border-gray-700 border-b last:border-0 justify-between flex">
-            <button @click="offset-=limit;admin.audits(offset, limit).then(r=>audits=r)"
-                    class="font-semibold" :disabled="offset==0" :class="offset==0&&'text-6'"><i
-                        class="fa-solid fa-angles-left mr-2"></i>Previous
-            </button>
-            <button @click="offset+=limit;admin.audits(offset, limit).then(r=>audits=r)"
-                    class="font-semibold">Next<i class="fa-solid fa-angles-right ml-2"></i></button>
         </div>
     </div>
-
 {{end}}

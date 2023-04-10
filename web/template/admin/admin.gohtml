@@ -16,8 +16,8 @@
 {{$indexData := .IndexData}}
 {{template "header" .IndexData.TUMLiveContext}}
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.AdminPageData*/ -}}
-<div x-data="{hidden:true}" class="lg:hidden mx-4 mt-4">
-    <button class="bg-gray-200 text-gray-700 rounded shadow px-4 py-1" @click="hidden=!hidden"
+<div x-data="{hidden:true}" class="lg:hidden mx-6 mt-2">
+    <button class="btn" @click="hidden=!hidden"
             x-text="hidden?'Open Menu':'Close Menu'">Open Menu
     </button>
     <div class="w-full text-1" x-show="!hidden">
@@ -210,7 +210,8 @@
                                 <li x-data="{expanded: {{if not (and (eq $semester.Year $y) (eq $semester.TeachingTerm $t))}}false{{else}}true{{end}}}">
                                     <a class="px-3 mb-3 lg:mb-3 uppercase tracking-wide font-semibold text-sm lg:text-xs transition-colors duration-200 text-5"
                                        href="#" @click="expanded=!expanded">
-                                        <i class="fas fa-chevron-right mr-1 transform" :class="expanded?'rotate-90':''"></i>
+                                        <i class="fas fa-chevron-right mr-1 transform"
+                                           :class="expanded?'rotate-90':''"></i>
                                         <span
                                                 class="rounded-md absolute bg-cyan-50 opacity-0"></span><span
                                                 class="relative">{{$semester.Year}} - {{$semester.TeachingTerm}}</span></a>

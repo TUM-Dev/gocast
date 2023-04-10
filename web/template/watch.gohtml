@@ -496,11 +496,11 @@
                     <div class="w-full overflow-x-scroll scrollbarThin">
                         <div class="flex flex-row gap-x-2 pb-4 pl-2">
                             {{range $preset := .Presets}}
-                                <div style="min-width: 150px" class="text-center relative group">
+                                <div style="min-width: 150px" class="text-center text-5 text-sm relative group">
                                     <img id="presetImage{{$preset.LectureHallID}}-{{$preset.PresetID}}"
                                          src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
                                          alt="prev" width="150px"
-                                         class="border-1 dark:border-slate-400 border-slate-500 rounded-lg">
+                                         class="tl-presetimage">
                                     <i onclick="watch.usePreset({{$course.Model.ID}}, {{$preset.LectureHallID}}, {{$preset.PresetID}})"
                                        title="Switch to this preset"
                                        class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-exchange-alt cursor-pointer"></i>
