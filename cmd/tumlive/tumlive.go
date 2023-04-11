@@ -159,7 +159,6 @@ func main() {
 		&model.VideoSeekChunk{},
 		&model.Notification{},
 		&model.UploadKey{},
-		&model.Keyword{},
 		&model.UserSetting{},
 		&model.Audit{},
 		&model.InfoPage{},
