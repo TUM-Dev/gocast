@@ -367,14 +367,6 @@ export class Lecture {
         }
     }
 
-    hasAttachments(): boolean {
-        if (this.files === undefined || this.files === null) {
-            return false;
-        }
-        const attachments = this.files.filter((f) => f.fileType !== 1);
-        return attachments.length > 0;
-    }
-
     private async postFile(file) {
         const formData = new FormData();
         formData.append("file", file);
