@@ -528,6 +528,11 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		stream.LiveNow = true
 		stream.Private = course.LivePrivate
 
+		err := s.StreamsDao.SaveStream(&stream)
+		if err != nil {
+			log.WithError(err).Error("Can't save stream")
+		}
+
 		err = s.StreamsDao.SetStreamLiveNowTimestampById(uint(request.StreamID), time.Now())
 		if err != nil {
 			log.WithError(err).Error("Can't set StreamLiveNowTimestamp")
