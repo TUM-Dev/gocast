@@ -276,7 +276,7 @@
                             <div x-show="marker.type === watch.MarkerType.bookmark" class="block w-[6px] h-[6px] ml-[-3px] rounded bg-indigo-400 rounded-t"></div>
                             <div
                                 x-show="marker.type === watch.MarkerType.bookmark && hoverPos.onTarget(marker.position, 7)"
-                                class="absolute z-10 top-[-45px] text-center w-[100px] bg-indigo-400 ml-[-50px] px-[12px] py-2 rounded"
+                                class="break-all absolute z-10 top-[-45px] text-center w-[100px] bg-indigo-400 ml-[-50px] px-[12px] py-2 rounded"
                                 :style="{ left: `${marker.position * 100}%` }"
                             >
                                 <span class="size1" x-text="marker.description"></span>
