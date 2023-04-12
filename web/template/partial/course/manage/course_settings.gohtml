@@ -75,6 +75,18 @@
                     </label>
                 </div>
             </div>
+            <h3 class="text-sm text-5">Advanced Visibility</h3>
+            <div>
+                <label class="block">
+                    <input type="checkbox" name="livePrivate"{{if .LivePrivate}} checked{{end}}>
+                    Private livestreams
+                </label>
+
+                <label class="block">
+                    <input type="checkbox" name="vodPrivate"{{if .VodPrivate}} checked{{end}}>
+                    Private recordings after livestream
+                </label>
+            </div>
             <div class="flex flex-col space-y-2 sm:space-y-0 sm:space-x-2 sm:block mt-2">
                 <input name="submit" class="btn" type="submit" value="Save Settings">
                 {{if .TUMOnlineIdentifier}}

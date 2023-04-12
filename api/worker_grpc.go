@@ -407,11 +407,16 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 	if err != nil {
 		return nil, err
 	}
+	course, err := s.CoursesDao.GetCourseById(ctx, stream.CourseID)
+	if err != nil {
+		return nil, err
+	}
 	if stream.LiveNow {
 		log.WithField("req", req).Warn("VoD not saved, stream is live.")
 		return nil, nil
 	}
 	stream.Recording = true
+	stream.Private = course.VodPrivate
 	switch req.SourceType {
 	case "CAM":
 		stream.PlaylistUrlCAM = req.HLSUrl
@@ -500,6 +505,11 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		log.WithError(err).Println("Can't find stream")
 		return nil, err
 	}
+	course, err := s.CoursesDao.GetCourseById(ctx, stream.CourseID)
+	if err != nil {
+		log.WithError(err).Println("Can't find course")
+		return nil, err
+	}
 	go func() {
 		err := handleLightOnSwitch(stream, s.DaoWrapper)
 		if err != nil {
@@ -515,9 +525,8 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		}
 	}()
 	go func() {
-		// interims solution; sometimes dvr doesn't work as expected.
-		// here we check if the url 404s and remove dvr from the stream in that case
 		stream.LiveNow = true
+		stream.Private = course.LivePrivate
 
 		err = s.StreamsDao.SetStreamLiveNowTimestampById(uint(request.StreamID), time.Now())
 		if err != nil {
