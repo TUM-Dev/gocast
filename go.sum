@@ -53,6 +53,8 @@ github.com/RBG-TUM/CAMPUSOnline v0.0.0-20221007083857-e8fe85015e85 h1:gL26KWpcns
 github.com/RBG-TUM/CAMPUSOnline v0.0.0-20221007083857-e8fe85015e85/go.mod h1:pcWaw3hQOKmvRfldxtPlYBGAFbWQXUU44+KcDYwqduc=
 github.com/RBG-TUM/CAMPUSOnline v0.0.0-20230410163608-9bc70c9eac67 h1:n/Zn4sm5MOdTx58g7K1YbNll8usnScZ6ZXrUgGjakjE=
 github.com/RBG-TUM/CAMPUSOnline v0.0.0-20230410163608-9bc70c9eac67/go.mod h1:pcWaw3hQOKmvRfldxtPlYBGAFbWQXUU44+KcDYwqduc=
+github.com/RBG-TUM/CAMPUSOnline v0.0.0-20230412070523-8db58ed5c0b4 h1:t2Po3FzeYWa8fO2GdacQtiLDUvGYlJ+ukGqe7gp6/ro=
+github.com/RBG-TUM/CAMPUSOnline v0.0.0-20230412070523-8db58ed5c0b4/go.mod h1:pcWaw3hQOKmvRfldxtPlYBGAFbWQXUU44+KcDYwqduc=
 github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b h1:87IltMZV7hN5jGCHbqDIEf0p8+X0f4Ep40PRmz1Mexg=
 github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b/go.mod h1:Nw30dUekEb8ZrJwoGck0lILeVDCIX9dqJsEAPSOxBs0=
 github.com/RBG-TUM/go-anel-pwrctrl v1.0.0 h1:8V7MV6oyg+sQzSRWhEfgg9FcOaQMGBreOh3TIu9HS+w=
