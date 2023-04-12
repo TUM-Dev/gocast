@@ -1,7 +1,6 @@
 import { Section, Time } from "./global";
 import { DataStore } from "./data-store/data-store";
 import { UpdateVideoSectionRequest } from "./data-store/video-sections";
-import { Bookmark } from "./data-store/bookmarks";
 
 export abstract class VideoSectionList {
     private streamId: number;
