@@ -2,12 +2,10 @@ package worker
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -15,12 +13,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/joschahenningsen/TUM-Live/worker/ocr"
-	"github.com/u2takey/go-utils/uuid"
-
 	"github.com/joschahenningsen/TUM-Live/worker/cfg"
 	"github.com/joschahenningsen/TUM-Live/worker/pb"
-	"github.com/joschahenningsen/thumbgen"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -124,13 +118,6 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 		if err != nil {
 			log.WithField("stream", ctx.streamId).WithError(err).Error("Error marking for deletion")
 		}
-	}
-
-	S.startKeywordExtraction(ctx)
-	defer S.endKeywordExtraction(ctx)
-	err = extractKeywords(ctx)
-	if err != nil {
-		log.WithField("File", ctx.getTranscodingFileName()).WithError(err).Error("Extracting keywords failed.")
 	}
 }
 
@@ -266,13 +253,6 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 		notifyUploadDone(streamCtx)
 	}
 
-	S.startKeywordExtraction(streamCtx)
-	defer S.endKeywordExtraction(streamCtx)
-	err = extractKeywords(streamCtx)
-	if err != nil {
-		log.WithField("File", streamCtx.getTranscodingFileName()).WithError(err).Error("Extracting keywords failed.")
-	}
-
 	if streamCtx.streamVersion == "COMB" {
 		S.startSilenceDetection(streamCtx)
 		defer S.endSilenceDetection(streamCtx)
@@ -394,13 +374,6 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		log.WithField("File", c.getTranscodingFileName()).WithError(err).Error("Detecting silence failed.")
 	} else {
 		notifySilenceResults(sd.Silences, c.streamId)
-	}
-
-	S.startKeywordExtraction(&c)
-	defer S.endKeywordExtraction(&c)
-	err = extractKeywords(&c)
-	if err != nil {
-		log.WithField("File", c.getTranscodingFileName()).WithError(err).Error("Extracting keywords failed.")
 	}
 
 	upload(&c)
@@ -552,70 +525,4 @@ func (s StreamContext) getStreamNameVoD() string {
 			s.streamVersion), "-", "_")
 	}
 	return s.courseSlug
-}
-
-// extractKeywords creates images of a given stream in a temporary folder, extracts keywords, sends the keywords to
-// TUM-Live, and deletes the temporary folder.
-func extractKeywords(ctx *StreamContext) error {
-	log.WithField("File", ctx.getTranscodingFileName()).Println("Start extracting keywords")
-
-	// create temporary directory
-	outFileName := fmt.Sprintf("%s.jpeg", uuid.NewUUID())
-	dir, err := os.CreateTemp("", "keyword-extraction")
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(dir.Name())
-	defer os.Remove(outFileName) // Remove thumbgen's out.jpeg
-
-	// generate images to process
-	g, err := thumbgen.New(ctx.getTranscodingFileName(), 768, 128,
-		outFileName, thumbgen.WithJpegCompression(70), thumbgen.WithStoreSingleFrames(dir.Name()))
-	if err != nil {
-		return err
-	}
-	err = g.Generate()
-	if err != nil {
-		return err
-	}
-
-	fileInfoArray, err := os.ReadDir(dir.Name())
-	if err != nil {
-		return err
-	}
-
-	// collect file-names
-	files := make([]string, len(fileInfoArray))
-	for i := range fileInfoArray {
-		files[i] = path.Join(dir.Name(), fileInfoArray[i].Name())
-	}
-
-	// extract keywords
-	extractor := ocr.NewOcrExtractor(files, []string{"eng", "deu"})
-	keywords, err := extractor.Extract()
-	if err != nil {
-		return err
-	}
-
-	fromWorkerClient, _, err := GetClient()
-	if err != nil {
-		return err
-	}
-
-	// send keywords to TUM-Live
-	status, err := fromWorkerClient.NewKeywords(context.Background(), &pb.NewKeywordsRequest{
-		WorkerID: cfg.WorkerID,
-		StreamID: ctx.streamId,
-		Keywords: keywords,
-	})
-
-	if err != nil {
-		return err
-	}
-
-	if !status.GetOk() {
-		return errors.New(status.String())
-	}
-
-	return nil
 }
