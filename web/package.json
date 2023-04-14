@@ -46,7 +46,7 @@
     "nouislider": "^15.7.0",
     "split.js": "^1.6.5",
     "video.js": "^7.21.1",
-    "videojs-contrib-quality-levels": "^3.0.0",
+    "videojs-contrib-quality-levels": "^4.0.0",
     "videojs-seek-buttons": "^3.0.1",
     "videojs-sprite-thumbnails": "^0.6.0"
   },
