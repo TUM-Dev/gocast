@@ -41,7 +41,7 @@ require (
 	github.com/crewjam/saml v0.4.13
 	github.com/golang/mock v1.6.0
 	github.com/icholy/digest v0.1.22
-	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20230410070000-ad9dc527def5
+	github.com/joschahenningsen/TUM-Live/worker v0.0.0-20230414104519-bbe97a6241cc
 	github.com/stretchr/testify v1.8.2
 	github.com/u2takey/go-utils v0.3.1
 )
