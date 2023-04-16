@@ -124,6 +124,8 @@ service FromWorker {
   rpc NotifyThumbnailsFinished(ThumbnailsFinished) returns (Status) {}
   rpc SendSelfStreamRequest(SelfStreamRequest) returns (SelfStreamResponse) {}
   rpc GetStreamInfoForUpload(GetStreamInfoForUploadRequest) returns (GetStreamInfoForUploadResponse) {}
+
+  rpc NotifyTranscodingFailure(NotifyTranscodingFailureRequest) returns (NotifyTranscodingFailureResponse) {}
 }
 
 message NotifyTranscodingProgressRequest {
@@ -235,4 +237,16 @@ message LivePreviewRequest {
 
 message LivePreviewResponse {
   bytes LiveThumb = 1;
+}
+
+message NotifyTranscodingFailureRequest {
+  string WorkerID = 1;
+  uint32 StreamID = 2;
+  string Version = 3;
+  string FilePath = 4;
+  string Logs = 5;
+  int64 ExitCode = 6;
+}
+
+message NotifyTranscodingFailureResponse {
 }

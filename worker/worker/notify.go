@@ -18,6 +18,27 @@ func closeConnection(conn *grpc.ClientConn) {
 	}
 }
 
+func NotifyTranscodingFailure(streamContext StreamContext, transcodingError error) {
+	client, conn, err := GetClient()
+	if err != nil {
+		log.WithError(err).Error("Unable to dial tumlive")
+		return
+	}
+	defer closeConnection(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	_, err = client.NotifyTranscodingFailure(ctx, &pb.NotifyTranscodingFailureRequest{
+		WorkerID: cfg.WorkerID,
+		StreamID: streamContext.streamId,
+		Version:  streamContext.streamVersion,
+		FilePath: streamContext.getRecordingFileName(),
+		Logs:     transcodingError.Error(),
+	})
+	if err != nil {
+		log.WithError(err).Error("Could not send transcoding error")
+	}
+}
+
 func notifySilenceResults(silences *[]silence, streamID uint32) {
 	if silences == nil {
 		return

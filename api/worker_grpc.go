@@ -996,6 +996,31 @@ func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool, daoWrapper 
 	}
 }
 
+func (s server) NotifyTranscodingFailure(ctx context.Context, request *pb.NotifyTranscodingFailureRequest) (*pb.NotifyTranscodingFailureResponse, error) {
+	worker, err := s.WorkerDao.GetWorkerByID(ctx, request.WorkerID)
+	if err != nil {
+		return nil, err
+	}
+	failure := model.TranscodingFailure{
+		StreamID: uint(request.StreamID),
+		Logs:     request.Logs,
+		ExitCode: int(request.ExitCode),
+		FilePath: request.FilePath,
+		Hostname: worker.Host,
+	}
+	switch request.Version {
+	case "CAM":
+		failure.Version = model.CAM
+	case "PRES":
+		failure.Version = model.PRES
+	default:
+		failure.Version = model.COMB
+	}
+
+	err = s.DaoWrapper.TranscodingFailureDao.New(&failure)
+	return &pb.NotifyTranscodingFailureResponse{}, err
+}
+
 // getWorkerWithLeastWorkload Gets the index of the worker from workers with the least workload.
 // workers must not be empty!
 func getWorkerWithLeastWorkload(workers []model.Worker) int {
