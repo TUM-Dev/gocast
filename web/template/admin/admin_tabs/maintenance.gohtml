@@ -38,6 +38,43 @@
                 <span x-cloak x-show="cronRunOk!==null" :class="cronRunOk?'text-green-500':'text-red-500'" x-text="cronRunOk?'Job has been triggered':'Something went wrong'"></span>
             </div>
         </div>
+
+        <div class="form-container" x-init="fetchTranscodingFailures()">
+            <div class="form-container-title">Failed Transcodings</div>
+            <div class="form-container-body">
+                <div class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                    <div class="flex justify-between text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <span class="px-6 py-3">Stream</span>
+                        <span class="px-6 py-3">Time</span>
+                        <span class="px-6 py-3">Worker</span>
+                        <span class="px-6 py-3">Actions</span>
+                    </div>
+                    <div>
+                    <template x-for="failure in transcodingFailures" :key="failure.ID">
+                        <div x-data="{ toggled: false }">
+                            <div class="flex justify-between bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                                <span class="px-6 py-3" x-text="failure.StreamID + ' - ' + failure.Version"></span>
+                                <span class="px-6 py-3" x-text="failure.FriendlyTime"></span>
+                                <span class="px-6 py-3" x-text="failure.Hostname"></span>
+                                <span>
+                                    <button class="btn" @click="toggled=!toggled" x-text="toggled?'Collapse':'Expand'"></button>
+                                    <button class="btn bg-red-500 text-white hover:bg-red-600" @click="deleteTranscodingFailure(failure.ID)"><i class="fas fa-trash"></i></button>
+                                </span>
+                            </div>
+                            <div x-show="toggled" class="px-6 py-3">
+                                <span class="font-semibold block">Filename</span>
+                                <span x-text="failure.FilePath"></span>
+
+                                <span class="font-semibold block">Logs</span>
+                                <div class="w-full whitespace-pre-wrap overflow-scroll" x-text="failure.Logs"></div>
+                            </div>
+                        </div>
+                    </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
 {{end}}

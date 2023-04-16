@@ -78,6 +78,7 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 	err := transcode(ctx)
 	if err != nil {
 		ctx.TranscodingSuccessful = false
+		NotifyTranscodingFailure(*ctx, err)
 		log.Errorf("Error while transcoding: %v", err)
 	} else {
 		ctx.TranscodingSuccessful = true
@@ -232,6 +233,7 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	err := transcode(streamCtx)
 	if err != nil {
 		streamCtx.TranscodingSuccessful = false
+		NotifyTranscodingFailure(*streamCtx, err)
 		log.Errorf("Error while transcoding: %v", err)
 	} else {
 		streamCtx.TranscodingSuccessful = true
@@ -338,6 +340,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		S.startTranscoding(c.getStreamName())
 		err := transcode(&c)
 		if err != nil {
+			NotifyTranscodingFailure(c, err)
 			log.WithError(err).Error("Error transcoding")
 		}
 		notifyTranscodingDone(&c)

@@ -15,6 +15,10 @@ interface maintenancePage {
     fetchCronJobs(): void;
     runSelectedCronJob(): Promise<boolean>;
     cronRunOk: boolean | null;
+
+    fetchTranscodingFailures(): void;
+    transcodingFailures: {}[];
+    deleteTranscodingFailure(id: number): void;
 }
 
 export function maintenancePage(): maintenancePage {
@@ -67,5 +71,17 @@ export function maintenancePage(): maintenancePage {
                 });
         },
         cronRunOk: null,
+        fetchTranscodingFailures() {
+            fetch("/api/maintenance/transcodingFailures").then(r => r.json()).then(r => this.transcodingFailures = r);
+        },
+        transcodingFailures: [],
+        deleteTranscodingFailure(id: number) {
+            fetch("/api/maintenance/transcodingFailures/" + id, { method: "DELETE" }).then(r => {
+                if (r.status === StatusCodes.OK) {
+                    console.log(id);
+                    this.transcodingFailures = this.transcodingFailures.filter(f => f.ID !== id);
+                }
+            });
+        }
     };
 }
