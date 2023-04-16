@@ -1,5 +1,4 @@
 import { StatusCodes } from "http-status-codes";
-import { retractMessage } from "./watch";
 
 interface maintenancePage {
     generateThumbnails(): Promise<boolean>;
@@ -17,7 +16,7 @@ interface maintenancePage {
     cronRunOk: boolean | null;
 
     fetchTranscodingFailures(): void;
-    transcodingFailures: {}[];
+    transcodingFailures: { ID: number }[];
     deleteTranscodingFailure(id: number): void;
 }
 
@@ -72,16 +71,18 @@ export function maintenancePage(): maintenancePage {
         },
         cronRunOk: null,
         fetchTranscodingFailures() {
-            fetch("/api/maintenance/transcodingFailures").then(r => r.json()).then(r => this.transcodingFailures = r);
+            fetch("/api/maintenance/transcodingFailures")
+                .then((r) => r.json())
+                .then((r) => (this.transcodingFailures = r));
         },
         transcodingFailures: [],
         deleteTranscodingFailure(id: number) {
-            fetch("/api/maintenance/transcodingFailures/" + id, { method: "DELETE" }).then(r => {
+            fetch("/api/maintenance/transcodingFailures/" + id, { method: "DELETE" }).then((r) => {
                 if (r.status === StatusCodes.OK) {
                     console.log(id);
-                    this.transcodingFailures = this.transcodingFailures.filter(f => f.ID !== id);
+                    this.transcodingFailures = this.transcodingFailures.filter((f) => f.ID !== id);
                 }
             });
-        }
+        },
     };
 }
