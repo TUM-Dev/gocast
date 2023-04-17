@@ -24,6 +24,13 @@ enum WSMessageType {
     ReactTo = "react_to",
 }
 
+export enum SidebarState {
+    Hidden = "hidden",
+    Chat = "chat",
+    Bookmarks = "bookmarks",
+    Streams = "streams",
+}
+
 export { repeatHeatMap } from "./repeat-heatmap";
 export { seekbarHighlights, MarkerType } from "./seekbar-highlights";
 export { seekbarOverlay, SeekbarHoverPosition } from "./seekbar-overlay";

@@ -20,7 +20,7 @@
         <script defer src="/static/node_modules/katex/dist/contrib/copy-tex.min.js"></script>
     {{end}}
 </head>
-<body x-data="{'streamID': {{$stream.Model.ID}}, 'showChat': $persist(false).as('chatOpen'), seekLogger: new watch.SeekLogger('{{$stream.ID}}'), showBookmarks: false, showShare: false}"
+<body x-data="{'streamID': {{$stream.Model.ID}}, seekLogger: new watch.SeekLogger('{{$stream.ID}}'), sidebar: $persist(watch.SidebarState.Hidden).as('sidebarState'), showShare: false}"
       @keypress.shift.window="(e) => watch.onShift(e)"
       x-init="watch.startWebsocket(); seekLogger.attach();">
 {{template "header" .IndexData.TUMLiveContext}}
@@ -67,9 +67,9 @@
     </div>
 </div>
 {{if .IndexData.TUMLiveContext.User}}
-<div id="bookmarks-mobile" x-cloak="" x-show="showBookmarks"
+<div id="bookmarks-mobile" x-cloak="" x-show="sidebar === watch.SidebarState.Bookmarks"
      class="md:hidden flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
-    <div @click.outside="showBookmarks = false"
+    <div @click.outside="sidebar = watch.SidebarState.Hidden"
          class="m-auto w-3/4 h-96 bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
         {{template "bookmarks-modal" $stream.ID}}
     </div>
@@ -84,7 +84,7 @@
         <div id="watchWrapper"
              x-data="{ 'chatEnabled': {{and $course.ChatEnabled $stream.ChatEnabled}} }"
              class="relative basis-full lg:order-none order-1 sticky top-0 lg:relative z-40"
-             :class="(showChat && chatEnabled) || showBookmarks ? 'lg:basis-3/4 lg:h-16/6 h-16/9' : 'lg:basis-full h-16/9'">
+             :class="sidebar !== watch.SidebarState.Hidden ? 'lg:basis-3/4 lg:h-16/6 h-16/9' : 'lg:basis-full h-16/9'">
             <noscript>
                 <p class="vjs-no-js">To view this video please enable JavaScript.</p>
             </noscript>
@@ -387,8 +387,8 @@
         </div>
         <!-- Chat -->
         {{if and $course.ChatEnabled $stream.ChatEnabled}}
-            <div x-show="showChat"
-                 :class="showChat ? 'lg:basis-1/4' : 'lg:basis-0'"
+            <div x-show="sidebar === watch.SidebarState.Chat"
+                 :class="sidebar === watch.SidebarState.Chat ? 'lg:basis-1/4' : 'lg:basis-0'"
                  class="z-20 basis-full order-5
                         md:px-2 md:pt-2
                         lg:h-16/6 h-96 lg:order-none">
@@ -400,8 +400,8 @@
 
         <!-- Bookmarks -->
         {{if .IndexData.TUMLiveContext.User}}
-        <div id="bookmarks-desktop" x-cloak="" x-show="showBookmarks"
-             :class="showBookmarks ? 'lg:basis-1/4' : 'lg:basis-0'"
+        <div id="bookmarks-desktop" x-cloak="" x-show="sidebar === watch.SidebarState.Bookmarks"
+             :class="sidebar === watch.SidebarState.Bookmarks ? 'lg:basis-1/4' : 'lg:basis-0'"
              class="hidden md:block basis-full h-96 lg:h-16/6 px-5 md:px-2 md:pt-2 lg:order-none order-4">
             {{template "bookmarks-modal" $stream.ID}}
         </div>
@@ -445,7 +445,7 @@
                         {{end}}
 
                         {{if .IndexData.TUMLiveContext.User}}
-                            <button @click="showChat = false; showBookmarks = !showBookmarks"
+                            <button @click="sidebar = (sidebar === watch.SidebarState.Bookmarks ? watch.SidebarState.Hidden : watch.SidebarState.Bookmarks)"
                                     class="rounded-lg px-4 py-2 h-fit w-fit bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600"
                                     :title="'New Bookmark'">
                                 <i class="fa-solid fa-bookmark text-4"></i>
@@ -463,13 +463,21 @@
 
                         <!-- Desktop Open Chat -->
                         {{if and $course.ChatEnabled $stream.ChatEnabled}}
-                            <button @click="showBookmarks = false;showChat = !showChat;"
+                            <button @click="sidebar = (sidebar === watch.SidebarState.Chat ? watch.SidebarState.Hidden : watch.SidebarState.Chat)"
                                     title="Open Chat"
-                                    :class="showChat ? 'bg-gray-200 hover:bg-gray-100 dark:bg-gray-600 dark:hover:bg-secondary' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600'"
+                                    :class="sidebar === watch.SidebarState.Chat ? 'bg-gray-200 hover:bg-gray-100 dark:bg-gray-600 dark:hover:bg-secondary' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600'"
                                     class="rounded-lg px-3 py-2 h-fit w-fit">
                                 <i class="fa-solid fa-comments text-4"></i>
                             </button>
                         {{end}}
+
+                        <!-- Lecture Stream Playlist -->
+                        <button @click="sidebar = (sidebar === watch.SidebarState.Streams ? watch.SidebarState.Hidden : watch.SidebarState.Streams)"
+                                title="Open Playlist"
+                                :class="sidebar === watch.SidebarState.Streams ? 'bg-gray-200 hover:bg-gray-100 dark:bg-gray-600 dark:hover:bg-secondary' : 'bg-gray-100 hover:bg-gray-200 dark:bg-secondary-light dark:hover:bg-gray-600'"
+                                class="rounded-lg px-3 py-2 h-fit w-fit">
+                            <i class="fa-solid fa-list text-4"></i>
+                        </button>
                     </div>
                 </div>
             </div>
