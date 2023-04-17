@@ -351,6 +351,14 @@ export class Lecture {
             });
     }
 
+    hasAttachments(): boolean {
+        if (this.files !== undefined && this.files !== null) {
+            const filtered = this.files.filter((f) => f.fileType === 2);
+            return filtered.length > 0;
+        }
+        return false;
+    }
+
     onFileDrop(e) {
         e.preventDefault();
         if (e.dataTransfer.items) {

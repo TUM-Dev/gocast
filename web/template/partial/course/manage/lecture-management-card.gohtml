@@ -215,7 +215,7 @@
 
         <div x-show="lecture.uiEditMode > 0" class="grid gap-y-4 p-4">
             <article class="grid gap-2 w-full">
-                <header class = "border-b dark:border-gray-800 w-full">
+                <header class="border-b dark:border-gray-800 w-full">
                     <h6 class="text-sm text-5 font-light">Title and Description</h6>
                 </header>
                 <article x-data="{ id: $id('text-input') }"
@@ -304,25 +304,27 @@
                 </div>
             </article>
 
-            <article>
-                <h6 class="text-sm text-5 font-light border-b dark:border-gray-800">Attachments</h6>
-                <ul class="list-disc grid py-2 ml-6">
-                    <template x-for="file in lecture.files">
-                        <template x-if="file.fileType === 2">
-                            <li>
-                                <section class="flex items-center">
+            <template x-if="lecture.hasAttachments()">
+                <article>
+                    <h6 class="text-sm text-5 font-light border-b dark:border-gray-800">Attachments</h6>
+                    <ul class="list-disc grid py-2 ml-6">
+                        <template x-for="file in lecture.files">
+                            <template x-if="file.fileType === 2">
+                                <li>
+                                    <section class="flex items-center">
                                     <span class="text-xs font-semibold text-3 my-auto"
                                           x-text="file.friendlyName"></span>
-                                    <button class="px-3"
-                                            @click="lecture.deleteFile(file.id)">
-                                        <i class="fa fa-xmark"></i>
-                                    </button>
-                                </section>
-                            </li>
+                                        <button class="px-3"
+                                                @click="lecture.deleteFile(file.id)">
+                                            <i class="fa fa-xmark"></i>
+                                        </button>
+                                    </section>
+                                </li>
+                            </template>
                         </template>
-                    </template>
-                </ul>
-            </article>
+                    </ul>
+                </article>
+            </template>
 
             <template x-if="lecture.uiEditMode > 0"> <!-- only render if in edit mode to avoid network calls -->
                 {{template "editvideosections"}}
@@ -330,8 +332,8 @@
 
             <article>
                 <h6 class="text-sm text-5 font-light border-b dark:border-gray-800">Live Chat</h6>
-                <section class="flex items-center">
-                    <label class="text-sm font-light text-5 mr-2">Enable</label>
+                <section class="flex items-center py-1">
+                    <label class="text-sm font-light text-5 mr-2">Enabled</label>
                     <input @change="lecture.updateIsDirty()" x-model="lecture.newIsChatEnabled"
                            class="w-auto mr-2" type="checkbox"/>
                 </section>
