@@ -12,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//stream records and streams a lecture hall to the lrz
+// stream records and streams a lecture hall to the lrz
 func stream(streamCtx *StreamContext) {
 	// add 10 minutes padding to stream end in case lecturers do lecturer things
 	streamUntil := streamCtx.endTime.Add(time.Minute * 10)
@@ -22,6 +22,7 @@ func stream(streamCtx *StreamContext) {
 	defer S.endStream(streamCtx)
 	// in case ffmpeg dies retry until stream should be done.
 	lastErr := time.Now().Add(time.Minute * -1)
+	errCount := 0
 	for time.Now().Before(streamUntil) && !streamCtx.stopped {
 		var cmd *exec.Cmd
 
@@ -54,6 +55,12 @@ func stream(streamCtx *StreamContext) {
 		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 		err := cmd.Run()
 		if err != nil && !streamCtx.stopped {
+			errCount++
+			if errCount > 20 {
+				// assume 20 seconds of inactivity by streamer as offline
+				streamCtx.stopped = true
+				return
+			}
 			errorWithBackoff(&lastErr, "Error while streaming (run)", err)
 			if errFfmpegErrFile == nil {
 				_ = ffmpegErr.Close()
@@ -67,7 +74,7 @@ func stream(streamCtx *StreamContext) {
 	streamCtx.streamCmd = nil
 }
 
-//errorWithBackoff updates lastError and sleeps for a second if the last error was within this second
+// errorWithBackoff updates lastError and sleeps for a second if the last error was within this second
 func errorWithBackoff(lastError *time.Time, msg string, err error) {
 	log.WithFields(log.Fields{"lastErr": lastError}).WithError(err).Error(msg)
 	if time.Now().Add(time.Second * -1).Before(*lastError) {
