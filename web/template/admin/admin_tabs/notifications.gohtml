@@ -4,14 +4,16 @@
     {{ range . }}
         {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Notification*/ -}}
         <section x-data class="form-container">
-            <h2 class="form-container-title">
-                <span class="mr-4">{{.Model.CreatedAt.Format "02.01.2006 15:04"}}</span>
-                {{if .Title}}{{.Title}}{{else}}<i>No title</i>{{end}}
-                <button class="btn primary align-right" type="button"
-                        @click="admin.deleteNotification({{.Model.ID}})">Delete
-                </button>
+            <h2 class="form-container-title flex justify-between">
+                <span>
+                    <span class="mr-4">{{.Model.CreatedAt.Format "02.01.2006 15:04"}}</span>
+                    {{if .Title}}{{.Title}}{{else}}<i>No title</i>{{end}}
+                </span>
+                <div class="justify-self-end ml-2">
+                    <i @click="admin.deleteNotification({{.Model.ID}})" class="fas fa-trash btn primary"></i>
+                </div>
             </h2>
-            <div class="form-container-body">
+            <div class="form-container-body text-3">
                 <div>{{.GetBodyForGoTemplate}}</div>
             </div>
         </section>
