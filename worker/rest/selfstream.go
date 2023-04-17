@@ -64,6 +64,7 @@ func (s *safeStreams) onPublishDone(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// todo remove this
 // onPublish is called by nginx when the stream starts publishing
 func (s *safeStreams) onPublish(w http.ResponseWriter, r *http.Request) {
 	log.Info("onPublish called")
@@ -118,6 +119,12 @@ func (s *safeStreams) onPublish(w http.ResponseWriter, r *http.Request) {
 
 	// register stream in local map
 	streamContext := worker.HandleSelfStream(resp, slug)
+
+	go func() {
+		worker.HandleStreamEnd(streamContext, false)
+		worker.NotifyStreamDone(streamContext)
+		worker.HandleSelfStreamRecordEnd(streamContext)
+	}()
 
 	s.mutex.Lock()
 	s.streams[streamKey] = streamContext
