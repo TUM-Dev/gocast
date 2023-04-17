@@ -1,6 +1,8 @@
 package rest
 
 import (
+	"encoding/json"
+	"fmt"
 	"google.golang.org/grpc"
 	"io"
 	"net/http"
@@ -34,7 +36,14 @@ func (s *safeStreams) onPublishDone(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Info("onPublishDone called")
-	streamKey, _, err := mustGetStreamInfo(r)
+	var req OnStartReq
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Could not decode request", http.StatusBadRequest)
+		return
+	}
+	streamKey, _, err := mustGetStreamInfo(req)
 	if err != nil {
 		log.WithFields(log.Fields{"request": r.Form}).WithError(err).Warn("onPublishDone: bad request")
 		http.Error(w, "Could not retrieve stream info", http.StatusBadRequest)
@@ -62,7 +71,17 @@ func (s *safeStreams) onPublish(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	streamKey, slug, err := mustGetStreamInfo(r)
+	var req OnStartReq
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Could not decode request", http.StatusBadRequest)
+		return
+	}
+	if req.Action != "publish" {
+		// all good, client is reading
+		return
+	}
+	streamKey, slug, err := mustGetStreamInfo(req)
 	if err != nil {
 		log.WithFields(log.Fields{"request": r.Form}).WithError(err).Warn("onPublish: bad request")
 		http.Error(w, "Could not retrieve stream info", http.StatusBadRequest)
@@ -86,6 +105,7 @@ func (s *safeStreams) onPublish(w http.ResponseWriter, r *http.Request) {
 		CourseSlug: slug,
 	})
 	if err != nil {
+		log.Error(err)
 		http.Error(w, "Authentication failed for SendSelfStreamRequest", http.StatusForbidden)
 		return
 	}
@@ -102,4 +122,15 @@ func (s *safeStreams) onPublish(w http.ResponseWriter, r *http.Request) {
 	s.mutex.Lock()
 	s.streams[streamKey] = streamContext
 	s.mutex.Unlock()
+}
+
+type OnStartReq struct {
+	Ip       string `json:"ip"`
+	User     string `json:"user"`
+	Password string `json:"password"`
+	Path     string `json:"path"`
+	Protocol string `json:"protocol"`
+	Id       string `json:"id"`
+	Action   string `json:"action"`
+	Query    string `json:"query"`
 }
