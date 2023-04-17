@@ -69,7 +69,7 @@ func HandleSelfStream(request *pb.SelfStreamResponse, slug string) *StreamContex
 		streamName:    request.StreamName,
 		outUrl:        request.OutUrl,
 	}
-	go stream(streamCtx)
+	stream(streamCtx)
 	return streamCtx
 }
 

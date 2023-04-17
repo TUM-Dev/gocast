@@ -117,18 +117,19 @@ func (s *safeStreams) onPublish(w http.ResponseWriter, r *http.Request) {
 	}
 	s.mutex.Unlock()
 
+	// todo is this right?
 	// register stream in local map
 	streamContext := worker.HandleSelfStream(resp, slug)
+
+	s.mutex.Lock()
+	s.streams[streamKey] = streamContext // todo this is only added after the stream has ended
+	s.mutex.Unlock()
 
 	go func() {
 		worker.HandleStreamEnd(streamContext, false)
 		worker.NotifyStreamDone(streamContext)
 		worker.HandleSelfStreamRecordEnd(streamContext)
 	}()
-
-	s.mutex.Lock()
-	s.streams[streamKey] = streamContext
-	s.mutex.Unlock()
 }
 
 type OnStartReq struct {

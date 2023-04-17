@@ -56,8 +56,8 @@ func stream(streamCtx *StreamContext) {
 		err := cmd.Run()
 		if err != nil && !streamCtx.stopped {
 			errCount++
-			if errCount > 20 {
-				// assume 20 seconds of inactivity by streamer as offline
+			if errCount > 20 && strings.Contains(streamCtx.sourceUrl, "localhost") {
+				// assume 20 seconds of inactivity by self - streamer as offline
 				streamCtx.stopped = true
 				return
 			}
