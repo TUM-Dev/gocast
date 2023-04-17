@@ -1,0 +1,24 @@
+{{/* 1st parameter: 'streamID' */}}
+{{define "playlist"}}
+    <div x-data="{showAddMenu: false}"
+         class="relative h-full border rounded-lg dark:border-gray-800">
+        <div class="h-full">
+            <div class="flex justify-between items-center p-4 border-b dark:border-gray-800">
+                <h3 class="font-bold text-sm text-xl text-3">Playlist</h3>
+                <div>
+                    <button type="button" title="Open bookmark dialog"
+                            class="text-3 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 px-3 py-1 h-fit w-fit rounded-lg"
+                            @click="showAddMenu = !showAddMenu">
+                        <i class="fa-solid fa-backward-step text-4"></i>
+                    </button>
+                    <button type="button" title="Open bookmark dialog"
+                            class="text-3 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 px-3 py-1 h-fit w-fit rounded-lg"
+                            @click="showAddMenu = !showAddMenu">
+                        <i class="fa-solid fa-forward-step text-4"></i>
+                    </button>
+                </div>
+            </div>
+            {{template "bookmark-list" .}}
+        </div>
+    </div>
+{{end}}
