@@ -33,7 +33,7 @@ udpMaxPayloadSize: 1472
 # }
 # If the response code is 20x, authentication is accepted, otherwise
 # it is discarded.
-externalAuthenticationURL: http://localhost:8060/on_publish
+#externalAuthenticationURL: http://localhost:8060/on_publish
 
 # Enable the HTTP API.
 api: no

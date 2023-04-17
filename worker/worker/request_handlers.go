@@ -65,7 +65,7 @@ func HandleSelfStream(request *pb.SelfStreamResponse, slug string) *StreamContex
 		streamVersion: "COMB",
 		isSelfStream:  false,
 		ingestServer:  request.IngestServer,
-		sourceUrl:     "rtmp://localhost/stream/" + slug,
+		sourceUrl:     "rtmp://localhost/" + slug,
 		streamName:    request.StreamName,
 		outUrl:        request.OutUrl,
 	}
