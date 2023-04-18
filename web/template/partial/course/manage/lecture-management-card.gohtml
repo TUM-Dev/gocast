@@ -309,7 +309,7 @@
                     <h6 class="text-sm text-5 font-light border-b dark:border-gray-800">Attachments</h6>
                     <ul class="list-disc grid py-2 ml-6">
                         <template x-for="file in lecture.files">
-                            <template x-if="file.fileType === 2">
+                            <template x-if="file.fileType === admin.FileType.attachment">
                                 <li>
                                     <section class="flex items-center">
                                     <span class="text-xs font-semibold text-3 my-auto"

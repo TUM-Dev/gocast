@@ -7,6 +7,16 @@ export enum UIEditMode {
     series,
 }
 
+export enum FileType {
+    invalid,
+    vod,
+    attachment,
+    image_jpg,
+    thumb_comb,
+    thumb_cam,
+    thumb_pres,
+}
+
 export class LectureList {
     static lectures: Lecture[] = [];
 
@@ -338,7 +348,7 @@ export class Lecture {
         if (this.files === undefined || this.files === null) {
             return [];
         }
-        return this.files.filter((f: LectureFile) => f.fileType === 1);
+        return this.files.filter((f: LectureFile) => f.fileType === FileType.vod);
     }
 
     async deleteFile(fileId: number) {
@@ -353,7 +363,7 @@ export class Lecture {
 
     hasAttachments(): boolean {
         if (this.files !== undefined && this.files !== null) {
-            const filtered = this.files.filter((f) => f.fileType === 2);
+            const filtered = this.files.filter((f) => f.fileType === FileType.attachment);
             return filtered.length > 0;
         }
         return false;
