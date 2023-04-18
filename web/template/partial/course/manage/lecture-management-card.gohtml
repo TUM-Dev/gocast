@@ -215,7 +215,7 @@
 
         <div x-show="lecture.uiEditMode > 0" class="grid gap-y-4 p-4">
             <article class="grid gap-2 w-full">
-                <header class="border-b dark:border-gray-800 w-full">
+                <header class="border-b dark:border-gray-600 w-full">
                     <h6 class="text-sm text-5 font-light">Title and Description</h6>
                 </header>
                 <article x-data="{ id: $id('text-input') }"
@@ -306,7 +306,7 @@
 
             <template x-if="lecture.hasAttachments()">
                 <article>
-                    <h6 class="text-sm text-5 font-light border-b dark:border-gray-800">Attachments</h6>
+                    <h6 class="text-sm text-5 font-light border-b dark:border-gray-600">Attachments</h6>
                     <ul class="list-disc grid py-2 ml-6">
                         <template x-for="file in lecture.files">
                             <template x-if="file.fileType === admin.FileType.attachment">
@@ -331,7 +331,7 @@
             </template>
 
             <article>
-                <h6 class="text-sm text-5 font-light border-b dark:border-gray-800">Live Chat</h6>
+                <h6 class="text-sm text-5 font-light border-b dark:border-gray-600">Live Chat</h6>
                 <section class="flex items-center py-1">
                     <label class="text-sm font-light text-5 mr-2">Enabled</label>
                     <input @change="lecture.updateIsDirty()" x-model="lecture.newIsChatEnabled"

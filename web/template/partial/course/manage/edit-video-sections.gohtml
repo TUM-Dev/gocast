@@ -3,7 +3,7 @@
             x-data="{ videoSectionController: new admin.VideoSectionsAdminController(lecture.lectureId), videoSections: [] }"
             x-init="() => videoSectionController.init(`edit-video-sections-${lecture.lectureId}`, $el)"
             @update="(e) => (videoSections = e.detail)" class="grid gap-y-3">
-        <header class="flex justify-between items-center border-b dark:border-gray-800">
+        <header class="flex justify-between items-center border-b dark:border-gray-600">
             <div class="flex items-center">
                 <h6 class="text-sm text-5 font-light">Video Sections</h6>
                 <div x-data="{showInfo: false}"
