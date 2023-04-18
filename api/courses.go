@@ -320,11 +320,9 @@ func (r coursesRoutes) getCourse(c *gin.Context) {
 		}
 		return
 	}
-	var response Response
-	if tumLiveContext.User == nil {
-		// Not-Logged-In Users do not receive the watch state
-		response = Response{Course: course}
-	} else {
+
+	response := Response{Course: course}
+	if tumLiveContext.User != nil {
 		streamsWithWatchState, err := r.StreamsDao.GetStreamsWithWatchState(course.ID, (*tumLiveContext.User).ID)
 		if err != nil {
 			sentry.CaptureException(err)
