@@ -301,6 +301,24 @@ func (r streamRoutes) getStream(c *gin.Context) {
 		"vod":         stream.Recording})
 }
 
+func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
+	type PlaylistStream struct {
+		StreamName string `json:"streamName"`
+		Watched    bool   `json:"watched"`
+	}
+
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	var result []PlaylistStream
+	for _, stream := range tumLiveContext.Course.Streams {
+		result = append(result, PlaylistStream{
+			StreamName: stream.StreamName,
+			Watched:    stream.Watched,
+		})
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
 func (r streamRoutes) getVideoSections(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	sections, err := r.VideoSectionDao.GetByStreamId(tumLiveContext.Stream.ID)
