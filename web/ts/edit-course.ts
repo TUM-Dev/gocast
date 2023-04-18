@@ -352,7 +352,6 @@ export class Lecture {
     }
 
     onFileDrop(e) {
-        e.preventDefault();
         if (e.dataTransfer.items) {
             const kind = e.dataTransfer.items[0].kind;
             switch (kind) {
