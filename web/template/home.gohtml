@@ -137,7 +137,7 @@
         {{end}}
     </div>
 </header>
-<article id = "content" class="flex grow h-full overflow-y-scroll">
+<article id="content" class="flex grow h-full overflow-y-scroll">
     <section id="side-navigation" class="tum-live-side-navigation lg:w-80 md:w-56 md:block"
              :class="navigation.value ? 'flex w-full' : 'hidden'">
         <article class="tum-live-side-navigation-group">
@@ -426,7 +426,7 @@
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </header>
-                <div class="w-full min-h-30 max-h-60 overflow-y-scroll py-2">
+                <div id="notification-list" class="w-full min-h-30 max-h-60 overflow-y-scroll py-2">
                     <div x-cloak x-show="notifications.empty()" class="py-4 relative text-3 text-center">
                         <span class="font-semibold">No notifications yet :)</span>
                     </div>

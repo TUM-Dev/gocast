@@ -28,12 +28,12 @@
 }
 
 /* Chrome, Safari and Opera */
-#content::-webkit-scrollbar {
+#content::-webkit-scrollbar, #notification-list::-webkit-scrollbar, .tum-live-side-navigation::-webkit-scrollbar {
     display: none;
 }
 
 /* IE, Edge and Firefox */
-#content {
+#content, #notification-list, .tum-live-side-navigation {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
 }
@@ -71,17 +71,6 @@
 
 .tum-live-badge > i{
     @apply mr-1
-}
-
-/* Chrome, Safari and Opera */
-.tum-live-side-navigation::-webkit-scrollbar {
-    display: none;
-}
-
-/* IE, Edge and Firefox */
-.tum-live-side-navigation {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
 }
 
 .tum-live-side-navigation{
@@ -155,6 +144,7 @@
 .tum-live-menu {
     @apply tum-live-bg shadow-lg rounded-lg h-fit border dark:border-gray-800 text-sm text-3 dark:shadow-gray-900/75
 }
+
 
 .tum-live-menu > header {
     @apply py-2 px-4 border-b dark:border-gray-800
