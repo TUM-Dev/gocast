@@ -509,7 +509,7 @@ a.fc-event, a.fc-event:hover {
 }
 
 .vjs-has-started.vjs-user-inactive.vjs-playing .vjs-skip-silence-control {
-    visibility: visible;
+    visibility: hidden;
     opacity: 0;
     pointer-events: none;
     transition: visibility 1s,opacity 1s;
