@@ -330,15 +330,6 @@
                 {{template "editvideosections"}}
             </template>
 
-            <article>
-                <h6 class="text-sm text-5 font-light border-b dark:border-gray-600">Live Chat</h6>
-                <section class="flex items-center py-1">
-                    <label class="text-sm font-light text-5 mr-2">Enabled</label>
-                    <input @change="lecture.updateIsDirty()" x-model="lecture.newIsChatEnabled"
-                           class="w-auto mr-2" type="checkbox"/>
-                </section>
-            </article>
-
             <span x-show="lecture.isRecording" class="absolute left-0 bottom-0 p-4">
                 <!-- buttons go here -->
             </span>
@@ -351,17 +342,31 @@
                 </ul>
             </div>
 
-            <div class="mt-6 flex justify-end">
-                <button :disabled="lecture.isSaving" @click="lecture.discardEdit();"
-                        class="px-8 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4">
-                    Discard Changes
-                </button>
-                <button
-                        @click="lecture.saveEdit();"
-                        :disabled="!lecture.isDirty || lecture.isSaving"
-                        class="px-8 py-3 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500"
-                        x-text="lecture.isSaving ? 'loading ...' : (lecture.uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
-                ></button>
+            <div class="mt-6 flex items-center justify-between">
+                <section class="flex items-center py-1 px-3">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" value="" class="sr-only peer" @change="lecture.updateIsDirty()"
+                               x-model="lecture.newIsChatEnabled">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-600
+                        dark:peer-focus:ring-indigo-600 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full
+                        peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                        after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5
+                        after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-indigo-600"></div>
+                        <span class="ml-3 text-sm font-medium text-3">Chat Enabled</span>
+                    </label>
+                </section>
+                <div>
+                    <button :disabled="lecture.isSaving" @click="lecture.discardEdit();"
+                            class="px-8 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4">
+                        Discard Changes
+                    </button>
+                    <button
+                            @click="lecture.saveEdit();"
+                            :disabled="!lecture.isDirty || lecture.isSaving"
+                            class="px-8 py-3 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500"
+                            x-text="lecture.isSaving ? 'loading ...' : (lecture.uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
+                    ></button>
+                </div>
             </div>
         </div>
     </li>
