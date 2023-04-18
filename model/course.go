@@ -205,6 +205,7 @@ func (c Course) GetNextLecture() Stream {
 }
 
 // GetLastLecture returns the most recent lecture of the course
+// Assumes an ascending order of c.Streams
 func (c Course) GetLastLecture() Stream {
 	var lastLecture Stream
 	now := time.Now()
