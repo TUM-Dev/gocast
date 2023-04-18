@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live/tools/pathprovider"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -40,8 +41,13 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 		{
 			// All User Endpoints
 			streamById.GET("/sections", routes.getVideoSections)
-			streamById.GET("/thumbs/:fid", routes.getThumbs)
 			streamById.GET("/subtitles/:lang", routes.getSubtitles)
+
+			thumbs := streamById.Group("/thumbs")
+			{
+				thumbs.GET(":fid", routes.getThumbs)
+				thumbs.GET("/live", routes.getLiveThumbs)
+			}
 		}
 		{
 			// Admin-Only Endpoints
@@ -124,6 +130,30 @@ func (r streamRoutes) getThumbs(c *gin.Context) {
 		return
 	}
 	sendDownloadFile(c, file, tumLiveContext)
+}
+
+func (r streamRoutes) getLiveThumbs(c *gin.Context) {
+	ctx, exists := c.Get("TUMLiveContext")
+	tumLiveContext := ctx.(tools.TUMLiveContext)
+
+	if !exists {
+		sentry.CaptureException(errors.New("context should exist but doesn't"))
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "context should exist but doesn't",
+		})
+		return
+	}
+
+	streamId := strconv.Itoa(int(tumLiveContext.Stream.ID))
+	path := pathprovider.LiveThumbnail(streamId)
+	image, err := os.ReadFile(path)
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	c.Data(http.StatusOK, "image/jpg", image)
 }
 
 func (r streamRoutes) getSubtitles(c *gin.Context) {

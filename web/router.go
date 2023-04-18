@@ -3,7 +3,6 @@ package web
 import (
 	"embed"
 	"github.com/getsentry/sentry-go"
-	"github.com/joschahenningsen/TUM-Live/tools/pathprovider"
 	log "github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
@@ -58,10 +57,8 @@ func ConfigGinRouter(router *gin.Engine) {
 	configCourseRoute(router)
 }
 
-func configGinStaticRouter(router gin.IRoutes) {
+func configGinStaticRouter(router *gin.Engine) {
 	router.Static("/public", tools.Cfg.Paths.Static)
-
-	router.Static("/thumbnails/live", pathprovider.TUMLiveTemporary)
 
 	if VersionTag != "development" {
 		router.StaticFS("/static", http.FS(staticFS))

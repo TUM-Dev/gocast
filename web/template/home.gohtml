@@ -316,7 +316,7 @@
                                                 </template>
                                             </div>
                                             <a :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`">
-                                                <div :style="`background-image:url('/thumbnails/live/${livestream.Stream.ID}.jpeg')`"
+                                                <div :style="`background-image:url('/api/stream/${livestream.Stream.ID}/thumbs/live')`"
                                                      class="h-full tum-live-thumbnail"></div>
                                             </a>
                                         </div>
