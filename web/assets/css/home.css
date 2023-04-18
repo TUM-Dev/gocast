@@ -27,6 +27,18 @@
     }
 }
 
+/* Chrome, Safari and Opera */
+#content::-webkit-scrollbar {
+    display: none;
+}
+
+/* IE, Edge and Firefox */
+#content {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+
 /* Background colors */
 .tum-live-bg {
     @apply bg-white dark:bg-secondary;
@@ -59,6 +71,17 @@
 
 .tum-live-badge > i{
     @apply mr-1
+}
+
+/* Chrome, Safari and Opera */
+.tum-live-side-navigation::-webkit-scrollbar {
+    display: none;
+}
+
+/* IE, Edge and Firefox */
+.tum-live-side-navigation {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
 }
 
 .tum-live-side-navigation{

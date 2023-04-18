@@ -137,7 +137,7 @@
         {{end}}
     </div>
 </header>
-<article class="flex grow h-full overflow-y-scroll">
+<article id = "content" class="flex grow h-full overflow-y-scroll">
     <section id="side-navigation" class="tum-live-side-navigation lg:w-80 md:w-56 md:block"
              :class="navigation.value ? 'flex w-full' : 'hidden'">
         <article class="tum-live-side-navigation-group">
@@ -212,7 +212,7 @@
             </a>
         </footer>
     </section>
-    <article id="content-wrapper" class="text-3 p-4 grow" :class="{'hidden' : navigation.value}">
+    <article class="text-3 p-4 grow" :class="{'hidden' : navigation.value}">
         <template x-if="view === home.Views.PublicCourses">
             <article id="public-courses" class="tum-live-course-list">
                 <header>
