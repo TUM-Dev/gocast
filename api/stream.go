@@ -42,6 +42,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			streamById.GET("/sections", routes.getVideoSections)
 			streamById.GET("/thumbs/:fid", routes.getThumbs)
 			streamById.GET("/subtitles/:lang", routes.getSubtitles)
+			streamById.GET("/playlist", routes.getStreamPlaylist)
 		}
 		{
 			// Admin-Only Endpoints
@@ -302,17 +303,23 @@ func (r streamRoutes) getStream(c *gin.Context) {
 }
 
 func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
-	type PlaylistStream struct {
-		StreamName string `json:"streamName"`
-		Watched    bool   `json:"watched"`
+	type StreamPlaylistEntry struct {
+		StreamID   uint      `json:"streamId"`
+		StreamName string    `json:"streamName"`
+		LiveNow    bool      `json:"liveNow"`
+		Watched    bool      `json:"watched"`
+		CreatedAt  time.Time `json:"createdAt"`
 	}
 
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-	var result []PlaylistStream
+	var result []StreamPlaylistEntry
 	for _, stream := range tumLiveContext.Course.Streams {
-		result = append(result, PlaylistStream{
-			StreamName: stream.StreamName,
+		result = append(result, StreamPlaylistEntry{
+			StreamID:   stream.ID,
+			StreamName: stream.GetName(),
+			LiveNow:    stream.LiveNow,
 			Watched:    stream.Watched,
+			CreatedAt:  stream.CreatedAt,
 		})
 	}
 

@@ -1,6 +1,7 @@
 {{/* 1st parameter: 'streamID' */}}
 {{define "playlist"}}
-    <div x-data="{showAddMenu: false}"
+    <div x-data="{ streamPlaylist: new watch.StreamPlaylist({{.}}, $el), playlistList: [] }"
+         @update="(e) => (playlistList = e.detail)"
          class="relative h-full border rounded-lg dark:border-gray-800">
         <div class="h-full">
             <div class="flex justify-between items-center p-4 border-b dark:border-gray-800">
@@ -18,7 +19,15 @@
                     </button>
                 </div>
             </div>
-            {{template "bookmark-list" .}}
+            <div x-cloak class="h-[85%]">
+                <div class="relative grid gap-1 overflow-y-scroll pr-3 max-h-full">
+                    <template x-for="(elem, i) in playlistList" :key="elem.streamId">
+                        <div class="p-4 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
+                            <h2 x-text="elem.streamName" class="text-sm dark:text-white"></h2>
+                        </div>
+                    </template>
+                </div>
+            </div>
         </div>
     </div>
 {{end}}
