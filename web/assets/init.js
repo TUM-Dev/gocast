@@ -16,15 +16,13 @@ function updateTheme() {
         document.documentElement.classList.toggle("dark");
     }
 }
-const setTheme = (mode) => {
-    localStorage.themeMode = mode;
-};
+
 const getTheme = () => localStorage.themeMode;
 
 localStorage.removeItem("darkTheme");
 // first visit or transition
 if (!("themeMode" in localStorage)) {
-    setTheme("system");
+    localStorage.themeMode = "system";
 }
 
 updateTheme();
@@ -37,7 +35,7 @@ document.addEventListener("alpine:init", () => {
         },
         setTheme(theme) {
             this.activeTheme = theme;
-            setTheme(theme);
+            localStorage.themeMode = theme;
             updateTheme();
         },
         modes: {
