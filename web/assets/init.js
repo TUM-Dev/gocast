@@ -41,9 +41,9 @@ document.addEventListener("alpine:init", () => {
             updateTheme();
         },
         modes: {
-            light: { name: "Light", faIconId: "sun" },
-            dark: { name: "Dark", faIconId: "moon" },
-            system: { name: "System", faIconId: "desktop", faSwitcherIconId: "" },
+            light: { name: "Light" },
+            dark: { name: "Dark" },
+            system: { name: "System" },
         },
         activeTheme: "",
     });
