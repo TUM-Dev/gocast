@@ -1,5 +1,5 @@
 import { DataStore } from "./data-store/data-store";
-import {StreamPlaylistEntry} from "./data-store/stream-playlist";
+import { StreamPlaylistEntry } from "./data-store/stream-playlist";
 
 export class StreamPlaylist {
     private streamId: number;
@@ -23,10 +23,10 @@ export class StreamPlaylist {
         }, 10);
     }
 
-    private findNextAndPrev() : { next: StreamPlaylistEntry, prev: StreamPlaylistEntry } {
+    private findNextAndPrev(): { next: StreamPlaylistEntry; prev: StreamPlaylistEntry } {
         const streamIndex = this.list.findIndex((e) => e.streamId == this.streamId);
-        const prevIndex = ((streamIndex - 1) >= 0) ? streamIndex - 1 : null;
-        const nextIndex = ((streamIndex + 1) < this.list.length) ? streamIndex + 1 : null;
+        const prevIndex = streamIndex - 1 >= 0 ? streamIndex - 1 : null;
+        const nextIndex = streamIndex + 1 < this.list.length ? streamIndex + 1 : null;
         return { prev: this.list[prevIndex], next: this.list[nextIndex] };
     }
 }

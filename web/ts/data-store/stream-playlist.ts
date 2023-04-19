@@ -4,23 +4,25 @@ import { StreamableMapProvider } from "./provider";
 export class StreamPlaylistProvider extends StreamableMapProvider<number, StreamPlaylistEntry[]> {
     protected async fetcher(streamId: number): Promise<StreamPlaylistEntry[]> {
         const result = await StreamPlaylist.get(streamId);
-        return result.map((e) => {
-            e.createdAtDate = new Date(e.createdAt);
-            return e;
-        }).sort((a, b) => a.createdAtDate.getTime() - b.createdAtDate.getTime());
+        return result
+            .map((e) => {
+                e.createdAtDate = new Date(e.createdAt);
+                return e;
+            })
+            .sort((a, b) => a.createdAtDate.getTime() - b.createdAtDate.getTime());
     }
 }
 
 export type StreamPlaylistEntry = {
-    streamId: number,
-    courseSlug: string,
-    streamName: string,
-    liveNow: boolean,
-    watched: boolean,
-    createdAt: string,
+    streamId: number;
+    courseSlug: string;
+    streamName: string;
+    liveNow: boolean;
+    watched: boolean;
+    createdAt: string;
 
     // Client Generated
-    createdAtDate: Date,
+    createdAtDate: Date;
 };
 
 const StreamPlaylist = {
@@ -30,5 +32,5 @@ const StreamPlaylist = {
             throw Error(resp.statusText);
         }
         return resp.json();
-    }
+    },
 };
