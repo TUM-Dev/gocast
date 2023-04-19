@@ -1,8 +1,5 @@
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
 {{$user := .TUMLiveContext.User}}
-{{$currentYear := .CurrentYear}}
-{{$currentTerm := .CurrentTerm}}
-
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -137,7 +134,7 @@
         {{end}}
     </div>
 </header>
-<article id="content" class="flex grow h-full overflow-y-scroll">
+<main id="content" class="flex grow h-full overflow-y-scroll">
     <section id="side-navigation" class="tum-live-side-navigation lg:w-80 md:w-56 md:block"
              :class="navigation.value ? 'flex w-full' : 'hidden'">
         <article class="tum-live-side-navigation-group">
@@ -275,10 +272,10 @@
         </template>
         <template x-if="view === home.Views.Main">
             <article id="main-view" class="relative min-h-full">
-                {{if .TUMLiveContext.User}}
-                    {{if .TUMLiveContext.User.Name}}
+                {{if $user}}
+                    {{if $user.Name}}
                         <h1 id="greeting" class="md:text-2xl text-xl font-bold mb-4 px-3">
-                            {{.TUMLiveContext.User.GetPreferredGreeting}} {{.TUMLiveContext.User.GetPreferredName}},
+                            {{$user.GetPreferredGreeting}} {{$user.GetPreferredName}},
                             nice to see you! 👋
                         </h1>
                     {{end}}
@@ -393,7 +390,7 @@
             </article>
         </template>
     </article>
-</article>
+</main>
 <footer id="desktop-footer"
         class="tum-live-footer justify-between space-x-3 items-center hidden md:flex">
     <div class="flex space-x-3">
