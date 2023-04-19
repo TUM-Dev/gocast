@@ -5,8 +5,6 @@ export class StreamPlaylist {
     private streamId: number;
     private elem: HTMLElement;
     private list: StreamPlaylistEntry[];
-    private perv: StreamPlaylistEntry;
-    private next: StreamPlaylistEntry;
 
     protected constructor(streamId: number, element: HTMLElement) {
         this.streamId = streamId;
