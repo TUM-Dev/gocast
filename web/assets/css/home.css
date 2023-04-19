@@ -34,8 +34,8 @@
 
 /* IE, Edge and Firefox */
 #content, #notification-list, .tum-live-side-navigation {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
 }
 
 
@@ -69,11 +69,11 @@
     @apply rounded-full px-2 py-1
 }
 
-.tum-live-badge > i{
+.tum-live-badge > i {
     @apply mr-1
 }
 
-.tum-live-side-navigation{
+.tum-live-side-navigation {
     @apply flex-col sticky top-0 overflow-y-scroll font-light text-3 shrink-0 divide-y dark:divide-gray-800
 }
 
@@ -81,7 +81,7 @@
     @apply px-5
 }
 
-.tum-live-side-navigation-group{
+.tum-live-side-navigation-group {
     @apply grid py-4 content-baseline
 }
 
@@ -125,7 +125,7 @@
     @apply grid gap-y-8 pb-4 h-full
 }
 
-.tum-live-content-grid-item > h3{
+.tum-live-content-grid-item > h3 {
     @apply font-bold px-3
 }
 
@@ -154,7 +154,7 @@
     @apply flex justify-between items-center
 }
 
-.tum-live-menu > header .close{
+.tum-live-menu > header .close {
     @apply ml-auto
 }
 
@@ -182,7 +182,7 @@
     @apply flex flex-col text-sm text-5 font-light lg:flex-row lg:items-center
 }
 
-.tum-live-course-list-item .links > *:not(:first-child){
+.tum-live-course-list-item .links > *:not(:first-child) {
     @apply pt-1 lg:pt-0 lg:pl-2
 }
 
