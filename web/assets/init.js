@@ -16,19 +16,15 @@ function updateTheme() {
         document.documentElement.classList.toggle("dark");
     }
 }
-const setThemeMode = (mode) => {
+const setTheme = (mode) => {
     localStorage.themeMode = mode;
 };
-const getThemeMode = () => localStorage.themeMode;
+const getTheme = () => localStorage.themeMode;
 
-// transition from old dark theme system
-if ("darkTheme" in localStorage) {
-    /* TODO: send notification? */
-}
 localStorage.removeItem("darkTheme");
 // first visit or transition
 if (!("themeMode" in localStorage)) {
-    setThemeMode("system");
+    setTheme("system");
 }
 
 updateTheme();
@@ -37,16 +33,11 @@ mediaQueryPrefersDarkScheme.addEventListener("change", () => updateTheme());
 document.addEventListener("alpine:init", () => {
     Alpine.store("theme", {
         init() {
-            this.activeMode = getThemeMode();
-            // show the currently active theme (light/dark) on the switcher when system theme mode is active
-            const updateSystemModeSwitcherIconId = () =>
-                (this.modes.system.faSwitcherIconId = mediaQueryPrefersDarkScheme.matches ? "moon" : "sun");
-            mediaQueryPrefersDarkScheme.addEventListener("change", () => updateSystemModeSwitcherIconId());
-            updateSystemModeSwitcherIconId();
+            this.activeTheme = getTheme();
         },
-        setMode(mode) {
-            this.activeMode = mode;
-            setThemeMode(mode);
+        setTheme(theme) {
+            this.activeTheme = theme;
+            setTheme(theme);
             updateTheme();
         },
         modes: {
@@ -54,6 +45,6 @@ document.addEventListener("alpine:init", () => {
             dark: { name: "Dark", faIconId: "moon" },
             system: { name: "System", faIconId: "desktop", faSwitcherIconId: "" },
         },
-        activeMode: "",
+        activeTheme: "",
     });
 });

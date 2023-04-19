@@ -96,8 +96,8 @@
                                               :key="modeId">
                                         <button type="button" tabindex="0"
                                                 class="text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-2 px-4"
-                                                :class="{'bg-gray-100 dark:bg-gray-800': modeId === $store.theme.activeMode}"
-                                                @click="$store.theme.setMode(modeId)"
+                                                :class="{'bg-gray-100 dark:bg-gray-800': modeId === $store.theme.activeTheme}"
+                                                @click="$store.theme.setTheme(modeId)"
                                                 x-text="mode.name">
                                         </button>
                                     </template>
