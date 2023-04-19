@@ -13,6 +13,7 @@ export class StreamPlaylistProvider extends StreamableMapProvider<number, Stream
 
 export type StreamPlaylistEntry = {
     streamId: number,
+    courseSlug: string,
     streamName: string,
     liveNow: boolean,
     watched: boolean,

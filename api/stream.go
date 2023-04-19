@@ -305,6 +305,7 @@ func (r streamRoutes) getStream(c *gin.Context) {
 func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
 	type StreamPlaylistEntry struct {
 		StreamID   uint      `json:"streamId"`
+		CourseSlug string    `json:"courseSlug"`
 		StreamName string    `json:"streamName"`
 		LiveNow    bool      `json:"liveNow"`
 		Watched    bool      `json:"watched"`
@@ -316,6 +317,7 @@ func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
 	for _, stream := range tumLiveContext.Course.Streams {
 		result = append(result, StreamPlaylistEntry{
 			StreamID:   stream.ID,
+			CourseSlug: tumLiveContext.Course.Slug,
 			StreamName: stream.GetName(),
 			LiveNow:    stream.LiveNow,
 			Watched:    stream.Watched,
