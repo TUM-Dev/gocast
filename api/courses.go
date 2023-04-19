@@ -184,6 +184,7 @@ func (r coursesRoutes) getPublic(c *gin.Context) {
 			CustomMessage: "invalid year",
 			Err:           err,
 		})
+		return
 	}
 	term = c.DefaultQuery("term", term)
 
