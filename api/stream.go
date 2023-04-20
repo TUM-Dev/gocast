@@ -149,13 +149,7 @@ func (r streamRoutes) getLiveThumbs(c *gin.Context) {
 
 	streamId := strconv.Itoa(int(tumLiveContext.Stream.ID))
 	path := pathprovider.LiveThumbnail(streamId)
-	image, err := os.ReadFile(path)
-	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
-		return
-	}
-
-	c.Data(http.StatusOK, "image/jpg", image)
+	c.File(path)
 }
 
 func (r streamRoutes) getSubtitles(c *gin.Context) {
