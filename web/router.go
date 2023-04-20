@@ -128,7 +128,7 @@ func configMainRoute(router *gin.Engine) {
 	streamGroup.GET("/w/:slug/:streamID/:version", routes.WatchPage)
 	streamGroup.GET("/w/:slug/:streamID/chat/popup", routes.PopUpChat)
 	router.GET("/", routes.MainPage)
-	router.GET("/home", routes.home)
+	router.GET("/new", routes.home)
 	router.GET("/semester/:year/:term", routes.MainPage)
 	router.GET("/healthcheck", routes.HealthCheck)
 	router.GET("/jwtPubKey", routes.JWTPubKey)
