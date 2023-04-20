@@ -39,3 +39,20 @@ func (l LectureHall) NumSources() int {
 	}
 	return num
 }
+
+type LectureHallDTO struct {
+	ID          uint
+	Name        string
+	ExternalURL string
+}
+
+func (l *LectureHall) ToDTO() *LectureHallDTO {
+	if l == nil {
+		return nil
+	}
+	return &LectureHallDTO{
+		ID:          l.ID,
+		Name:        l.Name,
+		ExternalURL: "https://nav.tum.de", // l.ExternalURL(),
+	}
+}

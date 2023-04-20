@@ -39,6 +39,28 @@ type Course struct {
 	Pinned                  bool   `gorm:"-"` // Used to determine if the course is pinned when loaded for a specific user.
 }
 
+type CourseDTO struct {
+	ID           uint
+	Name         string
+	Slug         string
+	TeachingTerm string
+	Year         int
+	NextLecture  StreamDTO
+	LastLecture  StreamDTO
+}
+
+func (c *Course) ToDTO() CourseDTO {
+	return CourseDTO{
+		ID:           c.ID,
+		Name:         c.Name,
+		Slug:         c.Slug,
+		TeachingTerm: c.TeachingTerm,
+		Year:         c.Year,
+		NextLecture:  c.GetNextLecture().ToDTO(),
+		LastLecture:  c.GetLastLecture().ToDTO(),
+	}
+}
+
 // GetUrl returns the URL of the course, e.g. /course/2022/S/MyCourse
 func (c Course) GetUrl() string {
 	return fmt.Sprintf("/course/%d/%s/%s", c.Year, c.TeachingTerm, c.Slug)

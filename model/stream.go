@@ -279,3 +279,19 @@ func (s Stream) Attachments() []File {
 	}
 	return attachments
 }
+
+type StreamDTO struct {
+	ID    uint
+	Name  string
+	Start time.Time
+	End   time.Time
+}
+
+func (s Stream) ToDTO() StreamDTO {
+	return StreamDTO{
+		ID:    s.ID,
+		Name:  s.Name,
+		Start: s.Start,
+		End:   s.End,
+	}
+}

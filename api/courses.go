@@ -110,16 +110,6 @@ type uploadVodReq struct {
 	Title string    `form:"title"`
 }
 
-type CourseDTO struct {
-	ID           uint
-	Name         string
-	Slug         string
-	TeachingTerm string
-	Year         int
-	NextLecture  model.Stream
-	LastLecture  model.Stream
-}
-
 func (r coursesRoutes) getLive(c *gin.Context) {
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
@@ -130,9 +120,9 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 	}
 
 	type CourseStream struct {
-		Course      model.Course
-		Stream      model.Stream
-		LectureHall *model.LectureHall
+		Course      model.CourseDTO
+		Stream      model.StreamDTO
+		LectureHall *model.LectureHallDTO
 	}
 
 	livestreams := make([]CourseStream, 0)
@@ -155,7 +145,7 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 			continue
 		}
 		var lectureHall *model.LectureHall
-		if tumLiveContext.User != nil && tumLiveContext.User.Role == model.AdminType && stream.LectureHallID != 0 {
+		if stream.LectureHallID != 0 {
 			lh, err := r.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
 			if err != nil {
 				log.WithError(err).Error(err)
@@ -164,9 +154,9 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 			}
 		}
 		livestreams = append(livestreams, CourseStream{
-			Course:      courseForLiveStream,
-			Stream:      stream,
-			LectureHall: lectureHall,
+			Course:      courseForLiveStream.ToDTO(),
+			Stream:      stream.ToDTO(),
+			LectureHall: lectureHall.ToDTO(),
 		})
 	}
 
@@ -201,17 +191,9 @@ func (r coursesRoutes) getPublic(c *gin.Context) {
 		courses = commons.Unique(public, func(c model.Course) uint { return c.ID })
 	}
 
-	resp := make([]CourseDTO, len(courses))
+	resp := make([]model.CourseDTO, len(courses))
 	for i, course := range courses {
-		resp[i] = CourseDTO{
-			ID:           course.ID,
-			Name:         course.Name,
-			Slug:         course.Slug,
-			TeachingTerm: course.TeachingTerm,
-			Year:         course.Year,
-			NextLecture:  course.GetNextLecture(),
-			LastLecture:  course.GetLastLecture(),
-		}
+		resp[i] = course.ToDTO()
 	}
 
 	c.JSON(http.StatusOK, resp)
@@ -235,15 +217,11 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 	if tumLiveContext.User != nil {
 		switch tumLiveContext.User.Role {
 		case model.AdminType:
-			courses = routes.GetAllCoursesForSemester(year, term, context.Background())
+			courses = routes.GetAllCoursesForSemester(year, term, c)
 		case model.LecturerType:
-			{
-				courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
-				coursesForLecturer, err :=
-					routes.GetCourseForLecturerIdByYearAndTerm(c, year, term, tumLiveContext.User.ID)
-				if err == nil {
-					courses = append(courses, coursesForLecturer...)
-				}
+			coursesForLecturer, err := r.GetAdministeredCoursesByUserId(c, tumLiveContext.User.ID, term, year)
+			if err == nil {
+				courses = append(courses, coursesForLecturer...)
 			}
 		default:
 			courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
@@ -252,17 +230,9 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 
 	sortCourses(courses)
 	courses = commons.Unique(courses, func(c model.Course) uint { return c.ID })
-	resp := make([]CourseDTO, len(courses))
+	resp := make([]model.CourseDTO, len(courses))
 	for i, course := range courses {
-		resp[i] = CourseDTO{
-			ID:           course.ID,
-			Name:         course.Name,
-			Slug:         course.Slug,
-			TeachingTerm: course.TeachingTerm,
-			Year:         course.Year,
-			NextLecture:  course.GetNextLecture(),
-			LastLecture:  course.GetLastLecture(),
-		}
+		resp[i] = course.ToDTO()
 	}
 
 	c.JSON(http.StatusOK, resp)
