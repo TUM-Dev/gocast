@@ -145,6 +145,8 @@ func notifyThumbnailDone(streamCtx *StreamContext) {
 		FilePath:   streamCtx.getThumbnailSpriteFileName(),
 		Interval:   streamCtx.thumbInterval,
 		SourceType: streamCtx.streamVersion,
+
+		LargeThumbnailPath: streamCtx.getLargeThumbnailSpriteFileName(),
 	})
 	if err != nil || !resp.Ok {
 		log.WithError(err).Error("Could not notify thumbnail done")

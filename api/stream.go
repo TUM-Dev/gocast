@@ -47,6 +47,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			{
 				thumbs.GET(":fid", routes.getThumbs)
 				thumbs.GET("/live", routes.getLiveThumbs)
+				thumbs.GET("/vod", routes.getVODThumbs)
 			}
 		}
 		{
@@ -132,18 +133,19 @@ func (r streamRoutes) getThumbs(c *gin.Context) {
 	sendDownloadFile(c, file, tumLiveContext)
 }
 
-func (r streamRoutes) getLiveThumbs(c *gin.Context) {
-	ctx, exists := c.Get("TUMLiveContext")
-	tumLiveContext := ctx.(tools.TUMLiveContext)
+func (r streamRoutes) getVODThumbs(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "context should exist but doesn't",
-		})
+	thumb, err := tumLiveContext.Stream.GetLGThumbnail()
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
+	c.File(thumb)
+}
+
+func (r streamRoutes) getLiveThumbs(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
 	streamId := strconv.Itoa(int(tumLiveContext.Stream.ID))
 	path := pathprovider.LiveThumbnail(streamId)

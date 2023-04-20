@@ -460,17 +460,25 @@ func (s server) NotifyThumbnailsFinished(ctx context.Context, req *pb.Thumbnails
 		return nil, err
 	}
 	var thumbType model.FileType
+	var thumbTypeLG model.FileType
+
 	switch req.SourceType {
 	case "COMB":
 		thumbType = model.FILETYPE_THUMB_COMB
+		thumbTypeLG = model.FILETYPE_THUMB_LG_COMB
 	case "CAM":
 		thumbType = model.FILETYPE_THUMB_CAM
+		thumbTypeLG = model.FILETYPE_THUMB_LG_CAM
 	case "PRES":
 		thumbType = model.FILETYPE_THUMB_PRES
+		thumbTypeLG = model.FILETYPE_THUMB_LG_PRES
 	default:
 		return nil, errors.New("unknown source type")
 	}
 	if err := s.FileDao.SetThumbnail(stream.ID, model.File{StreamID: stream.ID, Path: req.FilePath, Type: thumbType}); err != nil {
+		return nil, err
+	}
+	if err := s.FileDao.SetThumbnail(stream.ID, model.File{StreamID: stream.ID, Path: req.LargeThumbnailPath, Type: thumbTypeLG}); err != nil {
 		return nil, err
 	}
 	stream.ThumbInterval = req.Interval

@@ -102,9 +102,17 @@ func HandleSelfStreamRecordEnd(ctx *StreamContext) {
 	S.startThumbnailGeneration(ctx)
 	defer S.endThumbnailGeneration(ctx)
 	err = createThumbnailSprite(ctx, ctx.getTranscodingFileName())
+	thumbSuccessful := true
 	if err != nil {
 		log.WithField("File", ctx.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
-	} else {
+		thumbSuccessful = false
+	}
+	err = createVideoThumbnail(ctx, ctx.getTranscodingFileName())
+	if err != nil {
+		log.WithField("File", ctx.getLargeThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail failed.")
+		thumbSuccessful = false
+	}
+	if thumbSuccessful {
 		notifyThumbnailDone(ctx)
 	}
 
@@ -151,9 +159,17 @@ func HandleThumbnailRequest(request *pb.GenerateThumbnailRequest) {
 	S.startThumbnailGeneration(streamCtx)
 	defer S.endThumbnailGeneration(streamCtx)
 	err := createThumbnailSprite(streamCtx, *streamCtx.recordingPath)
+	thumbSuccessful := true
 	if err != nil {
 		log.WithField("File", streamCtx.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
-	} else {
+		thumbSuccessful = false
+	}
+	err = createVideoThumbnail(streamCtx, streamCtx.getTranscodingFileName())
+	if err != nil {
+		log.WithField("File", streamCtx.getLargeThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail failed.")
+		thumbSuccessful = false
+	}
+	if thumbSuccessful {
 		notifyThumbnailDone(streamCtx)
 	}
 }
@@ -255,9 +271,17 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	S.startThumbnailGeneration(streamCtx)
 	defer S.endThumbnailGeneration(streamCtx)
 	err = createThumbnailSprite(streamCtx, streamCtx.getTranscodingFileName())
+	thumbSuccessful := true
 	if err != nil {
-		log.WithField("File", streamCtx.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed")
-	} else {
+		log.WithField("File", streamCtx.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
+		thumbSuccessful = false
+	}
+	err = createVideoThumbnail(streamCtx, streamCtx.getTranscodingFileName())
+	if err != nil {
+		log.WithField("File", streamCtx.getLargeThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail failed.")
+		thumbSuccessful = false
+	}
+	if thumbSuccessful {
 		notifyThumbnailDone(streamCtx)
 	}
 
@@ -381,9 +405,17 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 	S.startThumbnailGeneration(&c)
 	defer S.endThumbnailGeneration(&c)
 	err = createThumbnailSprite(&c, c.getTranscodingFileName())
+	thumbSuccessful := true
 	if err != nil {
-		log.WithField("File", c.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed")
-	} else {
+		log.WithField("File", c.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
+		thumbSuccessful = false
+	}
+	err = createVideoThumbnail(&c, c.getTranscodingFileName())
+	if err != nil {
+		log.WithField("File", c.getLargeThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail failed.")
+		thumbSuccessful = false
+	}
+	if thumbSuccessful {
 		notifyThumbnailDone(&c)
 	}
 
@@ -508,6 +540,18 @@ func (s StreamContext) getTranscodingFileName() string {
 		s.courseSlug,
 		s.startTime.Format("2006-01-02_15-04"),
 		s.getStreamName())
+}
+
+// getLargeThumbnailSpriteFileName returns the path the full thumbnail sprite should be saved to after transcoding.
+// example: /srv/sharedMassStorage/2021/S/eidi/2021-09-23_10-00/eidi_2021-09-23_10-00_PRES-thumb.jpg
+func (s StreamContext) getLargeThumbnailSpriteFileName() string {
+	return fmt.Sprintf("%s/%d/%s/%s/%d-thumb-full-%s.jpg",
+		cfg.StorageDir,
+		s.teachingYear,
+		s.teachingTerm,
+		s.courseSlug,
+		s.streamId,
+		s.streamVersion)
 }
 
 // getThumbnailSpriteFileName returns the path a thumbnail sprite should be saved to after transcoding.

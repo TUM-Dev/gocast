@@ -361,7 +361,7 @@
                                 <template x-for="(course, i) in recently" :key="course.ID">
                                     <article class="tum-live-stream lg:col-span-1 col-span-full p-3">
                                         <a :href="course.LastLectureURL()" class="block mb-2">
-                                            <div style=""
+                                            <div :style="`background-image:url('/api/stream/${course.LastLecture.ID}/thumbs/vod')`"
                                                  class="h-40 tum-live-thumbnail">
                                                 <div :id="`vod-progress-${course.LastLecture.ID}`"
                                                      class="tum-live-thumbnail-progress">
