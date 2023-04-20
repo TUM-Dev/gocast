@@ -294,11 +294,11 @@
                         <article id="livestreams" class="tum-live-content-grid-item">
                             <h3 class="py-1 mx-3 bg-danger text-white text-sm w-fit uppercase rounded animate-pulse">
                                 Live</h3>
-                            <section class="grid xl:grid-cols-3 lg:grid-cols-2 grid-cols-1">
+                            <section class="grid xl:grid-cols-4 2xl:grid-cols-5 lg:grid-cols-3 grid-cols-1">
                                 <template x-for="(livestream, i) in livestreams" :key="livestream.Stream.ID">
                                     <article class="tum-live-stream p-3 lg:col-span-1 col-span-full"
                                              :id="`livestream-${livestream.Stream.ID}`">
-                                        <div class="h-56 relative mb-2">
+                                        <div class="aspect-video relative mb-2">
                                             <div class="absolute right-2 top-2 flex items-center space-x-2 text-xs font-semibold text-white z-40">
                                                 <template x-if="livestream.Course.IsHidden()">
                                                     <span class="tum-live-badge bg-neutral-700">Hidden</span>
@@ -357,12 +357,12 @@
                     <template x-if="recently.length > 0">
                         <article class="tum-live-content-grid-item" id="recent-vods">
                             <h3>Recent VODs</h3>
-                            <section class="grid xl:grid-cols-4 lg:grid-cols-2 grid-cols-1">
+                            <section class="grid xl:grid-cols-5 2xl:grid-cols-6 lg:grid-cols-2 grid-cols-1">
                                 <template x-for="(course, i) in recently" :key="course.ID">
                                     <article class="tum-live-stream lg:col-span-1 col-span-full p-3">
                                         <a :href="course.LastLectureURL()" class="block mb-2">
                                             <div :style="`background-image:url('/api/stream/${course.LastLecture.ID}/thumbs/vod')`"
-                                                 class="h-40 tum-live-thumbnail">
+                                                 class="aspect-video tum-live-thumbnail">
                                                 <div :id="`vod-progress-${course.LastLecture.ID}`"
                                                      class="tum-live-thumbnail-progress">
                                                     <div>
