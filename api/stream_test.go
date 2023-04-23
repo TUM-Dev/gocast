@@ -143,7 +143,7 @@ func TestStream(t *testing.T) {
 			"description": stream.Description,
 			"start":       stream.Start,
 			"end":         stream.End,
-			"ingest":      fmt.Sprintf("%sstream?secret=%s", tools.Cfg.IngestBase, stream.StreamKey),
+			"ingest":      fmt.Sprintf("%s%s-%d?secret=%s", tools.Cfg.IngestBase, course.Slug, stream.ID, stream.StreamKey),
 			"live":        stream.LiveNow,
 			"vod":         stream.Recording}
 
