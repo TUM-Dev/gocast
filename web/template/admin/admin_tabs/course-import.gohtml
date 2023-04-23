@@ -12,17 +12,16 @@
 
     <h2 class="form-container-title">Semester</h2>
 
-    <form x-show="step===0" class="form-container-body grid grid-cols-2 gap-4">
+    <form x-show="step===0 || step===1" class="form-container-body grid grid-cols-2 gap-4">
         <label>
             <h2>Year</h2>
             <select x-model="year" class="tl-select">
-                <option>2020</option>
-                <option>2021</option>
-                <option>2022</option>
                 <option>2023</option>
                 <option>2024</option>
                 <option>2025</option>
                 <option>2026</option>
+                <option>2027</option>
+                <option>2028</option>
             </select>
         </label>
         <label>

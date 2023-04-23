@@ -1,8 +1,9 @@
 {{define "editvideosections"}}
-    <div x-data="{videoSection: new admin.VideoSectionsAdmin(lecture.lectureId)}"
-         x-init="await videoSection.fetch()"
+    <div x-data="{ videoSectionController: new admin.VideoSectionsAdminController(lecture.lectureId), videoSections: [] }"
+         x-init="() => videoSectionController.init(`edit-video-sections-${lecture.lectureId}`, $el)"
+         @update="(e) => (videoSections = e.detail)"
          class="border dark:border-gray-800 dark:bg-secondary-light rounded-lg">
-        <template x-if="videoSection !== undefined">
+        <template x-if="videoSections.length > 0">
             <div>
                 <div class="flex align-middle justify-between border-b py-1 px-3 dark:border-gray-600 text-sm">
                     <div class="flex">
@@ -31,16 +32,16 @@
                             </div>
                         </div>
                     </div>
-                    <div x-show="videoSection.unsavedChanges"
+                    <div x-show="videoSectionController.unsavedChanges"
                          class="flex items-center text-xs text-3 px-2 border border-amber-200 bg-amber-200/50 rounded-full">
                         <i class="fa fa-triangle-exclamation mr-1"></i>
                         <span class="font-light">Unsaved Changes</span>
                     </div>
                 </div>
                 <div class="space-y-2 border-b dark:border-gray-600"
-                    :class="videoSection.existingSections.length > 0 && 'p-3'">
-                    <template x-if="videoSection.existingSections.length > 0">
-                        <template x-for="section in videoSection.existingSections" :key="section.ID">
+                    :class="videoSections.length > 0 && 'p-3'">
+                    <template x-if="videoSections.length > 0">
+                        <template x-for="section in videoSections" :key="section.ID">
                             <div x-data="{updater: {}}"
                                  x-init="updater = new admin.VideoSectionUpdater(lecture.lectureId, section);"
                                  class="flex align-middle items-stretch w-full border dark:border-gray-600 rounded">
@@ -104,17 +105,17 @@
                                     <i class="fa fa-edit"></i>
                                 </button>
                                 <button class="text-5 py-1 px-3 border-l rounded-r dark:border-gray-600 text-3 text-xs hover:bg-gray-200 dark:hover:bg-gray-600"
-                                        @click="videoSection.removeExistingSection(section.ID)">
+                                        @click="videoSectionController.removeExistingSection(section.ID)">
                                     <i class="fa fa-trash"></i>
                                 </button>
                             </div>
                         </template>
                     </template>
-                    <p x-show="videoSection.newSections.length > 0"
+                    <p x-show="videoSectionController.newSections.length > 0"
                        class="font-light text-5 text-xs">New sections</p>
-                    <template x-if="videoSection.newSections.length > 0">
+                    <template x-if="videoSectionController.newSections.length > 0">
                         <template
-                                x-for="section in videoSection.newSections">
+                                x-for="section in videoSectionController.newSections">
                             <div class="flex justify-between w-full border dark:border-gray-600 rounded">
                                 <div class="my-auto p-1">
                                     <span class="text-sky-800 bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded"
@@ -124,7 +125,7 @@
                                 </div>
                                 <div class="my-auto ml-auto border-l dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600">
                                     <button class="py-1 px-3"
-                                            @click="videoSection.removeNewSection(section)">
+                                            @click="videoSectionController.removeNewSection(section)">
                                         <i class="fa fa-trash text-xs"></i>
                                     </button>
                                 </div>
@@ -132,41 +133,41 @@
                         </template>
                     </template>
                 </div>
-                <form @submit.prevent="videoSection.publishNewSections()"
+                <form @submit.prevent="videoSectionController.publishNewSections()"
                       class="p-3">
                     <p class="text-5 text-xs mb-1">Add new video section</p>
                     <div class="flex align-middle">
                         <input id="startHours"
-                               x-model.number="videoSection.current.startHours"
+                               x-model.number="videoSectionController.current.startHours"
                                type="number" min="0" max="23" step="1"
                                placeholder="0"
                                class="w-20 rounded px-4 py-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600">
                         <span class="px-2 my-auto font-semibold text-5">:</span>
                         <input id="startMinutes"
-                               x-model.number="videoSection.current.startMinutes"
+                               x-model.number="videoSectionController.current.startMinutes"
                                type="number" min="0" max="59" step="1"
                                placeholder="0"
                                class="w-20 rounded px-4 py-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600">
                         <span class="px-2 my-auto font-semibold text-5">:</span>
                         <input id="startSeconds"
-                               x-model.number="videoSection.current.startSeconds"
+                               x-model.number="videoSectionController.current.startSeconds"
                                type="number" min="0" max="59" step="1"
                                placeholder="0"
                                class="w-20 rounded px-4 py-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600">
-                        <input x-model="videoSection.current.description"
+                        <input x-model="videoSectionController.current.description"
                                type="text" value=""
                                placeholder="Introduction"
                                class="mx-2 rounded px-4 py-3 focus:outline-none border-0 bg-gray-50 w-full dark:bg-gray-600">
                         <button type="button"
                                 class="w-fit bg-gray-100 text-center px-3 rounded w-full dark:bg-gray-600"
-                                @click="videoSection.pushNewSection()"
-                                :disabled="videoSection.current.description === ''">
+                                @click="videoSectionController.pushNewSection()"
+                                :disabled="videoSectionController.current.description === ''">
                             <i class="fa fa-plus text-3"></i>
                         </button>
                     </div>
                     <button class="bg-blue-500 text-center px-3 py-1 mt-3 rounded w-full dark:bg-indigo-600"
                             type="submit"
-                            :disabled="videoSection.newSections.length === 0">
+                            :disabled="videoSectionController.newSections.length === 0">
                         <span class="text-white uppercase text-sm font-semibold">Save</span>
                     </button>
                 </form>

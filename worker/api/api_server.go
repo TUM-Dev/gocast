@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/u2takey/go-utils/uuid"
 	"net"
 	"os"
 	"os/exec"
 	"time"
+
+	"github.com/u2takey/go-utils/uuid"
 
 	"github.com/joschahenningsen/TUM-Live/worker/cfg"
 	"github.com/joschahenningsen/TUM-Live/worker/pb"
@@ -73,6 +74,26 @@ func (s server) GenerateThumbnails(ctx context.Context, request *pb.GenerateThum
 	return &pb.Status{Ok: true}, nil
 }
 
+// GenerateLiveThumbs generates a preview image of the most recent stream state.
+func (s server) GenerateLivePreview(ctx context.Context, request *pb.LivePreviewRequest) (*pb.LivePreviewResponse, error) {
+	if request.WorkerID != cfg.WorkerID {
+		log.Info("Rejected request to generate live thumbnails")
+		return nil, errors.New("unauthenticated: wrong worker id")
+	}
+	cmd := exec.Command("ffmpeg",
+		"-sseof", "-3",
+		"-i", request.HLSUrl,
+		"-vframes", "1",
+		"-update", "1",
+		"-vf", "scale=720:-1",
+		"-q:v", "1",
+		"-c:v", "mjpeg",
+		"-f", "mjpeg",
+		"pipe:1")
+	liveThumb, err := cmd.Output()
+	return &pb.LivePreviewResponse{LiveThumb: liveThumb}, err
+}
+
 func (s server) GenerateSectionImages(ctx context.Context, request *pb.GenerateSectionImageRequest) (*pb.GenerateSectionImageResponse, error) {
 	folder := fmt.Sprintf("%s/%s/%d.%s/sections",
 		cfg.StorageDir, request.CourseName, request.CourseYear, request.CourseTeachingTerm)
@@ -98,6 +119,7 @@ func (s server) GenerateSectionImages(ctx context.Context, request *pb.GenerateS
 			"-vf", "scale=156:-1",
 			"-frames:v", "1",
 			"-q:v", "2",
+
 			path)
 		_, err = cmd.CombinedOutput()
 		if err != nil {

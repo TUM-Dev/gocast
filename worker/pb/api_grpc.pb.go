@@ -29,6 +29,7 @@ type ToWorkerClient interface {
 	RequestWaveform(ctx context.Context, in *WaveformRequest, opts ...grpc.CallOption) (*WaveFormResponse, error)
 	RequestCut(ctx context.Context, in *CutRequest, opts ...grpc.CallOption) (*CutResponse, error)
 	GenerateThumbnails(ctx context.Context, in *GenerateThumbnailRequest, opts ...grpc.CallOption) (*Status, error)
+	GenerateLivePreview(ctx context.Context, in *LivePreviewRequest, opts ...grpc.CallOption) (*LivePreviewResponse, error)
 	GenerateSectionImages(ctx context.Context, in *GenerateSectionImageRequest, opts ...grpc.CallOption) (*GenerateSectionImageResponse, error)
 	DeleteSectionImage(ctx context.Context, in *DeleteSectionImageRequest, opts ...grpc.CallOption) (*Status, error)
 }
@@ -95,6 +96,15 @@ func (c *toWorkerClient) GenerateThumbnails(ctx context.Context, in *GenerateThu
 	return out, nil
 }
 
+func (c *toWorkerClient) GenerateLivePreview(ctx context.Context, in *LivePreviewRequest, opts ...grpc.CallOption) (*LivePreviewResponse, error) {
+	out := new(LivePreviewResponse)
+	err := c.cc.Invoke(ctx, "/api.ToWorker/GenerateLivePreview", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *toWorkerClient) GenerateSectionImages(ctx context.Context, in *GenerateSectionImageRequest, opts ...grpc.CallOption) (*GenerateSectionImageResponse, error) {
 	out := new(GenerateSectionImageResponse)
 	err := c.cc.Invoke(ctx, "/api.ToWorker/GenerateSectionImages", in, out, opts...)
@@ -124,6 +134,7 @@ type ToWorkerServer interface {
 	RequestWaveform(context.Context, *WaveformRequest) (*WaveFormResponse, error)
 	RequestCut(context.Context, *CutRequest) (*CutResponse, error)
 	GenerateThumbnails(context.Context, *GenerateThumbnailRequest) (*Status, error)
+	GenerateLivePreview(context.Context, *LivePreviewRequest) (*LivePreviewResponse, error)
 	GenerateSectionImages(context.Context, *GenerateSectionImageRequest) (*GenerateSectionImageResponse, error)
 	DeleteSectionImage(context.Context, *DeleteSectionImageRequest) (*Status, error)
 	mustEmbedUnimplementedToWorkerServer()
@@ -150,6 +161,9 @@ func (UnimplementedToWorkerServer) RequestCut(context.Context, *CutRequest) (*Cu
 }
 func (UnimplementedToWorkerServer) GenerateThumbnails(context.Context, *GenerateThumbnailRequest) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateThumbnails not implemented")
+}
+func (UnimplementedToWorkerServer) GenerateLivePreview(context.Context, *LivePreviewRequest) (*LivePreviewResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateLivePreview not implemented")
 }
 func (UnimplementedToWorkerServer) GenerateSectionImages(context.Context, *GenerateSectionImageRequest) (*GenerateSectionImageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateSectionImages not implemented")
@@ -278,6 +292,24 @@ func _ToWorker_GenerateThumbnails_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ToWorker_GenerateLivePreview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LivePreviewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ToWorkerServer).GenerateLivePreview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.ToWorker/GenerateLivePreview",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ToWorkerServer).GenerateLivePreview(ctx, req.(*LivePreviewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ToWorker_GenerateSectionImages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GenerateSectionImageRequest)
 	if err := dec(in); err != nil {
@@ -346,6 +378,10 @@ var ToWorker_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ToWorker_GenerateThumbnails_Handler,
 		},
 		{
+			MethodName: "GenerateLivePreview",
+			Handler:    _ToWorker_GenerateLivePreview_Handler,
+		},
+		{
 			MethodName: "GenerateSectionImages",
 			Handler:    _ToWorker_GenerateSectionImages_Handler,
 		},
@@ -374,7 +410,7 @@ type FromWorkerClient interface {
 	NotifyThumbnailsFinished(ctx context.Context, in *ThumbnailsFinished, opts ...grpc.CallOption) (*Status, error)
 	SendSelfStreamRequest(ctx context.Context, in *SelfStreamRequest, opts ...grpc.CallOption) (*SelfStreamResponse, error)
 	GetStreamInfoForUpload(ctx context.Context, in *GetStreamInfoForUploadRequest, opts ...grpc.CallOption) (*GetStreamInfoForUploadResponse, error)
-	NewKeywords(ctx context.Context, in *NewKeywordsRequest, opts ...grpc.CallOption) (*Status, error)
+	NotifyTranscodingFailure(ctx context.Context, in *NotifyTranscodingFailureRequest, opts ...grpc.CallOption) (*NotifyTranscodingFailureResponse, error)
 }
 
 type fromWorkerClient struct {
@@ -509,9 +545,9 @@ func (c *fromWorkerClient) GetStreamInfoForUpload(ctx context.Context, in *GetSt
 	return out, nil
 }
 
-func (c *fromWorkerClient) NewKeywords(ctx context.Context, in *NewKeywordsRequest, opts ...grpc.CallOption) (*Status, error) {
-	out := new(Status)
-	err := c.cc.Invoke(ctx, "/api.FromWorker/NewKeywords", in, out, opts...)
+func (c *fromWorkerClient) NotifyTranscodingFailure(ctx context.Context, in *NotifyTranscodingFailureRequest, opts ...grpc.CallOption) (*NotifyTranscodingFailureResponse, error) {
+	out := new(NotifyTranscodingFailureResponse)
+	err := c.cc.Invoke(ctx, "/api.FromWorker/NotifyTranscodingFailure", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -534,7 +570,7 @@ type FromWorkerServer interface {
 	NotifyThumbnailsFinished(context.Context, *ThumbnailsFinished) (*Status, error)
 	SendSelfStreamRequest(context.Context, *SelfStreamRequest) (*SelfStreamResponse, error)
 	GetStreamInfoForUpload(context.Context, *GetStreamInfoForUploadRequest) (*GetStreamInfoForUploadResponse, error)
-	NewKeywords(context.Context, *NewKeywordsRequest) (*Status, error)
+	NotifyTranscodingFailure(context.Context, *NotifyTranscodingFailureRequest) (*NotifyTranscodingFailureResponse, error)
 	mustEmbedUnimplementedFromWorkerServer()
 }
 
@@ -575,8 +611,8 @@ func (UnimplementedFromWorkerServer) SendSelfStreamRequest(context.Context, *Sel
 func (UnimplementedFromWorkerServer) GetStreamInfoForUpload(context.Context, *GetStreamInfoForUploadRequest) (*GetStreamInfoForUploadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStreamInfoForUpload not implemented")
 }
-func (UnimplementedFromWorkerServer) NewKeywords(context.Context, *NewKeywordsRequest) (*Status, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method NewKeywords not implemented")
+func (UnimplementedFromWorkerServer) NotifyTranscodingFailure(context.Context, *NotifyTranscodingFailureRequest) (*NotifyTranscodingFailureResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NotifyTranscodingFailure not implemented")
 }
 func (UnimplementedFromWorkerServer) mustEmbedUnimplementedFromWorkerServer() {}
 
@@ -797,20 +833,20 @@ func _FromWorker_GetStreamInfoForUpload_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FromWorker_NewKeywords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NewKeywordsRequest)
+func _FromWorker_NotifyTranscodingFailure_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NotifyTranscodingFailureRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FromWorkerServer).NewKeywords(ctx, in)
+		return srv.(FromWorkerServer).NotifyTranscodingFailure(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.FromWorker/NewKeywords",
+		FullMethod: "/api.FromWorker/NotifyTranscodingFailure",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FromWorkerServer).NewKeywords(ctx, req.(*NewKeywordsRequest))
+		return srv.(FromWorkerServer).NotifyTranscodingFailure(ctx, req.(*NotifyTranscodingFailureRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -863,8 +899,8 @@ var FromWorker_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _FromWorker_GetStreamInfoForUpload_Handler,
 		},
 		{
-			MethodName: "NewKeywords",
-			Handler:    _FromWorker_NewKeywords_Handler,
+			MethodName: "NotifyTranscodingFailure",
+			Handler:    _FromWorker_NotifyTranscodingFailure_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

@@ -45,3 +45,8 @@ test:
 lint:
 	golangci-lint run
 
+.PHONY: protoVoice
+protoVoice:
+	cd voice-service; \
+	protoc ./subtitles.proto --go-grpc_out=../. --go_out=../.
+

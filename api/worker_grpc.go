@@ -6,6 +6,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"sync"
+	"time"
+
 	go_anel_pwrctrl "github.com/RBG-TUM/go-anel-pwrctrl"
 	"github.com/getsentry/sentry-go"
 	"github.com/joschahenningsen/TUM-Live/dao"
@@ -23,13 +33,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
-	"io"
-	"net"
-	"net/http"
-	"regexp"
-	"strings"
-	"sync"
-	"time"
 )
 
 var mutex = sync.Mutex{}
@@ -232,27 +235,6 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 	return &pb.Status{Ok: true}, nil
 }
 
-func (s server) NewKeywords(ctx context.Context, request *pb.NewKeywordsRequest) (*pb.Status, error) {
-	if _, err := s.DaoWrapper.WorkerDao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
-		return nil, errors.New("authentication failed: invalid worker id")
-	} else {
-		keywords := make([]model.Keyword, len(request.Keywords))
-		for i, keyword := range request.Keywords {
-			keywords[i] = model.Keyword{
-				StreamID: uint(request.StreamID),
-				Text:     keyword,
-			}
-		}
-		err = s.DaoWrapper.KeywordDao.NewKeywords(keywords)
-		if err != nil {
-			log.WithError(err).Println("Couldn't insert keyword")
-			return &pb.Status{Ok: false}, err
-		}
-
-		return &pb.Status{Ok: true}, nil
-	}
-}
-
 func handleCameraPositionSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) error {
 	if stream.LectureHallID == 0 {
 		return nil
@@ -425,11 +407,16 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 	if err != nil {
 		return nil, err
 	}
+	course, err := s.CoursesDao.GetCourseById(ctx, stream.CourseID)
+	if err != nil {
+		return nil, err
+	}
 	if stream.LiveNow {
 		log.WithField("req", req).Warn("VoD not saved, stream is live.")
 		return nil, nil
 	}
 	stream.Recording = true
+	stream.Private = course.VodPrivate
 	switch req.SourceType {
 	case "CAM":
 		stream.PlaylistUrlCAM = req.HLSUrl
@@ -518,6 +505,11 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		log.WithError(err).Println("Can't find stream")
 		return nil, err
 	}
+	course, err := s.CoursesDao.GetCourseById(ctx, stream.CourseID)
+	if err != nil {
+		log.WithError(err).Println("Can't find course")
+		return nil, err
+	}
 	go func() {
 		err := handleLightOnSwitch(stream, s.DaoWrapper)
 		if err != nil {
@@ -533,9 +525,13 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		}
 	}()
 	go func() {
-		// interims solution; sometimes dvr doesn't work as expected.
-		// here we check if the url 404s and remove dvr from the stream in that case
 		stream.LiveNow = true
+		stream.Private = course.LivePrivate
+
+		err := s.StreamsDao.SaveStream(&stream)
+		if err != nil {
+			log.WithError(err).Error("Can't save stream")
+		}
 
 		err = s.StreamsDao.SetStreamLiveNowTimestampById(uint(request.StreamID), time.Now())
 		if err != nil {
@@ -778,6 +774,71 @@ func notifyWorkersPremieres(daoWrapper dao.DaoWrapper) {
 	}
 }
 
+// FetchLivePreviews gets a live thumbnail from a worker.
+func FetchLivePreviews(daoWrapper dao.DaoWrapper) func() {
+	return func() {
+		workers := daoWrapper.WorkerDao.GetAliveWorkers()
+		liveStreams, err := daoWrapper.StreamsDao.GetCurrentLive(context.Background())
+		if err != nil {
+			return
+		}
+
+		// In case of an error, the preview might be outdated.
+		// That's okay since the cron job is run in 10s again.
+		for _, s := range liveStreams {
+			if s.PlaylistUrl == "" {
+				continue
+			}
+			workerIndex := getWorkerWithLeastWorkload(workers)
+			if len(workers) == 0 {
+				return
+			}
+			conn, err := dialIn(workers[workerIndex])
+			if err != nil {
+				log.WithError(err).Error("Could not connect to worker")
+				endConnection(conn)
+				continue
+			}
+			client := pb.NewToWorkerClient(conn)
+			workers[workerIndex].Workload += 1
+			if err := getLivePreviewFromWorker(&s, workers[workerIndex].WorkerID, client); err != nil {
+				workers[workerIndex].Workload -= 1
+				log.WithError(err).Error("Could not generate live preview")
+				endConnection(conn)
+				continue
+			}
+			workers[workerIndex].Workload -= 1
+		}
+		return
+	}
+}
+
+func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWorkerClient) error {
+	if err := tools.SetSignedPlaylists(s, nil); err != nil {
+		return err
+	}
+	req := pb.LivePreviewRequest{
+		WorkerID: workerID,
+		HLSUrl:   s.PlaylistUrl,
+	}
+	resp, err := client.GenerateLivePreview(context.Background(), &req)
+	if err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(filepath.Join(os.TempDir(), "TUM-Live"), 0750); err != nil {
+		return err
+	}
+
+	file, err := os.Create(filepath.Join(os.TempDir(), "TUM-Live", fmt.Sprintf("%d.jpeg", s.ID)))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	_, err = file.Write(resp.GetLiveThumb())
+	return err
+}
+
 // RegenerateThumbs regenerates the thumbnails for the timeline. This is useful for video with faulty thumbnails
 // and for VoDs that were created before the thumbnail feature.
 func RegenerateThumbs(daoWrapper dao.DaoWrapper, file model.File, stream *model.Stream, course *model.Course) error {
@@ -933,6 +994,31 @@ func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool, daoWrapper 
 		log.WithError(err).Error("Could not delete workers for stream")
 		return
 	}
+}
+
+func (s server) NotifyTranscodingFailure(ctx context.Context, request *pb.NotifyTranscodingFailureRequest) (*pb.NotifyTranscodingFailureResponse, error) {
+	worker, err := s.WorkerDao.GetWorkerByID(ctx, request.WorkerID)
+	if err != nil {
+		return nil, err
+	}
+	failure := model.TranscodingFailure{
+		StreamID: uint(request.StreamID),
+		Logs:     request.Logs,
+		ExitCode: int(request.ExitCode),
+		FilePath: request.FilePath,
+		Hostname: worker.Host,
+	}
+	switch request.Version {
+	case "CAM":
+		failure.Version = model.CAM
+	case "PRES":
+		failure.Version = model.PRES
+	default:
+		failure.Version = model.COMB
+	}
+
+	err = s.DaoWrapper.TranscodingFailureDao.New(&failure)
+	return &pb.NotifyTranscodingFailureResponse{}, err
 }
 
 // getWorkerWithLeastWorkload Gets the index of the worker from workers with the least workload.

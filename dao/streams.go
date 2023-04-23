@@ -26,6 +26,7 @@ type StreamsDao interface {
 	GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error)
 	GetWorkersForStream(stream model.Stream) ([]model.Worker, error)
 	GetAllStreams() ([]model.Stream, error)
+	ExecAllStreamsWithCoursesAndSubtitles(f func([]StreamWithCourseAndSubtitles))
 	GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error)
 	GetCurrentLiveNonHidden(ctx context.Context) (currentLive []model.Stream, err error)
 	GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Stream, error)
@@ -209,6 +210,45 @@ func (d streamsDao) GetAllStreams() ([]model.Stream, error) {
 	return res, err
 }
 
+type StreamWithCourseAndSubtitles struct {
+	Name, Description, TeachingTerm, CourseName, Subtitles string
+	ID, CourseID                                           uint
+	Year                                                   int
+}
+
+// ExecAllStreamsWithCoursesAndSubtitles executes f on all streams with their courses and subtitles preloaded.
+func (d streamsDao) ExecAllStreamsWithCoursesAndSubtitles(f func([]StreamWithCourseAndSubtitles)) {
+	var res []StreamWithCourseAndSubtitles
+	batchNum := 0
+	batchSize := 100
+	var numStreams int64
+	DB.Where("recording").Model(&model.Stream{}).Count(&numStreams)
+	for batchSize*batchNum < int(numStreams) {
+		err := DB.Raw(`WITH sws AS (
+				SELECT streams.id,
+                    streams.name,
+                    streams.description,
+                    c.id as course_id,
+                    c.name as course_name,
+                    c.teaching_term,
+                    c.year,
+                    s.content as subtitles,
+                    IFNULL(s.stream_id, streams.id) as sid
+             	FROM streams
+                      JOIN courses c ON c.id = streams.course_id
+                      LEFT JOIN subtitles s ON streams.id = s.stream_id
+             	WHERE streams.recording AND streams.deleted_at IS NULL
+				LIMIT ? OFFSET ?
+             	)
+			SELECT *, GROUP_CONCAT(subtitles, '\n') AS subtitles FROM sws GROUP BY sid;`, batchSize, batchNum*batchSize).Scan(&res).Error
+		if err != nil {
+			fmt.Println(err)
+		}
+		f(res)
+		batchNum++
+	}
+}
+
 func (d streamsDao) GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error) {
 	if streams, found := Cache.Get("AllCurrentlyLiveStreams"); found {
 		return streams.([]model.Stream), nil
@@ -382,6 +422,7 @@ func (d streamsDao) SaveStream(vod *model.Stream) error {
 		Files:            vod.Files,
 		Duration:         vod.Duration,
 		ThumbInterval:    vod.ThumbInterval,
+		Private:          vod.Private,
 	}).Error
 	return err
 }

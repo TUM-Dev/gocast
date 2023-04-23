@@ -1,11 +1,12 @@
 package cfg
 
 import (
+	"os"
+	"time"
+
 	"github.com/getsentry/sentry-go"
 	"github.com/makasim/sentryhook"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"time"
 )
 
 var (

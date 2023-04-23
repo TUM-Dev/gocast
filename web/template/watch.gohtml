@@ -230,27 +230,77 @@
             {{end}}
 
             <div
-                    x-data="{ size: { x: '0px', width: '0px' }, seekLogger: new watch.SeekLogger('{{$stream.ID}}'), heatMapPath: null }"
-                    x-on:updateheatmappath.window="e => { heatMapPath = e.detail.heatMapPath; }"
-                    x-on:updateheatmapsize.window="e => { size = e.detail; }"
-                    x-init="seekLogger.attach(); watch.repeatHeatMap.init('{{$stream.ID}}');"
-                    class="heatmap-wrap absolute bottom-[18px] rounded bg-gradient-to-t from-gray-800/[.6] pt-4 pointer-events-none"
+                    x-data="{ size: { x: '0px', width: '0px' }, hoverPos: watch.SeekbarHoverPosition.empty }"
+                    x-on:updateseekbarsize.window="e => { size = e.detail; }"
+                    x-on:seekbarhover.window="e => { hoverPos = e.detail; }"
+                    x-init="watch.seekbarOverlay.init($el);"
+                    class="seekbar-overlay absolute bottom-[18px] bg-gradient-to-t from-gray-800/[.6] h-full"
                     :style="{width: size.width, left: size.x}"
-                    x-show="heatMapPath != null"
             >
-                <template x-if="heatMapPath">
-                    <svg height="100%" preserveAspectRatio="none" viewBox="0 0 1000 100"
-                         width="100%" style="height: 30px;">
-                        <defs>
-                            <clipPath id="heatmap">
-                                <path class="tumlive-heat-map-path"
-                                      :d="heatMapPath"
-                                      fill="white" fill-opacity="0.6"></path>
-                            </clipPath>
-                        </defs>
-                        <rect clip-path="url(#heatmap)" fill="white" fill-opacity="0.4" height="100%" width="100%" x="0" y="0"></rect>
-                    </svg>
-                </template>
+
+                <div
+                        x-data="{ seekLogger: new watch.SeekLogger('{{$stream.ID}}'), heatMapPath: null }"
+                        x-on:updateheatmappath.window="e => { heatMapPath = e.detail.heatMapPath; }"
+                        x-on:updateseekbarsize.window="e => { size = e.detail; }"
+                        x-init="seekLogger.attach(); watch.repeatHeatMap.init('{{$stream.ID}}');"
+                        class="absolute h-[30px] bottom-0 left-0 right-0"
+                        x-show="heatMapPath != null"
+                >
+                    <template x-if="heatMapPath">
+                        <svg height="100%" preserveAspectRatio="none" viewBox="0 0 1000 100"
+                             width="100%" style="height: 30px;">
+                            <defs>
+                                <clipPath id="heatmap">
+                                    <path class="tumlive-heat-map-path"
+                                          :d="heatMapPath"
+                                          fill="white" fill-opacity="0.6"></path>
+                                </clipPath>
+                            </defs>
+                            <rect clip-path="url(#heatmap)" fill="white" fill-opacity="0.4" height="100%" width="100%" x="0" y="0"></rect>
+                        </svg>
+                    </template>
+                </div>
+
+                <div
+                        x-data="{ seekbarMarker: [], seekbarSections: [] }"
+                        class="absolute h-[30px] bottom-0 left-0 right-0"
+                        x-on:seekbarhighlightsupdate.window="e => { seekbarMarker = e.detail.marker; seekbarSections = e.detail.sections; }"
+                        x-init="watch.seekbarHighlights.init('{{$stream.ID}}');"
+                >
+                    <template x-for="marker in seekbarMarker">
+                        <div class="absolute bottom-0 top-0" :style="{ left: `${marker.position * 100}%` }">
+                            <!-- Section Separator -->
+                            <div x-show="marker.type === watch.MarkerType.sectionSep" class="w-[2px] h-full bg-gradient-to-t from-black rounded-t"></div>
+
+                            <!-- Bookmark Marker -->
+                            <div x-show="marker.type === watch.MarkerType.bookmark" class="block w-[6px] h-[6px] ml-[-3px] rounded bg-indigo-400 rounded-t"></div>
+                            <div
+                                x-show="marker.type === watch.MarkerType.bookmark && hoverPos.onTarget(marker.position, 7)"
+                                class="break-all absolute z-10 top-[-45px] text-center w-[100px] bg-indigo-400 ml-[-50px] px-[12px] py-2 rounded"
+                                :style="{ left: `${marker.position * 100}%` }"
+                            >
+                                <span class="size1" x-text="marker.description"></span>
+                            </div>
+                        </div>
+                    </template>
+
+                    <template x-for="section in seekbarSections">
+                        <div>
+                            <div
+                                class="absolute border-x-2 border-t-2 bottom-0 top-0 rounded-t"
+                                :class="hoverPos.inRange(section.from, section.to) ? 'bg-white/10 border-white/[.02]' : 'bg-black/20 border-transparent'"
+                                :style="{ left: `${section.from * 100}%`, right: `${(1 - section.to) * 100}%` }"
+                            ></div>
+                            <div
+                                    x-show="hoverPos.inRange(section.from, section.to)"
+                                    class="absolute top-[-45px] text-center w-[100px] bg-black/[0.9] ml-[-50px] px-[12px] py-2 rounded"
+                                    :style="{ left: `${(section.from + (section.to - section.from) / 2) * 100}%` }"
+                            >
+                                <span class="size1" x-text="section.title"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
             </div>
 
             <div
@@ -459,11 +509,11 @@
                     <div class="w-full overflow-x-scroll scrollbarThin">
                         <div class="flex flex-row gap-x-2 pb-4 pl-2">
                             {{range $preset := .Presets}}
-                                <div style="min-width: 150px" class="text-center relative group">
+                                <div style="min-width: 150px" class="text-center text-5 text-sm relative group">
                                     <img id="presetImage{{$preset.LectureHallID}}-{{$preset.PresetID}}"
                                          src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
                                          alt="prev" width="150px"
-                                         class="border-1 dark:border-slate-400 border-slate-500 rounded-lg">
+                                         class="tl-presetimage">
                                     <i onclick="watch.usePreset({{$course.Model.ID}}, {{$preset.LectureHallID}}, {{$preset.PresetID}})"
                                        title="Switch to this preset"
                                        class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-info fas fa-exchange-alt cursor-pointer"></i>

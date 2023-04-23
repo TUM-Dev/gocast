@@ -1,10 +1,9 @@
-//Package rest handles notifications for self streaming from nginx
+// Package rest handles notifications for self streaming from mediamtx
 package rest
 
 import (
 	"errors"
 	"net/http"
-	"regexp"
 	"strings"
 	"sync"
 
@@ -20,29 +19,28 @@ type safeStreams struct {
 	streams map[string]*worker.StreamContext
 }
 
-// InitApi creates routes for the api consumed by nginx
+// InitApi creates routes for the api consumed by mediamtx and TUM-Live
 func InitApi(addr string) {
 	http.HandleFunc("/", defaultHandler)
 	http.HandleFunc("/on_publish", streams.onPublish)
-	http.HandleFunc("/on_publish_done", streams.onPublishDone)
-	// this endpoint should **not** be exposed!
+	// this endpoint should **not** be exposed to the public!
 	http.HandleFunc("/upload", handleUpload)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
-// mustGetStreamInfo gets the stream key and slug from nginx requests and aborts with bad request if something is wrong
-func mustGetStreamInfo(r *http.Request) (streamKey string, slug string, err error) {
-	name := r.FormValue("name")
-	if name == "" {
-		return "", "", errors.New("no stream slug")
+// mustGetStreamInfo gets the stream key and slug from mediamtx requests and aborts with bad request if something is wrong
+func mustGetStreamInfo(req OnStartReq) (streamKey string, slug string, err error) {
+	pts := strings.Split(req.Query, "/")
+	if len(pts) != 2 {
+		return "", "", errors.New("stream key in wrong format")
 	}
-	tcUrl := r.FormValue("tcurl")
-	if tcUrl == "" {
-		return "", "", errors.New("no stream key")
+	key := strings.TrimPrefix(pts[0], "secret=")
+	if key == "" {
+		return "", "", errors.New("no stream key provided")
 	}
-	if m, _ := regexp.MatchString(".+\\?secret=.+", tcUrl); !m {
-		return "", "", errors.New("stream key invalid")
+	slug = pts[1]
+	if slug == "" {
+		return "", "", errors.New("no slug provided")
 	}
-	key := strings.Split(tcUrl, "?secret=")[1]
-	return key, name, nil
+	return key, slug, nil
 }

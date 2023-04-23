@@ -1,7 +1,7 @@
 import { getQueryParam, keepQuery, postData, Time } from "./global";
 import { VideoSectionList } from "./video-sections";
 import { StatusCodes } from "http-status-codes";
-import videojs from "video.js";
+import videojs, { VideoJsPlayer } from "video.js";
 import airplay from "@silvermine/videojs-airplay";
 import { loadAndSetTrackbars } from "./track-bars";
 
@@ -14,9 +14,9 @@ require("videojs-contrib-quality-levels");
 
 const Button = videojs.getComponent("Button");
 
-const players = [];
+const players: VideoJsPlayer[] = [];
 
-export function getPlayers() {
+export function getPlayers(): VideoJsPlayer[] {
     return players;
 }
 
@@ -576,10 +576,24 @@ export class OverlayIcon extends Component {
     }
 }
 
-export function jumpTo(hours: number, minutes: number, seconds: number) {
+export type jumpToSettings = {
+    timeParts: { hours: number; minutes: number; seconds: number } | undefined;
+    time: Time | undefined;
+    Ms: number | undefined;
+    S: number | undefined;
+};
+
+export function jumpTo(settings: jumpToSettings) {
+    if (settings.timeParts) {
+        settings.time = new Time(settings.timeParts.hours, settings.timeParts.minutes, settings.timeParts.seconds);
+    } else if (settings.Ms) {
+        settings.time = Time.FromSeconds(settings.Ms / 1000);
+    } else if (settings.S) {
+        settings.time = Time.FromSeconds(settings.S);
+    }
     for (let j = 0; j < players.length; j++) {
         players[j].ready(() => {
-            players[j].currentTime(new Time(hours, minutes, seconds).toSeconds());
+            players[j].currentTime(settings.time.toSeconds());
         });
     }
 }

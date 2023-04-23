@@ -12,6 +12,7 @@ service ToWorker {
   rpc RequestWaveform (WaveformRequest) returns (WaveFormResponse) {}
   rpc RequestCut (CutRequest) returns (CutResponse) {}
   rpc GenerateThumbnails (GenerateThumbnailRequest) returns (Status) {}
+  rpc GenerateLivePreview (LivePreviewRequest) returns (LivePreviewResponse) {}
   rpc GenerateSectionImages (GenerateSectionImageRequest) returns (GenerateSectionImageResponse) {}
   rpc DeleteSectionImage (DeleteSectionImageRequest) returns (Status) {}
 }
@@ -123,7 +124,8 @@ service FromWorker {
   rpc NotifyThumbnailsFinished(ThumbnailsFinished) returns (Status) {}
   rpc SendSelfStreamRequest(SelfStreamRequest) returns (SelfStreamResponse) {}
   rpc GetStreamInfoForUpload(GetStreamInfoForUploadRequest) returns (GetStreamInfoForUploadResponse) {}
-  rpc NewKeywords(NewKeywordsRequest) returns (Status) {}
+
+  rpc NotifyTranscodingFailure(NotifyTranscodingFailureRequest) returns (NotifyTranscodingFailureResponse) {}
 }
 
 message NotifyTranscodingProgressRequest {
@@ -228,8 +230,23 @@ message GetStreamInfoForUploadResponse {
   uint32 StreamID = 6;
 }
 
-message NewKeywordsRequest {
+message LivePreviewRequest {
+  string WorkerID = 1;
+  string HLSUrl = 2;
+}
+
+message LivePreviewResponse {
+  bytes LiveThumb = 1;
+}
+
+message NotifyTranscodingFailureRequest {
   string WorkerID = 1;
   uint32 StreamID = 2;
-  repeated string Keywords = 3;
+  string Version = 3;
+  string FilePath = 4;
+  string Logs = 5;
+  int64 ExitCode = 6;
+}
+
+message NotifyTranscodingFailureResponse {
 }

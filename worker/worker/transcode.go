@@ -18,7 +18,7 @@ import (
 func buildCommand(niceness int, infile string, outfile string, tune string, crf int) *exec.Cmd {
 	c := []string{
 		"-n", fmt.Sprintf("%d", niceness),
-		"ffmpeg", "-y",
+		"ffmpeg", "-nostats", "-loglevel", "error", "-y",
 		"-progress", "-",
 		"-i", infile,
 		"-vsync", "2", "-c:v", "libx264", "-level", "4.0", "-movflags", "+faststart"}
@@ -89,12 +89,12 @@ func transcode(streamCtx *StreamContext) error {
 	}
 
 	// send progress to tumlive on stderr output:
-	handleTranscodingOutput(stderr, inputTime, progressChan)
+	output := handleTranscodingOutput(stderr, inputTime, progressChan)
 
 	err = cmd.Wait()
 	if err != nil {
-		log.WithFields(log.Fields{"output": "o"}).Error("Transcoding failed")
-		return fmt.Errorf("transcode stream: %v", err)
+		log.WithFields(log.Fields{"output": output}).Error("Transcoding failed")
+		return fmt.Errorf("transcode stream: %w", fmt.Errorf("%w: %s", err, output))
 	} else {
 		log.WithField("stream", streamCtx.getStreamName()).Info("Transcoding finished")
 	}
@@ -109,7 +109,8 @@ func transcode(streamCtx *StreamContext) error {
 	return nil
 }
 
-func handleTranscodingOutput(stderr io.ReadCloser, inputTime float64, progressChan chan int32) {
+func handleTranscodingOutput(stderr io.ReadCloser, inputTime float64, progressChan chan int32) string {
+	output := ""
 	lastSend := -1
 	scanner := bufio.NewScanner(stderr)
 	scanner.Split(bufio.ScanWords)
@@ -117,9 +118,9 @@ func handleTranscodingOutput(stderr io.ReadCloser, inputTime float64, progressCh
 		m := scanner.Text()
 		lines := strings.Split(m, "\n")
 		for _, line := range lines {
-			if strings.HasPrefix(line, "time=") {
+			if strings.HasPrefix(strings.TrimSpace(line), "time=") {
 				// format: time=HH:MM:SS.MICROSECONDS
-				tstr := strings.Split(line, "=")
+				tstr := strings.Split(strings.TrimSpace(line), "=")
 				if len(tstr) == 2 {
 					parsed, err := time.Parse("15:04:05", strings.Split(tstr[1], ".")[0])
 					if err != nil {
@@ -132,9 +133,12 @@ func handleTranscodingOutput(stderr io.ReadCloser, inputTime float64, progressCh
 						lastSend = progress
 					}
 				}
+			} else {
+				output += line + " "
 			}
 		}
 	}
+	return output
 }
 
 // creates folder for output file if it doesn't exist

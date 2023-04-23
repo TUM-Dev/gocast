@@ -1,14 +1,11 @@
 {{define "lectureHalls"}}
-{{- /*gotype: github.com/joschahenningsen/TUM-Live/[]model.LectureHall*/ -}}
+    {{- /*gotype: github.com/joschahenningsen/TUM-Live/[]model.LectureHall*/ -}}
+    <a href="/admin/lectureHalls/new" class="mx-auto w-4/5 mt-8 btn primary block">
+        &#43; New Lecture Hall
+    </a>
 
-<h1 class="text-2xl text-1 my-4">Lecture Halls</h1>
-
-<a href="/admin/lectureHalls/new" class="mx-auto w-4/5 btn primary block">
-    &#43; New Lecture Hall
-</a>
-
-{{range $lectureHall := .}}
-<div id="{{$lectureHall.Model.ID}}" x-data="{
+    {{range $lectureHall := .}}
+        <div id="{{$lectureHall.Model.ID}}" x-data="{
             changed:false,
             saved:false,
             savingFailed:false,
@@ -19,94 +16,98 @@
             cameraIp: '{{$lectureHall.CameraIP}}',
             pwrCtrlIp: '{{$lectureHall.PwrCtrlIp}}',
             id: '{{$lectureHall.ID}}',}"
-    :class="window.location.hash.substr(1)===`${id}`?'dark:border-blue-500 border-blue-500':'dark:border-secondary-light'"
-    class="form-container">
+             :class="window.location.hash.substr(1)===`${id}`?'dark:border-blue-500 border-blue-500':'dark:border-secondary-light'"
+             class="form-container">
 
-    <h2 class="form-container-title">
-        {{$lectureHall.Name}}
-    </h2>
+            <h2 class="form-container-title">
+                {{$lectureHall.Name}}
+            </h2>
 
-    <div class="form-container-body grid grid-cols-3 gap-3 p-4">
-        <h2 class="text-sm text-5 col-span-full">Sources</h2>
-        <ul class="grid gap-4 md:grid-cols-3 lg:grid-cols-5 col-span-full">
-            <li>
-                <span class="text-sm text-6">Presentation</span>
-                <input class = "tl-input" type="text" @keyup="changed=true " x-model="presIp"
-                    value="{{if $lectureHall.PresIP}}{{$lectureHall.PresIP}}{{end}}">
-            </li>
-            <li>
-                <span class="text-sm text-6">Camera</span>
-                <input class = "tl-input" type="text" @keyup="changed=true " x-model="camIp"
-                    value="{{if $lectureHall.CamIP}}{{$lectureHall.CamIP}}{{end}}">
-            </li>
-            <li>
-                <span class="text-sm text-6">Combined</span>
-                <input class = "tl-input" type="text" @keyup="changed=true " x-model="combIp"
-                    value="{{if $lectureHall.CombIP}}{{$lectureHall.CombIP}}{{end}}">
-            </li>
-            <li>
-                <span class="text-sm text-6">Axis Cam</span>
-                <input class = "tl-input" type="text" @keyup="changed=true" x-model="cameraIp"
-                    value="{{if $lectureHall.CameraIP}}{{$lectureHall.CameraIP}}{{end}}">
-            </li>
-            <li>
-                <span class="text-sm text-6">Anel PWR-Ctrl</span>
-                <input class = "tl-input" type="text" @keyup="changed=true" x-model="pwrCtrlIp"
-                    value="{{if $lectureHall.PwrCtrlIp}}{{$lectureHall.PwrCtrlIp}}{{end}}">
-            </li>
-        </ul>
-        {{if $lectureHall.CameraIP}}
-        <h2 class="col-span-full">Presets</h2>
-        <div class="flex flex-row col-span-full">
-            <div class="flex align-middle overflow-x-scroll">
-                <div class="w-full scrollbarThin">
-                    <div class="flex flex-row gap-x-2">
-                        {{range $preset := $lectureHall.CameraPresets}}
-                        <div x-data="{defaultPreset: {{$preset.IsDefault}}, lectureHallID: {{$preset.LectureHallID}}}"
-                            @resetdefaults.window="e => {if(e.detail === lectureHallID){defaultPreset = false}}"
-                            style="min-width: 150px" class="text-center relative group">
-                            <img id="presetImage{{$preset.LectureHallID}}-{{$preset.PresetID}}"
-                                src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
-                                alt="prev" width="150px">
-                            <i @click="admin.setDefaultPreset({{$preset.LectureHallID}}, {{$preset.PresetID}}).then((r) => {if(r){$dispatch('resetdefaults', lectureHallID);defaultPreset=true}})"
-                                title="Set default" :class="!defaultPreset && 'opacity-0'"
-                                class="group-hover:opacity-100 absolute top-1 left-1 p-1 rounded text-white bg-amber-800 fas fa-check"></i>
-                            <i onclick="admin.takeSnapshot({{$preset.LectureHallID}}, {{$preset.PresetID}})"
-                                title="Take new snapshot"
-                                class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-sky-800 fas fa-sync"></i>
-                            <span title="{{$preset.Name}}" class="truncate block my-2">{{$preset.Name}}</span>
+            <div class="form-container-body grid grid-cols-3 gap-3 p-4">
+                <h2 class="text-sm text-4 col-span-full">Sources</h2>
+                <ul class="grid gap-4 md:grid-cols-3 lg:grid-cols-5 col-span-full">
+                    <li>
+                        <span class="text-sm text-5">Presentation</span>
+                        <input class="tl-input" type="text" @keyup="changed=true " x-model="presIp"
+                               value="{{if $lectureHall.PresIP}}{{$lectureHall.PresIP}}{{end}}">
+                    </li>
+                    <li>
+                        <span class="text-sm text-5">Camera</span>
+                        <input class="tl-input" type="text" @keyup="changed=true " x-model="camIp"
+                               value="{{if $lectureHall.CamIP}}{{$lectureHall.CamIP}}{{end}}">
+                    </li>
+                    <li>
+                        <span class="text-sm text-5">Combined</span>
+                        <input class="tl-input" type="text" @keyup="changed=true " x-model="combIp"
+                               value="{{if $lectureHall.CombIP}}{{$lectureHall.CombIP}}{{end}}">
+                    </li>
+                    <li>
+                        <span class="text-sm text-5">Axis Cam</span>
+                        <input class="tl-input" type="text" @keyup="changed=true" x-model="cameraIp"
+                               value="{{if $lectureHall.CameraIP}}{{$lectureHall.CameraIP}}{{end}}">
+                    </li>
+                    <li>
+                        <span class="text-sm text-5">Anel PWR-Ctrl</span>
+                        <input class="tl-input" type="text" @keyup="changed=true" x-model="pwrCtrlIp"
+                               value="{{if $lectureHall.PwrCtrlIp}}{{$lectureHall.PwrCtrlIp}}{{end}}">
+                    </li>
+                </ul>
+                {{if $lectureHall.CameraIP}}
+                    <h2 class="col-span-full">Presets</h2>
+                    <div class="flex flex-row col-span-full">
+                        <div class="flex align-middle overflow-x-scroll">
+                            <div class="w-full scrollbarThin">
+                                <div class="flex flex-row gap-x-2">
+                                    {{range $preset := $lectureHall.CameraPresets}}
+                                        <div x-data="{defaultPreset: {{$preset.IsDefault}}, lectureHallID: {{$preset.LectureHallID}}}"
+                                             @resetdefaults.window="e => {if(e.detail === lectureHallID){defaultPreset = false}}"
+                                             style="min-width: 150px" class="text-center text-sm text-5 relative group"
+                                        >
+                                            <img id="presetImage{{$preset.LectureHallID}}-{{$preset.PresetID}}"
+                                                 src="/public/{{if $preset.Image}}{{$preset.Image}}{{else}}noPreset.jpg{{end}}"
+                                                 alt="prev" width="150px"
+                                                 class="tl-presetimage">
+                                            <i @click="admin.setDefaultPreset({{$preset.LectureHallID}}, {{$preset.PresetID}}).then((r) => {if(r){$dispatch('resetdefaults', lectureHallID);defaultPreset=true}})"
+                                               title="Set default" :class="!defaultPreset && 'opacity-0'"
+                                               class="group-hover:opacity-100 absolute top-1 left-1 p-1 rounded text-white bg-blue-600 fas fa-check"></i>
+                                            <i onclick="admin.takeSnapshot({{$preset.LectureHallID}}, {{$preset.PresetID}})"
+                                               title="Take new snapshot"
+                                               class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 p-1 rounded text-white bg-indigo-500 fas fa-sync"></i>
+                                            <span title="{{$preset.Name}}" class="truncate block my-2"
+                                            >{{$preset.Name}}</span>
+                                        </div>
+                                    {{end}}
+                                </div>
+                            </div>
                         </div>
-                        {{end}}
                     </div>
-                </div>
-            </div>
-        </div>
-        {{end}}
-        <span x-show="saved" x-transition.delay.200ms class="mr-4 text-green-400 mb-6">
+                {{end}}
+                <span x-show="saved" x-transition.delay.200ms class="mr-4 text-green-400 mb-6">
             Saved Successfully
         </span>
-        <span x-show="savingFailed" x-transition.delay.200ms class="mr-4 text-red-400 mb-6">
+                <span x-show="savingFailed" x-transition.delay.200ms class="mr-4 text-red-400 mb-6">
             Error updating lecture hall
         </span>
-        <button class="btn" @click="fetch('/api/lectureHall/'+id, {method: 'PUT', headers: {'Content-Type': 'application/json'},
+                <button class="btn" @click="fetch('/api/lectureHall/'+id, {method: 'PUT', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({presIp: presIp,camIp: camIp, combIp: combIp, cameraIp: cameraIp, pwrCtrlIp: pwrCtrlIp})})
                                     .then(r => {
                                         saved = r.status === 200
                                         savingFailed = !saved
                                     });timeout = setTimeout(() => { saved = false; savingFailed = false; }, 3000)"
-            :disabled="!changed" class="btn">
-            Save
-        </button>
-        {{if $lectureHall.CameraIP}}
-        <button x-data="{loading:false}" title="Refresh list" class="btn"
-            @click="loading=true;fetch('/api/refreshLectureHallPresets/{{$lectureHall.Model.ID}}').then(d=>d.status==200?window.location.reload():alert('there was an error'))">
-            Reload Presets
-        </button>
-        {{end}}
-        <button class="btn" title="Delete Lecture Hall" onclick="admin.deleteLectureHall({{$lectureHall.Model.ID}})">
-            Delete
-        </button>
-    </div>
-</div>
-{{end}}
+                        :disabled="!changed" class="btn">
+                    Save
+                </button>
+                {{if $lectureHall.CameraIP}}
+                    <button x-data="{loading:false}" title="Refresh list" class="btn"
+                            @click="loading=true;fetch('/api/refreshLectureHallPresets/{{$lectureHall.Model.ID}}').then(d=>d.status==200?window.location.reload():alert('there was an error'))">
+                        Reload Presets
+                    </button>
+                {{end}}
+                <button class="btn" title="Delete Lecture Hall"
+                        onclick="admin.deleteLectureHall({{$lectureHall.Model.ID}})">
+                    Delete
+                </button>
+            </div>
+        </div>
+    {{end}}
 {{end}}

@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"mime"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -239,7 +240,11 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if uid == "" {
-		uid = r.RemoteAddr
+		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			ip = r.RemoteAddr
+		}
+		uid = ip
 	}
 	usersMap.Put(uid, true)
 	http.StripPrefix("/vod", vodFileServer).ServeHTTP(w, r)
@@ -274,7 +279,7 @@ func handleTLS(mux *http.ServeMux) {
 	}
 }
 
-// edgeHandler proxies requests to TUM-Live-Worker (nginx) and caches immutable files.
+// edgeHandler proxies requests to TUM-Live-Worker and caches immutable files.
 func edgeHandler(writer http.ResponseWriter, request *http.Request) {
 	if !allowedRe.MatchString(request.URL.Path) {
 		writer.WriteHeader(http.StatusNotFound)

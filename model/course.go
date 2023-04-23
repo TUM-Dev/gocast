@@ -37,6 +37,9 @@ type Course struct {
 	CameraPresetPreferences string // json encoded. e.g. [{lectureHallID:1, presetID:4}, ...]
 	SourcePreferences       string // json encoded. e.g. [{lectureHallID:1, sourceMode:0}, ...]
 	Pinned                  bool   `gorm:"-"` // Used to determine if the course is pinned when loaded for a specific user.
+
+	LivePrivate bool `gorm:"not null; default:false"` // whether Livestreams are private
+	VodPrivate  bool `gorm:"not null; default:false"` // Whether VODs are made private after livestreams
 }
 
 // GetUrl returns the URL of the course, e.g. /course/2022/S/MyCourse
@@ -159,6 +162,16 @@ func (c Course) NumStreams() int {
 		}
 	}
 	return res
+}
+
+func (c Course) StreamTimes() []string {
+	streamTimes := make([]string, len(c.Streams))
+
+	for i, s := range c.Streams {
+		streamTimes[i] = s.Start.In(time.UTC).Format("2006-01-02T15:04:05") + ".000Z"
+	}
+
+	return streamTimes
 }
 
 // HasRecordings returns whether the course has any recordings.
