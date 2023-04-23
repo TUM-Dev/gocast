@@ -79,14 +79,8 @@ func (r downloadRoutes) download(c *gin.Context) {
 	case "download":
 		fallthrough
 	default:
-		err := tools.SetSignedPlaylists(&stream, tumLiveContext.User, false)
-		if err != nil {
-			log.WithError(err).Error("can not set signed playlists for download")
-			return
-		}
-
 		if tumLiveContext.User.IsAdminOfCourse(course) {
-			c.Redirect(http.StatusFound, stream.PlaylistUrl)
+			sendDownloadFile(c, file, tumLiveContext)
 			return
 		}
 		if !course.DownloadsEnabled {
@@ -105,7 +99,8 @@ func (r downloadRoutes) download(c *gin.Context) {
 				}
 			}
 		}
-		c.Redirect(http.StatusFound, stream.PlaylistUrl)
+
+		sendDownloadFile(c, file, tumLiveContext)
 	}
 }
 
