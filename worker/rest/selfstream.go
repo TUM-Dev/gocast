@@ -28,7 +28,7 @@ func defaultHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// onPublish is called by nginx when the stream starts publishing
+// onPublish is called by mediamtx when the stream starts publishing
 func (s *safeStreams) onPublish(w http.ResponseWriter, r *http.Request) {
 	log.Info("onPublish called")
 	if r.Method != http.MethodPost {

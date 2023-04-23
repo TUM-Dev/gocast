@@ -1,4 +1,4 @@
-// Package rest handles notifications for self streaming from nginx
+// Package rest handles notifications for self streaming from mediamtx
 package rest
 
 import (
@@ -19,7 +19,7 @@ type safeStreams struct {
 	streams map[string]*worker.StreamContext
 }
 
-// InitApi creates routes for the api consumed by nginx
+// InitApi creates routes for the api consumed by mediamtx and TUM-Live
 func InitApi(addr string) {
 	http.HandleFunc("/", defaultHandler)
 	http.HandleFunc("/on_publish", streams.onPublish)
@@ -28,7 +28,7 @@ func InitApi(addr string) {
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
-// mustGetStreamInfo gets the stream key and slug from nginx requests and aborts with bad request if something is wrong
+// mustGetStreamInfo gets the stream key and slug from mediamtx requests and aborts with bad request if something is wrong
 func mustGetStreamInfo(req OnStartReq) (streamKey string, slug string, err error) {
 	pts := strings.Split(req.Query, "/")
 	if len(pts) != 2 {
