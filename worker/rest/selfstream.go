@@ -110,25 +110,28 @@ func (s *safeStreams) onPublish(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Authentication failed for SendSelfStreamRequest", http.StatusForbidden)
 		return
 	}
-	s.mutex.Lock()
-	if streamCtx, ok := s.streams[streamKey]; ok {
-		log.Debug("SelfStream already exists, stopping it.")
-		worker.HandleStreamEnd(streamCtx, true)
-	}
-	s.mutex.Unlock()
-
-	// todo is this right?
-	// register stream in local map
-	streamContext := worker.HandleSelfStream(resp, slug)
-
-	s.mutex.Lock()
-	s.streams[streamKey] = streamContext // todo this is only added after the stream has ended
-	s.mutex.Unlock()
-
 	go func() {
-		worker.HandleStreamEnd(streamContext, false)
-		worker.NotifyStreamDone(streamContext)
-		worker.HandleSelfStreamRecordEnd(streamContext)
+
+		s.mutex.Lock()
+		if streamCtx, ok := s.streams[streamKey]; ok {
+			log.Debug("SelfStream already exists, stopping it.")
+			worker.HandleStreamEnd(streamCtx, true)
+		}
+		s.mutex.Unlock()
+
+		// todo is this right?
+		// register stream in local map
+		streamContext := worker.HandleSelfStream(resp, slug)
+
+		s.mutex.Lock()
+		s.streams[streamKey] = streamContext // todo this is only added after the stream has ended
+		s.mutex.Unlock()
+
+		go func() {
+			worker.HandleStreamEnd(streamContext, false)
+			worker.NotifyStreamDone(streamContext)
+			worker.HandleSelfStreamRecordEnd(streamContext)
+		}()
 	}()
 }
 
