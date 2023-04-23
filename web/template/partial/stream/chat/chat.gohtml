@@ -90,9 +90,9 @@
                     </button>
                 </template>
             </div>
-            <div class="my-auto space-x-2 ml-auto">
-                <button class="text-5 text-xs rounded-full font-semibold px-2 py-1 my-auto uppercase"
-                        :class="c.chatReplayActive ? 'bg-gray-300 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700'"
+            <div class="flex items-center my-auto space-x-2 ml-auto">
+                <button class="flex border-0 h-8 w-8 rounded-full"
+                        :class="c.chatReplayActive ? 'bg-gray-100 dark:bg-gray-600 hover:bg-transparent' : 'bg-transparent hover:dark:bg-gray-600 hover:bg-gray-100'"
                         x-show="{{not (or $isComingUp $liveNow .IsPopUp)}}"
                         title="(De-)Activate Chat Replay"
                         @click="c.chatReplayActive = !c.chatReplayActive;"
@@ -100,7 +100,7 @@
                             $watch('c.chatReplayActive', (value) => {
                                 value ? c.activateChatReplay() : c.deactivateChatReplay();
                             })">
-                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <i class="fa-solid fa-clock-rotate-left m-auto text-sm"></i>
                 </button>
 
                 <!-- Toggle Chat and Polls -->
