@@ -17,7 +17,7 @@
             </button>
         {{end}}
         {{/* VoD download button */}}
-        {{if and (and $course.DownloadsEnabled $user) $stream.IsDownloadable}}
+        {{if and (or ($user.IsAdminOfCourse $course) (and $course.DownloadsEnabled $user)) $stream.IsDownloadable}}
             {{template "downloadBtn" $stream.GetVodFiles}}
         {{end}}
         {{if or $stream.PlaylistUrlCAM $stream.PlaylistUrl $stream.PlaylistUrlPRES}}

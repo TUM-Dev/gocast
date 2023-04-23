@@ -50,6 +50,11 @@ class LectureFile {
     }
 }
 
+class DownloadableVod {
+    downloadURL: string;
+    friendlyName: string;
+}
+
 class TranscodingProgress {
     version: string;
     progress: number;
@@ -98,6 +103,7 @@ export class Lecture {
     transcodingProgresses: TranscodingProgress[];
     files: LectureFile[];
     private: boolean;
+    downloadableVods: DownloadableVod[];
 
     clone() {
         return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
@@ -335,10 +341,7 @@ export class Lecture {
     }
 
     getDownloads() {
-        if (this.files === undefined || this.files === null) {
-            return [];
-        }
-        return this.files.filter((f: LectureFile) => f.fileType === 1);
+        return this.downloadableVods;
     }
 
     async deleteFile(fileId: number) {
@@ -352,7 +355,6 @@ export class Lecture {
     }
 
     onFileDrop(e) {
-        e.preventDefault();
         if (e.dataTransfer.items) {
             const kind = e.dataTransfer.items[0].kind;
             switch (kind) {

@@ -1,15 +1,46 @@
 import { getPlayers } from "./TUMLiveVjs";
 import { cloneEvents } from "./global";
 
+export class SeekbarHoverPosition {
+    static empty: SeekbarHoverPosition = new SeekbarHoverPosition(0, 0);
+
+    private readonly seekBarWidth: number;
+    public position: number;
+    public offset: number;
+
+    constructor(seekBarWidth: number, offset: number) {
+        this.seekBarWidth = seekBarWidth;
+        this.offset = offset;
+        this.position = offset / seekBarWidth;
+    }
+
+    public onTarget(target: number, maxDeltaPixels: number): boolean {
+        if (this.offset === -1) return false;
+        const deltaPercentage = maxDeltaPixels / this.seekBarWidth;
+        return this.position >= target - deltaPercentage && this.position <= target + deltaPercentage;
+    }
+
+    public inRange(from: number, to: number) {
+        if (this.offset === -1) return false;
+        return this.position >= from && this.position < to;
+    }
+}
+
 export const seekbarOverlay = {
     streamID: null,
+    outerWrap: null,
     seekBarWrap: null,
 
-    init() {
+    init(wrap: HTMLElement) {
+        this.outerWrap = wrap;
         const player = [...getPlayers()].pop();
         player.ready(() => {
             this.seekBarWrap = player.el().querySelector(".vjs-progress-control");
-            cloneEvents(this.seekBarWrap.querySelector(".vjs-slider"), this.seekBarWrap, ["mousemove", "mouseleave"]);
+            const slider = this.seekBarWrap.querySelector(".vjs-slider");
+            slider.style.marginLeft = 0;
+            slider.style.marginRight = 0;
+            cloneEvents(slider, this.seekBarWrap, ["mousemove", "mouseleave"]);
+            cloneEvents(this.outerWrap, this.seekBarWrap, ["mousemove", "mouseleave"]);
             this.injectElementIntoVjs();
             this.updateSize();
             this.listenForHoverEvents();
@@ -20,15 +51,15 @@ export const seekbarOverlay = {
     listenForHoverEvents() {
         this.seekBarWrap.addEventListener("mousemove", (e: MouseEvent) => {
             if (e.target !== this.seekBarWrap) return;
-            this.triggerHoverEvent(e.offsetX / this.seekBarWrap.getBoundingClientRect().width);
+            this.triggerHoverEvent(new SeekbarHoverPosition(this.seekBarWrap.getBoundingClientRect().width, e.offsetX));
         });
         this.seekBarWrap.addEventListener("mouseleave", (e: MouseEvent) => {
             if (e.target !== this.seekBarWrap) return;
-            this.triggerHoverEvent(-1);
+            this.triggerHoverEvent(new SeekbarHoverPosition(this.seekBarWrap.getBoundingClientRect().width, -1));
         });
     },
 
-    triggerHoverEvent(pos: number) {
+    triggerHoverEvent(pos: SeekbarHoverPosition) {
         const event = new CustomEvent("seekbarhover", {
             detail: pos,
         });

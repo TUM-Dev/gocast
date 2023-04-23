@@ -10,6 +10,7 @@ type FileType uint
 
 const (
 	FILETYPE_INVALID = iota
+	// Deprecated: vods can now be downloaded from the edge server using the signed playlist url + ?download=1.
 	FILETYPE_VOD
 	FILETYPE_ATTACHMENT
 	FILETYPE_IMAGE_JPG

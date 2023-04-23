@@ -159,7 +159,6 @@ func main() {
 		&model.VideoSeekChunk{},
 		&model.Notification{},
 		&model.UploadKey{},
-		&model.Keyword{},
 		&model.UserSetting{},
 		&model.Audit{},
 		&model.InfoPage{},
@@ -167,6 +166,7 @@ func main() {
 		&model.TranscodingProgress{},
 		&model.ChatReaction{},
 		&model.Subtitles{},
+		&model.TranscodingFailure{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)

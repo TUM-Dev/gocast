@@ -25,8 +25,8 @@ enum WSMessageType {
 }
 
 export { repeatHeatMap } from "./repeat-heatmap";
-export { seekbarHighlights } from "./seekbar-highlights";
-export { seekbarOverlay } from "./seekbar-overlay";
+export { seekbarHighlights, MarkerType } from "./seekbar-highlights";
+export { seekbarOverlay, SeekbarHoverPosition } from "./seekbar-overlay";
 
 function sendIDMessage(id: number, type: WSMessageType) {
     return Realtime.get().send(currentChatChannel, {

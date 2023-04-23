@@ -29,8 +29,7 @@ export function scrollToTop() {
 }
 
 export function scrollToElement(element: HTMLElement) {
-    const chatBox = document.getElementById("chatBox");
-    chatBox.scrollTop = element.offsetTop;
+    element.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
 }
 
 let orderByLikes = false; // sorting by likes or by time

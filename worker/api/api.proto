@@ -124,7 +124,8 @@ service FromWorker {
   rpc NotifyThumbnailsFinished(ThumbnailsFinished) returns (Status) {}
   rpc SendSelfStreamRequest(SelfStreamRequest) returns (SelfStreamResponse) {}
   rpc GetStreamInfoForUpload(GetStreamInfoForUploadRequest) returns (GetStreamInfoForUploadResponse) {}
-  rpc NewKeywords(NewKeywordsRequest) returns (Status) {}
+
+  rpc NotifyTranscodingFailure(NotifyTranscodingFailureRequest) returns (NotifyTranscodingFailureResponse) {}
 }
 
 message NotifyTranscodingProgressRequest {
@@ -231,12 +232,6 @@ message GetStreamInfoForUploadResponse {
   uint32 StreamID = 6;
 }
 
-message NewKeywordsRequest {
-  string WorkerID = 1;
-  uint32 StreamID = 2;
-  repeated string Keywords = 3;
-}
-
 message LivePreviewRequest {
   string WorkerID = 1;
   string HLSUrl = 2;
@@ -244,4 +239,16 @@ message LivePreviewRequest {
 
 message LivePreviewResponse {
   bytes LiveThumb = 1;
+}
+
+message NotifyTranscodingFailureRequest {
+  string WorkerID = 1;
+  uint32 StreamID = 2;
+  string Version = 3;
+  string FilePath = 4;
+  string Logs = 5;
+  int64 ExitCode = 6;
+}
+
+message NotifyTranscodingFailureResponse {
 }

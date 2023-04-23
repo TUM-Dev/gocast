@@ -410,7 +410,7 @@ type FromWorkerClient interface {
 	NotifyThumbnailsFinished(ctx context.Context, in *ThumbnailsFinished, opts ...grpc.CallOption) (*Status, error)
 	SendSelfStreamRequest(ctx context.Context, in *SelfStreamRequest, opts ...grpc.CallOption) (*SelfStreamResponse, error)
 	GetStreamInfoForUpload(ctx context.Context, in *GetStreamInfoForUploadRequest, opts ...grpc.CallOption) (*GetStreamInfoForUploadResponse, error)
-	NewKeywords(ctx context.Context, in *NewKeywordsRequest, opts ...grpc.CallOption) (*Status, error)
+	NotifyTranscodingFailure(ctx context.Context, in *NotifyTranscodingFailureRequest, opts ...grpc.CallOption) (*NotifyTranscodingFailureResponse, error)
 }
 
 type fromWorkerClient struct {
@@ -545,9 +545,9 @@ func (c *fromWorkerClient) GetStreamInfoForUpload(ctx context.Context, in *GetSt
 	return out, nil
 }
 
-func (c *fromWorkerClient) NewKeywords(ctx context.Context, in *NewKeywordsRequest, opts ...grpc.CallOption) (*Status, error) {
-	out := new(Status)
-	err := c.cc.Invoke(ctx, "/api.FromWorker/NewKeywords", in, out, opts...)
+func (c *fromWorkerClient) NotifyTranscodingFailure(ctx context.Context, in *NotifyTranscodingFailureRequest, opts ...grpc.CallOption) (*NotifyTranscodingFailureResponse, error) {
+	out := new(NotifyTranscodingFailureResponse)
+	err := c.cc.Invoke(ctx, "/api.FromWorker/NotifyTranscodingFailure", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -570,7 +570,7 @@ type FromWorkerServer interface {
 	NotifyThumbnailsFinished(context.Context, *ThumbnailsFinished) (*Status, error)
 	SendSelfStreamRequest(context.Context, *SelfStreamRequest) (*SelfStreamResponse, error)
 	GetStreamInfoForUpload(context.Context, *GetStreamInfoForUploadRequest) (*GetStreamInfoForUploadResponse, error)
-	NewKeywords(context.Context, *NewKeywordsRequest) (*Status, error)
+	NotifyTranscodingFailure(context.Context, *NotifyTranscodingFailureRequest) (*NotifyTranscodingFailureResponse, error)
 	mustEmbedUnimplementedFromWorkerServer()
 }
 
@@ -611,8 +611,8 @@ func (UnimplementedFromWorkerServer) SendSelfStreamRequest(context.Context, *Sel
 func (UnimplementedFromWorkerServer) GetStreamInfoForUpload(context.Context, *GetStreamInfoForUploadRequest) (*GetStreamInfoForUploadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStreamInfoForUpload not implemented")
 }
-func (UnimplementedFromWorkerServer) NewKeywords(context.Context, *NewKeywordsRequest) (*Status, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method NewKeywords not implemented")
+func (UnimplementedFromWorkerServer) NotifyTranscodingFailure(context.Context, *NotifyTranscodingFailureRequest) (*NotifyTranscodingFailureResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NotifyTranscodingFailure not implemented")
 }
 func (UnimplementedFromWorkerServer) mustEmbedUnimplementedFromWorkerServer() {}
 
@@ -833,20 +833,20 @@ func _FromWorker_GetStreamInfoForUpload_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FromWorker_NewKeywords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NewKeywordsRequest)
+func _FromWorker_NotifyTranscodingFailure_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NotifyTranscodingFailureRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FromWorkerServer).NewKeywords(ctx, in)
+		return srv.(FromWorkerServer).NotifyTranscodingFailure(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.FromWorker/NewKeywords",
+		FullMethod: "/api.FromWorker/NotifyTranscodingFailure",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FromWorkerServer).NewKeywords(ctx, req.(*NewKeywordsRequest))
+		return srv.(FromWorkerServer).NotifyTranscodingFailure(ctx, req.(*NotifyTranscodingFailureRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -899,8 +899,8 @@ var FromWorker_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _FromWorker_GetStreamInfoForUpload_Handler,
 		},
 		{
-			MethodName: "NewKeywords",
-			Handler:    _FromWorker_NewKeywords_Handler,
+			MethodName: "NotifyTranscodingFailure",
+			Handler:    _FromWorker_NotifyTranscodingFailure_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

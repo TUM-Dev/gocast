@@ -2,14 +2,15 @@ import { Section } from "./global";
 import { getPlayers } from "./TUMLiveVjs";
 import { VideoJsPlayer } from "video.js";
 import { DataStore } from "./data-store/data-store";
+import { Bookmark } from "./data-store/bookmarks";
 
 export enum MarkerType {
     sectionSep,
+    bookmark,
 }
 
 export type SeekbarMarker = {
     type: MarkerType;
-    icon?: string;
     description?: string;
     position: number;
 };
@@ -33,23 +34,28 @@ class SeekbarHighlights {
         this.player = [...getPlayers()].pop();
         this.player.ready(() => {
             if (this.player.duration() > 0) {
-                return this.update();
+                return this.setup();
             }
-            this.player.one("loadedmetadata", () => this.update());
+            this.player.one("loadedmetadata", () => this.setup());
         });
     }
 
-    async update() {
-        await this.updateSections();
-        this.triggerUpdateEvent();
+    async setup() {
+        await DataStore.videoSections.subscribe(this.streamId, (sections) => {
+            this.updateSections(sections);
+            this.triggerUpdateEvent();
+        });
+        await DataStore.bookmarks.subscribe(this.streamId, (bookmarks) => {
+            this.updateBookmarks(bookmarks);
+            this.triggerUpdateEvent();
+        });
     }
 
-    async updateSections() {
+    async updateSections(sections: Section[]) {
         const duration = this.player.duration();
         this.sections = [];
         this.marker = this.marker.filter((m) => m.type != MarkerType.sectionSep);
 
-        const sections = await DataStore.videoSections.getData(this.streamId);
         for (let i = 0; i < sections.length; i++) {
             const section = sections[i];
             const nextSection = i + 1 < sections.length ? sections[i + 1] : null;
@@ -72,6 +78,20 @@ class SeekbarHighlights {
         }
     }
 
+    async updateBookmarks(bookmarks: Bookmark[]) {
+        const duration = this.player.duration();
+        this.marker = this.marker.filter((m) => m.type != MarkerType.bookmark);
+
+        for (let i = 0; i < bookmarks.length; i++) {
+            const bookmark = bookmarks[i];
+            this.marker.push({
+                type: MarkerType.bookmark,
+                description: bookmark.description,
+                position: this.getBookmarkTimestamp(bookmark) / duration,
+            });
+        }
+    }
+
     triggerUpdateEvent() {
         const event = new CustomEvent("seekbarhighlightsupdate", {
             detail: {
@@ -84,6 +104,10 @@ class SeekbarHighlights {
 
     getSectionTimestamp(section: Section): number {
         return (section.startHours * 60 + section.startMinutes) * 60 + section.startSeconds;
+    }
+
+    getBookmarkTimestamp(bookmark: Bookmark): number {
+        return (bookmark.hours * 60 + bookmark.minutes) * 60 + bookmark.seconds;
     }
 }
 

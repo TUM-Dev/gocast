@@ -56,13 +56,31 @@ type Stream struct {
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }
 
+type DownloadableVod struct {
+	FriendlyName, DownloadURL string
+}
+
 // GetVodFiles returns all downloadable files that user can see when using the download dropdown for a stream.
-func (s Stream) GetVodFiles() []File {
-	dFiles := make([]File, 0)
-	for _, file := range s.Files {
-		if file.Type == FILETYPE_VOD {
-			dFiles = append(dFiles, file)
-		}
+func (s Stream) GetVodFiles() []DownloadableVod {
+	dFiles := make([]DownloadableVod, 0)
+
+	if s.PlaylistUrl != "" {
+		dFiles = append(dFiles, DownloadableVod{
+			FriendlyName: "Combined",
+			DownloadURL:  s.PlaylistUrl + "&download=1",
+		})
+	}
+	if s.PlaylistUrlCAM != "" {
+		dFiles = append(dFiles, DownloadableVod{
+			FriendlyName: "Camera",
+			DownloadURL:  s.PlaylistUrlCAM + "&download=1",
+		})
+	}
+	if s.PlaylistUrlPRES != "" {
+		dFiles = append(dFiles, DownloadableVod{
+			FriendlyName: "Presentation",
+			DownloadURL:  s.PlaylistUrlPRES + "&download=1",
+		})
 	}
 	return dFiles
 }
@@ -131,9 +149,9 @@ func (s Stream) IsConverting() bool {
 	return len(s.TranscodingProgresses) > 0
 }
 
-// IsDownloadable returns true if the stream is a recording and has at least one file associated with it.
+// IsDownloadable returns true if the stream is a recording and has at least one stream associated with it.
 func (s Stream) IsDownloadable() bool {
-	return s.Recording && len(s.Files) > 0
+	return s.Recording && (s.PlaylistUrl != "" || s.PlaylistUrlPRES != "" || s.PlaylistUrlCAM != "")
 }
 
 // IsSelfStream returns whether the stream is a scheduled stream in a lecture hall
@@ -292,6 +310,7 @@ func (s Stream) getJson(lhs []LectureHall, course Course) gin.H {
 		"isChatEnabled":         s.ChatEnabled,
 		"courseSlug":            course.Slug,
 		"private":               s.Private,
+		"downloadableVods":      s.GetVodFiles(),
 	}
 }
 

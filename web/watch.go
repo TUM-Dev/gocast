@@ -33,7 +33,11 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 	}
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	data.IndexData = NewIndexData()
-	err = tools.SetSignedPlaylists(tumLiveContext.Stream, tumLiveContext.User)
+	if tumLiveContext.Course.DownloadsEnabled && tumLiveContext.Stream.IsDownloadable() {
+		err = tools.SetSignedPlaylists(tumLiveContext.Stream, tumLiveContext.User, true)
+	} else {
+		err = tools.SetSignedPlaylists(tumLiveContext.Stream, tumLiveContext.User, false)
+	}
 	if err != nil {
 		log.WithError(err).Warn("Can't sign playlists")
 	}
@@ -80,6 +84,7 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 
 	// Check for fetching progress
 	if tumLiveContext.User != nil && tumLiveContext.Stream.Recording {
+
 		progress, err := dao.Progress.LoadProgress(tumLiveContext.User.ID, tumLiveContext.Stream.ID)
 		if err != nil {
 			data.Progress = model.StreamProgress{Progress: 0}

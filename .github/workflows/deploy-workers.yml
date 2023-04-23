@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: ["worker", "worker/nginx", "worker/edge", "worker/rtmp-relay", "vod-service"]
+        module: ["worker", "worker/edge", "vod-service"]
 
     steps:
       - name: get container name
