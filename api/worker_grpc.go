@@ -814,7 +814,7 @@ func FetchLivePreviews(daoWrapper dao.DaoWrapper) func() {
 }
 
 func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWorkerClient) error {
-	if err := tools.SetSignedPlaylists(s, nil); err != nil {
+	if err := tools.SetSignedPlaylists(s, nil, false); err != nil {
 		return err
 	}
 	req := pb.LivePreviewRequest{

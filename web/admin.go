@@ -228,6 +228,12 @@ func (r mainRoutes) EditCoursePage(c *gin.Context) {
 		courses = []model.Course{}
 	}
 	semesters := r.CoursesDao.GetAvailableSemesters(c)
+	for i := range tumLiveContext.Course.Streams {
+		err := tools.SetSignedPlaylists(&tumLiveContext.Course.Streams[i], tumLiveContext.User, true)
+		if err != nil {
+			log.WithError(err).Error("could not set signed playlist for admin page")
+		}
+	}
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
 		IndexData:      indexData,
 		Courses:        courses,

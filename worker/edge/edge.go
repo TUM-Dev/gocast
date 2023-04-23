@@ -131,6 +131,19 @@ type JWTPlaylistClaims struct {
 	CourseID string
 }
 
+func (c *JWTPlaylistClaims) GetFileName() string {
+	if c == nil {
+		return "video.mp4"
+	}
+	pts := strings.Split(c.Playlist, "/")
+	for _, pt := range pts {
+		if strings.HasSuffix(pt, ".mp4") {
+			return pt
+		}
+	}
+	return fmt.Sprintf("%s.mp4", c.StreamID)
+}
+
 func validateToken(w http.ResponseWriter, r *http.Request, download bool) (claims *JWTPlaylistClaims, ok bool) {
 	token := r.URL.Query().Get("jwt")
 	if token == "" {
