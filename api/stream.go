@@ -331,7 +331,7 @@ func (r streamRoutes) RegenerateThumbs(c *gin.Context) {
 				log.WithError(err).Errorf("Can't get video sections for stream %d", stream.ID)
 				continue
 			}
-			err = tools.SetSignedPlaylists(stream, nil)
+			err = tools.SetSignedPlaylists(stream, nil, false)
 			if err != nil {
 				log.WithError(err).Errorf("Can't set signed playlists for stream %d", stream.ID)
 				continue
@@ -390,7 +390,7 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 		return
 	}
 
-	err = tools.SetSignedPlaylists(stream, nil)
+	err = tools.SetSignedPlaylists(stream, nil, false)
 	if err != nil {
 		log.WithError(err).Error("failed to set signed playlists")
 		_ = c.Error(tools.RequestError{
@@ -663,7 +663,7 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 		return
 	}
 
-	err = tools.SetSignedPlaylists(stream, tumLiveContext.User)
+	err = tools.SetSignedPlaylists(stream, tumLiveContext.User, false)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

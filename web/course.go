@@ -170,7 +170,7 @@ func (r mainRoutes) CoursePage(c *gin.Context) {
 	tumLiveContext.Course.Streams = streamsWithWatchState // Update the course streams to contain the watch state.
 
 	for i := range tumLiveContext.Course.Streams {
-		err = tools.SetSignedPlaylists(&tumLiveContext.Course.Streams[i], tumLiveContext.User)
+		err = tools.SetSignedPlaylists(&tumLiveContext.Course.Streams[i], tumLiveContext.User, false)
 		if err != nil {
 			log.WithError(err).Warn("Can't sign playlists")
 		}
