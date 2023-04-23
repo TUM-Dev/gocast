@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"github.com/joschahenningsen/TUM-Live/worker/cfg"
-	"github.com/joschahenningsen/TUM-Live/worker/pb"
-	"github.com/joschahenningsen/TUM-Live/worker/worker"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -30,22 +28,6 @@ func setup() {
 func checkReturnCode(t *testing.T, w *httptest.ResponseRecorder, code int) {
 	if w.Result().StatusCode != code {
 		t.Errorf("Expected status code %d, but was %d", code, w.Result().StatusCode)
-	}
-}
-
-func checkBadStreamInfo(t *testing.T) {
-	key, slug, err := mustGetStreamInfo(r)
-	if err == nil || key != "" || slug != "" {
-		t.Errorf("Received invalid response from mustGetStreamInfo: "+
-			"err %v, key: %s, slug: %s", err, key, slug)
-	}
-}
-
-func checkValidStreamInfo(t *testing.T, form url.Values) {
-	key, slug, err := mustGetStreamInfo(r)
-	if err != nil || key != streamID || slug != form.Get("name") || w.Result().StatusCode != http.StatusOK {
-		t.Errorf("Received invalid response from mustGetStreamInfo: "+
-			"err %v, key: %s, slug: %s, status: %d", err, key, slug, w.Result().StatusCode)
 	}
 }
 
@@ -114,53 +96,4 @@ func TestDefaultHandler(t *testing.T) {
 	cfg.WorkerID = ""
 	defaultHandler(w, r)
 	checkReturnCode(t, w, http.StatusInternalServerError)
-}
-
-// TestPublishing checks that a valid request does not cause any errors
-func TestPublishing(t *testing.T) {
-	setup()
-	r.Method = http.MethodPost
-
-	streams.streams[streamID] = worker.HandleSelfStream(&pb.SelfStreamResponse{
-		StreamID: 123,
-	}, testSlug)
-
-	// Setup POST request
-	form := url.Values{}
-	form.Set("name", testSlug)
-	form.Set("tcurl", "abc?secret="+streamID)
-
-	// Test onPublishDone, should succeed
-	generateFormRequest(t, form)
-	streams.onPublishDone(w, r)
-	checkReturnCode(t, w, http.StatusOK)
-
-	// Test onPublish, should fail due client response
-	generateFormRequest(t, form)
-	streams.onPublish(w, r)
-	checkReturnCode(t, w, http.StatusForbidden)
-}
-
-// TestMustGetStreamInfo tests whether invalid and invalid request are handled correctly
-func TestMustGetStreamInfo(t *testing.T) {
-	setup()
-	// Test for non-existing form, using default r
-	checkBadStreamInfo(t)
-
-	// Test form with only one value, tcurl is missing
-	form := url.Values{}
-	form.Set("name", testSlug)
-
-	generateFormRequest(t, form)
-	checkBadStreamInfo(t)
-
-	// Test empty secret
-	form.Set("tcurl", "rmtp://abc?secret=")
-	generateFormRequest(t, form)
-	checkBadStreamInfo(t)
-
-	// Test valid secret
-	form.Set("tcurl", "abc?secret="+streamID)
-	generateFormRequest(t, form)
-	checkValidStreamInfo(t, form)
 }

@@ -2,7 +2,6 @@ package rest
 
 import (
 	"encoding/json"
-	"fmt"
 	"google.golang.org/grpc"
 	"io"
 	"net/http"
@@ -29,42 +28,6 @@ func defaultHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// onPublishDone is called by nginx when the stream stops publishing
-func (s *safeStreams) onPublishDone(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	log.Info("onPublishDone called")
-	var req OnStartReq
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		fmt.Println(err)
-		http.Error(w, "Could not decode request", http.StatusBadRequest)
-		return
-	}
-	streamKey, _, err := mustGetStreamInfo(req)
-	if err != nil {
-		log.WithFields(log.Fields{"request": r.Form}).WithError(err).Warn("onPublishDone: bad request")
-		http.Error(w, "Could not retrieve stream info", http.StatusBadRequest)
-		return
-	}
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	if streamCtx, ok := s.streams[streamKey]; ok {
-		go func() {
-			worker.HandleStreamEnd(streamCtx, false)
-			worker.NotifyStreamDone(streamCtx)
-			worker.HandleSelfStreamRecordEnd(streamCtx)
-		}()
-	} else {
-		errorText := "stream key not existing in self streams map"
-		log.WithField("streamKey", streamKey).Error(errorText)
-		http.Error(w, errorText, http.StatusBadRequest)
-	}
-}
-
-// todo remove this
 // onPublish is called by nginx when the stream starts publishing
 func (s *safeStreams) onPublish(w http.ResponseWriter, r *http.Request) {
 	log.Info("onPublish called")
