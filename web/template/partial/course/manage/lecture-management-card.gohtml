@@ -29,9 +29,9 @@
                         <i class="fas fa-key mr-2"></i><span x-text="showKeys?'Hide Keys':'Show Keys'"></span></button>
                     <p x-show="showKeys" class="mt-1 ml-2 p-2 border dark:border-gray-600 rounded w-full">
                         <span class="font-semibold">Stream Server:</span>
-                        <span x-text="'{{$ingestBase}}stream?secret=' + lecture.streamKey"></span>
+                        <span x-text="'{{$ingestBase}}{{$course.Slug}}-'+ lecture.lectureId +'?secret=' + lecture.streamKey"></span>
                         <i class="fas fa-clipboard hover:text-purple-500"
-                           @click="() => global.copyToClipboard('{{$ingestBase}}stream?secret=' + lecture.streamKey)"></i>
+                           @click="() => global.copyToClipboard('{{$ingestBase}}{{$course.Slug}}-'+ lecture.lectureId +'?secret=' + lecture.streamKey)"></i>
                         <br>
                         <span class="font-semibold">Stream Key:</span>
                         <span x-text="lecture.courseSlug + '-' + lecture.lectureId"></span>

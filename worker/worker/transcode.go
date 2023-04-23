@@ -18,7 +18,7 @@ import (
 func buildCommand(niceness int, infile string, outfile string, tune string, crf int) *exec.Cmd {
 	c := []string{
 		"-n", fmt.Sprintf("%d", niceness),
-		"ffmpeg", "-y",
+		"ffmpeg", "-nostats", "-loglevel", "error", "-y",
 		"-progress", "-",
 		"-i", infile,
 		"-vsync", "2", "-c:v", "libx264", "-level", "4.0", "-movflags", "+faststart"}
@@ -113,7 +113,7 @@ func handleTranscodingOutput(stderr io.ReadCloser, inputTime float64, progressCh
 	output := ""
 	lastSend := -1
 	scanner := bufio.NewScanner(stderr)
-	scanner.Split(bufio.ScanLines)
+	scanner.Split(bufio.ScanWords)
 	for scanner.Scan() {
 		m := scanner.Text()
 		lines := strings.Split(m, "\n")
@@ -134,7 +134,7 @@ func handleTranscodingOutput(stderr io.ReadCloser, inputTime float64, progressCh
 					}
 				}
 			} else {
-				output += line + "\n"
+				output += line + " "
 			}
 		}
 	}

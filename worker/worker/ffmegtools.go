@@ -2,11 +2,12 @@ package worker
 
 import (
 	"github.com/tidwall/gjson"
-	ffmpeg "github.com/u2takey/ffmpeg-go"
+	"os/exec"
 )
 
 func getDuration(file string) (float64, error) {
-	probe, err := ffmpeg.Probe(file)
+	probe, err := probe(file)
+
 	if err != nil {
 		return 0, err
 	}
@@ -14,7 +15,7 @@ func getDuration(file string) (float64, error) {
 }
 
 func getCodec(file string) (string, error) {
-	probe, err := ffmpeg.Probe(file)
+	probe, err := probe(file)
 	if err != nil {
 		return "", err
 	}
@@ -22,7 +23,7 @@ func getCodec(file string) (string, error) {
 }
 
 func getLevel(file string) (string, error) {
-	probe, err := ffmpeg.Probe(file)
+	probe, err := probe(file)
 	if err != nil {
 		return "", err
 	}
@@ -30,9 +31,17 @@ func getLevel(file string) (string, error) {
 }
 
 func getContainer(file string) (string, error) {
-	probe, err := ffmpeg.Probe(file)
+	probe, err := probe(file)
 	if err != nil {
 		return "", err
 	}
 	return gjson.Get(probe, "format.format_name").String(), nil
+}
+
+func probe(file string) (string, error) {
+	out, err := exec.Command("ffprobe",
+		"-v", "quiet",
+		"-print_format", "json",
+		"-show_format", "-show_streams", file).CombinedOutput()
+	return string(out), err
 }
