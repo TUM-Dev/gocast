@@ -194,3 +194,24 @@ func reportProgress(stream *StreamContext, p chan int32) error {
 		}
 	}
 }
+
+func transcodeAudio(ctx *StreamContext) error {
+	S.startTranscodingAudio(ctx.getStreamName())
+	defer S.endTranscodingAudio(ctx.getStreamName())
+
+	input := ctx.getTranscodingFileName()
+	output := ctx.getAudioTranscodingFileName()
+	cmd := exec.Command("ffmpeg",
+		"-v", "quiet",
+		"-i", input,
+		"-c:a", "aac",
+		"-vn", output)
+	log.WithFields(log.Fields{"input": input, "output": output, "command": cmd.String()}).Info("Transcoding audio")
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("transcode stream audio: %w", fmt.Errorf("%w: %s", err, out))
+	}
+
+	return nil
+}

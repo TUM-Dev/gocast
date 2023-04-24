@@ -361,6 +361,11 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		}
 	}
 
+	err = transcodeAudio(&c)
+	if err != nil {
+		log.WithError(err).Error("Error transcoding audio")
+	}
+
 	S.startThumbnailGeneration(&c)
 	defer S.endThumbnailGeneration(&c)
 	err = createThumbnailSprite(&c, c.getTranscodingFileName())
@@ -478,6 +483,16 @@ func (s StreamContext) getTranscodingFileName() string {
 			s.startTime.Format("02012006"))
 	}
 	return fmt.Sprintf("%s/%d/%s/%s/%s/%s.mp4",
+		cfg.StorageDir,
+		s.teachingYear,
+		s.teachingTerm,
+		s.courseSlug,
+		s.startTime.Format("2006-01-02_15-04"),
+		s.getStreamName())
+}
+
+func (s StreamContext) getAudioTranscodingFileName() string {
+	return fmt.Sprintf("%s/%d/%s/%s/%s/%s.m4a",
 		cfg.StorageDir,
 		s.teachingYear,
 		s.teachingTerm,
