@@ -24,3 +24,11 @@ func (c CanonicalURL) Course(year int, term string, slug string) string {
 func (c CanonicalURL) Stream(slug string, id uint, version string) string {
 	return path.Join(c.url, "w", slug, strconv.Itoa(int(id)), version)
 }
+
+func (c CanonicalURL) Login() string {
+	return path.Join(c.url, "login")
+}
+
+func (c CanonicalURL) Info(version string) string {
+	return path.Join(c.url, version)
+}
