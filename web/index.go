@@ -49,7 +49,7 @@ func (r mainRoutes) MainPage(c *gin.Context) {
 	}
 }
 
-func (r mainRoutes) InfoPage(id uint) gin.HandlerFunc {
+func (r mainRoutes) InfoPage(id uint, name string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var indexData IndexData
 		var tumLiveContext tools.TUMLiveContext
@@ -73,7 +73,8 @@ func (r mainRoutes) InfoPage(id uint) gin.HandlerFunc {
 		_ = templateExecutor.ExecuteTemplate(c.Writer, "info-page.gohtml", struct {
 			IndexData
 			Text template.HTML
-		}{indexData, text.Render()})
+			Name string
+		}{indexData, text.Render(), name})
 	}
 }
 
@@ -92,13 +93,15 @@ type IndexData struct {
 	CurrentTerm         string
 	UserName            string
 	ServerNotifications []model.ServerNotification
+	CanonicalURL        tools.CanonicalURL
 	Branding            tools.Branding
 }
 
 func NewIndexData() IndexData {
 	return IndexData{
-		VersionTag: VersionTag,
-		Branding:   tools.BrandingCfg,
+		VersionTag:   VersionTag,
+		CanonicalURL: tools.NewCanonicalURL(tools.Cfg.CanonicalURL),
+		Branding:     tools.BrandingCfg,
 	}
 }
 
