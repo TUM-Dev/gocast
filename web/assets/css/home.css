@@ -21,6 +21,11 @@
         @apply text-gray-800 dark:text-gray-200;
     }
 
+    /*low contrast text*/
+    .text-4 {
+        @apply text-gray-700 dark:text-gray-300;
+    }
+
     /*full contrast text*/
     .text-5 {
         @apply text-gray-600 dark:text-gray-400;
@@ -184,6 +189,31 @@
 
 .tum-live-course-list-item .links > *:not(:first-child) {
     @apply pt-1 lg:pt-0 lg:pl-2
+}
+
+.tum-live-notification {
+    @apply rounded-lg py-1 px-3 text-sm text-4 border
+}
+
+.tum-live-notification > .icon {
+    @apply mr-2
+}
+
+.tum-live-notification-info {
+    @apply bg-blue-100/50 border-blue-500/25 dark:bg-indigo-500/25 dark:border-indigo-600/50
+}
+
+.tum-live-notification-warn {
+    @apply bg-amber-200/25 border-amber-300/50 dark:bg-amber-400/25 dark:border-amber-500/50
+}
+
+.tum-live-notification-warn > .icon {
+    @apply text-amber-500/75 dark:text-amber-200/75
+}
+
+
+.tum-live-notification-info > .icon {
+    @apply text-blue-500/75 dark:text-indigo-600/75
 }
 
 .tum-live-footer {

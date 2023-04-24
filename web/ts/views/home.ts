@@ -2,6 +2,8 @@ import { ToggleableElement } from "../utilities/ToggleableElement";
 import { Semester, SemesterDTO, SemestersAPI } from "../api/semesters";
 import { ProgressAPI } from "../api/progress";
 import { Course, CoursesAPI, Livestream } from "../api/courses";
+import { Notification } from "../notifications";
+import { NotificationAPI } from "../api/notifications";
 
 export enum Views {
     Main,
@@ -21,6 +23,8 @@ export function context() {
         term: url.searchParams.get("term") ?? undefined,
         year: +url.searchParams.get("year"),
         view: +url.searchParams.get("view") ?? Views.Main,
+
+        serverNotifications: [],
 
         semesters: [] as Semester[],
         currentSemesterIndex: -1,
@@ -50,7 +54,13 @@ export function context() {
          */
         reload(full = false) {
             const promises = full
-                ? [this.loadSemesters(), this.loadPublicCourses(), this.loadLivestreams(), this.loadUserCourses()]
+                ? [
+                      this.loadServerNotifications(),
+                      this.loadSemesters(),
+                      this.loadPublicCourses(),
+                      this.loadLivestreams(),
+                      this.loadUserCourses(),
+                  ]
                 : [this.loadPublicCourses(), this.loadUserCourses()];
             this.load(promises).then(() => {
                 this.nothingToDo =
@@ -104,6 +114,10 @@ export function context() {
         switchView(view: Views) {
             this.view = view;
             this.navigation.toggle(false);
+        },
+
+        async loadServerNotifications() {
+            this.serverNotifications = await NotificationAPI.getServerNotifications();
         },
 
         async loadSemesters() {
