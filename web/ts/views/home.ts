@@ -4,6 +4,7 @@ import { ProgressAPI } from "../api/progress";
 import { Course, CoursesAPI, Livestream } from "../api/courses";
 import { Notification } from "../notifications";
 import { NotificationAPI } from "../api/notifications";
+import { Paginator } from "../utilities/paginator";
 
 export enum Views {
     Main,
@@ -34,7 +35,7 @@ export function context() {
         publicCourses: [] as Course[],
         userCourses: [] as Course[],
         liveToday: [] as Course[],
-        recently: [] as Course[],
+        recently: new Paginator<Course>([], 10),
 
         navigation: new ToggleableElement(new Map([["allSemesters", new ToggleableElement()]])),
 
@@ -67,7 +68,8 @@ export function context() {
                     this.livestreams.length === 0 && this.liveToday.length === 0 && this.recently.length === 0;
             });
             promises[promises.length - 1].then(() => {
-                this.recently = this.getRecently();
+                this.recently.set(this.getRecently());
+                this.recently.reset();
                 this.liveToday = this.getLiveToday();
                 this.loadProgresses(this.userCourses.map((c) => c.LastLecture.ID));
             });
