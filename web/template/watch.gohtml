@@ -6,6 +6,7 @@
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     {{$course := .IndexData.TUMLiveContext.Course}}
     <title>{{.IndexData.Branding.Title}} | {{$course.Name}}: {{$stream.Name}}</title>
+    <link rel="canonical" href="{{.IndexData.CanonicalURL.Stream $course.Slug $stream.ID}}" />
     {{template "headImports" .IndexData.VersionTag}}
     <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
     <script src="/static/assets/ts-dist/watch.bundle.js?v={{.IndexData.VersionTag}}"></script>

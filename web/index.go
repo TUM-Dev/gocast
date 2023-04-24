@@ -92,13 +92,15 @@ type IndexData struct {
 	CurrentTerm         string
 	UserName            string
 	ServerNotifications []model.ServerNotification
+	CanonicalURL        tools.CanonicalURL
 	Branding            tools.Branding
 }
 
 func NewIndexData() IndexData {
 	return IndexData{
-		VersionTag: VersionTag,
-		Branding:   tools.BrandingCfg,
+		VersionTag:   VersionTag,
+		CanonicalURL: tools.NewCanonicalURL(tools.Cfg.CanonicalURL),
+		Branding:     tools.BrandingCfg,
 	}
 }
 
