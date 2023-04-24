@@ -17,6 +17,7 @@ type LectureHall struct {
 	RoomID         int    // used by TUMOnline
 	PwrCtrlIp      string // power control api for red live light
 	LiveLightIndex int    // id of power outlet for live light
+	ExternalURL    string
 }
 
 type CameraType uint
@@ -53,6 +54,6 @@ func (l *LectureHall) ToDTO() *LectureHallDTO {
 	return &LectureHallDTO{
 		ID:          l.ID,
 		Name:        l.Name,
-		ExternalURL: "https://nav.tum.de", // l.ExternalURL(),
+		ExternalURL: l.ExternalURL,
 	}
 }
