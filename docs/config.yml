@@ -1,0 +1,52 @@
+baseURL: "https://examplesite.com/"
+title: TUM-Live
+paginate: 5
+theme: PaperMod
+
+params:
+  description: "TUM-Live the live streaming and video on demand platform for universities, conferences and everyone else."
+  title: TUM-Live
+  keywords: [ Live Streaming, Video Streaming, Education, Conference ]
+  author: Joscha Henningsen
+  images: [ "<link or path of image for opengraph, twitter-cards>" ]
+  DateFormat: "January 2, 2006"
+  defaultTheme: auto # dark, light
+  disableThemeToggle: false
+
+  ShowReadingTime: true
+  ShowShareButtons: false
+  ShowPostNavLinks: false
+  ShowBreadCrumbs: true
+  ShowCodeCopyButtons: false
+  ShowWordCount: true
+  ShowRssButtonInSectionTermList: true
+  UseHugoToc: true
+  disableSpecial1stPost: false
+  disableScrollToTop: false
+  comments: false
+  hidemeta: false
+  hideSummary: false
+  hideFooter: true
+  showtoc: true
+  tocopen: false
+  socialIcons:
+    - name: github
+      url: "https://github.com/joschahenningsen/TUM-Live"
+    - name: Rss
+      url: "index.xml"
+  homeInfoParams:
+    Title: 'TUM-Live'
+    Content: |
+      ## Welcome to TUM-Live
+      TUM-Live is a platform for live-streaming of lectures and events at the Technical University of Munich. It is developed by the [Chair of Media Informatics](https://www.in.tum.de/en/lehrstuehle/media-informatics/) at the [Department of Informatics](https://www.in.tum.de/en/) at the [Technical University of Munich](https://www.tum.de/en/).
+
+      ## Features
+      <details><summary>Toggle me!</summary>Peek a boo!</details>
+  languages:
+    en:
+      languageName: "English"
+      weight: 1
+      taxonomies:
+        category: categories
+        tag: tags
+        series: series
