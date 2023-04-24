@@ -241,6 +241,11 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	S.endTranscoding(streamCtx.getStreamName())
 	notifyTranscodingDone(streamCtx)
 
+	err = transcodeAudio(streamCtx)
+	if err != nil {
+		log.WithError(err).Error("Error transcoding audio")
+	}
+
 	S.startThumbnailGeneration(streamCtx)
 	defer S.endThumbnailGeneration(streamCtx)
 	err = createThumbnailSprite(streamCtx, streamCtx.getTranscodingFileName())
