@@ -10,7 +10,9 @@ ARG version=dev
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags "-w -extldflags '-static' -X main.VersionTag=${version}" -o /worker *.go &&\
     chmod +x /worker
 
-FROM scratch
+FROM alpine:3.17
 COPY --from=builder /worker /worker
+
+RUN apk add --no-cache ffmpeg
 
 CMD ["/worker"]

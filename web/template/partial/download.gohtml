@@ -9,12 +9,12 @@
              class="grid gap-1 p-2 absolute w-64 z-50 bottom-full -right-1/2 mb-2 rounded-lg bg-white dark:bg-secondary border dark:border-gray-800 shadow"
              role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
                 <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
-                {{range $file := . }}
+                {{range $dl := . }}
                     <a class="flex rounded px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-600"
-                       href="/api/download/{{$file.ID}}" target="_blank" download
+                       href="{{$dl.DownloadURL}}" target="_blank" download
                        role="menuitem" tabindex="-1" id="menu-item-0">
                             <i class="fa-solid fa-file-video text-xs mr-2 text-gray-500 dark:text-gray-200 my-auto"></i>
-                            <span class="font-semibold text-3 text-xs my-auto ml-auto">{{$file.GetFriendlyFileName}}</span>
+                            <span class="font-semibold text-3 text-xs my-auto ml-auto">{{$dl.FriendlyName}}</span>
                         </a>
                 {{end}}
         </span>

@@ -18,6 +18,11 @@ var (
 		Help: "The total number of ts chunks requested",
 	}, []string{"stream", "course"})
 
+	vodsDownloaded = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "edge_vods_downloaded_total",
+		Help: "The total number videos downloaded",
+	}, []string{"stream", "course"})
+
 	concurrentUsers = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "edge_concurrent_users",
 		Help: "The number of concurrent users (users active in the last 5 minutes)",

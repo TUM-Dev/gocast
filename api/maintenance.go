@@ -7,6 +7,7 @@ import (
 	"github.com/joschahenningsen/TUM-Live/tools"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"strconv"
 )
 
 func configMaintenanceRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
@@ -17,6 +18,8 @@ func configMaintenanceRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	{
 		g.POST("/generateThumbnails", routes.generateThumbnails)
 		g.GET("/generateThumbnails/status", routes.getThumbGenProgress)
+		g.GET("/transcodingFailures", routes.getTranscodingFailures)
+		g.DELETE("/transcodingFailures/:id", routes.deleteTranscodingFailure)
 	}
 
 	cronGroup := g.Group("/cron")
@@ -105,4 +108,37 @@ func (r *maintenanceRoutes) runCronJob(c *gin.Context) {
 	jobName := c.Request.FormValue("job")
 	log.Info("request to run ", jobName)
 	tools.Cron.RunJob(jobName)
+}
+
+func (r *maintenanceRoutes) getTranscodingFailures(c *gin.Context) {
+	all, err := r.TranscodingFailureDao.All()
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Can't get transcoding failures",
+			Err:           err,
+		})
+		return
+	}
+	c.JSON(http.StatusOK, all)
+}
+
+func (r *maintenanceRoutes) deleteTranscodingFailure(c *gin.Context) {
+	atoi, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "Can't parse id",
+			Err:           err,
+		})
+		return
+	}
+	err = r.TranscodingFailureDao.Delete(uint(atoi))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Can't delete transcoding failure",
+			Err:           err,
+		})
+	}
 }

@@ -235,27 +235,6 @@ func (s server) NotifyStreamFinished(ctx context.Context, request *pb.StreamFini
 	return &pb.Status{Ok: true}, nil
 }
 
-func (s server) NewKeywords(ctx context.Context, request *pb.NewKeywordsRequest) (*pb.Status, error) {
-	if _, err := s.DaoWrapper.WorkerDao.GetWorkerByID(ctx, request.GetWorkerID()); err != nil {
-		return nil, errors.New("authentication failed: invalid worker id")
-	} else {
-		keywords := make([]model.Keyword, len(request.Keywords))
-		for i, keyword := range request.Keywords {
-			keywords[i] = model.Keyword{
-				StreamID: uint(request.StreamID),
-				Text:     keyword,
-			}
-		}
-		err = s.DaoWrapper.KeywordDao.NewKeywords(keywords)
-		if err != nil {
-			log.WithError(err).Println("Couldn't insert keyword")
-			return &pb.Status{Ok: false}, err
-		}
-
-		return &pb.Status{Ok: true}, nil
-	}
-}
-
 func handleCameraPositionSwitch(stream model.Stream, daoWrapper dao.DaoWrapper) error {
 	if stream.LectureHallID == 0 {
 		return nil
@@ -428,11 +407,16 @@ func (s server) NotifyUploadFinished(ctx context.Context, req *pb.UploadFinished
 	if err != nil {
 		return nil, err
 	}
+	course, err := s.CoursesDao.GetCourseById(ctx, stream.CourseID)
+	if err != nil {
+		return nil, err
+	}
 	if stream.LiveNow {
 		log.WithField("req", req).Warn("VoD not saved, stream is live.")
 		return nil, nil
 	}
 	stream.Recording = true
+	stream.Private = course.VodPrivate
 	switch req.SourceType {
 	case "CAM":
 		stream.PlaylistUrlCAM = req.HLSUrl
@@ -521,6 +505,11 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		log.WithError(err).Println("Can't find stream")
 		return nil, err
 	}
+	course, err := s.CoursesDao.GetCourseById(ctx, stream.CourseID)
+	if err != nil {
+		log.WithError(err).Println("Can't find course")
+		return nil, err
+	}
 	go func() {
 		err := handleLightOnSwitch(stream, s.DaoWrapper)
 		if err != nil {
@@ -536,9 +525,13 @@ func (s server) NotifyStreamStarted(ctx context.Context, request *pb.StreamStart
 		}
 	}()
 	go func() {
-		// interims solution; sometimes dvr doesn't work as expected.
-		// here we check if the url 404s and remove dvr from the stream in that case
 		stream.LiveNow = true
+		stream.Private = course.LivePrivate
+
+		err := s.StreamsDao.SaveStream(&stream)
+		if err != nil {
+			log.WithError(err).Error("Can't save stream")
+		}
 
 		err = s.StreamsDao.SetStreamLiveNowTimestampById(uint(request.StreamID), time.Now())
 		if err != nil {
@@ -821,7 +814,7 @@ func FetchLivePreviews(daoWrapper dao.DaoWrapper) func() {
 }
 
 func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWorkerClient) error {
-	if err := tools.SetSignedPlaylists(s, nil); err != nil {
+	if err := tools.SetSignedPlaylists(s, nil, false); err != nil {
 		return err
 	}
 	req := pb.LivePreviewRequest{
@@ -1001,6 +994,31 @@ func NotifyWorkersToStopStream(stream model.Stream, discardVoD bool, daoWrapper 
 		log.WithError(err).Error("Could not delete workers for stream")
 		return
 	}
+}
+
+func (s server) NotifyTranscodingFailure(ctx context.Context, request *pb.NotifyTranscodingFailureRequest) (*pb.NotifyTranscodingFailureResponse, error) {
+	worker, err := s.WorkerDao.GetWorkerByID(ctx, request.WorkerID)
+	if err != nil {
+		return nil, err
+	}
+	failure := model.TranscodingFailure{
+		StreamID: uint(request.StreamID),
+		Logs:     request.Logs,
+		ExitCode: int(request.ExitCode),
+		FilePath: request.FilePath,
+		Hostname: worker.Host,
+	}
+	switch request.Version {
+	case "CAM":
+		failure.Version = model.CAM
+	case "PRES":
+		failure.Version = model.PRES
+	default:
+		failure.Version = model.COMB
+	}
+
+	err = s.DaoWrapper.TranscodingFailureDao.New(&failure)
+	return &pb.NotifyTranscodingFailureResponse{}, err
 }
 
 // getWorkerWithLeastWorkload Gets the index of the worker from workers with the least workload.

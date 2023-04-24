@@ -12,6 +12,7 @@ type JWTPlaylistClaims struct {
 	jwt.RegisteredClaims
 	UserID   uint
 	Playlist string
+	Download bool
 	StreamID string
 	CourseID string
 }
@@ -19,7 +20,7 @@ type JWTPlaylistClaims struct {
 // SetSignedPlaylists adds a signed jwt to all available playlist urls that indicates that the
 // user is allowed to consume the playlist. The method assumes that the user has been pre-authorized and doesn't
 // check for permissions.
-func SetSignedPlaylists(s *model.Stream, user *model.User) error {
+func SetSignedPlaylists(s *model.Stream, user *model.User, allowDownloading bool) error {
 	var playlists []struct{ Type, Playlist string }
 	if s.PlaylistUrl != "" {
 		playlists = append(playlists, struct{ Type, Playlist string }{Type: "COMB", Playlist: s.PlaylistUrl})
@@ -49,6 +50,7 @@ func SetSignedPlaylists(s *model.Stream, user *model.User) error {
 			},
 			UserID:   userid,
 			Playlist: playlist.Playlist,
+			Download: allowDownloading,
 			StreamID: fmt.Sprintf("%d", s.ID),
 			CourseID: fmt.Sprintf("%d", s.CourseID),
 		}

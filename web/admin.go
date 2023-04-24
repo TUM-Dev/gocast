@@ -228,6 +228,12 @@ func (r mainRoutes) EditCoursePage(c *gin.Context) {
 		courses = []model.Course{}
 	}
 	semesters := r.CoursesDao.GetAvailableSemesters(c)
+	for i := range tumLiveContext.Course.Streams {
+		err := tools.SetSignedPlaylists(&tumLiveContext.Course.Streams[i], tumLiveContext.User, true)
+		if err != nil {
+			log.WithError(err).Error("could not set signed playlist for admin page")
+		}
+	}
 	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
 		IndexData:      indexData,
 		Courses:        courses,
@@ -269,12 +275,16 @@ func (r mainRoutes) UpdateCourse(c *gin.Context) {
 	enChat := c.PostForm("enChat") == "on"
 	enChatAnon := c.PostForm("enChatAnon") == "on"
 	enChatMod := c.PostForm("enChatMod") == "on"
+	livePrivate := c.PostForm("livePrivate") == "on"
+	vodPrivate := c.PostForm("vodPrivate") == "on"
 	tumLiveContext.Course.Visibility = access
 	tumLiveContext.Course.VODEnabled = enVOD
 	tumLiveContext.Course.DownloadsEnabled = enDL
 	tumLiveContext.Course.ChatEnabled = enChat
 	tumLiveContext.Course.AnonymousChatEnabled = enChatAnon
 	tumLiveContext.Course.ModeratedChatEnabled = enChatMod
+	tumLiveContext.Course.LivePrivate = livePrivate
+	tumLiveContext.Course.VodPrivate = vodPrivate
 	r.CoursesDao.UpdateCourseMetadata(context.Background(), *tumLiveContext.Course)
 	c.Redirect(http.StatusFound, fmt.Sprintf("/admin/course/%v", tumLiveContext.Course.ID))
 }

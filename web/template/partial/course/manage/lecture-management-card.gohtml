@@ -29,9 +29,9 @@
                         <i class="fas fa-key mr-2"></i><span x-text="showKeys?'Hide Keys':'Show Keys'"></span></button>
                     <p x-show="showKeys" class="mt-1 ml-2 p-2 border dark:border-gray-600 rounded w-full">
                         <span class="font-semibold">Stream Server:</span>
-                        <span x-text="'{{$ingestBase}}stream?secret=' + lecture.streamKey"></span>
+                        <span x-text="'{{$ingestBase}}{{$course.Slug}}-'+ lecture.lectureId +'?secret=' + lecture.streamKey"></span>
                         <i class="fas fa-clipboard hover:text-purple-500"
-                           @click="() => global.copyToClipboard('{{$ingestBase}}stream?secret=' + lecture.streamKey)"></i>
+                           @click="() => global.copyToClipboard('{{$ingestBase}}{{$course.Slug}}-'+ lecture.lectureId +'?secret=' + lecture.streamKey)"></i>
                         <br>
                         <span class="font-semibold">Stream Key:</span>
                         <span x-text="lecture.courseSlug + '-' + lecture.lectureId"></span>
@@ -93,7 +93,7 @@
                         </div>
                     </div>
                 </div>
-                <template x-if="lecture.files && lecture.files.length > 0">
+                <template x-if="lecture.isRecording && lecture.downloadableVods && lecture.downloadableVods.length > 0">
                     <span class="relative mr-2" x-data="{expand:false}">
                         <button @click="expand=!expand" type="button"
                                 id="menu-button" aria-expanded="true"
@@ -108,12 +108,11 @@
                               aria-labelledby="menu-button" tabindex="-1">
                             <span class="py-1" role="none">
                             <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
-                                <template x-for="file in lecture.getDownloads()"
-                                          :key="file.id">
-                                    <a :href="'/api/download/' + file.id" download
+                                <template x-for="file in lecture.getDownloads()">
+                                    <a :href="file.DownloadURL" download
                                        class="hover:bg-gray-100 text-3 dark:hover:bg-gray-600
                                     block px-4 py-2 text-sm first:rounded-t-md last:rounded-b-md"
-                                       x-text="file.friendlyName" role="menuitem"
+                                       x-text="file.FriendlyName" role="menuitem"
                                        tabindex="-1" id="menu-item-0"></a>
                                 </template>
                             </span>
@@ -229,15 +228,13 @@
                            autocomplete="off">
                 </article>
                 <section>
-                    <article x-data="{ id: $id('text-input'), fileDropHover: false }"
+                    <article x-data="{ id: $id('text-input') }"
                              class="w-full">
                         <label :for="id" class="hidden">Lecture description</label>
                         <textarea :id="id"
-                                  @drop="(e) => lecture.onFileDrop(e); fileDropHover = false"
-                                  @dragover="fileDropHover = true"
-                                  @dragleave="fileDropHover = false"
+                                  @drop.prevent="(e) => lecture.onFileDrop(e)"
+                                  @dragover.prevent=""
                                   class="tl-textarea grow"
-                                  :class="fileDropHover ? 'shadow-sm border-blue-500/50' : 'border-transparent'"
                                   placeholder="Add a nice description, links, and more. You can use Markdown. Drop files here."
                                   autocomplete="off"
                                   x-model="lecture.newDescription"
