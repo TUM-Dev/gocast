@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
+	"log"
 	"net/http"
 	"os/exec"
 	"strings"
