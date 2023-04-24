@@ -21,6 +21,6 @@ func (c CanonicalURL) Course(year int, term string, slug string) string {
 	return path.Join(c.url, "course", strconv.Itoa(year), term, slug)
 }
 
-func (c CanonicalURL) Stream(slug string, id uint) string {
-	return path.Join(c.url, "w", slug, strconv.Itoa(int(id)))
+func (c CanonicalURL) Stream(slug string, id uint, version string) string {
+	return path.Join(c.url, "w", slug, strconv.Itoa(int(id)), version)
 }
