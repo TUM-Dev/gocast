@@ -212,79 +212,58 @@
             </div>
         </div>
 
-        <div x-show="lecture.uiEditMode > 0" class="px-4 pt-4 mt-4 border-t-2 border-gray-100/20">
-            <div x-data="{ id: $id('text-input') }"
-                 class="w-full flex flex-row">
-                <label :for="id" class="hidden">Lecture title</label>
-                <input :id="id"
-                       class="grow tl-input" type="text"
-                       x-model="lecture.newName"
-                       x-on:keyup="lecture.updateIsDirty()"
-                       placeholder="Lecture 2: Dark-Patterns I"
-                       autocomplete="off">
-            </div>
-            <div class="w-full mt-3">
-                <div class="w-full ml-5" x-show="{{$course.ChatEnabled}}">
-                    <input @change="lecture.updateIsDirty()" x-model="lecture.newIsChatEnabled"
-                           class="w-auto mr-2" type="checkbox"/>
-                    <span>Enable Live Chat</span>
-                </div>
-                <div x-data="{ id: $id('text-input') }"
-                     @drop.prevent="(e) => lecture.onFileDrop(e)"
-                     @dragover.prevent=""
-                     class="w-full flex flex-row">
-                    <label :for="id" class="hidden">Lecture description</label>
-                    <textarea :id="id"
-                              class="tl-textarea grow border-transparent"
-                              placeholder="Add a nice description, links, and more. You can use Markdown. Drop files here."
-                              autocomplete="off"
-                              x-model="lecture.newDescription"
-                              x-on:keyup="lecture.updateIsDirty()"></textarea>
-                </div>
-                <template x-if="lecture.hasAttachments()">
-                    <div class="rounded-t-lg border dark:border-gray-600 p-3 mt-3">
-                        <h6 class="font-semibold text-3 mb-3">Attachments</h6>
-                        <div class="grid gap-1">
-                            <template x-for="file in lecture.files">
-                                <template x-if="file.fileType === 2">
-                                    <div class="flex border rounded dark:border-gray-600">
-                                        <span class="text-xs font-semibold text-3 my-auto ml-2"
-                                              x-text="file.friendlyName"></span>
-                                        <div class="my-auto ml-auto border-l dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600">
-                                            <button class="py-1 px-3"
-                                                    @click="lecture.deleteFile(file.id)">
-                                                <i class="fa fa-xmark"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </template>
-                            </template>
-                        </div>
-                    </div>
-                </template>
-                <div class="flex rounded-b-lg border py-1 px-2 bg-gray-100 dark:border-gray-600 dark:bg-gray-700">
-                    <span class="text-xs text-4 font-semibold my-auto">Attach files or URL to files by Drag & Drop in the description field.</span>
-                    <div x-data="{showInfo: false}"
-                         class="relative my-auto">
-                        <button @click="showInfo = !showInfo;">
-                            <i class="fa fa-circle-info text-3 ml-2"></i>
-                        </button>
-                        <div x-show="showInfo"
-                             class="absolute top-full z-50"
-                             @mouseleave="showInfo = false">
-                            <div>
-                                <div class="tooltip relative w-56">
-                                    <div class="w-0 h-0 border-x-8 border-x-transparent border-b-8 border-b-black dark:border-b-white ml-2 mr-auto"></div>
-                                    <div class="bg-black dark:bg-white rounded-md px-2 py-1">
+        <div x-show="lecture.uiEditMode > 0" class="grid gap-y-4 p-4">
+            <article class="grid gap-2 w-full">
+                <header class="border-b dark:border-gray-600 w-full">
+                    <h6 class="text-sm text-5 font-light">Title and Description</h6>
+                </header>
+                <article x-data="{ id: $id('text-input') }"
+                         class="w-full">
+                    <label :for="id" class="hidden">Lecture Title</label>
+                    <input :id="id"
+                           class="grow tl-input" type="text"
+                           x-model="lecture.newName"
+                           x-on:keyup="lecture.updateIsDirty()"
+                           placeholder="Lecture 2: Dark-Patterns I"
+                           autocomplete="off">
+                </article>
+                <section>
+                    <article x-data="{ id: $id('text-input') }"
+                             class="w-full">
+                        <label :for="id" class="hidden">Lecture description</label>
+                        <textarea :id="id"
+                                  @drop.prevent="(e) => lecture.onFileDrop(e)"
+                                  @dragover.prevent=""
+                                  class="tl-textarea grow"
+                                  placeholder="Add a nice description, links, and more. You can use Markdown. Drop files here."
+                                  autocomplete="off"
+                                  x-model="lecture.newDescription"
+                                  x-on:keyup="lecture.updateIsDirty()"></textarea>
+                    </article>
+                    <article class="flex justify-center">
+                        <span class="text-xs text-3 my-auto">Attach files or URL to files by Drag & Drop in the description field.</span>
+                        <div x-data="{showInfo: false}"
+                             class="relative my-auto">
+                            <button @click="showInfo = !showInfo;">
+                                <i class="fa fa-circle-info text-3 ml-2"></i>
+                            </button>
+                            <div x-show="showInfo"
+                                 class="absolute top-full z-50"
+                                 @mouseleave="showInfo = false">
+                                <div>
+                                    <div class="tooltip relative w-56">
+                                        <div class="w-0 h-0 border-x-8 border-x-transparent border-b-8 border-b-black dark:border-b-white ml-2 mr-auto"></div>
+                                        <div class="bg-black dark:bg-white rounded-md px-2 py-1">
                                     <span class="text-white dark:text-black text-xs font-bold">
                                         Attachments allow students to download (additional) material directly from this TUMLive-stream.
                                     </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
+                    </article>
+                </section>
 
                 <div x-show="!lecture.isPast && !lecture.isRecording"
                      class="p-3 border dark:border-gray-600 rounded mt-3">
@@ -320,12 +299,33 @@
                         </div>
                     {{end}}
                 </div>
-                <template x-if="lecture.uiEditMode > 0"> <!-- only render if in edit mode to avoid network calls -->
-                    <div class="mt-3">
-                        {{template "editvideosections"}}
-                    </div>
-                </template>
-            </div>
+            </article>
+
+            <template x-if="lecture.hasAttachments()">
+                <article>
+                    <h6 class="text-sm text-5 font-light border-b dark:border-gray-600">Attachments</h6>
+                    <ul class="list-disc grid py-2 ml-6">
+                        <template x-for="file in lecture.files">
+                            <template x-if="file.fileType === admin.FileType.attachment">
+                                <li>
+                                    <section class="flex items-center">
+                                    <span class="text-xs font-semibold text-3 my-auto"
+                                          x-text="file.friendlyName"></span>
+                                        <button class="px-3"
+                                                @click="lecture.deleteFile(file.id)">
+                                            <i class="fa fa-xmark"></i>
+                                        </button>
+                                    </section>
+                                </li>
+                            </template>
+                        </template>
+                    </ul>
+                </article>
+            </template>
+
+            <template x-if="lecture.uiEditMode > 0"> <!-- only render if in edit mode to avoid network calls -->
+                {{template "editvideosections"}}
+            </template>
 
             <span x-show="lecture.isRecording" class="absolute left-0 bottom-0 p-4">
                 <!-- buttons go here -->
@@ -339,17 +339,31 @@
                 </ul>
             </div>
 
-            <div class="mt-6 flex justify-end">
-                <button :disabled="lecture.isSaving" @click="lecture.discardEdit();"
-                        class="px-8 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4">
-                    Discard Changes
-                </button>
-                <button
-                        @click="lecture.saveEdit();"
-                        :disabled="!lecture.isDirty || lecture.isSaving"
-                        class="px-8 py-3 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500"
-                        x-text="lecture.isSaving ? 'loading ...' : (lecture.uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
-                ></button>
+            <div class="mt-6 flex items-center justify-between">
+                <section class="flex items-center py-1 px-3">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" value="" class="sr-only peer" @change="lecture.updateIsDirty()"
+                               x-model="lecture.newIsChatEnabled">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-600
+                        dark:peer-focus:ring-indigo-600 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full
+                        peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                        after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5
+                        after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-indigo-600"></div>
+                        <span class="ml-3 text-sm font-medium text-3">Chat Enabled</span>
+                    </label>
+                </section>
+                <div>
+                    <button :disabled="lecture.isSaving" @click="lecture.discardEdit();"
+                            class="px-8 py-3 text-2 text-white rounded bg-indigo-500/70 hover:bg-indigo-500/90 dark:bg-indigo-500/10 disabled:opacity-20 dark:hover:bg-indigo-500/20 mr-4">
+                        Discard Changes
+                    </button>
+                    <button
+                            @click="lecture.saveEdit();"
+                            :disabled="!lecture.isDirty || lecture.isSaving"
+                            class="px-8 py-3 text-2 rounded text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-20 disabled:hover:bg-indigo-500"
+                            x-text="lecture.isSaving ? 'loading ...' : (lecture.uiEditMode === admin.UIEditMode.single ? 'Save Lecture' : 'Save Series')"
+                    ></button>
+                </div>
             </div>
         </div>
     </li>
