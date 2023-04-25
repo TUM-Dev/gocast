@@ -497,13 +497,13 @@ func (s StreamContext) getTranscodingFileName() string {
 }
 
 func (s StreamContext) getAudioTranscodingFileName() string {
-	return fmt.Sprintf("%s/%d/%s/%s/%s/%s.m4a",
+	return fmt.Sprintf("%s/%d/%s/%s/%d-%s.m4a",
 		cfg.StorageDir,
 		s.teachingYear,
 		s.teachingTerm,
 		s.courseSlug,
-		s.startTime.Format("2006-01-02_15-04"),
-		s.getStreamName())
+		s.streamId,
+		s.streamVersion)
 }
 
 // getThumbnailSpriteFileName returns the path a thumbnail sprite should be saved to after transcoding.
