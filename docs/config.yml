@@ -1,52 +1,109 @@
 baseURL: "https://examplesite.com/"
 title: TUM-Live
-paginate: 5
-theme: PaperMod
+theme: hugo-book
+contentDir: content
+home:
+  relPermalink: "abc"
+
+# Book configuration
+disablePathToLower: true
+enableGitInfo: true
+
+# Needed for mermaid/katex shortcodes
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+  tableOfContents:
+    startLevel: 1
+
+# Multilingual mode config
+# There are different options to translate files
+# See https://gohugo.io/content-management/multilingual/#translation-by-filename
+# And https://gohugo.io/content-management/multilingual/#translation-by-content-directory
+#languages:
+#  en:
+#    languageName: English
+#    weight: 1
+#  de:
+#    languageName: Deutsch
+#    weight: 2
+
+menu:
+  # before: []
+  after:
+      - name: "Github"
+        url: "https://github.com/joschahenningsen/TUM-Live"
+        weight: 10
+      - name: "Changelogs"
+        url: "/posts/changelogs/"
+        weight: 20
 
 params:
-  description: "TUM-Live the live streaming and video on demand platform for universities, conferences and everyone else."
-  title: TUM-Live
-  keywords: [ Live Streaming, Video Streaming, Education, Conference ]
-  author: Joscha Henningsen
-  images: [ "<link or path of image for opengraph, twitter-cards>" ]
-  DateFormat: "January 2, 2006"
-  defaultTheme: auto # dark, light
-  disableThemeToggle: false
+  # (Optional, default light) Sets color theme: light, dark or auto.
+  # Theme 'auto' switches between dark and light modes based on browser/os preferences
+  BookTheme: "auto"
 
-  ShowReadingTime: true
-  ShowShareButtons: false
-  ShowPostNavLinks: false
-  ShowBreadCrumbs: true
-  ShowCodeCopyButtons: false
-  ShowWordCount: true
-  ShowRssButtonInSectionTermList: true
-  UseHugoToc: true
-  disableSpecial1stPost: false
-  disableScrollToTop: false
-  comments: false
-  hidemeta: false
-  hideSummary: false
-  hideFooter: true
-  showtoc: true
-  tocopen: false
-  socialIcons:
-    - name: github
-      url: "https://github.com/joschahenningsen/TUM-Live"
-    - name: Rss
-      url: "index.xml"
-  homeInfoParams:
-    Title: 'TUM-Live'
-    Content: |
-      ## Welcome to TUM-Live
-      TUM-Live is a platform for live-streaming of lectures and events at the Technical University of Munich. It is developed by the [Chair of Media Informatics](https://www.in.tum.de/en/lehrstuehle/media-informatics/) at the [Department of Informatics](https://www.in.tum.de/en/) at the [Technical University of Munich](https://www.tum.de/en/).
+  # (Optional, default true) Controls table of contents visibility on right side of pages.
+  # Start and end levels can be controlled with markup.tableOfContents setting.
+  # You can also specify this parameter per page in front matter.
+  BookToC: true
 
-      ## Features
-      <details><summary>Toggle me!</summary>Peek a boo!</details>
-  languages:
-    en:
-      languageName: "English"
-      weight: 1
-      taxonomies:
-        category: categories
-        tag: tags
-        series: series
+  # (Optional, default none) Set the path to a logo for the book. If the logo is
+  # /static/logo.png then the path would be logo.png
+  BookLogo: /tum-live-logo.svg
+
+  # (Optional, default none) Set leaf bundle to render as side menu
+  # When not specified file structure and weights will be used
+  # BookMenuBundle: /menu
+
+  # (Optional, default docs) Specify root page to render child pages as menu.
+  # Page is resoled by .GetPage function: https://gohugo.io/functions/getpage/
+  # For backward compatibility you can set '*' to render all sections to menu. Acts same as '/'
+  BookSection: docs
+
+  # Set source repository location.
+  # Used for 'Last Modified' and 'Edit this page' links.
+  BookRepo: https://github.com/joschahenningsen/TUM-Live
+
+  # (Optional, default 'commit') Specifies commit portion of the link to the page's last modified
+  # commit hash for 'doc' page type.
+  # Requires 'BookRepo' param.
+  # Value used to construct a URL consisting of BookRepo/BookCommitPath/<commit-hash>
+  # Github uses 'commit', Bitbucket uses 'commits'
+  # BookCommitPath: commit
+
+  # Enable "Edit this page" links for 'doc' page type.
+  # Disabled by default. Uncomment to enable. Requires 'BookRepo' param.
+  # Edit path must point to root directory of repo.
+  BookEditPath: edit/dev/docs
+
+  # Configure the date format used on the pages
+  # - In git information
+  # - In blog posts
+  BookDateFormat: "January 2, 2006"
+
+  # (Optional, default true) Enables search function with flexsearch,
+  # Index is built on fly, therefore it might slowdown your website.
+  # Configuration for indexing can be adjusted in i18n folder per language.
+  BookSearch: true
+
+  # (Optional, default true) Enables comments template on pages
+  # By default partals/docs/comments.html includes Disqus template
+  # See https://gohugo.io/content-management/comments/#configure-disqus
+  # Can be overwritten by same param in page frontmatter
+  BookComments: true
+
+  # /!\ This is an experimental feature, might be removed or changed at any time
+  # (Optional, experimental, default false) Enables portable links and link checks in markdown pages.
+  # Portable links meant to work with text editors and let you write markdown without {{< relref >}} shortcode
+  # Theme will print warning if page referenced in markdown does not exists.
+  BookPortableLinks: true
+
+  # /!\ This is an experimental feature, might be removed or changed at any time
+  # (Optional, experimental, default false) Enables service worker that caches visited pages and resources for offline use.
+  BookServiceWorker: true
+
+  # /!\ This is an experimental feature, might be removed or changed at any time
+  # (Optional, experimental, default false) Enables a drop-down menu for translations only if a translation is present.
+  BookTranslatedOnly: false
