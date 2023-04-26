@@ -241,9 +241,11 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	S.endTranscoding(streamCtx.getStreamName())
 	notifyTranscodingDone(streamCtx)
 
-	err = transcodeAudio(streamCtx)
-	if err != nil {
-		log.WithError(err).Error("Error transcoding audio")
+	if streamCtx.streamVersion == "COMB" {
+		err = transcodeAudio(streamCtx)
+		if err != nil {
+			log.WithError(err).Error("Error transcoding audio")
+		}
 	}
 
 	S.startThumbnailGeneration(streamCtx)
@@ -497,13 +499,12 @@ func (s StreamContext) getTranscodingFileName() string {
 }
 
 func (s StreamContext) getAudioTranscodingFileName() string {
-	return fmt.Sprintf("%s/%d/%s/%s/%d-%s.m4a",
+	return fmt.Sprintf("%s/%d/%s/%s/%d.m4a",
 		cfg.StorageDir,
 		s.teachingYear,
 		s.teachingTerm,
 		s.courseSlug,
-		s.streamId,
-		s.streamVersion)
+		s.streamId)
 }
 
 // getThumbnailSpriteFileName returns the path a thumbnail sprite should be saved to after transcoding.
