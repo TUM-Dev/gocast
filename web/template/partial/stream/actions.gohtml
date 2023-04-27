@@ -6,7 +6,7 @@
     {{$isNotWaitingRoom := or ($stream.Recording) ($stream.LiveNow)}}
     {{if $isNotWaitingRoom}} {{/* Don't show actions in Waiting Room.*/}}
     {{/* Icons for different actions student can do for a stream */}}
-    <div class="content-center space-x-1 bg-gray-100 dark:bg-secondary-light rounded-lg px-3 py-2 w-fit h-fit">
+    <div class="content-center space-x-1 bg-gray-100 dark:bg-secondary-light rounded-lg px-3 py-2 w-fit h-fit whitespace-nowrap">
         {{/* File Attachment button (slides, etc.) */}}
         {{template "attachments" $stream}}
         {{/* Feedback button */}}
