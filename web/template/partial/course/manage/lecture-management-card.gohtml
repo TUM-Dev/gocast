@@ -9,8 +9,8 @@
     <li :id="$id('lecture-li')"
         x-show="!filterPast || !lecture.isPast"
         :key="lecture.lectureId"
-        class="w-full mb-4 pb-4 relative bg-white dark:bg-gray-800 border dark:border-0 rounded shadow">
-        <div class="border-t-2 flex justify-between mb-2" :class="'border-' + lecture.color">
+        class="w-full mb-4 relative bg-white dark:bg-gray-800 border dark:border-0 rounded shadow">
+        <div class="border-t-2 flex justify-between mb-2 rounded-t" :class="'border-' + lecture.color">
             <div class="pt-2 px-2 w-full">
                 <div class="text-3 font-semibold">
                     <input @change="$event.target.checked ? selectedLectures.push({ id: lecture.lectureId, isPast: lecture.isPast }) : (selectedLectures = selectedLectures.filter(({id}) => id != lecture.lectureId))"
@@ -213,6 +213,12 @@
                 </div>
             </div>
         </div>
+
+        <button x-show="lecture.uiEditMode == 0"
+                @click="lecture.startSingleEdit(); closeMoreDropdown();"
+                class="bg-gray-100 dark:bg-gray-900 w-full py-2 mt-2 rounded-b">
+            <span class="text-gray-700 dark:text-gray-300">Edit Lecture</span>
+        </button>
 
         <div x-show="lecture.uiEditMode > 0" class="grid gap-y-4 p-4">
             <article class="grid gap-2 w-full">

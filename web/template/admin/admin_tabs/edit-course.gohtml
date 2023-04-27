@@ -24,39 +24,80 @@
 
         <label class="hidden" for="courseID">CourseID<input id="courseID" type="text" class="hidden"
                 value="{{$course.Model.ID}}"></label>
-        <div class="form-container">
-            <h2 class="form-container-title">Settings</h2>
-            {{template "course_settings" $course}}
-        </div>
 
-        <div class="form-container">
-            <h2 class="form-container-title">Course Admins</h2>
-            {{template "course-admin-management" $course}}
-        </div>
+        <div x-data="{ selectedTab: 'lectures' }">
+            <div class="mb-4 border-b border-gray-200 dark:border-gray-700">
+                <ul class="flex flex-wrap -mb-px text-sm font-medium text-center">
+                    <li class="mr-2">
+                        <button
+                            @click="selectedTab = $el.dataset.tab"
+                            data-tab="lectures"
+                            :class="selectedTab == $el.dataset.tab ?
+                            'inline-block p-4 border-b-2 rounded-t-lg'
+                            : 'inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300'"
+                        >Lectures</button>
+                    </li>
+                    <li class="mr-2">
+                        <button
+                            @click="selectedTab = $el.dataset.tab"
+                            data-tab="settings"
+                            :class="selectedTab == $el.dataset.tab ?
+                            'inline-block p-4 border-b-2 rounded-t-lg'
+                            : 'inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300'"
+                        >Settings</button>
+                    </li>
+                    <li class="mr-2">
+                        <button
+                                @click="selectedTab = $el.dataset.tab"
+                                data-tab="external-participants"
+                                :class="selectedTab == $el.dataset.tab ?
+                            'inline-block p-4 border-b-2 rounded-t-lg'
+                            : 'inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300'"
+                        >External Participants</button>
+                    </li>
+                </ul>
+            </div>
+            <div>
+                <div data-tab="lectures" x-show="selectedTab === $el.dataset.tab">
+                    <div class="form-container">
+                        <h2 class="form-container-title">New Lecture</h2>
+                        {{template "create-lecture-form" .}}
+                    </div>
 
-        <div class="form-container">
-            <h2 class="form-container-title">Lecture Hall Settings</h2>
-            {{template "source-settings"}}
-        </div>
+                    <div class="form-container">
+                        <h2 class="form-container-title">Lectures</h2>
+                        {{template "course-lecture-management" .}}
+                    </div>
+                </div>
 
-        <div class="form-container">
-            <h2 class="form-container-title">New Lecture</h2>
-            {{template "create-lecture-form" .}}
-        </div>
+                <div data-tab="settings" x-show="selectedTab === $el.dataset.tab">
+                    <div class="form-container">
+                        <h2 class="form-container-title">Settings</h2>
+                        {{template "course_settings" $course}}
+                    </div>
 
-        <div class="form-container">
-            <h2 class="form-container-title">Lectures</h2>
-            {{template "course-lecture-management" .}}
-        </div>
+                    <div class="form-container">
+                        <h2 class="form-container-title">Course Admins</h2>
+                        {{template "course-admin-management" $course}}
+                    </div>
 
-        <div class="form-container">
-            <h2 class="form-container-title">External Participants</h2>
-            {{template "externalParticipants" $course}}
-        </div>
+                    <div class="form-container">
+                        <h2 class="form-container-title">Lecture Hall Settings</h2>
+                        {{template "source-settings"}}
+                    </div>
+                    <div class="form-container">
+                        <h2 class="form-container-title">Actions</h2>
+                        {{template "dangerzone" $course}}
+                    </div>
+                </div>
 
-        <div class="form-container">
-            <h2 class="form-container-title">Actions</h2>
-            {{template "dangerzone" $course}}
+                <div data-tab="external-participants" x-show="selectedTab === $el.dataset.tab">
+                    <div class="form-container">
+                        <h2 class="form-container-title">External Participants</h2>
+                        {{template "externalParticipants" $course}}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
