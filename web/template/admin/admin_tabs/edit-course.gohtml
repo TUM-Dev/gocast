@@ -40,20 +40,20 @@
                     <li class="mr-2">
                         <button
                             @click="selectedTab = $el.dataset.tab"
-                            data-tab="external-participants"
-                            :class="selectedTab == $el.dataset.tab ?
-                            'inline-block p-4 border-b-2 rounded-t-lg'
-                            : 'inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300'"
-                        >External Participants</button>
-                    </li>
-                    <li class="mr-2">
-                        <button
-                            @click="selectedTab = $el.dataset.tab"
                             data-tab="settings"
                             :class="selectedTab == $el.dataset.tab ?
                             'inline-block p-4 border-b-2 rounded-t-lg'
                             : 'inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300'"
                         >Settings</button>
+                    </li>
+                    <li class="mr-2">
+                        <button
+                                @click="selectedTab = $el.dataset.tab"
+                                data-tab="external-participants"
+                                :class="selectedTab == $el.dataset.tab ?
+                            'inline-block p-4 border-b-2 rounded-t-lg'
+                            : 'inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300'"
+                        >External Participants</button>
                     </li>
                 </ul>
             </div>
@@ -67,13 +67,6 @@
                     <div class="form-container">
                         <h2 class="form-container-title">Lectures</h2>
                         {{template "course-lecture-management" .}}
-                    </div>
-                </div>
-
-                <div data-tab="external-participants" x-show="selectedTab === $el.dataset.tab">
-                    <div class="form-container">
-                        <h2 class="form-container-title">External Participants</h2>
-                        {{template "externalParticipants" $course}}
                     </div>
                 </div>
 
@@ -95,6 +88,13 @@
                     <div class="form-container">
                         <h2 class="form-container-title">Actions</h2>
                         {{template "dangerzone" $course}}
+                    </div>
+                </div>
+
+                <div data-tab="external-participants" x-show="selectedTab === $el.dataset.tab">
+                    <div class="form-container">
+                        <h2 class="form-container-title">External Participants</h2>
+                        {{template "externalParticipants" $course}}
                     </div>
                 </div>
             </div>
