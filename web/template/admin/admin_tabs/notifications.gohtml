@@ -5,9 +5,9 @@
         {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.Notification*/ -}}
         <section x-data class="form-container">
             <h2 class="form-container-title flex justify-between items-center">
-                <div class="justify-self-center">
+                <div>
                     <div class="mr-4 text-sm">{{.Model.CreatedAt.Format "02.01.2006 15:04"}}</div>
-                    {{if .Title}}{{.Title}}{{else}}<i>No title</i>{{end}}
+                    <i>{{if .Title}}{{.Title}}{{else}}No title{{end}}</i>
                 </div>
                 <div>
                     <i @click="admin.deleteNotification({{.Model.ID}})" class="fas fa-trash btn primary"></i>
