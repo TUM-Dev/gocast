@@ -3,7 +3,7 @@ import { Calendar } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import iCalendarPlugin from "@fullcalendar/icalendar";
-import {ex} from "@fullcalendar/core/internal-common";
+import { ex } from "@fullcalendar/core/internal-common";
 
 let calendar: Calendar;
 
@@ -25,7 +25,7 @@ export function refetchCalendar(lecturehalls: number[]) {
 
 const opts = {
     plugins: [dayGridPlugin, timeGridPlugin, iCalendarPlugin],
-    headerToolbar: { center: "timeGridDay,timeGridWeek", right:"lhSelect prev,next" },
+    headerToolbar: { center: "timeGridDay,timeGridWeek", right: "lhSelect prev,next" },
     initialView: "timeGridDay",
     nowIndicator: true,
     firstDay: 1,
@@ -37,10 +37,10 @@ const opts = {
     },
     customButtons: {
         lhSelect: {
-            text: 'LectureHalls',
+            text: "LectureHalls",
             click: function () {
                 window.dispatchEvent(new CustomEvent("showlhselect"));
-            }
+            },
         },
     },
     eventDidMount: function (e) {
@@ -114,13 +114,16 @@ export function toggleAllLectureHalls() {
     const toggles = document.getElementsByClassName("lh-toggle");
     let allSelected = true;
     for (let i = 0; i < toggles.length; i++) {
-        if(!(toggles.item(i) as HTMLInputElement).checked) {
+        if (!(toggles.item(i) as HTMLInputElement).checked) {
             allSelected = false;
             break;
         }
     }
     for (let i = 0; i < toggles.length; i++) {
-        if(allSelected && (toggles.item(i) as HTMLInputElement).checked || !allSelected && !(toggles.item(i) as HTMLInputElement).checked) {
+        if (
+            (allSelected && (toggles.item(i) as HTMLInputElement).checked) ||
+            (!allSelected && !(toggles.item(i) as HTMLInputElement).checked)
+        ) {
             (toggles.item(i) as HTMLInputElement).click();
         }
     }
