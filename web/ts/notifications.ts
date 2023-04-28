@@ -5,6 +5,14 @@ export class Notifications {
         this.notifications = [];
     }
 
+    getAll(): Notification[] {
+        return this.notifications;
+    }
+
+    empty(): boolean {
+        return this.notifications.length === 0;
+    }
+
     writeToStorage(markRead = false) {
         if (markRead) {
             this.notifications.forEach((notification) => {

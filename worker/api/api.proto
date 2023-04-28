@@ -184,6 +184,8 @@ message ThumbnailsFinished {
   string FilePath = 3;
   uint32 Interval = 4;
   string SourceType = 5;
+
+  string LargeThumbnailPath = 6;
 }
 
 message TranscodingFinished {

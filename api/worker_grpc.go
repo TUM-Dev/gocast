@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live/tools/pathprovider"
 	"io"
 	"net"
 	"net/http"
@@ -443,17 +444,25 @@ func (s server) NotifyThumbnailsFinished(ctx context.Context, req *pb.Thumbnails
 		return nil, err
 	}
 	var thumbType model.FileType
+	var thumbTypeLG model.FileType
+
 	switch req.SourceType {
 	case "COMB":
 		thumbType = model.FILETYPE_THUMB_COMB
+		thumbTypeLG = model.FILETYPE_THUMB_LG_COMB
 	case "CAM":
 		thumbType = model.FILETYPE_THUMB_CAM
+		thumbTypeLG = model.FILETYPE_THUMB_LG_CAM
 	case "PRES":
 		thumbType = model.FILETYPE_THUMB_PRES
+		thumbTypeLG = model.FILETYPE_THUMB_LG_PRES
 	default:
 		return nil, errors.New("unknown source type")
 	}
 	if err := s.FileDao.SetThumbnail(stream.ID, model.File{StreamID: stream.ID, Path: req.FilePath, Type: thumbType}); err != nil {
+		return nil, err
+	}
+	if err := s.FileDao.SetThumbnail(stream.ID, model.File{StreamID: stream.ID, Path: req.LargeThumbnailPath, Type: thumbTypeLG}); err != nil {
 		return nil, err
 	}
 	stream.ThumbInterval = req.Interval
@@ -826,11 +835,11 @@ func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWork
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Join(os.TempDir(), "TUM-Live"), 0750); err != nil {
+	if err := os.MkdirAll(pathprovider.TUMLiveTemporary, 0750); err != nil {
 		return err
 	}
 
-	file, err := os.Create(filepath.Join(os.TempDir(), "TUM-Live", fmt.Sprintf("%d.jpeg", s.ID)))
+	file, err := os.Create(filepath.Join(pathprovider.TUMLiveTemporary, fmt.Sprintf("%d.jpeg", s.ID)))
 	if err != nil {
 		return err
 	}

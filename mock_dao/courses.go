@@ -77,7 +77,7 @@ func (mr *MockCoursesDaoMockRecorder) DeleteCourse(course interface{}) *gomock.C
 }
 
 // GetAdministeredCoursesByUserId mocks base method.
-func (m *MockCoursesDao) GetAdministeredCoursesByUserId(ctx context.Context, userid uint) ([]model.Course, error) {
+func (m *MockCoursesDao) GetAdministeredCoursesByUserId(ctx context.Context, userid uint, teachingTerm string, year int) ([]model.Course, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAdministeredCoursesByUserId", ctx, userid)
 	ret0, _ := ret[0].([]model.Course)

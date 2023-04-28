@@ -42,6 +42,28 @@ type Course struct {
 	VodPrivate  bool `gorm:"not null; default:false"` // Whether VODs are made private after livestreams
 }
 
+type CourseDTO struct {
+	ID           uint
+	Name         string
+	Slug         string
+	TeachingTerm string
+	Year         int
+	NextLecture  StreamDTO
+	LastLecture  StreamDTO
+}
+
+func (c *Course) ToDTO() CourseDTO {
+	return CourseDTO{
+		ID:           c.ID,
+		Name:         c.Name,
+		Slug:         c.Slug,
+		TeachingTerm: c.TeachingTerm,
+		Year:         c.Year,
+		NextLecture:  c.GetNextLecture().ToDTO(),
+		LastLecture:  c.GetLastLecture().ToDTO(),
+	}
+}
+
 // GetUrl returns the URL of the course, e.g. /course/2022/S/MyCourse
 func (c Course) GetUrl() string {
 	return fmt.Sprintf("/course/%d/%s/%s", c.Year, c.TeachingTerm, c.Slug)
@@ -205,6 +227,20 @@ func (c Course) GetNextLecture() Stream {
 		}
 	}
 	return earliestLecture
+}
+
+// GetLastLecture returns the most recent lecture of the course
+// Assumes an ascending order of c.Streams
+func (c Course) GetLastLecture() Stream {
+	var lastLecture Stream
+	now := time.Now()
+	for _, s := range c.Streams {
+		if s.Start.After(now) {
+			return lastLecture
+		}
+		lastLecture = s
+	}
+	return lastLecture
 }
 
 // GetLiveStreams returns the current live streams of the course or an empty slice if none are live
