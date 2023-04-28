@@ -25,9 +25,9 @@
                     <!-- Modal body -->
                     <div class="p-6 space-y-6">
                         <div class="text-3">
-                            <label class="block">
+                            <label class="block mb-2">
                                 <input type="checkbox" checked @change="e=>{admin.toggleAllLectureHalls()}">
-                                <span class="sr-only">de select or select all</span>
+                                <span class="font-semibold">Toggle all</span>
                             </label>
                             <label class="block">
                                 <input type="checkbox" class="lh-toggle" checked @change="e=>{if ($el.checked){lectureHalls.push(0)}else{lectureHalls=lectureHalls.filter(i=>i!==0)}}">
