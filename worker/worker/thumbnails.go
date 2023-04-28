@@ -22,7 +22,7 @@ func createThumbnailSprite(ctx *StreamContext, source string) error {
 	default:
 		ctx.thumbInterval = 30
 	}
-	log.WithField("File", ctx.getThumbnailSpriteFileName()).Info("Start creating thumbnail sprite")
+	log.WithField("File", ctx.getThumbnailSpriteFileName()).Info("Run creating thumbnail sprite")
 	g, err := thumbgen.New(source, ThumbWidth, int(ctx.thumbInterval), ctx.getThumbnailSpriteFileName(), thumbgen.WithJpegCompression(Compression))
 	if err != nil {
 		return err

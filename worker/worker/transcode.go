@@ -98,7 +98,7 @@ func transcode(streamCtx *StreamContext) error {
 	} else {
 		log.WithField("stream", streamCtx.getStreamName()).Info("Transcoding finished")
 	}
-	log.Info("Start Probing duration")
+	log.Info("Run Probing duration")
 	duration, err := getDuration(streamCtx.getTranscodingFileName())
 	if err != nil {
 		return fmt.Errorf("probe duration: %v", err)

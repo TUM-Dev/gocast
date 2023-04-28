@@ -22,7 +22,7 @@ func NewSilenceDetector(input string) *SilenceDetect {
 }
 
 func (s *SilenceDetect) ParseSilence() error {
-	log.WithField("File", s.Input).Info("Start detecting silence")
+	log.WithField("File", s.Input).Info("Run detecting silence")
 	cmd := exec.Command("nice", "ffmpeg", "-nostats", "-i", s.Input, "-af", "silencedetect=n=-15dB:d=30", "-f", "null", "-")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -55,7 +55,7 @@ func (s *SilenceDetect) ParseSilence() error {
 	return nil
 }
 
-//postprocess merges short duration of silence into units of silence
+// postprocess merges short duration of silence into units of silence
 func (s *SilenceDetect) postprocess() {
 	oldSilences := *s.Silences
 	if len(oldSilences) < 2 {
