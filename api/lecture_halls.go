@@ -228,13 +228,15 @@ func (r lectureHallRoutes) lectureHallIcal(c *gin.Context) {
 		}
 		lectureHalls = append(lectureHalls, uint(a))
 	}
+	all := !c.Request.Form.Has("lecturealls") // if none requested, deliver all
+
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	// pass 0 to db query to get all lectures if user is not logged in or admin
 	queryUid := uint(0)
 	if tumLiveContext.User != nil && tumLiveContext.User.Role != model.AdminType {
 		queryUid = tumLiveContext.User.ID
 	}
-	icalData, err := r.LectureHallsDao.GetStreamsForLectureHallIcal(queryUid, lectureHalls)
+	icalData, err := r.LectureHallsDao.GetStreamsForLectureHallIcal(queryUid, lectureHalls, all)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return

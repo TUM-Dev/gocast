@@ -126,7 +126,7 @@ func main() {
 		sentry.Flush(time.Second * 5)
 		log.Fatalf("%v", err)
 	}
-	dao.DB = db.Debug()
+	dao.DB = db
 
 	err = dao.Migrator.RunBefore(db)
 	if err != nil {
