@@ -20,6 +20,7 @@ const (
 	FILETYPE_THUMB_LG_COMB
 	FILETYPE_THUMB_LG_CAM
 	FILETYPE_THUMB_LG_PRES
+	FILETYPE_THUMB_LG_CAM_PRES // generated from CAM and PRES, preferred over the others
 )
 
 type File struct {

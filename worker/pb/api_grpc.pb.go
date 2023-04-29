@@ -32,6 +32,7 @@ type ToWorkerClient interface {
 	GenerateLivePreview(ctx context.Context, in *LivePreviewRequest, opts ...grpc.CallOption) (*LivePreviewResponse, error)
 	GenerateSectionImages(ctx context.Context, in *GenerateSectionImageRequest, opts ...grpc.CallOption) (*GenerateSectionImageResponse, error)
 	DeleteSectionImage(ctx context.Context, in *DeleteSectionImageRequest, opts ...grpc.CallOption) (*Status, error)
+	CombineThumbnails(ctx context.Context, in *CombineThumbnailsRequest, opts ...grpc.CallOption) (*CombineThumbnailsResponse, error)
 }
 
 type toWorkerClient struct {
@@ -123,6 +124,15 @@ func (c *toWorkerClient) DeleteSectionImage(ctx context.Context, in *DeleteSecti
 	return out, nil
 }
 
+func (c *toWorkerClient) CombineThumbnails(ctx context.Context, in *CombineThumbnailsRequest, opts ...grpc.CallOption) (*CombineThumbnailsResponse, error) {
+	out := new(CombineThumbnailsResponse)
+	err := c.cc.Invoke(ctx, "/api.ToWorker/CombineThumbnails", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ToWorkerServer is the server API for ToWorker service.
 // All implementations must embed UnimplementedToWorkerServer
 // for forward compatibility
@@ -137,6 +147,7 @@ type ToWorkerServer interface {
 	GenerateLivePreview(context.Context, *LivePreviewRequest) (*LivePreviewResponse, error)
 	GenerateSectionImages(context.Context, *GenerateSectionImageRequest) (*GenerateSectionImageResponse, error)
 	DeleteSectionImage(context.Context, *DeleteSectionImageRequest) (*Status, error)
+	CombineThumbnails(context.Context, *CombineThumbnailsRequest) (*CombineThumbnailsResponse, error)
 	mustEmbedUnimplementedToWorkerServer()
 }
 
@@ -170,6 +181,9 @@ func (UnimplementedToWorkerServer) GenerateSectionImages(context.Context, *Gener
 }
 func (UnimplementedToWorkerServer) DeleteSectionImage(context.Context, *DeleteSectionImageRequest) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteSectionImage not implemented")
+}
+func (UnimplementedToWorkerServer) CombineThumbnails(context.Context, *CombineThumbnailsRequest) (*CombineThumbnailsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CombineThumbnails not implemented")
 }
 func (UnimplementedToWorkerServer) mustEmbedUnimplementedToWorkerServer() {}
 
@@ -346,6 +360,24 @@ func _ToWorker_DeleteSectionImage_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ToWorker_CombineThumbnails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CombineThumbnailsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ToWorkerServer).CombineThumbnails(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.ToWorker/CombineThumbnails",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ToWorkerServer).CombineThumbnails(ctx, req.(*CombineThumbnailsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ToWorker_ServiceDesc is the grpc.ServiceDesc for ToWorker service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -388,6 +420,10 @@ var ToWorker_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteSectionImage",
 			Handler:    _ToWorker_DeleteSectionImage_Handler,
+		},
+		{
+			MethodName: "CombineThumbnails",
+			Handler:    _ToWorker_CombineThumbnails_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

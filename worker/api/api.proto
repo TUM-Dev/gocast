@@ -15,6 +15,7 @@ service ToWorker {
   rpc GenerateLivePreview (LivePreviewRequest) returns (LivePreviewResponse) {}
   rpc GenerateSectionImages (GenerateSectionImageRequest) returns (GenerateSectionImageResponse) {}
   rpc DeleteSectionImage (DeleteSectionImageRequest) returns (Status) {}
+  rpc CombineThumbnails (CombineThumbnailsRequest) returns (CombineThumbnailsResponse) {}
 }
 
 message DeleteSectionImageRequest {
@@ -251,4 +252,14 @@ message NotifyTranscodingFailureRequest {
 }
 
 message NotifyTranscodingFailureResponse {
+}
+
+message CombineThumbnailsRequest {
+  string PrimaryThumbnail = 1;
+  string SecondaryThumbnail = 2;
+  string Path = 3;
+}
+
+message CombineThumbnailsResponse {
+  string FilePath = 1;
 }

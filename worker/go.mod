@@ -8,7 +8,7 @@ require (
 	github.com/golang/protobuf v1.5.3
 	github.com/icza/gox v0.0.0-20230330130131-23e1aaac139e
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
-	github.com/joschahenningsen/thumbgen v0.1.0
+	github.com/joschahenningsen/thumbgen v0.1.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil/v3 v3.23.3
 	github.com/sirupsen/logrus v1.9.0
@@ -46,4 +46,5 @@ require (
 	github.com/google/pprof v0.0.0-20230406165453-00490a63f317 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/shoenig/go-m1cpu v0.1.5 // indirect
+	golang.org/x/image v0.7.0 // indirect
 )
