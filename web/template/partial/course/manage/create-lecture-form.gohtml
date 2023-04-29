@@ -25,8 +25,7 @@
 
         <label for="name" x-show="!loading">
             <span class="text-sm text-5">Lecture Name</span>
-            <input class="tl-input" name="name" id="name" x-model="formData.title" placeholder="L01: Binary Trees"
-                   required/>
+            <input class="tl-input" name="name" id="name" x-model="formData.title" placeholder="L01: Binary Trees"/>
         </label>
 
         <label x-show="!formData.premiere && !formData.vodup && !loading">
@@ -58,7 +57,7 @@
                 <input class="tl-input" name="end" placeholder="16:00" id="end" x-model="formData.end" x-ref="end"
                        x-init="flatpickr($refs.end, {enableTime: true, noCalendar: true, dateFormat: 'H:i', time_24hr: true, allowInput: true })"
                        @change="() => setTimeout(() => recalculateDuration(), 100)"
-                       required/>
+                       :required="!formData.vodup"/>
             </label>
         </template>
 
@@ -66,7 +65,7 @@
             <span class="text-sm text-5">Video File (mp4, if possible h264)</span>
             <input type="file" accept="video/mp4" class="btn tl-choose-file"
                    x-on:change="formData.file = Object.values($event.target.files)"
-                   required>
+                   :required="formData.vodup">
         </label>
 
         <div x-show="formData.recurring && !loading">
