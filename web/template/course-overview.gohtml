@@ -1,3 +1,5 @@
+{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.CoursePageData*/ -}}
+{{$course := .IndexData.TUMLiveContext.Course}}
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -5,12 +7,10 @@
     <title>{{.IndexData.Branding.Title}} | {{.IndexData.TUMLiveContext.Course.Name}}</title>
     <script src="/static/assets/ts-dist/global.bundle.js?v={{.IndexData.VersionTag}}"></script>
     {{template "headImports" .IndexData.VersionTag}}
+    <link rel="canonical" href="{{.IndexData.CanonicalURL.Course $course.Year $course.TeachingTerm $course.Slug }}">
 </head>
 <body class="md:overflow-hidden">
-{{- /*gotype: github.com/joschahenningsen/TUM-Live/web.CoursePageData*/ -}}
-{{$course := .IndexData.TUMLiveContext.Course}}
 {{template "header" .IndexData.TUMLiveContext}}
-
 <div class="m-auto px-1 sm:px-3 lg:px-5 w-full xl:w-2/3"
      style="height: calc(100vh - (6.5rem));" {{/* 6.5 = nav height + padding */}}>
     <div class="flex my-8 pl-2 md:pl-0">

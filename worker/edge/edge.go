@@ -15,6 +15,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path"
 	"path/filepath"
@@ -36,6 +37,8 @@ var (
 	//allowedRe = regexp.MustCompile("^.*$") // e.g. /vm123/live/strean/1234.ts
 )
 
+var port = ":8089"
+
 var originPort = "8085"
 var originProto = "http://"
 
@@ -54,12 +57,12 @@ var adminToken = ""
 
 func main() {
 	log.Println("Starting edge tumlive version " + VersionTag)
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = ":8089"
+	eport := os.Getenv("PORT")
+	if eport != "" {
+		port = eport
 	}
 	if !strings.HasPrefix(port, ":") {
-		port = ":" + originPort
+		port = ":" + port
 	}
 	originPEnv := os.Getenv("ORIGIN_PORT")
 	if originPEnv != "" {
@@ -123,11 +126,25 @@ type JWTPlaylistClaims struct {
 	jwt.RegisteredClaims
 	UserID   uint
 	Playlist string
+	Download bool
 	StreamID string
 	CourseID string
 }
 
-func validateToken(w http.ResponseWriter, r *http.Request) (claims *JWTPlaylistClaims, ok bool) {
+func (c *JWTPlaylistClaims) GetFileName() string {
+	if c == nil {
+		return "video.mp4"
+	}
+	pts := strings.Split(c.Playlist, "/")
+	for _, pt := range pts {
+		if strings.HasSuffix(pt, ".mp4") {
+			return pt
+		}
+	}
+	return fmt.Sprintf("%s.mp4", c.StreamID)
+}
+
+func validateToken(w http.ResponseWriter, r *http.Request, download bool) (claims *JWTPlaylistClaims, ok bool) {
 	token := r.URL.Query().Get("jwt")
 	if token == "" {
 		http.Error(w, "Missing JWT", http.StatusForbidden)
@@ -173,15 +190,26 @@ func validateToken(w http.ResponseWriter, r *http.Request) (claims *JWTPlaylistC
 		return nil, false
 	}
 
+	if download && !parsedToken.Claims.(*JWTPlaylistClaims).Download {
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte("Forbidden, download not allowed."))
+		return claims, false
+	}
+
 	return parsedToken.Claims.(*JWTPlaylistClaims), true
 }
 
 func vodHandler(w http.ResponseWriter, r *http.Request) {
+	d := r.URL.Query().Get("download")
+	if d != "" && d != "0" {
+		downloadHandler(w, r)
+		return
+	}
 	w.Header().Add("Access-Control-Allow-Origin", allowedOrigin)
 	var uid string
 	if jwtPubKey != nil {
 		// validate token; every page access requires a valid jwt.
-		claims, ok := validateToken(w, r)
+		claims, ok := validateToken(w, r, false)
 		if !ok {
 			return
 		}
@@ -264,7 +292,7 @@ func handleTLS(mux *http.ServeMux) {
 	}
 }
 
-// edgeHandler proxies requests to TUM-Live-Worker (nginx) and caches immutable files.
+// edgeHandler proxies requests to TUM-Live-Worker and caches immutable files.
 func edgeHandler(writer http.ResponseWriter, request *http.Request) {
 	if !allowedRe.MatchString(request.URL.Path) {
 		writer.WriteHeader(http.StatusNotFound)
@@ -391,8 +419,13 @@ var jwtPubKey *rsa.PublicKey
 
 // prepare clears the cache and creates the cache directory
 func prepare() {
+	output, err := exec.Command("ffmpeg", "-version").CombinedOutput()
+	if err != nil {
+		panic(err)
+	}
+	log.Println("FFmpeg version: ", string(output))
 	// Empty cache on startup:
-	err := os.RemoveAll(cacheDir)
+	err = os.RemoveAll(cacheDir)
 	if err != nil {
 		log.Printf("Could not empty cache directory: %v", err)
 	}

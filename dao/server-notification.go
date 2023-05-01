@@ -34,9 +34,10 @@ func (d serverNotificationDao) CreateServerNotification(notification model.Serve
 }
 
 //GetCurrentServerNotifications returns all tumlive notifications that are active
-func (d serverNotificationDao) GetCurrentServerNotifications() ([]model.ServerNotification, error) {
-	var res []model.ServerNotification
-	err := DB.Model(&model.ServerNotification{}).Where("start < ? AND expires > ?", time.Now(), time.Now()).Scan(&res).Error
+func (d serverNotificationDao) GetCurrentServerNotifications() (res []model.ServerNotification, err error) {
+	err = DB.Model(&model.ServerNotification{}).
+		Where("start < ? AND expires > ?", time.Now(), time.Now()).
+		Find(&res).Error
 	return res, err
 }
 

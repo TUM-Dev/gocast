@@ -7,6 +7,16 @@ export enum UIEditMode {
     series,
 }
 
+export enum FileType {
+    invalid,
+    vod,
+    attachment,
+    image_jpg,
+    thumb_comb,
+    thumb_cam,
+    thumb_pres,
+}
+
 export class LectureList {
     static lectures: Lecture[] = [];
 
@@ -48,6 +58,11 @@ class LectureFile {
         this.fileType = fileType;
         this.friendlyName = friendlyName;
     }
+}
+
+class DownloadableVod {
+    downloadURL: string;
+    friendlyName: string;
 }
 
 class TranscodingProgress {
@@ -98,6 +113,7 @@ export class Lecture {
     transcodingProgresses: TranscodingProgress[];
     files: LectureFile[];
     private: boolean;
+    downloadableVods: DownloadableVod[];
 
     clone() {
         return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
@@ -335,10 +351,7 @@ export class Lecture {
     }
 
     getDownloads() {
-        if (this.files === undefined || this.files === null) {
-            return [];
-        }
-        return this.files.filter((f: LectureFile) => f.fileType === 1);
+        return this.downloadableVods;
     }
 
     async deleteFile(fileId: number) {
@@ -351,8 +364,15 @@ export class Lecture {
             });
     }
 
+    hasAttachments(): boolean {
+        if (this.files !== undefined && this.files !== null) {
+            const filtered = this.files.filter((f) => f.fileType === FileType.attachment);
+            return filtered.length > 0;
+        }
+        return false;
+    }
+
     onFileDrop(e) {
-        e.preventDefault();
         if (e.dataTransfer.items) {
             const kind = e.dataTransfer.items[0].kind;
             switch (kind) {
@@ -365,14 +385,6 @@ export class Lecture {
                 }
             }
         }
-    }
-
-    hasAttachments(): boolean {
-        if (this.files === undefined || this.files === null) {
-            return false;
-        }
-        const attachments = this.files.filter((f) => f.fileType !== 1);
-        return attachments.length > 0;
     }
 
     private async postFile(file) {

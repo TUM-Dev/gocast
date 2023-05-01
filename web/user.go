@@ -187,9 +187,10 @@ func (r mainRoutes) CreatePasswordPage(c *gin.Context) {
 // NewLoginPageData returns a new struct LoginPageData with the Error value err
 func NewLoginPageData(err bool) LoginPageData {
 	return LoginPageData{
-		VersionTag: VersionTag,
-		Error:      err,
-		Branding:   tools.BrandingCfg,
+		VersionTag:   VersionTag,
+		Error:        err,
+		Branding:     tools.BrandingCfg,
+		CanonicalURL: tools.NewCanonicalURL(tools.Cfg.CanonicalURL),
 	}
 }
 
@@ -202,5 +203,6 @@ type LoginPageData struct {
 	IDPName  string
 	IDPColor string
 
-	Branding tools.Branding
+	Branding     tools.Branding
+	CanonicalURL tools.CanonicalURL
 }

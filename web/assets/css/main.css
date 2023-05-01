@@ -150,6 +150,10 @@
     @apply w-full h-12 px-3 bg-gray-50 dark:bg-gray-600 dark:text-white rounded shadow-sm outline-0 border-0;
 }
 
+label:has(~ .tl-input), label:has(~.tl-textarea) {
+    @apply text-sm text-5 font-light;
+}
+
 .tl-context-entry {
     @apply py-2 px-4 w-full text-left cursor-pointer hover:bg-white/10
 }
@@ -509,7 +513,7 @@ a.fc-event, a.fc-event:hover {
 }
 
 .vjs-has-started.vjs-user-inactive.vjs-playing .vjs-skip-silence-control {
-    visibility: visible;
+    visibility: hidden;
     opacity: 0;
     pointer-events: none;
     transition: visibility 1s,opacity 1s;

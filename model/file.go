@@ -10,12 +10,17 @@ type FileType uint
 
 const (
 	FILETYPE_INVALID = iota
+	// Deprecated: vods can now be downloaded from the edge server using the signed playlist url + ?download=1.
 	FILETYPE_VOD
 	FILETYPE_ATTACHMENT
 	FILETYPE_IMAGE_JPG
 	FILETYPE_THUMB_COMB
 	FILETYPE_THUMB_CAM
 	FILETYPE_THUMB_PRES
+	FILETYPE_THUMB_LG_COMB
+	FILETYPE_THUMB_LG_CAM
+	FILETYPE_THUMB_LG_PRES
+	FILETYPE_THUMB_LG_CAM_PRES // generated from CAM and PRES, preferred over the others
 )
 
 type File struct {

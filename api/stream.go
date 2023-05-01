@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live/tools/pathprovider"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -40,9 +41,16 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 		{
 			// All User Endpoints
 			streamById.GET("/sections", routes.getVideoSections)
-			streamById.GET("/thumbs/:fid", routes.getThumbs)
 			streamById.GET("/subtitles/:lang", routes.getSubtitles)
-			streamById.GET("/playlist", routes.getStreamPlaylist)
+
+      streamById.GET("/playlist", routes.getStreamPlaylist)
+
+			thumbs := streamById.Group("/thumbs")
+			{
+				thumbs.GET(":fid", routes.getThumbs)
+				thumbs.GET("/live", routes.getLiveThumbs)
+				thumbs.GET("/vod", routes.getVODThumbs)
+			}
 		}
 		{
 			// Admin-Only Endpoints
@@ -125,6 +133,25 @@ func (r streamRoutes) getThumbs(c *gin.Context) {
 		return
 	}
 	sendDownloadFile(c, file, tumLiveContext)
+}
+
+func (r streamRoutes) getVODThumbs(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	thumb, err := tumLiveContext.Stream.GetLGThumbnail()
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	c.File(thumb)
+}
+
+func (r streamRoutes) getLiveThumbs(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	streamId := strconv.Itoa(int(tumLiveContext.Stream.ID))
+	path := pathprovider.LiveThumbnail(streamId)
+	c.File(path)
 }
 
 func (r streamRoutes) getSubtitles(c *gin.Context) {
@@ -297,7 +324,7 @@ func (r streamRoutes) getStream(c *gin.Context) {
 		"description": stream.Description,
 		"start":       stream.Start,
 		"end":         stream.End,
-		"ingest":      fmt.Sprintf("%sstream?secret=%s", tools.Cfg.IngestBase, stream.StreamKey),
+		"ingest":      fmt.Sprintf("%s%s-%d?secret=%s", tools.Cfg.IngestBase, course.Slug, stream.ID, stream.StreamKey),
 		"live":        stream.LiveNow,
 		"vod":         stream.Recording})
 }
@@ -358,7 +385,7 @@ func (r streamRoutes) RegenerateThumbs(c *gin.Context) {
 				log.WithError(err).Errorf("Can't get video sections for stream %d", stream.ID)
 				continue
 			}
-			err = tools.SetSignedPlaylists(stream, nil)
+			err = tools.SetSignedPlaylists(stream, nil, false)
 			if err != nil {
 				log.WithError(err).Errorf("Can't set signed playlists for stream %d", stream.ID)
 				continue
@@ -417,7 +444,7 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 		return
 	}
 
-	err = tools.SetSignedPlaylists(stream, nil)
+	err = tools.SetSignedPlaylists(stream, nil, false)
 	if err != nil {
 		log.WithError(err).Error("failed to set signed playlists")
 		_ = c.Error(tools.RequestError{
@@ -690,7 +717,7 @@ func (r streamRoutes) requestSubtitles(c *gin.Context) {
 		return
 	}
 
-	err = tools.SetSignedPlaylists(stream, tumLiveContext.User)
+	err = tools.SetSignedPlaylists(stream, tumLiveContext.User, false)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,

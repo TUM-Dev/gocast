@@ -24,7 +24,7 @@ func BenchmarkValidateToken(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		validateToken(w, r)
+		validateToken(w, r, false)
 	}
 }
 
@@ -36,7 +36,7 @@ func TestValidateTokenSuccess(t *testing.T) {
 	r, _ := http.NewRequest("GET", testURL+"?jwt="+str, nil)
 	w := httptest.NewRecorder()
 
-	if res := validateToken(w, r); !res {
+	if _, res := validateToken(w, r, false); !res {
 		t.Error("validateToken returned false")
 	}
 
@@ -53,7 +53,7 @@ func TestValidateTokenNoJWT(t *testing.T) {
 	r, _ := http.NewRequest("GET", testURL, nil)
 	w := httptest.NewRecorder()
 
-	if res := validateToken(w, r); res {
+	if _, res := validateToken(w, r, false); res {
 		t.Error("validateToken returned true")
 	}
 
@@ -70,7 +70,7 @@ func TestValidateTokenExpiredJWT(t *testing.T) {
 	r, _ := http.NewRequest("GET", testURL+"?jwt="+str, nil)
 	w := httptest.NewRecorder()
 
-	if res := validateToken(w, r); res {
+	if _, res := validateToken(w, r, false); res {
 		t.Error("validateToken returned true")
 	}
 
@@ -87,7 +87,7 @@ func TestValidateTokenBadURL(t *testing.T) {
 	r, _ := http.NewRequest("GET", testURL+"?jwt="+str, nil)
 	w := httptest.NewRecorder()
 
-	if res := validateToken(w, r); res {
+	if _, res := validateToken(w, r, false); res {
 		t.Error("validateToken returned true")
 	}
 
@@ -104,7 +104,7 @@ func TestValidateTokenIncorrectURL(t *testing.T) {
 	r, _ := http.NewRequest("GET", "http://localhost/vod/wrong_video.mp4/playlist.m3u8?jwt="+str, nil)
 	w := httptest.NewRecorder()
 
-	if res := validateToken(w, r); res {
+	if _, res := validateToken(w, r, false); res {
 		t.Error("validateToken returned true")
 	}
 
@@ -121,7 +121,7 @@ func TestValidateTokenBadJWT(t *testing.T) {
 	r, _ := http.NewRequest("GET", "http://localhost/vod/wrong_video.mp4/playlist.m3u8?jwt=abc", nil)
 	w := httptest.NewRecorder()
 
-	if res := validateToken(w, r); res {
+	if _, res := validateToken(w, r, false); res {
 		t.Error("validateToken returned true")
 	}
 
@@ -139,7 +139,7 @@ func TestValidateTokenAdminToken(t *testing.T) {
 	r, _ := http.NewRequest("GET", "http://localhost/vod/wrong_video.mp4/playlist.m3u8?jwt=abcd", nil)
 	w := httptest.NewRecorder()
 
-	if res := validateToken(w, r); !res {
+	if _, res := validateToken(w, r, false); !res {
 		t.Error("validateToken returned true")
 	}
 

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live/tools/pathprovider"
 	"io"
 	"net"
 	"net/http"
@@ -443,24 +444,78 @@ func (s server) NotifyThumbnailsFinished(ctx context.Context, req *pb.Thumbnails
 		return nil, err
 	}
 	var thumbType model.FileType
+	var thumbTypeLG model.FileType
+
 	switch req.SourceType {
 	case "COMB":
 		thumbType = model.FILETYPE_THUMB_COMB
+		thumbTypeLG = model.FILETYPE_THUMB_LG_COMB
 	case "CAM":
 		thumbType = model.FILETYPE_THUMB_CAM
+		thumbTypeLG = model.FILETYPE_THUMB_LG_CAM
 	case "PRES":
 		thumbType = model.FILETYPE_THUMB_PRES
+		thumbTypeLG = model.FILETYPE_THUMB_LG_PRES
 	default:
 		return nil, errors.New("unknown source type")
 	}
 	if err := s.FileDao.SetThumbnail(stream.ID, model.File{StreamID: stream.ID, Path: req.FilePath, Type: thumbType}); err != nil {
 		return nil, err
 	}
+	if err := s.FileDao.SetThumbnail(stream.ID, model.File{StreamID: stream.ID, Path: req.LargeThumbnailPath, Type: thumbTypeLG}); err != nil {
+		return nil, err
+	}
 	stream.ThumbInterval = req.Interval
 	if err = s.StreamsDao.SaveStream(&stream); err != nil {
 		return nil, err
 	}
+
+	go generateCombinedThumb(stream.ID, s.DaoWrapper)
 	return &pb.Status{Ok: true}, nil
+}
+
+// generateCombinedThumb generates a combined thumbnail from the two source thumbnails CAM and PRES if both exist
+func generateCombinedThumb(streamID uint, dao dao.DaoWrapper) {
+	stream, err := dao.StreamsDao.GetStreamByID(context.Background(), fmt.Sprintf("%d", streamID))
+	if err != nil {
+		log.WithError(err).Warn("error getting stream")
+		return
+	}
+	var thumbCam, thumbPres string
+	for _, file := range stream.Files {
+		if file.Type == model.FILETYPE_THUMB_LG_CAM {
+			thumbCam = file.Path
+		}
+		if file.Type == model.FILETYPE_THUMB_LG_PRES {
+			thumbPres = file.Path
+		}
+	}
+	if thumbCam == "" || thumbPres == "" {
+		return // nothing to do
+	}
+	workers := dao.GetAliveWorkers()
+	if len(workers) == 0 {
+		return
+	}
+	w := workers[getWorkerWithLeastWorkload(workers)]
+	wConn, err := dialIn(w)
+	if err != nil {
+		log.WithError(err).Warn("error dialing in")
+		return
+	}
+	client := pb.NewToWorkerClient(wConn)
+	thumbnails, err := client.CombineThumbnails(context.Background(), &pb.CombineThumbnailsRequest{
+		PrimaryThumbnail:   thumbPres,
+		SecondaryThumbnail: thumbCam,
+		Path:               strings.ReplaceAll(thumbPres, "PRES", "CAM_PRES"),
+	})
+	if err != nil {
+		log.WithError(err).Warn("error combining thumbnails")
+		return
+	}
+	if err := dao.FileDao.SetThumbnail(stream.ID, model.File{StreamID: stream.ID, Path: thumbnails.FilePath, Type: model.FILETYPE_THUMB_LG_CAM_PRES}); err != nil {
+		log.WithError(err).Warn("error saving thumbnail")
+	}
 }
 
 // GetStreamInfoForUpload returns the stream info for a stream identified by its upload token.
@@ -814,7 +869,7 @@ func FetchLivePreviews(daoWrapper dao.DaoWrapper) func() {
 }
 
 func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWorkerClient) error {
-	if err := tools.SetSignedPlaylists(s, nil); err != nil {
+	if err := tools.SetSignedPlaylists(s, nil, false); err != nil {
 		return err
 	}
 	req := pb.LivePreviewRequest{
@@ -826,11 +881,11 @@ func getLivePreviewFromWorker(s *model.Stream, workerID string, client pb.ToWork
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Join(os.TempDir(), "TUM-Live"), 0750); err != nil {
+	if err := os.MkdirAll(pathprovider.TUMLiveTemporary, 0750); err != nil {
 		return err
 	}
 
-	file, err := os.Create(filepath.Join(os.TempDir(), "TUM-Live", fmt.Sprintf("%d.jpeg", s.ID)))
+	file, err := os.Create(filepath.Join(pathprovider.TUMLiveTemporary, fmt.Sprintf("%d.jpeg", s.ID)))
 	if err != nil {
 		return err
 	}

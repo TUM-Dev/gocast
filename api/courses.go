@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/RBG-TUM/commons"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/dao"
@@ -21,6 +22,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -34,6 +36,15 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 
 	api := router.Group("/api")
 	{
+		api.GET("/courses/live", routes.getLive)
+		api.GET("/courses/public", routes.getPublic)
+		api.GET("/courses/users", routes.getUsers)
+
+		courseById := api.Group("/courses/:id")
+		{
+			courseById.GET("", routes.getCourse)
+		}
+
 		lecturers := api.Group("")
 		{
 			lecturers.Use(tools.AtLeastLecturer)
@@ -97,6 +108,230 @@ const (
 type uploadVodReq struct {
 	Start time.Time `form:"start" binding:"required"`
 	Title string    `form:"title"`
+}
+
+func (r coursesRoutes) getLive(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	streams, err := r.GetCurrentLive(context.Background())
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.WithError(err).Error("could not get current live streams")
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
+	}
+
+	type CourseStream struct {
+		Course      model.CourseDTO
+		Stream      model.StreamDTO
+		LectureHall *model.LectureHallDTO
+	}
+
+	livestreams := make([]CourseStream, 0)
+
+	for _, stream := range streams {
+		courseForLiveStream, _ := r.GetCourseById(context.Background(), stream.CourseID)
+
+		// only show streams for logged-in users if they are logged in
+		if courseForLiveStream.Visibility == "loggedin" && tumLiveContext.User == nil {
+			continue
+		}
+		// only show "enrolled" streams to users which are enrolled or admins
+		if courseForLiveStream.Visibility == "enrolled" {
+			if !isUserAllowedToWatchPrivateCourse(courseForLiveStream, tumLiveContext.User) {
+				continue
+			}
+		}
+		// Only show hidden streams to admins
+		if courseForLiveStream.Visibility == "hidden" && (tumLiveContext.User == nil || tumLiveContext.User.Role != model.AdminType) {
+			continue
+		}
+		var lectureHall *model.LectureHall
+		if stream.LectureHallID != 0 {
+			lh, err := r.LectureHallsDao.GetLectureHallByID(stream.LectureHallID)
+			if err != nil {
+				log.WithError(err).Error(err)
+			} else {
+				lectureHall = &lh
+			}
+		}
+		livestreams = append(livestreams, CourseStream{
+			Course:      courseForLiveStream.ToDTO(),
+			Stream:      stream.ToDTO(),
+			LectureHall: lectureHall.ToDTO(),
+		})
+	}
+
+	c.JSON(http.StatusOK, livestreams)
+}
+
+func (r coursesRoutes) getPublic(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	year, term := tum.GetCurrentSemester()
+	year, err := strconv.Atoi(c.DefaultQuery("year", strconv.Itoa(year)))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid year",
+			Err:           err,
+		})
+		return
+	}
+	term = c.DefaultQuery("term", term)
+
+	var courses, public []model.Course
+	if tumLiveContext.User != nil {
+		public, err = r.GetPublicAndLoggedInCourses(year, term)
+	} else {
+		public, err = r.GetPublicCourses(year, term)
+	}
+	if err != nil {
+		courses = []model.Course{}
+	} else {
+		sortCourses(public)
+		courses = commons.Unique(public, func(c model.Course) uint { return c.ID })
+	}
+
+	resp := make([]model.CourseDTO, len(courses))
+	for i, course := range courses {
+		resp[i] = course.ToDTO()
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+func (r coursesRoutes) getUsers(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	year, term := tum.GetCurrentSemester()
+	year, err := strconv.Atoi(c.DefaultQuery("year", strconv.Itoa(year)))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid year",
+			Err:           err,
+		})
+	}
+	term = c.DefaultQuery("term", term)
+
+	var courses []model.Course
+	if tumLiveContext.User != nil {
+		switch tumLiveContext.User.Role {
+		case model.AdminType:
+			courses = routes.GetAllCoursesForSemester(year, term, c)
+		case model.LecturerType:
+			coursesForLecturer, err := r.GetAdministeredCoursesByUserId(c, tumLiveContext.User.ID, term, year)
+			if err == nil {
+				courses = append(courses, coursesForLecturer...)
+			}
+		default:
+			courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
+		}
+	}
+
+	sortCourses(courses)
+	courses = commons.Unique(courses, func(c model.Course) uint { return c.ID })
+	resp := make([]model.CourseDTO, len(courses))
+	for i, course := range courses {
+		resp[i] = course.ToDTO()
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+func sortCourses(courses []model.Course) {
+	sort.Slice(courses, func(i, j int) bool {
+		return courses[i].CompareTo(courses[j])
+	})
+}
+
+func (r coursesRoutes) getCourse(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	type coursesByIdURI struct {
+		ID uint `uri:"id" binding:"required"`
+	}
+
+	var uri coursesByIdURI
+	if err := c.ShouldBindUri(&uri); err != nil {
+		_ = c.Error(tools.RequestError{
+			Err:           err,
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid URI",
+		})
+		return
+	}
+
+	// watchedStateData is used by the client to track the which VoDs are watched.
+	type watchedStateData struct {
+		ID        uint   `json:"streamID"`
+		Month     string `json:"month"`
+		Watched   bool   `json:"watched"`
+		Recording bool   `json:"recording"`
+	}
+
+	type Response struct {
+		Course       model.Course
+		WatchedState []watchedStateData `json:",omitempty"`
+	}
+
+	course, err := r.CoursesDao.GetCourseById(c, uri.ID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusBadRequest,
+				CustomMessage: "can't find course",
+			})
+		} else {
+			sentry.CaptureException(err)
+			_ = c.Error(tools.RequestError{
+				Err:           err,
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can't retrieve course",
+			})
+		}
+		return
+	}
+
+	response := Response{Course: course}
+	if tumLiveContext.User != nil {
+		streamsWithWatchState, err := r.StreamsDao.GetStreamsWithWatchState(course.ID, (*tumLiveContext.User).ID)
+		if err != nil {
+			sentry.CaptureException(err)
+			_ = c.Error(tools.RequestError{
+				Err:           err,
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "loading streamsWithWatchState and progresses for a given course and user failed",
+			})
+		}
+
+		course.Streams = streamsWithWatchState // Update the course streams to contain the watch state.
+
+		var clientWatchState = make([]watchedStateData, 0)
+		for _, s := range streamsWithWatchState {
+			clientWatchState = append(clientWatchState, watchedStateData{
+				ID:        s.Model.ID,
+				Month:     s.Start.Month().String(),
+				Watched:   s.Watched,
+				Recording: s.Recording,
+			})
+		}
+
+		response = Response{Course: course, WatchedState: clientWatchState}
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {
+	if user != nil {
+		for _, c := range user.Courses {
+			if c.ID == course.ID {
+				return true
+			}
+		}
+		return user.IsEligibleToWatchCourse(course)
+	}
+	return false
 }
 
 func (r coursesRoutes) uploadVOD(c *gin.Context) {

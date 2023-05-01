@@ -1,4 +1,4 @@
-import { Delete, getData, postData, putData, Time } from "./global";
+import { Time } from "./global";
 import { getPlayers } from "./TUMLiveVjs";
 import { AddBookmarkRequest, Bookmark, UpdateBookmarkRequest } from "./data-store/bookmarks";
 import { DataStore } from "./data-store/data-store";
