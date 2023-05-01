@@ -163,7 +163,7 @@ export function context() {
         getLiveToday() {
             const today = new Date();
             const eq = (a: Date, b: Date) =>
-                a.getDay() === b.getDay() && a.getMonth() == b.getMonth() && a.getFullYear() === b.getFullYear();
+                a.getDate() === b.getDate() && a.getMonth() == b.getMonth() && a.getFullYear() === b.getFullYear();
             return this.userCourses
                 .filter((c) => c.NextLecture.ID !== 0)
                 .filter((c) => eq(today, new Date(c.NextLecture.Start)));
