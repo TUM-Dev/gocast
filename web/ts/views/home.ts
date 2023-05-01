@@ -10,6 +10,7 @@ export enum Views {
     Main,
     UserCourses,
     PublicCourses,
+    Course,
 }
 
 type History = {
@@ -23,6 +24,7 @@ export function context() {
     return {
         term: url.searchParams.get("term") ?? undefined,
         year: +url.searchParams.get("year"),
+        slug: url.searchParams.get("slug") ?? undefined,
         view: +url.searchParams.get("view") ?? Views.Main,
 
         serverNotifications: [],
@@ -31,7 +33,6 @@ export function context() {
         currentSemesterIndex: -1,
         selectedSemesterIndex: -1,
 
-        livestreams: [] as Livestream[],
         publicCourses: [] as Course[],
         userCourses: [] as Course[],
         liveToday: [] as Course[],
@@ -59,13 +60,11 @@ export function context() {
                       this.loadServerNotifications(),
                       this.loadSemesters(),
                       this.loadPublicCourses(),
-                      this.loadLivestreams(),
                       this.loadUserCourses(),
                   ]
                 : [this.loadPublicCourses(), this.loadUserCourses()];
             this.load(promises).then(() => {
-                this.nothingToDo =
-                    this.livestreams.length === 0 && this.liveToday.length === 0 && this.recently.length === 0;
+                this.nothingToDo = this.liveToday.length === 0 && this.recently.length === 0;
             });
             promises[promises.length - 1].then(() => {
                 this.recently.set(this.getRecently());
@@ -113,6 +112,10 @@ export function context() {
             this.pushHistory(this.year, this.term, Views.PublicCourses);
         },
 
+        showCourse() {
+            this.switchView(Views.Course);
+        },
+
         switchView(view: Views) {
             this.view = view;
             this.navigation.toggle(false);
@@ -136,10 +139,6 @@ export function context() {
                 this.year = res.Current.Year;
                 this.term = res.Current.TeachingTerm;
             }
-        },
-
-        async loadLivestreams() {
-            this.livestreams = await CoursesAPI.getLivestreams();
         },
 
         async loadPublicCourses() {

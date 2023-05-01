@@ -142,7 +142,7 @@
                 <i class="fa-solid fa-calendar"></i>
                 Semesters
             </header>
-            <span class="tum-live-side-navigation-group-item mb-1 border-l-4 bg-blue-100/50 border-blue-500/50 dark:bg-indigo-500/25 dark:border-indigo-600/50"
+            <span class="tum-live-side-navigation-group-item hover mb-1 border-l-4 bg-blue-100/50 border-blue-500/50 dark:bg-indigo-500/25 dark:border-indigo-600/50"
                   x-text="semesters[selectedSemesterIndex]?.FriendlyString()"></span>
             <template x-if="navigation.getChild('allSemesters').value">
                 <template x-for="(s, i) in semesters">
@@ -165,7 +165,7 @@
                     My Courses
                 </header>
                 <template x-for="(course, i) in userCourses.slice(0, 8)" :key="course.ID">
-                    <a class="tum-live-side-navigation-group-item"
+                    <a class="tum-live-side-navigation-group-item hover"
                        :href="course.URL()"
                        x-text="course.Name">
                     </a>
@@ -185,7 +185,7 @@
                 Public Courses
             </header>
             <template x-for="(course, i) in publicCourses.slice(0, 5)" :key="course.ID">
-                <a class="tum-live-side-navigation-group-item"
+                <a class="tum-live-side-navigation-group-item hover"
                    :href="course.URL()"
                    x-text="course.Name">
                 </a>
@@ -277,6 +277,9 @@
                 </article>
             </article>
         </template>
+        <template x-if="view === home.Views.Course">
+            <article id = "course-view" x-data=""></article>
+        </template>
         <template x-if="view === home.Views.Main">
             <article id="main-view" class="relative min-h-full">
                 {{if $user}}
@@ -295,9 +298,9 @@
                     </div>
                 </template>
 
-                <div class="tum-live-content-grid">
+                <div class="tum-live-content-grid" x-data="home.livestreams()">
                     <!-- Livestreams -->
-                    <template x-if="livestreams.length > 0">
+                    <template x-if="hasLivestreams() > 0">
                         <article id="livestreams" class="tum-live-content-grid-item">
                             <h3 class="py-1 mx-3 bg-danger text-white text-sm w-fit uppercase rounded animate-pulse">
                                 Live</h3>
