@@ -2,6 +2,8 @@ package web
 
 import (
 	"embed"
+	"github.com/getsentry/sentry-go"
+	log "github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
 	"os"
@@ -55,7 +57,7 @@ func ConfigGinRouter(router *gin.Engine) {
 	configCourseRoute(router)
 }
 
-func configGinStaticRouter(router gin.IRoutes) {
+func configGinStaticRouter(router *gin.Engine) {
 	router.Static("/public", tools.Cfg.Paths.Static)
 
 	if VersionTag != "development" {
@@ -126,6 +128,7 @@ func configMainRoute(router *gin.Engine) {
 	streamGroup.GET("/w/:slug/:streamID/:version", routes.WatchPage)
 	streamGroup.GET("/w/:slug/:streamID/chat/popup", routes.PopUpChat)
 	router.GET("/", routes.MainPage)
+	router.GET("/new", routes.home)
 	router.GET("/semester/:year/:term", routes.MainPage)
 	router.GET("/healthcheck", routes.HealthCheck)
 	router.GET("/jwtPubKey", routes.JWTPubKey)
@@ -149,6 +152,28 @@ func configMainRoute(router *gin.Engine) {
 
 type mainRoutes struct {
 	dao.DaoWrapper
+}
+
+func (r mainRoutes) home(c *gin.Context) {
+	tName := sentry.TransactionName("GET /")
+	spanMain := sentry.StartSpan(c.Request.Context(), "HomePageHandler", tName)
+	defer spanMain.Finish()
+
+	isFresh, err := IsFreshInstallation(c, r.UsersDao)
+	if err != nil {
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "error.gohtml", nil)
+		return
+	}
+	if isFresh {
+		_ = templateExecutor.ExecuteTemplate(c.Writer, "onboarding.gohtml", NewIndexData())
+		return
+	}
+
+	indexData := NewIndexDataWithContext(c)
+
+	if err := templateExecutor.ExecuteTemplate(c.Writer, "home.gohtml", indexData); err != nil {
+		log.WithError(err).Errorf("Could not execute template: 'home.gohtml'")
+	}
 }
 
 func configCourseRoute(router *gin.Engine) {

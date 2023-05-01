@@ -85,6 +85,37 @@ func (s Stream) GetVodFiles() []DownloadableVod {
 	return dFiles
 }
 
+func (s Stream) GetLGThumbnail() (string, error) {
+	var thumbs = map[string]string{}
+	for _, file := range s.Files {
+		if file.Type == FILETYPE_THUMB_LG_CAM_PRES {
+			thumbs["CAM_PRES"] = file.Path
+		}
+		if file.Type == FILETYPE_THUMB_LG_COMB {
+			thumbs["COMB"] = file.Path
+		}
+		if file.Type == FILETYPE_THUMB_LG_CAM {
+			thumbs["CAM"] = file.Path
+		}
+		if file.Type == FILETYPE_THUMB_LG_PRES {
+			thumbs["PRES"] = file.Path
+		}
+	}
+	if val, ok := thumbs["CAM_PRES"]; ok {
+		return val, nil
+	}
+	if val, ok := thumbs["COMB"]; ok {
+		return val, nil
+	}
+	if val, ok := thumbs["CAM"]; ok {
+		return val, nil
+	}
+	if val, ok := thumbs["PRES"]; ok {
+		return val, nil
+	}
+	return "", fmt.Errorf("no large thumbnail found")
+}
+
 // GetThumbIdForSource returns the id of file that stores the thumbnail sprite for a specific source type.
 func (s Stream) GetThumbIdForSource(source string) uint {
 	var fileType FileType
@@ -297,4 +328,20 @@ func (s Stream) Attachments() []File {
 		}
 	}
 	return attachments
+}
+
+type StreamDTO struct {
+	ID    uint
+	Name  string
+	Start time.Time
+	End   time.Time
+}
+
+func (s Stream) ToDTO() StreamDTO {
+	return StreamDTO{
+		ID:    s.ID,
+		Name:  s.Name,
+		Start: s.Start,
+		End:   s.End,
+	}
 }

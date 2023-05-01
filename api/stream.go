@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live/tools/pathprovider"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -40,8 +41,14 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 		{
 			// All User Endpoints
 			streamById.GET("/sections", routes.getVideoSections)
-			streamById.GET("/thumbs/:fid", routes.getThumbs)
 			streamById.GET("/subtitles/:lang", routes.getSubtitles)
+
+			thumbs := streamById.Group("/thumbs")
+			{
+				thumbs.GET(":fid", routes.getThumbs)
+				thumbs.GET("/live", routes.getLiveThumbs)
+				thumbs.GET("/vod", routes.getVODThumbs)
+			}
 		}
 		{
 			// Admin-Only Endpoints
@@ -124,6 +131,25 @@ func (r streamRoutes) getThumbs(c *gin.Context) {
 		return
 	}
 	sendDownloadFile(c, file, tumLiveContext)
+}
+
+func (r streamRoutes) getVODThumbs(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	thumb, err := tumLiveContext.Stream.GetLGThumbnail()
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	c.File(thumb)
+}
+
+func (r streamRoutes) getLiveThumbs(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	streamId := strconv.Itoa(int(tumLiveContext.Stream.ID))
+	path := pathprovider.LiveThumbnail(streamId)
+	c.File(path)
 }
 
 func (r streamRoutes) getSubtitles(c *gin.Context) {

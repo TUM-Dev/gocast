@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/joschahenningsen/thumbgen"
 	"net"
 	"os"
 	"os/exec"
@@ -138,6 +139,14 @@ func (s server) DeleteSectionImage(ctx context.Context, request *pb.DeleteSectio
 		return &pb.Status{Ok: false}, err
 	}
 	return &pb.Status{Ok: true}, err
+}
+
+func (s server) CombineThumbnails(ctx context.Context, request *pb.CombineThumbnailsRequest) (*pb.CombineThumbnailsResponse, error) {
+	err := thumbgen.CombineThumbs(request.GetPrimaryThumbnail(), request.GetSecondaryThumbnail(), request.GetPath())
+	if err != nil {
+		return nil, err
+	}
+	return &pb.CombineThumbnailsResponse{FilePath: request.Path}, nil
 }
 
 // InitApi Initializes api endpoints

@@ -23,7 +23,7 @@ type CoursesDao interface {
 	GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model.Stream, error)
 	GetAllCourses() ([]model.Course, error)
 	GetCourseForLecturerIdByYearAndTerm(c context.Context, year int, term string, userId uint) ([]model.Course, error)
-	GetAdministeredCoursesByUserId(ctx context.Context, userid uint) (courses []model.Course, err error)
+	GetAdministeredCoursesByUserId(ctx context.Context, userid uint, teachingTerm string, year int) (courses []model.Course, err error)
 	GetAllCoursesForSemester(year int, term string, ctx context.Context) (courses []model.Course)
 	GetPublicCourses(year int, term string) (courses []model.Course, err error)
 	GetPublicAndLoggedInCourses(year int, term string) (courses []model.Course, err error)
@@ -96,12 +96,14 @@ func (d coursesDao) GetAllCourses() ([]model.Course, error) {
 
 func (d coursesDao) GetCourseForLecturerIdByYearAndTerm(c context.Context, year int, term string, userId uint) ([]model.Course, error) {
 	var res []model.Course
-	err := DB.Model(&model.Course{}).Find(&res, "user_id = ? AND year = ? AND teaching_term = ?", userId, year, term).Error
+	err := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
+		return db.Order("start asc")
+	}).Model(&model.Course{}).Find(&res, "user_id = ? AND year = ? AND teaching_term = ?", userId, year, term).Error
 	return res, err
 }
 
-func (d coursesDao) GetAdministeredCoursesByUserId(ctx context.Context, userid uint) (courses []model.Course, err error) {
-	cachedCourses, found := Cache.Get(fmt.Sprintf("coursesByUserID%v", userid))
+func (d coursesDao) GetAdministeredCoursesByUserId(ctx context.Context, userid uint, teachingTerm string, year int) (courses []model.Course, err error) {
+	cachedCourses, found := Cache.Get(fmt.Sprintf("coursesByUserID%v-%d-%s", userid, year, teachingTerm))
 	if found {
 		return cachedCourses.([]model.Course), nil
 	}
@@ -114,7 +116,7 @@ func (d coursesDao) GetAdministeredCoursesByUserId(ctx context.Context, userid u
 	if isAdmin {
 		dbErr := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
 			return db.Order("start asc")
-		}).Find(&foundCourses).Error
+		}).Find(&foundCourses, "(teaching_term = ? and year = ?) or ? = 0", teachingTerm, year, year).Error
 		if dbErr == nil {
 			Cache.SetWithTTL(fmt.Sprintf("coursesByUserID%v", userid), foundCourses, 1, time.Minute)
 		}
@@ -122,16 +124,16 @@ func (d coursesDao) GetAdministeredCoursesByUserId(ctx context.Context, userid u
 	}
 	dbErr := DB.Preload("Streams", func(db *gorm.DB) *gorm.DB {
 		return db.Order("start asc")
-	}).Find(&foundCourses, "user_id = ?", userid).Error
+	}).Find(&foundCourses, "user_id = ? and ((teaching_term = ? and year = ?) or ? = 0)", userid, teachingTerm, year, year).Error
 
 	if err != nil && errors.Is(dbErr, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
 
 	var administeredCourses []model.Course
-	err = DB.Model(&model.Course{}).
+	err = DB.Preload("Streams").Model(&model.Course{}).
 		Joins("JOIN course_admins ON courses.id = course_admins.course_id").
-		Where("course_admins.user_id = ? AND courses.deleted_at IS NULL", userid).
+		Where("course_admins.user_id = ? AND courses.deleted_at IS NULL AND ((teaching_term = ? and year = ?) or ? = 0)", userid, teachingTerm, year, year).
 		Find(&administeredCourses).Error
 	if err != nil {
 		return nil, err
@@ -139,7 +141,7 @@ func (d coursesDao) GetAdministeredCoursesByUserId(ctx context.Context, userid u
 	foundCourses = append(foundCourses, administeredCourses...)
 	foundCourses = commons.Unique(foundCourses, func(c model.Course) uint { return c.ID })
 	if dbErr == nil {
-		Cache.SetWithTTL(fmt.Sprintf("coursesByUserID%v", userid), foundCourses, 1, time.Minute)
+		Cache.SetWithTTL(fmt.Sprintf("coursesByUserID%v-%d-%s", userid, year, teachingTerm), foundCourses, 1, time.Minute)
 	}
 	return foundCourses, dbErr
 }

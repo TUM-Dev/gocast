@@ -5,19 +5,56 @@
         <div id="popoverContent"
              class="cursor-auto absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 p-4 bg-white dark:bg-secondary-lighter rounded z-40 border dark:border-gray-500 border-gray-300 hidden"></div>
     </div>
-    <div x-data="{ lectureHalls: [0, {{range .}}{{.Model.ID}}, {{end}}] }"
-         x-init="$watch('lectureHalls', v=>admin.refetchCalendar(lectureHalls))"
-         class="text-3">
-        <label class="mr-4">
-            <input type="checkbox" checked @change="e=>{if ($el.checked){lectureHalls.push(0)}else{lectureHalls=lectureHalls.filter(i=>i!==0)}}">
-            Selfstreaming
-        </label>
-        {{range .}}
-            {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.LectureHall*/ -}}
-            <label class="mr-4">
-                <input type="checkbox" checked @change="e=>{if ($el.checked){lectureHalls.push({{.Model.ID}})}else{lectureHalls=lectureHalls.filter(i=>i!=={{.Model.ID}})}}">
-                {{.Name}}
-            </label>
-         {{end}}
-    </div>
+    <div x-data="{ show:false }" x-on:showlhselect.window="show=true">
+            <template x-if="show">
+            <div x-data="{ lectureHalls: [0, {{range .}}{{.Model.ID}}, {{end}}], allSelected: true }"
+                 x-init="$watch('lectureHalls', v=>admin.refetchCalendar(lectureHalls))"
+                 class="fixed top-0 backdrop-blur-sm left-0 right-0 z-50 w-full p-4 pt-40 overflow-x-hidden overflow-y-auto h-[calc(100%-1rem)] max-h-full">
+                <!-- Modal content -->
+                <div class="mx-auto relative bg-white rounded-lg shadow dark:bg-gray-700 max-w-xl">
+                    <!-- Modal header -->
+                    <div class="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-600">
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                            Select Lecture Halls
+                        </h3>
+                        <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white" @click="show=false">
+                            <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                            <span class="sr-only">Close modal</span>
+                        </button>
+                    </div>
+                    <!-- Modal body -->
+                    <div class="p-6 space-y-6">
+                        <div class="text-3">
+                            <label class="block mb-2">
+                                <input type="checkbox" checked @change="e=>{admin.toggleAllLectureHalls()}">
+                                <span class="font-semibold">Toggle all</span>
+                            </label>
+                            <label class="block">
+                                <input type="checkbox" class="lh-toggle" checked @change="e=>{if ($el.checked){lectureHalls.push(0)}else{lectureHalls=lectureHalls.filter(i=>i!==0)}}">
+                                Selfstreaming
+                            </label>
+                            {{range .}}
+                                {{- /*gotype: github.com/joschahenningsen/TUM-Live/model.LectureHall*/ -}}
+                                <label class="block">
+                                    <input type="checkbox" checked class="lh-toggle" @change="e=>{if ($el.checked){lectureHalls.push({{.Model.ID}})}else{lectureHalls=lectureHalls.filter(i=>i!=={{.Model.ID}})}}">
+                                    {{.Name}}
+                                </label>
+                            {{end}}
+                        </div>
+
+
+                    </div>
+                    <!-- Modal footer -->
+                    <div class="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
+                        <button type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                                @click="show=false">
+                            Ok
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+            </template>
+        </div>
+
 {{end}}

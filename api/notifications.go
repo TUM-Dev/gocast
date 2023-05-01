@@ -16,6 +16,7 @@ func configNotificationsRouter(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	notifications := r.Group("/api/notifications")
 	{
 		notifications.GET("/", routes.getNotifications)
+		notifications.GET("/server", routes.getServerNotifications)
 		notifications.POST("/", tools.Admin, routes.createNotification)
 		notifications.DELETE("/:id", tools.Admin, routes.deleteNotification)
 	}
@@ -48,6 +49,18 @@ func (r notificationRoutes) getNotifications(c *gin.Context) {
 			Err:           err,
 		})
 		return
+	}
+	c.JSON(http.StatusOK, notifications)
+}
+
+func (r notificationRoutes) getServerNotifications(c *gin.Context) {
+	notifications, err := r.ServerNotificationDao.GetCurrentServerNotifications()
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not bind body",
+			Err:           err,
+		})
 	}
 	c.JSON(http.StatusOK, notifications)
 }
