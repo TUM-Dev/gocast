@@ -89,7 +89,7 @@ func (d lectureHallsDao) GetStreamsForLectureHallIcal(userId uint, lectureHalls 
 			"streams.start, streams.end, courses.name as course_name").
 		Where("(streams.start BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) and DATE_ADD(NOW(), INTERVAL 3 MONTH)) "+
 			"AND (courses.user_id = ? OR 0 = ? OR course_admins.user_id = ?) AND courses.deleted_at IS NULL "+
-			"AND (streams.lecture_hall_id IN ? OR (0 in ? AND streams.lecture_hall_id is null)) OR ?", userId, userId, userId, lectureHalls, lectureHalls, all).
+			"AND (streams.lecture_hall_id IN ? OR (0 in ? AND streams.lecture_hall_id is null) OR ?)", userId, userId, userId, lectureHalls, lectureHalls, all).
 		Group("streams.id").
 		Scan(&res).Error
 	return res, err
