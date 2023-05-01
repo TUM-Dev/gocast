@@ -102,7 +102,7 @@
     @apply text-sm rounded-lg text-left px-3 py-2
 }
 
-.tum-live-side-navigation-group-item ~ .hover {
+.hover {
     @apply hover:bg-gray-100 dark:hover:bg-gray-800
 }
 
