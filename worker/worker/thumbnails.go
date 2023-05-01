@@ -54,7 +54,7 @@ func createVideoThumbnail(ctx *StreamContext, source string) error {
 		return err
 	}
 	defer file.Close()
-	_, err = io.Copy(thumb, file)
+	_, err = io.Copy(file, thumb)
 	if err != nil {
 		return err
 	}

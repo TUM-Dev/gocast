@@ -88,6 +88,9 @@ func (s Stream) GetVodFiles() []DownloadableVod {
 func (s Stream) GetLGThumbnail() (string, error) {
 	var thumbs = map[string]string{}
 	for _, file := range s.Files {
+		if file.Type == FILETYPE_THUMB_LG_CAM_PRES {
+			thumbs["CAM_PRES"] = file.Path
+		}
 		if file.Type == FILETYPE_THUMB_LG_COMB {
 			thumbs["COMB"] = file.Path
 		}
@@ -97,6 +100,9 @@ func (s Stream) GetLGThumbnail() (string, error) {
 		if file.Type == FILETYPE_THUMB_LG_PRES {
 			thumbs["PRES"] = file.Path
 		}
+	}
+	if val, ok := thumbs["CAM_PRES"]; ok {
+		return val, nil
 	}
 	if val, ok := thumbs["COMB"]; ok {
 		return val, nil
