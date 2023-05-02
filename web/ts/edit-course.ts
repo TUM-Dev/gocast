@@ -511,6 +511,7 @@ export function showHideUnits(id: number) {
 
 export function createLectureForm(args: { s: [] }) {
     return {
+        currentTab: 0,
         formData: {
             title: "",
             lectureHallId: 0,
