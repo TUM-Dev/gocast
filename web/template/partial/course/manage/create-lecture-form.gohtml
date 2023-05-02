@@ -32,8 +32,8 @@
             <div x-show="currentTab === 0" class="flex">
                 <ul class="w-full">
                     <li class="mb-2">
-                        <input type="radio" id="hosting-small" name="hosting" value="hosting-small" class="hidden peer" required>
-                        <label for="hosting-small" class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 dark:peer-checked:text-blue-500 peer-checked:border-blue-600 peer-checked:text-blue-600 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500">
+                        <input type="radio" id="type-live" name="type" value="live" x-model="formData.type" class="hidden peer" required>
+                        <label for="type-live" class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 dark:peer-checked:text-white dark:peer-checked:border-white peer-checked:border-blue-600 peer-checked:text-blue-600 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500">
                             <div class="block">
                                 <div class="w-full text-lg font-semibold">Livestream</div>
                                 <div class="w-full">From Lecture-Hall or Self-Stream</div>
@@ -41,10 +41,8 @@
                         </label>
                     </li>
                     <li>
-                        <input type="radio" id="hosting-big" name="hosting" value="hosting-big" class="hidden peer">
-                        <input type="checkbox" x-model="formData.vodup" @change="(v) => v && (formData.recurring = false)"
-                               class="w-auto">
-                        <label for="hosting-big" class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 dark:peer-checked:text-blue-500 peer-checked:border-blue-600 peer-checked:text-blue-600 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500">
+                        <input type="radio" id="type-vod" name="type" value="vod" x-model="formData.type" class="hidden peer" required>
+                        <label for="type-vod" class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 dark:peer-checked:text-white dark:peer-checked:border-white peer-checked:border-blue-600 peer-checked:text-blue-600 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500">
                             <div class="block">
                                 <div class="w-full text-lg font-semibold">Video-on-demand</div>
                                 <div class="w-full">Upload a video-on-demand</div>
