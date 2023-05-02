@@ -38,7 +38,7 @@ func initConfig() {
 	viper.AddConfigPath(".")
 	err := viper.ReadInConfig()
 	if err != nil {
-		if err == err.(viper.ConfigFileNotFoundError) {
+		if errors.Is(err, viper.ConfigFileNotFoundError{}) {
 			log.WithError(err).Warn("tools.config.LoadConfig: can't find config file")
 		} else {
 			panic(fmt.Errorf("fatal error config file: %v", err))
