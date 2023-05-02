@@ -21,7 +21,7 @@
                 </div>
             </div>
             <div x-cloak class="h-[85%]">
-                <div class="relative grid gap-1 overflow-y-scroll pr-3 max-h-full">
+                <div class="relative grid gap-1 overflow-y-scroll max-h-full">
                     <template x-for="(elem, i) in playlist.list.filter((v) => !v.liveNow)" :key="elem.streamId">
                         <a
                             :href="`/w/${elem.courseSlug}/${elem.streamId}`"
