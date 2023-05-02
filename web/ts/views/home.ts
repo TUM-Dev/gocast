@@ -27,8 +27,6 @@ export function context() {
         slug: url.searchParams.get("slug") ?? undefined,
         view: +url.searchParams.get("view") ?? Views.Main,
 
-        serverNotifications: [],
-
         semesters: [] as Semester[],
         currentSemesterIndex: -1,
         selectedSemesterIndex: -1,
@@ -56,12 +54,7 @@ export function context() {
          */
         reload(full = false) {
             const promises = full
-                ? [
-                      this.loadServerNotifications(),
-                      this.loadSemesters(),
-                      this.loadPublicCourses(),
-                      this.loadUserCourses(),
-                  ]
+                ? [this.loadSemesters(), this.loadPublicCourses(), this.loadUserCourses()]
                 : [this.loadPublicCourses(), this.loadUserCourses()];
             this.load(promises).then(() => {
                 this.nothingToDo = this.liveToday.length === 0 && this.recently.length === 0;
@@ -119,10 +112,6 @@ export function context() {
         switchView(view: Views) {
             this.view = view;
             this.navigation.toggle(false);
-        },
-
-        async loadServerNotifications() {
-            this.serverNotifications = await NotificationAPI.getServerNotifications();
         },
 
         async loadSemesters() {

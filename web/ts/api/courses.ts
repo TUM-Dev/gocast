@@ -6,6 +6,9 @@ const DEFAULT_LECTURE_NAME = "Untitled lecture";
 export class Stream {
     readonly ID: number;
     readonly Name: string;
+    readonly IsRecording: boolean;
+    readonly IsPlanned: boolean;
+    readonly Description: string;
     readonly End: string;
     readonly Start: string;
 
@@ -21,11 +24,30 @@ export class Stream {
         return new Date(this.Start).toLocaleString();
     }
 
+    public MonthOfStart(): string {
+        return new Date(this.Start).toLocaleString("default", { month: "long" });
+    }
+
+    public DayOfStart(): number {
+        return new Date(this.Start).getDate();
+    }
+
     public UntilString(): string {
         const end = new Date(this.End);
         const hours = end.getHours();
         const minutes = end.getMinutes();
         return `Until ${hours}:${minutes < 10 ? minutes + "0" : minutes}`;
+    }
+
+    public CompareStart(other: Stream) {
+        const a = new Date(this.Start);
+        const b = new Date(other.Start);
+        if (a < b) {
+            return 1;
+        } else if (b > a) {
+            return -1;
+        }
+        return 0;
     }
 }
 
@@ -40,10 +62,18 @@ export class Course {
     readonly NextLecture?: Stream;
     readonly LastLecture?: Stream;
 
+    private readonly Streams?: Stream[];
+
+    readonly Recordings?: Stream[];
+    readonly Planned?: Stream[];
+
     static New(obj): Course {
         const c = Object.assign(new Course(), obj);
-        c.NextLecture = c.NextLecture ? Stream.New(obj.NextLecture) : undefined;
-        c.LastLecture = c.LastLecture ? Stream.New(obj.LastLecture) : undefined;
+        c.NextLecture = obj.NextLecture ? Stream.New(obj.NextLecture) : undefined;
+        c.LastLecture = obj.LastLecture ? Stream.New(obj.LastLecture) : undefined;
+        c.Streams = obj.Streams ? obj.Streams.map((s) => Stream.New(s)) : [];
+        c.Recordings = c.Streams.filter((s) => s.IsRecording);
+        c.Planned = c.Streams.filter((s) => s.IsPlanned);
         return c;
     }
 
@@ -52,11 +82,15 @@ export class Course {
     }
 
     public LastLectureURL(): string {
-        return `/w/${this.Slug}/${this.LastLecture.ID}`;
+        return this.WatchURL(this.LastLecture.ID);
     }
 
     public NextLectureURL(): string {
-        return `/w/${this.Slug}/${this.NextLecture.ID}`;
+        return this.WatchURL(this.NextLecture.ID);
+    }
+
+    public WatchURL(id: number): string {
+        return `/w/${this.Slug}/${id}`;
     }
 
     public IsHidden(): boolean {
@@ -104,6 +138,10 @@ export const CoursesAPI = {
 
     async getUsers(year?: number, term?: string): Promise<object> {
         return get(`/api/courses/users${this.query(year, term)}`).then((courses) => courses.map((c) => Course.New(c)));
+    },
+
+    async get(year: number, term: string, slug: string) {
+        return get(`/api/courses/${year}/${term}/${slug}`).then((course) => Course.New(course));
     },
 
     query: (year?: number, term?: string) =>

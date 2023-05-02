@@ -210,13 +210,6 @@
         </footer>
     </section>
     <article class="text-3 p-4 grow" :class="{'hidden' : navigation.value}">
-        <template x-for="(n, i) in serverNotifications">
-            <div class="tum-live-notification mx-3 mb-3"
-                 :class="n.Warn ? 'tum-live-notification-warn' :'tum-live-notification-info'">
-                <i class="icon fa-solid" :class="n.Warn ? 'fa-triangle-exclamation' : 'fa-circle-info'"></i>
-                <span class = "title" x-html="n.Text"></span>
-            </div>
-        </template>
         <template x-if="view === home.Views.PublicCourses">
             <article id="public-courses" class="tum-live-course-list">
                 <header>
@@ -278,10 +271,130 @@
             </article>
         </template>
         <template x-if="view === home.Views.Course">
-            <article id = "course-view" x-data=""></article>
+            <article id="course-view" class="px-6 pb-5" x-data="home.course(2021,'W', 'fpv')">
+                <header class = "flex items-center mb-3">
+                    <h1 x-text="course.Name" class="font-bold"></h1>
+                    <a href = "#" class = "tum-live-button tum-live-button-secondary flex w-10 h-10 ml-2">
+                        <i class = "fa-solid fa-calendar m-auto"></i>
+                    </a>
+                </header>
+                <section class="flex flex-col lg:flex-row border-b dark:border-gray-800 py-3" x-data="home.livestreams((s) => s.Course.ID === course.ID)">
+                    <template x-if="hasLivestreams() > 0">
+                        <section class="flex-grow">
+                            <template x-for="livestream in livestreams" :key="livestream.Stream.ID">
+                                <article class="tum-live-stream-row"
+                                         :id="`livestream-${livestream.Stream.ID}`">
+                                    <div class="aspect-video h-40 relative">
+                                        <div class="absolute right-2 bottom-2 flex items-center space-x-2 text-xs font-semibold text-white z-40">
+                                            <template x-if="livestream.InLectureHall()">
+                                                <a class="tum-live-badge bg-black"
+                                                   target="_blank"
+                                                   :href="livestream.LectureHall.ExternalURL">
+                                                    <i class="fas fa-location-pin"></i>
+                                                    <span x-text="livestream.LectureHall.Name"></span>
+                                                </a>
+                                            </template>
+                                            <span class="tum-live-badge bg-red-500 text-white uppercase">
+                                                    <i class="fa-solid fa-satellite-dish"></i>
+                                                    Live
+                                                </span>
+                                        </div>
+                                        <a :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`">
+                                            <div :style="`background-image:url('/api/stream/${livestream.Stream.ID}/thumbs/live')`"
+                                                 class="h-full tum-live-thumbnail"></div>
+                                        </a>
+                                    </div>
+                                    <div class="px-3">
+                                        <a class="title text-xl"
+                                           :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`"
+                                           x-text="livestream.Stream.Name"></a>
+                                        <span class="description text-sm mt-2"
+                                              x-text="livestream.Stream.Description"></span>
+                                        <span class="date text-sm" x-text="livestream.Stream.UntilString()"></span>
+                                    </div>
+                                </article>
+                            </template>
+                        </section>
+                    </template>
+                    <section class="">
+                        <template x-if="course.NextLecture.ID !== 0">
+                            <article class="flex flex-col items-center w-fit">
+                                <h6 class="mb-1 text-xs">Next lecture</h6>
+                                <div class="bg-white flex flex-col rounded-lg shadow-sm h-32 w-32 border dark:border-0">
+                                    <div class="flex justify-center bg-red-500 rounded-t-lg">
+                                    <span x-text="course.NextLecture.MonthOfStart()"
+                                          class="font-semibold text-white"></span>
+                                    </div>
+                                    <div class="flex flex-col flex-grow items-center justify-center text-black">
+                                        <span x-text="course.NextLecture.DayOfStart()" class="font-bold text-2xl"></span>
+                                    </div>
+                                    <div class = "flex items-center justify-center border-t py-2 h-fit">
+                                        <span class = "text-xs text-5">8:00</span>
+                                    </div>
+                                </div>
+                            </article>
+                        </template>
+                    </section>
+                </section>
+                <section class = "py-3">
+                    <header class = "mb-3">
+                        <button type="button" @click="sortNewestFirst()"
+                                class="tum-live-button tum-live-button-tertiary mr-2"
+                                :class="{'active' : isNewestFirst() }">
+                            Newest first
+                        </button>
+                        <button type="button" @click="sortOldestFirst()"
+                                class="tum-live-button tum-live-button-tertiary"
+                                :class="{'active' : isOldestFirst() }">
+                            Oldest first
+                        </button>
+                    </header>
+                    <article class="grid gap-3 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
+                        <template x-for="vod in courseStreams.get(compareStream(streamSortMode))">
+                            <article class="tum-live-stream lg:col-span-1 col-span-full">
+                                <a :href="course.WatchURL(vod.ID)" class="block mb-2">
+                                    <div :style="`background-image:url('/api/stream/${vod.ID}/thumbs/vod')`"
+                                         class="aspect-video tum-live-thumbnail">
+                                        <div :id="`vod-progress-${vod.ID}`" class="tum-live-thumbnail-progress">
+                                            <div>
+                                                <template x-if="vod.Progress !== undefined">
+                                                    <span :style="`width: ${vod.Progress.Percentage()}%`"
+                                                          :class="{'rounded-br-lg': vod.Progress.HasProgressOne()}"></span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                                <div class="px-1">
+                                    <a class="title" :href="course.WatchURL(vod.ID)" x-text="vod.Name"></a>
+                                    <span class="date text-xs" x-text="vod.FriendlyDateStart()"></span>
+                                </div>
+                            </article>
+                        </template>
+                    </article>
+                    <template x-if="courseStreams.hasNext()">
+                        <div class="flex flex-grow justify-center mt-3">
+                            <button class="tum-live-button tum-live-button-secondary" type="button"
+                                    @click="courseStreams.next()">
+                                <i class="fa-solid fa-angles-down mr-2"></i>
+                                More
+                            </button>
+                        </div>
+                    </template>
+                </section>
         </template>
         <template x-if="view === home.Views.Main">
             <article id="main-view" class="relative min-h-full">
+                <article x-data="home.serverNotifications()">
+                    <template x-for="(n, i) in serverNotifications">
+                        <div class="tum-live-notification mx-3 mb-3"
+                             :class="n.Warn ? 'tum-live-notification-warn' :'tum-live-notification-info'">
+                            <i class="icon fa-solid" :class="n.Warn ? 'fa-triangle-exclamation' : 'fa-circle-info'"></i>
+                            <span class="title" x-html="n.Text"></span>
+                        </div>
+                    </template>
+                </article>
+
                 {{if $user}}
                     {{if $user.Name}}
                         <h1 id="greeting" class="md:text-2xl text-xl font-bold mb-4 px-3">
@@ -305,7 +418,7 @@
                             <h3 class="py-1 mx-3 bg-danger text-white text-sm w-fit uppercase rounded animate-pulse">
                                 Live</h3>
                             <section class="grid xl:grid-cols-3 2xl:grid-cols-4 lg:grid-cols-2 grid-cols-1">
-                                <template x-for="(livestream, i) in livestreams" :key="livestream.Stream.ID">
+                                <template x-for="livestream in livestreams" :key="livestream.Stream.ID">
                                     <article class="tum-live-stream p-3 lg:col-span-1 col-span-full"
                                              :id="`livestream-${livestream.Stream.ID}`">
                                         <div class="aspect-video relative mb-2">
@@ -346,7 +459,7 @@
                         <article id="live-today" class="tum-live-content-grid-item">
                             <h3>Today</h3>
                             <section class="grid gap-3 px-5">
-                                <template x-for="(course, i) in liveToday" :key="course.ID">
+                                <template x-for="course in liveToday" :key="course.ID">
                                     <article class="border-b dark:border-gray-800 last:border-0 py-2 px-1">
                                         <a class="block text-3 font-semibold hover:underline" x-text="course.Name"
                                            :href="course.URL()"></a>
@@ -368,7 +481,7 @@
                         <article class="tum-live-content-grid-item" id="recent-vods">
                             <h3>Recent VODs</h3>
                             <section class="grid xl:grid-cols-4 2xl:grid-cols-5 lg:grid-cols-3 grid-cols-1">
-                                <template x-for="(course, i) in recently.get()" :key="course.ID">
+                                <template x-for="course in recently.get()" :key="course.ID">
                                     <article class="tum-live-stream lg:col-span-1 col-span-full p-3">
                                         <a :href="course.LastLectureURL()" class="block mb-2">
                                             <div :style="`background-image:url('/api/stream/${course.LastLecture.ID}/thumbs/vod')`"
@@ -395,10 +508,11 @@
                                 </template>
                             </section>
                             <template x-if="recently.hasNext()">
-                                <div class = "flex flex-grow justify-center">
-                                    <button class = "tum-live-button tum-live-button-secondary" type="button" @click="recently.next()">
+                                <div class="flex flex-grow justify-center">
+                                    <button class="tum-live-button tum-live-button-secondary" type="button"
+                                            @click="recently.next()">
                                         <i class="fa-solid fa-angles-down mr-2"></i>
-                                        Next
+                                        More
                                     </button>
                                 </div>
                             </template>
@@ -420,6 +534,25 @@
 </footer>
 </body>
 </html>
+
+{{define "bin"}}
+    <article class="flex justify-center lg:col-span-1 col-span-full px-3">
+        <template x-if="course.NextLecture.ID !== 0">
+            <article class="flex flex-col items-center w-fit">
+                <div class="bg-white flex flex-col rounded-lg shadow-sm h-20 w-20 border dark:border-0">
+                    <div class="flex justify-center bg-red-500 rounded-t-lg">
+                                    <span x-text="course.NextLecture.MonthOfStart()"
+                                          class="font-semibold text-white"></span>
+                    </div>
+                    <div class="flex flex-col flex-grow items-center justify-center text-black">
+                        <span x-text="course.NextLecture.DayOfStart()" class="font-bold text-2xl"></span>
+                    </div>
+                </div>
+                <h6 class="mt-2 text-xs">Next lecture</h6>
+            </article>
+        </template>
+    </article>
+{{end}}
 
 {{define "notifications"}}
     <div id="notifications"

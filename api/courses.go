@@ -40,10 +40,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 		api.GET("/courses/public", routes.getPublic)
 		api.GET("/courses/users", routes.getUsers)
 
-		courseById := api.Group("/courses/:id")
-		{
-			courseById.GET("", routes.getCourse)
-		}
+		api.GET("/courses/:year/:term/:slug", routes.getCourse)
 
 		lecturers := api.Group("")
 		{
@@ -245,10 +242,10 @@ func sortCourses(courses []model.Course) {
 }
 
 func (r coursesRoutes) getCourse(c *gin.Context) {
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-
 	type coursesByIdURI struct {
-		ID uint `uri:"id" binding:"required"`
+		Year int    `uri:"year" binding:"required"`
+		Term string `uri:"term" binding:"required"`
+		Slug string `uri:"slug" binding:"required"`
 	}
 
 	var uri coursesByIdURI
@@ -261,20 +258,12 @@ func (r coursesRoutes) getCourse(c *gin.Context) {
 		return
 	}
 
-	// watchedStateData is used by the client to track the which VoDs are watched.
-	type watchedStateData struct {
-		ID        uint   `json:"streamID"`
-		Month     string `json:"month"`
-		Watched   bool   `json:"watched"`
-		Recording bool   `json:"recording"`
-	}
-
 	type Response struct {
-		Course       model.Course
-		WatchedState []watchedStateData `json:",omitempty"`
+		Course  model.CourseDTO
+		Streams []model.StreamDTO
 	}
 
-	course, err := r.CoursesDao.GetCourseById(c, uri.ID)
+	course, err := r.CoursesDao.GetCourseBySlugYearAndTerm(c, uri.Slug, uri.Term, uri.Year)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			_ = c.Error(tools.RequestError{
@@ -292,34 +281,16 @@ func (r coursesRoutes) getCourse(c *gin.Context) {
 		return
 	}
 
-	response := Response{Course: course}
-	if tumLiveContext.User != nil {
-		streamsWithWatchState, err := r.StreamsDao.GetStreamsWithWatchState(course.ID, (*tumLiveContext.User).ID)
-		if err != nil {
-			sentry.CaptureException(err)
-			_ = c.Error(tools.RequestError{
-				Err:           err,
-				Status:        http.StatusInternalServerError,
-				CustomMessage: "loading streamsWithWatchState and progresses for a given course and user failed",
-			})
-		}
-
-		course.Streams = streamsWithWatchState // Update the course streams to contain the watch state.
-
-		var clientWatchState = make([]watchedStateData, 0)
-		for _, s := range streamsWithWatchState {
-			clientWatchState = append(clientWatchState, watchedStateData{
-				ID:        s.Model.ID,
-				Month:     s.Start.Month().String(),
-				Watched:   s.Watched,
-				Recording: s.Recording,
-			})
-		}
-
-		response = Response{Course: course, WatchedState: clientWatchState}
+	streams := course.Streams
+	streamsDTO := make([]model.StreamDTO, len(streams))
+	for i, s := range streams {
+		streamsDTO[i] = s.ToDTO()
 	}
 
-	c.JSON(http.StatusOK, response)
+	courseDTO := course.ToDTO()
+	courseDTO.Streams = streamsDTO
+
+	c.JSON(http.StatusOK, courseDTO)
 }
 
 func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {

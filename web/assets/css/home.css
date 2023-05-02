@@ -66,6 +66,14 @@
     @apply text-3 hover:bg-gray-100 dark:hover:bg-gray-800
 }
 
+.tum-live-button-tertiary {
+    @apply bg-gray-100 hover:bg-gray-800 hover:text-white dark:bg-gray-800 dark:hover:bg-gray-600
+}
+
+.tum-live-button-tertiary.active{
+    @apply bg-gray-800 text-white dark:bg-gray-600
+}
+
 .tum-live-icon-button {
     @apply flex justify-center items-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-white active:bg-gray-100/50 dark:active:bg-gray-700/50
 }
@@ -102,7 +110,7 @@
     @apply text-sm rounded-lg text-left px-3 py-2
 }
 
-.hover {
+.tum-live-side-navigation-group-item.hover {
     @apply hover:bg-gray-100 dark:hover:bg-gray-800
 }
 
@@ -142,8 +150,24 @@
     @apply block font-medium hover:underline
 }
 
-.tum-live-stream .date {
+.tum-live-stream .date, .tum-live-stream-row .date {
     @apply flex items-center font-light;
+}
+
+.tum-live-stream .description, .tum-live-stream-row .description {
+    @apply flex items-center;
+}
+
+.tum-live-stream-row {
+    @apply flex items-center
+}
+
+.tum-live-stream-row:not(:last-child){
+    @apply mb-2;
+}
+
+.tum-live-stream-row .title {
+    @apply block font-semibold hover:underline
 }
 
 .tum-live-menu {

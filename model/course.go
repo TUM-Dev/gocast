@@ -50,6 +50,7 @@ type CourseDTO struct {
 	Year         int
 	NextLecture  StreamDTO
 	LastLecture  StreamDTO
+	Streams      []StreamDTO
 }
 
 func (c *Course) ToDTO() CourseDTO {

@@ -10,8 +10,10 @@ export class Paginator<T> {
         this.index = 1;
     }
 
-    get(): T[] {
-        return this.list.slice(0, this.index * this.split_number);
+    get(compareFn?: (a: T, b: T) => number): T[] {
+        return compareFn
+            ? [...this.list].sort(compareFn).slice(0, this.index * this.split_number)
+            : [...this.list].slice(0, this.index * this.split_number);
     }
 
     set(list: T[]) {

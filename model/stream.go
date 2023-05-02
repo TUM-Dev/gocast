@@ -325,17 +325,23 @@ func (s Stream) Attachments() []File {
 }
 
 type StreamDTO struct {
-	ID    uint
-	Name  string
-	Start time.Time
-	End   time.Time
+	ID          uint
+	Name        string
+	Description string
+	IsRecording bool
+	IsPlanned   bool
+	Start       time.Time
+	End         time.Time
 }
 
 func (s Stream) ToDTO() StreamDTO {
 	return StreamDTO{
-		ID:    s.ID,
-		Name:  s.Name,
-		Start: s.Start,
-		End:   s.End,
+		ID:          s.ID,
+		Name:        s.Name,
+		Description: s.Description,
+		IsRecording: s.Recording,
+		IsPlanned:   s.IsPlanned(),
+		Start:       s.Start,
+		End:         s.End,
 	}
 }
