@@ -512,7 +512,9 @@ export function showHideUnits(id: number) {
 export function createLectureForm(args: { s: [] }) {
     return {
         currentTab: 0,
-        canContinue: false,
+        canGoBack: false,
+        canContinue: true,
+        onLastSlide: false,
         formData: {
             title: "",
             lectureHallId: 0,
@@ -534,12 +536,45 @@ export function createLectureForm(args: { s: [] }) {
         error: false,
         courseID: -1,
         invalidReason: "",
+        init() {
+            this.onUpdate();
+        },
+        next() {
+            this.currentTab++;
+            this.onUpdate();
+        },
+        prev() {
+            this.currentTab--;
+            this.onUpdate();
+        },
         updateType(vodup: boolean) {
             this.formData.vodup = vodup;
         },
-        updateCanContinue() {
+        onUpdate() {
             if (this.currentTab === 0) {
                 this.canContinue = true;
+                this.canGoBack = false;
+                this.onLastSlide = false;
+                return;
+            }
+
+            if (this.currentTab === 1) {
+                if (this.formData.vodup) {
+                    this.canContinue = true;
+                    this.canGoBack = true;
+                    this.onLastSlide = false;
+                } else {
+                    this.canContinue = true;
+                    this.canGoBack = true;
+                    this.onLastSlide = true;
+                }
+                return;
+            }
+
+            if (this.currentTab === 2) {
+                this.canContinue = true;
+                this.canGoBack = true;
+                this.onLastSlide = true;
                 return;
             }
         },

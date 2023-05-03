@@ -60,7 +60,7 @@
 
             <div x-show="currentTab === 1" class="grid grid-cols-2 space-x-2">
 
-                <span class="text-sm text-5">Options</span>
+                <span class="text-sm text-5 pl-2">Options</span>
                 <div class="col-span-full flex gap-3 px-2">
                     <label>
                         <input type="checkbox" :disabled="formData.premiere || formData.vodup" x-model="formData.recurring"
@@ -193,7 +193,10 @@
         </div>
 
         <div class="flex justify-center py-2">
-            <button :disabled="canContinue" class="btn" type="submit" @click="() => currentTab++">
+            <button :disabled="!canGoBack" class="btn mx-2" @click="() => prev()">
+                Back
+            </button>
+            <button :disabled="!canContinue" class="btn mx-2" @click="() => next()">
                 Continue
             </button>
         </div>
