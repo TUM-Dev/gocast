@@ -18,9 +18,9 @@
                     2
                 </span>
                 <span class="hidden sm:inline-flex sm:ml-2">Details</span>
-                <svg aria-hidden="true" class="w-4 h-4 ml-2 sm:ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+                <svg x-show="formData.vodup" aria-hidden="true" class="w-4 h-4 ml-2 sm:ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
             </li>
-            <li class="flex items-center " :class="currentTab === 2 ? `text-blue-500 dark:text-white` : `text-gray-400 dark:text-gray-500`">
+            <li x-show="formData.vodup" class="flex items-center " :class="currentTab === 2 ? `text-blue-500 dark:text-white` : `text-gray-400 dark:text-gray-500`">
                 <span class="flex items-center justify-center w-5 h-5 mr-2 text-xs border rounded-full shrink-0" :class="currentTab === 2 ? `border-blue-500 dark:border-white` : `border-gray-400 dark:border-gray-500`">
                     3
                 </span>
@@ -32,33 +32,36 @@
             <div x-show="currentTab === 0" class="flex py-4">
                 <ul class="w-full">
                     <li class="mb-2">
-                        <input type="radio" id="type-live" name="type" value="live" x-model="formData.type" class="hidden peer" required>
-                        <label for="type-live" class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 dark:peer-checked:text-white dark:peer-checked:border-white peer-checked:border-blue-600 peer-checked:text-blue-600 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500">
-                            <div class="block">
+                        <button
+                            @click="() => updateType(false)"
+                            class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
+                            :class="formData.vodup === true ? '' : 'dark:text-white dark:border-white border-blue-600 text-blue-600'"
+                        >
+                            <div class="block text-left">
                                 <div class="w-full text-lg font-semibold">Livestream</div>
                                 <div class="w-full">From Lecture-Hall or Self-Stream</div>
                             </div>
-                        </label>
+                        </button>
                     </li>
                     <li>
-                        <input type="radio" id="type-vod" name="type" value="vod" x-model="formData.type" class="hidden peer" required>
-                        <label for="type-vod" class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 dark:peer-checked:text-white dark:peer-checked:border-white peer-checked:border-blue-600 peer-checked:text-blue-600 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500">
-                            <div class="block">
+                        <button
+                                @click="() => updateType(true)"
+                                class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
+                                :class="formData.vodup !== true ? '' : 'dark:text-white dark:border-white border-blue-600 text-blue-600'"
+                        >
+                            <div class="block text-left">
                                 <div class="w-full text-lg font-semibold">Video-on-demand</div>
                                 <div class="w-full">Upload a video-on-demand</div>
                             </div>
-                        </label>
+                        </button>
                     </li>
                 </ul>
             </div>
 
-            <div x-show="currentTab === 1">
-                <div class="col-span-full flex gap-3">
-                    <label>
-                        <input type="checkbox" x-model="formData.vodup" @change="(v) => v && (formData.recurring = false)"
-                               class="w-auto">
-                        <span class="text-3">VoD Upload</span>
-                    </label>
+            <div x-show="currentTab === 1" class="grid grid-cols-2 space-x-2">
+
+                <span class="text-sm text-5">Options</span>
+                <div class="col-span-full flex gap-3 px-2">
                     <label>
                         <input type="checkbox" :disabled="formData.premiere || formData.vodup" x-model="formData.recurring"
                                class="w-auto">
@@ -110,25 +113,6 @@
                     </label>
                 </template>
 
-                <label x-show="formData.premiere || formData.vodup && !loading">
-                    <span class="text-sm text-5">Combined File (mp4, if possible h264)</span>
-                    <input type="file" accept="video/mp4" class="btn tl-choose-file"
-                           x-on:change="formData.file = Object.values($event.target.files)"
-                           :required="formData.vodup">
-                </label>
-
-                <label x-show="formData.premiere || formData.vodup && !loading">
-                    <span class="text-sm text-5">Optional: Slides File (mp4, if possible h264)</span>
-                    <input type="file" accept="video/mp4" class="btn tl-choose-file"
-                           x-on:change="formData.file = Object.values($event.target.files)">
-                </label>
-
-                <label x-show="formData.premiere || formData.vodup && !loading">
-                    <span class="text-sm text-5">Optional: Camera File (mp4, if possible h264)</span>
-                    <input type="file" accept="video/mp4" class="btn tl-choose-file"
-                           x-on:change="formData.file = Object.values($event.target.files)">
-                </label>
-
                 <div x-show="formData.recurring && !loading">
                     <h2 class="text-sm text-5">Interval</h2>
                     <label class="block">
@@ -169,6 +153,27 @@
                         </template>
                     </ul>
                 </div>
+            </div>
+            <div x-show="currentTab === 2" class="grid grid-cols-2">
+                <label x-show="formData.premiere || formData.vodup && !loading">
+                    <span class="text-sm text-5">Combined File (mp4, if possible h264)</span>
+                    <input type="file" accept="video/mp4" class="btn tl-choose-file"
+                           x-on:change="formData.file = Object.values($event.target.files)"
+                           :required="formData.vodup">
+                </label>
+
+                <label x-show="formData.premiere || formData.vodup && !loading">
+                    <span class="text-sm text-5">Optional: Slides File (mp4, if possible h264)</span>
+                    <input type="file" accept="video/mp4" class="btn tl-choose-file"
+                           x-on:change="formData.file = Object.values($event.target.files)">
+                </label>
+
+                <label x-show="formData.premiere || formData.vodup && !loading">
+                    <span class="text-sm text-5">Optional: Camera File (mp4, if possible h264)</span>
+                    <input type="file" accept="video/mp4" class="btn tl-choose-file"
+                           x-on:change="formData.file = Object.values($event.target.files)">
+                </label>
+
                 <div class="mt-4">
                     <button class="btn" type="submit" id="createLectureBtn">
                 <span x-show="!loading">
@@ -188,7 +193,7 @@
         </div>
 
         <div class="flex justify-center py-2">
-            <button class="btn" type="submit" @click="() => currentTab++">
+            <button :disabled="canContinue" class="btn" type="submit" @click="() => currentTab++">
                 Continue
             </button>
         </div>

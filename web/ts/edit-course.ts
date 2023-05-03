@@ -512,6 +512,7 @@ export function showHideUnits(id: number) {
 export function createLectureForm(args: { s: [] }) {
     return {
         currentTab: 0,
+        canContinue: false,
         formData: {
             title: "",
             lectureHallId: 0,
@@ -533,6 +534,15 @@ export function createLectureForm(args: { s: [] }) {
         error: false,
         courseID: -1,
         invalidReason: "",
+        updateType(vodup: boolean) {
+            this.formData.vodup = vodup;
+        },
+        updateCanContinue() {
+            if (this.currentTab === 0) {
+                this.canContinue = true;
+                return;
+            }
+        },
         validateForm() {
             this.invalidReason = "";
             const hasDupes =
