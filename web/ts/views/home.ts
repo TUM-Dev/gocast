@@ -1,10 +1,9 @@
 import { ToggleableElement } from "../utilities/ToggleableElement";
 import { Semester, SemesterDTO, SemestersAPI } from "../api/semesters";
 import { ProgressAPI } from "../api/progress";
-import { Course, CoursesAPI, Livestream } from "../api/courses";
-import { Notification } from "../notifications";
-import { NotificationAPI } from "../api/notifications";
+import { Course, CoursesAPI } from "../api/courses";
 import { Paginator } from "../utilities/paginator";
+import { courseContext } from "../components/course";
 
 export enum Views {
     Main,
@@ -16,6 +15,7 @@ export enum Views {
 type History = {
     year: number;
     term: string;
+    slug: string;
     view: Views;
 };
 
@@ -35,6 +35,8 @@ export function context() {
         userCourses: [] as Course[],
         liveToday: [] as Course[],
         recently: new Paginator<Course>([], 10),
+
+        loadedCourse: {} as Course,
 
         navigation: new ToggleableElement(new Map([["allSemesters", new ToggleableElement()]])),
 
@@ -92,21 +94,25 @@ export function context() {
 
         showMain() {
             this.switchView(Views.Main);
-            this.pushHistory(this.year, this.term, Views.Main);
+            this.pushHistory({ year: this.year, term: this.term, view: Views.Main });
         },
 
         showUserCourses() {
             this.switchView(Views.UserCourses);
-            this.pushHistory(this.year, this.term, Views.UserCourses);
+            this.pushHistory({ year: this.year, term: this.term, view: Views.UserCourses });
         },
 
         showPublicCourses() {
             this.switchView(Views.PublicCourses);
-            this.pushHistory(this.year, this.term, Views.PublicCourses);
+            this.pushHistory({ year: this.year, term: this.term, view: Views.PublicCourses });
         },
 
-        showCourse() {
-            this.switchView(Views.Course);
+        showCourse(slug: string) {
+            this.slug = slug;
+            this.load([this.loadCourse()]).then(() => {
+                this.switchView(Views.Course);
+                this.pushHistory({ year: this.year, term: this.term, view: Views.Course, slug: this.slug });
+            });
         },
 
         switchView(view: Views) {
@@ -136,6 +142,10 @@ export function context() {
 
         async loadUserCourses() {
             this.userCourses = await CoursesAPI.getUsers(this.year, this.term);
+        },
+
+        async loadCourse() {
+            this.loadedCourse = await CoursesAPI.get(this.slug, this.year, this.term);
         },
 
         async loadProgresses(ids: number[]) {
@@ -177,7 +187,7 @@ export function context() {
             this.navigation.getChild("allSemesters").toggle(false);
 
             if (pushState) {
-                this.pushHistory(year, term);
+                this.pushHistory({ year, term });
             }
 
             this.reload();
@@ -193,16 +203,24 @@ export function context() {
         /**
          * Update search parameters and push state into the browser's history
          */
-        pushHistory(year: number, term: string, view?: Views) {
-            url.searchParams.set("year", String(year));
-            url.searchParams.set("term", term);
-            let data = { year, term } as History;
-            if (view !== undefined) {
-                if (view !== Views.Main) {
-                    url.searchParams.set("view", view.toString());
-                    data = { ...data, view };
+        pushHistory(history: { year: number; term: string; slug?: string; view?: Views }) {
+            url.searchParams.set("year", String(history.year));
+            url.searchParams.set("term", history.term);
+
+            let data = { year: history.year, term: history.term } as History;
+
+            if (history.slug !== undefined) {
+                url.searchParams.set("slug", history.slug);
+                data = { ...data, slug: history.slug };
+            }
+
+            if (history.view !== undefined) {
+                if (history.view !== Views.Main) {
+                    url.searchParams.set("view", history.view.toString());
+                    data = { ...data, view: history.view };
                 } else {
                     url.searchParams.delete("view");
+                    url.searchParams.delete("slug");
                 }
             }
             window.history.pushState(data, "", url.toString());

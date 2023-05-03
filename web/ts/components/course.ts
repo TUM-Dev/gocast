@@ -7,14 +7,14 @@ export enum StreamSortMode {
     OldestFirst,
 }
 
-export function course(year: number, term: string, slug: string) {
+export function courseContext(initial: Course) {
     return {
-        course: {} as Course,
+        course: {},
         courseStreams: new Paginator<Stream>([], 8),
         streamSortMode: StreamSortMode.NewestFirst,
 
         init() {
-            this.reset();
+            this.reset(initial);
         },
 
         compareStream(sortMode: StreamSortMode) {
@@ -39,19 +39,19 @@ export function course(year: number, term: string, slug: string) {
             return this.streamSortMode === StreamSortMode.OldestFirst;
         },
 
-        async reset() {
-            this.course = await CoursesAPI.get(year, term, slug);
-            console.log(this.course);
+        async reset(c: Course) {
+            const progresses = await this.loadProgresses(c.Recordings.map((s) => s.ID));
+            c.Recordings.forEach((s, i) => (s.Progress = progresses[i]));
+            // TODO: Endless loop
+            this.course = c;
+
             this.courseStreams.set(this.course.Recordings);
             this.courseStreams.reset();
-
-            await this.loadProgresses(this.course.Recordings.map((s) => s.ID));
         },
 
         async loadProgresses(ids: number[]) {
             if (ids.length > 0) {
-                const progresses = await ProgressAPI.getBatch(ids);
-                this.course.Recordings.forEach((s, i) => (s.Progress = progresses[i]));
+                return ProgressAPI.getBatch(ids);
             }
         },
     };

@@ -142,7 +142,7 @@
                 <i class="fa-solid fa-calendar"></i>
                 Semesters
             </header>
-            <span class="tum-live-side-navigation-group-item hover mb-1 border-l-4 bg-blue-100/50 border-blue-500/50 dark:bg-indigo-500/25 dark:border-indigo-600/50"
+            <span class="tum-live-side-navigation-group-item mb-1 border-l-4 bg-blue-100/50 border-blue-500/50 dark:bg-indigo-500/25 dark:border-indigo-600/50"
                   x-text="semesters[selectedSemesterIndex]?.FriendlyString()"></span>
             <template x-if="navigation.getChild('allSemesters').value">
                 <template x-for="(s, i) in semesters">
@@ -164,11 +164,11 @@
                     <i class="fa-solid fa-graduation-cap"></i>
                     My Courses
                 </header>
-                <template x-for="(course, i) in userCourses.slice(0, 8)" :key="course.ID">
-                    <a class="tum-live-side-navigation-group-item hover"
-                       :href="course.URL()"
-                       x-text="course.Name">
-                    </a>
+                <template x-for="course in userCourses.slice(0, 8)" :key="course.ID">
+                    <button x-data type="button" class="tum-live-side-navigation-group-item hover"
+                            @click="showCourse(course.Slug)"
+                            x-text="course.Name">
+                    </button>
                 </template>
                 <template x-if="userCourses.length > 8 && view !== home.Views.UserCourses">
                     <button @click="showUserCourses()"
@@ -184,11 +184,11 @@
                 <i class="fa-solid fa-chalkboard"></i>
                 Public Courses
             </header>
-            <template x-for="(course, i) in publicCourses.slice(0, 5)" :key="course.ID">
-                <a class="tum-live-side-navigation-group-item hover"
-                   :href="course.URL()"
-                   x-text="course.Name">
-                </a>
+            <template x-for="course in publicCourses.slice(0, 5)" :key="course.ID">
+                <button x-data type="button" class="tum-live-side-navigation-group-item hover"
+                        @click="showCourse(course.Slug)"
+                        x-text="course.Name">
+                </button>
             </template>
             <template x-if="publicCourses.length > 5 && view !== home.Views.PublicCourses">
                 <button @click="showPublicCourses()"
@@ -223,9 +223,12 @@
                     </button>
                 </header>
                 <article class="grid gap-3 pb-4">
-                    <template x-for="(course, i) in publicCourses" :key="course.ID">
+                    <template x-for="course in publicCourses" :key="course.ID">
                         <section class="tum-live-course-list-item">
-                            <a class="title" x-text="course.Name" :href="course.URL()"></a>
+                            <a x-data type="button" class="title"
+                               @click="showCourse(course.Slug)"
+                               x-text="course.Name">
+                            </a>
                             <div class="links">
                                 <span x-text="course.NextLecture.ID !== 0
                                         ? `Next lecture: ${course.NextLecture.FriendlyDateStart()}`
@@ -253,9 +256,12 @@
                     </button>
                 </header>
                 <article class="grid gap-3 pb-4">
-                    <template x-for="(course, i) in userCourses" :key="course.ID">
+                    <template x-for="course in userCourses" :key="course.ID">
                         <section class="tum-live-course-list-item">
-                            <a class="title" x-text="course.Name" :href="course.URL()"></a>
+                            <a x-data type="button" class="title"
+                                    @click="showCourse(course.Slug)"
+                                    x-text="course.Name">
+                            </a>
                             <div class="links">
                                 <span x-text="course.LastLecture.ID !== 0
                                         ? `Next lecture: ${course.LastLecture.FriendlyDateStart()}`
@@ -271,16 +277,18 @@
             </article>
         </template>
         <template x-if="view === home.Views.Course">
-            <article id="course-view" class="px-6 pb-5" x-data="home.course(2021,'W', 'fpv')">
-                <header class = "flex items-center mb-3">
+            <article id="course-view" class=""
+                     x-data="home.courseContext(loadedCourse)"
+                     x-init="$watch('loadedCourse', c => reset(c))">
+                <header class="flex items-center">
                     <h1 x-text="course.Name" class="font-bold"></h1>
-                    <a href = "#" class = "tum-live-button tum-live-button-secondary flex w-10 h-10 ml-2">
-                        <i class = "fa-solid fa-calendar m-auto"></i>
+                    <a href="#" class="tum-live-button tum-live-button-secondary flex w-10 h-10 ml-2">
+                        <i class="fa-solid fa-calendar m-auto"></i>
                     </a>
                 </header>
-                <section class="flex flex-col lg:flex-row border-b dark:border-gray-800 py-3" x-data="home.livestreams((s) => s.Course.ID === course.ID)">
+                <div x-data="home.livestreams((s) => s.Course.ID === course.ID)">
                     <template x-if="hasLivestreams() > 0">
-                        <section class="flex-grow">
+                        <section class="tum-live-content-grid-item">
                             <template x-for="livestream in livestreams" :key="livestream.Stream.ID">
                                 <article class="tum-live-stream-row"
                                          :id="`livestream-${livestream.Stream.ID}`">
@@ -316,77 +324,64 @@
                             </template>
                         </section>
                     </template>
-                    <section class="">
-                        <template x-if="course.NextLecture.ID !== 0">
-                            <article class="flex flex-col items-center w-fit">
-                                <h6 class="mb-1 text-xs">Next lecture</h6>
-                                <div class="bg-white flex flex-col rounded-lg shadow-sm h-32 w-32 border dark:border-0">
-                                    <div class="flex justify-center bg-red-500 rounded-t-lg">
-                                    <span x-text="course.NextLecture.MonthOfStart()"
-                                          class="font-semibold text-white"></span>
-                                    </div>
-                                    <div class="flex flex-col flex-grow items-center justify-center text-black">
-                                        <span x-text="course.NextLecture.DayOfStart()" class="font-bold text-2xl"></span>
-                                    </div>
-                                    <div class = "flex items-center justify-center border-t py-2 h-fit">
-                                        <span class = "text-xs text-5">8:00</span>
-                                    </div>
-                                </div>
-                            </article>
-                        </template>
-                    </section>
-                </section>
-                <section class = "py-3">
-                    <header class = "mb-3">
-                        <button type="button" @click="sortNewestFirst()"
-                                class="tum-live-button tum-live-button-tertiary mr-2"
-                                :class="{'active' : isNewestFirst() }">
-                            Newest first
-                        </button>
-                        <button type="button" @click="sortOldestFirst()"
-                                class="tum-live-button tum-live-button-tertiary"
-                                :class="{'active' : isOldestFirst() }">
-                            Oldest first
-                        </button>
-                    </header>
-                    <article class="grid gap-3 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
-                        <template x-for="vod in courseStreams.get(compareStream(streamSortMode))">
-                            <article class="tum-live-stream lg:col-span-1 col-span-full">
-                                <a :href="course.WatchURL(vod.ID)" class="block mb-2">
-                                    <div :style="`background-image:url('/api/stream/${vod.ID}/thumbs/vod')`"
-                                         class="aspect-video tum-live-thumbnail">
-                                        <div :id="`vod-progress-${vod.ID}`" class="tum-live-thumbnail-progress">
-                                            <div>
-                                                <template x-if="vod.Progress !== undefined">
+                </div>
+                <template x-if="courseStreams.hasElements()">
+                    <section>
+                        <header class="mb-3">
+                            <button type="button" @click="sortNewestFirst()"
+                                    class="tum-live-button tum-live-button-tertiary mr-2"
+                                    :class="{'active' : isNewestFirst() }">
+                                Newest first
+                            </button>
+                            <button type="button" @click="sortOldestFirst()"
+                                    class="tum-live-button tum-live-button-tertiary"
+                                    :class="{'active' : isOldestFirst() }">
+                                Oldest first
+                            </button>
+                        </header>
+                        <section>
+                            <article class="grid gap-3 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
+                                <template x-for="vod in courseStreams.get(compareStream(streamSortMode))">
+                                    <article class="tum-live-stream lg:col-span-1 col-span-full">
+                                        <a :href="course.WatchURL(vod.ID)" class="block mb-2">
+                                            <div :style="`background-image:url('/api/stream/${vod.ID}/thumbs/vod')`"
+                                                 class="aspect-video tum-live-thumbnail">
+                                                <div :id="`vod-progress-${vod.ID}`"
+                                                     class="tum-live-thumbnail-progress">
+                                                    <div>
+                                                        <template x-if="vod.Progress !== undefined">
                                                     <span :style="`width: ${vod.Progress.Percentage()}%`"
                                                           :class="{'rounded-br-lg': vod.Progress.HasProgressOne()}"></span>
-                                                </template>
+                                                        </template>
+                                                    </div>
+                                                </div>
                                             </div>
+                                        </a>
+                                        <div class="px-1">
+                                            <a class="title" :href="course.WatchURL(vod.ID)" x-text="vod.Name"></a>
+                                            <span class="date text-xs" x-text="vod.FriendlyDateStart()"></span>
                                         </div>
-                                    </div>
-                                </a>
-                                <div class="px-1">
-                                    <a class="title" :href="course.WatchURL(vod.ID)" x-text="vod.Name"></a>
-                                    <span class="date text-xs" x-text="vod.FriendlyDateStart()"></span>
-                                </div>
+                                    </article>
+                                </template>
                             </article>
-                        </template>
-                    </article>
-                    <template x-if="courseStreams.hasNext()">
-                        <div class="flex flex-grow justify-center mt-3">
-                            <button class="tum-live-button tum-live-button-secondary" type="button"
-                                    @click="courseStreams.next()">
-                                <i class="fa-solid fa-angles-down mr-2"></i>
-                                More
-                            </button>
-                        </div>
-                    </template>
-                </section>
+                            <template x-if="courseStreams.hasNext()">
+                                <div class="flex flex-grow justify-center mt-3">
+                                    <button class="tum-live-button tum-live-button-secondary" type="button"
+                                            @click="courseStreams.next()">
+                                        <i class="fa-solid fa-angles-down mr-2"></i>
+                                        More
+                                    </button>
+                                </div>
+                            </template>
+                        </section>
+                    </section>
+                </template>
+            </article>
         </template>
         <template x-if="view === home.Views.Main">
             <article id="main-view" class="relative min-h-full">
                 <article x-data="home.serverNotifications()">
-                    <template x-for="(n, i) in serverNotifications">
+                    <template x-for="n in serverNotifications">
                         <div class="tum-live-notification mx-3 mb-3"
                              :class="n.Warn ? 'tum-live-notification-warn' :'tum-live-notification-info'">
                             <i class="icon fa-solid" :class="n.Warn ? 'fa-triangle-exclamation' : 'fa-circle-info'"></i>
@@ -441,8 +436,10 @@
                                             </a>
                                         </div>
                                         <div class="px-2">
-                                            <a class="course text-sm" :href="livestream.Course.URL()"
-                                               x-text="livestream.Course.Name"></a>
+                                            <a x-data type="button" class="course text-sm"
+                                               @click="showCourse(livestream.Course.Slug)"
+                                               x-text="livestream.Course.Name">
+                                            </a>
                                             <a class="title"
                                                :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`"
                                                x-text="livestream.Stream.Name"></a>
@@ -461,8 +458,10 @@
                             <section class="grid gap-3 px-5">
                                 <template x-for="course in liveToday" :key="course.ID">
                                     <article class="border-b dark:border-gray-800 last:border-0 py-2 px-1">
-                                        <a class="block text-3 font-semibold hover:underline" x-text="course.Name"
-                                           :href="course.URL()"></a>
+                                        <a x-data type="button" class="block text-3 font-semibold hover:underline hover:cursor-pointer"
+                                           @click="showCourse(course.Slug)"
+                                           x-text="course.Name">
+                                        </a>
                                         <div class="flex items-center text-sm text-5 font-light">
                                             <a :href="course.NextLectureURL()">
                                                 <i class="fa-solid fa-square-up-right"></i>
@@ -498,7 +497,10 @@
                                             </div>
                                         </a>
                                         <div class="px-1">
-                                            <a class="course text-xs" x-text="course.Name" :href="course.URL()"></a>
+                                            <a x-data type="button" class="course text-xs"
+                                               @click="showCourse(course.Slug)"
+                                               x-text="course.Name">
+                                            </a>
                                             <a class="title" :href="course.LastLectureURL()"
                                                x-text="course.LastLecture.Name"></a>
                                             <span class="date text-xs"
@@ -534,25 +536,6 @@
 </footer>
 </body>
 </html>
-
-{{define "bin"}}
-    <article class="flex justify-center lg:col-span-1 col-span-full px-3">
-        <template x-if="course.NextLecture.ID !== 0">
-            <article class="flex flex-col items-center w-fit">
-                <div class="bg-white flex flex-col rounded-lg shadow-sm h-20 w-20 border dark:border-0">
-                    <div class="flex justify-center bg-red-500 rounded-t-lg">
-                                    <span x-text="course.NextLecture.MonthOfStart()"
-                                          class="font-semibold text-white"></span>
-                    </div>
-                    <div class="flex flex-col flex-grow items-center justify-center text-black">
-                        <span x-text="course.NextLecture.DayOfStart()" class="font-bold text-2xl"></span>
-                    </div>
-                </div>
-                <h6 class="mt-2 text-xs">Next lecture</h6>
-            </article>
-        </template>
-    </article>
-{{end}}
 
 {{define "notifications"}}
     <div id="notifications"
@@ -591,4 +574,27 @@
             </div>
         </div>
     </div>
+{{end}}
+
+{{define "bin"}}
+    <section class="">
+        <template x-if="course.NextLecture.ID !== 0">
+            <article class="flex flex-col items-center w-fit">
+                <h6 class="mb-1 text-xs">Next lecture</h6>
+                <div class="bg-white flex flex-col rounded-lg shadow-sm h-32 w-32 border dark:border-0">
+                    <div class="flex justify-center bg-red-500 rounded-t-lg">
+                                    <span x-text="course.NextLecture.MonthOfStart()"
+                                          class="font-semibold text-white"></span>
+                    </div>
+                    <div class="flex flex-col flex-grow items-center justify-center text-black">
+                                        <span x-text="course.NextLecture.DayOfStart()"
+                                              class="font-bold text-2xl"></span>
+                    </div>
+                    <div class="flex items-center justify-center border-t py-2 h-fit">
+                        <span class="text-xs text-5">8:00</span>
+                    </div>
+                </div>
+            </article>
+        </template>
+    </section>
 {{end}}

@@ -40,7 +40,10 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 		api.GET("/courses/public", routes.getPublic)
 		api.GET("/courses/users", routes.getUsers)
 
-		api.GET("/courses/:year/:term/:slug", routes.getCourse)
+		courseBySlug := api.Group("/courses/:slug")
+		{
+			courseBySlug.GET("/", routes.getCourseBySlug)
+		}
 
 		lecturers := api.Group("")
 		{
@@ -241,14 +244,17 @@ func sortCourses(courses []model.Course) {
 	})
 }
 
-func (r coursesRoutes) getCourse(c *gin.Context) {
-	type coursesByIdURI struct {
-		Year int    `uri:"year" binding:"required"`
-		Term string `uri:"term" binding:"required"`
+func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
+	type URI struct {
 		Slug string `uri:"slug" binding:"required"`
 	}
 
-	var uri coursesByIdURI
+	type Query struct {
+		Year int    `form:"year"`
+		Term string `form:"term"`
+	}
+
+	var uri URI
 	if err := c.ShouldBindUri(&uri); err != nil {
 		_ = c.Error(tools.RequestError{
 			Err:           err,
@@ -258,12 +264,26 @@ func (r coursesRoutes) getCourse(c *gin.Context) {
 		return
 	}
 
+	var query Query
+	if err := c.ShouldBindQuery(&query); err != nil {
+		_ = c.Error(tools.RequestError{
+			Err:           err,
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid query",
+		})
+		return
+	}
+
+	if query.Year == 0 || query.Term == "" {
+		query.Year, query.Term = tum.GetCurrentSemester()
+	}
+
 	type Response struct {
 		Course  model.CourseDTO
 		Streams []model.StreamDTO
 	}
 
-	course, err := r.CoursesDao.GetCourseBySlugYearAndTerm(c, uri.Slug, uri.Term, uri.Year)
+	course, err := r.CoursesDao.GetCourseBySlugYearAndTerm(c, uri.Slug, query.Term, query.Year)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			_ = c.Error(tools.RequestError{

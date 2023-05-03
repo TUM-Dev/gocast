@@ -111,7 +111,7 @@
 }
 
 .tum-live-side-navigation-group-item.hover {
-    @apply hover:bg-gray-100 dark:hover:bg-gray-800
+    @apply hover:bg-gray-100 dark:hover:bg-gray-800 hover:cursor-pointer
 }
 
 .tum-live-side-navigation-group-item > i {
@@ -143,7 +143,7 @@
 }
 
 .tum-live-stream .course {
-    @apply block text-5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded
+    @apply block text-5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded hover:cursor-pointer
 }
 
 .tum-live-stream .title {
@@ -204,7 +204,7 @@
 }
 
 .tum-live-course-list-item .title {
-    @apply block text-3 lg:text-base text-sm font-semibold hover:underline
+    @apply block text-3 lg:text-base text-sm font-semibold hover:underline hover:cursor-pointer
 }
 
 .tum-live-course-list-item .links {
