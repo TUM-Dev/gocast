@@ -580,9 +580,12 @@ export function createLectureForm(args: { s: [] }) {
                     this.onLastSlide = false;
                     this.canContinue = this.formData.title.length > 0 && this.formData.start.length > 0;
                 } else {
-                    this.canContinue = true;
                     this.canGoBack = true;
                     this.onLastSlide = true;
+                    this.canContinue =
+                        this.formData.title.length > 0 &&
+                        this.formData.start.length > 0 &&
+                        this.formData.end.length > 0;
                 }
                 return;
             }
