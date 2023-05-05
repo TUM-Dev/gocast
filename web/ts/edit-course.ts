@@ -557,14 +557,14 @@ export function createLectureForm(args: { s: [] }) {
             setTimeout(() => {
                 this.regenerateRecurringDates();
                 this.recalculateDuration();
+                this.onUpdate();
             }, 100);
-            this.onUpdate();
         },
         onEndChange() {
             setTimeout(() => {
                 this.recalculateDuration();
+                this.onUpdate();
             }, 100);
-            this.onUpdate();
         },
         onUpdate() {
             if (this.currentTab === 0) {
