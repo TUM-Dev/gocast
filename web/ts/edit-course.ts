@@ -549,6 +549,9 @@ export function createLectureForm(args: { s: [] }) {
         },
         updateType(vodup: boolean) {
             this.formData.vodup = vodup;
+            if (vodup) {
+                this.formData.recurring = false;
+            }
         },
         onUpdate() {
             if (this.currentTab === 0) {

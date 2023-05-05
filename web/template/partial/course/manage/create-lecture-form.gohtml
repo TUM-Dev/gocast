@@ -61,12 +61,7 @@
             <div x-show="currentTab === 1" class="grid grid-cols-2 space-x-2">
 
                 <span class="text-sm text-5 pl-2">Options</span>
-                <div class="col-span-full flex gap-3 px-2">
-                    <label>
-                        <input type="checkbox" :disabled="formData.premiere || formData.vodup" x-model="formData.recurring"
-                               class="w-auto">
-                        <span class="text-3">Recurring Event</span>
-                    </label>
+                <div class="col-span-full flex gap-3 px-2 py-2">
                     <label x-show="{{$course.ChatEnabled}}">
                         <input type="checkbox" x-model="formData.isChatEnabled"
                                x-init="formData.isChatEnabled = {{$course.ChatEnabled}}"
@@ -113,7 +108,15 @@
                     </label>
                 </template>
 
-                <div x-show="formData.recurring && !loading">
+                <div x-show="!formData.premiere && !formData.vodup" class="col-span-full mt-2">
+                    <label>
+                        <input type="checkbox" x-model="formData.recurring"
+                               class="w-auto">
+                        <span class="text-3">Recurring Event</span>
+                    </label>
+                </div>
+
+                <div class="col-span-full" x-show="formData.recurring">
                     <h2 class="text-sm text-5">Interval</h2>
                     <label class="block">
                         <input type="radio" value="daily" x-model="formData.recurringInterval" class="w-auto"
@@ -154,50 +157,52 @@
                     </ul>
                 </div>
             </div>
-            <div x-show="currentTab === 2" class="grid grid-cols-2">
-                <label x-show="formData.premiere || formData.vodup && !loading">
-                    <span class="text-sm text-5">Combined File (mp4, if possible h264)</span>
-                    <input type="file" accept="video/mp4" class="btn tl-choose-file"
-                           x-on:change="formData.file = Object.values($event.target.files)"
-                           :required="formData.vodup">
-                </label>
+            <div x-show="currentTab === 2" class="">
+                <div class="mb-2">
+                    <label x-show="formData.premiere || formData.vodup && !loading">
+                        <span class="text-sm text-5">Combined File (mp4, if possible h264)</span>
+                        <input type="file" accept="video/mp4" class="btn tl-choose-file w-full"
+                               x-on:change="formData.file = Object.values($event.target.files)"
+                               :required="formData.vodup">
+                    </label>
+                </div>
 
-                <label x-show="formData.premiere || formData.vodup && !loading">
-                    <span class="text-sm text-5">Optional: Slides File (mp4, if possible h264)</span>
-                    <input type="file" accept="video/mp4" class="btn tl-choose-file"
-                           x-on:change="formData.file = Object.values($event.target.files)">
-                </label>
+                <div class="mb-2">
+                    <label x-show="formData.premiere || formData.vodup && !loading">
+                        <span class="text-sm text-5">Optional: Slides File (mp4, if possible h264)</span>
+                        <input type="file" accept="video/mp4" class="btn tl-choose-file w-full"
+                               x-on:change="formData.file = Object.values($event.target.files)">
+                    </label>
+                </div>
 
-                <label x-show="formData.premiere || formData.vodup && !loading">
-                    <span class="text-sm text-5">Optional: Camera File (mp4, if possible h264)</span>
-                    <input type="file" accept="video/mp4" class="btn tl-choose-file"
-                           x-on:change="formData.file = Object.values($event.target.files)">
-                </label>
-
-                <div class="mt-4">
-                    <button class="btn" type="submit" id="createLectureBtn">
-                <span x-show="!loading">
-                    <span x-text="formData.recurring && formData.recurringDates.filter(({enabled}) => enabled).length > 0
-                                                            ? `Create ${(formData.recurringDates.filter(({enabled}) => enabled).length + 1).toString()} Lectures`
-                                                            : 'Create Lecture'"></span>
-                </span>
-                        <span x-show="loading">
-                    <i class="fas fa-circle-notch text-4 animate-spin"></i> <span
-                                    @voduploadprogress.window="(e) => progress=e.detail" x-data="{ progress: undefined }"
-                                    x-text="progress?progress+'%':'0%'"></span>
-                </span>
-                    </button>
-                    <span class="text-danger" x-show="error">Something went wrong.</span>
+                <div>
+                    <label x-show="formData.premiere || formData.vodup && !loading">
+                        <span class="text-sm text-5">Optional: Camera File (mp4, if possible h264)</span>
+                        <input type="file" accept="video/mp4" class="btn tl-choose-file w-full"
+                               x-on:change="formData.file = Object.values($event.target.files)">
+                    </label>
                 </div>
             </div>
         </div>
 
-        <div class="flex justify-center py-2">
-            <button :disabled="!canGoBack" class="btn mx-2" @click="() => prev()">
+        <div x-show="error" class="flex justify-end px-6 py-2">
+            <span class="text-white rounded bg-danger px-4 py-2" >Something went wrong.</span>
+        </div>
+
+        <div class="flex justify-end py-2 px-4">
+            <button :disabled="!canGoBack" class="mx-2 disabled:text-gray-300 dark:disabled:text-gray-500" @click="() => prev()">
                 Back
             </button>
             <button :disabled="!canContinue" class="btn mx-2" @click="() => next()">
-                Continue
+                <span x-show="!onLastSlide">Continue</span>
+                <span x-show="onLastSlide" x-text="formData.recurring && formData.recurringDates.filter(({enabled}) => enabled).length > 0
+                                                            ? `Create ${(formData.recurringDates.filter(({enabled}) => enabled).length + 1).toString()} Lectures`
+                                                            : 'Create Lecture'"></span>
+                <span x-show="loading">
+                    <i class="fas fa-circle-notch text-4 animate-spin"></i> <span
+                            @voduploadprogress.window="(e) => progress=e.detail" x-data="{ progress: undefined }"
+                            x-text="progress?progress+'%':'0%'"></span>
+                </span>
             </button>
         </div>
     </form>
