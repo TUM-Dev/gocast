@@ -553,6 +553,19 @@ export function createLectureForm(args: { s: [] }) {
                 this.formData.recurring = false;
             }
         },
+        onStartChange() {
+            setTimeout(() => {
+                this.regenerateRecurringDates();
+                this.recalculateDuration();
+            }, 100);
+            this.onUpdate();
+        },
+        onEndChange() {
+            setTimeout(() => {
+                this.recalculateDuration();
+            }, 100);
+            this.onUpdate();
+        },
         onUpdate() {
             if (this.currentTab === 0) {
                 this.canContinue = true;
@@ -563,9 +576,9 @@ export function createLectureForm(args: { s: [] }) {
 
             if (this.currentTab === 1) {
                 if (this.formData.vodup) {
-                    this.canContinue = true;
                     this.canGoBack = true;
                     this.onLastSlide = false;
+                    this.canContinue = this.formData.title.length > 0 && this.formData.start.length > 0;
                 } else {
                     this.canContinue = true;
                     this.canGoBack = true;

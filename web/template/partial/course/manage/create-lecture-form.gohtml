@@ -72,7 +72,7 @@
 
                 <label for="name" x-show="!loading">
                     <span class="text-sm text-5">Lecture Name</span>
-                    <input class="tl-input" name="name" id="name" x-model="formData.title" placeholder="L01: Binary Trees"/>
+                    <input class="tl-input" name="name" id="name" x-model="formData.title" @change="onUpdate" placeholder="L01: Binary Trees"/>
                 </label>
 
                 <label x-show="!formData.premiere && !formData.vodup && !loading">
@@ -93,7 +93,7 @@
                     <input class="tl-input" name="start" placeholder="2021-04-08 14:00" id="start" x-model="formData.start"
                            x-ref="start"
                            x-init="flatpickr($refs.start, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z', allowInput: true})"
-                           @change="() => setTimeout(() => { regenerateRecurringDates(); recalculateDuration(); }, 100)"
+                           @change="onStartChange"
                            required/>
                 </label>
                 <template x-if="!formData.premiere && !formData.vodup && !loading">
@@ -103,7 +103,7 @@
                               x-text="`( ${formData.formatedDuration} )`"></span>
                         <input class="tl-input" name="end" placeholder="16:00" id="end" x-model="formData.end" x-ref="end"
                                x-init="flatpickr($refs.end, {enableTime: true, noCalendar: true, dateFormat: 'H:i', time_24hr: true, allowInput: true })"
-                               @change="() => setTimeout(() => recalculateDuration(), 100)"
+                               @change="onEndChange"
                                :required="!formData.vodup"/>
                     </label>
                 </template>
