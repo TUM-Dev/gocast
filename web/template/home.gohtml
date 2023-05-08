@@ -152,7 +152,7 @@
                 </template>
             </template>
             <button @click="navigation.getChild('allSemesters').toggle()"
-                    class="tum-live-side-navigation-group-item">
+                    class="tum-live-side-navigation-group-item hover">
                 <i class="fa-solid"
                    :class="navigation.getChild('allSemesters').value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                 <span x-text="navigation.getChild('allSemesters').value ? 'Show less' : 'Show all'"></span>
@@ -165,14 +165,14 @@
                     My Courses
                 </header>
                 <template x-for="course in userCourses.slice(0, 8)" :key="course.ID">
-                    <a class="tum-live-side-navigation-group-item"
+                    <a class="tum-live-side-navigation-group-item hover"
                        :href="course.URL()"
                        x-text="course.Name">
                     </a>
                 </template>
                 <template x-if="userCourses.length > 8 && view !== home.Views.UserCourses">
                     <button @click="showUserCourses()"
-                            class="tum-live-side-navigation-group-item">
+                            class="tum-live-side-navigation-group-item hover">
                         <i class="fa-solid fa-chevron-right"></i>
                         Show all my courses
                     </button>
@@ -185,14 +185,14 @@
                 Public Courses
             </header>
             <template x-for="(course, i) in publicCourses.slice(0, 5)" :key="course.ID">
-                <a class="tum-live-side-navigation-group-item"
+                <a class="tum-live-side-navigation-group-item hover"
                    :href="course.URL()"
                    x-text="course.Name">
                 </a>
             </template>
             <template x-if="publicCourses.length > 5 && view !== home.Views.PublicCourses">
                 <button @click="showPublicCourses()"
-                        class="tum-live-side-navigation-group-item">
+                        class="tum-live-side-navigation-group-item hover">
                     <i class="fa-solid fa-chevron-right"></i>
                     Show all public courses
                 </button>
