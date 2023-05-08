@@ -313,7 +313,7 @@
                         <section>
                             <template x-for="livestream in livestreams" :key="livestream.Stream.ID">
                                 <article class="tum-live-stream-row" :id="`livestream-${livestream.Stream.ID}`">
-                                    <div class="aspect-video h-40 relative">
+                                    <div class="aspect-video relative md:h-40">
                                         <div class="absolute right-2 bottom-2 flex items-center space-x-2 text-xs font-semibold text-white z-40">
                                             <template x-if="livestream.InLectureHall()">
                                                 <a class="tum-live-badge bg-black"
