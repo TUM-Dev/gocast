@@ -45,6 +45,7 @@ type Course struct {
 type CourseDTO struct {
 	ID            uint
 	Name          string
+	Visibility    string
 	Slug          string
 	TeachingTerm  string
 	Year          int
@@ -56,6 +57,7 @@ func (c *Course) ToDTO() CourseDTO {
 	return CourseDTO{
 		ID:            c.ID,
 		Name:          c.Name,
+		Visibility:    c.Visibility,
 		Slug:          c.Slug,
 		TeachingTerm:  c.TeachingTerm,
 		Year:          c.Year,

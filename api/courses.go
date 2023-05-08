@@ -230,9 +230,11 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 
 	sortCourses(courses)
 	courses = commons.Unique(courses, func(c model.Course) uint { return c.ID })
-	resp := make([]model.CourseDTO, len(courses))
-	for i, course := range courses {
-		resp[i] = course.ToDTO()
+	resp := make([]model.CourseDTO, 0, len(courses))
+	for _, course := range courses {
+		if !course.IsHidden() {
+			resp = append(resp, course.ToDTO())
+		}
 	}
 
 	c.JSON(http.StatusOK, resp)
