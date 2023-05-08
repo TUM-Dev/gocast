@@ -20,14 +20,12 @@ export class Paginator<T> {
         this.list = list;
     }
 
-    next() {
-        this.index++;
+    next(all = false) {
+        this.index = all ? this.list.length / this.split_number : this.index + 1;
     }
 
     hasNext() {
-        return (
-            Math.ceil(this.list.length / this.split_number) * this.split_number >= (this.index + 1) * this.split_number
-        );
+        return Math.ceil(this.list.length / this.split_number) >= this.index + 1;
     }
 
     forEach(callback: (obj: T, i: number) => void) {

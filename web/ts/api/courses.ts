@@ -32,6 +32,13 @@ export class Stream {
         return new Date(this.Start).getDate();
     }
 
+    public TimeOfStart(): string {
+        const s = new Date(this.Start);
+        const hours = s.getUTCHours().toString().padStart(2, "0");
+        const minutes = s.getUTCMinutes().toString().padStart(2, "0");
+        return `${hours}:${minutes}`;
+    }
+
     public UntilString(): string {
         const end = new Date(this.End);
         const hours = end.getHours();

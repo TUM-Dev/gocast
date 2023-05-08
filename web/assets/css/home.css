@@ -159,7 +159,7 @@
 }
 
 .tum-live-stream-row {
-    @apply flex items-center
+    @apply flex flex-col md:px-0 md:items-center md:flex-row
 }
 
 .tum-live-stream-row:not(:last-child){
@@ -167,7 +167,7 @@
 }
 
 .tum-live-stream-row .title {
-    @apply block font-semibold hover:underline
+    @apply block font-semibold hover:underline mt-3 md:mt-0
 }
 
 .tum-live-menu {

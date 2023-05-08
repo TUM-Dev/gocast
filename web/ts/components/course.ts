@@ -16,6 +16,8 @@ export function courseContext(slug: string, year: number, term: string) {
         course: {} as Course,
 
         courseStreams: new Paginator<Stream>([], 8),
+
+        plannedStreams: [],
         streamSortMode: StreamSortMode.NewestFirst,
 
         /**
@@ -63,6 +65,9 @@ export function courseContext(slug: string, year: number, term: string) {
 
         async load() {
             this.course = await CoursesAPI.get(this.slug, this.year, this.term);
+
+            this.plannedStreams = this.groupBy(this.course.Planned, (s) => s.MonthOfStart());
+
             const progresses = await this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID));
 
             this.courseStreams.set(this.course.Recordings);
@@ -74,6 +79,13 @@ export function courseContext(slug: string, year: number, term: string) {
             if (ids.length > 0) {
                 return ProgressAPI.getBatch(ids);
             }
+        },
+
+        groupBy<K extends keyof any>(arr: Stream[], key: (s: Stream) => K) {
+            return arr.reduce((groups, item) => {
+                (groups[key(item)] ||= []).push(item);
+                return groups;
+            }, {} as Record<K, Stream[]>);
         },
     };
 }
