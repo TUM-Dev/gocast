@@ -31,15 +31,17 @@ export function context() {
         currentSemesterIndex: -1,
         selectedSemesterIndex: -1,
 
-        livestreams: [] as Livestream[],
-        publicCourses: [] as Course[],
         userCourses: [] as Course[],
+        pinnedCourses: [] as Course[],
+        publicCourses: [] as Course[],
+
+        livestreams: [] as Livestream[],
+
         liveToday: [] as Course[],
         recently: new Paginator<Course>([], 10),
 
         navigation: new ToggleableElement(new Map([["allSemesters", new ToggleableElement()]])),
 
-        loadingIndicator: 0,
         nothingToDo: false,
 
         /**
@@ -63,7 +65,7 @@ export function context() {
                       this.loadUserCourses(),
                   ]
                 : [this.loadPublicCourses(), this.loadUserCourses()];
-            this.load(promises).then(() => {
+            Promise.all(promises).then(() => {
                 this.nothingToDo =
                     this.livestreams.length === 0 && this.liveToday.length === 0 && this.recently.length === 0;
             });
@@ -73,18 +75,6 @@ export function context() {
                 this.liveToday = this.getLiveToday();
                 this.loadProgresses(this.userCourses.map((c) => c.LastRecording.ID));
             });
-        },
-
-        /**
-         * Resolve given promises and increment loadingIndicator partially
-         * @param  {Promise<object>[]} promises Array of promises
-         */
-        load(promises: Promise<object>[]): Promise<number | void> {
-            this.loadingIndicator = 0;
-            promises.forEach((p) => {
-                Promise.resolve(p).then((_) => (this.loadingIndicator += 100 / promises.length));
-            });
-            return Promise.all(promises).then(() => (this.loadingIndicator = 0));
         },
 
         /**
