@@ -302,7 +302,7 @@
                             <h3 class="py-1 mx-3 bg-danger text-white text-sm w-fit uppercase rounded animate-pulse">
                                 Live</h3>
                             <section class="grid xl:grid-cols-3 2xl:grid-cols-4 lg:grid-cols-2 grid-cols-1">
-                                <template x-for="(livestream, i) in livestreams" :key="livestream.Stream.ID">
+                                <template x-for="livestream in livestreams" :key="livestream.Stream.ID">
                                     <article class="tum-live-stream p-3 lg:col-span-1 col-span-full"
                                              :id="`livestream-${livestream.Stream.ID}`">
                                         <div class="aspect-video relative mb-2">
