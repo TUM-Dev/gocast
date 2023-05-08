@@ -70,7 +70,7 @@
     @apply bg-gray-100 hover:bg-gray-800 hover:text-white dark:bg-gray-800 dark:hover:bg-gray-600
 }
 
-.tum-live-button-tertiary.active{
+.tum-live-button-tertiary.active {
     @apply bg-gray-800 text-white dark:bg-gray-600
 }
 
@@ -162,7 +162,7 @@
     @apply flex flex-col md:px-0 md:items-center md:flex-row
 }
 
-.tum-live-stream-row:not(:last-child){
+.tum-live-stream-row:not(:last-child) {
     @apply mb-2;
 }
 
@@ -239,6 +239,84 @@
 .tum-live-notification-info > .icon {
     @apply text-blue-500/75 dark:text-indigo-600/75
 }
+
+
+.tum-live-calendar {
+    @apply bg-white flex flex-col rounded-lg shadow-sm w-24 h-24 border dark:border-0
+}
+
+.tum-live-calendar > .month {
+    @apply flex justify-center bg-red-500 rounded-t-lg font-semibold text-white
+}
+
+.tum-live-calendar > .day {
+    @apply flex flex-col flex-grow items-center justify-center text-black font-bold text-2xl
+}
+
+.tum-live-calendar > .time {
+    @apply py-1 text-center text-xs border-t text-black
+}
+
+
+.tum-live-course-view {
+    @apply pb-5
+}
+
+.tum-live-course-view > header {
+    @apply grid gap-2 text-center
+}
+
+.tum-live-course-view > header .slug {
+    @apply font-semibold uppercase text-5 mb-0
+}
+
+.tum-live-course-view > header .name {
+    @apply font-bold
+}
+
+.tum-live-course-view > header .button-area {
+    @apply flex justify-center items-center space-x-4
+}
+
+
+.tum-live-course-view-item {
+    @apply py-4
+}
+
+.tum-live-course-view-item:not(:last-child){
+    @apply border-b dark:border-gray-800
+}
+
+.tum-live-course-view-item > header {
+    @apply flex items-center space-x-4 mb-3;
+}
+
+.tum-live-course-view-item > header > h3 {
+    @apply font-bold
+}
+
+
+.tum-live-planned-list > .month {
+    @apply bg-gray-100 rounded px-2 text-sm font-light mb-2 dark:bg-gray-800
+}
+
+.tum-live-planned-list > .tum-live-planned-list-group {
+    @apply grid gap-5
+}
+
+.tum-live-planned-list > .tum-live-planned-list-group > .tum-live-planned-list-group-item{
+    @apply py-1
+}
+
+.tum-live-planned-list > .tum-live-planned-list-group > .tum-live-planned-list-group-item .name{
+    @apply font-semibold mb-0
+}
+
+.tum-live-planned-list > .tum-live-planned-list-group > .tum-live-planned-list-group-item .date{
+    @apply text-xs text-5
+}
+
+
 
 .tum-live-footer {
     @apply bg-gray-100 dark:bg-secondary-light py-4 px-8;
