@@ -71,7 +71,7 @@ export function context() {
                 this.recently.set(this.getRecently());
                 this.recently.reset();
                 this.liveToday = this.getLiveToday();
-                this.loadProgresses(this.userCourses.map((c) => c.LastLecture.ID));
+                this.loadProgresses(this.userCourses.map((c) => c.LastRecording.ID));
             });
         },
 
@@ -153,7 +153,7 @@ export function context() {
         async loadProgresses(ids: number[]) {
             if (ids.length > 0) {
                 const progresses = await ProgressAPI.getBatch(ids);
-                this.recently.forEach((r, i) => (r.LastLecture.Progress = progresses[i]));
+                this.recently.forEach((r, i) => (r.LastRecording.Progress = progresses[i]));
             }
         },
 
@@ -173,7 +173,7 @@ export function context() {
          * Filter userCourses for recently streamed lectures
          */
         getRecently() {
-            return this.userCourses.filter((c) => c.LastLecture.ID !== 0);
+            return this.userCourses.filter((c) => c.LastRecording.ID !== 0);
         },
 
         /**

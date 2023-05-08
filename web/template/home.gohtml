@@ -164,7 +164,7 @@
                     <i class="fa-solid fa-graduation-cap"></i>
                     My Courses
                 </header>
-                <template x-for="(course, i) in userCourses.slice(0, 8)" :key="course.ID">
+                <template x-for="course in userCourses.slice(0, 8)" :key="course.ID">
                     <a class="tum-live-side-navigation-group-item"
                        :href="course.URL()"
                        x-text="course.Name">
@@ -237,7 +237,7 @@
                                 <span x-text="course.NextLecture.ID !== 0
                                         ? `Next lecture: ${course.NextLecture.FriendlyDateStart()}`
                                         : 'No upcoming lecture.'"></span>
-                                <a x-cloak x-show="course.LastLecture.ID !== 0" :href="course.LastLectureURL()">
+                                <a x-cloak x-show="course.LastRecording.ID !== 0" :href="course.LastRecordingURL()">
                                     <i class="fa-solid fa-square-up-right"></i>
                                     <span class="hover:underline">Most recent lecture</span>
                                 </a>
@@ -264,10 +264,10 @@
                         <section class="tum-live-course-list-item">
                             <a class="title" x-text="course.Name" :href="course.URL()"></a>
                             <div class="links">
-                                <span x-text="course.LastLecture.ID !== 0
-                                        ? `Next lecture: ${course.LastLecture.FriendlyDateStart()}`
+                                <span x-text="course.LastRecording.ID !== 0
+                                        ? `Next lecture: ${course.LastRecording.FriendlyDateStart()}`
                                         : 'No upcoming lecture.'"></span>
-                                <a x-cloak x-show="course.LastLecture.ID !== 0" :href="course.LastLectureURL()">
+                                <a x-cloak x-show="course.LastRecording.ID !== 0" :href="course.LastRecordingURL()">
                                     <i class="fa-solid fa-square-up-right"></i>
                                     <span class="hover:underline">Most recent lecture</span>
                                 </a>
@@ -327,9 +327,11 @@
                                         <div class="px-2">
                                             <a class="course text-sm" :href="livestream.Course.URL()"
                                                x-text="livestream.Course.Name"></a>
-                                            <a class="title"
-                                               :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`"
-                                               x-text="livestream.Stream.Name"></a>
+                                            <template x-if="livestream.Stream.HasName()">
+                                                <a class="title"
+                                                   :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`"
+                                                   x-text="livestream.Stream.Name"></a>
+                                            </template>
                                             <span class="date text-sm" x-text="livestream.Stream.UntilString()"></span>
                                         </div>
                                     </article>
@@ -367,26 +369,29 @@
                             <section class="grid xl:grid-cols-4 2xl:grid-cols-5 lg:grid-cols-3 grid-cols-1">
                                 <template x-for="(course, i) in recently.get()" :key="course.ID">
                                     <article class="tum-live-stream lg:col-span-1 col-span-full p-3">
-                                        <a :href="course.LastLectureURL()" class="block mb-2">
-                                            <div :style="`background-image:url('/api/stream/${course.LastLecture.ID}/thumbs/vod')`"
+                                        <a :href="course.LastRecordingURL()" class="block mb-2">
+                                            <div :style="`background-image:url('/api/stream/${course.LastRecording.ID}/thumbs/vod')`"
                                                  class="aspect-video tum-live-thumbnail">
-                                                <div :id="`vod-progress-${course.LastLecture.ID}`"
+                                                <div :id="`vod-progress-${course.LastRecording.ID}`"
                                                      class="tum-live-thumbnail-progress">
                                                     <div>
-                                                        <template x-if="course.LastLecture.Progress !== undefined">
-                                                            <span :style="`width: ${course.LastLecture.Progress.Percentage()}%`"
-                                                                  :class="{'rounded-br-lg': course.LastLecture.Progress.HasProgressOne()}"></span>
+                                                        <template x-if="course.LastRecording.Progress !== undefined">
+                                                            <span :style="`width: ${course.LastRecording.Progress.Percentage()}%`"
+                                                                  :class="{'rounded-br-lg': course.LastRecording.Progress.HasProgressOne()}"></span>
                                                         </template>
                                                     </div>
                                                 </div>
                                             </div>
                                         </a>
                                         <div class="px-1">
-                                            <a class="course text-xs" x-text="course.Name" :href="course.URL()"></a>
-                                            <a class="title" :href="course.LastLectureURL()"
-                                               x-text="course.LastLecture.Name"></a>
+                                            <a class="course" :class = "course.LastRecording.HasName() ? 'text-xs' : 'text-sm'"
+                                               x-text="course.Name" :href="course.URL()"></a>
+                                            <template x-if="course.LastRecording.HasName()">
+                                                <a class="title" :href="course.LastRecordingURL()"
+                                                   x-text="course.LastRecording.Name"></a>
+                                            </template>
                                             <span class="date text-xs"
-                                                  x-text="course.LastLecture.FriendlyDateStart()"></span>
+                                                  x-text="course.LastRecording.FriendlyDateStart()"></span>
                                         </div>
                                     </article>
                                 </template>

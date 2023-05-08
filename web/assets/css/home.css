@@ -135,7 +135,7 @@
 }
 
 .tum-live-stream .course {
-    @apply block text-5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded
+    @apply text-5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg py-1 break-words
 }
 
 .tum-live-stream .title {

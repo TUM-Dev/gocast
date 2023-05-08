@@ -11,10 +11,8 @@ export class Stream {
 
     Progress?: Progress;
 
-    static New(obj): Stream {
-        const s = Object.assign(new Stream(), obj);
-        s.Name = s.Name === "" ? DEFAULT_LECTURE_NAME : s.Name;
-        return s;
+    public HasName(): boolean {
+        return this.Name !== "";
     }
 
     public FriendlyDateStart(): string {
@@ -38,12 +36,12 @@ export class Course {
     readonly Name: string;
 
     readonly NextLecture?: Stream;
-    readonly LastLecture?: Stream;
+    readonly LastRecording?: Stream;
 
     static New(obj): Course {
         const c = Object.assign(new Course(), obj);
-        c.NextLecture = c.NextLecture ? Stream.New(obj.NextLecture) : undefined;
-        c.LastLecture = c.LastLecture ? Stream.New(obj.LastLecture) : undefined;
+        c.NextLecture = obj.NextLecture ? Object.assign(new Stream(), obj.NextLecture) : undefined;
+        c.LastRecording = obj.LastRecording ? Object.assign(new Stream(), obj.LastRecording) : undefined;
         return c;
     }
 
@@ -51,8 +49,8 @@ export class Course {
         return `/course/${this.Year}/${this.TeachingTerm}/${this.Slug}`;
     }
 
-    public LastLectureURL(): string {
-        return `/w/${this.Slug}/${this.LastLecture.ID}`;
+    public LastRecordingURL(): string {
+        return `/w/${this.Slug}/${this.LastRecording.ID}`;
     }
 
     public NextLectureURL(): string {
@@ -80,7 +78,7 @@ export class Livestream {
     readonly LectureHall?: LectureHall;
 
     constructor(obj: Livestream) {
-        this.Stream = Stream.New(obj.Stream);
+        this.Stream = Object.assign(new Stream(), obj.Stream);
         this.Course = Course.New(obj.Course);
         this.LectureHall = obj.LectureHall ? new LectureHall(obj.LectureHall) : undefined;
     }
