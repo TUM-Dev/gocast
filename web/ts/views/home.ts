@@ -22,10 +22,12 @@ type History = {
 export function context() {
     const url = new URL(window.location.href);
     return {
-        term: url.searchParams.get("term") ?? undefined,
-        year: +url.searchParams.get("year"),
-        slug: url.searchParams.get("slug") ?? undefined,
-        view: +url.searchParams.get("view") ?? Views.Main,
+        state: {
+            term: url.searchParams.get("term") ?? undefined,
+            year: +url.searchParams.get("year"),
+            slug: url.searchParams.get("slug") ?? undefined,
+            view: +url.searchParams.get("view") ?? Views.Main,
+        },
 
         semesters: [] as Semester[],
         currentSemesterIndex: -1,
@@ -35,8 +37,6 @@ export function context() {
         userCourses: [] as Course[],
         liveToday: [] as Course[],
         recently: new Paginator<Course>([], 10),
-
-        loadedCourse: {} as Course,
 
         navigation: new ToggleableElement(new Map([["allSemesters", new ToggleableElement()]])),
 
@@ -88,35 +88,38 @@ export function context() {
             const state = event.state || {};
             const year = +state["year"] || this.semesters[this.currentSemesterIndex].Year;
             const term = state["term"] || this.semesters[this.currentSemesterIndex].TeachingTerm;
-            this.view = state["view"] || Views.Main;
+            this.state.view = state["view"] || Views.Main;
             this.switchSemester(year, term, false);
         },
 
         showMain() {
             this.switchView(Views.Main);
-            this.pushHistory({ year: this.year, term: this.term, view: Views.Main });
+            this.pushHistory({ year: this.state.year, term: this.state.term, view: Views.Main });
         },
 
         showUserCourses() {
             this.switchView(Views.UserCourses);
-            this.pushHistory({ year: this.year, term: this.term, view: Views.UserCourses });
+            this.pushHistory({ year: this.state.year, term: this.state.term, view: Views.UserCourses });
         },
 
         showPublicCourses() {
             this.switchView(Views.PublicCourses);
-            this.pushHistory({ year: this.year, term: this.term, view: Views.PublicCourses });
+            this.pushHistory({ year: this.state.year, term: this.state.term, view: Views.PublicCourses });
         },
 
         showCourse(slug: string) {
-            this.slug = slug;
-            this.load([this.loadCourse()]).then(() => {
-                this.switchView(Views.Course);
-                this.pushHistory({ year: this.year, term: this.term, view: Views.Course, slug: this.slug });
+            this.state.slug = slug;
+            this.switchView(Views.Course);
+            this.pushHistory({
+                year: this.state.year,
+                term: this.state.term,
+                view: Views.Course,
+                slug: this.state.slug,
             });
         },
 
         switchView(view: Views) {
-            this.view = view;
+            this.state.view = view;
             this.navigation.toggle(false);
         },
 
@@ -125,27 +128,23 @@ export function context() {
             this.semesters = res.Semesters;
 
             this.currentSemesterIndex = this.findSemesterIndex(res.Current.Year, res.Current.TeachingTerm);
-            if (this.year !== null && this.term != null) {
-                this.selectedSemesterIndex = this.findSemesterIndex(this.year, this.term);
+            if (this.state.year !== null && this.state.term != null) {
+                this.selectedSemesterIndex = this.findSemesterIndex(this.state.year, this.state.term);
             }
 
             if (this.selectedSemesterIndex === -1) {
                 this.selectedSemesterIndex = this.currentSemesterIndex;
-                this.year = res.Current.Year;
-                this.term = res.Current.TeachingTerm;
+                this.state.year = res.Current.Year;
+                this.state.term = res.Current.TeachingTerm;
             }
         },
 
         async loadPublicCourses() {
-            this.publicCourses = await CoursesAPI.getPublic(this.year, this.term);
+            this.publicCourses = await CoursesAPI.getPublic(this.state.year, this.state.term);
         },
 
         async loadUserCourses() {
-            this.userCourses = await CoursesAPI.getUsers(this.year, this.term);
-        },
-
-        async loadCourse() {
-            this.loadedCourse = await CoursesAPI.get(this.slug, this.year, this.term);
+            this.userCourses = await CoursesAPI.getUsers(this.state.year, this.state.term);
         },
 
         async loadProgresses(ids: number[]) {
@@ -181,9 +180,9 @@ export function context() {
          * @param  {object} pushState Push new state into the browser's history?
          */
         async switchSemester(year: number, term: string, pushState = true) {
-            this.year = year;
-            this.term = term;
-            this.selectedSemesterIndex = this.findSemesterIndex(this.year, this.term);
+            this.state.year = year;
+            this.state.term = term;
+            this.selectedSemesterIndex = this.findSemesterIndex(this.state.year, this.state.term);
             this.navigation.getChild("allSemesters").toggle(false);
 
             if (pushState) {

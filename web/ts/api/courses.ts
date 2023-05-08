@@ -62,6 +62,8 @@ export class Course {
     readonly NextLecture?: Stream;
     readonly LastLecture?: Stream;
 
+    readonly Pinned: boolean = true;
+
     private readonly Streams?: Stream[];
 
     readonly Recordings?: Stream[];
@@ -87,6 +89,10 @@ export class Course {
 
     public NextLectureURL(): string {
         return this.WatchURL(this.NextLecture.ID);
+    }
+
+    public ICS(): string {
+        return `/api/download_ics/${this.Year}/${this.TeachingTerm}/${this.Slug}/events.ics`;
     }
 
     public WatchURL(id: number): string {

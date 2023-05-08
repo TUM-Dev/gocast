@@ -7,14 +7,32 @@ export enum StreamSortMode {
     OldestFirst,
 }
 
-export function courseContext(initial: Course) {
+export function courseContext(slug: string, year: number, term: string) {
     return {
-        course: {},
+        slug: slug as string,
+        year: year as number,
+        term: term as string,
+
+        course: {} as Course,
+
         courseStreams: new Paginator<Stream>([], 8),
         streamSortMode: StreamSortMode.NewestFirst,
 
+        /**
+         * AlpineJS init function which is called automatically in addition to 'x-init'
+         */
         init() {
-            this.reset(initial);
+            this.load();
+        },
+
+        /**
+         * (Re-)Load course context
+         */
+        reload(slug: string, year: number, term: string) {
+            this.slug = slug;
+            this.year = year;
+            this.term = term;
+            this.load();
         },
 
         compareStream(sortMode: StreamSortMode) {
@@ -39,13 +57,16 @@ export function courseContext(initial: Course) {
             return this.streamSortMode === StreamSortMode.OldestFirst;
         },
 
-        async reset(c: Course) {
-            const progresses = await this.loadProgresses(c.Recordings.map((s) => s.ID));
-            c.Recordings.forEach((s, i) => (s.Progress = progresses[i]));
-            // TODO: Endless loop
-            this.course = c;
+        pin() {
+            this.course.Pinned = !this.course.Pinned;
+        },
+
+        async load() {
+            this.course = await CoursesAPI.get(this.slug, this.year, this.term);
+            const progresses = await this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID));
 
             this.courseStreams.set(this.course.Recordings);
+            this.courseStreams.forEach((s: Stream, i) => (s.Progress = progresses[i]));
             this.courseStreams.reset();
         },
 
