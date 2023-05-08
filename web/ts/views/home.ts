@@ -56,16 +56,12 @@ export function context() {
          * @param  {boolean} full If true, load everything including semesters and livestreams
          */
         reload(full = false) {
-            const promises = full
-                ? [
-                      this.loadServerNotifications(),
-                      this.loadSemesters(),
-                      this.loadPublicCourses(),
-                      this.loadLivestreams(),
-                      this.loadPinnedCourses(),
-                      this.loadUserCourses(),
-                  ]
-                : [this.loadPublicCourses(), this.loadPinnedCourses(), this.loadUserCourses()];
+            const promises = [
+                full ? [this.loadServerNotifications(), this.loadSemesters(), this.loadLivestreams()] : [],
+                this.loadPublicCourses(),
+                this.loadPinnedCourses(),
+                this.loadUserCourses(),
+            ];
             Promise.all(promises.flat()).then(() => {
                 this.nothingToDo =
                     this.livestreams.length === 0 && this.liveToday.length === 0 && this.recently.length === 0;
