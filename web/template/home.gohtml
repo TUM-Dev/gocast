@@ -157,6 +157,20 @@
                 <span x-text="navigation.getChild('allSemesters').value ? 'Show less' : 'Show all'"></span>
             </button>
         </article>
+        <template x-if="pinnedCourses.length > 0">
+            <article class="tum-live-side-navigation-group">
+                <header>
+                    <i class="fa-solid fa-thumbtack"></i>
+                    Pinned Courses
+                </header>
+                <template x-for="course in pinnedCourses" :key="course.ID">
+                    <a class="tum-live-side-navigation-group-item hover"
+                       :href="course.URL()"
+                       x-text="course.Name">
+                    </a>
+                </template>
+            </article>
+        </template>
         <template x-if="userCourses.length > 0">
             <article class="tum-live-side-navigation-group">
                 <header>

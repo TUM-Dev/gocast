@@ -62,10 +62,11 @@ export function context() {
                       this.loadSemesters(),
                       this.loadPublicCourses(),
                       this.loadLivestreams(),
+                      this.loadPinnedCourses(),
                       this.loadUserCourses(),
                   ]
-                : [this.loadPublicCourses(), this.loadUserCourses()];
-            Promise.all(promises).then(() => {
+                : [this.loadPublicCourses(), this.loadPinnedCourses(), this.loadUserCourses()];
+            Promise.all(promises.flat()).then(() => {
                 this.nothingToDo =
                     this.livestreams.length === 0 && this.liveToday.length === 0 && this.recently.length === 0;
             });
@@ -138,6 +139,10 @@ export function context() {
 
         async loadUserCourses() {
             this.userCourses = await CoursesAPI.getUsers(this.year, this.term);
+        },
+
+        async loadPinnedCourses() {
+            this.pinnedCourses = await CoursesAPI.getPinned(this.year, this.term);
         },
 
         async loadProgresses(ids: number[]) {

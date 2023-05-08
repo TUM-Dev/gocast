@@ -104,6 +104,12 @@ export const CoursesAPI = {
         return get(`/api/courses/users${this.query(year, term)}`).then((courses) => courses.map((c) => Course.New(c)));
     },
 
+    async getPinned(year?: number, term?: string): Promise<object> {
+        return get(`/api/courses/users/pinned${this.query(year, term)}`).then((courses) =>
+            courses.map((c) => Course.New(c)),
+        );
+    },
+
     query: (year?: number, term?: string) =>
         year !== undefined && term !== undefined && year !== 0 ? `?year=${year}&term=${term}` : "",
 };

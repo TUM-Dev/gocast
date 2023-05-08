@@ -39,6 +39,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 		api.GET("/courses/live", routes.getLive)
 		api.GET("/courses/public", routes.getPublic)
 		api.GET("/courses/users", routes.getUsers)
+		api.GET("/courses/users/pinned", routes.getPinned)
 
 		courseById := api.Group("/courses/:id")
 		{
@@ -233,6 +234,39 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 	resp := make([]model.CourseDTO, 0, len(courses))
 	for _, course := range courses {
 		if !course.IsHidden() {
+			resp = append(resp, course.ToDTO())
+		}
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+func (r coursesRoutes) getPinned(c *gin.Context) {
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	year, term := tum.GetCurrentSemester()
+	year, err := strconv.Atoi(c.DefaultQuery("year", strconv.Itoa(year)))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid year",
+			Err:           err,
+		})
+	}
+	term = c.DefaultQuery("term", term)
+
+	var pinnedCourses []model.Course
+	if tumLiveContext.User != nil {
+		pinnedCourses = tumLiveContext.User.PinnedCourses
+	} else {
+		pinnedCourses = []model.Course{}
+	}
+
+	sortCourses(pinnedCourses)
+	pinnedCourses = commons.Unique(pinnedCourses, func(c model.Course) uint { return c.ID })
+	resp := make([]model.CourseDTO, 0, len(pinnedCourses))
+	for _, course := range pinnedCourses {
+		if !course.IsHidden() && course.Year == year && course.TeachingTerm == term {
 			resp = append(resp, course.ToDTO())
 		}
 	}
