@@ -1,8 +1,6 @@
 import { get } from "../utilities/fetch-wrappers";
 import { Progress } from "./progress";
 
-const DEFAULT_LECTURE_NAME = "Untitled lecture";
-
 export class Stream {
     readonly ID: number;
     readonly Name: string;

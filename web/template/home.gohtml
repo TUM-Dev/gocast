@@ -227,7 +227,7 @@
             <div class="tum-live-notification mx-3 mb-3"
                  :class="n.Warn ? 'tum-live-notification-warn' :'tum-live-notification-info'">
                 <i class="icon fa-solid" :class="n.Warn ? 'fa-triangle-exclamation' : 'fa-circle-info'"></i>
-                <span class = "title" x-html="n.Text"></span>
+                <span class="title" x-html="n.Text"></span>
             </div>
         </template>
         <template x-if="view === home.Views.PublicCourses">
@@ -380,7 +380,7 @@
                         <article class="tum-live-content-grid-item" id="recent-vods">
                             <h3>Recent VODs</h3>
                             <section class="grid xl:grid-cols-4 2xl:grid-cols-5 lg:grid-cols-3 grid-cols-1">
-                                <template x-for="(course, i) in recently.get()" :key="course.ID">
+                                <template x-for="course in recently.get()" :key="course.ID">
                                     <article class="tum-live-stream lg:col-span-1 col-span-full p-3">
                                         <a :href="course.LastRecordingURL()" class="block mb-2">
                                             <div :style="`background-image:url('/api/stream/${course.LastRecording.ID}/thumbs/vod')`"
@@ -397,8 +397,9 @@
                                             </div>
                                         </a>
                                         <div class="px-1">
-                                            <a class="course" :class = "course.LastRecording.HasName() ? 'text-xs' : 'text-sm'"
-                                               x-text="course.Name" :href="course.URL()"></a>
+                                            <a class="course"
+                                               x-text="course.Name" :href="course.URL()"
+                                               :class="course.LastRecording.HasName() ? 'text-xs' : 'text-sm'"></a>
                                             <template x-if="course.LastRecording.HasName()">
                                                 <a class="title" :href="course.LastRecordingURL()"
                                                    x-text="course.LastRecording.Name"></a>
@@ -410,8 +411,9 @@
                                 </template>
                             </section>
                             <template x-if="recently.hasNext()">
-                                <div class = "flex flex-grow justify-center">
-                                    <button class = "tum-live-button tum-live-button-secondary" type="button" @click="recently.next()">
+                                <div class="flex flex-grow justify-center">
+                                    <button class="tum-live-button tum-live-button-secondary" type="button"
+                                            @click="recently.next()">
                                         <i class="fa-solid fa-angles-down mr-2"></i>
                                         Next
                                     </button>
