@@ -8,7 +8,7 @@
   },
   "scripts": {
     "postinstall": "npm run build && npm run tailwind-compile",
-    "tailwind-compile": "NODE_ENV=production npx tailwindcss build -i assets/css/main.css --minify -o ./assets/css-dist/main.css && npx tailwindcss build -i assets/css/home.css --minify -o ./assets/css-dist/home.css",
+    "tailwind-compile": "NODE_ENV=production npx tailwindcss build -i assets/css/main.css --minify -o ./assets/css-dist/main.css && npx tailwindcss build -i assets/css/home.css --minify -o ./assets/css-dist/home.css && npx tailwindcss build -i assets/css/watch.css --minify -o ./assets/css-dist/watch.css",
     "tailwind-compile-home": "NODE_ENV=production npx tailwindcss build -i assets/css/home.css --minify -o ./assets/css-dist/home.css",
     "tailwind-compile-watch": "NODE_ENV=production npx tailwindcss build -i assets/css/watch.css --minify -o ./assets/css-dist/watch.css",
     "lint": "eslint . --ext .ts,.tsx",
