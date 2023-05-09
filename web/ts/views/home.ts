@@ -89,6 +89,7 @@ export function context() {
             const year = +state["year"] || this.semesters[this.currentSemesterIndex].Year;
             const term = state["term"] || this.semesters[this.currentSemesterIndex].TeachingTerm;
             this.state.view = state["view"] || Views.Main;
+            this.state.slug = state["slug"] || undefined;
             this.switchSemester(year, term, false);
         },
 

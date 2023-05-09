@@ -21,6 +21,8 @@ export function courseContext(slug: string, year: number, term: string) {
         plannedStreams: [],
         streamSortMode: StreamSortMode.NewestFirst,
 
+        nothingToShow: false,
+
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
          */
