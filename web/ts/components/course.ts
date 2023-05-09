@@ -2,6 +2,7 @@ import { Course, CoursesAPI, Stream } from "../api/courses";
 import { ProgressAPI } from "../api/progress";
 import { Paginator } from "../utilities/paginator";
 import { HasPinnedCourseDTO, UserAPI } from "../api/user";
+import { ToggleableElement } from "../utilities/ToggleableElement";
 
 export enum StreamSortMode {
     NewestFirst,
@@ -37,12 +38,12 @@ export function courseContext(slug: string, year: number, term: string) {
             this.term = term;
             this.loadCourse()
                 .catch((_) => {
-                    document.location.href = "/"; // redirect to start page on error
+                    document.location.href = `/new?year=${year}&term=${term}`; // redirect to start page on error
                 })
                 .then(() => {
                     this.loadPinned();
                     this.plannedStreams = this.groupBy(this.course.Planned, (s) => s.MonthOfStart());
-                    const progresses = this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID)).then(() => {
+                    this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID)).then((progresses) => {
                         this.courseStreams.set(this.course.Recordings);
                         this.courseStreams.forEach((s: Stream, i) => (s.Progress = progresses[i]));
                         this.courseStreams.reset();

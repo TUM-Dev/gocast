@@ -402,7 +402,8 @@
                         <section>
                             <article class="grid gap-3 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
                                 <template x-for="vod in courseStreams.get(compareStream(streamSortMode))">
-                                    <article class="tum-live-stream lg:col-span-1 col-span-full">
+                                    <article class="tum-live-stream group lg:col-span-1 col-span-full"
+                                             @mouseleave="vod.Dropdown.toggle(false)">
                                         <a :href="course.WatchURL(vod.ID)" class="block mb-2">
                                             <div :style="`background-image:url('/api/stream/${vod.ID}/thumbs/vod')`"
                                                  class="aspect-video tum-live-thumbnail">
@@ -417,9 +418,27 @@
                                                 </div>
                                             </div>
                                         </a>
-                                        <div class="px-1">
-                                            <a class="title" :href="course.WatchURL(vod.ID)" x-text="vod.Name"></a>
-                                            <span class="date text-xs" x-text="vod.FriendlyDateStart()"></span>
+                                        <div class="relative flex justify-between px-1">
+                                            <div>
+                                                <a class="title" :href="course.WatchURL(vod.ID)" x-text="vod.Name"></a>
+                                                <span class="date text-xs" x-text="vod.FriendlyDateStart()"></span>
+                                            </div>
+                                            <button type="button" @click="vod.Dropdown.toggle()"
+                                                    class="text-sm text-5 group-hover:block hidden">
+                                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                                            </button>
+                                            <template x-if="vod.Dropdown.value">
+                                                <div class="absolute tum-live-menu absolute top-full right-0 z-50">
+                                                    <button type="button" @click="vod.Progress.ToggleWatched()"
+                                                            class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2">
+                                                        <i class="fa-solid fa-eye mr-4"></i>
+                                                        <span class="block"
+                                                              x-text="vod.Progress.watched
+                                                                ? 'Unmark as watched'
+                                                                : 'Mark as watched'"></span>
+                                                    </button>
+                                                </div>
+                                            </template>
                                         </div>
                                     </article>
                                 </template>

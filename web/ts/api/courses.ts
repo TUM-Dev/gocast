@@ -1,5 +1,6 @@
 import { get } from "../utilities/fetch-wrappers";
 import { Progress } from "./progress";
+import { ToggleableElement } from "../utilities/ToggleableElement";
 
 const DEFAULT_LECTURE_NAME = "Untitled lecture";
 
@@ -13,6 +14,8 @@ export class Stream {
     readonly Start: string;
 
     Progress?: Progress;
+
+    Dropdown = new ToggleableElement();
 
     static New(obj): Stream {
         const s = Object.assign(new Stream(), obj);
