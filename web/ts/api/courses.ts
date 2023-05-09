@@ -69,7 +69,7 @@ export class Course {
     readonly NextLecture?: Stream;
     readonly LastLecture?: Stream;
 
-    readonly Pinned: boolean = true;
+    readonly Pinned: boolean = false;
 
     private readonly Streams?: Stream[];
 

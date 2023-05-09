@@ -1,6 +1,7 @@
 import { Course, CoursesAPI, Stream } from "../api/courses";
 import { ProgressAPI } from "../api/progress";
 import { Paginator } from "../utilities/paginator";
+import { HasPinnedCourseDTO, UserAPI } from "../api/user";
 
 export enum StreamSortMode {
     NewestFirst,
@@ -60,11 +61,18 @@ export function courseContext(slug: string, year: number, term: string) {
         },
 
         pin() {
+            if (this.course.Pinned) {
+                UserAPI.unpinCourse(this.course.ID);
+            } else {
+                UserAPI.pinCourse(this.course.ID);
+            }
             this.course.Pinned = !this.course.Pinned;
         },
 
         async load() {
             this.course = await CoursesAPI.get(this.slug, this.year, this.term);
+
+            this.loadPinned();
 
             this.plannedStreams = this.groupBy(this.course.Planned, (s) => s.MonthOfStart());
 
@@ -73,6 +81,11 @@ export function courseContext(slug: string, year: number, term: string) {
             this.courseStreams.set(this.course.Recordings);
             this.courseStreams.forEach((s: Stream, i) => (s.Progress = progresses[i]));
             this.courseStreams.reset();
+        },
+
+        async loadPinned() {
+            const pinned = (await UserAPI.hasPinnedCourse(this.course.ID)) as HasPinnedCourseDTO;
+            this.course.Pinned = pinned.has;
         },
 
         async loadProgresses(ids: number[]) {
