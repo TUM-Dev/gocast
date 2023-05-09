@@ -2,15 +2,21 @@ import { CoursesAPI, Livestream } from "../api/courses";
 
 export function livestreams(predicate?: (s: Livestream) => boolean) {
     return {
+        _all: [] as Livestream[],
+
         livestreams: [] as Livestream[],
         init() {
             this.load();
         },
 
         async load() {
-            const s = await CoursesAPI.getLivestreams();
-            this.livestreams = predicate ? s.filter(predicate) : s;
+            this._all = await CoursesAPI.getLivestreams();
+            this.livestreams = predicate ? this._all.filter(predicate) : this._all;
             console.log("init livestreams", this.livestreams);
+        },
+
+        refilter(predicate?: (s: Livestream) => boolean) {
+            this.livestreams = predicate ? this._all.filter(predicate) : this._all;
         },
 
         hasLivestreams() {

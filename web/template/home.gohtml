@@ -308,8 +308,10 @@
                         {{end}}
                     </section>
                 </header>
-                <div class="tum-live-course-view-item" x-data="home.livestreams((s) => s.Course.ID === course.ID)">
-                    <template x-if="hasLivestreams() > 0">
+                <div x-data="home.livestreams((s) => s.Course.ID === course.ID)"
+                     x-init="$watch('course.ID', (id) => refilter((s) => s.Course.ID === id))"
+                     :class="{'tum-live-course-view-item' : hasLivestreams()}">
+                    <template x-if="hasLivestreams()">
                         <section>
                             <template x-for="livestream in livestreams" :key="livestream.Stream.ID">
                                 <article class="tum-live-stream-row" :id="`livestream-${livestream.Stream.ID}`">
@@ -360,20 +362,20 @@
                                     <div class="day">
                                         <span x-text="course.NextLecture.DayOfStart()"></span>
                                     </div>
-                                    <div class = "time">
+                                    <div class="time">
                                         <span x-text="course.NextLecture.TimeOfStart()"></span>
                                     </div>
                                 </div>
-                                <h6 class = "text-xs text-center mt-1">Next lecture</h6>
+                                <h6 class="text-xs text-center mt-1">Next lecture</h6>
                             </article>
                             <template x-for="[month, streams] of Object.entries(plannedStreams)">
-                                <article class = "tum-live-planned-list p-4">
-                                    <h6 x-text="month" class = "month"></h6>
-                                    <section class = "tum-live-planned-list-group">
+                                <article class="tum-live-planned-list p-4">
+                                    <h6 x-text="month" class="month"></h6>
+                                    <section class="tum-live-planned-list-group">
                                         <template x-for="planned in streams">
-                                            <article class = "tum-live-planned-list-group-item">
-                                                <p x-text="planned.Name" class = "name"></p>
-                                                <span x-text="planned.FriendlyDateStart()" class = "date"></span>
+                                            <article class="tum-live-planned-list-group-item">
+                                                <p x-text="planned.Name" class="name"></p>
+                                                <span x-text="planned.FriendlyDateStart()" class="date"></span>
                                             </article>
                                         </template>
                                     </section>
