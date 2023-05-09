@@ -154,7 +154,7 @@ export const CoursesAPI = {
     },
 
     async get(slug: string, year?: number, term?: string) {
-        return get(`/api/courses/${slug}${this.query(year, term)}`).then((course) => Course.New(course));
+        return get(`/api/courses/${slug}${this.query(year, term)}`, {}, true).then((course) => Course.New(course));
     },
 
     query: (year?: number, term?: string) =>

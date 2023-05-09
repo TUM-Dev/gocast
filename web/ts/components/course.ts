@@ -21,8 +21,6 @@ export function courseContext(slug: string, year: number, term: string) {
         plannedStreams: [],
         streamSortMode: StreamSortMode.NewestFirst,
 
-        nothingToShow: false,
-
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
          */
@@ -37,15 +35,19 @@ export function courseContext(slug: string, year: number, term: string) {
             this.slug = slug;
             this.year = year;
             this.term = term;
-            Promise.all([this.loadCourse()]).then(() => {
-                this.loadPinned();
-                this.plannedStreams = this.groupBy(this.course.Planned, (s) => s.MonthOfStart());
-                const progresses = this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID)).then(() => {
-                    this.courseStreams.set(this.course.Recordings);
-                    this.courseStreams.forEach((s: Stream, i) => (s.Progress = progresses[i]));
-                    this.courseStreams.reset();
+            this.loadCourse()
+                .catch((_) => {
+                    document.location.href = "/"; // redirect to start page on error
+                })
+                .then(() => {
+                    this.loadPinned();
+                    this.plannedStreams = this.groupBy(this.course.Planned, (s) => s.MonthOfStart());
+                    const progresses = this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID)).then(() => {
+                        this.courseStreams.set(this.course.Recordings);
+                        this.courseStreams.forEach((s: Stream, i) => (s.Progress = progresses[i]));
+                        this.courseStreams.reset();
+                    });
                 });
-            });
         },
 
         /**

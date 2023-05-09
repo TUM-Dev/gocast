@@ -4,7 +4,7 @@
  * @param  {object} default_resp Return value in case of error
  * @return {Promise<Response>}
  */
-export async function get(url: string, default_resp: object = []) {
+export async function get(url: string, default_resp: object = [], throw_err = false) {
     return fetch(url)
         .then((res) => {
             if (!res.ok) {
@@ -13,8 +13,10 @@ export async function get(url: string, default_resp: object = []) {
             return res.json();
         })
         .catch((err) => {
-            console.error(err);
-            return default_resp;
+            if (!throw_err) {
+                return default_resp;
+            }
+            throw err;
         })
         .then((o) => o);
 }
