@@ -25,7 +25,7 @@ export function courseContext(slug: string, year: number, term: string) {
          * AlpineJS init function which is called automatically in addition to 'x-init'
          */
         init() {
-            this.load();
+            this.reload(this.slug, this.year, this.term);
         },
 
         /**
@@ -35,9 +35,22 @@ export function courseContext(slug: string, year: number, term: string) {
             this.slug = slug;
             this.year = year;
             this.term = term;
-            this.load();
+            Promise.all([this.loadCourse()]).then(() => {
+                this.loadPinned();
+                this.plannedStreams = this.groupBy(this.course.Planned, (s) => s.MonthOfStart());
+                const progresses = this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID)).then(() => {
+                    this.courseStreams.set(this.course.Recordings);
+                    this.courseStreams.forEach((s: Stream, i) => (s.Progress = progresses[i]));
+                    this.courseStreams.reset();
+                });
+            });
         },
 
+        /**
+         * Return compare function for two streams
+         * @param  {StreamSortMode} sortMode Sorting mode
+         * @return Lambda function that compares two streams based on their .Start property
+         */
         compareStream(sortMode: StreamSortMode) {
             return sortMode === StreamSortMode.NewestFirst
                 ? (a: Stream, b: Stream) => a.CompareStart(b)
@@ -60,6 +73,9 @@ export function courseContext(slug: string, year: number, term: string) {
             return this.streamSortMode === StreamSortMode.OldestFirst;
         },
 
+        /**
+         * Depending on the pinned value, pin or unpin course
+         */
         pin() {
             if (this.course.Pinned) {
                 UserAPI.unpinCourse(this.course.ID);
@@ -69,18 +85,8 @@ export function courseContext(slug: string, year: number, term: string) {
             this.course.Pinned = !this.course.Pinned;
         },
 
-        async load() {
+        async loadCourse() {
             this.course = await CoursesAPI.get(this.slug, this.year, this.term);
-
-            this.loadPinned();
-
-            this.plannedStreams = this.groupBy(this.course.Planned, (s) => s.MonthOfStart());
-
-            const progresses = await this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID));
-
-            this.courseStreams.set(this.course.Recordings);
-            this.courseStreams.forEach((s: Stream, i) => (s.Progress = progresses[i]));
-            this.courseStreams.reset();
         },
 
         async loadPinned() {
