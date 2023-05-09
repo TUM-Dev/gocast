@@ -6,15 +6,18 @@
     {{$ingestBase := .IngestBase}}
     {{$lectureHalls := .LectureHalls}}
 
-    <li :id="$id('lecture-li')"
+    <li :id="`lecture-${lecture.lectureId}`"
         x-show="!filterPast || !lecture.isPast"
         :key="lecture.lectureId"
         class="w-full mb-4 relative bg-white dark:bg-gray-800 border dark:border-0 rounded shadow">
         <div class="border-t-2 flex justify-between mb-2 rounded-t" :class="'border-' + lecture.color">
             <div class="pt-2 px-2 w-full">
-                <div class="text-3 font-semibold">
+                <div class="text-3 font-semibold flex justify-start items-center">
                     <input @change="$event.target.checked ? selectedLectures.push({ id: lecture.lectureId, isPast: lecture.isPast }) : (selectedLectures = selectedLectures.filter(({id}) => id != lecture.lectureId))"
                            class="w-auto mr-2" type="checkbox"/>
+                    <div x-show="marked.includes(lecture.lectureId)" class="rounded-full bg-green-400 dark:bg-green-600 w-11 h-4 mr-2 text-center text-xs inline-block">
+                        NEW
+                    </div>
                     <a :href="`/w/${lecture.courseSlug}/${lecture.lectureId}`"><span
                                 x-text="lecture.startDateFormatted()"></span> <i class="fas fa-external-link"></i></a>
                 </div>

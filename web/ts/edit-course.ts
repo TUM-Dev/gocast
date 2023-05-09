@@ -19,20 +19,39 @@ export enum FileType {
 
 export class LectureList {
     static lectures: Lecture[] = [];
+    static markedIds: number[] = [];
 
     static init(initialState: Lecture[]) {
         if (initialState === null) {
             initialState = [];
         }
+
+        this.markedIds = this.parseUrlHash();
+
         // load initial state into lecture objects
-        initialState.forEach((lecture) => {
+        for (const lecture of initialState) {
             let l = new Lecture();
             l = Object.assign(l, lecture);
             l.start = new Date(lecture.start);
             l.end = new Date(lecture.end);
             LectureList.lectures.push(l);
-        });
+        }
+
         LectureList.triggerUpdate();
+        setTimeout(() => this.scrollSelectedLecturesIntoView(), 500);
+    }
+
+    static scrollSelectedLecturesIntoView() {
+        if (this.markedIds.length > 0) {
+            document.querySelector(`#lecture-${this.markedIds[0]}`).scrollIntoView({ behavior: "smooth" });
+        }
+    }
+
+    static parseUrlHash(): number[] {
+        if (!window.location.hash.startsWith("#lectures:")) {
+            return [];
+        }
+        return window.location.hash.substring("#lectures:".length).split(",").map(s => parseInt(s));
     }
 
     static hasIndividualChatEnabledSettings(): boolean {
@@ -43,7 +62,12 @@ export class LectureList {
     }
 
     static triggerUpdate() {
-        const event = new CustomEvent("newlectures", { detail: LectureList.lectures });
+        const event = new CustomEvent("newlectures", {
+            detail: {
+                lectures: LectureList.lectures,
+                markedIds: this.markedIds,
+            }
+        });
         window.dispatchEvent(event);
     }
 }
@@ -685,11 +709,16 @@ export function createLectureForm(args: { s: [] }) {
                     payload.duration = 0; // premieres have no explicit end set -> use "0" here
                 }
                 postData("/api/course/" + this.courseID + "/createLecture", payload)
-                    .then(() => {
-                        this.loading = false;
+                    .then(async (res) => {
+                        const { ids } = await res.json();
+                        const url = new URL(window.location.href);
+                        url.hash = `lectures:${ids.join(",")}`;
+                        window.location.assign(url);
                         window.location.reload();
+                        this.loading = false;
                     })
-                    .catch(() => {
+                    .catch((e) => {
+                        console.log(e);
                         this.loading = false;
                         this.error = true;
                     });

@@ -1113,6 +1113,12 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 	seriesIdentifier := uuid.NewV4().String()
 	req.DateSeries = append(req.DateSeries, req.Start)
 
+	// To get new ids after insert
+	var oldStreamIds []uint
+	for _, stream := range tumLiveContext.Course.Streams {
+		oldStreamIds = append(oldStreamIds, stream.ID)
+	}
+
 	for _, date := range req.DateSeries {
 		endTime := date.Add(time.Minute * time.Duration(req.Duration))
 
@@ -1164,6 +1170,24 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 		})
 		return
 	}
+
+	var newStreamIds []uint
+	for _, stream := range tumLiveContext.Course.Streams {
+		isNewStream := true
+		for _, s := range oldStreamIds {
+			if stream.ID == s {
+				isNewStream = false
+				break
+			}
+		}
+		if isNewStream {
+			newStreamIds = append(newStreamIds, stream.ID)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"ids": newStreamIds,
+	})
 }
 
 type createLectureRequest struct {
