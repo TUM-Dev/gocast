@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -563,13 +564,16 @@ func (s StreamContext) getStreamName() string {
 	return s.courseSlug
 }
 
+var vodFileNameIllegal = regexp.MustCompile(`[^a-zA-Z0-9_\\.]+`)
+
 // getStreamNameVoD returns the stream name for vod (lrz replaces - with _)
 func (s StreamContext) getStreamNameVoD() string {
 	if !s.isSelfStream {
-		return strings.ReplaceAll(fmt.Sprintf("%s_%s%s",
+		name := strings.ReplaceAll(fmt.Sprintf("%s_%s%s",
 			s.courseSlug,
 			s.startTime.Format("2006_01_02_15_04"),
 			s.streamVersion), "-", "_")
+		return vodFileNameIllegal.ReplaceAllString(name, "_")
 	}
 	return s.courseSlug
 }

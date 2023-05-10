@@ -47,6 +47,7 @@ func (d fileDao) CountVoDFiles() (count int64, err error) {
 }
 
 func (d fileDao) SetThumbnail(streamId uint, thumb model.File) error {
+	defer Cache.Clear()
 	return DB.Transaction(func(tx *gorm.DB) error {
 		err := DB.Where("stream_id = ? AND type = ?", streamId, thumb.Type).Delete(&model.File{}).Error
 		if err != nil {

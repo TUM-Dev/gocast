@@ -469,7 +469,53 @@ func (s server) NotifyThumbnailsFinished(ctx context.Context, req *pb.Thumbnails
 	if err = s.StreamsDao.SaveStream(&stream); err != nil {
 		return nil, err
 	}
+
+	go generateCombinedThumb(stream.ID, s.DaoWrapper)
 	return &pb.Status{Ok: true}, nil
+}
+
+// generateCombinedThumb generates a combined thumbnail from the two source thumbnails CAM and PRES if both exist
+func generateCombinedThumb(streamID uint, dao dao.DaoWrapper) {
+	stream, err := dao.StreamsDao.GetStreamByID(context.Background(), fmt.Sprintf("%d", streamID))
+	if err != nil {
+		log.WithError(err).Warn("error getting stream")
+		return
+	}
+	var thumbCam, thumbPres string
+	for _, file := range stream.Files {
+		if file.Type == model.FILETYPE_THUMB_LG_CAM {
+			thumbCam = file.Path
+		}
+		if file.Type == model.FILETYPE_THUMB_LG_PRES {
+			thumbPres = file.Path
+		}
+	}
+	if thumbCam == "" || thumbPres == "" {
+		return // nothing to do
+	}
+	workers := dao.GetAliveWorkers()
+	if len(workers) == 0 {
+		return
+	}
+	w := workers[getWorkerWithLeastWorkload(workers)]
+	wConn, err := dialIn(w)
+	if err != nil {
+		log.WithError(err).Warn("error dialing in")
+		return
+	}
+	client := pb.NewToWorkerClient(wConn)
+	thumbnails, err := client.CombineThumbnails(context.Background(), &pb.CombineThumbnailsRequest{
+		PrimaryThumbnail:   thumbPres,
+		SecondaryThumbnail: thumbCam,
+		Path:               strings.ReplaceAll(thumbPres, "PRES", "CAM_PRES"),
+	})
+	if err != nil {
+		log.WithError(err).Warn("error combining thumbnails")
+		return
+	}
+	if err := dao.FileDao.SetThumbnail(stream.ID, model.File{StreamID: stream.ID, Path: thumbnails.FilePath, Type: model.FILETYPE_THUMB_LG_CAM_PRES}); err != nil {
+		log.WithError(err).Warn("error saving thumbnail")
+	}
 }
 
 // GetStreamInfoForUpload returns the stream info for a stream identified by its upload token.

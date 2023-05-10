@@ -1,7 +1,7 @@
 {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.IndexData*/ -}}
 {{$user := .TUMLiveContext.User}}
 <!DOCTYPE html>
-<html lang="en" class="dark" xmlns="http://www.w3.org/1999/html">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -502,7 +502,7 @@
             </article>
         </template>
         <template x-if="state.view === home.Views.Main">
-            <article id="main-view" class="relative min-h-full">
+            <article id="main-view" class="relative min-h-full pb-8">
                 <article x-data="home.serverNotifications()">
                     <template x-for="n in serverNotifications">
                         <div class="tum-live-notification mx-3 mb-3"
@@ -512,7 +512,6 @@
                         </div>
                     </template>
                 </article>
-
                 {{if $user}}
                     {{if $user.Name}}
                         <h1 id="greeting" class="md:text-2xl text-xl font-bold mb-4 px-3">
