@@ -14,6 +14,10 @@ export class Progress {
         this.streamId = obj.streamId;
     }
 
+    public get Watched() {
+        return this.watched;
+    }
+
     public async ToggleWatched(watched?: boolean) {
         this.watched = watched ? watched : !this.watched;
         return WatchedAPI.update(this.streamId, this.watched);

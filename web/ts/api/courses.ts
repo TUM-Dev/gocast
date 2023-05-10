@@ -10,6 +10,7 @@ export class Stream {
     readonly IsRecording: boolean;
     readonly IsPlanned: boolean;
     readonly Description: string;
+    readonly HLSUrl: string;
     readonly End: string;
     readonly Start: string;
 

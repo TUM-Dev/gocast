@@ -2,11 +2,16 @@ import { Course, CoursesAPI, Stream } from "../api/courses";
 import { ProgressAPI } from "../api/progress";
 import { Paginator } from "../utilities/paginator";
 import { HasPinnedCourseDTO, UserAPI } from "../api/user";
-import { ToggleableElement } from "../utilities/ToggleableElement";
+import { copyToClipboard } from "../utilities/input-interactions";
 
 export enum StreamSortMode {
     NewestFirst,
     OldestFirst,
+}
+
+export enum StreamFilterMode {
+    ShowWatched,
+    HideWatched,
 }
 
 export function courseContext(slug: string, year: number, term: string) {
@@ -20,7 +25,9 @@ export function courseContext(slug: string, year: number, term: string) {
         courseStreams: new Paginator<Stream>([], 8),
 
         plannedStreams: [],
+
         streamSortMode: StreamSortMode.NewestFirst,
+        streamFilterMode: StreamFilterMode.ShowWatched,
 
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
@@ -56,10 +63,16 @@ export function courseContext(slug: string, year: number, term: string) {
          * @param  {StreamSortMode} sortMode Sorting mode
          * @return Lambda function that compares two streams based on their .Start property
          */
-        compareStream(sortMode: StreamSortMode) {
+        sortFn(sortMode: StreamSortMode) {
             return sortMode === StreamSortMode.NewestFirst
                 ? (a: Stream, b: Stream) => a.CompareStart(b)
                 : (a: Stream, b: Stream) => a.CompareStart(b) * -1;
+        },
+
+        filterPred(filterMode: StreamFilterMode) {
+            return filterMode === StreamFilterMode.ShowWatched
+                ? (_: Stream) => true
+                : (s: Stream) => !s.Progress.Watched;
         },
 
         sortNewestFirst() {
@@ -78,6 +91,17 @@ export function courseContext(slug: string, year: number, term: string) {
             return this.streamSortMode === StreamSortMode.OldestFirst;
         },
 
+        toggleShowWatched() {
+            this.streamFilterMode =
+                this.streamFilterMode === StreamFilterMode.ShowWatched
+                    ? StreamFilterMode.HideWatched
+                    : StreamFilterMode.ShowWatched;
+        },
+
+        isHideWatched() {
+            return this.streamFilterMode === StreamFilterMode.HideWatched;
+        },
+
         /**
          * Depending on the pinned value, pin or unpin course
          */
@@ -88,6 +112,10 @@ export function courseContext(slug: string, year: number, term: string) {
                 UserAPI.pinCourse(this.course.ID);
             }
             this.course.Pinned = !this.course.Pinned;
+        },
+
+        copyHLS(stream: Stream) {
+            copyToClipboard(stream.HLSUrl);
         },
 
         async loadCourse() {

@@ -398,10 +398,15 @@
                                     :class="{'active' : isOldestFirst() }">
                                 Oldest first
                             </button>
+                            <button type="button" @click="toggleShowWatched()"
+                                    class="tum-live-button tum-live-button-tertiary"
+                                    :class="{'active' : isHideWatched() }">
+                                Hide watched
+                            </button>
                         </header>
                         <section>
                             <article class="grid gap-3 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
-                                <template x-for="vod in courseStreams.get(compareStream(streamSortMode))">
+                                <template x-for="vod in courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode))">
                                     <article class="tum-live-stream group lg:col-span-1 col-span-full"
                                              @mouseleave="vod.Dropdown.toggle(false)">
                                         <a :href="course.WatchURL(vod.ID)" class="block mb-2">
@@ -424,18 +429,23 @@
                                                 <span class="date text-xs" x-text="vod.FriendlyDateStart()"></span>
                                             </div>
                                             <button type="button" @click="vod.Dropdown.toggle()"
-                                                    class="text-sm text-5 group-hover:block hidden">
+                                                    class="md:group-hover:block md:hidden">
                                                 <i class="fa-solid fa-ellipsis-vertical"></i>
                                             </button>
                                             <template x-if="vod.Dropdown.value">
                                                 <div class="absolute tum-live-menu absolute top-full right-0 z-50">
                                                     <button type="button" @click="vod.Progress.ToggleWatched()"
-                                                            class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2">
+                                                            class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2 w-full">
                                                         <i class="fa-solid fa-eye mr-4"></i>
                                                         <span class="block"
                                                               x-text="vod.Progress.watched
                                                                 ? 'Unmark as watched'
                                                                 : 'Mark as watched'"></span>
+                                                    </button>
+                                                    <button type="button" @click="copyHLS(vod)"
+                                                            class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2 w-full">
+                                                        <i class="fa-solid fa-link mr-4"></i>
+                                                        <span class="block">Copy HLS URL</span>
                                                     </button>
                                                 </div>
                                             </template>

@@ -9,6 +9,7 @@ import (
 	"github.com/russross/blackfriday/v2"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"strings"
 	"time"
 )
 
@@ -191,6 +192,16 @@ func (s Stream) IsPlanned() bool {
 	return !s.Recording && !s.LiveNow && !s.IsPast() && !s.IsComingUp()
 }
 
+func (s Stream) HLSUrl() string {
+	// $lecture.PlaylistUrl}}{{if $lecture.StartOffset}}?wowzaplaystart={{$lecture.StartOffset}}&wowzaplayduration={{$lecture.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))) { copied=true; setTimeout(() => { copied=false }, 1000); }">
+	hls := s.PlaylistUrl
+	if s.StartOffset > 0 {
+		hls = fmt.Sprintf("%s?wowzaplaystart=%d&wowzaplayduration=%d", s.PlaylistUrl, s.StartOffset, s.EndOffset)
+	}
+
+	return strings.Replace(hls, "quality", "", -1)
+}
+
 type silence struct {
 	Start uint `json:"start"`
 	End   uint `json:"end"`
@@ -330,6 +341,7 @@ type StreamDTO struct {
 	Description string
 	IsRecording bool
 	IsPlanned   bool
+	HLSUrl      string
 	Start       time.Time
 	End         time.Time
 }
@@ -341,6 +353,7 @@ func (s Stream) ToDTO() StreamDTO {
 		Description: s.Description,
 		IsRecording: s.Recording,
 		IsPlanned:   s.IsPlanned(),
+		HLSUrl:      s.HLSUrl(),
 		Start:       s.Start,
 		End:         s.End,
 	}

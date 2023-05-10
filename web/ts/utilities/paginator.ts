@@ -10,10 +10,11 @@ export class Paginator<T> {
         this.index = 1;
     }
 
-    get(compareFn?: (a: T, b: T) => number): T[] {
-        return compareFn
-            ? [...this.list].sort(compareFn).slice(0, this.index * this.split_number)
-            : [...this.list].slice(0, this.index * this.split_number);
+    get(sortFn?: (a: T, b: T) => number, filterPred?: (o: T) => boolean): T[] {
+        const copy = filterPred ? [...this.list].filter(filterPred) : [...this.list];
+        return sortFn
+            ? copy.sort(sortFn).slice(0, this.index * this.split_number)
+            : copy.slice(0, this.index * this.split_number);
     }
 
     set(list: T[]) {
