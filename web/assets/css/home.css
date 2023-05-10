@@ -187,6 +187,11 @@
     @apply ml-auto
 }
 
+.tum-live-menu .tum-live-menu-item {
+    @apply flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2 w-full
+}
+
+
 .tum-live-course-list > header {
     @apply flex items-center justify-between mb-8
 }

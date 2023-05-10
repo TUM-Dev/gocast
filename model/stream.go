@@ -193,7 +193,6 @@ func (s Stream) IsPlanned() bool {
 }
 
 func (s Stream) HLSUrl() string {
-	// $lecture.PlaylistUrl}}{{if $lecture.StartOffset}}?wowzaplaystart={{$lecture.StartOffset}}&wowzaplayduration={{$lecture.EndOffset}}{{end}}'.replaceAll('\{\{quality\}\}', ''))) { copied=true; setTimeout(() => { copied=false }, 1000); }">
 	hls := s.PlaylistUrl
 	if s.StartOffset > 0 {
 		hls = fmt.Sprintf("%s?wowzaplaystart=%d&wowzaplayduration=%d", s.PlaylistUrl, s.StartOffset, s.EndOffset)
@@ -342,17 +341,23 @@ type StreamDTO struct {
 	IsRecording bool
 	IsPlanned   bool
 	HLSUrl      string
+	Downloads   []DownloadableVod
 	Start       time.Time
 	End         time.Time
 }
 
 func (s Stream) ToDTO() StreamDTO {
+	downloads := []DownloadableVod{}
+	if s.IsDownloadable() {
+		downloads = s.GetVodFiles()
+	}
 	return StreamDTO{
 		ID:          s.ID,
 		Name:        s.Name,
 		Description: s.Description,
 		IsRecording: s.Recording,
 		IsPlanned:   s.IsPlanned(),
+		Downloads:   downloads,
 		HLSUrl:      s.HLSUrl(),
 		Start:       s.Start,
 		End:         s.End,

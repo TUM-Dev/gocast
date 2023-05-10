@@ -76,7 +76,7 @@
                         <nav class="d-grid gap-3 font-light">
                             {{if or (eq $user.Role 1) (eq $user.Role 2) }}
                                 <a href="/admin"
-                                   class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2">
+                                   class="tum-live-menu-item">
                                     <i class="fa-solid fa-hammer mr-4"></i>
                                     <p>Admin</p>
                                 </a>
@@ -84,7 +84,7 @@
                             {{end}}
                             <div>
                                 <button type="button"
-                                        class="flex items-center p-2 w-full hover:bg-gray-100 dark:hover:bg-gray-800 my-2"
+                                        class="tum-live-menu-item"
                                         @click="userContext.getChild('themePicker').toggle()">
                                     <i class="fa-regular fa-moon mr-4"></i>
                                     <span>Theme</span>
@@ -104,26 +104,26 @@
                                 </div>
                             </div>
                             <a href="/settings"
-                               class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2">
+                               class="tum-live-menu-item">
                                 <i class="fa-solid fa-gear mr-4"></i>
                                 <p>Settings</p>
                             </a>
                             <div class="border-b dark:border-gray-800"></div>
                             <a href="https://github.com/joschahenningsen/TUM-Live"
                                target="_blank"
-                               class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2">
+                               class="tum-live-menu-item">
                                 <i class="fa-regular fa-comment mr-4"></i>
                                 <p>Send Feedback</p>
                             </a>
                             <a href="https://github.com/joschahenningsen/TUM-Live/issues/new?assignees=&labels=&template=bug_report.md&title="
-                               class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2"
+                               class="tum-live-menu-item"
                                target="_blank">
                                 <i class="fa-brands fa-github mr-4"></i>
                                 <p>Report problem</p>
                             </a>
                             <div class="border-b dark:border-gray-800"></div>
                             <a href="/logout"
-                               class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2">
+                               class="tum-live-menu-item">
                                 <i class="fa-solid fa-sign-out mr-4"></i>
                                 <p>Logout</p>
                             </a>
@@ -286,25 +286,29 @@
                         <h1 x-text="course.Name" class="name"></h1>
                     </div>
                     <section class="button-area">
-                        <button type="button" @click="pin()"
-                                class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
-                                :class="{'active' : course.Pinned }">
-                            <i class="fa-solid fa-thumbtack mr-2"></i>
-                            <span x-text="course.Pinned ? 'Pinned' : 'Pin'"></span>
-                        </button>
+                        {{if $user}}
+                            <button type="button" @click="pin()"
+                                    class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
+                                    :class="{'active' : course.Pinned }">
+                                <i class="fa-solid fa-thumbtack mr-2"></i>
+                                <span x-text="course.Pinned ? 'Pinned' : 'Pin'"></span>
+                            </button>
+                        {{end}}
                         <a :href="course.ICS()"
                            class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
                            title="Download .ics calendar file">
                             <i class="fa-solid fa-calendar mr-2"></i>
                             .ics
                         </a>
-                        {{if or (eq $user.Role 1) (eq $user.Role 2) }}
-                            <a :href="`/admin/course/${course.ID}`"
-                               class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
-                               title="Go to admin page">
-                                <i class="fa-solid fa-hammer mr-2"></i>
-                                Admin
-                            </a>
+                        {{if $user}}
+                            {{if or (eq $user.Role 1) (eq $user.Role 2) }}
+                                <a :href="`/admin/course/${course.ID}`"
+                                   class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
+                                   title="Go to admin page">
+                                    <i class="fa-solid fa-hammer mr-2"></i>
+                                    Admin
+                                </a>
+                            {{end}}
                         {{end}}
                     </section>
                 </header>
@@ -398,17 +402,20 @@
                                     :class="{'active' : isOldestFirst() }">
                                 Oldest first
                             </button>
-                            <button type="button" @click="toggleShowWatched()"
-                                    class="tum-live-button tum-live-button-tertiary"
-                                    :class="{'active' : isHideWatched() }">
-                                Hide watched
-                            </button>
+                            {{if $user}}
+                                <button type="button" @click="toggleShowWatched()"
+                                        class="tum-live-button tum-live-button-tertiary"
+                                        :class="{'active' : isHideWatched() }">
+                                    Hide watched
+                                </button>
+                            {{end}}
                         </header>
                         <section>
                             <article class="grid gap-3 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
-                                <template x-for="vod in courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode))">
+                                <template
+                                        x-for="vod in courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode))">
                                     <article class="tum-live-stream group lg:col-span-1 col-span-full"
-                                             @mouseleave="vod.Dropdown.toggle(false)">
+                                        @mouseleave="vod.Dropdown.toggle(false)">
                                         <a :href="course.WatchURL(vod.ID)" class="block mb-2">
                                             <div :style="`background-image:url('/api/stream/${vod.ID}/thumbs/vod')`"
                                                  class="aspect-video tum-live-thumbnail">
@@ -433,20 +440,47 @@
                                                 <i class="fa-solid fa-ellipsis-vertical"></i>
                                             </button>
                                             <template x-if="vod.Dropdown.value">
-                                                <div class="absolute tum-live-menu absolute top-full right-0 z-50">
+                                                <div class="absolute tum-live-menu py-2 absolute top-full right-0 h-fit overflow-hidden z-50 w-56">
                                                     <button type="button" @click="vod.Progress.ToggleWatched()"
-                                                            class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2 w-full">
-                                                        <i class="fa-solid fa-eye mr-4"></i>
+                                                            class="tum-live-menu-item">
+                                                        <i class="fa-solid mr-4"
+                                                           :class="vod.Progress.watched
+                                                                ? 'fa-eye-slash'
+                                                                : 'fa-eye'"></i>
                                                         <span class="block"
                                                               x-text="vod.Progress.watched
                                                                 ? 'Unmark as watched'
                                                                 : 'Mark as watched'"></span>
                                                     </button>
                                                     <button type="button" @click="copyHLS(vod)"
-                                                            class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2 w-full">
+                                                            class="tum-live-menu-item">
                                                         <i class="fa-solid fa-link mr-4"></i>
                                                         <span class="block">Copy HLS URL</span>
                                                     </button>
+                                                    {{if $user}}
+                                                        <template x-if="course.DownloadsEnabled && vod.HasDownloads()">
+                                                            <div>
+                                                                <button type="button"
+                                                                        @click="vod.Dropdown.getChild('downloads').toggle()"
+                                                                        class="tum-live-menu-item">
+                                                                    <i class="fa-solid fa-cloud-arrow-down mr-4"></i>
+                                                                    <span class="block">Download</span>
+                                                                    <i class="fa-solid ml-auto"
+                                                                       :class="vod.Dropdown.getChild('downloads').value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                                                </button>
+                                                                <div x-cloak
+                                                                     x-show="vod.Dropdown.getChild('downloads').value"
+                                                                     class="grid gap-1">
+                                                                    <template x-for="file in vod.Downloads">
+                                                                        <a href="" download
+                                                                           class="block text-left hover:bg-gray-100 dark:hover:bg-gray-800 py-2 px-4"
+                                                                           x-text="file.FriendlyName">
+                                                                        </a>
+                                                                    </template>
+                                                                </div>
+                                                            </div>
+                                                        </template>
+                                                    {{end}}
                                                 </div>
                                             </template>
                                         </div>

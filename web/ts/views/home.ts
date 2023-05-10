@@ -38,7 +38,7 @@ export function context() {
         liveToday: [] as Course[],
         recently: new Paginator<Course>([], 10),
 
-        navigation: new ToggleableElement(new Map([["allSemesters", new ToggleableElement()]])),
+        navigation: new ToggleableElement([["allSemesters", new ToggleableElement()]]),
 
         loadingIndicator: 0,
         nothingToDo: false,

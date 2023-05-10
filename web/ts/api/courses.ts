@@ -4,6 +4,11 @@ import { ToggleableElement } from "../utilities/ToggleableElement";
 
 const DEFAULT_LECTURE_NAME = "Untitled lecture";
 
+type DownloadableVOD = {
+    readonly FriendlyName: string;
+    readonly DownloadURL: string;
+};
+
 export class Stream {
     readonly ID: number;
     readonly Name: string;
@@ -13,10 +18,11 @@ export class Stream {
     readonly HLSUrl: string;
     readonly End: string;
     readonly Start: string;
+    readonly Downloads: DownloadableVOD[];
 
     Progress?: Progress;
 
-    Dropdown = new ToggleableElement();
+    Dropdown = new ToggleableElement([["downloads", new ToggleableElement()]]);
 
     static New(obj): Stream {
         const s = Object.assign(new Stream(), obj);
@@ -50,6 +56,10 @@ export class Stream {
         return `Until ${hours}:${minutes < 10 ? minutes + "0" : minutes}`;
     }
 
+    public HasDownloads(): boolean {
+        return this.Downloads.length > 0;
+    }
+
     public CompareStart(other: Stream) {
         const a = new Date(this.Start);
         const b = new Date(other.Start);
@@ -69,6 +79,8 @@ export class Course {
     readonly Year: number;
     readonly TeachingTerm: string;
     readonly Name: string;
+
+    readonly DownloadsEnabled: boolean;
 
     readonly NextLecture?: Stream;
     readonly LastLecture?: Stream;

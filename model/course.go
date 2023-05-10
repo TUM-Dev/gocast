@@ -43,25 +43,27 @@ type Course struct {
 }
 
 type CourseDTO struct {
-	ID           uint
-	Name         string
-	Slug         string
-	TeachingTerm string
-	Year         int
-	NextLecture  StreamDTO
-	LastLecture  StreamDTO
-	Streams      []StreamDTO
+	ID               uint
+	Name             string
+	Slug             string
+	TeachingTerm     string
+	Year             int
+	DownloadsEnabled bool
+	NextLecture      StreamDTO
+	LastLecture      StreamDTO
+	Streams          []StreamDTO
 }
 
 func (c *Course) ToDTO() CourseDTO {
 	return CourseDTO{
-		ID:           c.ID,
-		Name:         c.Name,
-		Slug:         c.Slug,
-		TeachingTerm: c.TeachingTerm,
-		Year:         c.Year,
-		NextLecture:  c.GetNextLecture().ToDTO(),
-		LastLecture:  c.GetLastLecture().ToDTO(),
+		ID:               c.ID,
+		Name:             c.Name,
+		Slug:             c.Slug,
+		TeachingTerm:     c.TeachingTerm,
+		Year:             c.Year,
+		DownloadsEnabled: c.DownloadsEnabled,
+		NextLecture:      c.GetNextLecture().ToDTO(),
+		LastLecture:      c.GetLastLecture().ToDTO(),
 	}
 }
 

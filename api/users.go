@@ -341,15 +341,19 @@ func (r usersRoutes) getPinForCourse(c *gin.Context) {
 
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 
-	has, err := r.UsersDao.HasPinnedCourse(*tumLiveContext.User, uri.CourseId)
-	if err != nil {
-		sentry.CaptureException(err)
-		_ = c.Error(tools.RequestError{
-			Err:           err,
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can't retrieve course",
-		})
-		return
+	var has = false
+	var err error
+	if tumLiveContext.User != nil {
+		has, err = r.UsersDao.HasPinnedCourse(*tumLiveContext.User, uri.CourseId)
+		if err != nil {
+			sentry.CaptureException(err)
+			_ = c.Error(tools.RequestError{
+				Err:           err,
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can't retrieve course",
+			})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"has": has})
