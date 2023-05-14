@@ -553,7 +553,9 @@ export function createLectureForm(args: { s: [] }) {
             recurringInterval: "weekly",
             eventsCount: 10,
             recurringDates: [],
-            file: null,
+            combFile: null,
+            presFile: null,
+            camFile: null,
         },
         streams: args.s,
         loading: false,
@@ -683,10 +685,23 @@ export function createLectureForm(args: { s: [] }) {
             }
             this.formData.formatedDuration = res;
         },
-        submitData() {
+        async submitData() {
+            const currentTab = this.currentTab;
+            this.currentTab = -1;
             this.loading = true;
+
             if (this.formData.vodup) {
-                this.uploadVod();
+                try {
+                    const streamId = await this.uploadVod();
+                    const url = new URL(window.location.href);
+                    url.hash = `lectures:${streamId}`;
+                    window.location.assign(url);
+                    window.location.reload();
+                } catch (e) {
+                    this.currentTab = currentTab;
+                    this.loading = false;
+                    this.error = true;
+                }
             } else {
                 const payload = {
                     title: this.formData.title,
@@ -715,41 +730,73 @@ export function createLectureForm(args: { s: [] }) {
                         url.hash = `lectures:${ids.join(",")}`;
                         window.location.assign(url);
                         window.location.reload();
-                        this.loading = false;
                     })
                     .catch((e) => {
                         console.log(e);
+                        this.currentTab = currentTab;
                         this.loading = false;
                         this.error = true;
                     });
             }
         },
-        uploadVod() {
-            const xhr = new XMLHttpRequest();
-            const vodUploadFormData = new FormData();
-            vodUploadFormData.append("file", this.formData.file[0]);
-            xhr.onloadend = () => {
-                if (xhr.status === 200) {
-                    window.location.reload();
-                } else {
-                    this.error = true;
-                }
+
+        async uploadVod() : Promise<number> {
+            const uploadPres = this.formData.presFile[0] != null;
+            const uploadCam = this.formData.camFile[0] != null;
+
+            let uploadProgress = {
+                COMB: 0,
+                PRES: uploadPres ? 0 : null,
+                CAM: uploadCam ? 0 : null,
             };
-            xhr.upload.onprogress = (e: ProgressEvent) => {
-                if (!e.lengthComputable) {
-                    return;
-                }
-                window.dispatchEvent(
-                    new CustomEvent("voduploadprogress", { detail: Math.floor(100 * (e.loaded / e.total)) }),
-                );
-            };
-            xhr.open(
-                "POST",
+
+            const { streamID } = JSON.parse(await uploadFilePost(
                 `/api/course/${this.courseID}/uploadVOD?start=${this.formData.start}&title=${this.formData.title}`,
+                this.formData.combFile[0],
+                (progress) => new CustomEvent("voduploadprogress", { detail: { ...uploadProgress, COMB: progress } }),
+            ));
+
+            if (uploadPres) await uploadFilePost(
+                `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=PRES`,
+                this.formData.presFile[0],
+                (progress) => new CustomEvent("voduploadprogress", { detail: { ...uploadProgress, PRES: progress } }),
             );
-            xhr.send(vodUploadFormData);
+
+            if (uploadCam) await uploadFilePost(
+                `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=CAM`,
+                this.formData.camFile[0],
+                (progress) => new CustomEvent("voduploadprogress", { detail: { ...uploadProgress, CAM: progress } }),
+            );
+
+            return streamID;
         },
     };
+}
+
+function uploadFilePost(url: String, file: File, onProgress: ((progress: number) => void)): Promise<String> {
+    const xhr = new XMLHttpRequest();
+    const vodUploadFormData = new FormData();
+    vodUploadFormData.append("file", file);
+    return new Promise((resolve, reject) => {
+        xhr.onloadend = () => {
+            if (xhr.status === 200) {
+                resolve(xhr.responseText);
+            } else {
+                reject();
+            }
+        };
+        xhr.upload.onprogress = (e: ProgressEvent) => {
+            if (!e.lengthComputable) {
+                return;
+            }
+            onProgress(Math.floor(100 * (e.loaded / e.total)));
+        };
+        xhr.open(
+            "POST",
+            url,
+        );
+        xhr.send(vodUploadFormData);
+    });
 }
 
 export function sendCourseSettingsForm(courseId: number) {

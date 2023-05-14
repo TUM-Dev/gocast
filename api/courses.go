@@ -112,6 +112,7 @@ type uploadVodReq struct {
 }
 
 type uploadVodMediaReq struct {
+	StreamID  string          `form:"streamID" binding:"required"`
 	VideoType model.VideoType `form:"videoType" binding:"required"`
 }
 
@@ -410,21 +411,29 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 func (r coursesRoutes) uploadVODMedia(c *gin.Context) {
 	log.Info("uploadVODMedia")
 
-	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusNotFound,
-			CustomMessage: "can not find stream",
-			Err:           err,
-		})
-		return
-	}
-
 	var req uploadVodMediaReq
 	if err := c.BindQuery(&req); err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusBadRequest,
 			CustomMessage: "can not bind query",
+			Err:           err,
+		})
+		return
+	}
+
+	if !req.VideoType.Valid() {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid video type",
+		})
+		return
+	}
+
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), req.StreamID)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find stream",
 			Err:           err,
 		})
 		return
