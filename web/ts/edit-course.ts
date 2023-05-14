@@ -51,7 +51,10 @@ export class LectureList {
         if (!window.location.hash.startsWith("#lectures:")) {
             return [];
         }
-        return window.location.hash.substring("#lectures:".length).split(",").map(s => parseInt(s));
+        return window.location.hash
+            .substring("#lectures:".length)
+            .split(",")
+            .map((s) => parseInt(s));
     }
 
     static hasIndividualChatEnabledSettings(): boolean {
@@ -66,7 +69,7 @@ export class LectureList {
             detail: {
                 lectures: LectureList.lectures,
                 markedIds: this.markedIds,
-            }
+            },
         });
         window.dispatchEvent(event);
     }
@@ -740,40 +743,47 @@ export function createLectureForm(args: { s: [] }) {
             }
         },
 
-        async uploadVod() : Promise<number> {
+        async uploadVod(): Promise<number> {
             const uploadPres = this.formData.presFile[0] != null;
             const uploadCam = this.formData.camFile[0] != null;
 
-            let uploadProgress = {
+            const uploadProgress = {
                 COMB: 0,
                 PRES: uploadPres ? 0 : null,
                 CAM: uploadCam ? 0 : null,
             };
 
-            const { streamID } = JSON.parse(await uploadFilePost(
-                `/api/course/${this.courseID}/uploadVOD?start=${this.formData.start}&title=${this.formData.title}`,
-                this.formData.combFile[0],
-                (progress) => new CustomEvent("voduploadprogress", { detail: { ...uploadProgress, COMB: progress } }),
-            ));
-
-            if (uploadPres) await uploadFilePost(
-                `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=PRES`,
-                this.formData.presFile[0],
-                (progress) => new CustomEvent("voduploadprogress", { detail: { ...uploadProgress, PRES: progress } }),
+            const { streamID } = JSON.parse(
+                await uploadFilePost(
+                    `/api/course/${this.courseID}/uploadVOD?start=${this.formData.start}&title=${this.formData.title}`,
+                    this.formData.combFile[0],
+                    (progress) =>
+                        new CustomEvent("voduploadprogress", { detail: { ...uploadProgress, COMB: progress } }),
+                ),
             );
 
-            if (uploadCam) await uploadFilePost(
-                `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=CAM`,
-                this.formData.camFile[0],
-                (progress) => new CustomEvent("voduploadprogress", { detail: { ...uploadProgress, CAM: progress } }),
-            );
+            if (uploadPres)
+                await uploadFilePost(
+                    `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=PRES`,
+                    this.formData.presFile[0],
+                    (progress) =>
+                        new CustomEvent("voduploadprogress", { detail: { ...uploadProgress, PRES: progress } }),
+                );
+
+            if (uploadCam)
+                await uploadFilePost(
+                    `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=CAM`,
+                    this.formData.camFile[0],
+                    (progress) =>
+                        new CustomEvent("voduploadprogress", { detail: { ...uploadProgress, CAM: progress } }),
+                );
 
             return streamID;
         },
     };
 }
 
-function uploadFilePost(url: String, file: File, onProgress: ((progress: number) => void)): Promise<String> {
+function uploadFilePost(url: string, file: File, onProgress: (progress: number) => void): Promise<string> {
     const xhr = new XMLHttpRequest();
     const vodUploadFormData = new FormData();
     vodUploadFormData.append("file", file);
@@ -791,10 +801,7 @@ function uploadFilePost(url: String, file: File, onProgress: ((progress: number)
             }
             onProgress(Math.floor(100 * (e.loaded / e.total)));
         };
-        xhr.open(
-            "POST",
-            url,
-        );
+        xhr.open("POST", url);
         xhr.send(vodUploadFormData);
     });
 }

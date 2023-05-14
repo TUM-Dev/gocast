@@ -48,5 +48,5 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	go worker.HandleUploadRestReq(streamUploadInfo, out.Name())
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("{ streamID: %d }", streamUploadInfo.StreamID)))
+	w.Write([]byte(fmt.Sprintf("{ \"streamID\": %d }", streamUploadInfo.StreamID)))
 }

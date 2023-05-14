@@ -29,6 +29,15 @@
         </ol>
 
         <div class="form-container-body">
+            <div x-show="currentTab === -1" x-data="{ progress: { COMB: 0, PRES: null, CAM: null } }" @voduploadprogress.window="(e) => (progress = e.detail)">
+                <h3>Your lecture is being created ...</h3>
+                <ul x-show="!formData.vodup" class="mt-2">
+                    <li>Combined Video: <b x-text="progress.COMB === null ? 'skipped' : `${progress.COMB}%`"></b></li>
+                    <li>Presentation Video: <b x-text="progress.PRES === null ? 'skipped' : `${progress.PRES}%`"></b></li>
+                    <li>Camera Video: <b x-text="progress.CAM === null ? 'skipped' : `${progress.CAM}%`"></b></li>
+                </ul>
+            </div>
+
             <div x-show="currentTab === 0" class="flex py-4">
                 <ul class="w-full">
                     <li class="mb-2">
@@ -160,26 +169,26 @@
             <div x-show="currentTab === 2" class="">
                 <div class="mb-4">
                     <label x-show="formData.premiere || formData.vodup && !loading">
-                        <span class="text-sm text-5">Combined File (mp4, if possible h264)</span>
+                        <span class="text-sm text-5">Combined Video (mp4, if possible h264)</span>
                         <input type="file" accept="video/mp4" class="btn tl-choose-file w-full mt-2 mx-2"
-                               x-on:change="formData.file = Object.values($event.target.files)"
+                               x-on:change="formData.combFile = Object.values($event.target.files)"
                                :required="formData.vodup">
                     </label>
                 </div>
 
                 <div class="mb-4">
                     <label x-show="formData.premiere || formData.vodup && !loading">
-                        <span class="text-sm text-5">Optional: Slides File (mp4, if possible h264)</span>
+                        <span class="text-sm text-5">Optional: Presentation Video (mp4, if possible h264)</span>
                         <input type="file" accept="video/mp4" class="btn tl-choose-file w-full mt-2 mx-2"
-                               x-on:change="formData.file = Object.values($event.target.files)">
+                               x-on:change="formData.presFile = Object.values($event.target.files)">
                     </label>
                 </div>
 
                 <div>
                     <label x-show="formData.premiere || formData.vodup && !loading">
-                        <span class="text-sm text-5">Optional: Camera File (mp4, if possible h264)</span>
+                        <span class="text-sm text-5">Optional: Camera Video (mp4, if possible h264)</span>
                         <input type="file" accept="video/mp4" class="btn tl-choose-file w-full mt-2 mx-2"
-                               x-on:change="formData.file = Object.values($event.target.files)">
+                               x-on:change="formData.camFile = Object.values($event.target.files)">
                     </label>
                 </div>
             </div>
@@ -199,9 +208,7 @@
                                                             ? `Create ${(formData.recurringDates.filter(({enabled}) => enabled).length + 1).toString()} Lectures`
                                                             : 'Create Lecture'"></span>
                 <span x-show="loading">
-                    <i class="fas fa-circle-notch text-4 animate-spin"></i> <span
-                            @voduploadprogress.window="(e) => progress=e.detail" x-data="{ progress: undefined }"
-                            x-text="progress?progress+'%':'0%'"></span>
+                    <i class="fas fa-circle-notch text-4 animate-spin"></i> <span>loading ...</span>
                 </span>
             </button>
         </div>
