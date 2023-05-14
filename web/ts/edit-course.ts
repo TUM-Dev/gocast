@@ -747,18 +747,22 @@ export function createLectureForm(args: { s: [] }) {
             const uploadPres = this.formData.presFile[0] != null;
             const uploadCam = this.formData.camFile[0] != null;
 
-            const uploadProgress = {
+            let uploadProgress = {
                 COMB: 0,
                 PRES: uploadPres ? 0 : null,
                 CAM: uploadCam ? 0 : null,
             };
 
+            window.dispatchEvent(new CustomEvent("voduploadprogress", { detail: uploadProgress }));
+
             const { streamID } = JSON.parse(
                 await uploadFilePost(
                     `/api/course/${this.courseID}/uploadVOD?start=${this.formData.start}&title=${this.formData.title}`,
                     this.formData.combFile[0],
-                    (progress) =>
-                        new CustomEvent("voduploadprogress", { detail: { ...uploadProgress, COMB: progress } }),
+                    (progress) => {
+                        uploadProgress = { ...uploadProgress, COMB: progress };
+                        window.dispatchEvent(new CustomEvent("voduploadprogress", { detail: uploadProgress }));
+                    },
                 ),
             );
 
@@ -766,16 +770,20 @@ export function createLectureForm(args: { s: [] }) {
                 await uploadFilePost(
                     `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=PRES`,
                     this.formData.presFile[0],
-                    (progress) =>
-                        new CustomEvent("voduploadprogress", { detail: { ...uploadProgress, PRES: progress } }),
+                    (progress) => {
+                        uploadProgress = { ...uploadProgress, PRES: progress };
+                        window.dispatchEvent(new CustomEvent("voduploadprogress", { detail: uploadProgress }));
+                    },
                 );
 
             if (uploadCam)
                 await uploadFilePost(
                     `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=CAM`,
                     this.formData.camFile[0],
-                    (progress) =>
-                        new CustomEvent("voduploadprogress", { detail: { ...uploadProgress, CAM: progress } }),
+                    (progress) => {
+                        uploadProgress = { ...uploadProgress, CAM: progress };
+                        window.dispatchEvent(new CustomEvent("voduploadprogress", { detail: uploadProgress }));
+                    },
                 );
 
             return streamID;

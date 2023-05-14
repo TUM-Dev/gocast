@@ -31,7 +31,7 @@
         <div class="form-container-body">
             <div x-show="currentTab === -1" x-data="{ progress: { COMB: 0, PRES: null, CAM: null } }" @voduploadprogress.window="(e) => (progress = e.detail)">
                 <h3>Your lecture is being created ...</h3>
-                <ul x-show="!formData.vodup" class="mt-2">
+                <ul x-show="formData.vodup" class="mt-2">
                     <li>Combined Video: <b x-text="progress.COMB === null ? 'skipped' : `${progress.COMB}%`"></b></li>
                     <li>Presentation Video: <b x-text="progress.PRES === null ? 'skipped' : `${progress.PRES}%`"></b></li>
                     <li>Camera Video: <b x-text="progress.CAM === null ? 'skipped' : `${progress.CAM}%`"></b></li>
@@ -199,12 +199,12 @@
         </div>
 
         <div class="flex justify-end py-2 px-4">
-            <button :disabled="!canGoBack" class="mx-2 disabled:text-gray-300 dark:disabled:text-gray-500" @click="() => prev()">
+            <button x-show="!loading" :disabled="!canGoBack" class="mx-2 disabled:text-gray-300 dark:disabled:text-gray-500" @click="() => prev()">
                 Back
             </button>
-            <button :disabled="!canContinue" class="btn mx-2" @click="() => next()">
-                <span x-show="!onLastSlide">Continue</span>
-                <span x-show="onLastSlide" x-text="formData.recurring && formData.recurringDates.filter(({enabled}) => enabled).length > 0
+            <button :disabled="loading || !canContinue" class="btn mx-2" @click="() => next()">
+                <span x-show="!loading && !onLastSlide">Continue</span>
+                <span x-show="!loading && onLastSlide" x-text="formData.recurring && formData.recurringDates.filter(({enabled}) => enabled).length > 0
                                                             ? `Create ${(formData.recurringDates.filter(({enabled}) => enabled).length + 1).toString()} Lectures`
                                                             : 'Create Lecture'"></span>
                 <span x-show="loading">
