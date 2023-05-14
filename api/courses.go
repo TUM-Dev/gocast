@@ -61,6 +61,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			courses.Use(tools.AdminOfCourse)
 			courses.DELETE("/", routes.deleteCourse)
 			courses.POST("/uploadVOD", routes.uploadVOD)
+			courses.POST("/uploadVODMedia", routes.uploadVODMedia)
 			courses.POST("/copy", routes.copyCourse)
 			courses.POST("/createLecture", routes.createLecture)
 			courses.POST("/presets", routes.updateSourceSettings)
@@ -108,6 +109,10 @@ const (
 type uploadVodReq struct {
 	Start time.Time `form:"start" binding:"required"`
 	Title string    `form:"title"`
+}
+
+type uploadVodMediaReq struct {
+	VideoType model.VideoType `form:"videoType" binding:"required"`
 }
 
 func (r coursesRoutes) getLive(c *gin.Context) {
@@ -363,7 +368,70 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 		return
 	}
 	key := uuid.NewV4().String()
-	err = r.UploadKeyDao.CreateUploadKey(key, stream.ID)
+	err = r.UploadKeyDao.CreateUploadKey(key, stream.ID, model.VideoTypeCombined)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "can not create upload key",
+			Err:           err,
+		})
+		return
+	}
+	workers := r.WorkerDao.GetAliveWorkers()
+	if len(workers) == 0 {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "no workers available",
+			Err:           err,
+		})
+		return
+	}
+	w := workers[getWorkerWithLeastWorkload(workers)]
+	u, err := url.Parse("http://" + w.Host + ":" + WorkerHTTPPort + "/upload?" + c.Request.URL.Query().Encode() + "&key=" + key)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: fmt.Sprintf("parse proxy url: %v", err),
+			Err:           err,
+		})
+		return
+	}
+	p := httputil.NewSingleHostReverseProxy(u)
+	p.Director = func(req *http.Request) {
+		req.URL.Scheme = u.Scheme
+		req.URL.Host = u.Host
+		req.Host = u.Host
+		req.URL.Path = u.Path
+		req.URL.RawQuery = u.RawQuery
+	}
+	p.ServeHTTP(c.Writer, c.Request)
+}
+
+func (r coursesRoutes) uploadVODMedia(c *gin.Context) {
+	log.Info("uploadVODMedia")
+
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), c.Param("streamID"))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find stream",
+			Err:           err,
+		})
+		return
+	}
+
+	var req uploadVodMediaReq
+	if err := c.BindQuery(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind query",
+			Err:           err,
+		})
+		return
+	}
+
+	key := uuid.NewV4().String()
+	err = r.UploadKeyDao.CreateUploadKey(key, stream.ID, req.VideoType)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
