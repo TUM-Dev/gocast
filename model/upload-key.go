@@ -5,9 +5,9 @@ import "gorm.io/gorm"
 type VideoType string
 
 const (
-	VideoTypeCombined     VideoType = "combined"
-	VideoTypePresentation           = "presentation"
-	VideoTypeCamera                 = "camera"
+	VideoTypeCombined     VideoType = "COMB"
+	VideoTypePresentation           = "PRES"
+	VideoTypeCamera                 = "CAM"
 )
 
 // UploadKey represents a key that is created when a user uploads a file,

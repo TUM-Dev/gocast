@@ -321,7 +321,7 @@ func HandleUploadRestReq(uploadKey string, localFile string) {
 		teachingYear:  resp.CourseYear,
 		startTime:     resp.StreamStart.AsTime(),
 		endTime:       resp.StreamEnd.AsTime(),
-		streamVersion: "COMB",
+		streamVersion: resp.VideoType,
 		publishVoD:    true,
 		recordingPath: &localFile,
 	}
