@@ -63,8 +63,7 @@ export function context() {
                 this.nothingToDo = this.liveToday.length === 0 && this.recently.length === 0;
             });
             promises[promises.length - 1].then(() => {
-                this.recently.set(this.getRecently());
-                this.recently.reset();
+                this.recently.set(this.getRecently()).reset();
                 this.liveToday = this.getLiveToday();
                 this.loadProgresses(this.userCourses.map((c) => c.LastLecture.ID));
             });

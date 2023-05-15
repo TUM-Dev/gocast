@@ -49,12 +49,12 @@ export function courseContext(slug: string, year: number, term: string) {
                 })
                 .then(() => {
                     this.loadPinned();
-                    this.plannedStreams.set(this.course.Planned.reverse());
-                    this.plannedStreams.reset();
+                    this.plannedStreams.set(this.course.Planned.reverse()).reset();
                     this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID)).then((progresses) => {
-                        this.courseStreams.set(this.course.Recordings);
-                        this.courseStreams.forEach((s: Stream, i) => (s.Progress = progresses[i]));
-                        this.courseStreams.reset();
+                        this.courseStreams
+                            .set(this.course.Recordings)
+                            .forEach((s: Stream, i) => (s.Progress = progresses[i]))
+                            .reset();
                     });
                 });
         },
@@ -131,13 +131,6 @@ export function courseContext(slug: string, year: number, term: string) {
             if (ids.length > 0) {
                 return ProgressAPI.getBatch(ids);
             }
-        },
-
-        groupBy<K extends keyof any>(arr: Stream[], key: (s: Stream) => K) {
-            return arr.reduce((groups, item) => {
-                (groups[key(item)] ||= []).push(item);
-                return groups;
-            }, {} as Record<K, Stream[]>);
         },
     };
 }

@@ -17,8 +17,9 @@ export class Paginator<T> {
             : copy.slice(0, this.index * this.split_number);
     }
 
-    set(list: T[]) {
+    set(list: T[]): Paginator<never> {
         this.list = list;
+        return this;
     }
 
     next(all = false) {
@@ -29,15 +30,17 @@ export class Paginator<T> {
         return Math.ceil(this.list.length / this.split_number) >= this.index + 1;
     }
 
-    forEach(callback: (obj: T, i: number) => void) {
+    forEach(callback: (obj: T, i: number) => void): Paginator<never> {
         this.list.forEach(callback);
+        return this;
     }
 
     hasElements() {
         return this.list.length > 0;
     }
 
-    reset() {
+    reset(): Paginator<never> {
         this.index = 1;
+        return this;
     }
 }
