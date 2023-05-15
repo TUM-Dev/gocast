@@ -3,8 +3,6 @@ import { Progress } from "./progress";
 import { ToggleableElement } from "../utilities/ToggleableElement";
 import { date_eq } from "../utilities/time-utils";
 
-const DEFAULT_LECTURE_NAME = "Untitled lecture";
-
 type DownloadableVOD = {
     readonly FriendlyName: string;
     readonly DownloadURL: string;
@@ -25,10 +23,8 @@ export class Stream {
 
     Dropdown = new ToggleableElement([["downloads", new ToggleableElement()]]);
 
-    static New(obj): Stream {
-        const s = Object.assign(new Stream(), obj);
-        s.Name = s.Name === "" ? DEFAULT_LECTURE_NAME : s.Name;
-        return s;
+    public HasName(): boolean {
+        return this.Name !== "";
     }
 
     public FriendlyDateStart(): string {
@@ -93,7 +89,7 @@ export class Course {
     readonly DownloadsEnabled: boolean;
 
     readonly NextLecture?: Stream;
-    readonly LastLecture?: Stream;
+    readonly LastRecording?: Stream;
 
     readonly Pinned: boolean = false;
 
@@ -104,9 +100,9 @@ export class Course {
 
     static New(obj): Course {
         const c = Object.assign(new Course(), obj);
-        c.NextLecture = obj.NextLecture ? Stream.New(obj.NextLecture) : undefined;
-        c.LastLecture = obj.LastLecture ? Stream.New(obj.LastLecture) : undefined;
-        c.Streams = obj.Streams ? obj.Streams.map((s) => Stream.New(s)) : [];
+        c.NextLecture = obj.NextLecture ? Object.assign(new Stream(), obj.NextLecture) : undefined;
+        c.LastRecording = obj.LastRecording ? Object.assign(new Stream(), obj.LastRecording) : undefined;
+        c.Streams = obj.Streams ? obj.Streams.map((s) => Object.assign(new Stream(), s)) : [];
         c.Recordings = c.Streams.filter((s) => s.IsRecording);
         c.Planned = c.Streams.filter((s) => s.IsPlanned);
         return c;
@@ -117,7 +113,7 @@ export class Course {
     }
 
     public LastLectureURL(): string {
-        return this.WatchURL(this.LastLecture.ID);
+        return this.WatchURL(this.LastRecording.ID);
     }
 
     public NextLectureURL(): string {
@@ -153,7 +149,7 @@ export class Livestream {
     readonly LectureHall?: LectureHall;
 
     constructor(obj: Livestream) {
-        this.Stream = Stream.New(obj.Stream);
+        this.Stream = Object.assign(new Stream(), obj.Stream);
         this.Course = Course.New(obj.Course);
         this.LectureHall = obj.LectureHall ? new LectureHall(obj.LectureHall) : undefined;
     }
@@ -177,6 +173,12 @@ export const CoursesAPI = {
 
     async getUsers(year?: number, term?: string): Promise<object> {
         return get(`/api/courses/users${this.query(year, term)}`).then((courses) => courses.map((c) => Course.New(c)));
+    },
+
+    async getPinned(year?: number, term?: string): Promise<object> {
+        return get(`/api/courses/users/pinned${this.query(year, term)}`).then((courses) =>
+            courses.map((c) => Course.New(c)),
+        );
     },
 
     async get(slug: string, year?: number, term?: string) {

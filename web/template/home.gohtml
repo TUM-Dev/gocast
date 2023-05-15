@@ -33,7 +33,6 @@
 <body x-data="home.context()"
       @popstate.window="onPopState"
       class="h-screen flex flex-col items-stretch tum-live-bg">
-<div :style="`width: ${loadingIndicator}%`" class="bg-blue-500/50 h-px fixed top-0 transition-all duration-300"></div>
 <header x-data="home.header()"
         class="text-3 flex z-50 w-full items-center px-3 py-2 h-16 justify-between shrink-0 grow-0">
     <div class="flex items-center">
@@ -152,12 +151,26 @@
                 </template>
             </template>
             <button @click="navigation.getChild('allSemesters').toggle()"
-                    class="tum-live-side-navigation-group-item">
+                    class="tum-live-side-navigation-group-item hover">
                 <i class="fa-solid"
                    :class="navigation.getChild('allSemesters').value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                 <span x-text="navigation.getChild('allSemesters').value ? 'Show less' : 'Show all'"></span>
             </button>
         </article>
+        <template x-if="pinnedCourses.length > 0">
+            <article class="tum-live-side-navigation-group">
+                <header>
+                    <i class="fa-solid fa-thumbtack"></i>
+                    Pinned Courses
+                </header>
+                <template x-for="course in pinnedCourses" :key="course.ID">
+                    <a class="tum-live-side-navigation-group-item hover"
+                       :href="course.URL()"
+                       x-text="course.Name">
+                    </a>
+                </template>
+            </article>
+        </template>
         <template x-if="userCourses.length > 0">
             <article class="tum-live-side-navigation-group">
                 <header>
@@ -172,7 +185,7 @@
                 </template>
                 <template x-if="userCourses.length > 8 && state.view !== home.Views.UserCourses">
                     <button @click="showUserCourses()"
-                            class="tum-live-side-navigation-group-item">
+                            class="tum-live-side-navigation-group-item hover">
                         <i class="fa-solid fa-chevron-right"></i>
                         Show all my courses
                     </button>
@@ -192,7 +205,7 @@
             </template>
             <template x-if="publicCourses.length > 5 && state.view !== home.Views.PublicCourses">
                 <button @click="showPublicCourses()"
-                        class="tum-live-side-navigation-group-item">
+                        class="tum-live-side-navigation-group-item hover">
                     <i class="fa-solid fa-chevron-right"></i>
                     Show all public courses
                 </button>
@@ -210,7 +223,7 @@
         </footer>
     </section>
     <article class="text-3 p-4 grow" :class="{'hidden' : navigation.value}">
-        <template x-if="state.view === home.Views.PublicCourses">
+        <template x-if="view === home.Views.PublicCourses">
             <article id="public-courses" class="tum-live-course-list">
                 <header>
                     <h1>
@@ -233,7 +246,7 @@
                                 <span x-text="course.NextLecture.ID !== 0
                                         ? `Next lecture: ${course.NextLecture.FriendlyDateStart()}`
                                         : 'No upcoming lecture.'"></span>
-                                <a x-cloak x-show="course.LastLecture.ID !== 0" :href="course.LastLectureURL()">
+                                <a x-cloak x-show="course.LastRecording.ID !== 0" :href="course.LastRecordingURL()">
                                     <i class="fa-solid fa-square-up-right"></i>
                                     <span class="hover:underline">Most recent lecture</span>
                                 </a>
@@ -263,10 +276,10 @@
                                x-text="course.Name">
                             </a>
                             <div class="links">
-                                <span x-text="course.LastLecture.ID !== 0
-                                        ? `Next lecture: ${course.LastLecture.FriendlyDateStart()}`
+                                <span x-text="course.LastRecording.ID !== 0
+                                        ? `Next lecture: ${course.LastRecording.FriendlyDateStart()}`
                                         : 'No upcoming lecture.'"></span>
-                                <a x-cloak x-show="course.LastLecture.ID !== 0" :href="course.LastLectureURL()">
+                                <a x-cloak x-show="course.LastRecording.ID !== 0" :href="course.LastRecordingURL()">
                                     <i class="fa-solid fa-square-up-right"></i>
                                     <span class="hover:underline">Most recent lecture</span>
                                 </a>
@@ -381,7 +394,8 @@
                                 </header>
                                 <section>
                                     <article class="grid gap-3 xl:grid-cols-3 lg:grid-cols-2 grid-cols-1">
-                                        <template x-for="vod in courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode))">
+                                        <template
+                                                x-for="vod in courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode))">
                                             <article class="tum-live-stream group sm:col-span-1 col-span-full"
                                                      @mouseleave="vod.Dropdown.toggle(false)">
                                                 <a :href="course.WatchURL(vod.ID)" class="block mb-2">
@@ -573,9 +587,11 @@
                                                @click="showCourse(livestream.Course.Slug)"
                                                x-text="livestream.Course.Name">
                                             </a>
-                                            <a class="title"
-                                               :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`"
-                                               x-text="livestream.Stream.Name"></a>
+                                            <template x-if="livestream.Stream.HasName()">
+                                                <a class="title"
+                                                   :href="`/w/${livestream.Course.Slug}/${livestream.Stream.ID}`"
+                                                   x-text="livestream.Stream.Name"></a>
+                                            </template>
                                             <span class="date text-sm" x-text="livestream.Stream.UntilString()"></span>
                                         </div>
                                     </article>
@@ -617,29 +633,30 @@
                                     class="grid xl:grid-cols-4 2xl:grid-cols-5 lg:grid-cols-3 sm:grid-cols-2 grid-cols-1">
                                 <template x-for="course in recently.get()" :key="course.ID">
                                     <article class="tum-live-stream sm:col-span-1 col-span-full p-3">
-                                        <a :href="course.LastLectureURL()" class="block mb-2">
-                                            <div :style="`background-image:url('/api/stream/${course.LastLecture.ID}/thumbs/vod')`"
+                                        <a :href="course.LastRecordingURL()" class="block mb-2">
+                                            <div :style="`background-image:url('/api/stream/${course.LastRecording.ID}/thumbs/vod')`"
                                                  class="aspect-video tum-live-thumbnail">
-                                                <div :id="`vod-progress-${course.LastLecture.ID}`"
+                                                <div :id="`vod-progress-${course.LastRecording.ID}`"
                                                      class="tum-live-thumbnail-progress">
                                                     <div>
-                                                        <template x-if="course.LastLecture.Progress !== undefined">
-                                                            <span :style="`width: ${course.LastLecture.Progress.Percentage()}%`"
-                                                                  :class="{'rounded-br-lg': course.LastLecture.Progress.HasProgressOne()}"></span>
+                                                        <template x-if="course.LastRecording.Progress !== undefined">
+                                                            <span :style="`width: ${course.LastRecording.Progress.Percentage()}%`"
+                                                                  :class="{'rounded-br-lg': course.LastRecording.Progress.HasProgressOne()}"></span>
                                                         </template>
                                                     </div>
                                                 </div>
                                             </div>
                                         </a>
                                         <div class="px-1">
-                                            <a type="button" class="course text-xs"
-                                               @click="showCourse(course.Slug)"
-                                               x-text="course.Name">
-                                            </a>
-                                            <a class="title" :href="course.LastLectureURL()"
-                                               x-text="course.LastLecture.Name"></a>
+                                            <a class="course text-xs"
+                                               x-text="course.Name" @click="showCourse(course.Slug)"
+                                               :class="course.LastRecording.HasName() ? 'text-xs' : 'text-sm'"></a>
+                                            <template x-if="course.LastRecording.HasName()">
+                                                <a class="title" :href="course.LastRecordingURL()"
+                                                   x-text="course.LastRecording.Name"></a>
+                                            </template>
                                             <span class="date text-xs"
-                                                  x-text="course.LastLecture.FriendlyDateStart()"></span>
+                                                  x-text="course.LastRecording.FriendlyDateStart()"></span>
                                         </div>
                                     </article>
                                 </template>

@@ -36,12 +36,13 @@ export function context() {
 
         publicCourses: [] as Course[],
         userCourses: [] as Course[],
+        pinnedCourses: [] as Course[],
+
         liveToday: [] as Course[],
         recently: new Paginator<Course>([], 10),
 
         navigation: new ToggleableElement([["allSemesters", new ToggleableElement()]]),
 
-        loadingIndicator: 0,
         nothingToDo: false,
 
         /**
@@ -56,29 +57,21 @@ export function context() {
          * @param  {boolean} full If true, load everything including semesters and livestreams
          */
         reload(full = false) {
-            const promises = full
-                ? [this.loadSemesters(), this.loadPublicCourses(), this.loadUserCourses()]
-                : [this.loadPublicCourses(), this.loadUserCourses()];
-            this.load(promises).then(() => {
-                this.nothingToDo = this.liveToday.length === 0 && this.recently.length === 0;
+            const promises = [
+                full ? [this.loadSemesters()] : [],
+                this.loadPublicCourses(),
+                this.loadPinnedCourses(),
+                this.loadUserCourses(),
+            ];
+            Promise.all(promises.flat()).then(() => {
+                this.nothingToDo =
+                    this.livestreams.length === 0 && this.liveToday.length === 0 && this.recently.length === 0;
             });
             promises[promises.length - 1].then(() => {
                 this.recently.set(this.getRecently()).reset();
                 this.liveToday = this.getLiveToday();
-                this.loadProgresses(this.userCourses.map((c) => c.LastLecture.ID));
+                this.loadProgresses(this.userCourses.map((c) => c.LastRecording.ID));
             });
-        },
-
-        /**
-         * Resolve given promises and increment loadingIndicator partially
-         * @param  {Promise<object>[]} promises Array of promises
-         */
-        load(promises: Promise<object>[]): Promise<number | void> {
-            this.loadingIndicator = 0;
-            promises.forEach((p) => {
-                Promise.resolve(p).then((_) => (this.loadingIndicator += 100 / promises.length));
-            });
-            return Promise.all(promises).then(() => (this.loadingIndicator = 0));
         },
 
         /**
@@ -148,10 +141,14 @@ export function context() {
             this.userCourses = await CoursesAPI.getUsers(this.state.year, this.state.term);
         },
 
+        async loadPinnedCourses() {
+            this.pinnedCourses = await CoursesAPI.getPinned(this.year, this.term);
+        },
+
         async loadProgresses(ids: number[]) {
             if (ids.length > 0) {
                 const progresses = await ProgressAPI.getBatch(ids);
-                this.recently.forEach((r, i) => (r.LastLecture.Progress = progresses[i]));
+                this.recently.forEach((r, i) => (r.LastRecording.Progress = progresses[i]));
             }
         },
 
@@ -169,7 +166,7 @@ export function context() {
          * Filter userCourses for recently streamed lectures
          */
         getRecently() {
-            return this.userCourses.filter((c) => c.LastLecture.ID !== 0);
+            return this.userCourses.filter((c) => c.LastRecording.ID !== 0);
         },
 
         /**
