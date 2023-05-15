@@ -192,6 +192,21 @@ func (mr *MockUsersDaoMockRecorder) GetUserByResetKey(key interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByResetKey", reflect.TypeOf((*MockUsersDao)(nil).GetUserByResetKey), key)
 }
 
+// HasPinnedCourse mocks base method.
+func (m *MockUsersDao) HasPinnedCourse(arg0 model.User, arg1 uint) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasPinnedCourse", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HasPinnedCourse indicates an expected call of HasPinnedCourse.
+func (mr *MockUsersDaoMockRecorder) HasPinnedCourse(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasPinnedCourse", reflect.TypeOf((*MockUsersDao)(nil).HasPinnedCourse), arg0, arg1)
+}
+
 // IsUserAdmin mocks base method.
 func (m *MockUsersDao) IsUserAdmin(ctx context.Context, uid uint) (bool, error) {
 	m.ctrl.T.Helper()
