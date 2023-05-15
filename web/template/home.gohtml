@@ -280,40 +280,38 @@
             <article x-data="home.courseContext(state.slug, state.year, state.term)"
                      x-init="$watch('state', (s) => reload(s.slug, s.year, s.term))"
                      class="tum-live-course-view">
-                <template x-if="isLoaded()">
-                    <header>
-                        <div>
-                            <p x-text="course.Slug" class="slug"></p>
-                            <h1 x-text="course.Name" class="name"></h1>
-                        </div>
-                        <section class="button-area">
-                            {{if $user}}
-                                <button type="button" @click="pin()"
-                                        class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
-                                        :class="{'active' : course.Pinned }">
-                                    <i class="fa-solid fa-thumbtack mr-2"></i>
-                                    <span x-text="course.Pinned ? 'Pinned' : 'Pin'"></span>
-                                </button>
+                <header>
+                    <div>
+                        <p x-text="course.Slug" class="slug"></p>
+                        <h1 x-text="course.Name" class="name"></h1>
+                    </div>
+                    <section class="button-area">
+                        {{if $user}}
+                            <button type="button" @click="pin()"
+                                    class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
+                                    :class="{'active' : course.Pinned }">
+                                <i class="fa-solid fa-thumbtack mr-2"></i>
+                                <span x-text="course.Pinned ? 'Pinned' : 'Pin'"></span>
+                            </button>
+                        {{end}}
+                        <a :href="course.ICS()" download
+                           class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
+                           title="Download .ics calendar file">
+                            <i class="fa-solid fa-calendar mr-2"></i>
+                            .ics
+                        </a>
+                        {{if $user}}
+                            {{if or (eq $user.Role 1) (eq $user.Role 2) }}
+                                <a :href="`/admin/course/${course.ID}`"
+                                   class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
+                                   title="Go to admin page">
+                                    <i class="fa-solid fa-hammer mr-2"></i>
+                                    Admin
+                                </a>
                             {{end}}
-                            <a :href="course.ICS()" download
-                               class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
-                               title="Download .ics calendar file">
-                                <i class="fa-solid fa-calendar mr-2"></i>
-                                .ics
-                            </a>
-                            {{if $user}}
-                                {{if or (eq $user.Role 1) (eq $user.Role 2) }}
-                                    <a :href="`/admin/course/${course.ID}`"
-                                       class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
-                                       title="Go to admin page">
-                                        <i class="fa-solid fa-hammer mr-2"></i>
-                                        Admin
-                                    </a>
-                                {{end}}
-                            {{end}}
-                        </section>
-                    </header>
-                </template>
+                        {{end}}
+                    </section>
+                </header>
                 <div x-data="home.livestreams((s) => s.Course.ID === course.ID)"
                      x-init="$watch('course.ID', (id) => refilter((s) => s.Course.ID === id))"
                      :class="{'tum-live-course-view-item' : hasLivestreams()}">
@@ -606,7 +604,8 @@
                     <template x-if="recently.hasElements()">
                         <article class="tum-live-content-grid-item" id="recent-vods">
                             <h3>Recent VODs</h3>
-                            <section class="grid xl:grid-cols-4 2xl:grid-cols-5 lg:grid-cols-3 sm:grid-cols-2 grid-cols-1">
+                            <section
+                                    class="grid xl:grid-cols-4 2xl:grid-cols-5 lg:grid-cols-3 sm:grid-cols-2 grid-cols-1">
                                 <template x-for="course in recently.get()" :key="course.ID">
                                     <article class="tum-live-stream sm:col-span-1 col-span-full p-3">
                                         <a :href="course.LastLectureURL()" class="block mb-2">
