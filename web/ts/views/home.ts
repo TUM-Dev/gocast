@@ -20,7 +20,7 @@ type History = {
     view: Views;
 };
 
-export function context() {
+export function skeleton() {
     const url = new URL(window.location.href);
     return {
         state: {
@@ -28,6 +28,19 @@ export function context() {
             year: +url.searchParams.get("year"),
             slug: url.searchParams.get("slug") ?? undefined,
             view: +url.searchParams.get("view") ?? Views.Main,
+
+            isMain: function () {
+                return this.view === Views.Main;
+            },
+            isCourse: function () {
+                return this.view === Views.Course;
+            },
+            isPublicCourses: function () {
+                return this.view === Views.PublicCourses;
+            },
+            isUserCourses: function () {
+                return this.view === Views.UserCourses;
+            },
         },
 
         semesters: [] as Semester[],
@@ -37,9 +50,6 @@ export function context() {
         publicCourses: [] as Course[],
         userCourses: [] as Course[],
         pinnedCourses: [] as Course[],
-
-        liveToday: [] as Course[],
-        recently: new Paginator<Course>([], 10),
 
         navigation: new ToggleableElement([["allSemesters", new ToggleableElement()]]),
 
@@ -55,18 +65,14 @@ export function context() {
          * @param  {boolean} full If true, load everything including semesters and livestreams
          */
         reload(full = false) {
-            const promises = [
-                full ? [this.loadSemesters()] : [],
-                this.loadPublicCourses(),
-                this.loadPinnedCourses(),
-                this.loadUserCourses(),
-            ];
-            Promise.all(promises.flat());
-            promises[promises.length - 1].then(() => {
-                this.recently.set(this.getRecently()).reset();
-                this.liveToday = this.getLiveToday();
-                this.loadProgresses(this.userCourses.map((c) => c.LastRecording.ID));
-            });
+            Promise.all(
+                [
+                    full ? [this.loadSemesters()] : [],
+                    this.loadPublicCourses(),
+                    this.loadPinnedCourses(),
+                    this.loadUserCourses(),
+                ].flat(),
+            );
         },
 
         /**
@@ -138,30 +144,6 @@ export function context() {
 
         async loadPinnedCourses() {
             this.pinnedCourses = await CoursesAPI.getPinned(this.state.year, this.state.term);
-        },
-
-        async loadProgresses(ids: number[]) {
-            if (ids.length > 0) {
-                const progresses = await ProgressAPI.getBatch(ids);
-                this.recently.forEach((r, i) => (r.LastRecording.Progress = progresses[i]));
-            }
-        },
-
-        /**
-         * Filter userCourses for lectures streamed today
-         */
-        getLiveToday() {
-            const today = new Date();
-            return this.userCourses
-                .filter((c) => c.NextLecture.ID !== 0)
-                .filter((c) => date_eq(today, new Date(c.NextLecture.Start)));
-        },
-
-        /**
-         * Filter userCourses for recently streamed lectures
-         */
-        getRecently() {
-            return this.userCourses.filter((c) => c.LastRecording.ID !== 0);
         },
 
         /**
