@@ -43,24 +43,26 @@ type Course struct {
 }
 
 type CourseDTO struct {
-	ID           uint
-	Name         string
-	Slug         string
-	TeachingTerm string
-	Year         int
-	NextLecture  StreamDTO
-	LastLecture  StreamDTO
+	ID            uint
+	Name          string
+	Visibility    string
+	Slug          string
+	TeachingTerm  string
+	Year          int
+	NextLecture   StreamDTO
+	LastRecording StreamDTO
 }
 
 func (c *Course) ToDTO() CourseDTO {
 	return CourseDTO{
-		ID:           c.ID,
-		Name:         c.Name,
-		Slug:         c.Slug,
-		TeachingTerm: c.TeachingTerm,
-		Year:         c.Year,
-		NextLecture:  c.GetNextLecture().ToDTO(),
-		LastLecture:  c.GetLastLecture().ToDTO(),
+		ID:            c.ID,
+		Name:          c.Name,
+		Visibility:    c.Visibility,
+		Slug:          c.Slug,
+		TeachingTerm:  c.TeachingTerm,
+		Year:          c.Year,
+		NextLecture:   c.GetNextLecture().ToDTO(),
+		LastRecording: c.GetLastRecording().ToDTO(),
 	}
 }
 
@@ -229,16 +231,18 @@ func (c Course) GetNextLecture() Stream {
 	return earliestLecture
 }
 
-// GetLastLecture returns the most recent lecture of the course
+// GetLastRecording returns the most recent lecture of the course
 // Assumes an ascending order of c.Streams
-func (c Course) GetLastLecture() Stream {
+func (c Course) GetLastRecording() Stream {
 	var lastLecture Stream
 	now := time.Now()
 	for _, s := range c.Streams {
 		if s.Start.After(now) {
 			return lastLecture
 		}
-		lastLecture = s
+		if s.Recording {
+			lastLecture = s
+		}
 	}
 	return lastLecture
 }

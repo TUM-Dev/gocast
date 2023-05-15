@@ -79,15 +79,16 @@
 }
 
 .tum-live-side-navigation {
-    @apply flex-col sticky top-0 overflow-y-scroll font-light text-3 shrink-0 divide-y dark:divide-gray-800
-}
-
-.tum-live-side-navigation > .tum-live-side-navigation-group {
-    @apply px-5
+    @apply flex-col sticky top-0 overflow-y-scroll font-light text-3 shrink-0
 }
 
 .tum-live-side-navigation-group {
-    @apply grid py-4 content-baseline
+    @apply mx-5 grid py-4 content-baseline
+}
+
+/* not:last-two-children */
+.tum-live-side-navigation-group:not(:nth-last-child(-n + 2)){
+    @apply border-b dark:border-gray-800
 }
 
 .tum-live-side-navigation-group > header {
@@ -102,7 +103,7 @@
     @apply text-sm rounded-lg text-left px-3 py-2
 }
 
-.tum-live-side-navigation-group-item ~ .hover {
+.tum-live-side-navigation-group-item.hover {
     @apply hover:bg-gray-100 dark:hover:bg-gray-800
 }
 
@@ -135,7 +136,7 @@
 }
 
 .tum-live-stream .course {
-    @apply block text-5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded
+    @apply text-5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg py-1 break-words leading-relaxed
 }
 
 .tum-live-stream .title {
