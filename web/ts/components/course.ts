@@ -24,7 +24,7 @@ export function courseContext(slug: string, year: number, term: string) {
 
         courseStreams: new Paginator<Stream>([], 8),
 
-        plannedStreams: new Paginator<Stream>([], 6),
+        plannedStreams: new Paginator<Stream>([], 3),
 
         streamSortMode: StreamSortMode.NewestFirst,
         streamFilterMode: StreamFilterMode.ShowWatched,
