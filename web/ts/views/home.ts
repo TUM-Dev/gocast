@@ -43,8 +43,6 @@ export function context() {
 
         navigation: new ToggleableElement([["allSemesters", new ToggleableElement()]]),
 
-        nothingToDo: false,
-
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
          */
@@ -63,10 +61,7 @@ export function context() {
                 this.loadPinnedCourses(),
                 this.loadUserCourses(),
             ];
-            Promise.all(promises.flat()).then(() => {
-                this.nothingToDo =
-                    this.livestreams.length === 0 && this.liveToday.length === 0 && this.recently.length === 0;
-            });
+            Promise.all(promises.flat());
             promises[promises.length - 1].then(() => {
                 this.recently.set(this.getRecently()).reset();
                 this.liveToday = this.getLiveToday();
@@ -142,7 +137,7 @@ export function context() {
         },
 
         async loadPinnedCourses() {
-            this.pinnedCourses = await CoursesAPI.getPinned(this.year, this.term);
+            this.pinnedCourses = await CoursesAPI.getPinned(this.state.year, this.state.term);
         },
 
         async loadProgresses(ids: number[]) {

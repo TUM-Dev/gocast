@@ -165,7 +165,7 @@
                 </header>
                 <template x-for="course in pinnedCourses" :key="course.ID">
                     <a class="tum-live-side-navigation-group-item hover"
-                       :href="course.URL()"
+                       @click="showCourse(course.Slug)"
                        x-text="course.Name">
                     </a>
                 </template>
@@ -223,7 +223,7 @@
         </footer>
     </section>
     <article class="text-3 p-4 grow" :class="{'hidden' : navigation.value}">
-        <template x-if="view === home.Views.PublicCourses">
+        <template x-if="state.view === home.Views.PublicCourses">
             <article id="public-courses" class="tum-live-course-list">
                 <header>
                     <h1>
@@ -412,10 +412,12 @@
                                                         </div>
                                                     </div>
                                                 </a>
-                                                <div class="relative flex justify-between px-1">
+                                                <div class="relative flex justify-between px-1 min-h-[32px]">
                                                     <div>
-                                                        <a class="title" :href="course.WatchURL(vod.ID)"
-                                                           x-text="vod.Name"></a>
+                                                        <template x-if="vod.HasName()">
+                                                            <a class="title" :href="course.WatchURL(vod.ID)"
+                                                               x-text="vod.Name"></a>
+                                                        </template>
                                                         <span class="date text-xs"
                                                               x-text="vod.FriendlyDateStart()"></span>
                                                     </div>
@@ -545,13 +547,6 @@
                         </h1>
                     {{end}}
                 {{end}}
-
-                <template x-if="nothingToDo">
-                    <div class="absolute right-0 left-0 bottom-0 top-0 mx-auto flex flex-col items-center justify-center">
-                        <i class="text-3 fa-solid fa-umbrella-beach text-6xl mb-3"></i>
-                        <span class="text-5">Seems like there is nothing to do.</span>
-                    </div>
-                </template>
 
                 <div class="tum-live-content-grid" x-data="home.livestreams()">
                     <!-- Livestreams -->

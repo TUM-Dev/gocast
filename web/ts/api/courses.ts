@@ -112,7 +112,7 @@ export class Course {
         return `/course/${this.Year}/${this.TeachingTerm}/${this.Slug}`;
     }
 
-    public LastLectureURL(): string {
+    public LastRecordingURL(): string {
         return this.WatchURL(this.LastRecording.ID);
     }
 
