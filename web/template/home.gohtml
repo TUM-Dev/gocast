@@ -473,17 +473,23 @@
                         <article>
                             <section class="grid lg:grid-cols-3 sm:grid-cols-2 gap-5">
                                 <template x-for="s in plannedStreams.get()">
-                                    <article class="flex items-center space-x-4 p-2 sm:col-span-1 col-span-full">
-                                        <div class="text-center w-11">
-                                            <p x-text="s.MonthOfStart()" class="font-light text-5 text-sm"></p>
-                                            <h1 x-text="s.DayOfStart()" class="font-bold text-3"></h1>
-                                        </div>
-                                        <div class="px-2 grow">
-                                            <div class="flex items-center text-sm">
-                                                <i class="tum-live-badge bg-gray-100 fa-solid fa-satellite-dish text-xs px-2 mr-2"></i>
-                                                <span x-text="`${s.TimeOfStart()} - ${s.TimeOfEnd()}`"></span>
+                                    <article class = "rounded-lg"
+                                             :class="{'border dark:border-gray-800' : s.IsToday()}">
+                                        <template x-if="s.IsToday()">
+                                            <span class="block bg-red-500 text-white w-full px-2 py-px text-xs rounded-t-lg">Today</span>
+                                        </template>
+                                        <div class="flex items-center space-x-4 sm:col-span-1 col-span-full p-2">
+                                            <div class="text-center w-11">
+                                                <p x-text="s.MonthOfStart()" class="font-light text-5 text-sm"></p>
+                                                <h1 x-text="s.DayOfStart()" class="font-bold text-3"></h1>
                                             </div>
-                                            <h4 x-text="s.Name" class="font-semibold text-1"></h4>
+                                            <div class="px-2 grow">
+                                                <div class="flex items-center text-sm">
+                                                    <i class="tum-live-badge bg-gray-100 fa-solid fa-satellite-dish text-xs px-2 mr-2 dark:bg-gray-800"></i>
+                                                    <span x-text="`${s.TimeOfStart()} - ${s.TimeOfEnd()}`"></span>
+                                                </div>
+                                                <h4 x-text="s.Name" class="font-semibold text-1"></h4>
+                                            </div>
                                         </div>
                                     </article>
                                 </template>

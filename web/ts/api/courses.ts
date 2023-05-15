@@ -1,6 +1,7 @@
 import { get } from "../utilities/fetch-wrappers";
 import { Progress } from "./progress";
 import { ToggleableElement } from "../utilities/ToggleableElement";
+import { date_eq } from "../utilities/time-utils";
 
 const DEFAULT_LECTURE_NAME = "Untitled lecture";
 
@@ -48,6 +49,10 @@ export class Stream {
 
     public TimeOfEnd(): string {
         return Stream.TimeOf(this.End);
+    }
+
+    public IsToday(): boolean {
+        return date_eq(new Date(this.Start), new Date());
     }
 
     public UntilString(): string {

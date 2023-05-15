@@ -4,6 +4,7 @@ import { ProgressAPI } from "../api/progress";
 import { Course, CoursesAPI } from "../api/courses";
 import { Paginator } from "../utilities/paginator";
 import { courseContext } from "../components/course";
+import { date_eq } from "../utilities/time-utils";
 
 export enum Views {
     Main,
@@ -160,11 +161,9 @@ export function context() {
          */
         getLiveToday() {
             const today = new Date();
-            const eq = (a: Date, b: Date) =>
-                a.getDate() === b.getDate() && a.getMonth() == b.getMonth() && a.getFullYear() === b.getFullYear();
             return this.userCourses
                 .filter((c) => c.NextLecture.ID !== 0)
-                .filter((c) => eq(today, new Date(c.NextLecture.Start)));
+                .filter((c) => date_eq(today, new Date(c.NextLecture.Start)));
         },
 
         /**
