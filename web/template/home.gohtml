@@ -381,8 +381,7 @@
                                 </header>
                                 <section>
                                     <article class="grid gap-3 xl:grid-cols-3 lg:grid-cols-2 grid-cols-1">
-                                        <template
-                                                x-for="vod in courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode))">
+                                        <template x-for="vod in courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode))">
                                             <article class="tum-live-stream group sm:col-span-1 col-span-full"
                                                      @mouseleave="vod.Dropdown.toggle(false)">
                                                 <a :href="course.WatchURL(vod.ID)" class="block mb-2">

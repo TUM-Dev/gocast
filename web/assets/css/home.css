@@ -322,26 +322,6 @@
 }
 
 
-.tum-live-minimalistic-list {
-    @apply grid
-}
-
-.tum-live-minimalistic-list > .tum-live-minimalistic-list-item {
-    @apply border-b dark:border-gray-800 last:border-0 py-2 px-2
-}
-
-.tum-live-minimalistic-list > .tum-live-minimalistic-list-item h3,
-.tum-live-minimalistic-list > .tum-live-minimalistic-list-item h4,
-.tum-live-minimalistic-list > .tum-live-minimalistic-list-item h5,
-.tum-live-minimalistic-list > .tum-live-minimalistic-list-item h6 {
-    @apply font-semibold text-3
-}
-
-.tum-live-minimalistic-list > .tum-live-minimalistic-list-item p {
-    @apply m-0 font-light text-5
-}
-
-
 .tum-live-footer {
     @apply bg-gray-100 dark:bg-secondary-light py-4 px-8;
 }
