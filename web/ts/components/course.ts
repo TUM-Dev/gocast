@@ -24,7 +24,7 @@ export function courseContext(slug: string, year: number, term: string) {
 
         courseStreams: new Paginator<Stream>([], 8),
 
-        plannedStreams: [],
+        plannedStreams: new Paginator<Stream>([], 6),
 
         streamSortMode: StreamSortMode.NewestFirst,
         streamFilterMode: StreamFilterMode.ShowWatched,
@@ -49,7 +49,8 @@ export function courseContext(slug: string, year: number, term: string) {
                 })
                 .then(() => {
                     this.loadPinned();
-                    this.plannedStreams = this.groupBy(this.course.Planned, (s) => s.MonthOfStart());
+                    this.plannedStreams.set(this.course.Planned.reverse());
+                    this.plannedStreams.reset();
                     this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID)).then((progresses) => {
                         this.courseStreams.set(this.course.Recordings);
                         this.courseStreams.forEach((s: Stream, i) => (s.Progress = progresses[i]));

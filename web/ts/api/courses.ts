@@ -35,7 +35,7 @@ export class Stream {
     }
 
     public MonthOfStart(): string {
-        return new Date(this.Start).toLocaleString("default", { month: "long" });
+        return new Date(this.Start).toLocaleString("default", { month: "short" });
     }
 
     public DayOfStart(): number {
@@ -43,10 +43,11 @@ export class Stream {
     }
 
     public TimeOfStart(): string {
-        const s = new Date(this.Start);
-        const hours = s.getUTCHours().toString().padStart(2, "0");
-        const minutes = s.getUTCMinutes().toString().padStart(2, "0");
-        return `${hours}:${minutes}`;
+        return Stream.TimeOf(this.Start);
+    }
+
+    public TimeOfEnd(): string {
+        return Stream.TimeOf(this.End);
     }
 
     public UntilString(): string {
@@ -69,6 +70,10 @@ export class Stream {
             return -1;
         }
         return 0;
+    }
+
+    private static TimeOf(d: string): string {
+        return new Date(d).toLocaleTimeString("default", { hour: "2-digit", minute: "2-digit" });
     }
 }
 

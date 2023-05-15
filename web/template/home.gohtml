@@ -352,42 +352,6 @@
                         </section>
                     </template>
                 </div>
-                <template x-if="Object.keys(plannedStreams).length !== 0">
-                    <section class="tum-live-course-view-item">
-                        <header>
-                            <h3>Upcoming</h3>
-                        </header>
-                        <section class="flex flex-col md:flex-row">
-                            <article class="flex m-auto flex-col items-center w-fit py-4 pr-4 md:m-0">
-                                <div class="tum-live-calendar">
-                                    <div class="month">
-                                        <span x-text="course.NextLecture.MonthOfStart()"></span>
-                                    </div>
-                                    <div class="day">
-                                        <span x-text="course.NextLecture.DayOfStart()"></span>
-                                    </div>
-                                    <div class="time">
-                                        <span x-text="course.NextLecture.TimeOfStart()"></span>
-                                    </div>
-                                </div>
-                                <h6 class="text-xs text-center mt-1">Next lecture</h6>
-                            </article>
-                            <template x-for="[month, streams] of Object.entries(plannedStreams)">
-                                <article class="tum-live-planned-list p-4">
-                                    <h6 x-text="month" class="month"></h6>
-                                    <section class="tum-live-planned-list-group">
-                                        <template x-for="planned in streams">
-                                            <article class="tum-live-planned-list-group-item">
-                                                <p x-text="planned.Name" class="name"></p>
-                                                <span x-text="planned.FriendlyDateStart()" class="date"></span>
-                                            </article>
-                                        </template>
-                                    </section>
-                                </article>
-                            </template>
-                        </section>
-                    </section>
-                </template>
                 <template x-if="courseStreams.hasElements()">
                     <section class="tum-live-course-view-item">
                         <header>
@@ -490,7 +454,7 @@
                                 </template>
                             </article>
                             <template x-if="courseStreams.hasNext()">
-                                <div class="flex flex-grow justify-center mt-3">
+                                <div class="flex flex-grow justify-center mt-8">
                                     <button class="tum-live-button tum-live-button-secondary" type="button"
                                             @click="courseStreams.next()">
                                         <i class="fa-solid fa-angles-down mr-2"></i>
@@ -499,6 +463,40 @@
                                 </div>
                             </template>
                         </section>
+                    </section>
+                </template>
+                <template x-if="plannedStreams.length !== 0">
+                    <section class="tum-live-course-view-item">
+                        <header>
+                            <h3>Upcoming</h3>
+                        </header>
+                        <article>
+                            <section class="grid lg:grid-cols-3 sm:grid-cols-2 gap-5">
+                                <template x-for="s in plannedStreams.get()">
+                                    <article class="flex items-center space-x-4 p-2 sm:col-span-1 col-span-full">
+                                        <div class="text-center w-11">
+                                            <p x-text="s.MonthOfStart()" class="font-light text-5 text-sm"></p>
+                                            <h1 x-text="s.DayOfStart()" class="font-bold text-3"></h1>
+                                        </div>
+                                        <div class="px-2 grow">
+                                            <div class="flex items-center text-sm">
+                                                <i class="tum-live-badge bg-gray-100 fa-solid fa-satellite-dish text-xs px-2 mr-2"></i>
+                                                <span x-text="`${s.TimeOfStart()} - ${s.TimeOfEnd()}`"></span>
+                                            </div>
+                                            <h4 x-text="s.Name" class="font-semibold text-1"></h4>
+                                        </div>
+                                    </article>
+                                </template>
+                            </section>
+                            <template x-if="plannedStreams.hasNext()">
+                                <div class="flex flex-grow justify-center mt-8">
+                                    <button class="tum-live-button tum-live-button-secondary w-fit mt-3" type="button"
+                                            @click="plannedStreams.next(true)">
+                                        Show all
+                                    </button>
+                                </div>
+                            </template>
+                        </article>
                     </section>
                 </template>
             </article>
