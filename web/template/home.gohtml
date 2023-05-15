@@ -395,7 +395,7 @@
                                 <section>
                                     <article class="grid gap-3 xl:grid-cols-3 lg:grid-cols-2 grid-cols-1">
                                         <template
-                                                x-for="vod in courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode))">
+                                                x-for="vod in courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode))" :key="vod.ID">
                                             <article class="tum-live-stream group sm:col-span-1 col-span-full"
                                                      @mouseleave="vod.Dropdown.toggle(false)">
                                                 <a :href="course.WatchURL(vod.ID)" class="block mb-2">
@@ -494,7 +494,7 @@
                             </header>
                             <article>
                                 <section class="grid gap-5">
-                                    <template x-for="s in plannedStreams.get()">
+                                    <template x-for="s in plannedStreams.get()" :key="s.ID">
                                         <article class="rounded-lg"
                                                  :class="{'border dark:border-gray-800 dark:bg-gray-800' : s.IsToday()}">
                                             <template x-if="s.IsToday()">
@@ -531,7 +531,7 @@
         <template x-if="state.view === home.Views.Main">
             <article id="main-view" class="relative min-h-full pb-8">
                 <article x-data="home.serverNotifications()">
-                    <template x-for="n in serverNotifications">
+                    <template x-for="n in serverNotifications" :key="n.ID">
                         <div class="tum-live-notification mx-3 mb-3"
                              :class="n.Warn ? 'tum-live-notification-warn' :'tum-live-notification-info'">
                             <i class="icon fa-solid" :class="n.Warn ? 'fa-triangle-exclamation' : 'fa-circle-info'"></i>
