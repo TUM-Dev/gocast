@@ -12,7 +12,7 @@ export function livestreams(predicate?: (s: Livestream) => boolean) {
         async load() {
             this._all = await CoursesAPI.getLivestreams();
             this.livestreams = predicate ? this._all.filter(predicate) : this._all;
-            console.log("init livestreams", this.livestreams);
+            console.log("🌑 init livestreams", this.livestreams);
         },
 
         refilter(predicate?: (s: Livestream) => boolean) {

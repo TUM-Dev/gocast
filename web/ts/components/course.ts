@@ -56,6 +56,7 @@ export function courseContext(slug: string, year: number, term: string) {
                             .forEach((s: Stream, i) => (s.Progress = progresses[i]))
                             .reset();
                     });
+                    console.log("🌑 init course", this.course);
                 });
         },
 

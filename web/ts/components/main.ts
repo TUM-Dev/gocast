@@ -33,6 +33,8 @@ export function mainContext(year: number, term: string) {
                     this.recently.set(this.getRecently()).reset();
                     this.liveToday = this.getLiveToday();
                     this.loadProgresses(this.userCourses.map((c) => c.LastRecording.ID));
+                    console.log("🌑 init recently", this.recently);
+                    console.log("🌑 init live today", this.liveToday);
                 });
         },
 
