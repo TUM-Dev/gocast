@@ -280,38 +280,40 @@
             <article x-data="home.courseContext(state.slug, state.year, state.term)"
                      x-init="$watch('state', (s) => reload(s.slug, s.year, s.term))"
                      class="tum-live-course-view">
-                <header>
-                    <div>
-                        <p x-text="course.Slug" class="slug"></p>
-                        <h1 x-text="course.Name" class="name"></h1>
-                    </div>
-                    <section class="button-area">
-                        {{if $user}}
-                            <button type="button" @click="pin()"
-                                    class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
-                                    :class="{'active' : course.Pinned }">
-                                <i class="fa-solid fa-thumbtack mr-2"></i>
-                                <span x-text="course.Pinned ? 'Pinned' : 'Pin'"></span>
-                            </button>
-                        {{end}}
-                        <a :href="course.ICS()"
-                           class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
-                           title="Download .ics calendar file">
-                            <i class="fa-solid fa-calendar mr-2"></i>
-                            .ics
-                        </a>
-                        {{if $user}}
-                            {{if or (eq $user.Role 1) (eq $user.Role 2) }}
-                                <a :href="`/admin/course/${course.ID}`"
-                                   class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
-                                   title="Go to admin page">
-                                    <i class="fa-solid fa-hammer mr-2"></i>
-                                    Admin
-                                </a>
+                <template x-if="isLoaded()">
+                    <header>
+                        <div>
+                            <p x-text="course.Slug" class="slug"></p>
+                            <h1 x-text="course.Name" class="name"></h1>
+                        </div>
+                        <section class="button-area">
+                            {{if $user}}
+                                <button type="button" @click="pin()"
+                                        class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
+                                        :class="{'active' : course.Pinned }">
+                                    <i class="fa-solid fa-thumbtack mr-2"></i>
+                                    <span x-text="course.Pinned ? 'Pinned' : 'Pin'"></span>
+                                </button>
                             {{end}}
-                        {{end}}
-                    </section>
-                </header>
+                            <a :href="course.ICS()" download
+                               class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
+                               title="Download .ics calendar file">
+                                <i class="fa-solid fa-calendar mr-2"></i>
+                                .ics
+                            </a>
+                            {{if $user}}
+                                {{if or (eq $user.Role 1) (eq $user.Role 2) }}
+                                    <a :href="`/admin/course/${course.ID}`"
+                                       class="tum-live-button tum-live-button-tertiary flex items-center text-xs"
+                                       title="Go to admin page">
+                                        <i class="fa-solid fa-hammer mr-2"></i>
+                                        Admin
+                                    </a>
+                                {{end}}
+                            {{end}}
+                        </section>
+                    </header>
+                </template>
                 <div x-data="home.livestreams((s) => s.Course.ID === course.ID)"
                      x-init="$watch('course.ID', (id) => refilter((s) => s.Course.ID === id))"
                      :class="{'tum-live-course-view-item' : hasLivestreams()}">
@@ -392,30 +394,32 @@
                     <section class="tum-live-course-view-item">
                         <header>
                             <h3 class="font-bold">VODs</h3>
-                            <button type="button" @click="sortNewestFirst()"
-                                    class="tum-live-button tum-live-button-tertiary mr-2"
-                                    :class="{'active' : isNewestFirst() }">
-                                Newest first
-                            </button>
-                            <button type="button" @click="sortOldestFirst()"
-                                    class="tum-live-button tum-live-button-tertiary"
-                                    :class="{'active' : isOldestFirst() }">
-                                Oldest first
-                            </button>
-                            {{if $user}}
-                                <button type="button" @click="toggleShowWatched()"
+                            <section class="space-x-2">
+                                <button type="button" @click="sortNewestFirst()"
                                         class="tum-live-button tum-live-button-tertiary"
-                                        :class="{'active' : isHideWatched() }">
-                                    Hide watched
+                                        :class="{'active' : isNewestFirst() }">
+                                    Newest first
                                 </button>
-                            {{end}}
+                                <button type="button" @click="sortOldestFirst()"
+                                        class="tum-live-button tum-live-button-tertiary"
+                                        :class="{'active' : isOldestFirst() }">
+                                    Oldest first
+                                </button>
+                                {{if $user}}
+                                    <button type="button" @click="toggleShowWatched()"
+                                            class="tum-live-button tum-live-button-tertiary"
+                                            :class="{'active' : isHideWatched() }">
+                                        Hide watched
+                                    </button>
+                                {{end}}
+                            </section>
                         </header>
                         <section>
                             <article class="grid gap-3 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
                                 <template
                                         x-for="vod in courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode))">
                                     <article class="tum-live-stream group lg:col-span-1 col-span-full"
-                                        @mouseleave="vod.Dropdown.toggle(false)">
+                                             @mouseleave="vod.Dropdown.toggle(false)">
                                         <a :href="course.WatchURL(vod.ID)" class="block mb-2">
                                             <div :style="`background-image:url('/api/stream/${vod.ID}/thumbs/vod')`"
                                                  class="aspect-video tum-live-thumbnail">

@@ -268,7 +268,7 @@
 }
 
 .tum-live-course-view > header {
-    @apply grid gap-2 text-center
+    @apply grid gap-2 text-center mb-8
 }
 
 .tum-live-course-view > header .slug {
@@ -293,11 +293,11 @@
 }
 
 .tum-live-course-view-item > header {
-    @apply flex items-center space-x-4 mb-3;
+    @apply flex flex-col items-center mb-3 md:flex-row;
 }
 
 .tum-live-course-view-item > header > h3 {
-    @apply font-bold
+    @apply font-bold mb-2 md:mb-0 md:mr-2
 }
 
 

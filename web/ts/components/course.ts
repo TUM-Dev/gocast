@@ -20,7 +20,7 @@ export function courseContext(slug: string, year: number, term: string) {
         year: year as number,
         term: term as string,
 
-        course: {} as Course,
+        course: new Course() as Course,
 
         courseStreams: new Paginator<Stream>([], 8),
 
@@ -123,8 +123,7 @@ export function courseContext(slug: string, year: number, term: string) {
         },
 
         async loadPinned() {
-            const pinned = (await UserAPI.hasPinnedCourse(this.course.ID)) as HasPinnedCourseDTO;
-            this.course.Pinned = pinned.has;
+            this.course.Pinned = ((await UserAPI.hasPinnedCourse(this.course.ID)) as HasPinnedCourseDTO).has;
         },
 
         async loadProgresses(ids: number[]) {
