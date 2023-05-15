@@ -329,7 +329,7 @@
                     </section>
                 </header>
                 <div class="grid gap-x-8 xl:grid-cols-3">
-                    <div class="xl:col-span-2">
+                    <div :class="plannedStreams.hasElements() ? 'xl:col-span-2' : 'col-span-full'">
                         <div x-data="home.livestreams((s) => s.Course.ID === course.ID)"
                              x-init="$watch('course.ID', (id) => refilter((s) => s.Course.ID === id))"
                              :class="{'tum-live-course-view-item' : hasLivestreams()}">
@@ -396,7 +396,10 @@
                                     </section>
                                 </header>
                                 <section>
-                                    <article class="grid gap-3 xl:grid-cols-3 lg:grid-cols-2 grid-cols-1">
+                                    <article class="grid gap-3"
+                                            :class="plannedStreams.hasElements()
+                                                ? 'xl:grid-cols-3 lg:grid-cols-2 grid-cols-1'
+                                                : 'xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1'">
                                         <template
                                                 x-for="vod in courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode))"
                                                 :key="vod.ID">
