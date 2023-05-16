@@ -19,7 +19,7 @@ type LectureHallsDao interface {
 	GetAllLectureHalls() []model.LectureHall
 	GetLectureHallByPartialName(name string) (model.LectureHall, error)
 	GetLectureHallByID(id uint) (model.LectureHall, error)
-	GetStreamsForLectureHallIcal(userId uint, lectureHalls []uint) ([]CalendarResult, error)
+	GetStreamsForLectureHallIcal(userId uint, lectureHalls []uint, all bool) ([]CalendarResult, error)
 
 	UnsetDefaults(lectureHallID string) error
 
@@ -78,7 +78,7 @@ func (d lectureHallsDao) GetLectureHallByID(id uint) (model.LectureHall, error) 
 // GetStreamsForLectureHallIcal returns an instance of []calendarResult for the ical export.
 // if a user id is given, only streams of the user are returned. All streams are returned otherwise.
 // streams that happened more than on month ago and streams that are more than 3 months in the future are omitted.
-func (d lectureHallsDao) GetStreamsForLectureHallIcal(userId uint, lectureHalls []uint) ([]CalendarResult, error) {
+func (d lectureHallsDao) GetStreamsForLectureHallIcal(userId uint, lectureHalls []uint, all bool) ([]CalendarResult, error) {
 	var res []CalendarResult
 	err := DB.Model(&model.Stream{}).
 		Joins("LEFT JOIN lecture_halls ON lecture_halls.id = streams.lecture_hall_id").
@@ -89,7 +89,7 @@ func (d lectureHallsDao) GetStreamsForLectureHallIcal(userId uint, lectureHalls 
 			"streams.start, streams.end, courses.name as course_name").
 		Where("(streams.start BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) and DATE_ADD(NOW(), INTERVAL 3 MONTH)) "+
 			"AND (courses.user_id = ? OR 0 = ? OR course_admins.user_id = ?) AND courses.deleted_at IS NULL "+
-			"AND (streams.lecture_hall_id IN ? OR (0 in ? AND streams.lecture_hall_id is null))", userId, userId, userId, lectureHalls, lectureHalls).
+			"AND (streams.lecture_hall_id IN ? OR (0 in ? AND streams.lecture_hall_id is null) OR ?)", userId, userId, userId, lectureHalls, lectureHalls, all).
 		Group("streams.id").
 		Scan(&res).Error
 	return res, err

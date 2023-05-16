@@ -32,7 +32,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 	}
 	var users []model.User
 	_ = r.UsersDao.GetAllAdminsAndLecturers(&users)
-	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID)
+	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID, "", 0)
 	if err != nil {
 		log.WithError(err).Error("couldn't query courses for user.")
 		courses = []model.Course{}
@@ -188,7 +188,7 @@ func (r mainRoutes) CourseStatsPage(c *gin.Context) {
 	tumLiveContext := foundContext.(tools.TUMLiveContext)
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
-	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID)
+	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID, "", 0)
 	if err != nil {
 		log.Printf("couldn't query courses for user. %v\n", err)
 		courses = []model.Course{}
@@ -222,7 +222,7 @@ func (r mainRoutes) EditCoursePage(c *gin.Context) {
 	}
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
-	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID)
+	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID, "", 0)
 	if err != nil {
 		log.Printf("couldn't query courses for user. %v\n", err)
 		courses = []model.Course{}

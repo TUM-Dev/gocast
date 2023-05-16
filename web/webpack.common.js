@@ -5,6 +5,7 @@ module.exports = {
     mode: "development",
     target: "web",
     entry: {
+        home: "./ts/entry/home.ts",
         admin: "./ts/entry/admins.ts",
         watch: "./ts/entry/video.ts",
         global: "./ts/entry/user.ts",

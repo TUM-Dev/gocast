@@ -10,7 +10,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags "-w -extldflags '
 
 FROM aler9/rtsp-simple-server:latest as rtsp
 
-FROM alpine:3.17
+FROM alpine:3.18
 ADD entrypoint.sh /entrypoint.sh
 ADD mediamtx.yml /mediamtx.yml
 RUN chmod +x /entrypoint.sh

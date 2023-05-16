@@ -7,6 +7,16 @@ export enum UIEditMode {
     series,
 }
 
+export enum FileType {
+    invalid,
+    vod,
+    attachment,
+    image_jpg,
+    thumb_comb,
+    thumb_cam,
+    thumb_pres,
+}
+
 export class LectureList {
     static lectures: Lecture[] = [];
 
@@ -354,6 +364,14 @@ export class Lecture {
             });
     }
 
+    hasAttachments(): boolean {
+        if (this.files !== undefined && this.files !== null) {
+            const filtered = this.files.filter((f) => f.fileType === FileType.attachment);
+            return filtered.length > 0;
+        }
+        return false;
+    }
+
     onFileDrop(e) {
         if (e.dataTransfer.items) {
             const kind = e.dataTransfer.items[0].kind;
@@ -367,14 +385,6 @@ export class Lecture {
                 }
             }
         }
-    }
-
-    hasAttachments(): boolean {
-        if (this.files === undefined || this.files === null) {
-            return false;
-        }
-        const attachments = this.files.filter((f) => f.fileType !== 1);
-        return attachments.length > 0;
     }
 
     private async postFile(file) {
