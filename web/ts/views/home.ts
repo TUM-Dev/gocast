@@ -2,6 +2,7 @@ import { ToggleableElement } from "../utilities/ToggleableElement";
 import { Semester, SemesterDTO, SemestersAPI } from "../api/semesters";
 import { Course, CoursesAPI } from "../api/courses";
 import { AlpineComponent } from "../components/alpine-component";
+import { PinnedUpdate, Tunnel } from "../utilities/tunnels";
 
 export function skeleton(): AlpineComponent {
     return {
@@ -22,6 +23,8 @@ export function skeleton(): AlpineComponent {
          */
         init() {
             this.reload(true);
+            const callback = (update) => this.updatePinned(update);
+            Tunnel.pinned.subscribe(callback);
         },
 
         /**
@@ -131,6 +134,14 @@ export function skeleton(): AlpineComponent {
          */
         findSemesterIndex(year: number, term: string) {
             return this.semesters.findIndex((s) => s.Year === year && s.TeachingTerm === term);
+        },
+
+        updatePinned(update: PinnedUpdate) {
+            if (update.pin) {
+                this.pinnedCourses.push(update.course);
+            } else {
+                this.pinnedCourses = this.pinnedCourses.filter((c) => c.ID !== update.course.ID);
+            }
         },
     } as AlpineComponent;
 }

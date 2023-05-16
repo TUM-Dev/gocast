@@ -404,7 +404,7 @@
                                                 x-for="vod in courseStreams.get(sortFn(streamSortMode), filterPred(streamFilterMode))"
                                                 :key="vod.ID">
                                             <article class="tum-live-stream group sm:col-span-1 col-span-full"
-                                                     @mouseleave="vod.Dropdown.toggle(false)">
+                                                     @click.outside="vod.Dropdown.toggle(false)">
                                                 <a :href="course.WatchURL(vod.ID)" class="block mb-2">
                                                     <div :style="`background-image:url('/api/stream/${vod.ID}/thumbs/vod')`"
                                                          class="aspect-video tum-live-thumbnail">

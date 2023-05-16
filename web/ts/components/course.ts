@@ -4,6 +4,7 @@ import { Paginator } from "../utilities/paginator";
 import { HasPinnedCourseDTO, UserAPI } from "../api/user";
 import { copyToClipboard } from "../utilities/input-interactions";
 import { AlpineComponent } from "./alpine-component";
+import { Tunnel } from "../utilities/tunnels";
 
 export enum StreamSortMode {
     NewestFirst,
@@ -115,6 +116,7 @@ export function courseContext(slug: string, year: number, term: string): AlpineC
                 UserAPI.pinCourse(this.course.ID);
             }
             this.course.Pinned = !this.course.Pinned;
+            Tunnel.pinned.add({ pin: this.course.Pinned, course: this.course });
         },
 
         copyHLS(stream: Stream) {
