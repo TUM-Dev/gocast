@@ -3,82 +3,9 @@ import { Semester, SemesterDTO, SemestersAPI } from "../api/semesters";
 import { Course, CoursesAPI } from "../api/courses";
 import { AlpineComponent } from "../components/alpine-component";
 
-export enum Views {
-    Main,
-    UserCourses,
-    PublicCourses,
-    Course,
-}
-
-type History = {
-    year: number;
-    term: string;
-    slug: string;
-    view: Views;
-};
-
-class PageState {
-    private readonly url: URL;
-    term: string;
-    year: number;
-    slug: string;
-    view: Views;
-
-    constructor(url) {
-        this.url = url;
-        this.term = url.searchParams.get("term") ?? undefined;
-        this.year = +url.searchParams.get("year");
-        this.slug = url.searchParams.get("slug") ?? undefined;
-        this.view = url.searchParams.get("view") ?? Views.Main;
-    }
-
-    isMain() {
-        return this.view == Views.Main;
-    }
-
-    isCourse() {
-        return this.view == Views.Course;
-    }
-
-    isPublicCourses() {
-        return this.view == Views.PublicCourses;
-    }
-
-    isUserCourses() {
-        return this.view == Views.UserCourses;
-    }
-
-    /**
-     * Update search parameters and push state into the browser's history
-     */
-    pushHistory(history: { year: number; term: string; slug?: string; view?: Views }) {
-        this.url.searchParams.set("year", String(history.year));
-        this.url.searchParams.set("term", history.term);
-
-        let data = { year: history.year, term: history.term } as History;
-
-        if (history.slug !== undefined) {
-            this.url.searchParams.set("slug", history.slug);
-            data = { ...data, slug: history.slug };
-        }
-
-        if (history.view !== undefined) {
-            if (history.view !== Views.Main) {
-                this.url.searchParams.set("view", history.view.toString());
-                data = { ...data, view: history.view };
-            } else {
-                this.url.searchParams.delete("view");
-                this.url.searchParams.delete("slug");
-            }
-        }
-        window.history.pushState(data, "", this.url.toString());
-    }
-}
-
 export function skeleton(): AlpineComponent {
-    const url = new URL(window.location.href);
     return {
-        state: new PageState(url),
+        state: new PageState(new URL(window.location.href)),
 
         semesters: [] as Semester[],
         currentSemesterIndex: -1,
@@ -119,39 +46,38 @@ export function skeleton(): AlpineComponent {
             const state = event.state || {};
             const year = +state["year"] || this.semesters[this.currentSemesterIndex].Year;
             const term = state["term"] || this.semesters[this.currentSemesterIndex].TeachingTerm;
-            this.state.view = state["view"] || Views.Main;
-            this.state.slug = state["slug"] || undefined;
+            this.state.update({ view: state["view"] || View.Main, slug: state["slug"] });
             this.switchSemester(year, term, false);
         },
 
         showMain() {
-            this.switchView(Views.Main);
-            this.state.pushHistory({ year: this.state.year, term: this.state.term, view: Views.Main });
+            this.switchView(View.Main);
+            this.state.pushHistory({ year: this.state.year, term: this.state.term, view: View.Main });
         },
 
         showUserCourses() {
-            this.switchView(Views.UserCourses);
-            this.state.pushHistory({ year: this.state.year, term: this.state.term, view: Views.UserCourses });
+            this.switchView(View.UserCourses);
+            this.state.pushHistory({ year: this.state.year, term: this.state.term, view: View.UserCourses });
         },
 
         showPublicCourses() {
-            this.switchView(Views.PublicCourses);
-            this.state.pushHistory({ year: this.state.year, term: this.state.term, view: Views.PublicCourses });
+            this.switchView(View.PublicCourses);
+            this.state.pushHistory({ year: this.state.year, term: this.state.term, view: View.PublicCourses });
         },
 
         showCourse(slug: string) {
-            this.state.slug = slug;
-            this.switchView(Views.Course);
+            this.state.update({ slug });
+            this.switchView(View.Course);
             this.state.pushHistory({
                 year: this.state.year,
                 term: this.state.term,
-                view: Views.Course,
+                view: View.Course,
                 slug: this.state.slug,
             });
         },
 
-        switchView(view: Views) {
-            this.state.view = view;
+        switchView(view: View) {
+            this.state.update({ view });
             this.navigation.toggle(false);
         },
 
@@ -166,8 +92,7 @@ export function skeleton(): AlpineComponent {
 
             if (this.selectedSemesterIndex === -1) {
                 this.selectedSemesterIndex = this.currentSemesterIndex;
-                this.state.year = res.Current.Year;
-                this.state.term = res.Current.TeachingTerm;
+                this.state.update({ year: res.Current.Year, term: res.Current.TeachingTerm });
             }
         },
 
@@ -190,8 +115,7 @@ export function skeleton(): AlpineComponent {
          * @param  {object} pushState Push new state into the browser's history?
          */
         async switchSemester(year: number, term: string, pushState = true) {
-            this.state.year = year;
-            this.state.term = term;
+            this.state.update({ year, term });
             this.selectedSemesterIndex = this.findSemesterIndex(this.state.year, this.state.term);
             this.navigation.getChild("allSemesters").toggle(false);
 
@@ -209,4 +133,83 @@ export function skeleton(): AlpineComponent {
             return this.semesters.findIndex((s) => s.Year === year && s.TeachingTerm === term);
         },
     } as AlpineComponent;
+}
+
+enum View {
+    Main,
+    UserCourses,
+    PublicCourses,
+    Course,
+}
+
+type History = {
+    year: number;
+    term: string;
+    slug: string;
+    view: View;
+};
+
+class PageState {
+    private readonly url: URL;
+    term: string;
+    year: number;
+    slug: string;
+    view: View | string;
+
+    constructor(url: URL) {
+        this.url = url;
+        this.term = url.searchParams.get("term") ?? undefined;
+        this.year = +url.searchParams.get("year");
+        this.slug = url.searchParams.get("slug") ?? undefined;
+        this.view = url.searchParams.get("view") ?? View.Main;
+    }
+
+    update(state: { term?: string; year?: number; slug?: string; view?: View }) {
+        this.term = state.term ?? this.term;
+        this.year = state.year ?? this.year;
+        this.slug = state.slug ?? this.slug;
+        this.view = state.view ?? this.view;
+    }
+
+    isMain() {
+        return this.view == View.Main;
+    }
+
+    isCourse() {
+        return this.view == View.Course;
+    }
+
+    isPublicCourses() {
+        return this.view == View.PublicCourses;
+    }
+
+    isUserCourses() {
+        return this.view == View.UserCourses;
+    }
+
+    /**
+     * Update search parameters and push state into the browser's history
+     */
+    pushHistory(history: { year: number; term: string; slug?: string; view?: View }) {
+        this.url.searchParams.set("year", String(history.year));
+        this.url.searchParams.set("term", history.term);
+
+        let data = { year: history.year, term: history.term } as History;
+
+        if (history.slug !== undefined) {
+            this.url.searchParams.set("slug", history.slug);
+            data = { ...data, slug: history.slug };
+        }
+
+        if (history.view !== undefined) {
+            if (history.view !== View.Main) {
+                this.url.searchParams.set("view", history.view.toString());
+                data = { ...data, view: history.view };
+            } else {
+                this.url.searchParams.delete("view");
+                this.url.searchParams.delete("slug");
+            }
+        }
+        window.history.pushState(data, "", this.url.toString());
+    }
 }

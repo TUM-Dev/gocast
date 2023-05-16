@@ -184,7 +184,7 @@
                             x-text="course.Name">
                     </button>
                 </template>
-                <template x-if="userCourses.length > 8 && state.view !== home.Views.UserCourses">
+                <template x-if="userCourses.length > 8 && !state.isUserCourses()">
                     <button @click="showUserCourses()"
                             class="tum-live-side-navigation-group-item hover">
                         <i class="fa-solid fa-chevron-right"></i>
@@ -204,7 +204,7 @@
                         x-text="course.Name">
                 </button>
             </template>
-            <template x-if="publicCourses.length > 5 && state.view !== home.Views.PublicCourses">
+            <template x-if="publicCourses.length > 5 && !state.isPublicCourses()">
                 <button @click="showPublicCourses()"
                         class="tum-live-side-navigation-group-item hover">
                     <i class="fa-solid fa-chevron-right"></i>
