@@ -8,13 +8,13 @@ require (
 	github.com/antchfx/xmlquery v1.3.15
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/gabstv/melody v1.0.2
-	github.com/getsentry/sentry-go v0.20.0
+	github.com/getsentry/sentry-go v0.21.0
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-gonic/gin v1.9.0
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
 	github.com/go-gormigrate/gormigrate/v2 v2.0.2
 	github.com/go-ldap/ldap/v3 v3.4.4
-	github.com/go-sql-driver/mysql v1.7.0
+	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang/glog v1.1.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
@@ -26,13 +26,13 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/viper v1.15.0
-	golang.org/x/crypto v0.8.0
+	golang.org/x/crypto v0.9.0
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
-	google.golang.org/grpc v1.54.0
+	google.golang.org/grpc v1.55.0
 	google.golang.org/protobuf v1.30.0
 	gorm.io/driver/mysql v1.5.0
-	gorm.io/gorm v1.25.0
-	mvdan.cc/xurls/v2 v2.4.0
+	gorm.io/gorm v1.25.1
+	mvdan.cc/xurls/v2 v2.5.0
 )
 
 require (
@@ -123,8 +123,8 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
-	golang.org/x/net v0.9.0 // indirect
-	golang.org/x/sys v0.7.0 // indirect
+	golang.org/x/net v0.10.0 // indirect
+	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
