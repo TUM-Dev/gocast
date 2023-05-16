@@ -1,15 +1,16 @@
 import { CoursesAPI, Livestream } from "../api/courses";
+import { AlpineComponent } from "./alpine-component";
 
-export function livestreams(predicate?: (s: Livestream) => boolean) {
+export function livestreams(predicate?: (s: Livestream) => boolean): AlpineComponent {
     return {
         _all: [] as Livestream[],
 
         livestreams: [] as Livestream[],
         init() {
-            this.load();
+            this.reload();
         },
 
-        async load() {
+        async reload() {
             this._all = await CoursesAPI.getLivestreams();
             this.livestreams = predicate ? this._all.filter(predicate) : this._all;
             console.log("🌑 init livestreams", this.livestreams);
@@ -22,5 +23,5 @@ export function livestreams(predicate?: (s: Livestream) => boolean) {
         hasLivestreams() {
             return this.livestreams.length > 0;
         },
-    };
+    } as AlpineComponent;
 }

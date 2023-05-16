@@ -3,6 +3,7 @@ import { ProgressAPI } from "../api/progress";
 import { Paginator } from "../utilities/paginator";
 import { HasPinnedCourseDTO, UserAPI } from "../api/user";
 import { copyToClipboard } from "../utilities/input-interactions";
+import { AlpineComponent } from "./alpine-component";
 
 export enum StreamSortMode {
     NewestFirst,
@@ -14,7 +15,7 @@ export enum StreamFilterMode {
     HideWatched,
 }
 
-export function courseContext(slug: string, year: number, term: string) {
+export function courseContext(slug: string, year: number, term: string): AlpineComponent {
     return {
         slug: slug as string,
         year: year as number,
@@ -133,5 +134,5 @@ export function courseContext(slug: string, year: number, term: string) {
                 return ProgressAPI.getBatch(ids);
             }
         },
-    };
+    } as AlpineComponent;
 }
