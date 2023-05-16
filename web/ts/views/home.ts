@@ -1,10 +1,6 @@
 import { ToggleableElement } from "../utilities/ToggleableElement";
 import { Semester, SemesterDTO, SemestersAPI } from "../api/semesters";
-import { ProgressAPI } from "../api/progress";
 import { Course, CoursesAPI } from "../api/courses";
-import { Paginator } from "../utilities/paginator";
-import { courseContext } from "../components/course";
-import { date_eq } from "../utilities/time-utils";
 
 export enum Views {
     Main,
