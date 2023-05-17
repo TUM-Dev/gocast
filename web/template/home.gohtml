@@ -397,7 +397,7 @@
                                 </header>
                                 <section>
                                     <article class="grid gap-3"
-                                            :class="plannedStreams.hasElements()
+                                             :class="plannedStreams.hasElements()
                                                 ? 'xl:grid-cols-3 lg:grid-cols-2 grid-cols-1'
                                                 : 'xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1'">
                                         <template
@@ -434,17 +434,20 @@
                                                     </button>
                                                     <template x-if="vod.Dropdown.value">
                                                         <div class="absolute tum-live-menu py-2 absolute top-full right-0 h-fit overflow-hidden z-50 w-56">
-                                                            <button type="button" @click="vod.Progress.ToggleWatched()"
-                                                                    class="tum-live-menu-item">
-                                                                <i class="fa-solid mr-4"
-                                                                   :class="vod.Progress.watched
+                                                            {{if $user}}
+                                                                <button type="button"
+                                                                        @click="vod.Progress.ToggleWatched()"
+                                                                        class="tum-live-menu-item">
+                                                                    <i class="fa-solid mr-4"
+                                                                       :class="vod.Progress.watched
                                                                 ? 'fa-eye-slash'
                                                                 : 'fa-eye'"></i>
-                                                                <span class="block"
-                                                                      x-text="vod.Progress.watched
+                                                                    <span class="block"
+                                                                          x-text="vod.Progress.watched
                                                                 ? 'Unmark as watched'
                                                                 : 'Mark as watched'"></span>
-                                                            </button>
+                                                                </button>
+                                                            {{end}}
                                                             <button type="button" @click="copyHLS(vod)"
                                                                     class="tum-live-menu-item">
                                                                 <i class="fa-solid fa-link mr-4"></i>
