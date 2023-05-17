@@ -70,15 +70,21 @@ export class LectureHall {
     }
 }
 
+export class Stat {
+    readonly Viewers: number;
+}
+
 export class Livestream {
     readonly Stream: Stream;
     readonly Course: Course;
     readonly LectureHall?: LectureHall;
+    readonly Stat: Stat;
 
     constructor(obj: Livestream) {
         this.Stream = Object.assign(new Stream(), obj.Stream);
         this.Course = Course.New(obj.Course);
         this.LectureHall = obj.LectureHall ? new LectureHall(obj.LectureHall) : undefined;
+        this.Stat = Object.assign(new Stat(), obj.Stat);
     }
 
     public InLectureHall(): boolean {

@@ -124,6 +124,7 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 		Course      model.CourseDTO
 		Stream      model.StreamDTO
 		LectureHall *model.LectureHallDTO
+		Stat        model.StatDTO
 	}
 
 	livestreams := make([]CourseStream, 0)
@@ -154,10 +155,14 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 				lectureHall = &lh
 			}
 		}
+
+		var stat model.Stat
+		stat, err = r.StatisticsDao.GetStat(stream.ID)
 		livestreams = append(livestreams, CourseStream{
 			Course:      courseForLiveStream.ToDTO(),
 			Stream:      stream.ToDTO(),
 			LectureHall: lectureHall.ToDTO(),
+			Stat:        stat.ToDTO(),
 		})
 	}
 

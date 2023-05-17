@@ -10,6 +10,7 @@ import (
 //go:generate mockgen -source=statistics.go -destination ../mock_dao/statistics.go
 
 type StatisticsDao interface {
+	GetStat(uint) (model.Stat, error)
 	AddStat(stat model.Stat) error
 
 	GetCourseNumStudents(courseID uint) (int64, error)
@@ -28,6 +29,12 @@ type statisticsDao struct {
 
 func NewStatisticsDao() StatisticsDao {
 	return statisticsDao{db: DB}
+}
+
+// GetStat returns the newest statistics entry of the database for a given stream
+func (d statisticsDao) GetStat(streamID uint) (stat model.Stat, err error) {
+	err = DB.Model(&model.Stat{}).Last(&stat, "stream_id = ?", streamID).Error
+	return stat, err
 }
 
 // AddStat adds a new statistic entry to the database
