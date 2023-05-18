@@ -2024,7 +2024,7 @@ func TestUploadVOD(t *testing.T) {
 							streamsMock := mock_dao.NewMockUploadKeyDao(ctrl)
 							streamsMock.
 								EXPECT().
-								CreateUploadKey(gomock.Any(), gomock.Any()).
+								CreateUploadKey(gomock.Any(), gomock.Any(), gomock.Any()).
 								Return(errors.New(""))
 							return streamsMock
 						}(),
