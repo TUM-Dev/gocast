@@ -43,7 +43,7 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			streamById.GET("/sections", routes.getVideoSections)
 			streamById.GET("/subtitles/:lang", routes.getSubtitles)
 
-      streamById.GET("/playlist", routes.getStreamPlaylist)
+			streamById.GET("/playlist", routes.getStreamPlaylist)
 
 			thumbs := streamById.Group("/thumbs")
 			{
@@ -336,6 +336,7 @@ func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
 		StreamName string    `json:"streamName"`
 		LiveNow    bool      `json:"liveNow"`
 		Watched    bool      `json:"watched"`
+		Start      time.Time `json:"start"`
 		CreatedAt  time.Time `json:"createdAt"`
 	}
 
@@ -348,6 +349,7 @@ func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
 			StreamName: stream.GetName(),
 			LiveNow:    stream.LiveNow,
 			Watched:    stream.Watched,
+			Start:      stream.Start,
 			CreatedAt:  stream.CreatedAt,
 		})
 	}

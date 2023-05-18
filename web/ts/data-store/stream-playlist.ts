@@ -19,6 +19,7 @@ export type StreamPlaylistEntry = {
     streamName: string;
     liveNow: boolean;
     watched: boolean;
+    start: string;
     createdAt: string;
 
     // Client Generated

@@ -14,7 +14,8 @@ export class StreamPlaylist {
     }
 
     private onUpdate(data: StreamPlaylistEntry[]) {
-        this.list = data;
+        this.list = data.filter((item) => !item.liveNow && (new Date(item.start).getTime()) < (new Date().getTime()));
+
         const { prev, next } = this.findNextAndPrev();
         this.elem.dispatchEvent(new CustomEvent("update", { detail: { list: this.list, prev, next } }));
 

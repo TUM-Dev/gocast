@@ -2,9 +2,9 @@
 {{define "playlist"}}
     <div x-data="{ streamPlaylist: new watch.StreamPlaylist({{.}}, $el), playlist: {} }"
          @update="(e) => (playlist = e.detail)"
-         class="relative h-full border rounded-lg dark:border-gray-800">
+         class="relative h-full border rounded-lg dark:border-gray-800 overflow-hidden">
         <div class="h-full">
-            <div class="flex justify-between items-center p-4 border-b dark:border-gray-800">
+            <div class="flex justify-between items-center p-4 border-b dark:border-gray-800 h-[50px]">
                 <h3 class="font-bold text-sm text-xl text-3">Playlist</h3>
                 <div>
                     <a :href="playlist.prev != null ? `/w/${playlist.prev.courseSlug}/${playlist.prev.streamId}` : '#'"
@@ -20,9 +20,9 @@
                     </a>
                 </div>
             </div>
-            <div x-cloak class="h-[85%]">
+            <div x-cloak class="h-[calc(100%-50px)]">
                 <div class="relative grid gap-1 overflow-y-scroll max-h-full">
-                    <template x-for="(elem, i) in playlist.list.filter((v) => !v.liveNow)" :key="elem.streamId">
+                    <template x-for="(elem, i) in playlist.list" :key="elem.streamId">
                         <a
                             :href="`/w/${elem.courseSlug}/${elem.streamId}`"
                             x-data="{ selected: false }" x-init="() => { selected = ({{.}} ==  elem.streamId); }"
