@@ -43,6 +43,8 @@ func configGinStreamRestRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			streamById.GET("/sections", routes.getVideoSections)
 			streamById.GET("/subtitles/:lang", routes.getSubtitles)
 
+			streamById.GET("/playlist", routes.getStreamPlaylist)
+
 			thumbs := streamById.Group("/thumbs")
 			{
 				thumbs.GET(":fid", routes.getThumbs)
@@ -325,6 +327,34 @@ func (r streamRoutes) getStream(c *gin.Context) {
 		"ingest":      fmt.Sprintf("%s%s-%d?secret=%s", tools.Cfg.IngestBase, course.Slug, stream.ID, stream.StreamKey),
 		"live":        stream.LiveNow,
 		"vod":         stream.Recording})
+}
+
+func (r streamRoutes) getStreamPlaylist(c *gin.Context) {
+	type StreamPlaylistEntry struct {
+		StreamID   uint      `json:"streamId"`
+		CourseSlug string    `json:"courseSlug"`
+		StreamName string    `json:"streamName"`
+		LiveNow    bool      `json:"liveNow"`
+		Watched    bool      `json:"watched"`
+		Start      time.Time `json:"start"`
+		CreatedAt  time.Time `json:"createdAt"`
+	}
+
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	var result []StreamPlaylistEntry
+	for _, stream := range tumLiveContext.Course.Streams {
+		result = append(result, StreamPlaylistEntry{
+			StreamID:   stream.ID,
+			CourseSlug: tumLiveContext.Course.Slug,
+			StreamName: stream.GetName(),
+			LiveNow:    stream.LiveNow,
+			Watched:    stream.Watched,
+			Start:      stream.Start,
+			CreatedAt:  stream.CreatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, result)
 }
 
 func (r streamRoutes) getVideoSections(c *gin.Context) {
