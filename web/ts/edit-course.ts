@@ -800,15 +800,22 @@ export function createLectureForm(args: { s: [] }) {
             ).json();
 
             // Upload media
-            for (const mediaUpload of mediaFiles) {
-                await uploadFilePost(
-                    `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=${mediaUpload.type}`,
-                    mediaUpload.file,
-                    (progress) => {
-                        mediaUpload.progress = progress;
-                        this.dispatchMediaProgress(mediaFiles);
-                    },
-                );
+            try {
+                for (const mediaUpload of mediaFiles) {
+                    await uploadFilePost(
+                        `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=${mediaUpload.type}`,
+                        mediaUpload.file,
+                        (progress) => {
+                            mediaUpload.progress = progress;
+                            this.dispatchMediaProgress(mediaFiles);
+                        },
+                    );
+                }
+            } catch (e) {
+                await postData(`/api/course/${this.courseID}/deleteLectures`, {
+                    streamIDs: [streamID],
+                });
+                throw e;
             }
 
             return streamID;
