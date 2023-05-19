@@ -1,0 +1,25 @@
+{{define "lecture-media-slide"}}
+    <div class="mb-4">
+        <label x-show="formData.premiere || formData.vodup && !loading">
+            <span class="text-sm text-5">Combined Video (mp4, if possible h264)</span>
+            <input type="file" accept="video/mp4" class="btn tl-choose-file w-full mt-2 mx-2"
+                   x-on:change="updateFiles('COMB', Object.values($event.target.files))">
+        </label>
+    </div>
+
+    <div class="mb-4">
+        <label x-show="formData.premiere || formData.vodup && !loading">
+            <span class="text-sm text-5">Optional: Presentation Video (mp4, if possible h264)</span>
+            <input type="file" accept="video/mp4" class="btn tl-choose-file w-full mt-2 mx-2"
+                   x-on:change="updateFiles('PRES', Object.values($event.target.files))">
+        </label>
+    </div>
+
+    <div>
+        <label x-show="formData.premiere || formData.vodup && !loading">
+            <span class="text-sm text-5">Optional: Camera Video (mp4, if possible h264)</span>
+            <input type="file" accept="video/mp4" class="btn tl-choose-file w-full mt-2 mx-2"
+                   x-on:change="updateFiles('CAM', Object.values($event.target.files))">
+        </label>
+    </div>
+{{end}}
