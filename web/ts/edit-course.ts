@@ -638,9 +638,7 @@ export function createLectureForm(args: { s: [] }) {
                     // => we are already on the last tab
                     this.canGoBack = true;
                     this.onLastSlide = true;
-                    this.canContinue =
-                        this.formData.start.length > 0 &&
-                        this.formData.end.length > 0;
+                    this.canContinue = this.formData.start.length > 0 && this.formData.end.length > 0;
                 }
                 return;
             }
@@ -770,19 +768,22 @@ export function createLectureForm(args: { s: [] }) {
         },
 
         getMediaFiles(): MediaUpload[] {
-            let mediaUploads: MediaUpload[] = [];
-            if (this.formData.combFile[0] != null) mediaUploads.push({ file: this.formData.combFile[0], type: "COMB", progress: 0 });
-            if (this.formData.presFile[0] != null) mediaUploads.push({ file: this.formData.presFile[0], type: "PRES", progress: 0 });
-            if (this.formData.camFile[0] != null) mediaUploads.push({ file: this.formData.camFile[0], type: "CAM", progress: 0 });
+            const mediaUploads: MediaUpload[] = [];
+            if (this.formData.combFile[0] != null)
+                mediaUploads.push({ file: this.formData.combFile[0], type: "COMB", progress: 0 });
+            if (this.formData.presFile[0] != null)
+                mediaUploads.push({ file: this.formData.presFile[0], type: "PRES", progress: 0 });
+            if (this.formData.camFile[0] != null)
+                mediaUploads.push({ file: this.formData.camFile[0], type: "CAM", progress: 0 });
             return mediaUploads;
         },
 
         dispatchMediaProgress(mediaFiles: MediaUpload[]) {
             const detail = {
-                "COMB": mediaFiles.find((e) => e.type == "COMB")?.progress ?? null,
-                "PRES": mediaFiles.find((e) => e.type == "PRES")?.progress ?? null,
-                "CAM": mediaFiles.find((e) => e.type == "CAM")?.progress ?? null,
-            }
+                COMB: mediaFiles.find((e) => e.type == "COMB")?.progress ?? null,
+                PRES: mediaFiles.find((e) => e.type == "PRES")?.progress ?? null,
+                CAM: mediaFiles.find((e) => e.type == "CAM")?.progress ?? null,
+            };
             window.dispatchEvent(new CustomEvent("voduploadprogress", { detail }));
         },
 
@@ -791,9 +792,14 @@ export function createLectureForm(args: { s: [] }) {
             this.dispatchMediaProgress(mediaFiles);
 
             // Create New VOD
-            const { streamID } = await (await postData(`/api/course/${this.courseID}/uploadVOD?start=${this.formData.start}&title=${this.formData.title}`, {})).json();
+            const { streamID } = await (
+                await postData(
+                    `/api/course/${this.courseID}/uploadVOD?start=${this.formData.start}&title=${this.formData.title}`,
+                    {},
+                )
+            ).json();
 
-            // Upload additional media
+            // Upload media
             for (const mediaUpload of mediaFiles) {
                 await uploadFilePost(
                     `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=${mediaUpload.type}`,
