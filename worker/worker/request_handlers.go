@@ -258,12 +258,20 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	S.endTranscoding(streamCtx.getStreamName())
 	notifyTranscodingDone(streamCtx)
 
+	if streamCtx.streamVersion == "COMB" {
+		err = transcodeAudio(streamCtx)
+		if err != nil {
+			log.WithError(err).Error("Error transcoding audio")
+		}
+	}
+
+
 	S.startThumbnailGeneration(streamCtx)
 	defer S.endThumbnailGeneration(streamCtx)
 	err = createThumbnailSprite(streamCtx, streamCtx.getTranscodingFileName())
 	thumbSuccessful := true
 	if err != nil {
-		log.WithField("File", streamCtx.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed.")
+		log.WithField("File", streamCtx.getThumbnailSpriteFileName()).WithError(err).Error("Creating thumbnail sprite failed")
 		thumbSuccessful = false
 	}
 	err = createVideoThumbnail(streamCtx, streamCtx.getTranscodingFileName())
@@ -382,6 +390,11 @@ func HandleUploadRestReq(streamInfo *pb.GetStreamInfoForUploadResponse, localFil
 		} else {
 			log.WithField("stream", c.streamId).Debug("Successfully moved upload to target dir")
 		}
+	}
+
+	err = transcodeAudio(&c)
+	if err != nil {
+		log.WithError(err).Error("Error transcoding audio")
 	}
 
 	S.startThumbnailGeneration(&c)
@@ -515,6 +528,15 @@ func (s StreamContext) getTranscodingFileName() string {
 		s.courseSlug,
 		s.startTime.Format("2006-01-02_15-04"),
 		s.getStreamName())
+}
+
+func (s StreamContext) getAudioTranscodingFileName() string {
+	return fmt.Sprintf("%s/%d/%s/%s/%d.m4a",
+		cfg.StorageDir,
+		s.teachingYear,
+		s.teachingTerm,
+		s.courseSlug,
+		s.streamId)
 }
 
 // getLargeThumbnailSpriteFileName returns the path the full thumbnail sprite should be saved to after transcoding.

@@ -24,6 +24,7 @@ var (
 const (
 	costStream              = 3
 	costTranscoding         = 2
+	costTranscodingAudio    = 1
 	costSilenceDetection    = 1
 	costThumbnailGeneration = 1
 )
@@ -60,6 +61,14 @@ func (s *Status) startTranscoding(name string) {
 	defer statusLock.Unlock()
 	s.workload += costTranscoding
 	s.Jobs = append(s.Jobs, fmt.Sprintf("transcoding %s", name))
+}
+
+func (s *Status) startTranscodingAudio(name string) {
+	defer s.SendHeartbeat()
+	statusLock.Lock()
+	defer statusLock.Unlock()
+	s.workload += costTranscodingAudio
+	s.Jobs = append(s.Jobs, fmt.Sprintf("transcoding audio %s", name))
 }
 
 func (s *Status) startThumbnailGeneration(streamCtx *StreamContext) {
@@ -115,6 +124,19 @@ func (s *Status) endSilenceDetection(streamCtx *StreamContext) {
 	s.workload -= costSilenceDetection
 	for i := range s.Jobs {
 		if s.Jobs[i] == fmt.Sprintf("detecting silence in %s", streamCtx.getStreamName()) {
+			s.Jobs = append(s.Jobs[:i], s.Jobs[i+1:]...)
+			break
+		}
+	}
+	statusLock.Unlock()
+}
+
+func (s *Status) endTranscodingAudio(name string) {
+	defer s.SendHeartbeat()
+	statusLock.Lock()
+	s.workload -= costTranscodingAudio
+	for i := range s.Jobs {
+		if s.Jobs[i] == fmt.Sprintf("transcoding audio %s", name) {
 			s.Jobs = append(s.Jobs[:i], s.Jobs[i+1:]...)
 			break
 		}
