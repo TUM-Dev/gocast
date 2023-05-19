@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"fmt"
 	"github.com/joschahenningsen/TUM-Live/worker/worker"
 	log "github.com/sirupsen/logrus"
 	"io"
@@ -46,7 +45,5 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go worker.HandleUploadRestReq(streamUploadInfo, out.Name())
-
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("{ \"streamID\": %d }", streamUploadInfo.StreamID)))
 }

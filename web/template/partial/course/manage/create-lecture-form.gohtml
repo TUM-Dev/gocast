@@ -102,8 +102,7 @@
                     <input class="tl-input" name="start" placeholder="2021-04-08 14:00" id="start" x-model="formData.start"
                            x-ref="start"
                            x-init="flatpickr($refs.start, {enableTime: true, time_24hr: true, altInput:true, altFormat:'Y-m-d H:i', dateFormat:'Z', allowInput: true})"
-                           @change="onStartChange"
-                           required/>
+                           @change="onStartChange"/>
                 </label>
                 <template x-if="!formData.premiere && !formData.vodup && !loading">
                     <label for="end">
@@ -112,8 +111,7 @@
                               x-text="`( ${formData.formatedDuration} )`"></span>
                         <input class="tl-input" name="end" placeholder="16:00" id="end" x-model="formData.end" x-ref="end"
                                x-init="flatpickr($refs.end, {enableTime: true, noCalendar: true, dateFormat: 'H:i', time_24hr: true, allowInput: true })"
-                               @change="onEndChange"
-                               :required="!formData.vodup"/>
+                               @change="onEndChange"/>
                     </label>
                 </template>
 
@@ -171,8 +169,7 @@
                     <label x-show="formData.premiere || formData.vodup && !loading">
                         <span class="text-sm text-5">Combined Video (mp4, if possible h264)</span>
                         <input type="file" accept="video/mp4" class="btn tl-choose-file w-full mt-2 mx-2"
-                               x-on:change="formData.combFile = Object.values($event.target.files)"
-                               :required="formData.vodup">
+                               x-on:change="updateFiles('COMB', Object.values($event.target.files))">
                     </label>
                 </div>
 
@@ -180,7 +177,7 @@
                     <label x-show="formData.premiere || formData.vodup && !loading">
                         <span class="text-sm text-5">Optional: Presentation Video (mp4, if possible h264)</span>
                         <input type="file" accept="video/mp4" class="btn tl-choose-file w-full mt-2 mx-2"
-                               x-on:change="formData.presFile = Object.values($event.target.files)">
+                               x-on:change="updateFiles('PRES', Object.values($event.target.files))">
                     </label>
                 </div>
 
@@ -188,7 +185,7 @@
                     <label x-show="formData.premiere || formData.vodup && !loading">
                         <span class="text-sm text-5">Optional: Camera Video (mp4, if possible h264)</span>
                         <input type="file" accept="video/mp4" class="btn tl-choose-file w-full mt-2 mx-2"
-                               x-on:change="formData.camFile = Object.values($event.target.files)">
+                               x-on:change="updateFiles('CAM', Object.values($event.target.files))">
                     </label>
                 </div>
             </div>

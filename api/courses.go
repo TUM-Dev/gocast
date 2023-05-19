@@ -60,7 +60,7 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			courses.Use(tools.InitCourse(daoWrapper))
 			courses.Use(tools.AdminOfCourse)
 			courses.DELETE("/", routes.deleteCourse)
-			courses.POST("/uploadVOD", routes.uploadVOD)
+			courses.POST("/createVOD", routes.createVOD)
 			courses.POST("/uploadVODMedia", routes.uploadVODMedia)
 			courses.POST("/copy", routes.copyCourse)
 			courses.POST("/createLecture", routes.createLecture)
@@ -106,7 +106,7 @@ const (
 	CutOffLength   = 256
 )
 
-type uploadVodReq struct {
+type createVODReq struct {
 	Start time.Time `form:"start" binding:"required"`
 	Title string    `form:"title"`
 }
@@ -340,9 +340,9 @@ func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bo
 	return false
 }
 
-func (r coursesRoutes) uploadVOD(c *gin.Context) {
-	log.Info("uploadVOD")
-	var req uploadVodReq
+func (r coursesRoutes) createVOD(c *gin.Context) {
+	log.Info("createVOD")
+	var req createVODReq
 	err := c.BindQuery(&req)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
@@ -368,44 +368,9 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 		})
 		return
 	}
-	key := uuid.NewV4().String()
-	err = r.UploadKeyDao.CreateUploadKey(key, stream.ID, model.VideoTypeCombined)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "can not create upload key",
-			Err:           err,
-		})
-		return
-	}
-	workers := r.WorkerDao.GetAliveWorkers()
-	if len(workers) == 0 {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: "no workers available",
-			Err:           err,
-		})
-		return
-	}
-	w := workers[getWorkerWithLeastWorkload(workers)]
-	u, err := url.Parse("http://" + w.Host + ":" + WorkerHTTPPort + "/upload?" + c.Request.URL.Query().Encode() + "&key=" + key)
-	if err != nil {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusInternalServerError,
-			CustomMessage: fmt.Sprintf("parse proxy url: %v", err),
-			Err:           err,
-		})
-		return
-	}
-	p := httputil.NewSingleHostReverseProxy(u)
-	p.Director = func(req *http.Request) {
-		req.URL.Scheme = u.Scheme
-		req.URL.Host = u.Host
-		req.Host = u.Host
-		req.URL.Path = u.Path
-		req.URL.RawQuery = u.RawQuery
-	}
-	p.ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"streamID": stream.ID,
+	})
 }
 
 func (r coursesRoutes) uploadVODMedia(c *gin.Context) {
