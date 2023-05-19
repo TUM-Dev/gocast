@@ -42,7 +42,7 @@
                 <ul class="w-full">
                     <li class="mb-2">
                         <button
-                            @click="() => updateType(false)"
+                            @click.prevent="() => updateType(false)"
                             class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
                             :class="formData.vodup === true ? '' : 'dark:text-white dark:border-white border-blue-600 text-blue-600'"
                         >
@@ -54,7 +54,7 @@
                     </li>
                     <li>
                         <button
-                                @click="() => updateType(true)"
+                                @click.prevent="() => updateType(true)"
                                 class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
                                 :class="formData.vodup !== true ? '' : 'dark:text-white dark:border-white border-blue-600 text-blue-600'"
                         >
@@ -199,10 +199,10 @@
         </div>
 
         <div class="flex justify-end py-2 px-4">
-            <button x-show="!loading" :disabled="!canGoBack" class="mx-2 disabled:text-gray-300 dark:disabled:text-gray-500" @click="() => prev()">
+            <button x-show="!loading" :disabled="!canGoBack" class="mx-2 disabled:text-gray-300 dark:disabled:text-gray-500" @click.prevent="() => prev()">
                 Back
             </button>
-            <button :disabled="loading || !canContinue" class="btn mx-2" @click="() => next()">
+            <button :disabled="loading || !canContinue" class="btn mx-2" @click.prevent="() => next()">
                 <span x-show="!loading && !onLastSlide">Continue</span>
                 <span x-show="!loading && onLastSlide" x-text="formData.recurring && formData.recurringDates.filter(({enabled}) => enabled).length > 0
                                                             ? `Create ${(formData.recurringDates.filter(({enabled}) => enabled).length + 1).toString()} Lectures`

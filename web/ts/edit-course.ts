@@ -536,6 +536,11 @@ export function showHideUnits(id: number) {
     }
 }
 
+interface MediaUpload {
+    type: string;
+    file: File;
+}
+
 export function createLectureForm(args: { s: [] }) {
     return {
         currentTab: 0,
@@ -569,6 +574,10 @@ export function createLectureForm(args: { s: [] }) {
             this.onUpdate();
         },
         next() {
+            if (this.onLastSlide) {
+                this.submitData();
+                return;
+            }
             this.currentTab++;
             this.onUpdate();
         },
@@ -595,6 +604,8 @@ export function createLectureForm(args: { s: [] }) {
                 this.onUpdate();
             }, 100);
         },
+
+        // This function sets flags depending on the current tab and current data
         onUpdate() {
             if (this.currentTab === 0) {
                 this.canContinue = true;
@@ -605,14 +616,17 @@ export function createLectureForm(args: { s: [] }) {
 
             if (this.currentTab === 1) {
                 if (this.formData.vodup) {
+                    // If user has chosen video on demand, there are 3 tabs (file upload tab)
+                    // => we are not on the last tab
                     this.canGoBack = true;
                     this.onLastSlide = false;
-                    this.canContinue = this.formData.title.length > 0 && this.formData.start.length > 0;
+                    this.canContinue = this.formData.start.length > 0;
                 } else {
+                    // If user has chosen livestream, there are only 2 tabs
+                    // => we are already on the last tab
                     this.canGoBack = true;
                     this.onLastSlide = true;
                     this.canContinue =
-                        this.formData.title.length > 0 &&
                         this.formData.start.length > 0 &&
                         this.formData.end.length > 0;
                 }
@@ -766,25 +780,20 @@ export function createLectureForm(args: { s: [] }) {
                 ),
             );
 
-            if (uploadPres)
-                await uploadFilePost(
-                    `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=PRES`,
-                    this.formData.presFile[0],
-                    (progress) => {
-                        uploadProgress = { ...uploadProgress, PRES: progress };
-                        window.dispatchEvent(new CustomEvent("voduploadprogress", { detail: uploadProgress }));
-                    },
-                );
+            let mediaUploads: MediaUpload[] = []
+            if (uploadPres) mediaUploads.push({ file: this.formData.presFile[0], type: "PRES" })
+            if (uploadCam) mediaUploads.push({ file: this.formData.camFile[0], type: "CAM" })
 
-            if (uploadCam)
+            for (const mediaUpload of mediaUploads) {
                 await uploadFilePost(
-                    `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=CAM`,
-                    this.formData.camFile[0],
+                    `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=${mediaUpload.type}`,
+                    mediaUpload.file,
                     (progress) => {
-                        uploadProgress = { ...uploadProgress, CAM: progress };
+                        uploadProgress = { ...uploadProgress, [mediaUpload.type]: progress };
                         window.dispatchEvent(new CustomEvent("voduploadprogress", { detail: uploadProgress }));
                     },
                 );
+            }
 
             return streamID;
         },
