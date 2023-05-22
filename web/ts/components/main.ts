@@ -8,6 +8,7 @@ export function mainContext(year: number, term: string) {
         year: year as number,
         term: term as string,
 
+        publicCourses: [] as Course[],
         userCourses: [] as Course[],
         liveToday: [] as Course[],
         recently: new Paginator<Course>([], 10),
@@ -25,14 +26,21 @@ export function mainContext(year: number, term: string) {
         reload(year: number, term: string) {
             this.year = year;
             this.term = term;
-            this.loadUserCourses()
+            Promise.all([this.loadUserCourses(), this.loadPublicCourses()])
                 .catch((err) => {
                     console.error(err);
                 })
                 .then(() => {
-                    this.recently.set(this.getRecently()).reset();
                     this.liveToday = this.getLiveToday();
-                    this.loadProgresses(this.userCourses.map((c) => c.LastRecording.ID));
+                    if (this.userCourses.length > 0) {
+                        this.recently.set(this.getRecently(this.userCourses));
+                        this.loadProgresses(this.userCourses.map((c) => c.LastRecording.ID));
+                    } else {
+                        this.recently.set(this.getRecently(this.publicCourses));
+                    }
+                    this.recently.reset();
+                })
+                .finally(() => {
                     console.log("🌑 init recently", this.recently);
                     console.log("🌑 init live today", this.liveToday);
                 });
@@ -49,10 +57,14 @@ export function mainContext(year: number, term: string) {
         },
 
         /**
-         * Filter userCourses for recently streamed lectures
+         * Filter courses for recently streamed lectures
          */
-        getRecently() {
-            return this.userCourses.filter((c) => c.LastRecording.ID !== 0);
+        getRecently(courses: Course[]) {
+            return courses.filter((c) => c.LastRecording.ID !== 0);
+        },
+
+        async loadPublicCourses() {
+            this.publicCourses = await CoursesAPI.getPublic(this.state.year, this.state.term);
         },
 
         async loadUserCourses() {
@@ -60,10 +72,8 @@ export function mainContext(year: number, term: string) {
         },
 
         async loadProgresses(ids: number[]) {
-            if (ids.length > 0) {
-                const progresses = await ProgressAPI.getBatch(ids);
-                this.recently.forEach((r, i) => (r.LastRecording.Progress = progresses[i]));
-            }
+            const progresses = await ProgressAPI.getBatch(ids);
+            this.recently.forEach((r, i) => (r.LastRecording.Progress = progresses[i]));
         },
     };
 }
