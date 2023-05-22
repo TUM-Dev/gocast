@@ -27,12 +27,12 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	router.POST("/api/users/settings/greeting", routes.updatePreferredGreeting)
 	router.POST("/api/users/settings/playbackSpeeds", routes.updatePlaybackSpeeds)
 
-	router.POST("/api/users/pinCourse", func(c *gin.Context) {
-		routes.pinCourse(c, true)
-	})
-	router.POST("/api/users/unpinCourse", func(c *gin.Context) {
-		routes.pinCourse(c, false)
-	})
+	courses := router.Group("/api/users/courses")
+	{
+		courses.GET("/:id/pin", routes.getPinForCourse)
+		courses.POST("/pin", routes.pinCourse(true))
+		courses.POST("/unpin", routes.pinCourse(false))
+	}
 
 	router.GET("/api/users/exportData", routes.exportPersonalData)
 
@@ -324,39 +324,76 @@ func (r usersRoutes) addSingleUserToCourse(name string, email string, course mod
 	}
 }
 
-func (r usersRoutes) pinCourse(c *gin.Context, pin bool) {
-	var request struct {
-		CourseID uint `json:"courseID"`
+func (r usersRoutes) getPinForCourse(c *gin.Context) {
+	type URI struct {
+		CourseId uint `uri:"id" binding:"required"`
 	}
-	err := c.BindJSON(&request)
-	if err != nil {
-		log.WithError(err).Error("Could not bind JSON.")
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	if tumLiveContext.User == nil {
-		c.AbortWithStatus(http.StatusForbidden)
+
+	var uri URI
+	if err := c.ShouldBindUri(&uri); err != nil {
+		_ = c.Error(tools.RequestError{
+			Err:           err,
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid URI",
+		})
 		return
 	}
 
-	// Find course
-	course, err := r.CoursesDao.GetCourseById(context.Background(), request.CourseID)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	var has = false
+	var err error
+	if tumLiveContext.User != nil {
+		has, err = r.UsersDao.HasPinnedCourse(*tumLiveContext.User, uri.CourseId)
+		if err != nil {
+			sentry.CaptureException(err)
+			_ = c.Error(tools.RequestError{
+				Err:           err,
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can't retrieve course",
+			})
+			return
+		}
 	}
 
-	// Update user in database
-	err = r.UsersDao.PinCourse(*tumLiveContext.User, course, pin)
-	if err != nil {
-		log.WithError(err).Error("Can't update user")
-		return
+	c.JSON(http.StatusOK, gin.H{"has": has})
+}
+
+func (r usersRoutes) pinCourse(pin bool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var request struct {
+			CourseID uint `json:"courseID"`
+		}
+		err := c.BindJSON(&request)
+		if err != nil {
+			log.WithError(err).Error("Could not bind JSON.")
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+		foundContext, exists := c.Get("TUMLiveContext")
+		if !exists {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+		tumLiveContext := foundContext.(tools.TUMLiveContext)
+		if tumLiveContext.User == nil {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+
+		// Find course
+		course, err := r.CoursesDao.GetCourseById(context.Background(), request.CourseID)
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		// Update user in database
+		err = r.UsersDao.PinCourse(*tumLiveContext.User, course, pin)
+		if err != nil {
+			log.WithError(err).Error("Can't update user")
+			return
+		}
 	}
 }
 

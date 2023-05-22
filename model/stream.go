@@ -9,6 +9,7 @@ import (
 	"github.com/russross/blackfriday/v2"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"strings"
 	"time"
 )
 
@@ -197,6 +198,15 @@ func (s Stream) IsPlanned() bool {
 	return !s.Recording && !s.LiveNow && !s.IsPast() && !s.IsComingUp()
 }
 
+func (s Stream) HLSUrl() string {
+	hls := s.PlaylistUrl
+	if s.StartOffset > 0 {
+		hls = fmt.Sprintf("%s?wowzaplaystart=%d&wowzaplayduration=%d", s.PlaylistUrl, s.StartOffset, s.EndOffset)
+	}
+
+	return strings.Replace(hls, "quality", "", -1)
+}
+
 type silence struct {
 	Start uint `json:"start"`
 	End   uint `json:"end"`
@@ -331,17 +341,31 @@ func (s Stream) Attachments() []File {
 }
 
 type StreamDTO struct {
-	ID    uint
-	Name  string
-	Start time.Time
-	End   time.Time
+	ID          uint
+	Name        string
+	Description string
+	IsRecording bool
+	IsPlanned   bool
+	HLSUrl      string
+	Downloads   []DownloadableVod
+	Start       time.Time
+	End         time.Time
 }
 
 func (s Stream) ToDTO() StreamDTO {
+	downloads := []DownloadableVod{}
+	if s.IsDownloadable() {
+		downloads = s.GetVodFiles()
+	}
 	return StreamDTO{
-		ID:    s.ID,
-		Name:  s.Name,
-		Start: s.Start,
-		End:   s.End,
+		ID:          s.ID,
+		Name:        s.Name,
+		Description: s.Description,
+		IsRecording: s.Recording,
+		IsPlanned:   s.IsPlanned(),
+		Downloads:   downloads,
+		HLSUrl:      s.HLSUrl(),
+		Start:       s.Start,
+		End:         s.End,
 	}
 }

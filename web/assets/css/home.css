@@ -66,6 +66,14 @@
     @apply text-3 hover:bg-gray-100 dark:hover:bg-gray-800
 }
 
+.tum-live-button-tertiary {
+    @apply bg-gray-100 hover:bg-gray-800 hover:text-white dark:bg-gray-800 dark:hover:bg-gray-600
+}
+
+.tum-live-button-tertiary.active {
+    @apply bg-gray-800 text-white dark:bg-gray-600
+}
+
 .tum-live-icon-button {
     @apply flex justify-center items-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-white active:bg-gray-100/50 dark:active:bg-gray-700/50
 }
@@ -104,7 +112,7 @@
 }
 
 .tum-live-side-navigation-group-item.hover {
-    @apply hover:bg-gray-100 dark:hover:bg-gray-800
+    @apply hover:bg-gray-100 dark:hover:bg-gray-800 hover:cursor-pointer
 }
 
 .tum-live-side-navigation-group-item > i {
@@ -136,15 +144,31 @@
 }
 
 .tum-live-stream .course {
-    @apply text-5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg py-1 break-words leading-relaxed
+    @apply text-5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg py-1 break-words leading-relaxed hover:cursor-pointer
 }
 
 .tum-live-stream .title {
     @apply block font-medium hover:underline
 }
 
-.tum-live-stream .date {
-    @apply flex items-center font-light;
+.tum-live-stream .date, .tum-live-stream-row .date {
+    @apply flex items-center font-light mt-1;
+}
+
+.tum-live-stream .description, .tum-live-stream-row .description {
+    @apply flex items-center;
+}
+
+.tum-live-stream-row {
+    @apply flex flex-col md:px-0 md:items-center md:flex-row
+}
+
+.tum-live-stream-row:not(:last-child) {
+    @apply mb-2;
+}
+
+.tum-live-stream-row .title {
+    @apply block font-semibold hover:underline mt-3 md:mt-0
 }
 
 .tum-live-menu {
@@ -164,6 +188,11 @@
     @apply ml-auto
 }
 
+.tum-live-menu .tum-live-menu-item {
+    @apply flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2 w-full
+}
+
+
 .tum-live-course-list > header {
     @apply flex items-center justify-between mb-8
 }
@@ -181,7 +210,7 @@
 }
 
 .tum-live-course-list-item .title {
-    @apply block text-3 lg:text-base text-sm font-semibold hover:underline
+    @apply block text-3 lg:text-base text-sm font-semibold hover:underline hover:cursor-pointer
 }
 
 .tum-live-course-list-item .links {
@@ -216,6 +245,83 @@
 .tum-live-notification-info > .icon {
     @apply text-blue-500/75 dark:text-indigo-600/75
 }
+
+
+.tum-live-calendar {
+    @apply bg-white flex flex-col rounded-lg shadow-sm w-24 h-24 border dark:border-0
+}
+
+.tum-live-calendar > .month {
+    @apply flex justify-center bg-red-500 rounded-t-lg font-semibold text-white
+}
+
+.tum-live-calendar > .day {
+    @apply flex flex-col flex-grow items-center justify-center text-black font-bold text-2xl
+}
+
+.tum-live-calendar > .time {
+    @apply py-1 text-center text-xs border-t text-black
+}
+
+
+.tum-live-course-view {
+    @apply pb-5
+}
+
+.tum-live-course-view > header {
+    @apply grid gap-2 text-center mb-8
+}
+
+.tum-live-course-view > header .year {
+    @apply font-semibold uppercase text-5 mb-0
+}
+
+.tum-live-course-view > header .name {
+    @apply font-bold
+}
+
+.tum-live-course-view > header .button-area {
+    @apply flex justify-center items-center space-x-4
+}
+
+
+.tum-live-course-view-item {
+    @apply py-4
+}
+
+.tum-live-course-view-item:not(:last-child){
+    @apply border-b dark:border-gray-800
+}
+
+.tum-live-course-view-item > header {
+    @apply flex flex-col items-center mb-3 md:flex-row;
+}
+
+.tum-live-course-view-item > header > h3 {
+    @apply font-bold mb-2 md:mb-0 md:mr-2
+}
+
+
+.tum-live-planned-list > .month {
+    @apply bg-gray-100 rounded px-2 text-sm font-light mb-2 dark:bg-gray-800
+}
+
+.tum-live-planned-list > .tum-live-planned-list-group {
+    @apply grid gap-5
+}
+
+.tum-live-planned-list > .tum-live-planned-list-group > .tum-live-planned-list-group-item{
+    @apply py-1
+}
+
+.tum-live-planned-list > .tum-live-planned-list-group > .tum-live-planned-list-group-item .name{
+    @apply font-semibold mb-0
+}
+
+.tum-live-planned-list > .tum-live-planned-list-group > .tum-live-planned-list-group-item .date{
+    @apply text-xs text-5
+}
+
 
 .tum-live-footer {
     @apply bg-gray-100 dark:bg-secondary-light py-4 px-8;
