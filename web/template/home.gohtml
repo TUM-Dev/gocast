@@ -429,7 +429,7 @@
                                                               x-text="vod.FriendlyDateStart()"></span>
                                                     </div>
                                                     <button type="button" @click="vod.Dropdown.toggle()"
-                                                            class="md:group-hover:block md:hidden">
+                                                            class="md:group-hover:block md:hidden px-2">
                                                         <i class="fa-solid fa-ellipsis-vertical"></i>
                                                     </button>
                                                     <template x-if="vod.Dropdown.value">
@@ -448,7 +448,7 @@
                                                                 : 'Mark as watched'"></span>
                                                                 </button>
                                                             {{end}}
-                                                            <button type="button" @click="copyHLS(vod)"
+                                                            <button type="button" @click="copyHLS(vod, vod.Dropdown)"
                                                                     class="tum-live-menu-item">
                                                                 <i class="fa-solid fa-link mr-4"></i>
                                                                 <span class="block">Copy HLS URL</span>

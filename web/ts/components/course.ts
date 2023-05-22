@@ -5,6 +5,7 @@ import { HasPinnedCourseDTO, UserAPI } from "../api/user";
 import { copyToClipboard } from "../utilities/input-interactions";
 import { AlpineComponent } from "./alpine-component";
 import { Tunnel } from "../utilities/tunnels";
+import { ToggleableElement } from "../utilities/ToggleableElement";
 
 export enum StreamSortMode {
     NewestFirst,
@@ -119,8 +120,9 @@ export function courseContext(slug: string, year: number, term: string): AlpineC
             Tunnel.pinned.add({ pin: this.course.Pinned, course: this.course });
         },
 
-        copyHLS(stream: Stream) {
+        copyHLS(stream: Stream, dropdown: ToggleableElement) {
             copyToClipboard(stream.HLSUrl);
+            dropdown.toggle(false);
         },
 
         async loadCourse() {
