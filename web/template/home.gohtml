@@ -374,6 +374,23 @@
                                 </section>
                             </template>
                         </div>
+
+                        <template x-if="upcomingStreams.hasElements()">
+                            <section class="tum-live-course-view-item">
+                                <section class = "tum-live-upcoming">
+                                    <template x-for="upcoming in upcomingStreams.get()" :key="upcoming.ID">
+                                        <article class="tum-live-upcoming-item">
+                                            <span>Next lecture starts in </span><!--
+                                            --><span x-text="upcoming.MinutesLeftToStart()"></span><!--
+                                            --><span> Minutes.</span>
+                                            <a :href="course.WatchURL(upcoming.ID)" class="underline"
+                                               title="Join waiting room">Join waiting room</a>
+                                        </article>
+                                    </template>
+                                </section>
+                            </section>
+                        </template>
+
                         <template x-if="courseStreams.hasElements()">
                             <section class="tum-live-course-view-item">
                                 <header>
@@ -503,7 +520,7 @@
                     <template x-if="plannedStreams.hasElements()">
                         <section class="tum-live-course-view-item xl:col-span-1">
                             <header>
-                                <h3>Upcoming</h3>
+                                <h3>Scheduled</h3>
                             </header>
                             <article>
                                 <section class="grid gap-5">
