@@ -67,7 +67,7 @@ export class Stream {
         const b = new Date(other.Start);
         if (a < b) {
             return 1;
-        } else if (b > a) {
+        } else if (a > b) {
             return -1;
         }
         return 0;
