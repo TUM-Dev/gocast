@@ -13,13 +13,3 @@ type Stat struct {
 	Viewers  uint      `gorm:"not null;default:0"`
 	Live     bool      `gorm:"not null;default:false"`
 }
-
-type StatDTO struct {
-	Viewers uint
-}
-
-func (s Stat) ToDTO() StatDTO {
-	return StatDTO{
-		Viewers: s.Viewers,
-	}
-}

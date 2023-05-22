@@ -337,8 +337,8 @@
                                                      class="h-full tum-live-thumbnail"></div>
                                             </a>
                                             <div class="absolute bg-black/[.8] text-white text-xs bottom-3 left-3 z-40 px-2 py-px rounded">
-                                                <span x-text="livestream.Stat.Viewers"></span>
-                                                <span x-text="(livestream.Stat.Viewers > 1 || livestream.Stat.Viewers === 0) ? 'viewers' : 'viewer'"></span>
+                                                <span x-text="livestream.Viewers"></span>
+                                                <span x-text="(livestream.Viewers > 1 || livestream.Viewers === 0) ? 'viewers' : 'viewer'"></span>
                                             </div>
                                         </div>
                                         <div class="px-2">
@@ -362,7 +362,7 @@
                         <article id="live-today" class="tum-live-content-grid-item">
                             <h3>Today</h3>
                             <section class="grid gap-3 px-5">
-                                <template x-for="(course, i) in liveToday" :key="course.ID">
+                                <template x-for="course in liveToday" :key="course.ID">
                                     <article class="border-b dark:border-gray-800 last:border-0 py-2 px-1">
                                         <a class="block text-3 font-semibold hover:underline" x-text="course.Name"
                                            :href="course.URL()"></a>
