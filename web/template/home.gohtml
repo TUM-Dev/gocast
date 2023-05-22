@@ -180,6 +180,7 @@
                 </header>
                 <template x-for="course in userCourses.slice(0, 8)" :key="course.ID">
                     <button type="button" class="tum-live-side-navigation-group-item hover"
+                            @contextmenu="console.log(course.Slug)"
                             @click="showCourse(course.Slug)"
                             x-text="course.Name">
                     </button>
@@ -377,7 +378,7 @@
 
                         <template x-if="upcomingStreams.hasElements()">
                             <section class="tum-live-course-view-item">
-                                <section class = "tum-live-upcoming">
+                                <section class="tum-live-upcoming">
                                     <template x-for="upcoming in upcomingStreams.get()" :key="upcoming.ID">
                                         <article class="tum-live-upcoming-item">
                                             <span>Next lecture starts in </span><!--
@@ -634,17 +635,33 @@
                             <h3>Today</h3>
                             <section class="grid gap-3 px-5">
                                 <template x-for="course in liveToday" :key="course.ID">
-                                    <article class="border-b dark:border-gray-800 last:border-0 py-2 px-1">
-                                        <a type="button"
-                                           class="block text-3 font-semibold hover:underline hover:cursor-pointer"
-                                           @click="showCourse(course.Slug)"
-                                           x-text="course.Name">
-                                        </a>
+                                    <article class="border-b dark:border-gray-800 last:border-0 py-2">
+                                        <button type="button"
+                                                class="text-3 font-semibold hover:underline hover:cursor-pointer"
+                                                @click="showCourse(course.Slug)"
+                                                x-text="course.Name">
+                                        </button>
                                         <div class="flex items-center text-sm text-5 font-light">
                                             <a :href="course.NextLectureURL()">
-                                                <i class="fa-solid fa-square-up-right"></i>
-                                                <span class="hover:underline"
-                                                      x-text="`Next lecture: ${course.NextLecture.FriendlyDateStart()}`"></span>
+                                                <template x-if="course.NextLecture.IsComingUp">
+                                                    <span>
+                                                        <span>Next lecture starts in </span><!--
+                                                        --><span x-text="course.NextLecture.MinutesLeftToStart()"></span><!--
+                                                        --><span> Minutes.</span>
+                                                        <a :href="course.WatchURL(course.NextLecture.ID)"
+                                                           title="Join waiting room">
+                                                            <i class="fa-solid fa-square-up-right"></i>
+                                                            <span class="underline">Join waiting room</span>
+                                                        </a>
+                                                    </span>
+                                                </template>
+                                                <template x-if="!course.NextLecture.IsComingUp">
+                                                    <span>
+                                                        <i class="fa-solid fa-square-up-right"></i>
+                                                        <span class="hover:underline"
+                                                              x-text="`Next lecture: ${course.NextLecture.FriendlyDateStart()}`"></span>
+                                                    </span>
+                                                </template>
                                             </a>
                                         </div>
                                     </article>
