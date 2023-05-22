@@ -53,7 +53,7 @@ export class Stream {
     }
 
     public MinutesLeftToStart(): number {
-        return Math.round((new Date(this.Start) - new Date()) / 60000);
+        return Math.round((new Date(this.Start).valueOf() - new Date().valueOf()) / 60000);
     }
 
     public UntilString(): string {
