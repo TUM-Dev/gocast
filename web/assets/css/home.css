@@ -272,7 +272,7 @@
     @apply grid gap-2 text-center mb-8
 }
 
-.tum-live-course-view > header .slug {
+.tum-live-course-view > header .year {
     @apply font-semibold uppercase text-5 mb-0
 }
 

@@ -298,7 +298,10 @@
                      class="tum-live-course-view">
                 <header>
                     <div>
-                        <p x-text="course.Slug" class="slug"></p>
+                        <p class="year">
+                            <span x-text="course.TeachingTerm"></span><!--
+                            --><span x-text="course.Year"></span>
+                        </p>
                         <h1 x-text="course.Name" class="name"></h1>
                     </div>
                     <section class="button-area">
