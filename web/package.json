@@ -50,7 +50,7 @@
     "video.js": "^7.21.1",
     "videojs-contrib-quality-levels": "^3.0.0",
     "videojs-seek-buttons": "^3.0.1",
-    "videojs-sprite-thumbnails": "^0.6.0"
+    "videojs-sprite-thumbnails": "^1.0.0"
   },
   "devDependencies": {
     "@types/video.js": "^7.3.51",
