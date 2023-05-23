@@ -794,7 +794,7 @@ export function createLectureForm(args: { s: [] }) {
             // Create New VOD
             const { streamID } = await (
                 await postData(
-                    `/api/course/${this.courseID}/uploadVOD?start=${this.formData.start}&title=${this.formData.title}`,
+                    `/api/course/${this.courseID}/createVOD?start=${this.formData.start}&title=${this.formData.title}`,
                     {},
                 )
             ).json();
