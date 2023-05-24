@@ -220,6 +220,7 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 		case model.AdminType:
 			courses = routes.GetAllCoursesForSemester(year, term, c)
 		case model.LecturerType:
+			courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
 			coursesForLecturer, err := r.GetAdministeredCoursesByUserId(c, tumLiveContext.User.ID, term, year)
 			if err == nil {
 				courses = append(courses, coursesForLecturer...)
