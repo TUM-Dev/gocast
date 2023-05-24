@@ -31,7 +31,6 @@ type initializer func()
 
 var initializers = []initializer{
 	tools.LoadConfig,
-	api.ServeWorkerGRPC,
 	tools.InitBranding,
 }
 
@@ -147,7 +146,7 @@ func main() {
 		&model.IngestServer{},
 		&model.StreamName{},
 		&model.Stream{},
-		&model.Worker{},
+		&model.WorkerV2{},
 		&model.CameraPreset{},
 		&model.ServerNotification{},
 		&model.File{},
@@ -206,6 +205,9 @@ func main() {
 			log.WithError(err).Fatal("can't launch gin server")
 		}
 	}()
+
+	grpcSrv := api.FromWorkerServer{Dao: dao.NewDaoWrapper()}
+	grpcSrv.InitApiGrpc(":50052")
 	keepAlive()
 }
 
@@ -219,13 +221,13 @@ func initCron() {
 	//Flush stale sentry exceptions and transactions every 5 minutes
 	_ = tools.Cron.AddFunc("sentryFlush", func() { sentry.Flush(time.Minute * 2) }, "0-59/5 * * * *")
 	//Look for due streams and notify workers about them
-	_ = tools.Cron.AddFunc("triggerDueStreams", api.NotifyWorkers(daoWrapper), "0-59 * * * *")
+	_ = tools.Cron.AddFunc("triggerDueStreams", api.StartDueStreams(daoWrapper), "0-59 * * * *")
 	// update courses available
 	_ = tools.Cron.AddFunc("prefetchCourses", tum.PrefetchCourses(daoWrapper), "30 3 * * *")
 	// export data to meili search
 	_ = tools.Cron.AddFunc("exportToMeili", tools.NewMeiliExporter(daoWrapper).Export, "30 4 * * *")
 	// fetch live stream previews
-	_ = tools.Cron.AddFunc("fetchLivePreviews", api.FetchLivePreviews(daoWrapper), "*/1 * * * *")
+	_ = tools.Cron.AddFunc("fetchLivePreviews", api.FetchLivePreviews(daoWrapper), "* * * * *")
 	tools.Cron.Run()
 }
 

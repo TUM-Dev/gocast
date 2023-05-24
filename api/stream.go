@@ -216,10 +216,10 @@ func (r streamRoutes) liveStreams(c *gin.Context) {
 }
 
 func (r streamRoutes) endStream(c *gin.Context) {
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	/*tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	discardVoD := c.Request.URL.Query().Get("discard") == "true"
-	log.Info(discardVoD)
-	NotifyWorkersToStopStream(*tumLiveContext.Stream, discardVoD, r.DaoWrapper)
+	log.Info(discardVoD)*/
+	// todo NotifyWorkersToStopStream(*tumLiveContext.Stream, discardVoD, r.DaoWrapper)
 }
 
 // reportStreamIssue sends a notification to a matrix room that can be used for debugging technical issues.
@@ -339,6 +339,7 @@ func (r streamRoutes) getVideoSections(c *gin.Context) {
 
 // RegenerateThumbs regenerates the thumbnails for a stream.
 func (r streamRoutes) RegenerateThumbs(c *gin.Context) {
+	/* todo: is this required?
 	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	stream := tumLiveContext.Stream
 	course := tumLiveContext.Course
@@ -377,7 +378,7 @@ func (r streamRoutes) RegenerateThumbs(c *gin.Context) {
 				}
 			}()
 		}
-	}
+	}*/
 }
 
 func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
@@ -427,6 +428,7 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 		return
 	}
 	go func() {
+		/* todo
 		parameters := generateVideoSectionImagesParameters{
 			sections:           sections,
 			playlistUrl:        stream.PlaylistUrl,
@@ -438,6 +440,7 @@ func (r streamRoutes) createVideoSectionBatch(c *gin.Context) {
 		if err != nil {
 			log.WithError(err).Error("failed to generate video section images")
 		}
+		*/
 	}()
 }
 
@@ -514,7 +517,7 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 		return
 	}
 
-	file, err := r.FileDao.GetFileById(fmt.Sprintf("%d", old.FileID))
+	_, err = r.FileDao.GetFileById(fmt.Sprintf("%d", old.FileID))
 	if err != nil {
 		log.WithError(err).Error("can not find file")
 		_ = c.Error(tools.RequestError{
@@ -537,10 +540,12 @@ func (r streamRoutes) deleteVideoSection(c *gin.Context) {
 	}
 
 	go func() {
+		/* todo
 		err := DeleteVideoSectionImage(r.DaoWrapper.WorkerDao, file.Path)
 		if err != nil {
 			log.WithError(err).Error("failed to generate video section images")
 		}
+		*/
 	}()
 
 	c.Status(http.StatusAccepted)

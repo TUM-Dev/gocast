@@ -349,10 +349,10 @@ func (mr *MockStreamsDaoMockRecorder) GetUnitByID(id interface{}) *gomock.Call {
 }
 
 // GetWorkersForStream mocks base method.
-func (m *MockStreamsDao) GetWorkersForStream(stream model.Stream) ([]model.Worker, error) {
+func (m *MockStreamsDao) GetWorkersForStream(stream model.Stream) ([]model.WorkerV2, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetWorkersForStream", stream)
-	ret0, _ := ret[0].([]model.Worker)
+	ret0, _ := ret[0].([]model.WorkerV2)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -456,7 +456,7 @@ func (mr *MockStreamsDaoMockRecorder) SaveTranscodingProgress(progress interface
 }
 
 // SaveWorkerForStream mocks base method.
-func (m *MockStreamsDao) SaveWorkerForStream(stream model.Stream, worker model.Worker) error {
+func (m *MockStreamsDao) SaveWorkerForStream(stream model.Stream, worker model.WorkerV2) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveWorkerForStream", stream, worker)
 	ret0, _ := ret[0].(error)

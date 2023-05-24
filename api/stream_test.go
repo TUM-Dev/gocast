@@ -395,7 +395,7 @@ func TestStreamVideoSections(t *testing.T) {
 					CoursesDao: testutils.GetCoursesMock(t),
 					WorkerDao: func() dao.WorkerDao {
 						workerMock := mock_dao.NewMockWorkerDao(gomock.NewController(t))
-						workerMock.EXPECT().GetAliveWorkers().Return([]model.Worker{testutils.Worker1})
+						workerMock.EXPECT().GetAliveWorkers().Return([]model.WorkerV2{testutils.Worker1})
 						return workerMock
 					}(),
 					VideoSectionDao: func() dao.VideoSectionDao {
@@ -609,7 +609,7 @@ func TestStreamVideoSections(t *testing.T) {
 					CoursesDao: testutils.GetCoursesMock(t),
 					WorkerDao: func() dao.WorkerDao {
 						workerMock := mock_dao.NewMockWorkerDao(gomock.NewController(t))
-						workerMock.EXPECT().GetAliveWorkers().Return([]model.Worker{testutils.Worker1})
+						workerMock.EXPECT().GetAliveWorkers().Return([]model.WorkerV2{testutils.Worker1})
 						return workerMock
 					}(),
 					VideoSectionDao: func() dao.VideoSectionDao {

@@ -5,8 +5,7 @@ VERSION := $(shell git rev-parse --short origin/HEAD)
 
 .PHONY: protoGen
 protoGen:
-	cd api; \
-	protoc ./api.proto --go-grpc_out=../.. --go_out=../..
+	protoc ./worker.proto --go-grpc_out=.. --go_out=..
 
 .PHONY: build
 build: deps

@@ -24,7 +24,7 @@ type StreamsDao interface {
 	GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error)
 	GetStreamsByIds(ids []uint) ([]model.Stream, error)
 	GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error)
-	GetWorkersForStream(stream model.Stream) ([]model.Worker, error)
+	GetWorkersForStream(stream model.Stream) ([]model.WorkerV2, error)
 	GetAllStreams() ([]model.Stream, error)
 	ExecAllStreamsWithCoursesAndSubtitles(f func([]StreamWithCourseAndSubtitles))
 	GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error)
@@ -35,7 +35,7 @@ type StreamsDao interface {
 	SetLectureHall(streamIDs []uint, lectureHallID uint) error
 	UnsetLectureHall(streamIDs []uint) error
 	UpdateStream(stream model.Stream) error
-	SaveWorkerForStream(stream model.Stream, worker model.Worker) error
+	SaveWorkerForStream(stream model.Stream, worker model.WorkerV2) error
 	ClearWorkersForStream(stream model.Stream) error
 	UpdateSilences(silences []model.Silence, streamID string) error
 	DeleteSilences(streamID string) error
@@ -197,8 +197,8 @@ func (d streamsDao) DeleteLectureSeries(seriesIdentifier string) error {
 }
 
 // GetWorkersForStream retrieves all workers for a given stream with streamID
-func (d streamsDao) GetWorkersForStream(stream model.Stream) ([]model.Worker, error) {
-	var res []model.Worker
+func (d streamsDao) GetWorkersForStream(stream model.Stream) ([]model.WorkerV2, error) {
+	var res []model.WorkerV2
 	err := DB.Preload(clause.Associations).Model(&stream).Association("StreamWorkers").Find(&res)
 	return res, err
 }
@@ -326,7 +326,7 @@ func (d streamsDao) UpdateStream(stream model.Stream) error {
 }
 
 // SaveWorkerForStream associates a worker with a stream with streamID
-func (d streamsDao) SaveWorkerForStream(stream model.Stream, worker model.Worker) error {
+func (d streamsDao) SaveWorkerForStream(stream model.Stream, worker model.WorkerV2) error {
 	defer Cache.Clear()
 	return DB.Model(&stream).Association("StreamWorkers").Append(&worker)
 }

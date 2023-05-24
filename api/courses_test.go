@@ -2045,7 +2045,7 @@ func TestUploadVOD(t *testing.T) {
 							streamsMock.
 								EXPECT().
 								GetAliveWorkers().
-								Return([]model.Worker{})
+								Return([]model.WorkerV2{})
 							return streamsMock
 						}(),
 					}
@@ -2069,7 +2069,7 @@ func TestUploadVOD(t *testing.T) {
 							streamsMock.
 								EXPECT().
 								GetAliveWorkers().
-								Return([]model.Worker{testutils.Worker1})
+								Return([]model.WorkerV2{testutils.Worker1})
 							return streamsMock
 						}(),
 					},

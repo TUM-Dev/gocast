@@ -1,0 +1,16 @@
+manager: localhost
+storagePath: storage
+tmpPath: storage
+stream:
+  codecA: aac
+  codecV: libx264
+  hlsSegmentDuration: 2
+  hlsPlaylistLength: 300
+  maxDuration: 36000
+transcode:
+  codecA: aac
+  codecV: libx264
+  crf: 18
+  level: 4.0
+  movflags:
+    - +faststart

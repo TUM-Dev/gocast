@@ -1,0 +1,91 @@
+syntax = "proto3";
+package protobuf;
+option go_package = "worker/protobuf";
+
+import "google/protobuf/timestamp.proto";
+
+service ToWorker {
+  // Requests a stream from a lecture hall
+  rpc RequestStream (StreamRequest) returns (StreamResponse) {}
+  rpc RequestStreamEnd (StreamEndRequest) returns (StreamEndResponse) {}
+  //rpc GenerateThumbnail (GenerateThumbnailRequest) returns (GenerateThumbnailResponse) {}
+}
+
+message StreamRequest {
+  uint64 stream = 1;
+  uint64 course = 2;
+  string version = 3;
+  google.protobuf.Timestamp end = 4;
+  string source = 5;
+}
+
+
+message StreamResponse {
+  string job = 1;
+}
+
+message StreamEndRequest {
+  string jobID = 1;
+  bool keepVod = 2;
+}
+
+message StreamEndResponse {}
+
+enum ThumbnailRequestType {
+  LIVE = 0;
+  VOD = 1;
+  SECTION = 2;
+}
+
+message GenerateThumbnailRequest {
+  ThumbnailRequestType type = 1;
+  string input = 2; // filepath or url to video
+  repeated uint64 timestampSeconds = 3; // Only used for SECTION
+}
+
+message GenerateThumbnailResponse {
+  repeated string path = 1;
+}
+
+message Status {
+  bool ok = 1;
+}
+
+// FromWorker service defines communication from workers to TUM-Live
+service FromWorker {
+  // Register is a request to the server to join the worker pool.
+  rpc Register (RegisterRequest) returns (RegisterResponse) {}
+  rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse) {}
+  rpc RequestSelfStream (SelfStreamRequest) returns (SelfStreamResponse) {}
+}
+
+message RegisterRequest {
+  string hostname = 1;
+}
+
+message RegisterResponse {
+  uint64 id = 1;
+}
+
+message HeartbeatRequest {
+  uint64 ID = 1;
+  uint32 Workload = 2;
+  string Version = 3;
+  string CPU = 4;
+  string Memory = 5;
+  string Disk = 6;
+  string Uptime = 7;
+}
+
+message HeartbeatResponse {}
+
+message SelfStreamRequest {
+  string streamKey = 1;
+}
+
+message SelfStreamResponse {
+  uint64 stream = 1;
+  uint64 course = 2;
+  string version = 3;
+}
+

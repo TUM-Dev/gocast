@@ -142,7 +142,7 @@ func (r mainRoutes) AdminPage(c *gin.Context) {
 }
 
 type WorkersData struct {
-	Workers []model.Worker
+	Workers []model.WorkerV2
 	Token   string
 }
 

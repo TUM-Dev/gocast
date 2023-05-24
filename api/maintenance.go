@@ -66,13 +66,13 @@ func (r *maintenanceRoutes) generateThumbnails(c *gin.Context) {
 						continue
 					}
 					// Request thumbnail for VoD.
-					err := RegenerateThumbs(dao.NewDaoWrapper(), file, &stream, &course)
+					err := &struct{}{} // todo RegenerateThumbs(dao.NewDaoWrapper(), file, &stream, &course)
 					if err != nil {
-						log.WithError(err).Errorf(
+						/*log.WithError(err).Errorf(
 							"Can't regenerate thumbnail for stream %d with file %s",
 							stream.ID,
 							file.Path,
-						)
+						)*/
 						continue
 					}
 					log.Info("Processed thumbnail", processed, "of", noFiles)

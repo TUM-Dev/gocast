@@ -35,7 +35,7 @@
                                 </td>
                                 <td class="px-6">{{$worker.Uptime}}</td>
                                 <td x-data class="px-6">
-                                    <button @click="admin.deleteWorker('{{$worker.WorkerID}}').then(() => window.location.reload())"
+                                    <button @click="admin.deleteWorker('{{$worker.ID}}').then(() => window.location.reload())"
                                            class="text-5 hover:text-1 items-center justify-center"
                                            type="button"
                                            title="Delete Worker">

@@ -381,7 +381,7 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 		})
 		return
 	}
-	w := workers[getWorkerWithLeastWorkload(workers)]
+	w := model.WorkerV2{} // todo workers[getWorkerWithLeastWorkload(workers)]
 	u, err := url.Parse("http://" + w.Host + ":" + WorkerHTTPPort + "/upload?" + c.Request.URL.Query().Encode() + "&key=" + key)
 	if err != nil {
 		_ = c.Error(tools.RequestError{

@@ -36,7 +36,7 @@ func (m *MockWorkerDao) EXPECT() *MockWorkerDaoMockRecorder {
 }
 
 // CreateWorker mocks base method.
-func (m *MockWorkerDao) CreateWorker(worker *model.Worker) error {
+func (m *MockWorkerDao) CreateWorker(worker *model.WorkerV2) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateWorker", worker)
 	ret0, _ := ret[0].(error)
@@ -64,10 +64,10 @@ func (mr *MockWorkerDaoMockRecorder) DeleteWorker(workerID interface{}) *gomock.
 }
 
 // GetAliveWorkers mocks base method.
-func (m *MockWorkerDao) GetAliveWorkers() []model.Worker {
+func (m *MockWorkerDao) GetAliveWorkers() []model.WorkerV2 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAliveWorkers")
-	ret0, _ := ret[0].([]model.Worker)
+	ret0, _ := ret[0].([]model.WorkerV2)
 	return ret0
 }
 
@@ -78,10 +78,10 @@ func (mr *MockWorkerDaoMockRecorder) GetAliveWorkers() *gomock.Call {
 }
 
 // GetAllWorkers mocks base method.
-func (m *MockWorkerDao) GetAllWorkers() ([]model.Worker, error) {
+func (m *MockWorkerDao) GetAllWorkers() ([]model.WorkerV2, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllWorkers")
-	ret0, _ := ret[0].([]model.Worker)
+	ret0, _ := ret[0].([]model.WorkerV2)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -93,10 +93,10 @@ func (mr *MockWorkerDaoMockRecorder) GetAllWorkers() *gomock.Call {
 }
 
 // GetWorkerByHostname mocks base method.
-func (m *MockWorkerDao) GetWorkerByHostname(ctx context.Context, hostname string) (model.Worker, error) {
+func (m *MockWorkerDao) GetWorkerByHostname(ctx context.Context, hostname string) (model.WorkerV2, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetWorkerByHostname", ctx, hostname)
-	ret0, _ := ret[0].(model.Worker)
+	ret0, _ := ret[0].(model.WorkerV2)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -108,10 +108,10 @@ func (mr *MockWorkerDaoMockRecorder) GetWorkerByHostname(ctx, hostname interface
 }
 
 // GetWorkerByID mocks base method.
-func (m *MockWorkerDao) GetWorkerByID(ctx context.Context, workerID string) (model.Worker, error) {
+func (m *MockWorkerDao) GetWorkerByID(ctx context.Context, workerID string) (model.WorkerV2, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetWorkerByID", ctx, workerID)
-	ret0, _ := ret[0].(model.Worker)
+	ret0, _ := ret[0].(model.WorkerV2)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -123,7 +123,7 @@ func (mr *MockWorkerDaoMockRecorder) GetWorkerByID(ctx, workerID interface{}) *g
 }
 
 // SaveWorker mocks base method.
-func (m *MockWorkerDao) SaveWorker(worker model.Worker) error {
+func (m *MockWorkerDao) SaveWorker(worker model.WorkerV2) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveWorker", worker)
 	ret0, _ := ret[0].(error)

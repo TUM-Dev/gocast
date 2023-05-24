@@ -183,14 +183,14 @@ var (
 		PlaylistUrlCAM:   "https://url",
 		LiveNow:          false,
 	}
-	Worker1 = model.Worker{
+	Worker1 = model.WorkerV2{
 		WorkerID: "ed067fa3-2364-4dcd-bfd2-e0ffb8d751d4",
 		Host:     "localhost",
 		Status:   "",
 		Workload: 0,
 		LastSeen: time.Now(),
 	}
-	Worker2 = model.Worker{
+	Worker2 = model.WorkerV2{
 		WorkerID: "ed067fa3-2364-4dcd-bfd2-e0ffb8d751d4",
 		Host:     "localhost",
 		Status:   "",
@@ -295,7 +295,7 @@ func GetStreamMock(t *testing.T) dao.StreamsDao {
 	streamsMock.
 		EXPECT().
 		GetWorkersForStream(StreamFPVLive).
-		Return([]model.Worker{Worker1, Worker2}, nil).AnyTimes()
+		Return([]model.WorkerV2{Worker1, Worker2}, nil).AnyTimes()
 	streamsMock.
 		EXPECT().
 		ClearWorkersForStream(StreamFPVLive).
