@@ -144,7 +144,7 @@
 }
 
 .tum-live-stream .date {
-    @apply flex items-center font-light;
+    @apply flex items-center font-light inline;
 }
 
 .tum-live-menu {

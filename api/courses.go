@@ -124,6 +124,7 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 		Course      model.CourseDTO
 		Stream      model.StreamDTO
 		LectureHall *model.LectureHallDTO
+		Viewers     uint
 	}
 
 	livestreams := make([]CourseStream, 0)
@@ -154,10 +155,19 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 				lectureHall = &lh
 			}
 		}
+
+		viewers := uint(0)
+		for sID, sessions := range sessionsMap {
+			if sID == stream.ID {
+				viewers = uint(len(sessions))
+			}
+		}
+
 		livestreams = append(livestreams, CourseStream{
 			Course:      courseForLiveStream.ToDTO(),
 			Stream:      stream.ToDTO(),
 			LectureHall: lectureHall.ToDTO(),
+			Viewers:     viewers,
 		})
 	}
 

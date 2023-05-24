@@ -722,7 +722,7 @@ func TestLectureHallIcal(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetStreamsForLectureHallIcal(gomock.Any(), []uint{1, 2}).
+								GetStreamsForLectureHallIcal(gomock.Any(), []uint{1, 2}, false).
 								Return(nil, errors.New("")).
 								AnyTimes()
 							return lectureHallMock
@@ -745,7 +745,7 @@ func TestLectureHallIcal(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetStreamsForLectureHallIcal(testutils.TUMLiveContextAdmin.User.ID, []uint{1, 2}).
+								GetStreamsForLectureHallIcal(testutils.TUMLiveContextAdmin.User.ID, []uint{1, 2}, false).
 								Return(calendarResultsAdmin, nil).
 								AnyTimes()
 							return lectureHallMock
@@ -764,7 +764,7 @@ func TestLectureHallIcal(t *testing.T) {
 							lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 							lectureHallMock.
 								EXPECT().
-								GetStreamsForLectureHallIcal(testutils.TUMLiveContextStudent.User.ID, []uint{1, 2}).
+								GetStreamsForLectureHallIcal(testutils.TUMLiveContextStudent.User.ID, []uint{1, 2}, false).
 								Return(calendarResultsLoggedIn, nil).
 								AnyTimes()
 							return lectureHallMock

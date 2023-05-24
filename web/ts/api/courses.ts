@@ -74,11 +74,13 @@ export class Livestream {
     readonly Stream: Stream;
     readonly Course: Course;
     readonly LectureHall?: LectureHall;
+    readonly Viewers: number;
 
     constructor(obj: Livestream) {
         this.Stream = Object.assign(new Stream(), obj.Stream);
         this.Course = Course.New(obj.Course);
         this.LectureHall = obj.LectureHall ? new LectureHall(obj.LectureHall) : undefined;
+        this.Viewers = obj.Viewers;
     }
 
     public InLectureHall(): boolean {
