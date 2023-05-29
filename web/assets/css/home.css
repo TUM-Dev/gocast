@@ -152,7 +152,7 @@
 }
 
 .tum-live-stream .date, .tum-live-stream-row .date {
-    @apply flex items-center font-light mt-1;
+    @apply flex items-center font-light mt-1 inline;
 }
 
 .tum-live-stream .description, .tum-live-stream-row .description {
@@ -321,6 +321,7 @@
 .tum-live-planned-list > .tum-live-planned-list-group > .tum-live-planned-list-group-item .date{
     @apply text-xs text-5
 }
+
 
 .tum-live-upcoming {
     @apply grid gap-y-3
