@@ -122,7 +122,7 @@ class PlayerSettings {
     }
 
     storeRate() {
-        PlayerSettings.setInStorage(this.isLive ? "live_rate" : "rate", String(this.player.playbackRate()););
+        PlayerSettings.setInStorage(this.isLive ? "live_rate" : "rate", String(this.player.playbackRate()));
     }
 
     static setInStorage(key: string, value: string) {
