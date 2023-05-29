@@ -1,13 +1,27 @@
 import { get } from "../utilities/fetch-wrappers";
 import { Progress } from "./progress";
+import { ToggleableElement } from "../utilities/ToggleableElement";
+import { date_eq } from "../utilities/time-utils";
+
+type DownloadableVOD = {
+    readonly FriendlyName: string;
+    readonly DownloadURL: string;
+};
 
 export class Stream {
     readonly ID: number;
     readonly Name: string;
+    readonly IsRecording: boolean;
+    readonly IsPlanned: boolean;
+    readonly Description: string;
+    readonly HLSUrl: string;
     readonly End: string;
     readonly Start: string;
+    readonly Downloads: DownloadableVOD[];
 
     Progress?: Progress;
+
+    Dropdown = new ToggleableElement([["downloads", new ToggleableElement()]]);
 
     public HasName(): boolean {
         return this.Name !== "";
@@ -17,11 +31,50 @@ export class Stream {
         return new Date(this.Start).toLocaleString();
     }
 
+    public MonthOfStart(): string {
+        return new Date(this.Start).toLocaleString("default", { month: "short" });
+    }
+
+    public DayOfStart(): number {
+        return new Date(this.Start).getDate();
+    }
+
+    public TimeOfStart(): string {
+        return Stream.TimeOf(this.Start);
+    }
+
+    public TimeOfEnd(): string {
+        return Stream.TimeOf(this.End);
+    }
+
+    public IsToday(): boolean {
+        return date_eq(new Date(this.Start), new Date());
+    }
+
     public UntilString(): string {
         const end = new Date(this.End);
         const hours = end.getHours();
         const minutes = end.getMinutes();
         return `Until ${hours}:${minutes < 10 ? minutes + "0" : minutes}`;
+    }
+
+    public HasDownloads(): boolean {
+        return this.Downloads.length > 0;
+    }
+
+    public CompareStart(other: Stream) {
+        const a = new Date(this.Start);
+        const b = new Date(other.Start);
+        if (a < b) {
+            return 1;
+        } else if (a > b) {
+            return -1;
+        }
+        return 0;
+    }
+
+    private static TimeOf(d: string): string {
+        return new Date(d).toLocaleTimeString("default", { hour: "2-digit", minute: "2-digit" });
     }
 }
 
@@ -33,13 +86,25 @@ export class Course {
     readonly TeachingTerm: string;
     readonly Name: string;
 
+    readonly DownloadsEnabled: boolean;
+
     readonly NextLecture?: Stream;
     readonly LastRecording?: Stream;
+
+    readonly Pinned: boolean = false;
+
+    private readonly Streams?: Stream[];
+
+    readonly Recordings?: Stream[];
+    readonly Planned?: Stream[];
 
     static New(obj): Course {
         const c = Object.assign(new Course(), obj);
         c.NextLecture = obj.NextLecture ? Object.assign(new Stream(), obj.NextLecture) : undefined;
         c.LastRecording = obj.LastRecording ? Object.assign(new Stream(), obj.LastRecording) : undefined;
+        c.Streams = obj.Streams ? obj.Streams.map((s) => Object.assign(new Stream(), s)) : [];
+        c.Recordings = c.Streams.filter((s) => s.IsRecording);
+        c.Planned = c.Streams.filter((s) => s.IsPlanned);
         return c;
     }
 
@@ -48,11 +113,19 @@ export class Course {
     }
 
     public LastRecordingURL(): string {
-        return `/w/${this.Slug}/${this.LastRecording.ID}`;
+        return this.WatchURL(this.LastRecording.ID);
     }
 
     public NextLectureURL(): string {
-        return `/w/${this.Slug}/${this.NextLecture.ID}`;
+        return this.WatchURL(this.NextLecture.ID);
+    }
+
+    public ICS(): string {
+        return `/api/download_ics/${this.Year}/${this.TeachingTerm}/${this.Slug}/events.ics`;
+    }
+
+    public WatchURL(id: number): string {
+        return `/w/${this.Slug}/${id}`;
     }
 
     public IsHidden(): boolean {
@@ -108,6 +181,10 @@ export const CoursesAPI = {
         return get(`/api/courses/users/pinned${this.query(year, term)}`).then((courses) =>
             courses.map((c) => Course.New(c)),
         );
+    },
+
+    async get(slug: string, year?: number, term?: string) {
+        return get(`/api/courses/${slug}${this.query(year, term)}`, {}, true).then((course) => Course.New(course));
     },
 
     query: (year?: number, term?: string) =>
