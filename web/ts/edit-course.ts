@@ -133,6 +133,9 @@ export class Lecture {
     newDescription: string;
     newLectureHallId: string;
     newIsChatEnabled = false;
+    newCombinedVideo = null;
+    newPresentationVideo = null;
+    newCameraVideo = null;
     isDirty = false;
     isSaving = false;
     isDeleted = false;
@@ -163,11 +166,16 @@ export class Lecture {
     }
 
     updateIsDirty() {
+        console.log(this.newCombinedVideo);
         this.isDirty =
             this.newName !== this.name ||
             this.newDescription !== this.description ||
             this.newLectureHallId !== this.lectureHallId ||
-            this.newIsChatEnabled !== this.isChatEnabled;
+            this.newIsChatEnabled !== this.isChatEnabled ||
+            this.newCombinedVideo !== null ||
+            this.newPresentationVideo !== null ||
+            this.newCameraVideo !== null;
+
     }
 
     resetNewFields() {
@@ -177,6 +185,9 @@ export class Lecture {
         this.newIsChatEnabled = this.isChatEnabled;
         this.isDirty = false;
         this.lastErrors = [];
+        this.newCombinedVideo = null;
+        this.newPresentationVideo = null;
+        this.newCameraVideo = null;
     }
 
     startSeriesEdit() {

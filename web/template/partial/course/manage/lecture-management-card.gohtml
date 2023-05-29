@@ -230,20 +230,35 @@
                 </header>
                 <article x-data="{ id: $id('text-input') }"
                          class="w-full flex justify-center flex-wrap">
-                    <div class="h-40 w-[30%] mx-[1.5%] my-2 bg-red-400 rounded relative max-xl:min-w-full">
-                        <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-4">
+                    <div x-data="{ inputId: `${id}_comb` }" x-on:click="document.querySelector(`#${inputId}`).click()" class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/20 rounded relative max-xl:min-w-full cursor-pointer">
+                        <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-2">
                             Combined Video
                         </div>
+                        <div class="w-full h-full flex justify-center items-center">
+                            <span x-show="!lecture.newCombinedVideo">Click to upload new Video</span>
+                            <span x-show="lecture.newCombinedVideo" class="text-green-400" x-text="lecture.newCombinedVideo.name"></span>
+                        </div>
+                        <input :id="inputId" class="hidden" type="file" accept="video/mp4" x-on:change="() => { lecture.newCombinedVideo = $event.target.files[0]; lecture.updateIsDirty(); }" />
                     </div>
-                    <div class="h-40 w-[30%] mx-[1.5%] my-2 bg-red-400 rounded relative max-xl:min-w-full">
-                        <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-4">
+                    <div x-data="{ inputId: `${id}_pres` }" x-on:click="document.querySelector(`#${inputId}`).click()" class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/20 rounded relative max-xl:min-w-full cursor-pointer">
+                        <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-2">
                             Presentation Video
                         </div>
+                        <div class="w-full h-full flex justify-center items-center p-2">
+                            <span x-show="!lecture.newPresentationVideo">Click to upload new Video</span>
+                            <span x-show="lecture.newPresentationVideo" class="text-green-400" x-text="lecture.newPresentationVideo.name"></span>
+                        </div>
+                        <input :id="inputId" class="hidden" type="file" accept="video/mp4" x-on:change="() => { lecture.newPresentationVideo = $event.target.files[0]; lecture.updateIsDirty(); }" />
                     </div>
-                    <div class="h-40 w-[30%] mx-[1.5%] my-2 bg-red-400 rounded relative max-xl:min-w-full">
-                        <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-4">
+                    <div x-data="{ inputId: `${id}_cam` }" x-on:click="document.querySelector(`#${inputId}`).click()" class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/20 rounded relative max-xl:min-w-full cursor-pointer">
+                        <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-2">
                             Camera Video
                         </div>
+                        <div class="w-full h-full flex justify-center items-center p-2">
+                            <span x-show="!lecture.newCameraVideo">Click to upload new Video</span>
+                            <span x-show="lecture.newCameraVideo" class="text-green-400" x-text="lecture.newCameraVideo.name"></span>
+                        </div>
+                        <input :id="inputId" class="hidden" type="file" accept="video/mp4" x-on:change="() => { lecture.newCameraVideo = $event.target.files[0]; lecture.updateIsDirty(); }" />
                     </div>
                 </article>
                 <header class="border-b dark:border-gray-600 w-full">
