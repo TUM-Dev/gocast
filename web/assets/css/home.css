@@ -152,7 +152,7 @@
 }
 
 .tum-live-stream .date, .tum-live-stream-row .date {
-    @apply flex items-center font-light mt-1;
+    @apply flex items-center font-light mt-1 inline;
 }
 
 .tum-live-stream .description, .tum-live-stream-row .description {
