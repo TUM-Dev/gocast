@@ -20,6 +20,120 @@ export function getPlayers(): VideoJsPlayer[] {
     return players;
 }
 
+class PlayerSettings {
+    private readonly player: VideoJsPlayer;
+    private readonly isLive: boolean;
+    private readonly isEmbedded: boolean;
+
+    constructor(player: VideoJsPlayer, isLive: boolean, isEmbedded: boolean) {
+        this.player = player;
+        this.isLive = isLive;
+        this.isEmbedded = isEmbedded;
+    }
+
+    initTrackbars(streamID: number) {
+        loadAndSetTrackbars(this.player, streamID);
+    }
+
+    initAirPlay() {
+        // @ts-ignore
+        this.player.airPlay({ addButtonToControlBar: true, buttonPositionIndex: -2 });
+    }
+
+    setVolume() {
+        const volume: number = +PlayerSettings.getFromStorage("volume") ?? this.player.volume();
+        this.player.volume(volume);
+        console.log(`⚫️ set volume: ${volume}`);
+    }
+
+    setMuted() {
+        const muted: string = PlayerSettings.getFromStorage("muted") ?? String(this.player.muted());
+        this.player.muted("true" === muted);
+        console.log(`⚫️ set muted: ${muted}`);
+    }
+
+    setRate() {
+        let persistedRate = +PlayerSettings.getFromStorage(this.isLive ? "live_rate" : "rate") ?? 1.0;
+        persistedRate = persistedRate <= 0 ? 1.0 : persistedRate;
+
+        const queryRate: number = +getQueryParam("rate");
+        console.log(`⚫️ set ${this.isLive ? "live" : "vod"} rate: ${queryRate || persistedRate}`);
+        this.player.playbackRate(queryRate || persistedRate);
+    }
+
+    jumpTo() {
+        if (this.isLive) {
+            let iOSReady;
+            const t: number | undefined = +getQueryParam("t");
+            this.player.on("loadedmetadata", () => {
+                if (!isNaN(t) && t) {
+                    this.player.currentTime(t);
+                    console.log(`⚫️ jump to: ${t}`);
+                }
+            });
+            if (videojs.browser.IS_IOS) {
+                this.player.on("canplaythrough", () => {
+                    // Can be executed multiple times during playback
+                    if (!iOSReady && t) {
+                        this.player.currentTime(t);
+                        iOSReady = true;
+                    }
+                });
+            }
+        }
+    }
+
+    addTitleBar(options: object) {
+        if (this.isEmbedded) {
+            this.player.addChild("Titlebar", options);
+        }
+    }
+
+    addStartInOverlay(streamStartIn: number, options: object) {
+        if (streamStartIn > 0) {
+            this.player.addChild("StartInOverlay", options);
+        }
+    }
+
+    addOverlayIcon(options: object = {}) {
+        this.player.addChild("OverlayIcon", options);
+    }
+
+    addTimeToolTipClass(spriteID?: number) {
+        if (spriteID) {
+            const timeTooltip = this.player
+                .getChild("controlBar")
+                .getChild("progressControl")
+                .getChild("seekBar")
+                .getChild("mouseTimeDisplay")
+                .getChild("timeTooltip");
+            if (timeTooltip) {
+                timeTooltip.el().classList.add("thumb");
+            }
+        }
+    }
+
+    storeVolume() {
+        PlayerSettings.setInStorage("volume", String(this.player.volume()));
+    }
+
+    storeMuted() {
+        PlayerSettings.setInStorage("muted", String(this.player.muted()));
+    }
+
+    storeRate() {
+        PlayerSettings.setInStorage(this.isLive ? "live_rate" : "rate", String(this.player.playbackRate()););
+    }
+
+    static setInStorage(key: string, value: string) {
+        window.localStorage.setItem(key, value);
+    }
+
+    static getFromStorage(key: string) {
+        return window.localStorage.getItem(key);
+    }
+}
+
 /**
  * Initialize the player and bind it to a DOM object my-video
  */
@@ -57,6 +171,9 @@ export const initPlayer = function (
         },
         autoplay: autoplay,
     }) as any;
+
+    const settings = new PlayerSettings(player, live, isEmbedded);
+
     const isMobile = window.matchMedia && window.matchMedia("only screen and (max-width: 480px)").matches;
     if (spriteID && !isMobile) {
         player.spriteThumbnails({
@@ -72,14 +189,13 @@ export const initPlayer = function (
         forward: 15,
         back: 15,
     });
-    // handle volume store:
+
     player.on("volumechange", function () {
-        window.localStorage.setItem("volume", player.volume());
-        window.localStorage.setItem("muted", player.muted());
+        settings.storeVolume();
+        settings.storeMuted();
     });
-    // handle rate store:
     player.on("ratechange", function () {
-        window.localStorage.setItem("rate", player.playbackRate());
+        settings.storeRate();
     });
 
     // When catching up to live, resume at normal speed
@@ -89,74 +205,23 @@ export const initPlayer = function (
         }
     });
     player.ready(function () {
-        loadAndSetTrackbars(player, streamID);
-        player.airPlay({
-            addButtonToControlBar: true,
-            buttonPositionIndex: -2,
-        });
-        const persistedVolume = window.localStorage.getItem("volume");
-        if (persistedVolume !== null) {
-            player.volume(persistedVolume);
-        }
-        const persistedMute = window.localStorage.getItem("muted");
-        if (persistedMute !== null) {
-            player.muted("true" === persistedMute);
-        }
-        if (!live) {
-            const persistedRate = window.localStorage.getItem("rate");
-            if (persistedRate !== null) {
-                player.playbackRate(persistedRate);
-            }
-        } else {
-            // same procedure as with watch progress
-            let iOSReady;
-            const jumpTo: number | undefined = +getQueryParam("t");
-            player.on("loadedmetadata", () => {
-                if (jumpTo) {
-                    player.currentTime(jumpTo);
-                }
-            });
-            if (videojs.browser.IS_IOS) {
-                player.on("canplaythrough", () => {
-                    // Can be executed multiple times during playback
-                    if (!iOSReady && jumpTo) {
-                        player.currentTime(jumpTo);
-                        iOSReady = true;
-                    }
-                });
-            }
-        }
-        if (isEmbedded) {
-            player.addChild("Titlebar", {
-                course: courseName,
-                stream: streamName,
-                courseUrl: courseUrl,
-                streamUrl: streamUrl,
-            });
-        }
-
-        if (spriteID) {
-            const timeTooltip = player
-                .getChild("controlBar")
-                .getChild("progressControl")
-                .getChild("seekBar")
-                .getChild("mouseTimeDisplay")
-                .getChild("timeTooltip");
-            if (timeTooltip) {
-                timeTooltip.el().classList.add("thumb");
-            }
-        }
-
-        if (streamStartIn > 0) {
-            player.addChild("StartInOverlay", {
-                course: courseName,
-                stream: streamName,
-                courseUrl: courseUrl,
-                streamUrl: streamUrl,
-                startIn: streamStartIn,
-            });
-        }
-        player.addChild("OverlayIcon", {});
+        const options = {
+            course: courseName,
+            stream: streamName,
+            courseUrl: courseUrl,
+            streamUrl: streamUrl,
+            startIn: streamStartIn,
+        };
+        settings.initTrackbars(streamID);
+        settings.initAirPlay();
+        settings.setVolume();
+        settings.setMuted();
+        settings.setRate();
+        settings.jumpTo();
+        settings.addTitleBar({ ...options });
+        settings.addTimeToolTipClass(spriteID);
+        settings.addStartInOverlay(streamStartIn, { ...options });
+        settings.addOverlayIcon();
     });
     // handle hotkeys from anywhere on the page
     document.addEventListener("keydown", (event) => player.handleKeyDown(event));
