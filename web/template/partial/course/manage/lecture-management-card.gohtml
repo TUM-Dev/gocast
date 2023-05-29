@@ -230,7 +230,7 @@
                 </header>
                 <article x-data="{ id: $id('text-input') }"
                          class="w-full flex justify-center flex-wrap">
-                    <div x-data="{ inputId: `${id}_comb` }" x-on:click="document.querySelector(`#${inputId}`).click()" class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/20 rounded relative max-xl:min-w-full cursor-pointer">
+                    <div x-data="{ inputId: `${id}_comb` }" x-on:click="document.querySelector(`#${inputId}`).click()" class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/30 dark:bg-black/20 rounded relative max-xl:min-w-full cursor-pointer text-white">
                         <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-2">
                             Combined Video
                         </div>
@@ -243,7 +243,7 @@
                         </div>
                         <input :id="inputId" class="hidden" type="file" accept="video/mp4" x-on:change="() => { lecture.newCombinedVideo = $event.target.files[0]; lecture.updateIsDirty(); }" />
                     </div>
-                    <div x-data="{ inputId: `${id}_pres` }" x-on:click="document.querySelector(`#${inputId}`).click()" class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/20 rounded relative max-xl:min-w-full cursor-pointer">
+                    <div x-data="{ inputId: `${id}_pres` }" x-on:click="document.querySelector(`#${inputId}`).click()" class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/30 dark:bg-black/20 rounded relative max-xl:min-w-full cursor-pointer text-white">
                         <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-2">
                             Presentation Video
                         </div>
@@ -256,7 +256,7 @@
                         </div>
                         <input :id="inputId" class="hidden" type="file" accept="video/mp4" x-on:change="() => { lecture.newPresentationVideo = $event.target.files[0]; lecture.updateIsDirty(); }" />
                     </div>
-                    <div x-data="{ inputId: `${id}_cam` }" x-on:click="document.querySelector(`#${inputId}`).click()" class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/20 rounded relative max-xl:min-w-full cursor-pointer">
+                    <div x-data="{ inputId: `${id}_cam` }" x-on:click="document.querySelector(`#${inputId}`).click()" class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/30 dark:bg-black/20 rounded relative max-xl:min-w-full cursor-pointer text-white">
                         <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-2">
                             Camera Video
                         </div>
