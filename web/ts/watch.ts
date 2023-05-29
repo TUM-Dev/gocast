@@ -1,7 +1,6 @@
 import { scrollChat, shouldScroll, showNewMessageIndicator } from "./chat";
 import { NewChatMessage } from "./chat/NewChatMessage";
 import { getPlayers } from "./TUMLiveVjs";
-import { Get, postData } from "./global";
 import { Realtime } from "./socket";
 import { copyToClipboard, Time } from "./global";
 import { seekbarOverlay } from "./seekbar-overlay";
@@ -24,9 +23,17 @@ enum WSMessageType {
     ReactTo = "react_to",
 }
 
+export enum SidebarState {
+    Hidden = "hidden",
+    Chat = "chat",
+    Bookmarks = "bookmarks",
+    Streams = "streams",
+}
+
 export { repeatHeatMap } from "./repeat-heatmap";
 export { seekbarHighlights, MarkerType } from "./seekbar-highlights";
 export { seekbarOverlay, SeekbarHoverPosition } from "./seekbar-overlay";
+export { StreamPlaylist } from "./stream-playlist";
 
 function sendIDMessage(id: number, type: WSMessageType) {
     return Realtime.get().send(currentChatChannel, {

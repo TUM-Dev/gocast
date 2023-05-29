@@ -1,0 +1,44 @@
+{{/* 1st parameter: 'streamID' */}}
+{{define "playlist"}}
+    <div x-data="{ streamPlaylist: new watch.StreamPlaylist({{.}}, $el), playlist: {} }"
+         @update="(e) => (playlist = e.detail)"
+         class="relative h-full border rounded-lg dark:border-gray-800 overflow-hidden">
+        <div class="h-full">
+            <div class="flex justify-between items-center p-4 border-b dark:border-gray-800 h-[50px]">
+                <h3 class="font-bold text-sm text-xl text-3">Playlist</h3>
+                <div>
+                    <a :href="playlist.prev != null ? `/w/${playlist.prev.courseSlug}/${playlist.prev.streamId}` : '#'"
+                       title="Previous" class="text-3 text-sm px-3 py-1 h-fit w-fit rounded-lg"
+                       :class="playlist.prev != null ? 'hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer' : 'cursor-default opacity-60'">
+                        <i class="fa-solid fa-backward-step text-4"></i>
+                    </a>
+                    <a :href="playlist.next != null ? `/w/${playlist.next.courseSlug}/${playlist.next.streamId}` : '#'"
+                       title="Next" class="text-3 text-sm px-3 py-1 h-fit w-fit rounded-lg"
+                       :class="playlist.next != null ? 'hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer' : 'cursor-default opacity-60'"
+                    >
+                        <i class="fa-solid fa-forward-step text-4"></i>
+                    </a>
+                </div>
+            </div>
+            <div x-cloak class="h-[calc(100%-50px)]">
+                <div class="relative grid gap-1 overflow-y-scroll max-h-full">
+                    <template x-for="(elem, i) in playlist.list" :key="elem.streamId">
+                        <a
+                            :href="`/w/${elem.courseSlug}/${elem.streamId}`"
+                            x-data="{ selected: false }" x-init="() => { selected = ({{.}} ==  elem.streamId); }"
+                            class="p-4 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer flex flex-row items-center"
+                            :class="selected ? '--selected bg-gray-200 dark:bg-gray-700' : ''"
+                        >
+                            <div
+                                :style="`background-image:url('/api/stream/${elem.streamId}/thumbs/vod')`"
+                                 class="h-14 w-24 shrink-0 playlist-thumbnail">
+                            </div>
+                            <i x-show="selected" class="fa-solid fa-play text-2 mr-2"></i>
+                            <h2 x-text="elem.streamName" class="text-sm dark:text-white"></h2>
+                        </a>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+{{end}}
