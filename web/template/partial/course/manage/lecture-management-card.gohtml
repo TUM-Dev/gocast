@@ -226,6 +226,27 @@
         <div x-show="lecture.uiEditMode > 0" class="grid gap-y-4 p-4">
             <article class="grid gap-2 w-full">
                 <header class="border-b dark:border-gray-600 w-full">
+                    <h6 class="text-sm text-5 font-light">Media</h6>
+                </header>
+                <article x-data="{ id: $id('text-input') }"
+                         class="w-full flex justify-center flex-wrap">
+                    <div class="h-40 w-[30%] mx-[1.5%] my-2 bg-red-400 rounded relative max-xl:min-w-full">
+                        <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-4">
+                            Combined Video
+                        </div>
+                    </div>
+                    <div class="h-40 w-[30%] mx-[1.5%] my-2 bg-red-400 rounded relative max-xl:min-w-full">
+                        <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-4">
+                            Presentation Video
+                        </div>
+                    </div>
+                    <div class="h-40 w-[30%] mx-[1.5%] my-2 bg-red-400 rounded relative max-xl:min-w-full">
+                        <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-4">
+                            Camera Video
+                        </div>
+                    </div>
+                </article>
+                <header class="border-b dark:border-gray-600 w-full">
                     <h6 class="text-sm text-5 font-light">Title and Description</h6>
                 </header>
                 <article x-data="{ id: $id('text-input') }"
