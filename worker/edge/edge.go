@@ -110,7 +110,7 @@ func ServeEdge(port string) {
 	}()
 
 	mux := http.NewServeMux()
-	vodFileServer = http.FileServer(http.Dir(vodPath + "/vod"))
+	vodFileServer = http.FileServer(http.Dir(vodPath))
 	mux.HandleFunc("/vod/", vodHandler)
 	mux.HandleFunc("/", edgeHandler)
 
@@ -145,13 +145,6 @@ func (c *JWTPlaylistClaims) GetFileName() string {
 }
 
 func validateToken(w http.ResponseWriter, r *http.Request, download bool) (claims *JWTPlaylistClaims, ok bool) {
-	return &JWTPlaylistClaims{
-		RegisteredClaims: jwt.RegisteredClaims{},
-		UserID:           0,
-		Playlist:         "adminplayback",
-		StreamID:         "-1",
-	}, true
-
 	token := r.URL.Query().Get("jwt")
 	if token == "" {
 		http.Error(w, "Missing JWT", http.StatusForbidden)
