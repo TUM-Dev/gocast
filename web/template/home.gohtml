@@ -166,7 +166,8 @@
                 </header>
                 <template x-for="course in pinnedCourses" :key="course.ID">
                     <a class="tum-live-side-navigation-group-item hover"
-                       @click="showCourse(course.Slug)"
+                       :href="course.URL()"
+                       @click.prevent="showCourse(course.Slug)"
                        x-text="course.Name">
                     </a>
                 </template>
@@ -179,10 +180,11 @@
                     My Courses
                 </header>
                 <template x-for="course in userCourses.slice(0, 8)" :key="course.ID">
-                    <button type="button" class="tum-live-side-navigation-group-item hover"
-                            @click="showCourse(course.Slug)"
-                            x-text="course.Name">
-                    </button>
+                    <a class="tum-live-side-navigation-group-item hover"
+                       :href="course.URL()"
+                       @click.prevent="showCourse(course.Slug)"
+                       x-text="course.Name">
+                    </a>
                 </template>
                 <template x-if="userCourses.length > 8 && !state.isUserCourses()">
                     <button @click="showUserCourses()"
@@ -199,10 +201,11 @@
                 Public Courses
             </header>
             <template x-for="course in publicCourses.slice(0, 5)" :key="course.ID">
-                <button type="button" class="tum-live-side-navigation-group-item hover"
-                        @click="showCourse(course.Slug)"
-                        x-text="course.Name">
-                </button>
+                <a class="tum-live-side-navigation-group-item hover"
+                   :href="course.URL()"
+                   @click.prevent="showCourse(course.Slug)"
+                   x-text="course.Name">
+                </a>
             </template>
             <template x-if="publicCourses.length > 5 && !state.isPublicCourses()">
                 <button @click="showPublicCourses()"
@@ -241,8 +244,9 @@
                 <article class="grid gap-3 pb-4">
                     <template x-for="course in publicCourses" :key="course.ID">
                         <section class="tum-live-course-list-item">
-                            <a type="button" class="title"
-                               @click="showCourse(course.Slug)"
+                            <a class="title"
+                               :href="course.URL()"
+                               @click.prevent="showCourse(course.Slug)"
                                x-text="course.Name">
                             </a>
                             <div class="links">
@@ -274,8 +278,9 @@
                 <article class="grid gap-3 pb-4">
                     <template x-for="course in userCourses" :key="course.ID">
                         <section class="tum-live-course-list-item">
-                            <a type="button" class="title"
-                               @click="showCourse(course.Slug)"
+                            <a class="title"
+                               :href="course.URL()"
+                               @click.prevent="showCourse(course.Slug)"
                                x-text="course.Name">
                             </a>
                             <div class="links">
@@ -599,7 +604,8 @@
                                         </div>
                                         <div class="px-2">
                                             <a class="course text-sm"
-                                               @click="showCourse(livestream.Course.Slug)"
+                                               :href="course.URL()"
+                                               @click.prevent="showCourse(livestream.Course.Slug)"
                                                x-text="livestream.Course.Name">
                                             </a>
                                             <template x-if="livestream.Stream.HasName()">
@@ -622,9 +628,9 @@
                             <section class="grid gap-3 px-5">
                                 <template x-for="course in liveToday" :key="course.ID">
                                     <article class="border-b dark:border-gray-800 last:border-0 py-2 px-1">
-                                        <a type="button"
-                                           class="block text-3 font-semibold hover:underline hover:cursor-pointer"
-                                           @click="showCourse(course.Slug)"
+                                        <a class="block text-3 font-semibold hover:underline hover:cursor-pointer"
+                                           :href="course.URL()"
+                                           @click.prevent="showCourse(course.Slug)"
                                            x-text="course.Name">
                                         </a>
                                         <div class="flex items-center text-sm text-5 font-light">
@@ -664,7 +670,8 @@
                                         </a>
                                         <div class="px-1">
                                             <a class="course text-xs"
-                                               x-text="course.Name" @click="showCourse(course.Slug)"
+                                               x-text="course.Name" @click.prevent="showCourse(course.Slug)"
+                                               :href="course.URL()"
                                                :class="course.LastRecording.HasName() ? 'text-xs' : 'text-sm'"></a>
                                             <template x-if="course.LastRecording.HasName()">
                                                 <a class="title" :href="course.LastRecordingURL()"
