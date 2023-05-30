@@ -108,6 +108,11 @@ export class Course {
         return c;
     }
 
+    static LoadThumbnail(course: Course) {
+        const i = new Image();
+        i.src = `/api/stream/${course.ID}/thumbs/vod`;
+    }
+
     public URL(): string {
         return `?year=${this.Year}&term=${this.TeachingTerm}&slug=${this.Slug}&view=3`;
     }

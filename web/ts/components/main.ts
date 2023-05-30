@@ -10,7 +10,7 @@ export function mainContext(year: number, term: string) {
 
         userCourses: [] as Course[],
         liveToday: [] as Course[],
-        recently: new Paginator<Course>([], 10),
+        recently: new Paginator<Course>([], 10, Course.LoadThumbnail),
 
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
