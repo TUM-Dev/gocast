@@ -27,7 +27,7 @@ export class Paginator<T> {
 
     next(all = false) {
         this.index = all ? this.list.length / this.split_number : this.index + 1;
-        this.preload();
+        this.__preload();
     }
 
     hasNext() {
@@ -48,10 +48,15 @@ export class Paginator<T> {
         return this;
     }
 
-    private preload() {
+    preload(): Paginator<T> {
+        this.__preload();
+        return this;
+    }
+
+    private __preload() {
         if (this.hasNext() && this.preloader) {
             this.list
-                .slice((this.index - 1) * this.split_number, this.index * this.split_number)
+                .slice(this.index * this.split_number, (this.index + 1) * this.split_number)
                 .forEach((el: T) => this.preloader(el));
         }
     }

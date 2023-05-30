@@ -25,7 +25,7 @@ export function courseContext(slug: string, year: number, term: string): AlpineC
 
         course: new Course() as Course,
 
-        courseStreams: new Paginator<Stream>([], 8),
+        courseStreams: new Paginator<Stream>([], 8, (s: Stream) => s.FetchThumbnail()),
 
         plannedStreams: new Paginator<Stream>([], 3),
 
@@ -57,7 +57,8 @@ export function courseContext(slug: string, year: number, term: string): AlpineC
                         this.courseStreams
                             .set(this.course.Recordings)
                             .forEach((s: Stream, i) => (s.Progress = progresses[i]))
-                            .reset();
+                            .reset()
+                            .preload();
                     });
                     console.log("🌑 init course", this.course);
                 });

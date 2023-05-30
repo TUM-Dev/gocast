@@ -10,7 +10,7 @@ export function mainContext(year: number, term: string) {
 
         userCourses: [] as Course[],
         liveToday: [] as Course[],
-        recently: new Paginator<Course>([], 10, Course.LoadThumbnail),
+        recently: new Paginator<Course>([], 10, (c: Course) => c.LastRecording.FetchThumbnail()),
 
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
@@ -30,7 +30,7 @@ export function mainContext(year: number, term: string) {
                     console.error(err);
                 })
                 .then(() => {
-                    this.recently.set(this.getRecently()).reset();
+                    this.recently.set(this.getRecently()).reset().preload();
                     this.liveToday = this.getLiveToday();
                     this.loadProgresses(this.userCourses.map((c) => c.LastRecording.ID));
                     console.log("🌑 init recently", this.recently);

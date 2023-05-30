@@ -22,6 +22,7 @@ export class Stream {
     Progress?: Progress;
 
     Dropdown = new ToggleableElement([["downloads", new ToggleableElement()]]);
+    Thumbnail?: HTMLImageElement;
 
     public HasName(): boolean {
         return this.Name !== "";
@@ -73,6 +74,11 @@ export class Stream {
         return 0;
     }
 
+    public FetchThumbnail() {
+        this.Thumbnail = new Image();
+        this.Thumbnail.src = `/api/stream/${this.ID}/thumbs/vod`;
+    }
+
     private static TimeOf(d: string): string {
         return new Date(d).toLocaleTimeString("default", { hour: "2-digit", minute: "2-digit" });
     }
@@ -106,11 +112,6 @@ export class Course {
         c.Recordings = c.Streams.filter((s) => s.IsRecording);
         c.Planned = c.Streams.filter((s) => s.IsPlanned);
         return c;
-    }
-
-    static LoadThumbnail(course: Course) {
-        const i = new Image();
-        i.src = `/api/stream/${course.ID}/thumbs/vod`;
     }
 
     public URL(): string {
