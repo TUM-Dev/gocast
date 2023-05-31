@@ -26,8 +26,8 @@ export function courseContext(slug: string, year: number, term: string): AlpineC
         course: new Course() as Course,
 
         courseStreams: new Paginator<Stream>([], 8),
-
         plannedStreams: new Paginator<Stream>([], 3),
+        upcomingStreams: new Paginator<Stream>([], 3),
 
         streamSortMode: StreamSortMode.NewestFirst,
         streamFilterMode: StreamFilterMode.ShowWatched,
@@ -53,6 +53,7 @@ export function courseContext(slug: string, year: number, term: string): AlpineC
                 .then(() => {
                     this.loadPinned();
                     this.plannedStreams.set(this.course.Planned.reverse()).reset();
+                    this.upcomingStreams.set(this.course.Upcoming).reset();
                     this.loadProgresses(this.course.Recordings.map((s: Stream) => s.ID)).then((progresses) => {
                         this.courseStreams
                             .set(this.course.Recordings)

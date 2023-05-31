@@ -13,6 +13,7 @@ export class Stream {
     readonly Name: string;
     readonly IsRecording: boolean;
     readonly IsPlanned: boolean;
+    readonly IsComingUp: boolean;
     readonly Description: string;
     readonly HLSUrl: string;
     readonly End: string;
@@ -49,6 +50,10 @@ export class Stream {
 
     public IsToday(): boolean {
         return date_eq(new Date(this.Start), new Date());
+    }
+
+    public MinutesLeftToStart(): number {
+        return Math.round((new Date(this.Start).valueOf() - new Date().valueOf()) / 60000);
     }
 
     public UntilString(): string {
@@ -97,6 +102,7 @@ export class Course {
 
     readonly Recordings?: Stream[];
     readonly Planned?: Stream[];
+    readonly Upcoming?: Stream[];
 
     static New(obj): Course {
         const c = Object.assign(new Course(), obj);
@@ -105,6 +111,7 @@ export class Course {
         c.Streams = obj.Streams ? obj.Streams.map((s) => Object.assign(new Stream(), s)) : [];
         c.Recordings = c.Streams.filter((s) => s.IsRecording);
         c.Planned = c.Streams.filter((s) => s.IsPlanned);
+        c.Upcoming = c.Streams.filter((s) => s.IsComingUp);
         return c;
     }
 

@@ -379,6 +379,23 @@
                                 </section>
                             </template>
                         </div>
+
+                        <template x-if="upcomingStreams.hasElements()">
+                            <section class="tum-live-course-view-item">
+                                <section class="tum-live-upcoming">
+                                    <template x-for="upcoming in upcomingStreams.get()" :key="upcoming.ID">
+                                        <article class="tum-live-upcoming-item">
+                                            <span>Next lecture starts in </span><!--
+                                            --><span x-text="upcoming.MinutesLeftToStart()"></span><!--
+                                            --><span> Minutes.</span>
+                                            <a :href="course.WatchURL(upcoming.ID)" class="underline"
+                                               title="Join waiting room">Join waiting room</a>
+                                        </article>
+                                    </template>
+                                </section>
+                            </section>
+                        </template>
+
                         <template x-if="courseStreams.hasElements()">
                             <section class="tum-live-course-view-item">
                                 <header>
@@ -508,7 +525,7 @@
                     <template x-if="plannedStreams.hasElements()">
                         <section class="tum-live-course-view-item xl:col-span-1">
                             <header>
-                                <h3>Upcoming</h3>
+                                <h3>Scheduled</h3>
                             </header>
                             <article>
                                 <section class="grid gap-5">
@@ -635,9 +652,25 @@
                                         </a>
                                         <div class="flex items-center text-sm text-5 font-light">
                                             <a :href="course.NextLectureURL()">
-                                                <i class="fa-solid fa-square-up-right"></i>
-                                                <span class="hover:underline"
-                                                      x-text="`Next lecture: ${course.NextLecture.FriendlyDateStart()}`"></span>
+                                                <template x-if="course.NextLecture.IsComingUp">
+                                                    <span>
+                                                        <span>Next lecture starts in </span><!--
+                                                        --><span x-text="course.NextLecture.MinutesLeftToStart()"></span><!--
+                                                        --><span> Minutes.</span>
+                                                        <a :href="course.WatchURL(course.NextLecture.ID)"
+                                                           title="Join waiting room">
+                                                            <i class="fa-solid fa-square-up-right"></i>
+                                                            <span class="underline">Join waiting room</span>
+                                                        </a>
+                                                    </span>
+                                                </template>
+                                                <template x-if="!course.NextLecture.IsComingUp">
+                                                    <span>
+                                                        <i class="fa-solid fa-square-up-right"></i>
+                                                        <span class="hover:underline"
+                                                              x-text="`Next lecture: ${course.NextLecture.FriendlyDateStart()}`"></span>
+                                                    </span>
+                                                </template>
                                             </a>
                                         </div>
                                     </article>
