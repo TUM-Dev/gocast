@@ -116,7 +116,7 @@ export class Course {
     }
 
     public URL(): string {
-        return `/course/${this.Year}/${this.TeachingTerm}/${this.Slug}`;
+        return `?year=${this.Year}&term=${this.TeachingTerm}&slug=${this.Slug}&view=3`;
     }
 
     public LastRecordingURL(): string {
