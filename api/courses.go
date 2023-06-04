@@ -41,9 +41,9 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 		api.GET("/courses/users", routes.getUsers)
 		api.GET("/courses/users/pinned", routes.getPinned)
 
-		courseById := api.Group("/courses/:id")
+		courseBySlug := api.Group("/courses/:slug")
 		{
-			courseById.GET("", routes.getCourse)
+			courseBySlug.GET("/", routes.getCourseBySlug)
 		}
 
 		lecturers := api.Group("")
@@ -130,6 +130,7 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 		Course      model.CourseDTO
 		Stream      model.StreamDTO
 		LectureHall *model.LectureHallDTO
+		Viewers     uint
 	}
 
 	livestreams := make([]CourseStream, 0)
@@ -160,10 +161,19 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 				lectureHall = &lh
 			}
 		}
+
+		viewers := uint(0)
+		for sID, sessions := range sessionsMap {
+			if sID == stream.ID {
+				viewers = uint(len(sessions))
+			}
+		}
+
 		livestreams = append(livestreams, CourseStream{
 			Course:      courseForLiveStream.ToDTO(),
 			Stream:      stream.ToDTO(),
 			LectureHall: lectureHall.ToDTO(),
+			Viewers:     viewers,
 		})
 	}
 
@@ -226,6 +236,7 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 		case model.AdminType:
 			courses = routes.GetAllCoursesForSemester(year, term, c)
 		case model.LecturerType:
+			courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
 			coursesForLecturer, err := r.GetAdministeredCoursesByUserId(c, tumLiveContext.User.ID, term, year)
 			if err == nil {
 				courses = append(courses, coursesForLecturer...)
@@ -286,14 +297,17 @@ func sortCourses(courses []model.Course) {
 	})
 }
 
-func (r coursesRoutes) getCourse(c *gin.Context) {
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
-
-	type coursesByIdURI struct {
-		ID uint `uri:"id" binding:"required"`
+func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
+	type URI struct {
+		Slug string `uri:"slug" binding:"required"`
 	}
 
-	var uri coursesByIdURI
+	type Query struct {
+		Year int    `form:"year"`
+		Term string `form:"term"`
+	}
+
+	var uri URI
 	if err := c.ShouldBindUri(&uri); err != nil {
 		_ = c.Error(tools.RequestError{
 			Err:           err,
@@ -303,20 +317,26 @@ func (r coursesRoutes) getCourse(c *gin.Context) {
 		return
 	}
 
-	// watchedStateData is used by the client to track the which VoDs are watched.
-	type watchedStateData struct {
-		ID        uint   `json:"streamID"`
-		Month     string `json:"month"`
-		Watched   bool   `json:"watched"`
-		Recording bool   `json:"recording"`
+	var query Query
+	if err := c.ShouldBindQuery(&query); err != nil {
+		_ = c.Error(tools.RequestError{
+			Err:           err,
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid query",
+		})
+		return
+	}
+
+	if query.Year == 0 || query.Term == "" {
+		query.Year, query.Term = tum.GetCurrentSemester()
 	}
 
 	type Response struct {
-		Course       model.Course
-		WatchedState []watchedStateData `json:",omitempty"`
+		Course  model.CourseDTO
+		Streams []model.StreamDTO
 	}
 
-	course, err := r.CoursesDao.GetCourseById(c, uri.ID)
+	course, err := r.CoursesDao.GetCourseBySlugYearAndTerm(c, uri.Slug, query.Term, query.Year)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			_ = c.Error(tools.RequestError{
@@ -334,34 +354,16 @@ func (r coursesRoutes) getCourse(c *gin.Context) {
 		return
 	}
 
-	response := Response{Course: course}
-	if tumLiveContext.User != nil {
-		streamsWithWatchState, err := r.StreamsDao.GetStreamsWithWatchState(course.ID, (*tumLiveContext.User).ID)
-		if err != nil {
-			sentry.CaptureException(err)
-			_ = c.Error(tools.RequestError{
-				Err:           err,
-				Status:        http.StatusInternalServerError,
-				CustomMessage: "loading streamsWithWatchState and progresses for a given course and user failed",
-			})
-		}
-
-		course.Streams = streamsWithWatchState // Update the course streams to contain the watch state.
-
-		var clientWatchState = make([]watchedStateData, 0)
-		for _, s := range streamsWithWatchState {
-			clientWatchState = append(clientWatchState, watchedStateData{
-				ID:        s.Model.ID,
-				Month:     s.Start.Month().String(),
-				Watched:   s.Watched,
-				Recording: s.Recording,
-			})
-		}
-
-		response = Response{Course: course, WatchedState: clientWatchState}
+	streams := course.Streams
+	streamsDTO := make([]model.StreamDTO, len(streams))
+	for i, s := range streams {
+		streamsDTO[i] = s.ToDTO()
 	}
 
-	c.JSON(http.StatusOK, response)
+	courseDTO := course.ToDTO()
+	courseDTO.Streams = streamsDTO
+
+	c.JSON(http.StatusOK, courseDTO)
 }
 
 func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bool {

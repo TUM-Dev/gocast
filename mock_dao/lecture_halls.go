@@ -123,16 +123,16 @@ func (mr *MockLectureHallsDaoMockRecorder) GetLectureHallByPartialName(name inte
 // GetStreamsForLectureHallIcal mocks base method.
 func (m *MockLectureHallsDao) GetStreamsForLectureHallIcal(userId uint, lectureHalls []uint, all bool) ([]dao.CalendarResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetStreamsForLectureHallIcal", userId, lectureHalls)
+	ret := m.ctrl.Call(m, "GetStreamsForLectureHallIcal", userId, lectureHalls, all)
 	ret0, _ := ret[0].([]dao.CalendarResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetStreamsForLectureHallIcal indicates an expected call of GetStreamsForLectureHallIcal.
-func (mr *MockLectureHallsDaoMockRecorder) GetStreamsForLectureHallIcal(userId, lectureHalls interface{}) *gomock.Call {
+func (mr *MockLectureHallsDaoMockRecorder) GetStreamsForLectureHallIcal(userId, lectureHalls, all interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStreamsForLectureHallIcal", reflect.TypeOf((*MockLectureHallsDao)(nil).GetStreamsForLectureHallIcal), userId, lectureHalls)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStreamsForLectureHallIcal", reflect.TypeOf((*MockLectureHallsDao)(nil).GetStreamsForLectureHallIcal), userId, lectureHalls, all)
 }
 
 // SaveLectureHall mocks base method.
