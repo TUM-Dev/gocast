@@ -175,7 +175,6 @@ export class Lecture {
             this.newCombinedVideo !== null ||
             this.newPresentationVideo !== null ||
             this.newCameraVideo !== null;
-
     }
 
     resetNewFields() {
@@ -347,8 +346,8 @@ export class Lecture {
         return res;
     }
 
-    async saveNewVODMedia() : Promise<string[]> {
-        let errors = [];
+    async saveNewVODMedia(): Promise<string[]> {
+        const errors = [];
         const mediaInfo = [
             { key: "newCombinedVideo", type: "COMB" },
             { key: "newPresentationVideo", type: "PRES" },
@@ -364,16 +363,20 @@ export class Lecture {
                     `/api/course/${this.courseId}/uploadVODMedia?streamID=${this.lectureId}&videoType=${info.type}`,
                     mediaFile,
                     (progress) => {
-                        window.dispatchEvent(new CustomEvent(`voduploadprogressedit`, { detail: { type: info.type, progress, lectureId: this.lectureId } }));
+                        window.dispatchEvent(
+                            new CustomEvent(`voduploadprogressedit`, {
+                                detail: { type: info.type, progress, lectureId: this.lectureId },
+                            }),
+                        );
                     },
                 );
                 this[info.key] = null;
             } catch (e) {
                 const error = `Failed to upload "${mediaFile.name}".`;
-                errors.push(error)
+                errors.push(error);
             }
         }
-        return errors
+        return errors;
     }
 
     async saveSeries() {
