@@ -1,7 +1,7 @@
 import { get } from "../utilities/fetch-wrappers";
 import { Progress } from "./progress";
 import { ToggleableElement } from "../utilities/ToggleableElement";
-import { date_eq } from "../utilities/time-utils";
+import { same_day } from "../utilities/time-utils";
 
 type DownloadableVOD = {
     readonly FriendlyName: string;
@@ -50,7 +50,7 @@ export class Stream {
     }
 
     public IsToday(): boolean {
-        return date_eq(new Date(this.Start), new Date());
+        return same_day(new Date(this.Start), new Date());
     }
 
     public MinutesLeftToStart(): number {

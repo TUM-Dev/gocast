@@ -44,11 +44,8 @@ export function mainContext(year: number, term: string) {
         getLiveToday() {
             const today = new Date();
             return this.userCourses
-                .filter((c) => c.NextLecture.ID !== 0)
-                .filter((c) => {
-                    const d = new Date(c.NextLecture.Start);
-                    return same_day(today, d) && d > today;
-                });
+                .filter((c: Course) => c.NextLecture.ID !== 0)
+                .filter((c: Course) => c.NextLecture.IsToday() && c.NextLecture.MinutesLeftToStart() > 0);
         },
 
         /**
