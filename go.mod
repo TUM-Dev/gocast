@@ -10,7 +10,7 @@ require (
 	github.com/gabstv/melody v1.0.2
 	github.com/getsentry/sentry-go v0.21.0
 	github.com/gin-contrib/gzip v0.0.6
-	github.com/gin-gonic/gin v1.9.0
+	github.com/gin-gonic/gin v1.9.1
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
 	github.com/go-gormigrate/gormigrate/v2 v2.1.0
 	github.com/go-ldap/ldap/v3 v3.4.4
@@ -57,10 +57,10 @@ require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/asticode/go-astikit v0.39.0 // indirect
 	github.com/asticode/go-astits v1.11.0 // indirect
-	github.com/bytedance/sonic v1.8.7 // indirect
+	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/felixge/fgprof v0.9.3 // indirect
-	github.com/frankban/quicktest v1.14.4 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/google/pprof v0.0.0-20230406165453-00490a63f317 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.16.4 // indirect
@@ -91,7 +91,7 @@ require (
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.12.0 // indirect
+	github.com/go-playground/validator/v10 v10.14.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
@@ -103,10 +103,10 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jonboulle/clockwork v0.4.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/leodido/go-urn v1.2.3 // indirect
+	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect
-	github.com/mattn/go-isatty v0.0.18 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
