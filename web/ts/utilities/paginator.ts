@@ -49,8 +49,9 @@ export class Paginator<T> {
     }
 
     preload(sortFn?: CompareFunction<T>): Paginator<T> {
+        const copy = [...this.list];
         if (this.hasNext() && this.preloader) {
-            [...this.list]
+            (sortFn ? copy.sort(sortFn) : copy)
                 .sort(sortFn)
                 .slice(this.index * this.split_number, (this.index + 1) * this.split_number)
                 .forEach((el: T) => this.preloader(el));
@@ -60,5 +61,6 @@ export class Paginator<T> {
 }
 
 type Preload<T> = (o: T) => void;
+
 type CompareFunction<T> = (a: T, b: T) => number;
 type FilterPredicate<T> = (o: T) => boolean;

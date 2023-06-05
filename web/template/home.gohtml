@@ -655,7 +655,8 @@
                                                 <template x-if="course.NextLecture.IsComingUp">
                                                     <span>
                                                         <span>Next lecture starts in </span><!--
-                                                        --><span x-text="course.NextLecture.MinutesLeftToStart()"></span><!--
+                                                        --><span
+                                                                x-text="course.NextLecture.MinutesLeftToStart()"></span><!--
                                                         --><span> Minutes.</span>
                                                         <a :href="course.WatchURL(course.NextLecture.ID)"
                                                            title="Join waiting room">
