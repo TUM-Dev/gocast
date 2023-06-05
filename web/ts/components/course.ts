@@ -48,7 +48,7 @@ export function courseContext(slug: string, year: number, term: string): AlpineC
             this.term = term;
             this.loadCourse()
                 .catch((_) => {
-                    document.location.href = `/new?year=${year}&term=${term}`; // redirect to start page on error
+                    document.location.href = `/?year=${year}&term=${term}`; // redirect to start page on error
                 })
                 .then(() => {
                     this.loadPinned();
