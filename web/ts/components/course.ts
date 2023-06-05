@@ -59,7 +59,7 @@ export function courseContext(slug: string, year: number, term: string): AlpineC
                             .set(this.course.Recordings)
                             .forEach((s: Stream, i) => (s.Progress = progresses[i]))
                             .reset()
-                            .preload();
+                            .preload(this.sortFn(this.streamSortMode));
                     });
                     console.log("🌑 init course", this.course);
                 });

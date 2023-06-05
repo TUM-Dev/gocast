@@ -13,7 +13,7 @@ export class Paginator<T> {
         this.preloader = preloader;
     }
 
-    get(sortFn?: (a: T, b: T) => number, filterPred?: (o: T) => boolean): T[] {
+    get(sortFn?: CompareFunction<T>, filterPred?: FilterPredicate<T>): T[] {
         const copy = filterPred ? [...this.list].filter(filterPred) : [...this.list];
         return sortFn
             ? copy.sort(sortFn).slice(0, this.index * this.split_number)
@@ -27,7 +27,7 @@ export class Paginator<T> {
 
     next(all = false) {
         this.index = all ? this.list.length / this.split_number : this.index + 1;
-        this.__preload();
+        this.preload();
     }
 
     hasNext() {
@@ -48,18 +48,17 @@ export class Paginator<T> {
         return this;
     }
 
-    preload(): Paginator<T> {
-        this.__preload();
-        return this;
-    }
-
-    private __preload() {
+    preload(sortFn?: CompareFunction<T>): Paginator<T> {
         if (this.hasNext() && this.preloader) {
-            this.list
+            [...this.list]
+                .sort(sortFn)
                 .slice(this.index * this.split_number, (this.index + 1) * this.split_number)
                 .forEach((el: T) => this.preloader(el));
         }
+        return this;
     }
 }
 
 type Preload<T> = (o: T) => void;
+type CompareFunction<T> = (a: T, b: T) => number;
+type FilterPredicate<T> = (o: T) => boolean;
