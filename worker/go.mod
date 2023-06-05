@@ -10,8 +10,8 @@ require (
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/joschahenningsen/thumbgen v0.1.2
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/shirou/gopsutil/v3 v3.23.4
-	github.com/sirupsen/logrus v1.9.0
+	github.com/shirou/gopsutil/v3 v3.23.5
+	github.com/sirupsen/logrus v1.9.3
 	github.com/tidwall/gjson v1.14.4
 	golang.org/x/sync v0.2.0
 	google.golang.org/grpc v1.55.0
@@ -34,9 +34,9 @@ require (
 	github.com/tklauser/go-sysconf v0.3.11 // indirect
 	github.com/tklauser/numcpus v0.6.0 // indirect
 	github.com/u2takey/go-utils v0.3.1
-	github.com/yusufpapurcu/wmi v1.2.2 // indirect
+	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	golang.org/x/net v0.9.0 // indirect
-	golang.org/x/sys v0.7.0 // indirect
+	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
 )
@@ -45,6 +45,6 @@ require (
 	github.com/felixge/fgprof v0.9.3 // indirect
 	github.com/google/pprof v0.0.0-20230406165453-00490a63f317 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/shoenig/go-m1cpu v0.1.5 // indirect
+	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	golang.org/x/image v0.7.0 // indirect
 )

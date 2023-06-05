@@ -458,7 +458,7 @@
                                                         <i class="fa-solid fa-ellipsis-vertical"></i>
                                                     </button>
                                                     <template x-if="vod.Dropdown.value">
-                                                        <div class="absolute tum-live-menu py-2 absolute top-full right-0 h-fit overflow-hidden z-50 w-56">
+                                                        <div class="absolute tum-live-menu py-2 absolute bottom-full right-0 h-fit overflow-hidden z-50 w-56">
                                                             {{if $user}}
                                                                 <button type="button"
                                                                         @click="vod.Progress.ToggleWatched()"
@@ -621,7 +621,7 @@
                                         </div>
                                         <div class="px-2">
                                             <a class="course text-sm"
-                                               :href="course.URL()"
+                                               :href="livestream.Course.URL()"
                                                @click.prevent="showCourse(livestream.Course.Slug)"
                                                x-text="livestream.Course.Name">
                                             </a>
@@ -655,7 +655,8 @@
                                                 <template x-if="course.NextLecture.IsComingUp">
                                                     <span>
                                                         <span>Next lecture starts in </span><!--
-                                                        --><span x-text="course.NextLecture.MinutesLeftToStart()"></span><!--
+                                                        --><span
+                                                                x-text="course.NextLecture.MinutesLeftToStart()"></span><!--
                                                         --><span> Minutes.</span>
                                                         <a :href="course.WatchURL(course.NextLecture.ID)"
                                                            title="Join waiting room">

@@ -23,6 +23,7 @@ export class Stream {
     Progress?: Progress;
 
     Dropdown = new ToggleableElement([["downloads", new ToggleableElement()]]);
+    Thumbnail?: HTMLImageElement;
 
     public HasName(): boolean {
         return this.Name !== "";
@@ -76,6 +77,11 @@ export class Stream {
             return -1;
         }
         return 0;
+    }
+
+    public FetchThumbnail() {
+        this.Thumbnail = new Image();
+        this.Thumbnail.src = `/api/stream/${this.ID}/thumbs/vod`;
     }
 
     private static TimeOf(d: string): string {
