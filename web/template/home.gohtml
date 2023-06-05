@@ -29,6 +29,12 @@
     <style>[x-cloak] {
             display: none !important;
         }</style>
+    <script defer type='text/javascript'>
+        const link = !!document.querySelector("link[rel='canonical']") ? document.querySelector("link[rel='canonical']") : document.createElement('link');
+        link.setAttribute('rel', 'canonical');
+        link.setAttribute('href', location.href);
+        document.head.appendChild(link);
+    </script>
 </head>
 <body x-data="home.skeleton()"
       @popstate.window="onPopState"
