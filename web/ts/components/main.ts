@@ -1,4 +1,4 @@
-import { date_eq } from "../utilities/time-utils";
+import { same_day } from "../utilities/time-utils";
 import { Course, CoursesAPI } from "../api/courses";
 import { Paginator } from "../utilities/paginator";
 import { ProgressAPI } from "../api/progress";
@@ -45,7 +45,10 @@ export function mainContext(year: number, term: string) {
             const today = new Date();
             return this.userCourses
                 .filter((c) => c.NextLecture.ID !== 0)
-                .filter((c) => date_eq(today, new Date(c.NextLecture.Start)));
+                .filter((c) => {
+                    const d = new Date(c.NextLecture.Start);
+                    return same_day(today, d) && d > today;
+                });
         },
 
         /**
