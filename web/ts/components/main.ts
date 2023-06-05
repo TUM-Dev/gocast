@@ -11,7 +11,7 @@ export function mainContext(year: number, term: string) {
         publicCourses: [] as Course[],
         userCourses: [] as Course[],
         liveToday: [] as Course[],
-        recently: new Paginator<Course>([], 10),
+        recently: new Paginator<Course>([], 10, (c: Course) => c.LastRecording.FetchThumbnail()),
 
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
@@ -38,7 +38,7 @@ export function mainContext(year: number, term: string) {
                     } else {
                         this.recently.set(this.getRecently(this.publicCourses));
                     }
-                    this.recently.reset();
+                    this.recently.reset().preload();
                 })
                 .finally(() => {
                     console.log("🌑 init recently", this.recently);

@@ -13,6 +13,7 @@ export class Stream {
     readonly Name: string;
     readonly IsRecording: boolean;
     readonly IsPlanned: boolean;
+    readonly IsComingUp: boolean;
     readonly Description: string;
     readonly HLSUrl: string;
     readonly End: string;
@@ -22,6 +23,7 @@ export class Stream {
     Progress?: Progress;
 
     Dropdown = new ToggleableElement([["downloads", new ToggleableElement()]]);
+    Thumbnail?: HTMLImageElement;
 
     public HasName(): boolean {
         return this.Name !== "";
@@ -51,6 +53,10 @@ export class Stream {
         return date_eq(new Date(this.Start), new Date());
     }
 
+    public MinutesLeftToStart(): number {
+        return Math.round((new Date(this.Start).valueOf() - new Date().valueOf()) / 60000);
+    }
+
     public UntilString(): string {
         const end = new Date(this.End);
         const hours = end.getHours();
@@ -71,6 +77,11 @@ export class Stream {
             return -1;
         }
         return 0;
+    }
+
+    public FetchThumbnail() {
+        this.Thumbnail = new Image();
+        this.Thumbnail.src = `/api/stream/${this.ID}/thumbs/vod`;
     }
 
     private static TimeOf(d: string): string {
@@ -97,6 +108,7 @@ export class Course {
 
     readonly Recordings?: Stream[];
     readonly Planned?: Stream[];
+    readonly Upcoming?: Stream[];
 
     static New(obj): Course {
         const c = Object.assign(new Course(), obj);
@@ -105,11 +117,12 @@ export class Course {
         c.Streams = obj.Streams ? obj.Streams.map((s) => Object.assign(new Stream(), s)) : [];
         c.Recordings = c.Streams.filter((s) => s.IsRecording);
         c.Planned = c.Streams.filter((s) => s.IsPlanned);
+        c.Upcoming = c.Streams.filter((s) => s.IsComingUp);
         return c;
     }
 
     public URL(): string {
-        return `/course/${this.Year}/${this.TeachingTerm}/${this.Slug}`;
+        return `?year=${this.Year}&term=${this.TeachingTerm}&slug=${this.Slug}&view=3`;
     }
 
     public LastRecordingURL(): string {
