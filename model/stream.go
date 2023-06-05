@@ -346,6 +346,7 @@ type StreamDTO struct {
 	Description string
 	IsRecording bool
 	IsPlanned   bool
+	IsComingUp  bool
 	HLSUrl      string
 	Downloads   []DownloadableVod
 	Start       time.Time
@@ -363,6 +364,7 @@ func (s Stream) ToDTO() StreamDTO {
 		Description: s.Description,
 		IsRecording: s.Recording,
 		IsPlanned:   s.IsPlanned(),
+		IsComingUp:  s.IsComingUp(),
 		Downloads:   downloads,
 		HLSUrl:      s.HLSUrl(),
 		Start:       s.Start,
