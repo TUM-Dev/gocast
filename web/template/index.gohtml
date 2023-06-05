@@ -22,7 +22,7 @@
     {{if not .TUMLiveContext.User}}
         <p class="text-2"><a href="/login" class="underline">Log in</a> to see your courses</p>
     {{else if .TUMLiveContext.User.Name}}
-        <p class="text-2">{{.TUMLiveContext.User.GetPreferredGreeting}} {{.TUMLiveContext.User.GetPreferredName}}, nice
+        <p id="greeting" class="text-2">{{.TUMLiveContext.User.GetPreferredGreeting}} {{.TUMLiveContext.User.GetPreferredName}}, nice
             to see you!</p>
     {{end}}
     {{if .PinnedCourses}}

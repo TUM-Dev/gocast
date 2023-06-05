@@ -5,7 +5,6 @@ import (
 	"github.com/dgraph-io/ristretto"
 	"github.com/getsentry/sentry-go"
 	sentrygin "github.com/getsentry/sentry-go/gin"
-	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/joschahenningsen/TUM-Live/api"
 	"github.com/joschahenningsen/TUM-Live/dao"
@@ -60,7 +59,6 @@ func GinServer() (err error) {
 	chat := router.Group("/api/chat")
 	api.ConfigChatRouter(chat)
 
-	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	api.ConfigGinRouter(router)
 	web.ConfigGinRouter(router)
 	err = router.Run(":8081")

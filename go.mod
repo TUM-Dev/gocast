@@ -9,7 +9,6 @@ require (
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/gabstv/melody v1.0.2
 	github.com/getsentry/sentry-go v0.21.0
-	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-gonic/gin v1.9.0
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
 	github.com/go-gormigrate/gormigrate/v2 v2.0.2
