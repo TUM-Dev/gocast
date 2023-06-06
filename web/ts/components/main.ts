@@ -1,6 +1,6 @@
 import { same_day } from "../utilities/time-utils";
 import { Course, CoursesAPI } from "../api/courses";
-import { Paginator } from "../utilities/paginator";
+import { AutoPaginator, Paginator } from "../utilities/paginator";
 import { ProgressAPI } from "../api/progress";
 
 export function mainContext(year: number, term: string) {
@@ -10,7 +10,7 @@ export function mainContext(year: number, term: string) {
 
         userCourses: [] as Course[],
         liveToday: [] as Course[],
-        recently: new Paginator<Course>([], 10, (c: Course) => c.LastRecording.FetchThumbnail()),
+        recently: new AutoPaginator<Course>([], 10, (c: Course) => c.LastRecording.FetchThumbnail()),
 
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
