@@ -58,8 +58,9 @@ export class Stream {
         return Math.round((new Date(this.Start).valueOf() - new Date().valueOf()) / 60000);
     }
 
-    public DurationString(): string {
-        return new Date(new Date(this.End) - new Date(this.Start)).toLocaleTimeString("default", {
+    public DurationString() {
+        const diff = new Date(this.End).getTime() - new Date(this.Start).getTime();
+        return new Date(diff).toLocaleTimeString("default", {
             hour: "2-digit",
             minute: "2-digit",
             second: "2-digit",
