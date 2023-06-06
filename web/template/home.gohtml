@@ -448,6 +448,9 @@
                                                                 </template>
                                                             </div>
                                                         </div>
+                                                        <div class="tum-live-badge absolute bg-black/[.8] text-white bottom-4 right-2 z-40 text-xs">
+                                                            <span x-text="vod.DurationString()"></span>
+                                                        </div>
                                                     </div>
                                                 </a>
                                                 <div class="relative flex justify-between px-1 min-h-[32px]">
@@ -620,7 +623,7 @@
                                                 <div :style="`background-image:url('/api/stream/${livestream.Stream.ID}/thumbs/live')`"
                                                      class="h-full tum-live-thumbnail"></div>
                                             </a>
-                                            <div class="absolute bg-black/[.8] text-white text-xs bottom-3 left-3 z-40 px-2 py-px rounded">
+                                            <div class="tum-live-badge absolute bg-black/[.8] text-white bottom-2 right-2 z-40 text-xs">
                                                 <span x-text="livestream.Viewers"></span>
                                                 <span x-text="(livestream.Viewers > 1 || livestream.Viewers === 0) ? 'viewers' : 'viewer'"></span>
                                             </div>
@@ -705,6 +708,9 @@
                                                                   :class="{'rounded-br-lg': course.LastRecording.Progress.HasProgressOne()}"></span>
                                                         </template>
                                                     </div>
+                                                </div>
+                                                <div class="tum-live-badge absolute bg-black/[.8] text-white bottom-4 right-2 z-40 text-xs">
+                                                    <span x-text="course.LastRecording.DurationString()"></span>
                                                 </div>
                                             </div>
                                         </a>

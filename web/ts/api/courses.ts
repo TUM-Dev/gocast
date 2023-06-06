@@ -58,6 +58,14 @@ export class Stream {
         return Math.round((new Date(this.Start).valueOf() - new Date().valueOf()) / 60000);
     }
 
+    public DurationString(): string {
+        return new Date(new Date(this.End) - new Date(this.Start)).toLocaleTimeString("default", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+        });
+    }
+
     public UntilString(): string {
         const end = new Date(this.End);
         const hours = end.getHours();
