@@ -121,6 +121,10 @@ export class Course {
         return c;
     }
 
+    static Compare(a: Course, b: Course): number {
+        return a.Name.localeCompare(b.Name);
+    }
+
     public URL(): string {
         return `?year=${this.Year}&term=${this.TeachingTerm}&slug=${this.Slug}&view=3`;
     }
@@ -182,15 +186,15 @@ export const CoursesAPI = {
         return get("/api/courses/live").then((livestreams) => livestreams.map((l) => new Livestream(l)));
     },
 
-    async getPublic(year?: number, term?: string): Promise<object> {
+    async getPublic(year?: number, term?: string): Promise<Course[]> {
         return get(`/api/courses/public${this.query(year, term)}`).then((courses) => courses.map((c) => Course.New(c)));
     },
 
-    async getUsers(year?: number, term?: string): Promise<object> {
+    async getUsers(year?: number, term?: string): Promise<Course[]> {
         return get(`/api/courses/users${this.query(year, term)}`).then((courses) => courses.map((c) => Course.New(c)));
     },
 
-    async getPinned(year?: number, term?: string): Promise<object> {
+    async getPinned(year?: number, term?: string): Promise<Course[]> {
         return get(`/api/courses/users/pinned${this.query(year, term)}`).then((courses) =>
             courses.map((c) => Course.New(c)),
         );
