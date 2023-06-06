@@ -2,6 +2,7 @@ import { get } from "../utilities/fetch-wrappers";
 import { Progress } from "./progress";
 import { ToggleableElement } from "../utilities/ToggleableElement";
 import { same_day } from "../utilities/time-utils";
+import { CustomURL } from "../utilities/url";
 
 type DownloadableVOD = {
     readonly FriendlyName: string;
@@ -187,23 +188,22 @@ export const CoursesAPI = {
     },
 
     async getPublic(year?: number, term?: string): Promise<Course[]> {
-        return get(`/api/courses/public${this.query(year, term)}`).then((courses) => courses.map((c) => Course.New(c)));
+        const url = new CustomURL("/api/courses/public", { year, term });
+        return get(url.toString()).then((courses) => courses.map((c) => Course.New(c)));
     },
 
     async getUsers(year?: number, term?: string): Promise<Course[]> {
-        return get(`/api/courses/users${this.query(year, term)}`).then((courses) => courses.map((c) => Course.New(c)));
+        const url = new CustomURL("/api/courses/users", { year, term });
+        return get(url.toString()).then((courses) => courses.map((c) => Course.New(c)));
     },
 
     async getPinned(year?: number, term?: string): Promise<Course[]> {
-        return get(`/api/courses/users/pinned${this.query(year, term)}`).then((courses) =>
-            courses.map((c) => Course.New(c)),
-        );
+        const url = new CustomURL("/api/courses/users/pinned", { year, term });
+        return get(url.toString()).then((courses) => courses.map((c) => Course.New(c)));
     },
 
     async get(slug: string, year?: number, term?: string) {
-        return get(`/api/courses/${slug}${this.query(year, term)}`, {}, true).then((course) => Course.New(course));
+        const url = new CustomURL(`/api/courses/${slug}`, { year, term });
+        return get(url.toString(), {}, true).then((course) => Course.New(course));
     },
-
-    query: (year?: number, term?: string) =>
-        year !== undefined && term !== undefined && year !== 0 ? `?year=${year}&term=${term}` : "",
 };
