@@ -34,15 +34,6 @@ func (r mainRoutes) LoginHandler(c *gin.Context) {
 	username := c.Request.FormValue("username")
 	password := c.Request.FormValue("password")
 
-	redirURL := getRedirectUrl(c)
-
-	// Only set cookie if (potentially) needed.
-	if !strings.HasSuffix(redirURL, "/") && !strings.HasSuffix(redirURL, "/login") {
-		// We need to set the cookie here now as we don't know whether the user will choose an internal or external login.
-		// Use 10 minutes for expiry as the user may not login immediately. The cookie is deleted after login.
-		c.SetCookie(redirCookieName, redirURL, 600, "/", "", tools.CookieSecure, true)
-	}
-
 	var (
 		data *tools.SessionData
 		err  error
@@ -78,21 +69,21 @@ func HandleValidLogin(c *gin.Context, data *tools.SessionData) {
 	c.Redirect(http.StatusFound, redirURL)
 }
 
-func getRedirectUrl(c *gin.Context) string {
+func getRedirectUrl(c *gin.Context) (*url.URL, error) {
 	ret := c.Request.FormValue("return")
 	ref := c.Request.FormValue("ref")
 	if ret != "" {
 		red, err := url.QueryUnescape(ret)
 		if err == nil {
-			return red
+			return url.Parse(red)
 		}
 	}
 
 	if ref == "" {
-		return "/"
+		return url.Parse("/")
 	}
 
-	return ref
+	return url.Parse(ref)
 }
 
 // loginWithUserCredentials Try to login with non-tum credentials
@@ -133,6 +124,19 @@ func loginWithTumCredentials(username, password string, usersDao dao.UsersDao) (
 }
 
 func (r mainRoutes) LoginPage(c *gin.Context) {
+	redirUrlStr := "/"
+	redirURL, err := getRedirectUrl(c)
+	if err == nil && redirURL.Scheme == "" && redirURL.Host == "" {
+		redirUrlStr = redirURL.String()
+	}
+
+	// Only set cookie if (potentially) needed.
+	if !strings.HasSuffix(redirUrlStr, "/") && !strings.HasSuffix(redirUrlStr, "/login") {
+		// We need to set the cookie here now as we don't know whether the user will choose an internal or external login.
+		// Use 10 minutes for expiry as the user may not login immediately. The cookie is deleted after login.
+		c.SetCookie(redirCookieName, redirUrlStr, 600, "/", "", tools.CookieSecure, true)
+	}
+
 	d := NewLoginPageData(false)
 	d.UseSAML = tools.Cfg.Saml != nil
 	if d.UseSAML {
