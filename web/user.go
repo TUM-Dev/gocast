@@ -70,8 +70,7 @@ func HandleValidLogin(c *gin.Context, data *tools.SessionData) {
 }
 
 func getRedirectUrl(c *gin.Context) (*url.URL, error) {
-	ret := c.Request.FormValue("return")
-	ref := c.Request.FormValue("ref")
+	ret := c.Query("return")
 	if ret != "" {
 		red, err := url.QueryUnescape(ret)
 		if err == nil {
@@ -79,11 +78,11 @@ func getRedirectUrl(c *gin.Context) (*url.URL, error) {
 		}
 	}
 
-	if ref == "" {
+	if ret == "" {
 		return url.Parse("/")
 	}
 
-	return url.Parse(ref)
+	return url.Parse(ret)
 }
 
 // loginWithUserCredentials Try to login with non-tum credentials
