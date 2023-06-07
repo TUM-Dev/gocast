@@ -101,6 +101,6 @@ export function maintenancePage(): maintenancePage {
                     this.emailFailures = this.emailFailures.filter((f) => f.ID !== id);
                 }
             });
-        }
+        },
     };
 }
