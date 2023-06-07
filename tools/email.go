@@ -18,6 +18,9 @@ type Mailer struct {
 }
 
 func NewMailer(dao dao.DaoWrapper, maxMailsPerMinute int) *Mailer {
+	if maxMailsPerMinute == 0 {
+		maxMailsPerMinute = 10
+	}
 	return &Mailer{Dao: dao, MaxMailsPerMinute: maxMailsPerMinute}
 }
 
@@ -27,6 +30,7 @@ func (m *Mailer) Run() {
 		if time.Since(lastRun) < time.Minute {
 			time.Sleep(time.Until(lastRun.Add(time.Minute)))
 		}
+		lastRun = time.Now()
 		emails, err := m.Dao.EmailDao.GetDue(context.Background(), m.MaxMailsPerMinute)
 		if err != nil {
 			log.Printf("error getting due emails: %v", err)
@@ -46,7 +50,8 @@ func (m *Mailer) Run() {
 				log.Printf("error saving email: %v", err)
 			}
 
-			time.Sleep(time.Duration(1000 * (60 / m.MaxMailsPerMinute)))
+			sleepDur := time.Duration(1000 * (60 / m.MaxMailsPerMinute))
+			time.Sleep(sleepDur)
 		}
 	}
 }
