@@ -2,21 +2,55 @@ package tools
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live/dao"
 	"log"
 	"net/smtp"
 	"os/exec"
 	"strings"
+	"time"
 )
 
-func SendPasswordMail(to string, body string) error {
-	err := SendMail(Cfg.Mail.Server, Cfg.Mail.Sender, "Setup your TUM-Live Account",
-		body,
-		[]string{to})
-	return err
+type Mailer struct {
+	Dao               dao.DaoWrapper
+	MaxMailsPerMinute int
 }
 
-func SendMail(addr, from, subject, body string, to []string) error {
+func NewMailer(dao dao.DaoWrapper, maxMailsPerMinute int) *Mailer {
+	return &Mailer{Dao: dao, MaxMailsPerMinute: maxMailsPerMinute}
+}
+
+func (m *Mailer) Run() {
+	lastRun := time.Now().Add(-time.Minute)
+	for {
+		if time.Since(lastRun) < time.Minute {
+			time.Sleep(time.Until(lastRun.Add(time.Minute)))
+		}
+		emails, err := m.Dao.EmailDao.GetDue(context.Background(), m.MaxMailsPerMinute)
+		if err != nil {
+			log.Printf("error getting due emails: %v", err)
+			continue
+		}
+		for _, email := range emails {
+			err := m.sendMail(Cfg.Mail.Server, email.From, email.Subject, email.Body, []string{email.To})
+			if err != nil {
+				email.LastTry = time.Now()
+				email.Retries++
+			} else {
+				email.Success = true
+			}
+			err = m.Dao.EmailDao.Save(context.Background(), &email)
+			if err != nil {
+				log.Printf("error saving email: %v", err)
+			}
+
+			time.Sleep(time.Duration(1000 * (60 / m.MaxMailsPerMinute)))
+		}
+	}
+}
+
+func (m *Mailer) sendMail(addr, from, subject, body string, to []string) error {
 	log.Printf("sending mail to %v, subject: %s body:\n%s", to, subject, body)
 	r := strings.NewReplacer("\r\n", "", "\r", "", "\n", "", "%0a", "", "%0d", "")
 

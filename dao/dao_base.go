@@ -35,6 +35,7 @@ type DaoWrapper struct {
 	BookmarkDao BookmarkDao
 	SubtitlesDao
 	TranscodingFailureDao
+	EmailDao
 }
 
 func NewDaoWrapper() DaoWrapper {
@@ -61,5 +62,6 @@ func NewDaoWrapper() DaoWrapper {
 		BookmarkDao:           NewBookmarkDao(),
 		SubtitlesDao:          NewSubtitlesDao(),
 		TranscodingFailureDao: NewTranscodingFailureDao(),
+		EmailDao:              NewEmailDao(),
 	}
 }
