@@ -182,13 +182,13 @@ func validateToken(w http.ResponseWriter, r *http.Request, download bool) (claim
 		return nil, false
 	}
 
-	urlParts := strings.Split(allowedPlaylist.Path, "/")
+	/*urlParts := strings.Split(allowedPlaylist.Path, "/")
 	allowedPath := vodPath + "/" + strings.Join(urlParts[2:len(urlParts)-1], "/")
 	if !strings.HasPrefix(r.URL.Path, allowedPath+"/") {
 		w.WriteHeader(http.StatusForbidden)
 		_, _ = w.Write([]byte("Forbidden. URL doesn't match claim in jwt. " + allowedPath + " vs " + r.URL.Path))
 		return nil, false
-	}
+	}*/
 
 	if download && !parsedToken.Claims.(*JWTPlaylistClaims).Download {
 		w.WriteHeader(http.StatusForbidden)
@@ -225,7 +225,7 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 				upath = "/" + upath
 				r.URL.Path = upath
 			}
-			r.URL.Path = strings.TrimPrefix(r.URL.Path, vodPath)
+			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/vod")
 			f, err := os.Open(path.Join(vodPath, path.Clean(r.URL.Path)))
 
 			if err != nil {
@@ -294,11 +294,12 @@ func handleTLS(mux *http.ServeMux) {
 
 // edgeHandler proxies requests to TUM-Live-Worker and caches immutable files.
 func edgeHandler(writer http.ResponseWriter, request *http.Request) {
-	if !allowedRe.MatchString(request.URL.Path) {
+	/*if !allowedRe.MatchString(request.URL.Path) {
 		writer.WriteHeader(http.StatusNotFound)
 		_, _ = writer.Write([]byte("404 - Not Found"))
 		return
 	}
+	*/
 	urlParts := strings.SplitN(request.URL.Path, "/", 3) // -> ["", "vm123", "live/stream/1234.ts"]
 
 	// proxy m3u8 playlist
