@@ -16,4 +16,5 @@ type Email struct {
 	Success bool      `gorm:"not null;default:false"`
 	Retries int       `gorm:"not null;default:0"`
 	LastTry time.Time `gorm:"default:null"`
+	Errors  string    `gorm:"default:null"`
 }

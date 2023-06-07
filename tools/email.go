@@ -37,6 +37,7 @@ func (m *Mailer) Run() {
 			if err != nil {
 				email.LastTry = time.Now()
 				email.Retries++
+				email.Errors += fmt.Sprintf("%v\n", err)
 			} else {
 				email.Success = true
 			}
