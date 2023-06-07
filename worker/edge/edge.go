@@ -225,7 +225,7 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 				upath = "/" + upath
 				r.URL.Path = upath
 			}
-			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/vod")
+			r.URL.Path = strings.TrimPrefix(r.URL.Path, vodPath)
 			f, err := os.Open(path.Join(vodPath, path.Clean(r.URL.Path)))
 
 			if err != nil {
@@ -294,12 +294,12 @@ func handleTLS(mux *http.ServeMux) {
 
 // edgeHandler proxies requests to TUM-Live-Worker and caches immutable files.
 func edgeHandler(writer http.ResponseWriter, request *http.Request) {
-	/*if !allowedRe.MatchString(request.URL.Path) {
+	if !allowedRe.MatchString(request.URL.Path) {
 		writer.WriteHeader(http.StatusNotFound)
 		_, _ = writer.Write([]byte("404 - Not Found"))
 		return
 	}
-	*/
+
 	urlParts := strings.SplitN(request.URL.Path, "/", 3) // -> ["", "vm123", "live/stream/1234.ts"]
 
 	// proxy m3u8 playlist
