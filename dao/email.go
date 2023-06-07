@@ -24,6 +24,9 @@ type EmailDao interface {
 
 	// GetDue Gets a number of emails that is due for sending.
 	GetDue(context.Context, int) ([]model.Email, error)
+
+	// GetFailed Gets all failed sending attempts.
+	GetFailed(context.Context) ([]model.Email, error)
 }
 
 type emailDao struct {
@@ -59,8 +62,18 @@ func (d emailDao) GetDue(c context.Context, limit int) (res []model.Email, err e
 	return res,
 		DB.
 			WithContext(c).
-			Where("success = false AND retries <= 10 AND (last_try IS NULL OR last_try BEFORE ?)", time.Now().Add(-time.Minute)).
+			Where("success = false AND retries <= 10 AND (last_try IS NULL OR last_try < ?)", time.Now().Add(-time.Minute)).
 			Limit(limit).
+			Find(&res).
+			Error
+}
+
+// GetFailed Gets all failed sending attempts.
+func (d emailDao) GetFailed(c context.Context) (res []model.Email, err error) {
+	return res,
+		DB.
+			WithContext(c).
+			Where("success = false").
 			Find(&res).
 			Error
 }

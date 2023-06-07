@@ -18,6 +18,10 @@ interface maintenancePage {
     fetchTranscodingFailures(): void;
     transcodingFailures: { ID: number }[];
     deleteTranscodingFailure(id: number): void;
+
+    fetchEmailFailures(): void;
+    emailFailures: { ID: number }[];
+    deleteEmailFailure(id: number): void;
 }
 
 export function maintenancePage(): maintenancePage {
@@ -84,5 +88,19 @@ export function maintenancePage(): maintenancePage {
                 }
             });
         },
+        fetchEmailFailures() {
+            fetch("/api/maintenance/emailFailures")
+                .then((r) => r.json())
+                .then((r) => (this.emailFailures = r));
+        },
+        emailFailures: [],
+        deleteEmailFailure(id: number) {
+            fetch("/api/maintenance/emailFailures/" + id, { method: "DELETE" }).then((r) => {
+                if (r.status === StatusCodes.OK) {
+                    console.log(id);
+                    this.emailFailures = this.emailFailures.filter((f) => f.ID !== id);
+                }
+            });
+        }
     };
 }
