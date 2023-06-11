@@ -35,5 +35,15 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
-	go worker.HandleUploadRestReq(r.URL.Query().Get("key"), out.Name())
+
+	streamUploadInfo, err := worker.GetStreamInfoForUploadReq(r.URL.Query().Get("key"))
+	if err != nil {
+		log.WithError(err).Error("Error getting stream info for upload")
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(err.Error()))
+		return
+	}
+
+	go worker.HandleUploadRestReq(streamUploadInfo, out.Name())
+	w.WriteHeader(http.StatusOK)
 }

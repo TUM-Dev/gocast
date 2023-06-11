@@ -307,29 +307,27 @@ func HandleStreamRequest(request *pb.StreamRequest) {
 	}
 }
 
-func HandleUploadRestReq(uploadKey string, localFile string) {
+func GetStreamInfoForUploadReq(uploadKey string) (*pb.GetStreamInfoForUploadResponse, error) {
 	client, conn, err := GetClient()
 	if err != nil {
-		log.WithError(err).Error("Error getting client")
-		return
+		return nil, err
 	}
 	defer closeConnection(conn)
-	resp, err := client.GetStreamInfoForUpload(context.Background(), &pb.GetStreamInfoForUploadRequest{
+	return client.GetStreamInfoForUpload(context.Background(), &pb.GetStreamInfoForUploadRequest{
 		UploadKey: uploadKey,
 		WorkerID:  cfg.WorkerID,
 	})
-	if err != nil {
-		log.WithError(err).Error("Error getting stream info for upload")
-		return
-	}
+}
+
+func HandleUploadRestReq(streamInfo *pb.GetStreamInfoForUploadResponse, localFile string) {
 	c := StreamContext{
-		streamId:      resp.StreamID,
-		courseSlug:    resp.CourseSlug,
-		teachingTerm:  resp.CourseTerm,
-		teachingYear:  resp.CourseYear,
-		startTime:     resp.StreamStart.AsTime(),
-		endTime:       resp.StreamEnd.AsTime(),
-		streamVersion: "COMB",
+		streamId:      streamInfo.StreamID,
+		courseSlug:    streamInfo.CourseSlug,
+		teachingTerm:  streamInfo.CourseTerm,
+		teachingYear:  streamInfo.CourseYear,
+		startTime:     streamInfo.StreamStart.AsTime(),
+		endTime:       streamInfo.StreamEnd.AsTime(),
+		streamVersion: streamInfo.VideoType,
 		publishVoD:    true,
 		recordingPath: &localFile,
 	}

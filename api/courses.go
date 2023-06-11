@@ -61,7 +61,8 @@ func configGinCourseRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 			courses.Use(tools.InitCourse(daoWrapper))
 			courses.Use(tools.AdminOfCourse)
 			courses.DELETE("/", routes.deleteCourse)
-			courses.POST("/uploadVOD", routes.uploadVOD)
+			courses.POST("/createVOD", routes.createVOD)
+			courses.POST("/uploadVODMedia", routes.uploadVODMedia)
 			courses.POST("/copy", routes.copyCourse)
 			courses.POST("/createLecture", routes.createLecture)
 			courses.POST("/presets", routes.updateSourceSettings)
@@ -106,9 +107,14 @@ const (
 	CutOffLength   = 256
 )
 
-type uploadVodReq struct {
+type createVODReq struct {
 	Start time.Time `form:"start" binding:"required"`
 	Title string    `form:"title"`
+}
+
+type uploadVodMediaReq struct {
+	StreamID  string          `form:"streamID" binding:"required"`
+	VideoType model.VideoType `form:"videoType" binding:"required"`
 }
 
 func (r coursesRoutes) getLive(c *gin.Context) {
@@ -372,9 +378,9 @@ func isUserAllowedToWatchPrivateCourse(course model.Course, user *model.User) bo
 	return false
 }
 
-func (r coursesRoutes) uploadVOD(c *gin.Context) {
-	log.Info("uploadVOD")
-	var req uploadVodReq
+func (r coursesRoutes) createVOD(c *gin.Context) {
+	log.Info("createVOD")
+	var req createVODReq
 	err := c.BindQuery(&req)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
@@ -400,8 +406,44 @@ func (r coursesRoutes) uploadVOD(c *gin.Context) {
 		})
 		return
 	}
+	c.JSON(http.StatusOK, gin.H{
+		"streamID": stream.ID,
+	})
+}
+
+func (r coursesRoutes) uploadVODMedia(c *gin.Context) {
+	log.Info("uploadVODMedia")
+
+	var req uploadVodMediaReq
+	if err := c.BindQuery(&req); err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "can not bind query",
+			Err:           err,
+		})
+		return
+	}
+
+	if !req.VideoType.Valid() {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid video type",
+		})
+		return
+	}
+
+	stream, err := r.StreamsDao.GetStreamByID(context.Background(), req.StreamID)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "can not find stream",
+			Err:           err,
+		})
+		return
+	}
+
 	key := uuid.NewV4().String()
-	err = r.UploadKeyDao.CreateUploadKey(key, stream.ID)
+	err = r.UploadKeyDao.CreateUploadKey(key, stream.ID, req.VideoType)
 	if err != nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
@@ -1151,6 +1193,12 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 	seriesIdentifier := uuid.NewV4().String()
 	req.DateSeries = append(req.DateSeries, req.Start)
 
+	// To get new ids after insert
+	var oldStreamIds []uint
+	for _, stream := range tumLiveContext.Course.Streams {
+		oldStreamIds = append(oldStreamIds, stream.ID)
+	}
+
 	for _, date := range req.DateSeries {
 		endTime := date.Add(time.Minute * time.Duration(req.Duration))
 
@@ -1202,6 +1250,24 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 		})
 		return
 	}
+
+	var newStreamIds []uint
+	for _, stream := range tumLiveContext.Course.Streams {
+		isNewStream := true
+		for _, s := range oldStreamIds {
+			if stream.ID == s {
+				isNewStream = false
+				break
+			}
+		}
+		if isNewStream {
+			newStreamIds = append(newStreamIds, stream.ID)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"ids": newStreamIds,
+	})
 }
 
 type createLectureRequest struct {

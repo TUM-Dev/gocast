@@ -1952,11 +1952,11 @@ func TestPresets(t *testing.T) {
 	})
 }
 
-func TestUploadVOD(t *testing.T) {
+func TestCreateVOD(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	t.Run("POST/api/course/:courseID/uploadVOD", func(t *testing.T) {
-		baseUrl := fmt.Sprintf("/api/course/%d/uploadVOD", testutils.CourseFPV.ID)
+	t.Run("POST/api/course/:courseID/createVOD", func(t *testing.T) {
+		baseUrl := fmt.Sprintf("/api/course/%d/createVOD", testutils.CourseFPV.ID)
 		url := fmt.Sprintf("%s?start=2022-07-04T10:00:00.000Z&title=VOD1", baseUrl)
 
 		ctrl := gomock.NewController(t)
@@ -2008,7 +2008,64 @@ func TestUploadVOD(t *testing.T) {
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
-			"can note create upload key": {
+		}.
+			Method(http.MethodPost).
+			Url(url).
+			Run(t, testutils.Equal)
+	})
+}
+
+func TestUploadVODMedia(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("POST/api/course/:courseID/uploadVODMedia", func(t *testing.T) {
+		baseUrl := fmt.Sprintf("/api/course/%d/uploadVODMedia", testutils.CourseFPV.ID)
+		url := fmt.Sprintf("%s?videoType=COMB&streamID=%d", baseUrl, testutils.CourseFPV.Streams[0].ID)
+		urlInvalid := fmt.Sprintf("%s?videoType=XYZ&streamID=%d", baseUrl, testutils.CourseFPV.Streams[0].ID)
+
+		ctrl := gomock.NewController(t)
+
+		gomino.TestCases{
+			"no context": {
+				Router:       CourseRouterWrapper,
+				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"not admin": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						CoursesDao: testutils.GetCoursesMock(t),
+					}
+					configGinCourseRouter(r, wrapper)
+				},
+				Url:          url,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
+				ExpectedCode: http.StatusForbidden,
+			},
+			"invalid query": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						CoursesDao: testutils.GetCoursesMock(t),
+					}
+					configGinCourseRouter(r, wrapper)
+				},
+				Url:          baseUrl,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"invalid video type": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						CoursesDao: testutils.GetCoursesMock(t),
+					}
+					configGinCourseRouter(r, wrapper)
+				},
+				Url:          urlInvalid,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"can not create upload key": {
 				Router: func(r *gin.Engine) {
 					wrapper := dao.DaoWrapper{
 						CoursesDao: testutils.GetCoursesMock(t),
@@ -2016,21 +2073,22 @@ func TestUploadVOD(t *testing.T) {
 							streamsMock := mock_dao.NewMockStreamsDao(ctrl)
 							streamsMock.
 								EXPECT().
-								CreateStream(gomock.Any()).
-								Return(nil)
+								GetStreamByID(gomock.Any(), gomock.Any()).
+								Return(testutils.CourseFPV.Streams[0], nil)
 							return streamsMock
 						}(),
 						UploadKeyDao: func() dao.UploadKeyDao {
 							streamsMock := mock_dao.NewMockUploadKeyDao(ctrl)
 							streamsMock.
 								EXPECT().
-								CreateUploadKey(gomock.Any(), gomock.Any()).
+								CreateUploadKey(gomock.Any(), gomock.Any(), gomock.Any()).
 								Return(errors.New(""))
 							return streamsMock
 						}(),
 					}
 					configGinCourseRouter(r, wrapper)
 				},
+				Url:          url,
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode: http.StatusInternalServerError,
 			},
