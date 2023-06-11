@@ -183,7 +183,7 @@ func validateToken(w http.ResponseWriter, r *http.Request, download bool) (claim
 	}
 
 	urlParts := strings.Split(allowedPlaylist.Path, "/")
-	allowedPath := vodPath + "/" + strings.Join(urlParts[2:len(urlParts)-1], "/")
+	allowedPath := "/vod/" + strings.Join(urlParts[2:len(urlParts)-1], "/")
 	if !strings.HasPrefix(r.URL.Path, allowedPath+"/") {
 		w.WriteHeader(http.StatusForbidden)
 		_, _ = w.Write([]byte("Forbidden. URL doesn't match claim in jwt. " + allowedPath + " vs " + r.URL.Path))
@@ -225,7 +225,7 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 				upath = "/" + upath
 				r.URL.Path = upath
 			}
-			r.URL.Path = strings.TrimPrefix(r.URL.Path, vodPath)
+			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/vod")
 			f, err := os.Open(path.Join(vodPath, path.Clean(r.URL.Path)))
 
 			if err != nil {
