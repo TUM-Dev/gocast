@@ -190,6 +190,11 @@ func TestUsersCRUD(t *testing.T) {
 							usersMock.EXPECT().CreateRegisterLink(gomock.Any(), testutils.Lecturer).Return(model.RegisterLink{}, nil).AnyTimes()
 							return usersMock
 						}(),
+						EmailDao: func() dao.EmailDao {
+							emailMock := mock_dao.NewMockEmailDao(gomock.NewController(t))
+							emailMock.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).MinTimes(1).MaxTimes(1)
+							return emailMock
+						}(),
 					}
 					configGinUsersRouter(r, wrapper)
 				},
