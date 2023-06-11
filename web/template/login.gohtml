@@ -30,8 +30,7 @@
             </div>
         {{end}}
         <template x-if="showInternalLogin">
-            <form x-data="{ref: global.getLoginReferrer()}" id="loginForm" method="post" class="grid gap-3 py-4 px-5">
-                <input x-model="ref" type="hidden" name="ref">
+            <form id="loginForm" method="post" class="grid gap-3 py-4 px-5">
                 <div class="text-sm">
                     <label for="username" class="block text-5">Username</label>
                     <input type="text" name="username" id="username" autocomplete="off"
@@ -51,7 +50,7 @@
                     <span class="text-white uppercase text-sm font-semibold">Login</span>
                 </button>
                 {{if .Error}}
-                    <p class="text-warn text-sm mt-2">Couldn't log in. Please double check your credentials.</p>
+                    <p class="text-warn text-sm mt-2">Couldn't log in. Please double-check your credentials.</p>
                 {{end}}
             </form>
         </template>

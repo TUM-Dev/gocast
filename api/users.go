@@ -314,10 +314,14 @@ func (r usersRoutes) addSingleUserToCourse(name string, email string, course mod
 			log.WithError(err).Error("Can't update user")
 			return
 		}
-		err = tools.SendPasswordMail(email,
-			fmt.Sprintf("Hello!\n"+
-				"You have been invited to participate in the course \"%v\" on TUM-Live. Check it out at https://live.rbg.tum.de/",
-				course.Name))
+		err = r.EmailDao.Create(context.Background(), &model.Email{
+			From:    tools.Cfg.Mail.Sender,
+			To:      email,
+			Subject: "Setup your TUM-Live account",
+			Body: fmt.Sprintf("Hello!\n"+
+				"You have been invited to participate in the course \"%s\" on TUM-Live. Check it out at https://live.rbg.tum.de/",
+				course.Name),
+		})
 		if err != nil {
 			log.Printf("%v", err)
 		}
@@ -510,12 +514,16 @@ func (r usersRoutes) forgotPassword(email string) {
 		log.Println("couldn't create register link")
 		return
 	}
-	log.Println("register link:", registerLink)
 	body := fmt.Sprintf("Hello!\n"+
 		"You have been invited to use TUM-Live. You can set a password for your account here: https://live.rbg.tum.de/setPassword/%v\n"+
 		"After setting a password you can log in with the email this message was sent to. Please note that this is not your TUMOnline account.\n"+
 		"If you have any further questions please reach out to "+tools.Cfg.Mail.Sender, registerLink.RegisterSecret)
-	err = tools.SendPasswordMail(email, body)
+	err = r.EmailDao.Create(context.Background(), &model.Email{
+		From:    tools.Cfg.Mail.Sender,
+		To:      email,
+		Subject: "Setup your TUM-Live account",
+		Body:    body,
+	})
 	if err != nil {
 		log.Println("couldn't send password mail")
 	}

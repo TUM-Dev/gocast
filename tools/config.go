@@ -101,10 +101,11 @@ type Config struct {
 		SubDir    string `yaml:"subDir"`
 	} `yaml:"lrz"`
 	Mail struct {
-		Sender    string `yaml:"sender"`
-		Server    string `yaml:"server"`
-		SMIMECert string `yaml:"SMIMECert"`
-		SMIMEKey  string `yaml:"SMIMEKey"`
+		Sender            string `yaml:"sender"`
+		Server            string `yaml:"server"`
+		SMIMECert         string `yaml:"SMIMECert"`
+		SMIMEKey          string `yaml:"SMIMEKey"`
+		MaxMailsPerMinute int    `yaml:"maxMailsPerMinute"`
 	} `yaml:"mail"`
 	Db struct {
 		User     string `yaml:"user"`

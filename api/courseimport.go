@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	campusonline "github.com/RBG-TUM/CAMPUSOnline"
@@ -138,7 +139,7 @@ func (r lectureHallRoutes) postSchedule(c *gin.Context) {
 			if err := r.CoursesDao.AddAdminToCourse(user.ID, course.ID); err != nil {
 				log.WithError(err).Error("can't add admin to course")
 			}
-			err := notifyCourseCreated(MailTmpl{
+			err := r.notifyCourseCreated(MailTmpl{
 				Name:   user.Name,
 				Course: course,
 				Users:  users,
@@ -163,7 +164,7 @@ type MailTmpl struct {
 	Users  []*model.User
 }
 
-func notifyCourseCreated(d MailTmpl, mailAddr string, subject string) error {
+func (r lectureHallRoutes) notifyCourseCreated(d MailTmpl, mailAddr string, subject string) error {
 	templ, err := template.ParseFS(staticFS, "template/*.gotemplate")
 	if err != nil {
 		return err
@@ -173,7 +174,12 @@ func notifyCourseCreated(d MailTmpl, mailAddr string, subject string) error {
 	if err != nil {
 		log.Error(err)
 	}
-	return tools.SendMail(tools.Cfg.Mail.Server, tools.Cfg.Mail.Sender, subject, body.String(), []string{mailAddr})
+	return r.EmailDao.Create(context.Background(), &model.Email{
+		From:    tools.Cfg.Mail.Sender,
+		To:      mailAddr,
+		Subject: subject,
+		Body:    body.String(),
+	})
 }
 
 func (r lectureHallRoutes) getSchedule(c *gin.Context) {
