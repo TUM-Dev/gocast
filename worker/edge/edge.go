@@ -225,7 +225,7 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 				upath = "/" + upath
 				r.URL.Path = upath
 			}
-			r.URL.Path = strings.TrimPrefix(r.URL.Path, vodPath)
+			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/vod")
 			f, err := os.Open(path.Join(vodPath, path.Clean(r.URL.Path)))
 
 			if err != nil {
