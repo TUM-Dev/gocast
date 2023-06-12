@@ -2,13 +2,16 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/mock_dao"
+	"github.com/joschahenningsen/TUM-Live/model"
 	"github.com/joschahenningsen/TUM-Live/tools"
 	"github.com/joschahenningsen/TUM-Live/tools/testutils"
 	"github.com/matthiasreumann/gomino"
+	"gorm.io/gorm"
 	"net/http"
 	"testing"
 )
@@ -125,5 +128,111 @@ func TestWatched(t *testing.T) {
 			Method(http.MethodPost).
 			Url(url).
 			Run(t, testutils.Equal)
+	})
+}
+
+func TestUserProgress(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("GET/api/progress/streams", func(t *testing.T) {
+		url := "/api/progress/streams"
+
+		gomino.TestCases{
+			"no context": {
+				Router:       ProgressRouterWrapper,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"not logged in": {
+				Router:       ProgressRouterWrapper,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextUserNil)),
+				ExpectedCode: http.StatusForbidden,
+			},
+			"invalid query": {
+				Router:       ProgressRouterWrapper,
+				Url:          fmt.Sprintf("%s?[]wrong=1", url),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
+				ExpectedCode: http.StatusBadRequest,
+			},
+			"can't get stream progress": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						ProgressDao: func() dao.ProgressDao {
+							progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
+							progressMock.
+								EXPECT().
+								LoadProgress(testutils.TUMLiveContextStudent.User.ID, gomock.Any()).
+								Return(model.StreamProgress{}, errors.New(""))
+							return progressMock
+						}(),
+					}
+					configProgressRouter(r, wrapper)
+				},
+				Url:          fmt.Sprintf("%s?[]ids=16", url),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
+				ExpectedCode: http.StatusInternalServerError,
+			},
+			"success skip not found": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						ProgressDao: func() dao.ProgressDao {
+							progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
+							progressMock.
+								EXPECT().
+								LoadProgress(testutils.TUMLiveContextStudent.User.ID, gomock.Any()).
+								Return(model.StreamProgress{}, gorm.ErrRecordNotFound)
+							return progressMock
+						}(),
+					}
+					configProgressRouter(r, wrapper)
+				},
+				Url:              fmt.Sprintf("%s?[]ids=16", url),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: []model.StreamProgress{{StreamID: 16}},
+			},
+			"success skip invalid": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						ProgressDao: func() dao.ProgressDao {
+							progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
+							progressMock.
+								EXPECT().
+								LoadProgress(testutils.TUMLiveContextStudent.User.ID, gomock.Any()).
+								Return(model.StreamProgress{StreamID: 16, Watched: true, Progress: 0.5}, nil).
+								AnyTimes()
+							return progressMock
+						}(),
+					}
+					configProgressRouter(r, wrapper)
+				},
+				Url:              fmt.Sprintf("%s?[]ids=16&[]ids=XYZ", url),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: []model.StreamProgress{{StreamID: 16, Watched: true, Progress: 0.5}},
+			},
+			"success": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						ProgressDao: func() dao.ProgressDao {
+							progressMock := mock_dao.NewMockProgressDao(gomock.NewController(t))
+							progressMock.
+								EXPECT().
+								LoadProgress(testutils.TUMLiveContextStudent.User.ID, gomock.Any()).
+								Return(model.StreamProgress{StreamID: 16, Watched: true, Progress: 0.5}, nil)
+							return progressMock
+						}(),
+					}
+					configProgressRouter(r, wrapper)
+				},
+				Url:              fmt.Sprintf("%s?[]ids=16", url),
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: []model.StreamProgress{{StreamID: 16, Watched: true, Progress: 0.5}},
+			}}.
+			Method(http.MethodGet).
+			Url(url).
+			Run(t, testutils.Equal)
+
 	})
 }

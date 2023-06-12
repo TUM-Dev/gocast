@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
@@ -176,8 +177,16 @@ func (r progressRoutes) markWatched(c *gin.Context) {
 }
 
 func (r progressRoutes) getProgressBatch(c *gin.Context) {
-	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	ctx, exists := c.Get("TUMLiveContext")
+	if !exists {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "context should exist but doesn't",
+		})
+		return
+	}
 
+	tumLiveContext := ctx.(tools.TUMLiveContext)
 	if tumLiveContext.User == nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusForbidden,
@@ -196,13 +205,15 @@ func (r progressRoutes) getProgressBatch(c *gin.Context) {
 		return
 	}
 
-	ids := make([]uint, len(stringIds))
-	for i, stringId := range stringIds {
+	ids := make([]uint, 0, len(stringIds))
+	for _, stringId := range stringIds {
+		fmt.Println(stringId)
 		id, err := strconv.Atoi(stringId)
 		if err != nil {
 			continue
 		}
-		ids[i] = uint(id)
+		fmt.Println("ok")
+		ids = append(ids, uint(id))
 	}
 
 	streamProgresses := make([]model.StreamProgress, len(ids))
@@ -218,6 +229,7 @@ func (r progressRoutes) getProgressBatch(c *gin.Context) {
 					Status:        http.StatusInternalServerError,
 					CustomMessage: "can't retrieve streamProgresses for user",
 				})
+				return
 			}
 		} else {
 			streamProgresses[i] = p
