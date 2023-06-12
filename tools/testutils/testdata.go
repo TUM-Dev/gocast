@@ -1,7 +1,6 @@
 package testutils
 
 import (
-	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"math"
@@ -394,6 +393,17 @@ func GetCoursesMock(t *testing.T) dao.CoursesDao {
 		RemoveAdminFromCourse(Admin.ID, CourseFPV.ID).
 		Return(nil).
 		AnyTimes()
+	coursesMock.
+		EXPECT().
+		GetCourseByToken("t0k3n").
+		Return(CourseFPV, nil).
+		AnyTimes()
+	coursesMock.
+		EXPECT().
+		CreateCourse(gomock.Any(), gomock.Any(), true).
+		Return(nil).
+		AnyTimes()
+	coursesMock.EXPECT().DeleteCourse(CourseFPV).AnyTimes()
 	return coursesMock
 }
 
@@ -403,15 +413,6 @@ func GetLectureHallMock(t *testing.T) dao.LectureHallsDao {
 		EXPECT().
 		GetLectureHallByID(LectureHall.ID).
 		Return(LectureHall, nil)
-	return lectureHallMock
-}
-
-func GetLectureHallMockError(t *testing.T) dao.LectureHallsDao {
-	lectureHallMock := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
-	lectureHallMock.
-		EXPECT().
-		GetLectureHallByID(gomock.Any()).
-		Return(model.LectureHall{}, errors.New(""))
 	return lectureHallMock
 }
 
