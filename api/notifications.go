@@ -61,6 +61,7 @@ func (r notificationRoutes) getServerNotifications(c *gin.Context) {
 			CustomMessage: "can not bind body",
 			Err:           err,
 		})
+		return
 	}
 	c.JSON(http.StatusOK, notifications)
 }
