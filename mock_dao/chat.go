@@ -118,6 +118,20 @@ func (mr *MockChatDaoMockRecorder) DeleteChat(id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteChat", reflect.TypeOf((*MockChatDao)(nil).DeleteChat), id)
 }
 
+// DeleteReplies mocks base method.
+func (m *MockChatDao) DeleteReplies(id uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteReplies", id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteReplies indicates an expected call of DeleteReplies.
+func (mr *MockChatDaoMockRecorder) DeleteReplies(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReplies", reflect.TypeOf((*MockChatDao)(nil).DeleteReplies), id)
+}
+
 // GetActivePoll mocks base method.
 func (m *MockChatDao) GetActivePoll(streamID uint) (model.Poll, error) {
 	m.ctrl.T.Helper()
