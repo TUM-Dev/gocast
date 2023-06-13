@@ -143,7 +143,10 @@ func (r streamRoutes) getVODThumbs(c *gin.Context) {
 	if queryType == "" {
 		thumb, err := tumLiveContext.Stream.GetLGThumbnail()
 		if err != nil {
-			c.AbortWithStatus(http.StatusNotFound)
+			_ = c.Error(tools.RequestError{
+				Status:        http.StatusNotFound,
+				CustomMessage: "Large Thumbnail not found",
+			})
 			return
 		}
 		c.File(thumb)
@@ -152,13 +155,19 @@ func (r streamRoutes) getVODThumbs(c *gin.Context) {
 
 	videoType := model.VideoType(queryType)
 	if !videoType.Valid() {
-		c.AbortWithStatus(http.StatusBadRequest)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "Invalid VideoType",
+		})
 		return
 	}
 
 	thumb, err := tumLiveContext.Stream.GetLGThumbnailForVideoType(videoType)
 	if err != nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "Large Thumbnail not found",
+		})
 		return
 	}
 	c.File(thumb)

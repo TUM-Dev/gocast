@@ -166,7 +166,6 @@ export class Lecture {
     }
 
     updateIsDirty() {
-        console.log(this.newCombinedVideo);
         this.isDirty =
             this.newName !== this.name ||
             this.newDescription !== this.description ||
