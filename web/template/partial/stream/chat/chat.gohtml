@@ -11,6 +11,7 @@
         {{$userName = .IndexData.TUMLiveContext.User.Name}}
         {{$userId = .IndexData.TUMLiveContext.User.ID}}
     {{end}}
+        <div x-data="watch.chatContext()"></div>
     <div x-cloak
          x-data="watch.initChat({{.IsAdminOfCourse}}, {{$stream.ID}}, '{{$startTime}}', '{{$liveNowTimestamp}}', {{$userId}}, '{{$userName}}', {{not (or $isComingUp $liveNow .IsPopUp)}});"
          x-init="await Promise.all([c.loadMessages(), c.poll.load(), c.loadPollHistory()]); $nextTick(() => { watch.scrollToBottom(); window.dispatchEvent(new CustomEvent('chatinitialized')); });"
