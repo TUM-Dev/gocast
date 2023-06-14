@@ -58,8 +58,7 @@
         <div x-show="recorder.recordingsReady" class="flex justify-center mt-7">
             <button
                     @click.prevent="recorder.togglePlay()"
-                    class="rounded-full w-20 h-20 hover:scale-105 transition ease-in-out active:scale-90 active:bg-gray-600 flex justify-center items-center duration-100 disabled:opacity-20 disabled:scale-100 disabled:bg-gray-400"
-                    :class="recorder.isPlaying ? 'bg-blue-400' : 'bg-blue-400'"
+                    class="rounded-full w-20 h-20 hover:scale-105 transition ease-in-out bg-blue-400 active:scale-90 active:bg-gray-600 flex justify-center items-center duration-100 disabled:opacity-20 disabled:scale-100 disabled:bg-gray-400"
             >
                 <i x-show="!recorder.isPlaying" class="fa fa-play text-2xl"></i>
                 <i x-show="recorder.isPlaying" class="fa fa-pause text-2xl"></i>
