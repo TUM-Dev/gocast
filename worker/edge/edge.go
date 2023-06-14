@@ -299,6 +299,7 @@ func edgeHandler(writer http.ResponseWriter, request *http.Request) {
 		_, _ = writer.Write([]byte("404 - Not Found"))
 		return
 	}
+
 	urlParts := strings.SplitN(request.URL.Path, "/", 3) // -> ["", "vm123", "live/stream/1234.ts"]
 
 	// proxy m3u8 playlist
