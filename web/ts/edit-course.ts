@@ -594,8 +594,15 @@ interface MediaUpload {
     progress: number;
 }
 
+export enum LectureCreateType {
+    vodRecord,
+    livestream,
+    vodUpload
+}
+
 export function createLectureForm(args: { s: [] }) {
     return {
+        createType: LectureCreateType.livestream,
         currentTab: 0,
         canGoBack: false,
         canContinue: true,
@@ -638,9 +645,12 @@ export function createLectureForm(args: { s: [] }) {
             this.currentTab--;
             this.onUpdate();
         },
-        updateType(vodup: boolean) {
-            this.formData.vodup = vodup;
-            if (vodup) {
+        updateCreateType(newType: LectureCreateType) {
+            this.createType = newType;
+            if (newType === LectureCreateType.livestream) {
+                this.formData.vodup = false;
+            } else {
+                this.formData.vodup = true;
                 this.formData.recurring = false;
             }
         },

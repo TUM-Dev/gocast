@@ -248,47 +248,6 @@ func (r mainRoutes) EditCoursePage(c *gin.Context) {
 	}
 }
 
-func (r mainRoutes) RecordCoursePage(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		sentry.CaptureException(errors.New("context should exist but doesn't"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	lectureHalls := r.LectureHallsDao.GetAllLectureHalls()
-	err := r.CoursesDao.GetInvitedUsersForCourse(tumLiveContext.Course)
-	if err != nil {
-		log.Printf("%v", err)
-	}
-	indexData := NewIndexData()
-	indexData.TUMLiveContext = tumLiveContext
-	courses, err := r.CoursesDao.GetAdministeredCoursesByUserId(context.Background(), tumLiveContext.User.ID, "", 0)
-	if err != nil {
-		log.Printf("couldn't query courses for user. %v\n", err)
-		courses = []model.Course{}
-	}
-	semesters := r.CoursesDao.GetAvailableSemesters(c)
-	for i := range tumLiveContext.Course.Streams {
-		err := tools.SetSignedPlaylists(&tumLiveContext.Course.Streams[i], tumLiveContext.User, true)
-		if err != nil {
-			log.WithError(err).Error("could not set signed playlist for admin page")
-		}
-	}
-	err = templateExecutor.ExecuteTemplate(c.Writer, "admin.gohtml", AdminPageData{
-		IndexData:      indexData,
-		Courses:        courses,
-		Page:           "record",
-		Semesters:      semesters,
-		CurY:           tumLiveContext.Course.Year,
-		CurT:           tumLiveContext.Course.TeachingTerm,
-		EditCourseData: EditCourseData{IndexData: indexData, IngestBase: tools.Cfg.IngestBase, LectureHalls: lectureHalls},
-	})
-	if err != nil {
-		log.Printf("%v\n", err)
-	}
-}
-
 func (r mainRoutes) UpdateCourse(c *gin.Context) {
 	foundContext, exists := c.Get("TUMLiveContext")
 	if !exists {
