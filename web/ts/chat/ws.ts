@@ -1,4 +1,4 @@
-import { Realtime } from "../socket";
+import { MessageHandlerFn, Realtime } from "../socket";
 
 enum WSMessageType {
     Message = "message",
@@ -21,9 +21,9 @@ export class WebsocketConnection {
         this.channel = channel;
     }
 
-    async subscribe() {
+    async subscribe(handler: MessageHandlerFn) {
         Realtime.get()
-            .subscribeChannel(this.channel, (data) => console.log(data))
+            .subscribeChannel(this.channel, handler)
             .then(() => (this.connected = true));
     }
 }

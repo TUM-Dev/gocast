@@ -16,7 +16,9 @@ export function chatContext(streamId: number): AlpineComponent {
         },
 
         async initWebsocket() {
-            this.ws.subscribe();
+            this.ws.subscribe((data) => {
+                console.log("hello", data);
+            });
         },
 
         async loadMessages() {

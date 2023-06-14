@@ -1,0 +1,24 @@
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    {{if and .VersionTag (eq .VersionTag "development")}}
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.js"></script>
+    {{else}}
+    <script defer src="/static/node_modules/alpinejs/dist/cdn.min.js"></script>
+    {{end}}
+    <script defer src="/static/node_modules/@alpinejs/persist/dist/cdn.min.js"></script>
+    <script defer src="/static/node_modules/@alpinejs/focus/dist/cdn.min.js"></script>
+
+    <script src="/static/assets/ts-dist/watch.bundle.js?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"></script>
+    <title>test</title>
+</head>
+<body>
+<div x-data="watch.chatContext(12845)">
+    <template x-for="m in messages">
+        <p x-text="`${m.name}: ${m.message}`"></p>
+    </template>
+</div>
+</body>
+</html>
