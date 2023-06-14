@@ -213,10 +213,6 @@ export class Chat {
         this.messages.find((m) => m.ID === e.detail.delete).deleted = true;
     }
 
-    onLike(e) {
-        this.messages.find((m) => m.ID === e.detail.likes).likes = e.detail.num;
-    }
-
     onReaction(e) {
         const m = this.messages.find((m) => m.ID === e.detail.reactions);
         m.reactions = e.detail.payload;
@@ -521,8 +517,6 @@ export type ChatMessage = {
     name: string;
     color: string;
 
-    liked: false;
-    likes: number;
     reactions: ChatReaction[];
     aggregatedReactions: ChatReactionGroup[]; // is generated in frontend
 

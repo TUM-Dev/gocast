@@ -198,6 +198,10 @@ export async function fetchMessages(id: number) {
         });
 }
 
+/*
+ POLLS
+ */
+
 export function startPoll(question: string, pollAnswers: string[]) {
     return Realtime.get().send(currentChatChannel, {
         payload: {
@@ -236,6 +240,10 @@ export function getPollOptionWidth(pollOptions, pollOption) {
     const fractionWidth = minWidth + fractionOfMax * (maxWidth - minWidth);
     return `${Math.ceil(fractionWidth).toString()}%`;
 }
+
+/*
+ MISC
+ */
 
 export function contextMenuHandler(e, contextMenu, videoElem) {
     if (contextMenu.shown) return contextMenu;

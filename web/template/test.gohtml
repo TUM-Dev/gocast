@@ -16,7 +16,9 @@
 </head>
 <body>
 <div x-data="watch.chatContext(12845)">
-    <template x-for="m in messages">
+    <button type="button" @click="sortLiveFirst()">Sort Live First</button>
+    <button type="button" @click="sortPopularFirst()">Sort Popular First</button>
+    <template x-for="m in messages.get(chatSortFn)">
         <p x-text="`${m.name}: ${m.message}`"></p>
     </template>
 </div>
