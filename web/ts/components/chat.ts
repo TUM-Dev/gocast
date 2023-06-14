@@ -1,11 +1,26 @@
 import { AlpineComponent } from "./alpine-component";
 import { ChatAPI } from "../api/chat";
+import { ChatMessage } from "../chat/Chat";
+import { WebsocketConnection } from "../chat/ws";
 
-export function chatContext(): AlpineComponent {
+export function chatContext(streamId: number): AlpineComponent {
     return {
+        streamId: streamId as number,
+
+        messages: [] as ChatMessage[],
+
+        ws: new WebsocketConnection(`chat/${streamId}`),
+
         async init() {
-            const messages = await ChatAPI.getMessages(12845);
-            console.log(messages);
+            Promise.all([this.loadMessages(), this.initWebsocket()]);
+        },
+
+        async initWebsocket() {
+            this.ws.subscribe();
+        },
+
+        async loadMessages() {
+            this.messages = await ChatAPI.getMessages(this.streamId);
         },
     } as AlpineComponent;
 }
