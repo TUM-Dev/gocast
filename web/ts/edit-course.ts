@@ -600,11 +600,31 @@ export enum LectureCreateType {
     vodUpload
 }
 
+function stopRecorder(recorder: MediaRecorder): Promise<Blob> {
+    return new Promise((resolve) => {
+        this.recorder.ondataavailable = (e) => {
+            resolve(e.data);
+        }
+        this.recorder.stop();
+    })
+}
+
 class LectureRecorder {
     private eventRoot: HTMLElement;
 
+    private screencastStream: MediaStream;
+    private cameraStream: MediaStream;
+
+    private screencastRecorder: MediaRecorder;
+    private cameraRecorder: MediaRecorder;
+
+    private screenRecording: Blob;
+    private cameraRecording: Blob;
+
     public screencastAvailable: boolean;
     public cameraAvailable: boolean;
+    public isRecording: boolean;
+    public retrieveRecording: boolean;
 
     constructor(eventRoot: HTMLElement) {
         this.eventRoot = eventRoot;
@@ -612,12 +632,17 @@ class LectureRecorder {
 
     async selectScreencast(display: HTMLVideoElement): Promise<void> {
         try {
-            display.srcObject = await navigator.mediaDevices.getDisplayMedia({
+            const stream = await navigator.mediaDevices.getDisplayMedia({
                 audio: true,
                 video: true,
             });
+            display.srcObject = stream;
             display.onloadedmetadata = (e) => {
                 display.play();
+                this.screencastStream = stream;
+                this.screencastRecorder = new MediaRecorder(this.screencastStream, {
+                    mimeType: 'video/mp4'
+                });
                 this.screencastAvailable = true;
             };
         } catch (err) {
@@ -627,12 +652,17 @@ class LectureRecorder {
 
     async selectCamera(display: HTMLVideoElement): Promise<void> {
         try {
-            display.srcObject = await navigator.mediaDevices.getUserMedia({
+            const stream = await navigator.mediaDevices.getUserMedia({
                 audio: true,
                 video: true,
             });
+            display.srcObject = stream;
             display.onloadedmetadata = (e) => {
                 display.play();
+                this.cameraStream = stream;
+                this.cameraRecorder = new MediaRecorder(this.cameraStream, {
+                    mimeType: 'video/mp4'
+                });
                 this.cameraAvailable = true;
             };
         } catch (err) {
@@ -641,11 +671,36 @@ class LectureRecorder {
     }
 
     record(): void {
-
+        if (this.isRecording) return;
+        if (this.screencastAvailable) {
+            this.screencastRecorder.start();
+        }
+        if (this.cameraRecorder) {
+            this.cameraRecorder.start();
+        }
+        this.isRecording = true;
     }
 
-    stop(): void {
+    async stop(): Promise<void> {
+        if (!this.isRecording || this.retrieveRecording) return;
+        this.isRecording = false;
+        this.retrieveRecording = true;
 
+        await Promise.all([
+            async (resolve) => {
+                if (!this.screencastRecorder) {
+                    return resolve();
+                }
+                this.screenRecording = await stopRecorder(this.screencastRecorder);
+            },
+            async (resolve) => {
+                if (!this.cameraRecorder) {
+                    return resolve();
+                }
+                this.cameraRecording = await stopRecorder(this.cameraRecorder);
+            },
+        ]);
+        this.retrieveRecording = false;
     }
 }
 
