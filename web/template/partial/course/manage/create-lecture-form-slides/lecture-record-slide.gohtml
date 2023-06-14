@@ -41,15 +41,16 @@
             </div>
         </div>
 
-        <div x-data="{ isRecording: false }" class="flex justify-center mt-7">
+        <div class="flex justify-center mt-7">
             <button
-                    @click.prevent="() => (isRecording = (!isRecording))"
-                    class="rounded-full w-20 h-20 hover:scale-105 transition ease-in-out active:scale-90 active:bg-gray-600 flex justify-center items-center duration-100"
-                    :class="isRecording ? 'bg-gray-500' : 'bg-red-400'"
+                    @click.prevent="recorder.toggle()"
+                    class="rounded-full w-20 h-20 hover:scale-105 transition ease-in-out active:scale-90 active:bg-gray-600 flex justify-center items-center duration-100 disabled:opacity-20 disabled:scale-100 disabled:bg-gray-400"
+                    :class="recorder.isRecording ? 'bg-gray-500' : 'bg-red-400'"
+                    :disabled="recorder.retrieveRecording"
             >
                 <div
                     class="bg-white transition-all ease-in-out duration-100"
-                    :class="isRecording ? 'rounded w-7 h-7' : 'rounded-full w-5 h-5'"
+                    :class="recorder.isRecording ? 'rounded w-7 h-7' : 'rounded-full w-5 h-5'"
                 ></div>
             </button>
         </div>

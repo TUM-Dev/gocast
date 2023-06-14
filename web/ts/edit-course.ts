@@ -628,6 +628,10 @@ class LectureRecorder {
 
     constructor(eventRoot: HTMLElement) {
         this.eventRoot = eventRoot;
+        this.screencastAvailable = false;
+        this.cameraAvailable = false;
+        this.isRecording = false;
+        this.retrieveRecording = false;
     }
 
     async selectScreencast(display: HTMLVideoElement): Promise<void> {
@@ -641,7 +645,7 @@ class LectureRecorder {
                 display.play();
                 this.screencastStream = stream;
                 this.screencastRecorder = new MediaRecorder(this.screencastStream, {
-                    mimeType: 'video/mp4'
+                    mimeType: 'video/webm'
                 });
                 this.screencastAvailable = true;
             };
@@ -661,7 +665,7 @@ class LectureRecorder {
                 display.play();
                 this.cameraStream = stream;
                 this.cameraRecorder = new MediaRecorder(this.cameraStream, {
-                    mimeType: 'video/mp4'
+                    mimeType: 'video/webm'
                 });
                 this.cameraAvailable = true;
             };
@@ -670,7 +674,15 @@ class LectureRecorder {
         }
     }
 
-    record(): void {
+    toggle(): void {
+        if (this.isRecording) {
+            this.stop();
+        } else {
+            this.start();
+        }
+    }
+
+    start(): void {
         if (this.isRecording) return;
         if (this.screencastAvailable) {
             this.screencastRecorder.start();
