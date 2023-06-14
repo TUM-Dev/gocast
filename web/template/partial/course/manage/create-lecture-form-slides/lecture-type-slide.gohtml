@@ -1,6 +1,20 @@
 {{define "lecture-type-slide"}}
     <ul class="w-full">
         <li class="mb-2">
+            <a
+                    :href="`/admin/course/${courseID}/record`"
+                    class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
+            >
+                <div class="block text-left">
+                    <div class="w-full text-lg font-semibold">
+                        <i class="fas fa-external-link-alt pr-2"></i>
+                        Record Lecture
+                    </div>
+                    <div class="w-full">Record a Lecture in your Browser</div>
+                </div>
+            </a>
+        </li>
+        <li class="mb-2">
             <button
                     @click.prevent="() => updateType(false)"
                     class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
@@ -19,7 +33,7 @@
                     :class="formData.vodup !== true ? '' : 'dark:text-white dark:border-white border-blue-600 text-blue-600'"
             >
                 <div class="block text-left">
-                    <div class="w-full text-lg font-semibold">Video-on-demand</div>
+                    <div class="w-full text-lg font-semibold">Upload Video-on-demand</div>
                     <div class="w-full">Upload a video-on-demand</div>
                 </div>
             </button>
