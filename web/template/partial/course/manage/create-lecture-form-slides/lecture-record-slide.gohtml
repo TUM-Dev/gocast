@@ -41,9 +41,9 @@
             </div>
         </div>
 
-        <div class="flex justify-center mt-7">
+        <div x-show="!recorder.recordingsReady" class="flex justify-center mt-7">
             <button
-                    @click.prevent="recorder.toggle()"
+                    @click.prevent="recorder.toggleRecording()"
                     class="rounded-full w-20 h-20 hover:scale-105 transition ease-in-out active:scale-90 active:bg-gray-600 flex justify-center items-center duration-100 disabled:opacity-20 disabled:scale-100 disabled:bg-gray-400"
                     :class="recorder.isRecording ? 'bg-gray-500' : 'bg-red-400'"
                     :disabled="recorder.retrieveRecording"
@@ -52,6 +52,17 @@
                     class="bg-white transition-all ease-in-out duration-100"
                     :class="recorder.isRecording ? 'rounded w-7 h-7' : 'rounded-full w-5 h-5'"
                 ></div>
+            </button>
+        </div>
+
+        <div x-show="recorder.recordingsReady" class="flex justify-center mt-7">
+            <button
+                    @click.prevent="recorder.togglePlay()"
+                    class="rounded-full w-20 h-20 hover:scale-105 transition ease-in-out active:scale-90 active:bg-gray-600 flex justify-center items-center duration-100 disabled:opacity-20 disabled:scale-100 disabled:bg-gray-400"
+                    :class="recorder.isPlaying ? 'bg-blue-400' : 'bg-blue-400'"
+            >
+                <i x-show="!recorder.isPlaying" class="fa fa-play text-2xl"></i>
+                <i x-show="recorder.isPlaying" class="fa fa-pause text-2xl"></i>
             </button>
         </div>
     </div>

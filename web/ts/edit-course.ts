@@ -602,11 +602,23 @@ export enum LectureCreateType {
 
 function stopRecorder(recorder: MediaRecorder): Promise<Blob> {
     return new Promise((resolve) => {
-        this.recorder.ondataavailable = (e) => {
+        recorder.ondataavailable = (e) => {
             resolve(e.data);
         }
-        this.recorder.stop();
+        recorder.stop();
     })
+}
+
+function loadVideoBlob(elem: HTMLVideoElement, video: Blob): Promise<void> {
+    return new Promise((resolve) => {
+        elem.srcObject = null;
+        elem.onloadedmetadata = (e) => {
+            elem.pause();
+            elem.currentTime = 0;
+            resolve();
+        };
+        elem.src = URL.createObjectURL(video);
+    });
 }
 
 class LectureRecorder {
@@ -614,6 +626,9 @@ class LectureRecorder {
 
     private screencastStream: MediaStream;
     private cameraStream: MediaStream;
+
+    private screencastDisplay: HTMLVideoElement;
+    private cameraDisplay: HTMLVideoElement;
 
     private screencastRecorder: MediaRecorder;
     private cameraRecorder: MediaRecorder;
@@ -625,6 +640,8 @@ class LectureRecorder {
     public cameraAvailable: boolean;
     public isRecording: boolean;
     public retrieveRecording: boolean;
+    public recordingsReady: boolean;
+    public isPlaying: boolean;
 
     constructor(eventRoot: HTMLElement) {
         this.eventRoot = eventRoot;
@@ -632,10 +649,13 @@ class LectureRecorder {
         this.cameraAvailable = false;
         this.isRecording = false;
         this.retrieveRecording = false;
+        this.recordingsReady = false;
+        this.isPlaying = false;
     }
 
     async selectScreencast(display: HTMLVideoElement): Promise<void> {
         try {
+            this.screencastDisplay = display;
             const stream = await navigator.mediaDevices.getDisplayMedia({
                 audio: true,
                 video: true,
@@ -656,6 +676,7 @@ class LectureRecorder {
 
     async selectCamera(display: HTMLVideoElement): Promise<void> {
         try {
+            this.cameraDisplay = display;
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: true,
                 video: true,
@@ -674,9 +695,9 @@ class LectureRecorder {
         }
     }
 
-    toggle(): void {
+    async toggleRecording(): Promise<void> {
         if (this.isRecording) {
-            this.stop();
+            await this.stop();
         } else {
             this.start();
         }
@@ -699,20 +720,66 @@ class LectureRecorder {
         this.retrieveRecording = true;
 
         await Promise.all([
-            async (resolve) => {
+            async () => {
                 if (!this.screencastRecorder) {
-                    return resolve();
+                    return;
                 }
                 this.screenRecording = await stopRecorder(this.screencastRecorder);
+                this.screencastStream = null;
+                this.screencastRecorder = null;
             },
-            async (resolve) => {
+            async () => {
                 if (!this.cameraRecorder) {
-                    return resolve();
+                    return;
                 }
                 this.cameraRecording = await stopRecorder(this.cameraRecorder);
+                this.cameraStream = null;
+                this.cameraRecorder = null;
             },
-        ]);
+        ].map((fn) => fn()));
+        await this.displayRecordings();
         this.retrieveRecording = false;
+        this.recordingsReady = true;
+    }
+
+    async displayRecordings(): Promise<void> {
+        if (this.screenRecording) {
+            await loadVideoBlob(this.screencastDisplay, this.screenRecording);
+        }
+        if (this.cameraRecording) {
+            await loadVideoBlob(this.cameraDisplay, this.cameraRecording);
+        }
+    }
+
+    togglePlay() {
+        if (this.isPlaying) {
+            this.pause();
+        } else {
+            this.play();
+        }
+    }
+
+    play() {
+        if (this.isPlaying) return;
+        if (this.screenRecording) {
+            this.screencastDisplay.play();
+        }
+        if (this.cameraRecording) {
+            this.cameraDisplay.currentTime = this.screencastDisplay.currentTime;
+            this.cameraDisplay.play();
+        }
+        this.isPlaying = true;
+    }
+
+    pause() {
+        if (!this.isPlaying) return;
+        if (this.screenRecording) {
+            this.screencastDisplay.pause();
+        }
+        if (this.cameraRecording) {
+            this.cameraDisplay.pause();
+        }
+        this.isPlaying = false;
     }
 }
 
