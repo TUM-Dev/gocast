@@ -25,7 +25,6 @@ type ChatDao interface {
 
 	ApproveChat(id uint) error
 	RetractChat(id uint) error
-	DeleteReplies(id uint) error
 	DeleteChat(id uint) error
 	ResolveChat(id uint) error
 	ToggleReaction(userID uint, chatID uint, username string, emoji string) error
@@ -163,14 +162,11 @@ func (d chatDao) RetractChat(id uint) error {
 	return DB.Model(&model.Chat{}).Where("id = ?", id).Updates(map[string]interface{}{"visible": false}).Error
 }
 
-// DeleteReplies removes all replies of a given chat message
-func (d chatDao) DeleteReplies(id uint) error {
-	return DB.Delete(&model.Chat{}, "reply_to = ?", id).Error
-}
-
 // DeleteChat removes a chat with the given id from the database.
 func (d chatDao) DeleteChat(id uint) error {
-	return DB.Model(&model.Chat{}).Delete(&model.Chat{}, id).Error
+	return errors.Join(
+		DB.Model(&model.Chat{}).Delete(&model.Chat{}, id).Error,
+		DB.Delete(&model.Chat{}, "reply_to = ?", id).Error)
 }
 
 // ResolveChat sets the attribute resolved of chat with the given id to true

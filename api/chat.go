@@ -268,10 +268,6 @@ func (r chatRoutes) handleDelete(ctx tools.TUMLiveContext, msg []byte) {
 	if ctx.User == nil || !ctx.User.IsAdminOfCourse(*ctx.Course) {
 		return
 	}
-	err = r.ChatDao.DeleteReplies(req.Id)
-	if err != nil {
-		log.WithError(err).Error("could not delete chat replies")
-	}
 	err = r.ChatDao.DeleteChat(req.Id)
 	if err != nil {
 		log.WithError(err).Error("could not delete chat")
