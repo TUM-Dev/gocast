@@ -1,5 +1,5 @@
-import { Delete, patchData, postData, putData, sendFormData, showMessage } from "./global";
-import { StatusCodes } from "http-status-codes";
+import {Delete, patchData, postData, putData, sendFormData, showMessage} from "./global";
+import {StatusCodes} from "http-status-codes";
 
 export enum UIEditMode {
     none,
@@ -600,6 +600,55 @@ export enum LectureCreateType {
     vodUpload
 }
 
+class LectureRecorder {
+    private eventRoot: HTMLElement;
+
+    public screencastAvailable: boolean;
+    public cameraAvailable: boolean;
+
+    constructor(eventRoot: HTMLElement) {
+        this.eventRoot = eventRoot;
+    }
+
+    async selectScreencast(display: HTMLVideoElement): Promise<void> {
+        try {
+            display.srcObject = await navigator.mediaDevices.getDisplayMedia({
+                audio: true,
+                video: true,
+            });
+            display.onloadedmetadata = (e) => {
+                display.play();
+                this.screencastAvailable = true;
+            };
+        } catch (err) {
+            alert('Failed to access your screen.');
+        }
+    }
+
+    async selectCamera(display: HTMLVideoElement): Promise<void> {
+        try {
+            display.srcObject = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: true,
+            });
+            display.onloadedmetadata = (e) => {
+                display.play();
+                this.cameraAvailable = true;
+            };
+        } catch (err) {
+            alert('Failed to access your webcam & mic.');
+        }
+    }
+
+    record(): void {
+
+    }
+
+    stop(): void {
+
+    }
+}
+
 export function createLectureForm(args: { s: [] }) {
     return {
         createType: LectureCreateType.vodRecord,
@@ -632,6 +681,9 @@ export function createLectureForm(args: { s: [] }) {
         invalidReason: "",
         init() {
             this.onUpdate();
+        },
+        initRecorder(eventRoot: HTMLElement): LectureRecorder {
+            return new LectureRecorder(eventRoot);
         },
         next() {
             if (this.onLastSlide) {

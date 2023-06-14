@@ -1,23 +1,43 @@
 {{define "lecture-record-slide"}}
-    <div>
+    <div
+            x-data="{
+                recorder: initRecorder($el)
+            }"
+    >
         <div class="flex flex-col justify-center mt-7 xl:flex-row">
-            <div class="aspect-video xl:w-[47%] xl:mx-[1.5%] my-2 bg-black/30 dark:bg-black/20 rounded relative max-xl:min-w-full cursor-pointer text-white overflow-hidden">
-                <div class="flex justify-center flex-col items-center h-full">
+            <div
+                class="aspect-video xl:w-[47%] xl:mx-[1.5%] my-2 rounded relative max-xl:min-w-full cursor-pointer text-white overflow-hidden"
+                :class="recorder.screencastAvailable ? 'bg-black' : 'bg-black/30 dark:bg-black/20'"
+            >
+                <div
+                    x-show="!recorder.screencastAvailable"
+                    @click="() => recorder.selectScreencast($refs.screenDisplay)"
+                    class="flex justify-center flex-col items-center h-full"
+                >
                     <i class="fa fa-desktop text-2xl mb-2"></i>
                     <span class="block">
                         Click to enable Screencast
                     </span>
                 </div>
 
+                <video class="h-full w-full" x-ref="screenDisplay"></video>
             </div>
-            <div class="aspect-video xl:w-[47%] xl:mx-[1.5%] my-2 bg-black/30 dark:bg-black/20 rounded relative max-xl:min-w-full cursor-pointer text-white overflow-hidden">
-                <div class="flex justify-center flex-col items-center h-full">
+            <div
+                class="aspect-video xl:w-[47%] xl:mx-[1.5%] my-2 rounded relative max-xl:min-w-full cursor-pointer text-white overflow-hidden"
+                :class="recorder.cameraAvailable ? 'bg-black' : 'bg-black/30 dark:bg-black/20'"
+            >
+                <div
+                    x-show="!recorder.cameraAvailable"
+                    @click="() => recorder.selectCamera($refs.camDisplay)"
+                    class="flex justify-center flex-col items-center h-full"
+                >
                     <i class="fa fa-camera text-2xl mb-2"></i>
                     <span class="block">
                         Click to enable Camera
                     </span>
                 </div>
 
+                <video class="h-full w-full" x-ref="camDisplay"></video>
             </div>
         </div>
 
