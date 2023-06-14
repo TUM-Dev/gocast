@@ -640,8 +640,8 @@ export function createLectureForm(args: { s: [] }) {
             this.onUpdate();
         },
         updateLiveAdHoc(adHoc: boolean) {
-          this.formData.adHoc = adHoc;
-          this.next();
+            this.formData.adHoc = adHoc;
+            this.next();
         },
         updateType(vodup: boolean) {
             this.formData.vodup = vodup;
@@ -699,7 +699,9 @@ export function createLectureForm(args: { s: [] }) {
             }
 
             if (this.currentTab === 2) {
-                this.canContinue = (this.getMediaFiles().length > 0 && this.formData.vodup) || (this.formData.adHoc && this.formData.end != "");
+                this.canContinue =
+                    (this.getMediaFiles().length > 0 && this.formData.vodup) ||
+                    (this.formData.adHoc && this.formData.end != "");
                 this.canGoBack = true;
                 this.onLastSlide = true;
                 return;
