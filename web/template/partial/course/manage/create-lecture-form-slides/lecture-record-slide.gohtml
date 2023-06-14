@@ -1,25 +1,25 @@
 {{define "lecture-record-slide"}}
-    <div class="mb-4">
-        <label x-show="formData.premiere || formData.vodup && !loading">
-            <span class="text-sm text-5">Combined Video (mp4, if possible h264)</span>
-            <input type="file" accept="video/mp4" class="btn tl-choose-file w-full mt-2 mx-2"
-                   x-on:change="updateFiles('COMB', Object.values($event.target.files))">
-        </label>
-    </div>
-
-    <div class="mb-4">
-        <label x-show="formData.premiere || formData.vodup && !loading">
-            <span class="text-sm text-5">Presentation Video (mp4, if possible h264)</span>
-            <input type="file" accept="video/mp4" class="btn tl-choose-file w-full mt-2 mx-2"
-                   x-on:change="updateFiles('PRES', Object.values($event.target.files))">
-        </label>
-    </div>
-
     <div>
-        <label x-show="formData.premiere || formData.vodup && !loading">
-            <span class="text-sm text-5">Camera Video (mp4, if possible h264)</span>
-            <input type="file" accept="video/mp4" class="btn tl-choose-file w-full mt-2 mx-2"
-                   x-on:change="updateFiles('CAM', Object.values($event.target.files))">
-        </label>
+        <div class="flex justify-center mt-7">
+            <div class="aspect-video w-[40%] mx-[1.5%] my-2 bg-black/30 dark:bg-black/20 rounded relative max-xl:min-w-full cursor-pointer text-white overflow-hidden">
+
+            </div>
+            <div class="aspect-video w-[40%] mx-[1.5%] my-2 bg-black/30 dark:bg-black/20 rounded relative max-xl:min-w-full cursor-pointer text-white overflow-hidden">
+
+            </div>
+        </div>
+
+        <div x-data="{ isRecording: false }" class="flex justify-center mt-7">
+            <button
+                    @click.prevent="() => (isRecording = (!isRecording))"
+                    class="rounded-full w-20 h-20 hover:scale-105 transition ease-in-out active:scale-90 active:bg-gray-600 flex justify-center items-center duration-100"
+                    :class="isRecording ? 'bg-gray-500' : 'bg-red-400'"
+            >
+                <div
+                    class="bg-white transition-all ease-in-out duration-100"
+                    :class="isRecording ? 'rounded w-7 h-7' : 'rounded-full w-5 h-5'"
+                ></div>
+            </button>
+        </div>
     </div>
 {{end}}

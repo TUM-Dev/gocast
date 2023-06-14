@@ -602,8 +602,8 @@ export enum LectureCreateType {
 
 export function createLectureForm(args: { s: [] }) {
     return {
-        createType: LectureCreateType.livestream,
-        currentTab: 0,
+        createType: LectureCreateType.vodRecord,
+        currentTab: 2,
         canGoBack: false,
         canContinue: true,
         onLastSlide: false,
