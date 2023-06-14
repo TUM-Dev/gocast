@@ -1,13 +1,13 @@
 import { AlpineComponent } from "./alpine-component";
-import { ChatAPI, ChatMessageArray } from "../api/chat";
+import { ChatAPI, ChatMessage, ChatMessageArray, ChatReaction } from "../api/chat";
 import { WebsocketConnection } from "../chat/ws";
 import { ChatMessageSorter, ChatSortMode } from "../chat/ChatMessageSorter";
 import { ChatMessagePreprocessor } from "../chat/ChatMessagePreprocessor";
-import { scrollChat, shouldScroll, showNewMessageIndicator } from "../chat";
 
-export function chatContext(streamId: number): AlpineComponent {
+export function chatContext(streamId: number, userId: number): AlpineComponent {
     return {
         streamId: streamId as number,
+        userId: userId as number,
 
         chatSortMode: ChatSortMode.LiveChat,
         chatSortFn: ChatMessageSorter.GetSortFn(ChatSortMode.LiveChat),
@@ -19,7 +19,7 @@ export function chatContext(streamId: number): AlpineComponent {
 
         async init() {
             Promise.all([this.loadMessages(), this.initWebsocket()]).then(() => {
-                this.messages.forEach((msg, _) => this.preprocessors.forEach((f) => f(msg, 1)));
+                this.messages.forEach((msg, _) => this.preprocessors.forEach((f) => f(msg, this.userId)));
             });
         },
 
@@ -45,6 +45,8 @@ export function chatContext(streamId: number): AlpineComponent {
             const handler = (data) => {
                 if ("message" in data) {
                     this.handleNewMessage(data);
+                } else if ("reactions" in data) {
+                    this.handleReaction(data);
                 }
             };
             this.ws.subscribe(handler);
@@ -54,15 +56,20 @@ export function chatContext(streamId: number): AlpineComponent {
             this.messages = await ChatAPI.getMessages(this.streamId);
         },
 
-        handleNewMessage(data) {
-            data["replies"] = []; // go serializes this empty list as `null`
-            if (data["replyTo"].Valid) {
-                console.log("🌑 received reply", data);
-                this.messages.pushReply(data);
+        handleNewMessage(msg: ChatMessage) {
+            msg["replies"] = []; // go serializes this empty list as `null`
+            if (msg["replyTo"].Valid) {
+                console.log("🌑 received reply", msg);
+                this.messages.pushReply(msg);
             } else {
-                console.log("🌑 received message", data);
-                this.messages.pushMessage(data);
+                console.log("🌑 received message", msg);
+                this.messages.pushMessage(msg);
             }
+        },
+
+        handleReaction(reaction: { reactions: number; payload: ChatReaction[] }) {
+            console.log("🌑 received reaction", reaction);
+            this.messages.setReaction(reaction, this.userId);
         },
     } as AlpineComponent;
 }

@@ -15,14 +15,22 @@
     <title>test</title>
 </head>
 <body>
-<div x-data="watch.chatContext(12845)">
+<div x-data="watch.chatContext(12845, 1)">
     <button type="button" @click="sortLiveFirst()">Sort Live First</button>
     <button type="button" @click="sortPopularFirst()">Sort Popular First</button>
     <template x-for="m in messages.get(chatSortFn)">
-        <div>
+        <div style="border: 1px solid lightgrey; padding: 4px; margin-bottom: 8px;">
             <p x-text="`${m.name}: ${m.message}`"></p>
+            <template x-for="(reactionGroup, i) in m.aggregatedReactions">
+                <button type="button" :title="reactionGroup.namesPretty"
+                        @click="watch.reactToMessage(m.ID, reactionGroup.emojiName)"
+                style="margin-right: 4px;">
+                    <span x-text="reactionGroup.emoji"></span>
+                    <span x-text="reactionGroup.reactions.length"></span>
+                </button>
+            </template>
             <template x-for="reply in m.replies">
-                <p style="margin-left: 16px;" x-text="`${reply.name}: ${reply.message}`"></p>
+                <p style="margin-left: 16px;" x-text="`> ${reply.name}: ${reply.message}`"></p>
             </template>
         </div>
     </template>

@@ -1,5 +1,6 @@
 import { get } from "../utilities/fetch-wrappers";
 import { EmojiPicker } from "../chat/EmojiPicker";
+import { ChatMessagePreprocessor } from "../chat/ChatMessagePreprocessor";
 
 export class ChatMessage {
     readonly ID: number;
@@ -56,6 +57,14 @@ export class ChatMessageArray {
 
     get(sortFn?: (a: ChatMessage, b: ChatMessage) => number): ChatMessage[] {
         return sortFn ? [...this.messages].sort(sortFn) : this.messages;
+    }
+
+    setReaction(reaction: { reactions: number; payload: ChatReaction[] }, userId: number) {
+        const msg = this.messages.find((m) => m.ID === reaction.reactions);
+        if (msg != undefined) {
+            msg.reactions = reaction.payload;
+            ChatMessagePreprocessor.AggregateReactions(msg, userId);
+        }
     }
 
     pushReply(m: ChatMessage) {
