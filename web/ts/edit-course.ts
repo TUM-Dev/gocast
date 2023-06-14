@@ -654,45 +654,63 @@ class LectureRecorder {
     }
 
     async selectScreencast(display: HTMLVideoElement): Promise<void> {
+        if (this.isRecording || this.recordingsReady) return;
         try {
             this.screencastDisplay = display;
-            const stream = await navigator.mediaDevices.getDisplayMedia({
+            this.screencastStream = await navigator.mediaDevices.getDisplayMedia({
                 audio: true,
                 video: true,
             });
-            display.srcObject = stream;
-            display.onloadedmetadata = (e) => {
-                display.play();
-                this.screencastStream = stream;
-                this.screencastRecorder = new MediaRecorder(this.screencastStream, {
-                    mimeType: 'video/webm'
-                });
-                this.screencastAvailable = true;
-            };
+
+            await this.initScreencastDisplay();
+
         } catch (err) {
             alert('Failed to access your screen.');
         }
     }
 
     async selectCamera(display: HTMLVideoElement): Promise<void> {
+        if (this.isRecording || this.recordingsReady) return;
         try {
             this.cameraDisplay = display;
-            const stream = await navigator.mediaDevices.getUserMedia({
+            this.cameraStream = await navigator.mediaDevices.getUserMedia({
                 audio: true,
                 video: true,
             });
-            display.srcObject = stream;
-            display.onloadedmetadata = (e) => {
-                display.play();
-                this.cameraStream = stream;
-                this.cameraRecorder = new MediaRecorder(this.cameraStream, {
-                    mimeType: 'video/webm'
-                });
-                this.cameraAvailable = true;
-            };
+
+            await this.initCameraDisplay();
+
+            this.cameraAvailable = true;
         } catch (err) {
             alert('Failed to access your webcam & mic.');
         }
+    }
+
+    initScreencastDisplay() {
+        return new Promise<void>((resolve) => {
+            this.screencastDisplay.srcObject = this.screencastStream;
+            this.screencastDisplay.onloadedmetadata = (e) => {
+                this.screencastDisplay.play();
+                this.screencastRecorder = new MediaRecorder(this.screencastStream, {
+                    mimeType: 'video/webm'
+                });
+                this.screencastAvailable = true;
+                resolve();
+            };
+        });
+    }
+
+    initCameraDisplay(): Promise<void> {
+        return new Promise<void>((resolve) => {
+            this.cameraDisplay.srcObject = this.cameraStream;
+            this.cameraDisplay.onloadedmetadata = (e) => {
+                this.cameraDisplay.play();
+                this.cameraRecorder = new MediaRecorder(this.cameraStream, {
+                    mimeType: 'video/webm'
+                });
+                resolve();
+            };
+        });
     }
 
     async toggleRecording(): Promise<void> {
@@ -725,7 +743,6 @@ class LectureRecorder {
                     return;
                 }
                 this.screenRecording = await stopRecorder(this.screencastRecorder);
-                this.screencastStream = null;
                 this.screencastRecorder = null;
             },
             async () => {
@@ -733,7 +750,6 @@ class LectureRecorder {
                     return;
                 }
                 this.cameraRecording = await stopRecorder(this.cameraRecorder);
-                this.cameraStream = null;
                 this.cameraRecorder = null;
             },
         ].map((fn) => fn()));
@@ -763,10 +779,12 @@ class LectureRecorder {
         if (this.isPlaying) return;
         if (this.screenRecording) {
             this.screencastDisplay.play();
+            this.screencastDisplay.onended = () => this.resetPlay();
         }
         if (this.cameraRecording) {
             this.cameraDisplay.currentTime = this.screencastDisplay.currentTime;
             this.cameraDisplay.play();
+            this.cameraDisplay.onended = () => this.resetPlay();
         }
         this.isPlaying = true;
     }
@@ -780,6 +798,27 @@ class LectureRecorder {
             this.cameraDisplay.pause();
         }
         this.isPlaying = false;
+    }
+
+    resetPlay() {
+        this.pause();
+        if (this.screenRecording) {
+            this.screencastDisplay.currentTime = 0;
+        }
+        if (this.cameraRecording) {
+            this.cameraDisplay.currentTime = 0
+        }
+    }
+
+    deleteRecordings() {
+        this.pause();
+        if (confirm("Are your sure you want to delete all recordings?")) {
+            this.screenRecording = null;
+            this.cameraRecording = null;
+            this.recordingsReady = null;
+            this.initScreencastDisplay();
+            this.initCameraDisplay();
+        }
     }
 }
 

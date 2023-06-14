@@ -43,10 +43,10 @@
 
         <div x-show="!recorder.recordingsReady" class="flex justify-center mt-7">
             <button
-                    @click.prevent="recorder.toggleRecording()"
-                    class="rounded-full w-20 h-20 hover:scale-105 transition ease-in-out active:scale-90 active:bg-gray-600 flex justify-center items-center duration-100 disabled:opacity-20 disabled:scale-100 disabled:bg-gray-400"
-                    :class="recorder.isRecording ? 'bg-gray-500' : 'bg-red-400'"
-                    :disabled="recorder.retrieveRecording"
+                @click.prevent="recorder.toggleRecording()"
+                class="rounded-full w-20 h-20 hover:scale-105 transition ease-in-out active:scale-90 active:bg-gray-600 flex justify-center items-center duration-100 disabled:opacity-20 disabled:scale-100 disabled:bg-gray-400"
+                :class="recorder.isRecording ? 'bg-gray-500' : 'bg-red-400'"
+                :disabled="recorder.retrieveRecording"
             >
                 <div
                     class="bg-white transition-all ease-in-out duration-100"
@@ -57,11 +57,23 @@
 
         <div x-show="recorder.recordingsReady" class="flex justify-center mt-7">
             <button
-                    @click.prevent="recorder.togglePlay()"
-                    class="rounded-full w-20 h-20 hover:scale-105 transition ease-in-out bg-blue-400 active:scale-90 active:bg-gray-600 flex justify-center items-center duration-100 disabled:opacity-20 disabled:scale-100 disabled:bg-gray-400"
+                    @click.prevent="recorder.deleteRecordings()"
+                    class="rounded-full w-20 h-20 hover:scale-110 transition ease-in-out active:scale-90 flex justify-center items-center text-red-400 duration-100 disabled:opacity-20 disabled:scale-100"
+            >
+                <i class="fa fa-trash text-2xl"></i>
+            </button>
+            <button
+                @click.prevent="recorder.togglePlay()"
+                class="rounded-full w-20 h-20 hover:scale-105 transition ease-in-out bg-blue-400 active:scale-90 active:bg-gray-600 flex justify-center items-center duration-100 text-white disabled:opacity-20 disabled:scale-100 disabled:bg-gray-400"
             >
                 <i x-show="!recorder.isPlaying" class="fa fa-play text-2xl"></i>
                 <i x-show="recorder.isPlaying" class="fa fa-pause text-2xl"></i>
+            </button>
+            <button
+                    @click.prevent="recorder.resetPlay()"
+                    class="rounded-full w-20 h-20 hover:scale-110 transition ease-in-out active:scale-90 flex justify-center items-center text-blue-400 duration-100 disabled:opacity-20 disabled:scale-100"
+            >
+                <i class="fa fa-stop text-2xl"></i>
             </button>
         </div>
     </div>
