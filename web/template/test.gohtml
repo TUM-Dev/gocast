@@ -19,7 +19,12 @@
     <button type="button" @click="sortLiveFirst()">Sort Live First</button>
     <button type="button" @click="sortPopularFirst()">Sort Popular First</button>
     <template x-for="m in messages.get(chatSortFn)">
-        <p x-text="`${m.name}: ${m.message}`"></p>
+        <div>
+            <p x-text="`${m.name}: ${m.message}`"></p>
+            <template x-for="reply in m.replies">
+                <p style="margin-left: 16px;" x-text="`${reply.name}: ${reply.message}`"></p>
+            </template>
+        </div>
     </template>
 </div>
 </body>

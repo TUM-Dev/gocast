@@ -3,6 +3,7 @@ import { ChatAPI, ChatMessageArray } from "../api/chat";
 import { WebsocketConnection } from "../chat/ws";
 import { ChatMessageSorter, ChatSortMode } from "../chat/ChatMessageSorter";
 import { ChatMessagePreprocessor } from "../chat/ChatMessagePreprocessor";
+import { scrollChat, shouldScroll, showNewMessageIndicator } from "../chat";
 
 export function chatContext(streamId: number): AlpineComponent {
     return {
@@ -41,13 +42,27 @@ export function chatContext(streamId: number): AlpineComponent {
         },
 
         async initWebsocket() {
-            this.ws.subscribe((data) => {
-                console.log("hello", data);
-            });
+            const handler = (data) => {
+                if ("message" in data) {
+                    this.handleNewMessage(data);
+                }
+            };
+            this.ws.subscribe(handler);
         },
 
         async loadMessages() {
             this.messages = await ChatAPI.getMessages(this.streamId);
+        },
+
+        handleNewMessage(data) {
+            data["replies"] = []; // go serializes this empty list as `null`
+            if (data["replyTo"].Valid) {
+                console.log("🌑 received reply", data);
+                this.messages.pushReply(data);
+            } else {
+                console.log("🌑 received message", data);
+                this.messages.pushMessage(data);
+            }
         },
     } as AlpineComponent;
 }

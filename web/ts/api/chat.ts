@@ -10,6 +10,9 @@ export class ChatMessage {
     readonly name: string;
     readonly color: string;
 
+    replies: ChatMessage[];
+    replyTo: { Int64: number; Valid: boolean };
+
     reactions: ChatReaction[];
     aggregatedReactions: ChatReactionGroup[];
 
@@ -53,6 +56,17 @@ export class ChatMessageArray {
 
     get(sortFn?: (a: ChatMessage, b: ChatMessage) => number): ChatMessage[] {
         return sortFn ? [...this.messages].sort(sortFn) : this.messages;
+    }
+
+    pushReply(m: ChatMessage) {
+        const base = this.messages.find((msg) => msg.ID === m.replyTo.Int64);
+        if (base !== undefined) {
+            base.replies.push(Object.assign(new ChatMessage(), m));
+        }
+    }
+
+    pushMessage(m: ChatMessage) {
+        this.messages.push(Object.assign(new ChatMessage(), m));
     }
 }
 
