@@ -623,6 +623,7 @@ function loadVideoBlob(elem: HTMLVideoElement, video: Blob): Promise<void> {
 
 class LectureRecorder {
     private eventRoot: HTMLElement;
+    private readonly onUpdateData: (screenRecording: Blob, cameraRecording: Blob) => {};
 
     private screencastStream: MediaStream;
     private cameraStream: MediaStream;
@@ -643,8 +644,9 @@ class LectureRecorder {
     public recordingsReady: boolean;
     public isPlaying: boolean;
 
-    constructor(eventRoot: HTMLElement) {
+    constructor(eventRoot: HTMLElement, onUpdateData: (screenRecording: Blob, cameraRecording: Blob) => {}) {
         this.eventRoot = eventRoot;
+        this.onUpdateData = onUpdateData;
         this.screencastAvailable = false;
         this.cameraAvailable = false;
         this.isRecording = false;
@@ -754,6 +756,7 @@ class LectureRecorder {
             },
         ].map((fn) => fn()));
         await this.displayRecordings();
+        this.onUpdateData(this.screenRecording, this.cameraRecording)
         this.retrieveRecording = false;
         this.recordingsReady = true;
     }
@@ -818,6 +821,7 @@ class LectureRecorder {
             this.recordingsReady = null;
             this.initScreencastDisplay();
             this.initCameraDisplay();
+            this.onUpdateData(this.screenRecording, this.cameraRecording)
         }
     }
 }
@@ -856,7 +860,7 @@ export function createLectureForm(args: { s: [] }) {
             this.onUpdate();
         },
         initRecorder(eventRoot: HTMLElement): LectureRecorder {
-            return new LectureRecorder(eventRoot);
+            return new LectureRecorder(eventRoot, (screen, cam) => this.updateRecordings(screen, cam));
         },
         next() {
             if (this.onLastSlide) {
@@ -901,6 +905,21 @@ export function createLectureForm(args: { s: [] }) {
             } else if (type === "PRES") {
                 this.formData.presFile = file;
             }
+            this.onUpdate();
+        },
+
+        updateRecordings(screenRecording: Blob, cameraRecording: Blob) {
+            this.formData.combFile = [];
+            this.formData.presFile = [];
+            this.formData.camFile = [];
+
+            if (screenRecording) {
+                this.formData.presFile = [new File([screenRecording], "pres.webm")];
+            }
+            if (cameraRecording) {
+                this.formData.camFile = [new File([cameraRecording], "cam.webm")];
+            }
+
             this.onUpdate();
         },
 
