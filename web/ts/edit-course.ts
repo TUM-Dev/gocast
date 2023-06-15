@@ -1,5 +1,5 @@
-import {Delete, patchData, postData, putData, sendFormData, showMessage} from "./global";
-import {StatusCodes} from "http-status-codes";
+import { Delete, patchData, postData, putData, sendFormData, showMessage } from "./global";
+import { StatusCodes } from "http-status-codes";
 
 export enum UIEditMode {
     none,
@@ -597,16 +597,16 @@ interface MediaUpload {
 export enum LectureCreateType {
     vodRecord,
     livestream,
-    vodUpload
+    vodUpload,
 }
 
 function stopRecorder(recorder: MediaRecorder): Promise<Blob> {
     return new Promise((resolve) => {
         recorder.ondataavailable = (e) => {
             resolve(e.data);
-        }
+        };
         recorder.stop();
-    })
+    });
 }
 
 function loadVideoBlob(elem: HTMLVideoElement, video: Blob): Promise<void> {
@@ -623,7 +623,7 @@ function loadVideoBlob(elem: HTMLVideoElement, video: Blob): Promise<void> {
 
 class LectureRecorder {
     private eventRoot: HTMLElement;
-    private readonly onUpdateData: (screenRecording: Blob, cameraRecording: Blob) => {};
+    private readonly onUpdateData: (screenRecording: Blob, cameraRecording: Blob) => void;
 
     private screencastStream: MediaStream;
     private cameraStream: MediaStream;
@@ -644,7 +644,7 @@ class LectureRecorder {
     public recordingsReady: boolean;
     public isPlaying: boolean;
 
-    constructor(eventRoot: HTMLElement, onUpdateData: (screenRecording: Blob, cameraRecording: Blob) => {}) {
+    constructor(eventRoot: HTMLElement, onUpdateData: (screenRecording: Blob, cameraRecording: Blob) => void) {
         this.eventRoot = eventRoot;
         this.onUpdateData = onUpdateData;
         this.screencastAvailable = false;
@@ -665,9 +665,8 @@ class LectureRecorder {
             });
 
             await this.initScreencastDisplay();
-
         } catch (err) {
-            alert('Failed to access your screen.');
+            alert("Failed to access your screen.");
         }
     }
 
@@ -684,7 +683,7 @@ class LectureRecorder {
 
             this.cameraAvailable = true;
         } catch (err) {
-            alert('Failed to access your webcam & mic.');
+            alert("Failed to access your webcam & mic.");
         }
     }
 
@@ -694,7 +693,7 @@ class LectureRecorder {
             this.screencastDisplay.onloadedmetadata = (e) => {
                 this.screencastDisplay.play();
                 this.screencastRecorder = new MediaRecorder(this.screencastStream, {
-                    mimeType: 'video/webm'
+                    mimeType: "video/webm",
                 });
                 this.screencastAvailable = true;
                 resolve();
@@ -708,7 +707,7 @@ class LectureRecorder {
             this.cameraDisplay.onloadedmetadata = (e) => {
                 this.cameraDisplay.play();
                 this.cameraRecorder = new MediaRecorder(this.cameraStream, {
-                    mimeType: 'video/webm'
+                    mimeType: "video/webm",
                 });
                 resolve();
             };
@@ -739,24 +738,26 @@ class LectureRecorder {
         this.isRecording = false;
         this.retrieveRecording = true;
 
-        await Promise.all([
-            async () => {
-                if (!this.screencastRecorder) {
-                    return;
-                }
-                this.screenRecording = await stopRecorder(this.screencastRecorder);
-                this.screencastRecorder = null;
-            },
-            async () => {
-                if (!this.cameraRecorder) {
-                    return;
-                }
-                this.cameraRecording = await stopRecorder(this.cameraRecorder);
-                this.cameraRecorder = null;
-            },
-        ].map((fn) => fn()));
+        await Promise.all(
+            [
+                async () => {
+                    if (!this.screencastRecorder) {
+                        return;
+                    }
+                    this.screenRecording = await stopRecorder(this.screencastRecorder);
+                    this.screencastRecorder = null;
+                },
+                async () => {
+                    if (!this.cameraRecorder) {
+                        return;
+                    }
+                    this.cameraRecording = await stopRecorder(this.cameraRecorder);
+                    this.cameraRecorder = null;
+                },
+            ].map((fn) => fn()),
+        );
         await this.displayRecordings();
-        this.onUpdateData(this.screenRecording, this.cameraRecording)
+        this.onUpdateData(this.screenRecording, this.cameraRecording);
         this.retrieveRecording = false;
         this.recordingsReady = true;
     }
@@ -809,7 +810,7 @@ class LectureRecorder {
             this.screencastDisplay.currentTime = 0;
         }
         if (this.cameraRecording) {
-            this.cameraDisplay.currentTime = 0
+            this.cameraDisplay.currentTime = 0;
         }
     }
 
@@ -821,15 +822,15 @@ class LectureRecorder {
             this.recordingsReady = null;
             this.initScreencastDisplay();
             this.initCameraDisplay();
-            this.onUpdateData(this.screenRecording, this.cameraRecording)
+            this.onUpdateData(this.screenRecording, this.cameraRecording);
         }
     }
 }
 
 export function createLectureForm(args: { s: [] }) {
     return {
-        createType: LectureCreateType.vodRecord,
-        currentTab: 2,
+        createType: LectureCreateType.livestream,
+        currentTab: 0,
         canGoBack: false,
         canContinue: true,
         onLastSlide: false,
