@@ -1,12 +1,16 @@
 import { AlpineComponent } from "./alpine-component";
 import { Emoji, TopEmojis } from "top-twitter-emojis-map";
 import { getCurrentWordPositions } from "../chat/misc";
+import { SocketConnections, NewChatMessage } from "../api/chat-ws";
+import { ChatMessage } from "../api/chat";
 
-export function chatPromptContext(streamId: number, userId: number): AlpineComponent {
+export function chatPromptContext(): AlpineComponent {
     return {
         message: "" as string,
         isAnonymous: false as boolean,
         addressedTo: [] as ChatUser[],
+        reply: NewReply,
+
         emojis: new EmojiSuggestions(),
 
         input: undefined as HTMLInputElement,
@@ -16,8 +20,21 @@ export function chatPromptContext(streamId: number, userId: number): AlpineCompo
             this.input = document.getElementById("chat-input");
         },
 
+        reset() {
+            this.message = "";
+            this.addressedTo = [];
+            this.reply = NewReply.NoReply;
+        },
+
         send() {
             console.log("🌑 send message '", this.message, "'");
+            SocketConnections.chat.sendMessage({
+                msg: this.message,
+                anonymous: this.isAnonymous,
+                replyTo: this.reply.id,
+                addressedTo: this.addressedTo.map((u) => u.id),
+            });
+            this.reset();
         },
 
         /*
@@ -75,3 +92,19 @@ type ChatUser = {
     id: number;
     name: string;
 };
+
+class NewReply {
+    message: ChatMessage;
+    id: number;
+
+    static NoReply = new NewReply({ ID: 0 } as ChatMessage);
+
+    constructor(message: ChatMessage) {
+        this.message = message;
+        this.id = message.ID;
+    }
+
+    isNoReply(): boolean {
+        return this.id === 0;
+    }
+}

@@ -15,7 +15,27 @@ enum PollMessageType {
     CloseActivePoll = "close_active_poll",
 }
 
+export abstract class SocketConnections {
+    static chat: ChatWebsocketConnection;
+}
+
+export type NewChatMessage = {
+    msg: string;
+    anonymous: boolean;
+    replyTo: number;
+    addressedTo: number[];
+};
+
 export class ChatWebsocketConnection extends WebsocketConnection {
+    sendMessage(msg: NewChatMessage) {
+        return this.send({
+            payload: {
+                type: ChatMessageType.Message,
+                ...msg,
+            },
+        });
+    }
+
     deleteMessage(id: number) {
         return this.sendIDMessage(id, ChatMessageType.Delete);
     }
