@@ -52,6 +52,8 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
                     this.handleResolve(data.resolve);
                 } else if ("approve" in data) {
                     this.handleApprove(data.chat);
+                } else if ("retract" in data) {
+                    this.handleRetract(data.chat);
                 } else if ("reactions" in data) {
                     this.handleReaction(data);
                 }
@@ -85,6 +87,10 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
 
         handleApprove(msg: ChatMessage) {
             this.messages.approve(msg);
+        },
+
+        handleRetract(msg: ChatMessage) {
+            this.messages.retract(msg, this.user.isAdmin);
         },
 
         handleReaction(reaction: { reactions: number; payload: ChatReaction[] }) {

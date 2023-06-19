@@ -76,6 +76,14 @@ export class ChatMessageArray {
         this.messages = filtered;
     }
 
+    retract(msg: ChatMessage, isAdmin: boolean) {
+        if (isAdmin) {
+            this.messages.find((m) => m.ID === msg.ID).visible = false;
+        } else {
+            this.messages = this.messages.filter((m) => m.ID !== msg.ID);
+        }
+    }
+
     setReaction(reaction: { reactions: number; payload: ChatReaction[] }, user: User) {
         const msg = this.messages.find((m) => m.ID === reaction.reactions);
         if (msg != undefined) {
