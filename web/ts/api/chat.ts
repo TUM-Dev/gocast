@@ -1,13 +1,14 @@
 import { get } from "../utilities/fetch-wrappers";
 import { EmojiPicker } from "../chat/EmojiPicker";
 import { ChatMessagePreprocessor } from "../chat/ChatMessagePreprocessor";
+import { User } from "./users";
 
 export class ChatMessage {
     readonly ID: number;
     readonly admin: boolean;
 
+    message: string;
     readonly userId: number;
-    readonly message: string;
     readonly name: string;
     readonly color: string;
 
@@ -17,6 +18,7 @@ export class ChatMessage {
     reactions: ChatReaction[];
     aggregatedReactions: ChatReactionGroup[];
 
+    addressedTo: number[];
     visible: boolean;
 
     getLikes(): number {
@@ -59,11 +61,15 @@ export class ChatMessageArray {
         return sortFn ? [...this.messages].sort(sortFn) : this.messages;
     }
 
-    setReaction(reaction: { reactions: number; payload: ChatReaction[] }, userId: number) {
+    delete(msg: { ID: number }) {
+        this.messages = this.messages.filter((m) => m.ID != msg.ID);
+    }
+
+    setReaction(reaction: { reactions: number; payload: ChatReaction[] }, user: User) {
         const msg = this.messages.find((m) => m.ID === reaction.reactions);
         if (msg != undefined) {
             msg.reactions = reaction.payload;
-            ChatMessagePreprocessor.AggregateReactions(msg, userId);
+            ChatMessagePreprocessor.AggregateReactions(msg, user);
         }
     }
 

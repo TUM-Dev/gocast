@@ -3,23 +3,24 @@ import { ChatAPI, ChatMessage, ChatMessageArray, ChatReaction } from "../api/cha
 import { ChatMessageSorter, ChatSortMode } from "../chat/ChatMessageSorter";
 import { ChatMessagePreprocessor } from "../chat/ChatMessagePreprocessor";
 import { ChatWebsocketConnection, SocketConnections } from "../api/chat-ws";
+import { User } from "../api/users";
 
-export function chatContext(streamId: number, userId: number): AlpineComponent {
+export function chatContext(streamId: number, user: User): AlpineComponent {
     SocketConnections.chat = new ChatWebsocketConnection(`chat/${streamId}`);
 
     return {
         streamId: streamId as number,
-        userId: userId as number,
+        user: user as User,
 
         chatSortMode: ChatSortMode.LiveChat,
         chatSortFn: ChatMessageSorter.GetSortFn(ChatSortMode.LiveChat),
         messages: ChatMessageArray.EmptyArray() as ChatMessageArray,
 
-        preprocessors: [ChatMessagePreprocessor.AggregateReactions],
+        preprocessors: [ChatMessagePreprocessor.AggregateReactions, ChatMessagePreprocessor.AddressedToCurrentUser],
 
         async init() {
             Promise.all([this.loadMessages(), this.initWebsocket()]).then(() => {
-                this.messages.forEach((msg, _) => this.preprocessors.forEach((f) => f(msg, this.userId)));
+                this.messages.forEach((msg, _) => this.preprocessors.forEach((f) => f(msg, this.user)));
             });
         },
 
@@ -45,6 +46,8 @@ export function chatContext(streamId: number, userId: number): AlpineComponent {
             const handler = (data) => {
                 if ("message" in data) {
                     this.handleNewMessage(data);
+                } else if ("delete" in data) {
+                    this.handleDelete(data.delete);
                 } else if ("reactions" in data) {
                     this.handleReaction(data);
                 }
@@ -63,13 +66,18 @@ export function chatContext(streamId: number, userId: number): AlpineComponent {
                 this.messages.pushReply(msg);
             } else {
                 console.log("🌑 received message", msg);
+                this.preprocessors.forEach((f) => f(msg, this.user));
                 this.messages.pushMessage(msg);
             }
         },
 
+        handleDelete(messageId: number) {
+            this.messages.delete({ ID: messageId });
+        },
+
         handleReaction(reaction: { reactions: number; payload: ChatReaction[] }) {
             console.log("🌑 received reaction", reaction);
-            this.messages.setReaction(reaction, this.userId);
+            this.messages.setReaction(reaction, this.user);
         },
     } as AlpineComponent;
 }

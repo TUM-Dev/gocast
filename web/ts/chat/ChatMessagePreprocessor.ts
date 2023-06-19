@@ -1,11 +1,12 @@
 import { ChatMessage, ChatReaction, ChatReactionGroup } from "../api/chat";
 import { TopEmojis } from "top-twitter-emojis-map";
 import { EmojiPicker } from "./EmojiPicker";
+import { User } from "../api/users";
 
 export abstract class ChatMessagePreprocessor {
     static MAX_NAMES_IN_REACTION_TITLE = 2;
 
-    static AggregateReactions(m: ChatMessage, userId: number): ChatMessage {
+    static AggregateReactions(m: ChatMessage, user: User): ChatMessage {
         m.aggregatedReactions = (m.reactions || [])
             .reduce((res: ChatReactionGroup[], reaction: ChatReaction) => {
                 let group: ChatReactionGroup = res.find((r) => r.emojiName === reaction.emoji);
@@ -16,10 +17,10 @@ export abstract class ChatMessagePreprocessor {
                         reactions: [],
                         names: [],
                         namesPretty: "",
-                        hasReacted: reaction.userID === userId,
+                        hasReacted: reaction.userID === user.ID,
                     };
                     res.push(group);
-                } else if (reaction.userID == userId) {
+                } else if (reaction.userID == user.ID) {
                     group.hasReacted = true;
                 }
 
@@ -57,6 +58,19 @@ export abstract class ChatMessagePreprocessor {
         m.aggregatedReactions.sort(
             (a, b) => EmojiPicker.getEmojiIndex(a.emojiName) - EmojiPicker.getEmojiIndex(b.emojiName),
         );
+        return m;
+    }
+
+    static AddressedToCurrentUser(m: ChatMessage, user: User): ChatMessage {
+        if (m.addressedTo.find((uId) => uId === user.ID) !== undefined) {
+            m.message = m.message.replaceAll(
+                "@" + user.name,
+                "<span style='background-color: lightblue;' class = 'text-sky-800 bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded'>" +
+                    "@" +
+                    user.name +
+                    "</span>",
+            );
+        }
         return m;
     }
 }
