@@ -117,6 +117,24 @@ func (s Stream) GetLGThumbnail() (string, error) {
 	return "", fmt.Errorf("no large thumbnail found")
 }
 
+func (s Stream) GetLGThumbnailForVideoType(videoType VideoType) (string, error) {
+	mapping := map[VideoType]FileType{
+		VideoTypePresentation: FILETYPE_THUMB_LG_PRES,
+		VideoTypeCamera:       FILETYPE_THUMB_LG_CAM,
+		VideoTypeCombined:     FILETYPE_THUMB_LG_COMB,
+	}
+
+	fileType := mapping[videoType]
+
+	for _, file := range s.Files {
+		if file.Type == fileType {
+			return file.Path, nil
+		}
+	}
+
+	return "", fmt.Errorf("no large thumbnail found")
+}
+
 // GetThumbIdForSource returns the id of file that stores the thumbnail sprite for a specific source type.
 func (s Stream) GetThumbIdForSource(source string) uint {
 	var fileType FileType
