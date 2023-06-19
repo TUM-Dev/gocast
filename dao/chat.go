@@ -89,7 +89,7 @@ func (d chatDao) GetReactions(chatID uint) ([]model.ChatReaction, error) {
 func (d chatDao) GetVisibleChats(userID uint, streamID uint) ([]model.Chat, error) {
 	var chats []model.Chat
 	query := DB.Preload("Replies").Preload("Reactions").Preload("AddressedToUsers")
-	query.Where("(visible = 1) OR (user_id = ?)", userID).Find(&chats, "stream_id = ?", streamID)
+	query.Where("(visible = 1) OR (user_id = ?)", userID).Find(&chats, "stream_id = ? AND reply_to is null", streamID)
 	err := query.Error
 	if err != nil {
 		return nil, err
@@ -104,7 +104,7 @@ func (d chatDao) GetVisibleChats(userID uint, streamID uint) ([]model.Chat, erro
 // Number of likes are inserted and the user's like status is determined
 func (d chatDao) GetAllChats(userID uint, streamID uint) ([]model.Chat, error) {
 	var chats []model.Chat
-	query := DB.Preload("Replies").Preload("Reactions").Preload("AddressedToUsers").Find(&chats, "stream_id = ?", streamID)
+	query := DB.Preload("Replies").Preload("Reactions").Preload("AddressedToUsers").Find(&chats, "stream_id = ? AND reply_to is null", streamID)
 	err := query.Error
 	if err != nil {
 		return nil, err
