@@ -50,6 +50,8 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
                     this.handleDelete(data.delete);
                 } else if ("resolve" in data) {
                     this.handleResolve(data.resolve);
+                } else if ("approve" in data) {
+                    this.handleApprove(data.chat);
                 } else if ("reactions" in data) {
                     this.handleReaction(data);
                 }
@@ -73,12 +75,16 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
             }
         },
 
+        handleDelete(messageId: number) {
+            this.messages.delete({ ID: messageId });
+        },
+
         handleResolve(messageId: number) {
             this.messages.resolve({ ID: messageId });
         },
 
-        handleDelete(messageId: number) {
-            this.messages.delete({ ID: messageId });
+        handleApprove(msg: ChatMessage) {
+            this.messages.approve(msg);
         },
 
         handleReaction(reaction: { reactions: number; payload: ChatReaction[] }) {

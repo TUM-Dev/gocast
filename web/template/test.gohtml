@@ -41,6 +41,7 @@
     <button type="button" @click="sortPopularFirst()">Sort Popular First</button>
     <template x-for="m in messages.get(chatSortFn)">
         <div style="border: 1px solid lightgrey; padding: 4px; margin-bottom: 8px;">
+            <div x-show="!m.visible" style="color: grey">This message is only visible to you and admins.</div>
             <div x-show="m.resolved" style="background-color: green; height: 16px; width: 16px;"></div>
             <span x-html="`${m.name}: ${m.message}`"></span>
             <br>

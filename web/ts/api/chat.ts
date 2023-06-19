@@ -70,6 +70,12 @@ export class ChatMessageArray {
         this.messages = this.messages.filter((m) => m.ID != msg.ID);
     }
 
+    approve(msg: ChatMessage) {
+        const filtered = this.messages.filter((m) => m.ID !== msg.ID);
+        filtered.push(msg);
+        this.messages = filtered;
+    }
+
     setReaction(reaction: { reactions: number; payload: ChatReaction[] }, user: User) {
         const msg = this.messages.find((m) => m.ID === reaction.reactions);
         if (msg != undefined) {
