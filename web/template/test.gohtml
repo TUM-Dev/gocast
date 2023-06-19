@@ -41,7 +41,9 @@
     <button type="button" @click="sortPopularFirst()">Sort Popular First</button>
     <template x-for="m in messages.get(chatSortFn)">
         <div style="border: 1px solid lightgrey; padding: 4px; margin-bottom: 8px;">
-            <p x-html="`${m.name}: ${m.message}`"></p>
+            <div x-show="m.resolved" style="background-color: green; height: 16px; width: 16px;"></div>
+            <span x-html="`${m.name}: ${m.message}`"></span>
+            <br>
             <template x-for="(reactionGroup, i) in m.aggregatedReactions">
                 <button type="button" :title="reactionGroup.namesPretty"
                         @click="watch.reactToMessage(m.ID, reactionGroup.emojiName)"

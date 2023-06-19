@@ -20,6 +20,7 @@ export class ChatMessage {
 
     addressedTo: number[];
     visible: boolean;
+    resolved: boolean;
 
     getLikes(): number {
         const g = this.aggregatedReactions.find((r) => r.emojiName === EmojiPicker.LikeEmojiName);
@@ -59,6 +60,10 @@ export class ChatMessageArray {
 
     get(sortFn?: (a: ChatMessage, b: ChatMessage) => number): ChatMessage[] {
         return sortFn ? [...this.messages].sort(sortFn) : this.messages;
+    }
+
+    resolve(msg: { ID: number }) {
+        this.messages.find((m) => m.ID === msg.ID).resolved = true;
     }
 
     delete(msg: { ID: number }) {

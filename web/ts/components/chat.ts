@@ -48,6 +48,8 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
                     this.handleNewMessage(data);
                 } else if ("delete" in data) {
                     this.handleDelete(data.delete);
+                } else if ("resolve" in data) {
+                    this.handleResolve(data.resolve);
                 } else if ("reactions" in data) {
                     this.handleReaction(data);
                 }
@@ -69,6 +71,10 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
                 this.preprocessors.forEach((f) => f(msg, this.user));
                 this.messages.pushMessage(msg);
             }
+        },
+
+        handleResolve(messageId: number) {
+            this.messages.resolve({ ID: messageId });
         },
 
         handleDelete(messageId: number) {
