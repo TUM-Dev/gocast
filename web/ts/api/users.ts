@@ -1,6 +1,6 @@
 import { get, post } from "../utilities/fetch-wrappers";
 
-export class User {
+export class User implements Identifiable {
     ID: number;
     name: string;
     isAdmin: boolean;

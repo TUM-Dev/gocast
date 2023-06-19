@@ -3,7 +3,7 @@ import { EmojiPicker } from "../chat/EmojiPicker";
 import { ChatMessagePreprocessor } from "../chat/ChatMessagePreprocessor";
 import { User } from "./users";
 
-export class ChatMessage {
+export class ChatMessage implements Identifiable {
     readonly ID: number;
     readonly admin: boolean;
 
@@ -62,11 +62,11 @@ export class ChatMessageArray {
         return sortFn ? [...this.messages].sort(sortFn) : this.messages;
     }
 
-    resolve(msg: { ID: number }) {
+    resolve(msg: Identifiable) {
         this.messages.find((m) => m.ID === msg.ID).resolved = true;
     }
 
-    delete(msg: { ID: number }) {
+    delete(msg: Identifiable) {
         this.messages = this.messages.filter((m) => m.ID != msg.ID);
     }
 

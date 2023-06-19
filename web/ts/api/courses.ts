@@ -8,7 +8,7 @@ type DownloadableVOD = {
     readonly DownloadURL: string;
 };
 
-export class Stream {
+export class Stream implements Identifiable {
     readonly ID: number;
     readonly Name: string;
     readonly IsRecording: boolean;
@@ -89,7 +89,7 @@ export class Stream {
     }
 }
 
-export class Course {
+export class Course implements Identifiable {
     readonly ID: number;
     readonly Visibility: string;
     readonly Slug: string;
