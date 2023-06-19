@@ -3,6 +3,7 @@ import { ChatAPI, ChatMessage, ChatMessageArray, ChatReaction } from "../api/cha
 import { WebsocketConnection } from "../chat/ws";
 import { ChatMessageSorter, ChatSortMode } from "../chat/ChatMessageSorter";
 import { ChatMessagePreprocessor } from "../chat/ChatMessagePreprocessor";
+import { ChatWebsocketConnection } from "../api/chat-ws";
 
 export function chatContext(streamId: number, userId: number): AlpineComponent {
     return {
@@ -15,7 +16,7 @@ export function chatContext(streamId: number, userId: number): AlpineComponent {
 
         preprocessors: [ChatMessagePreprocessor.AggregateReactions],
 
-        ws: new WebsocketConnection(`chat/${streamId}`),
+        ws: new ChatWebsocketConnection(`chat/${streamId}`),
 
         async init() {
             Promise.all([this.loadMessages(), this.initWebsocket()]).then(() => {

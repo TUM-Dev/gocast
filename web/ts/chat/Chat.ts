@@ -283,6 +283,7 @@ export class Chat {
             let event = "";
             switch (e.keyCode) {
                 case 9: {
+                    console.log(e.code);
                     event = "emojiselectiontriggered";
                     break;
                 }

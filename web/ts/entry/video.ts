@@ -9,4 +9,5 @@ export * from "../bookmarks";
 export * from "../subtitle-search";
 
 export * from "../components/chat";
+export * from "../components/chat-prompt";
 // Lecture Units are currently not used, so we don't include them in the bundle at the moment

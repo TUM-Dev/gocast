@@ -6,10 +6,8 @@ import { copyToClipboard, Time } from "./global";
 import { seekbarOverlay } from "./seekbar-overlay";
 
 let currentChatChannel = "";
-const retryInt = 5000; //retry connecting to websocket after this timeout
 
 const scrollDelay = 100; // delay before scrolling to bottom to make sure chat is rendered
-const pageloaded = new Date();
 
 enum WSMessageType {
     Message = "message",
@@ -54,6 +52,7 @@ function sendCustomMessage(id: number, type: WSMessageType, optArgs: object = {}
     });
 }
 
+/* Messages */
 export const reactToMessage = (id: number, reaction: string) =>
     sendCustomMessage(id, WSMessageType.ReactTo, { reaction });
 

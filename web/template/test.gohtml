@@ -16,6 +16,27 @@
 </head>
 <body>
 <div x-data="watch.chatContext(12845, 1)">
+    <div x-data="watch.chatPromptContext(12845, 1)"
+         style="padding-bottom: 16px; margin-bottom: 16px; border-bottom: 3px solid blue;">
+        <div>
+            <template x-if="emojis.hasSuggestions()">
+                <template x-for="(emoji, i) in emojis.suggestions">
+                    <button type="button" @click="addEmoji(emoji.emoji)" x-html="emoji.emoji"
+                    :style="i === emojis.emojiIndex ? 'border: 3px solid red' : ''"></button>
+                </template>
+            </template>
+        </div>
+        <label>
+            <input type="checkbox" name="anonymous" id="anonymous" class="hidden"
+                   x-model="isAnonymous">
+            <input id = "chat-input"
+                   type="text" spellcheck="true" maxlength="200"
+                   @keyup="e => keyup(e)"
+                   x-model="message"
+                   style="width: 80%;">
+            <button type="button" @click="send()">SEND</button>
+        </label>
+    </div>
     <button type="button" @click="sortLiveFirst()">Sort Live First</button>
     <button type="button" @click="sortPopularFirst()">Sort Popular First</button>
     <template x-for="m in messages.get(chatSortFn)">
@@ -24,7 +45,7 @@
             <template x-for="(reactionGroup, i) in m.aggregatedReactions">
                 <button type="button" :title="reactionGroup.namesPretty"
                         @click="watch.reactToMessage(m.ID, reactionGroup.emojiName)"
-                style="margin-right: 4px;">
+                        style="margin-right: 4px;">
                     <span x-text="reactionGroup.emoji"></span>
                     <span x-text="reactionGroup.reactions.length"></span>
                 </button>
