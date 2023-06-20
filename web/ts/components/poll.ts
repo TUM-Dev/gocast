@@ -31,7 +31,7 @@ export function pollContext(streamId: number): AlpineComponent {
                 if (type === PollMessageType.StartPoll) {
                     this.handleNewPoll(data);
                 } else if (type === PollMessageType.SubmitPollOptionVote) {
-                    this.handleNewParticipant();
+                    this.handleParticipation(data);
                 } else if (type === PollMessageType.CloseActivePoll) {
                     this.handleClosePoll(data);
                 }
@@ -53,7 +53,11 @@ export function pollContext(streamId: number): AlpineComponent {
             this.activePoll = { ...data, selected: null };
         },
 
-        handleNewParticipant() {},
+        handleParticipation(vote: PollVote) {
+            this.activePoll.options = this.activePoll.options.map((opt) =>
+                opt.ID === vote.pollOptionId ? { ...opt, votes: vote.votes } : opt,
+            );
+        },
 
         handleClosePoll(result) {
             console.log("🌑 close poll", result);
@@ -68,3 +72,8 @@ export function pollContext(streamId: number): AlpineComponent {
         },
     } as AlpineComponent;
 }
+
+type PollVote = {
+    pollOptionId: number;
+    votes: number;
+};

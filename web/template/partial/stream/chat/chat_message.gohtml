@@ -2,7 +2,7 @@
     {{- /*gotype: github.com/joschahenningsen/TUM-Live/web.ChatData*/ -}}
     {{$moderatedChat := .IndexData.TUMLiveContext.Course.ModeratedChatEnabled}}
     <template x-for="(m, index) in c.messages" :key="m.ID + 'v' + m.renderVersion">
-        <div x-ref="message" class="grid gap-y-1 text-4 text-sm $m.ID message"
+        <div x-ref="message" class="grid gap-y-1 text-4 text-sm message"
              x-data="{ showReplies: false, emojiPicker: c.initEmojiPicker(m.ID) }"
              x-show="!m.deleted && m.replyTo && !m.replyTo.Valid"
              :class="{'opacity-60' : m.isGrayedOut}"

@@ -133,7 +133,7 @@
                             <span class="font-bold" x-text="c.poll.activePoll.question"></span>
                         </div>
                         <div>
-                            <template x-for="option in c.poll.activePoll.pollOptions" :key="option.ID">
+                            <template x-for="option in c.poll.activePoll.options" :key="option.ID">
                                 <div>
                                     <template x-if="c.admin">
                                         <div class="mb-3 pl-3 pr-3">

@@ -11,11 +11,11 @@
     <script defer src="/static/node_modules/@alpinejs/persist/dist/cdn.min.js"></script>
     <script defer src="/static/node_modules/@alpinejs/focus/dist/cdn.min.js"></script>
 
-    <script src="/static/assets/ts-dist/watch.bundle.js?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"></script>
+    <script src="/static/assets/ts-dist/interaction.bundle.js?v={{if .VersionTag}}{{.VersionTag}}{{else}}development{{end}}"></script>
     <title>test</title>
 </head>
 <body>
-<div x-data="watch.pollContext(12845)" style="border-bottom: 4px solid green;">
+<div x-data="interaction.pollContext(12845)" style="border-bottom: 4px solid green;">
     <template x-if="result">
         <p x-text="`Result: ${JSON.stringify(result)};`"></p>
     </template>
@@ -31,8 +31,8 @@
         <p x-html="JSON.stringify(poll)"></p>
     </template>
 </div>
-<div x-data="watch.chatContext(12845, {ID: 1, name: 'admin', isAdmin: true})">
-    <div x-data="watch.chatPromptContext(12845)"
+<div x-data="interaction.chatContext(12845, {ID: 1, name: 'admin', isAdmin: true})">
+    <div x-data="interaction.chatPromptContext(12845)"
          style="padding: 16px; margin: 8px; border: 3px solid blue;">
         <div>
             <template x-if="emojis.hasSuggestions()">

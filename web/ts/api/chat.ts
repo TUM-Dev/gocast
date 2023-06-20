@@ -3,6 +3,7 @@ import { EmojiPicker } from "../chat/EmojiPicker";
 import { ChatMessagePreprocessor } from "../chat/ChatMessagePreprocessor";
 import { User } from "./users";
 import { ChatUser } from "../chat/NewChatMessage";
+import { ToggleableElement } from "../utilities/ToggleableElement";
 
 export class ChatMessage implements Identifiable {
     readonly ID: number;
@@ -23,9 +24,18 @@ export class ChatMessage implements Identifiable {
     visible: boolean;
     resolved: boolean;
 
+    ShowReplies = new ToggleableElement();
+
+    CreatedAt: string;
+
     getLikes(): number {
         const g = this.aggregatedReactions.find((r) => r.emojiName === EmojiPicker.LikeEmojiName);
         return g ? g.reactions.length : 0;
+    }
+
+    friendlyCreatedAt(): string {
+        const d = new Date(this.CreatedAt);
+        return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
     }
 }
 
@@ -53,6 +63,9 @@ export class ChatMessageArray {
 
     constructor(messages: ChatMessage[]) {
         this.messages = messages.map((m) => Object.assign(new ChatMessage(), m));
+        this.messages.forEach((msg) => {
+            msg.replies = msg.replies.map((reply) => Object.assign(new ChatMessage(), reply));
+        });
     }
 
     forEach(callback: (obj: ChatMessage, i: number) => void) {
