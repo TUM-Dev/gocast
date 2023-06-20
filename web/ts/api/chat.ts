@@ -2,6 +2,7 @@ import { get } from "../utilities/fetch-wrappers";
 import { EmojiPicker } from "../chat/EmojiPicker";
 import { ChatMessagePreprocessor } from "../chat/ChatMessagePreprocessor";
 import { User } from "./users";
+import { ChatUser } from "../chat/NewChatMessage";
 
 export class ChatMessage implements Identifiable {
     readonly ID: number;
@@ -110,5 +111,9 @@ export class ChatMessageArray {
 export const ChatAPI = {
     async getMessages(streamId: number): Promise<ChatMessageArray> {
         return get(`/api/chat/${streamId}/messages`).then((messages: ChatMessage[]) => new ChatMessageArray(messages));
+    },
+
+    async getUsers(streamId: number): Promise<ChatUser[]> {
+        return get(`/api/chat/${streamId}/users`);
     },
 };

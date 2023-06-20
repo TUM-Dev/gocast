@@ -1,6 +1,6 @@
 import { MessageHandlerFn, Realtime } from "../socket";
 
-export abstract class WebsocketConnection {
+export class WebsocketConnection {
     private readonly channel: string;
 
     connected: boolean;
@@ -9,13 +9,17 @@ export abstract class WebsocketConnection {
         this.channel = channel;
     }
 
-    async subscribe(handler: MessageHandlerFn) {
+    async subscribe(handler?: MessageHandlerFn) {
         Realtime.get()
             .subscribeChannel(this.channel, handler)
             .then(() => (this.connected = true));
     }
 
-    protected send(payload: object = {}) {
+    async addHandler(handler: MessageHandlerFn) {
+        Realtime.get().registerHandler(this.channel, handler);
+    }
+
+    send(payload: object = {}) {
         return Realtime.get().send(this.channel, payload);
     }
 }

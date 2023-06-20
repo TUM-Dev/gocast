@@ -16,7 +16,7 @@ enum PollMessageType {
 }
 
 export abstract class SocketConnections {
-    static chat: ChatWebsocketConnection;
+    static ws: WebsocketConnection;
 }
 
 export type NewChatMessage = {
@@ -26,9 +26,15 @@ export type NewChatMessage = {
     addressedTo: number[];
 };
 
-export class ChatWebsocketConnection extends WebsocketConnection {
+export class ChatWebsocketConnection {
+    private readonly ws: WebsocketConnection;
+
+    constructor(ws: WebsocketConnection) {
+        this.ws = ws;
+    }
+
     sendMessage(msg: NewChatMessage) {
-        return this.send({
+        return this.ws.send({
             payload: {
                 type: ChatMessageType.Message,
                 ...msg,
@@ -53,6 +59,6 @@ export class ChatWebsocketConnection extends WebsocketConnection {
     }
 
     private sendIDMessage(id: number, type: ChatMessageType) {
-        return this.send({ payload: { type, id } });
+        return this.ws.send({ payload: { type, id } });
     }
 }

@@ -4,9 +4,10 @@ import { ChatMessageSorter, ChatSortMode } from "../chat/ChatMessageSorter";
 import { ChatMessagePreprocessor } from "../chat/ChatMessagePreprocessor";
 import { ChatWebsocketConnection, SocketConnections } from "../api/chat-ws";
 import { User } from "../api/users";
+import { WebsocketConnection } from "../chat/ws";
 
 export function chatContext(streamId: number, user: User): AlpineComponent {
-    SocketConnections.chat = new ChatWebsocketConnection(`chat/${streamId}`);
+    SocketConnections.ws = new WebsocketConnection(`chat/${streamId}`);
 
     return {
         streamId: streamId as number,
@@ -15,6 +16,8 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
         chatSortMode: ChatSortMode.LiveChat,
         chatSortFn: ChatMessageSorter.GetSortFn(ChatSortMode.LiveChat),
         messages: ChatMessageArray.EmptyArray() as ChatMessageArray,
+
+        ws: new ChatWebsocketConnection(SocketConnections.ws),
 
         preprocessors: [ChatMessagePreprocessor.AggregateReactions, ChatMessagePreprocessor.AddressedToCurrentUser],
 
@@ -56,9 +59,11 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
                     this.handleRetract(data.chat);
                 } else if ("reactions" in data) {
                     this.handleReaction(data);
+                } else if ("server" in data) {
+                    this.handleServerMessage(data);
                 }
             };
-            SocketConnections.chat.subscribe(handler);
+            SocketConnections.ws.subscribe(handler);
         },
 
         async loadMessages() {
@@ -96,6 +101,10 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
         handleReaction(reaction: { reactions: number; payload: ChatReaction[] }) {
             console.log("🌑 received reaction", reaction);
             this.messages.setReaction(reaction, this.user);
+        },
+
+        handleServerMessage(msg: { server: string; type: string }) {
+            console.log("🌑 received server message", msg);
         },
     } as AlpineComponent;
 }

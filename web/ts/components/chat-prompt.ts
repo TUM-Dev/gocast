@@ -1,10 +1,10 @@
 import { AlpineComponent } from "./alpine-component";
 import { Emoji, TopEmojis } from "top-twitter-emojis-map";
 import { getCurrentWordPositions } from "../chat/misc";
-import { SocketConnections, NewChatMessage } from "../api/chat-ws";
-import { ChatMessage } from "../api/chat";
+import { SocketConnections, ChatWebsocketConnection } from "../api/chat-ws";
+import { ChatAPI, ChatMessage } from "../api/chat";
 
-export function chatPromptContext(): AlpineComponent {
+export function chatPromptContext(streamId: number): AlpineComponent {
     return {
         message: "" as string,
         isAnonymous: false as boolean,
@@ -12,6 +12,9 @@ export function chatPromptContext(): AlpineComponent {
         reply: NewReply,
 
         emojis: new EmojiSuggestions(),
+        users: new UserSuggestions(streamId),
+
+        ws: new ChatWebsocketConnection(SocketConnections.ws),
 
         input: undefined as HTMLInputElement,
 
@@ -28,7 +31,7 @@ export function chatPromptContext(): AlpineComponent {
 
         send() {
             console.log("🌑 send message '", this.message, "'");
-            SocketConnections.chat.sendMessage({
+            this.ws.sendMessage({
                 msg: this.message,
                 anonymous: this.isAnonymous,
                 replyTo: this.reply.id,
@@ -37,21 +40,31 @@ export function chatPromptContext(): AlpineComponent {
             this.reset();
         },
 
-        /*
-            Remove last occurrence of emoji short_name, e.g. "i like my :dog" => "i like my "
-            and add emoji to message
-         */
         addEmoji(emoji: string) {
-            // this.message = this.message.replace(/:\w*$/g, "");
             const pos = getCurrentWordPositions(this.input.value, this.input.selectionStart);
             this.message = this.message.substring(0, pos[0]) + emoji + " " + this.message.substring(pos[1]);
             this.emojis.reset();
+        },
+
+        addAddressee(user: ChatUser): void {
+            const pos = getCurrentWordPositions(this.input.value, this.input.selectionStart);
+
+            // replace message with username e.g. 'Hello @Ad' to 'Hello @Admin':
+            this.message =
+                this.message.substring(0, pos[0]) +
+                this.message.substring(pos[0], pos[1]).replace(/@(\w)*/, "@" + user.name) +
+                " " +
+                this.message.substring(pos[1] + this.message.substring(pos[0], pos[1]).length);
+
+            this.addressedTo.push(user);
+            this.users.reset();
         },
 
         keyup(e) {
             console.log("🌑 keyup '", this.message, "'");
             this.addressedTo = this.addressedTo.filter((user) => this.message.includes(`@${user.name}`));
             this.emojis.getSuggestionsForMessage(e.target.value, e.target.selectionStart);
+            this.users.getSuggestionsForMessage(e.target.value, e.target.selectionStart);
         },
     } as AlpineComponent;
 }
@@ -85,6 +98,44 @@ export class EmojiSuggestions {
                 return emoji.short_names.some((key) => key.startsWith(currentWord.substring(1)));
             }).slice(0, limit);
         }
+    }
+}
+
+export class UserSuggestions {
+    private all: ChatUser[];
+    private readonly streamId: number;
+
+    suggestions: ChatUser[];
+
+    constructor(streamId: number) {
+        this.all = this.suggestions = [];
+        this.streamId = streamId;
+    }
+
+    hasSuggestions(): boolean {
+        return this.suggestions.length > 0;
+    }
+
+    getSuggestionsForMessage(message: string, cursorPos: number) {
+        const pos = getCurrentWordPositions(message, cursorPos);
+        // substring(0,0) returns ''
+        if (pos[0] === 0 && pos[1] === 0) pos[1] = 1;
+
+        const currentWord = message.substring(pos[0], pos[1]);
+        if (message === "" || !currentWord.startsWith("@")) {
+            this.suggestions = [];
+        } else if (currentWord === "@") {
+            // load users on '@'
+            ChatAPI.getUsers(this.streamId).then((users) => {
+                this.all = this.suggestions = users;
+            });
+        } else {
+            this.suggestions = this.all.filter((user) => user.name.startsWith(currentWord.substring(1)));
+        }
+    }
+
+    reset() {
+        this.suggestions = [];
     }
 }
 
