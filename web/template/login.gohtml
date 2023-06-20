@@ -58,7 +58,7 @@
 
         <template x-if="resetPassword">
             <form class="grid gap-3 py-4 px-5" x-data="{username: '', success: false}"
-                  @submit.prevent="fetch('/api/user/resetPassword', {method: 'POST', body: JSON.stringify({username: username})}).then(success=true)">
+                  @submit.prevent="fetch('/api/users/resetPassword', {method: 'POST', body: JSON.stringify({username: username})}).then(success=true)">
                 <div class="text-sm" x-show="!success">
                     <label for="username" class="block text-5">Username/Email</label>
                     <input type="text"
