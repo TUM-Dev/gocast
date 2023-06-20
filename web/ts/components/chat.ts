@@ -4,11 +4,8 @@ import { ChatMessageSorter, ChatSortMode } from "../chat/ChatMessageSorter";
 import { ChatMessagePreprocessor } from "../chat/ChatMessagePreprocessor";
 import { ChatWebsocketConnection, SocketConnections } from "../api/chat-ws";
 import { User } from "../api/users";
-import { WebsocketConnection } from "../chat/ws";
 
 export function chatContext(streamId: number, user: User): AlpineComponent {
-    SocketConnections.ws = new WebsocketConnection(`chat/${streamId}`);
-
     return {
         streamId: streamId as number,
         user: user as User,
@@ -63,7 +60,7 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
                     this.handleServerMessage(data);
                 }
             };
-            SocketConnections.ws.subscribe(handler);
+            SocketConnections.ws.addHandler(handler);
         },
 
         async loadMessages() {

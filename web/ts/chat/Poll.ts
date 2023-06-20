@@ -1,6 +1,5 @@
 import { startPoll } from "../watch";
 
-// TODO: Refactor to component as components/poll.ts
 export class Poll {
     readonly streamId: number;
 

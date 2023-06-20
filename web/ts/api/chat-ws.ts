@@ -1,4 +1,4 @@
-import { WebsocketConnection } from "../chat/ws";
+import { WebsocketConnection } from "../utilities/ws";
 
 enum ChatMessageType {
     Message = "message",
@@ -9,15 +9,11 @@ enum ChatMessageType {
     ReactTo = "react_to",
 }
 
-enum PollMessageType {
-    StartPoll = "start_poll",
-    SubmitPollOptionVote = "submit_poll_option_vote",
-    CloseActivePoll = "close_active_poll",
+export abstract class SocketConnections {
+    static ws: WebsocketConnection = new WebsocketConnection("chat/12845");
 }
 
-export abstract class SocketConnections {
-    static ws: WebsocketConnection;
-}
+SocketConnections.ws.subscribe();
 
 export type NewChatMessage = {
     msg: string;
