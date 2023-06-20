@@ -1,36 +1,70 @@
 import { AlpineComponent } from "./alpine-component";
 import { SocketConnections } from "../api/chat-ws";
-import { PollWebsocketConnection } from "../api/poll-ws";
+import { PollMessageType, PollWebsocketConnection } from "../api/poll-ws";
+import { ChatAPI, Poll } from "../api/chat";
 
-export function pollContext(): AlpineComponent {
+export function pollContext(streamId: number): AlpineComponent {
     return {
-        activePoll: undefined as object,
+        streamId: streamId,
+
+        // current poll
+        activePoll: undefined as Poll,
         result: undefined as object,
+
+        // create new poll
         showCreateUI: false as boolean,
         question: "" as string,
         options: [] as object[],
 
+        // poll history
+        history: [] as Poll[],
+
         ws: new PollWebsocketConnection(SocketConnections.ws),
 
         async init() {
-            Promise.all([this.initWebsocket()]).then(() => {
-                console.log("hello");
-            });
+            Promise.all([this.loadActivePoll(), this.loadHistory(), this.initWebsocket()]);
         },
 
         async initWebsocket() {
             const handler = (data) => {
-                if ("pollOptions" in data) {
+                const type = data.type;
+                if (type === PollMessageType.StartPoll) {
                     this.handleNewPoll(data);
+                } else if (type === PollMessageType.SubmitPollOptionVote) {
+                    this.handleNewParticipant();
+                } else if (type === PollMessageType.CloseActivePoll) {
+                    this.handleClosePoll(data);
                 }
             };
             SocketConnections.ws.addHandler(handler);
+        },
+
+        async loadActivePoll() {
+            this.activePoll = await ChatAPI.getActivePoll(this.streamId);
+        },
+
+        async loadHistory() {
+            this.history = await ChatAPI.getPolls(this.streamId);
         },
 
         handleNewPoll(data: object) {
             console.log("🌑 starting new poll", data);
             this.result = null;
             this.activePoll = { ...data, selected: null };
+        },
+
+        handleNewParticipant() {},
+
+        handleClosePoll(result) {
+            console.log("🌑 close poll", result);
+            this.activePoll = null;
+            this.result = result;
+
+            this.history.unshift({
+                ID: this.history.length > 0 ? this.history[0].ID + 1 : 1,
+                question: result.question,
+                options: result.pollOptionResults,
+            });
         },
     } as AlpineComponent;
 }

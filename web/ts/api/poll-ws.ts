@@ -1,7 +1,7 @@
 import { WebsocketConnection } from "../utilities/ws";
 import { Realtime } from "../socket";
 
-enum PollMessageType {
+export enum PollMessageType {
     StartPoll = "start_poll",
     SubmitPollOptionVote = "submit_poll_option_vote",
     CloseActivePoll = "close_active_poll",

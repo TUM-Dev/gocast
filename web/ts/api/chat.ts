@@ -105,6 +105,21 @@ export class ChatMessageArray {
     }
 }
 
+export class Poll implements Identifiable {
+    ID: number;
+    options: PollOption[];
+    question: string;
+
+    active: boolean;
+    submitted: boolean;
+}
+
+export class PollOption implements Identifiable {
+    ID: number;
+    answer: string;
+    votes: number;
+}
+
 /**
  * REST API Wrapper for /api/chat
  */
@@ -115,5 +130,13 @@ export const ChatAPI = {
 
     async getUsers(streamId: number): Promise<ChatUser[]> {
         return get(`/api/chat/${streamId}/users`);
+    },
+
+    async getPolls(streamId: number): Promise<Poll[]> {
+        return get(`/api/chat/${streamId}/polls`);
+    },
+
+    async getActivePoll(streamId: number): Promise<Poll> {
+        return get(`/api/chat/${streamId}/active-poll`);
     },
 };

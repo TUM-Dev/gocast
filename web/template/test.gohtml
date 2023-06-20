@@ -15,8 +15,21 @@
     <title>test</title>
 </head>
 <body>
-<div x-data="watch.pollContext()">
-
+<div x-data="watch.pollContext(12845)" style="border-bottom: 4px solid green;">
+    <template x-if="result">
+        <p x-text="`Result: ${JSON.stringify(result)};`"></p>
+    </template>
+    <template x-if="activePoll">
+        <div>
+            <h1 x-text="activePoll.question"></h1>
+            <template x-for="opt in activePoll.options">
+                <p x-text="`${opt.answer}: ${opt.votes}`"></p>
+            </template>
+        </div>
+    </template>
+    <template x-for="poll in history">
+        <p x-html="JSON.stringify(poll)"></p>
+    </template>
 </div>
 <div x-data="watch.chatContext(12845, {ID: 1, name: 'admin', isAdmin: true})">
     <div x-data="watch.chatPromptContext(12845)"
@@ -25,7 +38,7 @@
             <template x-if="emojis.hasSuggestions()">
                 <template x-for="(emoji, i) in emojis.suggestions">
                     <button type="button" @click="addEmoji(emoji.emoji)" x-html="emoji.emoji"
-                    :style="i === emojis.emojiIndex ? 'border: 3px solid red' : ''"></button>
+                            :style="i === emojis.emojiIndex ? 'border: 3px solid red' : ''"></button>
                 </template>
             </template>
         </div>
@@ -39,7 +52,7 @@
         <label>
             <input type="checkbox" name="anonymous" id="anonymous" class="hidden"
                    x-model="isAnonymous">
-            <input id = "chat-input"
+            <input id="chat-input"
                    type="text" spellcheck="true" maxlength="200"
                    @keyup="e => keyup(e)"
                    x-model="message"
