@@ -730,32 +730,29 @@ func (r usersRoutes) resetPassword(c *gin.Context) {
 		return
 	}
 
-	// continue in goroutine to prevent timing attacks
-	go func() {
-		user, err := r.UsersDao.GetUserByEmail(c, req.Username)
-		if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
-			// wrong username/email -> pass
-			return
-		}
-		if err != nil {
-			log.WithError(err).Error("can't get user for password reset")
-			return
-		}
-		link, err := r.UsersDao.CreateRegisterLink(c, user)
-		if err != nil {
-			log.WithError(err).Error("can't create register link")
-			return
-		}
-		err = r.EmailDao.Create(c, &model.Email{
-			From:    tools.Cfg.Mail.Sender,
-			To:      user.Email.String,
-			Subject: "TUM-Live: Reset Password",
-			Body:    "Hi! \n\nYou can reset your TUM-Live password by clicking on the following link: \n\n" + tools.Cfg.WebUrl + "/setPassword/" + link.RegisterSecret + "\n\nIf you did not request a password reset, please ignore this email. \n\nBest regards",
-		})
-		if err != nil {
-			log.WithError(err).Error("can't save reset password email")
-		}
-	}()
+	user, err := r.UsersDao.GetUserByEmail(c, req.Username)
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		// wrong username/email -> pass
+		return
+	}
+	if err != nil {
+		log.WithError(err).Error("can't get user for password reset")
+		return
+	}
+	link, err := r.UsersDao.CreateRegisterLink(c, user)
+	if err != nil {
+		log.WithError(err).Error("can't create register link")
+		return
+	}
+	err = r.EmailDao.Create(c, &model.Email{
+		From:    tools.Cfg.Mail.Sender,
+		To:      user.Email.String,
+		Subject: "TUM-Live: Reset Password",
+		Body:    "Hi! \n\nYou can reset your TUM-Live password by clicking on the following link: \n\n" + tools.Cfg.WebUrl + "/setPassword/" + link.RegisterSecret + "\n\nIf you did not request a password reset, please ignore this email. \n\nBest regards",
+	})
+	if err != nil {
+		log.WithError(err).Error("can't save reset password email")
+	}
 }
 
 type personalData struct {
