@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/joschahenningsen/TUM-Live/dao"
 	"github.com/joschahenningsen/TUM-Live/model"
@@ -207,12 +206,10 @@ func (r progressRoutes) getProgressBatch(c *gin.Context) {
 
 	ids := make([]uint, 0, len(stringIds))
 	for _, stringId := range stringIds {
-		fmt.Println(stringId)
 		id, err := strconv.Atoi(stringId)
 		if err != nil {
 			continue
 		}
-		fmt.Println("ok")
 		ids = append(ids, uint(id))
 	}
 
