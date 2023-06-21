@@ -536,21 +536,27 @@ func TestResetPassword(t *testing.T) {
 			Email: sql.NullString{String: "hansi@tum.de", Valid: true},
 			Role:  model.StudentType,
 		}
+		ctrl := gomock.NewController(t)
 		tools.Cfg.Mail = tools.MailConfig{Sender: "from@invalid", Server: "server", SMIMECert: "", SMIMEKey: "", MaxMailsPerMinute: 1}
 		gomino.TestCases{
 			"POST[success]": {
 				Router: func(r *gin.Engine) {
 					wrapper := dao.DaoWrapper{
 						UsersDao: func() dao.UsersDao {
-							usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
+							usersMock := mock_dao.NewMockUsersDao(ctrl)
 							usersMock.EXPECT().CreateRegisterLink(gomock.Any(), hansi).Return(model.RegisterLink{RegisterSecret: "abc"}, nil).MinTimes(1).MaxTimes(1)
 
 							usersMock.EXPECT().GetUserByEmail(gomock.Any(), hansi.Email.String).Return(hansi, nil).MinTimes(1).MaxTimes(1)
 							return usersMock
 						}(),
 						EmailDao: func() dao.EmailDao {
-							emailMock := mock_dao.NewMockEmailDao(gomock.NewController(t))
-							emailMock.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).MinTimes(1).MaxTimes(1)
+							emailMock := mock_dao.NewMockEmailDao(ctrl)
+							emailMock.EXPECT().Create(gomock.Any(), &model.Email{
+								From:    tools.Cfg.Mail.Sender,
+								To:      hansi.Email.String,
+								Subject: "TUM-Live: Reset Password",
+								Body:    "Hi! \n\nYou can reset your TUM-Live password by clicking on the following link: \n\n" + tools.Cfg.WebUrl + "/setPassword/abc\n\nIf you did not request a password reset, please ignore this email. \n\nBest regards",
+							}).Return(nil).MinTimes(1).MaxTimes(1)
 							return emailMock
 						}(),
 					}
