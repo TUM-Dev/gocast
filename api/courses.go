@@ -122,8 +122,12 @@ func (r coursesRoutes) getLive(c *gin.Context) {
 
 	streams, err := r.GetCurrentLive(context.Background())
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		log.WithError(err).Error("could not get current live streams")
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"message": "Could not load current livestream from database."})
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusNotFound,
+			CustomMessage: "Could not load current livestream from database.",
+			Err:           err,
+		})
+		return
 	}
 
 	type CourseStream struct {
@@ -227,6 +231,7 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 			CustomMessage: "invalid year",
 			Err:           err,
 		})
+		return
 	}
 	term = c.DefaultQuery("term", term)
 
@@ -234,7 +239,7 @@ func (r coursesRoutes) getUsers(c *gin.Context) {
 	if tumLiveContext.User != nil {
 		switch tumLiveContext.User.Role {
 		case model.AdminType:
-			courses = routes.GetAllCoursesForSemester(year, term, c)
+			courses = r.GetAllCoursesForSemester(year, term, c)
 		case model.LecturerType:
 			courses = tumLiveContext.User.CoursesForSemester(year, term, context.Background())
 			coursesForLecturer, err := r.GetAdministeredCoursesByUserId(c, tumLiveContext.User.ID, term, year)
@@ -269,6 +274,7 @@ func (r coursesRoutes) getPinned(c *gin.Context) {
 			CustomMessage: "invalid year",
 			Err:           err,
 		})
+		return
 	}
 	term = c.DefaultQuery("term", term)
 
@@ -340,7 +346,7 @@ func (r coursesRoutes) getCourseBySlug(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			_ = c.Error(tools.RequestError{
-				Status:        http.StatusBadRequest,
+				Status:        http.StatusNotFound,
 				CustomMessage: "can't find course",
 			})
 		} else {
@@ -1218,6 +1224,9 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 			Recording:     req.Vodup,
 			Premiere:      req.Premiere,
 		}
+		if req.AdHoc {
+			lecture.Start = time.Now().Add(time.Minute * 2) // add 2 minutes to start time to ensure a worker will pick it up
+		}
 
 		// add Series Identifier
 		if len(req.DateSeries) > 1 {
@@ -1265,6 +1274,10 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 		}
 	}
 
+	if req.AdHoc {
+		go NotifyWorkers(r.DaoWrapper)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"ids": newStreamIds,
 	})
@@ -1278,6 +1291,7 @@ type createLectureRequest struct {
 	ChatEnabled   bool        `json:"isChatEnabled"`
 	Premiere      bool        `json:"premiere"`
 	Vodup         bool        `json:"vodup"`
+	AdHoc         bool        `json:"adHoc"`
 	DateSeries    []time.Time `json:"dateSeries"`
 }
 

@@ -10,7 +10,7 @@
 {{template "header"}}
 <div class="bg-white border shadow-md shadow rounded-lg m-auto my-10
              dark:bg-secondary-light dark:border-gray-800 dark:shadow-0 lg:w-4/12 md:6/12 w-10/12"
-     x-data="{ showInternalLogin: {{not .UseSAML}} }">
+     x-data="{ showInternalLogin: {{not .UseSAML}}, resetPassword: false }">
     <div>
         <div class="border-b py-2 px-5 dark:border-gray-800">
             <h6 class="text-3 font-bold">Login</h6>
@@ -29,7 +29,7 @@
                 </div>
             </div>
         {{end}}
-        <template x-if="showInternalLogin">
+        <template x-if="showInternalLogin && !resetPassword">
             <form id="loginForm" method="post" class="grid gap-3 py-4 px-5">
                 <div class="text-sm">
                     <label for="username" class="block text-5">Username</label>
@@ -52,6 +52,29 @@
                 {{if .Error}}
                     <p class="text-warn text-sm mt-2">Couldn't log in. Please double-check your credentials.</p>
                 {{end}}
+                <button type="button" class="text-sm mt-2" @click="resetPassword=true">Reset Password</button>
+            </form>
+        </template>
+
+        <template x-if="resetPassword">
+            <form class="grid gap-3 py-4 px-5" x-data="{username: '', success: false}"
+                  @submit.prevent="fetch('/api/users/resetPassword', {method: 'POST', body: JSON.stringify({username: username})}).then(success=true)">
+                <div class="text-sm" x-show="!success">
+                    <label for="username" class="block text-5">Username/Email</label>
+                    <input type="text"
+                           autocomplete="username"
+                           required placeholder="Username"
+                           x-model="username"
+                           class="tl-input mt-3"/>
+                </div>
+                <button type="submit" x-show="!success"
+                        class="diabled:bg-gray-600 block bg-blue-500 text-center px-3 py-1 mt-3 rounded w-full dark:bg-indigo-600">
+                    <span class="text-white uppercase text-sm font-semibold">Reset Password</span>
+                </button>
+                <p x-show="success" x-cloak class="text-success text-sm mt-2">
+                    We emailed you instructions to reset your password if the username
+                    you provided is associated with an account.
+                </p>
             </form>
         </template>
     </div>
