@@ -27,8 +27,9 @@
     {{end}}
 </head>
 <body class="bg-white dark:bg-secondary h-screen overflow-hidden">
-<div x-data="interaction.chatContext({{$stream.ID}}, {ID: {{$userId}}, name: '{{$userName}}', isAdmin: {{$isAdmin}}})"
-     class="flex relative flex-col text-1 h-full">
+<section
+        x-data="interaction.chatContext({{$stream.ID}}, {ID: {{$userId}}, name: '{{$userName}}', isAdmin: {{$isAdmin}}})"
+        class="flex relative flex-col text-1 h-full">
     <!-- Chat header -->
     <div class="flex items-center justify-between sticky top-0 z-40 w-full px-3 max-h-12 h-12 rounded-t-lg bg-white dark:bg-secondary border-b dark:border-gray-800"
          style="min-height: 3rem;"> <!-- since there is no min-h-12 class -->
@@ -77,7 +78,7 @@
                         <template x-for="(reactionGroup, i) in m.aggregatedReactions">
                             <button type="button"
                                     :title="reactionGroup.namesPretty" {{/* e.g. ':eyes:' */}}
-                                    @click="console.log('TODO!')" {{/* notify emoji click */}}
+                                    @click="reactToMessage(m.ID, reactionGroup.emojiName)" {{/* notify emoji click */}}
                                     :class="reactionGroup.hasReacted ? 'border-blue-500/25 bg-blue-100/25 dark:border-indigo-600 dark:bg-indigo-900/25' : 'border-gray-500'"
                                     class="cursor-pointer m-1 px-2 h-6 border-[1px] border-gray-500 rounded-full border-solid text-xs flex justify-start items-center">
                                 <span x-text="reactionGroup.emoji"></span>
@@ -87,28 +88,58 @@
                     </div>
                 </div>
 
-                <!-- like count & open reply button -->
+                <!-- open reply button -->
                 <div class="flex justify-between items-center">
                     <div class="flex space-x-2 align-middle items-center">
+                        <div class="relative" @click.outside="() => m.ShowEmojiPicker.toggle(false)">
+                            <button type="button" title="React"
+                                    @click="m.ShowEmojiPicker.toggle()"
+                                    class="flex px-2 h-8 rounded-full text-5 hover:bg-gray-100 dark:hover:bg-gray-600">
+                                <i class="far fa-face-smile m-auto"></i>
+                            </button>
+
+                            <div x-data="interaction.emojiPickerContext(m.ID)"
+                                 class="absolute ease-out duration-100 bg-white dark:bg-secondary border-2 border-solid border-gray-200 dark:border-black rounded left-[-10px] top-[-36px] text-left overflow-hidden whitespace-nowrap p-2 flex flex-row"
+                                 :class="m.ShowEmojiPicker.value ? 'scale-100 opacity-1 translate-x-0 translate-y-0' : 'scale-0 opacity-0 translate-x-[-42px] translate-y-[42px]'">
+                                <template x-for="emoji in emojiSuggestions">
+                                    <button type="button"
+                                            :title="`:${emoji.short_names[0]}:`"
+                                            x-text="emoji.emoji"
+                                            @click="reactToMessage(m.ID, emoji.short_names[0])"
+                                            class="cursor-pointer mr-1 ml-1 h-5 w-5 rounded text-xs hover:bg-gray-100 hover:dark:bg-gray-600">
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                        <template x-if="m.resolved">
+                            <i class="fa-solid fa-check-double text-success"></i>
+                        </template>
                         <template x-if="m.replies.length > 0">
                             <button class="text-5 uppercase text-xs hover:bg-gray-100 dark:hover:bg-gray-600 px-2 h-8 rounded-full"
                                     @click="m.ShowReplies.toggle()">
                                 <span>replies</span>
                                 <span x-text="`(${m.replies.length})`"></span>
-                                <i class="fa-solid ml-1" :class="m.ShowReplies.value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                <i class="fa-solid ml-1"
+                                   :class="m.ShowReplies.value ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                             </button>
                         </template>
+
+                        <button type = "button" @click="setReply(m)" title="Reply">
+                            <span class="font-semibold text-xs text-4">Reply</span>
+                        </button>
                     </div>
                 </div>
 
                 <!-- replies -->
-                <div x-cloak x-show="m.ShowReplies.value" class="grid gap-y-3 py-1 pl-2 mt-2 ml-4 border-l-2 dark:border-secondary-light">
+                <div x-cloak x-show="m.ShowReplies.value"
+                     class="grid gap-y-3 py-1 pl-2 mt-2 ml-4 border-l-2 dark:border-secondary-light">
                     <template x-for="reply in m.replies">
                         <div class="grid gap-y-1">
                             <div>
                             <span x-show="reply.admin"
                                   class="text-white bg-red-400 p-1 text-xs rounded fas fa-video"></span>
-                                <span class="text-2 font-semibold" x-text="reply.name" :style="'color:'+reply.color"></span>
+                                <span class="text-2 font-semibold" x-text="reply.name"
+                                      :style="'color:'+reply.color"></span>
                             </div>
                             <div class="group p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
                                 <div class="flex justify-between">
@@ -122,6 +153,94 @@
                 </div>
             </section>
         </template>
+    </article>
+
+    <article x-data="interaction.chatPromptContext(12845)">
+        <template x-if="!reply.isNoReply()">
+            <div class="text-3 grid gap-2 px-3 pt-2 pb-4 text-sm dark:border-gray-800">
+                <div class="flex justify-between items-center">
+                    <div class="font-semibold">
+                        <i class="fa-solid fa-reply mr-2"></i>
+                        <span x-text="`Replying to @${reply.message.name}:`"></span>
+                    </div>
+                    <button type="button"
+                            class="text-lg flex bg-transparent border-0 font-semibold rounded-full"
+                            @click="cancelReply();">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="flex">
+                    <span x-show="reply.message.admin"
+                          class="h-fit fa-video text-xs text-white bg-red-400 p-1 rounded fas mr-1">
+                    </span>
+                    <span class="text-2 font-semibold mr-2" x-text="`${reply.message.name}:`"
+                          :style="'color:'+reply.message.color">
+                    </span>
+                    <span class="" x-html="reply.message.message"
+                          x-init="$nextTick(() => renderMathInElement($el, global.getKatexOptions()))">
+                    </span>
+                </div>
+            </div>
+        </template>
+
+        <template x-if="users.hasSuggestions()">
+            <section id="user-list" class="max-h-56 overflow-y-hidden w-full py-1 px-2 space-y-1 outline-none">
+                <template x-for="user in users.suggestions">
+                    <div type="button" @click="addAddressee(user)"
+                         class="flex justify-between p-2 rounded hover:cursor-pointer hover:bg-gray-100 hover:dark:bg-gray-600">
+                        <span class="font-semibold text-3 text-xs my-auto" x-text="user.name"></span>
+                    </div>
+                </template>
+            </section>
+        </template>
+        <template x-if="emojis.hasSuggestions()">
+            <section id="emoji-list">
+                <template x-for="emoji in emojis.suggestions">
+                    <button type="button" @click="addEmoji(emoji.emoji)"
+                            :title="`:${emoji.short_names[0]}:`" x-text="emoji.emoji"
+                            class="cursor-pointer mr-1 h-8 w-8 rounded text-xl hover:bg-gray-100 hover:dark:bg-gray-600">
+                    </button>
+                </template>
+            </section>
+        </template>
+        <article class="relative flex my-auto px-5 border-t dark:border-gray-800 py-2">
+            {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
+                <input type="checkbox" name="anonymous" id="anonymous" class="hidden"
+                       x-model="c.current.anonymous" :disabled="c.disconnected">
+                <label for="anonymous" class="flex items-center cursor-pointer text-4 hover:text-3"
+                       :class="c.current.anonymous && 'text-blue-500'"
+                       title="Don't show my name.">
+                    <i class="fas fa-ghost"></i>
+                </label>
+            {{end}}
+            <label class="grow">
+                <input id="chat-input" type="text" spellcheck="true" maxlength="200"
+                       @keyup="e => keyup(e)"
+                       x-model="message"
+                       placeholder="Send a message"
+                       class="py-2 px-4 border-0 bg-transparent text-sm font-normal placeholder:text-sm focus:outline-none w-full"
+                       autocomplete="off">
+            </label>
+            <div class="absolute right-3 top-0 bottom-0 flex">
+                <div x-show="false"
+                     class="m-auto">
+                    <svg class="w-5 h-5 animate-spin text-sky-400 dark:text-indigo-400 fill-sky-600 dark:fill-indigo-600"
+                         viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                              fill="currentColor"/>
+                        <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                              fill="currentFill"/>
+                    </svg>
+                </div>
+            </div>
+            <button type="button" tabindex="-1" class="cursor-pointer" title="Send message" @click="send()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill=""
+                     class="bi bi-send-fill rotate-45 fill-blue-500 hover:fill-blue-600 dark:fill-indigo-600 hover:dark:fill-indigo-700"
+                     viewBox="0 0 16 16">
+                    <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083l6-15Zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471-.47 1.178Z"/>
+                </svg>
+            </button>
+        </article>
     </article>
 
     {{/*
@@ -306,5 +425,5 @@
             </div>
         </form>
     </div> */}}
-</div>
+    </div>
 </body>

@@ -1,4 +1,5 @@
 import { WebsocketConnection } from "../utilities/ws";
+import { Realtime } from "../socket";
 
 enum ChatMessageType {
     Message = "message",
@@ -52,6 +53,16 @@ export class ChatWebsocketConnection {
 
     retractMessage(id: number) {
         return this.sendIDMessage(id, ChatMessageType.Retract);
+    }
+
+    reactToMessage(id: number, reaction: string) {
+        return this.ws.send({
+            payload: {
+                type: ChatMessageType.ReactTo,
+                id: id,
+                reaction: reaction,
+            },
+        });
     }
 
     private sendIDMessage(id: number, type: ChatMessageType) {

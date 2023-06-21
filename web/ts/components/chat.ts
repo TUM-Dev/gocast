@@ -4,6 +4,7 @@ import { ChatMessageSorter, ChatSortMode } from "../chat/ChatMessageSorter";
 import { ChatMessagePreprocessor } from "../chat/ChatMessagePreprocessor";
 import { ChatWebsocketConnection, SocketConnections } from "../api/chat-ws";
 import { User } from "../api/users";
+import { Tunnel } from "../utilities/tunnels";
 
 export function chatContext(streamId: number, user: User): AlpineComponent {
     return {
@@ -40,6 +41,14 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
 
         isPopularFirst(): boolean {
             return this.chatSortMode === ChatSortMode.PopularFirst;
+        },
+
+        reactToMessage(id: number, reaction: string) {
+            return this.ws.reactToMessage(id, reaction);
+        },
+
+        setReply(message: ChatMessage) {
+            Tunnel.reply.add({ message });
         },
 
         async initWebsocket() {

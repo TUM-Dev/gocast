@@ -3,6 +3,7 @@ import { Emoji, TopEmojis } from "top-twitter-emojis-map";
 import { getCurrentWordPositions } from "../chat/misc";
 import { SocketConnections, ChatWebsocketConnection } from "../api/chat-ws";
 import { ChatAPI, ChatMessage } from "../api/chat";
+import { SetReply, Tunnel } from "../utilities/tunnels";
 
 export function chatPromptContext(streamId: number): AlpineComponent {
     return {
@@ -21,6 +22,8 @@ export function chatPromptContext(streamId: number): AlpineComponent {
         init() {
             console.log("🌑 init chat prompt");
             this.input = document.getElementById("chat-input");
+            const callback = (sr: SetReply) => this.setReply(sr);
+            Tunnel.reply.subscribe(callback);
         },
 
         reset() {
@@ -65,6 +68,14 @@ export function chatPromptContext(streamId: number): AlpineComponent {
             this.addressedTo = this.addressedTo.filter((user) => this.message.includes(`@${user.name}`));
             this.emojis.getSuggestionsForMessage(e.target.value, e.target.selectionStart);
             this.users.getSuggestionsForMessage(e.target.value, e.target.selectionStart);
+        },
+
+        setReply(sr: SetReply) {
+            this.reply = new NewReply(sr.message);
+        },
+
+        cancelReply() {
+            this.reply = NewReply.NoReply;
         },
     } as AlpineComponent;
 }

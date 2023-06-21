@@ -25,11 +25,12 @@ export class ChatMessage implements Identifiable {
     resolved: boolean;
 
     ShowReplies = new ToggleableElement();
+    ShowEmojiPicker = new ToggleableElement();
 
     CreatedAt: string;
 
     getLikes(): number {
-        const g = this.aggregatedReactions.find((r) => r.emojiName === EmojiPicker.LikeEmojiName);
+        const g = this.aggregatedReactions.find((r) => r.emojiName === "+1");
         return g ? g.reactions.length : 0;
     }
 
