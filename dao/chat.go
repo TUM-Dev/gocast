@@ -164,7 +164,7 @@ func (d chatDao) RetractChat(id uint) error {
 
 // DeleteChat removes a chat with the given id from the database.
 func (d chatDao) DeleteChat(id uint) error {
-	return DB.Model(&model.Chat{}).Delete(&model.Chat{}, id).Error
+	return DB.Where("id = ? OR reply_to = ?", id, id).Delete(&model.Chat{}).Error
 }
 
 // ResolveChat sets the attribute resolved of chat with the given id to true
