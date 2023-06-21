@@ -4,7 +4,7 @@
     <template x-for="(m, index) in c.messages" :key="m.ID + 'v' + m.renderVersion">
         <div x-ref="message" class="grid gap-y-1 text-4 text-sm $m.ID message"
              x-data="{ showReplies: false, emojiPicker: c.initEmojiPicker(m.ID) }"
-             x-show="!m.deleted && m.replyTo && !m.replyTo.Valid"
+             x-show="!m.deleted"
              :class="{'opacity-60' : m.isGrayedOut}"
              x-init="$watch('c.focusedMessageId', () => {if (c.isMessageToBeFocused(index)){watch.scrollToElement($refs.message)}});">
             <!-- name and message -->
