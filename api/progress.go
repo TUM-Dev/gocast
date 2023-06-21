@@ -176,16 +176,7 @@ func (r progressRoutes) markWatched(c *gin.Context) {
 }
 
 func (r progressRoutes) getProgressBatch(c *gin.Context) {
-	ctx, exists := c.Get("TUMLiveContext")
-	if !exists {
-		_ = c.Error(tools.RequestError{
-			Status:        http.StatusBadRequest,
-			CustomMessage: "context should exist but doesn't",
-		})
-		return
-	}
-
-	tumLiveContext := ctx.(tools.TUMLiveContext)
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
 	if tumLiveContext.User == nil {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusForbidden,

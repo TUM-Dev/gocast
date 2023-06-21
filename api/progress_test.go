@@ -72,15 +72,10 @@ func TestWatched(t *testing.T) {
 		}
 
 		gomino.TestCases{
-			"invalid body": {
-				Router:       ProgressRouterWrapper,
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
-				ExpectedCode: http.StatusBadRequest,
-			},
 			"no context": {
 				Router:       ProgressRouterWrapper,
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				Body:         req,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
 				ExpectedCode: http.StatusBadRequest,
 			},
 			"not logged in": {
@@ -88,6 +83,11 @@ func TestWatched(t *testing.T) {
 				Body:         req,
 				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextUserNil)),
 				ExpectedCode: http.StatusForbidden,
+			},
+			"invalid body": {
+				Router:       ProgressRouterWrapper,
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextStudent)),
+				ExpectedCode: http.StatusBadRequest,
 			},
 			"can not save progress": {
 				Router: func(r *gin.Engine) {
@@ -138,14 +138,9 @@ func TestUserProgress(t *testing.T) {
 		url := "/api/progress/streams"
 
 		gomino.TestCases{
-			"no context": {
-				Router:       ProgressRouterWrapper,
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler),
-				ExpectedCode: http.StatusBadRequest,
-			},
 			"not logged in": {
 				Router:       ProgressRouterWrapper,
-				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextUserNil)),
+				Middlewares:  testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextEmpty)),
 				ExpectedCode: http.StatusForbidden,
 			},
 			"invalid query": {
