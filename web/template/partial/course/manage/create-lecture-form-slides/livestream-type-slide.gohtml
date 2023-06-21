@@ -1,26 +1,26 @@
-{{define "lecture-type-slide"}}
+{{define "livestream-type-slide"}}
     <ul class="w-full">
         <li class="mb-2">
             <button
-                    @click.prevent="() => updateType(false)"
+                    @click.prevent="() => updateLiveAdHoc(false)"
                     class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
-                    :class="formData.vodup === true ? '' : 'dark:text-white dark:border-white border-blue-600 text-blue-600'"
+                    :class="formData.adHoc === true ? '' : 'dark:text-white dark:border-white border-blue-600 text-blue-600'"
             >
                 <div class="block text-left">
-                    <div class="w-full text-lg font-semibold">Livestream</div>
-                    <div class="w-full">From Lecture-Hall or Self-Stream</div>
+                    <div class="w-full text-lg font-semibold">Schedule</div>
+                    <div class="w-full">Schedule one or multiple livestreams in the future</div>
                 </div>
             </button>
         </li>
         <li>
             <button
-                    @click.prevent="() => updateType(true)"
+                    @click.prevent="() => updateLiveAdHoc(true)"
                     class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer dark:hover:text-gray-300 dark:border-gray-700 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
-                    :class="formData.vodup !== true ? '' : 'dark:text-white dark:border-white border-blue-600 text-blue-600'"
+                    :class="formData.adHoc !== true ? '' : 'dark:text-white dark:border-white border-blue-600 text-blue-600'"
             >
                 <div class="block text-left">
-                    <div class="w-full text-lg font-semibold">Video Upload</div>
-                    <div class="w-full">Upload a video-on-demand</div>
+                    <div class="w-full text-lg font-semibold">Ad-Hoc</div>
+                    <div class="w-full">Start a livestream from a lecture hall now</div>
                 </div>
             </button>
         </li>

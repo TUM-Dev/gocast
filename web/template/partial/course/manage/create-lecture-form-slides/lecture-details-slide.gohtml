@@ -2,9 +2,9 @@
     {{$course := .IndexData.TUMLiveContext.Course}}
     <span class="text-sm text-5 pl-2">Options</span>
     <div class="col-span-full flex gap-3 px-2 py-2">
-        <label x-show="{{$course.ChatEnabled}}">
+        <label x-show="{{if $course.ChatEnabled}}true{{else}}false{{end}}">
             <input type="checkbox" x-model="formData.isChatEnabled"
-                   x-init="formData.isChatEnabled = {{$course.ChatEnabled}}"
+                   x-init="formData.isChatEnabled = {{if $course.ChatEnabled}}true{{else}}false{{end}}"
                    class="w-auto">
             <span class="text-3">Enable Live Chat</span>
         </label>
@@ -28,7 +28,7 @@
         </select>
     </label>
 
-    <label for="start" x-show="!loading">
+    <label for="start" x-show="!loading && !formData.adHoc">
         <span class="text-sm text-5">Start</span>
         <input class="tl-input" name="start" placeholder="2021-04-08 14:00" id="start" x-model="formData.start"
                x-ref="start"
@@ -46,7 +46,7 @@
         </label>
     </template>
 
-    <div x-show="!formData.premiere && !formData.vodup" class="col-span-full mt-2">
+    <div x-show="!formData.premiere && !formData.vodup && !formData.adHoc" class="col-span-full mt-2">
         <label>
             <input type="checkbox" x-model="formData.recurring"
                    class="w-auto">

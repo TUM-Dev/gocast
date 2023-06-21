@@ -610,6 +610,7 @@ export function createLectureForm(args: { s: [] }) {
             formatedDuration: "", // Duration in Minutes
             premiere: false,
             vodup: false,
+            adHoc: false,
             recurring: false,
             recurringInterval: "weekly",
             eventsCount: 10,
@@ -638,11 +639,16 @@ export function createLectureForm(args: { s: [] }) {
             this.currentTab--;
             this.onUpdate();
         },
+        updateLiveAdHoc(adHoc: boolean) {
+            this.formData.adHoc = adHoc;
+            this.next();
+        },
         updateType(vodup: boolean) {
             this.formData.vodup = vodup;
             if (vodup) {
                 this.formData.recurring = false;
             }
+            this.next();
         },
         onStartChange() {
             setTimeout(() => {
@@ -679,24 +685,23 @@ export function createLectureForm(args: { s: [] }) {
             }
 
             if (this.currentTab === 1) {
+                this.onLastSlide = false;
                 if (this.formData.vodup) {
                     // If user has chosen video on demand, there are 3 tabs (file upload tab)
                     // => we are not on the last tab
                     this.canGoBack = true;
-                    this.onLastSlide = false;
                     this.canContinue = this.formData.start.length > 0;
                 } else {
-                    // If user has chosen livestream, there are only 2 tabs
-                    // => we are already on the last tab
                     this.canGoBack = true;
-                    this.onLastSlide = true;
                     this.canContinue = this.formData.start.length > 0 && this.formData.end.length > 0;
                 }
                 return;
             }
 
             if (this.currentTab === 2) {
-                this.canContinue = this.getMediaFiles().length > 0;
+                this.canContinue =
+                    (this.getMediaFiles().length > 0 && this.formData.vodup) ||
+                    (this.formData.adHoc && this.formData.end != "");
                 this.canGoBack = true;
                 this.onLastSlide = true;
                 return;
@@ -737,6 +742,9 @@ export function createLectureForm(args: { s: [] }) {
             this.formData.recurringDates = result;
         },
         recalculateDuration() {
+            if (this.formData.adHoc) {
+                this.formData.start = new Date().toISOString();
+            }
             if (this.formData.start != "" && this.formData.end != "") {
                 const [hours, minutes] = this.formData.end.split(":");
                 const startDate = new Date(this.formData.start);
@@ -788,6 +796,7 @@ export function createLectureForm(args: { s: [] }) {
                     premiere: this.formData.premiere,
                     vodup: this.formData.vodup,
                     start: this.formData.start,
+                    adHoc: this.formData.adHoc,
                     duration: this.formData.duration,
                     isChatEnabled: this.formData.isChatEnabled,
                     dateSeries: [],

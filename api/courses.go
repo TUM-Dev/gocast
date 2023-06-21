@@ -1218,6 +1218,9 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 			Recording:     req.Vodup,
 			Premiere:      req.Premiere,
 		}
+		if req.AdHoc {
+			lecture.Start = time.Now().Add(time.Minute * 2) // add 2 minutes to start time to ensure a worker will pick it up
+		}
 
 		// add Series Identifier
 		if len(req.DateSeries) > 1 {
@@ -1265,6 +1268,10 @@ func (r coursesRoutes) createLecture(c *gin.Context) {
 		}
 	}
 
+	if req.AdHoc {
+		go NotifyWorkers(r.DaoWrapper)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"ids": newStreamIds,
 	})
@@ -1278,6 +1285,7 @@ type createLectureRequest struct {
 	ChatEnabled   bool        `json:"isChatEnabled"`
 	Premiere      bool        `json:"premiere"`
 	Vodup         bool        `json:"vodup"`
+	AdHoc         bool        `json:"adHoc"`
 	DateSeries    []time.Time `json:"dateSeries"`
 }
 
