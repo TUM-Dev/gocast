@@ -691,7 +691,7 @@ class LectureRecorder {
         return new Promise<void>((resolve) => {
             this.screencastDisplay.srcObject = this.screencastStream;
             this.screencastDisplay.onloadedmetadata = (e) => {
-                this.cameraDisplay.muted = true;
+                this.screencastDisplay.muted = true;
                 this.screencastDisplay.play();
                 this.screencastRecorder = new MediaRecorder(this.screencastStream, {
                     mimeType: "video/webm",
