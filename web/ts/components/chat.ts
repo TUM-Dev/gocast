@@ -97,6 +97,7 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
         },
 
         handleApprove(msg: ChatMessage) {
+            this.preprocessors.forEach((f) => f(msg, this.user));
             this.messages.approve(msg);
         },
 

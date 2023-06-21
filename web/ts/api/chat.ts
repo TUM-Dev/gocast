@@ -87,7 +87,7 @@ export class ChatMessageArray {
 
     approve(msg: ChatMessage) {
         const filtered = this.messages.filter((m) => m.ID !== msg.ID);
-        filtered.push(msg);
+        filtered.push(Object.assign(new ChatMessage(), msg));
         this.messages = filtered;
     }
 

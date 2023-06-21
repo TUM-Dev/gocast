@@ -34,12 +34,10 @@
 <div x-data="interaction.chatContext(12845, {ID: 1, name: 'admin', isAdmin: true})">
     <div x-data="interaction.chatPromptContext(12845)"
          style="padding: 16px; margin: 8px; border: 3px solid blue;">
-        <div>
-            <template x-if="emojis.hasSuggestions()">
-                <template x-for="(emoji, i) in emojis.suggestions">
-                    <button type="button" @click="addEmoji(emoji.emoji)" x-html="emoji.emoji"
-                            :style="i === emojis.emojiIndex ? 'border: 3px solid red' : ''"></button>
-                </template>
+        <div x-cloak x-show="emojis.hasSuggestions()">
+            <template x-for="(emoji, i) in emojis.suggestions">
+                <button type="button" @click="addEmoji(emoji.emoji)" x-html="emoji.emoji"
+                        :style="i === emojis.emojiIndex ? 'border: 3px solid red' : ''"></button>
             </template>
         </div>
         <div>

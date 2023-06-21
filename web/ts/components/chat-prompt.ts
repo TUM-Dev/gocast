@@ -4,24 +4,26 @@ import { getCurrentWordPositions } from "../chat/misc";
 import { SocketConnections, ChatWebsocketConnection } from "../api/chat-ws";
 import { ChatAPI, ChatMessage } from "../api/chat";
 import { SetReply, Tunnel } from "../utilities/tunnels";
+import { isAlphaNumeric, isSpacebar } from "../utilities/keycodes";
 
 export function chatPromptContext(streamId: number): AlpineComponent {
     return {
         message: "" as string,
         isAnonymous: false as boolean,
         addressedTo: [] as ChatUser[],
-        reply: NewReply,
+        reply: NewReply.NoReply,
 
         emojis: new EmojiSuggestions(),
         users: new UserSuggestions(streamId),
 
         ws: new ChatWebsocketConnection(SocketConnections.ws),
 
-        input: undefined as HTMLInputElement,
+        inputEl: document.getElementById("chat-input") as HTMLInputElement,
+        usersEl: document.getElementById("chat-user-list") as HTMLInputElement,
+        emojiEl: document.getElementById("chat-emoji-list") as HTMLInputElement,
 
         init() {
             console.log("🌑 init chat prompt");
-            this.input = document.getElementById("chat-input");
             const callback = (sr: SetReply) => this.setReply(sr);
             Tunnel.reply.subscribe(callback);
         },
@@ -30,6 +32,8 @@ export function chatPromptContext(streamId: number): AlpineComponent {
             this.message = "";
             this.addressedTo = [];
             this.reply = NewReply.NoReply;
+            this.emojis.reset();
+            this.users.reset();
         },
 
         send() {
@@ -44,13 +48,13 @@ export function chatPromptContext(streamId: number): AlpineComponent {
         },
 
         addEmoji(emoji: string) {
-            const pos = getCurrentWordPositions(this.input.value, this.input.selectionStart);
+            const pos = getCurrentWordPositions(this.inputEl.value, this.inputEl.selectionStart);
             this.message = this.message.substring(0, pos[0]) + emoji + " " + this.message.substring(pos[1]);
             this.emojis.reset();
         },
 
         addAddressee(user: ChatUser): void {
-            const pos = getCurrentWordPositions(this.input.value, this.input.selectionStart);
+            const pos = getCurrentWordPositions(this.inputEl.value, this.inputEl.selectionStart);
 
             // replace message with username e.g. 'Hello @Ad' to 'Hello @Admin':
             this.message =
@@ -61,17 +65,43 @@ export function chatPromptContext(streamId: number): AlpineComponent {
 
             this.addressedTo.push(user);
             this.users.reset();
+            this.inputEl.focus();
         },
 
-        keyup(e) {
-            console.log("🌑 keyup '", this.message, "'");
+        keyup() {
+            // console.log("🌑 keyup '", this.message, "'");
+
             this.addressedTo = this.addressedTo.filter((user) => this.message.includes(`@${user.name}`));
-            this.emojis.getSuggestionsForMessage(e.target.value, e.target.selectionStart);
-            this.users.getSuggestionsForMessage(e.target.value, e.target.selectionStart);
+            this.emojis.getSuggestionsForMessage(this.inputEl.value, this.inputEl.selectionStart);
+            this.users.getSuggestionsForMessage(this.inputEl.value, this.inputEl.selectionStart);
+
+            if (this.users.hasSuggestions()) {
+                this.usersEl.focus();
+            } else if (this.emojis.hasSuggestions()) {
+                this.emojiEl.focus();
+            }
+        },
+
+        keyupAlphanumeric(e) {
+            if (isAlphaNumeric(e.keyCode) || isSpacebar(e.keyCode)) {
+                this.inputEl.value += String.fromCharCode(e.keyCode);
+                this.inputEl.focus();
+            }
+        },
+
+        backspace() {
+            this.message = this.message.substring(0, this.message.length - 2);
+            this.inputEl.focus();
+
+            this.addressedTo = this.addressedTo.filter((user) => this.message.includes(`@${user.name}`));
+            this.emojis.getSuggestionsForMessage(this.inputEl.value, this.inputEl.selectionStart);
+            this.users.getSuggestionsForMessage(this.inputEl.value, this.inputEl.selectionStart);
         },
 
         setReply(sr: SetReply) {
+            this.reset();
             this.reply = new NewReply(sr.message);
+            this.inputEl.focus();
         },
 
         cancelReply() {
@@ -116,11 +146,14 @@ export class UserSuggestions {
     private all: ChatUser[];
     private readonly streamId: number;
 
+    index: number;
+
     suggestions: ChatUser[];
 
     constructor(streamId: number) {
         this.all = this.suggestions = [];
         this.streamId = streamId;
+        this.index = 0;
     }
 
     hasSuggestions(): boolean {
@@ -145,8 +178,21 @@ export class UserSuggestions {
         }
     }
 
+    selected(): ChatUser {
+        return this.suggestions[this.index];
+    }
+
+    next() {
+        this.index = (this.index + 1) % this.suggestions.length;
+    }
+
+    prev() {
+        this.index = (this.index - 1) % this.suggestions.length;
+    }
+
     reset() {
         this.suggestions = [];
+        this.index = 0;
     }
 }
 

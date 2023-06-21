@@ -65,7 +65,7 @@ export abstract class ChatMessagePreprocessor {
         if (m.addressedTo.find((uId) => uId === user.ID) !== undefined) {
             m.message = m.message.replaceAll(
                 "@" + user.name,
-                "<span style='background-color: lightblue;' class = 'text-sky-800 bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded'>" +
+                "<span class = 'text-sky-800 bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded'>" +
                     "@" +
                     user.name +
                     "</span>",
