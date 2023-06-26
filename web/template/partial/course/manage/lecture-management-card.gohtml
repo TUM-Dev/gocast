@@ -226,6 +226,80 @@
         <div x-show="lecture.uiEditMode > 0" class="grid gap-y-4 p-4">
             <article class="grid gap-2 w-full">
                 <header class="border-b dark:border-gray-600 w-full">
+                    <h6 class="text-sm text-5 font-light">Media</h6>
+                </header>
+                <article x-data="{ id: `lecture_media_${lecture.lectureId}`, progress: { 'COMB': 0, 'PRES': 0, 'CAM': 0 } }"
+                         @voduploadprogressedit.window="({ detail: { type, progress, lectureId } }) => { if (lectureId === lecture.lectureId) { progress[type] = progress; }}"
+                         class="w-full flex justify-center flex-wrap">
+                    <div x-data="{ inputId: `${id}_comb` }"
+                         x-on:click="document.querySelector(`#${inputId}`).click()"
+                         class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/30 dark:bg-black/20 rounded relative max-xl:min-w-full cursor-pointer text-white overflow-hidden"
+                    >
+                        <div class="absolute bg-cover bottom-0 left-0 right-0 top-0 brightness-75" :style="`background-image: url('/api/stream/${lecture.lectureId}/thumbs/vod?type=COMB')`"></div>
+                        <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-2">
+                            Combined Video
+                        </div>
+                        <div class="w-full h-full flex justify-center items-center drop-shadow-[2px_4px_6px_black]">
+                            <span x-show="!lecture.newCombinedVideo">Click to upload new Video</span>
+                            <template x-if="lecture.newCombinedVideo !== null">
+                                <span class="text-green-400" x-text="lecture.newCombinedVideo.name"></span>
+                            </template>
+                        </div>
+                        <div x-on:click="() => { $event.stopPropagation(); lecture.newCombinedVideo = null; lecture.updateIsDirty(); }" x-show="lecture.newCombinedVideo" class="absolute text-sm top-3 right-3 rounded-full bg-black/20 inline-block px-3">
+                            <i class="fa fa-xmark text-3"></i>
+                        </div>
+                        <input :id="inputId" class="hidden" type="file" accept="video/mp4" x-on:change="() => { lecture.newCombinedVideo = $event.target.files[0]; lecture.updateIsDirty(); }" />
+                        <div x-show="lecture.isSaving && lecture.newCombinedVideo !== null" class="absolute top-0 left-0 bottom-0 right-0 bg-black/[.8] flex justify-center items-center font-bold text-2xl">
+                            <span x-text="`${progress.COMB}%`"></span>
+                        </div>
+                    </div>
+                    <div x-data="{ inputId: `${id}_pres` }"
+                         x-on:click="document.querySelector(`#${inputId}`).click()"
+                         class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/30 dark:bg-black/20 rounded relative max-xl:min-w-full cursor-pointer text-white overflow-hidden"
+                    >
+                        <div class="absolute bg-cover bottom-0 left-0 right-0 top-0 brightness-75" :style="`background-image: url('/api/stream/${lecture.lectureId}/thumbs/vod?type=PRES')`"></div>
+                        <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-2">
+                            Presentation Video
+                        </div>
+                        <div class="w-full h-full flex justify-center items-center p-2 drop-shadow-[2px_4px_6px_black]">
+                            <span x-show="!lecture.newPresentationVideo">Click to upload new Video</span>
+                            <template x-if="lecture.newPresentationVideo !== null">
+                                <span class="text-green-400" x-text="lecture.newPresentationVideo.name"></span>
+                            </template>
+                        </div>
+                        <div x-on:click="() => { $event.stopPropagation(); lecture.newPresentationVideo = null; lecture.updateIsDirty(); }" x-show="lecture.newPresentationVideo" class="absolute text-sm top-3 right-3 rounded-full bg-black/20 inline-block px-3">
+                            <i class="fa fa-xmark text-3"></i>
+                        </div>
+                        <input :id="inputId" class="hidden" type="file" accept="video/mp4" x-on:change="() => { lecture.newPresentationVideo = $event.target.files[0]; lecture.updateIsDirty(); }" />
+                        <div x-show="lecture.isSaving && lecture.newPresentationVideo !== null" class="absolute top-0 left-0 bottom-0 right-0 bg-black/[.8] flex justify-center items-center font-bold text-2xl">
+                            <span x-text="`${progress.PRES}%`"></span>
+                        </div>
+                    </div>
+                    <div
+                            x-data="{ inputId: `${id}_cam` }"
+                            x-on:click="document.querySelector(`#${inputId}`).click()"
+                            class="h-40 w-[30%] mx-[1.5%] my-2 bg-black/30 dark:bg-black/20 rounded relative max-xl:min-w-full cursor-pointer text-white overflow-hidden"
+                    >
+                        <div class="absolute bg-cover bottom-0 left-0 right-0 top-0 brightness-75" :style="`background-image: url('/api/stream/${lecture.lectureId}/thumbs/vod?type=CAM')`"></div>
+                        <div class="absolute text-sm bottom-3 left-3 rounded-full bg-black/20 inline-block px-2">
+                            Camera Video
+                        </div>
+                        <div class="w-full h-full flex justify-center items-center p-2 drop-shadow-[2px_4px_6px_black]">
+                            <span x-show="!lecture.newCameraVideo">Click to upload new Video</span>
+                            <template x-if="lecture.newCameraVideo !== null">
+                                <span class="text-green-400" x-text="lecture.newCameraVideo.name"></span>
+                            </template>
+                        </div>
+                        <div x-on:click="() => { $event.stopPropagation(); lecture.newCameraVideo = null; lecture.updateIsDirty(); }" x-show="lecture.newCameraVideo" class="absolute text-sm top-3 right-3 rounded-full bg-black/20 inline-block px-3">
+                            <i class="fa fa-xmark text-3"></i>
+                        </div>
+                        <input :id="inputId" class="hidden" type="file" accept="video/mp4" x-on:change="() => { lecture.newCameraVideo = $event.target.files[0]; lecture.updateIsDirty(); }" />
+                        <div x-show="lecture.isSaving && lecture.newCameraVideo !== null" class="absolute top-0 left-0 bottom-0 right-0 bg-black/[.8] flex justify-center items-center font-bold text-2xl">
+                            <span x-text="`${progress.CAM}%`"></span>
+                        </div>
+                    </div>
+                </article>
+                <header class="border-b dark:border-gray-600 w-full">
                     <h6 class="text-sm text-5 font-light">Title and Description</h6>
                 </header>
                 <article x-data="{ id: $id('text-input') }"

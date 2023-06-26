@@ -133,6 +133,9 @@ export class Lecture {
     newDescription: string;
     newLectureHallId: string;
     newIsChatEnabled = false;
+    newCombinedVideo = null;
+    newPresentationVideo = null;
+    newCameraVideo = null;
     isDirty = false;
     isSaving = false;
     isDeleted = false;
@@ -167,7 +170,10 @@ export class Lecture {
             this.newName !== this.name ||
             this.newDescription !== this.description ||
             this.newLectureHallId !== this.lectureHallId ||
-            this.newIsChatEnabled !== this.isChatEnabled;
+            this.newIsChatEnabled !== this.isChatEnabled ||
+            this.newCombinedVideo !== null ||
+            this.newPresentationVideo !== null ||
+            this.newCameraVideo !== null;
     }
 
     resetNewFields() {
@@ -177,6 +183,9 @@ export class Lecture {
         this.newIsChatEnabled = this.isChatEnabled;
         this.isDirty = false;
         this.lastErrors = [];
+        this.newCombinedVideo = null;
+        this.newPresentationVideo = null;
+        this.newCameraVideo = null;
     }
 
     startSeriesEdit() {
@@ -238,12 +247,13 @@ export class Lecture {
         if (this.uiEditMode === UIEditMode.none) return;
 
         this.isSaving = true;
+
+        // Save Settings
         const promises = [];
         if (this.newName !== this.name) promises.push(this.saveNewLectureName());
         if (this.newDescription !== this.description) promises.push(this.saveNewLectureDescription());
         if (this.newLectureHallId !== this.lectureHallId) promises.push(this.saveNewLectureHall());
         if (this.newIsChatEnabled !== this.isChatEnabled) promises.push(this.saveNewIsChatEnabled());
-
         const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
 
         if (this.uiEditMode === UIEditMode.series && errors.length === 0) {
@@ -267,6 +277,15 @@ export class Lecture {
                     return text;
                 }),
             );
+            this.isSaving = false;
+            return false;
+        }
+
+        // Upload new media files
+        const uploadErrors = await this.saveNewVODMedia();
+
+        if (uploadErrors.length > 0) {
+            this.lastErrors = uploadErrors;
             this.isSaving = false;
             return false;
         }
@@ -324,6 +343,39 @@ export class Lecture {
             res.text().then((t) => showMessage(t));
         }
         return res;
+    }
+
+    async saveNewVODMedia(): Promise<string[]> {
+        const errors = [];
+        const mediaInfo = [
+            { key: "newCombinedVideo", type: "COMB" },
+            { key: "newPresentationVideo", type: "PRES" },
+            { key: "newCameraVideo", type: "CAM" },
+        ];
+
+        for (const info of mediaInfo) {
+            const mediaFile = this[info.key];
+            if (mediaFile === null) continue;
+
+            try {
+                await uploadFilePost(
+                    `/api/course/${this.courseId}/uploadVODMedia?streamID=${this.lectureId}&videoType=${info.type}`,
+                    mediaFile,
+                    (progress) => {
+                        window.dispatchEvent(
+                            new CustomEvent(`voduploadprogressedit`, {
+                                detail: { type: info.type, progress, lectureId: this.lectureId },
+                            }),
+                        );
+                    },
+                );
+                this[info.key] = null;
+            } catch (e) {
+                const error = `Failed to upload "${mediaFile.name}".`;
+                errors.push(error);
+            }
+        }
+        return errors;
     }
 
     async saveSeries() {
@@ -558,6 +610,7 @@ export function createLectureForm(args: { s: [] }) {
             formatedDuration: "", // Duration in Minutes
             premiere: false,
             vodup: false,
+            adHoc: false,
             recurring: false,
             recurringInterval: "weekly",
             eventsCount: 10,
@@ -586,11 +639,16 @@ export function createLectureForm(args: { s: [] }) {
             this.currentTab--;
             this.onUpdate();
         },
+        updateLiveAdHoc(adHoc: boolean) {
+            this.formData.adHoc = adHoc;
+            this.next();
+        },
         updateType(vodup: boolean) {
             this.formData.vodup = vodup;
             if (vodup) {
                 this.formData.recurring = false;
             }
+            this.next();
         },
         onStartChange() {
             setTimeout(() => {
@@ -627,24 +685,23 @@ export function createLectureForm(args: { s: [] }) {
             }
 
             if (this.currentTab === 1) {
+                this.onLastSlide = false;
                 if (this.formData.vodup) {
                     // If user has chosen video on demand, there are 3 tabs (file upload tab)
                     // => we are not on the last tab
                     this.canGoBack = true;
-                    this.onLastSlide = false;
                     this.canContinue = this.formData.start.length > 0;
                 } else {
-                    // If user has chosen livestream, there are only 2 tabs
-                    // => we are already on the last tab
                     this.canGoBack = true;
-                    this.onLastSlide = true;
                     this.canContinue = this.formData.start.length > 0 && this.formData.end.length > 0;
                 }
                 return;
             }
 
             if (this.currentTab === 2) {
-                this.canContinue = this.getMediaFiles().length > 0;
+                this.canContinue =
+                    (this.getMediaFiles().length > 0 && this.formData.vodup) ||
+                    (this.formData.adHoc && this.formData.end != "");
                 this.canGoBack = true;
                 this.onLastSlide = true;
                 return;
@@ -685,6 +742,9 @@ export function createLectureForm(args: { s: [] }) {
             this.formData.recurringDates = result;
         },
         recalculateDuration() {
+            if (this.formData.adHoc) {
+                this.formData.start = new Date().toISOString();
+            }
             if (this.formData.start != "" && this.formData.end != "") {
                 const [hours, minutes] = this.formData.end.split(":");
                 const startDate = new Date(this.formData.start);
@@ -736,6 +796,7 @@ export function createLectureForm(args: { s: [] }) {
                     premiere: this.formData.premiere,
                     vodup: this.formData.vodup,
                     start: this.formData.start,
+                    adHoc: this.formData.adHoc,
                     duration: this.formData.duration,
                     isChatEnabled: this.formData.isChatEnabled,
                     dateSeries: [],
