@@ -127,6 +127,18 @@ export class Poll implements Identifiable {
 
     active: boolean;
     submitted: boolean;
+
+    getOptionWidth(pollOption) {
+        const minWidth = 1;
+        const maxWidth = 100;
+        const maxVotes = Math.max(...this.options.map(({ votes: v }) => v));
+
+        if (pollOption.votes == 0) return `${minWidth.toString()}%`;
+
+        const fractionOfMax = pollOption.votes / maxVotes;
+        const fractionWidth = minWidth + fractionOfMax * (maxWidth - minWidth);
+        return `${Math.ceil(fractionWidth).toString()}%`;
+    }
 }
 
 export class PollOption implements Identifiable {
@@ -148,10 +160,12 @@ export const ChatAPI = {
     },
 
     async getPolls(streamId: number): Promise<Poll[]> {
-        return get(`/api/chat/${streamId}/polls`);
+        return get(`/api/chat/${streamId}/polls`).then((polls) => polls.map((poll) => Object.assign(new Poll(), poll)));
     },
 
     async getActivePoll(streamId: number): Promise<Poll> {
-        return get(`/api/chat/${streamId}/active-poll`);
+        return get(`/api/chat/${streamId}/active-poll`, {}, true)
+            .then((poll) => Object.assign(new Poll(), poll))
+            .catch((err) => ({ ID: -1 }));
     },
 };

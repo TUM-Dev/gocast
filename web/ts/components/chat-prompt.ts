@@ -53,6 +53,7 @@ export function chatPromptContext(streamId: number): AlpineComponent {
             const pos = getCurrentWordPositions(this.inputEl.value, this.inputEl.selectionStart);
             this.message = this.message.substring(0, pos[0]) + emoji + " " + this.message.substring(pos[1]);
             this.emojis.reset();
+            this.inputEl.focus();
         },
 
         addAddressee(user: ChatUser): void {
@@ -95,8 +96,8 @@ export function chatPromptContext(streamId: number): AlpineComponent {
             this.inputEl.focus();
 
             this.addressedTo = this.addressedTo.filter((user) => this.message.includes(`@${user.name}`));
-            this.emojis.getSuggestionsForMessage(this.inputEl.value, this.inputEl.selectionStart);
-            this.users.getSuggestionsForMessage(this.inputEl.value, this.inputEl.selectionStart);
+            this.emojis.getSuggestionsForMessage(this.message, this.inputEl.selectionStart);
+            this.users.getSuggestionsForMessage(this.message, this.inputEl.selectionStart);
         },
 
         setReply(sr: SetReply) {
@@ -113,15 +114,11 @@ export function chatPromptContext(streamId: number): AlpineComponent {
 
 export class EmojiSuggestions {
     suggestions: Emoji[];
-    emojiIndex: number;
+    index: number;
 
     constructor() {
         this.suggestions = [];
-        this.emojiIndex = 0;
-    }
-
-    reset() {
-        this.suggestions = [];
+        this.index = 0;
     }
 
     hasSuggestions(): boolean {
@@ -140,6 +137,24 @@ export class EmojiSuggestions {
                 return emoji.short_names.some((key) => key.startsWith(currentWord.substring(1)));
             }).slice(0, limit);
         }
+    }
+
+    selected(): Emoji {
+        return this.suggestions[this.index];
+    }
+
+    next() {
+        this.index = (this.index + 1) % this.suggestions.length;
+        console.log(this.index);
+    }
+
+    prev() {
+        this.index = (this.index - 1) % this.suggestions.length;
+    }
+
+    reset() {
+        this.suggestions = [];
+        this.index = 0;
     }
 }
 

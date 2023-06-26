@@ -47,6 +47,21 @@ export function pollContext(streamId: number): AlpineComponent {
             this.history = await ChatAPI.getPolls(this.streamId);
         },
 
+        hasActivePoll(): boolean {
+            return this.activePoll.ID !== -1;
+        },
+
+        closeActivePoll() {
+            this.ws.closeActivePoll();
+            this.activePoll = null;
+        },
+
+        submitPollOptionVote(pollOptionId: number) {
+            this.ws.submitPollOptionVote(pollOptionId);
+            this.activePoll.submitted = this.activePoll.selected;
+            this.activePoll.selected = null;
+        },
+
         handleNewPoll(data: object) {
             console.log("🌑 starting new poll", data);
             this.result = null;

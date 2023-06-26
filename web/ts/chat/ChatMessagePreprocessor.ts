@@ -21,6 +21,7 @@ export abstract class ChatMessagePreprocessor {
                     };
                     res.push(group);
                 } else if (reaction.userID == user.ID) {
+                    console.log("hello");
                     group.hasReacted = true;
                 }
 
