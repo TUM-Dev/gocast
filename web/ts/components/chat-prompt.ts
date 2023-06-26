@@ -26,6 +26,8 @@ export function chatPromptContext(streamId: number): AlpineComponent {
             console.log("🌑 init chat prompt");
             const callback = (sr: SetReply) => this.setReply(sr);
             Tunnel.reply.subscribe(callback);
+
+            this.inputEl.focus();
         },
 
         reset() {
@@ -82,15 +84,14 @@ export function chatPromptContext(streamId: number): AlpineComponent {
             }
         },
 
-        keyupAlphanumeric(e) {
+        keypressAlphanumeric(e) {
             if (isAlphaNumeric(e.keyCode) || isSpacebar(e.keyCode)) {
-                this.inputEl.value += String.fromCharCode(e.keyCode);
                 this.inputEl.focus();
             }
         },
 
         backspace() {
-            this.message = this.message.substring(0, this.message.length - 2);
+            this.message = this.message.substring(0, this.message.length - 1);
             this.inputEl.focus();
 
             this.addressedTo = this.addressedTo.filter((user) => this.message.includes(`@${user.name}`));

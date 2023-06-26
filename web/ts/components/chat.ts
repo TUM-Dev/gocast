@@ -43,6 +43,10 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
             return this.chatSortMode === ChatSortMode.PopularFirst;
         },
 
+        isLoggedIn(): boolean {
+            return this.user.ID !== 0;
+        },
+
         reactToMessage(id: number, reaction: string) {
             return this.ws.reactToMessage(id, reaction);
         },
