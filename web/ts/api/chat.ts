@@ -26,6 +26,7 @@ export class ChatMessage implements Identifiable {
 
     ShowReplies = new ToggleableElement();
     ShowEmojiPicker = new ToggleableElement();
+    ShowAdminTools = new ToggleableElement();
 
     CreatedAt: string;
 

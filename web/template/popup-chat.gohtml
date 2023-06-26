@@ -2,12 +2,9 @@
 {{$course := .IndexData.TUMLiveContext.Course}}
 {{$stream := .IndexData.TUMLiveContext.Stream}}
 {{$startTime := $stream.ParsableStartTime}}
-{{$liveNowTimestamp := $stream.ParsableLiveNowTimestamp}}
-{{$liveNow := $stream.LiveNow}}
-{{$isComingUp := $stream.IsComingUp}}
 {{$userName := ""}}
 {{$userId := 0}}
-{{$isAdmin := false}}
+{{$isAdmin := .IsAdminOfCourse}}
 {{if .IndexData.TUMLiveContext.User}}
     {{$userName = .IndexData.TUMLiveContext.User.Name}}
     {{$userId = .IndexData.TUMLiveContext.User.ID}}
@@ -52,7 +49,7 @@
     <!-- Messages -->
     <article id="chat-box"
             class="relative h-full w-full overflow-y-scroll overflow-x-hidden z-30">
-        <div class = "grid gap-y-8 content-start px-4 pt-3">
+        <div class = "grid gap-y-8 content-start px-4 py-3">
             <template x-for="m in messages.get(chatSortFn)" :key="m.ID">
             <section class="grid gap-y-1 text-4 text-sm">
                 <div class="text-xs">
@@ -70,7 +67,7 @@
                     </div>
 
                     <!-- message-date -->
-                    <span class="absolute right-2 bottom-2 hidden lg:group-hover:inline text-xs text-5 font-light"
+                    <span class="absolute right-2 bottom-2 hidden group-hover:inline text-xs text-5 font-light"
                           x-text="m.friendlyCreatedAt()"></span>
                 </div>
 
@@ -129,7 +126,53 @@
                             <span class="font-semibold text-xs text-4">Reply</span>
                         </button>
                     </div>
+
+                    <template x-if="isAdmin()">
+                        <article class="relative">
+                            <button type="button" title="Admin tools"
+                                    @click="m.ShowAdminTools.toggle(true)"
+                                    class="text-amber-400 uppercase text-sm hover:bg-gray-100 dark:hover:bg-gray-600 w-8 h-8 rounded-full">
+                                <i class="fa-solid fa-bolt"></i>
+                            </button>
+                            <div x-cloak x-show="m.ShowAdminTools.value"
+                                 @click.outside="m.ShowAdminTools.toggle(false)"
+                                 class="absolute right-0 bottom-full py-2 z-[60] w-32 bg-white dark:bg-secondary-light
+                                border dark:border-gray-600 shadow rounded-lg">
+                                <button @click="deleteMessage(m.ID)"
+                                        title="Delete Message"
+                                        class="flex items-center w-full px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-600">
+                                    <i class="fas fa-ban text-danger mr-2"></i>
+                                    <span class="text-4 font-light">Delete</span>
+                                </button>
+                                {{if $course.ModeratedChatEnabled}}
+                                    <button x-cloak x-show="!m.visible"
+                                            @click="approveMessage(m.ID)"
+                                            title="Approve Message"
+                                            class="flex items-center w-full px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-600">
+                                        <i class="fa-solid fa-spell-check mr-2"></i>
+                                        <span class="text-4 font-light">Approve</span>
+                                    </button>
+                                    <button x-cloak x-show="m.visible && !m.admin"
+                                            @click="retractMessage(m.ID)"
+                                            title="Retract Message"
+                                            class="flex items-center w-full px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-600">
+                                        <i class="fa-solid fa-rotate-left mr-2"></i>
+                                        <span class="text-4 font-light">Retract</span>
+                                    </button>
+                                {{end}}
+                                <template x-if="!m.resolved">
+                                    <button @click="resolveMessage(m.ID)"
+                                            title="Resolve Message"
+                                            class="flex items-center w-full px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-600">
+                                        <i class="fas fa-check text-success mr-2"></i>
+                                        <span class="text-4 font-light">Resolve</span>
+                                    </button>
+                                </template>
+                            </div>
+                        </article>
+                    </template>
                 </div>
+
 
                 <!-- replies -->
                 <div x-cloak x-show="m.ShowReplies.value"

@@ -1,3 +1,3 @@
-export interface AlpineComponent {
-    init(): void;
+export abstract class AlpineComponent {
+    abstract init(): void;
 }

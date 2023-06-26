@@ -47,6 +47,10 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
             return this.user.ID !== 0;
         },
 
+        isAdmin(): boolean {
+            return this.user.isAdmin;
+        },
+
         reactToMessage(id: number, reaction: string) {
             return this.ws.reactToMessage(id, reaction);
         },
@@ -116,6 +120,22 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
 
         handleServerMessage(msg: { server: string; type: string }) {
             console.log("🌑 received server message", msg);
+        },
+
+        deleteMessage(id: number) {
+            return this.ws.deleteMessage(id);
+        },
+
+        approveMessage(id: number) {
+            return this.ws.approveMessage(id);
+        },
+
+        retractMessage(id: number) {
+            return this.ws.retractMessage(id);
+        },
+
+        resolveMessage(id: number) {
+            return this.ws.resolveMessage(id);
         },
     } as AlpineComponent;
 }
