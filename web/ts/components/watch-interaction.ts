@@ -1,5 +1,6 @@
 import { AlpineComponent } from "./alpine-component";
 import { User } from "../api/users";
+import { SocketConnections } from "../api/chat-ws";
 
 enum InteractionType {
     Chat,
@@ -12,7 +13,7 @@ export function watchInteractionContext(user: User) {
         user: user as User,
 
         init() {
-            console.log("init watchInteraction");
+            SocketConnections.ws.subscribe();
         },
 
         showChat() {

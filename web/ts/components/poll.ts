@@ -57,7 +57,8 @@ export function pollContext(streamId: number): AlpineComponent {
 
         startPoll() {
             this.showCreateUI.toggle(false);
-            this.ws.startPoll(this.newPoll.question, this.newPoll.options);
+            this.ws.startPoll(this.newPoll.question, this.newPoll.getOptionStrings());
+            this.newPoll.reset();
         },
 
         cancelPoll() {
@@ -74,7 +75,6 @@ export function pollContext(streamId: number): AlpineComponent {
         handleNewPoll(data: object) {
             console.log("🌑 starting new poll", data);
             this.activePoll = Object.assign(new Poll(), data);
-            console.log(this.activePoll);
         },
 
         handleParticipation(vote: PollVote) {
@@ -106,6 +106,11 @@ class NewPoll {
         this.reset();
     }
 
+    getOptionStrings(): string[] {
+        // @ts-ignore
+        return this.options.map(({ answer }) => answer);
+    }
+
     isValid(): boolean {
         // @ts-ignore
         return this.question.length === 0 || this.options.some(({ answer }) => answer.length === 0);
@@ -113,6 +118,10 @@ class NewPoll {
 
     addEmptyOption() {
         this.options.push({ answer: "" });
+    }
+
+    removeOption(i: number) {
+        this.options.splice(i, 1);
     }
 
     onlyOneOption() {

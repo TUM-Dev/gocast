@@ -14,8 +14,6 @@ export abstract class SocketConnections {
     static ws: WebsocketConnection = new WebsocketConnection("chat/12845");
 }
 
-SocketConnections.ws.subscribe();
-
 export type NewChatMessage = {
     msg: string;
     anonymous: boolean;

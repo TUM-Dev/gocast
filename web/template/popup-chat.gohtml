@@ -438,7 +438,7 @@
 
                             <button class="tum-live-icon-button text-xs px-3"
                                     :disabled="newPoll.onlyOneOption()"
-                                    @click=""
+                                    @click="newPoll.removeOption(index)"
                                     tabindex="-1"
                                     type="button"
                                     title="Remove Poll Option">
@@ -448,7 +448,7 @@
                     </template>
                 </section>
                 <div class="flex justify-between space-x-3">
-                    <button type="button" @click="showCreateUI.toggle()" tabindex="-1"
+                    <button type="button" @click="startPoll()" tabindex="-1"
                             class="tum-live-button tum-live-button-primary grow"
                             title="Start Poll"
                             :disabled="newPoll.isValid()">
