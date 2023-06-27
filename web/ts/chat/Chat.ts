@@ -1,12 +1,4 @@
-import { NewChatMessage, NewReply } from "./NewChatMessage";
-import { ChatUserList } from "./ChatUserList";
-import { EmojiList } from "./EmojiList";
-import { Poll } from "./Poll";
 import { deregisterTimeWatcher, getPlayers, registerTimeWatcher } from "../TUMLiveVjs";
-import { EmojiPicker } from "./EmojiPicker";
-import { TopEmojis } from "top-twitter-emojis-map";
-
-const MAX_NAMES_IN_REACTION_TITLE = 2;
 
 enum ShowMode {
     Messages,
@@ -21,89 +13,17 @@ export class Chat {
 
     popUpWindow: Window;
     chatReplayActive: boolean;
-    orderByLikes: boolean;
-    disconnected: boolean;
-    current: NewChatMessage;
     messages: ChatMessage[];
     focusedMessageId?: number;
-    users: ChatUserList;
-    emojis: EmojiList;
     startTime: Date;
     liveNowTimestamp: Date;
-    poll: Poll;
     pollHistory: object[];
     showMode: ShowMode;
+    orderByLikes: boolean;
 
     preprocessors: ((m: ChatMessage) => ChatMessage)[] = [
         (m: ChatMessage) => {
-            if (m.addressedTo.find((uId) => uId === this.userId) !== undefined) {
-                m.message = m.message.replaceAll(
-                    "@" + this.userName,
-                    "<span class = 'text-sky-800 bg-sky-200 text-xs dark:text-indigo-200 dark:bg-indigo-800 p-1 rounded'>" +
-                        "@" +
-                        this.userName +
-                        "</span>",
-                );
-            }
-            return m;
-        },
-        (m: ChatMessage) => {
             return { ...m, isGrayedOut: this.chatReplayActive && !this.orderByLikes };
-        },
-        (m: ChatMessage) => {
-            return { ...m, renderVersion: 0 };
-        },
-        (m: ChatMessage) => {
-            m.aggregatedReactions = (m.reactions || [])
-                .reduce((res: ChatReactionGroup[], reaction: ChatReaction) => {
-                    let group: ChatReactionGroup = res.find((r) => r.emojiName === reaction.emoji);
-                    if (group === undefined) {
-                        group = {
-                            emoji: TopEmojis.find((e) => e.short_names.includes(reaction.emoji)).emoji,
-                            emojiName: reaction.emoji,
-                            reactions: [],
-                            names: [],
-                            namesPretty: "",
-                            hasReacted: reaction.userID === this.userId,
-                        };
-                        res.push(group);
-                    } else if (reaction.userID == this.userId) {
-                        group.hasReacted = true;
-                    }
-
-                    group.names.push(reaction.username);
-                    group.reactions.push(reaction);
-                    return res;
-                }, [])
-                .map((group) => {
-                    if (group.names.length === 0) {
-                        // Nobody
-                        group.namesPretty = `Nobody reacted with ${group.emojiName}`;
-                    } else if (group.names.length == 1) {
-                        // One Person
-                        group.namesPretty = `${group.names[0]} reacted with ${group.emojiName}`;
-                    } else if (group.names.length == MAX_NAMES_IN_REACTION_TITLE + 1) {
-                        // 1 person more than max allowed
-                        group.namesPretty = `${group.names
-                            .slice(0, MAX_NAMES_IN_REACTION_TITLE)
-                            .join(", ")} and one other reacted with ${group.emojiName}`;
-                    } else if (group.names.length > MAX_NAMES_IN_REACTION_TITLE) {
-                        // at least 2 more than max allowed
-                        group.namesPretty = `${group.names.slice(0, MAX_NAMES_IN_REACTION_TITLE).join(", ")} and ${
-                            group.names.length - MAX_NAMES_IN_REACTION_TITLE
-                        } others reacted with ${group.emojiName}`;
-                    } else {
-                        // More than 1 Person but less than MAX_NAMES_IN_REACTION_TITLE
-                        group.namesPretty = `${group.names.slice(0, group.names.length - 1).join(", ")} and ${
-                            group.names[group.names.length - 1]
-                        } reacted with ${group.emojiName}`;
-                    }
-                    return group;
-                });
-            m.aggregatedReactions.sort(
-                (a, b) => EmojiPicker.getEmojiIndex(a.emojiName) - EmojiPicker.getEmojiIndex(b.emojiName),
-            );
-            return m;
         },
     ];
 
@@ -113,32 +33,8 @@ export class Chat {
 
     private timeWatcherCallBackFunction: () => void;
 
-    constructor(
-        isAdminOfCourse: boolean,
-        streamId: number,
-        startTime: string,
-        liveNowTimestamp: string,
-        userId: number,
-        userName: string,
-        activateChatReplay: boolean,
-    ) {
+    constructor(activateChatReplay: boolean) {
         this.orderByLikes = false;
-        this.disconnected = false;
-        this.current = new NewChatMessage();
-        this.admin = isAdminOfCourse;
-        this.users = new ChatUserList(streamId);
-        this.emojis = new EmojiList();
-        this.messages = [];
-        this.streamId = streamId;
-        this.userId = userId;
-        this.userName = userName;
-        this.poll = new Poll(streamId);
-        this.startTime = Date.parse(startTime) ? new Date(startTime) : null;
-        this.liveNowTimestamp = Date.parse(liveNowTimestamp) ? new Date(liveNowTimestamp) : null;
-        this.focusedMessageId = -1;
-        this.popUpWindow = null;
-        this.showMode = ShowMode.Messages;
-        this.pollHistory = [];
         this.grayOutMessagesAfterPlayerTime = this.grayOutMessagesAfterPlayerTime.bind(this);
         this.deregisterPlayerTimeWatcher = this.deregisterPlayerTimeWatcher.bind(this);
         this.registerPlayerTimeWatcher = this.registerPlayerTimeWatcher.bind(this);
@@ -148,89 +44,6 @@ export class Chat {
             this.activateChatReplay();
         } else {
             this.deactivateChatReplay();
-        }
-        window.addEventListener("beforeunload", () => {
-            this.popUpWindow?.close();
-        });
-    }
-
-    initEmojiPicker(id: string): EmojiPicker {
-        return new EmojiPicker(id);
-    }
-
-    async loadMessages() {
-        this.messages = [];
-        fetchMessages(this.streamId).then((messages) => {
-            messages.forEach((m) => this.addMessage(m));
-        });
-    }
-
-    async loadPollHistory() {
-        this.pollHistory = [];
-        fetch(`/api/chat/${this.streamId}/polls`)
-            .then((r) => r.json())
-            .then((polls) => (this.pollHistory = polls));
-    }
-
-    showMessages(set = false): boolean {
-        this.showMode = set ? ShowMode.Messages : this.showMode;
-        return this.showMode == ShowMode.Messages;
-    }
-
-    showPolls(set = false): boolean {
-        this.showMode = set ? ShowMode.Polls : this.showMode;
-        return this.showMode == ShowMode.Polls;
-    }
-
-    sortMessages() {
-        this.messages = [...this.messages].sort((m1, m2) => {
-            if (this.orderByLikes) {
-                const m1LikeReactionGroup = m1.aggregatedReactions.find(
-                    (r) => r.emojiName === EmojiPicker.LikeEmojiName,
-                );
-                const m1Likes = m1LikeReactionGroup ? m1LikeReactionGroup.reactions.length : 0;
-
-                const m2LikeReactionGroup = m2.aggregatedReactions.find(
-                    (r) => r.emojiName === EmojiPicker.LikeEmojiName,
-                );
-                const m2Likes = m2LikeReactionGroup ? m2LikeReactionGroup.reactions.length : 0;
-
-                if (m1Likes === m2Likes) {
-                    return m2.ID - m1.ID; // same amount of likes -> newer messages up
-                }
-                return m2Likes - m1Likes; // more likes -> up
-            } else {
-                return m1.ID < m2.ID ? -1 : 1; // newest messages last
-            }
-        });
-    }
-
-    onMessage(e) {
-        this.addMessage(e.detail);
-    }
-
-    onDelete(e) {
-        this.messages.find((m) => m.ID === e.detail.delete).deleted = true;
-    }
-
-    onReaction(e) {
-        const m = this.messages.find((m) => m.ID === e.detail.reactions);
-        m.reactions = e.detail.payload;
-        this.patchMessage(m);
-    }
-
-    onResolve(e) {
-        this.messages.find((m) => m.ID === e.detail.resolve).resolved = true;
-    }
-
-    onReply(e) {
-        this.messages.find((m) => m.ID === e.detail.replyTo.Int64).replies.push(e.detail);
-    }
-
-    onNewPoll(e) {
-        if (!this.current.anonymous) {
-            this.poll.result = null;
-            this.poll.activePoll = { ...e.detail, selected: null };
         }
     }
 
@@ -248,89 +61,6 @@ export class Chat {
 
     onFocusUpdated(e) {
         this.focusedMessageId = e.detail.ID;
-    }
-
-    onPollOptionVotesUpdate(e) {
-        this.poll.updateVotes(e.detail);
-    }
-
-    onPollOptionResult(e) {
-        this.poll.activePoll = null;
-        this.poll.result = e.detail;
-        // @ts-ignore
-        const id = this.pollHistory.length > 0 ? this.pollHistory[0].ID + 1 : 1;
-        this.pollHistory.unshift({
-            // @ts-ignore
-            ID: id,
-            question: e.detail.question,
-            options: e.detail.pollOptionResults,
-        });
-    }
-
-    onSubmit() {
-        if (this.emojis.isValid()) {
-            window.dispatchEvent(new CustomEvent("chatenter"));
-        } else if (this.users.isValid()) {
-            this.current.addAddressee(this.users.getSelected());
-            this.users.clear();
-        } else {
-            this.current.send();
-        }
-    }
-
-    onInputKeyUp(e) {
-        if (this.emojis.isValid()) {
-            let event = "";
-            switch (e.keyCode) {
-                case 9: {
-                    console.log(e.code);
-                    event = "emojiselectiontriggered";
-                    break;
-                }
-                case 38: {
-                    event = "emojiarrowup";
-                    break;
-                }
-                case 40: {
-                    event = "emojiarrowdown";
-                    break;
-                }
-                default: {
-                    this.emojis.getEmojisForMessage(e.target.value, e.target.selectionStart);
-                    return;
-                }
-            }
-            window.dispatchEvent(new CustomEvent(event));
-        } else if (this.users.isValid()) {
-            switch (e.keyCode) {
-                case 38 /* UP */: {
-                    this.users.prev();
-                    break;
-                }
-                case 40 /* DOWN */: {
-                    this.users.next();
-                    break;
-                }
-                default: {
-                    this.users.filterUsers(e.target.value, e.target.selectionStart);
-                    return;
-                }
-            }
-        } else {
-            this.users.filterUsers(e.target.value, e.target.selectionStart);
-            this.emojis.getEmojisForMessage(e.target.value, e.target.selectionStart);
-        }
-    }
-
-    getInputPlaceHolder(): string {
-        if (this.disconnected) {
-            return "Reconnecting to chat...";
-        }
-        if (this.current.reply.id === 0) {
-            return "Send a message";
-        } else {
-            return "Reply [escape to cancel]";
-        }
     }
 
     openChatPopUp(courseSlug: string, streamID: number) {
@@ -480,18 +210,6 @@ export class Chat {
         }
 
         window.dispatchEvent(new CustomEvent("reorder"));
-    }
-
-    findReplyMessage(reply: NewReply): ChatMessage {
-        return reply.isNoReply() ? reply.message : this.messages.find((m) => m.ID === reply.id);
-    }
-
-    private addMessage(m: ChatMessage) {
-        this.preprocessors.forEach((f) => (m = f(m)));
-
-        if (!this.filterPredicate(m)) {
-            this.messages.push(m);
-        }
     }
 
     private notifyMessagesUpdate(type: MessageUpdateType, payload: MessageUpdate) {

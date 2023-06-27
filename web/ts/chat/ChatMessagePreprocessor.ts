@@ -1,7 +1,7 @@
 import { ChatMessage, ChatReaction, ChatReactionGroup } from "../api/chat";
 import { TopEmojis } from "top-twitter-emojis-map";
-import { EmojiPicker } from "./EmojiPicker";
 import { User } from "../api/users";
+import { EmojiPicker } from "./EmojiPicker";
 
 export abstract class ChatMessagePreprocessor {
     static MAX_NAMES_IN_REACTION_TITLE = 2;

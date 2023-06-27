@@ -47,7 +47,6 @@ func (r mainRoutes) WatchPage(c *gin.Context) {
 
 	data.ChatData.IndexData.TUMLiveContext = foundContext.(tools.TUMLiveContext)
 	data.ChatData.IsAdminOfCourse = tumLiveContext.UserIsAdmin()
-	data.ChatData.IsPopUp = false
 
 	if data.IsAdminOfCourse && tumLiveContext.Stream.LectureHallID != 0 {
 		lectureHall, err := r.LectureHallsDao.GetLectureHallByID(tumLiveContext.Stream.LectureHallID)

@@ -1,7 +1,7 @@
 import { Emoji, TopEmojis } from "top-twitter-emojis-map";
 
 export class EmojiPicker {
-    id: string | number;
+    id: string;
     isOpen: boolean;
 
     static LikeEmojiName = "+1";
@@ -14,7 +14,7 @@ export class EmojiPicker {
         return this.suggestions.findIndex((e) => e.short_names[0] === emojiName);
     }
 
-    constructor(id: string | number) {
+    constructor(id: string) {
         this.id = id;
         this.isOpen = false;
     }

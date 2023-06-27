@@ -1,19 +1,3 @@
-import { Chat } from "./chat/Chat";
-
-export function initChat(
-    isAdminOfCourse: boolean,
-    streamId: number,
-    streamStart: string,
-    liveNowTimestamp: string,
-    userId: number,
-    userName: string,
-    activateChatReplay: boolean,
-) {
-    return {
-        c: new Chat(isAdminOfCourse, streamId, streamStart, liveNowTimestamp, userId, userName, activateChatReplay),
-    };
-}
-
 /*
     Scroll to the bottom of the 'chatBox'
  */

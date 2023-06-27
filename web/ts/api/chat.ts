@@ -1,8 +1,6 @@
 import { get } from "../utilities/fetch-wrappers";
-import { EmojiPicker } from "../chat/EmojiPicker";
 import { ChatMessagePreprocessor } from "../chat/ChatMessagePreprocessor";
 import { User } from "./users";
-import { ChatUser } from "../chat/NewChatMessage";
 import { ToggleableElement } from "../utilities/ToggleableElement";
 
 export class ChatMessage implements Identifiable {
@@ -111,12 +109,16 @@ export class ChatMessageArray {
     pushReply(m: ChatMessage) {
         const base = this.messages.find((msg) => msg.ID === m.replyTo.Int64);
         if (base !== undefined) {
-            base.replies.push(Object.assign(new ChatMessage(), m));
+            if (base.replies.findIndex((msg) => msg.ID === m.ID) === -1) {
+                base.replies.push(Object.assign(new ChatMessage(), m));
+            }
         }
     }
 
     pushMessage(m: ChatMessage) {
-        this.messages.push(Object.assign(new ChatMessage(), m));
+        if (this.messages.findIndex((msg) => msg.ID === m.ID) === -1) {
+            this.messages.push(Object.assign(new ChatMessage(), m));
+        }
     }
 }
 
@@ -145,6 +147,11 @@ export class PollOption implements Identifiable {
     answer: string;
     votes: number;
 }
+
+export type ChatUser = {
+    id: number;
+    name: string;
+};
 
 /**
  * REST API Wrapper for /api/chat
