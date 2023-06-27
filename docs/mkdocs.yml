@@ -1,0 +1,8 @@
+site_name: TUM-Live
+site_url: https://docs.live.mm.rbg.tum.de/
+theme:
+  name: readthedocs
+  highlightjs: true
+  hljs_languages:
+    - yaml
+    - rust
