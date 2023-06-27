@@ -1,20 +1,19 @@
 import { AlpineComponent } from "./alpine-component";
 import { SocketConnections } from "../api/chat-ws";
 import { PollMessageType, PollWebsocketConnection } from "../api/poll-ws";
-import { ChatAPI, Poll } from "../api/chat";
+import { ChatAPI, Poll, PollOption } from "../api/chat";
+import { ToggleableElement } from "../utilities/ToggleableElement";
 
 export function pollContext(streamId: number): AlpineComponent {
     return {
         streamId: streamId,
 
         // current poll
-        activePoll: undefined as Poll,
-        result: undefined as object,
+        activePoll: null as Poll,
 
         // create new poll
-        showCreateUI: false as boolean,
-        question: "" as string,
-        options: [] as object[],
+        showCreateUI: new ToggleableElement(),
+        newPoll: new NewPoll(),
 
         // poll history
         history: [] as Poll[],
@@ -48,12 +47,22 @@ export function pollContext(streamId: number): AlpineComponent {
         },
 
         hasActivePoll(): boolean {
-            return this.activePoll.ID !== -1;
+            return this.activePoll !== null && this.activePoll !== undefined && this.activePoll.ID !== -1;
         },
 
         closeActivePoll() {
             this.ws.closeActivePoll();
             this.activePoll = null;
+        },
+
+        startPoll() {
+            this.showCreateUI.toggle(false);
+            this.ws.startPoll(this.newPoll.question, this.newPoll.options);
+        },
+
+        cancelPoll() {
+            this.showCreateUI.toggle(false);
+            this.newPoll.reset();
         },
 
         submitPollOptionVote(pollOptionId: number) {
@@ -64,8 +73,8 @@ export function pollContext(streamId: number): AlpineComponent {
 
         handleNewPoll(data: object) {
             console.log("🌑 starting new poll", data);
-            this.result = null;
-            this.activePoll = { ...data, selected: null };
+            this.activePoll = Object.assign(new Poll(), data);
+            console.log(this.activePoll);
         },
 
         handleParticipation(vote: PollVote) {
@@ -77,15 +86,43 @@ export function pollContext(streamId: number): AlpineComponent {
         handleClosePoll(result) {
             console.log("🌑 close poll", result);
             this.activePoll = null;
-            this.result = result;
 
-            this.history.unshift({
-                ID: this.history.length > 0 ? this.history[0].ID + 1 : 1,
-                question: result.question,
-                options: result.pollOptionResults,
-            });
+            this.history.unshift(
+                Object.assign(new Poll(), {
+                    ID: this.history.length > 0 ? this.history[0].ID + 1 : 1,
+                    question: result.question,
+                    options: result.options,
+                }),
+            );
         },
     } as AlpineComponent;
+}
+
+class NewPoll {
+    question: string;
+    options: object[];
+
+    constructor() {
+        this.reset();
+    }
+
+    isValid(): boolean {
+        // @ts-ignore
+        return this.question.length === 0 || this.options.some(({ answer }) => answer.length === 0);
+    }
+
+    addEmptyOption() {
+        this.options.push({ answer: "" });
+    }
+
+    onlyOneOption() {
+        return this.options.length === 1;
+    }
+
+    reset() {
+        this.question = "";
+        this.options = [{ answer: "Yes" }, { answer: "No" }];
+    }
 }
 
 type PollVote = {

@@ -316,8 +316,15 @@
     </article>
 </template>
 <template x-if="isPolls()">
-    <article x-data="interaction.pollContext({{$stream.ID}})" class="relative">
+    <article x-data="interaction.pollContext({{$stream.ID}})" class="text-3 relative">
         <header class="tum-live-bg tum-live-border flex items-center justify-between sticky top-0 z-40 w-full px-3 h-12 border-b">
+            <template x-if="isAdmin() && activePoll  && !showCreateUI.value">
+                <button type="button" @click="showCreateUI.toggle();" tabindex="-1"
+                        class="tum-live-button tum-live-button-primary"
+                        title="New Poll">
+                    <span>New Poll</span>
+                </button>
+            </template>
             <button type="button"
                     @click="showChat()"
                     class="tum-live-button tum-live-button-tertiary ml-auto">Chat
@@ -356,10 +363,9 @@
                 <div class="flex justify-end pt-2 text-xs">
                     <template x-if="isAdmin()">
                         <button class="tum-live-button tum-live-button-primary"
-                                x-text="activePoll.active ?  'Publish & Close' : 'Poll closed'"
                                 @click="closeActivePoll()"
-                                :disabled="!activePoll.active"
                                 title="Close poll">
+                            Publish & Close
                         </button>
                     </template>
                     <template x-if="!isAdmin()">
@@ -397,6 +403,67 @@
                 </template>
             </template>
         </article>
+        <template x-if="showCreateUI.value">
+            <article class="tum-live-bg tum-live-border fixed bottom-0 w-full px-2 pb-2 shadow-lg border rounded-lg">
+                <header class="flex justify-end p-1">
+                    <button class="tum-live-icon-button text-xs p-2"
+                            @click="cancelPoll()"
+                            title="Cancel Poll"
+                            tabindex="-1"
+                            type="button">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </header>
+                <section class="bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full my-auto lg:mr-2">
+                    <label class = "w-full">
+                    <textarea
+                            id="pollQuestion" spellcheck="true"
+                            class="bg-transparent w-full h-40 resize-none border-none py-2 px-4 text-sm font-normal placeholder:text-sm focus:outline-none"
+                            maxlength="500"
+                            x-model="newPoll.question"
+                            autocomplete="off"
+                            placeholder="Write a Poll-Question ..."></textarea>
+                    </label>
+                </section>
+                <section>
+                    <template x-for="(option, index) in newPoll.options" :key="index">
+                        <div class="flex-1 bg-gray-200 dark:bg-gray-600 rounded-lg flex border-2 border-transparent w-full lg:mr-2 my-2">
+                            <label class = "w-full">
+                                <input :id="$id('poll-answer')"
+                                       placeholder="Write a Poll-Answer ..." maxlength="240"
+                                       spellcheck="true"
+                                       x-model="option.answer"
+                                       class="bg-transparent w-full py-2 px-4 border-0 text-sm font-normal placeholder:text-sm focus:outline-none">
+                            </label>
+
+                            <button class="tum-live-icon-button text-xs px-3"
+                                    :disabled="newPoll.onlyOneOption()"
+                                    @click=""
+                                    tabindex="-1"
+                                    type="button"
+                                    title="Remove Poll Option">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </template>
+                </section>
+                <div class="flex justify-between space-x-3">
+                    <button type="button" @click="showCreateUI.toggle()" tabindex="-1"
+                            class="tum-live-button tum-live-button-primary grow"
+                            title="Start Poll"
+                            :disabled="newPoll.isValid()">
+                        <span class="font-semibold text-xs">Start Poll</span>
+                    </button>
+                    <button type="button" tabindex="-1"
+                            class="tum-live-button tum-live-button-secondary"
+                            @click="newPoll.addEmptyOption()"
+                            title="Add Poll Answer">
+                        <i class="fas fa-plus m-auto"></i>
+                        Add option
+                    </button>
+                </div>
+            </article>
+        </template>
     </article>
 </template>
 </body>

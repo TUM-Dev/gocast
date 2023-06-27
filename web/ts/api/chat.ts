@@ -125,7 +125,6 @@ export class Poll implements Identifiable {
     options: PollOption[];
     question: string;
 
-    active: boolean;
     submitted: boolean;
 
     getOptionWidth(pollOption) {

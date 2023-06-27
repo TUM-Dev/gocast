@@ -54,7 +54,7 @@
 }
 
 .tum-live-bg-primary {
-    @apply bg-blue-500 dark:bg-indigo-600
+    @apply bg-blue-500 dark:bg-indigo-600 disabled:bg-blue-400/50 disabled:dark:bg-indigo-500/50
 }
 
 /* Elements */
@@ -67,7 +67,7 @@
 }
 
 .tum-live-button-secondary {
-    @apply text-3 hover:bg-gray-100 dark:hover:bg-gray-800
+    @apply text-3 hover:bg-gray-100 dark:hover:bg-gray-800;
 }
 
 .tum-live-button-tertiary {
@@ -79,7 +79,7 @@
 }
 
 .tum-live-icon-button {
-    @apply flex justify-center items-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-white active:bg-gray-100/50 dark:active:bg-gray-700/50
+    @apply flex justify-center items-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-white active:bg-gray-100/50 dark:active:bg-gray-700/50 disabled:opacity-20;
 }
 
 .tum-live-badge {
