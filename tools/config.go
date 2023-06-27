@@ -38,7 +38,7 @@ func initConfig() {
 	viper.AddConfigPath(".")
 	err := viper.ReadInConfig()
 	if err != nil {
-		if err == err.(viper.ConfigFileNotFoundError) {
+		if errors.Is(err, viper.ConfigFileNotFoundError{}) {
 			log.WithError(err).Warn("tools.config.LoadConfig: can't find config file")
 		} else {
 			panic(fmt.Errorf("fatal error config file: %v", err))
@@ -100,13 +100,8 @@ type Config struct {
 		UploadURL string `yaml:"uploadUrl"`
 		SubDir    string `yaml:"subDir"`
 	} `yaml:"lrz"`
-	Mail struct {
-		Sender    string `yaml:"sender"`
-		Server    string `yaml:"server"`
-		SMIMECert string `yaml:"SMIMECert"`
-		SMIMEKey  string `yaml:"SMIMEKey"`
-	} `yaml:"mail"`
-	Db struct {
+	Mail MailConfig `yaml:"mail"`
+	Db   struct {
 		User     string `yaml:"user"`
 		Password string `yaml:"password"`
 		Database string `yaml:"database"`
@@ -173,6 +168,14 @@ type Config struct {
 	} `yaml:"meili"`
 	VodURLTemplate string `yaml:"vodURLTemplate"`
 	CanonicalURL   string `yaml:"canonicalURL"`
+}
+
+type MailConfig struct {
+	Sender            string `yaml:"sender"`
+	Server            string `yaml:"server"`
+	SMIMECert         string `yaml:"SMIMECert"`
+	SMIMEKey          string `yaml:"SMIMEKey"`
+	MaxMailsPerMinute int    `yaml:"maxMailsPerMinute"`
 }
 
 func (Config) GetJWTKey() *rsa.PrivateKey {

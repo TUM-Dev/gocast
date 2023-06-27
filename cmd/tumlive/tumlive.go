@@ -166,6 +166,7 @@ func main() {
 		&model.ChatReaction{},
 		&model.Subtitles{},
 		&model.TranscodingFailure{},
+		&model.Email{},
 	)
 	if err != nil {
 		sentry.CaptureException(err)
@@ -195,6 +196,9 @@ func main() {
 
 	// init meili search index settings
 	go tools.NewMeiliExporter(dao.NewDaoWrapper()).SetIndexSettings()
+
+	mailer := tools.NewMailer(dao.NewDaoWrapper(), tools.Cfg.Mail.MaxMailsPerMinute)
+	go mailer.Run()
 
 	initCron()
 	go func() {

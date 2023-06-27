@@ -190,6 +190,11 @@ func TestUsersCRUD(t *testing.T) {
 							usersMock.EXPECT().CreateRegisterLink(gomock.Any(), testutils.Lecturer).Return(model.RegisterLink{}, nil).AnyTimes()
 							return usersMock
 						}(),
+						EmailDao: func() dao.EmailDao {
+							emailMock := mock_dao.NewMockEmailDao(gomock.NewController(t))
+							emailMock.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).MinTimes(1).MaxTimes(1)
+							return emailMock
+						}(),
 					}
 					configGinUsersRouter(r, wrapper)
 				},
@@ -518,6 +523,47 @@ func TestSearchUserForCourse(t *testing.T) {
 				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler, testutils.TUMLiveContext(testutils.TUMLiveContextAdmin)),
 				ExpectedCode:     http.StatusOK,
 				ExpectedResponse: response,
+			},
+		}.Run(t, testutils.Equal)
+	})
+}
+
+func TestResetPassword(t *testing.T) {
+	t.Run("/api/users/resetPassword", func(t *testing.T) {
+		hansi := model.User{
+			Model: gorm.Model{ID: 1},
+			Name:  "Hansi",
+			Email: sql.NullString{String: "hansi@tum.de", Valid: true},
+			Role:  model.StudentType,
+		}
+		tools.Cfg.Mail = tools.MailConfig{Sender: "from@invalid", Server: "server", SMIMECert: "", SMIMEKey: "", MaxMailsPerMinute: 1}
+		gomino.TestCases{
+			"POST[success]": {
+				Router: func(r *gin.Engine) {
+					wrapper := dao.DaoWrapper{
+						UsersDao: func() dao.UsersDao {
+							usersMock := mock_dao.NewMockUsersDao(gomock.NewController(t))
+							usersMock.EXPECT().CreateRegisterLink(gomock.Any(), hansi).Return(model.RegisterLink{RegisterSecret: "abc"}, nil).MinTimes(1).MaxTimes(1)
+
+							usersMock.EXPECT().GetUserByEmail(gomock.Any(), hansi.Email.String).Return(hansi, nil).MinTimes(1).MaxTimes(1)
+							return usersMock
+						}(),
+						EmailDao: func() dao.EmailDao {
+							emailMock := mock_dao.NewMockEmailDao(gomock.NewController(t))
+							emailMock.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).MinTimes(1).MaxTimes(1)
+							return emailMock
+						}(),
+					}
+					configGinUsersRouter(r, wrapper)
+				},
+				Method: http.MethodPost,
+				Url:    "/api/users/resetPassword",
+				Body: struct {
+					Username string `json:"username"`
+				}{Username: "hansi@tum.de"},
+				Middlewares:      testutils.GetMiddlewares(tools.ErrorHandler),
+				ExpectedCode:     http.StatusOK,
+				ExpectedResponse: nil,
 			},
 		}.Run(t, testutils.Equal)
 	})

@@ -33,6 +33,7 @@ var templatePaths = []string{
 	"template/partial/course/manage/*.gohtml",
 	"template/partial/stream/chat/*.gohtml",
 	"template/partial/course/manage/*.gohtml",
+	"template/partial/course/manage/create-lecture-form-slides/*.gohtml",
 }
 
 func ConfigGinRouter(router *gin.Engine) {

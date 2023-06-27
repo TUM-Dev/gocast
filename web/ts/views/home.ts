@@ -1,52 +1,30 @@
 import { ToggleableElement } from "../utilities/ToggleableElement";
 import { Semester, SemesterDTO, SemestersAPI } from "../api/semesters";
-import { ProgressAPI } from "../api/progress";
-import { Course, CoursesAPI, Livestream } from "../api/courses";
-import { Notification } from "../notifications";
-import { NotificationAPI } from "../api/notifications";
-import { Paginator } from "../utilities/paginator";
+import { Course, CoursesAPI } from "../api/courses";
+import { AlpineComponent } from "../components/alpine-component";
+import { PinnedUpdate, Tunnel } from "../utilities/tunnels";
 
-export enum Views {
-    Main,
-    UserCourses,
-    PublicCourses,
-}
-
-type History = {
-    year: number;
-    term: string;
-    view: Views;
-};
-
-export function context() {
-    const url = new URL(window.location.href);
+export function skeleton(): AlpineComponent {
     return {
-        term: url.searchParams.get("term") ?? undefined,
-        year: +url.searchParams.get("year"),
-        view: +url.searchParams.get("view") ?? Views.Main,
-
-        serverNotifications: [],
+        state: new PageState(new URL(window.location.href)),
 
         semesters: [] as Semester[],
         currentSemesterIndex: -1,
         selectedSemesterIndex: -1,
 
-        livestreams: [] as Livestream[],
         publicCourses: [] as Course[],
         userCourses: [] as Course[],
-        liveToday: [] as Course[],
-        recently: new Paginator<Course>([], 10),
+        pinnedCourses: [] as Course[],
 
-        navigation: new ToggleableElement(new Map([["allSemesters", new ToggleableElement()]])),
-
-        loadingIndicator: 0,
-        nothingToDo: false,
+        navigation: new ToggleableElement([["allSemesters", new ToggleableElement()]]),
 
         /**
          * AlpineJS init function which is called automatically in addition to 'x-init'
          */
         init() {
             this.reload(true);
+            const callback = (update) => this.updatePinned(update);
+            Tunnel.pinned.subscribe(callback);
         },
 
         /**
@@ -54,37 +32,14 @@ export function context() {
          * @param  {boolean} full If true, load everything including semesters and livestreams
          */
         reload(full = false) {
-            const promises = full
-                ? [
-                      this.loadServerNotifications(),
-                      this.loadSemesters(),
-                      this.loadPublicCourses(),
-                      this.loadLivestreams(),
-                      this.loadUserCourses(),
-                  ]
-                : [this.loadPublicCourses(), this.loadUserCourses()];
-            this.load(promises).then(() => {
-                this.nothingToDo =
-                    this.livestreams.length === 0 && this.liveToday.length === 0 && this.recently.length === 0;
-            });
-            promises[promises.length - 1].then(() => {
-                this.recently.set(this.getRecently());
-                this.recently.reset();
-                this.liveToday = this.getLiveToday();
-                this.loadProgresses(this.userCourses.map((c) => c.LastLecture.ID));
-            });
-        },
-
-        /**
-         * Resolve given promises and increment loadingIndicator partially
-         * @param  {Promise<object>[]} promises Array of promises
-         */
-        load(promises: Promise<object>[]): Promise<number | void> {
-            this.loadingIndicator = 0;
-            promises.forEach((p) => {
-                Promise.resolve(p).then((_) => (this.loadingIndicator += 100 / promises.length));
-            });
-            return Promise.all(promises).then(() => (this.loadingIndicator = 0));
+            Promise.all(
+                [
+                    full ? [this.loadSemesters()] : [],
+                    this.loadPublicCourses(),
+                    this.loadPinnedCourses(),
+                    this.loadUserCourses(),
+                ].flat(),
+            );
         },
 
         /**
@@ -94,32 +49,39 @@ export function context() {
             const state = event.state || {};
             const year = +state["year"] || this.semesters[this.currentSemesterIndex].Year;
             const term = state["term"] || this.semesters[this.currentSemesterIndex].TeachingTerm;
-            this.view = state["view"] || Views.Main;
+            this.state.update({ view: state["view"] || View.Main, slug: state["slug"] });
             this.switchSemester(year, term, false);
         },
 
         showMain() {
-            this.switchView(Views.Main);
-            this.pushHistory(this.year, this.term, Views.Main);
+            this.switchView(View.Main);
+            this.state.pushHistory({ year: this.state.year, term: this.state.term, view: View.Main });
         },
 
         showUserCourses() {
-            this.switchView(Views.UserCourses);
-            this.pushHistory(this.year, this.term, Views.UserCourses);
+            this.switchView(View.UserCourses);
+            this.state.pushHistory({ year: this.state.year, term: this.state.term, view: View.UserCourses });
         },
 
         showPublicCourses() {
-            this.switchView(Views.PublicCourses);
-            this.pushHistory(this.year, this.term, Views.PublicCourses);
+            this.switchView(View.PublicCourses);
+            this.state.pushHistory({ year: this.state.year, term: this.state.term, view: View.PublicCourses });
         },
 
-        switchView(view: Views) {
-            this.view = view;
+        showCourse(slug: string) {
+            this.state.update({ slug });
+            this.switchView(View.Course);
+            this.state.pushHistory({
+                year: this.state.year,
+                term: this.state.term,
+                view: View.Course,
+                slug: this.state.slug,
+            });
+        },
+
+        switchView(view: View) {
+            this.state.update({ view });
             this.navigation.toggle(false);
-        },
-
-        async loadServerNotifications() {
-            this.serverNotifications = await NotificationAPI.getServerNotifications();
         },
 
         async loadSemesters() {
@@ -127,53 +89,26 @@ export function context() {
             this.semesters = res.Semesters;
 
             this.currentSemesterIndex = this.findSemesterIndex(res.Current.Year, res.Current.TeachingTerm);
-            if (this.year !== null && this.term != null) {
-                this.selectedSemesterIndex = this.findSemesterIndex(this.year, this.term);
+            if (this.state.year !== null && this.state.term != null) {
+                this.selectedSemesterIndex = this.findSemesterIndex(this.state.year, this.state.term);
             }
 
             if (this.selectedSemesterIndex === -1) {
                 this.selectedSemesterIndex = this.currentSemesterIndex;
-                this.year = res.Current.Year;
-                this.term = res.Current.TeachingTerm;
+                this.state.update({ year: res.Current.Year, term: res.Current.TeachingTerm });
             }
-        },
-
-        async loadLivestreams() {
-            this.livestreams = await CoursesAPI.getLivestreams();
         },
 
         async loadPublicCourses() {
-            this.publicCourses = await CoursesAPI.getPublic(this.year, this.term);
+            this.publicCourses = await CoursesAPI.getPublic(this.state.year, this.state.term);
         },
 
         async loadUserCourses() {
-            this.userCourses = await CoursesAPI.getUsers(this.year, this.term);
+            this.userCourses = await CoursesAPI.getUsers(this.state.year, this.state.term);
         },
 
-        async loadProgresses(ids: number[]) {
-            if (ids.length > 0) {
-                const progresses = await ProgressAPI.getBatch(ids);
-                this.recently.forEach((r, i) => (r.LastLecture.Progress = progresses[i]));
-            }
-        },
-
-        /**
-         * Filter userCourses for lectures streamed today
-         */
-        getLiveToday() {
-            const today = new Date();
-            const eq = (a: Date, b: Date) =>
-                a.getDate() === b.getDate() && a.getMonth() == b.getMonth() && a.getFullYear() === b.getFullYear();
-            return this.userCourses
-                .filter((c) => c.NextLecture.ID !== 0)
-                .filter((c) => eq(today, new Date(c.NextLecture.Start)));
-        },
-
-        /**
-         * Filter userCourses for recently streamed lectures
-         */
-        getRecently() {
-            return this.userCourses.filter((c) => c.LastLecture.ID !== 0);
+        async loadPinnedCourses() {
+            this.pinnedCourses = await CoursesAPI.getPinned(this.state.year, this.state.term);
         },
 
         /**
@@ -183,13 +118,12 @@ export function context() {
          * @param  {object} pushState Push new state into the browser's history?
          */
         async switchSemester(year: number, term: string, pushState = true) {
-            this.year = year;
-            this.term = term;
-            this.selectedSemesterIndex = this.findSemesterIndex(this.year, this.term);
+            this.state.update({ year, term });
+            this.selectedSemesterIndex = this.findSemesterIndex(this.state.year, this.state.term);
             this.navigation.getChild("allSemesters").toggle(false);
 
             if (pushState) {
-                this.pushHistory(year, term);
+                this.state.pushHistory({ year, term });
             }
 
             this.reload();
@@ -202,22 +136,91 @@ export function context() {
             return this.semesters.findIndex((s) => s.Year === year && s.TeachingTerm === term);
         },
 
-        /**
-         * Update search parameters and push state into the browser's history
-         */
-        pushHistory(year: number, term: string, view?: Views) {
-            url.searchParams.set("year", String(year));
-            url.searchParams.set("term", term);
-            let data = { year, term } as History;
-            if (view !== undefined) {
-                if (view !== Views.Main) {
-                    url.searchParams.set("view", view.toString());
-                    data = { ...data, view };
-                } else {
-                    url.searchParams.delete("view");
-                }
+        updatePinned(update: PinnedUpdate) {
+            if (update.pin) {
+                this.pinnedCourses.push(update.course);
+            } else {
+                this.pinnedCourses = this.pinnedCourses.filter((c) => c.ID !== update.course.ID);
             }
-            window.history.pushState(data, "", url.toString());
         },
-    };
+    } as AlpineComponent;
+}
+
+enum View {
+    Main,
+    UserCourses,
+    PublicCourses,
+    Course,
+}
+
+type History = {
+    year: number;
+    term: string;
+    slug: string;
+    view: View;
+};
+
+class PageState {
+    private readonly url: URL;
+    term: string;
+    year: number;
+    slug: string;
+    view: View | string;
+
+    constructor(url: URL) {
+        this.url = url;
+        this.term = url.searchParams.get("term") ?? undefined;
+        this.year = +url.searchParams.get("year");
+        this.slug = url.searchParams.get("slug") ?? undefined;
+        this.view = url.searchParams.get("view") ?? View.Main;
+    }
+
+    update(state: { term?: string; year?: number; slug?: string; view?: View }) {
+        this.term = state.term ?? this.term;
+        this.year = state.year ?? this.year;
+        this.slug = state.slug ?? this.slug;
+        this.view = state.view ?? this.view;
+    }
+
+    isMain() {
+        return this.view == View.Main;
+    }
+
+    isCourse() {
+        return this.view == View.Course;
+    }
+
+    isPublicCourses() {
+        return this.view == View.PublicCourses;
+    }
+
+    isUserCourses() {
+        return this.view == View.UserCourses;
+    }
+
+    /**
+     * Update search parameters and push state into the browser's history
+     */
+    pushHistory(history: { year: number; term: string; slug?: string; view?: View }) {
+        this.url.searchParams.set("year", String(history.year));
+        this.url.searchParams.set("term", history.term);
+
+        let data = { year: history.year, term: history.term } as History;
+
+        if (history.slug !== undefined) {
+            this.url.searchParams.set("slug", history.slug);
+            data = { ...data, slug: history.slug };
+        }
+
+        if (history.view !== undefined) {
+            if (history.view !== View.Main) {
+                this.url.searchParams.set("view", history.view.toString());
+                data = { ...data, view: history.view };
+            } else {
+                this.url.searchParams.delete("view");
+                this.url.searchParams.delete("slug");
+            }
+        }
+        window.history.pushState(data, "", this.url.toString());
+    }
 }

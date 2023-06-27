@@ -27,12 +27,14 @@ func configGinUsersRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	router.POST("/api/users/settings/greeting", routes.updatePreferredGreeting)
 	router.POST("/api/users/settings/playbackSpeeds", routes.updatePlaybackSpeeds)
 
-	router.POST("/api/users/pinCourse", func(c *gin.Context) {
-		routes.pinCourse(c, true)
-	})
-	router.POST("/api/users/unpinCourse", func(c *gin.Context) {
-		routes.pinCourse(c, false)
-	})
+	router.POST("/api/users/resetPassword", routes.resetPassword)
+
+	courses := router.Group("/api/users/courses")
+	{
+		courses.GET("/:id/pin", routes.getPinForCourse)
+		courses.POST("/pin", routes.pinCourse(true))
+		courses.POST("/unpin", routes.pinCourse(false))
+	}
 
 	router.GET("/api/users/exportData", routes.exportPersonalData)
 
@@ -314,49 +316,90 @@ func (r usersRoutes) addSingleUserToCourse(name string, email string, course mod
 			log.WithError(err).Error("Can't update user")
 			return
 		}
-		err = tools.SendPasswordMail(email,
-			fmt.Sprintf("Hello!\n"+
-				"You have been invited to participate in the course \"%v\" on TUM-Live. Check it out at https://live.rbg.tum.de/",
-				course.Name))
+		err = r.EmailDao.Create(context.Background(), &model.Email{
+			From:    tools.Cfg.Mail.Sender,
+			To:      email,
+			Subject: "Setup your TUM-Live account",
+			Body: fmt.Sprintf("Hello!\n"+
+				"You have been invited to participate in the course \"%s\" on TUM-Live. Check it out at https://live.rbg.tum.de/",
+				course.Name),
+		})
 		if err != nil {
 			log.Printf("%v", err)
 		}
 	}
 }
 
-func (r usersRoutes) pinCourse(c *gin.Context, pin bool) {
-	var request struct {
-		CourseID uint `json:"courseID"`
+func (r usersRoutes) getPinForCourse(c *gin.Context) {
+	type URI struct {
+		CourseId uint `uri:"id" binding:"required"`
 	}
-	err := c.BindJSON(&request)
-	if err != nil {
-		log.WithError(err).Error("Could not bind JSON.")
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-	tumLiveContext := foundContext.(tools.TUMLiveContext)
-	if tumLiveContext.User == nil {
-		c.AbortWithStatus(http.StatusForbidden)
+
+	var uri URI
+	if err := c.ShouldBindUri(&uri); err != nil {
+		_ = c.Error(tools.RequestError{
+			Err:           err,
+			Status:        http.StatusBadRequest,
+			CustomMessage: "invalid URI",
+		})
 		return
 	}
 
-	// Find course
-	course, err := r.CoursesDao.GetCourseById(context.Background(), request.CourseID)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
+	tumLiveContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+
+	var has = false
+	var err error
+	if tumLiveContext.User != nil {
+		has, err = r.UsersDao.HasPinnedCourse(*tumLiveContext.User, uri.CourseId)
+		if err != nil {
+			sentry.CaptureException(err)
+			_ = c.Error(tools.RequestError{
+				Err:           err,
+				Status:        http.StatusInternalServerError,
+				CustomMessage: "can't retrieve course",
+			})
+			return
+		}
 	}
 
-	// Update user in database
-	err = r.UsersDao.PinCourse(*tumLiveContext.User, course, pin)
-	if err != nil {
-		log.WithError(err).Error("Can't update user")
-		return
+	c.JSON(http.StatusOK, gin.H{"has": has})
+}
+
+func (r usersRoutes) pinCourse(pin bool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var request struct {
+			CourseID uint `json:"courseID"`
+		}
+		err := c.BindJSON(&request)
+		if err != nil {
+			log.WithError(err).Error("Could not bind JSON.")
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+		foundContext, exists := c.Get("TUMLiveContext")
+		if !exists {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+		tumLiveContext := foundContext.(tools.TUMLiveContext)
+		if tumLiveContext.User == nil {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+
+		// Find course
+		course, err := r.CoursesDao.GetCourseById(context.Background(), request.CourseID)
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
+		// Update user in database
+		err = r.UsersDao.PinCourse(*tumLiveContext.User, course, pin)
+		if err != nil {
+			log.WithError(err).Error("Can't update user")
+			return
+		}
 	}
 }
 
@@ -473,12 +516,16 @@ func (r usersRoutes) forgotPassword(email string) {
 		log.Println("couldn't create register link")
 		return
 	}
-	log.Println("register link:", registerLink)
 	body := fmt.Sprintf("Hello!\n"+
 		"You have been invited to use TUM-Live. You can set a password for your account here: https://live.rbg.tum.de/setPassword/%v\n"+
 		"After setting a password you can log in with the email this message was sent to. Please note that this is not your TUMOnline account.\n"+
 		"If you have any further questions please reach out to "+tools.Cfg.Mail.Sender, registerLink.RegisterSecret)
-	err = tools.SendPasswordMail(email, body)
+	err = r.EmailDao.Create(context.Background(), &model.Email{
+		From:    tools.Cfg.Mail.Sender,
+		To:      email,
+		Subject: "Setup your TUM-Live account",
+		Body:    body,
+	})
 	if err != nil {
 		log.Println("couldn't send password mail")
 	}
@@ -666,6 +713,49 @@ func (r usersRoutes) exportPersonalData(c *gin.Context) {
 		return
 	}
 	_, _ = c.Writer.Write(marshal)
+}
+
+func (r usersRoutes) resetPassword(c *gin.Context) {
+	type resetPasswordRequest struct {
+		Username string `json:"username"`
+	}
+	var req resetPasswordRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		_ = c.AbortWithError(http.StatusBadRequest, tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "Can't bind request body",
+			Err:           err,
+		})
+		return
+	}
+
+	// continue in goroutine to prevent timing attacks
+	go func() {
+		user, err := r.UsersDao.GetUserByEmail(c, req.Username)
+		if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+			// wrong username/email -> pass
+			return
+		}
+		if err != nil {
+			log.WithError(err).Error("can't get user for password reset")
+			return
+		}
+		link, err := r.UsersDao.CreateRegisterLink(c, user)
+		if err != nil {
+			log.WithError(err).Error("can't create register link")
+			return
+		}
+		err = r.EmailDao.Create(c, &model.Email{
+			From:    tools.Cfg.Mail.Sender,
+			To:      user.Email.String,
+			Subject: "TUM-Live: Reset Password",
+			Body:    "Hi! \n\nYou can reset your TUM-Live password by clicking on the following link: \n\n" + tools.Cfg.WebUrl + "/setPassword/" + link.RegisterSecret + "\n\nIf you did not request a password reset, please ignore this email. \n\nBest regards",
+		})
+		if err != nil {
+			log.WithError(err).Error("can't save reset password email")
+		}
+	}()
 }
 
 type personalData struct {

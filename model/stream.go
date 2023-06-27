@@ -9,6 +9,7 @@ import (
 	"github.com/russross/blackfriday/v2"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"strings"
 	"time"
 )
 
@@ -116,6 +117,24 @@ func (s Stream) GetLGThumbnail() (string, error) {
 	return "", fmt.Errorf("no large thumbnail found")
 }
 
+func (s Stream) GetLGThumbnailForVideoType(videoType VideoType) (string, error) {
+	mapping := map[VideoType]FileType{
+		VideoTypePresentation: FILETYPE_THUMB_LG_PRES,
+		VideoTypeCamera:       FILETYPE_THUMB_LG_CAM,
+		VideoTypeCombined:     FILETYPE_THUMB_LG_COMB,
+	}
+
+	fileType := mapping[videoType]
+
+	for _, file := range s.Files {
+		if file.Type == fileType {
+			return file.Path, nil
+		}
+	}
+
+	return "", fmt.Errorf("no large thumbnail found")
+}
+
 // GetThumbIdForSource returns the id of file that stores the thumbnail sprite for a specific source type.
 func (s Stream) GetThumbIdForSource(source string) uint {
 	var fileType FileType
@@ -195,6 +214,15 @@ func (s Stream) IsStartingInMoreThanOneDay() bool {
 // IsPlanned returns whether the stream is planned or not
 func (s Stream) IsPlanned() bool {
 	return !s.Recording && !s.LiveNow && !s.IsPast() && !s.IsComingUp()
+}
+
+func (s Stream) HLSUrl() string {
+	hls := s.PlaylistUrl
+	if s.StartOffset > 0 {
+		hls = fmt.Sprintf("%s?wowzaplaystart=%d&wowzaplayduration=%d", s.PlaylistUrl, s.StartOffset, s.EndOffset)
+	}
+
+	return strings.Replace(hls, "quality", "", -1)
 }
 
 type silence struct {
@@ -331,17 +359,33 @@ func (s Stream) Attachments() []File {
 }
 
 type StreamDTO struct {
-	ID    uint
-	Name  string
-	Start time.Time
-	End   time.Time
+	ID          uint
+	Name        string
+	Description string
+	IsRecording bool
+	IsPlanned   bool
+	IsComingUp  bool
+	HLSUrl      string
+	Downloads   []DownloadableVod
+	Start       time.Time
+	End         time.Time
 }
 
 func (s Stream) ToDTO() StreamDTO {
+	downloads := []DownloadableVod{}
+	if s.IsDownloadable() {
+		downloads = s.GetVodFiles()
+	}
 	return StreamDTO{
-		ID:    s.ID,
-		Name:  s.Name,
-		Start: s.Start,
-		End:   s.End,
+		ID:          s.ID,
+		Name:        s.Name,
+		Description: s.Description,
+		IsRecording: s.Recording,
+		IsPlanned:   s.IsPlanned(),
+		IsComingUp:  s.IsComingUp(),
+		Downloads:   downloads,
+		HLSUrl:      s.HLSUrl(),
+		Start:       s.Start,
+		End:         s.End,
 	}
 }

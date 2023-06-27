@@ -3,7 +3,7 @@ import { ToggleableElement } from "../utilities/ToggleableElement";
 
 export function header() {
     return {
-        userContext: new ToggleableElement(new Map([["themePicker", new ToggleableElement()]])),
+        userContext: new ToggleableElement([["themePicker", new ToggleableElement()]]),
 
         notifications: new Notifications(),
         notification: new ToggleableElement(),

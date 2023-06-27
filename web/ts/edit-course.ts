@@ -19,20 +19,42 @@ export enum FileType {
 
 export class LectureList {
     static lectures: Lecture[] = [];
+    static markedIds: number[] = [];
 
     static init(initialState: Lecture[]) {
         if (initialState === null) {
             initialState = [];
         }
+
+        this.markedIds = this.parseUrlHash();
+
         // load initial state into lecture objects
-        initialState.forEach((lecture) => {
+        for (const lecture of initialState) {
             let l = new Lecture();
             l = Object.assign(l, lecture);
             l.start = new Date(lecture.start);
             l.end = new Date(lecture.end);
             LectureList.lectures.push(l);
-        });
+        }
+
         LectureList.triggerUpdate();
+        setTimeout(() => this.scrollSelectedLecturesIntoView(), 500);
+    }
+
+    static scrollSelectedLecturesIntoView() {
+        if (this.markedIds.length > 0) {
+            document.querySelector(`#lecture-${this.markedIds[0]}`).scrollIntoView({ behavior: "smooth" });
+        }
+    }
+
+    static parseUrlHash(): number[] {
+        if (!window.location.hash.startsWith("#lectures:")) {
+            return [];
+        }
+        return window.location.hash
+            .substring("#lectures:".length)
+            .split(",")
+            .map((s) => parseInt(s));
     }
 
     static hasIndividualChatEnabledSettings(): boolean {
@@ -43,7 +65,12 @@ export class LectureList {
     }
 
     static triggerUpdate() {
-        const event = new CustomEvent("newlectures", { detail: LectureList.lectures });
+        const event = new CustomEvent("newlectures", {
+            detail: {
+                lectures: LectureList.lectures,
+                markedIds: this.markedIds,
+            },
+        });
         window.dispatchEvent(event);
     }
 }
@@ -106,6 +133,9 @@ export class Lecture {
     newDescription: string;
     newLectureHallId: string;
     newIsChatEnabled = false;
+    newCombinedVideo = null;
+    newPresentationVideo = null;
+    newCameraVideo = null;
     isDirty = false;
     isSaving = false;
     isDeleted = false;
@@ -140,7 +170,10 @@ export class Lecture {
             this.newName !== this.name ||
             this.newDescription !== this.description ||
             this.newLectureHallId !== this.lectureHallId ||
-            this.newIsChatEnabled !== this.isChatEnabled;
+            this.newIsChatEnabled !== this.isChatEnabled ||
+            this.newCombinedVideo !== null ||
+            this.newPresentationVideo !== null ||
+            this.newCameraVideo !== null;
     }
 
     resetNewFields() {
@@ -150,6 +183,9 @@ export class Lecture {
         this.newIsChatEnabled = this.isChatEnabled;
         this.isDirty = false;
         this.lastErrors = [];
+        this.newCombinedVideo = null;
+        this.newPresentationVideo = null;
+        this.newCameraVideo = null;
     }
 
     startSeriesEdit() {
@@ -211,12 +247,13 @@ export class Lecture {
         if (this.uiEditMode === UIEditMode.none) return;
 
         this.isSaving = true;
+
+        // Save Settings
         const promises = [];
         if (this.newName !== this.name) promises.push(this.saveNewLectureName());
         if (this.newDescription !== this.description) promises.push(this.saveNewLectureDescription());
         if (this.newLectureHallId !== this.lectureHallId) promises.push(this.saveNewLectureHall());
         if (this.newIsChatEnabled !== this.isChatEnabled) promises.push(this.saveNewIsChatEnabled());
-
         const errors = (await Promise.all(promises)).filter((res) => res.status !== StatusCodes.OK);
 
         if (this.uiEditMode === UIEditMode.series && errors.length === 0) {
@@ -240,6 +277,15 @@ export class Lecture {
                     return text;
                 }),
             );
+            this.isSaving = false;
+            return false;
+        }
+
+        // Upload new media files
+        const uploadErrors = await this.saveNewVODMedia();
+
+        if (uploadErrors.length > 0) {
+            this.lastErrors = uploadErrors;
             this.isSaving = false;
             return false;
         }
@@ -297,6 +343,39 @@ export class Lecture {
             res.text().then((t) => showMessage(t));
         }
         return res;
+    }
+
+    async saveNewVODMedia(): Promise<string[]> {
+        const errors = [];
+        const mediaInfo = [
+            { key: "newCombinedVideo", type: "COMB" },
+            { key: "newPresentationVideo", type: "PRES" },
+            { key: "newCameraVideo", type: "CAM" },
+        ];
+
+        for (const info of mediaInfo) {
+            const mediaFile = this[info.key];
+            if (mediaFile === null) continue;
+
+            try {
+                await uploadFilePost(
+                    `/api/course/${this.courseId}/uploadVODMedia?streamID=${this.lectureId}&videoType=${info.type}`,
+                    mediaFile,
+                    (progress) => {
+                        window.dispatchEvent(
+                            new CustomEvent(`voduploadprogressedit`, {
+                                detail: { type: info.type, progress, lectureId: this.lectureId },
+                            }),
+                        );
+                    },
+                );
+                this[info.key] = null;
+            } catch (e) {
+                const error = `Failed to upload "${mediaFile.name}".`;
+                errors.push(error);
+            }
+        }
+        return errors;
     }
 
     async saveSeries() {
@@ -509,8 +588,18 @@ export function showHideUnits(id: number) {
     }
 }
 
+interface MediaUpload {
+    type: string;
+    file: File;
+    progress: number;
+}
+
 export function createLectureForm(args: { s: [] }) {
     return {
+        currentTab: 0,
+        canGoBack: false,
+        canContinue: true,
+        onLastSlide: false,
         formData: {
             title: "",
             lectureHallId: 0,
@@ -521,17 +610,103 @@ export function createLectureForm(args: { s: [] }) {
             formatedDuration: "", // Duration in Minutes
             premiere: false,
             vodup: false,
+            adHoc: false,
             recurring: false,
             recurringInterval: "weekly",
             eventsCount: 10,
             recurringDates: [],
-            file: null,
+            combFile: [],
+            presFile: [],
+            camFile: [],
         },
         streams: args.s,
         loading: false,
         error: false,
         courseID: -1,
         invalidReason: "",
+        init() {
+            this.onUpdate();
+        },
+        next() {
+            if (this.onLastSlide) {
+                this.submitData();
+                return;
+            }
+            this.currentTab++;
+            this.onUpdate();
+        },
+        prev() {
+            this.currentTab--;
+            this.onUpdate();
+        },
+        updateLiveAdHoc(adHoc: boolean) {
+            this.formData.adHoc = adHoc;
+            this.next();
+        },
+        updateType(vodup: boolean) {
+            this.formData.vodup = vodup;
+            if (vodup) {
+                this.formData.recurring = false;
+            }
+            this.next();
+        },
+        onStartChange() {
+            setTimeout(() => {
+                this.regenerateRecurringDates();
+                this.recalculateDuration();
+                this.onUpdate();
+            }, 100);
+        },
+        onEndChange() {
+            setTimeout(() => {
+                this.recalculateDuration();
+                this.onUpdate();
+            }, 100);
+        },
+
+        updateFiles(type: string, file: File[]) {
+            if (type === "COMB") {
+                this.formData.combFile = file;
+            } else if (type === "CAM") {
+                this.formData.camFile = file;
+            } else if (type === "PRES") {
+                this.formData.presFile = file;
+            }
+            this.onUpdate();
+        },
+
+        // This function sets flags depending on the current tab and current data
+        onUpdate() {
+            if (this.currentTab === 0) {
+                this.canContinue = true;
+                this.canGoBack = false;
+                this.onLastSlide = false;
+                return;
+            }
+
+            if (this.currentTab === 1) {
+                this.onLastSlide = false;
+                if (this.formData.vodup) {
+                    // If user has chosen video on demand, there are 3 tabs (file upload tab)
+                    // => we are not on the last tab
+                    this.canGoBack = true;
+                    this.canContinue = this.formData.start.length > 0;
+                } else {
+                    this.canGoBack = true;
+                    this.canContinue = this.formData.start.length > 0 && this.formData.end.length > 0;
+                }
+                return;
+            }
+
+            if (this.currentTab === 2) {
+                this.canContinue =
+                    (this.getMediaFiles().length > 0 && this.formData.vodup) ||
+                    (this.formData.adHoc && this.formData.end != "");
+                this.canGoBack = true;
+                this.onLastSlide = true;
+                return;
+            }
+        },
         validateForm() {
             this.invalidReason = "";
             const hasDupes =
@@ -567,6 +742,9 @@ export function createLectureForm(args: { s: [] }) {
             this.formData.recurringDates = result;
         },
         recalculateDuration() {
+            if (this.formData.adHoc) {
+                this.formData.start = new Date().toISOString();
+            }
             if (this.formData.start != "" && this.formData.end != "") {
                 const [hours, minutes] = this.formData.end.split(":");
                 const startDate = new Date(this.formData.start);
@@ -594,10 +772,23 @@ export function createLectureForm(args: { s: [] }) {
             }
             this.formData.formatedDuration = res;
         },
-        submitData() {
+        async submitData() {
+            const currentTab = this.currentTab;
+            this.currentTab = -1;
             this.loading = true;
+
             if (this.formData.vodup) {
-                this.uploadVod();
+                try {
+                    const streamId = await this.uploadVod();
+                    const url = new URL(window.location.href);
+                    url.hash = `lectures:${streamId}`;
+                    window.location.assign(url);
+                    window.location.reload();
+                } catch (e) {
+                    this.currentTab = currentTab;
+                    this.loading = false;
+                    this.error = true;
+                }
             } else {
                 const payload = {
                     title: this.formData.title,
@@ -605,6 +796,7 @@ export function createLectureForm(args: { s: [] }) {
                     premiere: this.formData.premiere,
                     vodup: this.formData.vodup,
                     start: this.formData.start,
+                    adHoc: this.formData.adHoc,
                     duration: this.formData.duration,
                     isChatEnabled: this.formData.isChatEnabled,
                     dateSeries: [],
@@ -620,42 +812,99 @@ export function createLectureForm(args: { s: [] }) {
                     payload.duration = 0; // premieres have no explicit end set -> use "0" here
                 }
                 postData("/api/course/" + this.courseID + "/createLecture", payload)
-                    .then(() => {
-                        this.loading = false;
+                    .then(async (res) => {
+                        const { ids } = await res.json();
+                        const url = new URL(window.location.href);
+                        url.hash = `lectures:${ids.join(",")}`;
+                        window.location.assign(url);
                         window.location.reload();
                     })
-                    .catch(() => {
+                    .catch((e) => {
+                        console.log(e);
+                        this.currentTab = currentTab;
                         this.loading = false;
                         this.error = true;
                     });
             }
         },
-        uploadVod() {
-            const xhr = new XMLHttpRequest();
-            const vodUploadFormData = new FormData();
-            vodUploadFormData.append("file", this.formData.file[0]);
-            xhr.onloadend = () => {
-                if (xhr.status === 200) {
-                    window.location.reload();
-                } else {
-                    this.error = true;
-                }
+
+        getMediaFiles(): MediaUpload[] {
+            const mediaUploads: MediaUpload[] = [];
+            if (this.formData.combFile[0] != null)
+                mediaUploads.push({ file: this.formData.combFile[0], type: "COMB", progress: 0 });
+            if (this.formData.presFile[0] != null)
+                mediaUploads.push({ file: this.formData.presFile[0], type: "PRES", progress: 0 });
+            if (this.formData.camFile[0] != null)
+                mediaUploads.push({ file: this.formData.camFile[0], type: "CAM", progress: 0 });
+            return mediaUploads;
+        },
+
+        dispatchMediaProgress(mediaFiles: MediaUpload[]) {
+            const detail = {
+                COMB: mediaFiles.find((e) => e.type == "COMB")?.progress ?? null,
+                PRES: mediaFiles.find((e) => e.type == "PRES")?.progress ?? null,
+                CAM: mediaFiles.find((e) => e.type == "CAM")?.progress ?? null,
             };
-            xhr.upload.onprogress = (e: ProgressEvent) => {
-                if (!e.lengthComputable) {
-                    return;
+            window.dispatchEvent(new CustomEvent("voduploadprogress", { detail }));
+        },
+
+        async uploadVod(): Promise<number> {
+            const mediaFiles = this.getMediaFiles();
+            this.dispatchMediaProgress(mediaFiles);
+
+            // Create New VOD
+            const { streamID } = await (
+                await postData(
+                    `/api/course/${this.courseID}/createVOD?start=${this.formData.start}&title=${this.formData.title}`,
+                    {},
+                )
+            ).json();
+
+            // Upload media
+            try {
+                for (const mediaUpload of mediaFiles) {
+                    await uploadFilePost(
+                        `/api/course/${this.courseID}/uploadVODMedia?streamID=${streamID}&videoType=${mediaUpload.type}`,
+                        mediaUpload.file,
+                        (progress) => {
+                            mediaUpload.progress = progress;
+                            this.dispatchMediaProgress(mediaFiles);
+                        },
+                    );
                 }
-                window.dispatchEvent(
-                    new CustomEvent("voduploadprogress", { detail: Math.floor(100 * (e.loaded / e.total)) }),
-                );
-            };
-            xhr.open(
-                "POST",
-                `/api/course/${this.courseID}/uploadVOD?start=${this.formData.start}&title=${this.formData.title}`,
-            );
-            xhr.send(vodUploadFormData);
+            } catch (e) {
+                await postData(`/api/course/${this.courseID}/deleteLectures`, {
+                    streamIDs: [streamID],
+                });
+                throw e;
+            }
+
+            return streamID;
         },
     };
+}
+
+function uploadFilePost(url: string, file: File, onProgress: (progress: number) => void): Promise<string> {
+    const xhr = new XMLHttpRequest();
+    const vodUploadFormData = new FormData();
+    vodUploadFormData.append("file", file);
+    return new Promise((resolve, reject) => {
+        xhr.onloadend = () => {
+            if (xhr.status === 200) {
+                resolve(xhr.responseText);
+            } else {
+                reject();
+            }
+        };
+        xhr.upload.onprogress = (e: ProgressEvent) => {
+            if (!e.lengthComputable) {
+                return;
+            }
+            onProgress(Math.floor(100 * (e.loaded / e.total)));
+        };
+        xhr.open("POST", url);
+        xhr.send(vodUploadFormData);
+    });
 }
 
 export function sendCourseSettingsForm(courseId: number) {

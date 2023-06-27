@@ -18,8 +18,12 @@ func configMaintenanceRouter(router *gin.Engine, daoWrapper dao.DaoWrapper) {
 	{
 		g.POST("/generateThumbnails", routes.generateThumbnails)
 		g.GET("/generateThumbnails/status", routes.getThumbGenProgress)
+
 		g.GET("/transcodingFailures", routes.getTranscodingFailures)
 		g.DELETE("/transcodingFailures/:id", routes.deleteTranscodingFailure)
+
+		g.GET("/emailFailures", routes.getEmailFailures)
+		g.DELETE("/emailFailures/:id", routes.deleteEmailFailure)
 	}
 
 	cronGroup := g.Group("/cron")
@@ -138,6 +142,39 @@ func (r *maintenanceRoutes) deleteTranscodingFailure(c *gin.Context) {
 		_ = c.Error(tools.RequestError{
 			Status:        http.StatusInternalServerError,
 			CustomMessage: "Can't delete transcoding failure",
+			Err:           err,
+		})
+	}
+}
+
+func (r *maintenanceRoutes) getEmailFailures(c *gin.Context) {
+	failed, err := r.EmailDao.GetFailed(c)
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Can't get email failures",
+			Err:           err,
+		})
+		return
+	}
+	c.JSON(http.StatusOK, failed)
+}
+
+func (r *maintenanceRoutes) deleteEmailFailure(c *gin.Context) {
+	atoi, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusBadRequest,
+			CustomMessage: "Can't parse id",
+			Err:           err,
+		})
+		return
+	}
+	err = r.EmailDao.Delete(c, uint(atoi))
+	if err != nil {
+		_ = c.Error(tools.RequestError{
+			Status:        http.StatusInternalServerError,
+			CustomMessage: "Can't delete email failure",
 			Err:           err,
 		})
 	}

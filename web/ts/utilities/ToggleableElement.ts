@@ -3,8 +3,8 @@ export class ToggleableElement {
 
     public value: boolean;
 
-    constructor(children?: Map<string, ToggleableElement>, value = false) {
-        this.children = children || new Map<string, ToggleableElement>();
+    constructor(children?: readonly [string, ToggleableElement][] | null, value = false) {
+        this.children = children ? new Map<string, ToggleableElement>(children) : new Map<string, ToggleableElement>();
         this.value = value;
     }
 

@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/joschahenningsen/TUM-Live/model"
 	uuid "github.com/satori/go.uuid"
@@ -25,6 +26,7 @@ type UsersDao interface {
 	GetUserByResetKey(key string) (model.User, error)
 	DeleteResetKey(key string)
 	UpdateUser(user model.User) error
+	HasPinnedCourse(model.User, uint) (bool, error)
 	PinCourse(user model.User, course model.Course, pin bool) error
 	UpsertUser(user *model.User) error
 	AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error
@@ -127,6 +129,19 @@ func (d usersDao) DeleteResetKey(key string) {
 
 func (d usersDao) UpdateUser(user model.User) error {
 	return DB.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&user).Error
+}
+
+func (d usersDao) HasPinnedCourse(user model.User, courseId uint) (has bool, err error) {
+	err = DB.Model(&user).
+		Joins("left join pinned_courses on pinned_courses.user_id = users.id").
+		Select("count(*) > 0").
+		Where("users.id = ? AND course_id = ?", user.ID, courseId).
+		Find(&has).
+		Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
+	}
+	return has, err
 }
 
 func (d usersDao) PinCourse(user model.User, course model.Course, pin bool) error {

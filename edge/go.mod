@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
-	github.com/prometheus/client_golang v1.14.0
+	github.com/prometheus/client_golang v1.15.1
 )
 
 require (

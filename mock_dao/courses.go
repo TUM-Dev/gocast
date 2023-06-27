@@ -79,16 +79,16 @@ func (mr *MockCoursesDaoMockRecorder) DeleteCourse(course interface{}) *gomock.C
 // GetAdministeredCoursesByUserId mocks base method.
 func (m *MockCoursesDao) GetAdministeredCoursesByUserId(ctx context.Context, userid uint, teachingTerm string, year int) ([]model.Course, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAdministeredCoursesByUserId", ctx, userid)
+	ret := m.ctrl.Call(m, "GetAdministeredCoursesByUserId", ctx, userid, teachingTerm, year)
 	ret0, _ := ret[0].([]model.Course)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAdministeredCoursesByUserId indicates an expected call of GetAdministeredCoursesByUserId.
-func (mr *MockCoursesDaoMockRecorder) GetAdministeredCoursesByUserId(ctx, userid interface{}) *gomock.Call {
+func (mr *MockCoursesDaoMockRecorder) GetAdministeredCoursesByUserId(ctx, userid, teachingTerm, year interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdministeredCoursesByUserId", reflect.TypeOf((*MockCoursesDao)(nil).GetAdministeredCoursesByUserId), ctx, userid)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdministeredCoursesByUserId", reflect.TypeOf((*MockCoursesDao)(nil).GetAdministeredCoursesByUserId), ctx, userid, teachingTerm, year)
 }
 
 // GetAllCourses mocks base method.
