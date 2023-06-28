@@ -20,7 +20,7 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
 
         chatBoxEl: document.getElementById("chat-box") as HTMLInputElement,
 
-        status: false,
+        status: true,
         serverMessage: {},
         unreadMessages: false,
 
@@ -29,14 +29,14 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
         async init() {
             Promise.all([this.loadMessages(), this.initWebsocket()]).then(() => {
                 this.messages.forEach((msg, _) => this.preprocessors.forEach((f) => f(msg, this.user)));
-                const cb = () => this.scrollToBottom();
-                Alpine.nextTick(cb);
+                Alpine.nextTick(() => this.scrollToBottom());
             });
         },
 
         sortLiveFirst() {
             this.chatSortMode = ChatSortMode.LiveChat;
             this.chatSortFn = ChatMessageSorter.GetSortFn(ChatSortMode.LiveChat);
+            Alpine.nextTick(() => this.scrollToBottom());
         },
 
         isLiveFirst(): boolean {
@@ -46,6 +46,7 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
         sortPopularFirst() {
             this.chatSortMode = ChatSortMode.PopularFirst;
             this.chatSortFn = ChatMessageSorter.GetSortFn(ChatSortMode.PopularFirst);
+            Alpine.nextTick(() => this.scrollToTop());
         },
 
         isPopularFirst(): boolean {
@@ -123,18 +124,19 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
             }
         },
 
-        scrollIsBottom(delta = 32) {
+        scrollIsBottom(delta = 128) {
             return (
                 Math.abs(this.chatBoxEl.scrollHeight - this.chatBoxEl.clientHeight - this.chatBoxEl.scrollTop) < delta
             );
         },
 
         scrollToBottom() {
-            this.chatBoxEl.scrollTo({
-                top: this.chatBoxEl.scrollHeight,
-                behavior: "smooth",
-            });
+            this.chatBoxEl.scrollTo({ top: this.chatBoxEl.scrollHeight, behavior: "smooth" });
             this.unreadMessages = false;
+        },
+
+        scrollToTop() {
+            this.chatBoxEl.scrollTo({ top: 0, behavior: "smooth" });
         },
 
         handleDelete(messageId: number) {
