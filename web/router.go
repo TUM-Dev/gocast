@@ -135,8 +135,6 @@ func configMainRoute(router *gin.Engine) {
 	router.GET("/healthcheck", routes.HealthCheck)
 	router.GET("/jwtPubKey", routes.JWTPubKey)
 
-	router.GET("/testchat", routes.TestChat) // TODO: Delete once done
-
 	router.GET("/:shortLink", routes.HighlightPage)
 	router.GET("/edit-course", routes.editCourseByTokenPage)
 	router.GET("/edit-course/opt-out", routes.optOutPage)
