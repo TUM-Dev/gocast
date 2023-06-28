@@ -203,12 +203,12 @@ func (r mainRoutes) home(c *gin.Context) {
 }
 
 func (r mainRoutes) semesterRedirect(c *gin.Context) {
-	c.Redirect(http.StatusPermanentRedirect,
+	c.Redirect(http.StatusFound,
 		fmt.Sprintf("/?year=%s&term=%s", c.Param("year"), c.Param("term")))
 }
 
 func (r mainRoutes) courseRedirect(c *gin.Context) {
-	c.Redirect(http.StatusPermanentRedirect,
+	c.Redirect(http.StatusFound,
 		fmt.Sprintf("/?year=%s&term=%s&slug=%s&view=3",
 			c.Param("year"), c.Param("term"), c.Param("slug")))
 }
