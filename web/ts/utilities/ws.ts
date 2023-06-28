@@ -1,18 +1,14 @@
 import { MessageHandlerFn, Realtime } from "../socket";
 
-export class WebsocketConnection {
+export class RealtimeFacade {
     private readonly channel: string;
-
-    connected: boolean;
 
     constructor(channel: string) {
         this.channel = channel;
     }
 
     async subscribe(handler?: MessageHandlerFn) {
-        Realtime.get()
-            .subscribeChannel(this.channel, handler)
-            .then(() => (this.connected = true));
+        Realtime.get().subscribeChannel(this.channel, handler);
     }
 
     async addHandler(handler: MessageHandlerFn) {

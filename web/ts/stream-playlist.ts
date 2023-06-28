@@ -20,7 +20,7 @@ export class StreamPlaylist {
         this.elem.dispatchEvent(new CustomEvent("update", { detail: { list: this.list, prev, next } }));
 
         setTimeout(() => {
-            this.elem.querySelector(".--selected").scrollIntoView({ block: "center" });
+            this.elem.querySelector(".--selected")?.scrollIntoView({ block: "center" });
         }, 10);
     }
 

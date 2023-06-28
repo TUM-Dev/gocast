@@ -1,4 +1,4 @@
-import { WebsocketConnection } from "../utilities/ws";
+import { RealtimeFacade } from "../utilities/ws";
 import { Realtime } from "../socket";
 
 export enum PollMessageType {
@@ -8,9 +8,9 @@ export enum PollMessageType {
 }
 
 export class PollWebsocketConnection {
-    private readonly ws: WebsocketConnection;
+    private readonly ws: RealtimeFacade;
 
-    constructor(ws: WebsocketConnection) {
+    constructor(ws: RealtimeFacade) {
         this.ws = ws;
     }
 

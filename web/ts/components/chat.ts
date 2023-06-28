@@ -5,6 +5,7 @@ import { ChatMessagePreprocessor } from "../chat/ChatMessagePreprocessor";
 import { ChatWebsocketConnection, SocketConnections } from "../api/chat-ws";
 import { User } from "../api/users";
 import { Tunnel } from "../utilities/tunnels";
+import Alpine from "alpinejs";
 
 export function chatContext(streamId: number, user: User): AlpineComponent {
     return {
@@ -17,11 +18,19 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
 
         ws: new ChatWebsocketConnection(SocketConnections.ws),
 
+        chatBoxEl: document.getElementById("chat-box") as HTMLInputElement,
+
+        status: false,
+        serverMessage: {},
+        unreadMessages: false,
+
         preprocessors: [ChatMessagePreprocessor.AggregateReactions, ChatMessagePreprocessor.AddressedToCurrentUser],
 
         async init() {
             Promise.all([this.loadMessages(), this.initWebsocket()]).then(() => {
                 this.messages.forEach((msg, _) => this.preprocessors.forEach((f) => f(msg, this.user)));
+                const cb = () => this.scrollToBottom();
+                Alpine.nextTick(cb);
             });
         },
 
@@ -51,6 +60,22 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
             Tunnel.reply.add({ message });
         },
 
+        setStatus(status = false) {
+            this.status = status;
+        },
+
+        hasServerMessage() {
+            return Object.keys(this.serverMessage).length > 0;
+        },
+
+        hideServerMessage() {
+            this.serverMessage = {};
+        },
+
+        isConnected() {
+            return this.status;
+        },
+
         async initWebsocket() {
             const handler = (data) => {
                 if ("message" in data) {
@@ -69,7 +94,7 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
                     this.handleServerMessage(data);
                 }
             };
-            SocketConnections.ws.addHandler(handler);
+            SocketConnections.ws.subscribe(handler);
         },
 
         async loadMessages() {
@@ -82,10 +107,34 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
                 console.log("🌑 received reply", msg);
                 this.messages.pushReply(msg);
             } else {
+                const sib = this.scrollIsBottom();
+
                 console.log("🌑 received message", msg);
                 this.preprocessors.forEach((f) => f(msg, this.user));
                 this.messages.pushMessage(msg);
+
+                const cb = () => {
+                    if (sib) this.scrollToBottom();
+                    else {
+                        this.unreadMessages = true;
+                    }
+                };
+                Alpine.nextTick(cb);
             }
+        },
+
+        scrollIsBottom(delta = 32) {
+            return (
+                Math.abs(this.chatBoxEl.scrollHeight - this.chatBoxEl.clientHeight - this.chatBoxEl.scrollTop) < delta
+            );
+        },
+
+        scrollToBottom() {
+            this.chatBoxEl.scrollTo({
+                top: this.chatBoxEl.scrollHeight,
+                behavior: "smooth",
+            });
+            this.unreadMessages = false;
         },
 
         handleDelete(messageId: number) {
@@ -112,6 +161,7 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
 
         handleServerMessage(msg: { server: string; type: string }) {
             console.log("🌑 received server message", msg);
+            this.serverMessage = { msg: msg.server };
         },
 
         deleteMessage(id: number) {

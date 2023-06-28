@@ -13,7 +13,7 @@ export function watchInteractionContext(user: User) {
         user: user as User,
 
         init() {
-            SocketConnections.ws.subscribe();
+            // SocketConnections.ws.subscribe();
         },
 
         showChat() {

@@ -1,4 +1,4 @@
-import { WebsocketConnection } from "../utilities/ws";
+import { RealtimeFacade } from "../utilities/ws";
 import { Realtime } from "../socket";
 
 enum ChatMessageType {
@@ -11,7 +11,7 @@ enum ChatMessageType {
 }
 
 export abstract class SocketConnections {
-    static ws: WebsocketConnection = new WebsocketConnection("chat/12845");
+    static ws: RealtimeFacade = new RealtimeFacade("chat/12845");
 }
 
 export type NewChatMessage = {
@@ -22,9 +22,9 @@ export type NewChatMessage = {
 };
 
 export class ChatWebsocketConnection {
-    private readonly ws: WebsocketConnection;
+    private readonly ws: RealtimeFacade;
 
-    constructor(ws: WebsocketConnection) {
+    constructor(ws: RealtimeFacade) {
         this.ws = ws;
     }
 

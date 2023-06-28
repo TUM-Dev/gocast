@@ -15,6 +15,7 @@
         <template x-if="isChat()">
             <article
                     x-data="interaction.chatContext({{$stream.ID}}, user)"
+                    x-on:wsrealtimeconnectionchange.window="(e) => setStatus(e.detail.status);"
                     class="flex relative flex-col text-1 h-full">
                 <header
                         class="flex items-center justify-between sticky top-0 z-40 w-full px-3 max-h-12 h-12 rounded-t-lg bg-white dark:bg-secondary border-b dark:border-gray-800"
@@ -43,7 +44,7 @@
 
                 <!-- Messages -->
                 <article id="chat-box" class="relative h-full w-full overflow-y-scroll overflow-x-hidden z-30">
-                    <div class="grid gap-y-8 content-start px-4 py-3">
+                    <div class="grid gap-y-8 content-start px-4 py-3 min-h-full">
                         <template x-for="m in messages.get(chatSortFn)" :key="m.ID">
                             <section class="grid gap-y-1 text-4 text-sm">
                                 <div class="text-xs">
@@ -56,11 +57,10 @@
                                 </div>
                                 <div class="relative group p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
                                     <div class="flex justify-between">
-                    <span class="w-5/6 overflow-wrap-anywhere my-auto" x-html="m.message"
-                          x-init="$nextTick(() => renderMathInElement($el, global.getKatexOptions()))">
-                    </span>
+                                        <span class="w-5/6 overflow-wrap-anywhere my-auto" x-html="m.message"
+                                              x-init="$nextTick(() => renderMathInElement($el, global.getKatexOptions()))">
+                                        </span>
                                     </div>
-
                                     <!-- message-date -->
                                     <span class="absolute right-2 bottom-2 hidden group-hover:inline text-xs text-5 font-light"
                                           x-text="m.friendlyCreatedAt()"></span>
@@ -190,13 +190,24 @@
                             </section>
                         </template>
                     </div>
-                    <!--
-                    <div class = "flex sticky bottom-3 justify-center">
-                        <button class="text-xs bg-blue-500 border-blue-600 rounded-lg px-2 py-1 text-white shadow hover:bg-blue-600 dark:bg-indigo-600 dark:border-indigo-700 hover:dark:bg-indigo-700">
-                            <i class="fas fa-arrow-down mr-2"></i>
-                            <span class = "uppercase font-semibold">New messages</span>
-                        </button>
-                    </div>-->
+                    <article class="grid gap-2 sticky bottom-3">
+                        <section x-cloak x-show="unreadMessages" class="flex justify-center">
+                            <button type = "button" @click="scrollToBottom()"
+                                    class="tum-live-badge flex items-center space-x-2 text-xs uppercase font-semibold shadow text-white bg-blue-500 dark:bg-indigo-600">
+                                <i class="fas fa-arrow-down"></i>
+                                New messages
+                            </button>
+                        </section>
+                        <section x-cloak x-show="hasServerMessage()" class="flex justify-center">
+                            <div class="tum-live-badge flex items-center space-x-2 text-sm shadow text-white bg-rose-500 dark:bg-rose-800">
+                                <i class="fa-solid fa-robot"></i>
+                                <span x-text="serverMessage.msg"></span>
+                                <button type="button" @click="hideServerMessage()">
+                                    <i class="fa-solid fa-close"></i>
+                                </button>
+                            </div>
+                        </section>
+                    </article>
                 </article>
 
                 <article x-data="interaction.chatPromptContext({{$stream.ID}})"
@@ -271,13 +282,12 @@
                                    @keyup.esc="cancelReply()"
                                    :disabled="!isLoggedIn()"
                                    x-model="message"
-                                   :placeholder="isLoggedIn() ? 'Send a message' : 'Log in to chat'"
+                                   :placeholder="!isConnected() ? 'Reconnecting to chat...' : isLoggedIn() ? 'Send a message' : 'Log in to chat'"
                                    class="py-2 px-4 border-0 bg-transparent text-sm font-normal placeholder:text-sm focus:outline-none w-full"
                                    autocomplete="off">
                         </label>
-                        <div class="absolute right-3 top-0 bottom-0 flex">
-                            <div x-show="false"
-                                 class="m-auto">
+                        <div class="absolute right-5 top-0 bottom-0 flex py-2">
+                            <div x-cloak x-show="!isConnected()" class="m-auto">
                                 <svg class="w-5 h-5 animate-spin text-sky-400 dark:text-indigo-400 fill-sky-600 dark:fill-indigo-600"
                                      viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
@@ -287,7 +297,8 @@
                                 </svg>
                             </div>
                         </div>
-                        <button type="button" tabindex="-1" class="cursor-pointer" title="Send message" @click="send()"
+                        <button x-cloak x-show="isConnected()"
+                                type="button" tabindex="-1" class="cursor-pointer" title="Send message" @click="send()"
                                 :disabled="!isLoggedIn()">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill=""
                                  class="bi bi-send-fill rotate-45 fill-blue-500 hover:fill-blue-600 dark:fill-indigo-600 hover:dark:fill-indigo-700"
