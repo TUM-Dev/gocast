@@ -20,10 +20,10 @@
                 <header
                         class="flex items-center justify-between sticky top-0 z-40 w-full px-3 max-h-12 h-12 rounded-t-lg bg-white dark:bg-secondary border-b dark:border-gray-800"
                         style="min-height: 3rem;"> <!-- since there is no min-h-12 class -->
-                    <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-3 text-xs">
                         <button type="button"
                                 @click="sortPopularFirst()"
-                                class="tum-live-button tum-live-button-tertiary"
+                                class="tum-live-button tum-live-button-tertiary text-xs"
                                 :class="{'active': isPopularFirst()}"
                                 title="Change to 'Popular First Order'">
                             <span>Popular First</span>
@@ -211,7 +211,7 @@
                 </article>
 
                 <article x-data="interaction.chatPromptContext({{$stream.ID}})"
-                         class="rounded-lg dark:border-gray-800"
+                         class="rounded-lg dark:border-gray-800 z-50"
                          :class="(!reply.isNoReply() || users.hasSuggestions() || emojis.hasSuggestions()) && 'shadow-lg border'">
 
                     <template x-if="!reply.isNoReply()">
@@ -265,16 +265,29 @@
                             </button>
                         </template>
                     </section>
-                    <article class="relative flex my-auto px-5 border-t dark:border-gray-800 py-2">
-                        {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
-                            <input type="checkbox" name="anonymous" id="anonymous" class="hidden"
-                                   x-model="isAnonymous" :disabled="!isLoggedIn()">
-                            <label for="anonymous" class="flex items-center cursor-pointer text-4 hover:text-3"
-                                   :class="isAnonymous && 'text-blue-500'"
-                                   title="Don't show my name.">
-                                <i class="fas fa-ghost"></i>
-                            </label>
-                        {{end}}
+                    <article class="relative flex items-center my-auto px-5 border-t dark:border-gray-800 py-2">
+                        <div class = "relative">
+                            <button type = "button" @click="showOptions.toggle()" class = "">
+                                <i class = "fa-solid fa-gear"></i>
+                            </button>
+                            <article x-cloak x-show="showOptions.value" class = "tum-live-menu absolute w-56 bottom-full"
+                                    @click.outside="showOptions.toggle(false)">
+                                <a href = "" type = "button" class = "tum-live-menu-item">
+                                    <i class = "fa-solid fa-arrow-up-right-from-square mr-3"></i>
+                                    Pop-out chat
+                                </a>
+                                {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
+                                <section class = "tum-live-menu-item">
+                                    <input type="checkbox" name="anonymous" id="anonymous" class="hidden"
+                                           x-model="isAnonymous" :disabled="!isLoggedIn()">
+                                    <label for="anonymous" title="Don't show my name." class="hover:cursor-pointer">
+                                        <i class="fas fa-ghost mr-3"></i>
+                                        Send anonymously
+                                    </label>
+                                </section>
+                                {{end}}
+                            </article>
+                        </div>
                         <label class="grow">
                             <input id="chat-input" type="text" spellcheck="true" maxlength="200"
                                    @keyup="keyup()"

@@ -5,6 +5,7 @@ import { SocketConnections, ChatWebsocketConnection } from "../api/chat-ws";
 import { ChatAPI, ChatMessage } from "../api/chat";
 import { SetReply, Tunnel } from "../utilities/tunnels";
 import { isAlphaNumeric, isSpacebar } from "../utilities/keycodes";
+import { ToggleableElement } from "../utilities/ToggleableElement";
 
 export function chatPromptContext(streamId: number): AlpineComponent {
     return {
@@ -15,6 +16,8 @@ export function chatPromptContext(streamId: number): AlpineComponent {
 
         emojis: new EmojiSuggestions(),
         users: new UserSuggestions(streamId),
+
+        showOptions: new ToggleableElement(),
 
         ws: new ChatWebsocketConnection(SocketConnections.ws),
 
