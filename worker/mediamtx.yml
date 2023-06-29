@@ -1,0 +1,101 @@
+
+# Sets the verbosity of the program; available values are "error", "warn", "info", "debug".
+logLevel: debug
+# Destinations of log messages; available values are "stdout", "file" and "syslog".
+logDestinations: [stdout]
+
+# Timeout of read operations.
+readTimeout: 10s
+# Timeout of write operations.
+writeTimeout: 10s
+# Number of read buffers.
+# A higher value allows a wider throughput, a lower value allows to save RAM.
+readBufferCount: 512
+# Maximum size of payload of outgoing UDP packets.
+# This can be decreased to avoid fragmentation on networks with a low UDP MTU.
+udpMaxPayloadSize: 1472
+
+# HTTP URL to perform external authentication.
+# Every time a user wants to authenticate, the server calls this URL
+# with the POST method and a body containing:
+# {
+#   "ip": "ip",
+#   "user": "user",
+#   "password": "password",
+#   "path": "path",
+#   "protocol": "rtsp|rtmp|hls|webrtc",
+#   "id": "id",
+#   "action": "read|publish",
+#   "query": "query"
+# }
+# If the response code is 20x, authentication is accepted, otherwise
+# it is discarded.
+externalAuthenticationURL: http://localhost:8060/on_publish
+
+# Enable the HTTP API.
+api: no
+# Address of the API listener.
+apiAddress: 127.0.0.1:9997
+
+# Enable Prometheus-compatible metrics.
+metrics: no
+# Address of the metrics listener.
+metricsAddress: 127.0.0.1:9998
+
+
+###############################################
+# RTSP parameters
+
+# Disable support for the RTSP protocol.
+rtspDisable: yes
+
+###############################################
+# RTMP parameters
+
+# Disable support for the RTMP protocol.
+rtmpDisable: no
+# Address of the RTMP listener. This is needed only when encryption is "no" or "optional".
+rtmpAddress: :1935
+# Encrypt connections with TLS (RTMPS).
+# Available values are "no", "strict", "optional".
+rtmpEncryption: "no"
+
+###############################################
+# HLS parameters
+
+# Disable support for the HLS protocol.
+hlsDisable: yes
+
+###############################################
+# WebRTC parameters
+
+# Disable support for the WebRTC protocol.
+webrtcDisable: yes
+
+###############################################
+# Path parameters
+
+# These settings are path-dependent, and the map key is the name of the path.
+# It's possible to use regular expressions by using a tilde as prefix.
+# For example, "~^(test1|test2)$" will match both "test1" and "test2".
+# For example, "~^prefix" will match all paths that start with "prefix".
+# The settings under the path "all" are applied to all paths that do not match
+# another entry.
+paths:
+all:
+# Source of the stream. This can be:
+# * publisher -> the stream is published by a RTSP or RTMP client
+# * rtsp://existing-url -> the stream is pulled from another RTSP server / camera
+# * rtsps://existing-url -> the stream is pulled from another RTSP server / camera with RTSPS
+# * rtmp://existing-url -> the stream is pulled from another RTMP server / camera
+# * rtmps://existing-url -> the stream is pulled from another RTMP server / camera with RTMPS
+# * http://existing-url/stream.m3u8 -> the stream is pulled from another HLS server
+# * https://existing-url/stream.m3u8 -> the stream is pulled from another HLS server with HTTPS
+# * udp://ip:port -> the stream is pulled from UDP, by listening on the specified IP and port
+# * redirect -> the stream is provided by another path or server
+# * rpiCamera -> the stream is provided by a Raspberry Pi Camera
+source: publisher
+
+# If the source is an RTSP or RTSPS URL, this is the protocol that will be used to
+# pull the stream. available values are "automatic", "udp", "multicast", "tcp".
+sourceProtocol: automatic

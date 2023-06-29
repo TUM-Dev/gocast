@@ -54,7 +54,7 @@ func TruncateHtml(buf []byte, maxlen int, ellipsis string) ([]byte, error) {
 			offset = localOffset
 
 			if runeValue == '<' {
-				// Run of tag.
+				// Start of tag.
 				break
 			} else if runeValue == '&' {
 				// Possible start of HTML Entity
