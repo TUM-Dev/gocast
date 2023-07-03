@@ -217,11 +217,20 @@
             </div>
         </div>
 
-        <button x-show="lecture.uiEditMode == 0"
-                @click="lecture.startSingleEdit(); closeMoreDropdown();"
-                class="bg-gray-100 dark:bg-gray-900 w-full py-2 mt-2 rounded-b">
-            <span class="text-gray-700 dark:text-gray-300">Edit Lecture</span>
-        </button>
+        <div class="flex">
+            <button x-show="lecture.uiEditMode == 0"
+                    @click="lecture.startSingleEdit(); closeMoreDropdown();"
+                    class="bg-gray-100 dark:bg-gray-900 w-full py-2 mt-2 rounded-bl">
+                <span class="text-gray-700 dark:text-gray-300">Edit Lecture</span>
+            </button>
+            <a x-show="lecture.uiEditMode == 0 && !lecture.isPast"
+               target="_blank"
+               :href="`/admin/course/343/stream/${lecture.lectureId}`"
+               class="bg-red-400 dark:bg-red-500 w-full py-2 mt-2 rounded-br text-center">
+                <span class="text-white">Start Streaming</span>
+                <i class="fas fa-external-link"></i></a>
+            </a>
+        </div>
 
         <div x-show="lecture.uiEditMode > 0" class="grid gap-y-4 p-4">
             <article class="grid gap-2 w-full">
