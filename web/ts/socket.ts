@@ -13,6 +13,7 @@ export class Realtime {
     private debugging = true;
     private ws: WebSocket;
     private handler: object = {};
+    private subscribedChannels: string[] = [];
 
     // Singleton
     private static instance;
@@ -43,6 +44,7 @@ export class Realtime {
         await this.send(channel, {
             type: RealtimeMessageTypes.RealtimeMessageTypeSubscribe,
         });
+        this.subscribedChannels.push(channel);
         this.debug("Subscribed", channel);
     }
 
@@ -54,6 +56,7 @@ export class Realtime {
         await this.send(channel, {
             type: RealtimeMessageTypes.RealtimeMessageTypeUnsubscribe,
         });
+        this.subscribedChannels = this.subscribedChannels.filter((c) => c != channel);
         this.debug("Unsubscribed", channel);
     }
 
@@ -97,7 +100,7 @@ export class Realtime {
         this.debug("connected");
 
         // Re-Subscribe to all channels
-        for (const channel of Object.keys(this.handler)) {
+        for (const channel of this.subscribedChannels) {
             await this.send(channel, {
                 type: RealtimeMessageTypes.RealtimeMessageTypeSubscribe,
             });
