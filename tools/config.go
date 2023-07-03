@@ -181,6 +181,7 @@ type MailConfig struct {
 
 type LivekitConfig struct {
 	Host   string `yaml:"host"`
+	WSHost string `yaml:"wsHost"`
 	ApiKey string `yaml:"apiKey"`
 	Secret string `yaml:"secret"`
 }

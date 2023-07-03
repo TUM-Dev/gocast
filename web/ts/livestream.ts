@@ -10,10 +10,12 @@ import {
 
 export class Livestream {
     private streamId: number;
+    private url: string;
     private token: string;
 
-    constructor(streamId: number, token: string) {
+    constructor(streamId: number, url: string, token: string) {
         this.streamId = streamId;
+        this.url = url;
         this.token = token;
         console.log("init", streamId);
     }
@@ -27,7 +29,7 @@ export class Livestream {
             },
         });
 
-        await room.connect('ws://localhost:7800', this.token);
+        await room.connect(this.url, this.token);
         console.log('connected to room', room.name);
     }
 }

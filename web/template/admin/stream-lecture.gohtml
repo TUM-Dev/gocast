@@ -12,8 +12,11 @@
 {{$indexData := .IndexData}}
 {{$course := .IndexData.TUMLiveContext.Course}}
 {{$stream := .IndexData.TUMLiveContext.Stream}}
+{{$token := .LivestreamToken}}
+{{$url := .LivestreamUrl}}
 
-<div x-data="{ liveStream: new admin.Livestream({{$stream.ID}}) }" class="text-white container mx-auto">
+
+<div x-data="{ liveStream: new admin.Livestream({{$stream.ID}}, '{{$url}}', '{{$token}}') }" class="text-white container mx-auto">
     <div class="min-w-screen flex items-center justify-center">
         <button @click="liveStream.connect()">Connect</button>
     </div>

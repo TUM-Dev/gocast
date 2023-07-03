@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"regexp"
+	"strconv"
 )
 
 // AdminPage serves all administration pages. todo: refactor into multiple methods
@@ -219,9 +220,19 @@ func (r mainRoutes) StreamLecture(c *gin.Context) {
 	indexData := NewIndexData()
 	indexData.TUMLiveContext = tumLiveContext
 
+	roomName := fmt.Sprintf("live_lecture_%d", tumLiveContext.Stream.ID)
+	authToken, err := tools.GenerateLivekitAuthToken(strconv.Itoa(int(tumLiveContext.User.ID)), roomName)
+	if err != nil {
+		sentry.CaptureException(err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
 	if err := templateExecutor.ExecuteTemplate(c.Writer, "stream-lecture.gohtml", StreamLecturePageData{
-		IndexData: indexData,
-		Lecture:   *tumLiveContext.Stream,
+		IndexData:       indexData,
+		Lecture:         *tumLiveContext.Stream,
+		LivestreamToken: authToken,
+		LivestreamUrl:   tools.Cfg.Livekit.WSHost,
 	}); err != nil {
 		log.Fatalln(err)
 	}
@@ -362,5 +373,6 @@ type LectureUnitsPageData struct {
 type StreamLecturePageData struct {
 	IndexData       IndexData
 	Lecture         model.Stream
+	LivestreamUrl   string
 	LivestreamToken string
 }

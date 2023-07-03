@@ -105,5 +105,6 @@ vodURLTemplate: https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s.mp4/playlist.
 canonicalURL: https://tum.live
 livekit:
   host: http://localhost:7880
+  wsHost: ws://localhost:7880
   apiKey: devkey
   secret: secret
