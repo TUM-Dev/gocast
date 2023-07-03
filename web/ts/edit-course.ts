@@ -954,6 +954,7 @@ export function createLectureForm(args: { s: [] }) {
                     this.canGoBack = true;
                     this.canContinue = this.formData.start.length > 0;
                 } else {
+                    this.onLastSlide = true;
                     this.canGoBack = true;
                     this.canContinue = this.formData.start.length > 0 && this.formData.end.length > 0;
                 }
