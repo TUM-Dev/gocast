@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{.IndexData.Branding.Title}} | Stream</title>
+    {{template "headImports"}}
+    <script src="/static/assets/ts-dist/admin.bundle.js?v={{.IndexData.VersionTag}}"></script>
+</head>
+<body class="bg-primary">
+
+{{template "header" .IndexData.TUMLiveContext}}
+{{$indexData := .IndexData}}
+{{$course := .IndexData.TUMLiveContext.Course}}
+{{$stream := .IndexData.TUMLiveContext.Stream}}
+
+<div class="text-white container mx-auto">
+    <div class="min-w-screen flex items-center justify-center">
+
+    </div>
+</div>
+</body>
+</html>
