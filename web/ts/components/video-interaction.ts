@@ -7,13 +7,13 @@ enum InteractionType {
     Polls,
 }
 
-export function watchInteractionContext(user: User) {
+export function videoInteractionContext(user: User) {
     return {
         type: InteractionType.Chat,
         user: user as User,
 
         init() {
-            // SocketConnections.ws.subscribe();
+            SocketConnections.ws.subscribe();
         },
 
         showChat() {

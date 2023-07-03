@@ -112,6 +112,19 @@ export function chatPromptContext(streamId: number): AlpineComponent {
         cancelReply() {
             this.reply = NewReply.NoReply;
         },
+
+        isPopOut(): boolean {
+            return window.location.href.includes("/chat/popup");
+        },
+
+        openPopOut() {
+            const height = window.innerHeight * 0.8;
+            window.open(
+                `${window.location.href}/chat/popup`,
+                "tumlive-popout",
+                `popup=yes,width=420,innerWidth=420,height=${height},innerHeight=${height}`,
+            );
+        },
     } as AlpineComponent;
 }
 

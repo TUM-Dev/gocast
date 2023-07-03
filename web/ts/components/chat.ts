@@ -95,7 +95,7 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
                     this.handleServerMessage(data);
                 }
             };
-            SocketConnections.ws.subscribe(handler);
+            SocketConnections.ws.addHandler(handler);
         },
 
         async loadMessages() {

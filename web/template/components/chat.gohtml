@@ -10,7 +10,7 @@
         {{$userId = .IndexData.TUMLiveContext.User.ID}}
     {{end}}
     <article
-            x-data="interaction.watchInteractionContext({ID: {{$userId}}, name: '{{$userName}}', isAdmin: {{$isAdmin}}})"
+            x-data="interaction.videoInteractionContext({ID: {{$userId}}, name: '{{$userName}}', isAdmin: {{$isAdmin}}})"
             class="h-full">
         <template x-if="isChat()">
             <article
@@ -272,10 +272,12 @@
                             </button>
                             <article x-cloak x-show="showOptions.value" class = "tum-live-menu absolute w-56 bottom-full"
                                     @click.outside="showOptions.toggle(false)">
-                                <a href = "" type = "button" class = "tum-live-menu-item">
-                                    <i class = "fa-solid fa-arrow-up-right-from-square mr-3"></i>
-                                    Pop-out chat
-                                </a>
+                                <template x-if="!isPopOut()">
+                                    <button type = "button" @click="openPopOut()" class = "tum-live-menu-item">
+                                        <i class = "fa-solid fa-arrow-up-right-from-square mr-3"></i>
+                                        Pop-out chat
+                                    </button>
+                                </template>
                                 {{if .IndexData.TUMLiveContext.Course.AnonymousChatEnabled}}
                                 <section class = "tum-live-menu-item">
                                     <input type="checkbox" name="anonymous" id="anonymous" class="hidden"

@@ -184,47 +184,11 @@ export class Chat {
 
     isMessageToBeFocused = (index: number) => this.messages[index].ID === this.focusedMessageId;
 
-    // patchMessage adds the message to the list of messages at the position it should appear in based on the send time.
-    patchMessage(m: ChatMessage): void {
-        if (this.filterPredicate(m)) {
-            this.messages = this.messages.filter((m2) => m2.ID !== m.ID);
-            return;
-        }
-
-        this.preprocessors.forEach((f) => (m = f(m)));
-
-        const newMessageCreatedAt = Date.parse(m.CreatedAt);
-
-        for (let i = 0; i <= this.messages.length; i++) {
-            if (i == this.messages.length) {
-                this.messages.push(m);
-                break;
-            }
-
-            const createdAt = Date.parse(this.messages[i].CreatedAt);
-            if (createdAt === newMessageCreatedAt) {
-                const newRenderVersion = this.messages[i].renderVersion + 1;
-                this.messages.splice(i, 1, { ...m, renderVersion: newRenderVersion });
-                break;
-            }
-        }
-
-        window.dispatchEvent(new CustomEvent("reorder"));
-    }
-
     private notifyMessagesUpdate(type: MessageUpdateType, payload: MessageUpdate) {
         [window, this.popUpWindow].forEach((window: Window) => {
             window?.dispatchEvent(new CustomEvent(type, { detail: payload }));
         });
     }
-}
-
-export async function fetchMessages(streamId: number): Promise<ChatMessage[]> {
-    return await fetch("/api/chat/" + streamId + "/messages")
-        .then((res) => res.json())
-        .then((messages) => {
-            return messages;
-        });
 }
 
 export type ChatMessage = {
