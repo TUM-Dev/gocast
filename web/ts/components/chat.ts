@@ -6,6 +6,7 @@ import { ChatWebsocketConnection, SocketConnections } from "../api/chat-ws";
 import { User } from "../api/users";
 import { Tunnel } from "../utilities/tunnels";
 import Alpine from "alpinejs";
+import { ToggleableElement } from "../utilities/ToggleableElement";
 
 export function chatContext(streamId: number, user: User): AlpineComponent {
     return {
@@ -23,6 +24,8 @@ export function chatContext(streamId: number, user: User): AlpineComponent {
         status: true,
         serverMessage: {},
         unreadMessages: false,
+
+        showSortSelect: new ToggleableElement(),
 
         preprocessors: [ChatMessagePreprocessor.AggregateReactions, ChatMessagePreprocessor.AddressedToCurrentUser],
 

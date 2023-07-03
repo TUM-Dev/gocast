@@ -33,12 +33,12 @@
 }
 
 /* Chrome, Safari and Opera */
-#content::-webkit-scrollbar, #notification-list::-webkit-scrollbar, .tum-live-side-navigation::-webkit-scrollbar {
+#chat-box::-webkit-scrollbar, #content::-webkit-scrollbar, #notification-list::-webkit-scrollbar, .tum-live-side-navigation::-webkit-scrollbar {
     display: none;
 }
 
 /* IE, Edge and Firefox */
-#content, #notification-list, .tum-live-side-navigation {
+#chat-box, #content, #notification-list, .tum-live-side-navigation {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
 }
@@ -194,6 +194,10 @@
 
 .tum-live-menu .tum-live-menu-item {
     @apply flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 my-2 w-full
+}
+
+.tum-live-menu .tum-live-menu-item.active {
+    @apply bg-gray-100 dark:bg-gray-800
 }
 
 

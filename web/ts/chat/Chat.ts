@@ -1,10 +1,5 @@
 import { deregisterTimeWatcher, getPlayers, registerTimeWatcher } from "../TUMLiveVjs";
 
-enum ShowMode {
-    Messages,
-    Polls,
-}
-
 export class Chat {
     readonly userId: number;
     readonly userName: string;
@@ -18,7 +13,6 @@ export class Chat {
     startTime: Date;
     liveNowTimestamp: Date;
     pollHistory: object[];
-    showMode: ShowMode;
     orderByLikes: boolean;
 
     preprocessors: ((m: ChatMessage) => ChatMessage)[] = [
@@ -26,10 +20,6 @@ export class Chat {
             return { ...m, isGrayedOut: this.chatReplayActive && !this.orderByLikes };
         },
     ];
-
-    filterPredicate: (m: ChatMessage) => boolean = (m) => {
-        return !this.admin && !m.visible && m.userId != this.userId;
-    };
 
     private timeWatcherCallBackFunction: () => void;
 
@@ -47,53 +37,12 @@ export class Chat {
         }
     }
 
-    onPopUpMessagesUpdated(e) {
-        const messagesToUpdate: ChatMessage[] = e.detail;
-        if (messagesToUpdate) {
-            this.messages = [];
-            messagesToUpdate.forEach((message) => this.messages.push(message));
-        }
-    }
-
     onGrayedOutUpdated(e) {
         this.messages.find((m) => m.ID === e.detail.ID).isGrayedOut = e.detail.isGrayedOut;
     }
 
     onFocusUpdated(e) {
         this.focusedMessageId = e.detail.ID;
-    }
-
-    openChatPopUp(courseSlug: string, streamID: number) {
-        // multiple popup chat windows seem to trigger Alpine.js exceptions
-        // which is probably caused by a race condition during the update of the
-        // chat messages array with the custom event
-        if (this.popUpWindow) {
-            this.popUpWindow.focus();
-            return;
-        }
-        const height = window.innerHeight * 0.8;
-        const popUpWindow = window.open(
-            `/w/${courseSlug}/${streamID}/chat/popup`,
-            "_blank",
-            `popup=yes,width=420,innerWidth=420,height=${height},innerHeight=${height}`,
-        );
-
-        popUpWindow.addEventListener("beforeunload", (_) => {
-            this.popUpWindow = null;
-        });
-
-        popUpWindow.addEventListener("chatinitialized", () => {
-            this.messages.forEach((message) => {
-                const type: MessageUpdateType = "chatupdategrayedout";
-                const payload: MessageUpdate = { ID: message.ID, isGrayedOut: message.isGrayedOut };
-                popUpWindow.dispatchEvent(new CustomEvent(type, { detail: payload }));
-            });
-            const type: MessageUpdateType = "chatupdatefocus";
-            const payload: FocusUpdate = { ID: this.focusedMessageId };
-            popUpWindow.dispatchEvent(new CustomEvent(type, { detail: payload }));
-        });
-
-        this.popUpWindow = popUpWindow;
     }
 
     /**
