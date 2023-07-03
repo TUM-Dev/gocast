@@ -13,9 +13,9 @@
 {{$course := .IndexData.TUMLiveContext.Course}}
 {{$stream := .IndexData.TUMLiveContext.Stream}}
 
-<div class="text-white container mx-auto">
+<div x-data="{ liveStream: new admin.Livestream({{$stream.ID}}) }" class="text-white container mx-auto">
     <div class="min-w-screen flex items-center justify-center">
-
+        <button @click="liveStream.connect()">Connect</button>
     </div>
 </div>
 </body>
