@@ -360,6 +360,7 @@ type LectureUnitsPageData struct {
 }
 
 type StreamLecturePageData struct {
-	IndexData IndexData
-	Lecture   model.Stream
+	IndexData       IndexData
+	Lecture         model.Stream
+	LivestreamToken string
 }

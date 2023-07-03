@@ -100,8 +100,9 @@ type Config struct {
 		UploadURL string `yaml:"uploadUrl"`
 		SubDir    string `yaml:"subDir"`
 	} `yaml:"lrz"`
-	Mail MailConfig `yaml:"mail"`
-	Db   struct {
+	Mail    MailConfig    `yaml:"mail"`
+	Livekit LivekitConfig `yaml:"livekit"`
+	Db      struct {
 		User     string `yaml:"user"`
 		Password string `yaml:"password"`
 		Database string `yaml:"database"`
@@ -176,6 +177,12 @@ type MailConfig struct {
 	SMIMECert         string `yaml:"SMIMECert"`
 	SMIMEKey          string `yaml:"SMIMEKey"`
 	MaxMailsPerMinute int    `yaml:"maxMailsPerMinute"`
+}
+
+type LivekitConfig struct {
+	Host   string `yaml:"host"`
+	ApiKey string `yaml:"apiKey"`
+	Secret string `yaml:"secret"`
 }
 
 func (Config) GetJWTKey() *rsa.PrivateKey {
