@@ -17,8 +17,22 @@
 
 
 <div x-data="{ liveStream: new admin.Livestream({{$stream.ID}}, '{{$url}}', '{{$token}}') }" class="text-white container mx-auto">
-    <div class="min-w-screen flex items-center justify-center">
-        <button @click="liveStream.connect()">Connect</button>
+    <div class="mt-7 min-w-screen flex items-center justify-between">
+        <button @click="liveStream.connect($refs.screenDisplay, $refs.camDisplay)">Connect</button>
+        <button @click="liveStream.enableScreen()">Enable Screen</button>
+        <button @click="liveStream.enableCam()">Enable Cam</button>
+    </div>
+
+    <div class="flex flex-col items-end mt-7">
+        <div
+                class="aspect-video bg-black/30 dark:bg-white/20 my-2 rounded relative min-w-full text-white overflow-hidden"
+                x-ref="screenDisplay"
+        >
+        </div>
+        <div
+                class="aspect-video bg-black/30 dark:bg-white/20 my-2 rounded relative w-[320px] text-white overflow-hidden"
+                x-ref="camDisplay"
+        ></div>
     </div>
 </div>
 </body>
