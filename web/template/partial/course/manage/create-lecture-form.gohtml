@@ -18,16 +18,24 @@
                     2
                 </span>
                 <span class="hidden sm:inline-flex sm:ml-2">Details</span>
-                <svg aria-hidden="true" class="w-4 h-4 ml-2 sm:ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+                <svg x-show="createType === admin.LectureCreateType.vodUpload || createType === admin.LectureCreateType.vodRecord" aria-hidden="true" class="w-4 h-4 ml-2 sm:ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
             </li>
-            <li class="flex items-center " :class="currentTab === 2 ? `text-blue-500 dark:text-white` : `text-gray-400 dark:text-gray-500`">
+            <li x-show="createType === admin.LectureCreateType.vodUpload" class="flex items-center " :class="currentTab === 2 ? `text-blue-500 dark:text-white` : `text-gray-400 dark:text-gray-500`">
                 <span class="flex items-center justify-center w-5 h-5 mr-2 text-xs border rounded-full shrink-0" :class="currentTab === 2 ? `border-blue-500 dark:border-white` : `border-gray-400 dark:border-gray-500`">
                     3
                 </span>
+                Upload Media
+            </li>
+            <li x-show="createType === admin.LectureCreateType.vodRecord" class="flex items-center " :class="currentTab === 2 ? `text-blue-500 dark:text-white` : `text-gray-400 dark:text-gray-500`">
+                <span class="flex items-center justify-center w-5 h-5 mr-2 text-xs border rounded-full shrink-0" :class="currentTab === 2 ? `border-blue-500 dark:border-white` : `border-gray-400 dark:border-gray-500`">
+                    3
+                </span>
+                Record Media
             </li>
         </ol>
 
         <div class="form-container-body">
+            {{- /* Loading Tab */ -}}
             <div x-show="currentTab === -1" x-data="{ progress: { COMB: 0, PRES: null, CAM: null } }" @voduploadprogress.window="(e) => (progress = e.detail)">
                 <h3>Your lecture is being created ...</h3>
                 <ul x-show="formData.vodup" class="mt-2">
@@ -37,20 +45,22 @@
                 </ul>
             </div>
 
+            {{- /* Tab 1 */ -}}
             <div x-show="currentTab === 0" class="flex py-4">
                 {{template "lecture-type-slide"}}
             </div>
 
-            <div x-show="currentTab === 1 && !formData.vodup">
-                {{template "livestream-type-slide"}}
-            </div>
-
-            <div x-show="(currentTab === 1 && formData.vodup) || (currentTab === 2 && !formData.vodup) " class="grid grid-cols-2 space-x-2">
+            {{- /* Tab 2 */ -}}
+            <div x-show="currentTab === 1" class="grid grid-cols-2 space-x-2">
                 {{template "lecture-details-slide"}}
             </div>
 
-            <div x-show="currentTab === 2 && formData.vodup">
+            {{- /* Tab 3 */ -}}
+            <div x-show="createType === admin.LectureCreateType.vodUpload && currentTab === 2" class="">
                 {{template "lecture-media-slide"}}
+            </div>
+            <div x-show="createType === admin.LectureCreateType.vodRecord && currentTab === 2" class="">
+                {{template "lecture-record-slide"}}
             </div>
         </div>
 

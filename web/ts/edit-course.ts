@@ -594,8 +594,244 @@ interface MediaUpload {
     progress: number;
 }
 
+export enum LectureCreateType {
+    vodRecord,
+    livestream,
+    vodUpload,
+}
+
+function stopRecorder(recorder: MediaRecorder): Promise<Blob> {
+    return new Promise((resolve) => {
+        recorder.ondataavailable = (e) => {
+            resolve(e.data);
+        };
+        recorder.stop();
+    });
+}
+
+function loadVideoBlob(elem: HTMLVideoElement, video: Blob): Promise<void> {
+    return new Promise((resolve) => {
+        elem.srcObject = null;
+        elem.onloadedmetadata = (e) => {
+            elem.pause();
+            elem.currentTime = 0;
+            resolve();
+        };
+        elem.src = URL.createObjectURL(video);
+    });
+}
+
+class LectureRecorder {
+    private eventRoot: HTMLElement;
+    private readonly onUpdateData: (screenRecording: Blob, cameraRecording: Blob) => void;
+
+    private screencastStream: MediaStream;
+    private cameraStream: MediaStream;
+
+    private screencastDisplay: HTMLVideoElement;
+    private cameraDisplay: HTMLVideoElement;
+
+    private screencastRecorder: MediaRecorder;
+    private cameraRecorder: MediaRecorder;
+
+    private screenRecording: Blob;
+    private cameraRecording: Blob;
+
+    public screencastAvailable: boolean;
+    public cameraAvailable: boolean;
+    public isRecording: boolean;
+    public retrieveRecording: boolean;
+    public recordingsReady: boolean;
+    public isPlaying: boolean;
+
+    constructor(eventRoot: HTMLElement, onUpdateData: (screenRecording: Blob, cameraRecording: Blob) => void) {
+        this.eventRoot = eventRoot;
+        this.onUpdateData = onUpdateData;
+        this.screencastAvailable = false;
+        this.cameraAvailable = false;
+        this.isRecording = false;
+        this.retrieveRecording = false;
+        this.recordingsReady = false;
+        this.isPlaying = false;
+    }
+
+    async selectScreencast(display: HTMLVideoElement): Promise<void> {
+        if (this.isRecording || this.recordingsReady) return;
+        try {
+            this.screencastDisplay = display;
+            this.screencastStream = await navigator.mediaDevices.getDisplayMedia({
+                audio: true,
+                video: true,
+            });
+
+            await this.initScreencastDisplay();
+        } catch (err) {
+            alert("Failed to access your screen.");
+        }
+    }
+
+    async selectCamera(display: HTMLVideoElement): Promise<void> {
+        if (this.isRecording || this.recordingsReady) return;
+        try {
+            this.cameraDisplay = display;
+            this.cameraStream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: true,
+            });
+
+            await this.initCameraDisplay();
+
+            this.cameraAvailable = true;
+        } catch (err) {
+            alert("Failed to access your webcam & mic.");
+        }
+    }
+
+    initScreencastDisplay() {
+        return new Promise<void>((resolve) => {
+            this.screencastDisplay.srcObject = this.screencastStream;
+            this.screencastDisplay.onloadedmetadata = (e) => {
+                this.screencastDisplay.muted = true;
+                this.screencastDisplay.play();
+                this.screencastRecorder = new MediaRecorder(this.screencastStream, {
+                    mimeType: "video/webm",
+                });
+                this.screencastAvailable = true;
+                resolve();
+            };
+        });
+    }
+
+    initCameraDisplay(): Promise<void> {
+        return new Promise<void>((resolve) => {
+            this.cameraDisplay.srcObject = this.cameraStream;
+            this.cameraDisplay.onloadedmetadata = (e) => {
+                this.cameraDisplay.muted = true;
+                this.cameraDisplay.play();
+                this.cameraRecorder = new MediaRecorder(this.cameraStream, {
+                    mimeType: "video/webm",
+                });
+                resolve();
+            };
+        });
+    }
+
+    async toggleRecording(): Promise<void> {
+        if (this.isRecording) {
+            await this.stop();
+        } else {
+            this.start();
+        }
+    }
+
+    start(): void {
+        if (this.isRecording) return;
+        if (this.screencastAvailable) {
+            this.screencastRecorder.start();
+        }
+        if (this.cameraRecorder) {
+            this.cameraRecorder.start();
+        }
+        this.isRecording = true;
+    }
+
+    async stop(): Promise<void> {
+        if (!this.isRecording || this.retrieveRecording) return;
+        this.isRecording = false;
+        this.retrieveRecording = true;
+
+        await Promise.all(
+            [
+                async () => {
+                    if (!this.screencastRecorder) {
+                        return;
+                    }
+                    this.screenRecording = await stopRecorder(this.screencastRecorder);
+                    this.screencastRecorder = null;
+                },
+                async () => {
+                    if (!this.cameraRecorder) {
+                        return;
+                    }
+                    this.cameraRecording = await stopRecorder(this.cameraRecorder);
+                    this.cameraRecorder = null;
+                },
+            ].map((fn) => fn()),
+        );
+        await this.displayRecordings();
+        this.onUpdateData(this.screenRecording, this.cameraRecording);
+        this.retrieveRecording = false;
+        this.recordingsReady = true;
+    }
+
+    async displayRecordings(): Promise<void> {
+        if (this.screenRecording) {
+            await loadVideoBlob(this.screencastDisplay, this.screenRecording);
+        }
+        if (this.cameraRecording) {
+            await loadVideoBlob(this.cameraDisplay, this.cameraRecording);
+        }
+    }
+
+    togglePlay() {
+        if (this.isPlaying) {
+            this.pause();
+        } else {
+            this.play();
+        }
+    }
+
+    play() {
+        if (this.isPlaying) return;
+        if (this.screenRecording) {
+            this.screencastDisplay.play();
+            this.screencastDisplay.onended = () => this.resetPlay();
+        }
+        if (this.cameraRecording) {
+            this.cameraDisplay.currentTime = this.screencastDisplay.currentTime;
+            this.cameraDisplay.play();
+            this.cameraDisplay.onended = () => this.resetPlay();
+        }
+        this.isPlaying = true;
+    }
+
+    pause() {
+        if (!this.isPlaying) return;
+        if (this.screenRecording) {
+            this.screencastDisplay.pause();
+        }
+        if (this.cameraRecording) {
+            this.cameraDisplay.pause();
+        }
+        this.isPlaying = false;
+    }
+
+    resetPlay() {
+        this.pause();
+        if (this.screenRecording) {
+            this.screencastDisplay.currentTime = 0;
+        }
+        if (this.cameraRecording) {
+            this.cameraDisplay.currentTime = 0;
+        }
+    }
+
+    deleteRecordings() {
+        this.pause();
+        if (confirm("Are your sure you want to delete all recordings?")) {
+            this.screenRecording = null;
+            this.cameraRecording = null;
+            this.recordingsReady = null;
+            this.initScreencastDisplay();
+            this.initCameraDisplay();
+            this.onUpdateData(this.screenRecording, this.cameraRecording);
+        }
+    }
+}
+
 export function createLectureForm(args: { s: [] }) {
     return {
+        createType: LectureCreateType.livestream,
         currentTab: 0,
         canGoBack: false,
         canContinue: true,
@@ -627,6 +863,9 @@ export function createLectureForm(args: { s: [] }) {
         init() {
             this.onUpdate();
         },
+        initRecorder(eventRoot: HTMLElement): LectureRecorder {
+            return new LectureRecorder(eventRoot, (screen, cam) => this.updateRecordings(screen, cam));
+        },
         next() {
             if (this.onLastSlide) {
                 this.submitData();
@@ -638,6 +877,14 @@ export function createLectureForm(args: { s: [] }) {
         prev() {
             this.currentTab--;
             this.onUpdate();
+        },
+        updateCreateType(newType: LectureCreateType) {
+            this.createType = newType;
+            if (newType === LectureCreateType.livestream) {
+                this.formData.vodup = false;
+            } else {
+                this.formData.vodup = true;
+            }
         },
         updateLiveAdHoc(adHoc: boolean) {
             this.formData.adHoc = adHoc;
@@ -672,6 +919,21 @@ export function createLectureForm(args: { s: [] }) {
             } else if (type === "PRES") {
                 this.formData.presFile = file;
             }
+            this.onUpdate();
+        },
+
+        updateRecordings(screenRecording: Blob, cameraRecording: Blob) {
+            this.formData.combFile = [];
+            this.formData.presFile = [];
+            this.formData.camFile = [];
+
+            if (screenRecording) {
+                this.formData.presFile = [new File([screenRecording], "pres.webm")];
+            }
+            if (cameraRecording) {
+                this.formData.camFile = [new File([cameraRecording], "cam.webm")];
+            }
+
             this.onUpdate();
         },
 
