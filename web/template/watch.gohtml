@@ -6,7 +6,7 @@
     {{$stream := .IndexData.TUMLiveContext.Stream}}
     {{$course := .IndexData.TUMLiveContext.Course}}
     <title>{{.IndexData.Branding.Title}} | {{$course.Name}}: {{$stream.Name}}</title>
-    <link rel="canonical" href="{{.IndexData.CanonicalURL.Stream $course.Slug $stream.ID .Version}}" />
+    <link rel="canonical" href="{{.IndexData.CanonicalURL.Stream $course.Slug $stream.ID .Version}}"/>
     {{template "headImports" .IndexData.VersionTag}}
     <script>window.HELP_IMPROVE_VIDEOJS = false;</script>
     <script src="/static/assets/ts-dist/watch.bundle.js?v={{.IndexData.VersionTag}}"></script>
@@ -16,7 +16,8 @@
     <link rel="stylesheet" href="/static/node_modules/video.js/dist/video-js.min.css">
     <link rel="stylesheet" href="/static/node_modules/videojs-seek-buttons/dist/videojs-seek-buttons.css">
     <link rel="stylesheet" href="/static/node_modules/@silvermine/videojs-airplay/dist/silvermine-videojs-airplay.css">
-    <link rel="stylesheet" href="/static/assets/css-dist/watch.css?v={{if .IndexData.VersionTag}}{{.IndexData.VersionTag}}{{else}}development{{end}}">
+    <link rel="stylesheet"
+          href="/static/assets/css-dist/watch.css?v={{if .IndexData.VersionTag}}{{.IndexData.VersionTag}}{{else}}development{{end}}">
     {{/* Remove this when using KaTeX in other locations than the chat */}}
     {{if $stream.ChatEnabled}}
         <link rel="stylesheet" href="/static/node_modules/katex/dist/katex.min.css">
@@ -56,9 +57,9 @@
                     </button>
                 </div>
                 {{if not $stream.LiveNow}}
-                        <!-- $nextTick does not work in watch. Therefore, @change.once has to be used. -->
-                        <div x-init="$watch('showShare', async value => { if (value) { await share.setURL(true); }});"
-                             class="flex justify-start items-center pt-2">
+                    <!-- $nextTick does not work in watch. Therefore, @change.once has to be used. -->
+                    <div x-init="$watch('showShare', async value => { if (value) { await share.setURL(true); }});"
+                         class="flex justify-start items-center pt-2">
                         <input id="include-timestamp" type="checkbox" class="h-8 hover:cursor-pointer"
                                x-model="share.includeTimestamp" @change="share.setURL(false)">
                         <label for="include-timestamp" class="font-light text-4 text-xs ml-2">Include Timestamp</label>
@@ -71,20 +72,22 @@
     </div>
 </div>
 {{if .IndexData.TUMLiveContext.User}}
-<div id="bookmarks-mobile" x-cloak="" x-show="sidebar === watch.SidebarState.Bookmarks"
-     class="md:hidden flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
-    <div @click.outside="sidebar = watch.SidebarState.Hidden"
-         class="m-auto w-3/4 h-96 bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
-        {{template "bookmarks-modal" $stream.ID}}
+    <div id="bookmarks-mobile" x-cloak="" x-show="sidebar === watch.SidebarState.Bookmarks"
+         class="md:hidden flex absolute top-0 h-screen w-screen z-50 backdrop-brightness-50">
+        <div @click.outside="sidebar = watch.SidebarState.Hidden"
+             class="m-auto w-3/4 h-96 bg-white dark:bg-secondary-light border dark:border-gray-800 rounded-lg">
+            {{template "bookmarks-modal" $stream.ID}}
+        </div>
     </div>
-</div>
 {{end}}
 {{if .AlertsEnabled}}
     {{template "alert-modal" . }}
 {{end}}
 <div id="watchPageMainWrapper">
+    <input type="hidden" id="description" value="{{.Description}}">
     <input type="hidden" id="streamID" value="{{$stream.Model.ID}}">
-    <div x-data="interaction.videoInformationContext();" class="flex flex-wrap shadow border bg-white dark:bg-secondary dark:shadow-0 dark:border-0">
+    <div x-data="interaction.videoInformationContext();"
+         class="flex flex-wrap shadow border bg-white dark:bg-secondary dark:shadow-0 dark:border-0">
         <div id="watchWrapper"
              x-data="{ 'chatEnabled': {{and $course.ChatEnabled $stream.ChatEnabled}} }"
              class="relative basis-full lg:order-none order-1 sticky top-0 lg:relative z-40"
@@ -104,11 +107,11 @@
                 </div>
                 {{if (eq .Version "SPLIT")}}
                     <div
-                        x-data="{splitView: new watch.SplitView(), mouseMoving: false}"
-                        @mouseleave="splitView.hideMenu()"
-                        @update-mouse-moving.camel="(e) => mouseMoving = e.detail"
-                        :class="mouseMoving && 'mouse-moving'"
-                        class="splitview-wrap group relative flex w-full h-full"
+                            x-data="{splitView: new watch.SplitView(), mouseMoving: false}"
+                            @mouseleave="splitView.hideMenu()"
+                            @update-mouse-moving.camel="(e) => mouseMoving = e.detail"
+                            :class="mouseMoving && 'mouse-moving'"
+                            class="splitview-wrap group relative flex w-full h-full"
                     >
                         <div class="hidden group-hover:flex absolute left-1 top-1 z-40">
                             <button x-cloak x-show="!splitView.showSplitMenu" @click="splitView.toggleMenu()"
@@ -227,98 +230,101 @@
                                 {{end}}
                             {{end}}
                         {{end}}
-                    <p class="vjs-no-js">
-                        To view this video please enable JavaScript.
-                    </p>
-                </video-js>
-            {{end}}
-
-            <div
-                    x-data="{ size: { x: '0px', width: '0px' }, hoverPos: watch.SeekbarHoverPosition.empty }"
-                    x-on:updateseekbarsize.window="e => { size = e.detail; }"
-                    x-on:seekbarhover.window="e => { hoverPos = e.detail; }"
-                    x-init="watch.seekbarOverlay.init($el);"
-                    class="seekbar-overlay absolute bottom-[18px] bg-gradient-to-t from-gray-800/[.6] h-full"
-                    :style="{width: size.width, left: size.x}"
-            >
+                        <p class="vjs-no-js">
+                            To view this video please enable JavaScript.
+                        </p>
+                    </video-js>
+                {{end}}
 
                 <div
-                        x-data="{ seekLogger: new watch.SeekLogger('{{$stream.ID}}'), heatMapPath: null }"
-                        x-on:updateheatmappath.window="e => { heatMapPath = e.detail.heatMapPath; }"
+                        x-data="{ size: { x: '0px', width: '0px' }, hoverPos: watch.SeekbarHoverPosition.empty }"
                         x-on:updateseekbarsize.window="e => { size = e.detail; }"
-                        x-init="seekLogger.attach(); watch.repeatHeatMap.init('{{$stream.ID}}');"
-                        class="absolute h-[30px] bottom-0 left-0 right-0"
-                        x-show="heatMapPath != null"
+                        x-on:seekbarhover.window="e => { hoverPos = e.detail; }"
+                        x-init="watch.seekbarOverlay.init($el);"
+                        class="seekbar-overlay absolute bottom-[18px] bg-gradient-to-t from-gray-800/[.6] h-full"
+                        :style="{width: size.width, left: size.x}"
                 >
-                    <template x-if="heatMapPath">
-                        <svg height="100%" preserveAspectRatio="none" viewBox="0 0 1000 100"
-                             width="100%" style="height: 30px;">
-                            <defs>
-                                <clipPath id="heatmap">
-                                    <path class="tumlive-heat-map-path"
-                                          :d="heatMapPath"
-                                          fill="white" fill-opacity="0.6"></path>
-                                </clipPath>
-                            </defs>
-                            <rect clip-path="url(#heatmap)" fill="white" fill-opacity="0.4" height="100%" width="100%" x="0" y="0"></rect>
-                        </svg>
-                    </template>
+
+                    <div
+                            x-data="{ seekLogger: new watch.SeekLogger('{{$stream.ID}}'), heatMapPath: null }"
+                            x-on:updateheatmappath.window="e => { heatMapPath = e.detail.heatMapPath; }"
+                            x-on:updateseekbarsize.window="e => { size = e.detail; }"
+                            x-init="seekLogger.attach(); watch.repeatHeatMap.init('{{$stream.ID}}');"
+                            class="absolute h-[30px] bottom-0 left-0 right-0"
+                            x-show="heatMapPath != null"
+                    >
+                        <template x-if="heatMapPath">
+                            <svg height="100%" preserveAspectRatio="none" viewBox="0 0 1000 100"
+                                 width="100%" style="height: 30px;">
+                                <defs>
+                                    <clipPath id="heatmap">
+                                        <path class="tumlive-heat-map-path"
+                                              :d="heatMapPath"
+                                              fill="white" fill-opacity="0.6"></path>
+                                    </clipPath>
+                                </defs>
+                                <rect clip-path="url(#heatmap)" fill="white" fill-opacity="0.4" height="100%"
+                                      width="100%" x="0" y="0"></rect>
+                            </svg>
+                        </template>
+                    </div>
+
+                    <div
+                            x-data="{ seekbarMarker: [], seekbarSections: [] }"
+                            class="absolute h-[30px] bottom-0 left-0 right-0"
+                            x-on:seekbarhighlightsupdate.window="e => { seekbarMarker = e.detail.marker; seekbarSections = e.detail.sections; }"
+                            x-init="watch.seekbarHighlights.init('{{$stream.ID}}');"
+                    >
+                        <template x-for="marker in seekbarMarker">
+                            <div class="absolute bottom-0 top-0" :style="{ left: `${marker.position * 100}%` }">
+                                <!-- Section Separator -->
+                                <div x-show="marker.type === watch.MarkerType.sectionSep"
+                                     class="w-[2px] h-full bg-gradient-to-t from-black rounded-t"></div>
+
+                                <!-- Bookmark Marker -->
+                                <div x-show="marker.type === watch.MarkerType.bookmark"
+                                     class="block w-[6px] h-[6px] ml-[-3px] rounded bg-indigo-400 rounded-t"></div>
+                                <div
+                                        x-show="marker.type === watch.MarkerType.bookmark && hoverPos.onTarget(marker.position, 7)"
+                                        class="break-all absolute z-10 top-[-45px] text-center w-[100px] bg-indigo-400 ml-[-50px] px-[12px] py-2 rounded"
+                                        :style="{ left: `${marker.position * 100}%` }"
+                                >
+                                    <span class="size1" x-text="marker.description"></span>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-for="section in seekbarSections">
+                            <div>
+                                <div
+                                        class="absolute border-x-2 border-t-2 bottom-0 top-0 rounded-t"
+                                        :class="hoverPos.inRange(section.from, section.to) ? 'bg-white/10 border-white/[.02]' : 'bg-black/20 border-transparent'"
+                                        :style="{ left: `${section.from * 100}%`, right: `${(1 - section.to) * 100}%` }"
+                                ></div>
+                                <div
+                                        x-show="hoverPos.inRange(section.from, section.to)"
+                                        class="absolute top-[-45px] text-center w-[100px] bg-black/[0.9] ml-[-50px] px-[12px] py-2 rounded"
+                                        :style="{ left: `${(section.from + (section.to - section.from) / 2) * 100}%` }"
+                                >
+                                    <span class="size1" x-text="section.title"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
                 </div>
 
                 <div
-                        x-data="{ seekbarMarker: [], seekbarSections: [] }"
-                        class="absolute h-[30px] bottom-0 left-0 right-0"
-                        x-on:seekbarhighlightsupdate.window="e => { seekbarMarker = e.detail.marker; seekbarSections = e.detail.sections; }"
-                        x-init="watch.seekbarHighlights.init('{{$stream.ID}}');"
-                >
-                    <template x-for="marker in seekbarMarker">
-                        <div class="absolute bottom-0 top-0" :style="{ left: `${marker.position * 100}%` }">
-                            <!-- Section Separator -->
-                            <div x-show="marker.type === watch.MarkerType.sectionSep" class="w-[2px] h-full bg-gradient-to-t from-black rounded-t"></div>
-
-                            <!-- Bookmark Marker -->
-                            <div x-show="marker.type === watch.MarkerType.bookmark" class="block w-[6px] h-[6px] ml-[-3px] rounded bg-indigo-400 rounded-t"></div>
-                            <div
-                                x-show="marker.type === watch.MarkerType.bookmark && hoverPos.onTarget(marker.position, 7)"
-                                class="break-all absolute z-10 top-[-45px] text-center w-[100px] bg-indigo-400 ml-[-50px] px-[12px] py-2 rounded"
-                                :style="{ left: `${marker.position * 100}%` }"
-                            >
-                                <span class="size1" x-text="marker.description"></span>
-                            </div>
-                        </div>
-                    </template>
-
-                    <template x-for="section in seekbarSections">
-                        <div>
-                            <div
-                                class="absolute border-x-2 border-t-2 bottom-0 top-0 rounded-t"
-                                :class="hoverPos.inRange(section.from, section.to) ? 'bg-white/10 border-white/[.02]' : 'bg-black/20 border-transparent'"
-                                :style="{ left: `${section.from * 100}%`, right: `${(1 - section.to) * 100}%` }"
-                            ></div>
-                            <div
-                                    x-show="hoverPos.inRange(section.from, section.to)"
-                                    class="absolute top-[-45px] text-center w-[100px] bg-black/[0.9] ml-[-50px] px-[12px] py-2 rounded"
-                                    :style="{ left: `${(section.from + (section.to - section.from) / 2) * 100}%` }"
-                            >
-                                <span class="size1" x-text="section.title"></span>
-                            </div>
-                        </div>
-                    </template>
+                        x-cloak
+                        x-show="contextMenu.shown"
+                        @click.outside="contextMenu = {...contextMenu, shown: false}"
+                        class="origin-top-left absolute w-72 py-2 bg-gray-800/[.9] border-gray-100 border-1 rounded text-white text-sm"
+                        :style="{ top: contextMenu.locY + 'px', left: contextMenu.locX + 'px' }"
+                        role="menu" aria-orientation="vertical" tabindex="-1">
+                    <button @click="contextMenu = {...contextMenu, shown: false}; videoStatsShown = true; watch.videoStatListener.listen();"
+                            class="py-2 px-4 w-full text-left cursor-pointer hover:bg-white/10">
+                        Show detailed stats
+                    </button>
                 </div>
-            </div>
-
-            <div
-                    x-cloak
-                    x-show="contextMenu.shown"
-                    @click.outside="contextMenu = {...contextMenu, shown: false}"
-                    class="origin-top-left absolute w-72 py-2 bg-gray-800/[.9] border-gray-100 border-1 rounded text-white text-sm"
-                    :style="{ top: contextMenu.locY + 'px', left: contextMenu.locX + 'px' }"
-                    role="menu" aria-orientation="vertical" tabindex="-1">
-                <button @click="contextMenu = {...contextMenu, shown: false}; videoStatsShown = true; watch.videoStatListener.listen();"
-                        class="py-2 px-4 w-full text-left cursor-pointer hover:bg-white/10">
-                    Show detailed stats
-                </button>
-            </div>
 
                 <div
                         x-cloak
@@ -557,36 +563,30 @@
 
 
         <!-- Video description -->
-        {{$less := gt (len .Description) .CutOffLength}}
-        {{if gt (len .Description) 0}}
-            <div x-data="{ less: {{$less}}, toggleDesc: true }"
-                    {{/* Update less on update */}}
-                 @descriptionupdate.window="toggleDesc = less = $event.detail.description.full.length > {{.CutOffLength}};"
-                 class="video-description flex-grow p-3 order-2 basis-full lg:order-none lg:p-5 lg:mx-2">
+        <template x-if="hasDescription()">
+            <div class="video-description flex-grow p-3 order-2 basis-full lg:order-none lg:p-5 lg:mx-2">
                 <div class="flex justify-between border-b mb-1 dark:border-gray-800 lg:justify-start">
                     <h3 class="text-4 font-semibold">Description</h3>
                 </div>
                 <div>
                     <div class="rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-secondary-light hover:dark:bg-gray-600 text-3 text-sm">
-                        <button @click="toggleDesc = !toggleDesc;"
+                        <button @click="showFullDescription.toggle()"
                                 :disabled="!less"
                                 class="p-2 w-full text-left"
                                 :class="less && 'hover:cursor-pointer'">
-                        <span class="block overflow-y-clip"
-                              :class="(less && toggleDesc) ? 'h-8' : 'h-auto'"
-                              @descriptionupdate.window="$el.innerHTML=$event.detail.description.full">
-                            {{.Description}}
+                        <span x-html="description" class="block overflow-y-clip"
+                              :class="(less && !showFullDescription.value) ? 'h-8' : 'h-auto'">
                         </span>
                         </button>
                         <template x-if="less">
                             <button class="font-semibold m-1 py-1 px-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
-                                    x-text="toggleDesc ? 'Show more' : 'Show less'"
-                                    @click="toggleDesc = !toggleDesc;"></button>
+                                    x-text="showFullDescription.toggleText('Show more', 'Show less')"
+                                    @click="showFullDescription.toggle()"></button>
                         </template>
                     </div>
                 </div>
             </div>
-        {{end}}
+        </template>
 
         <!-- Modal when stopping a stream -->
         <div class="inline-block" x-data="{ 'showModal': false }"
